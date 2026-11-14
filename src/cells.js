@@ -33,6 +33,7 @@
 
 import { loadFieldShader, KIND } from './field.js';
 import { Genome, BIO_BYTES } from './genome.js';
+import { Heat, HEAT_COMMON_URL } from './heat.js';
 
 export const CELL_URL = 'src/shaders/cell_common.wgsl';
 
@@ -238,14 +239,17 @@ export class Cells {
 
   async init() {
     const d = this.device;
-    const [drawMod, gridMod, checkMod, stepMod, censusMod, fieldMod] = await Promise.all([
-      loadFieldShader(d, 'src/shaders/cell_draw.wgsl', [CELL_URL]),
-      loadFieldShader(d, 'src/shaders/cell_grid.wgsl', [CELL_URL]),
-      loadFieldShader(d, 'src/shaders/cell_check.wgsl', [CELL_URL]),
-      loadFieldShader(d, 'src/shaders/cell_step.wgsl', [CELL_URL]),
-      loadFieldShader(d, 'src/shaders/cell_census.wgsl', [CELL_URL]),
-      loadFieldShader(d, 'src/shaders/cell_field.wgsl', [CELL_URL]),
+    const pre = [HEAT_COMMON_URL, CELL_URL];
+    const [drawMod, gridMod, checkMod, stepMod, censusMod, fieldMod, heat] = await Promise.all([
+      loadFieldShader(d, 'src/shaders/cell_draw.wgsl', pre),
+      loadFieldShader(d, 'src/shaders/cell_grid.wgsl', pre),
+      loadFieldShader(d, 'src/shaders/cell_check.wgsl', pre),
+      loadFieldShader(d, 'src/shaders/cell_step.wgsl', pre),
+      loadFieldShader(d, 'src/shaders/cell_census.wgsl', pre),
+      loadFieldShader(d, 'src/shaders/cell_field.wgsl', pre),
+      Heat.create(d),
     ]);
+    this.heat = heat;           // step C1: the heat band (src/heat.js)
     // the cells' field: plain additive blending into a float texture (signed values add up)
     const add = { srcFactor: 'one', dstFactor: 'one', operation: 'add' };
     this.fieldPipe = d.createRenderPipeline({
@@ -273,8 +277,9 @@ export class Cells {
     };
     const un = (binding) => ({ binding, visibility: C, buffer: { type: 'uniform' } });
     this.gridL = layout('cell grid', [sim, ro(1), rw(2), rw(3), rw(4), rw(5), rw(6), rw(7), un(8), rw(9), un(10)]);
-    // (at most 8 storage buffers per stage, the core limit: the step finds sortIdx in the beats)
-    this.stepL = layout('cell step', [sim, ro(1), ro(3), ro(4), rw(5), ro(6), rw(7), rw(8), un(9), un(10), ro(11), un(12)]);
+    // (at most 8 storage buffers per stage, the core limit: the step finds sortIdx in the beats, and a grid cell's end
+    // in the next one's start instead of in counts; binding 4 is the heat buffer, 13 its parameters)
+    this.stepL = layout('cell step', [sim, ro(1), ro(3), rw(4), rw(5), ro(6), rw(7), rw(8), un(9), un(10), ro(11), un(12), un(13)]);
     this.censusL = layout('cell census', [sim, ro(1), ro(2), rw(3)]);
     this.checkL = layout('cell check', [sim, ro(1), ro(2), ro(3), ro(4), ro(5), rw(6),
       { binding: 7, visibility: C, buffer: { type: 'uniform' } }]);
@@ -290,6 +295,7 @@ export class Cells {
     const U = GPUBufferUsage;
     const n = this.count;
     this.cellBuf = d.createBuffer({ label: 'cells', size: n * CELL_BYTES, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
+    this.heat.setCells(this.cellBuf, n);
     this.sortedBuf = d.createBuffer({ label: 'cells sorted', size: n * CELL_BYTES, usage: U.STORAGE });
     this.sortIdxBuf = d.createBuffer({ label: 'cell sort index', size: n * 4, usage: U.STORAGE });
     this.beatBuf = d.createBuffer({ label: 'cell beats (sorted)', size: n * CELL_BEAT_BYTES, usage: U.STORAGE });
@@ -342,6 +348,7 @@ export class Cells {
     const first = !this.view;
     this.view = view;
     this.R = this.fitR(view);
+    this.heat.resize(view, this.R);
     this.sizeGrid();
     this.sizeField();
     if (first) this.seed();
@@ -399,8 +406,7 @@ export class Cells {
         b(2, this.countsBuf), b(3, this.startsBuf), b(4, this.blockBuf), b(5, this.cellGridBuf),
         b(6, this.sortedBuf), b(7, this.sortIdxBuf), b(8, this.medium.buffer), b(9, this.beatBuf), b(10, this.fieldsBuf)],
     });
-    // two step bind groups: stepBG[k] reads bioBuf[k] and writes bioBuf[1 - k]
-    this.stepBG = [0, 1].map((k) => this.makeStepBG(this.cellBuf, this.bioBuf[k], this.bioBuf[1 - k], this.statsBuf));
+    this.makeStepBGs();
     this.censusBG = [0, 1].map((k) => d.createBindGroup({
       label: 'cell census', layout: this.censusL.bgl,
       entries: [{ binding: 0, resource: { buffer: this.simBuf, size: SIM_BYTES } }, b(1, this.cellBuf),
@@ -409,14 +415,20 @@ export class Cells {
     this.makeCheck();
   }
 
-  makeStepBG(cellBuf, bioPrev, bioNext, statsBuf) {
+  /** The two step bind groups: stepBG[k] reads bioBuf[k] and writes bioBuf[1 - k] (rebuilt when the heat grid is replaced). */
+  makeStepBGs() {
+    this.stepBG = [0, 1].map((k) => this.makeStepBG(this.cellBuf, this.bioBuf[k], this.bioBuf[1 - k], this.statsBuf));
+    this.heatVersion = this.heat.version;
+  }
+
+  makeStepBG(cellBuf, bioPrev, bioNext, statsBuf, heatBuf = this.heat.buffer) {
     const b = (binding, buffer) => ({ binding, resource: { buffer } });
     return this.device.createBindGroup({
       label: 'cell step', layout: this.stepL.bgl,
       entries: [{ binding: 0, resource: { buffer: this.simBuf, size: SIM_BYTES } }, b(1, this.sortedBuf),
-        b(3, this.startsBuf), b(4, this.countsBuf), b(5, cellBuf),
+        b(3, this.startsBuf), b(4, heatBuf), b(5, cellBuf),
         b(6, bioPrev), b(7, bioNext), b(8, statsBuf), b(9, this.medium.buffer), b(10, this.srcBuf), b(11, this.beatBuf),
-        b(12, this.fieldsBuf)],
+        b(12, this.fieldsBuf), b(13, this.heat.paramBuf)],
     });
   }
 
@@ -445,6 +457,7 @@ export class Cells {
       f[o + 11] = keys[2 * i + 1];                     // key scale
       f[o + 12] = 1; f[o + 13] = 0;                    // step 8: the phasor of field A and its partner
     }
+    this.heat.depositAll();     // step C1: the old cells' motion becomes heat (queued before they are overwritten)
     this.device.queue.writeBuffer(this.cellBuf, 0, ab);
     this.device.queue.writeBuffer(this.bioBuf[this.bioCur], 0, bab);
     this.warm = Math.max(0, Math.round(this.params.warmup));
@@ -472,6 +485,7 @@ export class Cells {
     f[o + 22] = p.drift; f[o + 23] = time;
     u[o + 24] = this.genome.ruleBits();
     f[o + 25] = this.excl.flip ? Math.max(0, this.excl.flipRate) : 0;
+    u[o + 26] = this.heat.offsetAt(k);
     const G = this.genome.params;
     f[o + 28] = G.tau; f[o + 29] = G.release; f[o + 30] = G.reach; f[o + 31] = G.adhesion;
     f[o + 32] = G.adhSigma; f[o + 33] = G.fateAdh; f[o + 34] = this.genome.rules.body ? 1 : 0; f[o + 35] = G.adhBase;
@@ -550,6 +564,8 @@ export class Cells {
     this.warm -= warm;
     const ticks = warm + frame.ticks;
     if (!ticks) return;
+    this.heat.beginFrame(encoder, ticks, frame);
+    if (this.heatVersion !== this.heat.version) this.makeStepBGs();
     this.writeSources();
     for (let t = 0; t < ticks; t++) {
       const time = frame.time - Math.max(0, ticks - 1 - t) * frame.tickDt * (t < warm ? 0 : 1);
@@ -565,7 +581,9 @@ export class Cells {
       // ?check runs between the grid build and the move, so both see the same positions
       if (t === ticks - 1) this.maybeCheck(encoder, t, frame);
       this.encodeStep(encoder, t);
+      this.heat.encodeTick(encoder, t);
     }
+    this.heat.endFrame(encoder, ticks, frame);
     this.maybeCensus(encoder, ticks - 1, frame);
     this.maybeMotion(encoder, frame);
     this.encodeField(encoder);
@@ -817,8 +835,12 @@ export class Cells {
         this.scratchStats = d.createBuffer({ label: 'cells probe stats', size: STATS_BYTES, usage: GPUBufferUsage.STORAGE });
         this.scratchBio = d.createBuffer({ label: 'cells probe bio', size: this.count * BIO_BYTES, usage: GPUBufferUsage.STORAGE });
       }
+      if (!this.scratchHeat || this.scratchHeat.size !== this.heat.bytes) {
+        if (this.scratchHeat) this.scratchHeat.destroy();
+        this.scratchHeat = d.createBuffer({ label: 'cells probe heat', size: this.heat.bytes, usage: GPUBufferUsage.STORAGE });
+      }
       // the probe writes only to scratch buffers, so it changes nothing the simulation sees
-      const scratchBG = this.makeStepBG(this.scratchBuf, this.bioBuf[this.bioCur], this.scratchBio, this.scratchStats);
+      const scratchBG = this.makeStepBG(this.scratchBuf, this.bioBuf[this.bioCur], this.scratchBio, this.scratchStats, this.scratchHeat);
       const record = (fn) => { const e = d.createCommandEncoder({ label: 'cells probe' }); for (let k = 0; k < K; k++) fn(e); return e.finish(); };
       const gridCB = record((e) => this.encodeGrid(e, 0));
       const stepCB = record((e) => {
@@ -891,6 +913,7 @@ export class Cells {
       ` · , change makes partner ${on(P.change)} ' ${P.chMode ? `clock (${P.omega} rad/s, pull ${P.pull} rad/s, lag ${P.lag})` : `felt change (gain ${P.chGain} s, follow ${P.chTau} s, cap ${P.chMax}, sign ${P.chSign})`}` +
       ` · . sideways push ${on(P.side)} (${P.sideMode ? 'across the motion' : 'partner force turned 90°'}, gain ${P.sideGain})` +
       (st && st.step8 ? ` · phasor off (1,0) by > 0.25: ${st.step8.moved} cells, mean ${(st.step8.dev / 1000 / Math.max(1, this.count)).toFixed(3)}` : '') + ` · ; drawn ${on(L && L.params.partner)}`);
+    lines.push(...this.heat.overlayLines(this.view));
     if (c) {
       lines.push(`grid check: ${c.contacts / 2} contacts` + (c.brute ? ` (brute force ${c.bruteContacts / 2}, ${c.mismatch} cells differ)` : '') +
         ` · ${c.badSort} bad slots · overlap mean ${(100 * c.ovMean).toFixed(1)}% max ${(100 * c.ovMax).toFixed(1)}%`);

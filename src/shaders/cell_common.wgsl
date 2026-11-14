@@ -60,7 +60,7 @@ struct Sim {
   time: f32,        // simulation time (s)
   rules: u32,       // RULE_* bits: which genome rules are on
   flip: f32,        // step 7, rule 2: chance per s that a cell crowded by its own state flips (0 = off)
-  pad1: u32,
+  heatCur: u32,     // step C1: word offset of the current heat copy in the heat buffer this tick (heat_common.wgsl)
   pad2: u32,
   tau: f32,         // accumulator time constant (s): brief bumps fade, only sustained input counts
   release: f32,     // a committed cell goes back to stem below release x threshold

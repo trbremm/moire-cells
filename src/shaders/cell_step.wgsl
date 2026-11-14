@@ -1,7 +1,7 @@
 // One simulation tick for every cell: the field felt on the membrane (step 4), contact signalling and fate choice from the genome, adhesion, soft
 // contact push, gentle pull to the dish centre, slow drift of the medium, soft walls, stirring, crawling,
-// damped (viscous) velocity and a little Brownian jitter.
-// Needs field_common.wgsl and cell_common.wgsl in front of it (src/cells.js does that).
+// damped (viscous) velocity and a little Brownian jitter; the motion lost to drag becomes heat (step C1).
+// Needs field_common.wgsl, heat_common.wgsl and cell_common.wgsl in front of it (src/cells.js does that).
 //
 // One invocation per slot of the sorted list (cell_grid.wgsl), so neighbouring invocations read neighbouring
 // memory. It reads only the sorted copy (positions as they were when the grid was built) and writes the
@@ -12,7 +12,8 @@
 @group(0) @binding(0) var<uniform> S: Sim;
 @group(0) @binding(1) var<storage, read> sorted: array<Cell>;
 @group(0) @binding(3) var<storage, read> starts: array<u32>;
-@group(0) @binding(4) var<storage, read> counts: array<u32>;
+// (no `counts`: a grid cell's cells end where the next one's start, which keeps the step within 8 storage buffers)
+@group(0) @binding(4) var<storage, read_write> hb: array<atomic<i32>>;   // step C1: the heat buffer (heat_common.wgsl)
 @group(0) @binding(5) var<storage, read_write> cells: array<Cell>;
 @group(0) @binding(6) var<storage, read> bioPrev: array<Bio>;
 @group(0) @binding(7) var<storage, read_write> bioNext: array<Bio>;
@@ -21,6 +22,7 @@
 @group(0) @binding(10) var<uniform> src: Sources;
 @group(0) @binding(11) var<storage, read> beats: array<CellBeat>;
 @group(0) @binding(12) var<uniform> FL: Fields;
+@group(0) @binding(13) var<uniform> HP: HeatP;
 
 @compute @workgroup_size(128)
 fn step(@builtin(global_invocation_id) id: vec3u) {
@@ -99,7 +101,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     for (var gx = rg.x; gx <= rg.z; gx++) {
       let g = grid_index(S, vec2i(gx, gy));
       let s = starts[g];
-      let e = s + counts[g];
+      let e = select(starts[g + 1u], S.count, g + 1u >= S.gw * S.gh);
       for (var k = s; k < e; k++) {
         if (k == j) { continue; }
         let o = sorted[k];
@@ -429,11 +431,26 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     bio.body.w -= TAU * floor(bio.body.w / TAU);
     f += S.crawl * S.R * mot * vec2f(cos(bio.body.w), sin(bio.body.w));
   }
-  // viscous, nearly overdamped motion plus Brownian jitter
-  c.vel = c.vel * S.damping + f * (1.0 - S.damping);
+  // viscous, nearly overdamped motion, in two parts whose energies the heat band books (step C1; energy 0.5 (v/10)^2):
+  //   drag   v1 = damping x v0: the motion it takes (L) becomes heat under the cell (its 3 x 3 heat pixels)
+  //   force  v2 = v1 + (1 - damping) f: the work the forces do (W: fields, contact, crawling, stirring) comes in
+  // plus a little Brownian jitter on the position (no energy involved)
+  let hxy = heat_xy(HP, c.pos);
+  var hidx: array<u32, 9>;
+  for (var q = 0; q < 9; q++) {
+    let p = clamp(hxy + vec2i(q % 3 - 1, q / 3 - 1), vec2i(0), vec2i(i32(HP.hw) - 1, i32(HP.hh) - 1));
+    hidx[q] = u32(p.y) * HP.hw + u32(p.x);
+  }
+  let v0 = c.vel;
+  let v1 = v0 * S.damping;
+  let v2 = v1 + f * (1.0 - S.damping);
+  let eDrag = heat_ke(v0) - heat_ke(v1);
+  let eWork = heat_ke(v2) - heat_ke(v1);
+  c.vel = v2;
   let jit = vec2f(rand01(c.seed, S.tick * 2u), rand01(c.seed, S.tick * 2u + 1u)) - 0.5;
   c.pos += c.vel * S.dt + jit * S.jitter * S.R * mot;
   c.pos = clamp(c.pos, vec2f(0.0), vec2f(S.W, S.H));
+  var eDeath = 0.0;          // the motion of a cell that dies this tick (its daughter starts at rest) becomes heat too
   c.r += (S.R * size - c.r) * min(1.0, S.dt * 0.8);
 
   // shape: an area-preserving stretch e = (e1, e2), relaxing toward a target made of the passive contact
@@ -511,10 +528,26 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       d.seed = pcg(bs ^ 0x5bd1e995u);
       d.aux = nb.key.y;
       d.z = vec2f(1.0, 0.0);
+      eDeath = heat_ke(c.vel);
       c = d;
       bio = nb;
     }
   }
+
+  // step C1: the heat under the cell gets the drag's loss and a dead cell's motion, spread evenly over its 3 x 3 pixels
+  // (whole counts, the remainder to the middle); the ledger books the work and the drag (each in one of 256 or 160
+  // slots, so the atomic adds do not all queue on one address)
+  let cDrag = heat_counts(eDrag);
+  let dep = cDrag + heat_counts(eDeath);
+  if (dep != 0) {
+    let part = dep / 9;
+    for (var q = 0; q < 9; q++) {
+      atomicAdd(&hb[LEDGER_WORDS + hidx[q]], select(part, dep - 8 * part, q == 4));
+    }
+  }
+  atomicAdd(&hb[LG_WORK + (j & 255u)], heat_counts(eWork));
+  let slot = j % LG_SLOTS_DK;
+  if (cDrag != 0) { atomicAdd(&hb[LG_DRAG + slot], cDrag); }
 
   // the leak level, for the drawing and the census (a newborn starts at 0)
   if (c.seed != sorted[j].seed) { c.flags &= ~(255u << CELL_LEAK_SHIFT); }

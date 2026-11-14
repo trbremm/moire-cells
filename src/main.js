@@ -235,7 +235,7 @@ let tapMode = 0;
 
 function hintLine() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · K: cell field · O: emit · S: sense · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
+    'C: clear · L: landscape · K: cell field · O: emit · S: sense · W: shape · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
 }
 
 function tap(x, y) {
@@ -337,6 +337,9 @@ function setupInput() {
     } else if (k === 's') {
       cells.params.senseOn = !cells.params.senseOn;
       flash(`field sensing ${cells.params.senseOn ? 'on: cells move along the field they feel on their membrane' : 'off'}`);
+    } else if (k === 'w') {
+      cells.params.active = !cells.params.active;
+      flash(`active deformation ${cells.params.active ? 'on: cells stretch along their motion and the pull of the field' : 'off: only contact squeezes them'}`);
     } else if (k === 'o') {
       cells.params.emit = !cells.params.emit;
       flash(`cells emit ${cells.params.emit ? 'on: every cell adds its own beat to the field' : 'off'}`);

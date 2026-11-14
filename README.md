@@ -54,6 +54,12 @@ The loop (step 4):
 - **K**: the cells' field drawn in the halftone on/off (drawing only)
 - **-** / **=**: the lever, smaller / larger (how different the cells' lattices are from the medium's)
 
+Field B (step 5):
+- **Q**: cells feel field B on/off (it is still emitted and drawn)
+- **U**: B's sign rule: like repels like (default) / like attracts like
+- **Y**: what "like" means for B: the same sign of charge (default; charges by fate) / a similar key (lineage)
+- **J**: field B drawn on/off (blue rings; drawing only)
+
 A fresh load starts with the reference's sources: two nutrient (green), one threat (red). At most 6 sources,
 as in the reference; one more replaces the oldest (`moire.landscape.params.maxSources`, up to 64).
 Sources do not drift, fade or get eaten yet.
@@ -185,10 +191,63 @@ Cost (F overlay probe, per simulation tick, GPU time): GTX 1650 in headless Chro
 0.3 ms at 2000 cells, 0.14 + 0.6 ms at 10 000; the AMD Vega in Firefox, physics 2.5 ms at 2000 cells (so 8×
 speed there costs about 20 ms a frame).
 
+Fixed in step 5: the beat paired each lattice direction of an emitter with the wrong direction of the medium's
+lattice whenever the emitter was turned more than 30 degrees from the medium (`make_beat` in
+`field_common.wgsl`, and `prep()` in the CPU reference: m - s instead of m + s). Those beats were fast (about
+0.6 medium periods), so about half of the cells, those with key angles above 30 degrees, were in effect silent.
+With the fix every cell emits its slow beat: loop only, the middle pulls together into a tighter drop (spread
+25 R instead of 31 R at 90 s, seed 3); with the biology, the rosettes are rounder and more frequent.
+
 On the lattice scale: the field's lattice keeps the medium's period (0.62 × the screen-based R, 9 px here)
 rather than following the cells' radius (6.5 px at 2000 cells, 2.9 px at 10 000). Tried at 2000 cells: tying
 it to the cell radius makes the source rosettes smaller and sparser and the cells cluster less; and at 10 000
 cells it would bring the beats down toward the halftone pitch.
+
+## Field B (step 5)
+
+A second field, a separate sum that is never added to field A, in its own lattice band: every lattice of field B
+(the medium's and each cell's) is `band` = 1.5 times longer than field A's, so A and B make no slow beat with each
+other. A cell's B lattice is its key and stretch as for A, with its own lever, 0.1: B's beat is then far longer
+than its reach, so each cell's B is a smooth bump (at lever 0.4 its rings make the summed force jitter, a gas).
+B reaches further than A: power-law envelope from r0 = 5 R (A: 2.2 R), cut at 10 R (A: 3.6 R), always pinned.
+
+Charges: each fate has a charge per field, how strongly it emits into that field and listens to it
+(`moire.cells.fields.chargeA`, all 1, and `chargeB`: stem 1, epithelium 1, muscle -1, neuron 0.5, cartilage -1).
+Sign rule (U): like repels like. By charge (Y, default) the two charges multiply: same sign repels, opposite
+attracts. By lineage, two cells repel by how alike their keys are (Gaussian, width 0.15) times the size of their
+charges; unlike keys ignore each other.
+
+Sensing: B is smooth over a cell, so the membrane integral is taken as area x gradient at the centre, summed over
+the neighbours within 10 R (the neighbour block grows from 3 x 3 to 7 x 7 grid cells while B is felt), scaled as
+field A's force, gain 0.6, saturating at 2 R/s.
+
+Drawing: B goes into the field texture's G channel and has its own halftone screen (8 px, turned 45 degrees,
+A's is 15), in a faded print blue: open rings where B is positive, filled dots where it is negative. B sums many
+cells (about 20 in a crowd), so gain 0.03 with a high threshold (0.35): the rings mark the crowded parts and leave
+black where the culture is loose. Knobs in `moire.landscape.params`: `fieldB`, `bGain`, `bThresh`, `bColour`,
+`bLevel`, `bAngle`, `bPitch`, `bMaxDot`, `bRing` (0 = filled dots).
+
+What it looks like (seed 3, 2000 cells, compare with Q):
+- Loop only (`?bio=0`): without B the culture is one packed drop with a few rosettes breaking off at the rim.
+  With B (like repels like) the drop opens into rounded islands of 7 to 20 cells at the rim, evenly spaced with
+  about a cell's width of black between them, each with its pale halo, and a labyrinth of short worms in the
+  middle where the blue rings show the crowding (spread 44 R instead of 22 R at 180 s). The islands form within
+  about 30 s and then keep their size. U (like attracts) pulls everything into one tighter drop (19 R).
+  By lineage (Y), the culture stays more compact (36 R), islands only at the rim, each a mix of lineages.
+- With the biology: like repels like spreads the culture over most of the dish as islands of stem rosettes, and
+  the fates mostly fail to form (at 180 s: 1814 stem cells of 2000, against 1366 without B), because the cells
+  no longer keep their contacts. Like attracts like (U) does the opposite and is the richer picture with the
+  biology: a compact culture (29 R) with bold tissue domains, large cyan and violet sheets, amber worm-like
+  chains and round pink muscle clumps (at 400 s: 828 stem, 638 epithelium, 81 muscle, 349 neuron).
+  So for now: like repels in the loop, like attracts with the biology; the default is like repels.
+
+Live-tunable in `moire.cells.fields`: `chargeA`, `chargeB` (5 numbers each), `band`, `lever`, `r0`, `cut`,
+`emit`, `on`, `gain`, `sat`, `sign` (1 / -1), `like` (0 / 1), `likeW`, `strain` (how much the stretch strains
+B's lattice, 1 = as A; for step 6).
+
+Cost (physics per tick, B felt vs not): GTX 1650 in headless Chrome, 0.38 vs 0.24 ms at 2000 cells, 0.81 vs
+0.46 ms at 10 000; the field scatter's quads grow to B's 10 R. The AMD Vega in Firefox: about 3.2 ms per tick at
+2000 cells either way (the probe there is too rough to see B's share).
 
 ## The look of the landscape
 
@@ -215,10 +274,10 @@ The background ripples stay soft on purpose.
 - `src/landscape.js` + `src/shaders/field_prep.wgsl`, `landscape_draw.wgsl`: the sources, their per-frame beat
   prep, and the green / red halftone landscape with ring markers
 - `src/cells.js` + `src/shaders/cell_*.wgsl`: the cells. `cell_common.wgsl` holds the cell layout, the per-tick
-  uniforms, the grid helpers and the loop's maths (cell beat, membrane, sensing, tuning; prepended after
-  field_common); `cell_grid.wgsl` rebuilds the neighbour grid every tick (a counting sort by grid cell) and
-  works out every cell's beat; `cell_step.wgsl` moves the cells; `cell_field.wgsl` scatters the cells' field
-  into its texture; `cell_draw.wgsl` draws them;
+  uniforms, the grid helpers, the loop's maths (cell beat, membrane, sensing, tuning; prepended after
+  field_common) and field B (struct `Fields`, charges, `cell_field_b`); `cell_grid.wgsl` rebuilds the neighbour grid every tick (a counting sort by grid cell) and
+  works out every cell's beat; `cell_step.wgsl` moves the cells; `cell_field.wgsl` scatters the cells' fields
+  (A into r, B into g) into their texture; `cell_draw.wgsl` draws them;
   `cell_check.wgsl` is the `?check=1` test; `cell_census.wgsl` counts fates, key bins and founder lines for the overlay
 - `src/genome.js`: the genome layout, random founders, the rule switches and their numbers (`moire.genome`);
   the GPU side (mutation, key likeness, the `Bio` and `Stats` structs) is in `cell_common.wgsl`, the rules

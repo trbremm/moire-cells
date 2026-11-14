@@ -15,16 +15,29 @@
 // put in, the heat leaked out, the drag and the kicks; once per frame it also sums the heat in the dish and the cells'
 // motion energy, and the ledger part of the buffer is copied to one of a small ring of MAP_READ buffers (skipped when
 // all are busy: the counters then keep adding up until the next copy), read without waiting.
-//   ENTROPY = all heat that has left the dish; in = work + warmth; rounding = in - (moving + heat in dish + out).
+//   ENTROPY = all heat that has left the dish; in = work + warmth + light absorbed; rounding = in - (moving + heat in
+//   dish + out).
+//
+// Step C2, light (src/light.js): on each tick's first spreading substep, every pixel takes in the light that falls on it
+// and keeps, as heat, what its absorbers catch (the bare medium, and the cells, which put down their cover in a fourth
+// block of the buffer during their step); the ledger books, per band, the light arriving and the light absorbed (the
+// difference passed through and is lost). Once per frame it also sums the heat under the cells in the light and under
+// the rest, for the overlay.
 
 import { loadShader } from './gpu.js';
 
+const LIGHT_COMMON_URL = 'src/shaders/light_common.wgsl';
+
 export const HEAT_COMMON_URL = 'src/shaders/heat_common.wgsl';
 export const HEAT_SCALE = 65536;          // counts per energy unit (HEAT_SCALE in heat_common.wgsl)
-const LEDGER_WORDS = 1024;
+const LEDGER_WORDS = 3072;
 // ledger regions [first word, slots]; OUT, HEAT and MOVE are 64-bit (the carry words follow 64 words later)
 const LG = { WORK: [0, 256], BASE: [256, 64], OUT: [320, 64], HEAT: [448, 64], MOVE: [576, 64], DRAG: [704, 160], KICK: [864, 160] };
 const LG_WIDE = new Set(['OUT', 'HEAT', 'MOVE']);
+// step C2 (heat_common.wgsl): per band (4) light in and light absorbed, 64-bit, 128 words each; the snapshot of the
+// heat under cells and pixels in / out of the light: 4 classes of 64 counts (i32), and their heat (64-bit, 128 words each)
+const LG_LIGHT_IN = 1024, LG_LIGHT_ABS = 1536, LG_SPOT_N = 2048, LG_SPOT_T = 2304;
+const SPOT_UNIT = 64;     // the spot snapshot counts heat in units of 64 counts (SPOT_SHIFT in heat.wgsl)
 const HP_BYTES = 64;                      // struct HeatP
 const HT_SLOT = 256;                      // struct HeatTick slots, bound with a dynamic offset
 const MAX_TICKS = 128;                    // as SLOTS in cells.js
@@ -59,8 +72,9 @@ export class Heat {
     this.old = null;        // the grid replaced by a resize, drained into "out" at the next frame
     this.trash = [];
     this.cellBuf = null; this.count = 0;
+    this.light = null;      // step C2: the light (src/light.js; its uniform is bound to the heat passes)
     // ledger (cumulative since the page started; energy units)
-    this.tot = { work: 0, base: 0, out: 0, drag: 0, kick: 0 };
+    this.tot = { work: 0, base: 0, out: 0, drag: 0, kick: 0, lin: [0, 0, 0, 0], labs: [0, 0, 0, 0] };
     this.ledger = null;     // last snapshot: { time, moving, heat, in, out, rounding, rate }
     this.hist = [];         // [time, work, base, out, drag, kick] for the rates
     this.seq = 0; this.nextSeq = 0; this.pending = new Map();
@@ -78,7 +92,12 @@ export class Heat {
     const res = await fetch(HEAT_COMMON_URL, { cache: 'no-cache' });
     if (!res.ok) throw new Error(`Could not load shader ${HEAT_COMMON_URL}: HTTP ${res.status}`);
     const common = (await res.text()).replace(/\s*$/, '\n\n');
-    const mod = await loadShader(d, 'src/shaders/heat.wgsl', { prefixes: [{ name: HEAT_COMMON_URL, text: common }] });
+    const lres = await fetch(LIGHT_COMMON_URL, { cache: 'no-cache' });
+    if (!lres.ok) throw new Error(`Could not load shader ${LIGHT_COMMON_URL}: HTTP ${lres.status}`);
+    const light = (await lres.text()).replace(/\s*$/, '\n\n');
+    const mod = await loadShader(d, 'src/shaders/heat.wgsl', {
+      prefixes: [{ name: HEAT_COMMON_URL, text: common }, { name: LIGHT_COMMON_URL, text: light }],
+    });
     const C = GPUShaderStage.COMPUTE;
     this.bgl = d.createBindGroupLayout({
       label: 'heat',
@@ -87,6 +106,7 @@ export class Heat {
         { binding: 1, visibility: C, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: 32 } },
         { binding: 2, visibility: C, buffer: { type: 'storage' } },
         { binding: 3, visibility: C, buffer: { type: 'read-only-storage' } },
+        { binding: 4, visibility: C, buffer: { type: 'uniform' } },
       ],
     });
     const layout = d.createPipelineLayout({ label: 'heat', bindGroupLayouts: [this.bgl] });
@@ -104,6 +124,12 @@ export class Heat {
     }));
   }
 
+  /** Step C2: the light, whose uniform the heat passes read. Called once by main.js, before the first resize. */
+  setLight(light) {
+    this.light = light;
+    if (this.buffer && this.cellBuf) this.bg = this.makeBG(this.buffer);
+  }
+
   /** The cells (their buffer is read by sum_cells and deposit). Called once by cells.js. */
   setCells(cellBuf, count) {
     this.cellBuf = cellBuf; this.count = count;
@@ -118,6 +144,7 @@ export class Heat {
         { binding: 1, resource: { buffer: this.tickBuf, size: 32 } },
         { binding: 2, resource: { buffer } },
         { binding: 3, resource: { buffer: this.cellBuf } },
+        { binding: 4, resource: { buffer: this.light.buffer } },
       ],
     });
   }
@@ -126,8 +153,12 @@ export class Heat {
   offset(c) { return LEDGER_WORDS + this.n * (1 + c); }
   /** Word offset of the current heat copy at the start of tick t of this frame (each substep flips the copies). */
   offsetAt(t) { return this.offset(this.cur ^ ((t * this.nSub) & 1)); }
+  /** Word offset of the cells' cover (step C2). */
+  get coverOffset() { return LEDGER_WORDS + 3 * this.n; }
   /** Bytes of the whole heat buffer. */
-  get bytes() { return (LEDGER_WORDS + 3 * this.n) * 4; }
+  get bytes() { return (LEDGER_WORDS + 4 * this.n) * 4; }
+  /** Whether the light is on this frame (then the cells put down their cover and the pixels absorb). */
+  get lightOn() { return !!(this.light && this.light.on); }
 
   /** Size the grid from the dish and the cells' radius R; a new grid replaces the old at the next frame. */
   resize(view, R) {
@@ -164,7 +195,7 @@ export class Heat {
     this.nSub = Math.max(1, Math.min(MAX_SUB, Math.ceil(kTot / K_MAX)));
     this.k = Math.min(K_MAX, kTot / this.nSub);
     const f = new Float32Array(this.paramAB), u = new Uint32Array(this.paramAB);
-    u[0] = this.hw; u[1] = this.hh; u[2] = this.n; u[3] = p.kicks ? 1 : 0;
+    u[0] = this.hw; u[1] = this.hh; u[2] = this.n; u[3] = (p.kicks ? 1 : 0) | (this.lightOn ? 2 : 0);
     f[4] = this.px; f[5] = Math.max(0, p.grab); f[6] = Math.max(0, p.kickMax) * this.R; f[7] = this.k;
     f[8] = 1 - Math.exp(-Math.max(0, p.leak) * dt); f[9] = 1 - Math.exp(-Math.max(0, p.edge) * dt);
     f[10] = Math.max(0, p.warmth) * a * a * dt * HEAT_SCALE; f[11] = this.tempScale;
@@ -211,6 +242,8 @@ export class Heat {
       pass.dispatchWorkgroups(wx, wy);
     }
     pass.end();
+    // step C2: the cells' cover was read by the first substep; clear it for the next tick
+    if (this.lightOn) encoder.clearBuffer(this.buffer, this.coverOffset * 4, this.n * 4);
   }
 
   /** After the frame's ticks: advance the current copy, and copy the ledger out if a read-back buffer is free. */
@@ -263,17 +296,36 @@ export class Heat {
       else for (let k = a; k < a + n; k++) s += w[k];
       return s / HEAT_SCALE;
     };
+    // a 64-bit region of 64 slots at word a (step C2's light and spot numbers), and a plain one
+    const wide = (a) => { let s = 0; for (let k = a; k < a + 64; k++) s += w[k + 64] * 4294967296 + (w[k] >>> 0); return s; };
+    const plain = (a) => { let s = 0; for (let k = a; k < a + 64; k++) s += w[k]; return s; };
     const T = this.tot, kick = sum('KICK');
     T.work += sum('WORK'); T.base += sum('BASE'); T.out += sum('OUT'); T.drag += sum('DRAG'); T.kick += kick;
-    const moving = sum('MOVE'), heat = sum('HEAT'), inn = T.work + T.base;
+    for (let b = 0; b < 4; b++) {
+      T.lin[b] += wide(LG_LIGHT_IN + 128 * b) / HEAT_SCALE;
+      T.labs[b] += wide(LG_LIGHT_ABS + 128 * b) / HEAT_SCALE;
+    }
+    const lin = T.lin.reduce((a, b) => a + b, 0), labs = T.labs.reduce((a, b) => a + b, 0);
+    const moving = sum('MOVE'), heat = sum('HEAT'), inn = T.work + T.base + labs;
+    // the heat under the cells / pixels in the light and the rest, as temperatures (heat per R^2)
+    const ts = this.tempScale;
+    const spot = [0, 1, 2, 3].map((k) => {
+      const n = plain(LG_SPOT_N + 64 * k);
+      return { n, temp: n ? wide(LG_SPOT_T + 128 * k) * SPOT_UNIT * ts / n : 0 };
+    });
     const H = this.hist;
-    H.push([rec.time, T.work, T.base, T.out, T.drag, T.kick]);
+    H.push([rec.time, T.work, T.base, T.out, T.drag, T.kick, lin, labs, ...T.lin, ...T.labs]);
     while (H.length > 2 && rec.time - H[1][0] >= RATE_WINDOW) H.shift();
     const h0 = H[0], dt = rec.time - h0[0];
     const rate = (k) => (dt > 0.05 ? (H[H.length - 1][k] - h0[k]) / dt : 0);
     this.ledger = {
       time: rec.time, moving, heat, in: inn, out: T.out, rounding: inn - (moving + heat + T.out),
-      rate: { work: rate(1), base: rate(2), out: rate(3), drag: rate(4), kick: rate(5) },
+      light: { in: lin, abs: labs, pass: lin - labs },
+      rate: {
+        work: rate(1), base: rate(2), out: rate(3), drag: rate(4), kick: rate(5), lin: rate(6), labs: rate(7),
+        binIn: [0, 1, 2, 3].map((b) => rate(8 + b)), binAbs: [0, 1, 2, 3].map((b) => rate(12 + b)),
+      },
+      spot: { cellsIn: spot[0], cellsOut: spot[1], pxIn: spot[2], pxOut: spot[3] },
       kickPerTick: rec.ticks && this.count ? kick / (rec.ticks * this.count) : 0,
     };
   }
@@ -300,8 +352,11 @@ export class Heat {
   panelText() {
     const L = this.ledger;
     if (!L) return 'ENTROPY  …';
+    const Lt = this.light, r = L.rate;
+    const light = !Lt || !Lt.on ? 'light off'
+      : `light in ${fmt(r.lin)}/s → heat ${fmt(r.labs)}/s · passed ${fmt(r.lin - r.labs)}/s · ${Lt.label()}`;
     return `ENTROPY  ${fmt(L.out)}  +${fmt(L.rate.out)}/s\n` +
-      `moving ${fmt(L.moving)} · heat in dish ${fmt(L.heat)} · in ${fmt(L.in)} · rounding ${fmtRound(L.rounding)}`;
+      `moving ${fmt(L.moving)} · heat in dish ${fmt(L.heat)} · in ${fmt(L.in)} · rounding ${fmtRound(L.rounding)}\n` + light;
   }
 
   /** Lines for the F overlay. */
@@ -314,15 +369,34 @@ export class Heat {
       const area = view.cssW * view.cssH / (this.R * this.R);
       const sigma = HEAT_V0_PX * Math.sqrt(Math.max(0, L.kickPerTick)) / this.R;
       const r = L.rate;
-      lines.push(`energy per s: in ${fmt(r.work + r.base)} (work by forces ${fmt(r.work)}, warmth ${fmt(r.base)}) · drag → heat ${fmt(r.drag)}` +
+      lines.push(`energy per s: in ${fmt(r.work + r.base + r.labs)} (work by forces ${fmt(r.work)}, warmth ${fmt(r.base)}, light ${fmt(r.labs)}) · drag → heat ${fmt(r.drag)}` +
         ` · kicks ← heat ${fmt(r.kick)} · out ${fmt(r.out)} · mean temperature ${(L.heat / area).toFixed(3)}/R² · kick ≈ ${sigma.toFixed(3)} R/s per axis` +
         ` (the old jitter ≈ 0.13) · rounding ${fmtRound(L.rounding)} (${L.in > 0 ? (L.rounding / L.in).toExponential(1) : '-'} of in)`);
+    }
+    if (this.light) {
+      lines.push(this.light.overlayLine());
+      if (L && L.light) {
+        const r = L.rate, S = L.spot, t = (c) => `${c.temp.toFixed(2)}/R² (${c.n})`;
+        // the kick a cell at that temperature gets (sigma per axis, before its motility): HEAT_V0 sqrt(grab x its 3 x 3 pixels)
+        const ar = this.px / this.R, kick = (T) => (HEAT_V0_PX * Math.sqrt(Math.max(0, this.params.grab * 9 * T * ar * ar)) / this.R).toFixed(2);
+        if (this.light.on) {
+          const per = BAND_NAMES.map((n, b) => `${n} ${fmt(r.binIn[b])} → ${fmt(r.binAbs[b])}`).join(', ');
+          const where = this.light.modeIndex === 1 ? 'in the spot' : 'lit';
+          lines.push(`light per s: in ${fmt(r.lin)} · absorbed → heat ${fmt(r.labs)} · passed through (lost) ${fmt(r.lin - r.labs)}` +
+            ` · per band in → absorbed: ${per} · totals in ${fmt(L.light.in)}, absorbed ${fmt(L.light.abs)}, passed ${fmt(L.light.pass)}`);
+          lines.push(`temperature under cells ${where} ${t(S.cellsIn)}, outside ${t(S.cellsOut)} (kick ≈ ${kick(S.cellsIn.temp)} and ${kick(S.cellsOut.temp)} R/s per axis)` +
+            ` · dish pixels ${where} ${t(S.pxIn)}, outside ${t(S.pxOut)}`);
+        } else {
+          lines.push(`temperature under cells ${t(S.cellsOut)} (kick ≈ ${kick(S.cellsOut.temp)} R/s per axis) · dish pixels ${t(S.pxOut)}`);
+        }
+      }
     }
     return lines;
   }
 }
 
 const HEAT_V0_PX = 10;   // HEAT_V0 in heat_common.wgsl
+const BAND_NAMES = ['warm', 'visible 1', 'visible 2', 'hard'];   // as BANDS in src/light.js
 
 /** A number with 3 significant digits and a k / M / G suffix. */
 export function fmt(x) {

@@ -567,6 +567,13 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       atomicAdd(&hb[LEDGER_WORDS + hidx[q]], select(part, dep - 8 * part, q == 4));
     }
   }
+  // step C2: while the light is on, the cell puts down its area (in heat pixel areas) at its centre, so the light's
+  // absorption knows where cells are (heat.wgsl reads the 3 x 3 mean; cleared after the tick)
+  if ((HP.flags & 2u) != 0u) {
+    let cov = i32(round(3.14159265 * c.r * c.r / (HP.px * HP.px) * COVER_SCALE));
+    let cp = heat_xy(HP, c.pos);
+    atomicAdd(&hb[LEDGER_WORDS + 3u * HP.n + u32(cp.y) * HP.hw + u32(cp.x)], cov);
+  }
   atomicAdd(&hb[LG_WORK + (j & 255u)], heat_counts(eWork));
   let slot = j % LG_SLOTS_DK;
   if (cDrag != 0) { atomicAdd(&hb[LG_DRAG + slot], cDrag); }

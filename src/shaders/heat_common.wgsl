@@ -14,11 +14,14 @@
 //   [LEDGER_WORDS, + n)            delta: what the cells deposit (+) or take (-) this tick, by atomic adds
 //   [LEDGER_WORDS + n, + 2n)       heat grid, copy 0     (ping-pong: the spreading reads one copy, writes the other;
 //   [LEDGER_WORDS + 2n, + 3n)      heat grid, copy 1      Sim.heatCur / HeatTick.src say which is current)
+//   [LEDGER_WORDS + 3n, + 4n)      cover (step C2): how much of each pixel the cells cover this tick (COVER_SCALE per
+//                                  pixel area; each cell adds its area at its centre, the light's absorption reads the
+//                                  3 x 3 mean; cleared after every tick's spreading)
 // Channel-major, so later steps can add channels (atoms, fuels, sediment) as further blocks of n words.
 
 const HEAT_SCALE: f32 = 65536.0;   // counts per energy unit
 const HEAT_V0: f32 = 10.0;         // CSS px / s: the speed whose motion energy is 0.5 units
-const LEDGER_WORDS: u32 = 1024u;
+const LEDGER_WORDS: u32 = 3072u;
 const LG_WORK: u32 = 0u;     // 256 slots: work done on the cells by the forces (fields, contact, crawling, stirring)
 const LG_BASE: u32 = 256u;   // 64: the base warmth put into the dish
 const LG_OUT: u32 = 320u;    // 64, 64-bit: heat that leaked out of the dish (to the sky, at the edge, on a resize)
@@ -27,13 +30,20 @@ const LG_MOVE: u32 = 576u;   // 64, 64-bit: snapshot, the cells' motion energy
 const LG_DRAG: u32 = 704u;   // 160: motion lost to drag (damping), which became heat
 const LG_KICK: u32 = 864u;   // 160: energy the heat kicks took from the grid (net; a kick against the motion gives back)
 const LG_SLOTS_DK: u32 = 160u;
+// step C2, light (64-bit slots, 128 words per band or class: 64 low words, then 64 carry words)
+const LG_LIGHT_IN: u32 = 1024u;    // 4 bands: light arriving in the dish
+const LG_LIGHT_ABS: u32 = 1536u;   // 4 bands: light absorbed, which became heat (the rest passed through, lost)
+const LG_SPOT_N: u32 = 2048u;      // snapshot, 4 classes x 64 slots (i32): cells in the light, cells outside,
+                                   //   pixels in the light, pixels outside
+const LG_SPOT_T: u32 = 2304u;      // snapshot, 4 classes, 64-bit: the heat under them (counts)
+const COVER_SCALE: f32 = 4096.0;   // cover counts per pixel area
 
 // The heat grid's parameters (written once per frame by src/heat.js; 64 bytes)
 struct HeatP {
   hw: u32,          // grid width and height (pixels)
   hh: u32,
   n: u32,           // hw x hh
-  flags: u32,       // bit 0: kicks from heat (Shift+H); off = the old constant jitter
+  flags: u32,       // bit 0: kicks from heat (Shift+H); off = the old constant jitter. bit 1: light on (cells add cover)
   px: f32,          // CSS px per heat pixel (about half a cell radius)
   grab: f32,        // share of the heat under a cell (its 3 x 3 pixels) that one kick takes on average, per tick
   kickMax: f32,     // largest kick (CSS px / s, per axis)

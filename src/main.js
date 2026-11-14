@@ -27,15 +27,22 @@
 //   ?heat=0     step C1: start with the kicks from heat off (the old constant jitter; Shift+H)
 //   ?entropy=0  step C1: start with the entropy panel hidden (Shift+E)
 //   ?simmer=0   step C1: start with the ripples not driven by heat (Shift+R)
+//   ?light=spot|full|off   step C2: the light's mode (Shift+L); ?spot=x,y,r the spot's centre and radius (shares of the
+//               dish's width, height and shorter side, or CSS px if any is above 2); ?tilt=deg (0..70); ?az=deg (the
+//               direction the light comes from: 0 right, 90 below, 180 left, 270 above); ?day=0 no day / night cycle
+//               (Shift+D); ?hour=h the hour of the day at the start (12 = noon); ?clouds=0 no clouds (full field)
 //
 // Part C keys are Shift + a letter (every plain letter is taken by Parts A and B): checked before the plain keys,
 // so Shift+H never also toggles H.
+// Mouse: left tap drops (keys 1 2 3), left drag stirs; step C2's spotlight: right-drag moves it, the wheel tilts it,
+// Shift+wheel turns the direction the light comes from.
 
 import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown } from './gpu.js';
 import { Background } from './background.js';
 import { Medium, KIND } from './field.js';
 import { Landscape } from './landscape.js';
 import { Cells, DEFAULT_CELLS, ANCHORS } from './cells.js';
+import { Light } from './light.js';
 
 window.__moireBooted = true;
 
@@ -76,6 +83,7 @@ let background = null;
 let medium = null;
 let landscape = null;
 let cells = null;
+let light = null;
 let running = false;
 let view = null;
 
@@ -110,7 +118,11 @@ async function boot() {
     background = await Background.create(gpu.device, gpu.format);
     medium = new Medium(gpu.device);
     landscape = await Landscape.create(gpu.device, gpu.format, medium);
+    light = await Light.create(gpu.device, gpu.format);
     cells = await Cells.create(gpu.device, gpu.format, medium, Number(params.get('cells')) || DEFAULT_CELLS, SEED);
+    cells.heat.setLight(light);   // step C2: the heat passes absorb the light
+    light.heat = cells.heat;
+    lightOptions(light);
     cells.landscape = landscape;
     landscape.cells = cells;
     if (params.has('founders')) cells.genome.params.founders = Number(params.get('founders')) || 0;
@@ -137,10 +149,11 @@ async function boot() {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));
     return;
   }
-  // the medium first: it writes the lattice every field-reading layer uses
-  layers = [medium, background, landscape, cells];
+  // the medium first: it writes the lattice every field-reading layer uses; the light before the cells (its uniform is
+  // read by the heat passes the cells run), and its tint is drawn under them (its outline over them: renderTop)
+  layers = [medium, background, landscape, light, cells];
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
-  window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat };
+  window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   // births and deaths drop small ripples into the background (a birth a bump, a death a dip)
   cells.onEvents = (events) => {
@@ -162,6 +175,28 @@ async function boot() {
   requestAnimationFrame(frame);
 }
 
+/** Step C2: the light's URL options (see the top of this file). */
+function lightOptions(L) {
+  const P = L.params;
+  const m = params.get('light');
+  if (m === 'spot' || m === 'full' || m === 'off') P.mode = m;
+  if (params.has('spot')) {
+    const v = params.get('spot').split(',').map(Number);
+    const px = v.some((x) => x > 2);   // CSS px instead of shares; resolved once the dish's size is known
+    if (px) L.pendingSpotPx = v;
+    else {
+      if (Number.isFinite(v[0])) P.x = v[0];
+      if (Number.isFinite(v[1])) P.y = v[1];
+      if (Number.isFinite(v[2]) && v[2] > 0) P.radius = v[2];
+    }
+  }
+  if (params.has('tilt')) P.tilt = Math.max(0, Math.min(P.maxTilt, Number(params.get('tilt')) || 0));
+  if (params.has('az')) L.turnBy((Number(params.get('az')) || 0) - P.az);
+  if (params.has('day')) P.day = flag('day');
+  if (params.has('hour')) P.dayStart = (((Number(params.get('hour')) || 0) / 24) % 1 + 1) % 1;
+  if (params.has('clouds')) P.clouds = flag('clouds');
+}
+
 // ---------- size ----------
 function resize() {
   const cssW = Math.max(1, canvas.clientWidth), cssH = Math.max(1, canvas.clientHeight);
@@ -172,6 +207,12 @@ function resize() {
   if (canvas.height !== pxH) canvas.height = pxH;
   view = { cssW, cssH, dpr, pxW, pxH };
   for (const l of layers) l.resize(view);
+  if (light && light.pendingSpotPx) {
+    const [x, y, r] = light.pendingSpotPx;
+    light.pendingSpotPx = null;
+    if (Number.isFinite(x) && Number.isFinite(y)) light.moveTo(x, y);
+    if (Number.isFinite(r) && r > 0) light.params.radius = r / Math.min(cssW, cssH);
+  }
 }
 
 // ---------- loop ----------
@@ -204,6 +245,7 @@ function frame(now) {
     }],
   });
   for (const l of layers) l.render(pass, f);
+  for (const l of layers) if (l.renderTop) l.renderTop(pass, f);
   pass.end();
   device.queue.submit([encoder.finish()]);
   stats.cpuMs += (performance.now() - t0 - stats.cpuMs) * 0.05;
@@ -268,12 +310,12 @@ let tapMode = 0;
 let allKeys = false;   // key ?: the short hint or the full key list
 function hintLine() {
   const short = `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'N / G: new culture / new genomes · V: view · [ ]: speed · F: stats · ⇧H ⇧E: heat, entropy · ?: all keys';
+    'N / G: new culture / genomes · V: view · [ ]: speed · F: stats · ⇧H ⇧E ⇧L: heat, entropy, light · ?: more';
   return allKeys ? fullHint() : short;
 }
 function fullHint() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · \\: squeeze · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · .: sideways push · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats · Shift+H: jitter from heat / constant · Shift+E: entropy panel · Shift+R: ripples simmer with heat';
+    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · \\: squeeze · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · .: sideways push · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats · Shift+H: jitter from heat / constant · Shift+E: entropy panel · Shift+R: ripples simmer with heat · Shift+L: light spot / full field / off · Shift+D: day and night · right-drag: move the spot · wheel: tilt it · Shift+wheel: turn where the light comes from';
 }
 
 function tap(x, y) {
@@ -487,7 +529,22 @@ function shiftKey(k) {
   } else if (k === 'r') {
     background.heatOn = !background.heatOn;
     flash(`ripples ${background.heatOn ? 'simmer with heat: small random rings where it is hot' : 'no longer driven by heat'}`);
+  } else if (k === 'l') {
+    const P = light.params;
+    P.mode = P.mode === 'spot' ? 'full' : P.mode === 'full' ? 'off' : 'spot';
+    flash(P.mode === 'spot' ? 'light: spotlight (right-drag moves it, the wheel tilts it, Shift+wheel turns where it comes from)'
+      : P.mode === 'full' ? 'light: full field, the whole dish lit (clouds drift over)' : 'light off: only the base warmth and the cells\' own motion heat the dish');
+  } else if (k === 'd') {
+    const P = light.params;
+    P.day = !P.day;
+    flash(P.day ? `day and night: the light rises and falls over ${P.dayPeriod} s` : 'no day and night: the light stays at full day');
   }
+}
+
+/** A compass word for the direction the light comes from (screen: 0 = right, 90 = below). */
+function compass(az) {
+  const names = ['the right', 'the lower right', 'below', 'the lower left', 'the left', 'the upper left', 'above', 'the upper right'];
+  return names[Math.round(((az % 360) + 360) % 360 / 45) % 8];
 }
 
 function showEntropy(on) {

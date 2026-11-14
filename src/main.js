@@ -23,7 +23,7 @@
 //   ?paused=1   start paused (Space)
 //   ?ui=0|1     step C3b: start with the toolbar folded / unfolded (default: as the page last had it)
 //   ?founders=N founder genomes at the start (0 = every cell its own)
-//   ?view=1     colour by lineage from the start (key V)
+//   ?view=1     colour by lineage from the start (key V); ?view=2 (or strategy): by strategy (step C6)
 //   ?bio=0      start with the biology rules off (D H B T M): the loop alone
 //   ?excl=0|1   step 7 exclusion off / on from the start (key 8); ?states=2..4 its number of states;
 //               ?flip=0|1 its state flip (key 9)
@@ -42,6 +42,8 @@
 //   ?show=summary|off|<substance>   step C3: what the substances' halftone shows (Shift+S), e.g. ?show=G
 //   ?chem=0     step C4: start with the chemistry off (Shift+M)
 //   ?eat=0      step C5: start with the cells not eating (Shift+A)
+//   ?engines=0  step C6: start with the engines in the genome off (Shift+O); ?burners=1 with everyone burning (C5's
+//               built-in burner, Shift+U)
 //   ?springs=0  step C5: the old empty start (no springs; the spot at the centre). The default scene puts a light and a
 //               heavy spring beside the culture with the spot between, see defaultScene
 //
@@ -162,7 +164,10 @@ async function boot() {
     cells.landscape = landscape;
     landscape.cells = cells;
     if (params.has('founders')) cells.genome.params.founders = Number(params.get('founders')) || 0;
-    if (flag('view')) cells.look.view = 1;
+    if (params.has('view')) {   // ?view=1 lineage, ?view=2 or ?view=strategy (step C6)
+      const v = params.get('view'), k = ['fate', 'lineage', 'strategy'].indexOf(v);
+      cells.look.view = k >= 0 ? k : Math.max(0, Math.min(2, Math.round(Number(v)) || 0));
+    }
     if (flag('check')) cells.enableCheck();
     if (params.get('bio') === '0') {
       // the loop alone: no fates, adhesion, body traits, turnover or mutation
@@ -183,6 +188,8 @@ async function boot() {
     if (params.has('show')) { const i = SHOWS.indexOf(params.get('show')); if (i >= 0) matter.params.show = i; }
     if (params.has('chem')) matter.chem.on = flag('chem');   // step C4: ?chem=0 starts with the chemistry off (Shift+M)
     if (params.has('eat')) cells.eat.params.on = flag('eat');   // step C5: ?eat=0 starts with the cells not eating
+    if (params.has('engines')) cells.eat.params.engines = flag('engines');   // step C6
+    if (params.has('burners')) cells.eat.params.burner = flag('burners');
     background.heat = cells.heat;
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));

@@ -41,6 +41,8 @@
 // so Shift+H never also toggles H.
 //   ?show=summary|off|<substance>   step C3: what the substances' halftone shows (Shift+S), e.g. ?show=G
 //   ?chem=0     step C4: start with the chemistry off (Shift+M)
+//   ?springs=0  step C5: the old empty start (no springs; the spot at the centre). The default scene puts a light and a
+//               heavy spring beside the culture with the spot between, see defaultScene
 //
 // Mouse: left tap drops (keys 1 2 3: a ripple, a light spring, a heavy spring), left drag stirs; step C2's spotlight: right-drag moves it, the wheel tilts it,
 // Shift+wheel turns the direction the light comes from.
@@ -200,6 +202,7 @@ async function boot() {
   };
 
   resize();
+  defaultScene();
   window.addEventListener('resize', resize);
   setupInput();
   if (flag('overlay')) overlayEl.hidden = false;
@@ -219,6 +222,25 @@ function defaultCells() {
   const side = Math.min(window.innerWidth || 800, window.innerHeight || 800);
   if (!TOUCH && side >= 600) return DEFAULT_CELLS;
   return Math.max(800, Math.min(1500, Math.round(DEFAULT_CELLS * (side / 800) ** 2)));
+}
+
+/**
+ * Step C5: the default scene, so the chemistry and the eating show without anyone doing anything: a light and a heavy
+ * spring just beyond the culture's rim, on the dish's longer axis (to the right on a wide screen, below on a tall one),
+ * and the spotlight centred on the rim between them, so it lights both springs and the edge of the culture. The springs
+ * drip for a whole day (SCENE.life, 240 s). ?springs=0: the old empty start (and the spot where it was).
+ */
+const SCENE = { life: 240, rim: 0.72, gap: 0.01, apart: 0.09 };
+function defaultScene() {
+  if (params.has('springs') && !flag('springs')) return;
+  const W = view.cssW, H = view.cssH, m = Math.min(W, H);
+  const rim = SCENE.rim * cells.R * Math.sqrt(cells.count / 0.85);   // about the settled culture's radius (its seed blob shrinks)
+  const wide = W >= H, ax = wide ? [1, 0] : [0, 1], perp = wide ? [0, 1] : [1, 0];
+  const d = rim + SCENE.gap * m, s = SCENE.apart * m;
+  const cx = W / 2 + ax[0] * d, cy = H / 2 + ax[1] * d;
+  matter.addSpring(cx - perp[0] * s, cy - perp[1] * s, 'light', SCENE.life);
+  matter.addSpring(cx + perp[0] * s, cy + perp[1] * s, 'heavy', SCENE.life);
+  if (!params.has('spot')) light.moveTo(W / 2 + ax[0] * rim, H / 2 + ax[1] * rim);
 }
 
 /** Step C2: the light's URL options (see the top of this file). */

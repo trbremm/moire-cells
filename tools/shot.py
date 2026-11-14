@@ -14,7 +14,7 @@ Usage:
     python tools/shot.py --headed                          # Firefox in a real window (shows for a few seconds)
     python tools/shot.py --wait 4000 --out shots/later.png # let it run 4 s after it started
     python tools/shot.py --key f                           # press F (toggles the overlay)
-    python tools/shot.py --key shift+h                     # Shift + a letter (the Part C keys)
+    python tools/shot.py --key shift+h                     # Shift + a letter (the Part C keys); shift+4: Shift + a digit
     python tools/shot.py --click 640,400 --drag 200,600,900,500
     python tools/shot.py --rdrag 640,400,500,300 --wheel 640,400,600 --wheel 640,400,300,shift   # right-drag, wheel
     python tools/shot.py --eval "window.someTweak = 1"      # any JS before waiting
@@ -377,9 +377,13 @@ class Firefox:
 # ---------------------------------------------------------------- synthetic input (page-side events)
 def key_js(k):
     shift = k.lower().startswith("shift+") and len(k) > 6
+    code = ""
     if shift:
         k = k[6:].upper()
-    opts = f"{{key: {json.dumps(k)}, shiftKey: {'true' if shift else 'false'}, bubbles: true}}"
+        if k.isdigit():   # Shift + a digit key: the symbol a US keyboard types, and the key's place (e.code)
+            code = f", code: 'Digit{k}'"
+            k = "!@#$%^&*()"[(int(k) + 9) % 10]
+    opts = f"{{key: {json.dumps(k)}, shiftKey: {'true' if shift else 'false'}{code}, bubbles: true}}"
     return (f"window.dispatchEvent(new KeyboardEvent('keydown', {opts}));"
             f"window.dispatchEvent(new KeyboardEvent('keyup', {opts}));")
 
@@ -437,6 +441,11 @@ def main():
     ap.add_argument("--at", default="", help="comma-separated simulation times (s, from moire.time()): one shot "
                                              "each, named <out>_t<time>.png; replaces --wait")
     args = ap.parse_args()
+    for stream in (sys.stdout, sys.stderr):   # the panel's arrows and dots on a Windows console
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
 
     if args.headed:
         args.browser = "firefox"

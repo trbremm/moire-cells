@@ -26,8 +26,8 @@ struct Draw {
   leakMin: f32,     // leak level below which no dot is drawn
   blue: vec4f,      // field B's ink (rgb) for the step 6 marks; a = the converted cells' outline (0 = none)
   convFill: f32,    // fill of a converted stem cell, as a fraction of field B's ink
-  _p3: f32,
-  _p4: f32,
+  states: f32,      // step 7: number of states, for the state bar (0 = no bar: exclusion off)
+  bar: f32,         // the bar's brightness
   _p5: f32,
 };
 
@@ -127,6 +127,24 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   if (conv && c.kind == KIND_STEM) { fillRgb = D.blue.rgb * D.convFill; }
   var rgb = mix(fillRgb, col * D.dots, dot);
   let lineCol = select(col * D.line, D.blue.rgb, conv);
+  // step 7: the cell's state as a flat bar through its centre, turned by 180 / states degrees per state (2 states:
+  // upright and lying; 3: three directions 60 degrees apart), drawn over the dots like a print mark
+  var bar = 0.0;
+  var clearA = 0.0;
+  if (D.states > 0.0) {
+    let n = u32(D.states);
+    let th = f32(cell_state(c, n)) * 3.14159265 / f32(n) + 1.5707963;
+    let dir = vec2f(cos(th), sin(th));
+    let along = abs(in.local.x * dir.x + in.local.y * dir.y);     // (the builtin dot() is shadowed above)
+    let across = abs(in.local.y * dir.x - in.local.x * dir.y);
+    let bd = length(vec2f(max(along - 0.55 * c.r, 0.0), across));
+    let bw = max(0.13 * c.r, 0.6 / D.dpr);
+    bar = cover(bw, bd, aa);
+    // a clear margin around the bar (the dots there are left out), so the mark reads as one clean stroke
+    clearA = cover(bw + 0.14 * c.r, bd, aa);
+    rgb = mix(rgb, fillRgb, clearA * dot);
+    rgb = mix(rgb, col * D.bar, bar);
+  }
   rgb = mix(rgb, lineCol, ring);
   // step 6, rule 1: a cell leaking into field B gets a flat blue centre dot, its area growing with the leak
   var mark = 0.0;
@@ -137,7 +155,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       rgb = mix(rgb, D.blue.rgb, mark);
     }
   }
-  let a = disc * mix(D.fillA, 1.0, max(max(ring, dot), mark));
+  let a = disc * mix(D.fillA, 1.0, max(max(max(ring, dot * (1.0 - clearA)), mark), bar));
   // rgb is the colour as seen; blend premultiplied (one, one-minus-src-alpha)
   return vec4f(rgb * a, a);
 }

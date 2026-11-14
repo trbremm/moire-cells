@@ -95,11 +95,13 @@ struct Sim {
   senseSrc: f32,    // gain of the sources' part of the field force (1 = reference)
   receptor: u32,    // tuning toward other cells (key R): 0 = by the cell's own lattice (like feels like, the
                     // reference); 1 = by its genome's receptor (angle, period, width), so A may feel B but not back
-  pad19: f32,
-  pad20: f32,
-  pad21: f32,
-  pad22: f32,
-  pad23: f32,
+  // ---- step 7: exclusion. Cells of the same type (fate) in the same state (their lattice angle, cut into
+  // `states` bins, like spin up / down) keep a gap; cells of the same type in different states pack closer ----
+  excl: f32,        // how hard same-state cells push apart, x the contact push (0 = exclusion off)
+  exclReach: f32,   // ... out to this distance, x the contact distance r_i + r_j (1 = plain contact)
+  pack: f32,        // cells of the same type in different states push apart only below pack x the contact distance
+  states: u32,      // number of states (2..4): the key angle's 60 degrees cut into this many bins
+  xCount: u32,      // 1 = this tick counts neighbour pairs by state for the census (Stats.xPairs)
 };
 
 // fate-typical body: size and motility factors per fate (stem, epithelium, muscle, neuron, cartilage)
@@ -176,6 +178,12 @@ fn feel_sources(S: Sim, src: Sources, med: Medium, p: vec2f) -> vec2f {
 const KEY_SPAN: f32 = 1.0471975512;   // key angles live in [0, 60 degrees)
 const KEY_SMAX: f32 = 0.15;           // key scales live in [-0.15, 0.15]
 
+// step 7: a cell's state, 0 .. n-1: which of n equal bins of the hex lattice's 60 degrees its lattice angle lies in
+fn cell_state(c: Cell, n: u32) -> u32 {
+  let m = max(n, 1u);
+  return min(u32(fract(c.la / KEY_SPAN) * f32(m)), m - 1u);
+}
+
 // rule bits in Sim.rules (keep in step with RULE in src/cells.js)
 const RULE_DIFF: u32 = 1u;      // differentiation (contact signalling, accumulators, commitment)
 const RULE_ADH: u32 = 2u;       // adhesion
@@ -195,7 +203,10 @@ struct Stats {
   births: atomic<u32>,                // cumulative since the page started
   deaths: atomic<u32>,
   nEvents: atomic<u32>,               // births and deaths recorded in `events` since the last read-back
-  pad: array<u32, 5>,
+  pad: u32,
+  xPairs: array<atomic<u32>, 4>,      // step 7 (cleared every frame, counted on its last tick): neighbour pairs of the
+                                      // same type within 1.6 x contact distance: [0] all, [1] of the same state;
+                                      // touching (within reach x contact distance): [2] all, [3] of the same state
   events: array<vec4f, 64>,           // x, y, +1 birth / -1 death, 0
   bins: array<atomic<u32>, 144>,      // census: cells per key bin
   founders: array<atomic<u32>, 1632>, // census: bit set = that founder line still has cells
@@ -209,6 +220,7 @@ const STATS_X_ABINS: u32 = 48u;
 const STATS_X_AW: f32 = 0.2;
 const STATS_X_SHIST: u32 = 50u;     // 10 bins: stretch length, 0.05 wide (0 .. 0.5)
 const STATS_X_LHIST: u32 = 60u;     // 10 bins: leak level, 0.1 wide
+const STATS_X_STATE: u32 = 70u;     // step 7: 4 bins, cells per state
 
 // standard normal random number (Box-Muller) from two uniform draws of stream (a, b)
 fn gauss(a: u32, b: u32) -> f32 {

@@ -33,6 +33,8 @@ fn census(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       let sv = u32(clamp(length(vec2f(c.e1, c.e2)) / 0.05, 0.0, 9.0));
       atomicAdd(&stats.extra[STATS_X_SHIST + sv], 1u);
       atomicAdd(&stats.extra[STATS_X_LHIST + u32(clamp(lk * 10.0, 0.0, 9.0))], 1u);
+      // step 7: cells per state
+      atomicAdd(&stats.extra[STATS_X_STATE + min(cell_state(c, S.states), 3u)], 1u);
     }
   }
   workgroupBarrier();

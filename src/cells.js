@@ -274,7 +274,9 @@ export class Cells {
     f[o + 22] = p.drift; f[o + 23] = time;
     u[o + 24] = this.genome.ruleBits();
     const G = this.genome.params;
-    f[o + 28] = G.tau; f[o + 29] = G.release; f[o + 30] = G.reach;
+    f[o + 28] = G.tau; f[o + 29] = G.release; f[o + 30] = G.reach; f[o + 31] = G.adhesion;
+    f[o + 32] = G.adhSigma; f[o + 33] = G.fateAdh; f[o + 34] = this.genome.rules.body ? 1 : 0; f[o + 35] = G.adhBase;
+    f[o + 36] = this.genome.rules.body ? G.crawl : 0; f[o + 37] = G.turnRate;
   }
 
   /** Record the grid build for the tick whose uniforms are in slot k. */
@@ -442,7 +444,7 @@ export class Cells {
       lines.push(`fates: stem <b>${F[0]}</b> · epithelium <b>${F[1]}</b> · muscle <b>${F[2]}</b> · neuron <b>${F[3]}</b> · cartilage <b>${F[4]}</b>`);
       lines.push(`lineages: ${st.founders} founder lines · ${st.clusters} key clusters · births ${st.birthRate.toFixed(1)}/s · deaths ${st.deathRate.toFixed(1)}/s`);
     }
-    lines.push(`rules: D differentiation ${on(r.diff)} · H adhesion ${on(r.adh)} · T turnover ${on(r.turn)} · M mutation ${on(r.mut)} · view ${this.look.view ? 'lineage' : 'fate'}`);
+    lines.push(`rules: D differentiation ${on(r.diff)} · H adhesion ${on(r.adh)} · B body ${on(r.body)} · T turnover ${on(r.turn)} · M mutation ${on(r.mut)} · view ${this.look.view ? 'lineage' : 'fate'}`);
     if (c) {
       lines.push(`grid check: ${c.contacts / 2} contacts` + (c.brute ? ` (brute force ${c.bruteContacts / 2}, ${c.mismatch} cells differ)` : '') +
         ` · ${c.badSort} bad slots · overlap mean ${(100 * c.ovMean).toFixed(1)}% max ${(100 * c.ovMax).toFixed(1)}%`);

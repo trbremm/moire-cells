@@ -220,7 +220,7 @@ let tapMode = 0;
 
 function hintLine() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · A: ambient · N / G: new culture / new genomes · P: push · D: fates · V: view · [ ]: speed · F: stats';
+    'C: clear · L: landscape · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · V: view · [ ]: speed · F: stats';
 }
 
 function tap(x, y) {
@@ -285,6 +285,14 @@ function setupInput() {
       const r = cells.genome.rules;
       r.diff = !r.diff;
       flash(r.diff ? 'differentiation on: cells read their contacts and choose fates' : 'differentiation off: every cell back to stem');
+    } else if (k === 'h') {
+      const r = cells.genome.rules;
+      r.adh = !r.adh;
+      flash(`adhesion ${r.adh ? 'on: like sticks to like (similar keys, same fate)' : 'off'}`);
+    } else if (k === 'b') {
+      const r = cells.genome.rules;
+      r.body = !r.body;
+      flash(`body traits ${r.body ? 'on: size and motility from the genome and the fate' : 'off: all cells alike'}`);
     } else if (k === 'v') {
       cells.look.view = cells.look.view ? 0 : 1;
       flash(`colour by ${cells.look.view ? 'lineage (key)' : 'fate'}`);

@@ -57,8 +57,36 @@ struct Sim {
   tau: f32,         // accumulator time constant (s): brief bumps fade, only sustained input counts
   release: f32,     // a committed cell goes back to stem below release x threshold
   reach: f32,       // neighbours within reach x (r_i + r_j) count as touching (signals, adhesion)
-  pad3: f32,
+  adhesion: f32,    // adhesion pull at full stickiness, as the contact push of an overlap of adhesion x R
+  adhSigma: f32,    // how alike two keys must be to stick (width of the Gaussian in the key difference)
+  fateAdh: f32,     // extra stickiness between cells of the same committed fate
+  body: f32,        // 1 = body traits on (size and motility from the genome and the fate), 0 = all alike
+  adhBase: f32,     // stickiness every pair loses: unlike neighbours (stick below this) push off a little
+  crawl: f32,       // crawling speed, in units of R per s (times the motility factor)
+  turnRate: f32,    // how fast a crawling cell's heading wanders (rad^2 / s)
+  pad4: f32,
+  pad5: f32,
 };
+
+// fate-typical body: size and motility factors per fate (stem, epithelium, muscle, neuron, cartilage)
+fn fate_size(kind: u32) -> f32 {
+  switch kind {
+    case 1u: { return 0.95; }
+    case 2u: { return 1.1; }
+    case 3u: { return 0.85; }
+    case 4u: { return 1.15; }
+    default: { return 1.0; }
+  }
+}
+fn fate_motility(kind: u32) -> f32 {
+  switch kind {
+    case 1u: { return 0.6; }
+    case 2u: { return 0.8; }
+    case 3u: { return 1.4; }
+    case 4u: { return 0.4; }
+    default: { return 1.0; }
+  }
+}
 
 // ---------- the genome ----------
 // Every cell carries a Bio record (96 bytes; keep in step with BIO_* in src/cells.js): its genome plus its

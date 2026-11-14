@@ -124,7 +124,8 @@ export class Cells {
       on: true,       // cells feel B (key Q)
       gain: 0.6,      // gain of B's force (as params.sense for A)
       sat: 2,         // B's force saturates at this speed (R / s)
-      sign: 1,        // +1: like repels like; -1: like attracts like (key U)
+      sign: -1,       // +1: like repels like; -1: like attracts like (key U). Default attracts: with the biology
+                      // on, repelling keeps cells apart so fates rarely form; ?bio=0 sets +1 (the labyrinth)
       like: 0,        // what "like" means: 0 = by charge (signed charges multiply), 1 = by key (lineage)
       likeW: 0.15,    // lineage likeness width (Gaussian in the key difference)
     };

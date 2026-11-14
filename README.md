@@ -8,9 +8,10 @@ lattices. This is the WebGPU version (work in progress). The original CPU versio
 
 WebGPU needs a page served over http(s), not opened as a file. In the project folder:
 
-    python -m http.server
+    python tools/serve.py
 
-then open http://localhost:8000 in **Firefox** (141 or newer on Windows), **Chrome** or **Edge**.
+(like `python -m http.server`, but it tells the browser not to cache, so after an update you never run a mix
+of old and new code; add `--lan` to reach it from other devices on the network) then open http://localhost:8000 in **Firefox** (141 or newer on Windows), **Chrome** or **Edge**.
 
 Browsers with WebGPU (checked November 2026):
 Firefox 141+ on Windows and 147+ on Apple-silicon Macs; Chrome / Edge 113+ on Windows, macOS, ChromeOS;
@@ -29,6 +30,7 @@ choose the browser, set "High performance", restart the browser.
 - **C**: clear all sources
 - **L**: landscape dots on/off (the sources' ring markers stay)
 - **F**: frame time and adapter overlay
+- **?**: the hint line shows all keys / only the main ones
 - **A**: ambient ripples on/off (random drops standing in for the cells' divisions and deaths)
 - **N**: new culture (a fresh blob of stem cells at the centre, the same founder genomes)
 - **G**: new culture with fresh random founder genomes
@@ -56,7 +58,7 @@ The loop (step 4):
 
 Field B (step 5):
 - **Q**: cells feel field B on/off (it is still emitted and drawn)
-- **U**: B's sign rule: like repels like (default) / like attracts like
+- **U**: B's sign rule: like repels like / like attracts like (default; `?bio=0` starts with like repels)
 - **Y**: what "like" means for B: the same sign of charge (default; charges by fate) / a similar key (lineage)
 - **J**: field B drawn on/off (blue rings; drawing only)
 
@@ -173,7 +175,7 @@ Ported from the reference, with the changes marked:
   so far; off by default.
 - **Drawing the cells' field (K)**: summing thousands of emitters per pixel does not scale, so each cell adds
   its field over one quad into a half-resolution float texture (additive), and the halftone dots read it: pale
-  warm dots (`moire.landscape.params.cellColour`, `cellLevel` 0.32, `cellGain`), positive part only. Under a
+  warm dots (`moire.landscape.params.cellColour`, `cellLevel` 0.32, `cellGain` 0.5), positive part only. Under a
   packed tissue they are hidden; they show as halos around loose cells and clusters.
 
 What it looks like (seed 3, 2000 cells): with the biology off (`?bio=0`) the middle stays packed and the rim
@@ -239,7 +241,7 @@ What it looks like (seed 3, 2000 cells, compare with Q):
   no longer keep their contacts. Like attracts like (U) does the opposite and is the richer picture with the
   biology: a compact culture (29 R) with bold tissue domains, large cyan and violet sheets, amber worm-like
   chains and round pink muscle clumps (at 400 s: 828 stem, 638 epithelium, 81 muscle, 349 neuron).
-  So for now: like repels in the loop, like attracts with the biology; the default is like repels.
+  So the default follows the biology: like attracts on the normal page, like repels with `?bio=0` (U flips).
 
 Live-tunable in `moire.cells.fields`: `chargeA`, `chargeB` (5 numbers each), `band`, `lever`, `r0`, `cut`,
 `emit`, `on`, `gain`, `sat`, `sign` (1 / -1), `like` (0 / 1), `likeW`, `strain` (how much the stretch strains

@@ -46,8 +46,9 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
 - **Panels** (one open at a time; tap the button again, the ×, or Escape to close):
   - *light* (the sun): spotlight / full field / off, sliders for the tilt and the direction the light comes from,
     day and night;
-  - *view* (the eye): the entropy panel, the stats overlay (F), the landscape, which substance is shown, colour by
-    fate, lineage or strategy (step C6), and the other drawing switches;
+  - *view* (the eye): first the **look** (step C6n: neon, halo, trails, hum, show the machinery, substances as dust or
+    halftone, the lattice inside the cells), then the entropy panel, the stats overlay (F), the landscape, which
+    substance is shown, colour by fate, lineage or strategy (step C6), and the other drawing switches;
   - *rules*: every rule that has a key, as a switch with a one-line explanation and its key, grouped as below
     (the loop, field B, steps 6 to 8, biology, heat and light, chemistry); settings with several values show the current one
     and change on a tap; the lever has - and +. The switches follow the state, also when a key changes it;
@@ -75,7 +76,9 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   between 800 and 1500, on touch screens and windows shorter than 600 px; a phone of 390 px gets 800 cells of about
   the computer's size. The entropy panel gets shorter lines, panels take at most about half the screen and scroll,
   buttons are 42 px.
-- URL options: `?speed=32` or `?speed=max`, `?paused=1` (start paused), `?ui=0` (start with the toolbar folded).
+- URL options: `?speed=32` or `?speed=max`, `?paused=1` (start paused), `?ui=0` (start with the toolbar folded);
+  step C6n: `?neon=0`, `?halo=off|low|medium|high`, `?trails=0`, `?hum=0`, `?machinery=1`, `?cheap=0|1`, and
+  `?until=T` (run to simulation time T, then pause at exactly that tick).
 
 ## Keyboard shortcuts
 
@@ -97,7 +100,12 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
 - **B**: body traits on/off (size, motility and crawling from the genome and the fate; off: all alike, no crawling)
 - **T**: turnover on/off (cells die now and then and a neighbour divides into the gap)
 - **M**: mutation on/off (off: daughters are exact copies of their parent)
-- (**E** is free: it switched rule E, nutrient and threat, which went with the sources in step C3)
+- **E**: the neon look on/off (step C6n; off: the flat look of steps 1 to C6). Until step C3 E switched rule E,
+  nutrient and threat, which went with the sources
+- **Shift+1**: halo off / low / medium / high · **Shift+2**: light trails · **Shift+3**: hum · **Shift+4**: show the
+  machinery (every diagnostic layer at once; default off: the clean view) · **Shift+5**: substances as dust / halftone ·
+  **Shift+6**: the lattice inside the cells (step C6n, "The neon look and the clean view" below; Shift + the digit key,
+  on any keyboard layout)
 - **I**: daughters inherit their parent's fate on/off (default off: they start as stem cells)
 - **V**: colour by fate, by lineage (the key's hue), or by strategy (step C6: how the cell's engines make a living)
 - **[** / **]**: simulation speed 1× / 2× / 4× / 8× / 16× / 32× / MAX (step C3b: the last three are the timelapse)
@@ -795,7 +803,9 @@ with the heat's ledger, never waiting. With a light and a heavy spring (seed 3, 
     light in 9595/s → heat 4217/s · passed 5378/s · spot · day 24%
     ORDER  0.204 · atoms in dish 686 · added 720 (+0/s) · out 33.7 · rounding 0
 
-**Drawing** (the user's look: crisp halftone dots, flat colour, no glow). The dot screen is the medium's own lattice,
+**Drawing** (the user's look then: crisp halftone dots, flat colour, no glow; since step C6n this halftone is the
+machinery view, Shift+4 or Shift+5, and the default draws the substances as dust, see "The neon look and the clean
+view"). The dot screen is the medium's own lattice,
 every 2 lattice spacings (about 13 px). A triangular lattice has three interleaved sets of points (the points and the
 centres of its two kinds of triangle), and each carries one layer, so layers never sit on each other:
 - **free atoms** on the lattice points: one dot for all of them, its area c / (c + 0.6 per R²); its ink by chemical
@@ -962,7 +972,8 @@ cell dies, what it held goes back into the dish. No engines in the genome yet (C
 **What it looks like** (the default scene, seed 3, 2000 cells, 8×). The page now starts with a light and a heavy spring
 just beyond the culture's right rim (below it on a tall phone screen), with the spotlight centred on the rim between
 them, so the chemistry and the eating show without doing anything (`?springs=0`: the old empty start). Every cell
-has a flat pale-green **core** in its middle: its battery, the core's area in proportion to the charge (green: the
+has a flat pale-green **core** in its middle (since step C6n, under the neon look, a soft-lit disc with a bright rim):
+its battery, the core's area in proportion to the charge (green: the
 fuel's colour, energy). At the start every cell has a small core (the starter charge). Within a minute the cells on
 the rim by the springs have big cores, the light spring's cloud of green fuel dots has a bite out of it where they sit,
 and a few of them crawl out into the cloud. Far from the springs the cores shrink to dots and vanish, and those cells
@@ -1217,6 +1228,8 @@ diamond in the fuel's deeper green, **breathing swap** a triangle pointing out, 
 grey. The body keeps its fate colour; the lattice dots dim to 45 % and keep a clear margin around each part; the core is a
 little smaller at full charge (0.36 of the radius instead of 0.55). The parts show while the engines run (Shift+O). A cell
 is about 13 px across at 2000 cells on a computer screen, so zoom in (pinch, or the browser's zoom) to read them.
+Since step C6n the inks are in `src/palette.js` (`band`, `core`, `burn`, `swap`, `sed`), and under the neon look the
+parts are small bright lamps, whiter at their centres; the lattice dots are off in the clean view (Shift+6).
 
 **Colour by strategy** (key V cycles fate → lineage → strategy; `?view=strategy`): harvester only = its band's colour,
 burn only = green, both = split down the middle (band colour left, green right, a crisp edge), the rest = dim grey; every
@@ -1260,14 +1273,121 @@ by the display), the step's physics 0.62 ms per tick against 0.67. The pigments'
 pixel (each cell spreads its depth over its 3 × 3 pixels when it puts it down), as atomic reads are slow on Direct3D.
 Firefox (headed) ran the page without errors.
 
+## The neon look and the clean view (step C6n)
+
+The user, 2026-11-15: "I don't want the rendering to look like 80s computer graphics, I want it to look like 80s neon
+colour lights. Think of video clip graphics." And: "Simplify what is shown: fields (dots) can be hidden, just the cells,
+interesting materials, the substrate. Nothing algorithmic." Only the drawing changed: the simulation, the ledgers and
+the census are the same code (see "Checked" below).
+
+**What it looks like.** Black dish, the soft ripples underneath as before (the one soft layer), and on it the cells as
+thin bright **neon tubes**: each outline is a tube about 1.1 px wide whose centre line is nearly white-hot and whose
+edges carry the fate's colour, with a tight coloured halo around it; the inside of the cell is dark, with only a faint
+tint and a soft glow just inside the tube (as a lit tube lights the wall behind it). Inside, the battery is a small
+**soft-lit disc with a bright rim** (its size is still the charge), and the engines are tiny bright **lamps** (the same
+shapes and colours as in C6, whiter at their centres). Fates in neon colours: stem warm white (peach), epithelium cyan,
+muscle hot pink, neuron violet, cartilage amber. In a packed tissue every cell stays a separate ring: the halo is about
+a tube's width, and only bright light makes one (the dark insides do not), so the dish does not fog over. The
+substances are **material**, not a dot screen: fuel is green glow-dust, free atoms are fainter specks (red to grey-blue
+by their mix), trace is a rare small spark, sediment is a solid dark crust. The spot's outline is a quiet warm-white
+line, the springs are small lit rings.
+
+**Trails.** Moving cells leave short fading streaks, as a long exposure or video feedback: the cells are drawn into
+their own buffer, which is faded each frame (by exp(-real time / 0.15 s); the ghosts lose their opacity three times
+faster than their light, so they glow and never shade what lies under them) before the new frame is drawn over it.
+Only the cells trail: the substances, springs, spot and the panels never do. The fade runs on real time, and above 1x
+it shortens by the square root of the speed reached (at 16x a quarter, at MAX about a third or less), so a timelapse
+shows short ghost outlines instead of smear. At 1x the cells crawl slowly, so the trails show mostly where cells are
+stirred, shoved or jitter in hot spots (a slight softness on shivering cells).
+
+**Hum.** Every tube's brightness wobbles by about 5 % at its own slow rate (0.5 to 1.3 per s) and phase (from the cell's
+seed), and rises with the cell's **activity**: how fast its battery changes, either way (burning fuel or a downhill
+engine fills it; crawling, sparks and upkeep empty it), smoothed over about 0.6 s of real time. An idle cell is at 0.8,
+the busiest at about 1.1 (they look whiter: the tube saturates toward its white core). In the default scene at 1 to 2
+minutes most batteries are empty and the busy cells are the few percent near the springs and in the spot, so those
+light up. A division flares briefly (the parent's battery halves, the daughter's jumps). Measured: the activity's
+median is near 0, the top 1 % about 0.04 to 0.07 battery per s (`humAct`, 0.03, is where a cell is 63 % of the way to
+the busiest). The activity is worked out by a small compute pass of the drawing's own (`cell_glow.wgsl`), which reads
+the cells and writes only its own buffer.
+
+**The clean view (default) and the machinery.** The default screen shows the cells, the materials, the light and the
+ripples. Everything diagnostic is behind one switch, **show the machinery** (Shift+4, view panel; `?machinery=1`):
+the cells' field dots (K, J, ;), the lattice inside each cell (Shift+6), the substances as the halftone on the medium
+lattice (Shift+5), and the marks of steps 6 to 8 (the blue leak dot and converted outline, the state bar, the clock
+hand). Each layer keeps its own switch too. The short hint line at the bottom goes quiet 8 s after the start on a
+computer (flashes still show, ? still lists all keys); the entropy panel stays (Shift+E hides it).
+
+**Switches** (keys, and the view panel's new "Look" group at its top):
+- **E**: neon look on / off. Off is the flat look of steps 1 to C6 (crisp shapes, the faded palette, no glow, no
+  trails, no hum), kept for comparison; with Shift+4 too it is the old page exactly (`?neon=0`).
+- **Shift+1**: halo off / low / medium (default) / high (`?halo=high`).
+- **Shift+2**: light trails on / off (`?trails=0`).
+- **Shift+3**: hum on / off (`?hum=0`).
+- **Shift+4**: show the machinery (above). **Shift+5**: substances as dust / halftone. **Shift+6**: the lattice
+  inside the cells.
+Every Shift + letter was taken, so these are Shift + a digit key. The page reads the key's place on the keyboard, so
+it works on any layout; where Shift + that key types a symbol that is already a key of its own (Shift+7 is / on a
+German keyboard, Shift+1 is 1 on a French one), the symbol keeps its meaning and the view panel has the switch.
+
+**How it is drawn** (`src/neon.js`, `neon.wgsl`). Every layer but the background now draws into float buffers
+(rgba16float, the canvas's size), and the frame is: (1) the ripple background onto the canvas; (2) the cells into the
+trail buffer, after fading it; (3) the light buffer: the layers under the cells (field dots, substances, the light's
+tint), the trail buffer copied over them, then the spot's outline; (4) the halo: the light at half resolution (the
+cells at full weight, the rest at 45 %, each pixel through a soft knee so only light brighter than about 0.1 to 0.45
+makes a halo), blurred by a Gaussian of 1.4 CSS px; with halo medium and high once more at a quarter resolution, 4.5 px,
+added faintly; (5) the composite onto the canvas: the light as drawn, plus 1.2 x the tight halo and 0.25 x the wide one
+(medium), through a soft shoulder above 0.82 so a tube brighter than white saturates toward white instead of clipping
+in one channel. With the neon look off, steps (2) to (5) only copy: no fade, no halo, no shoulder, and the result is the
+old picture (premultiplied "over" in a float buffer and then over the background is the same as drawing in order).
+Recording (Shift+V) copies the canvas, so videos get the finished picture.
+
+**Palette.** Every colour is in one place, `src/palette.js`: `FLAT` (the faded palette) and `NEON`, with the same
+meanings (fates; the light bands; the battery, burn, swap, sediment engines; the strategy view's "other"; the
+substances by function; the spot; the field dots) and the levels of the quieter layers (substances 0.62, field dots
+0.2, spot 0.4 under neon). E swaps every colour at once. The cells' fate colours moved from the shader into it; the old
+`moire.cells.look` inks (`coreInk`, `burnInk`, `sedInk`, `swapInk`, `otherInk`), `BANDS[].ink` and the landscape's
+`cellColour` / `bColour` / `pColour` now live there.
+
+**Knobs** (live from the console): `moire.neon.params`: `halo` (index), `trails`, `hum`, `sigma1` (1.4 CSS px),
+`sigma2` (4.5), `res` (2: the tight halo at half resolution; 4 = quarter), `level2` (the wide level), `knee` ([0.1,
+0.45]), `others` (0.45), `trail` (0.15 s), `trailSpeed` (0.5), `trailAlpha` (3), `shoulder` (0.82), `autoMs` (26).
+`moire.cells.look`: `tube` (1.1 px), `white` (0.6), `innerGlow` (0.08), `innerReach` (0.3), `nFill` / `nFillC` /
+`nFillA` (the inside: 0.03, 0.06, 0.8), `nLine`, `nDots`, `nStrategyFill`, `nStarveDim` (0.25: a starving cell dims
+less than in the flat look, as the hum already dims idle cells), `coreRim`, `coreDim`, `partWhite`, `humDepth` (0.05),
+`humRate` (0.9 Hz), `humIdle` (0.8), `humAct` (0.03), `humTau` (0.6 s), `innerDots`, `marks`. `moire.matter.params`:
+`style` ('dust' or 'halftone'), `dustCell` (3.2 px: at most one speck of each kind per square), `dustR` ([0.45, 0.95]
+px), `dustAtoms` (0.55). For tuning the hum: `await moire.cells.glowStats()` gives the activity's percentiles.
+
+**Phones and small screens** (touch-only, or the shorter side under 600 px; `?cheap=0|1` overrides): the cheap path,
+the tight halo at a quarter resolution, no wide level, trails 0.1 s. On any device, if frames are slower than 26 ms for
+3 s at 1x to 8x (not paused), the halo steps down by itself (the wide level off, then quarter resolution, then halo
+low) and says so in the hint line.
+
+**Cost** (this machine; F overlay's "drawing per frame (gpu, probe)": all the drawing timed on its own). Headless
+Chrome, 1280 x 800, 2000 cells: the flat look 0.65 ms, neon (halo medium, trails, hum) 0.75 ms, halo high 0.78 ms,
+the cheap path 0.68 ms; 1920 x 1080 at MAX: 3.0 ms flat, 3.6 ms neon (measured while the simulation runs flat out, so
+rough). MAX reached at 1920 x 1080: the old page (before C6n) x11.4 and x12.1, neon off x12.2, neon x12.0: no
+difference beyond the noise. Firefox (headed, 1600 x 1000): 11.6 ms per frame at 8x, drawing 2.6 ms. Phone size
+(Chrome, 390 x 844 at 2 device px per CSS px, cheap path): drawing 0.67 ms. Memory: two float buffers of the canvas's
+size (8 bytes per device pixel each: 16 MB at 1920 x 1080) plus the halo levels.
+
+**Checked.** No WebGPU errors in Chrome (headless) or Firefox (headed). Recording: 3 s in Chrome gave a 1.5 MB VP9
+WebM whose frames are the finished picture (mean brightness 45 of 255, not black). The simulation: the drawing only
+reads the cells (the hum's pass writes its own buffer). The numbers cannot be compared to the last digit, because the
+simulation is not bit-for-bit repeatable between runs on the GPU (the same seed with neon off twice, stopped at the same
+tick with `?until=40`: batteries 154 and 161, atoms in cells 80.3 and 83.5); neon on falls inside that spread
+(batteries 154, atoms in cells 81.4). `?until=T` (new) runs to simulation time T and pauses at exactly that tick.
+
 ## The look of the landscape
 
+Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the
+substances are drawn as dust by default (see "The neon look and the clean view" above).
 The landscape is drawn as crisp halftone dots, like print: a dot screen lies over the dish, each dot reads what it
 shows at its own centre, and its area grows with the amount (flat colour, no glow; too little draws no dot).
 - The cells' fields (steps 4 to 8): field A in pale dots on a triangular screen turned 15°, field B as blue rings on
   one turned 45°, the partner A' in yellow dots at 75° (the separate colour screens of print). Knobs in
   `moire.landscape.params`: `pitch` (6 CSS px), `hex`, `angle`, `threshold` (0.12), `maxDot` (0.9), `cellGain`,
-  `cellColour`, `cellLevel`, the `b...` and `p...` knobs for B and A'.
+  `cellLevel`, the `b...` and `p...` knobs for B and A' (the inks: `field` in `src/palette.js`).
 - The substances (step C3): on the medium's own lattice instead, see "Matter" above.
 - Until step C3 the nutrient and threat sources' beat landscape was drawn here too (green and red rosettes with ring
   markers); it went with the sources.
@@ -1281,7 +1401,11 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
 - `src/ui.js`: the toolbar and its panels (light, view, rules, dish), built from that table; `src/record.js`: the
   video recording
 - `src/main.js`: boot, frame loop (speeds and their budgets), input, overlay. Layers are classes with `resize`, `compute`, `render`;
-  the loop runs every layer's compute passes, then draws all layers into one render pass
+  the loop runs every layer's compute passes, then hands the drawing to `src/neon.js`
+- `src/neon.js` + `src/shaders/neon.wgsl`: the drawing as a whole (step C6n): the background onto the canvas, the cells
+  into the trail buffer, the other layers into the light buffer, the halo, the composite; the neon switches and the
+  drawing's probe. `src/palette.js`: every colour, flat and neon, with its meaning. `src/shaders/cell_glow.wgsl`: the
+  cells' activity for the hum (drawing only)
 - `src/gpu.js`: adapter/device setup, fallback and error messages, shader loading with readable errors
 - `src/background.js` + `src/shaders/ripple_*.wgsl`, `background_draw.wgsl`: the viscous background (since step C1
   it reads the heat grid: hot places simmer)
@@ -1326,6 +1450,7 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
     python tools/shot.py --query "speed=8&view=1&seed=3" --at 5,30,90,180   # a series in simulation time
     python tools/shot.py --clip 420,250,440,300,2             # only part of the page, enlarged 2x (Chrome)
     python tools/shot.py --dpr 2 --clip 560,330,160,110,5     # the page drawn at 2 device px per CSS px: sharp zooms
+    python tools/shot.py --key e --key shift+4                # neon off, then the machinery (Shift + a digit key)
     python tools/shot.py --rdrag 640,400,400,300 --wheel 640,400,600 --wheel 640,400,300,shift   # right-drag, wheel
     python tools/shot.py --mobile                              # a phone: 390x844, 3 device px per CSS px, touch only
     python tools/shot.py --mobile --tapel "[data-action=tool-heavy]" --tap 200,300   # finger taps: a tool, the dish

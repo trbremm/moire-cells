@@ -14,6 +14,11 @@
 // Per-tick uniforms (struct Sim) sit in slots 256 bytes apart in one buffer, bound with a dynamic offset, so
 // several ticks in one frame each get their own tick number.
 //
+// The loop (step 4): in the grid's scatter pass every cell also works out its beat against the medium
+// (struct CellBeat, cell_common.wgsl) into `beats`, in sorted order. The cells' field is drawn by scattering:
+// each cell adds its beat x envelope over a quad into a half-resolution rgba16float texture (cell_field.wgsl),
+// which the landscape's halftone dots read.
+//
 // Size: the cells' radius R is the reference's R (from the screen area, 5 to 9 CSS px), but smaller when
 // that many cells would not fit in a round blob of about 0.8 x the dish height (so 10 000 or 50 000 cells
 // get smaller). See `fitR`.
@@ -34,7 +39,7 @@ const ALIVE = 1;
 export const DEFAULT_CELLS = 2000;
 export const MAX_CELLS = 262144;
 
-const SIM_BYTES = 192;         // struct Sim
+const SIM_BYTES = 256;         // struct Sim
 const SLOT = 256;              // uniform slot stride (minUniformBufferOffsetAlignment is at most 256)
 const SLOTS = 128;             // ticks that can be encoded in one frame
 const BLOCK = 512;             // scan block (cell_grid.wgsl)
@@ -43,6 +48,8 @@ const STATS_BYTES = 8192;      // struct Stats in cell_common.wgsl (counters, ev
 const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder bitmap) in struct Stats
 const STATS_EVENTS = 64;
 const MAX_SRC = 16;            // sources the cells feel (MAX_CELL_SOURCES in cell_common.wgsl)
+const CELL_BEAT_BYTES = 80;    // struct CellBeat in cell_common.wgsl
+const FIELD_FORMAT = 'rgba16float';
 
 export class Cells {
   constructor(device, format, medium, count, seed) {
@@ -74,10 +81,18 @@ export class Cells {
       warmup: 180,    // ticks run at once after a reset, so a new culture starts settled
       stir: 0.5,      // how strongly a drag pushes cells along (reference 0.5)
       stirReach: 110, // how far from the pointer a drag reaches (CSS px; reference sqrt(12000))
-      range: 3.0,     // grid cell size in units of R (must be >= the largest interaction range: reach x 2 r,
-                      // with r up to about 1.3 R for big cells)
+      range: 3.0,     // smallest grid cell size in units of R (must be >= the largest contact range: reach x 2 r,
+                      // with r up to about 1.3 R for big cells); the grid is at least `cut` wide too
+      // the loop (step 4)
+      emit: true,     // cells emit into the field (key O)
+      lever: 1.0,     // how different the cells' lattices are from the medium's (keys - and =): scales each
+                      // key's angle and period difference from the medium (1 = as the genome has it)
+      r0: 2.2,        // a cell's envelope range, in units of R (reference: r0^2 = 4.84 R^2)
+      cut: 3.6,       // how far a cell's field reaches (sensed and drawn), in units of R (reference 3.6)
     };
     // drawing (live-tunable: moire.cells.look)
+    this.fieldScale = 0.5;     // texels per CSS px of the cells' field texture
+    this.fieldTex = null;
     this.look = {
       view: 0,        // 0 = colour by fate, 1 = colour by lineage (the key's hue)
       fill: 0.09,     // disc fill of stem cells, as a fraction of the cell colour over black
@@ -99,13 +114,22 @@ export class Cells {
 
   async init() {
     const d = this.device;
-    const [drawMod, gridMod, checkMod, stepMod, censusMod] = await Promise.all([
+    const [drawMod, gridMod, checkMod, stepMod, censusMod, fieldMod] = await Promise.all([
       loadFieldShader(d, 'src/shaders/cell_draw.wgsl', [CELL_URL]),
       loadFieldShader(d, 'src/shaders/cell_grid.wgsl', [CELL_URL]),
       loadFieldShader(d, 'src/shaders/cell_check.wgsl', [CELL_URL]),
       loadFieldShader(d, 'src/shaders/cell_step.wgsl', [CELL_URL]),
       loadFieldShader(d, 'src/shaders/cell_census.wgsl', [CELL_URL]),
+      loadFieldShader(d, 'src/shaders/cell_field.wgsl', [CELL_URL]),
     ]);
+    // the cells' field: plain additive blending into a float texture (signed values add up)
+    const add = { srcFactor: 'one', dstFactor: 'one', operation: 'add' };
+    this.fieldPipe = d.createRenderPipeline({
+      label: 'cell field', layout: 'auto',
+      vertex: { module: fieldMod, entryPoint: 'vs' },
+      fragment: { module: fieldMod, entryPoint: 'fs', targets: [{ format: FIELD_FORMAT, blend: { color: add, alpha: add } }] },
+      primitive: { topology: 'triangle-list' },
+    });
     const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
     this.drawPipe = d.createRenderPipeline({
       label: 'cell draw', layout: 'auto',
@@ -123,8 +147,8 @@ export class Cells {
       const bgl = d.createBindGroupLayout({ label, entries });
       return { bgl, pl: d.createPipelineLayout({ label, bindGroupLayouts: [bgl] }) };
     };
-    this.gridL = layout('cell grid', [sim, ro(1), rw(2), rw(3), rw(4), rw(5), rw(6), rw(7)]);
     const un = (binding) => ({ binding, visibility: C, buffer: { type: 'uniform' } });
+    this.gridL = layout('cell grid', [sim, ro(1), rw(2), rw(3), rw(4), rw(5), rw(6), rw(7), un(8), rw(9)]);
     this.stepL = layout('cell step', [sim, ro(1), ro(2), ro(3), ro(4), rw(5), ro(6), rw(7), rw(8), un(9), un(10)]);
     this.censusL = layout('cell census', [sim, ro(1), ro(2), rw(3)]);
     this.checkL = layout('cell check', [sim, ro(1), ro(2), ro(3), ro(4), ro(5), rw(6),
@@ -143,6 +167,12 @@ export class Cells {
     this.cellBuf = d.createBuffer({ label: 'cells', size: n * CELL_BYTES, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
     this.sortedBuf = d.createBuffer({ label: 'cells sorted', size: n * CELL_BYTES, usage: U.STORAGE });
     this.sortIdxBuf = d.createBuffer({ label: 'cell sort index', size: n * 4, usage: U.STORAGE });
+    this.beatBuf = d.createBuffer({ label: 'cell beats (sorted)', size: n * CELL_BEAT_BYTES, usage: U.STORAGE });
+    this.fieldU = d.createBuffer({ label: 'cell field params', size: 16, usage: U.UNIFORM | U.COPY_DST });
+    this.fieldBG = d.createBindGroup({
+      label: 'cell field', layout: this.fieldPipe.getBindGroupLayout(0),
+      entries: [{ binding: 0, resource: { buffer: this.fieldU } }, { binding: 1, resource: { buffer: this.beatBuf } }],
+    });
     this.cellGridBuf = d.createBuffer({ label: 'cell grid slot', size: n * 8, usage: U.STORAGE });
     // the Bio records (genome + state), double-buffered: bioBuf[bioCur] holds the current tick's
     this.bioBuf = [0, 1].map((k) => d.createBuffer({ label: `cell bio ${k}`, size: n * BIO_BYTES, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC }));
@@ -186,13 +216,37 @@ export class Cells {
     this.view = view;
     this.R = this.fitR(view);
     this.sizeGrid();
+    this.sizeField();
     if (first) this.seed();
+  }
+
+  /** The cells' field texture: fieldScale texels per CSS px over the dish. */
+  sizeField() {
+    const { cssW: W, cssH: H } = this.view;
+    const w = Math.max(1, Math.ceil(W * this.fieldScale)), h = Math.max(1, Math.ceil(H * this.fieldScale));
+    if (this.fieldTex && this.fieldTex.width === w && this.fieldTex.height === h) return;
+    if (this.fieldTex) this.fieldTex.destroy();
+    this.fieldTex = this.device.createTexture({
+      label: 'cell field', size: [w, h], format: FIELD_FORMAT,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+    });
+    this.fieldView = this.fieldTex.createView();
+    this.fieldBlank = false;
+  }
+
+  /** Whether the cells emit at all (key O). */
+  emitting() { return !!this.params.emit; }
+
+  /** Grid cell size in CSS px: the larger of the contact range and the field's reach. */
+  gridSize() {
+    const p = this.params;
+    return Math.max(1, Math.max(p.range, p.cut) * this.R);
   }
 
   /** Grid dimensions from the dish size and R; (re)allocates the grid buffers when they grow. */
   sizeGrid() {
     const { cssW: W, cssH: H } = this.view;
-    const cs = Math.max(1, this.params.range * this.R);
+    const cs = this.gridSize();
     const gw = Math.max(1, Math.ceil(W / cs)), gh = Math.max(1, Math.ceil(H / cs));
     const n = gw * gh;
     Object.assign(this.grid, { gw, gh, cs, n });
@@ -209,7 +263,7 @@ export class Cells {
       label: 'cell grid', layout: this.gridL.bgl,
       entries: [{ binding: 0, resource: { buffer: this.simBuf, size: SIM_BYTES } }, b(1, this.cellBuf),
         b(2, this.countsBuf), b(3, this.startsBuf), b(4, this.blockBuf), b(5, this.cellGridBuf),
-        b(6, this.sortedBuf), b(7, this.sortIdxBuf)],
+        b(6, this.sortedBuf), b(7, this.sortIdxBuf), b(8, this.medium.buffer), b(9, this.beatBuf)],
     });
     // two step bind groups: stepBG[k] reads bioBuf[k] and writes bioBuf[1 - k]
     this.stepBG = [0, 1].map((k) => this.makeStepBG(this.cellBuf, this.bioBuf[k], this.bioBuf[1 - k], this.statsBuf));
@@ -286,6 +340,7 @@ export class Cells {
     f[o + 36] = this.genome.rules.body ? G.crawl : 0; f[o + 37] = G.turnRate;
     f[o + 38] = G.turnover; f[o + 39] = G.unhappy; f[o + 40] = G.mutSize; f[o + 41] = G.mutJump;
     f[o + 42] = G.nutFar; f[o + 43] = G.thrKill; u[o + 44] = this.srcCount; f[o + 45] = G.beatMix;
+    f[o + 46] = p.lever; f[o + 47] = p.emit ? 1 : 0; f[o + 48] = p.r0; f[o + 49] = p.cut;
   }
 
   /** Record the grid build for the tick whose uniforms are in slot k. */
@@ -313,6 +368,7 @@ export class Cells {
   }
 
   compute(encoder, frame) {
+    if (this.gridSize() !== this.grid.cs) this.sizeGrid();   // params.cut or range changed
     // after a reset, the warm-up ticks run first (all in this frame, at the current time)
     const warm = Math.min(this.warm, SLOTS - frame.ticks);
     this.warm -= warm;
@@ -333,6 +389,28 @@ export class Cells {
       this.encodeStep(encoder, t);
     }
     this.maybeCensus(encoder, ticks - 1, frame);
+    this.encodeField(encoder);
+  }
+
+  /** Scatter the cells' field into its texture (from the beats of the last tick's grid), if it is drawn. */
+  encodeField(encoder) {
+    const L = this.landscape;
+    if (!this.fieldTex || !L) return;
+    const on = this.emitting() && L.params.cellField;
+    if (!on && this.fieldBlank) return;
+    this.fieldBlank = !on;
+    const v = this.view, a = new Float32Array([v.cssW, v.cssH, this.params.cut * this.R, 0]);
+    this.device.queue.writeBuffer(this.fieldU, 0, a);
+    const pass = encoder.beginRenderPass({
+      label: 'cell field',
+      colorAttachments: [{ view: this.fieldView, clearValue: { r: 0, g: 0, b: 0, a: 0 }, loadOp: 'clear', storeOp: 'store' }],
+    });
+    if (on) {
+      pass.setPipeline(this.fieldPipe);
+      pass.setBindGroup(0, this.fieldBG);
+      pass.draw(6, this.count);
+    }
+    pass.end();
   }
 
   /** Upload the sources as the cells feel them (once per frame; none while the rule is off). */

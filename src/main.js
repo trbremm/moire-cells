@@ -97,6 +97,7 @@ async function boot() {
     landscape = await Landscape.create(gpu.device, gpu.format, medium);
     cells = await Cells.create(gpu.device, gpu.format, medium, Number(params.get('cells')) || DEFAULT_CELLS, SEED);
     cells.landscape = landscape;
+    landscape.cells = cells;
     if (params.has('founders')) cells.genome.params.founders = Number(params.get('founders')) || 0;
     if (flag('view')) cells.look.view = 1;
     if (flag('check')) cells.enableCheck();
@@ -227,7 +228,7 @@ let tapMode = 0;
 
 function hintLine() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
+    'C: clear · L: landscape · K: cell field · O: emit · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
 }
 
 function tap(x, y) {
@@ -326,6 +327,12 @@ function setupInput() {
     } else if (k === 'p') {
       cells.params.contact = !cells.params.contact;
       flash(`contact push ${cells.params.contact ? 'on' : 'off'}`);
+    } else if (k === 'o') {
+      cells.params.emit = !cells.params.emit;
+      flash(`cells emit ${cells.params.emit ? 'on: every cell adds its own beat to the field' : 'off'}`);
+    } else if (k === 'k') {
+      landscape.params.cellField = !landscape.params.cellField;
+      flash(`cells' field ${landscape.params.cellField ? 'drawn (pale dots)' : 'not drawn'}`);
     } else if (k === 'l') {
       landscape.params.on = !landscape.params.on;
       flash(`landscape ${landscape.params.on ? 'on' : 'off'}`);

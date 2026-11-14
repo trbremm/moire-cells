@@ -8,6 +8,8 @@
 //              summed per kind (nutrient, threat), times a gain
 //   coverage = clamp((strength - threshold) / (1 - threshold), 0, 1);   dot radius = maxDot * pitch/2 * sqrt(coverage)
 //   overlap  = one dot per screen cell: the stronger kind takes the cell, with its own colour and size
+// The cells' field (step 4) is a third kind: the cells scatter their beats into a texture (cell_field.wgsl),
+// read here at each dot centre, positive part only, times cellGain, in its own pale ink.
 // Edges are anti-aliased over about one device pixel (distance measured in device px), nothing wider.
 // The output is premultiplied and blended "over", so the flat colours stay flat on top of the soft background.
 //
@@ -31,11 +33,18 @@ struct DrawParams {
   ringW: f32,       // ring stroke width (CSS px)
   nut: vec4f,       // nutrient ink: rgb, and the dots' level (dots are ink * level)
   thr: vec4f,       // threat ink
+  cell: vec4f,      // the cells' field ink
+  cellGain: f32,    // the cells' field strength gain (0 = not drawn)
+  fieldScale: f32,  // texels per CSS px of the cells' field texture
+  _p0: f32,
+  _p1: f32,
 };
 
 @group(0) @binding(0) var<uniform> medium: Medium;
 @group(0) @binding(1) var<uniform> D: DrawParams;
 @group(0) @binding(2) var<storage, read> beats: array<Beat>;
+@group(0) @binding(3) var cellTex: texture_2d<f32>;
+@group(0) @binding(4) var cellSamp: sampler;
 
 struct VSOut {
   @builtin(position) pos: vec4f,
@@ -86,7 +95,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   let c = rot(screen_point(rot(x - o, -D.angle)), D.angle) + o;   // this screen cell's centre, in the world
 
   // ---- halftone dots ----
-  if (D.gain > 0.0) {
+  if (D.gain > 0.0 || D.cellGain > 0.0) {
     var nut = 0.0;
     var thr = 0.0;
     for (var i = 0u; i < D.count; i++) {
@@ -94,11 +103,18 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       let v = 0.2 * b.amp * beat_envelope(b, c) * (D.base + (1.0 - D.base) * max(0.0, beat_sum(b, medium, c) / 3.0));
       if (b.kind == KIND_THR) { thr += v; } else { nut += v; }
     }
-    let s = max(nut, thr) * D.gain;
+    nut *= D.gain;
+    thr *= D.gain;
+    var cel = 0.0;
+    if (D.cellGain > 0.0) {
+      let uv = c * D.fieldScale / vec2f(textureDimensions(cellTex));
+      cel = max(0.0, textureSampleLevel(cellTex, cellSamp, uv, 0.0).r) * D.cellGain;
+    }
+    let s = max(max(nut, thr), cel);
     let cov = clamp((s - D.thresh) / max(1.0 - D.thresh, 1e-3), 0.0, 1.0);
     if (cov > 0.0) {
       let r = D.maxDot * 0.5 * D.pitch * sqrt(cov);
-      let ink = select(D.nut, D.thr, thr > nut);
+      let ink = select(select(D.nut, D.thr, thr > nut), D.cell, cel > max(nut, thr));
       res = vec4f(ink.rgb * ink.a, 1.0) * disc(length(x - c), r);
     }
   }

@@ -35,7 +35,8 @@ import { loadFieldShader, KIND } from './field.js';
 import { Genome, BIO_BYTES } from './genome.js';
 import { Heat, HEAT_COMMON_URL } from './heat.js';
 import { Eat } from './eat.js';
-import { INKS } from './matter.js';
+import { INKS, ENGINES } from './matter.js';
+import { BANDS } from './light.js';
 
 export const CELL_URL = 'src/shaders/cell_common.wgsl';
 
@@ -213,7 +214,7 @@ export class Cells {
     this.fieldScale = 0.5;     // texels per CSS px of the cells' field texture
     this.fieldTex = null;
     this.look = {
-      view: 0,        // 0 = colour by fate, 1 = colour by lineage (the key's hue)
+      view: 0,        // 0 = colour by fate, 1 = colour by lineage (the key's hue), 2 = by strategy (step C6; key V cycles)
       fill: 0.09,     // disc fill of stem cells, as a fraction of the cell colour over black
       fillC: 0.34,    // disc fill of committed cells (flat colour, so tissues read as areas)
       fillA: 0.88,    // disc opacity (1 = background fully hidden under a cell)
@@ -234,6 +235,19 @@ export class Cells {
       coreInk: INKS.fuel.light.map((v) => v * 0.92),   // ... its ink: the fuel's green (energy)
       starve: 0.12,   // ... a cell with less than this share of its battery is drawn dimmer, the emptier the dimmer
       starveDim: 0.4, // ... by up to this much (0 = not at all)
+      // step C6: the engines drawn as parts (small flat marks around the core), and the strategy view's inks
+      parts: true,    // draw them (while the engines run)
+      partSize: 0.24, // a part's largest half-size, as a share of the cell's radius
+      partDist: 0.58, // the parts' distance from the centre, as a share of the radius
+      partDots: 0.45, // the lattice dots' brightness while parts are drawn, as a share of `dots` (they give the parts room)
+      partRate: 2,    // the slot rate at which a part reaches its largest size (area in proportion to the rate below it)
+      coreParts: 0.36, // the battery core's radius at full charge while parts are drawn (it gives them room)
+      burnInk: INKS.fuel.heavy,           // a burn engine: the fuel's deeper green (the battery's core is the pale one)
+      sedInk: [150, 138, 120],            // a form (sediment) engine: dim warm grey
+      swapInk: [232, 128, 112],           // a swap engine: faded red (as the reactive free atoms)
+      otherInk: [118, 112, 106],          // strategy view: neither harvest nor burn
+      strategyFill: 0.5,                  // strategy view: every body's flat fill, as a share of its strategy's ink
+      // (a harvest engine is drawn in its pigment's light band colour: BANDS[b].ink in src/light.js)
     };
   }
 
@@ -335,15 +349,19 @@ export class Cells {
     this.eat = await Eat.create(d, this);
     this.heat.eat = this.eat;
 
-    this.drawU = d.createBuffer({ label: 'cell draw params', size: 144, usage: U.UNIFORM | U.COPY_DST });
-    this.drawData = new Float32Array(36);
-    this.drawBG = d.createBindGroup({
+    this.drawU = d.createBuffer({ label: 'cell draw params', size: 256, usage: U.UNIFORM | U.COPY_DST });
+    this.drawAB = new ArrayBuffer(256);
+    this.drawData = new Float32Array(this.drawAB);
+    this.drawU32 = new Uint32Array(this.drawAB);
+    // one per genome copy (step C6: the parts read the engines; bioBuf[bioCur] is the current one)
+    this.drawBGs = this.bioBuf.map((bio) => d.createBindGroup({
       layout: this.drawPipe.getBindGroupLayout(0),
       entries: [
         { binding: 0, resource: { buffer: this.drawU } },
         { binding: 1, resource: { buffer: this.cellBuf } },
+        { binding: 2, resource: { buffer: bio } },
       ],
-    });
+    }));
   }
 
   /** The cells' radius: the reference's R, or smaller if `count` cells would not fit in the dish. */
@@ -1023,9 +1041,17 @@ export class Cells {
     const eating = this.eat && this.eat.params.on;
     a[28] = eating ? L.core : 0; a[29] = eating ? L.starveDim : 0; a[30] = L.starve;
     for (let k = 0; k < 3; k++) a[32 + k] = L.coreInk[k] / 255;
-    this.device.queue.writeBuffer(this.drawU, 0, a);
+    // step C6: the parts (while the engines run) and the strategy view's inks
+    const inks = [BANDS[1].ink, BANDS[2].ink, BANDS[3].ink, L.burnInk, L.sedInk, L.swapInk, L.otherInk];
+    inks.forEach((ink, j) => { for (let k = 0; k < 3; k++) a[36 + 4 * j + k] = ink[k] / 255; });
+    a[39] = L.parts && this.eat && this.eat.rule('engines') ? 1 : 0; a[43] = L.partSize; a[47] = L.partDist;
+    const kinds = (lo) => ENGINES.slice(lo, lo + 16).reduce((m, e, k) => m | (e.kind << (2 * k)), 0) >>> 0;
+    this.drawU32[51] = kinds(0); this.drawU32[35] = kinds(16);   // the engines' kinds, 2 bits each
+    a[55] = Math.max(1e-3, L.partRate); a[59] = L.coreParts; a[63] = L.strategyFill;
+    if (a[39] > 0) a[8] = L.dots * L.partDots;
+    this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
-    pass.setBindGroup(0, this.drawBG);
+    pass.setBindGroup(0, this.drawBGs[this.bioCur]);
     pass.draw(6, this.count);
   }
 }

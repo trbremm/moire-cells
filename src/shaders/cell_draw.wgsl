@@ -7,6 +7,12 @@
 // covers the edge of an earlier one and packed cells read as distinct shapes.
 // The disc, outline and dots are drawn in the cell's unstretched frame and mapped through its stretch F,
 // so a stretched cell and its lattice stretch together (as in the reference).
+// Step C6: the cell's engines as PARTS: up to three small flat marks around the battery's core, at fixed places (up, lower
+// right, lower left: the genome's slots 1, 2, 3), their size by the slot's rate, their shape and colour by what the engine
+// does: harvest (an uphill engine with a pigment) = a disc in its pigment's light band colour, storer (an uphill engine
+// without one, paid by the battery) = a ring in the battery's pale green, burn = a diamond in the fuel's green, swap = a
+// triangle in faded red, form (sediment) = a square in dim warm grey. A clear margin keeps the lattice dots off them. View 2
+// (strategy) colours the body by the strategy instead of the fate.
 
 struct Draw {
   view: vec2f,      // canvas size in CSS px
@@ -34,11 +40,20 @@ struct Draw {
   dim: f32,         // ... how much darker a starving cell is drawn (0 = not at all)
   starve: f32,      // ... battery share below which a cell counts as starving (it dims toward this share and below)
   _p0: f32,
-  coreInk: vec4f,   // ... the core's ink (rgb): the fuel's green, energy
+  coreInk: vec4f,   // ... the core's ink (rgb): the fuel's green, energy; w: step C6, engine kinds 16.. (see part_kind)
+  // ---- step C6: the engines as parts, and the strategy view ----
+  ink1: vec4f,      // visible 1's ink (rgb); w: 1 = draw the parts
+  ink2: vec4f,      // visible 2's ink; w: a part's largest half-size, as a share of the cell's radius
+  ink3: vec4f,      // hard light's ink; w: the parts' distance from the centre, as a share of the radius
+  inkBurn: vec4f,   // a burn engine (the fuel's green); w: the engines' kinds, 2 bits each (u32 bits)
+  inkSed: vec4f,    // a form (sediment) engine; w: the rate at which a part reaches its largest size
+  inkSwap: vec4f,   // a swap engine; w: the battery's core radius at full charge while parts are drawn (share of r)
+  inkOther: vec4f,  // strategy view: the body of a cell that neither harvests nor burns; w: every body's fill there
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
 @group(0) @binding(1) var<storage, read> cells: array<Cell>;
+@group(0) @binding(2) var<storage, read> bio: array<Bio>;    // step C6: the genomes (engines)
 
 struct VSOut {
   @builtin(position) pos: vec4f,
@@ -88,6 +103,18 @@ fn cover(edge: f32, d: f32, aa: f32) -> f32 {
   return clamp((edge - d) / aa + 0.5, 0.0, 1.0);
 }
 
+// step C6: an engine's kind (0 harvest, 1 burn, 2 swap, 3 form) from the table packed 2 bits each in D.inkBurn.w (engines
+// 0..15) and D.coreInk.w (16..)
+fn part_kind(e: u32) -> u32 {
+  let w = select(bitcast<u32>(D.coreInk.w), bitcast<u32>(D.inkBurn.w), e < 16u);
+  return (w >> (2u * (e & 15u))) & 3u;
+}
+fn band_ink(b: u32) -> vec3f {
+  if (b == 1u) { return D.ink1.rgb; }
+  if (b == 2u) { return D.ink2.rgb; }
+  return D.ink3.rgb;
+}
+
 // distance from p to the nearest point of a hex lattice with spacing s, turned by angle a, with a point at 0
 fn hex_dist(p: vec2f, s: f32, a: f32) -> f32 {
   let a1 = s * vec2f(cos(a), sin(a));
@@ -119,13 +146,32 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   let aad = max(fwidth(dd), 0.35 / D.dpr);       // derivatives before any discard
   let disc = cover(c.r, d, aa);
   if (disc <= 0.0) { discard; }
-  let col = select(cell_colour(c.kind), key_colour(c), D.mode > 0.5);
+  var col = select(cell_colour(c.kind), key_colour(c), D.mode > 0.5);
+  // step C6: the genome's engines (for the parts and the strategy view)
+  let g = bio[in.id];
+  var harvestBand = 0u;
+  var burns = false;
+  for (var k = 0u; k < 3u; k++) {
+    if (g.rate[k] <= 0.0) { continue; }
+    let kind = part_kind(eng_index(g.eng[k]));
+    if (kind == 0u && harvestBand == 0u) { harvestBand = eng_band(g.eng[k]); }   // (0: a storer, not a harvester)
+    if (kind == 1u) { burns = true; }
+  }
+  let strategyView = D.mode > 1.5;
+  if (strategyView) {
+    // harvest: the pigment's band colour; burn: the fuel's green; both: split down the middle, band left, green right
+    // (a crisp edge); neither: dim grey
+    if (harvestBand > 0u && burns) { col = mix(D.inkBurn.rgb, band_ink(harvestBand), cover(0.0, in.local.x, aa)); }
+    else if (harvestBand > 0u) { col = band_ink(harvestBand); }
+    else if (burns) { col = D.inkBurn.rgb; }
+    else { col = D.inkOther.rgb; }
+  }
 
   let lw = min(D.lineW, 0.22 * c.r);              // thinner outline on small cells, so they do not turn solid
   let dot = select(0.0, cover(D.dotR * s, dd, aad) * cover(c.r - lw - 0.12 * D.R, d, aa), D.dots > 0.0);
   let ring = 1.0 - cover(c.r - lw, d, aa);        // clean outline at the rim
   // committed cells get a flat fill in their colour, so tissues read as areas; stem cells stay dark inside
-  let fill = select(D.fill, D.fillC, c.kind != KIND_STEM);
+  let fill = select(select(D.fill, D.fillC, c.kind != KIND_STEM), D.inkOther.w, strategyView);
   var fillRgb = col * fill;   // (step 8 may tint it below)
   // step 6, rule 2: a converted cell's outline is drawn in field B's ink, and a converted stem cell is filled with
   // it (flat, at the committed cells' level), so converted areas read as areas
@@ -137,11 +183,42 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   // step C5: the battery as a flat core at the centre, its AREA in proportion to the charge (full: a big core; empty:
   // none), in the fuel's green (energy); drawn over the lattice dots, crisp
   var coreA = 0.0;
+  let partsOn = D.ink1.w > 0.0;
   if (D.core > 0.0 && c.bat > 0.0) {
-    let rc = D.core * c.r * sqrt(clamp(c.bat, 0.0, 1.0));
+    let rc = select(D.core, D.inkSwap.w, partsOn) * c.r * sqrt(clamp(c.bat, 0.0, 1.0));
     if (rc * D.dpr > 0.6) {
       coreA = cover(rc, d, aa);
       rgb = mix(rgb, D.coreInk.rgb, coreA);
+    }
+  }
+  // step C6: the engines as parts around the core: flat marks with crisp edges, each in a clear margin
+  var partA = 0.0;
+  if (partsOn) {
+    let hmax = D.ink2.w * c.r;
+    for (var k = 0u; k < 3u; k++) {
+      let rk = g.rate[k];
+      if (rk <= 0.0) { continue; }
+      let e = eng_index(g.eng[k]);
+      let kind = part_kind(e);
+      let h = hmax * sqrt(clamp(rk / max(D.inkSed.w, 1e-3), 0.12, 1.0));
+      if (h * D.dpr < 0.6) { continue; }
+      let th = -1.5707963 + f32(k) * 2.0943951;               // up, lower right, lower left (screen y down)
+      let ax = vec2f(cos(th), sin(th));
+      let p = in.local - ax * (D.ink3.w * c.r);
+      let q = vec2f(p.x * ax.x + p.y * ax.y, p.y * ax.x - p.x * ax.y);   // along the outward axis, across
+      var dd2 = length(q) - h;                                  // harvest: a disc in its band's colour
+      var ink = band_ink(eng_band(g.eng[k]));
+      if (kind == 0u && eng_band(g.eng[k]) == 0u) { dd2 = abs(length(q) - 0.7 * h) - 0.3 * h; ink = D.coreInk.rgb; }   // storer: a ring, battery green
+      if (kind == 1u) { dd2 = (abs(q.x) + abs(q.y)) * 0.7071068 - 0.86 * h; ink = D.inkBurn.rgb; }        // burn: a diamond
+      else if (kind == 2u) {                                                                                // swap: a triangle
+        dd2 = max(abs(q.y) * 0.8660254 + q.x * 0.5, -q.x) - 0.62 * h;
+        ink = D.inkSwap.rgb;
+      } else if (kind == 3u) { dd2 = max(abs(q.x), abs(q.y)) - 0.84 * h; ink = D.inkSed.rgb; }           // form: a square
+      let pa = cover(0.0, dd2, aa);
+      let margin = cover(0.14 * c.r, dd2, aa);
+      rgb = mix(rgb, fillRgb, margin * dot);
+      rgb = mix(rgb, ink, pa);
+      partA = max(partA, pa);
     }
   }
   let lineCol = select(col * D.line, D.blue.rgb, conv);
@@ -194,7 +271,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   }
   // step C5: a starving cell (battery below D.starve) is drawn dimmer, down to 1 - D.dim at an empty battery
   if (D.dim > 0.0) { rgb *= 1.0 - D.dim * (1.0 - smoothstep(0.0, max(D.starve, 1e-3), c.bat)); }
-  let a = disc * mix(D.fillA, 1.0, max(max(max(max(max(ring, dot * (1.0 - clearA)), mark), bar), hnd), coreA));
+  let a = disc * mix(D.fillA, 1.0, max(max(max(max(max(max(ring, dot * (1.0 - clearA)), mark), bar), hnd), coreA), partA));
   // rgb is the colour as seen; blend premultiplied (one, one-minus-src-alpha)
   return vec4f(rgb * a, a);
 }

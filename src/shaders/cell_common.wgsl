@@ -72,8 +72,26 @@ struct Sim {
   thrKill: f32,     // death rate x (1 + thrKill x the threat a cell feels)
   srcCount: u32,    // sources in the Sources uniform (0 = nutrient and threat rule off)
   beatMix: f32,     // 1 = cells feel the sources' beat (the halftone rosettes), 0 = only the smooth envelope
-  pad8: f32,
-  pad9: f32,
+  // ---- the loop (step 4): cells emit into the field and feel it on their membrane ----
+  lever: f32,       // how different the cells' lattices are from the medium's (1 = the keys as they are;
+                    // smaller = closer to the medium, so longer and slower beats)
+  emit: f32,        // cells' emission strength (0 = cells do not emit)
+  r0: f32,          // a cell's envelope range r0, in units of R (reference 2.2)
+  cut: f32,         // how far a cell feels another's field, in units of R (reference 3.6)
+  pad10: f32,
+  pad11: f32,
+  pad12: f32,
+  pad13: f32,
+  pad14: f32,
+  pad15: f32,
+  pad16: f32,
+  pad17: f32,
+  pad18: f32,
+  pad19: f32,
+  pad20: f32,
+  pad21: f32,
+  pad22: f32,
+  pad23: f32,
 };
 
 // fate-typical body: size and motility factors per fate (stem, epithelium, muscle, neuron, cartilage)
@@ -245,18 +263,63 @@ fn cell_F(c: Cell) -> vec3f {
   return vec3f(ch + sh * c.e1, sh * c.e2, ch - sh * c.e1);
 }
 
-// the cell as a field emitter (for step 4): strength min(1, r/R), range r0^2 = 4.84 R^2 as in the reference
-fn cell_emitter(c: Cell, R: f32) -> Emitter {
-  let F = cell_F(c);
+// ---------- the cell as an emitter (step 4) ----------
+// The lattice a cell emits with: its key (angle, log period factor) plus its fate's period, with the
+// difference from the medium's lattice scaled by the lever (Sim.lever). Returns (angle, log period factor).
+fn cell_lattice(c: Cell, lever: f32) -> vec2f {
+  let base = P3 * round(c.la / P3);            // the nearest of the medium's hex directions (0 or 60 degrees)
+  return vec2f(base + lever * (c.la - base), lever * (c.aux + log(kind_period(c.kind))));
+}
+
+// A cell's beat, computed once per tick (cell_grid.wgsl, scatter) for everyone who senses or draws it (80 bytes;
+// keep in step with CELL_BEAT_BYTES in src/cells.js). The phases are taken at the cell's own centre, so the
+// field near it is  amp * envelope * (1/3) sum_m cos(q_m . (x - pos) + ph_m)  with small cosine arguments.
+struct CellBeat {
+  q01: vec4f,       // beat wavevectors q0 (xy) and q1 (zw)
+  q2p: vec4f,       // q2 (xy), the cell's centre (zw)
+  k01: vec4f,       // the cell's own (strained) lattice wavevectors k0 (xy) and k1 (zw), for receptor tuning
+  k2a: vec4f,       // k2 (xy), strength (z; 0 = not emitting), envelope range squared (w)
+  ph: vec4f,        // phases at the cell's centre (xyz), w spare
+};
+
+// The cell as a field emitter: strength min(1, r/R) (times Sim.emit), range r0 = Sim.r0 x R. Its lattice is
+// strained by the cell's stretch (k = F^-1 . k0) and scaled by its period factor p; emitter_k does
+// k = adj(F) . k0 / kind_period, so p goes in as F / p (with kind = stem, period 1).
+fn cell_beat(c: Cell, S: Sim, M: Medium) -> CellBeat {
+  let lat = cell_lattice(c, S.lever);
+  let F = cell_F(c) * exp(-lat.y);
   var e: Emitter;
   e.pos = c.pos;
-  e.la = c.la;
-  e.amp = min(1.0, c.r / R);
-  e.r0sq = 4.84 * R * R;
+  e.la = lat.x;
+  e.amp = S.emit * min(1.0, c.r / S.R);
+  e.r0sq = (S.r0 * S.R) * (S.r0 * S.R);
   e.fa = F.x; e.fb = F.y; e.fd = F.z;
-  e.kind = c.kind;
+  e.kind = KIND_STEM;
   e._pad = 0u;
-  return e;
+  let b = make_beat(e, M);
+  let o = c.pos - M.centre;
+  var cb: CellBeat;
+  cb.q01 = vec4f(b.q0, b.q1);
+  cb.q2p = vec4f(b.q2, c.pos);
+  cb.k01 = vec4f(emitter_k(e, M, 0), emitter_k(e, M, 1));
+  cb.k2a = vec4f(emitter_k(e, M, 2), e.amp, e.r0sq);
+  let ph = vec3f(b.ph0 + dot(b.q0, o), b.ph1 + dot(b.q1, o), b.ph2 + dot(b.q2, o));
+  cb.ph = vec4f(ph - TAU * floor(ph / TAU), 0.0);
+  return cb;
+}
+
+// the field's taper near the cut-off: 1 out to 0.7 x cutR, then smoothly down to 0 at cutR, so a neighbour
+// crossing the cut-off fades in and out instead of popping (the reference cut it off hard)
+fn cut_taper(d2: f32, cutR: f32) -> f32 {
+  return 1.0 - smoothstep(0.7 * cutR, cutR, sqrt(d2));
+}
+
+// a cell's field at x, before receptor tuning
+fn cell_field(b: CellBeat, x: vec2f, cutR: f32) -> f32 {
+  let d = x - b.q2p.zw;
+  let d2 = dot(d, d);
+  let s = cos(dot(b.q01.xy, d) + b.ph.x) + cos(dot(b.q01.zw, d) + b.ph.y) + cos(dot(b.q2p.xy, d) + b.ph.z);
+  return b.k2a.z * s / (3.0 * (1.0 + d2 / b.k2a.w)) * cut_taper(d2, cutR);
 }
 
 // grid cell (x, y) of a position, clamped into the grid

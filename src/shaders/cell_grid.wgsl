@@ -6,8 +6,9 @@
 //   scan_local  exclusive prefix sum of counts within blocks of 512 grid cells; block totals to blockSums
 //   scan_top    one workgroup: exclusive prefix sum of blockSums, in chunks of 512 with a running carry
 //   scan_add    adds each block's offset: starts[g] = first slot of grid cell g in the sorted list
-//   scatter     one invocation per cell: copies it to sorted[starts[g] + rank], and its index to sortIdx
-// After this, the cells of grid cell g are sorted[starts[g] .. starts[g] + counts[g]).
+//   scatter     one invocation per cell: copies it to sorted[starts[g] + rank], and its index to sortIdx;
+//               also works out the cell's beat against the medium (cell_beat) into beats[the same slot]
+// After this, the cells of grid cell g are sorted[starts[g] .. starts[g] + counts[g]), with their beats.
 // Only core WebGPU: storage-buffer atomics and workgroup memory (256 invocations, 1 KiB of workgroup memory).
 
 @group(0) @binding(0) var<uniform> S: Sim;
@@ -18,6 +19,8 @@
 @group(0) @binding(5) var<storage, read_write> cellGrid: array<vec2u>;   // per cell: grid cell, rank in it
 @group(0) @binding(6) var<storage, read_write> sorted: array<Cell>;
 @group(0) @binding(7) var<storage, read_write> sortIdx: array<u32>;
+@group(0) @binding(8) var<uniform> med: Medium;
+@group(0) @binding(9) var<storage, read_write> beats: array<CellBeat>;
 
 const WG: u32 = 256u;
 const BLOCK: u32 = 512u;   // two elements per invocation
@@ -104,6 +107,8 @@ fn scatter(@builtin(global_invocation_id) id: vec3u) {
   if (i >= S.count) { return; }
   let gr = cellGrid[i];
   let dst = starts[gr.x] + gr.y;
-  sorted[dst] = cells[i];
+  let c = cells[i];
+  sorted[dst] = c;
   sortIdx[dst] = i;
+  beats[dst] = cell_beat(c, S, med);
 }

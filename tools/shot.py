@@ -16,6 +16,8 @@ Usage:
     python tools/shot.py --key f                           # press F (toggles the overlay)
     python tools/shot.py --click 640,400 --drag 200,600,900,500
     python tools/shot.py --eval "window.someTweak = 1"      # any JS before waiting
+    python tools/shot.py --query speed=8 --at 5,30,90      # a series at these SIMULATION times (s):
+                                                           # shots/shot_t5.png, shots/shot_t30.png, ...
     python tools/shot.py --page reference/neon_organoid_cpu.html --query ""
     python tools/shot.py --query nogpu=1                   # see the no-WebGPU message
 
@@ -248,8 +250,12 @@ class Chrome:
                                str(r["exceptionDetails"].get("exception", {}).get("description", "")))
         return r.get("result", {}).get("value")
 
-    def screenshot(self):
-        return base64.b64decode(self.rpc.call("Page.captureScreenshot", {"format": "png"}, timeout=60)["data"])
+    def screenshot(self, clip=None):
+        p = {"format": "png"}
+        if clip:
+            x, y, w, h, sc = clip
+            p["clip"] = {"x": x, "y": y, "width": w, "height": h, "scale": sc}
+        return base64.b64decode(self.rpc.call("Page.captureScreenshot", p, timeout=60)["data"])
 
     def logs(self):
         out = []
@@ -316,8 +322,12 @@ class Firefox:
             raise RuntimeError(r.get("exceptionDetails", {}).get("text", "exception"))
         return r.get("result", {}).get("value")
 
-    def screenshot(self):
-        r = self.rpc.call("browsingContext.captureScreenshot", {"context": self.ctx}, timeout=60)
+    def screenshot(self, clip=None):
+        p = {"context": self.ctx}
+        if clip:
+            x, y, w, h, _ = clip
+            p["clip"] = {"type": "box", "x": x, "y": y, "width": w, "height": h}
+        r = self.rpc.call("browsingContext.captureScreenshot", p, timeout=60)
         return base64.b64decode(r["data"])
 
     def logs(self):
@@ -376,6 +386,10 @@ def main():
     ap.add_argument("--headed", action="store_true",
                     help="Firefox in a real (visible) window; implies --browser firefox (headless Firefox has no WebGPU)")
     ap.add_argument("--quiet", action="store_true", help="do not print console lines")
+    ap.add_argument("--clip", default="", help="x,y,w,h[,scale]: shoot only this part of the page (CSS px), "
+                                               "enlarged by scale (Chrome/Edge only)")
+    ap.add_argument("--at", default="", help="comma-separated simulation times (s, from moire.time()): one shot "
+                                             "each, named <out>_t<time>.png; replaces --wait")
     args = ap.parse_args()
 
     if args.headed:
@@ -426,11 +440,34 @@ def main():
         for js in args.eval:
             driver.eval(js)
 
-        time.sleep(args.wait / 1000)
-        state = json.loads(driver.eval(STATE_JS) or "{}")
-        png = driver.screenshot()
-        with open(out, "wb") as f:
-            f.write(png)
+        clip = [float(v) for v in args.clip.split(",")] if args.clip else None
+        if clip and len(clip) == 4:
+            clip.append(1.0)
+
+        def shoot(path):
+            st = json.loads(driver.eval(STATE_JS) or "{}")
+            with open(path, "wb") as f:
+                f.write(driver.screenshot(clip))
+            return st
+
+        if args.at:
+            stem, ext = os.path.splitext(out)
+            for t in (float(v) for v in args.at.split(",")):
+                t_start = time.time()
+                while True:
+                    now = float(driver.eval("String(window.moire && window.moire.time ? window.moire.time() : 0)") or 0)
+                    if now >= t or time.time() - t_start > t + 60:
+                        break
+                    time.sleep(0.05)
+                path = f"{stem}_t{t:g}{ext}"
+                state = shoot(path)
+                ov = state.get("overlay", "")
+                print(f"t={now:.1f} s -> {path}")
+                for line in ov.splitlines():
+                    print("  " + line)
+        else:
+            time.sleep(args.wait / 1000)
+            state = shoot(out)
 
         print(f"browser {args.browser}  url {url}")
         print(f"stage   {state.get('stage', '')}")

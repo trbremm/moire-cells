@@ -14,6 +14,7 @@ Usage:
     python tools/shot.py --headed                          # Firefox in a real window (shows for a few seconds)
     python tools/shot.py --wait 4000 --out shots/later.png # let it run 4 s after it started
     python tools/shot.py --key f                           # press F (toggles the overlay)
+    python tools/shot.py --key shift+h                     # Shift + a letter (the Part C keys)
     python tools/shot.py --click 640,400 --drag 200,600,900,500
     python tools/shot.py --eval "window.someTweak = 1"      # any JS before waiting
     python tools/shot.py --query speed=8 --at 5,30,90      # a series at these SIMULATION times (s):
@@ -82,7 +83,9 @@ FIREFOX_PREFS = {
 STATE_JS = """(() => {
   const m = document.getElementById('msg');
   const o = document.getElementById('overlay');
+  const en = document.getElementById('entropy');
   return JSON.stringify({
+    entropy: en && !en.hidden ? en.innerText : '',
     ready: document.readyState,
     stage: (document.body && document.body.dataset.stage) || '',
     msg: m && !m.hidden ? m.innerText : '',
@@ -352,8 +355,12 @@ class Firefox:
 
 # ---------------------------------------------------------------- synthetic input (page-side events)
 def key_js(k):
-    return (f"window.dispatchEvent(new KeyboardEvent('keydown', {{key: {json.dumps(k)}, bubbles: true}}));"
-            f"window.dispatchEvent(new KeyboardEvent('keyup', {{key: {json.dumps(k)}, bubbles: true}}));")
+    shift = k.lower().startswith("shift+") and len(k) > 6
+    if shift:
+        k = k[6:].upper()
+    opts = f"{{key: {json.dumps(k)}, shiftKey: {'true' if shift else 'false'}, bubbles: true}}"
+    return (f"window.dispatchEvent(new KeyboardEvent('keydown', {opts}));"
+            f"window.dispatchEvent(new KeyboardEvent('keyup', {opts}));")
 
 
 def pointer_js(points):
@@ -465,6 +472,8 @@ def main():
                 state = shoot(path)
                 ov = state.get("overlay", "")
                 print(f"t={now:.1f} s -> {path}")
+                for line in state.get("entropy", "").splitlines():
+                    print("  | " + line)
                 for line in ov.splitlines():
                     print("  " + line)
         else:
@@ -473,6 +482,8 @@ def main():
 
         print(f"browser {args.browser}  url {url}")
         print(f"stage   {state.get('stage', '')}")
+        if state.get("entropy"):
+            print("entropy panel:\n  " + state["entropy"].replace("\n", "\n  "))
         if state.get("overlay"):
             print("overlay:\n  " + state["overlay"].replace("\n", "\n  "))
         if state.get("msg"):

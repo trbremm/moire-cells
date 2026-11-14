@@ -412,6 +412,12 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     bio.body.w -= TAU * floor(bio.body.w / TAU);
     motor += S.crawl * vec2f(cos(bio.body.w), sin(bio.body.w));
   }
+  // step C5, smell: the fuel gradient the membrane's 6 corners smelled (the eat pass's plan, last tick; energy per R^2
+  // per R) steers the motor up toward the fuel (tanh: gentle, saturating)
+  if ((FL.eat & EAT_SMELL) != 0u && FL.smell > 0.0) {
+    let gm = length(c.smell);
+    if (gm > 1e-9) { motor += FL.smell * tanh(gm / max(FL.smellHalf, 1e-6)) * c.smell / gm; }
+  }
   // step C5: the battery gates the motor (full speed from FL.crawlFull of the battery, none when it is empty) and pays
   // for it: crawlCost x the work of crawling at that speed against the drag (its motion energy x (1 - damping^2) per
   // tick), paid by the eat pass after this step (Cell.pay)

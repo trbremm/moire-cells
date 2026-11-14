@@ -251,7 +251,29 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     }
     flux[fo + k] = n;
   }
+  // smell: the fuels (each weighted by its energy) at the membrane's 6 corners; for a field v = v0 + G . x sampled at a
+  // regular hexagon, sum v x = G sum |x|^2 / 2, so G = 2 sum v x / sum |x|^2 (here in energy per R^2 per R)
   var g = vec2f(0.0);
+  if (EP.smell != 0u && cur != 0u) {
+    let mb = membrane(c);
+    var gr = vec2f(0.0);
+    var rr = 0.0;
+    for (var a = 0; a < 6; a++) {
+      let cp = mb.mid[a] - 0.5 * mb.edge[a];
+      let px = heat_xy(HP, c.pos + cp);
+      let pi = u32(px.y) * HP.hw + u32(px.x);
+      var v = 0.0;
+      for (var f = FUEL_CH; f < FUEL_CH + 4u; f++) {
+        if ((EP.mask & (1u << f)) != 0u) { v += f32(ep_i(EP.e16, f)) * f32(mg[cur - lw + f * EP.n + pi]); }
+      }
+      gr += v * cp;
+      rr += dot(cp, cp);
+    }
+    // (e16 / 16 = energy per count; counts in a pixel / (ATOM_SCALE x its area in R^2) = units per R^2; x R: per R
+    // instead of per CSS px)
+    let conc = EP.R * EP.R / (ATOM_SCALE * HP.px * HP.px);
+    g = 2.0 * gr / max(rr, 1e-6) * conc / 16.0 * EP.R;
+  }
   cells[i].smell = g;
 }
 

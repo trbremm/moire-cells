@@ -516,7 +516,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       let pc = sorted[parent];
       let pi = beats[parent].idx;
       var nb = bioPrev[pi];
-      if ((S.rules & RULE_MUT) != 0u) { nb = mutate(nb, bs, S.mutSize, S.mutJump); }
+      if ((S.rules & RULE_MUT) != 0u) { nb = mutate(nb, bs, S.mutSize, S.mutJump, S.engJump); }
       let inherit = (S.rules & RULE_INHERIT) != 0u;
       if (!inherit) { nb.acc = vec4f(0.0); }
       nb.env = vec4f(0.0);                      // a newborn has felt nothing yet and is not converted

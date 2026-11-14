@@ -502,7 +502,8 @@ export class Cells {
     f[o + 32] = G.adhSigma; f[o + 33] = G.fateAdh; f[o + 34] = this.genome.rules.body ? 1 : 0; f[o + 35] = G.adhBase;
     f[o + 36] = this.genome.rules.body ? G.crawl : 0; f[o + 37] = G.turnRate;
     f[o + 38] = G.turnover; f[o + 39] = G.unhappy; f[o + 40] = G.mutSize; f[o + 41] = G.mutJump;
-    f[o + 42] = 0; f[o + 43] = 0; f[o + 45] = 0;   // spare (the nutrient and threat numbers until step C3)
+    f[o + 42] = Math.max(0, G.engJump ?? 0);       // step C6: engine slot jumps per birth
+    f[o + 43] = 0; f[o + 45] = 0;                  // spare (the nutrient and threat numbers until step C3)
     u[o + 44] = this.matter ? this.matter.copyAt(k) : 0;   // step C5: the substances' current copy at this tick
     f[o + 46] = p.lever; f[o + 47] = p.emit ? 1 : 0; f[o + 48] = p.r0; f[o + 49] = p.cut;
     f[o + 50] = p.senseOn ? p.sense : 0; f[o + 51] = p.tuneW; f[o + 57] = 0;

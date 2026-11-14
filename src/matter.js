@@ -110,7 +110,7 @@ export const SPRING_KINDS = {
 export const ATOM_SCALE = 4096;          // counts per atom-unit (ATOM_SCALE in matter.wgsl)
 const MP_BYTES = 368;                     // struct MatterP
 const MT_SLOT = 256;                      // struct MatterTick slots, bound with a dynamic offset
-const MAX_TICKS = 128;
+const MAX_TICKS = 320;                    // as SLOTS in cells.js
 const MAX_SUB = 4;                        // spreading substeps per tick at most
 const MT_LEDGER = MAX_TICKS * MAX_SUB;    // slot: the ledger snapshot and the paint (current copy after the ticks)
 const MT_DRAIN = MT_LEDGER + 1;           // slot: the old grid on a resize
@@ -322,15 +322,19 @@ export class Matter {
     const ticks = frame.ticks;
     if (!ticks) return;
     const p = this.params, dt = frame.tickDt, a = H.px / H.R;
-    // springs: age, dry up, and their counts per tick
-    for (const s of this.springs) s.age += ticks * dt;
-    this.springs = this.springs.filter((s) => s.age < p.life);
-    const ns = this.writeSprings(dt);
+    // springs: each drips on every tick of this frame on which it is still younger than its life (counted per tick, so
+    // a spring gives the same amount at any speed, also with hundreds of ticks per frame), then ages and dries up.
+    // Written youngest first, so the springs still dripping on tick t are the first nsAt(t).
+    const order = this.springs.slice().sort((x, y) => x.age - y.age);
+    const ns = this.writeSprings(dt, order, ticks * dt);
+    const nsAt = (t) => { let k = 0; while (k < ns && order[k].age + (t + 1) * dt < p.life) k++; return k; };
     // the channels worth spreading: matter in the dish at the last read-back, or a spring dripping it, within the last
     // 2 s (so both copies of a channel left out are certainly all zero); the others are skipped (most are empty)
     this.time = frame.time;
     for (let c = 0; c < NCH; c++) if (this.dish[c] > 0) this.seen[c] = frame.time;
-    for (const sp of this.springs) for (const a of Object.keys(SPRING_KINDS[sp.kind].mix)) this.seen[CH[a]] = frame.time;
+    for (const sp of order) for (const a of Object.keys(SPRING_KINDS[sp.kind].mix)) this.seen[CH[a]] = frame.time;
+    for (const s of this.springs) s.age += ticks * dt;
+    this.springs = this.springs.filter((s) => s.age < p.life);
     let active = 0;
     for (let c = 0; c < NCH; c++) if (frame.time - this.seen[c] < 2) active |= 1 << c;
     this.active = active;
@@ -355,10 +359,11 @@ export class Matter {
     const T = new Uint32Array(this.tickAB), w = MT_SLOT / 4;
     const seed0 = (frame.frameNo * 2654435761 + 0x7f4a7c15) >>> 0;
     for (let t = 0; t < ticks; t++) {
+      const nt = nsAt(t);
       for (let s = 0; s < this.nSub; s++) {
         const o = (t * MAX_SUB + s) * w, c = this.cur ^ ((t * this.nSub + s) & 1);
         T[o] = this.copyBase(c); T[o + 1] = this.copyBase(c ^ 1); T[o + 2] = s === 0 ? 1 : 0;
-        T[o + 3] = Math.imul(seed0 + t * 131 + s * 7, 2654435761) >>> 0; T[o + 4] = ns; T[o + 5] = 0;
+        T[o + 3] = Math.imul(seed0 + t * 131 + s * 7, 2654435761) >>> 0; T[o + 4] = nt; T[o + 5] = 0;
       }
     }
     const last = (ticks - 1) * MAX_SUB + MAX_SUB;
@@ -389,15 +394,15 @@ export class Matter {
     pass.end();
   }
 
-  /** Write the springs uniform for this frame; returns how many. */
-  writeSprings(dt) {
+  /** Write the springs uniform for this frame (`list` in this order; `aged`: the age they reach this frame); returns how many. */
+  writeSprings(dt, list, aged) {
     const p = this.params, F = this.springF, H = this.heat;
-    const n = Math.min(MAX_SPRINGS, this.springs.length);
+    const n = Math.min(MAX_SPRINGS, list.length);
     const rad = Math.min(7 * H.px, Math.max(0, p.radius) * H.R);
     F.fill(0);
     for (let k = 0; k < n; k++) {
-      const s = this.springs[k], K = SPRING_KINDS[s.kind], o = k * SPRING_FLOATS;
-      F[o] = s.x; F[o + 1] = s.y; F[o + 2] = rad; F[o + 3] = Math.max(0, 1 - s.age / p.life);
+      const s = list[k], K = SPRING_KINDS[s.kind], o = k * SPRING_FLOATS;
+      F[o] = s.x; F[o + 1] = s.y; F[o + 2] = rad; F[o + 3] = Math.max(0, 1 - (s.age + aged) / p.life);
       F[o + 4 + 13] = discPixels(s.x / H.px, s.y / H.px, Math.max(rad / H.px, 0.75), H.hw, H.hh);   // amt[13]: its disc's pixels
       for (const [atom, share] of Object.entries(K.mix)) F[o + 4 + CH[atom]] = p.rate * share * dt * ATOM_SCALE;
       const ink = springInk(s.kind);

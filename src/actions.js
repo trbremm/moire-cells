@@ -58,9 +58,11 @@ export function makeActions(app) {
     })),
 
     // ---------- playback ----------
+    { id: 'pause', keys: [' '], label: 'pause', group: 'play', type: 'toggle', get: () => app.paused,
+      run: () => app.togglePause(), help: 'stop and start the simulation (the picture stays)' },
     { id: 'speed', keys: ['[', ']'], label: 'speed', group: 'play', type: 'knob', get: () => app.speedLabel(),
       run: (k) => app.stepSpeed(k === ']' || k === '+' ? 1 : -1),
-      help: 'simulation steps per drawn frame' },
+      help: 'simulation steps per drawn frame: 1× to 32× (a timelapse), MAX = as many as the GPU fits; the button shows the speed reached' },
     { id: 'culture', keys: ['n'], label: 'new culture', group: 'play', type: 'do', run: () => newCulture(false),
       help: 'a fresh blob of stem cells at the centre, the same founder genomes' },
     { id: 'genomes', keys: ['g'], label: 'new genomes', group: 'play', type: 'do', run: () => newCulture(true),

@@ -1,7 +1,10 @@
 // Boot, frame loop, input and the F overlay.
 //
-// Frame loop: the simulation runs in fixed ticks of 1/60 s (at most MAX_TICKS per frame, so a slow frame
-// slows the simulation instead of exploding it). Each frame:
+// Frame loop: the simulation runs in fixed ticks of 1/60 s (at most MAX_TICKS per frame and per 1x of speed, so a slow
+// frame slows the simulation instead of exploding it). Speeds (step C3b; keys [ ], the toolbar): 1x to 8x as before;
+// 16x and 32x (timelapse) and MAX run more ticks per drawn frame, capped by a budget of ticks that adapts to the
+// measured time between frames (see `budgets`), never more than TICK_CAP. The ticks are the same at any speed; only how many run
+// between two drawn frames changes. Space pauses (no ticks; the picture stays). Each frame:
 //   1. every layer's compute(encoder, frame) records its compute passes (in layer order),
 //   2. one render pass to the canvas; every layer's render(pass, frame) draws into it (in layer order),
 //   3. submit.
@@ -16,7 +19,8 @@
 //   ?cells=N    number of cells (default 2000)
 //   ?check=1    compare the cells' neighbour grid with brute force every 2 s (console)
 //   ?seed=N     seed of the random start (cells, genomes); default random
-//   ?speed=N    simulation speed: 1, 2, 4 or 8 ticks of 1/60 s per 1/60 s of real time (keys [ and ])
+//   ?speed=N    simulation speed: 1, 2, 4, 8, 16 or 32 ticks of 1/60 s per 1/60 s of real time, or max (keys [ and ])
+//   ?paused=1   start paused (Space)
 //   ?founders=N founder genomes at the start (0 = every cell its own)
 //   ?view=1     colour by lineage from the start (key V)
 //   ?bio=0      start with the biology rules off (D H B T M): the loop alone
@@ -52,14 +56,28 @@ import { setupUI } from './ui.js';
 window.__moireBooted = true;
 
 const TICK = 1 / 60;
-const MAX_TICKS = 4;
+const MAX_TICKS = 4;        // 1x to 8x: at most this many ticks per frame per 1x of speed (as before step C3b)
+const TICK_CAP = 256;       // never more ticks than this in one frame (cells.js SLOTS = 320 leaves room for the warm-up)
+// step C3b: the tick budgets of the fast speeds. MAX: as many ticks per frame as the GPU does while the picture keeps
+// at least about 50 frames per s (frames of at most 20 ms; a GPU that keeps up does about 13 to 16 ms of work in each);
+// 16x and 32x: up to frames of 34 ms (about 30 per s), so they come as close to their speed as the GPU allows.
+// `ticks` adapts to the time between frames (smoothed): up by 5 % a frame while the frames are quick, down by 15 % when
+// they are slow (or the GPU's queue runs far behind), then a pause before it grows again, and slowly near the level
+// where it last got slow (`ceil`), so a GPU at its limit does not see-saw between smooth and stuttering.
+const budgets = {
+  max: { ticks: 8, frameMs: 20, hold: 0, calm: 0, ceil: 0 },
+  fast: { ticks: 16, frameMs: 34, hold: 0, calm: 0, ceil: 0 },
+};
+let lastBud = null;   // the budget that limited the last frame (adapted at the next frame, when its time is known)
 const BG = { r: 4 / 255, g: 6 / 255, b: 10 / 255, a: 1 };   // --bg #04060a
 
 const params = new URLSearchParams(location.search);
 const flag = (name) => params.has(name) && params.get(name) !== '0';
 
-const SPEEDS = [1, 2, 4, 8];
-let speed = Math.max(1, Math.min(8, Number(params.get('speed')) || 1));
+const SPEEDS = [1, 2, 4, 8, 16, 32, 0];   // 0 = MAX
+let speed = params.get('speed') === 'max' ? 0 : Math.max(1, Math.min(32, Number(params.get('speed')) || 1));
+let paused = flag('paused');
+const speedName = (s) => (s ? `${s}×` : 'MAX');
 const SEED = params.has('seed') ? (Number(params.get('seed')) >>> 0) : ((Math.random() * 4294967296) >>> 0);
 
 const canvas = document.getElementById('gpu');
@@ -164,6 +182,8 @@ async function boot() {
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
   window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
+  window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
+  window.moire.budgets = budgets;      // the fast speeds' tick budgets
   // births and deaths drop small ripples into the background (a birth a bump, a death a dip)
   cells.onEvents = (events) => {
     const amp = cells.genome.params.ripple;
@@ -223,7 +243,7 @@ function resize() {
 }
 
 // ---------- loop ----------
-const stats = { frameMs: 16.7, cpuMs: 0, gpuMs: 0, lastOverlay: 0, lastProbe: 0 };
+const stats = { frameMs: 16.7, iv: 16.7, cpuMs: 0, gpuMs: 0, lastOverlay: 0, lastProbe: 0, reached: 1, ticks: 0, lat: 0 };
 let last = 0, acc = 0, simTime = 0, frameNo = 0, nextAutoRipple = 0.3, autoK = 0;
 
 function frame(now) {
@@ -231,11 +251,23 @@ function frame(now) {
   const dtReal = last ? Math.min(0.25, (now - last) / 1000) : TICK;
   last = now;
   stats.frameMs += (dtReal * 1000 - stats.frameMs) * 0.05;
+  stats.iv += (dtReal * 1000 - stats.iv) * 0.3;   // the same, quicker: for the budgets
+  if (lastBud) adapt(lastBud);
 
-  acc += dtReal * speed;
-  let ticks = Math.floor(acc / TICK);
-  if (ticks > MAX_TICKS * speed) { ticks = MAX_TICKS * speed; acc = 0; } else acc -= ticks * TICK;
+  let ticks, bud = null;
+  if (paused) { ticks = 0; acc = 0; }
+  else if (!speed) { bud = budgets.max; ticks = bud.ticks; acc = 0; }
+  else {
+    acc += dtReal * speed;
+    ticks = Math.floor(acc / TICK);
+    const cap = speed >= 16 ? Math.min(TICK_CAP, budgets.fast.ticks) : MAX_TICKS * speed;
+    if (ticks > cap) { ticks = cap; acc = 0; if (speed >= 16) bud = budgets.fast; } else acc -= ticks * TICK;
+  }
   simTime += ticks * TICK;
+  // the speed reached: simulation time per real time, smoothed over about a second
+  stats.reached += (ticks * TICK / Math.max(1e-3, dtReal) - stats.reached) * Math.min(1, dtReal / 1.0);
+  stats.ticks = ticks;
+  lastBud = bud;
 
   if (flag('ripple') && simTime >= nextAutoRipple) autoRipple();
 
@@ -257,14 +289,19 @@ function frame(now) {
   device.queue.submit([encoder.finish()]);
   stats.cpuMs += (performance.now() - t0 - stats.cpuMs) * 0.05;
 
-  // rough GPU latency: time from submit until the queue reports the work done (every 15th frame)
-  if (frameNo % 15 === 0) {
+  // rough GPU latency: time from submit until the queue reports the work done (every 8th frame); the budgets also back
+  // off when it runs far behind
+  if (frameNo % 8 === 0) {
     const ts = performance.now();
-    device.queue.onSubmittedWorkDone().then(() => { stats.gpuMs += (performance.now() - ts - stats.gpuMs) * 0.3; });
+    device.queue.onSubmittedWorkDone().then(() => { stats.lat = performance.now() - ts; stats.gpuMs += (stats.lat - stats.gpuMs) * 0.3; });
   }
 
   if (!entropyEl.hidden) {
-    const t = `${cells.heat.panelText()}\n${matter.panelLine()}`;
+    let t = `${cells.heat.panelText()}\n${matter.panelLine()}`;
+    if (paused || speed !== 1) {
+      const r = reachedText();
+      t = t.replace('\n', `   ${paused ? 'paused' : r ? `${speedName(speed)} · reached ${r}` : speedName(speed)}\n`);
+    }
     if (t !== entropyEl.textContent) entropyEl.textContent = t;
   }
   if (frameNo === 10) stage('running-10-frames');
@@ -272,6 +309,31 @@ function frame(now) {
   if (!overlayEl.hidden && now - stats.lastProbe > 1000) { stats.lastProbe = now; cells.probe(); }
   frameNo++;
   requestAnimationFrame(frame);
+}
+
+/** A fast speed's budget, after a frame it limited (see `budgets`). */
+function adapt(B) {
+  if (B.hold > 0) B.hold--;
+  if (stats.iv > B.frameMs * 1.15 || stats.lat > B.frameMs * 4) {
+    if (B.hold > 0) return;   // the last cut has not shown in the frame times yet
+    B.ceil = B.ticks;
+    B.ticks = Math.max(1, Math.floor(B.ticks * 0.85));
+    B.hold = 8; B.calm = 30;
+  } else if (stats.iv < B.frameMs * 0.9) {
+    if (B.calm > 0) { B.calm--; return; }
+    const near = B.ceil && B.ticks + 1 >= B.ceil;
+    const step = near ? (frameNo % 60 === 0 ? 1 : 0) : Math.max(1, Math.round(B.ticks * 0.05));
+    B.ticks = Math.min(TICK_CAP, B.ticks + step);
+    if (B.ticks > B.ceil) B.ceil = 0;
+  }
+}
+
+/** The speed reached, for the speed button and the entropy panel: "×37", "×0.9", or "" at the set speed. */
+function reachedText() {
+  if (paused) return 'paused';
+  const r = stats.reached;
+  if (speed && speed <= 8 && Math.abs(r - speed) < 0.1 * speed) return '';
+  return `×${r >= 9.5 ? r.toFixed(0) : r.toFixed(1)}`;
 }
 
 function autoRipple() {
@@ -296,7 +358,8 @@ function drawOverlay() {
     ...cells.overlayLines(),
     ...matter.overlayLines(),
     `simmer (Shift+R) ${background.heatOn ? 'on' : 'off'}: ripple drops ${background.params.heatDrops} per cell per step x temperature², height ${background.params.heatAmp}`,
-    `sim t ${simTime.toFixed(1)} s · speed ${speed}× · seed ${SEED}`,
+    `sim t ${simTime.toFixed(1)} s · speed ${paused ? 'paused' : speedName(speed)}, reached ×${stats.reached.toFixed(2)} (${stats.ticks} ticks this frame` +
+      `${!speed || speed >= 16 ? `, budget ${(speed ? budgets.fast : budgets.max).ticks} ticks, gpu done after ${stats.lat.toFixed(1)} ms` : ''}) · seed ${SEED}`,
   ];
   if (debugLog.length) lines.push('', ...debugLog.map(esc));
   overlayEl.innerHTML = lines.join('\n');
@@ -340,20 +403,27 @@ function makeApp() {
     overlayEl, entropyEl, ANCHORS,
     get tool() { return tool; },
     setTool,
-    speeds: () => SPEEDS.map((s) => `${s}×`),
+    speeds: () => SPEEDS.map(speedName),
     speedIndex: () => Math.max(0, SPEEDS.indexOf(speed)),
-    speedLabel: () => `${speed}×`,
-    speedReached: () => '',
-    setSpeed(i) { speed = SPEEDS[Math.max(0, Math.min(SPEEDS.length - 1, i))]; return `speed ${speed}×`; },
+    speedLabel: () => speedName(speed),
+    speedReached: reachedText,
+    setSpeed(i) { speed = SPEEDS[Math.max(0, Math.min(SPEEDS.length - 1, i))]; return speedText(); },
     stepSpeed(d) {
       const i = SPEEDS.indexOf(speed);
       speed = SPEEDS[Math.max(0, Math.min(SPEEDS.length - 1, (i < 0 ? 0 : i) + d))];
-      return `speed ${speed}×`;
+      return speedText();
     },
+    get paused() { return paused; },
+    togglePause() { paused = !paused; return paused ? 'paused (Space or the button runs it again)' : 'running'; },
     showEntropy, drawOverlay, flash, compass, tiltText, turnText,
     allKeys: () => allKeys,
     toggleAllKeys() { allKeys = !allKeys; hintEl.textContent = hintLine(); },
   };
+}
+
+function speedText() {
+  if (!speed) return 'speed MAX: as many steps per frame as the GPU does at about 50 frames per s (the speed button shows the speed reached)';
+  return speed >= 16 ? `speed ${speed}× (as close as the GPU allows; the speed button shows the speed reached)` : `speed ${speed}×`;
 }
 
 /** Keys 1 2 3 and the toolbar: what a tap / click and a drag on the dish do. */
@@ -392,7 +462,9 @@ function onKey(e) {
   }
   const k = e.key.toLowerCase();
   const a = keys.plain.get(k);
-  if (a) runAction(a, k);
+  if (!a) return;
+  if (k === ' ') e.preventDefault();   // Space pauses; it must not also press a focused button
+  runAction(a, k);
 }
 
 function tap(x, y) {

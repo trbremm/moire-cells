@@ -45,7 +45,7 @@ const LG_LIGHT_IN = 1024, LG_LIGHT_ABS = 1536, LG_SPOT_N = 2048, LG_SPOT_T = 230
 const SPOT_UNIT = 64;     // the spot snapshot counts heat in units of 64 counts (SPOT_SHIFT in heat.wgsl)
 const HP_BYTES = 64;                      // struct HeatP
 const HT_SLOT = 256;                      // struct HeatTick slots, bound with a dynamic offset
-const MAX_TICKS = 128;                    // as SLOTS in cells.js
+const MAX_TICKS = 320;                    // as SLOTS in cells.js
 const MAX_SUB = 8;                        // spreading substeps per tick at most
 const HT_LEDGER = MAX_TICKS * MAX_SUB;    // slot of the ledger passes
 const HT_DRAIN = HT_LEDGER + 1;

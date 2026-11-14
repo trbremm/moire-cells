@@ -35,7 +35,8 @@ const LIGHT_COMMON_URL = 'src/shaders/light_common.wgsl';
 
 export const HEAT_COMMON_URL = 'src/shaders/heat_common.wgsl';
 export const HEAT_SCALE = 65536;          // counts per energy unit (HEAT_SCALE in heat_common.wgsl)
-export const LEDGER_WORDS = 10240;              // LEDGER_WORDS in heat_common.wgsl (words 3072 on: step C3's matter ledger)
+export const LEDGER_WORDS = 11520;              // LEDGER_WORDS in heat_common.wgsl (words 3072 on: step C3's matter ledger;
+                                                // 10240 on: step C4's chemistry)
 // ledger regions [first word, slots]; OUT, HEAT and MOVE are 64-bit (the carry words follow 64 words later)
 const LG = { WORK: [0, 256], BASE: [256, 64], OUT: [320, 64], HEAT: [448, 64], MOVE: [576, 64], DRAG: [704, 160], KICK: [864, 160] };
 const LG_WIDE = new Set(['OUT', 'HEAT', 'MOVE']);
@@ -246,9 +247,14 @@ export class Heat {
     }
   }
 
-  /** Record tick t's spreading (after the cells' step of that tick). */
-  encodeTick(encoder, t) {
+  /**
+   * Record tick t's spreading (after the cells' step of that tick). `before(pass)`, if given, records more dispatches
+   * into the same pass first (step C4: the substances' spreading and reactions, which read this tick's heat and the
+   * cells' cover and put the heat they release into the delta that the spreading's first substep takes in).
+   */
+  encodeTick(encoder, t, before = null) {
     const pass = encoder.beginComputePass({ label: 'heat spread' });
+    if (before) before(pass);
     pass.setPipeline(this.pipes.spread);
     const wx = Math.ceil(this.hw / 8), wy = Math.ceil(this.hh / 8);
     for (let s = 0; s < this.nSub; s++) {
@@ -298,7 +304,8 @@ export class Heat {
     while (this.pending.has(this.nextSeq)) {
       const { rec: r, words: w } = this.pending.get(this.nextSeq);
       this.pending.delete(this.nextSeq++);
-      if (w) { this.apply(r, w); if (this.matter) this.matter.apply(r, w); }
+      // (the matter first: step C4's chemical energy is part of the energy books)
+      if (w) { if (this.matter) this.matter.apply(r, w); this.apply(r, w); }
     }
   }
 
@@ -321,7 +328,10 @@ export class Heat {
       T.labs[b] += wide(LG_LIGHT_ABS + 128 * b) / HEAT_SCALE;
     }
     const lin = T.lin.reduce((a, b) => a + b, 0), labs = T.labs.reduce((a, b) => a + b, 0);
-    const moving = sum('MOVE'), heat = sum('HEAT'), inn = T.work + T.base + labs;
+    // step C4: the light the substances caught (into bonds, the rest as heat), the chemical energy in the dish, and the
+    // chemical energy that left with matter (at the edge, washed out, on a resize)
+    const C = this.matter && this.matter.ledger ? this.matter.ledger.chem : { light: 0, dish: 0, out: 0 };
+    const moving = sum('MOVE'), heat = sum('HEAT'), inn = T.work + T.base + labs + C.light;
     // the heat under the cells / pixels in the light and the rest, as temperatures (heat per R^2)
     const ts = this.tempScale;
     const spot = [0, 1, 2, 3].map((k) => {
@@ -334,7 +344,8 @@ export class Heat {
     const h0 = H[0], dt = rec.time - h0[0];
     const rate = (k) => (dt > 0.05 ? (H[H.length - 1][k] - h0[k]) / dt : 0);
     this.ledger = {
-      time: rec.time, moving, heat, in: inn, out: T.out, rounding: inn - (moving + heat + T.out),
+      time: rec.time, moving, heat, in: inn, out: T.out, rounding: inn - (moving + heat + T.out + C.dish + C.out),
+      chem: C.dish, chemOut: C.out,
       light: { in: lin, abs: labs, pass: lin - labs },
       rate: {
         work: rate(1), base: rate(2), out: rate(3), drag: rate(4), kick: rate(5), lin: rate(6), labs: rate(7),

@@ -562,8 +562,10 @@ export class Cells {
     if (!ticks) return;
     this.heat.beginFrame(encoder, ticks, frame);
     if (this.heatVersion !== this.heat.version) this.makeStepBGs();
-    // step C3: the substances drip and spread over the frame's real ticks (not the warm-up), in the heat buffer
-    if (this.matter) this.matter.encodeFrame(encoder, frame);
+    // step C3: the substances drip and spread over the frame's real ticks (not the warm-up), in the heat buffer; step
+    // C4: and react, each tick inside the heat's pass (after the cells' step, before the heat spreads)
+    const M = this.matter;
+    if (M) M.beginFrame(encoder, frame, warm);
     for (let t = 0; t < ticks; t++) {
       const time = frame.time - Math.max(0, ticks - 1 - t) * frame.tickDt * (t < warm ? 0 : 1);
       this.writeSim(t, frame.tickDt, time, t === ticks - 1);
@@ -578,8 +580,9 @@ export class Cells {
       // ?check runs between the grid build and the move, so both see the same positions
       if (t === ticks - 1) this.maybeCheck(encoder, t, frame);
       this.encodeStep(encoder, t);
-      this.heat.encodeTick(encoder, t);
+      this.heat.encodeTick(encoder, t, M && t >= warm ? (pass) => M.encodeTick(pass, t - warm) : null);
     }
+    if (M) M.endTicks(encoder);
     this.heat.endFrame(encoder, ticks, frame);
     this.maybeCensus(encoder, ticks - 1, frame);
     this.maybeMotion(encoder, frame);

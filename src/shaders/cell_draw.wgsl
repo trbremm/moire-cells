@@ -30,6 +30,11 @@ struct Draw {
   bar: f32,         // the bar's brightness
   hand: f32,        // step 8, rule b: the phasor's hand (0 = none)
   pInk: vec4f,      // the partner A' ink (rgb)
+  core: f32,        // step C5: the battery's core at a full battery, radius as a share of the cell's (0 = not drawn)
+  dim: f32,         // ... how much darker a starving cell is drawn (0 = not at all)
+  starve: f32,      // ... battery share below which a cell counts as starving (it dims toward this share and below)
+  _p0: f32,
+  coreInk: vec4f,   // ... the core's ink (rgb): the fuel's green, energy
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
@@ -129,6 +134,16 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   // step 8, rule b, clock: a stem cell filled with the partner's ink as far as it emits A' (see the hand below)
   if (D.hand < 0.0 && c.kind == KIND_STEM) { fillRgb = mix(fillRgb, D.pInk.rgb * 0.55, clamp(c.z.y, 0.0, 1.0)); }
   var rgb = mix(fillRgb, col * D.dots, dot);
+  // step C5: the battery as a flat core at the centre, its AREA in proportion to the charge (full: a big core; empty:
+  // none), in the fuel's green (energy); drawn over the lattice dots, crisp
+  var coreA = 0.0;
+  if (D.core > 0.0 && c.bat > 0.0) {
+    let rc = D.core * c.r * sqrt(clamp(c.bat, 0.0, 1.0));
+    if (rc * D.dpr > 0.6) {
+      coreA = cover(rc, d, aa);
+      rgb = mix(rgb, D.coreInk.rgb, coreA);
+    }
+  }
   let lineCol = select(col * D.line, D.blue.rgb, conv);
   // step 7: the cell's state as a flat bar through its centre, turned by 180 / states degrees per state (2 states:
   // upright and lying; 3: three directions 60 degrees apart), drawn over the dots like a print mark
@@ -177,7 +192,9 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       rgb = mix(rgb, D.blue.rgb, mark);
     }
   }
-  let a = disc * mix(D.fillA, 1.0, max(max(max(max(ring, dot * (1.0 - clearA)), mark), bar), hnd));
+  // step C5: a starving cell (battery below D.starve) is drawn dimmer, down to 1 - D.dim at an empty battery
+  if (D.dim > 0.0) { rgb *= 1.0 - D.dim * (1.0 - smoothstep(0.0, max(D.starve, 1e-3), c.bat)); }
+  let a = disc * mix(D.fillA, 1.0, max(max(max(max(max(ring, dot * (1.0 - clearA)), mark), bar), hnd), coreA));
   // rgb is the colour as seen; blend premultiplied (one, one-minus-src-alpha)
   return vec4f(rgb * a, a);
 }

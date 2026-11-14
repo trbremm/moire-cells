@@ -35,6 +35,7 @@ import { loadFieldShader, KIND } from './field.js';
 import { Genome, BIO_BYTES } from './genome.js';
 import { Heat, HEAT_COMMON_URL } from './heat.js';
 import { Eat } from './eat.js';
+import { INKS } from './matter.js';
 
 export const CELL_URL = 'src/shaders/cell_common.wgsl';
 
@@ -228,6 +229,11 @@ export class Cells {
                       // `states` directions, 180 / states degrees apart)
       bar: 0.8,       // the bar's brightness (as the outline's)
       hand: 1.0,      // step 8, rule b: brightness of the phasor's hand (0 = none), in the partner's ink
+      core: 0.55,     // step C5: radius of a full battery's core, as a share of the cell's radius (area in proportion to the
+                      // charge; 0 = not drawn)
+      coreInk: INKS.fuel.light.map((v) => v * 0.92),   // ... its ink: the fuel's green (energy)
+      starve: 0.12,   // ... a cell with less than this share of its battery is drawn dimmer, the emptier the dimmer
+      starveDim: 0.4, // ... by up to this much (0 = not at all)
     };
   }
 
@@ -329,8 +335,8 @@ export class Cells {
     this.eat = await Eat.create(d, this);
     this.heat.eat = this.eat;
 
-    this.drawU = d.createBuffer({ label: 'cell draw params', size: 112, usage: U.UNIFORM | U.COPY_DST });
-    this.drawData = new Float32Array(28);
+    this.drawU = d.createBuffer({ label: 'cell draw params', size: 144, usage: U.UNIFORM | U.COPY_DST });
+    this.drawData = new Float32Array(36);
     this.drawBG = d.createBindGroup({
       layout: this.drawPipe.getBindGroupLayout(0),
       entries: [
@@ -1011,6 +1017,10 @@ export class Cells {
     // step 8: the phasor's hand, in the partner's ink
     const pc = this.landscape ? this.landscape.params.pColour : [236, 218, 124];
     a[23] = this.partner.change ? (this.partner.chMode ? -L.hand : L.hand) : 0; a[24] = pc[0] / 255; a[25] = pc[1] / 255; a[26] = pc[2] / 255;
+    // step C5: the battery's core and the starving cells' dimming (while the cells eat)
+    const eating = this.eat && this.eat.params.on;
+    a[28] = eating ? L.core : 0; a[29] = eating ? L.starveDim : 0; a[30] = L.starve;
+    for (let k = 0; k < 3; k++) a[32 + k] = L.coreInk[k] / 255;
     this.device.queue.writeBuffer(this.drawU, 0, a);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG);

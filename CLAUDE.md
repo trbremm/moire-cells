@@ -230,10 +230,28 @@ ROW (size: heavier = slower spreading, stronger/richer bonds, needs harder light
   band; GT richest, needs hard light). Linkers chain into SEDIMENT ll and LL: forming it releases a little
   energy, it does not spread, so it piles up (accumulation only through reaction; the user's two ideas in one
   rule); it is dark, so it warms in light; hard light slowly cracks it. Like with like (g+g, t+t): no bond.
+- SWAPS (the permutation itself): a free atom can take a partner out of a weaker bond (e.g. T + gt -> gT + t),
+  releasing the bond difference as heat. Same table, same spark rule, in the open and inside cells.
 - Grid: 6 atoms + 4 fuels + 2 sediments + trace + heat = 14 channels per pixel (e.g. four rgba textures or
   storage buffers; f32 preferred for conservation, measure drift in the "rounding" line). About one pixel per
-  half a cell radius. Springs (today's nutrient sources, mouse-dropped) drip atoms in.
-- Look: colour means function. Fuel in the nutrient green as halftone dots; sediment as a flat, crisp, dim layer;
+  half a cell radius. SPRINGS (mouse-dropped) drip atoms in.
+
+NO NUTRIENT, NO THREAT (user 2026-11-14): "change the nutrient and threat to just be part of the chemistry; I want
+the substances to emerge naturally as those." The hand-made nutrient and threat sources and rule E go away.
+- Food is not a label: a substance is food for a cell if that cell's engines can get energy from it. One
+  lineage's food can be another's useless or harmful substance.
+- Harm is not a label either. It emerges from two things already in the plan: (1) the same reactions run inside
+  a cell as outside, so a reactive free atom (e.g. heavy taker T) that gets in swaps the cell's fuel apart,
+  wasting what its engines need and dumping heat inside; (2) HEAT DAMAGE: a cell's death rate rises when its
+  local temperature is above a tolerance (a genome trait later). So threats are whatever makes a place too hot:
+  reactive chemistry, a strong spotlight, a crowd of busy cells.
+- Growth: energy replaces "nutrient speeds division": rich cells win freed slots (energy-biased turnover).
+- Tap modes 2 and 3 become springs (e.g. 2 = light-row atoms, 3 = heavy-row atoms + a little trace), each with
+  its own mix; the spring's mix decides what chemistry happens there.
+- The landscape's halftone dots (the user's chosen look) now show the grid's substances, on the medium lattice:
+  dot size = amount.
+- Look: colour means function (chemical function now, not "nutrient"/"threat" labels). Energy-rich fuel in
+  the old nutrient green; the old threat red goes to the most REACTIVE free atoms (hungry for partners); sediment as a flat, crisp, dim layer;
   free atoms hidden unless a key cycles through them.
 
 Cells and engines ("permutators"):
@@ -245,7 +263,7 @@ Cells and engines ("permutators"):
   optionally using a light band), with a rate. The energy table does the bookkeeping: each run pays its spark
   and any uphill difference from the battery; a run the battery cannot pay does not happen; the inefficiency
   goes to heat.
-- Energy pays for MOTION and CHEMICAL REACTIONS (user); survival later. Energy-biased turnover: rich cells win
+- Energy pays for MOTION and CHEMICAL REACTIONS (user); survival by energy later (heat damage, above, from C5). Energy-biased turnover: rich cells win
   the freed slot more often, so good energy handlers spread.
 - The membrane's 6 corners sample the grid too: cells "smell" which way fuel lies.
 - Engines are the cell's first PARTS (the user's body-plus-parts plan): small marks inside the body, coloured by
@@ -255,13 +273,15 @@ Build order (one rule at a time, each with a Shift key, look after each):
 C1. Heat band + entropy counter: heat channel on a grid, jitter from local heat, drag and losses feed it, kicks
     use it, leak to the sky, ripples respond to heat. Counter with entropy, heat in dish, moving, rounding.
 C2. Light: full field / spotlight (mouse controls above); warm and hard bands become heat where absorbed.
-C3. The atom grid without reactions: springs, spreading by row, halftone drawing, key to cycle substances;
+C3. The atom grid without reactions: springs REPLACE the nutrient/threat sources (tap modes 2, 3; remove rule E
+    and the sources' beat landscape), spreading by row, halftone drawing of the substances, key to cycle them;
     ORDER line in the counter.
 C4. Chemistry in the open (no cells): light makes and breaks bonds by the table, sediment forms and cracks,
-    sparks from light and local heat, trace lowers the spark. Watch the substrate alone first.
+    swaps, sparks from light and local heat, trace lowers the spark. Watch the substrate alone first.
 C5. Cells eat: exchange, internal stock, battery (starter charge), one built-in burner for all; the battery
-    pays for crawling and for each reaction's spark.
-C6. Engines in the genome (2-3 slots, mutate), energy-biased turnover, engines drawn as parts.
+    pays for crawling and for each reaction's spark; the table's reactions also run inside cells (swaps);
+    heat damage; energy-biased turnover (replaces the old nutrient rule).
+C6. Engines in the genome (2-3 slots, mutate), heat tolerance as a gene, engines drawn as parts.
 C7. Pumps across contact: storing, sharing, stealing.
 C8. Hard light mutates cells.
 

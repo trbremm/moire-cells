@@ -20,6 +20,14 @@ bloom. Think 80s graphic art: crisp, flat, graphic shapes with clean hard edges,
 Soft in colour, sharp in form. (The reference CPU page still glows; that part of it is no longer the target.)
 User choices: source landscape = crisp HALFTONE DOTS on the lattice (dot size shows field strength, flat colour);
 viscous ripple background = keep soft as it is (the one deliberately soft layer).
+User answers after Part A (2026-11-14):
+- COLOUR MEANS SOMETHING: colours represent function and specialisation. In a later iteration cells will also have
+  PARTS (so plan colour for a body plus parts, not one fill per cell). Do not paint cells in colours that carry no
+  meaning.
+- Motion: the user likes it lively and does not want to supervise motion, unless it is numerical error (which
+  "might give us free entropy").
+- Step 8 curls (clock + sideways push): the user LOVES them, "the kind of self referring pattern I was hoping for".
+  Keep them; they are a direction worth growing.
 
 ## Files
 - `reference/neon_organoid_cpu.html` — the working CPU version (single file, Canvas 2D, about 520 cells).
@@ -82,8 +90,9 @@ Stack:
   secure context: localhost and https qualify; opening the file directly (file://) may not work.
 - If WebGPU is missing (`navigator.gpu` undefined or no adapter), show a plain message saying which browsers
   work and link to the CPU reference page. Never a blank screen.
-- Sharing with friends: any static https host works (GitHub Pages is the obvious free one). Publishing is
-  outward-facing: ask the user before pushing anything public. Whether a claude.ai artifact allows WebGPU is
+- Sharing with friends: LIVE at https://trbremm.github.io/moire-cells/ (GitHub Pages from main / root, enabled
+  2026-11-14 with the user's yes; every push to main updates it within a minute or two). The repo is public, so
+  every push is public. Whether a claude.ai artifact allows WebGPU is
   unknown; test once with a tiny page before relying on it.
 - Which browsers and phones support WebGPU changes quickly: CHECK CURRENT SUPPORT, do not rely on memory.
   Likewise check the current WebGPU / WGSL docs for API details before writing code.

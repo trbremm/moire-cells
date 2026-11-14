@@ -1,6 +1,7 @@
-// Matter (Part C, step C3): the atom grid, without reactions. SPRINGS (mouse-dropped, tap modes 2 and 3) drip atoms into
-// the dish; the atoms spread (light ones quickly, heavy ones slowly), leave at the dish's edge, and are drawn as crisp
-// halftone dots on the medium lattice (dot size = amount). Cells ignore them in C3.
+// Matter (Part C, step C3): the atom grid. SPRINGS (mouse-dropped, tap modes 2 and 3) drip atoms into the dish; the
+// atoms spread (light ones quickly, heavy ones slowly), leave at the dish's edge, and are drawn as crisp halftone dots on
+// the medium lattice (dot size = amount). Step C4: they react in the open (the energy table CHEM and the reaction list
+// REACTIONS below; matter.wgsl's react, run every tick inside the heat's pass). The cells still ignore them (C5).
 //
 // Storage: 13 channels (6 atoms g t l G T L, 4 fuels gt gT Gt GT, 2 sediments ll LL, trace; heat is the 14th, in
 // src/heat.js) on the heat grid's pixels (same size and geometry, so later steps react them together), as more blocks

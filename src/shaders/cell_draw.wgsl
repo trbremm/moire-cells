@@ -21,7 +21,7 @@ struct Draw {
   period: f32,      // dot spacing per unit lattice period, in units of R (0.62 = the medium's period)
   mode: f32,        // 0 = colour by fate, 1 = colour by lineage (the key's hue)
   fillC: f32,       // disc fill of committed (non-stem) cells
-  _p0: f32,
+  lever: f32,       // the lever (Sim.lever): the dots show the lattice the cell emits with
   _p1: f32,
   _p2: f32,
 };
@@ -99,9 +99,12 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   let c = cells[in.id];
   let d = length(in.local);
   let aa = max(fwidth(d), 0.35 / D.dpr);
-  // the cell's own lattice as sharp dots (the reference turns its dot pattern by la + 90 degrees)
-  let s = D.period * D.R * kind_period(c.kind) * exp(c.aux);   // the key scale stretches the period
-  let dd = hex_dist(in.local, s, c.la + 1.5707963);
+  // the cell's own lattice as sharp dots (the reference turns its dot pattern by la + 90 degrees): the lattice
+  // it emits with (key and fate, scaled by the lever), drawn in the unstretched frame and mapped through the
+  // stretch with the outline, so the dots sit on the strained lattice
+  let lat = cell_lattice(c, D.lever);
+  let s = D.period * D.R * exp(lat.y);
+  let dd = hex_dist(in.local, s, lat.x + 1.5707963);
   let aad = max(fwidth(dd), 0.35 / D.dpr);       // derivatives before any discard
   let disc = cover(c.r, d, aa);
   if (disc <= 0.0) { discard; }

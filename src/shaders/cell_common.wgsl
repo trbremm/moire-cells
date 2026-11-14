@@ -17,7 +17,7 @@ struct Cell {
   vel: vec2f,       // velocity (CSS px / s)
   r: f32,           // radius (CSS px); relaxes toward Sim.R
   la: f32,          // lattice angle (radians); the cell's key angle (a copy of Bio.key.x)
-  e1: f32,          // area-preserving stretch (traceless tensor [[e1, e2], [e2, -e1]]); 0 for now
+  e1: f32,          // area-preserving stretch (traceless tensor [[e1, e2], [e2, -e1]]), length at most 0.5
   e2: f32,
   kind: u32,        // KIND_* from field_common.wgsl: its fate (stem, epithelium, muscle, neuron, cartilage)
   flags: u32,       // bit 0: alive (all alive for now; kept for division and death later)
@@ -82,8 +82,8 @@ struct Sim {
   tuneW: f32,       // receptor tuning width: how alike two lattices must be to feel each other (reference 0.177)
   srcAmp: f32,      // strength of a fresh source (reference 5)
   senseMax: f32,    // the field force saturates at this speed, in units of R per s (reference 3)
-  pad14: f32,
-  pad15: f32,
+  activeGain: f32,  // active deformation gain: stretch along the cell's motion and the field's pull (0 = off)
+  shapeRate: f32,   // how fast the shape follows its target (1/s; reference 3)
   pad16: f32,
   pad17: f32,
   pad18: f32,

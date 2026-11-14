@@ -93,6 +93,8 @@ export class Cells {
       senseOn: true,
       tuneW: 0.177,   // receptor tuning width (reference: exp(-|dk|^2 / (3 x 0.0625 k0^2)))
       senseMax: 3.0,  // the field force saturates at this speed (R / s; reference 3)
+      active: true,   // active deformation (key W): stretch along the motion and the field's pull
+      shapeRate: 3,   // how fast the shape follows its target (1/s; reference 3)
     };
     // drawing (live-tunable: moire.cells.look)
     this.fieldScale = 0.5;     // texels per CSS px of the cells' field texture
@@ -348,6 +350,7 @@ export class Cells {
     f[o + 46] = p.lever; f[o + 47] = p.emit ? 1 : 0; f[o + 48] = p.r0; f[o + 49] = p.cut;
     f[o + 50] = p.senseOn ? p.sense : 0; f[o + 51] = p.tuneW;
     f[o + 52] = this.landscape ? this.landscape.params.amp : 5; f[o + 53] = p.senseMax;
+    f[o + 54] = p.active ? 1 : 0; f[o + 55] = p.shapeRate;
   }
 
   /** Record the grid build for the tick whose uniforms are in slot k. */
@@ -606,7 +609,7 @@ export class Cells {
     }
     lines.push(`rules: D differentiation ${on(r.diff)} · H adhesion ${on(r.adh)} · B body ${on(r.body)} · T turnover ${on(r.turn)} · M mutation ${on(r.mut)} · E nutrient/threat ${on(r.nut)} · I inherit fate ${on(r.inherit)} · view ${this.look.view ? 'lineage' : 'fate'}`);
     const mo = this.motion;
-    lines.push(`loop: S sense ${on(p.senseOn)} · O emit ${on(p.emit)} · lever ${p.lever.toFixed(2)}` +
+    lines.push(`loop: S sense ${on(p.senseOn)} · O emit ${on(p.emit)} · W active shape ${on(p.active)} · lever ${p.lever.toFixed(2)}` +
       (mo ? ` · speed ${mo.speed.toFixed(1)} px/s · net ${mo.net == null ? '-' : mo.net.toFixed(1)} px/s · stretch ${mo.stretch.toFixed(2)} · spread ${mo.spread.toFixed(1)} R` : ''));
     if (c) {
       lines.push(`grid check: ${c.contacts / 2} contacts` + (c.brute ? ` (brute force ${c.bruteContacts / 2}, ${c.mismatch} cells differ)` : '') +
@@ -688,7 +691,7 @@ export class Cells {
     const v = this.view, L = this.look, a = this.drawData;
     a[0] = v.cssW; a[1] = v.cssH; a[2] = v.dpr; a[3] = this.R;
     a[4] = L.fill; a[5] = L.fillA; a[6] = L.line; a[7] = L.lineW;
-    a[8] = L.dots; a[9] = L.dotR; a[10] = L.period; a[11] = L.view; a[12] = L.fillC;
+    a[8] = L.dots; a[9] = L.dotR; a[10] = L.period; a[11] = L.view; a[12] = L.fillC; a[13] = this.params.lever;
     this.device.queue.writeBuffer(this.drawU, 0, a);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG);

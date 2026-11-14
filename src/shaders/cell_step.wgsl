@@ -50,6 +50,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let mk0 = me.k01.xy;
   let mk1 = me.k01.zw;
   let mk2 = me.k2a.xy;
+  var C = vec2f(0.0);                        // contact squeeze (traceless tensor: (xx - yy, 2 xy) parts)
 
   // every neighbour within reach: contact push, and (differentiation on) recognition and signals
   let rg = grid_range(S, grid_xy(S, c.pos));
@@ -117,10 +118,14 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           u = vec2f(cos(a), sin(a)) * select(-1.0, 1.0, i < beats[k].idx);
         }
         f -= u * S.stiffness * (R0 - dist);
+        // contact squeezes the cell along the contact axis (passive deformation)
+        let ov = (R0 - dist) / R0;
+        C -= ov * vec2f(u.x * u.x - u.y * u.y, 2.0 * u.x * u.y);
       }
     }
   }
 
+  var Q = vec2f(0.0);                        // the field's pull on the outline (quadrupole of the membrane signal)
   if (sensing) {
     // the sources' landscape (nutrient, threat), felt the same way; tuning counts for 3/4 (as the reference)
     for (var s = 0u; s < min(S.srcCount, MAX_CELL_SOURCES); s++) {
@@ -145,6 +150,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     for (var a = 0; a < 6; a++) {
       let ed = mb.edge[a];
       cf += seg[a] * vec2f(ed.y, -ed.x);
+      // the outward normal's direction, doubled: (cos 2 phi, sin 2 phi)
+      Q += seg[a] * vec2f(ed.y * ed.y - ed.x * ed.x, -2.0 * ed.x * ed.y) / max(dot(ed, ed), 1e-6);
     }
     cf *= 1.3 * S.R / max(c.r, 0.1);
     let cm = length(cf);
@@ -206,6 +213,27 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   c.pos += c.vel * S.dt + jit * S.jitter * S.R * mot;
   c.pos = clamp(c.pos, vec2f(0.0), vec2f(S.W, S.H));
   c.r += (S.R * size - c.r) * min(1.0, S.dt * 0.8);
+
+  // shape: an area-preserving stretch e = (e1, e2), relaxing toward a target made of the passive contact
+  // squeeze and (active, key W) a stretch along the cell's own motion and toward where the field pulls on its
+  // outline; muscle stretches along its crawling heading. As the reference's step(); length capped at 0.5.
+  var t = 0.5 * C;
+  if (S.activeGain > 0.0) {
+    let spd = length(c.vel);
+    if (spd > 0.01) {
+      let mv = 0.25 * tanh(spd / (2.0 * S.R)) / (spd * spd);
+      t += S.activeGain * mv * vec2f(c.vel.x * c.vel.x - c.vel.y * c.vel.y, 2.0 * c.vel.x * c.vel.y);
+    }
+    let qm = length(Q);
+    if (qm > 1e-6) { t += S.activeGain * (0.35 * tanh(qm / 1.5) / qm) * Q; }
+    if (c.kind == KIND_MUS) { t += S.activeGain * 0.3 * vec2f(cos(2.0 * bio.body.w), sin(2.0 * bio.body.w)); }
+  }
+  var e = vec2f(c.e1, c.e2);
+  e += (t - e) * min(1.0, S.dt * S.shapeRate);
+  let em = length(e);
+  if (em > 0.5) { e *= 0.5 / em; }
+  c.e1 = e.x;
+  c.e2 = e.y;
 
   // turnover: now and then a cell dies and a touching neighbour divides into its place, the daughter a copy
   // of the parent's genome (from last tick's buffer, so it does not matter whether the parent changes or dies

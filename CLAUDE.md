@@ -293,6 +293,9 @@ C6. Engines in the genome (2-3 slots, mutate), pigments (cells catch a visible b
     emerge: harvesters' waste (free light atoms, the vandals) is first caught by free takers in the dish (the
     "iron" sink), then builds up dish-wide, poisons leaky cells, and breathers learn to live on it. Never write
     it as a rule; only watch for it (panel readout of free light atoms; census of harvesters vs breathers).
+    HARVESTERS MUST BURN (user 2026-11-14): light never charges the battery; it only pays a harvester's uphill
+    difference, the product goes to stock. Every engine's spark and upkeep come from the battery, and only
+    downhill reactions fill it. So a harvester must burn (or breathe) some of what it makes to keep running.
     heat tolerance and permeability as genes, engines drawn as parts.
 C7. Pumps across contact: storing, sharing, stealing.
 C8. Hard light mutates cells.

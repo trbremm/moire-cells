@@ -35,7 +35,10 @@ export const RULE_GROUPS = [
   ['heatlight', 'Heat and light (Part C)'],
   ['chem', 'Chemistry (step C4)'],
   ['eat', 'Cells eat (step C5)'],
+  ['engines', 'Engines in the genome (step C6)'],
 ];
+
+export const VIEWS = ['fate', 'lineage', 'strategy'];   // key V: what the cells' bodies are coloured by (cells.look.view)
 
 export const SQUEEZE_SOFT = 0.25, SQUEEZE_HARD = 1.2;   // key \ : cells.params.squeeze, normal or pressed together
 
@@ -91,10 +94,10 @@ export function makeActions(app) {
     { id: 'show', keys: ['shift+s'], label: 'substances shown', group: 'view', type: 'cycle', get: () => app.matter.showName,
       run: () => app.matter.cycleShow(), help: 'the substances\' dots: summary, each substance alone, or off' },
     { id: 'colour', keys: ['v'], label: 'colour by', group: 'view', type: 'cycle',
-      get: () => (C().look.view ? 'lineage' : 'fate'), options: () => ['fate', 'lineage'],
-      set: (v) => { C().look.view = v === 'lineage' ? 1 : 0; return `colour by ${C().look.view ? 'lineage (key)' : 'fate'}`; },
-      run: () => { C().look.view = C().look.view ? 0 : 1; return `colour by ${C().look.view ? 'lineage (key)' : 'fate'}`; },
-      help: 'cells coloured by their fate (function) or by their lineage (the genome key\'s hue)' },
+      get: () => VIEWS[C().look.view] || 'fate', options: () => VIEWS,
+      set: (v) => { C().look.view = Math.max(0, VIEWS.indexOf(v)); return viewText(); },
+      run: () => { C().look.view = (C().look.view + 1) % VIEWS.length; return viewText(); },
+      help: 'cells coloured by their fate (function), their lineage (the genome key\'s hue), or their strategy (how their engines make a living)' },
     { id: 'cellField', keys: ['k'], label: 'cells\' field drawn', group: 'view', type: 'toggle', get: () => LP().cellField,
       run: () => `cells' field ${flip(LP(), 'cellField') ? 'drawn (pale dots)' : 'not drawn'}`,
       help: 'field A in pale dots (drawing only)' },
@@ -269,9 +272,9 @@ export function makeActions(app) {
         ? 'cells eat: they trade substances with the dish through their membrane, burn fuel into their battery (the green core), and pay for crawling with it'
         : 'cells do not eat: they ignore the substances (as in step C4); their stock and batteries stay as they are'),
       help: 'cells trade substances with the dish, burn fuel into a battery (the green core) and pay for crawling (off: as in C4)' },
-    { id: 'burner', keys: ['shift+u'], label: 'burner', group: 'eat', type: 'toggle', get: () => E().burner,
-      run: () => `burner ${flip(E(), 'burner') ? 'on: every cell breaks the fuel it holds into atoms; the energy fills its battery, a quarter becomes heat' : 'off: fuel inside a cell stays fuel'}${eatNote()}`,
-      help: 'every cell burns the fuel it holds: the energy fills its battery (the spark is paid from it), a quarter becomes heat' },
+    { id: 'burner', keys: ['shift+u'], label: 'everyone burns', group: 'eat', type: 'toggle', get: () => E().burner,
+      run: () => `everyone burns ${flip(E(), 'burner') ? 'on: every cell has the built-in burner of step C5 (besides its own engines): the fuel it holds fills its battery, a quarter becomes heat' : 'off: only the engines in the genome make energy (step C6)'}${eatNote()}`,
+      help: 'step C5\'s built-in burner in every cell, besides its own engines (off by default since step C6, to compare)' },
     { id: 'inside', keys: ['shift+i'], label: 'reactions inside', group: 'eat', type: 'toggle', get: () => E().inside,
       run: () => `reactions inside cells ${flip(E(), 'inside') ? 'on: the swaps, fuel breaking by heat and sediment run inside too, by the same rules (sediment is expelled)' : 'off'}${eatNote()}`,
       help: 'the chemistry\'s heat-driven reactions run inside cells too (light atoms that get in degrade rich fuel); sediment is expelled' },
@@ -288,6 +291,32 @@ export function makeActions(app) {
       run: () => `smell ${flip(E(), 'smell') ? 'on: the membrane\'s corners sense fuel; crawling steers up toward it' : 'off'}${eatNote()}`,
       help: 'the membrane\'s six corners sense fuel; crawling steers gently up toward it' },
   );
+
+  // ---------- engines in the genome (step C6) ----------
+  const engNote = () => (!E().on ? ' (cells eat is off: Shift+A)' : E().engines ? '' : ' (engines are off: Shift+O)');
+  A.push(
+    { id: 'engines', keys: ['shift+o'], label: 'engines', group: 'engines', type: 'toggle', get: () => E().engines,
+      run: () => `engines ${flip(E(), 'engines') ? 'on: each cell runs the engines in its genome (the small marks inside it): harvest fuel with a pigment, burn, swap, make sediment' : 'off: no cell runs its engines (only "everyone burns", Shift+U, makes energy)'}${E().on ? '' : ' (cells eat is off: Shift+A)'}`,
+      help: 'each cell runs the up to three engines in its genome (the small marks inside it): harvest, burn, swap, make sediment' },
+    { id: 'pigments', keys: ['shift+y'], label: 'pigments', group: 'engines', type: 'toggle', get: () => E().pigments,
+      run: () => `pigments ${flip(E(), 'pigments') ? 'on: a harvest engine\'s pigment catches its band of the light and makes fuel with it' : 'off: harvest engines catch nothing'}${engNote()}`,
+      help: 'a harvest engine\'s pigment catches its band of the light (the round marks, in the band\'s colour) and makes fuel with it' },
+    { id: 'upkeep', keys: ['shift+q'], label: 'upkeep', group: 'engines', type: 'toggle', get: () => E().upkeep,
+      run: () => `upkeep ${flip(E(), 'upkeep') ? 'on: engines and a high heat tolerance cost the battery a little every second' : 'off: engines and tolerance are free'}${E().on ? '' : ' (cells eat is off: Shift+A)'}`,
+      help: 'faster engines and a higher heat tolerance cost the battery a little every second (as heat)' },
+    { id: 'tolGene', keys: ['shift+z'], label: 'gene: heat tolerance', group: 'engines', type: 'toggle', get: () => E().tolGene,
+      run: () => `heat tolerance ${flip(E(), 'tolGene') ? 'is a gene: each cell tolerates its own temperature (and pays upkeep for it)' : `the same for all: ${E().tol} per R²`}${E().on ? '' : ' (cells eat is off: Shift+A)'}`,
+      help: 'each cell tolerates its own temperature, set by its genome (off: the same for all)' },
+    { id: 'permGene', keys: ['shift+j'], label: 'gene: permeability', group: 'engines', type: 'toggle', get: () => E().permGene,
+      run: () => `permeability ${flip(E(), 'permGene') ? 'is a gene: each cell\'s membrane lets substances through at its own rate' : `the same for all: ${E().perm} per s`}${E().on ? '' : ' (cells eat is off: Shift+A)'}`,
+      help: 'each cell\'s membrane lets substances through at its own rate, set by its genome (off: the same for all)' },
+  );
+
+  function viewText() {
+    const v = VIEWS[C().look.view] || 'fate';
+    return v === 'lineage' ? 'colour by lineage (key)' : v === 'strategy'
+      ? 'colour by strategy: gold harvesters (light), green burners, half and half both, grey the others' : 'colour by fate';
+  }
 
   function CH() { return app.matter.chem; }
   function chemNote() { return CH().on ? '' : ' (chemistry is off: Shift+M)'; }

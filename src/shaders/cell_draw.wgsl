@@ -22,8 +22,9 @@ struct Draw {
   mode: f32,        // 0 = colour by fate, 1 = colour by lineage (the key's hue)
   fillC: f32,       // disc fill of committed (non-stem) cells
   lever: f32,       // the lever (Sim.lever): the dots show the lattice the cell emits with
-  _p1: f32,
-  _p2: f32,
+  leakDot: f32,     // step 6: largest radius of the blue centre dot of a leaking cell, as a fraction of r (0 = none)
+  leakMin: f32,     // leak level below which no dot is drawn
+  blue: vec4f,      // field B's ink (rgb) for the step 6 marks; a = the converted cells' outline (0 = none)
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
@@ -117,7 +118,16 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   let fill = select(D.fill, D.fillC, c.kind != KIND_STEM);
   var rgb = mix(col * fill, col * D.dots, dot);
   rgb = mix(rgb, col * D.line, ring);
-  let a = disc * mix(D.fillA, 1.0, max(ring, dot));
+  // step 6, rule 1: a cell leaking into field B gets a flat blue centre dot, its area growing with the leak
+  var mark = 0.0;
+  if (D.leakDot > 0.0) {
+    let lk = clamp((cell_leak(c) - D.leakMin) / max(1.0 - D.leakMin, 1e-3), 0.0, 1.0);
+    if (lk > 0.0) {
+      mark = cover(D.leakDot * c.r * sqrt(lk), d, aa);
+      rgb = mix(rgb, D.blue.rgb, mark);
+    }
+  }
+  let a = disc * mix(D.fillA, 1.0, max(max(ring, dot), mark));
   // rgb is the colour as seen; blend premultiplied (one, one-minus-src-alpha)
   return vec4f(rgb * a, a);
 }

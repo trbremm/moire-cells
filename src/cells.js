@@ -51,6 +51,8 @@ export class Cells {
     this.grid = { gw: 0, gh: 0, cs: 1, n: 0, cap: 0 };
     this.checkOn = false;
     this.checkResult = null;   // last ?check result, for the overlay
+    this.pointer = { drag: false, x: 0, y: 0, vx: 0, vy: 0 };   // stirring (see stir)
+    this.timing = null;        // per-tick GPU time of the grid and the physics, from probe()
     this.warm = 0;             // ticks still to run at once after a reset (the reference pre-steps 200)
     // physics (live-tunable: moire.cells.params); forces are in CSS px / s, as in the reference
     this.params = {
@@ -64,6 +66,8 @@ export class Cells {
       drift: 0.15,    // slow drift of the medium, in units of R / s (reference 0.5, which tears a blob without
                       // adhesion; 0 = still)
       warmup: 120,    // ticks run at once after a reset, so a new culture starts settled
+      stir: 0.5,      // how strongly a drag pushes cells along (reference 0.5)
+      stirReach: 110, // how far from the pointer a drag reaches (CSS px; reference sqrt(12000))
       range: 2.2,     // grid cell size in units of R (must be >= the largest interaction range: 2 r for contact)
     };
     // drawing (live-tunable: moire.cells.look)
@@ -224,8 +228,9 @@ export class Cells {
     f[o + 8] = v.cssW / 2; f[o + 9] = v.cssH / 2; f[o + 10] = dt;
     f[o + 11] = p.contact ? p.stiffness : 0;
     f[o + 12] = p.damping; f[o + 13] = p.jitter; f[o + 14] = this.pull(); f[o + 15] = p.wall;
-    f[o + 16] = 0; f[o + 17] = 0; f[o + 18] = 0; f[o + 19] = 0;    // pointer, pointer velocity (stir)
-    f[o + 20] = 1; f[o + 21] = 0;                                  // stir reach squared, gain
+    const P = this.pointer, on = P.drag ? 1 : 0;
+    f[o + 16] = P.x; f[o + 17] = P.y; f[o + 18] = P.vx * on; f[o + 19] = P.vy * on;
+    f[o + 20] = p.stirReach * p.stirReach; f[o + 21] = p.stir;
     f[o + 22] = p.drift; f[o + 23] = time;
   }
 
@@ -262,6 +267,7 @@ export class Cells {
       const time = frame.time - Math.max(0, ticks - 1 - t) * frame.tickDt * (t < warm ? 0 : 1);
       this.writeSim(t, frame.tickDt, time);
       this.tick++;
+      if (t >= warm) { this.pointer.vx *= 0.8; this.pointer.vy *= 0.8; }   // the stir fades (reference: per frame)
     }
     this.device.queue.writeBuffer(this.simBuf, 0, this.simAB, 0, ticks * SLOT);
     for (let t = 0; t < ticks; t++) {
@@ -270,6 +276,74 @@ export class Cells {
       if (t === ticks - 1) this.maybeCheck(encoder, t, frame);
       this.encodeStep(encoder, t);
     }
+  }
+
+  // ---------- stirring (called by main.js on pointer moves) ----------
+  /** The pointer moved by (dx, dy) to (x, y) while dragging: cells nearby are pushed along, as in the reference. */
+  stir(x, y, dx, dy) {
+    const P = this.pointer;
+    P.drag = true; P.x = x; P.y = y;
+    P.vx = P.vx * 0.6 + dx * 24; P.vy = P.vy * 0.6 + dy * 24;
+  }
+
+  release() { Object.assign(this.pointer, { drag: false, vx: 0, vy: 0 }); }
+
+  // ---------- timing ----------
+  /**
+   * Measure the GPU time of one tick's grid build and physics: submit each K times on its own, between frames,
+   * and time it until the queue reports it done, minus the time an empty submit takes. Rough (+-0.1 ms), but
+   * works in every browser (timestamp queries are optional and coarse). The physics copy writes to a scratch
+   * buffer, and rebuilding the grid from the same positions changes nothing, so the probe does not disturb
+   * the simulation.
+   */
+  async probe(K = 8) {
+    if (this.probing) return;
+    this.probing = true;
+    const d = this.device, q = d.queue;
+    try {
+      if (!this.scratchBuf) {
+        this.scratchBuf = d.createBuffer({ label: 'cells probe scratch', size: this.count * CELL_BYTES, usage: GPUBufferUsage.STORAGE });
+      }
+      const b = (binding, buffer) => ({ binding, resource: { buffer } });
+      const scratchBG = d.createBindGroup({
+        label: 'cell step (probe)', layout: this.stepL.bgl,
+        entries: [{ binding: 0, resource: { buffer: this.simBuf, size: SIM_BYTES } }, b(1, this.sortedBuf),
+          b(2, this.sortIdxBuf), b(3, this.startsBuf), b(4, this.countsBuf), b(5, this.scratchBuf)],
+      });
+      const record = (fn) => { const e = d.createCommandEncoder({ label: 'cells probe' }); for (let k = 0; k < K; k++) fn(e); return e.finish(); };
+      const gridCB = record((e) => this.encodeGrid(e, 0));
+      const stepCB = record((e) => {
+        const pass = e.beginComputePass({ label: 'cell step (probe)' });
+        pass.setPipeline(this.pipes.step);
+        pass.setBindGroup(0, scratchBG, [0]);
+        pass.dispatchWorkgroups(Math.ceil(this.count / 128));
+        pass.end();
+      });
+      const timed = async (cbs) => { const t0 = performance.now(); q.submit(cbs); await q.onSubmittedWorkDone(); return performance.now() - t0; };
+      await q.onSubmittedWorkDone();
+      const base = await timed([]);
+      const tg = await timed([gridCB]);
+      const ts = await timed([stepCB]);
+      const now = { grid: Math.max(0, tg - base) / K, step: Math.max(0, ts - base) / K };
+      const T = this.timing;
+      this.timing = T ? { grid: T.grid + (now.grid - T.grid) * 0.3, step: T.step + (now.step - T.step) * 0.3 } : now;
+    } finally {
+      this.probing = false;
+    }
+  }
+
+  /** Lines for the F overlay. */
+  overlayLines() {
+    const g = this.grid, p = this.params, T = this.timing, c = this.checkResult;
+    const lines = [
+      `cells <b>${this.count}</b> · r ${this.R.toFixed(2)} px · grid ${g.gw}×${g.gh} (${g.cs.toFixed(1)} px) · contact push ${p.contact ? 'on' : 'off'}`,
+      T ? `cells per tick (gpu, probe): grid ${T.grid.toFixed(2)} ms · physics ${T.step.toFixed(2)} ms` : 'cells per tick (gpu, probe): measuring',
+    ];
+    if (c) {
+      lines.push(`grid check: ${c.contacts / 2} contacts` + (c.brute ? ` (brute force ${c.bruteContacts / 2}, ${c.mismatch} cells differ)` : '') +
+        ` · ${c.badSort} bad slots · overlap mean ${(100 * c.ovMean).toFixed(1)}% max ${(100 * c.ovMax).toFixed(1)}%`);
+    }
+    return lines;
   }
 
   // ---------- ?check: the grid's contacts against brute force ----------

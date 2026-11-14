@@ -15,7 +15,7 @@
 
 import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown } from './gpu.js';
 import { Background } from './background.js';
-import { Medium } from './field.js';
+import { Medium, KIND } from './field.js';
 import { Landscape } from './landscape.js';
 
 window.__moireBooted = true;
@@ -179,7 +179,7 @@ function drawOverlay() {
     `vendor ${esc(i.vendor || '?')} · arch ${esc(i.architecture || '?')}${i.device ? ' · device ' + esc(i.device) : ''}`,
     `canvas ${view.pxW}×${view.pxH} (dpr ${view.dpr.toFixed(2)}) · ${gpu.format}`,
     `ripple grid ${background.gw}×${background.gh} (${background.sc} css px/cell) · ambient ${background.ambient ? 'on' : 'off'}`,
-    `sources ${landscape.sources.length}/${landscape.params.maxSources} · landscape ${landscape.params.on ? 'on' : 'off'} · R ${medium.R.toFixed(2)} px · medium ${(medium.la0 * 180 / Math.PI).toFixed(2)}°`,
+    `tap ${TAP_MODES[tapMode].name} · sources ${landscape.sources.length}/${landscape.params.maxSources} · landscape ${landscape.params.on ? 'on' : 'off'} · R ${medium.R.toFixed(2)} px · medium ${(medium.la0 * 180 / Math.PI).toFixed(2)}°`,
     `sim t ${simTime.toFixed(1)} s`,
   ];
   if (debugLog.length) lines.push('', ...debugLog.map(esc));
@@ -191,7 +191,27 @@ function esc(s) {
 }
 
 // ---------- input ----------
+// what a click drops (keys 1, 2, 3)
+const TAP_MODES = [
+  { name: 'ripple', label: 'drop a ripple' },
+  { name: 'nutrient', label: 'drop a nutrient source', kind: KIND.NUT },
+  { name: 'threat', label: 'drop a threat source', kind: KIND.THR },
+];
+let tapMode = 0;
+
+function hintLine() {
+  return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
+    'C: clear sources · L: landscape · A: ambient ripples · F: frame time';
+}
+
+function tap(x, y) {
+  const m = TAP_MODES[tapMode];
+  if (m.kind === undefined) background.impulse(x, y, 2.5, 1.2 * background.sc);
+  else { landscape.addSource(x, y, m.kind); background.impulse(x, y, 3); }   // as the reference: a source lands with a ripple
+}
+
 function setupInput() {
+  hintEl.textContent = hintLine();
   const pointer = { down: false, drag: false, x: 0, y: 0, sx: 0, sy: 0 };
   const pos = (e) => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
 
@@ -215,7 +235,7 @@ function setupInput() {
     pointer.x = x; pointer.y = y;
   });
   const up = () => {
-    if (pointer.down && !pointer.drag) background.impulse(pointer.x, pointer.y, 2.5, 1.2 * background.sc);
+    if (pointer.down && !pointer.drag) tap(pointer.x, pointer.y);
     pointer.down = pointer.drag = false;
   };
   canvas.addEventListener('pointerup', up);
@@ -230,6 +250,12 @@ function setupInput() {
     } else if (k === 'a') {
       background.ambient = !background.ambient;
       flash(`ambient ripples ${background.ambient ? 'on' : 'off'}`);
+    } else if (k === '1' || k === '2' || k === '3') {
+      tapMode = Number(k) - 1;
+      flash(`click drops: ${TAP_MODES[tapMode].name}`);
+    } else if (k === 'c') {
+      landscape.clear();
+      flash('sources cleared');
     } else if (k === 'l') {
       landscape.params.on = !landscape.params.on;
       flash(`landscape ${landscape.params.on ? 'on' : 'off'}`);
@@ -238,11 +264,10 @@ function setupInput() {
 }
 
 let flashTimer = 0;
-const hintText = hintEl.textContent;
 function flash(text) {
   hintEl.textContent = text;
   clearTimeout(flashTimer);
-  flashTimer = setTimeout(() => { hintEl.textContent = hintText; }, 1600);
+  flashTimer = setTimeout(() => { hintEl.textContent = hintLine(); }, 1600);
 }
 
 boot().catch((e) => { if (!messageIsShown()) showError('Could not start', e.stack || e.message || String(e)); });

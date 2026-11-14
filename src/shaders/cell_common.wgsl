@@ -123,7 +123,7 @@ fn fate_motility(kind: u32) -> f32 {
 }
 
 // ---------- the genome ----------
-// Every cell carries a Bio record (96 bytes; keep in step with BIO_* in src/cells.js): its genome plus its
+// Every cell carries a Bio record (128 bytes; keep in step with BIO_* in src/genome.js): its genome plus its
 // small mutable state. Bio is double-buffered: each tick reads last tick's copy of every cell (bioPrev) and
 // writes the new one (bioNext), so a newborn copies its parent's genome race-free.
 //
@@ -138,8 +138,10 @@ struct Bio {
   body: vec4f,      // x adhesion, y size factor, z motility factor, w spare
   acc: vec4f,       // state, not genes: the four leaky accumulators
   env: vec4f,       // state: x nutrient, y threat felt last tick (neighbours read it when picking a parent);
-                    // z the A felt (plus the relay), through a leaky integrator; w > 0 converted (rule 2: 1;
-                    // with the relay, rule 3: seconds converted so far), w < 0 resting (seconds left), 0 neither
+                    // z the A felt, through a leaky integrator; w > 0 converted (rule 2: 1; with the relay,
+                    // rule 3: seconds converted so far), w < 0 resting (seconds left), 0 neither (step 6)
+  conv: vec4f,      // state (step 6): x the converted share of the neighbourhood, through the same integrator
+                    // (rule 3, relay); y z w spare
 };
 
 // The sources (nutrient, threat) for the cells: two vec4 per source, written by src/cells.js every frame:
@@ -197,14 +199,16 @@ struct Stats {
   events: array<vec4f, 64>,           // x, y, +1 birth / -1 death, 0
   bins: array<atomic<u32>, 144>,      // census: cells per key bin
   founders: array<atomic<u32>, 1632>, // census: bit set = that founder line still has cells
-  extra: array<atomic<u32>, 64>,      // census (step 6): see STATS_X_* below
+  extra: array<atomic<u32>, 80>,      // census (step 6): see STATS_X_* below
 };
 // step 6 census counters in Stats.extra
 const STATS_X_LEAK: u32 = 0u;       // cells leaking (leak level above 0.25)
 const STATS_X_CONV: u32 = 1u;       // converted cells
-const STATS_X_AHIST: u32 = 2u;      // 16 bins: the A a cell feels (its integrator), 0.25 wide from 0 (below 0 in bin 0)
-const STATS_X_SHIST: u32 = 18u;     // 10 bins: stretch length, 0.05 wide (0 .. 0.5)
-const STATS_X_LHIST: u32 = 28u;     // 10 bins: leak level, 0.1 wide
+const STATS_X_AHIST: u32 = 2u;      // 48 bins: the A a cell feels (its integrator), 0.2 wide from 0 (below 0 in bin 0)
+const STATS_X_ABINS: u32 = 48u;
+const STATS_X_AW: f32 = 0.2;
+const STATS_X_SHIST: u32 = 50u;     // 10 bins: stretch length, 0.05 wide (0 .. 0.5)
+const STATS_X_LHIST: u32 = 60u;     // 10 bins: leak level, 0.1 wide
 
 // standard normal random number (Box-Muller) from two uniform draws of stream (a, b)
 fn gauss(a: u32, b: u32) -> f32 {

@@ -232,21 +232,27 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // rule 2 (step 6), conversion A -> B: the A felt goes through a leaky integrator (bio.env.z, time constant
   // convTau), and the cell converts above convOn and converts back below convOff (hysteresis, so it does not
   // flicker). A converted cell emits B more strongly, or of the other sign (cell_beat); it shows a blue outline.
-  // Rule 3, relay through B: the B of converted neighbours adds to the trigger, so conversion spreads from cell to
+  // Rule 3, relay through B: the converted share of the neighbourhood adds to the trigger, so conversion spreads from cell to
   // cell; and a converted cell tires after relayOn s, then rests relayRest s before it can convert again (an
   // excitable medium: fronts travel, and the resting cells behind a front keep it from coming back).
-  bio.env.z += (aFelt + FL.relay * relaySig / max(relayAll, 1.0) - bio.env.z) * min(1.0, S.dt / max(FL.convTau, 1e-3));
+  let kInt = min(1.0, S.dt / max(FL.convTau, 1e-3));
+  bio.env.z += (aFelt - bio.env.z) * kInt;
+  bio.conv.x += (select(0.0, relaySig / max(relayAll, 1.0), relayOn) - bio.conv.x) * kInt;
+  // with the relay, the trigger is measured from convOff (0) to convOn (1), and the relay adds relay x share: a cell
+  // that feels the typical A (convOff, the median with convAuto) converts once 1 / relay of its neighbourhood has
+  let trigger = select(bio.env.z, (bio.env.z - FL.convOff) / max(FL.convOn - FL.convOff, 1e-3) + FL.relay * bio.conv.x, relayOn);
+  let onAt = select(FL.convOn, 1.0, relayOn);
   if (FL.conv <= 0.0) {
     bio.env.w = 0.0;
   } else if (!relayOn) {
-    bio.env.w = select(bio.env.w, 1.0, bio.env.w <= 0.0 && bio.env.z > FL.convOn);
+    bio.env.w = select(bio.env.w, 1.0, bio.env.w <= 0.0 && trigger > FL.convOn);
     if (bio.env.w > 0.0 && bio.env.z < FL.convOff) { bio.env.w = 0.0; }
   } else if (bio.env.w < 0.0) {
     bio.env.w = min(0.0, bio.env.w + S.dt);                       // resting
   } else if (bio.env.w > 0.0) {
     bio.env.w += S.dt;                                            // converted: tires, then rests
     if (bio.env.w > FL.relayOn) { bio.env.w = -FL.relayRest; }
-  } else if (bio.env.z > FL.convOn) {
+  } else if (trigger > onAt) {
     bio.env.w = S.dt;                                             // converts
   }
   c.flags = select(c.flags & ~CELL_CONV, c.flags | CELL_CONV, bio.env.w > 0.0);
@@ -338,6 +344,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       let inherit = (S.rules & RULE_INHERIT) != 0u;
       if (!inherit) { nb.acc = vec4f(0.0); }
       nb.env = vec4f(0.0);                      // a newborn has felt nothing yet and is not converted
+      nb.conv = vec4f(0.0);
       nb.body.w = TAU * rand01(bs, 200u);
       // record the death and the birth (counters always, positions while there is room)
       atomicAdd(&stats.deaths, 1u);

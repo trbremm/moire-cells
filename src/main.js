@@ -107,7 +107,6 @@ async function boot() {
       // the loop alone: no fates, adhesion, body traits, turnover, mutation or nutrient/threat biology
       Object.assign(cells.genome.rules, { diff: false, adh: false, body: false, turn: false, mut: false, nut: false });
       cells.fields.sign = 1;   // like repels like: islands and a labyrinth of strands (key U flips)
-      Object.assign(cells.fields, { convUp: 2.0, convDown: 1.25 });   // the loop alone feels less A (step 6, rule 2)
     }
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));

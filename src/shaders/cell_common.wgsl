@@ -78,10 +78,10 @@ struct Sim {
   emit: f32,        // cells' emission strength (0 = cells do not emit)
   r0: f32,          // a cell's envelope range r0, in units of R (reference 2.2)
   cut: f32,         // how far a cell feels another's field, in units of R (reference 3.6)
-  pad10: f32,
-  pad11: f32,
-  pad12: f32,
-  pad13: f32,
+  sense: f32,       // gain of the force from the field felt on the membrane (0 = off; 1 = reference)
+  tuneW: f32,       // receptor tuning width: how alike two lattices must be to feel each other (reference 0.177)
+  srcAmp: f32,      // strength of a fresh source (reference 5)
+  senseMax: f32,    // the field force saturates at this speed, in units of R per s (reference 3)
   pad14: f32,
   pad15: f32,
   pad16: f32,
@@ -263,7 +263,97 @@ fn cell_F(c: Cell) -> vec3f {
   return vec3f(ch + sh * c.e1, sh * c.e2, ch - sh * c.e1);
 }
 
-// ---------- the cell as an emitter (step 4) ----------
+// ---------- the loop (step 4): emitting, sensing, deforming ----------
+// EMW of the reference: how a cell of fate `fate` responds to the field of an emitter of kind `kind`
+// (positive = moves toward the field's bright blobs, negative = away). Like fates attract, unlike repel a
+// little; nutrient attracts, threat repels; neurons barely care.
+fn emw(fate: u32, kind: u32) -> f32 {
+  if (kind == KIND_NUT) {
+    switch fate {
+      case 0u: { return 1.0; }
+      case 1u: { return 0.4; }
+      case 2u: { return 0.3; }
+      case 4u: { return 0.2; }
+      default: { return 0.0; }
+    }
+  }
+  if (kind == KIND_THR) { return select(-1.2, -0.5, fate == KIND_NEU); }
+  if (fate == KIND_NEU) { return -0.1; }
+  if (fate == kind) { return select(0.5, 0.15, fate == KIND_STEM); }
+  return -0.15;
+}
+
+// squared distance between two hex lattices given by their 3 wavevectors: each wavevector of a is paired with
+// the nearest of b's (either sign, as the hex lattice is symmetric), and the squared differences summed
+fn lattice_dist2(a0: vec2f, a1: vec2f, a2: vec2f, b0: vec2f, b1: vec2f, b2: vec2f) -> f32 {
+  let a = array<vec2f, 3>(a0, a1, a2);
+  let b = array<vec2f, 3>(b0, b1, b2);
+  var sum = 0.0;
+  for (var m = 0; m < 3; m++) {
+    var best = 1e30;
+    for (var n = 0; n < 3; n++) {
+      let dm = a[m] - b[n];
+      let dp = a[m] + b[n];
+      best = min(best, min(dot(dm, dm), dot(dp, dp)));
+    }
+    sum += best;
+  }
+  return sum;
+}
+
+// receptor tuning (tune() in the reference): 1 for identical lattices, a Gaussian in the wavevector difference
+fn tuning(dist2: f32, k0: f32, w: f32) -> f32 {
+  return exp(-dist2 / (6.0 * w * w * k0 * k0));
+}
+
+// A cell's membrane: 6 straight segments of its (stretched) outline. mid = segment midpoint relative to the
+// cell's centre; edge = the segment as a vector, going round in increasing angle, so (edge.y, -edge.x) is the
+// outward normal times the segment's length.
+struct Membrane {
+  mid: array<vec2f, 6>,
+  edge: array<vec2f, 6>,
+};
+
+fn membrane(c: Cell) -> Membrane {
+  let F = cell_F(c);
+  var P: array<vec2f, 6>;
+  for (var a = 0; a < 6; a++) {
+    let t = f32(a) * P3;
+    let u = vec2f(cos(t), sin(t));
+    P[a] = c.r * vec2f(F.x * u.x + F.y * u.y, F.y * u.x + F.z * u.y);
+  }
+  var mb: Membrane;
+  for (var a = 0; a < 6; a++) {
+    let nx = P[(a + 1) % 6];
+    mb.mid[a] = 0.5 * (P[a] + nx);
+    mb.edge[a] = nx - P[a];
+  }
+  return mb;
+}
+
+// Adds an emitter's field, averaged exactly along each membrane segment, to seg[0..6) (sense() in the reference).
+// The field is w * (1/3) sum_m cos(q_m . (x - epos) + ph_m) / (1 + |x - epos|^2 / r0sq); rel = cell centre - epos.
+// Along a straight segment, the mean of cos(q . x + p) is cos at the midpoint times sinc(q . edge / 2); the
+// envelope is taken at the midpoint.
+fn sense_field(seg: ptr<function, array<f32, 6>>, mb: Membrane, rel: vec2f, q0: vec2f, q1: vec2f, q2: vec2f,
+               ph: vec3f, r0sq: f32, w: f32) {
+  let q = array<vec2f, 3>(q0, q1, q2);
+  var env: array<f32, 6>;
+  for (var a = 0; a < 6; a++) {
+    let x = rel + mb.mid[a];
+    env[a] = w / (3.0 * (1.0 + dot(x, x) / r0sq));
+  }
+  for (var m = 0; m < 3; m++) {
+    let base = dot(q[m], rel) + ph[m];
+    for (var a = 0; a < 6; a++) {
+      let X = 0.5 * dot(q[m], mb.edge[a]);
+      let sinc = select(sin(X) / X, 1.0, abs(X) < 1e-4);
+      (*seg)[a] += env[a] * cos(dot(q[m], mb.mid[a]) + base) * sinc;
+    }
+  }
+}
+
+// ---------- the cell as an emitter ----------
 // The lattice a cell emits with: its key (angle, log period factor) plus its fate's period, with the
 // difference from the medium's lattice scaled by the lever (Sim.lever). Returns (angle, log period factor).
 fn cell_lattice(c: Cell, lever: f32) -> vec2f {
@@ -279,7 +369,8 @@ struct CellBeat {
   q2p: vec4f,       // q2 (xy), the cell's centre (zw)
   k01: vec4f,       // the cell's own (strained) lattice wavevectors k0 (xy) and k1 (zw), for receptor tuning
   k2a: vec4f,       // k2 (xy), strength (z; 0 = not emitting), envelope range squared (w)
-  ph: vec4f,        // phases at the cell's centre (xyz), w spare
+  ph: vec3f,        // phases at the cell's centre
+  idx: u32,         // the cell's index in `cells` (a copy of sortIdx, so the step pass needs one buffer less)
 };
 
 // The cell as a field emitter: strength min(1, r/R) (times Sim.emit), range r0 = Sim.r0 x R. Its lattice is
@@ -304,7 +395,8 @@ fn cell_beat(c: Cell, S: Sim, M: Medium) -> CellBeat {
   cb.k01 = vec4f(emitter_k(e, M, 0), emitter_k(e, M, 1));
   cb.k2a = vec4f(emitter_k(e, M, 2), e.amp, e.r0sq);
   let ph = vec3f(b.ph0 + dot(b.q0, o), b.ph1 + dot(b.q1, o), b.ph2 + dot(b.q2, o));
-  cb.ph = vec4f(ph - TAU * floor(ph / TAU), 0.0);
+  cb.ph = ph - TAU * floor(ph / TAU);
+  cb.idx = 0u;
   return cb;
 }
 

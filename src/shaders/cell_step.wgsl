@@ -1,4 +1,4 @@
-// One simulation tick for every cell: contact signalling and fate choice from the genome, adhesion, soft
+// One simulation tick for every cell: the field felt on the membrane (step 4), contact signalling and fate choice from the genome, adhesion, soft
 // contact push, gentle pull to the dish centre, slow drift of the medium, soft walls, stirring, crawling,
 // damped (viscous) velocity and a little Brownian jitter.
 // Needs field_common.wgsl and cell_common.wgsl in front of it (src/cells.js does that).
@@ -11,7 +11,6 @@
 
 @group(0) @binding(0) var<uniform> S: Sim;
 @group(0) @binding(1) var<storage, read> sorted: array<Cell>;
-@group(0) @binding(2) var<storage, read> sortIdx: array<u32>;
 @group(0) @binding(3) var<storage, read> starts: array<u32>;
 @group(0) @binding(4) var<storage, read> counts: array<u32>;
 @group(0) @binding(5) var<storage, read_write> cells: array<Cell>;
@@ -20,13 +19,14 @@
 @group(0) @binding(8) var<storage, read_write> stats: Stats;
 @group(0) @binding(9) var<uniform> med: Medium;
 @group(0) @binding(10) var<uniform> src: Sources;
+@group(0) @binding(11) var<storage, read> beats: array<CellBeat>;
 
 @compute @workgroup_size(128)
 fn step(@builtin(global_invocation_id) id: vec3u) {
   let j = id.x;
   if (j >= S.count) { return; }
   var c = sorted[j];
-  let i = sortIdx[j];
+  let i = beats[j].idx;              // the cell's own slot in `cells` (sortIdx, carried in its beat)
   var bio = bioPrev[i];
   if ((c.flags & CELL_ALIVE) == 0u) { cells[i] = c; bioNext[i] = bio; return; }
 
@@ -37,8 +37,19 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var sig = vec4f(0.0);     // committed neighbours' signals per fate channel
   var nParent = 0u;         // touching neighbours seen so far, and the one picked as parent (sorted slot)
   var parent = 0xffffffffu;
+  let nutOn = (S.rules & RULE_NUT) != 0u;
   // what this cell feels from the sources (nutrient, threat); its neighbours read it next tick
-  bio.env = vec4f(feel_sources(S, src, med, c.pos), 0.0, 0.0);
+  bio.env = select(vec4f(0.0), vec4f(feel_sources(S, src, med, c.pos), 0.0, 0.0), nutOn);
+
+  // the loop: the field of the neighbours and the sources, averaged along each membrane segment
+  let sensing = S.sense > 0.0;
+  let cutR = S.cut * S.R;
+  var seg = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  let mb = membrane(c);
+  let me = beats[j];                         // this cell's own (strained) lattice, for the receptor tuning
+  let mk0 = me.k01.xy;
+  let mk1 = me.k01.zw;
+  let mk2 = me.k2a.xy;
 
   // every neighbour within reach: contact push, and (differentiation on) recognition and signals
   let rg = grid_range(S, grid_xy(S, c.pos));
@@ -54,6 +65,17 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         let d = o.pos - c.pos;
         let R0 = c.r + o.r;
         let d2 = dot(d, d);
+        if (sensing && d2 < cutR * cutR) {
+          let ob = beats[k];
+          if (ob.k2a.z > 0.0) {
+            // weight: sign by fates (EMW), receptor tuning by how alike the lattices are, strength, taper
+            let tn = tuning(lattice_dist2(mk0, mk1, mk2, ob.k01.xy, ob.k01.zw, ob.k2a.xy), med.k0, S.tuneW);
+            let w = emw(c.kind, o.kind) * tn * ob.k2a.z * cut_taper(d2, cutR);
+            if (w != 0.0) {
+              sense_field(&seg, mb, c.pos - ob.q2p.zw, ob.q01.xy, ob.q01.zw, ob.q2p.xy, ob.ph, ob.k2a.w, w);
+            }
+          }
+        }
         let reach = S.reach * R0;
         if (d2 >= reach * reach) { continue; }
         let dist = sqrt(d2);
@@ -63,7 +85,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         // SPECIFIC: my receptor against the neighbour's key (its lattice), a Gaussian in the wavevector difference
         let w = bio.rec.x;
         M += touch * exp(-key_dist2(bio.key.z, bio.key.w, o.la, o.aux) / (2.0 * w * w));
-        let ob = bioPrev[sortIdx[k]];
+        let ob = bioPrev[beats[k].idx];
         // a parent in case this cell dies this tick: one touching neighbour, picked uniformly
         // (reservoir sampling: the n-th candidate replaces the pick with chance 1/n)
         if (dist < R0) {
@@ -91,12 +113,43 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           u = d / dist;
         } else {
           // exactly on top of each other: push apart in a direction set by the pair
-          let a = TAU * rand01(min(i, sortIdx[k]) * 7919u + max(i, sortIdx[k]), 17u);
-          u = vec2f(cos(a), sin(a)) * select(-1.0, 1.0, i < sortIdx[k]);
+          let a = TAU * rand01(min(i, beats[k].idx) * 7919u + max(i, beats[k].idx), 17u);
+          u = vec2f(cos(a), sin(a)) * select(-1.0, 1.0, i < beats[k].idx);
         }
         f -= u * S.stiffness * (R0 - dist);
       }
     }
+  }
+
+  if (sensing) {
+    // the sources' landscape (nutrient, threat), felt the same way; tuning counts for 3/4 (as the reference)
+    for (var s = 0u; s < min(S.srcCount, MAX_CELL_SOURCES); s++) {
+      let sa = src.s[2u * s];
+      let sb = src.s[2u * s + 1u];
+      var e: Emitter;
+      e.pos = sa.xy; e.la = sa.z; e.amp = sa.w * S.srcAmp; e.r0sq = sb.x;
+      e.fa = 1.0; e.fb = 0.0; e.fd = 1.0;
+      e.kind = u32(sb.y);
+      e._pad = 0u;
+      let wk = emw(c.kind, e.kind);
+      if (wk == 0.0) { continue; }
+      let bt = make_beat(e, med);
+      let tn = tuning(lattice_dist2(mk0, mk1, mk2, emitter_k(e, med, 0), emitter_k(e, med, 1), emitter_k(e, med, 2)), med.k0, S.tuneW);
+      let o = e.pos - med.centre;
+      let ph = vec3f(bt.ph0 + dot(bt.q0, o), bt.ph1 + dot(bt.q1, o), bt.ph2 + dot(bt.q2, o));
+      sense_field(&seg, mb, c.pos - e.pos, bt.q0, bt.q1, bt.q2, ph - TAU * floor(ph / TAU), e.r0sq,
+                  wk * (0.25 + 0.75 * tn) * e.amp);
+    }
+    // force = sum of (segment mean x outward normal x length) = area x gradient, then a saturating response
+    var cf = vec2f(0.0);
+    for (var a = 0; a < 6; a++) {
+      let ed = mb.edge[a];
+      cf += seg[a] * vec2f(ed.y, -ed.x);
+    }
+    cf *= 1.3 * S.R / max(c.r, 0.1);
+    let cm = length(cf);
+    let sat = S.senseMax * S.R;
+    if (cm > 1e-6) { f += cf * (S.sense * sat * tanh(cm / sat) / cm); }
   }
 
   // differentiation: leaky accumulators per fate channel (SUFFICIENT: only sustained input crosses the
@@ -165,20 +218,20 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     let rate = S.turnover * (1.0 + S.unhappy * (1.0 - min(M, 1.0))) * (1.0 + threat);
     if (rand01(c.seed ^ 0x165667b1u, S.tick) < rate * S.dt) {
       let bs = pcg(c.seed ^ pcg(S.tick * 0x9e3779b9u + i));    // this birth's random stream
-      if (S.srcCount > 0u && rand01(bs, 300u) < S.nutFar + (1.0 - S.nutFar) * threat / (1.0 + threat)) {
+      if (nutOn && S.srcCount > 0u && rand01(bs, 300u) < S.nutFar + (1.0 - S.nutFar) * threat / (1.0 + threat)) {
         // a far parent: random cells, each accepted with a chance growing with the nutrient it feels
         // (rejection sampling, up to 16 tries); if none is accepted, the last fed one tried (after a threat
         // death, the last one tried at all), else the local parent stays
         for (var t = 0u; t < 16u; t++) {
           let k = min(u32(rand01(bs, 310u + t) * f32(S.count)), S.count - 1u);
-          let nut = bioPrev[sortIdx[k]].env.x;
+          let nut = bioPrev[beats[k].idx].env.x;
           if ((sorted[k].flags & CELL_ALIVE) == 0u || k == j) { continue; }
           if (threat > 0.05 || nut > 0.01) { parent = k; }
           if (rand01(bs, 330u + t) < nut) { parent = k; break; }
         }
       }
       let pc = sorted[parent];
-      let pi = sortIdx[parent];
+      let pi = beats[parent].idx;
       var nb = bioPrev[pi];
       if ((S.rules & RULE_MUT) != 0u) { nb = mutate(nb, bs, S.mutSize, S.mutJump); }
       let inherit = (S.rules & RULE_INHERIT) != 0u;

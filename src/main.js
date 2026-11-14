@@ -8,7 +8,8 @@
 // To add a step (landscape, cells, ...), write a class with resize / compute / render and push it into `layers`.
 //
 // URL parameters (handy for headless screenshots, see tools/shot.py):
-//   ?overlay=1  show the frame-time / adapter overlay from the start
+//   ?overlay=1  show the frame-time / adapter overlay from the start (overlay=ghost: kept up to date but
+//               invisible, so tools/shot.py can print it without it covering the picture)
 //   ?ripple=1   drop a ripple every 0.7 s at varying spots
 //   ?debug=1    copy console warnings and errors into the overlay
 //   ?nogpu=1    pretend WebGPU is missing (to see the fallback message)
@@ -18,6 +19,7 @@
 //   ?speed=N    simulation speed: 1, 2, 4 or 8 ticks of 1/60 s per 1/60 s of real time (keys [ and ])
 //   ?founders=N founder genomes at the start (0 = every cell its own)
 //   ?view=1     colour by lineage from the start (key V)
+//   ?bio=0      start with the biology rules off (D H B T M E): the loop alone
 
 import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown } from './gpu.js';
 import { Background } from './background.js';
@@ -101,6 +103,10 @@ async function boot() {
     if (params.has('founders')) cells.genome.params.founders = Number(params.get('founders')) || 0;
     if (flag('view')) cells.look.view = 1;
     if (flag('check')) cells.enableCheck();
+    if (params.get('bio') === '0') {
+      // the loop alone: no fates, adhesion, body traits, turnover, mutation or nutrient/threat biology
+      Object.assign(cells.genome.rules, { diff: false, adh: false, body: false, turn: false, mut: false, nut: false });
+    }
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));
     return;
@@ -123,6 +129,7 @@ async function boot() {
   window.addEventListener('resize', resize);
   setupInput();
   if (flag('overlay')) overlayEl.hidden = false;
+  if (params.get('overlay') === 'ghost') overlayEl.style.opacity = '0';   // kept up to date but invisible (for tools/shot.py)
   running = true;
   stage('running');
   requestAnimationFrame(frame);
@@ -228,7 +235,7 @@ let tapMode = 0;
 
 function hintLine() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · K: cell field · O: emit · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
+    'C: clear · L: landscape · K: cell field · O: emit · S: sense · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
 }
 
 function tap(x, y) {
@@ -327,6 +334,9 @@ function setupInput() {
     } else if (k === 'p') {
       cells.params.contact = !cells.params.contact;
       flash(`contact push ${cells.params.contact ? 'on' : 'off'}`);
+    } else if (k === 's') {
+      cells.params.senseOn = !cells.params.senseOn;
+      flash(`field sensing ${cells.params.senseOn ? 'on: cells move along the field they feel on their membrane' : 'off'}`);
     } else if (k === 'o') {
       cells.params.emit = !cells.params.emit;
       flash(`cells emit ${cells.params.emit ? 'on: every cell adds its own beat to the field' : 'off'}`);

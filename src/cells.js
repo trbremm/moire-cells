@@ -89,6 +89,10 @@ export class Cells {
                       // key's angle and period difference from the medium (1 = as the genome has it)
       r0: 2.2,        // a cell's envelope range, in units of R (reference: r0^2 = 4.84 R^2)
       cut: 3.6,       // how far a cell's field reaches (sensed and drawn), in units of R (reference 3.6)
+      sense: 1.0,     // force from the field felt on the membrane (0 = off; key S toggles)
+      senseOn: true,
+      tuneW: 0.177,   // receptor tuning width (reference: exp(-|dk|^2 / (3 x 0.0625 k0^2)))
+      senseMax: 3.0,  // the field force saturates at this speed (R / s; reference 3)
     };
     // drawing (live-tunable: moire.cells.look)
     this.fieldScale = 0.5;     // texels per CSS px of the cells' field texture
@@ -149,7 +153,8 @@ export class Cells {
     };
     const un = (binding) => ({ binding, visibility: C, buffer: { type: 'uniform' } });
     this.gridL = layout('cell grid', [sim, ro(1), rw(2), rw(3), rw(4), rw(5), rw(6), rw(7), un(8), rw(9)]);
-    this.stepL = layout('cell step', [sim, ro(1), ro(2), ro(3), ro(4), rw(5), ro(6), rw(7), rw(8), un(9), un(10)]);
+    // (at most 8 storage buffers per stage, the core limit: the step finds sortIdx in the beats)
+    this.stepL = layout('cell step', [sim, ro(1), ro(3), ro(4), rw(5), ro(6), rw(7), rw(8), un(9), un(10), ro(11)]);
     this.censusL = layout('cell census', [sim, ro(1), ro(2), rw(3)]);
     this.checkL = layout('cell check', [sim, ro(1), ro(2), ro(3), ro(4), ro(5), rw(6),
       { binding: 7, visibility: C, buffer: { type: 'uniform' } }]);
@@ -280,8 +285,8 @@ export class Cells {
     return this.device.createBindGroup({
       label: 'cell step', layout: this.stepL.bgl,
       entries: [{ binding: 0, resource: { buffer: this.simBuf, size: SIM_BYTES } }, b(1, this.sortedBuf),
-        b(2, this.sortIdxBuf), b(3, this.startsBuf), b(4, this.countsBuf), b(5, cellBuf),
-        b(6, bioPrev), b(7, bioNext), b(8, statsBuf), b(9, this.medium.buffer), b(10, this.srcBuf)],
+        b(3, this.startsBuf), b(4, this.countsBuf), b(5, cellBuf),
+        b(6, bioPrev), b(7, bioNext), b(8, statsBuf), b(9, this.medium.buffer), b(10, this.srcBuf), b(11, this.beatBuf)],
     });
   }
 
@@ -341,6 +346,8 @@ export class Cells {
     f[o + 38] = G.turnover; f[o + 39] = G.unhappy; f[o + 40] = G.mutSize; f[o + 41] = G.mutJump;
     f[o + 42] = G.nutFar; f[o + 43] = G.thrKill; u[o + 44] = this.srcCount; f[o + 45] = G.beatMix;
     f[o + 46] = p.lever; f[o + 47] = p.emit ? 1 : 0; f[o + 48] = p.r0; f[o + 49] = p.cut;
+    f[o + 50] = p.senseOn ? p.sense : 0; f[o + 51] = p.tuneW;
+    f[o + 52] = this.landscape ? this.landscape.params.amp : 5; f[o + 53] = p.senseMax;
   }
 
   /** Record the grid build for the tick whose uniforms are in slot k. */
@@ -389,6 +396,7 @@ export class Cells {
       this.encodeStep(encoder, t);
     }
     this.maybeCensus(encoder, ticks - 1, frame);
+    this.maybeMotion(encoder, frame);
     this.encodeField(encoder);
   }
 
@@ -413,10 +421,10 @@ export class Cells {
     pass.end();
   }
 
-  /** Upload the sources as the cells feel them (once per frame; none while the rule is off). */
+  /** Upload the sources as the cells feel them (once per frame). */
   writeSources() {
     const L = this.landscape, a = this.srcData;
-    const list = L && this.genome.rules.nut ? L.sources.slice(-MAX_SRC) : [];
+    const list = L ? L.sources.slice(-MAX_SRC) : [];
     const r0sq = L ? (L.params.range * this.medium.R) ** 2 : 1, ref = L ? L.params.amp : 1;
     list.forEach((s, k) => {
       a.set([s.x, s.y, s.la, s.amp / ref, r0sq, s.kind, 0, 0], 8 * k);
@@ -474,6 +482,58 @@ export class Cells {
       // device lost or page closing: nothing to show
     } finally {
       rb.busy = false;
+    }
+  }
+
+  // ---------- motion: how the cells move, for the overlay ----------
+  /**
+   * About once per simulation second, copy the cells out and compare with the copy before: mean speed (the
+   * damped velocity), mean net displacement per second (low against the speed = jittering on the spot), mean
+   * stretch, and the spread of the culture (RMS distance from its centre of mass, in R).
+   */
+  maybeMotion(encoder, frame) {
+    if (this.motionBusy || frame.time - (this.motionLast ?? -1e9) < 1) return;
+    const d = this.device;
+    if (!this.motionRead) {
+      this.motionRead = d.createBuffer({ label: 'cells motion read', size: this.count * CELL_BYTES, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+    }
+    this.motionBusy = true;
+    this.motionLast = frame.time;
+    encoder.copyBufferToBuffer(this.cellBuf, 0, this.motionRead, 0, this.count * CELL_BYTES);
+    const time = frame.time;
+    setTimeout(() => this.readMotion(time), 0);
+  }
+
+  async readMotion(time) {
+    try {
+      await this.motionRead.mapAsync(GPUMapMode.READ);
+      const f = new Float32Array(this.motionRead.getMappedRange().slice(0));
+      this.motionRead.unmap();
+      const n = this.count, R = this.R, prev = this.motionPrev;
+      let sp = 0, st = 0, cx = 0, cy = 0, net = 0, nNet = 0;
+      for (let i = 0; i < n; i++) {
+        const o = i * CELL_FLOATS;
+        sp += Math.hypot(f[o + 2], f[o + 3]); st += Math.hypot(f[o + 6], f[o + 7]);
+        cx += f[o]; cy += f[o + 1];
+      }
+      cx /= n; cy /= n;
+      let r2 = 0;
+      for (let i = 0; i < n; i++) { const o = i * CELL_FLOATS; r2 += (f[o] - cx) ** 2 + (f[o + 1] - cy) ** 2; }
+      const dt = prev ? time - prev.time : 0;
+      if (prev && dt > 0.2) {
+        for (let i = 0; i < n; i++) {
+          const o = i * CELL_FLOATS, dd = Math.hypot(f[o] - prev.pos[2 * i], f[o + 1] - prev.pos[2 * i + 1]);
+          if (dd < 8 * R * dt) { net += dd; nNet++; }   // a reborn cell jumps; leave those out
+        }
+      }
+      const pos = new Float32Array(2 * n);
+      for (let i = 0; i < n; i++) { pos[2 * i] = f[i * CELL_FLOATS]; pos[2 * i + 1] = f[i * CELL_FLOATS + 1]; }
+      this.motionPrev = { time, pos };
+      this.motion = { time, speed: sp / n, net: nNet ? net / nNet / dt : null, stretch: st / n, spread: Math.sqrt(r2 / n) / R };
+    } catch (e) {
+      // device lost or page closing
+    } finally {
+      this.motionBusy = false;
     }
   }
 
@@ -545,6 +605,9 @@ export class Cells {
       lines.push(`lineages: ${st.founders} founder lines · ${st.clusters} key clusters · births ${st.birthRate.toFixed(1)}/s · deaths ${st.deathRate.toFixed(1)}/s`);
     }
     lines.push(`rules: D differentiation ${on(r.diff)} · H adhesion ${on(r.adh)} · B body ${on(r.body)} · T turnover ${on(r.turn)} · M mutation ${on(r.mut)} · E nutrient/threat ${on(r.nut)} · I inherit fate ${on(r.inherit)} · view ${this.look.view ? 'lineage' : 'fate'}`);
+    const mo = this.motion;
+    lines.push(`loop: S sense ${on(p.senseOn)} · O emit ${on(p.emit)} · lever ${p.lever.toFixed(2)}` +
+      (mo ? ` · speed ${mo.speed.toFixed(1)} px/s · net ${mo.net == null ? '-' : mo.net.toFixed(1)} px/s · stretch ${mo.stretch.toFixed(2)} · spread ${mo.spread.toFixed(1)} R` : ''));
     if (c) {
       lines.push(`grid check: ${c.contacts / 2} contacts` + (c.brute ? ` (brute force ${c.bruteContacts / 2}, ${c.mismatch} cells differ)` : '') +
         ` · ${c.badSort} bad slots · overlap mean ${(100 * c.ovMean).toFixed(1)}% max ${(100 * c.ovMax).toFixed(1)}%`);

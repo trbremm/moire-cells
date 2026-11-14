@@ -537,7 +537,8 @@ export class Cells {
     f[44] = P.side ? (P.sideMode ? P.sideGain / 60 : P.sideGain) : 0; u[45] = P.sideMode ? 1 : 0;
     // step C5: what the step needs of the cells' eating (src/eat.js): the switches (all off while it is off) and knobs
     const E = this.eat.params, rule = (k) => this.eat.rule(k);
-    u[47] = (rule('pay') ? 1 : 0) | (rule('heat') ? 2 : 0) | (rule('bias') ? 4 : 0) | (rule('smell') ? 8 : 0);
+    u[47] = (rule('pay') ? 1 : 0) | (rule('heat') ? 2 : 0) | (rule('bias') ? 4 : 0) | (rule('smell') ? 8 : 0) |
+      (rule('tolGene') ? 16 : 0);   // step C6: heat damage by each cell's tolerance gene
     f[48] = Math.max(1e-3, E.crawlFull); f[49] = Math.max(0, E.crawlCost); f[50] = Math.max(1e-3, E.tol); f[51] = Math.max(0, E.heatKill);
     f[52] = Math.max(0, E.biasFloor); f[53] = Math.max(0, E.smellGain); f[54] = Math.max(1e-6, E.smellHalf);
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);

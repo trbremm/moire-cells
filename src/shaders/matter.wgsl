@@ -31,7 +31,7 @@ struct MatterP {
   px: f32,                      // CSS px per pixel
   conc: f32,                    // counts in one pixel x conc = atom-units per R^2
   edge: f32,                    // share of a rim pixel's mobile matter that leaves per tick
-  _p1: f32,
+  pig: u32,                     // step C6: offset in `mg` of the cells' pigment blocks (heat_common.wgsl; 0 = none)
   k: array<vec4f, 4>,           // per channel: spreading per substep (0 = does not move: sediment)
   layer: array<vec4u, 4>,       // per channel: the drawing's layer (0 free atoms, 1 fuels, 2 sediment, 3 trace)
   react: array<vec4f, 4>,       // per channel: 1 for a reactive free atom (a giver or a taker)
@@ -301,7 +301,13 @@ fn react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
             }
           }
           let cover = f32(cov) / (9.0 * COVER_SCALE);
-          et = LP.power * s * exp(-(LP.tauMed + LP.tauCell * cover));
+          // step C6: and minus what the cells' pigments caught (their depth, which each cell spread over its 3 x 3
+          // pixels, per band)
+          var pig = vec4f(0.0);
+          if (MP.pig != 0u) {
+            for (var b = 1u; b < 4u; b++) { pig[b] = f32(mg[MP.pig + (b - 1u) * MP.n + i]) / COVER_SCALE; }
+          }
+          et = LP.power * s * exp(-(LP.tauMed + LP.tauCell * cover + pig));
         }
       }
       // optical depths of the absorbers, per reaction and per band

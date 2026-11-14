@@ -23,6 +23,19 @@
 //   reset  a new culture (N, G): every cell's stock back to the dish at its place, its battery as heat, then the
 //          starter charge into every battery (booked as energy in)
 //
+// Step C6, engines in the genome: every cell's engines (Bio.eng, Bio.rate; ENGINES in src/matter.js, struct Eng below) run in
+// the eat dispatch, after the membrane: a HARVEST engine (make fuel, or a swap run uphill: gT + G -> GT + g, the light atom
+// going free) has a pigment that catches its band of the light falling on the cell (the
+// cell books it as light in; it also puts its pigment's depth down in the heat buffer, so the dish's absorption and the
+// substances' reactions under it see less of that band) and each photon makes one fuel from the stock. Light never
+// charges the battery: the photon pays only what goes into the bond (a weaker photon takes the difference from the
+// battery), the spark is paid from the battery and lost as heat, the rest of the photon (and a photon with nothing to
+// make) becomes heat at the cell. Only the downhill engines fill the battery: a BURN, SWAP or FORM engine works like the
+// C5 burner (spark from the battery and given back, the energy released into it minus the `ineff` share as heat). So a
+// harvester without a burner (or a breathing swap) runs its battery flat and stops. UPKEEP: a cell pays per s for its engines' rates and
+// its heat tolerance, from the battery, as heat. The PERMEABILITY gene sets the membrane's rate per cell (plan).
+// The C5 burner is now the rule "everyone burns" (EF_BURN), off by default once the engines are on.
+//
 // A TAKE from a word other invocations may also change (a grid pixel, a parent's stock): subtract what is wanted, keep
 // what was there (at most the want), and add back the rest. Whatever the order, no word goes below zero for good and
 // the takers together get no more than was there.
@@ -34,6 +47,8 @@
 @group(0) @binding(4) var<uniform> EP: EatP;
 @group(0) @binding(5) var<uniform> CP: ChemP;                           // step C4's reactions (heat_common.wgsl)
 @group(0) @binding(6) var<uniform> HP: HeatP;
+@group(0) @binding(8) var<uniform> LP: LightP;                          // step C6: the light (light_common.wgsl)
+@group(0) @binding(10) var<storage, read> bio: array<Bio>;              // step C6: the genomes (this tick's copy)
 @group(0) @binding(9) var<storage, read_write> flux: array<i32>;      // per cell 16: the exchange per channel (+ in, - out),
                                                                     // [15] the temperature under it (f32 bits)
 // The plan pass sees the same buffers through plain views (no atomics: on Direct3D an atomic load is a read-modify-write,
@@ -45,7 +60,17 @@
 const SW: u32 = 16u;       // stock words per cell
 const BAT: u32 = 13u;      // the battery's word
 
-// what src/eat.js writes once per frame (384 bytes)
+// step C6: one engine of ENGINES (src/matter.js), 32 bytes
+struct Eng {
+  ch: vec4u,               // reactants x, y and products z, w (NONE: none; form lists its linker twice)
+  kind: u32,               // 0 harvest (make fuel by light, or an uphill swap: then w is the freed light atom), 1 burn,
+                           // 2 swap, 3 form
+  g16: i32,                // heat counts per event: stored in the bond (harvest) or released (the others)
+  spark: f32,              // the bond's spark (energy units)
+  _p: u32,
+};
+
+// what src/eat.js writes once per frame (1296 bytes)
 struct EatP {
   flags: u32,              // EF_* below
   mask: u32,               // bit c: the dish moves channel c this frame (the cells may put matter into it)
@@ -68,10 +93,26 @@ struct EatP {
   pair: array<vec4u, 4>,   // per channel: a fuel's two atoms' channels, x | y << 8 (0xffff: not a fuel)
   natoms: array<vec4f, 4>, // per channel: atoms per unit
   spark: array<vec4f, 4>,  // per channel: its bond's spark (energy units)
+  // ---- step C6 ----
+  engMax: f32,             // an engine slot runs at most this many events (counts) per tick
+  pigK: f32,               // a pigment's optical depth per unit of its slot's rate
+  upEng: f32,              // upkeep: heat counts per tick per unit of engine rate
+  upTol: f32,              // upkeep: heat counts per tick for a tolerance of tolRef (in proportion to the tolerance)
+  tolRef: f32,
+  pigOff: u32,             // word offset in hb of the pigment cover's first block (visible 1; then visible 2, hard); 0: none
+  _c0: u32, _c1: u32, _c2: u32, _c3: u32, _c4: u32, _c5: u32, _c6: u32, _c7: u32, _c8: u32, _c9: u32,
+  photon16: vec4i,         // per light band: one photon's energy in heat counts per event (16 x its energy)
+  ratio: array<vec4f, 4>,  // per channel: its spreading speed / the light atoms' (scales the permeability gene; sediment 0)
+  eng: array<Eng, 24>,     // ENGINES (18)
 };
 const EF_EAT: u32 = 1u;      // the membrane trades (cells eat, Shift+A)
-const EF_BURN: u32 = 2u;     // the burner (Shift+U)
+const EF_BURN: u32 = 2u;     // everyone burns: the C5 built-in burner (Shift+U)
 const EF_INSIDE: u32 = 4u;   // the table's reactions inside cells (Shift+I)
+const EF_ENG: u32 = 8u;      // step C6: engines from the genome
+const EF_PIG: u32 = 16u;     // ... pigments catch light (harvest engines)
+const EF_UPKEEP: u32 = 32u;  // ... upkeep costs
+const EF_TOLG: u32 = 64u;    // ... the heat tolerance is a gene (else the global `tol`)
+const EF_PERMG: u32 = 128u;  // ... the permeability is a gene (else the global `perm`)
 
 // counters (LG_K_EV + 128 k): per workgroup in wev, then one 64-bit add
 const EV_BURNED: u32 = 0u;      // fuel counts the burners broke
@@ -89,6 +130,19 @@ const EV_BATBACK: u32 = 11u;    // heat counts: dead cells' batteries become hea
 const EV_GONE: u32 = 12u;       // atoms (counts) booked as gone at a death (their channel not moving)
 const EV_IN_HEAT: u32 = 13u;    // heat counts released by the reactions inside
 var<workgroup> wev: array<atomic<i32>, 16>;
+// step C6 counters (LG_K_EV2 + 128 k), in heat counts unless said otherwise
+const E2_PIG: u32 = 0u;         // 0..3: light the pigments caught, per band
+const E2_MADE: u32 = 4u;        // counts the harvest engines (with a pigment) made: fuel, upgraded fuel, cracked sediment
+const E2_DEFICIT: u32 = 5u;     // heat counts the batteries paid for the harvest engines (their sparks, weak photons)
+const E2_BURN: u32 = 6u;        // counts the burn engines broke
+const E2_SWAP: u32 = 7u;        // ... the swap engines swapped
+const E2_FORM: u32 = 8u;        // ... the form engines chained (sediment counts)
+const E2_GAIN: u32 = 9u;        // heat counts the burn, swap and form engines put into batteries
+const E2_HEAT: u32 = 10u;       // heat counts the engines released (their inefficiency, the photons' rest, unused photons)
+const E2_UPKEEP: u32 = 11u;     // heat counts paid as upkeep
+const E2_IDLE: u32 = 12u;       // heat counts of photons caught with nothing to make (part of E2_HEAT)
+const E2_STORE: u32 = 13u;      // counts the storers (uphill engines without a pigment) made, paid by the battery
+var<workgroup> wev2: array<atomic<i32>, 16>;
 
 fn add64(lo: u32, x: i32) {
   if (x == 0) { return; }
@@ -175,6 +229,9 @@ fn flush_counters(li: u32, slot: u32) {
   if (li < 16u) {
     let v = atomicLoad(&wev[li]);
     if (v != 0) { add64(LG_K_EV + 128u * li + slot, v); }
+  } else if (li < 32u) {
+    let v = atomicLoad(&wev2[li - 16u]);
+    if (v != 0) { add64(LG_K_EV2 + 128u * (li - 16u) + slot, v); }
   }
 }
 
@@ -233,9 +290,12 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   let room = clamp(1.0 - atomsIn / max(cap, 1.0), 0.0, 1.0);
   let Ao = 9.0 * HP.px * HP.px;
   let rs = pcg(c.seed ^ pcg(S.tick * 0x9e3779b9u + 0x2c1b3c6du));
+  // step C6: with the permeability gene on, the cell's own (Bio.rate.w, for the light atoms) x each channel's ratio
+  let permG = (EP.flags & EF_PERMG) != 0u;
+  let pgene = bio[i].rate.w;
   for (var k = 0u; k < NCH; k++) {
     var n = 0;
-    let pk = ep_f(EP.perm, k);
+    let pk = select(ep_f(EP.perm, k), pgene * ep_f(EP.ratio, k), permG);
     if (eatOn && pk > 0.0 && (EP.mask & (1u << k)) != 0u) {
       let base = cur - lw + k * EP.n;
       var Mo = 0;
@@ -346,7 +406,112 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     var sparkScale = 1.0;
     if (CP.traceOn != 0u) { sparkScale = 1.0 / (1.0 + CP.traceK * f32(m[CP.trace]) * concIn); }
 
-    // ---- the burner: fuel -> its two atoms, the bond's energy into the battery minus the heat share ----
+    // ---- step C6: the engines from the genome ----
+    let b = bio[i];
+    if ((EP.flags & EF_ENG) != 0u) {
+      // pigments: each harvest slot's pigment catches its band of the light falling on the cell, in whole photons (one
+      // photon = one event's worth); its optical depth is pigK x the slot's rate, and it shares the band with what else
+      // catches it there (the medium, the cell's body) by depth, as the dish's absorption does
+      var nph = vec3i(0);
+      if ((EP.flags & EF_PIG) != 0u && LP.mode != LIGHT_OFF) {
+        let s = light_factor(LP, c.pos);
+        var tb = vec4f(0.0);
+        for (var k = 0u; k < 3u; k++) {
+          if (b.rate[k] > 0.0 && EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) > 0u) { tb[eng_band(b.eng[k])] += EP.pigK * b.rate[k]; }
+        }
+        if (s > 0.0 && any(tb > vec4f(0.0))) {
+          let apx = areaPx / (HP.px * HP.px);                  // the cell's area in heat pixels
+          let tot = tb + LP.tauMed + LP.tauCell;
+          let caught = LP.power * s * apx * (1.0 - exp(-tot)) / max(tot, vec4f(1e-9));   // x a depth = what it catches
+          for (var k = 0u; k < 3u; k++) {
+            let band = eng_band(b.eng[k]);
+            if (b.rate[k] <= 0.0 || EP.eng[eng_index(b.eng[k])].kind != 0u || band == 0u) { continue; }
+            let ph16 = EP.photon16[band];
+            let n = i32(floor(caught[band] * EP.pigK * b.rate[k] / f32(ph16) + u01(pcg(rs + k * 0x2f6b1e3du + 0x13579bdfu))));
+            nph[k] = n;
+            atomicAdd(&wev2[E2_PIG + band], n * ph16);
+          }
+          // the pigments' depth, put down over the 3 x 3 pixels under the cell for the light's absorption this tick
+          // (heat.wgsl absorb, matter.wgsl react: they see that much less of the band, which the cells caught instead;
+          // spread here, so the pixels read one word per band instead of nine)
+          if (EP.pigOff != 0u) {
+            let idx = footprint(c.pos);
+            for (var band = 1u; band < 4u; band++) {
+              let v = i32(round(tb[band] * apx * COVER_SCALE / 9.0));
+              if (v <= 0) { continue; }
+              for (var q = 0; q < 9; q++) { atomicAdd(&hb[EP.pigOff + (band - 1u) * HP.n + idx[q]], v); }
+            }
+          }
+        }
+      }
+      let cap = i32(EP.engMax);
+      for (var k = 0u; k < 3u; k++) {
+        let rk = b.rate[k];
+        if (rk <= 0.0) { continue; }
+        let E = EP.eng[eng_index(b.eng[k])];
+        let sp16 = max(i32(ceil(E.spark * sparkScale * 16.0)), 1);
+        // what it works on: one reactant, two different ones (the scarcer), or a pair of the same (half of it)
+        var a = m[E.ch.x];
+        if (E.ch.y != NONE) { a = select(min(m[E.ch.x], m[E.ch.y]), m[E.ch.x] / 2, E.ch.y == E.ch.x); }
+        if (E.kind == 0u) {
+          // UPHILL (make fuel, an uphill swap freeing a light atom, crack sediment). Light never charges the battery.
+          // With a pigment (band 1..3): one photon per event pays the energy that goes into the bonds (a photon below it
+          // needs the difference, d16, from the battery); the SPARK is paid from the battery and lost as heat (so a
+          // harvester runs its battery down unless the cell also burns or breathes); the rest of each photon, and photons
+          // with nothing to work on, heat. Without one (band 0, a STORER): rate x what it works on per s, the battery
+          // pays the whole difference and the spark (battery energy banked in the stock as fuel)
+          let band = eng_band(b.eng[k]);
+          var np = nph[k];
+          var ph16 = 0;
+          if (band == 0u) {
+            np = i32(floor(rk * f32(max(a, 0)) * EP.dt + u01(pcg(rs + k * 0x6c8e9cf5u + 0x2545f491u))));
+          } else {
+            ph16 = EP.photon16[band];
+          }
+          if (np <= 0) { continue; }
+          let d16 = max(E.g16 - ph16, 0);
+          let c16 = sp16 + d16;                                 // from the battery per event
+          var n = min(np, min(a, cap));
+          n = max(min(n, bat / c16), 0);
+          if (band == 0u) { np = n; }                           // (a storer has no photons to waste)
+          m[E.ch.x] -= n;
+          if (E.ch.y != NONE) { m[E.ch.y] -= n; }
+          m[E.ch.z] += n;
+          if (E.ch.w != NONE) { m[E.ch.w] += n; }
+          bat -= n * c16;
+          let hh = n * (ph16 + c16 - E.g16) + (np - n) * ph16;
+          heat += hh;
+          atomicAdd(&wev2[select(E2_MADE, E2_STORE, band == 0u)], n);
+          atomicAdd(&wev2[E2_DEFICIT], n * c16);
+          atomicAdd(&wev2[E2_HEAT], hh);
+          atomicAdd(&wev2[E2_IDLE], (np - n) * ph16);
+        } else {
+          // burn, swap, form: rate x what it works on per s (the fuel; the scarcer of an atom and a fuel; pairs of
+          // linkers), at most engMax per tick; the spark from the battery first (an empty one starts nothing), the energy
+          // released into it minus the ineff share as heat; a full battery takes nothing more
+          if (a <= 0) { continue; }
+          let h1 = (E.g16 * i32(EP.ineff)) / 256;
+          let g1 = E.g16 - h1;
+          var n = i32(floor(rk * f32(a) * EP.dt + u01(pcg(rs + k * 0x6c8e9cf5u + 0x2545f491u))));
+          n = min(n, min(a, cap));
+          n = min(n, bat / sp16);
+          n = min(n, max(batMax - bat, 0) / max(g1, 1));
+          if (n <= 0) { continue; }
+          m[E.ch.x] -= n;
+          if (E.ch.y != NONE) { m[E.ch.y] -= n; }
+          m[E.ch.z] += n;
+          if (E.ch.w != NONE) { m[E.ch.w] += n; }
+          bat += n * g1;
+          heat += n * h1;
+          atomicAdd(&wev2[E2_BURN + E.kind - 1u], n);
+          atomicAdd(&wev2[E2_GAIN], n * g1);
+          atomicAdd(&wev2[E2_HEAT], n * h1);
+        }
+      }
+    }
+
+    // ---- the burner (C5's built-in one; since C6 the rule "everyone burns"): fuel -> its two atoms, the bond's energy
+    // into the battery minus the heat share ----
     // The spark of each event is paid from the battery first and given back (the reaction is downhill), so a battery
     // holding less than one event's spark starts nothing. Rate: kBurner x the fuel in stock per s, at most burnMax counts
     // per tick in all, and no more than the battery has room for.
@@ -407,6 +572,20 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       atomicAdd(&wev[EV_IN_HEAT], rh);
     }
 
+    // ---- step C6, upkeep: per s, upEng x the engines' rates (while they run) and upTol x tolerance / tolRef (while it is
+    // a gene), paid from the battery as heat (what an empty battery cannot pay is not paid)
+    if ((EP.flags & EF_UPKEEP) != 0u) {
+      var cost = 0.0;
+      if ((EP.flags & EF_ENG) != 0u) { cost += EP.upEng * (max(b.rate.x, 0.0) + max(b.rate.y, 0.0) + max(b.rate.z, 0.0)); }
+      if ((EP.flags & EF_TOLG) != 0u) { cost += EP.upTol * b.eng.w / max(EP.tolRef, 1e-3); }
+      let pay = clamp(i32(floor(cost + u01(pcg(rs + 0x0b4e0ef3u)))), 0, bat);
+      if (pay > 0) {
+        bat -= pay;
+        heat += pay;
+        atomicAdd(&wev2[E2_UPKEEP], pay);
+      }
+    }
+
     // ---- sediment formed inside is expelled where the cell is (it cannot pass the membrane, and it would clog the cell);
     // while its channel is not moving in the dish (the first frame it appears) it waits inside
     if (cur != 0u && EP.sedMask != 0u) {
@@ -436,6 +615,14 @@ fn u01(h: u32) -> f32 { return f32(h >> 8u) / 16777216.0; }
 var<workgroup> wlo: array<atomic<u32>, 14>;
 var<workgroup> whi: array<atomic<u32>, 14>;
 var<workgroup> wcnt: array<atomic<i32>, 5>;
+// step C6, the strategies' census (a snapshot, LG_K_CEN + 16 v): 8 classes (harvest, burn, both, other; in the light, then
+// in the dark) x 8 numbers (cells, battery share x 1000, harvest rates x 1000, burn rates x 1000, other rates x 1000,
+// tolerance x 100, permeability x 1000, cells above half a battery), then 8 numbers: harvest slots per pigment band
+// (in the light: storers, visible 1, visible 2, hard; then the same in the dark), then 4: cells carrying an uphill swap
+// (light-driven, with a pigment) and cells carrying a downhill swap engine (a "breather"), in the light, then in the dark.
+// (A "harvester" in the strategies is a cell with an uphill engine that has a pigment.)
+const CEN_N: u32 = 76u;
+var<workgroup> wcen: array<atomic<i32>, 76>;
 
 @compute @workgroup_size(64)
 fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index) li: u32, @builtin(workgroup_id) wid: vec3u) {
@@ -455,9 +642,48 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     let idx = footprint(c.pos);
     var hs = 0;
     for (var q = 0; q < 9; q++) { hs += atomicLoad(&hb[EP.heatEnd + idx[q]]); }
-    if (f32(hs) / 9.0 * HP.tempScale > EP.tol) { atomicAdd(&wcnt[4], 1); }
+    let b = bio[i];
+    let tol = select(EP.tol, b.eng.w, (EP.flags & EF_TOLG) != 0u);
+    if (f32(hs) / 9.0 * HP.tempScale > tol) { atomicAdd(&wcnt[4], 1); }
+    // step C6: the census of strategies
+    var hv = false;
+    var bu = false;
+    var rr = vec3f(0.0);
+    let lit = light_inside(LP, c.pos);
+    let pb = select(68u, 64u, lit);
+    var up = false;
+    var br = false;
+    for (var k = 0u; k < 3u; k++) {
+      if (b.rate[k] <= 0.0) { continue; }
+      let E = EP.eng[eng_index(b.eng[k])];
+      if (E.kind == 0u) {
+        let band = eng_band(b.eng[k]);
+        atomicAdd(&wcen[pb + band], 1);
+        if (band > 0u) { hv = true; rr.x += b.rate[k]; up = up || (E.ch.w != NONE && E.ch.y != NONE); }
+        else { rr.z += b.rate[k]; }
+      }
+      else if (E.kind == 1u) { bu = true; rr.y += b.rate[k]; }
+      else { rr.z += b.rate[k]; br = br || E.kind == 2u; }
+    }
+    let pu = select(74u, 72u, lit);
+    if (up) { atomicAdd(&wcen[pu], 1); }
+    if (br) { atomicAdd(&wcen[pu + 1u], 1); }
+    let st = select(select(select(3u, 1u, bu), 0u, hv), 2u, hv && bu);
+    let row = 8u * (st + select(4u, 0u, lit));
+    atomicAdd(&wcen[row], 1);
+    atomicAdd(&wcen[row + 1u], i32(round(c.bat * 1000.0)));
+    atomicAdd(&wcen[row + 2u], i32(round(rr.x * 1000.0)));
+    atomicAdd(&wcen[row + 3u], i32(round(rr.y * 1000.0)));
+    atomicAdd(&wcen[row + 4u], i32(round(rr.z * 1000.0)));
+    atomicAdd(&wcen[row + 5u], i32(round(b.eng.w * 100.0)));
+    atomicAdd(&wcen[row + 6u], i32(round(b.rate.w * 1000.0)));
+    if (c.bat > 0.5) { atomicAdd(&wcen[row + 7u], 1); }
   }
   workgroupBarrier();
+  for (var q = li; q < CEN_N; q += 64u) {
+    let v = atomicLoad(&wcen[q]);
+    if (v != 0) { atomicAdd(&hb[LG_K_CEN + 16u * q + (wid.x & 15u)], v); }
+  }
   let slot = wid.x & 63u;
   if (li <= BAT) {
     let L = atomicLoad(&wlo[li]);

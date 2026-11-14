@@ -588,6 +588,7 @@ export class Matter {
     const show = this.showName;
     u[4] = show === 'off' ? 0 : show === 'summary' ? 1 : 2; u[5] = Math.max(0, CH[show] ?? 0); u[6] = this.nSub; u[7] = active;
     f[8] = H.px; f[9] = 1 / (ATOM_SCALE * a * a); f[10] = 1 - Math.exp(-Math.max(0, p.edge) * dt);
+    u[11] = H.pigOn ? H.pigOffset - LEDGER_WORDS : 0;   // step C6: the cells' pigments (their depth takes its share of the light)
     SUBSTANCES.forEach((s, c) => {
       f[12 + c] = Math.min(K_MAX, kTot[c] / this.nSub);   // k
       u[28 + c] = s.layer;                                // layer

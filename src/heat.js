@@ -35,8 +35,9 @@ const LIGHT_COMMON_URL = 'src/shaders/light_common.wgsl';
 
 export const HEAT_COMMON_URL = 'src/shaders/heat_common.wgsl';
 export const HEAT_SCALE = 65536;          // counts per energy unit (HEAT_SCALE in heat_common.wgsl)
-export const LEDGER_WORDS = 15872;              // LEDGER_WORDS in heat_common.wgsl (words 3072 on: step C3's matter ledger;
-                                                // 10240 on: step C4's chemistry; 11520 on: step C5, cells eat)
+export const LEDGER_WORDS = 19200;              // LEDGER_WORDS in heat_common.wgsl (words 3072 on: step C3's matter ledger;
+                                                // 10240 on: step C4's chemistry; 11520 on: step C5, cells eat; 15872 on:
+                                                // step C6, engines)
 // ledger regions [first word, slots]; OUT, HEAT and MOVE are 64-bit (the carry words follow 64 words later)
 const LG = { WORK: [0, 256], BASE: [256, 64], OUT: [320, 64], HEAT: [448, 64], MOVE: [576, 64], DRAG: [704, 160], KICK: [864, 160] };
 const LG_WIDE = new Set(['OUT', 'HEAT', 'MOVE']);
@@ -165,8 +166,15 @@ export class Heat {
   get coverOffset() { return LEDGER_WORDS + 3 * this.n; }
   /** Bytes of the whole heat buffer (with step C3's substance channels behind the heat's blocks). */
   get bytes() { return (LEDGER_WORDS + (4 + this.extraBlocks) * this.n) * 4; }
-  /** Blocks of n words that other bands keep in this buffer (step C3: the substances, 2 copies of 13 channels). */
-  get extraBlocks() { return this.matter ? this.matter.blocks : 0; }
+  /**
+   * Blocks of n words that other bands keep in this buffer (step C3: the substances, 2 copies of 13 channels; step C6:
+   * then the cells' pigments, 3 bands).
+   */
+  get extraBlocks() { return (this.matter ? this.matter.blocks : 0) + (this.eat ? this.eat.blocks : 0); }
+  /** Step C6: word offset of the cells' pigment blocks (behind the substances'). */
+  get pigOffset() { return this.extraBase() + (this.matter ? this.matter.blocks : 0) * this.n; }
+  /** Step C6: whether the cells put their pigments down this frame (the light on and a pigment rule acting). */
+  get pigOn() { return this.lightOn && !!(this.eat && this.eat.pigmentsOn); }
   /** Word offset of the first block after the heat's own (step C3: the substances' copy 0, channel 0), for n pixels. */
   extraBase(n = this.n) { return LEDGER_WORDS + 4 * n; }
 
@@ -214,6 +222,7 @@ export class Heat {
     f[4] = this.px; f[5] = Math.max(0, p.grab); f[6] = Math.max(0, p.kickMax) * this.R; f[7] = this.k;
     f[8] = 1 - Math.exp(-Math.max(0, p.leak) * dt); f[9] = 1 - Math.exp(-Math.max(0, p.edge) * dt);
     f[10] = Math.max(0, p.warmth) * a * a * dt * HEAT_SCALE; f[11] = this.tempScale;
+    u[12] = this.pigOn ? this.pigOffset : 0;   // step C6: where the cells' pigments are put down (0: not this frame)
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
 
     const T = new Uint32Array(this.tickAB), w = HT_SLOT / 4;
@@ -265,6 +274,8 @@ export class Heat {
     pass.end();
     // step C2: the cells' cover was read by the first substep; clear it for the next tick
     if (this.lightOn) encoder.clearBuffer(this.buffer, this.coverOffset * 4, this.n * 4);
+    // step C6: and the cells' pigments
+    if (this.pigOn) encoder.clearBuffer(this.buffer, this.pigOffset * 4, 3 * this.n * 4);
   }
 
   /** After the frame's ticks: advance the current copy, and copy the ledger out if a read-back buffer is free. */
@@ -336,7 +347,9 @@ export class Heat {
     const C = this.matter && this.matter.ledger ? this.matter.ledger.chem : { light: 0, dish: 0, out: 0 };
     // step C5: the cells' chemical energy (their stock) and their batteries are stored too; the starter charges came in
     const cellsE = (C.cells || 0) + (C.bat || 0);
-    const moving = sum('MOVE'), heat = sum('HEAT'), inn = T.work + T.base + labs + C.light + (C.start || 0);
+    // step C6: the light the cells' pigments caught came in too (src/eat.js reads it from the same read-back, first)
+    const PG = this.eat ? this.eat.pig : { tot: 0, rate: [0, 0, 0, 0], sum: 0 };
+    const moving = sum('MOVE'), heat = sum('HEAT'), inn = T.work + T.base + labs + C.light + (C.start || 0) + PG.tot;
     // the heat under the cells / pixels in the light and the rest, as temperatures (heat per R^2)
     const ts = this.tempScale;
     const spot = [0, 1, 2, 3].map((k) => {
@@ -351,12 +364,14 @@ export class Heat {
     this.ledger = {
       time: rec.time, moving, heat, in: inn, out: T.out, rounding: inn - (moving + heat + T.out + C.dish + cellsE + C.out),
       chem: C.dish + cellsE, chemDish: C.dish, chemCells: C.cells || 0, bat: C.bat || 0, chemOut: C.out,
-      light: { in: lin, abs: labs, chem: C.light, pass: lin - labs - C.light },
+      light: { in: lin, abs: labs, chem: C.light, pig: PG.tot, pass: lin - labs - C.light - PG.tot },
       rate: {
         work: rate(1), base: rate(2), out: rate(3), drag: rate(4), kick: rate(5), lin: rate(6), labs: rate(7),
         binIn: [0, 1, 2, 3].map((b) => rate(8 + b)), binAbs: [0, 1, 2, 3].map((b) => rate(12 + b)),
         // step C4: the light the substances caught, per s (from the matter's ledger, same read-back)
         binChem: C.lightRate || [0, 0, 0, 0], lchem: (C.lightRate || []).reduce((a, b) => a + b, 0),
+        // step C6: the light the cells' pigments caught, per s
+        binPig: PG.rate, lpig: PG.sum,
       },
       spot: { cellsIn: spot[0], cellsOut: spot[1], pxIn: spot[2], pxOut: spot[3] },
       kickPerTick: rec.ticks && this.count ? kick / (rec.ticks * this.count) : 0,
@@ -390,12 +405,12 @@ export class Heat {
     // stock and batteries); the light the substances
     // catch goes partly into bonds and is not heat until a reaction releases it
     if (compact) {
-      const light = !Lt || !Lt.on ? 'light off' : `light ${fmt(r.lin)}/s → caught ${fmt(r.labs + r.lchem)}/s · ${Lt.label().replace(' · day', '')}`;
+      const light = !Lt || !Lt.on ? 'light off' : `light ${fmt(r.lin)}/s → caught ${fmt(r.labs + r.lchem + r.lpig)}/s · ${Lt.label().replace(' · day', '')}`;
       return `ENTROPY ${fmt(L.out)} +${fmt(L.rate.out)}/s\n` +
         `heat ${fmt(L.heat)} · moving ${fmt(L.moving)} · stored ${fmt(L.chem)} · rounding ${fmtRound(L.rounding)}\n` + light;
     }
     const light = !Lt || !Lt.on ? 'light off'
-      : `light in ${fmt(r.lin)}/s → heat ${fmt(r.labs)}/s · chemistry ${fmt(r.lchem)}/s · passed ${fmt(r.lin - r.labs - r.lchem)}/s · ${Lt.label()}`;
+      : `light in ${fmt(r.lin)}/s → heat ${fmt(r.labs)}/s · chemistry ${fmt(r.lchem)}/s${r.lpig > 0 ? ` · pigments ${fmt(r.lpig)}/s` : ''} · passed ${fmt(r.lin - r.labs - r.lchem - r.lpig)}/s · ${Lt.label()}`;
     return `ENTROPY  ${fmt(L.out)}  +${fmt(L.rate.out)}/s\n` +
       `moving ${fmt(L.moving)} · heat in dish ${fmt(L.heat)} · stored ${fmt(L.chem)} · in ${fmt(L.in)} · rounding ${fmtRound(L.rounding)}\n` + light;
   }
@@ -410,8 +425,8 @@ export class Heat {
       const area = view.cssW * view.cssH / (this.R * this.R);
       const sigma = HEAT_V0_PX * Math.sqrt(Math.max(0, L.kickPerTick)) / this.R;
       const r = L.rate;
-      lines.push(`energy per s: in ${fmt(r.work + r.base + r.labs + r.lchem)} (work by forces ${fmt(r.work)}, warmth ${fmt(r.base)}, light ${fmt(r.labs)}` +
-        ` + caught by the substances ${fmt(r.lchem)}) · stored ${fmt(L.chem)} (in the dish's bonds ${fmt(L.chemDish)}, in the cells' stock ${fmt(L.chemCells)}, batteries ${fmt(L.bat)}), out with matter ${fmt(L.chemOut)} · drag → heat ${fmt(r.drag)}` +
+      lines.push(`energy per s: in ${fmt(r.work + r.base + r.labs + r.lchem + r.lpig)} (work by forces ${fmt(r.work)}, warmth ${fmt(r.base)}, light ${fmt(r.labs)}` +
+        ` + caught by the substances ${fmt(r.lchem)} + by the cells' pigments ${fmt(r.lpig)}) · stored ${fmt(L.chem)} (in the dish's bonds ${fmt(L.chemDish)}, in the cells' stock ${fmt(L.chemCells)}, batteries ${fmt(L.bat)}), out with matter ${fmt(L.chemOut)} · drag → heat ${fmt(r.drag)}` +
         ` · kicks ← heat ${fmt(r.kick)} · out ${fmt(r.out)} · mean temperature ${(L.heat / area).toFixed(3)}/R² · kick ≈ ${sigma.toFixed(3)} R/s per axis` +
         ` (the old jitter ≈ 0.13) · rounding ${fmtRound(L.rounding)} (${L.in > 0 ? (L.rounding / L.in).toExponential(1) : '-'} of in)`);
     }
@@ -422,10 +437,10 @@ export class Heat {
         // the kick a cell at that temperature gets (sigma per axis, before its motility): HEAT_V0 sqrt(grab x its 3 x 3 pixels)
         const ar = this.px / this.R, kick = (T) => (HEAT_V0_PX * Math.sqrt(Math.max(0, this.params.grab * 9 * T * ar * ar)) / this.R).toFixed(2);
         if (this.light.on) {
-          const per = BAND_NAMES.map((n, b) => `${n} ${fmt(r.binIn[b])} → ${fmt(r.binAbs[b])} + ${fmt(r.binChem[b])}`).join(', ');
+          const per = BAND_NAMES.map((n, b) => `${n} ${fmt(r.binIn[b])} → ${fmt(r.binAbs[b])} + ${fmt(r.binChem[b])} + ${fmt(r.binPig[b] || 0)}`).join(', ');
           const where = this.light.modeIndex === 1 ? 'in the spot' : 'lit';
-          lines.push(`light per s: in ${fmt(r.lin)} · absorbed → heat ${fmt(r.labs)} · caught by the substances ${fmt(r.lchem)} · passed through (lost) ${fmt(r.lin - r.labs - r.lchem)}` +
-            ` · per band in → absorbed + by the substances: ${per} · totals in ${fmt(L.light.in)}, absorbed ${fmt(L.light.abs)}, substances ${fmt(L.light.chem)}, passed ${fmt(L.light.pass)}`);
+          lines.push(`light per s: in ${fmt(r.lin)} · absorbed → heat ${fmt(r.labs)} · caught by the substances ${fmt(r.lchem)} · by the cells' pigments ${fmt(r.lpig)} · passed through (lost) ${fmt(r.lin - r.labs - r.lchem - r.lpig)}` +
+            ` · per band in → absorbed + by the substances + by pigments: ${per} · totals in ${fmt(L.light.in)}, absorbed ${fmt(L.light.abs)}, substances ${fmt(L.light.chem)}, pigments ${fmt(L.light.pig)}, passed ${fmt(L.light.pass)}`);
           lines.push(`temperature under cells ${where} ${t(S.cellsIn)}, outside ${t(S.cellsOut)} (kick ≈ ${kick(S.cellsIn.temp)} and ${kick(S.cellsOut.temp)} R/s per axis)` +
             ` · dish pixels ${where} ${t(S.pxIn)}, outside ${t(S.pxOut)}`);
         } else {

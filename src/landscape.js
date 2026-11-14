@@ -48,16 +48,18 @@ export class Landscape {
       cellGain: 1.0,      // strength gain of the cells' field
       cellColour: [241, 236, 223],
       cellLevel: 0.32,
-      // field B (step 5), from the same texture's G channel, on its own screen: dots where positive, open rings
-      // where negative, in a faded print blue
+      // field B (step 5), from the same texture's G channel, on its own screen: open rings where positive, filled
+      // dots where negative, in a faded print blue. B sums many cells (about 20 in a crowd), hence the low gain;
+      // the high threshold leaves black where the culture is loose, so the rings mark the crowded parts
       fieldB: true,       // drawn on/off (key J)
-      bGain: 0.5,         // strength gain
+      bGain: 0.03,        // strength gain
       bColour: [128, 158, 255],
       bLevel: 0.5,
       bAngle: 45,         // screen rotation (degrees; A's screen is at 15)
-      bPitch: 6,          // distance between B's dots (CSS px)
-      bMaxDot: 0.7,       // largest dot radius as a fraction of bPitch/2 (smaller than A's, so both read)
-      bRing: 1.0,         // stroke of the open rings (CSS px)
+      bPitch: 8,          // distance between B's rings (CSS px)
+      bMaxDot: 0.9,       // largest ring radius as a fraction of bPitch/2
+      bRing: 1.0,         // stroke of the open rings (CSS px; 0 = filled dots)
+      bThresh: 0.35,      // strength below which there is no ring
       maxSources: 6,      // the reference keeps at most 6; adding one more drops the oldest (up to MAX_SOURCES)
       amp: 5,             // strength of a new source (reference)
       range: 9,           // envelope range r0 in units of R (reference: r0^2 = 81 R^2)
@@ -202,7 +204,7 @@ export class Landscape {
     for (let j = 0; j < 3; j++) F[28 + j] = p.bColour[j] / 255;
     F[31] = p.bLevel;
     F[32] = bOn ? p.bGain : 0; F[33] = p.bAngle * Math.PI / 180; F[34] = Math.max(2, p.bPitch);
-    F[35] = Math.max(0, Math.min(1, p.bMaxDot)); F[36] = p.bRing;
+    F[35] = Math.max(0, Math.min(1, p.bMaxDot)); F[36] = p.bRing; F[37] = p.bThresh;
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBindGroup());

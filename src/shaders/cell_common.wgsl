@@ -385,7 +385,7 @@ struct Fields {
   bLikeW: f32,      // lineage likeness width (Gaussian in the key difference, as adhSigma)
   bReach: u32,      // neighbour block radius in grid cells that covers bCut (1 = the usual 3 x 3)
   bEmit: f32,       // 1 = cells emit into B, 0 = not
-  _p: f32,
+  bStrain: f32,     // how much the cell's stretch strains its B lattice (1 = fully, as field A; 0 = not at all)
 };
 
 fn charge_a(F: Fields, kind: u32) -> f32 {
@@ -467,7 +467,10 @@ fn cell_beat(c: Cell, S: Sim, M: Medium, FL: Fields) -> CellBeat {
   // field B: the same key and stretch, in B's band (the medium's lattice and the cell's both bBand times longer),
   // with B's own lever; pinned to the cell
   let latB = cell_lattice(c, FL.bLever);
-  let FB = cell_F(c) * exp(-latB.y);
+  var cs = c;
+  cs.e1 *= FL.bStrain;
+  cs.e2 *= FL.bStrain;
+  let FB = cell_F(cs) * exp(-latB.y);
   var MB = M;
   MB.k0 = M.k0 / FL.bBand;
   var eb = e;

@@ -235,7 +235,7 @@ let tapMode = 0;
 
 function hintLine() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · K: cell field · J: field B · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
+    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
 }
 
 function tap(x, y) {
@@ -361,6 +361,14 @@ function setupInput() {
     } else if (k === 'j') {
       landscape.params.fieldB = !landscape.params.fieldB;
       flash(`field B ${landscape.params.fieldB ? 'drawn (blue dots; open rings where it is negative)' : 'not drawn'}`);
+    } else if (k === 'q') {
+      const F = cells.fields;
+      F.on = !F.on;
+      flash(`field B ${F.on ? 'felt: cells move along it by the sign rule' : 'not felt (still emitted and drawn)'}`);
+    } else if (k === 'u') {
+      const F = cells.fields;
+      F.sign = -F.sign;
+      flash(`field B: like ${F.sign > 0 ? 'repels' : 'attracts'} like`);
     } else if (k === 'l') {
       landscape.params.on = !landscape.params.on;
       flash(`landscape ${landscape.params.on ? 'on' : 'off'}`);

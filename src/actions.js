@@ -21,6 +21,8 @@ export const TOOLS = [
   { id: 'ripple', name: 'ripple', label: 'drop a ripple', key: '1' },
   { id: 'light', name: 'light spring', label: 'drop a light spring', spring: 'light', key: '2' },
   { id: 'heavy', name: 'heavy spring', label: 'drop a heavy spring', spring: 'heavy', key: '3' },
+  { id: 'stir', name: 'stir', label: 'stir', stir: true },
+  { id: 'spot', name: 'move light', label: 'move the light', spot: true },
 ];
 
 export const RULE_GROUPS = [

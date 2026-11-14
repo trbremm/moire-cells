@@ -47,6 +47,7 @@ import { Cells, DEFAULT_CELLS, ANCHORS } from './cells.js';
 import { Light } from './light.js';
 import { Matter, SHOWS } from './matter.js';
 import { makeActions, keyMaps, keysText, TOOLS, SQUEEZE_SOFT, SQUEEZE_HARD } from './actions.js';
+import { setupUI } from './ui.js';
 
 window.__moireBooted = true;
 
@@ -312,16 +313,21 @@ let tool = 0;
 let allKeys = false;   // key ?: the short hint or the full key list
 let actions = [];
 let keys = null;
+let ui = null;
+// touch only (no mouse or pen anywhere): no hint line, bigger buttons
+const TOUCH = !!(window.matchMedia && !window.matchMedia('(any-pointer: fine)').matches);
 
 function hintLine() {
-  const short = `click: ${TOOLS[tool].label} · drag: stir · 1 ripple · 2 light spring · 3 heavy spring · ` +
-    'N / G: new culture · [ ]: speed · F: stats · ⇧E ⇧L ⇧S: entropy, light, substances · ?: more';
-  return allKeys ? fullHint() : short;
+  if (allKeys) return fullHint();
+  if (TOUCH) return '';   // touch only: the toolbar says it all; the line shows only the flashes
+  const t = TOOLS[tool];
+  const what = t.spot ? 'click or drag: move the light' : t.stir ? 'click or drag: stir' : `click: ${t.label} · drag: stir`;
+  return `${what} · right-drag: move the light · wheel: tilt it · ?: all keys`;
 }
 /** Every key, from the action table, plus the mouse. */
 function fullHint() {
   const list = actions.filter((a) => a.keys.length).map((a) => `${keysText(a)}: ${a.label}`);
-  return `click: ${TOOLS[tool].label} · drag: stir · ${list.join(' · ')} · right-drag: move the spot · wheel: tilt it · ` +
+  return `click: ${TOOLS[tool].label} · drag: stir · ${list.join(' · ')} · right-drag: move the light · wheel: tilt it · ` +
     'Shift+wheel: turn where the light comes from';
 }
 
@@ -333,23 +339,47 @@ function makeApp() {
     get view() { return view; },
     overlayEl, entropyEl, ANCHORS,
     get tool() { return tool; },
-    setTool(i) { tool = i; return `click drops: ${TOOLS[tool].label.replace(/^drop /, '')}`; },
+    setTool,
+    speeds: () => SPEEDS.map((s) => `${s}×`),
+    speedIndex: () => Math.max(0, SPEEDS.indexOf(speed)),
     speedLabel: () => `${speed}×`,
+    speedReached: () => '',
+    setSpeed(i) { speed = SPEEDS[Math.max(0, Math.min(SPEEDS.length - 1, i))]; return `speed ${speed}×`; },
     stepSpeed(d) {
       const i = SPEEDS.indexOf(speed);
       speed = SPEEDS[Math.max(0, Math.min(SPEEDS.length - 1, (i < 0 ? 0 : i) + d))];
       return `speed ${speed}×`;
     },
-    showEntropy, drawOverlay,
+    showEntropy, drawOverlay, flash, compass, tiltText, turnText,
     allKeys: () => allKeys,
     toggleAllKeys() { allKeys = !allKeys; hintEl.textContent = hintLine(); },
   };
 }
 
+/** Keys 1 2 3 and the toolbar: what a tap / click and a drag on the dish do. */
+function setTool(i) {
+  tool = i;
+  const t = TOOLS[i];
+  let text;
+  if (t.stir) text = 'tap and drag: stir the dish';
+  else if (t.spot) {
+    text = 'tap or drag: move the spotlight there';
+    if (light.params.mode !== 'spot') { light.params.mode = 'spot'; text += ' (the light is now a spotlight)'; }
+  } else text = `click drops: ${t.label.replace(/^drop /, '')}`;
+  return text;
+}
+
+function tiltText() {
+  const t = light.params.tilt;
+  return t < 0.5 ? 'the light falls straight down' : `the light falls tilted by ${t.toFixed(0)}° (from ${compass(light.params.az)}): the spot stretches away from it, brighter on its near side`;
+}
+function turnText() { return `the light comes from ${compass(light.params.az)} (${light.params.az.toFixed(0)}°)`; }
+
 /** Run an action (from a key or a button); k = the key, or '-' / '+' for a knob's buttons. */
 function runAction(a, k) {
   const text = a.run(k);
   if (text) flash(text);
+  if (ui) ui.refresh();
 }
 
 function onKey(e) {
@@ -367,20 +397,31 @@ function onKey(e) {
 
 function tap(x, y) {
   const m = TOOLS[tool];
+  if (m.stir) { background.impulse(x, y, 1.2); return; }   // the stir tool: a tap is a small stir bump
   if (!m.spring) { background.impulse(x, y, 2.5, 1.2 * background.sc); return; }
   matter.addSpring(x, y, m.spring);
   background.impulse(x, y, 3);   // a spring lands with a ripple, as the old sources did
 }
 
 function setupInput() {
-  actions = makeActions(makeApp());
+  const app = makeApp();
+  actions = makeActions(app);
   keys = keyMaps(actions);
   hintEl.textContent = hintLine();
   const pointer = { down: false, drag: false, light: false, x: 0, y: 0, sx: 0, sy: 0 };
   const pos = (e) => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
 
   canvas.addEventListener('pointerdown', (e) => {
+    if (!e.isPrimary) return;   // a second finger: left to the browser (pinch); the first keeps its gesture
     const [x, y] = pos(e);
+    if (e.button === 0 && TOOLS[tool].spot) {
+      // the move-light tool: a tap or a drag puts the spot's centre under the pointer (as the right button does)
+      if (light.params.mode !== 'spot') { light.params.mode = 'spot'; flash('light: spotlight'); }
+      Object.assign(pointer, { down: false, drag: false, light: true });
+      light.moveTo(x, y);
+      try { canvas.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      return;
+    }
     if (e.button === 2) {
       // step C2: right button moves the spotlight (the spot's centre follows the pointer)
       if (light.modeIndex !== 1) { flash('the spotlight is off: Shift+L until it says "spotlight"'); return; }
@@ -395,6 +436,7 @@ function setupInput() {
   });
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   canvas.addEventListener('pointermove', (e) => {
+    if (!e.isPrimary) return;
     if (pointer.light) { const [x, y] = pos(e); light.moveTo(x, y); return; }
     if (!pointer.down) return;
     const [x, y] = pos(e);
@@ -411,6 +453,7 @@ function setupInput() {
     pointer.x = x; pointer.y = y;
   });
   const up = (e) => {
+    if (!e.isPrimary) return;
     if (pointer.light) { if (e.button === 2 || !e.buttons) pointer.light = false; return; }
     if (e.button !== 0) return;
     if (pointer.down && !pointer.drag) tap(pointer.x, pointer.y);
@@ -428,15 +471,18 @@ function setupInput() {
     const d = (Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX) * unit;
     if (e.shiftKey) {
       light.turnBy(d * 0.15);
-      flash(`the light comes from ${compass(light.params.az)} (${light.params.az.toFixed(0)}°)`);
+      flash(turnText());
     } else {
       light.tiltBy(d * 0.05);
-      const t = light.params.tilt;
-      flash(t < 0.5 ? 'the light falls straight down' : `the light falls tilted by ${t.toFixed(0)}° (from ${compass(light.params.az)}): the spot stretches away from it, brighter on its near side`);
+      flash(tiltText());
     }
   }, { passive: false });
 
   window.addEventListener('keydown', onKey);
+  ui = setupUI(Object.assign(app, {
+    actions, runAction, touch: TOUCH,
+    startFolded: params.has('ui') ? !flag('ui') : null,
+  }));
 }
 
 /** A compass word for the direction the light comes from (screen: 0 = right, 90 = below). */
@@ -454,7 +500,7 @@ let flashTimer = 0;
 function flash(text) {
   hintEl.textContent = text;
   clearTimeout(flashTimer);
-  flashTimer = setTimeout(() => { hintEl.textContent = hintLine(); }, 1600);
+  flashTimer = setTimeout(() => { flashTimer = 0; hintEl.textContent = hintLine(); }, 1600);
 }
 
 boot().catch((e) => { if (!messageIsShown()) showError('Could not start', e.stack || e.message || String(e)); });

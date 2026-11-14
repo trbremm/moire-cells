@@ -40,6 +40,8 @@ const SLOTS = 128;             // ticks that can be encoded in one frame
 const BLOCK = 512;             // scan block (cell_grid.wgsl)
 const BRUTE_MAX = 20000;       // largest count the ?check brute force runs on
 const STATS_BYTES = 8192;      // struct Stats in cell_common.wgsl (counters, events, census)
+const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder bitmap) in struct Stats
+const STATS_EVENTS = 64;
 
 export class Cells {
   constructor(device, format, medium, count, seed) {
@@ -71,12 +73,14 @@ export class Cells {
       warmup: 180,    // ticks run at once after a reset, so a new culture starts settled
       stir: 0.5,      // how strongly a drag pushes cells along (reference 0.5)
       stirReach: 110, // how far from the pointer a drag reaches (CSS px; reference sqrt(12000))
-      range: 2.2,     // grid cell size in units of R (must be >= the largest interaction range: 2 r for contact)
+      range: 3.0,     // grid cell size in units of R (must be >= the largest interaction range: reach x 2 r,
+                      // with r up to about 1.3 R for big cells)
     };
     // drawing (live-tunable: moire.cells.look)
     this.look = {
       view: 0,        // 0 = colour by fate, 1 = colour by lineage (the key's hue)
-      fill: 0.09,     // disc fill, as a fraction of the cell colour over black
+      fill: 0.09,     // disc fill of stem cells, as a fraction of the cell colour over black
+      fillC: 0.34,    // disc fill of committed cells (flat colour, so tissues read as areas)
       fillA: 0.88,    // disc opacity (1 = background fully hidden under a cell)
       line: 0.72,     // outline brightness
       lineW: 1.1,     // outline width (CSS px)
@@ -94,11 +98,12 @@ export class Cells {
 
   async init() {
     const d = this.device;
-    const [drawMod, gridMod, checkMod, stepMod] = await Promise.all([
+    const [drawMod, gridMod, checkMod, stepMod, censusMod] = await Promise.all([
       loadFieldShader(d, 'src/shaders/cell_draw.wgsl', [CELL_URL]),
       loadFieldShader(d, 'src/shaders/cell_grid.wgsl', [CELL_URL]),
       loadFieldShader(d, 'src/shaders/cell_check.wgsl', [CELL_URL]),
       loadFieldShader(d, 'src/shaders/cell_step.wgsl', [CELL_URL]),
+      loadFieldShader(d, 'src/shaders/cell_census.wgsl', [CELL_URL]),
     ]);
     const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
     this.drawPipe = d.createRenderPipeline({
@@ -119,6 +124,7 @@ export class Cells {
     };
     this.gridL = layout('cell grid', [sim, ro(1), rw(2), rw(3), rw(4), rw(5), rw(6), rw(7)]);
     this.stepL = layout('cell step', [sim, ro(1), ro(2), ro(3), ro(4), rw(5), ro(6), rw(7), rw(8)]);
+    this.censusL = layout('cell census', [sim, ro(1), ro(2), rw(3)]);
     this.checkL = layout('cell check', [sim, ro(1), ro(2), ro(3), ro(4), ro(5), rw(6),
       { binding: 7, visibility: C, buffer: { type: 'uniform' } }]);
     const pipe = (L, module, entryPoint) => d.createComputePipeline({
@@ -128,6 +134,7 @@ export class Cells {
     for (const e of ['count', 'scan_local', 'scan_top', 'scan_add', 'scatter']) this.pipes[e] = pipe(this.gridL, gridMod, e);
     this.pipes.step = pipe(this.stepL, stepMod, 'step');
     this.pipes.check = pipe(this.checkL, checkMod, 'check');
+    this.pipes.census = pipe(this.censusL, censusMod, 'census');
 
     const U = GPUBufferUsage;
     const n = this.count;
@@ -139,13 +146,18 @@ export class Cells {
     this.bioBuf = [0, 1].map((k) => d.createBuffer({ label: `cell bio ${k}`, size: n * BIO_BYTES, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC }));
     this.bioCur = 0;
     this.statsBuf = d.createBuffer({ label: 'cell stats', size: STATS_BYTES, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
+    // read-back ring for the stats (never waits: a buffer still mapping is simply skipped)
+    this.statsRead = [0, 1, 2].map((k) => ({ buf: d.createBuffer({ label: `cell stats read ${k}`, size: STATS_BYTES, usage: U.MAP_READ | U.COPY_DST }), busy: false }));
+    this.stats = null;          // last census, for the overlay (see readStats)
+    this.statsHist = [];        // [time, births, deaths] for births / deaths per second
+    this.onEvents = null;       // callback(events) for births and deaths (main.js drops ripples)
     this.simBuf = d.createBuffer({ label: 'cell sim params', size: SLOTS * SLOT, usage: U.UNIFORM | U.COPY_DST });
     this.simAB = new ArrayBuffer(SLOTS * SLOT);
     this.simF = new Float32Array(this.simAB);
     this.simU = new Uint32Array(this.simAB);
 
-    this.drawU = d.createBuffer({ label: 'cell draw params', size: 48, usage: U.UNIFORM | U.COPY_DST });
-    this.drawData = new Float32Array(12);
+    this.drawU = d.createBuffer({ label: 'cell draw params', size: 64, usage: U.UNIFORM | U.COPY_DST });
+    this.drawData = new Float32Array(16);
     this.drawBG = d.createBindGroup({
       layout: this.drawPipe.getBindGroupLayout(0),
       entries: [
@@ -194,6 +206,11 @@ export class Cells {
     });
     // two step bind groups: stepBG[k] reads bioBuf[k] and writes bioBuf[1 - k]
     this.stepBG = [0, 1].map((k) => this.makeStepBG(this.cellBuf, this.bioBuf[k], this.bioBuf[1 - k], this.statsBuf));
+    this.censusBG = [0, 1].map((k) => d.createBindGroup({
+      label: 'cell census', layout: this.censusL.bgl,
+      entries: [{ binding: 0, resource: { buffer: this.simBuf, size: SIM_BYTES } }, b(1, this.cellBuf),
+        b(2, this.bioBuf[k]), b(3, this.statsBuf)],
+    }));
     this.makeCheck();
   }
 
@@ -216,7 +233,7 @@ export class Cells {
     const n = this.count, R = this.R, rng = this.genome.rng;
     if (fresh) this.genome.newFounders();
     const bab = new ArrayBuffer(n * BIO_BYTES);
-    const keys = this.genome.fill(new Float32Array(bab), new Uint32Array(bab), n);
+    const keys = this.genome.fill(new Float32Array(bab), n);
     const ab = new ArrayBuffer(n * CELL_BYTES);
     const f = new Float32Array(ab), u = new Uint32Array(ab);
     const spread = R * Math.sqrt(n / 0.85);  // blob radius at 0.85 area fraction (overlaps settle in the warm-up)
@@ -256,6 +273,8 @@ export class Cells {
     f[o + 20] = p.stirReach * p.stirReach; f[o + 21] = p.stir;
     f[o + 22] = p.drift; f[o + 23] = time;
     u[o + 24] = this.genome.ruleBits();
+    const G = this.genome.params;
+    f[o + 28] = G.tau; f[o + 29] = G.release; f[o + 30] = G.reach;
   }
 
   /** Record the grid build for the tick whose uniforms are in slot k. */
@@ -300,6 +319,59 @@ export class Cells {
       // ?check runs between the grid build and the move, so both see the same positions
       if (t === ticks - 1) this.maybeCheck(encoder, t, frame);
       this.encodeStep(encoder, t);
+    }
+    this.maybeCensus(encoder, ticks - 1, frame);
+  }
+
+  // ---------- stats: census and read-back for the overlay ----------
+  /** Every few frames: count fates, key bins and founder lines, and copy the stats out (if a buffer is free). */
+  maybeCensus(encoder, k, frame) {
+    if (frame.frameNo % 4 !== 0) return;
+    const rb = this.statsRead.find((r) => !r.busy);
+    if (!rb) return;
+    rb.busy = true;
+    encoder.clearBuffer(this.statsBuf, 0, 32);                       // fate counts
+    encoder.clearBuffer(this.statsBuf, STATS_CENSUS, STATS_BYTES - STATS_CENSUS);   // key bins, founder bitmap
+    const pass = encoder.beginComputePass({ label: 'cell census' });
+    pass.setPipeline(this.pipes.census);
+    pass.setBindGroup(0, this.censusBG[this.bioCur], [k * SLOT]);
+    pass.dispatchWorkgroups(Math.ceil(this.count / 256));
+    pass.end();
+    encoder.copyBufferToBuffer(this.statsBuf, 0, rb.buf, 0, STATS_BYTES);
+    encoder.clearBuffer(this.statsBuf, 40, 4);                       // event count: events restart after each copy
+    const time = frame.time;
+    setTimeout(() => this.readStats(rb, time), 0);                   // map once this frame is submitted
+  }
+
+  async readStats(rb, time) {
+    try {
+      await rb.buf.mapAsync(GPUMapMode.READ);
+      const u = new Uint32Array(rb.buf.getMappedRange().slice(0));
+      rb.buf.unmap();
+      const f = new Float32Array(u.buffer);
+      const fate = Array.from(u.subarray(0, 5));
+      const births = u[8], deaths = u[9];
+      const nEv = Math.min(u[10], STATS_EVENTS);
+      const events = [];
+      for (let e = 0; e < nEv; e++) events.push([f[16 + 4 * e], f[17 + 4 * e], f[18 + 4 * e]]);
+      // key bins holding a real share of the cells: a rough count of distinct lineages (genotype clusters)
+      const bins = u.subarray(STATS_CENSUS / 4, STATS_CENSUS / 4 + 144);
+      const big = Math.max(3, this.count / 400);
+      let clusters = 0;
+      for (const b of bins) if (b >= big) clusters++;
+      let founders = 0;
+      for (let w = STATS_CENSUS / 4 + 144; w < u.length; w++) { let x = u[w]; while (x) { x &= x - 1; founders++; } }
+      const H = this.statsHist;
+      H.push([time, births, deaths]);
+      while (H.length > 2 && time - H[0][0] > 2) H.shift();
+      const h0 = H[0], dt = time - h0[0];
+      const rate = dt > 0.2 ? [((births - h0[1]) >>> 0) / dt, ((deaths - h0[2]) >>> 0) / dt] : [0, 0];
+      this.stats = { time, fate, births, deaths, clusters, founders, birthRate: rate[0], deathRate: rate[1] };
+      if (events.length && this.onEvents) this.onEvents(events);
+    } catch (e) {
+      // device lost or page closing: nothing to show
+    } finally {
+      rb.busy = false;
     }
   }
 
@@ -364,6 +436,13 @@ export class Cells {
       `cells <b>${this.count}</b> · r ${this.R.toFixed(2)} px · grid ${g.gw}×${g.gh} (${g.cs.toFixed(1)} px) · contact push ${p.contact ? 'on' : 'off'}`,
       T ? `cells per tick (gpu, probe): grid ${T.grid.toFixed(2)} ms · physics ${T.step.toFixed(2)} ms` : 'cells per tick (gpu, probe): measuring',
     ];
+    const st = this.stats, r = this.genome.rules, on = (x) => (x ? 'on' : 'off');
+    if (st) {
+      const F = st.fate;
+      lines.push(`fates: stem <b>${F[0]}</b> · epithelium <b>${F[1]}</b> · muscle <b>${F[2]}</b> · neuron <b>${F[3]}</b> · cartilage <b>${F[4]}</b>`);
+      lines.push(`lineages: ${st.founders} founder lines · ${st.clusters} key clusters · births ${st.birthRate.toFixed(1)}/s · deaths ${st.deathRate.toFixed(1)}/s`);
+    }
+    lines.push(`rules: D differentiation ${on(r.diff)} · H adhesion ${on(r.adh)} · T turnover ${on(r.turn)} · M mutation ${on(r.mut)} · view ${this.look.view ? 'lineage' : 'fate'}`);
     if (c) {
       lines.push(`grid check: ${c.contacts / 2} contacts` + (c.brute ? ` (brute force ${c.bruteContacts / 2}, ${c.mismatch} cells differ)` : '') +
         ` · ${c.badSort} bad slots · overlap mean ${(100 * c.ovMean).toFixed(1)}% max ${(100 * c.ovMax).toFixed(1)}%`);
@@ -444,7 +523,7 @@ export class Cells {
     const v = this.view, L = this.look, a = this.drawData;
     a[0] = v.cssW; a[1] = v.cssH; a[2] = v.dpr; a[3] = this.R;
     a[4] = L.fill; a[5] = L.fillA; a[6] = L.line; a[7] = L.lineW;
-    a[8] = L.dots; a[9] = L.dotR; a[10] = L.period; a[11] = L.view;
+    a[8] = L.dots; a[9] = L.dotR; a[10] = L.period; a[11] = L.view; a[12] = L.fillC;
     this.device.queue.writeBuffer(this.drawU, 0, a);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG);

@@ -54,6 +54,10 @@ struct Sim {
   pad0: u32,
   pad1: u32,
   pad2: u32,
+  tau: f32,         // accumulator time constant (s): brief bumps fade, only sustained input counts
+  release: f32,     // a committed cell goes back to stem below release x threshold
+  reach: f32,       // neighbours within reach x (r_i + r_j) count as touching (signals, adhesion)
+  pad3: f32,
 };
 
 // ---------- the genome ----------
@@ -66,7 +70,7 @@ struct Sim {
 // wavevector difference in units of the medium's wavenumber (as the reference's receptor tuning).
 struct Bio {
   key: vec4f,       // x key angle (0..pi/3), y key scale (log period factor), z receptor angle, w receptor scale
-  rec: vec4f,       // x receptor width (pickiness; small = picky), y threshold, z output once committed, w founder id (u32 bits)
+  rec: vec4f,       // x receptor width (pickiness; small = picky), y threshold, z output once committed, w founder id (a whole number)
   resp: vec4f,      // per fate channel (epi, mus, neu, cho): how recognised contact feeds that channel (-1..1)
   relay: vec4f,     // per fate channel: how a committed neighbour's signal on that channel feeds it (-1..1)
   body: vec4f,      // x adhesion, y size factor, z motility factor, w spare

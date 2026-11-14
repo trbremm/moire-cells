@@ -3,7 +3,7 @@
 // Layout: struct Bio in cell_common.wgsl, 24 floats (96 bytes) per cell, double-buffered on the GPU.
 //   key    x key angle (0..60 deg), y key scale (log period factor, -0.15..0.15),
 //          z receptor angle, w receptor scale            -> WHICH keys the cell recognises (specific)
-//   rec    x receptor width (pickiness), y threshold, z output once committed, w founder id (u32 bits)
+//   rec    x receptor width (pickiness), y threshold, z output once committed, w founder id (a whole number, as a float)
 //   resp   per fate channel (epithelium, muscle, neuron, cartilage): recognised contact -> accumulator
 //   relay  per fate channel: a committed neighbour's signal on that channel -> accumulator
 //   body   x adhesion, y size factor, z motility factor, w spare
@@ -37,7 +37,7 @@ export function makeRng(seed) {
 const U = (rng, a, b) => a + (b - a) * rng();
 const logU = (rng, a, b) => a * Math.pow(b / a, rng());
 
-/** One random genome, as a plain array of BIO_FLOATS numbers (founder id in slot 7 as a float to bit-cast). */
+/** One random genome, as a plain array of BIO_FLOATS numbers. */
 export function randomGenome(rng, founder) {
   const g = new Array(BIO_FLOATS).fill(0);
   g[0] = U(rng, 0, KEY_SPAN); g[1] = U(rng, -KEY_SMAX, KEY_SMAX);
@@ -45,7 +45,7 @@ export function randomGenome(rng, founder) {
   g[4] = logU(rng, 0.06, 0.25);          // receptor width
   g[5] = U(rng, 0.6, 1.6);               // threshold
   g[6] = U(rng, 0.4, 1.4);               // output once committed
-  g[7] = founder;                        // founder id (written as u32 bits)
+  g[7] = founder;                        // founder id (exact as a float up to 2^24)
   for (let c = 0; c < 4; c++) g[8 + c] = U(rng, -1, 1);    // resp
   for (let c = 0; c < 4; c++) g[12 + c] = U(rng, -1, 1);   // relay
   g[16] = U(rng, 0, 1);                  // adhesion
@@ -62,6 +62,9 @@ export class Genome {
     // live-tunable (moire.genome.params); the rule switches are keys
     this.params = {
       founders: 12,     // founder genomes at a fresh start (0 = every cell its own random genome)
+      tau: 2.0,         // accumulator time constant (s): brief contacts fade, sustained ones add up
+      release: 0.3,     // a committed cell returns to stem when its channel falls below release x threshold
+      reach: 1.15,      // neighbours closer than reach x (r_i + r_j) are in contact (signals, adhesion)
     };
     this.rules = { diff: true, adh: true, turn: true, mut: true, nut: true, inherit: false };
   }
@@ -81,17 +84,16 @@ export class Genome {
   }
 
   /**
-   * Fill the Bio records of n cells (Float32Array f / Uint32Array u over the same buffer) and return each
+   * Fill the Bio records of n cells (Float32Array f) and return each
    * cell's key (angle, scale) for the Cell copies. Each cell is a copy of a random founder.
    */
-  fill(f, u, n) {
+  fill(f, n) {
     if (!this.founders.length && this.params.founders > 0) this.newFounders();
     const keys = new Float32Array(n * 2);
     for (let i = 0; i < n; i++) {
       const g = this.founders.length ? this.founders[Math.floor(this.rng() * this.founders.length)] : randomGenome(this.rng, i);
       const o = i * BIO_FLOATS;
       for (let k = 0; k < BIO_FLOATS; k++) f[o + k] = g[k];
-      u[o + 7] = g[7] >>> 0;
       for (let k = 20; k < 24; k++) f[o + k] = 0;   // accumulators start empty
       keys[2 * i] = g[0]; keys[2 * i + 1] = g[1];
     }

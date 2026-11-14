@@ -316,6 +316,7 @@ export class Cells {
     this.statsHist = [];        // [time, births, deaths] for births / deaths per second
     this.onEvents = null;       // callback(events) for births and deaths (main.js drops ripples)
     this.landscape = null;      // set by main.js (its inks colour the cells' step 6 and 8 marks)
+    this.matter = null;         // step C3: the substance grid (src/matter.js; set by main.js), run inside the heat's frame
     this.simBuf = d.createBuffer({ label: 'cell sim params', size: SLOTS * SLOT, usage: U.UNIFORM | U.COPY_DST });
     this.simAB = new ArrayBuffer(SLOTS * SLOT);
     this.simF = new Float32Array(this.simAB);
@@ -561,6 +562,8 @@ export class Cells {
     if (!ticks) return;
     this.heat.beginFrame(encoder, ticks, frame);
     if (this.heatVersion !== this.heat.version) this.makeStepBGs();
+    // step C3: the substances drip and spread over the frame's real ticks (not the warm-up), in the heat buffer
+    if (this.matter) this.matter.encodeFrame(encoder, frame);
     for (let t = 0; t < ticks; t++) {
       const time = frame.time - Math.max(0, ticks - 1 - t) * frame.tickDt * (t < warm ? 0 : 1);
       this.writeSim(t, frame.tickDt, time, t === ticks - 1);

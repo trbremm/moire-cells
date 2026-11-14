@@ -17,11 +17,15 @@
 //   [LEDGER_WORDS + 3n, + 4n)      cover (step C2): how much of each pixel the cells cover this tick (COVER_SCALE per
 //                                  pixel area; each cell adds its area at its centre, the light's absorption reads the
 //                                  3 x 3 mean; cleared after every tick's spreading)
-// Channel-major, so later steps can add channels (atoms, fuels, sediment) as further blocks of n words.
+//   [LEDGER_WORDS + 4n, + 30n)     step C3, the substances (src/matter.js, matter.wgsl): 13 channels (6 atoms, 4 fuels,
+//                                  2 sediments, trace), each a block of n words, in two copies (ping-pong, as the heat):
+//                                  copy k, channel c at LEDGER_WORDS + 4n + (13 k + c) n. Amounts in whole counts
+//                                  (ATOM_SCALE per atom-unit), so moving matter around is exact.
+// Channel-major, so later steps can add channels as further blocks of n words.
 
 const HEAT_SCALE: f32 = 65536.0;   // counts per energy unit
 const HEAT_V0: f32 = 10.0;         // CSS px / s: the speed whose motion energy is 0.5 units
-const LEDGER_WORDS: u32 = 3072u;
+const LEDGER_WORDS: u32 = 10240u;
 const LG_WORK: u32 = 0u;     // 256 slots: work done on the cells by the forces (fields, contact, crawling, stirring)
 const LG_BASE: u32 = 256u;   // 64: the base warmth put into the dish
 const LG_OUT: u32 = 320u;    // 64, 64-bit: heat that leaked out of the dish (to the sky, at the edge, on a resize)
@@ -37,6 +41,12 @@ const LG_SPOT_N: u32 = 2048u;      // snapshot, 4 classes x 64 slots (i32): cell
                                    //   pixels in the light, pixels outside
 const LG_SPOT_T: u32 = 2304u;      // snapshot, 4 classes, 64-bit: the heat under them (counts)
 const COVER_SCALE: f32 = 4096.0;   // cover counts per pixel area
+// step C3, the matter ledger (src/matter.js): per channel (13), 64-bit, 64 slots (128 words per channel), in counts
+const LG_M_ADD: u32 = 3072u;       // added by the springs
+const LG_M_LOST: u32 = 4736u;      // left the dish at its edge
+const LG_M_GONE: u32 = 6400u;      // washed out (Shift+C) or dropped with the old grid on a resize
+const LG_M_DISH: u32 = 8064u;      // snapshot: in the dish now (cleared before each read-back)
+const LG_M_ORDER: u32 = 9728u;     // (256 words, reserved)
 
 // The heat grid's parameters (written once per frame by src/heat.js; 64 bytes)
 struct HeatP {

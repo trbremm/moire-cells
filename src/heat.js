@@ -346,10 +346,12 @@ export class Heat {
     this.ledger = {
       time: rec.time, moving, heat, in: inn, out: T.out, rounding: inn - (moving + heat + T.out + C.dish + C.out),
       chem: C.dish, chemOut: C.out,
-      light: { in: lin, abs: labs, pass: lin - labs },
+      light: { in: lin, abs: labs, chem: C.light, pass: lin - labs - C.light },
       rate: {
         work: rate(1), base: rate(2), out: rate(3), drag: rate(4), kick: rate(5), lin: rate(6), labs: rate(7),
         binIn: [0, 1, 2, 3].map((b) => rate(8 + b)), binAbs: [0, 1, 2, 3].map((b) => rate(12 + b)),
+        // step C4: the light the substances caught, per s (from the matter's ledger, same read-back)
+        binChem: C.lightRate || [0, 0, 0, 0], lchem: (C.lightRate || []).reduce((a, b) => a + b, 0),
       },
       spot: { cellsIn: spot[0], cellsOut: spot[1], pxIn: spot[2], pxOut: spot[3] },
       kickPerTick: rec.ticks && this.count ? kick / (rec.ticks * this.count) : 0,
@@ -379,15 +381,17 @@ export class Heat {
     const L = this.ledger;
     if (!L) return 'ENTROPY  …';
     const Lt = this.light, r = L.rate;
+    // step C4: "stored" is the chemical energy in the dish (fuel's bonds, minus the sediment's); the light the substances
+    // catch goes partly into bonds and is not heat until a reaction releases it
     if (compact) {
-      const light = !Lt || !Lt.on ? 'light off' : `light ${fmt(r.lin)}/s → heat ${fmt(r.labs)}/s · ${Lt.label().replace(' · day', '')}`;
+      const light = !Lt || !Lt.on ? 'light off' : `light ${fmt(r.lin)}/s → caught ${fmt(r.labs + r.lchem)}/s · ${Lt.label().replace(' · day', '')}`;
       return `ENTROPY ${fmt(L.out)} +${fmt(L.rate.out)}/s\n` +
-        `heat ${fmt(L.heat)} · moving ${fmt(L.moving)} · rounding ${fmtRound(L.rounding)}\n` + light;
+        `heat ${fmt(L.heat)} · moving ${fmt(L.moving)} · stored ${fmt(L.chem)} · rounding ${fmtRound(L.rounding)}\n` + light;
     }
     const light = !Lt || !Lt.on ? 'light off'
-      : `light in ${fmt(r.lin)}/s → heat ${fmt(r.labs)}/s · passed ${fmt(r.lin - r.labs)}/s · ${Lt.label()}`;
+      : `light in ${fmt(r.lin)}/s → heat ${fmt(r.labs)}/s · chemistry ${fmt(r.lchem)}/s · passed ${fmt(r.lin - r.labs - r.lchem)}/s · ${Lt.label()}`;
     return `ENTROPY  ${fmt(L.out)}  +${fmt(L.rate.out)}/s\n` +
-      `moving ${fmt(L.moving)} · heat in dish ${fmt(L.heat)} · in ${fmt(L.in)} · rounding ${fmtRound(L.rounding)}\n` + light;
+      `moving ${fmt(L.moving)} · heat in dish ${fmt(L.heat)} · stored ${fmt(L.chem)} · in ${fmt(L.in)} · rounding ${fmtRound(L.rounding)}\n` + light;
   }
 
   /** Lines for the F overlay. */
@@ -400,7 +404,8 @@ export class Heat {
       const area = view.cssW * view.cssH / (this.R * this.R);
       const sigma = HEAT_V0_PX * Math.sqrt(Math.max(0, L.kickPerTick)) / this.R;
       const r = L.rate;
-      lines.push(`energy per s: in ${fmt(r.work + r.base + r.labs)} (work by forces ${fmt(r.work)}, warmth ${fmt(r.base)}, light ${fmt(r.labs)}) · drag → heat ${fmt(r.drag)}` +
+      lines.push(`energy per s: in ${fmt(r.work + r.base + r.labs + r.lchem)} (work by forces ${fmt(r.work)}, warmth ${fmt(r.base)}, light ${fmt(r.labs)}` +
+        ` + caught by the substances ${fmt(r.lchem)}) · stored in bonds ${fmt(L.chem)}, out with matter ${fmt(L.chemOut)} · drag → heat ${fmt(r.drag)}` +
         ` · kicks ← heat ${fmt(r.kick)} · out ${fmt(r.out)} · mean temperature ${(L.heat / area).toFixed(3)}/R² · kick ≈ ${sigma.toFixed(3)} R/s per axis` +
         ` (the old jitter ≈ 0.13) · rounding ${fmtRound(L.rounding)} (${L.in > 0 ? (L.rounding / L.in).toExponential(1) : '-'} of in)`);
     }
@@ -411,10 +416,10 @@ export class Heat {
         // the kick a cell at that temperature gets (sigma per axis, before its motility): HEAT_V0 sqrt(grab x its 3 x 3 pixels)
         const ar = this.px / this.R, kick = (T) => (HEAT_V0_PX * Math.sqrt(Math.max(0, this.params.grab * 9 * T * ar * ar)) / this.R).toFixed(2);
         if (this.light.on) {
-          const per = BAND_NAMES.map((n, b) => `${n} ${fmt(r.binIn[b])} → ${fmt(r.binAbs[b])}`).join(', ');
+          const per = BAND_NAMES.map((n, b) => `${n} ${fmt(r.binIn[b])} → ${fmt(r.binAbs[b])} + ${fmt(r.binChem[b])}`).join(', ');
           const where = this.light.modeIndex === 1 ? 'in the spot' : 'lit';
-          lines.push(`light per s: in ${fmt(r.lin)} · absorbed → heat ${fmt(r.labs)} · passed through (lost) ${fmt(r.lin - r.labs)}` +
-            ` · per band in → absorbed: ${per} · totals in ${fmt(L.light.in)}, absorbed ${fmt(L.light.abs)}, passed ${fmt(L.light.pass)}`);
+          lines.push(`light per s: in ${fmt(r.lin)} · absorbed → heat ${fmt(r.labs)} · caught by the substances ${fmt(r.lchem)} · passed through (lost) ${fmt(r.lin - r.labs - r.lchem)}` +
+            ` · per band in → absorbed + by the substances: ${per} · totals in ${fmt(L.light.in)}, absorbed ${fmt(L.light.abs)}, substances ${fmt(L.light.chem)}, passed ${fmt(L.light.pass)}`);
           lines.push(`temperature under cells ${where} ${t(S.cellsIn)}, outside ${t(S.cellsOut)} (kick ≈ ${kick(S.cellsIn.temp)} and ${kick(S.cellsOut.temp)} R/s per axis)` +
             ` · dish pixels ${where} ${t(S.pxIn)}, outside ${t(S.pxOut)}`);
         } else {

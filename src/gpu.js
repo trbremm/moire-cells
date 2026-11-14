@@ -142,25 +142,29 @@ function webglRenderer() {
 
 /**
  * Fetch a WGSL file and compile it. Throws an Error with readable compiler messages on failure.
- * Shared snippets can be prepended via `prefix` (plain text concatenation; no #include).
+ * Shared snippets can be prepended via `prefix` (plain text concatenation; no #include); `prefixName` is the
+ * file the prefix came from, so messages point at the right file and line.
  */
-export async function loadShader(device, url, { prefix = '' } = {}) {
+export async function loadShader(device, url, { prefix = '', prefixName = 'prefix' } = {}) {
   const res = await fetch(url, { cache: 'no-cache' });
   if (!res.ok) throw new Error(`Could not load shader ${url}: HTTP ${res.status}`);
   const code = prefix + (await res.text());
   const module = device.createShaderModule({ label: url, code });
   const ci = await module.getCompilationInfo();
   const errors = ci.messages.filter((m) => m.type === 'error');
+  const prefixLines = prefix ? prefix.split('\n').length - 1 : 0;
+  // "file:line" of a message, in the prefix or in the file itself
+  const where = (m) => (m.lineNum <= prefixLines
+    ? `${prefixName}:${m.lineNum}:${m.linePos}`
+    : `${url}:${m.lineNum - prefixLines}:${m.linePos}`);
   for (const m of ci.messages) {
-    if (m.type !== 'error') console.warn(`${url}:${m.lineNum}:${m.linePos} ${m.type}: ${m.message}`);
+    if (m.type !== 'error') console.warn(`${where(m)} ${m.type}: ${m.message}`);
   }
   if (errors.length) {
-    const prefixLines = prefix ? prefix.split('\n').length - 1 : 0;
     const lines = code.split('\n');
     const text = errors.map((m) => {
-      const ln = m.lineNum - prefixLines;
       const src = lines[m.lineNum - 1] ?? '';
-      return `${url}:${ln}:${m.linePos}  ${m.message}\n    ${src.trim()}`;
+      return `${where(m)}  ${m.message}\n    ${src.trim()}`;
     }).join('\n');
     const err = new Error(text);
     err.shaderError = true;

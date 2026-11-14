@@ -46,6 +46,11 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let sensing = S.sense > 0.0 || S.senseSrc > 0.0;
   let cutR = S.cut * S.R;
   var seg = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  // step 8: the neighbours' field A and its partner A' along the membrane (weights without the sense gain)
+  let partner = FL.pOn != 0u;
+  let pSgn = p_sgn(FL.pSgn1);
+  var segQ = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  var segP = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
   let mb = membrane(c);
   let me = beats[j];                         // this cell's own (strained) lattice, for the receptor tuning
   let mk0 = me.k01.xy;
@@ -123,9 +128,14 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
             // weight: sign by fates (EMW), receptor tuning by how alike the lattices are, strength, taper
             let tn = tuning(lattice_dist2(rk0, rk1, rk2, ob.k01.xy, ob.k01.zw, ob.k2a.xy), med.k0, rw);
             aFelt += tn * cell_field(ob, c.pos, cutR);
-            let w = S.sense * myQA * emw(c.kind, o.kind) * tn * ob.k2a.z * cut_taper(d2, cutR);
-            if (sensing && w != 0.0) {
-              sense_field(&seg, mb, c.pos - ob.q2p.zw, ob.q01.xy, ob.q01.zw, ob.q2p.xy, ob.ph, ob.k2a.w, w);
+            let wq = myQA * emw(c.kind, o.kind) * tn * ob.k2a.z * cut_taper(d2, cutR);
+            if (partner) {
+              // step 8: field A and its partner A' on the membrane, with the same weight (S.sense is put on A after)
+              if (wq != 0.0) {
+                sense_pair(&segQ, &segP, mb, c.pos - ob.q2p.zw, ob.q01.xy, ob.q01.zw, ob.q2p.xy, ob.ph, ob.k2a.w, wq, wq, pSgn);
+              }
+            } else if (sensing && wq != 0.0 && S.sense != 0.0) {
+              sense_field(&seg, mb, c.pos - ob.q2p.zw, ob.q01.xy, ob.q01.zw, ob.q2p.xy, ob.ph, ob.k2a.w, S.sense * wq);
             }
           }
         }
@@ -201,6 +211,22 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     atomicAdd(&stats.xPairs[3], tSame);
   }
 
+  // step 8: the field A and partner A' this cell feels from its neighbours: the mean over the membrane, and the gradient
+  // (sum of segment mean x outward normal x length = area x gradient; the outline's area is 2.6 r^2)
+  var pA = vec3f(0.0);                       // A: gradient xy, value z
+  var pP = vec3f(0.0);                       // A': gradient xy, value z
+  if (partner) {
+    for (var a = 0; a < 6; a++) {
+      let nrm = vec2f(mb.edge[a].y, -mb.edge[a].x);
+      pA += vec3f(segQ[a] * nrm, segQ[a]);
+      pP += vec3f(segP[a] * nrm, segP[a]);
+      if (sensing) { seg[a] += S.sense * segQ[a]; }
+    }
+    let area = 2.598 * c.r * c.r;
+    pA = vec3f(pA.xy / area, pA.z / 6.0);
+    pP = vec3f(pP.xy / area, pP.z / 6.0);
+  }
+
   var Q = vec2f(0.0);                        // the field's pull on the outline (quadrupole of the membrane signal)
   if (sensing) {
     // the sources' landscape (nutrient, threat), felt the same way; tuning counts for 3/4 (as the reference)
@@ -242,6 +268,17 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     let bm = length(fb);
     let bs = FL.bSat * S.R;
     if (bm > 1e-6) { f += fb * (bs * tanh(bm / bs) / bm); }
+  }
+
+  // step 8, rule a: the pair A + i A' carries a phase, and where the phase changes it has a direction of travel: the
+  // phase current  j = A grad A' - A' grad A  (= |pair|^2 x the phase gradient). The cell is pushed along it, as if
+  // carried by the wave: gain x R x (R x phase gradient) per s, softened near zeros of the pair, saturating.
+  if (partner && FL.pGain > 0.0) {
+    let jc = pA.z * pP.xy - pP.z * pA.xy;
+    let fj = FL.pGain * S.R * S.R * jc / (pA.z * pA.z + pP.z * pP.z + FL.pEps * FL.pEps);
+    let jm = length(fj);
+    let js = FL.pSat * S.R;
+    if (jm > 1e-6) { f += fj * (js * tanh(jm / js) / jm); }
   }
 
   // differentiation: leaky accumulators per fate channel (SUFFICIENT: only sustained input crosses the

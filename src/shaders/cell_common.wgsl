@@ -435,9 +435,26 @@ struct Fields {
                     // then a converted cell also tires after relayOn s and rests relayRest s before it can convert)
   relayOn: f32,     // how long a cell stays converted when the relay is on (s)
   relayRest: f32,   // how long it then cannot convert again (refractory, s)
-  _p7: f32,
-  _p8: f32,
+  // ---- step 8: the partner A' of field A (the same pinned beat a quarter period out of step: the sin twin) ----
+  pGain: f32,       // rule a: gain of the push along the pair's phase current (0 = off)
+  pSat: f32,        // ... saturating at this speed, in units of R per s
+  pEps: f32,        // ... the current is divided by |A|^2 + |A'|^2 + pEps^2 (so a cell near a zero of both is not flung)
+  pOn: u32,         // 1 = the partner is worked out in the step (any step 8 rule on)
+  pSgn1: f32,       // the middle wave's direction in the partner: 1 = arrow (all three one way), -1 = symmetric
+  _p10: f32,
 };
+
+// Step 8: the partner A'. Field A of one cell is  amp x envelope x (1/3) sum_m cos(q_m . d + ph_m); its partner is
+// the same beat a quarter period out of step,  amp x envelope x (1/3) sum_m sgn_m sin(q_m . d + ph_m). The pair is
+// three travelling waves, cos(q_m . d - t) + i sin(...), each moving along sgn_m q_m. Which way each wave travels is
+// a choice (cos does not care about the sign of q, sin does): the beat's three wavevectors lie 0, 60 and 120 degrees
+// apart, so with sgn = (1, 1, 1) ("arrow", Fields.pSgn1 = 1) the three travel roughly the same way, along the cell's
+// middle beat direction q1, and the partner is a dipole across the cell (plus on one side, minus on the other): every
+// cell has an arrow. With sgn = (1, -1, 1) ("symmetric", pSgn1 = -1) they point 120 degrees apart (q0 - q1 + q2 = 0),
+// the partner is three-fold and weak near the cell, and a lone cell's pair just pulses in place.
+// cos(x - sgn_m pi/2) = sgn_m sin(x), so A' is field A evaluated with its phases shifted by p_shift(sgn1).
+fn p_sgn(s1: f32) -> vec3f { return vec3f(1.0, s1, 1.0); }
+fn p_shift(s1: f32) -> vec3f { return -1.5707963 * p_sgn(s1); }
 
 fn charge_a(F: Fields, kind: u32) -> f32 {
   if (kind < 4u) { return F.qA[kind]; }
@@ -591,10 +608,38 @@ fn cut_taper(d2: f32, cutR: f32) -> f32 {
 
 // a cell's field at x, before receptor tuning
 fn cell_field(b: CellBeat, x: vec2f, cutR: f32) -> f32 {
+  return cell_field_ph(b, x, cutR, vec3f(0.0));
+}
+// ... with its phases shifted by dph (step 8: dph = p_shift(..) gives the partner A')
+fn cell_field_ph(b: CellBeat, x: vec2f, cutR: f32, dph: vec3f) -> f32 {
   let d = x - b.q2p.zw;
   let d2 = dot(d, d);
-  let s = cos(dot(b.q01.xy, d) + b.ph.x) + cos(dot(b.q01.zw, d) + b.ph.y) + cos(dot(b.q2p.xy, d) + b.ph.z);
+  let p = b.ph + dph;
+  let s = cos(dot(b.q01.xy, d) + p.x) + cos(dot(b.q01.zw, d) + p.y) + cos(dot(b.q2p.xy, d) + p.z);
   return b.k2a.z * s / (3.0 * (1.0 + d2 / b.k2a.w)) * cut_taper(d2, cutR);
+}
+
+// Step 8: as sense_field, but adds the emitter's field A (weight w) to seg and its partner A' (weight wP) to segP in
+// one go: the partner shares the envelope, the midpoints and the sinc, only cos becomes sgn x sin.
+fn sense_pair(seg: ptr<function, array<f32, 6>>, segP: ptr<function, array<f32, 6>>, mb: Membrane, rel: vec2f,
+              q0: vec2f, q1: vec2f, q2: vec2f, ph: vec3f, r0sq: f32, w: f32, wP: f32, sgn: vec3f) {
+  let q = array<vec2f, 3>(q0, q1, q2);
+  var env: array<f32, 6>;
+  for (var a = 0; a < 6; a++) {
+    let x = rel + mb.mid[a];
+    env[a] = 1.0 / (3.0 * (1.0 + dot(x, x) / r0sq));
+  }
+  for (var m = 0; m < 3; m++) {
+    let base = dot(q[m], rel) + ph[m];
+    let wp = wP * sgn[m];
+    for (var a = 0; a < 6; a++) {
+      let X = 0.5 * dot(q[m], mb.edge[a]);
+      let e = env[a] * select(sin(X) / X, 1.0, abs(X) < 1e-4);
+      let arg = dot(q[m], mb.mid[a]) + base;
+      (*seg)[a] += w * e * cos(arg);
+      (*segP)[a] += wp * e * sin(arg);
+    }
+  }
 }
 
 // grid cell (x, y) of a position, clamped into the grid

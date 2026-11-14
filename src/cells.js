@@ -56,7 +56,7 @@ const STATS_EVENTS = 64;
 const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_AW in cell_common.wgsl)
 const MAX_SRC = 16;            // sources the cells feel (MAX_CELL_SOURCES in cell_common.wgsl)
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
-const FIELDS_BYTES = 144;      // struct Fields in cell_common.wgsl
+const FIELDS_BYTES = 160;      // struct Fields in cell_common.wgsl
 const FIELD_FORMAT = 'rgba16float';
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
@@ -176,6 +176,19 @@ export class Cells {
       flip: true,     // key 9 (it only acts while exclusion is on; without it a lineage is all one state)
       flipRate: 1,    // chance per s that a crowded cell flips (random moments, so neighbours do not all flip at once)
     };
+    // step 8: the partner A' of field A (live-tunable: moire.cells.partner). Every cell's field A is its pinned beat;
+    // the partner is the same beat a quarter period out of step (its sin twin). Together they carry a phase, and where
+    // the phase changes from place to place, a direction of travel.
+    this.partner = {
+      // rule a (key Z): cells feel the pair as a phase current, j = A grad A' - A' grad A, and are pushed along it
+      on: false,
+      gain: 1,        // push: gain x R x (R x the phase gradient) per s
+      sat: 2,         // ... saturating at this speed (R / s)
+      arrow: true,    // the partner's three waves travel one way (true: every cell has an arrow, its partner a dipole) or
+                      // 120 degrees apart (false: symmetric; the partner of a lone cell is weak near it)
+      eps: 0.05,      // the current is divided by A^2 + A'^2 + eps^2 (the pair as weighted on the membrane: field A x
+                      // the sign table x tuning; loop only about 0.2 to 0.4)
+    };
     // drawing (live-tunable: moire.cells.look)
     this.fieldScale = 0.5;     // texels per CSS px of the cells' field texture
     this.fieldTex = null;
@@ -263,7 +276,7 @@ export class Cells {
     this.beatBuf = d.createBuffer({ label: 'cell beats (sorted)', size: n * CELL_BEAT_BYTES, usage: U.STORAGE });
     this.fieldsBuf = d.createBuffer({ label: 'fields (charges, field B)', size: FIELDS_BYTES, usage: U.UNIFORM | U.COPY_DST });
     this.fieldsAB = new ArrayBuffer(FIELDS_BYTES);
-    this.fieldU = d.createBuffer({ label: 'cell field params', size: 16, usage: U.UNIFORM | U.COPY_DST });
+    this.fieldU = d.createBuffer({ label: 'cell field params', size: 32, usage: U.UNIFORM | U.COPY_DST });
     this.fieldBG = d.createBindGroup({
       label: 'cell field', layout: this.fieldPipe.getBindGroupLayout(0),
       entries: [{ binding: 0, resource: { buffer: this.fieldU } }, { binding: 1, resource: { buffer: this.beatBuf } }],
@@ -331,6 +344,12 @@ export class Cells {
 
   /** Whether the cells emit at all (key O). */
   emitting() { return !!this.params.emit; }
+
+  /** Step 8: whether any partner rule is on (then the step works out the partner A'). */
+  partnerOn() { const P = this.partner; return !!P.on; }
+
+  /** Step 8: whether the partner A' is drawn (only while a partner rule is on, so the page is as before otherwise). */
+  partnerDrawn() { return this.emitting() && this.partnerOn(); }
 
   /** Grid cell size in CSS px: the larger of the contact range and the field's reach. */
   gridSize() {
@@ -464,6 +483,8 @@ export class Cells {
     const [up, down] = this.convThresholds();
     f[24] = F.convOn ? F.conv : 0; u[25] = F.convMode ? 1 : 0; f[26] = up; f[27] = down; f[28] = F.convTau;
     f[29] = F.relayOnKey ? F.relay : 0; f[30] = F.relayOn; f[31] = F.relayRest;
+    const P = this.partner;
+    f[32] = P.on ? P.gain : 0; f[33] = Math.max(0.01, P.sat); f[34] = Math.max(1e-4, P.eps); u[35] = this.partnerOn() ? 1 : 0; f[36] = P.arrow ? 1 : -1;
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -532,10 +553,11 @@ export class Cells {
     const L = this.landscape;
     if (!this.fieldTex || !L) return;
     const onB = !!(this.fields.emit && L.params.fieldB);
-    const on = (this.emitting() && L.params.cellField) || onB;
+    const onP = !!(L.params.partner && this.partnerDrawn());
+    const on = (this.emitting() && L.params.cellField) || onB || onP;
     if (!on && this.fieldBlank) return;
     this.fieldBlank = !on;
-    const v = this.view, a = new Float32Array([v.cssW, v.cssH, this.params.cut * this.R, onB ? this.fields.cut * this.R : 0]);
+    const v = this.view, a = new Float32Array([v.cssW, v.cssH, this.params.cut * this.R, onB ? this.fields.cut * this.R : 0, onP ? 1 : 0, this.partner.arrow ? 1 : -1, 0, 0]);
     this.device.queue.writeBuffer(this.fieldU, 0, a);
     const pass = encoder.beginRenderPass({
       label: 'cell field',
@@ -830,6 +852,8 @@ export class Cells {
         ` · same state among same-type neighbours: touching ${s7.touch ? (100 * s7.touchSame / s7.touch).toFixed(0) : '-'}%, within 1.6 ${s7.pairs ? (100 * s7.same / s7.pairs).toFixed(0) : '-'}%` +
         ` (random mixing ${(100 * rnd).toFixed(0)}%) · per cell ${(s7.touch / Math.max(1, n)).toFixed(2)} touching, ${(s7.pairs / Math.max(1, n)).toFixed(2)} within 1.6`);
     }
+    const P = this.partner;
+    lines.push(`step 8, partner A': Z phase current ${on(P.on)} (gain ${P.gain}, sat ${P.sat} R/s, eps ${P.eps}) · waves ${P.arrow ? 'one way (arrow)' : 'symmetric'} · ; drawn ${on(L && L.params.partner)}`);
     if (c) {
       lines.push(`grid check: ${c.contacts / 2} contacts` + (c.brute ? ` (brute force ${c.bruteContacts / 2}, ${c.mismatch} cells differ)` : '') +
         ` · ${c.badSort} bad slots · overlap mean ${(100 * c.ovMean).toFixed(1)}% max ${(100 * c.ovMax).toFixed(1)}%`);

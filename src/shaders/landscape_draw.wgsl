@@ -11,8 +11,10 @@
 // Edges are anti-aliased over about one device pixel (distance measured in device px), nothing wider.
 // The output is premultiplied and blended "over", so the flat colours stay flat on top of the soft background.
 //
-// marker = the reference's source sprite: a soft core and a thin ring, in the kind's colour,
-//          size R (5 + 1.6 amp), opacity 0.5 + 0.08 amp (added: alpha 0 in premultiplied "over" is additive)
+// Ring markers: a clean stroke (ringW CSS px) at the radius where the reference's sprite had its ring,
+// 0.32 * R (5 + 1.6 amp) / 2, and a solid centre dot, in the kind's full ink, opacity 0.5 + 0.08 amp.
+// Halftone dots that sit on the ring or the centre dot are left out whole, so the marker stands clear
+// (a keyline, as in print) without cut-off half dots; the background still shows there.
 
 struct DrawParams {
   dpr: f32,         // device pixels per CSS pixel
@@ -75,28 +77,16 @@ fn over(top: vec4f, under: vec4f) -> vec4f {
   return top + under * (1.0 - top.a);
 }
 
-// the reference's sprite gradient: opacity against radius (0 = centre, 1 = edge), piecewise linear
-fn sprite_alpha(r: f32) -> f32 {
-  if (r >= 1.0) { return 0.0; }
-  if (r < 0.09) { return mix(0.55, 0.5, r / 0.09); }
-  if (r < 0.13) { return mix(0.5, 0.2, (r - 0.09) / 0.04); }
-  if (r < 0.27) { return mix(0.2, 0.24, (r - 0.13) / 0.14); }
-  if (r < 0.32) { return mix(0.24, 0.7, (r - 0.27) / 0.05); }
-  if (r < 0.37) { return mix(0.7, 0.16, (r - 0.32) / 0.05); }
-  if (r < 0.6) { return mix(0.16, 0.045, (r - 0.37) / 0.23); }
-  return mix(0.045, 0.0, (r - 0.6) / 0.4);
-}
-
 @fragment
 fn fs(in: VSOut) -> @location(0) vec4f {
   let x = in.pos.xy / D.dpr;       // CSS px, the world units of the field
   var res = vec4f(0.0);
 
+  let o = medium.centre;                        // the halftone screen is anchored at the dish centre
+  let c = rot(screen_point(rot(x - o, -D.angle)), D.angle) + o;   // this screen cell's centre, in the world
+
   // ---- halftone dots ----
   if (D.gain > 0.0) {
-    let o = medium.centre;                      // the screen is anchored at the dish centre
-    let u = rot(x - o, -D.angle);
-    let c = rot(screen_point(u), D.angle) + o;  // this screen cell's centre, in the world
     var nut = 0.0;
     var thr = 0.0;
     for (var i = 0u; i < D.count; i++) {
@@ -113,13 +103,25 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     }
   }
 
-  // ---- markers ----
-  for (var i = 0u; i < D.count; i++) {
-    let b = beats[i];
-    let half = 0.5 * D.R * (5.0 + 1.6 * b.amp);
-    let a = sprite_alpha(length(x - b.pos) / half) * min(1.0, 0.5 + 0.08 * b.amp) * D.markers;
-    let ink = select(D.nut.rgb, D.thr.rgb, b.kind == KIND_THR);
-    res = over(vec4f(ink * a, 0.0), res);
+  // ---- ring markers: stroke + centre dot ----
+  if (D.markers > 0.0) {
+    for (var i = 0u; i < D.count; i++) {
+      let b = beats[i];
+      let half = 0.5 * D.R * (5.0 + 1.6 * b.amp);   // the reference's sprite size
+      let d = length(x - b.pos);
+      let rr = 0.32 * half;                          // ring radius
+      let rc = 0.07 * half;                          // centre dot radius
+      let ring = disc(abs(d - rr), 0.5 * D.ringW);
+      let core = disc(d, rc);
+      // keyline: whole dots whose centre lies within half a pitch of the ring or the centre dot are dropped
+      let dc = length(c - b.pos);
+      let kw = 0.5 * D.ringW + 0.5 * D.pitch;
+      let key = select(0.0, 1.0, abs(dc - rr) < kw || dc < rc + 0.5 * D.pitch);
+      let m = min(1.0, D.markers * (0.5 + 0.08 * b.amp));
+      let ink = select(D.nut.rgb, D.thr.rgb, b.kind == KIND_THR);
+      res *= 1.0 - key;
+      res = over(vec4f(ink, 1.0) * max(ring, core) * m, res);
+    }
   }
   return res;
 }

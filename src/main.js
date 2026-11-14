@@ -462,9 +462,10 @@ let ui = null;
 // touch only (no mouse or pen anywhere): no hint line, bigger buttons
 const TOUCH = !!(window.matchMedia && !window.matchMedia('(any-pointer: fine)').matches);
 
+let hintQuiet = false;   // step C6n: the short hint goes quiet 8 s after the start (a calm screen); flashes and ? still show
 function hintLine() {
   if (allKeys) return fullHint();
-  if (TOUCH) return '';   // touch only: the toolbar says it all; the line shows only the flashes
+  if (TOUCH || hintQuiet) return '';   // touch only: the toolbar says it all; the line shows only the flashes
   const t = TOOLS[tool];
   const what = t.spot ? 'click or drag: move the light' : t.stir ? 'click or drag: stir' : `click: ${t.label} · drag: stir`;
   return `${what} · right-drag: move the light · wheel: tilt it · ?: all keys`;
@@ -562,6 +563,13 @@ function onKey(e) {
     return;
   }
   const k = e.key.toLowerCase();
+  // step C6n: Shift + a digit key (by its place on the keyboard, e.code, as the symbol it types differs between
+  // layouts), unless that symbol is already a key of its own (e.g. Shift+7 is / on a German keyboard, Shift+1 is 1 on a
+  // French one: those keep their meaning)
+  if (e.shiftKey && /^Digit[0-9]$/.test(e.code) && !keys.plain.has(k)) {
+    const s = keys.shift.get(e.code.slice(5));
+    if (s) { runAction(s, `shift+${e.code.slice(5)}`); return; }
+  }
   const a = keys.plain.get(k);
   if (!a) return;
   if (k === ' ') e.preventDefault();   // Space pauses; it must not also press a focused button
@@ -584,6 +592,11 @@ function setupInput() {
   actions = makeActions(app);
   keys = keyMaps(actions);
   hintEl.textContent = hintLine();
+  if (params.has('machinery')) {   // step C6n: ?machinery=1, every diagnostic layer at once (the action does it)
+    const m = actions.find((a) => a.id === 'machinery');
+    if (m && !!m.get() !== flag('machinery')) m.run();
+  }
+  setTimeout(() => { hintQuiet = true; if (!flashTimer) hintEl.textContent = hintLine(); }, 8000);
   const pointer = { down: false, drag: false, light: false, x: 0, y: 0, sx: 0, sy: 0 };
   const pos = (e) => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
 

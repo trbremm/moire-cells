@@ -4,9 +4,10 @@
 // An entry:
 //   id      unique name (the buttons use it: data-action)
 //   keys    the keys that run it: a plain key as e.key lowercased ('p', '[', ' ' for Space), or 'shift+<letter>' for the
-//           Part C keys (Shift + a letter never also runs the plain letter). Empty: a button only.
+//           Part C keys (Shift + a letter never also runs the plain letter), or 'shift+<digit>' (step C6n: the digit key's
+//           place on the keyboard, see main.js onKey). Empty: a button only.
 //   label   a short name for the button / switch
-//   group   where it sits: 'tool', 'play', 'light', 'view', or a rules group (RULE_GROUPS below)
+//   group   where it sits: 'tool', 'play', 'light', 'look' and 'view' (the view panel), or a rules group (RULE_GROUPS below)
 //   type    'toggle' (get() is true / false: a switch), 'cycle' (get() is the current setting's name; options() lists
 //           them when the panel can set one directly with set()), 'knob' (get() is the value; run('-') / run('+')
 //           step it), 'do' (a button)
@@ -80,6 +81,32 @@ export function makeActions(app) {
     { id: 'wash', keys: ['shift+c'], label: 'wash atoms', group: 'play', type: 'do',
       run: () => { app.matter.wash(); return 'the dish washed: every atom out (booked as gone in the atoms ledger)'; },
       help: 'every atom out of the dish (booked as gone in the atoms ledger)' },
+
+    // ---------- step C6n: the look (drawing only) ----------
+    { id: 'neon', keys: ['e'], label: 'neon look', group: 'look', type: 'toggle', get: () => app.neon.on,
+      run: () => app.neon.toggle(),
+      help: 'cells as bright neon tubes with a tight halo, trails and hum (off: the flat look of steps 1 to C6)' },
+    { id: 'halo', keys: ['shift+1'], label: 'halo', group: 'look', type: 'cycle', get: () => app.neon.halo.name,
+      options: () => ['off', 'low', 'medium', 'high'],
+      set: (v) => { app.neon.params.halo = Math.max(0, ['off', 'low', 'medium', 'high'].indexOf(v)); return `halo ${v}`; },
+      run: () => app.neon.cycleHalo(), help: 'how far the tubes\' light spills around them (neon look)' },
+    { id: 'trails', keys: ['shift+2'], label: 'light trails', group: 'look', type: 'toggle', get: () => app.neon.params.trails,
+      run: () => `light trails ${flip(app.neon.params, 'trails') ? 'on: moving cells leave short fading streaks' : 'off'}${app.neon.on ? '' : ' (the neon look is off: E)'}`,
+      help: 'moving cells leave short fading streaks, as a long exposure (neon look)' },
+    { id: 'hum', keys: ['shift+3'], label: 'hum', group: 'look', type: 'toggle', get: () => app.neon.params.hum,
+      run: () => `hum ${flip(app.neon.params, 'hum') ? 'on: the tubes wobble a little in brightness, busy cells (battery filling or emptying fast) shine brighter' : 'off: every tube steady'}${app.neon.on ? '' : ' (the neon look is off: E)'}`,
+      help: 'tubes brighten and dim a little; busy cells (battery filling or emptying fast) shine brighter (neon look)' },
+    { id: 'machinery', keys: ['shift+4'], label: 'show the machinery', group: 'look', type: 'toggle', get: () => machinery(),
+      run: () => setMachinery(!machinery()),
+      help: 'off (clean, the default): the cells, the materials and the light. On: every diagnostic layer at once: the fields\' dots, the lattice inside the cells, the substances as a halftone on the lattice, the marks of steps 6 to 8' },
+    { id: 'dustStyle', keys: ['shift+5'], label: 'substances as', group: 'look', type: 'cycle',
+      get: () => app.matter.params.style, options: () => ['dust', 'halftone'],
+      set: (v) => { app.matter.params.style = v; return styleText(); },
+      run: () => { const p = app.matter.params; p.style = p.style === 'dust' ? 'halftone' : 'dust'; return styleText(); },
+      help: 'the substances as material (glowing specks, as many as the amount) or as the halftone dots on the medium lattice' },
+    { id: 'innerDots', keys: ['shift+6'], label: 'lattice inside cells', group: 'look', type: 'toggle', get: () => C().look.innerDots,
+      run: () => `the cells' own lattice ${flip(C().look, 'innerDots') ? 'drawn as dots inside each cell' : 'not drawn'}`,
+      help: 'each cell\'s own hex lattice as small dots inside it' },
 
     // ---------- view (drawing only) ----------
     { id: 'entropy', keys: ['shift+e'], label: 'entropy panel', group: 'view', type: 'toggle', get: () => !app.entropyEl.hidden,
@@ -311,6 +338,24 @@ export function makeActions(app) {
       run: () => `permeability ${flip(E(), 'permGene') ? 'is a gene: each cell\'s membrane lets substances through at its own rate' : `the same for all: ${E().perm} per s`}${E().on ? '' : ' (cells eat is off: Shift+A)'}`,
       help: 'each cell\'s membrane lets substances through at its own rate, set by its genome (off: the same for all)' },
   );
+
+  // step C6n: the clean view (default) or the machinery: every diagnostic layer at once
+  function machinery() {
+    const L = LP(), K = C().look;
+    return L.cellField && L.fieldB && K.innerDots && K.marks && app.matter.params.style === 'halftone';
+  }
+  function setMachinery(on) {
+    const L = LP(), K = C().look;
+    L.cellField = L.fieldB = L.partner = on;
+    K.innerDots = K.marks = on;
+    app.matter.params.style = on ? 'halftone' : 'dust';
+    return on ? 'the machinery: the fields\' dots, the lattice inside the cells, the substances as halftone, the marks of steps 6 to 8'
+      : 'clean: the cells, the materials and the light (Shift+4: the machinery)';
+  }
+  function styleText() {
+    return app.matter.params.style === 'dust' ? 'substances as material: glowing specks, as many as the amount (fuel green, free atoms faint, trace sparks)'
+      : 'substances as halftone dots on the medium lattice';
+  }
 
   function viewText() {
     const v = VIEWS[C().look.view] || 'fate';

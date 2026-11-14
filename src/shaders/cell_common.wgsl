@@ -138,7 +138,8 @@ struct Bio {
   body: vec4f,      // x adhesion, y size factor, z motility factor, w spare
   acc: vec4f,       // state, not genes: the four leaky accumulators
   env: vec4f,       // state: x nutrient, y threat felt last tick (neighbours read it when picking a parent);
-                    // z the A felt, through a leaky integrator, w converted (1) or not (0) (step 6, rule 2)
+                    // z the A felt (plus the relay), through a leaky integrator; w > 0 converted (rule 2: 1;
+                    // with the relay, rule 3: seconds converted so far), w < 0 resting (seconds left), 0 neither
 };
 
 // The sources (nutrient, threat) for the cells: two vec4 per source, written by src/cells.js every frame:
@@ -381,7 +382,7 @@ fn sense_field(seg: ptr<function, array<f32, 6>>, mb: Membrane, rel: vec2f, q0: 
 // in its own band: every lattice involved (the cell's and the medium's) is `bBand` times longer, so A and B
 // make no slow beat with each other; it reaches further (power law from a larger r0) and has its own sign rule.
 // Each fate carries a charge per field: how strongly it emits into that field and listens to it.
-// Written once per frame by src/cells.js (writeFields; keep in step); 128 bytes.
+// Written once per frame by src/cells.js (writeFields; keep in step); 144 bytes.
 struct Fields {
   qA: vec4f,        // field A charge per fate: stem, epithelium, muscle, neuron (1 = as in step 4)
   qB: vec4f,        // field B charge per fate (signed: like charges repel, when bSign = 1)
@@ -407,7 +408,12 @@ struct Fields {
   convOn: f32,      // the A felt (leaky integrator) above which a cell converts
   convOff: f32,     // ... and below which it converts back (hysteresis)
   convTau: f32,     // the integrator's time constant (s)
-  _p6: f32,
+  relay: f32,       // rule 3, relay through B: how much the B of converted neighbours adds to the trigger (0 = off;
+                    // then a converted cell also tires after relayOn s and rests relayRest s before it can convert)
+  relayOn: f32,     // how long a cell stays converted when the relay is on (s)
+  relayRest: f32,   // how long it then cannot convert again (refractory, s)
+  _p7: f32,
+  _p8: f32,
 };
 
 fn charge_a(F: Fields, kind: u32) -> f32 {

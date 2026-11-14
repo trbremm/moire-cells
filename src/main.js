@@ -243,7 +243,7 @@ function hintLine() {
 }
 function fullHint() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
+    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
 }
 
 function tap(x, y) {
@@ -396,6 +396,10 @@ function setupInput() {
       const F = cells.fields;
       F.convMode = F.convMode ? 0 : 1;
       flash(`a converted cell ${F.convMode ? 'flips its B charge' : 'emits more B'}`);
+    } else if (k === '7') {
+      const F = cells.fields;
+      F.relayOnKey = !F.relayOnKey;
+      flash(`relay through B ${F.relayOnKey ? 'on: converted cells excite their neighbours, tire and rest' : 'off'}${F.convOn ? '' : ' (conversion is off: key 5)'}`);
     } else if (k === 'l') {
       landscape.params.on = !landscape.params.on;
       flash(`landscape ${landscape.params.on ? 'on' : 'off'}`);

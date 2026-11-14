@@ -25,6 +25,10 @@ struct Draw {
   leakDot: f32,     // step 6: largest radius of the blue centre dot of a leaking cell, as a fraction of r (0 = none)
   leakMin: f32,     // leak level below which no dot is drawn
   blue: vec4f,      // field B's ink (rgb) for the step 6 marks; a = the converted cells' outline (0 = none)
+  convFill: f32,    // fill of a converted stem cell, as a fraction of field B's ink
+  _p3: f32,
+  _p4: f32,
+  _p5: f32,
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
@@ -116,9 +120,13 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   let ring = 1.0 - cover(c.r - lw, d, aa);        // clean outline at the rim
   // committed cells get a flat fill in their colour, so tissues read as areas; stem cells stay dark inside
   let fill = select(D.fill, D.fillC, c.kind != KIND_STEM);
-  var rgb = mix(col * fill, col * D.dots, dot);
-  // step 6, rule 2: a converted cell's outline is drawn in field B's ink
-  let lineCol = select(col * D.line, D.blue.rgb, D.blue.a > 0.0 && (c.flags & CELL_CONV) != 0u);
+  var fillRgb = col * fill;
+  // step 6, rule 2: a converted cell's outline is drawn in field B's ink, and a converted stem cell is filled with
+  // it (flat, at the committed cells' level), so converted areas read as areas
+  let conv = D.blue.a > 0.0 && (c.flags & CELL_CONV) != 0u;
+  if (conv && c.kind == KIND_STEM) { fillRgb = D.blue.rgb * D.convFill; }
+  var rgb = mix(fillRgb, col * D.dots, dot);
+  let lineCol = select(col * D.line, D.blue.rgb, conv);
   rgb = mix(rgb, lineCol, ring);
   // step 6, rule 1: a cell leaking into field B gets a flat blue centre dot, its area growing with the leak
   var mark = 0.0;

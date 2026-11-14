@@ -93,6 +93,23 @@ Keep `reference/neon_organoid_cpu.html` as the behavioural reference; try rule c
 Claude cannot see the window: after each step, ask the user what they see, or save a screenshot to a file
 and read it.
 
+## Design direction: several separate fields, like the forces of matter (user idea, 2026-11-14; not built)
+The user's picture: different fields as matter has, each with its own decay law, which do not mix by themselves
+and only "leak" into each other through interaction rules carried by the cells (their example: Pauli exclusion).
+Proposed shape (Claude's suggestion, open to change):
+- 2 to 4 fields. Each field is its own sum over emitters, never added to another field. Each has its own
+  lattice period ("band"), decay law, and sign rule. Starting set:
+  long-range attraction ~1/r (nutrient / gravity-like) · mid-range, like repels like ~1/r² (charge-like) ·
+  short-range binding, exponential cut-off (adhesion / strong-force-like).
+- Bands keep fields apart naturally: lattices with very different periods make no slow beat, only close
+  periods do. A cell that deforms strains its lattice toward another band, so deformation can be the leak.
+- Cells are the only place fields meet. Each cell type has a "charge" per field (how strongly it emits and
+  responds). Conversion rules live in the cell: e.g. feeling field A above a threshold makes it emit field B.
+- Exclusion rule: two cells of the same type in the same internal state (lattice angle/phase) repel hard at
+  short range; cells in different states may pack closer. Expected look: shells or alternating patterns.
+- Draw each field in its own faded colour, added together.
+- Keep to the "minimal core first" advice: start with two fields and no biology, add one rule at a time.
+
 ## Ground rules
 - State plainly what was tested and how. "Runs without errors" is not "looks right".
 - Commit working states often, so a bad visual change is easy to undo.

@@ -296,7 +296,7 @@ export class Cells {
    * buffer, and rebuilding the grid from the same positions changes nothing, so the probe does not disturb
    * the simulation.
    */
-  async probe(K = 8) {
+  async probe(K = 32) {
     if (this.probing) return;
     this.probing = true;
     const d = this.device, q = d.queue;

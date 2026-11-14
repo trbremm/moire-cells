@@ -319,6 +319,7 @@ function resize() {
 // ---------- loop ----------
 const stats = { frameMs: 16.7, iv: 16.7, cpuMs: 0, gpuMs: 0, lastOverlay: 0, lastProbe: 0, reached: 1, ticks: 0, lat: 0 };
 let last = 0, acc = 0, simTime = 0, frameNo = 0, nextAutoRipple = 0.3, autoK = 0;
+const UNTIL = params.has('until') ? Math.max(0, Number(params.get('until')) || 0) : -1;   // ?until=T
 
 function frame(now) {
   if (!running) return;
@@ -336,6 +337,11 @@ function frame(now) {
     ticks = Math.floor(acc / TICK);
     const cap = speed >= 16 ? Math.min(TICK_CAP, budgets.fast.ticks) : MAX_TICKS * speed;
     if (ticks > cap) { ticks = cap; acc = 0; if (speed >= 16) bud = budgets.fast; } else acc -= ticks * TICK;
+  }
+  if (UNTIL >= 0 && !paused) {
+    // ?until=T: never past T; pause on reaching it (the same tick in every run)
+    const left = Math.max(0, Math.round((UNTIL - simTime) / TICK));
+    if (ticks >= left) { ticks = left; paused = true; acc = 0; bud = null; document.body.dataset.until = 'reached'; }
   }
   simTime += ticks * TICK;
   // the speed reached: simulation time per real time, smoothed over about a second

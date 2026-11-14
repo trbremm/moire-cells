@@ -4,6 +4,8 @@
 // holding the previous, current and next state; they rotate roles every step.
 // Each frame: (1) inject queued impulses into the current buffer, (2) one wave step per simulation tick.
 // Drawing: a full-screen triangle; the fragment shader samples the grid smoothly and adds the sheen.
+// Step C1: the heat grid (src/heat.js, set as this.heat by main.js) makes the medium simmer: small random bumps, more
+// where it is hot (ripple_step.wgsl), so hot places shimmer and cool places go still.
 //
 // Layer interface used by main.js (other layers follow the same shape):
 //   resize(view)              view = { cssW, cssH, dpr, pxW, pxH }
@@ -25,7 +27,14 @@ export class Background {
       viscosity: 0.015, // extra damping of short waves (not in the reference; 0 = off, 0.04 = very soft)
       ripple: 1.0,      // drawing gain for the ripples
       sheen: 1.0,       // drawing gain for the sheen
+      heatDrops: 1e-4,  // step C1: chance per ripple cell per step of a small bump, x the temperature squared (heat per R^2)
+      heatAmp: 0.3,     // ... the bump's height (a tap is about 2.5, spread over a few cells)
+      heatMaxP: 0.004,  // ... the chance is capped here
     };
+    this.heatOn = true;   // step C1: heat drives the ripples (Shift+R)
+    this.heat = null;     // the heat band (set by main.js)
+    this.heatVersion = -1;
+    this.steps = 0;
     this.ambient = true;  // occasional random drops, standing in for the divisions and deaths of the reference
     this.queue = [];      // pending impulses: [gx, gy, amp, radius] in grid units
     this.cur = 0;         // which of the three field buffers holds the current state
@@ -60,7 +69,8 @@ export class Background {
     });
 
     const U = GPUBufferUsage;
-    this.stepU = d.createBuffer({ label: 'ripple step params', size: 32, usage: U.UNIFORM | U.COPY_DST });
+    this.stepU = d.createBuffer({ label: 'ripple step params', size: 64, usage: U.UNIFORM | U.COPY_DST });
+    this.noHeat = d.createBuffer({ label: 'ripple no heat', size: 16, usage: U.STORAGE });
     this.injectU = d.createBuffer({ label: 'ripple inject params', size: 16, usage: U.UNIFORM | U.COPY_DST });
     this.drawU = d.createBuffer({ label: 'background draw params', size: 48, usage: U.UNIFORM | U.COPY_DST });
     this.impBuf = d.createBuffer({ label: 'ripple impulses', size: MAX_IMPULSES * 16, usage: U.STORAGE | U.COPY_DST });
@@ -84,17 +94,7 @@ export class Background {
     }));
     this.cur = 0;
 
-    // bind groups for the three rotations: index k = "buffer k is current", (k+2)%3 previous, (k+1)%3 next
-    const F = this.fields;
-    this.stepBG = [0, 1, 2].map((k) => d.createBindGroup({
-      layout: this.stepPipe.getBindGroupLayout(0),
-      entries: [
-        { binding: 0, resource: { buffer: this.stepU } },
-        { binding: 1, resource: { buffer: F[k] } },
-        { binding: 2, resource: { buffer: F[(k + 2) % 3] } },
-        { binding: 3, resource: { buffer: F[(k + 1) % 3] } },
-      ],
-    }));
+    this.makeStepBG();
     this.injectBG = [0, 1, 2].map((k) => d.createBindGroup({
       layout: this.injectPipe.getBindGroupLayout(0),
       entries: [
@@ -108,6 +108,22 @@ export class Background {
       entries: [
         { binding: 0, resource: { buffer: this.drawU } },
         { binding: 1, resource: { buffer: this.fields[k] } },
+      ],
+    }));
+  }
+
+  /** Bind groups for the three rotations: index k = "buffer k is current", (k+2)%3 previous, (k+1)%3 next. */
+  makeStepBG() {
+    const F = this.fields, H = this.heat && this.heat.buffer;
+    this.heatVersion = H ? this.heat.version : -1;
+    this.stepBG = [0, 1, 2].map((k) => this.device.createBindGroup({
+      layout: this.stepPipe.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: this.stepU } },
+        { binding: 1, resource: { buffer: F[k] } },
+        { binding: 2, resource: { buffer: F[(k + 2) % 3] } },
+        { binding: 3, resource: { buffer: F[(k + 1) % 3] } },
+        { binding: 4, resource: { buffer: H || this.noHeat } },
       ],
     }));
   }
@@ -140,9 +156,18 @@ export class Background {
     if (this.ambient) for (let i = 0; i < frame.ticks; i++) this.ambientTick();
 
     // step params every frame, so tuning this.params live takes effect
-    const sp = new ArrayBuffer(32);
-    new Uint32Array(sp, 0, 2).set([this.gw, this.gh]);
-    new Float32Array(sp, 8, 3).set([this.params.coupling, this.params.damping, this.params.viscosity]);
+    const Ht = this.heat, P = this.params;
+    if (Ht && Ht.buffer && this.heatVersion !== Ht.version) this.makeStepBG();
+    const heatOn = !!(this.heatOn && Ht && Ht.buffer && this.heatVersion === Ht.version && P.heatDrops > 0);
+    const sp = new ArrayBuffer(64), su = new Uint32Array(sp), sf = new Float32Array(sp);
+    su[0] = this.gw; su[1] = this.gh;
+    sf[2] = P.coupling; sf[3] = P.damping; sf[4] = P.viscosity;
+    su[5] = heatOn ? 1 : 0; su[6] = (this.steps += frame.ticks) >>> 0;
+    sf[7] = this.sc;
+    if (heatOn) {
+      sf[8] = Ht.px; su[9] = Ht.hw; su[10] = Ht.hh; su[11] = Ht.offset(Ht.cur); sf[12] = Ht.tempScale;
+      sf[13] = P.heatDrops; sf[14] = P.heatAmp; sf[15] = P.heatMaxP;
+    }
     d.queue.writeBuffer(this.stepU, 0, sp);
 
     const wgx = Math.ceil(this.gw / 8), wgy = Math.ceil(this.gh / 8);

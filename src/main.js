@@ -25,6 +25,7 @@
 //   ?partner=0|1 step 8, rule a: the partner A' felt as a phase current (key Z); ?change=0|1 rule b (key ,);
 //               ?clock=0|1 its mode (key '); ?side=0|1 rule c, sideways push (key .)
 //   ?heat=0     step C1: start with the kicks from heat off (the old constant jitter; Shift+H)
+//   ?simmer=0   step C1: start with the ripples not driven by heat (Shift+R)
 //
 // Part C keys are Shift + a letter (every plain letter is taken by Parts A and B): checked before the plain keys,
 // so Shift+H never also toggles H.
@@ -128,6 +129,8 @@ async function boot() {
     if (params.has('clock')) cells.partner.chMode = flag('clock') ? 1 : 0;
     if (params.has('states')) cells.excl.states = Math.max(2, Math.min(4, Number(params.get('states')) || 2));
     if (params.has('heat')) cells.heat.params.kicks = flag('heat');
+    if (params.has('simmer')) background.heatOn = flag('simmer');
+    background.heat = cells.heat;
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));
     return;
@@ -235,6 +238,7 @@ function drawOverlay() {
     `ripple grid ${background.gw}×${background.gh} (${background.sc} css px/cell) · ambient ${background.ambient ? 'on' : 'off'}`,
     `tap ${TAP_MODES[tapMode].name} · sources ${landscape.sources.length}/${landscape.params.maxSources} · landscape ${landscape.params.on ? 'on' : 'off'} · R ${medium.R.toFixed(2)} px · medium ${(medium.la0 * 180 / Math.PI).toFixed(2)}°`,
     ...cells.overlayLines(),
+    `simmer (Shift+R) ${background.heatOn ? 'on' : 'off'}: ripple drops ${background.params.heatDrops} per cell per step x temperature², height ${background.params.heatAmp}`,
     `sim t ${simTime.toFixed(1)} s · speed ${speed}× · seed ${SEED}`,
   ];
   if (debugLog.length) lines.push('', ...debugLog.map(esc));
@@ -262,7 +266,7 @@ function hintLine() {
 }
 function fullHint() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · \\: squeeze · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · .: sideways push · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats · Shift+H: jitter from heat / constant';
+    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · \\: squeeze · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · .: sideways push · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats · Shift+H: jitter from heat / constant · Shift+R: ripples simmer with heat';
 }
 
 function tap(x, y) {
@@ -470,6 +474,9 @@ function shiftKey(k) {
     P.kicks = !P.kicks;
     flash(P.kicks ? 'jitter from heat: each cell is kicked in a random direction, harder where it is hot; the kick uses that heat up'
       : 'jitter constant (as before Part C): the heat is still made, spread and leaked, but no longer shakes the cells');
+  } else if (k === 'r') {
+    background.heatOn = !background.heatOn;
+    flash(`ripples ${background.heatOn ? 'simmer with heat: small random rings where it is hot' : 'no longer driven by heat'}`);
   }
 }
 

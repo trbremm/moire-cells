@@ -122,7 +122,7 @@ function resize() {
 }
 
 // ---------- loop ----------
-const stats = { frameMs: 16.7, cpuMs: 0, gpuMs: 0, lastOverlay: 0 };
+const stats = { frameMs: 16.7, cpuMs: 0, gpuMs: 0, lastOverlay: 0, lastProbe: 0 };
 let last = 0, acc = 0, simTime = 0, frameNo = 0, nextAutoRipple = 0.3, autoK = 0;
 
 function frame(now) {
@@ -163,6 +163,7 @@ function frame(now) {
 
   if (frameNo === 10) stage('running-10-frames');
   if (!overlayEl.hidden && now - stats.lastOverlay > 250) { stats.lastOverlay = now; drawOverlay(); }
+  if (!overlayEl.hidden && now - stats.lastProbe > 500) { stats.lastProbe = now; cells.probe(); }
   frameNo++;
   requestAnimationFrame(frame);
 }
@@ -186,6 +187,7 @@ function drawOverlay() {
     `canvas ${view.pxW}×${view.pxH} (dpr ${view.dpr.toFixed(2)}) · ${gpu.format}`,
     `ripple grid ${background.gw}×${background.gh} (${background.sc} css px/cell) · ambient ${background.ambient ? 'on' : 'off'}`,
     `tap ${TAP_MODES[tapMode].name} · sources ${landscape.sources.length}/${landscape.params.maxSources} · landscape ${landscape.params.on ? 'on' : 'off'} · R ${medium.R.toFixed(2)} px · medium ${(medium.la0 * 180 / Math.PI).toFixed(2)}°`,
+    ...cells.overlayLines(),
     `sim t ${simTime.toFixed(1)} s`,
   ];
   if (debugLog.length) lines.push('', ...debugLog.map(esc));
@@ -207,7 +209,7 @@ let tapMode = 0;
 
 function hintLine() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear sources · L: landscape · A: ambient ripples · F: frame time';
+    'C: clear sources · L: landscape · A: ambient ripples · N: new culture · P: contact push · F: frame time';
 }
 
 function tap(x, y) {
@@ -237,15 +239,17 @@ function setupInput() {
       for (let k = 1; k <= n; k++) {
         background.impulse(pointer.x + (x - pointer.x) * k / n, pointer.y + (y - pointer.y) * k / n, 1.2 / Math.sqrt(n));
       }
+      cells.stir(x, y, x - pointer.x, y - pointer.y);   // cells near the pointer are pushed along
     }
     pointer.x = x; pointer.y = y;
   });
   const up = () => {
     if (pointer.down && !pointer.drag) tap(pointer.x, pointer.y);
     pointer.down = pointer.drag = false;
+    cells.release();
   };
   canvas.addEventListener('pointerup', up);
-  canvas.addEventListener('pointercancel', () => { pointer.down = pointer.drag = false; });
+  canvas.addEventListener('pointercancel', () => { pointer.down = pointer.drag = false; cells.release(); });
 
   window.addEventListener('keydown', (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -262,6 +266,13 @@ function setupInput() {
     } else if (k === 'c') {
       landscape.clear();
       flash('sources cleared');
+    } else if (k === 'n') {
+      cells.seed();
+      background.impulse(view.cssW / 2, view.cssH / 2, 2);   // as the reference's seed()
+      flash('new culture');
+    } else if (k === 'p') {
+      cells.params.contact = !cells.params.contact;
+      flash(`contact push ${cells.params.contact ? 'on' : 'off'}`);
     } else if (k === 'l') {
       landscape.params.on = !landscape.params.on;
       flash(`landscape ${landscape.params.on ? 'on' : 'off'}`);

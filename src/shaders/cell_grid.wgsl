@@ -110,5 +110,7 @@ fn scatter(@builtin(global_invocation_id) id: vec3u) {
   let c = cells[i];
   sorted[dst] = c;
   sortIdx[dst] = i;
-  beats[dst] = cell_beat(c, S, med);
+  var b = cell_beat(c, S, med);
+  b.idx = i;
+  beats[dst] = b;
 }

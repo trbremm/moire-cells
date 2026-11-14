@@ -88,12 +88,15 @@ fn emitter_k(e: Emitter, M: Medium, m: i32) -> vec2f {
 
 // Beat of the emitter's lattice against the medium's (prep in the reference). Each emitter direction is paired
 // with the nearest medium direction; pairing across the 180 degree wrap flips the medium vector's sign.
+// Emitter direction m lies at about (m + s) x 60 degrees, so it pairs with medium direction m + s. (The reference
+// and steps 2 to 4 used m - s: right for |angle| < 30 degrees, but beyond that every direction was paired with
+// the wrong one, so the beat was fast, a period of about 0.6 medium periods: such an emitter was in effect silent.)
 fn make_beat(e: Emitter, M: Medium) -> Beat {
   let s = i32(round((e.la - M.la0) / P3));
   var q: array<vec2f, 3>;
   var ph: array<f32, 3>;
   for (var m = 0; m < 3; m++) {
-    var idx = m - s;
+    var idx = m + s;
     let w = i32(floor(f32(idx) / 3.0));
     let sg = select(1.0, -1.0, (w & 1) != 0);
     idx -= 3 * w;

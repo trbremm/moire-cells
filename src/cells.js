@@ -36,8 +36,8 @@ import { Genome, BIO_BYTES } from './genome.js';
 
 export const CELL_URL = 'src/shaders/cell_common.wgsl';
 
-// struct Cell in cell_common.wgsl: pos.xy, vel.xy, r, la, e1, e2, kind (u32), flags (u32), seed (u32), aux
-export const CELL_FLOATS = 12;
+// struct Cell in cell_common.wgsl: pos.xy, vel.xy, r, la, e1, e2, kind (u32), flags (u32), seed (u32), aux, z.xy
+export const CELL_FLOATS = 14;
 export const CELL_BYTES = CELL_FLOATS * 4;
 const ALIVE = 1;
 
@@ -56,7 +56,7 @@ const STATS_EVENTS = 64;
 const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_AW in cell_common.wgsl)
 const MAX_SRC = 16;            // sources the cells feel (MAX_CELL_SOURCES in cell_common.wgsl)
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
-const FIELDS_BYTES = 160;      // struct Fields in cell_common.wgsl
+const FIELDS_BYTES = 192;      // struct Fields in cell_common.wgsl
 const FIELD_FORMAT = 'rgba16float';
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
@@ -184,8 +184,21 @@ export class Cells {
       on: false,
       gain: 1,        // push: gain x R x (R x the phase gradient) per s
       sat: 2,         // ... saturating at this speed (R / s)
-      arrow: true,    // the partner's three waves travel one way (true: every cell has an arrow, its partner a dipole) or
+      arrow: false,   // the partner's three waves travel one way (true: every cell has an arrow, its partner a dipole) or
                       // 120 degrees apart (false: symmetric; the partner of a lone cell is weak near it)
+      // rule b (key ,): change makes the partner. A cell emits A' in proportion to how fast the A it feels changes,
+      // and A in proportion to how fast the A' it feels changes (both through the step 6 integrator, convTau)
+      change: false,
+      chGain: 2,      // s: phasor = (1 + chSign x chGain x dA'/dt, chGain x dA/dt)
+      chTau: 0.3,     // s: how fast the phasor follows
+      chMax: 1.5,     // soft cap on its distance from (1, 0)
+      chSign: -1,     // -1: change of A' lowers A (the pair turns, as Faraday's law); +1: raises it
+      chMode: 1,      // 0 = felt change (the gains above), 1 = clock (key ')
+      omega: 2.5,     // clock: rate of the hand (rad/s; a lone cell turns once in 2.5 s)
+      pull: 1.5,      // clock: how hard the felt pair pulls the hand toward the neighbours' (rad/s)
+      lag: 1.0,       // clock: ... toward their hand turned back by this much (rad). The lag slows a clock that is in
+                      // step with its neighbours, to omega - pull x sin(lag) (here 1.2 rad/s: a turn in 5 s), and makes
+                      // the waves travel: the culture's rim leads, rings run inward. 0 = plain alignment, all in step
       eps: 0.05,      // the current is divided by A^2 + A'^2 + eps^2 (the pair as weighted on the membrane: field A x
                       // the sign table x tuning; loop only about 0.2 to 0.4)
     };
@@ -208,6 +221,7 @@ export class Cells {
       stateMark: true, // step 7: while exclusion is on, a bar across each cell shows its state (its angle: one of
                       // `states` directions, 180 / states degrees apart)
       bar: 0.8,       // the bar's brightness (as the outline's)
+      hand: 1.0,      // step 8, rule b: brightness of the phasor's hand (0 = none), in the partner's ink
     };
   }
 
@@ -301,8 +315,8 @@ export class Cells {
     this.simF = new Float32Array(this.simAB);
     this.simU = new Uint32Array(this.simAB);
 
-    this.drawU = d.createBuffer({ label: 'cell draw params', size: 96, usage: U.UNIFORM | U.COPY_DST });
-    this.drawData = new Float32Array(24);
+    this.drawU = d.createBuffer({ label: 'cell draw params', size: 112, usage: U.UNIFORM | U.COPY_DST });
+    this.drawData = new Float32Array(28);
     this.drawBG = d.createBindGroup({
       layout: this.drawPipe.getBindGroupLayout(0),
       entries: [
@@ -346,7 +360,7 @@ export class Cells {
   emitting() { return !!this.params.emit; }
 
   /** Step 8: whether any partner rule is on (then the step works out the partner A'). */
-  partnerOn() { const P = this.partner; return !!P.on; }
+  partnerOn() { const P = this.partner; return !!(P.on || P.change); }
 
   /** Step 8: whether the partner A' is drawn (only while a partner rule is on, so the page is as before otherwise). */
   partnerDrawn() { return this.emitting() && this.partnerOn(); }
@@ -424,6 +438,7 @@ export class Cells {
       f[o + 6] = 0; f[o + 7] = 0;
       u[o + 8] = KIND.STEM; u[o + 9] = ALIVE; u[o + 10] = (rng() * 4294967296) >>> 0;
       f[o + 11] = keys[2 * i + 1];                     // key scale
+      f[o + 12] = 1; f[o + 13] = 0;                    // step 8: the phasor of field A and its partner
     }
     this.device.queue.writeBuffer(this.cellBuf, 0, ab);
     this.device.queue.writeBuffer(this.bioBuf[this.bioCur], 0, bab);
@@ -485,6 +500,8 @@ export class Cells {
     f[29] = F.relayOnKey ? F.relay : 0; f[30] = F.relayOn; f[31] = F.relayRest;
     const P = this.partner;
     f[32] = P.on ? P.gain : 0; f[33] = Math.max(0.01, P.sat); f[34] = Math.max(1e-4, P.eps); u[35] = this.partnerOn() ? 1 : 0; f[36] = P.arrow ? 1 : -1;
+    f[37] = P.change ? (P.chMode ? P.pull : P.chGain) : 0; f[38] = Math.max(1e-3, P.chTau); f[39] = Math.max(0.01, P.chMax); f[40] = P.chSign;
+    u[41] = P.chMode ? 1 : 0; f[42] = P.omega; f[43] = P.lag;
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -626,6 +643,7 @@ export class Cells {
       const step6 = { leak: X[0], conv: X[1], aHist: Array.from(X.subarray(2, 50)), sHist: Array.from(X.subarray(50, 60)), lHist: Array.from(X.subarray(60, 70)) };
       // step 7: cells per state, and same-type neighbour pairs (all, same state) from the frame's last tick
       const step7 = { perState: Array.from(X.subarray(70, 74)), pairs: u[12], same: u[13], touch: u[14], touchSame: u[15] };
+      const step8 = { moved: X[74], dev: X[75] };
       // the conversion thresholds (convAuto): quantiles of the A felt across the culture (from the histogram,
       // interpolated in the bin), smoothed over about 20 s of simulation time
       const tot = step6.aHist.reduce((x, y) => x + y, 0);
@@ -648,7 +666,7 @@ export class Cells {
       while (H.length > 2 && time - H[0][0] > 2) H.shift();
       const h0 = H[0], dt = time - h0[0];
       const rate = dt > 0.2 ? [((births - h0[1]) >>> 0) / dt, ((deaths - h0[2]) >>> 0) / dt] : [0, 0];
-      this.stats = { time, fate, births, deaths, clusters, founders, birthRate: rate[0], deathRate: rate[1], step6, step7 };
+      this.stats = { time, fate, births, deaths, clusters, founders, birthRate: rate[0], deathRate: rate[1], step6, step7, step8 };
       if (events.length && this.onEvents) this.onEvents(events);
     } catch (e) {
       // device lost or page closing: nothing to show
@@ -853,7 +871,9 @@ export class Cells {
         ` (random mixing ${(100 * rnd).toFixed(0)}%) · per cell ${(s7.touch / Math.max(1, n)).toFixed(2)} touching, ${(s7.pairs / Math.max(1, n)).toFixed(2)} within 1.6`);
     }
     const P = this.partner;
-    lines.push(`step 8, partner A': Z phase current ${on(P.on)} (gain ${P.gain}, sat ${P.sat} R/s, eps ${P.eps}) · waves ${P.arrow ? 'one way (arrow)' : 'symmetric'} · ; drawn ${on(L && L.params.partner)}`);
+    lines.push(`step 8, partner A': Z phase current ${on(P.on)} (gain ${P.gain}, sat ${P.sat} R/s, eps ${P.eps}) · waves ${P.arrow ? 'one way (arrow)' : 'symmetric'}` +
+      ` · , change makes partner ${on(P.change)} ' ${P.chMode ? `clock (${P.omega} rad/s, pull ${P.pull} rad/s, lag ${P.lag})` : `felt change (gain ${P.chGain} s, follow ${P.chTau} s, cap ${P.chMax}, sign ${P.chSign})`}` +
+      (st && st.step8 ? ` · phasor off (1,0) by > 0.25: ${st.step8.moved} cells, mean ${(st.step8.dev / 1000 / Math.max(1, this.count)).toFixed(3)}` : '') + ` · ; drawn ${on(L && L.params.partner)}`);
     if (c) {
       lines.push(`grid check: ${c.contacts / 2} contacts` + (c.brute ? ` (brute force ${c.bruteContacts / 2}, ${c.mismatch} cells differ)` : '') +
         ` · ${c.badSort} bad slots · overlap mean ${(100 * c.ovMean).toFixed(1)}% max ${(100 * c.ovMax).toFixed(1)}%`);
@@ -942,6 +962,9 @@ export class Cells {
     // step 7: the state bar (only while exclusion is on)
     const X = this.excl;
     a[21] = X.on && L.stateMark ? Math.max(1, Math.min(4, Math.round(X.states))) : 0; a[22] = L.bar;
+    // step 8: the phasor's hand, in the partner's ink
+    const pc = this.landscape ? this.landscape.params.pColour : [236, 218, 124];
+    a[23] = this.partner.change ? (this.partner.chMode ? -L.hand : L.hand) : 0; a[24] = pc[0] / 255; a[25] = pc[1] / 255; a[26] = pc[2] / 255;
     this.device.queue.writeBuffer(this.drawU, 0, a);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG);

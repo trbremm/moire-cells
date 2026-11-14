@@ -35,6 +35,10 @@ fn census(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       atomicAdd(&stats.extra[STATS_X_LHIST + u32(clamp(lk * 10.0, 0.0, 9.0))], 1u);
       // step 7: cells per state
       atomicAdd(&stats.extra[STATS_X_STATE + min(cell_state(c, S.states), 3u)], 1u);
+      // step 8: how far the phasor is from (1, 0): cells beyond 0.25, and the sum (x 1000)
+      let zd = length(c.z - vec2f(1.0, 0.0));
+      if (zd > 0.25) { atomicAdd(&stats.extra[74u], 1u); }
+      atomicAdd(&stats.extra[75u], u32(round(min(zd, 100.0) * 1000.0)));
     }
   }
   workgroupBarrier();

@@ -75,6 +75,9 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var gB = vec2f(0.0);
   // rule 2 (step 6), conversion: how much A this cell feels at its centre (its neighbours' A field, tuned)
   var aFelt = 0.0;
+  // step 8, rule b: ... and how much of the partner A' (as aFelt, the phases shifted a quarter period)
+  let changeOn = FL.chGain > 0.0;
+  var pFelt = 0.0;
   // rule 3 (step 6), relay through B: the share of the neighbourhood (weighted by B's envelope) that is converted
   let relayOn = FL.conv > 0.0 && FL.relay > 0.0;
   var relaySig = 0.0;
@@ -128,6 +131,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
             // weight: sign by fates (EMW), receptor tuning by how alike the lattices are, strength, taper
             let tn = tuning(lattice_dist2(rk0, rk1, rk2, ob.k01.xy, ob.k01.zw, ob.k2a.xy), med.k0, rw);
             aFelt += tn * cell_field(ob, c.pos, cutR);
+            if (changeOn) { pFelt += tn * cell_field_ph(ob, c.pos, cutR, p_shift(FL.pSgn1)); }
             let wq = myQA * emw(c.kind, o.kind) * tn * ob.k2a.z * cut_taper(d2, cutR);
             if (partner) {
               // step 8: field A and its partner A' on the membrane, with the same weight (S.sense is put on A after)
@@ -307,6 +311,38 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // cell; and a converted cell tires after relayOn s, then rests relayRest s before it can convert again (an
   // excitable medium: fronts travel, and the resting cells behind a front keep it from coming back).
   let kInt = min(1.0, S.dt / max(FL.convTau, 1e-3));
+  // step 8, rule b, change makes the partner. Mode 0, felt change: the rates of change of the A and A' felt, as the
+  // slopes of their leaky integrators (bio.env.z, bio.conv.y: (now - smoothed) / convTau). The cell emits A' in
+  // proportion to the change of A, and A in proportion to the change of A' (with chSign): its phasor z follows
+  // (1 + chSign chGain dA'/dt, chGain dA/dt) with time constant chTau, softly capped at chMax from (1, 0).
+  // Mode 1, clock: the change happens inside the cell: its A turns into A' and its A' into -A, so its phasor turns at
+  // chOmega; the pair it feels, A + i A' (its neighbours' phasors, each seen through its beat), pulls its hand toward
+  // theirs turned back by chLag, at up to chGain rad/s. A cell's clock starts at a random hour (bio.conv.z marks it
+  // running), so neighbours first disagree and settle into waves. Rule off: z goes back to (1, 0).
+  var zt = vec2f(1.0, 0.0);
+  var zk = min(1.0, S.dt / max(FL.chTau, 1e-3));
+  if (changeOn && FL.chMode == 1u) {
+    var ph = atan2(c.z.y, c.z.x);
+    if (bio.conv.z == 0.0) { ph = TAU * rand01(c.seed ^ 0x2545f491u, S.tick); bio.conv.z = 1.0; }
+    let psi = vec2f(aFelt, pFelt);
+    let hl = ph + FL.chLag;
+    let pull = (psi.y * cos(hl) - psi.x * sin(hl)) / (length(psi) + 0.05);
+    ph += (FL.chOmega + FL.chGain * pull) * S.dt;
+    zt = vec2f(cos(ph), sin(ph));
+    zk = 1.0;
+    bio.conv.y = 0.0;
+  } else if (changeOn) {
+    let tauC = max(FL.convTau, 1e-3);
+    let w = FL.chGain * vec2f(FL.chSign * (pFelt - bio.conv.y) / tauC, (aFelt - bio.env.z) / tauC);
+    let wm = length(w);
+    zt += select(w, w * (FL.chMax * tanh(wm / FL.chMax) / wm), wm > 1e-6);
+    bio.conv.y += (pFelt - bio.conv.y) * kInt;
+    bio.conv.z = 0.0;
+  } else {
+    bio.conv.y = 0.0;
+    bio.conv.z = 0.0;
+  }
+  c.z += (zt - c.z) * zk;
   bio.env.z += (aFelt - bio.env.z) * kInt;
   bio.conv.x += (select(0.0, relaySig / max(relayAll, 1.0), relayOn) - bio.conv.x) * kInt;
   // with the relay, the trigger is measured from convOff (0) to convOn (1), and the relay adds relay x share: a cell
@@ -455,6 +491,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       d.flags = CELL_ALIVE;
       d.seed = pcg(bs ^ 0x5bd1e995u);
       d.aux = nb.key.y;
+      d.z = vec2f(1.0, 0.0);
       c = d;
       bio = nb;
     }

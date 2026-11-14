@@ -37,6 +37,11 @@ Lattices:
 - LESSON: anchoring the sensing lattice to the moving cell itself does not work. The beat then slides several
   times faster than the cell moves (the moiré lever), so cells get pinned within a few pixels. Beating against
   a shared medium lattice keeps the landscape stable in the world.
+- LESSON 2 (GPU step 4, 2026-11-14): with thousands of moving cells, the reference's sliding cell beat is just noise
+  (the field force averaged ~0.4 px/s against ~3 px/s of contact and drift, so nothing visible). What works: PIN each
+  cell's beat pattern to the cell (phase 0 at its centre: bright core, hex rings at the beat period), sensing gain
+  ~10, lever 0.4 (beat periods ~2.5x longer). That gives rosettes and, with deformation, petals and ribbons.
+  Key X switches the anchor modes for comparison.
 
 Sensing and motion:
 - Nothing is simulated per pixel. A cell's membrane is 6 straight segments; the field is integrated exactly

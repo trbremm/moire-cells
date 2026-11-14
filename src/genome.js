@@ -72,6 +72,11 @@ export class Genome {
       adhBase: 0.25,    // stickiness every pair loses (unlike neighbours push off a little; helps sorting)
       crawl: 0.6,       // crawling speed (R / s, times the motility factor); body traits (key B)
       turnRate: 0.5,    // how fast a crawling cell's heading wanders (rad^2 / s)
+      turnover: 0.02,   // deaths per cell per s (each reborn as a neighbour's daughter; key T)
+      unhappy: 2,       // extra death rate (x turnover) for a cell that recognises none of its neighbours
+      mutSize: 1,       // size of the small mutations at each birth (key M switches mutation)
+      mutJump: 0.03,    // chance per birth that one gene is drawn afresh
+      ripple: 0.4,      // ripple strength of a birth (a death dips by 0.7 of it); 0 = none
     };
     this.rules = { diff: true, adh: true, body: true, turn: true, mut: true, nut: true, inherit: false };
   }

@@ -33,6 +33,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let adh = (S.rules & RULE_ADH) != 0u && S.adhesion > 0.0;
   var M = 0.0;              // recognised contact: sum over touching neighbours of (contact x key match)
   var sig = vec4f(0.0);     // committed neighbours' signals per fate channel
+  var nParent = 0u;         // touching neighbours seen so far, and the one picked as parent (sorted slot)
+  var parent = 0xffffffffu;
 
   // every neighbour within reach: contact push, and (differentiation on) recognition and signals
   let rg = grid_range(S, grid_xy(S, c.pos));
@@ -54,14 +56,18 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
 
         // contact: 1 when touching, fading to 0 at the reach (cells a hair apart still talk)
         let touch = clamp((reach - dist) / (reach - R0 + 1e-3), 0.0, 1.0);
+        // SPECIFIC: my receptor against the neighbour's key (its lattice), a Gaussian in the wavevector difference
+        let w = bio.rec.x;
+        M += touch * exp(-key_dist2(bio.key.z, bio.key.w, o.la, o.aux) / (2.0 * w * w));
+        // a parent in case this cell dies this tick: one touching neighbour, picked uniformly
+        // (reservoir sampling: the n-th candidate replaces the pick with chance 1/n)
+        if (dist < R0) {
+          nParent++;
+          if (rand01(c.seed ^ 0x27d4eb2fu, S.tick * 64u + nParent) * f32(nParent) < 1.0) { parent = k; }
+        }
         if (diff || adh) {
           let ob = bioPrev[sortIdx[k]];
-          if (diff) {
-            // SPECIFIC: my receptor against the neighbour's key (its lattice), a Gaussian in the wavevector difference
-            let w = bio.rec.x;
-            M += touch * exp(-key_dist2(bio.key.z, bio.key.w, o.la, o.aux) / (2.0 * w * w));
-            if (o.kind >= 1u && o.kind <= 4u) { sig[o.kind - 1u] += touch * ob.rec.z; }
-          }
+          if (diff && o.kind >= 1u && o.kind <= 4u) { sig[o.kind - 1u] += touch * ob.rec.z; }
           if (adh && dist > 1e-3) {
             // like sticks to like: both cells' stickiness, times how alike their keys are, plus same-fate glue
             let sa = S.adhSigma;
@@ -143,6 +149,46 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   c.pos += c.vel * S.dt + jit * S.jitter * S.R * mot;
   c.pos = clamp(c.pos, vec2f(0.0), vec2f(S.W, S.H));
   c.r += (S.R * size - c.r) * min(1.0, S.dt * 0.8);
+
+  // turnover: now and then a cell dies and a touching neighbour divides into its place, the daughter a copy
+  // of the parent's genome (from last tick's buffer, so it does not matter whether the parent changes or dies
+  // this tick) with small mutations. Cells that recognise none of their neighbours die sooner.
+  if ((S.rules & RULE_TURN) != 0u && parent != 0xffffffffu) {
+    let rate = S.turnover * (1.0 + S.unhappy * (1.0 - min(M, 1.0)));
+    if (rand01(c.seed ^ 0x165667b1u, S.tick) < rate * S.dt) {
+      let pc = sorted[parent];
+      let pi = sortIdx[parent];
+      let bs = pcg(c.seed ^ pcg(S.tick * 0x9e3779b9u + i));    // this birth's random stream
+      var nb = bioPrev[pi];
+      if ((S.rules & RULE_MUT) != 0u) { nb = mutate(nb, bs, S.mutSize, S.mutJump); }
+      let inherit = (S.rules & RULE_INHERIT) != 0u;
+      if (!inherit) { nb.acc = vec4f(0.0); }
+      nb.body.w = TAU * rand01(bs, 200u);
+      // record the death and the birth (counters always, positions while there is room)
+      atomicAdd(&stats.deaths, 1u);
+      atomicAdd(&stats.births, 1u);
+      let a = TAU * rand01(bs, 201u);
+      let np = clamp(pc.pos + vec2f(cos(a), sin(a)) * 0.4 * pc.r, vec2f(0.0), vec2f(S.W, S.H));
+      let ev = atomicAdd(&stats.nEvents, 2u);
+      if (ev + 1u < STATS_EVENTS) {
+        stats.events[ev] = vec4f(c.pos, -1.0, 0.0);
+        stats.events[ev + 1u] = vec4f(np, 1.0, 0.0);
+      }
+      var d: Cell;
+      d.pos = np;
+      d.vel = vec2f(0.0);
+      d.r = 0.6 * pc.r;                         // starts small and grows to its size
+      d.la = nb.key.x;
+      d.e1 = 0.0;
+      d.e2 = 0.0;
+      d.kind = select(KIND_STEM, pc.kind, inherit);
+      d.flags = CELL_ALIVE;
+      d.seed = pcg(bs ^ 0x5bd1e995u);
+      d.aux = nb.key.y;
+      c = d;
+      bio = nb;
+    }
+  }
 
   cells[i] = c;
   bioNext[i] = bio;

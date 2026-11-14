@@ -364,6 +364,56 @@ fn sense_field(seg: ptr<function, array<f32, 6>>, mb: Membrane, rel: vec2f, q0: 
   }
 }
 
+// ---------- the fields (step 5): A and B, separate sums in separate lattice bands ----------
+// Field A is the loop's field (step 4): the cell's lattice near the medium's period. Field B is a second field
+// in its own band: every lattice involved (the cell's and the medium's) is `bBand` times longer, so A and B
+// make no slow beat with each other; it reaches further (power law from a larger r0) and has its own sign rule.
+// Each fate carries a charge per field: how strongly it emits into that field and listens to it.
+// Written once per frame by src/cells.js (writeFields; keep in step); 96 bytes.
+struct Fields {
+  qA: vec4f,        // field A charge per fate: stem, epithelium, muscle, neuron (1 = as in step 4)
+  qB: vec4f,        // field B charge per fate (signed: like charges repel, when bSign = 1)
+  q4: vec2f,        // cartilage's charges (A, B)
+  bBand: f32,       // B's lattice period, in units of the medium's period (its band)
+  bLever: f32,      // as Sim.lever, for B's lattices
+  bR0: f32,         // B's envelope range r0, in units of R
+  bCut: f32,        // how far B reaches (sensed and drawn), in units of R
+  bGain: f32,       // gain of the force from B (0 = cells do not feel B)
+  bSat: f32,        // B's force saturates at this speed, in units of R per s
+  bSign: f32,       // +1: like repels like; -1: like attracts like
+  bLike: u32,       // what "like" means: 0 = by charge (the fates' signed charges multiply), 1 = by key (lineage)
+  bLikeW: f32,      // lineage likeness width (Gaussian in the key difference, as adhSigma)
+  bReach: u32,      // neighbour block radius in grid cells that covers bCut (1 = the usual 3 x 3)
+  bEmit: f32,       // 1 = cells emit into B, 0 = not
+  _p: f32,
+};
+
+fn charge_a(F: Fields, kind: u32) -> f32 {
+  if (kind < 4u) { return F.qA[kind]; }
+  return F.q4.x;
+}
+fn charge_b(F: Fields, kind: u32) -> f32 {
+  if (kind < 4u) { return F.qB[kind]; }
+  return F.q4.y;
+}
+
+// Field B of one cell at x, before the sign rule: strength x envelope x (1/3) sum_m cos(q_m . (x - centre)),
+// tapered to 0 at cutR. Its gradient (what a cell feels: membrane integral = area x gradient for a field this
+// smooth over the cell) comes with it: returns (gradient xy, value z).
+fn cell_field_b(b: CellBeat, x: vec2f, cutR: f32) -> vec3f {
+  let d = x - b.q2p.zw;
+  let d2 = dot(d, d);
+  let inv = 1.0 / (1.0 + d2 / b.b2a.w);
+  let a0 = dot(b.b01.xy, d);
+  let a1 = dot(b.b01.zw, d);
+  let a2 = dot(b.b2a.xy, d);
+  let s = cos(a0) + cos(a1) + cos(a2);
+  let gs = -(b.b01.xy * sin(a0) + b.b01.zw * sin(a1) + b.b2a.xy * sin(a2));
+  let genv = d * (-2.0 / b.b2a.w * inv * inv);
+  let t = cut_taper(d2, cutR) * b.b2a.z / 3.0;
+  return vec3f((genv * s + inv * gs) * t, inv * s * t);
+}
+
 // ---------- the cell as an emitter ----------
 // The lattice a cell emits with: its key (angle, log period factor) plus its fate's period, with the
 // difference from the medium's lattice scaled by the lever (Sim.lever). Returns (angle, log period factor).
@@ -372,7 +422,7 @@ fn cell_lattice(c: Cell, lever: f32) -> vec2f {
   return vec2f(base + lever * (c.la - base), lever * (c.aux + log(kind_period(c.kind))));
 }
 
-// A cell's beat, computed once per tick (cell_grid.wgsl, scatter) for everyone who senses or draws it (80 bytes;
+// A cell's beat, computed once per tick (cell_grid.wgsl, scatter) for everyone who senses or draws it (112 bytes;
 // keep in step with CELL_BEAT_BYTES in src/cells.js). The phases are taken at the cell's own centre, so the
 // field near it is  amp * envelope * (1/3) sum_m cos(q_m . (x - pos) + ph_m)  with small cosine arguments.
 struct CellBeat {
@@ -382,18 +432,21 @@ struct CellBeat {
   k2a: vec4f,       // k2 (xy), strength (z; 0 = not emitting), envelope range squared (w)
   ph: vec3f,        // phases at the cell's centre
   idx: u32,         // the cell's index in `cells` (a copy of sortIdx, so the step pass needs one buffer less)
+  // field B (step 5): its own band, always pinned to the cell (phase 0 at the centre)
+  b01: vec4f,       // B's beat wavevectors q0 (xy) and q1 (zw)
+  b2a: vec4f,       // q2 (xy), signed strength = the cell's B charge x size (z), envelope range squared (w)
 };
 
 // The cell as a field emitter: strength min(1, r/R) (times Sim.emit), range r0 = Sim.r0 x R. Its lattice is
 // strained by the cell's stretch (k = F^-1 . k0) and scaled by its period factor p; emitter_k does
 // k = adj(F) . k0 / kind_period, so p goes in as F / p (with kind = stem, period 1).
-fn cell_beat(c: Cell, S: Sim, M: Medium) -> CellBeat {
+fn cell_beat(c: Cell, S: Sim, M: Medium, FL: Fields) -> CellBeat {
   let lat = cell_lattice(c, S.lever);
   let F = cell_F(c) * exp(-lat.y);
   var e: Emitter;
   e.pos = c.pos;
   e.la = lat.x;
-  e.amp = S.emit * min(1.0, c.r / S.R);
+  e.amp = S.emit * charge_a(FL, c.kind) * min(1.0, c.r / S.R);
   e.r0sq = (S.r0 * S.R) * (S.r0 * S.R);
   e.fa = F.x; e.fb = F.y; e.fd = F.z;
   e.kind = KIND_STEM;
@@ -411,6 +464,19 @@ fn cell_beat(c: Cell, S: Sim, M: Medium) -> CellBeat {
   if (S.anchor == 2u) { pa = vec3f(dot(b.q0, o), dot(b.q1, o), dot(b.q2, o)); }
   cb.ph = pa - TAU * floor(pa / TAU);
   cb.idx = 0u;
+  // field B: the same key and stretch, in B's band (the medium's lattice and the cell's both bBand times longer),
+  // with B's own lever; pinned to the cell
+  let latB = cell_lattice(c, FL.bLever);
+  let FB = cell_F(c) * exp(-latB.y);
+  var MB = M;
+  MB.k0 = M.k0 / FL.bBand;
+  var eb = e;
+  eb.la = latB.x;
+  eb.fa = FB.x; eb.fb = FB.y; eb.fd = FB.z;
+  let bb = make_beat(eb, MB);
+  let rB = FL.bR0 * S.R;
+  cb.b01 = vec4f(bb.q0, bb.q1);
+  cb.b2a = vec4f(bb.q2, FL.bEmit * charge_b(FL, c.kind) * min(1.0, c.r / S.R), rB * rB);
   return cb;
 }
 
@@ -440,8 +506,12 @@ fn grid_index(S: Sim, g: vec2i) -> u32 {
 
 // the 3 x 3 block of grid cells around g, clipped to the grid: min corner in .xy, max corner in .zw
 fn grid_range(S: Sim, g: vec2i) -> vec4i {
-  let lo = max(g - vec2i(1), vec2i(0));
-  let hi = min(g + vec2i(1), vec2i(i32(S.gw) - 1, i32(S.gh) - 1));
+  return grid_range_n(S, g, 1);
+}
+// the (2n + 1) x (2n + 1) block: covers at least n grid cells' width around any point of g (field B's reach)
+fn grid_range_n(S: Sim, g: vec2i, n: i32) -> vec4i {
+  let lo = max(g - vec2i(n), vec2i(0));
+  let hi = min(g + vec2i(n), vec2i(i32(S.gw) - 1, i32(S.gh) - 1));
   return vec4i(lo, hi);
 }
 

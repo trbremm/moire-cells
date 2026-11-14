@@ -7,7 +7,8 @@
 //   scan_top    one workgroup: exclusive prefix sum of blockSums, in chunks of 512 with a running carry
 //   scan_add    adds each block's offset: starts[g] = first slot of grid cell g in the sorted list
 //   scatter     one invocation per cell: copies it to sorted[starts[g] + rank], and its index to sortIdx;
-//               also works out the cell's beat against the medium (cell_beat) into beats[the same slot]
+//               also works out the cell's beats against the medium (cell_beat: field A and field B) into
+//               beats[the same slot]
 // After this, the cells of grid cell g are sorted[starts[g] .. starts[g] + counts[g]), with their beats.
 // Only core WebGPU: storage-buffer atomics and workgroup memory (256 invocations, 1 KiB of workgroup memory).
 
@@ -21,6 +22,7 @@
 @group(0) @binding(7) var<storage, read_write> sortIdx: array<u32>;
 @group(0) @binding(8) var<uniform> med: Medium;
 @group(0) @binding(9) var<storage, read_write> beats: array<CellBeat>;
+@group(0) @binding(10) var<uniform> FL: Fields;
 
 const WG: u32 = 256u;
 const BLOCK: u32 = 512u;   // two elements per invocation
@@ -110,7 +112,7 @@ fn scatter(@builtin(global_invocation_id) id: vec3u) {
   let c = cells[i];
   sorted[dst] = c;
   sortIdx[dst] = i;
-  var b = cell_beat(c, S, med);
+  var b = cell_beat(c, S, med, FL);
   b.idx = i;
   beats[dst] = b;
 }

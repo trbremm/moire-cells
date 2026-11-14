@@ -19,6 +19,11 @@
 // each cell adds its beat x envelope over a quad into a half-resolution rgba16float texture (cell_field.wgsl),
 // which the landscape's halftone dots read.
 //
+// Field B (step 5): a second, separate field in its own lattice band (every lattice bBand times longer, so it
+// makes no slow beat with field A), with a longer reach and its own sign rule. Its beat rides along in the
+// same CellBeat; it is scattered into the texture's G channel. Each fate has a charge per field (`fields`,
+// uniform struct Fields, written once per frame).
+//
 // Size: the cells' radius R is the reference's R (from the screen area, 5 to 9 CSS px), but smaller when
 // that many cells would not fit in a round blob of about 0.8 x the dish height (so 10 000 or 50 000 cells
 // get smaller). See `fitR`.
@@ -48,7 +53,8 @@ const STATS_BYTES = 8192;      // struct Stats in cell_common.wgsl (counters, ev
 const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder bitmap) in struct Stats
 const STATS_EVENTS = 64;
 const MAX_SRC = 16;            // sources the cells feel (MAX_CELL_SOURCES in cell_common.wgsl)
-const CELL_BEAT_BYTES = 80;    // struct CellBeat in cell_common.wgsl
+const CELL_BEAT_BYTES = 112;   // struct CellBeat in cell_common.wgsl
+const FIELDS_BYTES = 96;       // struct Fields in cell_common.wgsl
 const FIELD_FORMAT = 'rgba16float';
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
@@ -103,6 +109,16 @@ export class Cells {
       anchor: 1,      // where a cell's beat is anchored (key X): 0 = its lattice at the cell, the moire sliding as
                       // it moves (reference); 1 = the beat pinned to the cell, bright at its centre; 2 = its
                       // lattice anchored at the dish centre, the moire standing still in the world
+    };
+    // the fields' charges and field B (step 5; live-tunable: moire.cells.fields)
+    this.fields = {
+      chargeA: [1, 1, 1, 1, 1],     // field A charge per fate (stem, epithelium, muscle, neuron, cartilage)
+      chargeB: [1, 1, -1, 0.5, -1], // field B charge per fate (signed)
+      band: 1.5,      // B's lattice period in units of the medium's (its band; A's is 1)
+      lever: 0.4,     // as params.lever, for B's lattices
+      r0: 3.5,        // B's envelope range, in units of R (A: 2.2)
+      cut: 7,         // how far B reaches (sensed and drawn), in units of R (A: 3.6)
+      emit: true,     // cells emit into B
     };
     // drawing (live-tunable: moire.cells.look)
     this.fieldScale = 0.5;     // texels per CSS px of the cells' field texture
@@ -162,7 +178,7 @@ export class Cells {
       return { bgl, pl: d.createPipelineLayout({ label, bindGroupLayouts: [bgl] }) };
     };
     const un = (binding) => ({ binding, visibility: C, buffer: { type: 'uniform' } });
-    this.gridL = layout('cell grid', [sim, ro(1), rw(2), rw(3), rw(4), rw(5), rw(6), rw(7), un(8), rw(9)]);
+    this.gridL = layout('cell grid', [sim, ro(1), rw(2), rw(3), rw(4), rw(5), rw(6), rw(7), un(8), rw(9), un(10)]);
     // (at most 8 storage buffers per stage, the core limit: the step finds sortIdx in the beats)
     this.stepL = layout('cell step', [sim, ro(1), ro(3), ro(4), rw(5), ro(6), rw(7), rw(8), un(9), un(10), ro(11)]);
     this.censusL = layout('cell census', [sim, ro(1), ro(2), rw(3)]);
@@ -183,6 +199,8 @@ export class Cells {
     this.sortedBuf = d.createBuffer({ label: 'cells sorted', size: n * CELL_BYTES, usage: U.STORAGE });
     this.sortIdxBuf = d.createBuffer({ label: 'cell sort index', size: n * 4, usage: U.STORAGE });
     this.beatBuf = d.createBuffer({ label: 'cell beats (sorted)', size: n * CELL_BEAT_BYTES, usage: U.STORAGE });
+    this.fieldsBuf = d.createBuffer({ label: 'fields (charges, field B)', size: FIELDS_BYTES, usage: U.UNIFORM | U.COPY_DST });
+    this.fieldsAB = new ArrayBuffer(FIELDS_BYTES);
     this.fieldU = d.createBuffer({ label: 'cell field params', size: 16, usage: U.UNIFORM | U.COPY_DST });
     this.fieldBG = d.createBindGroup({
       label: 'cell field', layout: this.fieldPipe.getBindGroupLayout(0),
@@ -278,7 +296,7 @@ export class Cells {
       label: 'cell grid', layout: this.gridL.bgl,
       entries: [{ binding: 0, resource: { buffer: this.simBuf, size: SIM_BYTES } }, b(1, this.cellBuf),
         b(2, this.countsBuf), b(3, this.startsBuf), b(4, this.blockBuf), b(5, this.cellGridBuf),
-        b(6, this.sortedBuf), b(7, this.sortIdxBuf), b(8, this.medium.buffer), b(9, this.beatBuf)],
+        b(6, this.sortedBuf), b(7, this.sortIdxBuf), b(8, this.medium.buffer), b(9, this.beatBuf), b(10, this.fieldsBuf)],
     });
     // two step bind groups: stepBG[k] reads bioBuf[k] and writes bioBuf[1 - k]
     this.stepBG = [0, 1].map((k) => this.makeStepBG(this.cellBuf, this.bioBuf[k], this.bioBuf[1 - k], this.statsBuf));
@@ -362,6 +380,16 @@ export class Cells {
     f[o + 54] = p.active ? 1 : 0; f[o + 55] = p.shapeRate; u[o + 56] = p.anchor;
   }
 
+  /** Write the fields' uniform (struct Fields): charges per fate, field B's band, range and rules. */
+  writeFields() {
+    const F = this.fields, f = new Float32Array(this.fieldsAB), u = new Uint32Array(this.fieldsAB);
+    for (let k = 0; k < 4; k++) { f[k] = F.chargeA[k]; f[4 + k] = F.chargeB[k]; }
+    f[8] = F.chargeA[4]; f[9] = F.chargeB[4];
+    f[10] = Math.max(0.1, F.band); f[11] = F.lever; f[12] = Math.max(0.1, F.r0); f[13] = Math.max(0.1, F.cut);
+    f[20] = F.emit ? 1 : 0;
+    this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
+  }
+
   /** Record the grid build for the tick whose uniforms are in slot k. */
   encodeGrid(encoder, k) {
     const g = this.grid, wg = Math.ceil(this.count / 256);
@@ -401,6 +429,7 @@ export class Cells {
       if (t >= warm) { this.pointer.vx *= 0.8; this.pointer.vy *= 0.8; }   // the stir fades (reference: per frame)
     }
     this.device.queue.writeBuffer(this.simBuf, 0, this.simAB, 0, ticks * SLOT);
+    this.writeFields();
     for (let t = 0; t < ticks; t++) {
       this.encodeGrid(encoder, t);
       // ?check runs between the grid build and the move, so both see the same positions
@@ -412,14 +441,15 @@ export class Cells {
     this.encodeField(encoder);
   }
 
-  /** Scatter the cells' field into its texture (from the beats of the last tick's grid), if it is drawn. */
+  /** Scatter the cells' fields (A into r, B into g) into their texture (from the last tick's beats), if drawn. */
   encodeField(encoder) {
     const L = this.landscape;
     if (!this.fieldTex || !L) return;
-    const on = this.emitting() && L.params.cellField;
+    const onB = !!(this.fields.emit && L.params.fieldB);
+    const on = (this.emitting() && L.params.cellField) || onB;
     if (!on && this.fieldBlank) return;
     this.fieldBlank = !on;
-    const v = this.view, a = new Float32Array([v.cssW, v.cssH, this.params.cut * this.R, 0]);
+    const v = this.view, a = new Float32Array([v.cssW, v.cssH, this.params.cut * this.R, onB ? this.fields.cut * this.R : 0]);
     this.device.queue.writeBuffer(this.fieldU, 0, a);
     const pass = encoder.beginRenderPass({
       label: 'cell field',

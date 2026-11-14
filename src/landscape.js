@@ -15,6 +15,7 @@
 import { loadFieldShader, writeEmitter, KIND, EMITTER_FLOATS, EMITTER_BYTES, BEAT_BYTES } from './field.js';
 
 export const MAX_SOURCES = 64;   // GPU buffer capacity
+const DRAW_BYTES = 160;          // struct DrawParams in landscape_draw.wgsl
 
 export class Landscape {
   constructor(device, format, medium) {
@@ -47,6 +48,16 @@ export class Landscape {
       cellGain: 1.0,      // strength gain of the cells' field
       cellColour: [241, 236, 223],
       cellLevel: 0.32,
+      // field B (step 5), from the same texture's G channel, on its own screen: dots where positive, open rings
+      // where negative, in a faded print blue
+      fieldB: true,       // drawn on/off (key J)
+      bGain: 0.5,         // strength gain
+      bColour: [128, 158, 255],
+      bLevel: 0.5,
+      bAngle: 45,         // screen rotation (degrees; A's screen is at 15)
+      bPitch: 6,          // distance between B's dots (CSS px)
+      bMaxDot: 0.7,       // largest dot radius as a fraction of bPitch/2 (smaller than A's, so both read)
+      bRing: 1.0,         // stroke of the open rings (CSS px)
       maxSources: 6,      // the reference keeps at most 6; adding one more drops the oldest (up to MAX_SOURCES)
       amp: 5,             // strength of a new source (reference)
       range: 9,           // envelope range r0 in units of R (reference: r0^2 = 81 R^2)
@@ -81,11 +92,11 @@ export class Landscape {
     this.emitBuf = d.createBuffer({ label: 'sources', size: MAX_SOURCES * EMITTER_BYTES, usage: U.STORAGE | U.COPY_DST });
     this.beatBuf = d.createBuffer({ label: 'source beats', size: MAX_SOURCES * BEAT_BYTES, usage: U.STORAGE });
     this.prepU = d.createBuffer({ label: 'source prep params', size: 16, usage: U.UNIFORM | U.COPY_DST });
-    this.drawU = d.createBuffer({ label: 'landscape draw params', size: 112, usage: U.UNIFORM | U.COPY_DST });
+    this.drawU = d.createBuffer({ label: 'landscape draw params', size: DRAW_BYTES, usage: U.UNIFORM | U.COPY_DST });
     const ab = new ArrayBuffer(MAX_SOURCES * EMITTER_BYTES);
     this.emitF = new Float32Array(ab);
     this.emitU = new Uint32Array(ab);
-    this.drawAB = new ArrayBuffer(112);
+    this.drawAB = new ArrayBuffer(DRAW_BYTES);
     this.drawF = new Float32Array(this.drawAB);
     this.drawI = new Uint32Array(this.drawAB);
 
@@ -176,7 +187,8 @@ export class Landscape {
   render(pass) {
     const n = this.sources.length, p = this.params;
     const C = this.cells, cellOn = !!(C && C.fieldTex && p.cellField && C.emitting());
-    if (!n && !cellOn) return;
+    const bOn = !!(C && C.fieldTex && p.fieldB && C.fields.emit);
+    if (!n && !cellOn && !bOn) return;
     const F = this.drawF;
     F[0] = this.view.dpr; F[1] = this.medium.R; this.drawI[2] = n;
     F[3] = p.on ? p.gain : 0; F[4] = p.markers;
@@ -187,6 +199,10 @@ export class Landscape {
     for (let j = 0; j < 3; j++) F[20 + j] = p.cellColour[j] / 255;
     F[23] = p.cellLevel;
     F[24] = cellOn ? p.cellGain : 0; F[25] = C ? C.fieldScale : 1;
+    for (let j = 0; j < 3; j++) F[28 + j] = p.bColour[j] / 255;
+    F[31] = p.bLevel;
+    F[32] = bOn ? p.bGain : 0; F[33] = p.bAngle * Math.PI / 180; F[34] = Math.max(2, p.bPitch);
+    F[35] = Math.max(0, Math.min(1, p.bMaxDot)); F[36] = p.bRing;
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBindGroup());

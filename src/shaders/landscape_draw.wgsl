@@ -10,6 +10,9 @@
 //   overlap  = one dot per screen cell: the stronger kind takes the cell, with its own colour and size
 // The cells' field (step 4) is a third kind: the cells scatter their beats into a texture (cell_field.wgsl),
 // read here at each dot centre, positive part only, times cellGain, in its own pale ink.
+// Field B (step 5, channel g of the same texture) has its own screen on top, turned to another angle (as the
+// separate colour screens of print), in its own ink: a filled dot where B is positive, an open ring where it is
+// negative (the negative charges' field), area again growing with the strength.
 // Edges are anti-aliased over about one device pixel (distance measured in device px), nothing wider.
 // The output is premultiplied and blended "over", so the flat colours stay flat on top of the soft background.
 //
@@ -38,6 +41,15 @@ struct DrawParams {
   fieldScale: f32,  // texels per CSS px of the cells' field texture
   _p0: f32,
   _p1: f32,
+  bInk: vec4f,      // field B's ink: rgb, and its level
+  bGain: f32,       // field B's strength gain (0 = not drawn)
+  bAngle: f32,      // field B's screen rotation (radians)
+  bPitch: f32,      // field B's screen pitch (CSS px)
+  bMaxDot: f32,     // field B's largest dot radius as a fraction of bPitch/2
+  bRing: f32,       // stroke of B's open rings (negative field), CSS px
+  _p2: f32,
+  _p3: f32,
+  _p4: f32,
 };
 
 @group(0) @binding(0) var<uniform> medium: Medium;
@@ -67,8 +79,7 @@ fn rot(v: vec2f, a: f32) -> vec2f {
 
 // nearest screen point to u (screen frame, CSS px). The hex grid is the union of two rectangular grids
 // (p by p*sqrt3), the second shifted by half a cell; the nearer of the two candidates is the nearest point.
-fn screen_point(u: vec2f) -> vec2f {
-  let p = D.pitch;
+fn screen_point(u: vec2f, p: f32) -> vec2f {
   if (D.hex == 0u) { return round(u / p) * p; }
   let cell = vec2f(p, p * 1.7320508);
   let a = round(u / cell) * cell;
@@ -92,7 +103,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   var res = vec4f(0.0);
 
   let o = medium.centre;                        // the halftone screen is anchored at the dish centre
-  let c = rot(screen_point(rot(x - o, -D.angle)), D.angle) + o;   // this screen cell's centre, in the world
+  let c = rot(screen_point(rot(x - o, -D.angle), D.pitch), D.angle) + o;   // this screen cell's centre, in the world
 
   // ---- halftone dots ----
   if (D.gain > 0.0 || D.cellGain > 0.0) {
@@ -116,6 +127,21 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       let r = D.maxDot * 0.5 * D.pitch * sqrt(cov);
       let ink = select(select(D.nut, D.thr, thr > nut), D.cell, cel > max(nut, thr));
       res = vec4f(ink.rgb * ink.a, 1.0) * disc(length(x - c), r);
+    }
+  }
+
+  // ---- field B: its own screen, on top ----
+  if (D.bGain > 0.0) {
+    let cb = rot(screen_point(rot(x - o, -D.bAngle), D.bPitch), D.bAngle) + o;
+    let uv = cb * D.fieldScale / vec2f(textureDimensions(cellTex));
+    let v = textureSampleLevel(cellTex, cellSamp, uv, 0.0).g * D.bGain;
+    let cov = clamp((abs(v) - D.thresh) / max(1.0 - D.thresh, 1e-3), 0.0, 1.0);
+    if (cov > 0.0) {
+      let r = D.bMaxDot * 0.5 * D.bPitch * sqrt(cov);
+      let d = length(x - cb);
+      var a = disc(d, r);                                    // positive: a filled dot
+      if (v < 0.0) { a = disc(abs(d - r), 0.5 * D.bRing); }   // negative: an open ring
+      res = over(vec4f(D.bInk.rgb * D.bInk.a, 1.0) * a, res);
     }
   }
 

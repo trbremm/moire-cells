@@ -51,7 +51,19 @@ export class Cells {
     this.grid = { gw: 0, gh: 0, cs: 1, n: 0, cap: 0 };
     this.checkOn = false;
     this.checkResult = null;   // last ?check result, for the overlay
+    this.warm = 0;             // ticks still to run at once after a reset (the reference pre-steps 200)
+    // physics (live-tunable: moire.cells.params); forces are in CSS px / s, as in the reference
     this.params = {
+      contact: true,  // soft contact push on/off (key P)
+      stiffness: 7,   // contact push per px of overlap (reference KR = 7)
+      damping: 0.85,  // velocity kept per tick (reference: v = 0.85 v + 0.15 F)
+      jitter: 0.05,   // Brownian kick per tick, full width, in units of R (reference: 0.05)
+      squeeze: 0.25,  // pull to the dish centre, set as the overlap it would cause in the blob's middle
+                      // (scaled by the count, so 50 000 cells are squeezed no harder than 2000)
+      wall: 2,        // soft wall stiffness (reference)
+      drift: 0.15,    // slow drift of the medium, in units of R / s (reference 0.5, which tears a blob without
+                      // adhesion; 0 = still)
+      warmup: 120,    // ticks run at once after a reset, so a new culture starts settled
       range: 2.2,     // grid cell size in units of R (must be >= the largest interaction range: 2 r for contact)
     };
     // drawing (live-tunable: moire.cells.look)
@@ -74,10 +86,11 @@ export class Cells {
 
   async init() {
     const d = this.device;
-    const [drawMod, gridMod, checkMod] = await Promise.all([
+    const [drawMod, gridMod, checkMod, stepMod] = await Promise.all([
       loadFieldShader(d, 'src/shaders/cell_draw.wgsl', [CELL_URL]),
       loadFieldShader(d, 'src/shaders/cell_grid.wgsl', [CELL_URL]),
       loadFieldShader(d, 'src/shaders/cell_check.wgsl', [CELL_URL]),
+      loadFieldShader(d, 'src/shaders/cell_step.wgsl', [CELL_URL]),
     ]);
     const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
     this.drawPipe = d.createRenderPipeline({
@@ -97,6 +110,7 @@ export class Cells {
       return { bgl, pl: d.createPipelineLayout({ label, bindGroupLayouts: [bgl] }) };
     };
     this.gridL = layout('cell grid', [sim, ro(1), rw(2), rw(3), rw(4), rw(5), rw(6), rw(7)]);
+    this.stepL = layout('cell step', [sim, ro(1), ro(2), ro(3), ro(4), rw(5)]);
     this.checkL = layout('cell check', [sim, ro(1), ro(2), ro(3), ro(4), ro(5), rw(6),
       { binding: 7, visibility: C, buffer: { type: 'uniform' } }]);
     const pipe = (L, module, entryPoint) => d.createComputePipeline({
@@ -104,6 +118,7 @@ export class Cells {
     });
     this.pipes = {};
     for (const e of ['count', 'scan_local', 'scan_top', 'scan_add', 'scatter']) this.pipes[e] = pipe(this.gridL, gridMod, e);
+    this.pipes.step = pipe(this.stepL, stepMod, 'step');
     this.pipes.check = pipe(this.checkL, checkMod, 'check');
 
     const U = GPUBufferUsage;
@@ -165,6 +180,11 @@ export class Cells {
         b(2, this.countsBuf), b(3, this.startsBuf), b(4, this.blockBuf), b(5, this.cellGridBuf),
         b(6, this.sortedBuf), b(7, this.sortIdxBuf)],
     });
+    this.stepBG = d.createBindGroup({
+      label: 'cell step', layout: this.stepL.bgl,
+      entries: [{ binding: 0, resource: { buffer: this.simBuf, size: SIM_BYTES } }, b(1, this.sortedBuf),
+        b(2, this.sortIdxBuf), b(3, this.startsBuf), b(4, this.countsBuf), b(5, this.cellBuf)],
+    });
     this.makeCheck();
   }
 
@@ -186,16 +206,27 @@ export class Cells {
       u[o + 8] = KIND.STEM; u[o + 9] = ALIVE; u[o + 10] = (Math.random() * 4294967296) >>> 0; f[o + 11] = 0;
     }
     this.device.queue.writeBuffer(this.cellBuf, 0, ab);
+    this.warm = Math.max(0, Math.round(this.params.warmup));
   }
 
-  /** Write the Sim uniform for one tick into slot k. */
-  writeSim(k, frame) {
-    const v = this.view, g = this.grid;
+  /** Pull toward the dish centre (1/s) that squeezes the middle of the blob by about params.squeeze. */
+  pull() {
+    const p = this.params;
+    return 6.6 * p.squeeze * p.stiffness / this.count;
+  }
+
+  /** Write the Sim uniform for one tick (at simulation time `time`) into slot k. */
+  writeSim(k, dt, time) {
+    const v = this.view, g = this.grid, p = this.params;
     const f = this.simF, u = this.simU, o = k * SLOT / 4;
     u[o] = this.count; u[o + 1] = g.gw; u[o + 2] = g.gh; u[o + 3] = this.tick >>> 0;
     f[o + 4] = g.cs; f[o + 5] = this.R; f[o + 6] = v.cssW; f[o + 7] = v.cssH;
-    f[o + 8] = v.cssW / 2; f[o + 9] = v.cssH / 2; f[o + 10] = frame.tickDt;
-    for (let q = 11; q < 24; q++) f[o + q] = 0;
+    f[o + 8] = v.cssW / 2; f[o + 9] = v.cssH / 2; f[o + 10] = dt;
+    f[o + 11] = p.contact ? p.stiffness : 0;
+    f[o + 12] = p.damping; f[o + 13] = p.jitter; f[o + 14] = this.pull(); f[o + 15] = p.wall;
+    f[o + 16] = 0; f[o + 17] = 0; f[o + 18] = 0; f[o + 19] = 0;    // pointer, pointer velocity (stir)
+    f[o + 20] = 1; f[o + 21] = 0;                                  // stir reach squared, gain
+    f[o + 22] = p.drift; f[o + 23] = time;
   }
 
   /** Record the grid build for the tick whose uniforms are in slot k. */
@@ -212,14 +243,32 @@ export class Cells {
     pass.end();
   }
 
+  /** Record the physics for the tick in slot k (after its grid). */
+  encodeStep(encoder, k) {
+    const pass = encoder.beginComputePass({ label: 'cell step' });
+    pass.setPipeline(this.pipes.step);
+    pass.setBindGroup(0, this.stepBG, [k * SLOT]);
+    pass.dispatchWorkgroups(Math.ceil(this.count / 128));
+    pass.end();
+  }
+
   compute(encoder, frame) {
-    const ticks = frame.ticks;
+    // after a reset, the warm-up ticks run first (all in this frame, at the current time)
+    const warm = Math.min(this.warm, SLOTS - frame.ticks);
+    this.warm -= warm;
+    const ticks = warm + frame.ticks;
     if (!ticks) return;
-    for (let t = 0; t < ticks; t++) { this.writeSim(t, frame); this.tick++; }
+    for (let t = 0; t < ticks; t++) {
+      const time = frame.time - Math.max(0, ticks - 1 - t) * frame.tickDt * (t < warm ? 0 : 1);
+      this.writeSim(t, frame.tickDt, time);
+      this.tick++;
+    }
     this.device.queue.writeBuffer(this.simBuf, 0, this.simAB, 0, ticks * SLOT);
     for (let t = 0; t < ticks; t++) {
       this.encodeGrid(encoder, t);
+      // ?check runs between the grid build and the move, so both see the same positions
       if (t === ticks - 1) this.maybeCheck(encoder, t, frame);
+      this.encodeStep(encoder, t);
     }
   }
 

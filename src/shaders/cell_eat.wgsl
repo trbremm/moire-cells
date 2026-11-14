@@ -324,6 +324,36 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     var sparkScale = 1.0;
     if (CP.traceOn != 0u) { sparkScale = 1.0 / (1.0 + CP.traceK * f32(m[CP.trace]) * concIn); }
 
+    // ---- the burner: fuel -> its two atoms, the bond's energy into the battery minus the heat share ----
+    // The spark of each event is paid from the battery first and given back (the reaction is downhill), so a battery
+    // holding less than one event's spark starts nothing. Rate: kBurner x the fuel in stock per s, at most burnMax counts
+    // per tick in all, and no more than the battery has room for.
+    if ((EP.flags & EF_BURN) != 0u) {
+      var left = i32(EP.burnMax);
+      for (var f = FUEL_CH; f < FUEL_CH + 4u; f++) {
+        if (m[f] <= 0 || left <= 0) { continue; }
+        let e16 = ep_i(EP.e16, f);
+        let h1 = (e16 * i32(EP.ineff)) / 256;                 // heat share of one event (whole counts)
+        let g1 = e16 - h1;                                     // ... and what the battery keeps
+        let sp16 = max(i32(ceil(ep_f(EP.spark, f) * sparkScale * 16.0)), 1);
+        var n = i32(floor(EP.kBurner * f32(m[f]) * EP.dt + u01(pcg(rs + f * 0x3c6ef372u))));
+        n = min(n, min(m[f], left));
+        n = min(n, bat / sp16);                                // the spark: an empty battery starts nothing
+        n = min(n, max(batMax - bat, 0) / max(g1, 1));         // a full battery takes nothing more
+        if (n <= 0) { continue; }
+        let pr = ep_u(EP.pair, f);
+        m[f] -= n;
+        m[pr & 255u] += n;
+        m[(pr >> 8u) & 255u] += n;
+        bat += n * g1;
+        heat += n * h1;
+        left -= n;
+        atomicAdd(&wev[EV_BURNED], n);
+        atomicAdd(&wev[EV_GAIN], n * g1);
+        atomicAdd(&wev[EV_BHEAT], n * h1);
+      }
+    }
+
     // write back what changed (only this invocation touches this cell's stock in this dispatch)
     for (var k = 0u; k < NCH; k++) { if (m[k] != m0[k]) { atomicStore(&stock[o + k], m[k]); } }
     if (bat != bat0) { atomicStore(&stock[o + BAT], bat); }

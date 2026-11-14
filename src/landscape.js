@@ -45,7 +45,8 @@ export class Landscape {
       dotLevel: 0.55,
       // the cells' field (step 4): positive part only, in a pale warm ink (the stem colour, dimmer)
       cellField: true,    // drawn on/off (key K)
-      cellGain: 1.0,      // strength gain of the cells' field
+      cellGain: 0.5,      // strength gain of the cells' field (1 left a grey haze in every gap once field B opened
+                          // the culture up)
       cellColour: [241, 236, 223],
       cellLevel: 0.32,
       // field B (step 5), from the same texture's G channel, on its own screen: open rings where positive, filled

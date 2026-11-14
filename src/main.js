@@ -106,6 +106,7 @@ async function boot() {
     if (params.get('bio') === '0') {
       // the loop alone: no fates, adhesion, body traits, turnover, mutation or nutrient/threat biology
       Object.assign(cells.genome.rules, { diff: false, adh: false, body: false, turn: false, mut: false, nut: false });
+      cells.fields.sign = 1;   // like repels like: islands and a labyrinth of strands (key U flips)
     }
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));
@@ -233,7 +234,13 @@ const TAP_MODES = [
 ];
 let tapMode = 0;
 
+let allKeys = false;   // key ?: the short hint or the full key list
 function hintLine() {
+  const short = `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
+    'N / G: new culture / new genomes · V: view · [ ]: speed · F: stats · ?: all keys';
+  return allKeys ? fullHint() : short;
+}
+function fullHint() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
     'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
 }
@@ -283,6 +290,9 @@ function setupInput() {
     if (k === 'f') {
       overlayEl.hidden = !overlayEl.hidden;
       if (!overlayEl.hidden) drawOverlay();
+    } else if (k === '?' || k === '/') {
+      allKeys = !allKeys;
+      hintEl.textContent = hintLine();
     } else if (k === 'a') {
       background.ambient = !background.ambient;
       flash(`ambient ripples ${background.ambient ? 'on' : 'off'}`);

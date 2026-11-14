@@ -74,6 +74,14 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let relayOn = FL.conv > 0.0 && FL.relay > 0.0;
   var relaySig = 0.0;
   var relayAll = 0.0;
+  // step 7, exclusion: this cell's state (its lattice angle's bin); neighbours of its type in the same state are kept
+  // out to exclReach x the contact distance, harder (x excl); neighbours of its type in another state pack closer
+  let exclOn = S.excl > 0.0;
+  let myState = cell_state(c, S.states);
+  var xAll = 0u;                             // census: same-type neighbours within 1.6 x contact distance
+  var xSame = 0u;                            // ... of which in the same state
+  var tAll = 0u;                             // census: same-type neighbours touching (within reach x contact distance)
+  var tSame = 0u;                            // ... of which in the same state
 
   // every neighbour within reach: contact push, and (differentiation on) recognition and signals
   let rg = grid_range_n(S, grid_xy(S, c.pos), select(1, i32(FL.bReach), feelB || relayOn));
@@ -119,8 +127,23 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
             }
           }
         }
+        // step 7, exclusion: the distance below which this pair pushes apart (Rt) and how hard (kx)
+        var Rt = R0;
+        var kx = 1.0;
+        if (o.kind == c.kind) {
+          let same = cell_state(o, S.states) == myState;
+          if (S.xCount != 0u && d2 < 2.56 * R0 * R0) {
+            xAll++;
+            if (same) { xSame++; }
+            if (d2 < S.reach * S.reach * R0 * R0) { tAll++; if (same) { tSame++; } }
+          }
+          if (exclOn) {
+            Rt = select(S.pack * R0, S.exclReach * R0, same);
+            kx = select(1.0, S.excl, same);
+          }
+        }
         let reach = S.reach * R0;
-        if (d2 >= reach * reach) { continue; }
+        if (d2 >= max(reach * reach, Rt * Rt)) { continue; }
         let dist = sqrt(d2);
 
         // contact: 1 when touching, fading to 0 at the reach (cells a hair apart still talk)
@@ -149,8 +172,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           }
         }
 
-        if (dist >= R0 || S.stiffness <= 0.0) { continue; }
-        // soft contact push: an overlap spring
+        if (dist >= max(R0, Rt) || S.stiffness <= 0.0) { continue; }
+        // soft contact push: an overlap spring (step 7: to Rt, kx times as hard)
         var u: vec2f;
         if (dist > 1e-3) {
           u = d / dist;
@@ -159,12 +182,19 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           let a = TAU * rand01(min(i, beats[k].idx) * 7919u + max(i, beats[k].idx), 17u);
           u = vec2f(cos(a), sin(a)) * select(-1.0, 1.0, i < beats[k].idx);
         }
-        f -= u * S.stiffness * (R0 - dist);
-        // contact squeezes the cell along the contact axis (passive deformation)
-        let ov = (R0 - dist) / R0;
+        if (dist < Rt) { f -= u * S.stiffness * kx * (Rt - dist); }
+        // contact squeezes the cell along the contact axis (passive deformation; by the real overlap)
+        let ov = max(R0 - dist, 0.0) / R0;
         C -= ov * vec2f(u.x * u.x - u.y * u.y, 2.0 * u.x * u.y);
       }
     }
+  }
+
+  if (S.xCount != 0u && xAll > 0u) {
+    atomicAdd(&stats.xPairs[0], xAll);
+    atomicAdd(&stats.xPairs[1], xSame);
+    atomicAdd(&stats.xPairs[2], tAll);
+    atomicAdd(&stats.xPairs[3], tSame);
   }
 
   var Q = vec2f(0.0);                        // the field's pull on the outline (quadrupole of the membrane signal)

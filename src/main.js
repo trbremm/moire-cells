@@ -20,6 +20,7 @@
 //   ?founders=N founder genomes at the start (0 = every cell its own)
 //   ?view=1     colour by lineage from the start (key V)
 //   ?bio=0      start with the biology rules off (D H B T M E): the loop alone
+//   ?excl=0|1   step 7 exclusion off / on from the start (key 8); ?states=2..4 its number of states
 
 import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown } from './gpu.js';
 import { Background } from './background.js';
@@ -108,6 +109,8 @@ async function boot() {
       Object.assign(cells.genome.rules, { diff: false, adh: false, body: false, turn: false, mut: false, nut: false });
       cells.fields.sign = 1;   // like repels like: islands and a labyrinth of strands (key U flips)
     }
+    if (params.has('excl')) cells.excl.on = flag('excl');
+    if (params.has('states')) cells.excl.states = Math.max(2, Math.min(4, Number(params.get('states')) || 2));
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));
     return;
@@ -242,7 +245,7 @@ function hintLine() {
 }
 function fullHint() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
+    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
 }
 
 function tap(x, y) {
@@ -399,6 +402,10 @@ function setupInput() {
       const F = cells.fields;
       F.relayOnKey = !F.relayOnKey;
       flash(`relay through B ${F.relayOnKey ? 'on: converted cells excite their neighbours, tire and rest' : 'off'}${F.convOn ? '' : ' (conversion is off: key 5)'}`);
+    } else if (k === '8') {
+      const X = cells.excl;
+      X.on = !X.on;
+      flash(`exclusion ${X.on ? 'on: same fate and same state (the bar) keep apart, other states pack closer' : 'off'}`);
     } else if (k === 'l') {
       landscape.params.on = !landscape.params.on;
       flash(`landscape ${landscape.params.on ? 'on' : 'off'}`);

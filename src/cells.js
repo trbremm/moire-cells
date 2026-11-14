@@ -158,6 +158,18 @@ export class Cells {
       relayOn: 2,     // seconds a cell stays converted
       relayRest: 6,   // seconds it then rests before it can convert again
     };
+    // step 7: exclusion (live-tunable: moire.cells.excl). A cell's TYPE is its fate; its STATE is which of `states`
+    // equal bins of the hex lattice's 60 degrees its lattice angle lies in (2 bins: like spin up / down). Two cells
+    // of the same type and state push apart hard, out past contact; of the same type in different states, they
+    // may pack closer than contact. Cells of different types meet as before.
+    this.excl = {
+      on: false,      // key 8
+      hard: 4,        // how hard same-state cells push apart, x the contact push
+      reach: 1.3,     // ... out to this distance, x the contact distance (the sum of the two radii)
+      pack: 1,        // same type, different state: push apart only below this x the contact distance (below 1:
+                      // they pack closer than contact; 0.85 overlaps them visibly, busy with 3 states)
+      states: 2,      // number of states, 2 to 4
+    };
     // drawing (live-tunable: moire.cells.look)
     this.fieldScale = 0.5;     // texels per CSS px of the cells' field texture
     this.fieldTex = null;
@@ -174,6 +186,9 @@ export class Cells {
       leakDot: 0.42,  // step 6: largest blue centre dot of a leaking cell, as a fraction of its radius (0 = none)
       leakMin: 0.2,   // leak level below which no dot is drawn
       convFill: 0.55, // fill of a converted stem cell, as a fraction of field B's ink (outline: the ink itself)
+      stateMark: true, // step 7: while exclusion is on, a bar across each cell shows its state (its angle: one of
+                      // `states` directions, 180 / states degrees apart)
+      bar: 0.8,       // the bar's brightness (as the outline's)
     };
   }
 
@@ -314,7 +329,8 @@ export class Cells {
   /** Grid cell size in CSS px: the larger of the contact range and the field's reach. */
   gridSize() {
     const p = this.params;
-    return Math.max(1, Math.max(p.range, p.cut) * this.R);
+    const x = this.excl.on ? this.excl.reach * 2.3 : 0;   // step 7: same-state pairs reach past contact
+    return Math.max(1, Math.max(p.range, p.cut, x) * this.R);
   }
 
   /** Grid dimensions from the dish size and R; (re)allocates the grid buffers when they grow. */
@@ -397,7 +413,7 @@ export class Cells {
   }
 
   /** Write the Sim uniform for one tick (at simulation time `time`) into slot k. */
-  writeSim(k, dt, time) {
+  writeSim(k, dt, time, count = false) {
     const v = this.view, g = this.grid, p = this.params;
     const f = this.simF, u = this.simU, o = k * SLOT / 4;
     u[o] = this.count; u[o + 1] = g.gw; u[o + 2] = g.gh; u[o + 3] = this.tick >>> 0;
@@ -421,6 +437,9 @@ export class Cells {
     u[o + 58] = p.receptor ? 1 : 0;
     f[o + 52] = this.landscape ? this.landscape.params.amp : 5; f[o + 53] = p.senseMax;
     f[o + 54] = p.active ? 1 : 0; f[o + 55] = p.shapeRate; u[o + 56] = p.anchor;
+    const X = this.excl;
+    f[o + 59] = X.on ? Math.max(0, X.hard) : 0; f[o + 60] = Math.max(0, X.reach); f[o + 61] = Math.max(0, X.pack);
+    u[o + 62] = Math.max(1, Math.min(4, Math.round(X.states))); u[o + 63] = count ? 1 : 0;
   }
 
   /** Write the fields' uniform (struct Fields): charges per fate, field B's band, range and rules. */
@@ -483,12 +502,13 @@ export class Cells {
     this.writeSources();
     for (let t = 0; t < ticks; t++) {
       const time = frame.time - Math.max(0, ticks - 1 - t) * frame.tickDt * (t < warm ? 0 : 1);
-      this.writeSim(t, frame.tickDt, time);
+      this.writeSim(t, frame.tickDt, time, t === ticks - 1);
       this.tick++;
       if (t >= warm) { this.pointer.vx *= 0.8; this.pointer.vy *= 0.8; }   // the stir fades (reference: per frame)
     }
     this.device.queue.writeBuffer(this.simBuf, 0, this.simAB, 0, ticks * SLOT);
     this.writeFields();
+    encoder.clearBuffer(this.statsBuf, 48, 16);   // step 7: neighbour pairs by state, counted on the last tick
     for (let t = 0; t < ticks; t++) {
       this.encodeGrid(encoder, t);
       // ?check runs between the grid build and the move, so both see the same positions
@@ -575,6 +595,8 @@ export class Cells {
       // step 6: leaking and converted cells, histograms (STATS_X_* in cell_common.wgsl)
       const X = u.subarray(STATS_EXTRA / 4, STATS_EXTRA / 4 + 80);
       const step6 = { leak: X[0], conv: X[1], aHist: Array.from(X.subarray(2, 50)), sHist: Array.from(X.subarray(50, 60)), lHist: Array.from(X.subarray(60, 70)) };
+      // step 7: cells per state, and same-type neighbour pairs (all, same state) from the frame's last tick
+      const step7 = { perState: Array.from(X.subarray(70, 74)), pairs: u[12], same: u[13], touch: u[14], touchSame: u[15] };
       // the conversion thresholds (convAuto): quantiles of the A felt across the culture (from the histogram,
       // interpolated in the bin), smoothed over about 20 s of simulation time
       const tot = step6.aHist.reduce((x, y) => x + y, 0);
@@ -597,7 +619,7 @@ export class Cells {
       while (H.length > 2 && time - H[0][0] > 2) H.shift();
       const h0 = H[0], dt = time - h0[0];
       const rate = dt > 0.2 ? [((births - h0[1]) >>> 0) / dt, ((deaths - h0[2]) >>> 0) / dt] : [0, 0];
-      this.stats = { time, fate, births, deaths, clusters, founders, birthRate: rate[0], deathRate: rate[1], step6 };
+      this.stats = { time, fate, births, deaths, clusters, founders, birthRate: rate[0], deathRate: rate[1], step6, step7 };
       if (events.length && this.onEvents) this.onEvents(events);
     } catch (e) {
       // device lost or page closing: nothing to show
@@ -742,6 +764,14 @@ export class Cells {
         ` · 7 relay ${on(F.relayOnKey)} · up ${this.convThresholds()[0].toFixed(2)} down ${this.convThresholds()[1].toFixed(2)}` +
         `${F.convAuto ? ' (quantiles ' + F.convUp + ' / ' + F.convDown + ' of the A felt)' : ''} · A felt p25 ${pct(s6.aHist, 0.25, A_BIN).toFixed(2)} p50 ${pct(s6.aHist, 0.5, A_BIN).toFixed(2)} p90 ${pct(s6.aHist, 0.9, A_BIN).toFixed(2)}`);
     }
+    const s7 = st && st.step7, X = this.excl;
+    if (s7) {
+      // same-state share among same-type neighbours, and what random mixing of the states would give
+      const n = s7.perState.reduce((x, y) => x + y, 0), rnd = n ? s7.perState.reduce((x, y) => x + (y / n) ** 2, 0) : 0;
+      lines.push(`step 7: 8 exclusion ${on(X.on)} · ${X.states} states (${s7.perState.slice(0, X.states).join(' / ')} cells) · hard x${X.hard} out to ${X.reach} · other state packs to ${X.pack}` +
+        ` · same state among same-type neighbours: touching ${s7.touch ? (100 * s7.touchSame / s7.touch).toFixed(0) : '-'}%, within 1.6 ${s7.pairs ? (100 * s7.same / s7.pairs).toFixed(0) : '-'}%` +
+        ` (random mixing ${(100 * rnd).toFixed(0)}%) · per cell ${(s7.touch / Math.max(1, n)).toFixed(2)} touching, ${(s7.pairs / Math.max(1, n)).toFixed(2)} within 1.6`);
+    }
     if (c) {
       lines.push(`grid check: ${c.contacts / 2} contacts` + (c.brute ? ` (brute force ${c.bruteContacts / 2}, ${c.mismatch} cells differ)` : '') +
         ` · ${c.badSort} bad slots · overlap mean ${(100 * c.ovMean).toFixed(1)}% max ${(100 * c.ovMax).toFixed(1)}%`);
@@ -827,6 +857,9 @@ export class Cells {
     const F = this.fields, bc = this.landscape ? this.landscape.params.bColour : [128, 158, 255];
     a[14] = F.leakOn ? L.leakDot : 0; a[15] = L.leakMin;
     a[16] = bc[0] / 255 * 0.85; a[17] = bc[1] / 255 * 0.85; a[18] = bc[2] / 255 * 0.85; a[19] = F.convOn ? 1 : 0; a[20] = L.convFill;
+    // step 7: the state bar (only while exclusion is on)
+    const X = this.excl;
+    a[21] = X.on && L.stateMark ? Math.max(1, Math.min(4, Math.round(X.states))) : 0; a[22] = L.bar;
     this.device.queue.writeBuffer(this.drawU, 0, a);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG);

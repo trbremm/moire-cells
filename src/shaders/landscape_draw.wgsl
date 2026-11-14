@@ -11,8 +11,8 @@
 // The cells' field (step 4) is a third kind: the cells scatter their beats into a texture (cell_field.wgsl),
 // read here at each dot centre, positive part only, times cellGain, in its own pale ink.
 // Field B (step 5, channel g of the same texture) has its own screen on top, turned to another angle (as the
-// separate colour screens of print), in its own ink: a filled dot where B is positive, an open ring where it is
-// negative (the negative charges' field), area again growing with the strength.
+// separate colour screens of print), in its own ink: an open ring where B is positive, a filled dot where it is
+// negative (the negative charges' field), the size again growing with the strength (bRing 0: filled dots only).
 // Edges are anti-aliased over about one device pixel (distance measured in device px), nothing wider.
 // The output is premultiplied and blended "over", so the flat colours stay flat on top of the soft background.
 //
@@ -46,8 +46,8 @@ struct DrawParams {
   bAngle: f32,      // field B's screen rotation (radians)
   bPitch: f32,      // field B's screen pitch (CSS px)
   bMaxDot: f32,     // field B's largest dot radius as a fraction of bPitch/2
-  bRing: f32,       // stroke of B's open rings (negative field), CSS px
-  _p2: f32,
+  bRing: f32,       // stroke of B's open rings (positive field), CSS px; 0 = filled dots
+  bThresh: f32,     // field B's strength below which there is no dot
   _p3: f32,
   _p4: f32,
 };
@@ -135,12 +135,13 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     let cb = rot(screen_point(rot(x - o, -D.bAngle), D.bPitch), D.bAngle) + o;
     let uv = cb * D.fieldScale / vec2f(textureDimensions(cellTex));
     let v = textureSampleLevel(cellTex, cellSamp, uv, 0.0).g * D.bGain;
-    let cov = clamp((abs(v) - D.thresh) / max(1.0 - D.thresh, 1e-3), 0.0, 1.0);
+    let cov = clamp((abs(v) - D.bThresh) / max(1.0 - D.bThresh, 1e-3), 0.0, 1.0);
     if (cov > 0.0) {
       let r = D.bMaxDot * 0.5 * D.bPitch * sqrt(cov);
       let d = length(x - cb);
-      var a = disc(d, r);                                    // positive: a filled dot
-      if (v < 0.0) { a = disc(abs(d - r), 0.5 * D.bRing); }   // negative: an open ring
+      // positive: an open ring (light ink, so the black stays); negative: a filled dot
+      var a = disc(abs(d - r), 0.5 * D.bRing);
+      if (v < 0.0 || D.bRing <= 0.0) { a = disc(d, r); }
       res = over(vec4f(D.bInk.rgb * D.bInk.a, 1.0) * a, res);
     }
   }

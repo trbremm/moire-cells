@@ -20,6 +20,7 @@
 @group(0) @binding(9) var<uniform> med: Medium;
 @group(0) @binding(10) var<uniform> src: Sources;
 @group(0) @binding(11) var<storage, read> beats: array<CellBeat>;
+@group(0) @binding(12) var<uniform> FL: Fields;
 
 @compute @workgroup_size(128)
 fn step(@builtin(global_invocation_id) id: vec3u) {
@@ -57,9 +58,16 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let rk2 = select(mk2, lattice_k(bio.key.z, bio.key.w, S.lever, med.k0, 2), byRec);
   let rw = select(S.tuneW, bio.rec.x, byRec);
   var C = vec2f(0.0);                        // contact squeeze (traceless tensor: (xx - yy, 2 xy) parts)
+  // field B (step 5): its gradient at the centre, summed over the neighbours within its reach, each weighted by
+  // the sign rule; it reaches past the usual 3 x 3 grid block, so the block grows to FL.bReach cells around
+  let feelB = FL.bGain > 0.0;
+  let cutB = FL.bCut * S.R;
+  let myQA = charge_a(FL, c.kind);
+  let myQB = charge_b(FL, c.kind);
+  var gB = vec2f(0.0);
 
   // every neighbour within reach: contact push, and (differentiation on) recognition and signals
-  let rg = grid_range(S, grid_xy(S, c.pos));
+  let rg = grid_range_n(S, grid_xy(S, c.pos), select(1, i32(FL.bReach), feelB));
   for (var gy = rg.y; gy <= rg.w; gy++) {
     for (var gx = rg.x; gx <= rg.z; gx++) {
       let g = grid_index(S, vec2i(gx, gy));
@@ -72,12 +80,22 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         let d = o.pos - c.pos;
         let R0 = c.r + o.r;
         let d2 = dot(d, d);
+        if (feelB && d2 < cutB * cutB) {
+          let ob = beats[k];
+          // sign rule: like repels like (bSign 1). "Like" by charge: the two charges multiply (same sign
+          // repels, opposite attracts); or by key: lineage likeness (Gaussian in the key difference) x |charges|
+          var w = -FL.bSign * myQB;
+          if (FL.bLike == 1u) {
+            w = -FL.bSign * abs(myQB) * sign(ob.b2a.z) * exp(-key_dist2(c.la, c.aux, o.la, o.aux) / (2.0 * FL.bLikeW * FL.bLikeW));
+          }
+          if (w != 0.0 && ob.b2a.z != 0.0) { gB += w * cell_field_b(ob, c.pos, cutB).xy; }
+        }
         if (sensing && d2 < cutR * cutR) {
           let ob = beats[k];
           if (ob.k2a.z > 0.0) {
             // weight: sign by fates (EMW), receptor tuning by how alike the lattices are, strength, taper
             let tn = tuning(lattice_dist2(rk0, rk1, rk2, ob.k01.xy, ob.k01.zw, ob.k2a.xy), med.k0, rw);
-            let w = S.sense * emw(c.kind, o.kind) * tn * ob.k2a.z * cut_taper(d2, cutR);
+            let w = S.sense * myQA * emw(c.kind, o.kind) * tn * ob.k2a.z * cut_taper(d2, cutR);
             if (w != 0.0) {
               sense_field(&seg, mb, c.pos - ob.q2p.zw, ob.q01.xy, ob.q01.zw, ob.q2p.xy, ob.ph, ob.k2a.w, w);
             }
@@ -163,6 +181,15 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     let cm = length(cf);
     let sat = S.senseMax * S.R;
     if (cm > 1e-6) { f += cf * (sat * tanh(cm / sat) / cm); }
+  }
+
+  // field B's force: area x gradient (the membrane integral, for a field this smooth over the cell), scaled as
+  // field A's (x 1.3 R / r), saturating at its own speed
+  if (feelB) {
+    let fb = FL.bGain * 3.38 * S.R * c.r * gB;
+    let bm = length(fb);
+    let bs = FL.bSat * S.R;
+    if (bm > 1e-6) { f += fb * (bs * tanh(bm / bs) / bm); }
   }
 
   // differentiation: leaky accumulators per fate channel (SUFFICIENT: only sustained input crosses the

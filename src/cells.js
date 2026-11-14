@@ -115,10 +115,18 @@ export class Cells {
       chargeA: [1, 1, 1, 1, 1],     // field A charge per fate (stem, epithelium, muscle, neuron, cartilage)
       chargeB: [1, 1, -1, 0.5, -1], // field B charge per fate (signed)
       band: 1.5,      // B's lattice period in units of the medium's (its band; A's is 1)
-      lever: 0.4,     // as params.lever, for B's lattices
-      r0: 3.5,        // B's envelope range, in units of R (A: 2.2)
-      cut: 7,         // how far B reaches (sensed and drawn), in units of R (A: 3.6)
+      lever: 0.1,     // as params.lever, for B's lattices: small, so B's beat is much longer than its reach and
+                      // B is a smooth bump around each cell (at 0.4 its rings make the summed force jitter)
+      r0: 5,          // B's envelope range, in units of R (A: 2.2)
+      cut: 10,        // how far B reaches (sensed and drawn), in units of R (A: 3.6)
       emit: true,     // cells emit into B
+      strain: 1,      // how much a cell's stretch strains its B lattice (1 = fully, as A; 0 = not)
+      on: true,       // cells feel B (key Q)
+      gain: 0.6,      // gain of B's force (as params.sense for A)
+      sat: 2,         // B's force saturates at this speed (R / s)
+      sign: 1,        // +1: like repels like; -1: like attracts like (key U)
+      like: 0,        // what "like" means: 0 = by charge (signed charges multiply), 1 = by key (lineage)
+      likeW: 0.15,    // lineage likeness width (Gaussian in the key difference)
     };
     // drawing (live-tunable: moire.cells.look)
     this.fieldScale = 0.5;     // texels per CSS px of the cells' field texture
@@ -180,7 +188,7 @@ export class Cells {
     const un = (binding) => ({ binding, visibility: C, buffer: { type: 'uniform' } });
     this.gridL = layout('cell grid', [sim, ro(1), rw(2), rw(3), rw(4), rw(5), rw(6), rw(7), un(8), rw(9), un(10)]);
     // (at most 8 storage buffers per stage, the core limit: the step finds sortIdx in the beats)
-    this.stepL = layout('cell step', [sim, ro(1), ro(3), ro(4), rw(5), ro(6), rw(7), rw(8), un(9), un(10), ro(11)]);
+    this.stepL = layout('cell step', [sim, ro(1), ro(3), ro(4), rw(5), ro(6), rw(7), rw(8), un(9), un(10), ro(11), un(12)]);
     this.censusL = layout('cell census', [sim, ro(1), ro(2), rw(3)]);
     this.checkL = layout('cell check', [sim, ro(1), ro(2), ro(3), ro(4), ro(5), rw(6),
       { binding: 7, visibility: C, buffer: { type: 'uniform' } }]);
@@ -314,7 +322,8 @@ export class Cells {
       label: 'cell step', layout: this.stepL.bgl,
       entries: [{ binding: 0, resource: { buffer: this.simBuf, size: SIM_BYTES } }, b(1, this.sortedBuf),
         b(3, this.startsBuf), b(4, this.countsBuf), b(5, cellBuf),
-        b(6, bioPrev), b(7, bioNext), b(8, statsBuf), b(9, this.medium.buffer), b(10, this.srcBuf), b(11, this.beatBuf)],
+        b(6, bioPrev), b(7, bioNext), b(8, statsBuf), b(9, this.medium.buffer), b(10, this.srcBuf), b(11, this.beatBuf),
+        b(12, this.fieldsBuf)],
     });
   }
 
@@ -386,7 +395,11 @@ export class Cells {
     for (let k = 0; k < 4; k++) { f[k] = F.chargeA[k]; f[4 + k] = F.chargeB[k]; }
     f[8] = F.chargeA[4]; f[9] = F.chargeB[4];
     f[10] = Math.max(0.1, F.band); f[11] = F.lever; f[12] = Math.max(0.1, F.r0); f[13] = Math.max(0.1, F.cut);
-    f[20] = F.emit ? 1 : 0;
+    const feel = F.on && F.emit && F.gain > 0;
+    f[14] = feel ? F.gain : 0; f[15] = Math.max(0.01, F.sat); f[16] = F.sign; u[17] = F.like ? 1 : 0;
+    f[18] = Math.max(0.005, F.likeW);
+    u[19] = Math.max(1, Math.min(4, Math.ceil(F.cut * this.R / this.grid.cs - 1e-6)));   // grid block radius for B's reach
+    f[20] = F.emit ? 1 : 0; f[21] = F.strain;
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -650,6 +663,9 @@ export class Cells {
     const mo = this.motion;
     lines.push(`loop: S sense ${on(p.senseOn)} · O emit ${on(p.emit)} · W active shape ${on(p.active)} · X beat ${ANCHORS[p.anchor] || p.anchor} · R tuning by ${p.receptor ? 'receptor' : 'own lattice'} · lever ${p.lever.toFixed(2)}` +
       (mo ? ` · speed ${mo.speed.toFixed(1)} px/s · net ${mo.net == null ? '-' : mo.net.toFixed(1)} px/s · stretch ${mo.stretch.toFixed(2)} · spread ${mo.spread.toFixed(1)} R` : ''));
+    const F = this.fields, L = this.landscape;
+    lines.push(`field B: Q felt ${on(F.on)} · J drawn ${on(L && L.params.fieldB)} · U like ${F.sign > 0 ? 'repels' : 'attracts'} like · like = ${F.like ? 'similar key (lineage)' : 'charge'}` +
+      ` · band ${F.band} · r0 ${F.r0} R · cut ${F.cut} R · gain ${F.gain} · charges ${F.chargeB.join(' ')}`);
     if (c) {
       lines.push(`grid check: ${c.contacts / 2} contacts` + (c.brute ? ` (brute force ${c.bruteContacts / 2}, ${c.mismatch} cells differ)` : '') +
         ` · ${c.badSort} bad slots · overlap mean ${(100 * c.ovMean).toFixed(1)}% max ${(100 * c.ovMax).toFixed(1)}%`);

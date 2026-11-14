@@ -8,6 +8,7 @@
 // field dots and the substances' dots together).
 
 import { loadFieldShader } from './field.js';
+import { pal } from './palette.js';
 
 const DRAW_BYTES = 192;          // struct DrawParams in landscape_draw.wgsl
 
@@ -116,14 +117,15 @@ export class Landscape {
     F[0] = this.view.dpr; F[1] = this.medium.R;
     F[5] = Math.max(2, p.pitch); F[6] = p.angle * Math.PI / 180; F[7] = p.threshold;
     F[8] = Math.max(0, Math.min(1, p.maxDot)); this.drawI[9] = p.hex ? 1 : 0;
-    for (let j = 0; j < 3; j++) F[20 + j] = p.cellColour[j] / 255;
-    F[23] = p.cellLevel;
+    const P = pal();
+    for (let j = 0; j < 3; j++) F[20 + j] = P.field.A[j] / 255;
+    F[23] = p.cellLevel * P.levels.field / 0.32;
     F[24] = cellOn ? p.cellGain : 0; F[25] = C ? C.fieldScale : 1;
-    for (let j = 0; j < 3; j++) F[28 + j] = p.bColour[j] / 255;
+    for (let j = 0; j < 3; j++) F[28 + j] = P.field.B[j] / 255;
     F[31] = p.bLevel;
     F[32] = bOn ? p.bGain : 0; F[33] = p.bAngle * Math.PI / 180; F[34] = Math.max(2, p.bPitch);
     F[35] = Math.max(0, Math.min(1, p.bMaxDot)); F[36] = p.bRing; F[37] = p.bThresh;
-    for (let j = 0; j < 3; j++) F[40 + j] = p.pColour[j] / 255;
+    for (let j = 0; j < 3; j++) F[40 + j] = P.field.P[j] / 255;
     F[43] = p.pLevel; F[44] = pOn ? p.pGain : 0; F[45] = p.pAngle * Math.PI / 180; F[46] = Math.max(2, p.pPitch); F[47] = p.pThresh;
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);

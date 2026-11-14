@@ -31,6 +31,7 @@
 import { loadShader } from './gpu.js';
 import { HEAT_COMMON_URL, HEAT_SCALE, LEDGER_WORDS, fmt } from './heat.js';
 import { BANDS, LIGHT_COMMON_URL } from './light.js';
+import { FLAT, pal } from './palette.js';
 
 // ---------- the periodic table (CLAUDE.md, Part C): every property derived from ROW and GROUP, nowhere else ----------
 // ROW is size: heavier = slower spreading (later: richer bonds, harder light needed). GROUP is role: a GIVER wants one
@@ -75,13 +76,8 @@ export const CHEM = { fuelPerRow: 0.75, sedPerRow: -0.25, sparkPerRow: 0.125 };
 // a substance's ink sits between them by the share of its atoms in row 2. Reactive free atoms (givers and takers, hungry
 // for a partner) in the old threat red; linkers dim and quiet; fuels in the old nutrient green; sediment a dim flat
 // brown-grey; trace a pale silver, drawn as a small diamond instead of a dot.
-export const INKS = {
-  reactive: { light: [250, 170, 150], heavy: [214, 98, 86] },
-  linker: { light: [150, 158, 176], heavy: [104, 112, 132] },
-  fuel: { light: [196, 242, 178], heavy: [124, 204, 128] },
-  sediment: { light: [96, 86, 74], heavy: [74, 64, 56] },
-  trace: { light: [222, 222, 232], heavy: [222, 222, 232] },
-};
+// Step C6n: the inks live in src/palette.js (FLAT and NEON, the same meanings); INKS is the flat one (the toolbar's icons).
+export const INKS = FLAT.substances;
 
 // The 13 channels, in buffer order. A substance is just its atoms; its kind follows from their groups:
 // one giver or taker or linker = a free atom, giver + taker = FUEL, linker + linker = SEDIMENT, the inert atom = trace.
@@ -120,8 +116,8 @@ export function makingBand(s) {
   return BANDS.findIndex((b) => b.photon >= s.energy + s.spark);
 }
 
-function inkOf(func, heavy) {
-  const I = INKS[func];
+function inkOf(func, heavy, inks = INKS) {
+  const I = inks[func];
   return I.light.map((v, j) => v + (I.heavy[j] - v) * heavy);
 }
 
@@ -305,7 +301,16 @@ export class Matter {
       maxDot: 0.9,        // largest dot radius, as a share of half the distance between neighbouring dots of two layers
       half: 0.6,          // amount per R^2 at which a dot covers half its largest area (dot area = c / (c + half))
       thresh: 0.06,       // coverage below which there is no dot
-      level: 0.85,        // the inks' brightness
+      level: 0.85,        // the inks' brightness (step C6n: the palette's levels.substances, src/palette.js)
+      // step C6n: how the substances look (Shift+5; the clean / machinery switch, Shift+4, sets it too):
+      //   dust      MATERIAL: specks scattered at fixed random places (a fine grid, each square holding at most one speck
+      //             per kind, its place jittered by a hash, so nothing flickers), as many as the amount says: fuel as
+      //             green glow-dust, free atoms fainter, trace as rare small sparks; sediment as solid crusts (default)
+      //   halftone  the dots on the medium lattice of steps C3 to C6 (the machinery view)
+      style: 'dust',
+      dustCell: 3.2,      // dust: the grid's square (CSS px); at most one speck of each kind in each
+      dustR: [0.45, 0.95], // dust: a speck's radius (CSS px) at a small and at a large amount
+      dustAtoms: 0.55,    // dust: free atoms' brightness, as a share of the fuel's (they are the quieter material)
       traceDot: 0.75,     // trace diamonds' size, as a share of a full dot
       sedStep: 0.3,       // sediment: amount per R^2 where a crust patch starts (its lighter core from 4 x; hard edges)
       sedAlpha: 0.7,      // sediment: opacity of the top level
@@ -694,7 +699,7 @@ export class Matter {
       F[o] = s.x; F[o + 1] = s.y; F[o + 2] = rad; F[o + 3] = Math.max(0, 1 - (s.age + aged) / this.lifeOf(s));
       F[o + 4 + 13] = discPixels(s.x / H.px, s.y / H.px, Math.max(rad / H.px, 0.75), H.hw, H.hh);   // amt[13]: its disc's pixels
       for (const [atom, share] of Object.entries(K.mix)) F[o + 4 + CH[atom]] = p.rate * share * dt * ATOM_SCALE;
-      const ink = springInk(s.kind);
+      const ink = springInk(s.kind, pal().substances);
       F[o + 20] = ink[0] / 255; F[o + 21] = ink[1] / 255; F[o + 22] = ink[2] / 255; F[o + 23] = K.stroke;
     }
     this.device.queue.writeBuffer(this.springBuf, 0, F);
@@ -843,11 +848,14 @@ export class Matter {
     f[0] = this.view.dpr; f[1] = Math.max(0.5, p.step); f[2] = Math.max(0, Math.min(1, p.maxDot)); f[3] = Math.max(1e-4, p.half);
     f[4] = H.px; f[5] = H.hw; f[6] = H.hh; f[7] = p.thresh;
     u[8] = this.nSprings || 0; f[9] = Math.max(1e-4, p.sedStep); f[10] = p.sedAlpha; f[11] = p.ringR * this.medium.R;
-    f[12] = p.level; f[13] = p.traceDot;
+    const P = pal(), I = P.substances;
+    f[12] = P.levels.substances * p.level / 0.85; f[13] = p.traceDot;
+    f[14] = p.style === 'halftone' ? 0 : 1; f[15] = P === FLAT ? 0 : 1;
     const put = (o, rgb) => { f[o] = rgb[0] / 255; f[o + 1] = rgb[1] / 255; f[o + 2] = rgb[2] / 255; f[o + 3] = 1; };
-    put(16, INKS.reactive.light); put(20, INKS.reactive.heavy); put(24, INKS.linker.light); put(28, INKS.linker.heavy);
-    put(32, INKS.fuel.light); put(36, INKS.fuel.heavy); put(40, INKS.sediment.light); put(44, INKS.sediment.heavy);
-    put(48, INKS.trace.light);
+    put(16, I.reactive.light); put(20, I.reactive.heavy); put(24, I.linker.light); put(28, I.linker.heavy);
+    put(32, I.fuel.light); put(36, I.fuel.heavy); put(40, I.sediment.light); put(44, I.sediment.heavy);
+    put(48, I.trace.light);
+    f[52] = Math.max(1, p.dustCell); f[53] = p.dustR[0]; f[54] = p.dustR[1]; f[55] = p.dustAtoms;
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG);
@@ -930,14 +938,15 @@ function discPixels(cx, cy, r, w, h) {
   return Math.max(1, n);
 }
 
-/** A spring's marker ink: its atoms' inks, weighted by its mix. */
-export function springInk(kind) {
+/** A spring's marker ink: its atoms' inks (from `inks`, a palette's substances), weighted by its mix. */
+export function springInk(kind, inks = INKS) {
   const mix = SPRING_KINDS[kind].mix, ink = [0, 0, 0];
   let tot = 0;
   for (const [a, share] of Object.entries(mix)) {
     if (a === 'trace') continue;
     const s = SUBSTANCES[CH[a]];
-    for (let j = 0; j < 3; j++) ink[j] += s.ink[j] * share;
+    const si = inkOf(s.func, s.heavy, inks);
+    for (let j = 0; j < 3; j++) ink[j] += si[j] * share;
     tot += share;
   }
   return ink.map((v) => v / tot);

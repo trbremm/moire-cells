@@ -136,6 +136,15 @@ export class Cells {
       leak: 1,        // strength of the leaked B, per unit A emission (and of the A charge it listens to B with)
       leakW: 0.1,     // how close the strained A lattice must come to B's band (Gaussian width of the pair's beat
                       // wavevector, in units of the medium's wavenumber; an unstretched cell is about 0.33 away)
+      // step 6, rule 2: conversion A -> B (key 5). A cell that feels enough A (through a leaky integrator, with
+      // hysteresis) converts: it emits B more strongly (mode 0) or B of the other sign (mode 1; key 6)
+      convOn: false,  // key 5
+      conv: 2,        // mode 0: a converted cell emits and feels B x (1 + conv); mode 1: x -conv
+      convMode: 0,    // 0 = boost, 1 = flip (key 6). Flip pulls the loop-only culture into one blob
+      convUp: 3.0,    // the A felt above which a cell converts (see the A felt percentiles in the F overlay;
+                      // ?bio=0 sets 2, as the loop alone packs cells less densely)
+      convDown: 2.0,  // ... and below which it converts back (?bio=0: 1.25)
+      convTau: 1.0,   // the integrator's time constant (s)
     };
     // drawing (live-tunable: moire.cells.look)
     this.fieldScale = 0.5;     // texels per CSS px of the cells' field texture
@@ -412,6 +421,7 @@ export class Cells {
     u[19] = Math.max(1, Math.min(4, Math.ceil(F.cut * this.R / this.grid.cs - 1e-6)));   // grid block radius for B's reach
     f[20] = F.emit ? 1 : 0; f[21] = F.strain;
     f[22] = F.leakOn ? F.leak : 0; f[23] = Math.max(0.005, F.leakW);
+    f[24] = F.convOn ? F.conv : 0; u[25] = F.convMode ? 1 : 0; f[26] = F.convUp; f[27] = F.convDown; f[28] = F.convTau;
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -687,6 +697,8 @@ export class Cells {
       const pct = (h, p, w) => { const n = h.reduce((x, y) => x + y, 0); let acc = 0; for (let k = 0; k < h.length; k++) { acc += h[k]; if (acc >= p * n) return (k + 1) * w; } return h.length * w; };
       lines.push(`step 6: 4 leak ${on(F.leakOn)} (${s6.leak} cells leaking) · stretch p50 ${pct(s6.sHist, 0.5, 0.05).toFixed(2)} p90 ${pct(s6.sHist, 0.9, 0.05).toFixed(2)}` +
         ` · stretched > 0.35: ${s6.sHist.slice(7).reduce((x, y) => x + y, 0)} · leak level > 0.5: ${s6.lHist.slice(5).reduce((x, y) => x + y, 0)}`);
+      lines.push(`step 6: 5 conversion ${on(F.convOn)} (${s6.conv} converted) · 6 mode ${F.convMode ? 'flip B charge' : 'boost B'} x${F.conv}` +
+        ` · up ${F.convUp} down ${F.convDown} · A felt p25 ${pct(s6.aHist, 0.25, 0.25).toFixed(2)} p50 ${pct(s6.aHist, 0.5, 0.25).toFixed(2)} p90 ${pct(s6.aHist, 0.9, 0.25).toFixed(2)}`);
     }
     if (c) {
       lines.push(`grid check: ${c.contacts / 2} contacts` + (c.brute ? ` (brute force ${c.bruteContacts / 2}, ${c.mismatch} cells differ)` : '') +
@@ -772,7 +784,7 @@ export class Cells {
     // step 6 marks, in field B's ink (the landscape's), a little brighter than its halftone
     const F = this.fields, bc = this.landscape ? this.landscape.params.bColour : [128, 158, 255];
     a[14] = F.leakOn ? L.leakDot : 0; a[15] = L.leakMin;
-    a[16] = bc[0] / 255 * 0.85; a[17] = bc[1] / 255 * 0.85; a[18] = bc[2] / 255 * 0.85; a[19] = 0;
+    a[16] = bc[0] / 255 * 0.85; a[17] = bc[1] / 255 * 0.85; a[18] = bc[2] / 255 * 0.85; a[19] = F.convOn ? 1 : 0;
     this.device.queue.writeBuffer(this.drawU, 0, a);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG);

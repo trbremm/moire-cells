@@ -353,7 +353,7 @@ function adapt(B) {
 function reachedText() {
   if (paused) return 'paused';
   const r = stats.reached;
-  if (speed && speed <= 8 && Math.abs(r - speed) < 0.1 * speed) return '';
+  if (speed && speed <= 8 && r > 0.8 * speed) return '';   // 1x to 8x: only when notably slower than set
   return `×${r >= 9.5 ? r.toFixed(0) : r.toFixed(1)}`;
 }
 

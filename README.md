@@ -62,6 +62,14 @@ Field B (step 5):
 - **Y**: what "like" means for B: the same sign of charge (default; charges by fate) / a similar key (lineage)
 - **J**: field B drawn on/off (blue rings; drawing only)
 
+Where the fields meet (step 6):
+- **4**: leak by deformation on/off (default off): strongly stretched cells leak part of their A into B (blue centre dot)
+- **5**: conversion on/off (default on): a cell that feels enough A converts and emits more B (blue outline; a
+  converted stem cell is filled blue)
+- **6**: what conversion does: boost B (default) / flip the sign of the cell's B charge
+- **7**: relay through B on/off (default on; needs 5): converted cells excite their neighbours, tire and rest, so
+  conversion travels as waves
+
 A fresh load starts with the reference's sources: two nutrient (green), one threat (red). At most 6 sources,
 as in the reference; one more replaces the oldest (`moire.landscape.params.maxSources`, up to 64).
 Sources do not drift, fade or get eaten yet.
@@ -251,6 +259,63 @@ Cost (physics per tick, B felt vs not): GTX 1650 in headless Chrome, 0.38 vs 0.2
 0.46 ms at 10 000; the field scatter's quads grow to B's 10 R. The AMD Vega in Firefox: about 3.2 ms per tick at
 2000 cells either way (the probe there is too rough to see B's share).
 
+## Where the fields meet (step 6)
+
+Fields A and B never mix by themselves; step 6 adds three rules, carried by the cells, through which A turns into
+B. Each has a key; the F overlay has two "step 6" lines (counts, stretch, the A felt and the thresholds).
+
+**Leak by deformation (key 4, off by default).** A stretched cell's A lattice is squeezed the other way, so along
+its stretch its wavevector shrinks toward B's band (B's lattices are 1.5 times longer: a stretch of about 0.4 along a
+lattice direction gets there). Of the cell's three strained A wavevectors and B's three medium wavevectors, the
+closest pair makes a slow beat, and the leak level is a Gaussian in that pair's beat wavevector (width `leakW` 0.1
+of the medium's wavenumber; an unstretched cell is about 0.33 away, so it leaks nothing). That share of the cell's A
+emission goes into B instead, as that one beat: a plane wave pinned to the cell (stripes across the stretch axis),
+with B's envelope. The cell also listens to B through its A charge in the same share. A leaking cell gets a flat
+blue centre dot, its area growing with the leak.
+What it does: loop only (`?bio=0`), nothing: cells there hardly stretch (90 % below 0.05), so no cell leaks. With
+the biology about 10 % of the cells leak, mostly stretched neurons (their lattice period is the medium's, and they
+move and stretch the most); epithelium is stretched as often but its shorter period needs more stretch than the cap
+allows. At `leak` 1 the culture looks the same with and without (seed 3, 120 and 300 s); at 15 the fates sort a
+little less. So the blue dots show where the strain bridges the two bands, but the bridge does not change the
+picture yet: off by default.
+
+**Conversion A to B (key 5, on).** Every cell adds up the A its neighbours' fields give at its centre (tuned, as
+the sensing), through a leaky integrator (`convTau` 1 s). It converts above a threshold and converts back below a
+lower one (hysteresis, so it does not flicker). A converted cell emits and listens to B x (1 + `conv`) = 3 (boost,
+default) or x -2 (flip, key 6). It gets an outline in B's ink, and a converted stem cell is filled flat with it.
+The thresholds follow the culture (`convAuto`): the A felt differs a lot between cultures (loop only, median 1.2 at
+2000 cells and 2.4 at 10 000, where the cells are smaller than the field's lattice and sit in each other's bright
+cores; with the biology a long tail, median 1.8 and 90th percentile 6.5), so the census keeps a histogram of the A
+felt and the thresholds are its 90th percentile (`convUp` 0.9) and its median (`convDown` 0.5), smoothed over 20 s.
+Without the relay: loop only, the converted cells are the centres of the rosettes (one blue cell with six around
+it), the "nuclei" of the islands; with the biology, converted tissue gathers into islands wrapped in B's blue rings.
+Flip (6) pulls the loop-only culture into one tight blob (opposite charges attract), so boost is the default.
+
+**Relay through B (key 7, on).** The converted share of a cell's neighbourhood (within B's reach, 10 R, weighted by
+B's envelope; its own integrator) adds to the trigger, measured in units of the gap between the two thresholds:
+with `relay` 4, a cell at the median converts once a quarter of its neighbourhood has. A converted cell tires
+after `relayOn` 2 s and then rests `relayRest` 6 s before it can convert again: an excitable medium, as in the
+chemical waves of a Belousov-Zhabotinsky dish.
+What it looks like: loop only, the culture pulses. Every 8 to 9 s a burst of conversion starts in the dense middle
+and a blue ring travels out to the rim, behind it the resting cells; then the next starts in the middle (a target
+pattern). At 2000 cells the bursts are patchy (from about 60 to 300 converted cells); at 10 000 cells the ring is
+clean and sharp (from about 100 to 3500 converted). With the biology the pulses are there too (160 to 480 converted, every
+9 s), but they read as a blue shimmer moving over the tissues rather than a ring, since only converted stem cells
+are filled. The fates come out about as without it (seed 3 at 160 s: 953 stem, 507 epithelium, 406 neuron, 129
+cartilage). Tried and dropped: summing the converted neighbours instead of taking their share made the whole
+culture flash in sync (all 2000 at once, then none); fixed thresholds made 10 000 cells flash in sync and kept the
+relay from spreading with the biology.
+
+Live-tunable in `moire.cells.fields`: `leakOn`, `leak`, `leakW`; `convOn`, `conv`, `convMode`, `convAuto`, `convUp`,
+`convDown` (quantiles with `convAuto`, else absolute A), `convTau`; `relayOnKey`, `relay`, `relayOn`, `relayRest`.
+Drawing in `moire.cells.look`: `leakDot` (0.42 of the radius), `leakMin` (0.2), `convFill` (0.55).
+State: `Bio.env.z` the A felt, `Bio.env.w` converted / resting time, `Bio.conv.x` the relay share (Bio is now
+32 floats); `Cell.flags` bit 1 converted and bits 8 to 15 the leak level (the drawing and the scatter read them).
+
+Cost (physics per tick): GTX 1650 in headless Chrome, 2000 cells 0.77 ms with the step 6 rules off and 0.80 ms on;
+10 000 cells 1.30 and 1.56 ms. The AMD Vega in headed Firefox: 3.9 ms at 2000 cells (3.2 ms before step 6), 31 fps
+at 4x speed.
+
 ## The look of the landscape
 
 The sources' landscape is drawn as crisp halftone dots, like print: a triangular dot screen lies over the
@@ -280,7 +345,8 @@ The background ripples stay soft on purpose.
   field_common) and field B (struct `Fields`, charges, `cell_field_b`); `cell_grid.wgsl` rebuilds the neighbour grid every tick (a counting sort by grid cell) and
   works out every cell's beat; `cell_step.wgsl` moves the cells; `cell_field.wgsl` scatters the cells' fields
   (A into r, B into g) into their texture; `cell_draw.wgsl` draws them;
-  `cell_check.wgsl` is the `?check=1` test; `cell_census.wgsl` counts fates, key bins and founder lines for the overlay
+  `cell_check.wgsl` is the `?check=1` test; `cell_census.wgsl` counts fates, key bins and founder lines for the overlay,
+  and the step 6 counters and histograms
 - `src/genome.js`: the genome layout, random founders, the rule switches and their numbers (`moire.genome`);
   the GPU side (mutation, key likeness, the `Bio` and `Stats` structs) is in `cell_common.wgsl`, the rules
   themselves in `cell_step.wgsl`

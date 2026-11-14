@@ -12,25 +12,9 @@ import { loadShader } from './gpu.js';
 
 export const COMMON_URL = 'src/shaders/field_common.wgsl';
 
-// emitter kinds, numbered as in the reference and in field_common.wgsl
-export const KIND = { STEM: 0, EPI: 1, MUS: 2, NEU: 3, CHO: 4, NUT: 5, THR: 6 };
-
-// struct Emitter in field_common.wgsl: pos.xy, la, amp, r0sq, fa, fb, fd, kind (u32), pad = 10 x 4 bytes
-export const EMITTER_FLOATS = 10;
-export const EMITTER_BYTES = EMITTER_FLOATS * 4;
-// struct Beat in field_common.wgsl: 14 x 4 bytes
-export const BEAT_BYTES = 56;
-
-/**
- * Write one emitter into a Float32Array/Uint32Array pair viewing the same buffer, at slot i.
- * e = { x, y, la, amp, r0sq, kind, fa?, fb?, fd? }  (no stretch = identity)
- */
-export function writeEmitter(f32, u32, i, e) {
-  const o = i * EMITTER_FLOATS;
-  f32[o] = e.x; f32[o + 1] = e.y; f32[o + 2] = e.la; f32[o + 3] = e.amp; f32[o + 4] = e.r0sq;
-  f32[o + 5] = e.fa ?? 1; f32[o + 6] = e.fb ?? 0; f32[o + 7] = e.fd ?? 1;
-  u32[o + 8] = e.kind; u32[o + 9] = 0;
-}
+// emitter kinds (the cells' fates), numbered as in the reference and in field_common.wgsl. (The reference's
+// nutrient and threat sources, kinds 5 and 6, were removed in step C3: springs of atoms took their place.)
+export const KIND = { STEM: 0, EPI: 1, MUS: 2, NEU: 3, CHO: 4 };
 
 const texts = new Map();
 async function shaderText(url) {

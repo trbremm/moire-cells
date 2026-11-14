@@ -1,44 +1,38 @@
-// The sources' landscape as crisp halftone dots, plus the sources' markers, drawn over the background.
-// Needs field_common.wgsl in front of it (src/field.js does that).
+// The cells' fields as crisp halftone dots, drawn over the background. Needs field_common.wgsl in front of it
+// (src/field.js does that).
 //
 // Halftone, as in print: a fixed screen of dot positions (a triangular / hex grid, or a square one) lies over
 // the image. In each screen cell the field strength is read once, at the cell's centre, and a flat-coloured
 // round dot is drawn there whose AREA grows with the strength (radius ~ sqrt). Weak field = no dot.
-//   strength = the reference's glow quantity, 0.2 * amp * envelope * (base + (1 - base) * max(0, beat_sum / 3)),
-//              summed per kind (nutrient, threat), times a gain
 //   coverage = clamp((strength - threshold) / (1 - threshold), 0, 1);   dot radius = maxDot * pitch/2 * sqrt(coverage)
-//   overlap  = one dot per screen cell: the stronger kind takes the cell, with its own colour and size
-// The cells' field (step 4) is a third kind: the cells scatter their beats into a texture (cell_field.wgsl),
-// read here at each dot centre, positive part only, times cellGain, in its own pale ink.
+// The cells' field A (step 4): the cells scatter their beats into a texture (cell_field.wgsl), read here at each dot
+// centre, positive part only, times cellGain, in its own pale ink.
 // Field B (step 5, channel g of the same texture) has its own screen on top, turned to another angle (as the
 // separate colour screens of print), in its own ink: an open ring where B is positive, a filled dot where it is
 // negative (the negative charges' field), the size again growing with the strength (bRing 0: filled dots only).
 // The partner A' of the cells' field A (step 8, channel b) has a third screen, turned again, in its own ink: filled
 // dots on its positive part, as field A's. Where a wave travels, A' sits a quarter period ahead of A, so the order
 // of the two inks shows the direction of travel.
+// (Until step C3 this shader also drew the nutrient and threat sources' landscape and their ring markers; the dish's
+// substances are now drawn by matter_draw.wgsl.)
 // Edges are anti-aliased over about one device pixel (distance measured in device px), nothing wider.
 // The output is premultiplied and blended "over", so the flat colours stay flat on top of the soft background.
-//
-// Ring markers: a clean stroke (ringW CSS px) at the radius where the reference's sprite had its ring,
-// 0.32 * R (5 + 1.6 amp) / 2, and a solid centre dot, in the kind's full ink, opacity 0.5 + 0.08 amp.
-// Halftone dots that sit on the ring or the centre dot are left out whole, so the marker stands clear
-// (a keyline, as in print) without cut-off half dots; the background still shows there.
 
 struct DrawParams {
   dpr: f32,         // device pixels per CSS pixel
-  R: f32,           // cell radius of the reference (CSS px); sets the marker size
-  count: u32,       // number of sources
-  gain: f32,        // strength gain (0 = landscape off)
-  markers: f32,     // marker gain (0 = no markers)
+  R: f32,           // cell radius of the reference (CSS px)
+  _s0: u32,         // (spare: the sources' count, gain and marker gain until step C3)
+  _s1: f32,
+  _s2: f32,
   pitch: f32,       // halftone screen pitch: distance between neighbouring dot centres (CSS px)
   angle: f32,       // screen rotation (radians)
   thresh: f32,      // strength below which there is no dot
   maxDot: f32,      // largest dot radius as a fraction of pitch/2 (1 = neighbours touch)
   hex: u32,         // 1 = triangular (hex) screen, 0 = square screen
-  base: f32,        // share of the strength that does not follow the beat (reference 0.3)
-  ringW: f32,       // ring stroke width (CSS px)
-  nut: vec4f,       // nutrient ink: rgb, and the dots' level (dots are ink * level)
-  thr: vec4f,       // threat ink
+  _s3: f32,         // (spare: the sources' base glow and marker stroke until step C3)
+  _s4: f32,
+  _s5: vec4f,       // (spare: the nutrient and threat inks until step C3)
+  _s6: vec4f,
   cell: vec4f,      // the cells' field ink
   cellGain: f32,    // the cells' field strength gain (0 = not drawn)
   fieldScale: f32,  // texels per CSS px of the cells' field texture
@@ -62,7 +56,6 @@ struct DrawParams {
 
 @group(0) @binding(0) var<uniform> medium: Medium;
 @group(0) @binding(1) var<uniform> D: DrawParams;
-@group(0) @binding(2) var<storage, read> beats: array<Beat>;
 @group(0) @binding(3) var cellTex: texture_2d<f32>;
 @group(0) @binding(4) var cellSamp: sampler;
 
@@ -113,28 +106,14 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   let o = medium.centre;                        // the halftone screen is anchored at the dish centre
   let c = rot(screen_point(rot(x - o, -D.angle), D.pitch), D.angle) + o;   // this screen cell's centre, in the world
 
-  // ---- halftone dots ----
-  if (D.gain > 0.0 || D.cellGain > 0.0) {
-    var nut = 0.0;
-    var thr = 0.0;
-    for (var i = 0u; i < D.count; i++) {
-      let b = beats[i];
-      let v = 0.2 * b.amp * beat_envelope(b, c) * (D.base + (1.0 - D.base) * max(0.0, beat_sum(b, medium, c) / 3.0));
-      if (b.kind == KIND_THR) { thr += v; } else { nut += v; }
-    }
-    nut *= D.gain;
-    thr *= D.gain;
-    var cel = 0.0;
-    if (D.cellGain > 0.0) {
-      let uv = c * D.fieldScale / vec2f(textureDimensions(cellTex));
-      cel = max(0.0, textureSampleLevel(cellTex, cellSamp, uv, 0.0).r) * D.cellGain;
-    }
-    let s = max(max(nut, thr), cel);
-    let cov = clamp((s - D.thresh) / max(1.0 - D.thresh, 1e-3), 0.0, 1.0);
+  // ---- field A's halftone dots ----
+  if (D.cellGain > 0.0) {
+    let uv = c * D.fieldScale / vec2f(textureDimensions(cellTex));
+    let cel = max(0.0, textureSampleLevel(cellTex, cellSamp, uv, 0.0).r) * D.cellGain;
+    let cov = clamp((cel - D.thresh) / max(1.0 - D.thresh, 1e-3), 0.0, 1.0);
     if (cov > 0.0) {
       let r = D.maxDot * 0.5 * D.pitch * sqrt(cov);
-      let ink = select(select(D.nut, D.thr, thr > nut), D.cell, cel > max(nut, thr));
-      res = vec4f(ink.rgb * ink.a, 1.0) * disc(length(x - c), r);
+      res = vec4f(D.cell.rgb * D.cell.a, 1.0) * disc(length(x - c), r);
     }
   }
 
@@ -166,25 +145,5 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     }
   }
 
-  // ---- ring markers: stroke + centre dot ----
-  if (D.markers > 0.0) {
-    for (var i = 0u; i < D.count; i++) {
-      let b = beats[i];
-      let half = 0.5 * D.R * (5.0 + 1.6 * b.amp);   // the reference's sprite size
-      let d = length(x - b.pos);
-      let rr = 0.32 * half;                          // ring radius
-      let rc = 0.07 * half;                          // centre dot radius
-      let ring = disc(abs(d - rr), 0.5 * D.ringW);
-      let core = disc(d, rc);
-      // keyline: whole dots whose centre lies within half a pitch of the ring or the centre dot are dropped
-      let dc = length(c - b.pos);
-      let kw = 0.5 * D.ringW + 0.5 * D.pitch;
-      let key = select(0.0, 1.0, abs(dc - rr) < kw || dc < rc + 0.5 * D.pitch);
-      let m = min(1.0, D.markers * (0.5 + 0.08 * b.amp));
-      let ink = select(D.nut.rgb, D.thr.rgb, b.kind == KIND_THR);
-      res *= 1.0 - key;
-      res = over(vec4f(ink, 1.0) * max(ring, core) * m, res);
-    }
-  }
   return res;
 }

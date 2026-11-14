@@ -8,7 +8,7 @@
 //   relay  per fate channel: a committed neighbour's signal on that channel -> accumulator
 //   body   x adhesion, y size factor, z motility factor, w spare
 //   acc    state (not inherited as genes): the four leaky accumulators
-//   env    state: x nutrient, y threat the cell felt last tick; z the A felt (integrated), w converted (step 6)
+//   env    state: x y spare (the nutrient and threat felt, until step C3); z the A felt (integrated), w converted (step 6)
 //   conv   state (step 6): x the converted share of the neighbourhood (integrated, for the relay); y z w spare
 // The key is the cell's own lattice (Cell.la and Cell.aux carry copies), so it shows in the dot pattern.
 //
@@ -22,7 +22,8 @@ export const KEY_SPAN = Math.PI / 3;
 export const KEY_SMAX = 0.15;
 
 // rule bits (keep in step with RULE_* in cell_common.wgsl)
-export const RULE = { DIFF: 1, ADH: 2, TURN: 4, MUT: 8, INHERIT: 16, NUT: 32 };
+// (bit 32 was rule E, nutrient and threat, until step C3)
+export const RULE = { DIFF: 1, ADH: 2, TURN: 4, MUT: 8, INHERIT: 16 };
 
 /** Small seeded random generator (mulberry32): returns a function giving floats in [0, 1). */
 export function makeRng(seed) {
@@ -78,19 +79,16 @@ export class Genome {
       unhappy: 2,       // extra death rate (x turnover) for a cell that recognises none of its neighbours
       mutSize: 1,       // size of the small mutations at each birth (key M switches mutation)
       mutJump: 0.03,    // chance per birth that one gene is drawn afresh
-      nutFar: 0.3,      // share of births that go to well-fed cells anywhere (key E switches nutrient and threat)
-      thrKill: 6,       // death rate x (1 + thrKill x the threat a cell feels)
-      beatMix: 1,       // 1 = cells feel the beat (halftone rosettes), 0 = only the smooth envelope
       ripple: 0.4,      // ripple strength of a birth (a death dips by 0.7 of it); 0 = none
     };
-    this.rules = { diff: true, adh: true, body: true, turn: true, mut: true, nut: true, inherit: false };
+    this.rules = { diff: true, adh: true, body: true, turn: true, mut: true, inherit: false };
   }
 
   /** Bits for Sim.rules. */
   ruleBits() {
     const r = this.rules;
     return (r.diff ? RULE.DIFF : 0) | (r.adh ? RULE.ADH : 0) | (r.turn ? RULE.TURN : 0) |
-      (r.mut ? RULE.MUT : 0) | (r.inherit ? RULE.INHERIT : 0) | (r.nut ? RULE.NUT : 0);
+      (r.mut ? RULE.MUT : 0) | (r.inherit ? RULE.INHERIT : 0);
   }
 
   /** Draw a fresh set of founder genomes (key G). With founders = 0, every cell gets its own (made in fill). */
@@ -111,7 +109,7 @@ export class Genome {
       const g = this.founders.length ? this.founders[Math.floor(this.rng() * this.founders.length)] : randomGenome(this.rng, i);
       const o = i * BIO_FLOATS;
       for (let k = 0; k < BIO_FLOATS; k++) f[o + k] = g[k];
-      for (let k = 20; k < BIO_FLOATS; k++) f[o + k] = 0;   // accumulators, felt sources and step 6 state start empty
+      for (let k = 20; k < BIO_FLOATS; k++) f[o + k] = 0;   // accumulators and step 6 state start empty
       keys[2 * i] = g[0]; keys[2 * i + 1] = g[1];
     }
     return keys;

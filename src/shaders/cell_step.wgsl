@@ -19,7 +19,6 @@
 @group(0) @binding(7) var<storage, read_write> bioNext: array<Bio>;
 @group(0) @binding(8) var<storage, read_write> stats: Stats;
 @group(0) @binding(9) var<uniform> med: Medium;
-@group(0) @binding(10) var<uniform> src: Sources;
 @group(0) @binding(11) var<storage, read> beats: array<CellBeat>;
 @group(0) @binding(12) var<uniform> FL: Fields;
 @group(0) @binding(13) var<uniform> HP: HeatP;
@@ -40,12 +39,9 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var sig = vec4f(0.0);     // committed neighbours' signals per fate channel
   var nParent = 0u;         // touching neighbours seen so far, and the one picked as parent (sorted slot)
   var parent = 0xffffffffu;
-  let nutOn = (S.rules & RULE_NUT) != 0u;
-  // what this cell feels from the sources (nutrient, threat); its neighbours read it next tick
-  bio.env = vec4f(select(vec2f(0.0), feel_sources(S, src, med, c.pos), nutOn), bio.env.zw);
 
-  // the loop: the field of the neighbours and the sources, averaged along each membrane segment
-  let sensing = S.sense > 0.0 || S.senseSrc > 0.0;
+  // the loop: the field of the neighbours, averaged along each membrane segment
+  let sensing = S.sense > 0.0;
   let cutR = S.cut * S.R;
   var seg = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
   // step 8: the neighbours' field A and its partner A' along the membrane (weights without the sense gain)
@@ -235,24 +231,6 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
 
   var Q = vec2f(0.0);                        // the field's pull on the outline (quadrupole of the membrane signal)
   if (sensing) {
-    // the sources' landscape (nutrient, threat), felt the same way; tuning counts for 3/4 (as the reference)
-    for (var s = 0u; s < min(S.srcCount, MAX_CELL_SOURCES); s++) {
-      let sa = src.s[2u * s];
-      let sb = src.s[2u * s + 1u];
-      var e: Emitter;
-      e.pos = sa.xy; e.la = sa.z; e.amp = sa.w * S.srcAmp; e.r0sq = sb.x;
-      e.fa = 1.0; e.fb = 0.0; e.fd = 1.0;
-      e.kind = u32(sb.y);
-      e._pad = 0u;
-      let wk = emw(c.kind, e.kind);
-      if (wk == 0.0) { continue; }
-      let bt = make_beat(e, med);
-      let tn = tuning(lattice_dist2(mk0, mk1, mk2, emitter_k(e, med, 0), emitter_k(e, med, 1), emitter_k(e, med, 2)), med.k0, S.tuneW);
-      let o = e.pos - med.centre;
-      let ph = vec3f(bt.ph0 + dot(bt.q0, o), bt.ph1 + dot(bt.q1, o), bt.ph2 + dot(bt.q2, o));
-      sense_field(&seg, mb, c.pos - e.pos, bt.q0, bt.q1, bt.q2, ph - TAU * floor(ph / TAU), e.r0sq,
-                  S.senseSrc * wk * (0.25 + 0.75 * tn) * e.amp);
-    }
     // force = sum of (segment mean x outward normal x length) = area x gradient, then a saturating response
     var cf = vec2f(0.0);
     for (var a = 0; a < 6; a++) {
@@ -498,26 +476,12 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // turnover: now and then a cell dies and a touching neighbour divides into its place, the daughter a copy
   // of the parent's genome (from last tick's buffer, so it does not matter whether the parent changes or dies
   // this tick) with small mutations. Cells that recognise none of their neighbours die sooner.
-  // Nutrient and threat (rule E): a cell in a threat's field dies sooner, and the gap it leaves is not
-  // refilled from next door: its replacement, like a share nutFar of all births, is born next to a
-  // well-fed cell anywhere in the dish. So tissue drains away from threat and grows into nutrient.
+  // (Until step C3, rule E let a threat source raise the death rate and send births to cells fed by a nutrient
+  // source; growth by energy replaces it in step C5.)
   if ((S.rules & RULE_TURN) != 0u && parent != 0xffffffffu) {
-    let threat = S.thrKill * bio.env.y;
-    let rate = S.turnover * (1.0 + S.unhappy * (1.0 - min(M, 1.0))) * (1.0 + threat);
+    let rate = S.turnover * (1.0 + S.unhappy * (1.0 - min(M, 1.0)));
     if (rand01(c.seed ^ 0x165667b1u, S.tick) < rate * S.dt) {
       let bs = pcg(c.seed ^ pcg(S.tick * 0x9e3779b9u + i));    // this birth's random stream
-      if (nutOn && S.srcCount > 0u && rand01(bs, 300u) < S.nutFar + (1.0 - S.nutFar) * threat / (1.0 + threat)) {
-        // a far parent: random cells, each accepted with a chance growing with the nutrient it feels
-        // (rejection sampling, up to 16 tries); if none is accepted, the last fed one tried (after a threat
-        // death, the last one tried at all), else the local parent stays
-        for (var t = 0u; t < 16u; t++) {
-          let k = min(u32(rand01(bs, 310u + t) * f32(S.count)), S.count - 1u);
-          let nut = bioPrev[beats[k].idx].env.x;
-          if ((sorted[k].flags & CELL_ALIVE) == 0u || k == j) { continue; }
-          if (threat > 0.05 || nut > 0.01) { parent = k; }
-          if (rand01(bs, 330u + t) < nut) { parent = k; break; }
-        }
-      }
       let pc = sorted[parent];
       let pi = beats[parent].idx;
       var nb = bioPrev[pi];

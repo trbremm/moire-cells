@@ -37,8 +37,9 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let adh = (S.rules & RULE_ADH) != 0u && S.adhesion > 0.0;
   var M = 0.0;              // recognised contact: sum over touching neighbours of (contact x key match)
   var sig = vec4f(0.0);     // committed neighbours' signals per fate channel
-  var nParent = 0u;         // touching neighbours seen so far, and the one picked as parent (sorted slot)
-  var parent = 0xffffffffu;
+  var wParent = 0.0;        // touching neighbours' weight so far, and the one picked as parent (sorted slot); step C5,
+  var parent = 0xffffffffu; // energy-biased turnover: a neighbour weighs FL.bias + its battery share (else all 1)
+  let biasOn = (FL.eat & EAT_BIAS) != 0u;
 
   // the loop: the field of the neighbours, averaged along each membrane segment
   let sensing = S.sense > 0.0;
@@ -168,11 +169,12 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         let w = bio.rec.x;
         M += touch * exp(-key_dist2(bio.key.z, bio.key.w, o.la, o.aux) / (2.0 * w * w));
         let ob = bioPrev[beats[k].idx];
-        // a parent in case this cell dies this tick: one touching neighbour, picked uniformly
-        // (reservoir sampling: the n-th candidate replaces the pick with chance 1/n)
+        // a parent in case this cell dies this tick: one touching neighbour, picked by weight (reservoir sampling: a
+        // candidate of weight w replaces the pick with chance w / the weight seen so far; all weights 1 = uniform)
         if (dist < R0) {
-          nParent++;
-          if (rand01(c.seed ^ pcg(S.tick ^ 0x27d4eb2fu), k) * f32(nParent) < 1.0) { parent = k; }
+          let wp = select(1.0, FL.bias + o.bat, biasOn);
+          wParent += wp;
+          if (rand01(c.seed ^ pcg(S.tick ^ 0x27d4eb2fu), k) * wParent < wp) { parent = k; }
         }
         if (diff || adh) {
           if (diff && o.kind >= 1u && o.kind <= 4u) { sig[o.kind - 1u] += touch * ob.rec.z; }
@@ -486,7 +488,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // of the parent's genome (from last tick's buffer, so it does not matter whether the parent changes or dies
   // this tick) with small mutations. Cells that recognise none of their neighbours die sooner.
   // (Until step C3, rule E let a threat source raise the death rate and send births to cells fed by a nutrient
-  // source; growth by energy replaces it in step C5.)
+  // source; since step C5 growth is by energy: richer neighbours win the slot, above.)
   // Step C5, heat damage: where the dish under the cell (its 3 x 3 pixels) is hotter than the tolerance, the death rate
   // rises by heatKill per s x (temperature / tol - 1), at most heatKill (from twice the tolerance on: a bound, as the
   // deaths and births themselves heat the dish, which could otherwise run away); such a death is replaced in the same

@@ -34,12 +34,14 @@ const LP_BYTES = 160;   // struct LightP
 // What is caught becomes heat; the rest passes through and is lost. In C2 nothing catches visible light (no pigments,
 // no atoms yet), so both visible bands pass through. Later absorbers (atoms, sediment, the cells' pigment genes) add
 // their own optical depth per band in heat.wgsl's absorb().
+//   ink:     step C6: the band's colour where something shows it (a cell's pigment part, the strategy view): faded, by
+//            photon energy from warm red-orange through gold and sky blue to a pale violet for hard light
 export const BANDS = [
-  { name: 'warm', photon: 1, share: 0.40, medium: 0.4, cell: 2.3 },    // heat only: caught by everything (33 % by the bare
+  { name: 'warm', photon: 1, share: 0.40, medium: 0.4, cell: 2.3, ink: [226, 138, 110] },   // heat only: caught by everything (33 % by the bare
                                                                       // medium, 90 % by a layer of cells)
-  { name: 'visible 1', photon: 2, share: 0.22, medium: 0, cell: 0 },  // the lighter bonds (C4); passes through for now
-  { name: 'visible 2', photon: 3, share: 0.22, medium: 0, cell: 0 },  // the richer bonds (C4); passes through for now
-  { name: 'hard', photon: 5, share: 0.16, medium: 0.08, cell: 1.2 },  // the heaviest bonds, cracks sediment (C4);
+  { name: 'visible 1', photon: 2, share: 0.22, medium: 0, cell: 0, ink: [236, 188, 104] },   // the lighter bonds (C4); C6: pigments
+  { name: 'visible 2', photon: 3, share: 0.22, medium: 0, cell: 0, ink: [138, 190, 238] },   // the richer bonds (C4); C6: pigments
+  { name: 'hard', photon: 5, share: 0.16, medium: 0.08, cell: 1.2, ink: [212, 186, 250] },  // the heaviest bonds, cracks sediment (C4);
                                                                       // mostly heat in cells (70 %), a little passes
 ];
 

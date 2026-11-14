@@ -20,6 +20,7 @@
 
 import { loadShader } from './gpu.js';
 import { HEAT_SCALE } from './heat.js';
+import { pal } from './palette.js';
 
 export const LIGHT_COMMON_URL = 'src/shaders/light_common.wgsl';
 const LP_BYTES = 160;   // struct LightP
@@ -74,8 +75,8 @@ export class Light {
       cloudDrift: 6,      // CSS px per s of simulation time
       cloudDepth: 0.45,   // how much a full cloud takes away
       // drawing
-      colour: [242, 228, 200],   // faded warm white
-      lineAlpha: 0.55,
+      // (the colour: the palette's `spot`, warm white; src/palette.js)
+      lineAlpha: 0.55,    // the outline's opacity under the flat look (neon: x the palette's levels.spot / 0.55)
       lineWidth: 1.25,    // CSS px
       marker: 7,          // CSS px: the triangle on the near rim
       tintAlpha: 0.045,   // the inside tint at full day (0 = none)
@@ -187,10 +188,10 @@ export class Light {
       f[20 + k] = Math.max(0, b.medium);
       f[24 + k] = Math.max(0, b.cell);
     });
-    const c = p.colour.map((x) => x / 255);
+    const P = pal(), c = P.spot.map((x) => x / 255);
     f[28] = c[0]; f[29] = c[1]; f[30] = c[2];
     f[31] = (mode === 2 ? p.fullTint : p.tintAlpha) * this.dayLevel;
-    f[32] = c[0]; f[33] = c[1]; f[34] = c[2]; f[35] = p.lineAlpha;
+    f[32] = c[0]; f[33] = c[1]; f[34] = c[2]; f[35] = p.lineAlpha * P.levels.spot / 0.55;
     f[36] = this.view.dpr; f[37] = Math.max(0.5, p.lineWidth); f[38] = Math.max(0, p.marker); f[39] = Math.max(1, Math.round(p.tintSteps));
     this.device.queue.writeBuffer(this.buffer, 0, this.ab);
   }

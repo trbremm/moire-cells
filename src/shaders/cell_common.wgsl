@@ -49,7 +49,7 @@ struct Sim {
   dt: f32,          // tick length (s)
   stiffness: f32,   // contact push (1/s); 0 = off
   damping: f32,     // velocity kept per tick (0.85 = reference)
-  jitter: f32,      // Brownian kick per tick, full width, in units of R
+  jitter: f32,      // Brownian kick per tick, full width, in units of R (only while the heat kicks are off, Shift+H)
   pull: f32,        // gentle pull to the dish centre (1/s)
   wall: f32,        // soft wall stiffness (1/s)
   pointer: vec2f,   // stir position (CSS px)

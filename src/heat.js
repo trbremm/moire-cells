@@ -3,15 +3,16 @@
 //
 // Heat is the lowest, INCOHERENT band: only its amount per place matters, so it is one channel on a coarse substrate
 // grid (about one pixel per half a cell radius) instead of a sum of lattices. Every tick:
-//   1. the cells' step (cell_step.wgsl) adds to the grid's delta under each cell (its 3 x 3 pixels; atomic adds,
-//      whole counts): the motion the drag took this tick, plus the motion of a cell that died;
+//   1. the cells' step (cell_step.wgsl) reads the heat under each cell (its 3 x 3 pixels), gives it a kick in a random
+//      direction whose size grows with that heat, and adds to the grid's delta (atomic adds, whole counts): the motion
+//      the drag took this tick, minus the kick's energy (a kick uses heat up), plus the motion of a cell that died;
 //   2. spread (heat.wgsl), nSub substeps: the delta comes in, a base warmth is added, a share leaks to the sky, and the
 //      heat spreads to the neighbouring pixels (explicit, conservative, exact in whole counts).
 // Energy unit: a cell moving at 10 CSS px/s carries 0.5 (heat_common.wgsl). Storage: one i32 buffer laid out as
 // [ledger | delta | heat copy 0 | heat copy 1] (heat_common.wgsl), channel-major so later steps can add channels.
 //
-// The ledger: the GPU counts, in whole counts, the work done on the cells (forces), the base warmth
-// put in, the heat leaked out and the drag; once per frame it also sums the heat in the dish and the cells'
+// The ledger (entropy counter): the GPU counts, in whole counts, the work done on the cells (forces), the base warmth
+// put in, the heat leaked out, the drag and the kicks; once per frame it also sums the heat in the dish and the cells'
 // motion energy, and the ledger part of the buffer is copied to one of a small ring of MAP_READ buffers (skipped when
 // all are busy: the counters then keep adding up until the next copy), read without waiting.
 //   ENTROPY = all heat that has left the dish; in = work + warmth; rounding = in - (moving + heat in dish + out).
@@ -41,10 +42,13 @@ export class Heat {
     this.device = device;
     // live-tunable: moire.heat.params
     this.params = {
+      kicks: true,      // Shift+H: kicks from heat (off: the old constant jitter, Sim.jitter)
       spread: 12,       // how fast heat spreads (R^2 per s; a patch spreads over about sqrt(spread / leak) R)
       leak: 0.5,        // share of the heat that leaks out to the sky per s (sets the dish's temperature)
       edge: 0,          // extra share per s that leaks at the dish edge (0 = an insulated edge)
       warmth: 0.05,     // base warmth put in everywhere (units per R^2 per s), so the dish is never at zero
+      grab: 0.004,      // share of the heat under a cell (its 3 x 3 pixels) that one kick takes on average, per tick
+      kickMax: 2,       // largest kick, R / s per axis
       pxR: 0.5,         // heat pixel size in units of the cells' radius R
     };
     this.hw = 0; this.hh = 0; this.n = 0; this.px = 1; this.R = 1;
@@ -160,8 +164,8 @@ export class Heat {
     this.nSub = Math.max(1, Math.min(MAX_SUB, Math.ceil(kTot / K_MAX)));
     this.k = Math.min(K_MAX, kTot / this.nSub);
     const f = new Float32Array(this.paramAB), u = new Uint32Array(this.paramAB);
-    u[0] = this.hw; u[1] = this.hh; u[2] = this.n; u[3] = 0;
-    f[4] = this.px; f[5] = 0; f[6] = 0; f[7] = this.k;
+    u[0] = this.hw; u[1] = this.hh; u[2] = this.n; u[3] = p.kicks ? 1 : 0;
+    f[4] = this.px; f[5] = Math.max(0, p.grab); f[6] = Math.max(0, p.kickMax) * this.R; f[7] = this.k;
     f[8] = 1 - Math.exp(-Math.max(0, p.leak) * dt); f[9] = 1 - Math.exp(-Math.max(0, p.edge) * dt);
     f[10] = Math.max(0, p.warmth) * a * a * dt * HEAT_SCALE; f[11] = this.tempScale;
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
@@ -297,13 +301,14 @@ export class Heat {
     const p = this.params, L = this.ledger, on = (x) => (x ? 'on' : 'off');
     const lines = [`heat: grid ${this.hw}×${this.hh} (${this.px.toFixed(2)} px, ${(this.px / this.R).toFixed(2)} R) · spread ${p.spread} R²/s` +
       ` (${this.nSub} substeps of k ${this.k.toFixed(3)}) · leak ${p.leak}/s · edge ${p.edge}/s · warmth ${p.warmth}/R²/s` +
-      ''];
+      ` · Shift+H kicks ${on(p.kicks)} (grab ${p.grab}/tick, max ${p.kickMax} R/s)`];
     if (L) {
       const area = view.cssW * view.cssH / (this.R * this.R);
+      const sigma = HEAT_V0_PX * Math.sqrt(Math.max(0, L.kickPerTick)) / this.R;
       const r = L.rate;
       lines.push(`energy per s: in ${fmt(r.work + r.base)} (work by forces ${fmt(r.work)}, warmth ${fmt(r.base)}) · drag → heat ${fmt(r.drag)}` +
-        ` · out ${fmt(r.out)} · mean temperature ${(L.heat / area).toFixed(3)}/R²` +
-        ` · rounding ${fmtRound(L.rounding)} (${L.in > 0 ? (L.rounding / L.in).toExponential(1) : '-'} of in)`);
+        ` · kicks ← heat ${fmt(r.kick)} · out ${fmt(r.out)} · mean temperature ${(L.heat / area).toFixed(3)}/R² · kick ≈ ${sigma.toFixed(3)} R/s per axis` +
+        ` (the old jitter ≈ 0.13) · rounding ${fmtRound(L.rounding)} (${L.in > 0 ? (L.rounding / L.in).toExponential(1) : '-'} of in)`);
     }
     return lines;
   }

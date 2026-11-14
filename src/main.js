@@ -24,6 +24,10 @@
 //               ?flip=0|1 its state flip (key 9)
 //   ?partner=0|1 step 8, rule a: the partner A' felt as a phase current (key Z); ?change=0|1 rule b (key ,);
 //               ?clock=0|1 its mode (key '); ?side=0|1 rule c, sideways push (key .)
+//   ?heat=0     step C1: start with the kicks from heat off (the old constant jitter; Shift+H)
+//
+// Part C keys are Shift + a letter (every plain letter is taken by Parts A and B): checked before the plain keys,
+// so Shift+H never also toggles H.
 
 import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown } from './gpu.js';
 import { Background } from './background.js';
@@ -123,6 +127,7 @@ async function boot() {
     if (params.has('side')) cells.partner.side = flag('side');
     if (params.has('clock')) cells.partner.chMode = flag('clock') ? 1 : 0;
     if (params.has('states')) cells.excl.states = Math.max(2, Math.min(4, Number(params.get('states')) || 2));
+    if (params.has('heat')) cells.heat.params.kicks = flag('heat');
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));
     return;
@@ -252,12 +257,12 @@ let tapMode = 0;
 let allKeys = false;   // key ?: the short hint or the full key list
 function hintLine() {
   const short = `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'N / G: new culture / new genomes · V: view · [ ]: speed · F: stats · ?: all keys';
+    'N / G: new culture / new genomes · V: view · [ ]: speed · F: stats · ⇧H: heat · ?: all keys';
   return allKeys ? fullHint() : short;
 }
 function fullHint() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · \\: squeeze · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · .: sideways push · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
+    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · \\: squeeze · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · .: sideways push · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats · Shift+H: jitter from heat / constant';
 }
 
 function tap(x, y) {
@@ -301,6 +306,8 @@ function setupInput() {
 
   window.addEventListener('keydown', (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
+    // Part C: Shift + a letter (before the plain keys, which lowercase e.key; Shift + a non-letter, such as ? or +, goes on)
+    if (e.shiftKey && /^[a-z]$/i.test(e.key)) { shiftKey(e.key.toLowerCase()); return; }
     const k = e.key.toLowerCase();
     if (k === 'f') {
       overlayEl.hidden = !overlayEl.hidden;
@@ -454,6 +461,16 @@ function setupInput() {
       flash(`landscape ${landscape.params.on ? 'on' : 'off'}`);
     }
   });
+}
+
+/** Part C keys (Shift + letter). */
+function shiftKey(k) {
+  if (k === 'h') {
+    const P = cells.heat.params;
+    P.kicks = !P.kicks;
+    flash(P.kicks ? 'jitter from heat: each cell is kicked in a random direction, harder where it is hot; the kick uses that heat up'
+      : 'jitter constant (as before Part C): the heat is still made, spread and leaked, but no longer shakes the cells');
+  }
 }
 
 let flashTimer = 0;

@@ -688,6 +688,34 @@ export class Matter {
     this.ledger = { time: rec.time, add, lost, gone, dish, rounding: add - (dish + lost + gone), rateAdd: rate(1), rateLost: rate(2), order, entropy: Hn, chem };
   }
 
+  /**
+   * Tuning aid (step C4; console or tools/shot.py --eval): read the grid back and print, along the row of pixels at CSS
+   * y, every `step` CSS px from x0 to x1, the amounts per R^2 of the substances present and the temperature (heat per
+   * R^2). Resolves to the rows as text, e.g. moire.matter.probeLine(400, 0, 640, 20).then(console.log).
+   */
+  async probeLine(y, x0 = 0, x1 = this.view.cssW, step = 20) {
+    const H = this.heat, d = this.device, n = H.n;
+    const bytes = (H.extraBlocks + 4) * n * 4;
+    const buf = d.createBuffer({ size: bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+    const e = d.createCommandEncoder();
+    e.copyBufferToBuffer(H.buffer, LEDGER_WORDS * 4, buf, 0, bytes);
+    d.queue.submit([e.finish()]);
+    await buf.mapAsync(GPUMapMode.READ);
+    const w = new Int32Array(buf.getMappedRange().slice(0));
+    buf.unmap(); buf.destroy();
+    const a = H.px / H.R, conc = 1 / (ATOM_SCALE * a * a);
+    const heatBase = H.offset(H.cur) - LEDGER_WORDS, base = this.copyBase(this.cur);
+    const py = Math.max(0, Math.min(H.hh - 1, Math.floor(y / H.px)));
+    const rows = [];
+    for (let x = x0; x <= x1; x += step) {
+      const px = Math.max(0, Math.min(H.hw - 1, Math.floor(x / H.px))), i = py * H.hw + px;
+      const parts = SUBSTANCES.map((s, c) => [s.name, w[base + c * n + i] * conc]).filter(([, v]) => v >= 0.005)
+        .map(([nm, v]) => `${nm} ${v.toFixed(2)}`);
+      rows.push(`x ${x} T ${(w[heatBase + i] * H.tempScale).toFixed(2)} | ${parts.join(' ')}`);
+    }
+    return rows.join('\n');
+  }
+
   // ---------- drawing ----------
   compute() {}
 
@@ -759,6 +787,17 @@ export class Matter {
     lines.push('energy table (step C4, from row and group; free atoms 0): ' + SUBSTANCES.filter((s) => s.atoms.length > 1).map((s) =>
       `${s.name} ${s.energy} (spark ${s.spark}${s.kind === 'fuel' ? ', made by ' + (BANDS[makingBand(s)] || { name: 'nothing' }).name : ''})`).join(' · ') +
       ` · swaps: ${REACTIONS.filter((r) => r.fam === 'swap').map((r) => r.name).join(', ')}`);
+    const C = this.chem, on = (x) => (x ? 'on' : 'off');
+    lines.push(`chemistry (step C4) Shift+M ${on(C.on)}: F make fuel by light ${on(C.make)} · B break fuel (heat, hard light) ${on(C.burn)}` +
+      ` · P swaps ${on(C.swap)} · K sediment ${on(C.sediment)} · T trace lowers the spark ${on(C.trace)} · ${this.rxOn.length} reactions running` +
+      ` · theta ${+C.theta.toFixed(4)} · k make ${C.kMake}, burn ${C.kBurn}/s, photo ${C.kPhoto}, swap ${C.kSwap}, sediment ${C.kSed}, crack ${C.kCrack}, dark ${C.dark}, trace ${C.traceK}`);
+    if (L && L.chem) {
+      const K = L.chem, R = K.rate;
+      lines.push(`chemistry per s: fuel made ${fmt(R.make)} · burned ${fmt(R.burn + R.photo)} (by heat ${fmt(R.burn)}, by hard light ${fmt(R.photo)})` +
+        ` · swaps ${fmt(R.swap)} · sediment formed ${fmt(R.form)}, cracked ${fmt(R.crack)} (substance units)` +
+        ` · light caught per band ${K.lightRate.map((x, b) => `${BANDS[b].name} ${fmt(x)}`).join(', ')}` +
+        ` · stored ${fmt(K.dish)} (fuel ${fmt(K.fuel)}, sediment ${fmt(K.sed)} units) · out with matter ${fmt(K.out)}`);
+    }
     if (L) {
       const el = {};
       for (const a of Object.keys(ATOMS)) el[a] = { add: 0, dish: 0, out: 0 };

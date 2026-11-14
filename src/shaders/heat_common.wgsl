@@ -21,11 +21,15 @@
 //                                  2 sediments, trace), each a block of n words, in two copies (ping-pong, as the heat):
 //                                  copy k, channel c at LEDGER_WORDS + 4n + (13 k + c) n. Amounts in whole counts
 //                                  (ATOM_SCALE per atom-unit), so moving matter around is exact.
+//   [LEDGER_WORDS + 30n, + 33n)    step C6, the cells' pigments (src/eat.js, cell_eat.wgsl): per light band (visible 1,
+//                                  visible 2, hard) the optical depth the cells' pigments put down this tick (x their area
+//                                  in pixels, COVER_SCALE per unit; read as the 3 x 3 mean as the cover; cleared after
+//                                  every tick's spreading; HeatP.pig says where, 0 = none this frame)
 // Channel-major, so later steps can add channels as further blocks of n words.
 
 const HEAT_SCALE: f32 = 65536.0;   // counts per energy unit
 const HEAT_V0: f32 = 10.0;         // CSS px / s: the speed whose motion energy is 0.5 units
-const LEDGER_WORDS: u32 = 15872u;
+const LEDGER_WORDS: u32 = 19200u;
 const LG_WORK: u32 = 0u;     // 256 slots: work done on the cells by the forces (fields, contact, crawling, stirring)
 const LG_BASE: u32 = 256u;   // 64: the base warmth put into the dish
 const LG_OUT: u32 = 320u;    // 64, 64-bit: heat that leaked out of the dish (to the sky, at the edge, on a resize)
@@ -57,6 +61,9 @@ const LG_K_START: u32 = 13312u;    // the starter charges given to new cultures 
 const LG_K_EV: u32 = 13440u;       // 16 counters (EV_* in cell_eat.wgsl)
 const LG_K_COUNT: u32 = 15488u;    // snapshot, 5 classes x 64 slots (i32): cells with a battery above half, below 5 %,
                                    //   stock above half full, all cells, and cells hotter than the tolerance
+// step C6, engines in the genome (src/eat.js, cell_eat.wgsl)
+const LG_K_EV2: u32 = 15872u;      // 16 counters (E2_* in cell_eat.wgsl), 64-bit, 64 slots (128 words each)
+const LG_K_CEN: u32 = 17920u;      // snapshot: the strategies' census, 76 numbers x 16 slots (i32; CEN_N in cell_eat.wgsl)
 
 const NCH: u32 = 13u;               // step C3: substance channels
 const ATOM_SCALE: f32 = 4096.0;     // counts per atom-unit (ATOM_SCALE in src/matter.js)
@@ -102,7 +109,7 @@ struct HeatP {
   edge: f32,        // extra share per tick at the dish edge (0 = an insulated edge)
   base: f32,        // base warmth per pixel per tick (counts; fractional, added with random rounding)
   tempScale: f32,   // counts in one pixel x tempScale = temperature, as heat per R^2 (units)
-  _p0: f32,
+  pig: u32,         // step C6: word offset of the cells' pigment blocks (visible 1, visible 2, hard; 0 = none this frame)
   _p1: f32,
   _p2: f32,
   _p3: f32,

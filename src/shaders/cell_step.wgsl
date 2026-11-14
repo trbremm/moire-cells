@@ -505,7 +505,9 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     var hs = hsum;
     if (!kicks) { for (var q = 0; q < 9; q++) { hs += atomicLoad(&hb[S.heatCur + hidx[q]]); } }
     let temp = f32(hs) / 9.0 * HP.tempScale;
-    hot = FL.heatKill * clamp(temp / max(FL.tol, 1e-3) - 1.0, 0.0, 1.0);
+    // step C6: with the tolerance gene on, each cell's own tolerance (Bio.eng.w) instead of the global one
+    let tol = select(FL.tol, bio.eng.w, (FL.eat & EAT_TOLG) != 0u);
+    hot = FL.heatKill * clamp(temp / max(tol, 1e-3) - 1.0, 0.0, 1.0);
   }
   if (turnOn && parent != 0xffffffffu) {
     let rate = S.turnover * (1.0 + S.unhappy * (1.0 - min(M, 1.0)));

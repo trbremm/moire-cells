@@ -48,7 +48,9 @@ const SPOT_SHIFT: u32 = 6u;
 // The absorbers: the bare medium (tauMed, everywhere) and the cells (tauCell x their cover, the 3 x 3 mean of what they
 // put down this tick). Step C4: the substances (fuel-making pairs, fuel, the dark sediment) catch what these two leave,
 // in matter.wgsl's react (the same light, times exp(-tau) of this pixel's medium and cells), so this pass needs no reads
-// of the substance grid; the cells' pigments (later) would add their tau x amount to `tau` here.
+// of the substance grid. Step C6: the cells' pigments add their depth (spread over their 3 x 3 pixels this tick) to
+// `tau`; their share of what is caught is not heat here (the cells booked it as light in, in cell_eat.wgsl), so the
+// light they catch is not used twice.
 struct Caught { inc: vec4i, abs: vec4i, };
 fn absorb(i: u32, p: vec2u) -> Caught {
   var r: Caught;
@@ -64,8 +66,9 @@ fn absorb(i: u32, p: vec2u) -> Caught {
   }
   let cover = f32(cov) / (9.0 * COVER_SCALE);
   let e = LP.power * s;                                     // per band, counts arriving
-  let tau = LP.tauMed + LP.tauCell * cover;                 // per band, optical depth of everything in the way
-  let a = e * (1.0 - exp(-tau));                            // per band, counts caught
+  let pig = pigment_depth(i);                               // step C6: the cells' pigments, per band
+  let tau = LP.tauMed + LP.tauCell * cover + pig;           // per band, optical depth of everything in the way
+  let a = e * (1.0 - exp(-tau)) * (1.0 - pig / max(tau, vec4f(1e-9)));   // per band, counts caught as heat here
   let seed = HT.seed ^ 0x3c6ef372u;
   for (var b = 0u; b < 4u; b++) {
     // random rounding, so small amounts are neither lost nor stuck
@@ -73,6 +76,15 @@ fn absorb(i: u32, p: vec2u) -> Caught {
     r.abs[b] = min(i32(floor(a[b] + hrand(i, seed + 2u * b + 1u))), r.inc[b]);
   }
   return r;
+}
+
+// step C6: the cells' pigments' optical depth over pixel i, per band (warm: 0); each cell spreads its depth over its
+// 3 x 3 pixels as it puts it down, so this is one word per band
+fn pigment_depth(i: u32) -> vec4f {
+  var t = vec4f(0.0);
+  if (HP.pig == 0u) { return t; }
+  for (var b = 1u; b < 4u; b++) { t[b] = f32(atomicLoad(&hb[HP.pig + (b - 1u) * HP.n + i])) / COVER_SCALE; }
+  return t;
 }
 
 fn hpcg(v: u32) -> u32 {

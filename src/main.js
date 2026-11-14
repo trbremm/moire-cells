@@ -346,7 +346,7 @@ function frame(now) {
 
   if (!entropyEl.hidden) {
     const compact = view.cssW < 560 || view.cssH < 500;   // a phone (either way up): shorter lines
-    let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}`;
+    let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}`;
     if (paused || speed !== 1) {
       const r = reachedText();
       const sp = paused ? 'paused' : r ? (compact ? r : `${speedName(speed)} · reached ${r}`) : speedName(speed);

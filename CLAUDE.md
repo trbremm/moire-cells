@@ -338,6 +338,23 @@ C6d. CHARGE PER SIDE (dipoles): each side holds its own charge (a cell that eats
 C7. Pumps across contact: storing, sharing, stealing. Membrane VOLTAGE (charge difference pumped across the
     membrane) as a second battery; stealing charged atoms fights the voltage it builds.
 C8. Hard light mutates cells.
+C9. DIVISION AND DEATH WITH A CHANGING COUNT (Part B step 9, pulled in for the experiments; user 2026-11-15: "play
+    with cell division too"): fixed-capacity buffers with an alive flag; a cell divides when its battery (and
+    stock) can pay for a daughter (split, conserved), dies when it starves or overheats; the count rises and
+    falls with the energy the dish catches. Fixed-count turnover stays as a switch for comparison.
+
+EXPERIMENTS (user 2026-11-15; after C6..C9 are all done): run experiments with interesting, different
+conditions and RECORD anything interesting: patterns, behaviours, and the statistics, MAINLY ENTROPY (entropy
+rate, heat out vs ORDER, rounding/"free entropy"), plus counts, strategies, free light atoms (oxygen-like
+build-up?), charge patterns. Play with cell division (rates, costs, capacity, fixed vs changing count).
+- Tooling first: a headless experiment runner (extend tools/shot.py or a new tools/experiment.py) that sets URL
+  options / evals, runs at MAX for a set simulated time, samples the panel's numbers to CSV every few seconds,
+  and saves screenshots (and short .webm clips) at set times.
+- Example conditions: full field vs spotlight vs darkness; long day vs no day cycle; light springs only / heavy
+  only / both / many; no trace; mutation off vs high; heat tolerance low; division cheap vs costly; charge off
+  vs on; dipoles on; 800 vs 10 000 cells; founders all burners vs all harvesters.
+- Record in EXPERIMENTS.md (conditions, exact URL/settings, what was seen in plain visual words, entropy plots
+  or tables, best images), keep only what is interesting, and publish a summary page for the user.
 
 ## Ground rules
 - State plainly what was tested and how. "Runs without errors" is not "looks right".

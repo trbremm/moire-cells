@@ -13,6 +13,13 @@
 // without one, paid by the battery) = a ring in the battery's pale green, burn = a diamond in the fuel's green, swap = a
 // triangle in faded red, form (sediment) = a square in dim warm grey. A clear margin keeps the lattice dots off them. View 2
 // (strategy) colours the body by the strategy instead of the fate.
+// Step C6n, the NEON look (D.neon.x = 1; src/neon.js adds the halo and the trails): the same shapes as light. The outline
+// becomes a thin bright TUBE whose centre line is near white-hot and whose edges carry the colour; the inside goes dark
+// (a faint tint plus a soft inner glow near the tube, as a lit tube lights the wall behind it); the lattice dots are
+// faint; the battery's core is a soft-lit disc with a bright rim (its size still shows how full the battery is); the
+// parts are small bright lamps. HUM: every cell's brightness wobbles a few % at its own slow rate and phase (from its
+// seed), and rises with its ACTIVITY: how fast its battery changes (charging by burning, spending on engines and crawl;
+// cell_glow.wgsl smooths it per cell), so busy cells shine brighter and idle ones dim a little. Colours: src/palette.js.
 
 struct Draw {
   view: vec2f,      // canvas size in CSS px
@@ -49,11 +56,21 @@ struct Draw {
   inkSed: vec4f,    // a form (sediment) engine; w: the rate at which a part reaches its largest size
   inkSwap: vec4f,   // a swap engine; w: the battery's core radius at full charge while parts are drawn (share of r)
   inkOther: vec4f,  // strategy view: the body of a cell that neither harvests nor burns; w: every body's fill there
+  // ---- step C6n: the palette's fate inks, and the neon look ----
+  fate: array<vec4f, 5>,   // the fates' inks (rgb): stem, epithelium, muscle, neuron, cartilage
+  neon: vec4f,      // x: 1 = the neon look; y: the tube's width (CSS px); z: how white its centre line is (0..1); w: the inner
+                    // glow's reach (share of r)
+  neon2: vec4f,     // x: the inner glow's brightness; y: the battery core's lit rim (share of its radius); z: how white the
+                    // parts' lamps are (0..1); w: the core's dim inside (share of its rim's brightness)
+  hum: vec4f,       // x: the wobble's depth; y: its rate (Hz, each cell 0.6 to 1.4 x); z: real time (s); w: 1 = activity read
+  hum2: vec4f,      // x: an idle cell's brightness; y: the activity (battery change per s) at which a cell is 63 % of the way
+                    // to the busiest; z, w: the lineage colours' base and amplitude
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
 @group(0) @binding(1) var<storage, read> cells: array<Cell>;
 @group(0) @binding(2) var<storage, read> bio: array<Bio>;    // step C6: the genomes (engines)
+@group(0) @binding(3) var<storage, read> glow: array<vec2f>; // step C6n: x the battery last frame, y its smoothed change per s
 
 struct VSOut {
   @builtin(position) pos: vec4f,
@@ -61,23 +78,29 @@ struct VSOut {
   @location(1) @interpolate(flat) id: u32,
 };
 
-// faded palette, as the reference's COL (stem, epithelium, muscle, neuron, cartilage)
+// the fate's ink (stem, epithelium, muscle, neuron, cartilage), from the palette in use (src/palette.js)
 fn cell_colour(kind: u32) -> vec3f {
-  switch kind {
-    case 1u: { return vec3f(121.0, 220.0, 216.0) / 255.0; }
-    case 2u: { return vec3f(239.0, 134.0, 184.0) / 255.0; }
-    case 3u: { return vec3f(185.0, 162.0, 255.0) / 255.0; }
-    case 4u: { return vec3f(240.0, 201.0, 135.0) / 255.0; }
-    default: { return vec3f(241.0, 236.0, 223.0) / 255.0; }
-  }
+  return D.fate[min(kind, 4u)].rgb;
 }
 
 // lineage colour: the key angle (60 degrees of hex symmetry) goes once round the hue circle, so related
-// cells (close keys) get close hues; the key scale shifts lightness a little. Faded, as the fate palette.
+// cells (close keys) get close hues; the key scale shifts lightness a little. Base and amplitude from the palette
+// (faded: 0.64 + 0.26 cos; neon: more saturated).
 fn key_colour(c: Cell) -> vec3f {
   let h = fract(c.la / KEY_SPAN);
-  let rgb = 0.64 + 0.26 * cos(TAU * (h + vec3f(0.0, -1.0 / 3.0, 1.0 / 3.0)));
-  return rgb * (1.0 + 0.8 * c.aux);
+  let rgb = D.hum2.z + D.hum2.w * cos(TAU * (h + vec3f(0.0, -1.0 / 3.0, 1.0 / 3.0)));
+  return max(rgb, vec3f(0.0)) * (1.0 + 0.8 * c.aux);
+}
+
+// step C6n: the hum, a cell's brightness: a slow wobble at its own rate and phase, times idle .. 1 + by its activity
+fn hum_bright(c: Cell, i: u32) -> f32 {
+  if (D.hum.x <= 0.0 && D.hum.w <= 0.0) { return 1.0; }
+  let ph = f32(c.seed & 65535u) / 65536.0;
+  let rate = D.hum.y * (0.6 + 0.8 * f32((c.seed >> 16u) & 255u) / 255.0);
+  let wob = 1.0 + D.hum.x * sin(TAU * (rate * D.hum.z + ph));
+  var act = 1.0;
+  if (D.hum.w > 0.0) { act = D.hum2.x + (1.0 - D.hum2.x) * 1.6 * (1.0 - exp(-glow[i].y / max(D.hum2.y, 1e-6))); }
+  return wob * act;
 }
 
 @vertex
@@ -167,12 +190,17 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     else { col = D.inkOther.rgb; }
   }
 
-  let lw = min(D.lineW, 0.22 * c.r);              // thinner outline on small cells, so they do not turn solid
+  let neon = D.neon.x > 0.5;
+  // thinner outline on small cells, so they do not turn solid (neon: the tube, a little wider)
+  let lw = select(min(D.lineW, 0.22 * c.r), min(D.neon.y, 0.3 * c.r), neon);
   let dot = select(0.0, cover(D.dotR * s, dd, aad) * cover(c.r - lw - 0.12 * D.R, d, aa), D.dots > 0.0);
   let ring = 1.0 - cover(c.r - lw, d, aa);        // clean outline at the rim
   // committed cells get a flat fill in their colour, so tissues read as areas; stem cells stay dark inside
+  // (neon: every inside dark, a faint tint; the fills come from src/cells.js by the look)
   let fill = select(select(D.fill, D.fillC, c.kind != KIND_STEM), D.inkOther.w, strategyView);
   var fillRgb = col * fill;   // (step 8 may tint it below)
+  // step C6n: neon, the tube lights the inside near it (a soft glow falling off inward)
+  if (neon) { fillRgb += col * D.neon2.x * exp(-max(c.r - lw - d, 0.0) / max(D.neon.w * c.r, 1e-3)); }
   // step 6, rule 2: a converted cell's outline is drawn in field B's ink, and a converted stem cell is filled with
   // it (flat, at the committed cells' level), so converted areas read as areas
   let conv = D.blue.a > 0.0 && (c.flags & CELL_CONV) != 0u;
@@ -188,7 +216,10 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     let rc = select(D.core, D.inkSwap.w, partsOn) * c.r * sqrt(clamp(c.bat, 0.0, 1.0));
     if (rc * D.dpr > 0.6) {
       coreA = cover(rc, d, aa);
-      rgb = mix(rgb, D.coreInk.rgb, coreA);
+      var ci = D.coreInk.rgb;
+      // step C6n: neon, a soft-lit disc: dim inside, a bright rim (a large core reads as a lit ring, a small one as a dot)
+      if (neon) { ci *= mix(D.neon2.w, 1.0, smoothstep(rc * (1.0 - D.neon2.y) - aa, rc - 0.5 * aa, d)); }
+      rgb = mix(rgb, ci, coreA);
     }
   }
   // step C6: the engines as parts around the core: flat marks with crisp edges, each in a clear margin
@@ -217,11 +248,18 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       let pa = cover(0.0, dd2, aa);
       let margin = cover(0.14 * c.r, dd2, aa);
       rgb = mix(rgb, fillRgb, margin * dot);
+      if (neon) { ink = mix(ink, vec3f(1.0), D.neon2.z * clamp(-dd2 / max(h, 1e-3), 0.0, 1.0)); }   // step C6n: a lamp, whiter inside
       rgb = mix(rgb, ink, pa);
       partA = max(partA, pa);
     }
   }
-  let lineCol = select(col * D.line, D.blue.rgb, conv);
+  var lineCol = select(col * D.line, D.blue.rgb, conv);
+  if (neon) {
+    // step C6n: the tube's cross-section: white-hot along its centre line, its colour toward its edges
+    let prof = clamp(1.0 - abs(d - (c.r - 0.5 * lw)) / max(0.5 * lw, 1e-3), 0.0, 1.0);
+    lineCol = mix(lineCol, vec3f(max(max(lineCol.r, lineCol.g), lineCol.b)), D.neon.z * prof * prof);
+    lineCol = mix(lineCol, vec3f(1.0), 0.6 * D.neon.z * prof * prof * prof);
+  }
   // step 7: the cell's state as a flat bar through its centre, turned by 180 / states degrees per state (2 states:
   // upright and lying; 3: three directions 60 degrees apart), drawn over the dots like a print mark
   var bar = 0.0;
@@ -271,6 +309,8 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   }
   // step C5: a starving cell (battery below D.starve) is drawn dimmer, down to 1 - D.dim at an empty battery
   if (D.dim > 0.0) { rgb *= 1.0 - D.dim * (1.0 - smoothstep(0.0, max(D.starve, 1e-3), c.bat)); }
+  // step C6n: the hum (1 when it is off or the look is flat)
+  rgb *= hum_bright(c, in.id);
   let a = disc * mix(D.fillA, 1.0, max(max(max(max(max(max(ring, dot * (1.0 - clearA)), mark), bar), hnd), coreA), partA));
   // rgb is the colour as seen; blend premultiplied (one, one-minus-src-alpha)
   return vec4f(rgb * a, a);

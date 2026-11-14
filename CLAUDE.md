@@ -107,6 +107,14 @@ Proposed shape (Claude's suggestion, open to change):
   responds). Conversion rules live in the cell: e.g. feeling field A above a threshold makes it emit field B.
 - Exclusion rule: two cells of the same type in the same internal state (lattice angle/phase) repel hard at
   short range; cells in different states may pack closer. Expected look: shells or alternating patterns.
+- Orthogonal partner fields (user idea, after electric/magnetic): each field can have a partner at right angles.
+  Suggested translation into patterns: (a) the partner is the same lattice a quarter period out of step
+  (cos/sin pair), so the pair carries a phase and a direction of travel; (b) a CHANGE in one field at a cell's
+  membrane makes the cell emit the partner (changing A makes B, changing B makes A), which lets signals travel
+  as waves instead of sitting still; (c) the partner pushes a cell sideways to its motion, giving curls and spirals.
+- NOT a particle simulation (user, explicit): no physics accuracy is wanted. Physics is only a source of
+  concepts for how patterns exchange information. "Charge" above just means how strongly a cell emits into and
+  listens to a field.
 - Draw each field in its own faded colour, added together.
 - Keep to the "minimal core first" advice: start with two fields and no biology, add one rule at a time.
 

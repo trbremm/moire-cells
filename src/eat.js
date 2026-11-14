@@ -109,7 +109,7 @@ export class Eat {
     for (const e of ['dump', 'split', 'eat', 'ledger', 'reset']) {
       this.pipes[e] = d.createComputePipeline({ label: `cell ${e}`, layout, compute: { module: mod, entryPoint: e } });
     }
-
+    this.pipes.plan = d.createComputePipeline({ label: 'cell plan', layout: layoutP, compute: { module: mod, entryPoint: 'plan' } });
     const U = GPUBufferUsage, n = this.cells.count;
     this.stockBuf = d.createBuffer({ label: 'cell stock', size: n * SW * 4, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
     this.fluxBuf = d.createBuffer({ label: 'cell flux', size: n * SW * 4, usage: U.STORAGE });
@@ -182,6 +182,7 @@ export class Eat {
     pass.setBindGroup(0, this.bg, [t * slot]);
     pass.setPipeline(this.pipes.dump); pass.dispatchWorkgroups(wg);
     pass.setPipeline(this.pipes.split); pass.dispatchWorkgroups(wg);
+    pass.setPipeline(this.pipes.plan); pass.setBindGroup(0, this.bgP, [t * slot]); pass.dispatchWorkgroups(wg);
     pass.setPipeline(this.pipes.eat); pass.setBindGroup(0, this.bg, [t * slot]); pass.dispatchWorkgroups(wg);
     pass.end();
   }

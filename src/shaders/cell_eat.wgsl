@@ -207,6 +207,54 @@ fn split(@builtin(global_invocation_id) id: vec3u) {
   cells[i].flags = c.flags & ~CELL_BORN;
 }
 
+// ---------- plan (plain reads) ----------
+// The exchange: outside, the 9 pixels' amount over their area; inside, the stock over the cell's area. Per tick each
+// channel moves a share min(1, perm x dt) of the way to equal concentrations (so it is stable at any rate); an inflow is
+// scaled by the room left (1 - fill), so a cell cannot hoard more than its capacity.
+@compute @workgroup_size(64)
+fn plan(@builtin(global_invocation_id) id: vec3u) {
+  let i = id.x;
+  if (i >= S.count) { return; }
+  let c = cells[i];
+  let fo = i * SW;
+  let idx = footprint(c.pos);
+  let lw = LEDGER_WORDS;
+  // the temperature under the cell
+  var hsum = 0;
+  for (var q = 0; q < 9; q++) { hsum += mg[S.heatCur - lw + idx[q]]; }
+  flux[fo + 15u] = bitcast<i32>(f32(hsum) / 9.0 * HP.tempScale);
+  let cur = S.matterCur;
+  let eatOn = (EP.flags & EF_EAT) != 0u && cur != 0u && (c.flags & CELL_ALIVE) != 0u;
+  let areaPx = 3.14159265 * c.r * c.r;
+  let areaR2 = max(areaPx / (EP.R * EP.R), 1e-3);
+  let cap = EP.capR2 * areaR2 * ATOM_SCALE;
+  var atomsIn = 0.0;
+  for (var k = 0u; k < NCH; k++) { atomsIn += f32(stockP[fo + k]) * ep_f(EP.natoms, k); }
+  let room = clamp(1.0 - atomsIn / max(cap, 1.0), 0.0, 1.0);
+  let Ao = 9.0 * HP.px * HP.px;
+  let rs = pcg(c.seed ^ pcg(S.tick * 0x9e3779b9u + 0x2c1b3c6du));
+  for (var k = 0u; k < NCH; k++) {
+    var n = 0;
+    let pk = ep_f(EP.perm, k);
+    if (eatOn && pk > 0.0 && (EP.mask & (1u << k)) != 0u) {
+      let base = cur - lw + k * EP.n;
+      var Mo = 0;
+      for (var q = 0; q < 9; q++) { Mo += max(mg[base + idx[q]], 0); }
+      let Mi = stockP[fo + k];
+      if (Mo != 0 || Mi != 0) {
+        let jeq = (f32(Mo) * areaPx - f32(Mi) * Ao) / (Ao + areaPx);
+        var j = jeq * min(1.0, pk * EP.dt);
+        if (j > 0.0) { j *= room; }
+        n = i32(floor(j + u01(pcg(rs + k * 0x85ebca6bu))));
+        n = clamp(n, -Mi, Mo);
+      }
+    }
+    flux[fo + k] = n;
+  }
+  var g = vec2f(0.0);
+  cells[i].smell = g;
+}
+
 // ---------- eat ----------
 @compute @workgroup_size(64)
 fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index) li: u32, @builtin(workgroup_id) wid: vec3u) {
@@ -239,6 +287,39 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     let cap = EP.capR2 * areaR2 * ATOM_SCALE;                // stock capacity, atom counts
     let rs = pcg(c.seed ^ pcg(S.tick * 0x9e3779b9u + 0x51ed27u));
 
+    // ---- the membrane: the exchange the plan pass worked out (flux), with the 3 x 3 pixels under the cell. An uptake
+    // takes an even share from each pixel (a take: a pixel that has less gives what it has); a release is spread evenly.
+    // Only channels that move touch the grid, so a cell in an empty place costs no atomics here.
+    let fo = i * SW;
+    if ((EP.flags & EF_EAT) != 0u && cur != 0u) {
+      var up = 0;
+      var down = 0;
+      for (var k = 0u; k < NCH; k++) {
+        let n = flux[fo + k];
+        if (n == 0 || (EP.mask & (1u << k)) == 0u) { continue; }
+        let base = cur + k * EP.n;
+        let na = i32(ep_f(EP.natoms, k));
+        if (n > 0) {
+          let part = n / 9;
+          var got = 0;
+          for (var q = 0; q < 9; q++) { got += take_hb(base + idx[q], select(part, n - 8 * part, q == 4)); }
+          m[k] += got;
+          up += got * na;
+        } else {
+          let give = min(-n, m[k]);
+          if (give > 0) {
+            spread9(base, idx, give);
+            m[k] -= give;
+            down += give * na;
+          }
+        }
+      }
+      atomicAdd(&wev[EV_UPTAKE], up);
+      atomicAdd(&wev[EV_RELEASE], down);
+    }
+
+    // the temperature under the cell (its 3 x 3 pixels' mean, from the plan pass), for the sparks of the reactions inside
+    let temp = max(bitcast<f32>(flux[fo + 15u]), 1e-4);
     let concIn = 1.0 / (ATOM_SCALE * areaR2);                  // stock counts x concIn = units per R^2 inside
     var sparkScale = 1.0;
     if (CP.traceOn != 0u) { sparkScale = 1.0 / (1.0 + CP.traceK * f32(m[CP.trace]) * concIn); }

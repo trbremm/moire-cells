@@ -288,6 +288,11 @@ C5. Cells eat: exchange, internal stock, battery (starter charge), one built-in 
     only 0.012 of the real work (full work emptied batteries in seconds); most battery energy leaves through
     turnover (a death turns the battery into heat); heat damage acts only with turnover (T) on.
 C6. Engines in the genome (2-3 slots, mutate), pigments (cells catch a visible band for uphill reactions),
+    incl. LIGHT-DRIVEN UPHILL SWAPS (gT + G + light -> GT + g: richer fuel plus a free light atom as waste) and
+    downhill swaps as "breathing" engines. User hope (2026-11-14, "on a toy level"): an OXYGEN-LIKE story may
+    emerge: harvesters' waste (free light atoms, the vandals) is first caught by free takers in the dish (the
+    "iron" sink), then builds up dish-wide, poisons leaky cells, and breathers learn to live on it. Never write
+    it as a rule; only watch for it (panel readout of free light atoms; census of harvesters vs breathers).
     heat tolerance and permeability as genes, engines drawn as parts.
 C7. Pumps across contact: storing, sharing, stealing.
 C8. Hard light mutates cells.

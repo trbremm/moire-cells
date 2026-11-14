@@ -24,7 +24,8 @@ body {
   background: var(--bg); color: var(--ink);
   font-family: var(--mono); font-size: 12px; line-height: 1.5;
 }
-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: crosshair; }
+/* one finger on the dish is the active tool's; two fingers pinch-zoom the page (the browser's) */
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pinch-zoom; cursor: crosshair; }
 
 /* frame-time / adapter readout, toggled with F */
 #overlay {
@@ -49,14 +50,127 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 #entropy[hidden] { display: none; }
 body.entropy-on #overlay { top: 116px; }
 
+/* the flash / hint line: just above the controls (src/ui.js keeps --ui-h at their height) */
 #hint {
-  position: absolute; bottom: 14px; right: max(16px, env(safe-area-inset-right, 0px));
-  margin: 0; color: var(--dim); opacity: 0.7; pointer-events: none; text-align: right;
+  position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + var(--ui-h, 0px) + 8px);
+  margin: 0; color: var(--dim); opacity: 0.75; pointer-events: none; text-align: left;
+}
+/* wide screens: bottom right, beside the bar, as before the toolbar */
+@media (min-width: 900px) {
+  #hint {
+    left: auto; bottom: max(14px, env(safe-area-inset-bottom, 0px)); text-align: right;
+    max-width: calc(100% - var(--bar-w, 0px) - 72px);
+  }
+}
+
+/* step C3b: the toolbar and its panels (src/ui.js). Thin outlines, flat, hard edges; no glow, no shadow */
+.ui {
+  --line2: rgba(217, 221, 230, 0.36);
+  --s: 34px;
+  position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); bottom: max(14px, env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  max-width: calc(100% - 32px); pointer-events: none;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+.ui > * { pointer-events: auto; }
+.bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.grp { display: flex; gap: 2px; }
+.ui button { font: inherit; color: var(--ink); touch-action: manipulation; cursor: pointer; }
+.btn {
+  width: var(--s); height: var(--s); padding: 0; display: grid; place-items: center;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 3px;
+}
+.ui svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.25; stroke-linecap: square; stroke-linejoin: miter; }
+.btn:hover, .ui .seg button:hover, .ui .kb:hover, .ui .act:hover, .ui .cyc:hover .val { border-color: var(--line2); }
+.btn[aria-pressed="true"] { border-color: var(--epi); color: var(--epi); }
+.ui button:focus-visible, .ui input:focus-visible { outline: 1px solid var(--epi); outline-offset: 1px; }
+.btn.speed {
+  width: auto; min-width: calc(var(--s) + 8px); padding: 0 5px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.btn.speed .set { font-size: 12px; }
+.btn.speed .got { font-size: 9px; color: var(--dim); }
+.btn.speed .got:empty { display: none; }
+.btn.rec[aria-pressed="true"] { color: var(--thr); border-color: var(--thr); }
+.btn.rec[aria-pressed="true"] circle { fill: currentColor; }
+.btn.rec:disabled { opacity: 0.35; cursor: not-allowed; }
+.ui.folded .bar > :not(.fold) { display: none; }
+.ui.folded .fold { opacity: 0.7; }
+
+.panel {
+  box-sizing: border-box; width: 400px; max-width: 100%;
+  max-height: calc(100vh - var(--s) - 150px); max-height: calc(100dvh - var(--s) - 150px);
+  overflow: auto; overscroll-behavior: contain;
+  background: rgba(6, 9, 15, 0.88); border: 1px solid var(--line); border-radius: 3px;
+}
+.panel[hidden] { display: none; }
+.phead {
+  position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 4px 4px 12px; background: rgb(6, 9, 15); border-bottom: 1px solid var(--line);
+}
+.phead h2 { margin: 0; font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; }
+.phead .x { width: 28px; height: 28px; padding: 0; display: grid; place-items: center; background: none; border: 1px solid transparent; border-radius: 3px; color: var(--dim); }
+.phead .x:hover { border-color: var(--line); color: var(--ink); }
+.pbody { padding: 2px 12px 10px; }
+.pbody h3 { margin: 12px 0 2px; font-size: 10px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--epi); opacity: 0.8; }
+.row { padding: 5px 0 6px; border-top: 1px solid rgba(217, 221, 230, 0.07); }
+.pbody h3 + .row, .pbody > .row:first-child { border-top: 0; }
+.rmain { display: flex; align-items: center; gap: 8px; min-height: 26px; }
+.rmain .lbl { color: var(--ink); }
+.ui kbd {
+  margin-left: auto; padding: 0 4px; font: 10px var(--mono); color: var(--dim);
+  border: 1px solid var(--line); border-radius: 2px; white-space: nowrap;
+}
+.help { margin: 1px 0 0; color: var(--dim); font-size: 11px; line-height: 1.4; }
+.row.t-toggle .help { padding-left: 36px; }
+.note { margin: 10px 0 0; color: var(--dim); font-size: 11px; line-height: 1.4; }
+
+.sw { display: flex; align-items: center; gap: 10px; padding: 0; background: none; border: 0; text-align: left; }
+.track { position: relative; flex: none; width: 26px; height: 14px; box-sizing: border-box; border: 1px solid var(--line2); border-radius: 2px; }
+.track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 8px; height: 8px; background: var(--dim); }
+.sw[aria-checked="true"] .track { border-color: var(--epi); }
+.sw[aria-checked="true"] .track::after { left: 14px; background: var(--epi); }
+.cyc { display: flex; align-items: center; gap: 10px; padding: 0; background: none; border: 0; text-align: left; }
+.cyc .val, .knobs .val { color: var(--epi); font-variant-numeric: tabular-nums; }
+.cyc .val { padding: 1px 6px; border: 1px solid var(--line); border-radius: 2px; }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 2px; }
+.ui .seg button, .ui .kb, .ui .act {
+  min-width: 30px; height: 24px; padding: 0 7px; background: none; border: 1px solid var(--line); border-radius: 2px;
+}
+.ui .seg button[aria-pressed="true"] { border-color: var(--epi); color: var(--epi); }
+.knobs { display: inline-flex; align-items: center; gap: 6px; }
+.knobs .val { min-width: 3.2em; text-align: center; }
+.row.slider .rmain { gap: 10px; }
+.row.slider .lbl { min-width: 6.5em; }
+.row.slider .val { min-width: 7.5em; color: var(--epi); }
+.ui input[type="range"] { flex: 1; min-width: 80px; height: 26px; margin: 0; background: transparent; -webkit-appearance: none; appearance: none; }
+.ui input[type="range"]::-webkit-slider-runnable-track { height: 1px; background: var(--line2); }
+.ui input[type="range"]::-moz-range-track { height: 1px; background: var(--line2); }
+.ui input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 9px; height: 16px; margin-top: -8px; background: var(--bg); border: 1px solid var(--epi); border-radius: 0; }
+.ui input[type="range"]::-moz-range-thumb { width: 9px; height: 16px; box-sizing: border-box; background: var(--bg); border: 1px solid var(--epi); border-radius: 0; }
+.ui input[type="range"]:disabled { opacity: 0.35; }
+
+/* fingers: bigger targets */
+@media (pointer: coarse) {
+  .ui { --s: 42px; }
+  .ui svg { width: 22px; height: 22px; }
+  .rmain { min-height: 36px; }
+  .ui .seg button, .ui .kb, .ui .act { min-width: 40px; height: 34px; }
+  .track { width: 34px; height: 20px; }
+  .track::after { width: 12px; height: 12px; }
+  .sw[aria-checked="true"] .track::after { left: 18px; }
+  .row.t-toggle .help { padding-left: 44px; }
+  .phead .x { width: 38px; height: 38px; }
+  .ui input[type="range"] { height: 36px; }
+  .ui input[type="range"]::-webkit-slider-thumb { width: 14px; height: 26px; margin-top: -13px; }
+  .ui input[type="range"]::-moz-range-thumb { width: 14px; height: 26px; }
 }
 
 /* plain message: no WebGPU, device lost, shader error */
 #msg {
-  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center;
   padding: 16px; box-sizing: border-box; background: var(--bg);
 }
 #msg[hidden] { display: none; }
@@ -80,7 +194,7 @@ body.entropy-on #overlay { top: 116px; }
 <canvas id="gpu" aria-label="Dark viscous fluid background with slow ripples"></canvas>
 <pre id="overlay" hidden></pre>
 <pre id="entropy" hidden></pre>
-<p id="hint">click: drop a ripple · drag: stir · 1 ripple · L: landscape · A: ambient ripples · N: new culture · P: contact push · F: frame time</p>
+<p id="hint"></p>
 <div id="msg" hidden><div class="box" id="msgbox"></div></div>
 
 <noscript>

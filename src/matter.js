@@ -570,7 +570,7 @@ function discPixels(cx, cy, r, w, h) {
 }
 
 /** A spring's marker ink: its atoms' inks, weighted by its mix. */
-function springInk(kind) {
+export function springInk(kind) {
   const mix = SPRING_KINDS[kind].mix, ink = [0, 0, 0];
   let tot = 0;
   for (const [a, share] of Object.entries(mix)) {

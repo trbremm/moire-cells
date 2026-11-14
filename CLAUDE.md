@@ -296,6 +296,11 @@ C6. Engines in the genome (2-3 slots, mutate), pigments (cells catch a visible b
     HARVESTERS MUST BURN (user 2026-11-14): light never charges the battery; it only pays a harvester's uphill
     difference, the product goes to stock. Every engine's spark and upkeep come from the battery, and only
     downhill reactions fill it. So a harvester must burn (or breathe) some of what it makes to keep running.
+    SYMMETRY (user 2026-11-14: "as long as our chemistry enables endothermic and exothermic reactions and their
+    inverse, it should be close enough"): every reaction exists in both directions, in the open and in cells.
+    Downhill: spark only (heat outside, battery inside), energy released (heat outside, battery inside).
+    Uphill: difference + spark (light outside; inside: difference from pigment light or the battery, spark from
+    the battery). Battery-paid uphill engines are STORERS (bank energy as fuel).
     heat tolerance and permeability as genes, engines drawn as parts.
 C7. Pumps across contact: storing, sharing, stealing.
 C8. Hard light mutates cells.

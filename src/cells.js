@@ -55,7 +55,6 @@ const STATS_EXTRA = 8192;      // byte offset of Stats.extra (step 6 census: STA
 const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder bitmap) in struct Stats
 const STATS_EVENTS = 64;
 const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_AW in cell_common.wgsl)
-const MAX_SRC = 16;            // sources the cells feel (MAX_CELL_SOURCES in cell_common.wgsl)
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
 const FIELDS_BYTES = 192;      // struct Fields in cell_common.wgsl
 const FIELD_FORMAT = 'rgba16float';
@@ -102,7 +101,6 @@ export class Cells {
       cut: 3.6,       // how far a cell's field reaches (sensed and drawn), in units of R (reference 3.6)
       sense: 10,      // gain of the force from the other cells' field felt on the membrane (1 = reference, which
                       // is too weak to matter against the contact push at 2000 cells)
-      senseSrc: 1.0,  // gain of the force from the sources' field (1 = reference)
       senseOn: true,  // field sensing on/off (key S)
       receptor: false, // tuning toward other cells by the genome's receptor instead of the own lattice (key R)
       tuneW: 0.5,     // tuning width toward other cells' lattices (reference 0.177: only near-identical keys)
@@ -279,7 +277,8 @@ export class Cells {
     this.gridL = layout('cell grid', [sim, ro(1), rw(2), rw(3), rw(4), rw(5), rw(6), rw(7), un(8), rw(9), un(10)]);
     // (at most 8 storage buffers per stage, the core limit: the step finds sortIdx in the beats, and a grid cell's end
     // in the next one's start instead of in counts; binding 4 is the heat buffer, 13 its parameters)
-    this.stepL = layout('cell step', [sim, ro(1), ro(3), rw(4), rw(5), ro(6), rw(7), rw(8), un(9), un(10), ro(11), un(12), un(13)]);
+    // (binding 10 held the nutrient and threat sources until step C3)
+    this.stepL = layout('cell step', [sim, ro(1), ro(3), rw(4), rw(5), ro(6), rw(7), rw(8), un(9), ro(11), un(12), un(13)]);
     this.censusL = layout('cell census', [sim, ro(1), ro(2), rw(3)]);
     this.checkL = layout('cell check', [sim, ro(1), ro(2), ro(3), ro(4), ro(5), rw(6),
       { binding: 7, visibility: C, buffer: { type: 'uniform' } }]);
@@ -316,11 +315,7 @@ export class Cells {
     this.stats = null;          // last census, for the overlay (see readStats)
     this.statsHist = [];        // [time, births, deaths] for births / deaths per second
     this.onEvents = null;       // callback(events) for births and deaths (main.js drops ripples)
-    // the sources as the cells feel them (nutrient, threat), written every frame from the landscape
-    this.srcBuf = d.createBuffer({ label: 'cell sources', size: MAX_SRC * 32, usage: U.UNIFORM | U.COPY_DST });
-    this.srcData = new Float32Array(MAX_SRC * 8);
-    this.srcCount = 0;
-    this.landscape = null;      // set by main.js
+    this.landscape = null;      // set by main.js (its inks colour the cells' step 6 and 8 marks)
     this.simBuf = d.createBuffer({ label: 'cell sim params', size: SLOTS * SLOT, usage: U.UNIFORM | U.COPY_DST });
     this.simAB = new ArrayBuffer(SLOTS * SLOT);
     this.simF = new Float32Array(this.simAB);
@@ -427,7 +422,7 @@ export class Cells {
       label: 'cell step', layout: this.stepL.bgl,
       entries: [{ binding: 0, resource: { buffer: this.simBuf, size: SIM_BYTES } }, b(1, this.sortedBuf),
         b(3, this.startsBuf), b(4, heatBuf), b(5, cellBuf),
-        b(6, bioPrev), b(7, bioNext), b(8, statsBuf), b(9, this.medium.buffer), b(10, this.srcBuf), b(11, this.beatBuf),
+        b(6, bioPrev), b(7, bioNext), b(8, statsBuf), b(9, this.medium.buffer), b(11, this.beatBuf),
         b(12, this.fieldsBuf), b(13, this.heat.paramBuf)],
     });
   }
@@ -491,11 +486,11 @@ export class Cells {
     f[o + 32] = G.adhSigma; f[o + 33] = G.fateAdh; f[o + 34] = this.genome.rules.body ? 1 : 0; f[o + 35] = G.adhBase;
     f[o + 36] = this.genome.rules.body ? G.crawl : 0; f[o + 37] = G.turnRate;
     f[o + 38] = G.turnover; f[o + 39] = G.unhappy; f[o + 40] = G.mutSize; f[o + 41] = G.mutJump;
-    f[o + 42] = G.nutFar; f[o + 43] = G.thrKill; u[o + 44] = this.srcCount; f[o + 45] = G.beatMix;
+    f[o + 42] = 0; f[o + 43] = 0; u[o + 44] = 0; f[o + 45] = 0;   // spare (the nutrient and threat numbers until step C3)
     f[o + 46] = p.lever; f[o + 47] = p.emit ? 1 : 0; f[o + 48] = p.r0; f[o + 49] = p.cut;
-    f[o + 50] = p.senseOn ? p.sense : 0; f[o + 51] = p.tuneW; f[o + 57] = p.senseOn ? p.senseSrc : 0;
+    f[o + 50] = p.senseOn ? p.sense : 0; f[o + 51] = p.tuneW; f[o + 57] = 0;
     u[o + 58] = p.receptor ? 1 : 0;
-    f[o + 52] = this.landscape ? this.landscape.params.amp : 5; f[o + 53] = p.senseMax;
+    f[o + 52] = 0; f[o + 53] = p.senseMax;
     f[o + 54] = p.active ? 1 : 0; f[o + 55] = p.shapeRate; u[o + 56] = p.anchor;
     const X = this.excl;
     f[o + 59] = X.on ? Math.max(0, X.hard) : 0; f[o + 60] = Math.max(0, X.reach); f[o + 61] = Math.max(0, X.pack);
@@ -566,7 +561,6 @@ export class Cells {
     if (!ticks) return;
     this.heat.beginFrame(encoder, ticks, frame);
     if (this.heatVersion !== this.heat.version) this.makeStepBGs();
-    this.writeSources();
     for (let t = 0; t < ticks; t++) {
       const time = frame.time - Math.max(0, ticks - 1 - t) * frame.tickDt * (t < warm ? 0 : 1);
       this.writeSim(t, frame.tickDt, time, t === ticks - 1);
@@ -610,18 +604,6 @@ export class Cells {
       pass.draw(6, this.count);
     }
     pass.end();
-  }
-
-  /** Upload the sources as the cells feel them (once per frame). */
-  writeSources() {
-    const L = this.landscape, a = this.srcData;
-    const list = L ? L.sources.slice(-MAX_SRC) : [];
-    const r0sq = L ? (L.params.range * this.medium.R) ** 2 : 1, ref = L ? L.params.amp : 1;
-    list.forEach((s, k) => {
-      a.set([s.x, s.y, s.la, s.amp / ref, r0sq, s.kind, 0, 0], 8 * k);
-    });
-    this.srcCount = list.length;
-    if (list.length) this.device.queue.writeBuffer(this.srcBuf, 0, a, 0, 8 * list.length);
   }
 
   // ---------- stats: census and read-back for the overlay ----------
@@ -876,7 +858,7 @@ export class Cells {
       lines.push(`fates: stem <b>${F[0]}</b> · epithelium <b>${F[1]}</b> · muscle <b>${F[2]}</b> · neuron <b>${F[3]}</b> · cartilage <b>${F[4]}</b>`);
       lines.push(`lineages: ${st.founders} founder lines · ${st.clusters} key clusters · births ${st.birthRate.toFixed(1)}/s · deaths ${st.deathRate.toFixed(1)}/s`);
     }
-    lines.push(`rules: D differentiation ${on(r.diff)} · H adhesion ${on(r.adh)} · B body ${on(r.body)} · T turnover ${on(r.turn)} · M mutation ${on(r.mut)} · E nutrient/threat ${on(r.nut)} · I inherit fate ${on(r.inherit)} · view ${this.look.view ? 'lineage' : 'fate'}`);
+    lines.push(`rules: D differentiation ${on(r.diff)} · H adhesion ${on(r.adh)} · B body ${on(r.body)} · T turnover ${on(r.turn)} · M mutation ${on(r.mut)} · I inherit fate ${on(r.inherit)} · view ${this.look.view ? 'lineage' : 'fate'}`);
     const mo = this.motion;
     lines.push(`loop: S sense ${on(p.senseOn)} · O emit ${on(p.emit)} · W active shape ${on(p.active)} · X beat ${ANCHORS[p.anchor] || p.anchor} · R tuning by ${p.receptor ? 'receptor' : 'own lattice'} · lever ${p.lever.toFixed(2)}` +
       (mo ? ` · speed ${mo.speed.toFixed(1)} px/s · net ${mo.net == null ? '-' : mo.net.toFixed(1)} px/s · stretch ${mo.stretch.toFixed(2)} · spread ${mo.spread.toFixed(1)} R` : ''));

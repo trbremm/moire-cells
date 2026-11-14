@@ -1,12 +1,12 @@
 // ===== field_common.wgsl: the chemical field's maths, shared by every shader that draws or senses it =====
 // Not compiled on its own: src/field.js prepends it to a shader's source (plain text concatenation), so the
-// landscape drawing, the per-emitter prep pass and (later) the cells' membrane sensing use identical maths.
+// cells' beats (cell_common.wgsl) and their membrane sensing use identical maths.
 // It declares no bindings; each shader binds its own buffers and passes the medium in as a value.
 //
 // Ported from the CPU reference (reference/neon_organoid_cpu.html: shape, prep, landscapeRows, sense).
 // World units are CSS pixels.
 //
-// Every emitter (cell, nutrient source, threat source) carries a hex lattice: 3 wavevectors 60 degrees apart,
+// Every emitter (a cell; until step C3 also the nutrient and threat sources) carries a hex lattice: 3 wavevectors 60 degrees apart,
 // turned by its angle `la`, with a period PER[kind] times the medium's period, squeezed by its own stretch.
 // The medium has its own lattice, anchored at the dish centre, breathing by about 1 degree.
 // An emitter's field is the slow beat of its lattice against the medium's:
@@ -17,14 +17,12 @@
 const P3: f32 = 1.0471975512;      // 60 degrees
 const TAU: f32 = 6.2831853072;
 
-// emitter kinds, numbered as in the reference (0..4 cell types, then the sources)
+// emitter kinds, numbered as in the reference (0..4 cell types; the reference's sources, 5 and 6, are gone since C3)
 const KIND_STEM: u32 = 0u;
 const KIND_EPI: u32 = 1u;
 const KIND_MUS: u32 = 2u;
 const KIND_NEU: u32 = 3u;
 const KIND_CHO: u32 = 4u;
-const KIND_NUT: u32 = 5u;
-const KIND_THR: u32 = 6u;
 
 // The medium's lattice. Written once per frame by src/field.js (Medium).
 struct Medium {
@@ -33,12 +31,12 @@ struct Medium {
   la0: f32,         // medium lattice angle; breathes as 0.02 sin(0.05 t)
 };
 
-// An emitter as uploaded from JS (40 bytes; keep in step with EMITTER_FLOATS / writeEmitter in src/field.js).
+// An emitter (filled in by cell_common.wgsl's cell_beat).
 struct Emitter {
   pos: vec2f,       // centre (CSS px)
   la: f32,          // lattice angle (radians)
   amp: f32,         // strength
-  r0sq: f32,        // envelope range squared (CSS px^2): sources 81 R^2, cells 4.84 R^2 in the reference
+  r0sq: f32,        // envelope range squared (CSS px^2): cells 4.84 R^2 in the reference
   fa: f32,          // deformation matrix F = [[fa, fb], [fb, fd]] (area-preserving stretch); identity = 1, 0, 1
   fb: f32,
   fd: f32,
@@ -46,7 +44,7 @@ struct Emitter {
   _pad: u32,
 };
 
-// What the field evaluation needs per emitter, precomputed once per frame by field_prep.wgsl (56 bytes).
+// What the field evaluation needs per emitter (make_beat).
 struct Beat {
   q0: vec2f,        // beat wavevectors (emitter lattice minus medium lattice)
   q1: vec2f,
@@ -66,8 +64,7 @@ fn kind_period(kind: u32) -> f32 {
     case 1u: { return 0.86; }   // epithelium
     case 2u: { return 1.16; }   // muscle
     case 4u: { return 0.74; }   // cartilage
-    case 6u: { return 0.9; }    // threat
-    default: { return 1.0; }    // stem, neuron, nutrient
+    default: { return 1.0; }    // stem, neuron
   }
 }
 

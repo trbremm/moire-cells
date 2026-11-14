@@ -76,10 +76,10 @@ struct Sim {
   unhappy: f32,     // extra death rate for cells that recognise none of their neighbours (x turnover)
   mutSize: f32,     // size of the small mutations (1 = the steps in mutate())
   mutJump: f32,     // chance per birth that one gene jumps to a fresh random value
-  nutFar: f32,      // share of births that go to well-fed cells anywhere in the dish (when any feel nutrient)
-  thrKill: f32,     // death rate x (1 + thrKill x the threat a cell feels)
-  srcCount: u32,    // sources in the Sources uniform (0 = nutrient and threat rule off)
-  beatMix: f32,     // 1 = cells feel the sources' beat (the halftone rosettes), 0 = only the smooth envelope
+  _free42: f32,     // spare (42..45: the nutrient and threat numbers until step C3)
+  _free43: f32,
+  _free44: u32,
+  _free45: f32,
   // ---- the loop (step 4): cells emit into the field and feel it on their membrane ----
   lever: f32,       // how different the cells' lattices are from the medium's (1 = the keys as they are;
                     // smaller = closer to the medium, so longer and slower beats)
@@ -88,7 +88,7 @@ struct Sim {
   cut: f32,         // how far a cell feels another's field, in units of R (reference 3.6)
   sense: f32,       // gain of the force from the other cells' field felt on the membrane (0 = off; 1 = reference)
   tuneW: f32,       // receptor tuning width: how alike two lattices must be to feel each other (reference 0.177)
-  srcAmp: f32,      // strength of a fresh source (reference 5)
+  _free52: f32,     // spare (the sources' strength until step C3)
   senseMax: f32,    // the field force saturates at this speed, in units of R per s (reference 3)
   activeGain: f32,  // active deformation gain: stretch along the cell's motion and the field's pull (0 = off)
   shapeRate: f32,   // how fast the shape follows its target (1/s; reference 3)
@@ -96,7 +96,7 @@ struct Sim {
                     // as the cell moves (the reference); 1 = the beat pattern pinned to the cell, bright at its
                     // centre; 2 = its lattice anchored at the dish centre like the medium's, so the moire stands
                     // still in the world and only the envelope moves with the cell
-  senseSrc: f32,    // gain of the sources' part of the field force (1 = reference)
+  _free57: f32,     // spare (the sources' sensing gain until step C3)
   receptor: u32,    // tuning toward other cells (key R): 0 = by the cell's own lattice (like feels like, the
                     // reference); 1 = by its genome's receptor (angle, period, width), so A may feel B but not back
   // ---- step 7: exclusion. Cells of the same type (fate) in the same state (their lattice angle, cut into
@@ -143,41 +143,12 @@ struct Bio {
   relay: vec4f,     // per fate channel: how a committed neighbour's signal on that channel feeds it (-1..1)
   body: vec4f,      // x adhesion, y size factor, z motility factor, w spare
   acc: vec4f,       // state, not genes: the four leaky accumulators
-  env: vec4f,       // state: x nutrient, y threat felt last tick (neighbours read it when picking a parent);
+  env: vec4f,       // state: x y spare (the nutrient and threat felt, until step C3);
                     // z the A felt, through a leaky integrator; w > 0 converted (rule 2: 1; with the relay,
                     // rule 3: seconds converted so far), w < 0 resting (seconds left), 0 neither (step 6)
   conv: vec4f,      // state (step 6): x the converted share of the neighbourhood, through the same integrator
                     // (rule 3, relay); y z w spare
 };
-
-// The sources (nutrient, threat) for the cells: two vec4 per source, written by src/cells.js every frame:
-// (x, y, lattice angle, strength relative to a fresh source), (envelope range squared, kind, 0, 0).
-const MAX_CELL_SOURCES: u32 = 16u;
-struct Sources {
-  s: array<vec4f, 32>,
-};
-
-// What a cell at p feels from the sources: (nutrient, threat). The same beat as the landscape draws (the
-// emitter's lattice against the medium's), positive part only, so cells feel the halftone rosettes.
-fn feel_sources(S: Sim, src: Sources, med: Medium, p: vec2f) -> vec2f {
-  var out = vec2f(0.0);
-  for (var k = 0u; k < min(S.srcCount, MAX_CELL_SOURCES); k++) {
-    let a = src.s[2u * k];
-    let b = src.s[2u * k + 1u];
-    var e: Emitter;
-    e.pos = a.xy;
-    e.la = a.z;
-    e.amp = a.w;
-    e.r0sq = b.x;
-    e.fa = 1.0; e.fb = 0.0; e.fd = 1.0;
-    e.kind = u32(b.y);
-    e._pad = 0u;
-    let bt = make_beat(e, med);
-    let v = bt.amp * beat_envelope(bt, p) * max(0.0, mix(1.0, beat_sum(bt, med, p) / 3.0, S.beatMix));
-    if (e.kind == KIND_THR) { out.y += v; } else { out.x += v; }
-  }
-  return out;
-}
 
 const KEY_SPAN: f32 = 1.0471975512;   // key angles live in [0, 60 degrees)
 const KEY_SMAX: f32 = 0.15;           // key scales live in [-0.15, 0.15]
@@ -199,7 +170,6 @@ const RULE_ADH: u32 = 2u;       // adhesion
 const RULE_TURN: u32 = 4u;      // turnover
 const RULE_MUT: u32 = 8u;       // mutation at birth
 const RULE_INHERIT: u32 = 16u;  // a newborn keeps its parent's fate (else it starts as stem)
-const RULE_NUT: u32 = 32u;      // nutrient and threat bias of turnover
 
 // Counters the GPU keeps for the overlay (read back a few times a second; see src/cells.js).
 // The census part (fate, bins, founders) is cleared and refilled by the census pass before each read-back.
@@ -308,18 +278,8 @@ fn cell_F(c: Cell) -> vec3f {
 // ---------- the loop (step 4): emitting, sensing, deforming ----------
 // EMW of the reference: how a cell of fate `fate` responds to the field of an emitter of kind `kind`
 // (positive = moves toward the field's bright blobs, negative = away). Like fates attract, unlike repel a
-// little; nutrient attracts, threat repels; neurons barely care.
+// little; neurons barely care. (The reference's nutrient and threat rows went with the sources in step C3.)
 fn emw(fate: u32, kind: u32) -> f32 {
-  if (kind == KIND_NUT) {
-    switch fate {
-      case 0u: { return 1.0; }
-      case 1u: { return 0.4; }
-      case 2u: { return 0.3; }
-      case 4u: { return 0.2; }
-      default: { return 0.0; }
-    }
-  }
-  if (kind == KIND_THR) { return select(-1.2, -0.5, fate == KIND_NEU); }
   if (fate == KIND_NEU) { return -0.1; }
   if (fate == kind) { return select(0.5, 0.15, fate == KIND_STEM); }
   return -0.15;

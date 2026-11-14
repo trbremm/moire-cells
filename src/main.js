@@ -19,7 +19,7 @@
 //   ?speed=N    simulation speed: 1, 2, 4 or 8 ticks of 1/60 s per 1/60 s of real time (keys [ and ])
 //   ?founders=N founder genomes at the start (0 = every cell its own)
 //   ?view=1     colour by lineage from the start (key V)
-//   ?bio=0      start with the biology rules off (D H B T M E): the loop alone
+//   ?bio=0      start with the biology rules off (D H B T M): the loop alone
 //   ?excl=0|1   step 7 exclusion off / on from the start (key 8); ?states=2..4 its number of states;
 //               ?flip=0|1 its state flip (key 9)
 //   ?partner=0|1 step 8, rule a: the partner A' felt as a phase current (key Z); ?change=0|1 rule b (key ,);
@@ -34,12 +34,12 @@
 //
 // Part C keys are Shift + a letter (every plain letter is taken by Parts A and B): checked before the plain keys,
 // so Shift+H never also toggles H.
-// Mouse: left tap drops (keys 1 2 3), left drag stirs; step C2's spotlight: right-drag moves it, the wheel tilts it,
+// Mouse: left tap drops (key 1: a ripple), left drag stirs; step C2's spotlight: right-drag moves it, the wheel tilts it,
 // Shift+wheel turns the direction the light comes from.
 
 import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown } from './gpu.js';
 import { Background } from './background.js';
-import { Medium, KIND } from './field.js';
+import { Medium } from './field.js';
 import { Landscape } from './landscape.js';
 import { Cells, DEFAULT_CELLS, ANCHORS } from './cells.js';
 import { Light } from './light.js';
@@ -129,8 +129,8 @@ async function boot() {
     if (flag('view')) cells.look.view = 1;
     if (flag('check')) cells.enableCheck();
     if (params.get('bio') === '0') {
-      // the loop alone: no fates, adhesion, body traits, turnover, mutation or nutrient/threat biology
-      Object.assign(cells.genome.rules, { diff: false, adh: false, body: false, turn: false, mut: false, nut: false });
+      // the loop alone: no fates, adhesion, body traits, turnover or mutation
+      Object.assign(cells.genome.rules, { diff: false, adh: false, body: false, turn: false, mut: false });
       cells.fields.sign = 1;   // like repels like: islands and a labyrinth of strands (key U flips)
       cells.excl.on = true;    // step 7 exclusion: pinwheel rosettes (key 8; the user chose it as this view's default)
     }
@@ -163,8 +163,6 @@ async function boot() {
   };
 
   resize();
-  landscape.seed();
-  for (const s of landscape.sources) background.impulse(s.x, s.y, 3);
   window.addEventListener('resize', resize);
   setupInput();
   if (flag('overlay')) overlayEl.hidden = false;
@@ -285,7 +283,7 @@ function drawOverlay() {
     `vendor ${esc(i.vendor || '?')} · arch ${esc(i.architecture || '?')}${i.device ? ' · device ' + esc(i.device) : ''}`,
     `canvas ${view.pxW}×${view.pxH} (dpr ${view.dpr.toFixed(2)}) · ${gpu.format}`,
     `ripple grid ${background.gw}×${background.gh} (${background.sc} css px/cell) · ambient ${background.ambient ? 'on' : 'off'}`,
-    `tap ${TAP_MODES[tapMode].name} · sources ${landscape.sources.length}/${landscape.params.maxSources} · landscape ${landscape.params.on ? 'on' : 'off'} · R ${medium.R.toFixed(2)} px · medium ${(medium.la0 * 180 / Math.PI).toFixed(2)}°`,
+    `tap ${TAP_MODES[tapMode].name} · landscape ${landscape.params.on ? 'on' : 'off'} · R ${medium.R.toFixed(2)} px · medium ${(medium.la0 * 180 / Math.PI).toFixed(2)}°`,
     ...cells.overlayLines(),
     `simmer (Shift+R) ${background.heatOn ? 'on' : 'off'}: ripple drops ${background.params.heatDrops} per cell per step x temperature², height ${background.params.heatAmp}`,
     `sim t ${simTime.toFixed(1)} s · speed ${speed}× · seed ${SEED}`,
@@ -299,29 +297,25 @@ function esc(s) {
 }
 
 // ---------- input ----------
-// what a click drops (keys 1, 2, 3)
+// what a click drops (key 1)
 const TAP_MODES = [
   { name: 'ripple', label: 'drop a ripple' },
-  { name: 'nutrient', label: 'drop a nutrient source', kind: KIND.NUT },
-  { name: 'threat', label: 'drop a threat source', kind: KIND.THR },
 ];
 let tapMode = 0;
 
 let allKeys = false;   // key ?: the short hint or the full key list
 function hintLine() {
-  const short = `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
+  const short = `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · ` +
     'N / G: new culture / genomes · V: view · [ ]: speed · F: stats · ⇧H ⇧E ⇧L: heat, entropy, light · ?: more';
   return allKeys ? fullHint() : short;
 }
 function fullHint() {
-  return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · \\: squeeze · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · .: sideways push · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats · Shift+H: jitter from heat / constant · Shift+E: entropy panel · Shift+R: ripples simmer with heat · Shift+L: light spot / full field / off · Shift+D: day and night · right-drag: move the spot · wheel: tilt it · Shift+wheel: turn where the light comes from';
+  return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · ` +
+    'L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · \\: squeeze · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · .: sideways push · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · I: inherit fate · V: view · [ ]: speed · F: stats · Shift+H: jitter from heat / constant · Shift+E: entropy panel · Shift+R: ripples simmer with heat · Shift+L: light spot / full field / off · Shift+D: day and night · right-drag: move the spot · wheel: tilt it · Shift+wheel: turn where the light comes from';
 }
 
 function tap(x, y) {
-  const m = TAP_MODES[tapMode];
-  if (m.kind === undefined) background.impulse(x, y, 2.5, 1.2 * background.sc);
-  else { landscape.addSource(x, y, m.kind); background.impulse(x, y, 3); }   // as the reference: a source lands with a ripple
+  background.impulse(x, y, 2.5, 1.2 * background.sc);
 }
 
 function setupInput() {
@@ -400,12 +394,9 @@ function setupInput() {
     } else if (k === 'a') {
       background.ambient = !background.ambient;
       flash(`ambient ripples ${background.ambient ? 'on' : 'off'}`);
-    } else if (k === '1' || k === '2' || k === '3') {
-      tapMode = Number(k) - 1;
+    } else if (k === '1') {
+      tapMode = 0;
       flash(`click drops: ${TAP_MODES[tapMode].name}`);
-    } else if (k === 'c') {
-      landscape.clear();
-      flash('sources cleared');
     } else if (k === 'n' || k === 'g') {
       cells.seed(k === 'g');
       background.impulse(view.cssW / 2, view.cssH / 2, 2);   // as the reference's seed()
@@ -430,10 +421,6 @@ function setupInput() {
       const r = cells.genome.rules;
       r.mut = !r.mut;
       flash(`mutation ${r.mut ? 'on: daughters differ a little from their parent' : 'off: daughters are exact copies'}`);
-    } else if (k === 'e') {
-      const r = cells.genome.rules;
-      r.nut = !r.nut;
-      flash(`nutrient and threat ${r.nut ? 'on: cells in nutrient divide more, threat kills' : 'off: the cells ignore the sources'}`);
     } else if (k === 'i') {
       const r = cells.genome.rules;
       r.inherit = !r.inherit;
@@ -540,7 +527,7 @@ function setupInput() {
       flash(`partner A' ${landscape.params.partner ? 'drawn (yellow dots, while a step 8 rule is on)' : 'not drawn'}`);
     } else if (k === 'l') {
       landscape.params.on = !landscape.params.on;
-      flash(`landscape ${landscape.params.on ? 'on' : 'off'}`);
+      flash(`landscape ${landscape.params.on ? 'on' : 'off: no halftone dots'}`);
     }
   });
 }

@@ -42,6 +42,7 @@ const BRUTE_MAX = 20000;       // largest count the ?check brute force runs on
 const STATS_BYTES = 8192;      // struct Stats in cell_common.wgsl (counters, events, census)
 const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder bitmap) in struct Stats
 const STATS_EVENTS = 64;
+const MAX_SRC = 16;            // sources the cells feel (MAX_CELL_SOURCES in cell_common.wgsl)
 
 export class Cells {
   constructor(device, format, medium, count, seed) {
@@ -123,7 +124,8 @@ export class Cells {
       return { bgl, pl: d.createPipelineLayout({ label, bindGroupLayouts: [bgl] }) };
     };
     this.gridL = layout('cell grid', [sim, ro(1), rw(2), rw(3), rw(4), rw(5), rw(6), rw(7)]);
-    this.stepL = layout('cell step', [sim, ro(1), ro(2), ro(3), ro(4), rw(5), ro(6), rw(7), rw(8)]);
+    const un = (binding) => ({ binding, visibility: C, buffer: { type: 'uniform' } });
+    this.stepL = layout('cell step', [sim, ro(1), ro(2), ro(3), ro(4), rw(5), ro(6), rw(7), rw(8), un(9), un(10)]);
     this.censusL = layout('cell census', [sim, ro(1), ro(2), rw(3)]);
     this.checkL = layout('cell check', [sim, ro(1), ro(2), ro(3), ro(4), ro(5), rw(6),
       { binding: 7, visibility: C, buffer: { type: 'uniform' } }]);
@@ -151,6 +153,11 @@ export class Cells {
     this.stats = null;          // last census, for the overlay (see readStats)
     this.statsHist = [];        // [time, births, deaths] for births / deaths per second
     this.onEvents = null;       // callback(events) for births and deaths (main.js drops ripples)
+    // the sources as the cells feel them (nutrient, threat), written every frame from the landscape
+    this.srcBuf = d.createBuffer({ label: 'cell sources', size: MAX_SRC * 32, usage: U.UNIFORM | U.COPY_DST });
+    this.srcData = new Float32Array(MAX_SRC * 8);
+    this.srcCount = 0;
+    this.landscape = null;      // set by main.js
     this.simBuf = d.createBuffer({ label: 'cell sim params', size: SLOTS * SLOT, usage: U.UNIFORM | U.COPY_DST });
     this.simAB = new ArrayBuffer(SLOTS * SLOT);
     this.simF = new Float32Array(this.simAB);
@@ -220,7 +227,7 @@ export class Cells {
       label: 'cell step', layout: this.stepL.bgl,
       entries: [{ binding: 0, resource: { buffer: this.simBuf, size: SIM_BYTES } }, b(1, this.sortedBuf),
         b(2, this.sortIdxBuf), b(3, this.startsBuf), b(4, this.countsBuf), b(5, cellBuf),
-        b(6, bioPrev), b(7, bioNext), b(8, statsBuf)],
+        b(6, bioPrev), b(7, bioNext), b(8, statsBuf), b(9, this.medium.buffer), b(10, this.srcBuf)],
     });
   }
 
@@ -278,6 +285,7 @@ export class Cells {
     f[o + 32] = G.adhSigma; f[o + 33] = G.fateAdh; f[o + 34] = this.genome.rules.body ? 1 : 0; f[o + 35] = G.adhBase;
     f[o + 36] = this.genome.rules.body ? G.crawl : 0; f[o + 37] = G.turnRate;
     f[o + 38] = G.turnover; f[o + 39] = G.unhappy; f[o + 40] = G.mutSize; f[o + 41] = G.mutJump;
+    f[o + 42] = G.nutFar; f[o + 43] = G.thrKill; u[o + 44] = this.srcCount; f[o + 45] = G.beatMix;
   }
 
   /** Record the grid build for the tick whose uniforms are in slot k. */
@@ -310,6 +318,7 @@ export class Cells {
     this.warm -= warm;
     const ticks = warm + frame.ticks;
     if (!ticks) return;
+    this.writeSources();
     for (let t = 0; t < ticks; t++) {
       const time = frame.time - Math.max(0, ticks - 1 - t) * frame.tickDt * (t < warm ? 0 : 1);
       this.writeSim(t, frame.tickDt, time);
@@ -324,6 +333,18 @@ export class Cells {
       this.encodeStep(encoder, t);
     }
     this.maybeCensus(encoder, ticks - 1, frame);
+  }
+
+  /** Upload the sources as the cells feel them (once per frame; none while the rule is off). */
+  writeSources() {
+    const L = this.landscape, a = this.srcData;
+    const list = L && this.genome.rules.nut ? L.sources.slice(-MAX_SRC) : [];
+    const r0sq = L ? (L.params.range * this.medium.R) ** 2 : 1, ref = L ? L.params.amp : 1;
+    list.forEach((s, k) => {
+      a.set([s.x, s.y, s.la, s.amp / ref, r0sq, s.kind, 0, 0], 8 * k);
+    });
+    this.srcCount = list.length;
+    if (list.length) this.device.queue.writeBuffer(this.srcBuf, 0, a, 0, 8 * list.length);
   }
 
   // ---------- stats: census and read-back for the overlay ----------
@@ -445,7 +466,7 @@ export class Cells {
       lines.push(`fates: stem <b>${F[0]}</b> · epithelium <b>${F[1]}</b> · muscle <b>${F[2]}</b> · neuron <b>${F[3]}</b> · cartilage <b>${F[4]}</b>`);
       lines.push(`lineages: ${st.founders} founder lines · ${st.clusters} key clusters · births ${st.birthRate.toFixed(1)}/s · deaths ${st.deathRate.toFixed(1)}/s`);
     }
-    lines.push(`rules: D differentiation ${on(r.diff)} · H adhesion ${on(r.adh)} · B body ${on(r.body)} · T turnover ${on(r.turn)} · M mutation ${on(r.mut)} · view ${this.look.view ? 'lineage' : 'fate'}`);
+    lines.push(`rules: D differentiation ${on(r.diff)} · H adhesion ${on(r.adh)} · B body ${on(r.body)} · T turnover ${on(r.turn)} · M mutation ${on(r.mut)} · E nutrient/threat ${on(r.nut)} · view ${this.look.view ? 'lineage' : 'fate'}`);
     if (c) {
       lines.push(`grid check: ${c.contacts / 2} contacts` + (c.brute ? ` (brute force ${c.bruteContacts / 2}, ${c.mismatch} cells differ)` : '') +
         ` · ${c.badSort} bad slots · overlap mean ${(100 * c.ovMean).toFixed(1)}% max ${(100 * c.ovMax).toFixed(1)}%`);

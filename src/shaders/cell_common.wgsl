@@ -68,8 +68,12 @@ struct Sim {
   unhappy: f32,     // extra death rate for cells that recognise none of their neighbours (x turnover)
   mutSize: f32,     // size of the small mutations (1 = the steps in mutate())
   mutJump: f32,     // chance per birth that one gene jumps to a fresh random value
-  pad6: f32,
-  pad7: f32,
+  nutFar: f32,      // share of births that go to well-fed cells anywhere in the dish (when any feel nutrient)
+  thrKill: f32,     // death rate x (1 + thrKill x the threat a cell feels)
+  srcCount: u32,    // sources in the Sources uniform (0 = nutrient and threat rule off)
+  beatMix: f32,     // 1 = cells feel the sources' beat (the halftone rosettes), 0 = only the smooth envelope
+  pad8: f32,
+  pad9: f32,
 };
 
 // fate-typical body: size and motility factors per fate (stem, epithelium, muscle, neuron, cartilage)
@@ -107,7 +111,37 @@ struct Bio {
   relay: vec4f,     // per fate channel: how a committed neighbour's signal on that channel feeds it (-1..1)
   body: vec4f,      // x adhesion, y size factor, z motility factor, w spare
   acc: vec4f,       // state, not genes: the four leaky accumulators
+  env: vec4f,       // state: x nutrient, y threat felt last tick (neighbours read it when picking a parent)
 };
+
+// The sources (nutrient, threat) for the cells: two vec4 per source, written by src/cells.js every frame:
+// (x, y, lattice angle, strength relative to a fresh source), (envelope range squared, kind, 0, 0).
+const MAX_CELL_SOURCES: u32 = 16u;
+struct Sources {
+  s: array<vec4f, 32>,
+};
+
+// What a cell at p feels from the sources: (nutrient, threat). The same beat as the landscape draws (the
+// emitter's lattice against the medium's), positive part only, so cells feel the halftone rosettes.
+fn feel_sources(S: Sim, src: Sources, med: Medium, p: vec2f) -> vec2f {
+  var out = vec2f(0.0);
+  for (var k = 0u; k < min(S.srcCount, MAX_CELL_SOURCES); k++) {
+    let a = src.s[2u * k];
+    let b = src.s[2u * k + 1u];
+    var e: Emitter;
+    e.pos = a.xy;
+    e.la = a.z;
+    e.amp = a.w;
+    e.r0sq = b.x;
+    e.fa = 1.0; e.fb = 0.0; e.fd = 1.0;
+    e.kind = u32(b.y);
+    e._pad = 0u;
+    let bt = make_beat(e, med);
+    let v = bt.amp * beat_envelope(bt, p) * max(0.0, mix(1.0, beat_sum(bt, med, p) / 3.0, S.beatMix));
+    if (e.kind == KIND_THR) { out.y += v; } else { out.x += v; }
+  }
+  return out;
+}
 
 const KEY_SPAN: f32 = 1.0471975512;   // key angles live in [0, 60 degrees)
 const KEY_SMAX: f32 = 0.15;           // key scales live in [-0.15, 0.15]

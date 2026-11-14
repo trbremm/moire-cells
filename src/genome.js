@@ -8,12 +8,13 @@
 //   relay  per fate channel: a committed neighbour's signal on that channel -> accumulator
 //   body   x adhesion, y size factor, z motility factor, w spare
 //   acc    state (not inherited as genes): the four leaky accumulators
+//   env    state: x nutrient, y threat the cell felt last tick
 // The key is the cell's own lattice (Cell.la and Cell.aux carry copies), so it shows in the dot pattern.
 //
 // Seeding: `founders` random genomes (0 = every cell its own), each cell a copy of one of them, scattered at
 // random. A seeded random generator (?seed=N) makes the start repeatable.
 
-export const BIO_FLOATS = 24;
+export const BIO_FLOATS = 28;
 export const BIO_BYTES = BIO_FLOATS * 4;
 
 export const KEY_SPAN = Math.PI / 3;
@@ -76,6 +77,9 @@ export class Genome {
       unhappy: 2,       // extra death rate (x turnover) for a cell that recognises none of its neighbours
       mutSize: 1,       // size of the small mutations at each birth (key M switches mutation)
       mutJump: 0.03,    // chance per birth that one gene is drawn afresh
+      nutFar: 0.3,      // share of births that go to well-fed cells anywhere (key E switches nutrient and threat)
+      thrKill: 6,       // death rate x (1 + thrKill x the threat a cell feels)
+      beatMix: 1,       // 1 = cells feel the beat (halftone rosettes), 0 = only the smooth envelope
       ripple: 0.4,      // ripple strength of a birth (a death dips by 0.7 of it); 0 = none
     };
     this.rules = { diff: true, adh: true, body: true, turn: true, mut: true, nut: true, inherit: false };
@@ -106,7 +110,7 @@ export class Genome {
       const g = this.founders.length ? this.founders[Math.floor(this.rng() * this.founders.length)] : randomGenome(this.rng, i);
       const o = i * BIO_FLOATS;
       for (let k = 0; k < BIO_FLOATS; k++) f[o + k] = g[k];
-      for (let k = 20; k < 24; k++) f[o + k] = 0;   // accumulators start empty
+      for (let k = 20; k < 28; k++) f[o + k] = 0;   // accumulators and felt sources start empty
       keys[2 * i] = g[0]; keys[2 * i + 1] = g[1];
     }
     return keys;

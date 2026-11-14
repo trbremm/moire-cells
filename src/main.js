@@ -96,6 +96,7 @@ async function boot() {
     medium = new Medium(gpu.device);
     landscape = await Landscape.create(gpu.device, gpu.format, medium);
     cells = await Cells.create(gpu.device, gpu.format, medium, Number(params.get('cells')) || DEFAULT_CELLS, SEED);
+    cells.landscape = landscape;
     if (params.has('founders')) cells.genome.params.founders = Number(params.get('founders')) || 0;
     if (flag('view')) cells.look.view = 1;
     if (flag('check')) cells.enableCheck();
@@ -226,7 +227,7 @@ let tapMode = 0;
 
 function hintLine() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · V: view · [ ]: speed · F: stats';
+    'C: clear · L: landscape · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · V: view · [ ]: speed · F: stats';
 }
 
 function tap(x, y) {
@@ -307,6 +308,10 @@ function setupInput() {
       const r = cells.genome.rules;
       r.mut = !r.mut;
       flash(`mutation ${r.mut ? 'on: daughters differ a little from their parent' : 'off: daughters are exact copies'}`);
+    } else if (k === 'e') {
+      const r = cells.genome.rules;
+      r.nut = !r.nut;
+      flash(`nutrient and threat ${r.nut ? 'on: cells in nutrient divide more, threat kills' : 'off: the cells ignore the sources'}`);
     } else if (k === 'v') {
       cells.look.view = cells.look.view ? 0 : 1;
       flash(`colour by ${cells.look.view ? 'lineage (key)' : 'fate'}`);

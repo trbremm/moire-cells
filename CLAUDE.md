@@ -74,26 +74,48 @@ Proposed stack (a proposal, not yet confirmed by the user or tried here):
 - CHECK THE CURRENT wgpu-py DOCS before writing code (how to request the Vulkan backend, the window/canvas
   API, compute pipeline setup). Do not rely on memory for these; the API has changed between versions.
 
-Build order (each step ends in something the user can look at; commit after each):
+Build order (each step ends in something the user can look at; commit after each). Agreed principle:
+minimal core first, then ONE rule at a time, so the user can see what each rule alone changes:
 1. Window + Vulkan check: open a window, print the adapter name and backend, draw the viscous background
    (ripple field + sheen) as a full-screen shader. Confirms the stack works on this GPU.
-2. Landscape shader: sources only, full resolution, same formula as the reference.
-3. Cells on the GPU: state in buffers; compute pass for forces, with a uniform grid for neighbours
-   (count, prefix sum, scatter; or sort by cell index). Contact forces first, then membrane sensing.
-4. Draw cells: instanced quads, glow body + inner dot grid, stretched by each cell's deformation.
-5. Biology: division and death change the cell count. Simplest route: fixed-capacity buffers with an alive
-   flag, and do fate choice, division and death on the CPU every few frames from a read-back, or with an
-   atomic counter in the compute shader. Decide when reached.
-6. Full landscape including every cell's field (the reason to go to the GPU), then scale up the cell count.
-7. Mouse: tap to drop stem cells / nutrient / threat, drag to stir.
+   Also set up a screenshot-to-file key or flag, so Claude can look at frames.
 
-Goals: many more cells (thousands to tens of thousands); a full-resolution landscape that includes every
-cell's field, not only the sources'; 60 fps on the GTX 1650.
-Keep `reference/neon_organoid_cpu.html` as the behavioural reference; try rule changes there first when quicker.
+   PART A — minimal core (no biology: no division, death, fates or adhesion matrix)
+2. One field, sources only: full-resolution landscape shader, same beat formula as the reference
+   (emitter lattice against the medium lattice, power-law envelope). Mouse drops sources.
+3. Cells on the GPU, fixed count (start ~2 000): state in buffers; compute pass with a uniform grid for
+   neighbours (count, prefix sum, scatter; or sort by grid index). Soft contact push only. Draw as instanced
+   quads: glow body + inner dot grid.
+4. The loop: membrane sensing (segment integrals), force, deformation, strained lattice — ported from the
+   reference. Cells now emit into the field too, and the landscape shader includes every cell's field.
+   LOOK HERE FIRST: what do thousands of cells do with only the loop? Tune the lever (how different the grids
+   are) until patterns win over flicker. Do not move on until this is worth watching.
+5. Second field with a different range and sign rule (e.g. long-range attraction + mid-range like-repels-like).
+   Fields are separate sums in separate lattice bands, each drawn in its own colour. Look for clusters of a
+   preferred size, stripes, regular spacing.
+6. Leak by deformation: strained cells couple into the neighbouring band. Then conversion rules in the cell
+   (feeling A above a threshold emits B). One rule at a time; keep only what makes it more interesting.
+7. Exclusion: same-type cells in the same internal state (lattice angle) repel hard up close; different
+   states pack closer. Look for shells filling up around an attractor.
+8. Orthogonal partner fields: quarter-period partner lattice; a change in A makes the cell emit B and vice
+   versa; partner pushes sideways to motion. Look for travelling waves, spirals, rotating clusters.
+
+   PART B — biology on top (only once Part A is worth watching)
+9. Division and death (cell count changes): fixed-capacity buffers with an alive flag; do it on the CPU every
+   few frames from a read-back, or with an atomic counter in the compute shader. Decide when reached.
+10. Fates and tissues, driven by the fields rather than by the hand-written neighbour rules of the reference
+   where possible. Nutrient is eaten, threat kills. Neuron links and pulses if still wanted.
+11. Polish: tap modes, stirring, legend/scale-bar overlay, performance (target 60 fps on the GTX 1650 with
+   thousands to tens of thousands of cells).
+
+Each new rule gets an on/off key, so its effect can be seen by toggling it.
+Keep `reference/neon_organoid_cpu.html` as the behavioural reference for the loop (step 4) and the biology
+(Part B); the multi-field ideas in "Design direction" below are new and have no reference.
 Claude cannot see the window: after each step, ask the user what they see, or save a screenshot to a file
 and read it.
 
 ## Design direction: several separate fields, like the forces of matter (user idea, 2026-11-14; not built)
+This is the heart of the project now (build steps 5–8 above); the user is excited about it.
 The user's picture: different fields as matter has, each with its own decay law, which do not mix by themselves
 and only "leak" into each other through interaction rules carried by the cells (their example: Pauli exclusion).
 Proposed shape (Claude's suggestion, open to change):

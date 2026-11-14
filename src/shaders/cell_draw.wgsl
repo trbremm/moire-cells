@@ -95,8 +95,9 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   if (disc <= 0.0) { discard; }
   let col = cell_colour(c.kind);
 
-  let dot = select(0.0, cover(D.dotR * s, dd, aad) * cover(c.r - D.lineW - 0.12 * D.R, d, aa), D.dots > 0.0);
-  let ring = 1.0 - cover(c.r - D.lineW, d, aa);   // clean outline at the rim
+  let lw = min(D.lineW, 0.22 * c.r);              // thinner outline on small cells, so they do not turn solid
+  let dot = select(0.0, cover(D.dotR * s, dd, aad) * cover(c.r - lw - 0.12 * D.R, d, aa), D.dots > 0.0);
+  let ring = 1.0 - cover(c.r - lw, d, aa);        // clean outline at the rim
   var rgb = mix(col * D.fill, col * D.dots, dot);
   rgb = mix(rgb, col * D.line, ring);
   let a = disc * mix(D.fillA, 1.0, max(ring, dot));

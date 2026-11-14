@@ -199,6 +199,11 @@ export class Cells {
       lag: 1.0,       // clock: ... toward their hand turned back by this much (rad). The lag slows a clock that is in
                       // step with its neighbours, to omega - pull x sin(lag) (here 1.2 rad/s: a turn in 5 s), and makes
                       // the waves travel: the culture's rim leads, rings run inward. 0 = plain alignment, all in step
+      // rule c (key .): sideways push, the partner's force at right angles
+      side: false,
+      sideGain: 1,    // mode 0: x field A's force (the partner's gradient force, turned 90 degrees); mode 1: rad per s
+                      // of turning at full A'
+      sideMode: 0,    // 0 = the partner's gradient force turned 90 degrees, 1 = perpendicular to the cell's motion
       eps: 0.05,      // the current is divided by A^2 + A'^2 + eps^2 (the pair as weighted on the membrane: field A x
                       // the sign table x tuning; loop only about 0.2 to 0.4)
     };
@@ -360,7 +365,7 @@ export class Cells {
   emitting() { return !!this.params.emit; }
 
   /** Step 8: whether any partner rule is on (then the step works out the partner A'). */
-  partnerOn() { const P = this.partner; return !!(P.on || P.change); }
+  partnerOn() { const P = this.partner; return !!(P.on || P.change || P.side); }
 
   /** Step 8: whether the partner A' is drawn (only while a partner rule is on, so the page is as before otherwise). */
   partnerDrawn() { return this.emitting() && this.partnerOn(); }
@@ -502,6 +507,7 @@ export class Cells {
     f[32] = P.on ? P.gain : 0; f[33] = Math.max(0.01, P.sat); f[34] = Math.max(1e-4, P.eps); u[35] = this.partnerOn() ? 1 : 0; f[36] = P.arrow ? 1 : -1;
     f[37] = P.change ? (P.chMode ? P.pull : P.chGain) : 0; f[38] = Math.max(1e-3, P.chTau); f[39] = Math.max(0.01, P.chMax); f[40] = P.chSign;
     u[41] = P.chMode ? 1 : 0; f[42] = P.omega; f[43] = P.lag;
+    f[44] = P.side ? (P.sideMode ? P.sideGain / 60 : P.sideGain) : 0; u[45] = P.sideMode ? 1 : 0;
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -737,6 +743,7 @@ export class Cells {
    *          halved (so a rigid rotation gives swirl = spin everywhere), in deg/s: the RMS over the bins (any sign),
    *          and the RMS left after taking out the culture's own spin (eddies, counter-rotating patches)
    *   eddies bins whose own swirl, minus the spin, is above 3 deg/s, and how many of them turn each way
+   *   keep   how the bins' eddy turning correlates with the read-back before (persistent eddies near 1)
    */
   rotation(f, prev, dt, cx, cy) {
     const n = this.count, R = this.R, W = this.view.cssW, H = this.view.cssH;
@@ -755,6 +762,8 @@ export class Cells {
     const spin = I > 0 ? L / I : 0;                       // rad/s, + = clockwise on screen (y points down)
     for (let g = 0; g < gw * gh; g++) if (cnt[g]) { vx[g] /= cnt[g]; vy[g] /= cnt[g]; }
     let s2 = 0, e2 = 0, nb = 0, cw = 0, ccw = 0;
+    const vort = new Float32Array(gw * gh).fill(NaN), pv = this.rotPrev;
+    let pc = 0, pa = 0, pb = 0;
     const deg = 180 / Math.PI, ok = (g) => cnt[g] >= 4;
     for (let y = 1; y < gh - 1; y++) {
       for (let x = 1; x < gw - 1; x++) {
@@ -762,10 +771,16 @@ export class Cells {
         if (!ok(g) || !ok(g - 1) || !ok(g + 1) || !ok(g - gw) || !ok(g + gw)) continue;
         const w = 0.5 * ((vy[g + 1] - vy[g - 1]) - (vx[g + gw] - vx[g - gw])) / (2 * b);   // half the vorticity
         s2 += w * w; e2 += (w - spin) ** 2; nb++;
+        vort[g] = w - spin;
+        if (pv && pv.length === vort.length && !Number.isNaN(pv[g])) { pc += vort[g] * pv[g]; pa += vort[g] ** 2; pb += pv[g] ** 2; }
         if ((w - spin) * deg > 3) cw++; else if ((w - spin) * deg < -3) ccw++;
       }
     }
-    const S = { spin: spin * deg, swirl: nb ? Math.sqrt(s2 / nb) * deg : 0, eddy: nb ? Math.sqrt(e2 / nb) * deg : 0, bins: nb, cw, ccw };
+    this.rotPrev = vort;
+    // persistence: correlation of each bin's eddy turning with its value one read-back earlier (1 = the same eddies keep
+    // turning the same way, -1 = they reverse, about 0 = new eddies every time)
+    const keep = pa > 0 && pb > 0 ? pc / Math.sqrt(pa * pb) : null;
+    const S = { spin: spin * deg, swirl: nb ? Math.sqrt(s2 / nb) * deg : 0, eddy: nb ? Math.sqrt(e2 / nb) * deg : 0, bins: nb, cw, ccw, keep };
     // smoothed over about 5 s, as the 1 s numbers are noisy
     const P = this.rotSmooth, k = P ? 1 - Math.exp(-dt / 5) : 1;
     this.rotSmooth = P ? { spin: P.spin + (S.spin - P.spin) * k, swirl: P.swirl + (S.swirl - P.swirl) * k, eddy: P.eddy + (S.eddy - P.eddy) * k } : { ...S };
@@ -847,7 +862,8 @@ export class Cells {
     if (ro && rs) {
       lines.push(`rotation (deg/s, + clockwise; 5 s mean in brackets): culture spin ${ro.spin.toFixed(2)} (${rs.spin.toFixed(2)})` +
         ` · local swirl rms ${ro.swirl.toFixed(1)} (${rs.swirl.toFixed(1)}) · eddies after the spin rms ${ro.eddy.toFixed(1)} (${rs.eddy.toFixed(1)})` +
-        ` · bins of 6 R turning > 3 deg/s: ${ro.cw} clockwise, ${ro.ccw} anticlockwise of ${ro.bins}`);
+        ` · bins of 6 R turning > 3 deg/s: ${ro.cw} clockwise, ${ro.ccw} anticlockwise of ${ro.bins}` +
+        ` · eddies kept from the last second ${ro.keep == null ? '-' : ro.keep.toFixed(2)}`);
     }
     const F = this.fields, L = this.landscape;
     lines.push(`field B: Q felt ${on(F.on)} · J drawn ${on(L && L.params.fieldB)} · U like ${F.sign > 0 ? 'repels' : 'attracts'} like · like = ${F.like ? 'similar key (lineage)' : 'charge'}` +
@@ -873,6 +889,7 @@ export class Cells {
     const P = this.partner;
     lines.push(`step 8, partner A': Z phase current ${on(P.on)} (gain ${P.gain}, sat ${P.sat} R/s, eps ${P.eps}) · waves ${P.arrow ? 'one way (arrow)' : 'symmetric'}` +
       ` · , change makes partner ${on(P.change)} ' ${P.chMode ? `clock (${P.omega} rad/s, pull ${P.pull} rad/s, lag ${P.lag})` : `felt change (gain ${P.chGain} s, follow ${P.chTau} s, cap ${P.chMax}, sign ${P.chSign})`}` +
+      ` · . sideways push ${on(P.side)} (${P.sideMode ? 'across the motion' : 'partner force turned 90°'}, gain ${P.sideGain})` +
       (st && st.step8 ? ` · phasor off (1,0) by > 0.25: ${st.step8.moved} cells, mean ${(st.step8.dev / 1000 / Math.max(1, this.count)).toFixed(3)}` : '') + ` · ; drawn ${on(L && L.params.partner)}`);
     if (c) {
       lines.push(`grid check: ${c.contacts / 2} contacts` + (c.brute ? ` (brute force ${c.bruteContacts / 2}, ${c.mismatch} cells differ)` : '') +

@@ -381,6 +381,25 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     }
   }
 
+  // step 8, rule c, sideways push: the partner's force at right angles ((x, y) -> (-y, x): a quarter turn clockwise on
+  // screen, as y points down; a negative gain turns the other way). Mode 0: the partner A''s membrane force
+  // (area x its gradient, scaled and saturating as field A's) turned 90 degrees. Mode 1: the velocity turned 90 degrees,
+  // times the A' felt (softly saturated), so a moving cell's path curls one way where A' is positive, the other where
+  // it is negative.
+  if (partner && FL.side != 0.0) {
+    if (FL.sideMode == 0u) {
+      let g = FL.side * S.sense * 3.38 * c.r * S.R * pP.xy;
+      var fs = vec2f(-g.y, g.x);
+      let fm = length(fs);
+      let sat = S.senseMax * S.R;
+      if (fm > 1e-6) { fs *= sat * tanh(fm / sat) / fm; }
+      f += fs;
+    } else {
+      let a = tanh(pP.z / max(abs(pA.z), FL.pEps));
+      f += FL.side * a * vec2f(-c.vel.y, c.vel.x) / max(1.0 - S.damping, 1e-3);
+    }
+  }
+
   // gentle pull to the middle, slow drift of the medium (as the reference)
   f += (S.centre - c.pos) * S.pull;
   f += S.drift * S.R * vec2f(sin(c.pos.y * 0.011 + S.time * 0.10), sin(c.pos.x * 0.012 - S.time * 0.08));

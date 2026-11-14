@@ -24,13 +24,21 @@ choose the browser, set "High performance", restart the browser.
 
 ## Keys and mouse
 
-- click: drop a ripple · drag: stir
+- click: drop what the tap mode says · drag: stir
+- **1** / **2** / **3**: tap mode: ripple / nutrient source / threat source (the hint line shows the mode)
+- **C**: clear all sources
+- **L**: landscape glow on/off (the sources' ring markers stay)
 - **F**: frame time and adapter overlay
 - **A**: ambient ripples on/off (random drops standing in for the cells' divisions and deaths)
 
+A fresh load starts with the reference's sources: two nutrient (green), one threat (red). At most 6 sources,
+as in the reference; one more replaces the oldest (`moire.landscape.params.maxSources`, up to 64).
+Sources do not drift, fade or get eaten yet.
+
 URL options: `?overlay=1` (overlay from the start), `?ripple=1` (a ripple every 0.7 s),
 `?debug=1` (console warnings into the overlay), `?nogpu=1` (show the no-WebGPU message).
-In the browser console, `moire.background.params` holds live-tunable numbers.
+In the browser console, `moire.background.params`, `moire.landscape.params` and `moire.medium.params` hold
+live-tunable numbers.
 
 ## Files
 
@@ -39,6 +47,11 @@ In the browser console, `moire.background.params` holds live-tunable numbers.
   the loop runs every layer's compute passes, then draws all layers into one render pass
 - `src/gpu.js`: adapter/device setup, fallback and error messages, shader loading with readable errors
 - `src/background.js` + `src/shaders/ripple_*.wgsl`, `background_draw.wgsl`: the viscous background
+- `src/shaders/field_common.wgsl`: the field's maths (lattices, beat against the medium, envelope), shared by
+  every shader that draws or senses the field; `src/field.js` prepends it (`loadFieldShader`) and owns the
+  medium's breathing lattice (`Medium`, a layer that runs first)
+- `src/landscape.js` + `src/shaders/field_prep.wgsl`, `landscape_draw.wgsl`: the sources, their per-frame beat
+  prep, and the per-pixel green / red landscape with ring markers
 - `tools/shot.py`: headless screenshots (below)
 
 ## Screenshots without a browser tool

@@ -676,15 +676,60 @@ export class Cells {
           if (dd < 8 * R * dt) { net += dd; nNet++; }   // a reborn cell jumps; leave those out
         }
       }
+      const rot = prev && dt > 0.2 ? this.rotation(f, prev.pos, dt, cx, cy) : null;
       const pos = new Float32Array(2 * n);
       for (let i = 0; i < n; i++) { pos[2 * i] = f[i * CELL_FLOATS]; pos[2 * i + 1] = f[i * CELL_FLOATS + 1]; }
       this.motionPrev = { time, pos };
-      this.motion = { time, speed: sp / n, net: nNet ? net / nNet / dt : null, stretch: st / n, spread: Math.sqrt(r2 / n) / R };
+      this.motion = { time, speed: sp / n, net: nNet ? net / nNet / dt : null, stretch: st / n, spread: Math.sqrt(r2 / n) / R, rot };
     } catch (e) {
       // device lost or page closing
     } finally {
       this.motionBusy = false;
     }
+  }
+
+  /**
+   * Rotation, from the displacements over the last read-back interval (step 8): positions f (Cell layout) now,
+   * prev (x, y pairs) dt seconds ago, about the culture's centre (cx, cy).
+   *   spin   the whole culture's turning rate (deg/s; + = clockwise on screen): the best rigid-rotation fit,
+   *          sum(r x v) / sum(r^2)
+   *   swirl  local turning: the velocity averaged in square bins (6 R), its vorticity by central differences,
+   *          halved (so a rigid rotation gives swirl = spin everywhere), in deg/s: the RMS over the bins (any sign),
+   *          and the RMS left after taking out the culture's own spin (eddies, counter-rotating patches)
+   *   eddies bins whose own swirl, minus the spin, is above 3 deg/s, and how many of them turn each way
+   */
+  rotation(f, prev, dt, cx, cy) {
+    const n = this.count, R = this.R, W = this.view.cssW, H = this.view.cssH;
+    let L = 0, I = 0;
+    const b = 6 * R, gw = Math.max(3, Math.ceil(W / b)), gh = Math.max(3, Math.ceil(H / b));
+    const vx = new Float32Array(gw * gh), vy = new Float32Array(gw * gh), cnt = new Uint16Array(gw * gh);
+    for (let i = 0; i < n; i++) {
+      const o = i * CELL_FLOATS, x = f[o], y = f[o + 1];
+      const ux = (x - prev[2 * i]) / dt, uy = (y - prev[2 * i + 1]) / dt;
+      if (Math.hypot(ux, uy) > 8 * R) continue;          // a reborn cell jumps; leave those out
+      const rx = x - cx, ry = y - cy;
+      L += rx * uy - ry * ux; I += rx * rx + ry * ry;
+      const g = Math.min(gh - 1, Math.max(0, Math.floor(y / b))) * gw + Math.min(gw - 1, Math.max(0, Math.floor(x / b)));
+      vx[g] += ux; vy[g] += uy; cnt[g]++;
+    }
+    const spin = I > 0 ? L / I : 0;                       // rad/s, + = clockwise on screen (y points down)
+    for (let g = 0; g < gw * gh; g++) if (cnt[g]) { vx[g] /= cnt[g]; vy[g] /= cnt[g]; }
+    let s2 = 0, e2 = 0, nb = 0, cw = 0, ccw = 0;
+    const deg = 180 / Math.PI, ok = (g) => cnt[g] >= 4;
+    for (let y = 1; y < gh - 1; y++) {
+      for (let x = 1; x < gw - 1; x++) {
+        const g = y * gw + x;
+        if (!ok(g) || !ok(g - 1) || !ok(g + 1) || !ok(g - gw) || !ok(g + gw)) continue;
+        const w = 0.5 * ((vy[g + 1] - vy[g - 1]) - (vx[g + gw] - vx[g - gw])) / (2 * b);   // half the vorticity
+        s2 += w * w; e2 += (w - spin) ** 2; nb++;
+        if ((w - spin) * deg > 3) cw++; else if ((w - spin) * deg < -3) ccw++;
+      }
+    }
+    const S = { spin: spin * deg, swirl: nb ? Math.sqrt(s2 / nb) * deg : 0, eddy: nb ? Math.sqrt(e2 / nb) * deg : 0, bins: nb, cw, ccw };
+    // smoothed over about 5 s, as the 1 s numbers are noisy
+    const P = this.rotSmooth, k = P ? 1 - Math.exp(-dt / 5) : 1;
+    this.rotSmooth = P ? { spin: P.spin + (S.spin - P.spin) * k, swirl: P.swirl + (S.swirl - P.swirl) * k, eddy: P.eddy + (S.eddy - P.eddy) * k } : { ...S };
+    return S;
   }
 
   // ---------- stirring (called by main.js on pointer moves) ----------
@@ -758,6 +803,12 @@ export class Cells {
     const mo = this.motion;
     lines.push(`loop: S sense ${on(p.senseOn)} · O emit ${on(p.emit)} · W active shape ${on(p.active)} · X beat ${ANCHORS[p.anchor] || p.anchor} · R tuning by ${p.receptor ? 'receptor' : 'own lattice'} · lever ${p.lever.toFixed(2)}` +
       (mo ? ` · speed ${mo.speed.toFixed(1)} px/s · net ${mo.net == null ? '-' : mo.net.toFixed(1)} px/s · stretch ${mo.stretch.toFixed(2)} · spread ${mo.spread.toFixed(1)} R` : ''));
+    const ro = mo && mo.rot, rs = this.rotSmooth;
+    if (ro && rs) {
+      lines.push(`rotation (deg/s, + clockwise; 5 s mean in brackets): culture spin ${ro.spin.toFixed(2)} (${rs.spin.toFixed(2)})` +
+        ` · local swirl rms ${ro.swirl.toFixed(1)} (${rs.swirl.toFixed(1)}) · eddies after the spin rms ${ro.eddy.toFixed(1)} (${rs.eddy.toFixed(1)})` +
+        ` · bins of 6 R turning > 3 deg/s: ${ro.cw} clockwise, ${ro.ccw} anticlockwise of ${ro.bins}`);
+    }
     const F = this.fields, L = this.landscape;
     lines.push(`field B: Q felt ${on(F.on)} · J drawn ${on(L && L.params.fieldB)} · U like ${F.sign > 0 ? 'repels' : 'attracts'} like · like = ${F.like ? 'similar key (lineage)' : 'charge'}` +
       ` · band ${F.band} · r0 ${F.r0} R · cut ${F.cut} R · gain ${F.gain} · charges ${F.chargeB.join(' ')}`);

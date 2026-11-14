@@ -55,7 +55,7 @@ const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder 
 const STATS_EVENTS = 64;
 const MAX_SRC = 16;            // sources the cells feel (MAX_CELL_SOURCES in cell_common.wgsl)
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
-const FIELDS_BYTES = 128;      // struct Fields in cell_common.wgsl
+const FIELDS_BYTES = 144;      // struct Fields in cell_common.wgsl
 const FIELD_FORMAT = 'rgba16float';
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
@@ -145,6 +145,13 @@ export class Cells {
                       // ?bio=0 sets 2, as the loop alone packs cells less densely)
       convDown: 2.0,  // ... and below which it converts back (?bio=0: 1.25)
       convTau: 1.0,   // the integrator's time constant (s)
+      // step 6, rule 3: relay through B (key 7; needs conversion on). The B of converted neighbours adds to the
+      // trigger, so conversion spreads; a converted cell tires and then rests (an excitable medium)
+      relayOnKey: false, // key 7
+      relay: 2,       // weight of the converted share of a cell's neighbourhood (within B's reach, weighted by B's
+                      // envelope) in the trigger: with 2, a quarter converted adds 0.5 to the A felt
+      relayOn: 2,     // seconds a cell stays converted
+      relayRest: 6,   // seconds it then rests before it can convert again
     };
     // drawing (live-tunable: moire.cells.look)
     this.fieldScale = 0.5;     // texels per CSS px of the cells' field texture
@@ -161,6 +168,7 @@ export class Cells {
       period: 0.62,   // dot spacing per lattice period, in units of R (the medium's period is 0.62 R)
       leakDot: 0.42,  // step 6: largest blue centre dot of a leaking cell, as a fraction of its radius (0 = none)
       leakMin: 0.2,   // leak level below which no dot is drawn
+      convFill: 0.55, // fill of a converted stem cell, as a fraction of field B's ink (outline: the ink itself)
     };
   }
 
@@ -254,8 +262,8 @@ export class Cells {
     this.simF = new Float32Array(this.simAB);
     this.simU = new Uint32Array(this.simAB);
 
-    this.drawU = d.createBuffer({ label: 'cell draw params', size: 80, usage: U.UNIFORM | U.COPY_DST });
-    this.drawData = new Float32Array(20);
+    this.drawU = d.createBuffer({ label: 'cell draw params', size: 96, usage: U.UNIFORM | U.COPY_DST });
+    this.drawData = new Float32Array(24);
     this.drawBG = d.createBindGroup({
       layout: this.drawPipe.getBindGroupLayout(0),
       entries: [
@@ -422,6 +430,7 @@ export class Cells {
     f[20] = F.emit ? 1 : 0; f[21] = F.strain;
     f[22] = F.leakOn ? F.leak : 0; f[23] = Math.max(0.005, F.leakW);
     f[24] = F.convOn ? F.conv : 0; u[25] = F.convMode ? 1 : 0; f[26] = F.convUp; f[27] = F.convDown; f[28] = F.convTau;
+    f[29] = F.relayOnKey ? F.relay : 0; f[30] = F.relayOn; f[31] = F.relayRest;
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -698,7 +707,7 @@ export class Cells {
       lines.push(`step 6: 4 leak ${on(F.leakOn)} (${s6.leak} cells leaking) · stretch p50 ${pct(s6.sHist, 0.5, 0.05).toFixed(2)} p90 ${pct(s6.sHist, 0.9, 0.05).toFixed(2)}` +
         ` · stretched > 0.35: ${s6.sHist.slice(7).reduce((x, y) => x + y, 0)} · leak level > 0.5: ${s6.lHist.slice(5).reduce((x, y) => x + y, 0)}`);
       lines.push(`step 6: 5 conversion ${on(F.convOn)} (${s6.conv} converted) · 6 mode ${F.convMode ? 'flip B charge' : 'boost B'} x${F.conv}` +
-        ` · up ${F.convUp} down ${F.convDown} · A felt p25 ${pct(s6.aHist, 0.25, 0.25).toFixed(2)} p50 ${pct(s6.aHist, 0.5, 0.25).toFixed(2)} p90 ${pct(s6.aHist, 0.9, 0.25).toFixed(2)}`);
+        ` · 7 relay ${on(F.relayOnKey)} · up ${F.convUp} down ${F.convDown} · A felt p25 ${pct(s6.aHist, 0.25, 0.25).toFixed(2)} p50 ${pct(s6.aHist, 0.5, 0.25).toFixed(2)} p90 ${pct(s6.aHist, 0.9, 0.25).toFixed(2)}`);
     }
     if (c) {
       lines.push(`grid check: ${c.contacts / 2} contacts` + (c.brute ? ` (brute force ${c.bruteContacts / 2}, ${c.mismatch} cells differ)` : '') +
@@ -784,7 +793,7 @@ export class Cells {
     // step 6 marks, in field B's ink (the landscape's), a little brighter than its halftone
     const F = this.fields, bc = this.landscape ? this.landscape.params.bColour : [128, 158, 255];
     a[14] = F.leakOn ? L.leakDot : 0; a[15] = L.leakMin;
-    a[16] = bc[0] / 255 * 0.85; a[17] = bc[1] / 255 * 0.85; a[18] = bc[2] / 255 * 0.85; a[19] = F.convOn ? 1 : 0;
+    a[16] = bc[0] / 255 * 0.85; a[17] = bc[1] / 255 * 0.85; a[18] = bc[2] / 255 * 0.85; a[19] = F.convOn ? 1 : 0; a[20] = L.convFill;
     this.device.queue.writeBuffer(this.drawU, 0, a);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG);

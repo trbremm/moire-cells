@@ -70,9 +70,13 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var gB = vec2f(0.0);
   // rule 2 (step 6), conversion: how much A this cell feels at its centre (its neighbours' A field, tuned)
   var aFelt = 0.0;
+  // rule 3 (step 6), relay through B: the share of the neighbourhood (weighted by B's envelope) that is converted
+  let relayOn = FL.conv > 0.0 && FL.relay > 0.0;
+  var relaySig = 0.0;
+  var relayAll = 0.0;
 
   // every neighbour within reach: contact push, and (differentiation on) recognition and signals
-  let rg = grid_range_n(S, grid_xy(S, c.pos), select(1, i32(FL.bReach), feelB));
+  let rg = grid_range_n(S, grid_xy(S, c.pos), select(1, i32(FL.bReach), feelB || relayOn));
   for (var gy = rg.y; gy <= rg.w; gy++) {
     for (var gx = rg.x; gx <= rg.z; gx++) {
       let g = grid_index(S, vec2i(gx, gy));
@@ -85,6 +89,11 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         let d = o.pos - c.pos;
         let R0 = c.r + o.r;
         let d2 = dot(d, d);
+        if (relayOn && d2 < cutB * cutB) {
+          let rw = cut_taper(d2, cutB) / (1.0 + d2 / beats[k].b2a.w);
+          relayAll += rw;
+          if ((o.flags & CELL_CONV) != 0u) { relaySig += rw; }
+        }
         if (feelB && d2 < cutB * cutB) {
           let ob = beats[k];
           // sign rule: like repels like (bSign 1). "Like" by charge: the two charges multiply (same sign
@@ -223,14 +232,24 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // rule 2 (step 6), conversion A -> B: the A felt goes through a leaky integrator (bio.env.z, time constant
   // convTau), and the cell converts above convOn and converts back below convOff (hysteresis, so it does not
   // flicker). A converted cell emits B more strongly, or of the other sign (cell_beat); it shows a blue outline.
-  bio.env.z += (aFelt - bio.env.z) * min(1.0, S.dt / max(FL.convTau, 1e-3));
-  if (FL.conv > 0.0) {
-    if (bio.env.w < 0.5 && bio.env.z > FL.convOn) { bio.env.w = 1.0; }
-    if (bio.env.w > 0.5 && bio.env.z < FL.convOff) { bio.env.w = 0.0; }
-  } else {
+  // Rule 3, relay through B: the B of converted neighbours adds to the trigger, so conversion spreads from cell to
+  // cell; and a converted cell tires after relayOn s, then rests relayRest s before it can convert again (an
+  // excitable medium: fronts travel, and the resting cells behind a front keep it from coming back).
+  bio.env.z += (aFelt + FL.relay * relaySig / max(relayAll, 1.0) - bio.env.z) * min(1.0, S.dt / max(FL.convTau, 1e-3));
+  if (FL.conv <= 0.0) {
     bio.env.w = 0.0;
+  } else if (!relayOn) {
+    bio.env.w = select(bio.env.w, 1.0, bio.env.w <= 0.0 && bio.env.z > FL.convOn);
+    if (bio.env.w > 0.0 && bio.env.z < FL.convOff) { bio.env.w = 0.0; }
+  } else if (bio.env.w < 0.0) {
+    bio.env.w = min(0.0, bio.env.w + S.dt);                       // resting
+  } else if (bio.env.w > 0.0) {
+    bio.env.w += S.dt;                                            // converted: tires, then rests
+    if (bio.env.w > FL.relayOn) { bio.env.w = -FL.relayRest; }
+  } else if (bio.env.z > FL.convOn) {
+    bio.env.w = S.dt;                                             // converts
   }
-  c.flags = select(c.flags & ~CELL_CONV, c.flags | CELL_CONV, bio.env.w > 0.5);
+  c.flags = select(c.flags & ~CELL_CONV, c.flags | CELL_CONV, bio.env.w > 0.0);
 
   // gentle pull to the middle, slow drift of the medium (as the reference)
   f += (S.centre - c.pos) * S.pull;

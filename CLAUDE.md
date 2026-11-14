@@ -302,7 +302,27 @@ C6. Engines in the genome (2-3 slots, mutate), pigments (cells catch a visible b
     Uphill: difference + spark (light outside; inside: difference from pigment light or the battery, spark from
     the battery). Battery-paid uphill engines are STORERS (bank energy as fuel).
     heat tolerance and permeability as genes, engines drawn as parts.
-C7. Pumps across contact: storing, sharing, stealing.
+C6b. CHARGE (user 2026-11-15): givers +1, takers -1, linkers 0, bonds neutral (every reaction already conserves
+    charge). A SCREENED charge field on the substrate grid (its own decay law: exponential cut-off, like charge in
+    salty water; one channel + a few relaxation passes per tick); free atoms drift in it, so fast light atoms
+    cannot run far from their opposite partners. A cell's charge in field B comes from the net charge of its
+    STOCK (replacing the fixed per-fate charges), so chemistry finally shapes the moire patterns. The charge
+    field is not drawn by default (optional thin crisp contour lines). Shape already couples in: a cell's field
+    is its own strained lattice, so a stretched charged cell projects a squeezed, elongated field (and can leak
+    into a neighbouring band, step 6).
+C6c. ELASTIC HONEYCOMB CELLS (user 2026-11-15: "cluster in honeycomb shape and deform elastically"): cells get a
+    real deformable outline instead of a stretched ellipse. Suggested shape: the membrane's 6 sides (the ones
+    sensing already uses) each with its own distance from the centre, plus an orientation that turns to face
+    neighbours; elastic: springs back toward round with area kept, underdamped so a pushed cell wobbles a little;
+    contact flattens the sides facing neighbours, so packed tissue tiles into hexagons and free edges stay
+    rounded. Drawn as crisp flat polygons (slightly rounded corners allowed), shared walls straight; the inner
+    parts (battery core, engines) sit inside. Sensing integrates along the real sides. Lively, not stiff.
+C6d. CHARGE PER SIDE (dipoles): each side holds its own charge (a cell that eats on one side gets charged
+    there); an outside field pulls the + and - ends opposite ways, so cells turn, line up and stretch along the
+    field, which strains their lattice and changes their field again (a form <-> field loop, like the loved
+    step 8 curls). Expect chains, head-to-tail threads, alternating stripes. Own switch.
+C7. Pumps across contact: storing, sharing, stealing. Membrane VOLTAGE (charge difference pumped across the
+    membrane) as a second battery; stealing charged atoms fights the voltage it builds.
 C8. Hard light mutates cells.
 
 ## Ground rules

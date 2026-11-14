@@ -227,7 +227,7 @@ let tapMode = 0;
 
 function hintLine() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · V: view · [ ]: speed · F: stats';
+    'C: clear · L: landscape · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
 }
 
 function tap(x, y) {
@@ -312,6 +312,10 @@ function setupInput() {
       const r = cells.genome.rules;
       r.nut = !r.nut;
       flash(`nutrient and threat ${r.nut ? 'on: cells in nutrient divide more, threat kills' : 'off: the cells ignore the sources'}`);
+    } else if (k === 'i') {
+      const r = cells.genome.rules;
+      r.inherit = !r.inherit;
+      flash(r.inherit ? "daughters inherit their parent's fate" : 'daughters start as stem cells');
     } else if (k === 'v') {
       cells.look.view = cells.look.view ? 0 : 1;
       flash(`colour by ${cells.look.view ? 'lineage (key)' : 'fate'}`);

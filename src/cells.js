@@ -49,10 +49,11 @@ const SLOT = 256;              // uniform slot stride (minUniformBufferOffsetAli
 const SLOTS = 128;             // ticks that can be encoded in one frame
 const BLOCK = 512;             // scan block (cell_grid.wgsl)
 const BRUTE_MAX = 20000;       // largest count the ?check brute force runs on
-const STATS_BYTES = 8448;      // struct Stats in cell_common.wgsl (counters, events, census, step 6 census)
+const STATS_BYTES = 8512;      // struct Stats in cell_common.wgsl (counters, events, census, step 6 census)
 const STATS_EXTRA = 8192;      // byte offset of Stats.extra (step 6 census: STATS_X_* in cell_common.wgsl)
 const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder bitmap) in struct Stats
 const STATS_EVENTS = 64;
+const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_AW in cell_common.wgsl)
 const MAX_SRC = 16;            // sources the cells feel (MAX_CELL_SOURCES in cell_common.wgsl)
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
 const FIELDS_BYTES = 144;      // struct Fields in cell_common.wgsl
@@ -138,18 +139,22 @@ export class Cells {
                       // wavevector, in units of the medium's wavenumber; an unstretched cell is about 0.33 away)
       // step 6, rule 2: conversion A -> B (key 5). A cell that feels enough A (through a leaky integrator, with
       // hysteresis) converts: it emits B more strongly (mode 0) or B of the other sign (mode 1; key 6)
-      convOn: false,  // key 5
+      convOn: true,   // key 5
       conv: 2,        // mode 0: a converted cell emits and feels B x (1 + conv); mode 1: x -conv
       convMode: 0,    // 0 = boost, 1 = flip (key 6). Flip pulls the loop-only culture into one blob
-      convUp: 3.0,    // the A felt above which a cell converts (see the A felt percentiles in the F overlay;
-                      // ?bio=0 sets 2, as the loop alone packs cells less densely)
-      convDown: 2.0,  // ... and below which it converts back (?bio=0: 1.25)
+      convAuto: true, // the thresholds below are quantiles of the A felt across the culture (from the census, smoothed
+                      // over about 20 s), as the A felt differs a lot between cultures (loop only, median 1.2 at 2000
+                      // cells and 2.4 at 10 000: the smaller cells sit in each other's bright cores). false: absolute
+      convUp: 0.9,    // the A felt above which a cell converts: with convAuto, the level that 90 % of the cells feel
+                      // less than (so about the top tenth can convert on its own)
+      convDown: 0.5,  // ... and below which it converts back (rule 2 alone; with convAuto, the median)
       convTau: 1.0,   // the integrator's time constant (s)
       // step 6, rule 3: relay through B (key 7; needs conversion on). The B of converted neighbours adds to the
       // trigger, so conversion spreads; a converted cell tires and then rests (an excitable medium)
-      relayOnKey: false, // key 7
-      relay: 2,       // weight of the converted share of a cell's neighbourhood (within B's reach, weighted by B's
-                      // envelope) in the trigger: with 2, a quarter converted adds 0.5 to the A felt
+      relayOnKey: true, // key 7
+      relay: 4,       // weight of the converted share of a cell's neighbourhood (within B's reach, weighted by B's
+                      // envelope) in the trigger, in units of the gap between the two thresholds: with 4, a cell that
+                      // feels the median A converts once a quarter of its neighbourhood has
       relayOn: 2,     // seconds a cell stays converted
       relayRest: 6,   // seconds it then rests before it can convert again
     };
@@ -382,6 +387,7 @@ export class Cells {
     this.device.queue.writeBuffer(this.cellBuf, 0, ab);
     this.device.queue.writeBuffer(this.bioBuf[this.bioCur], 0, bab);
     this.warm = Math.max(0, Math.round(this.params.warmup));
+    this.aQuant = null;         // step 6: the conversion thresholds re-learn the A felt
   }
 
   /** Pull toward the dish centre (1/s) that squeezes the middle of the blob by about params.squeeze. */
@@ -429,9 +435,18 @@ export class Cells {
     u[19] = Math.max(1, Math.min(4, Math.ceil(F.cut * this.R / this.grid.cs - 1e-6)));   // grid block radius for B's reach
     f[20] = F.emit ? 1 : 0; f[21] = F.strain;
     f[22] = F.leakOn ? F.leak : 0; f[23] = Math.max(0.005, F.leakW);
-    f[24] = F.convOn ? F.conv : 0; u[25] = F.convMode ? 1 : 0; f[26] = F.convUp; f[27] = F.convDown; f[28] = F.convTau;
+    const [up, down] = this.convThresholds();
+    f[24] = F.convOn ? F.conv : 0; u[25] = F.convMode ? 1 : 0; f[26] = up; f[27] = down; f[28] = F.convTau;
     f[29] = F.relayOnKey ? F.relay : 0; f[30] = F.relayOn; f[31] = F.relayRest;
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
+  }
+
+  /** Conversion thresholds (up, down) in units of A felt: quantiles of the culture's A felt when convAuto. */
+  convThresholds() {
+    const F = this.fields;
+    if (!F.convAuto) return [F.convUp, F.convDown];
+    const Q = this.aQuant;
+    return Q ? [Q.up, Q.down] : [1e9, 0];   // none converts before the first census
   }
 
   /** Record the grid build for the tick whose uniforms are in slot k. */
@@ -558,8 +573,25 @@ export class Cells {
       let founders = 0;
       for (let w = STATS_CENSUS / 4 + 144; w < STATS_EXTRA / 4; w++) { let x = u[w]; while (x) { x &= x - 1; founders++; } }
       // step 6: leaking and converted cells, histograms (STATS_X_* in cell_common.wgsl)
-      const X = u.subarray(STATS_EXTRA / 4, STATS_EXTRA / 4 + 64);
-      const step6 = { leak: X[0], conv: X[1], aHist: Array.from(X.subarray(2, 18)), sHist: Array.from(X.subarray(18, 28)), lHist: Array.from(X.subarray(28, 38)) };
+      const X = u.subarray(STATS_EXTRA / 4, STATS_EXTRA / 4 + 80);
+      const step6 = { leak: X[0], conv: X[1], aHist: Array.from(X.subarray(2, 50)), sHist: Array.from(X.subarray(50, 60)), lHist: Array.from(X.subarray(60, 70)) };
+      // the conversion thresholds (convAuto): quantiles of the A felt across the culture (from the histogram,
+      // interpolated in the bin), smoothed over about 20 s of simulation time
+      const tot = step6.aHist.reduce((x, y) => x + y, 0);
+      const quant = (p) => {
+        let acc = 0;
+        for (let k = 0; k < step6.aHist.length; k++) {
+          const h = step6.aHist[k];
+          if (acc + h >= p * tot) return (k + (p * tot - acc) / Math.max(h, 1)) * A_BIN;
+          acc += h;
+        }
+        return step6.aHist.length * A_BIN;
+      };
+      if (tot > 0) {
+        const F = this.fields, now = { up: quant(F.convUp), down: quant(F.convDown) }, Q = this.aQuant;
+        const k = Q ? 1 - Math.exp(-Math.max(0, time - Q.time) / 20) : 1;
+        this.aQuant = Q ? { up: Q.up + (now.up - Q.up) * k, down: Q.down + (now.down - Q.down) * k, time } : { ...now, time };
+      }
       const H = this.statsHist;
       H.push([time, births, deaths]);
       while (H.length > 2 && time - H[0][0] > 2) H.shift();
@@ -707,7 +739,8 @@ export class Cells {
       lines.push(`step 6: 4 leak ${on(F.leakOn)} (${s6.leak} cells leaking) · stretch p50 ${pct(s6.sHist, 0.5, 0.05).toFixed(2)} p90 ${pct(s6.sHist, 0.9, 0.05).toFixed(2)}` +
         ` · stretched > 0.35: ${s6.sHist.slice(7).reduce((x, y) => x + y, 0)} · leak level > 0.5: ${s6.lHist.slice(5).reduce((x, y) => x + y, 0)}`);
       lines.push(`step 6: 5 conversion ${on(F.convOn)} (${s6.conv} converted) · 6 mode ${F.convMode ? 'flip B charge' : 'boost B'} x${F.conv}` +
-        ` · 7 relay ${on(F.relayOnKey)} · up ${F.convUp} down ${F.convDown} · A felt p25 ${pct(s6.aHist, 0.25, 0.25).toFixed(2)} p50 ${pct(s6.aHist, 0.5, 0.25).toFixed(2)} p90 ${pct(s6.aHist, 0.9, 0.25).toFixed(2)}`);
+        ` · 7 relay ${on(F.relayOnKey)} · up ${this.convThresholds()[0].toFixed(2)} down ${this.convThresholds()[1].toFixed(2)}` +
+        `${F.convAuto ? ' (quantiles ' + F.convUp + ' / ' + F.convDown + ' of the A felt)' : ''} · A felt p25 ${pct(s6.aHist, 0.25, A_BIN).toFixed(2)} p50 ${pct(s6.aHist, 0.5, A_BIN).toFixed(2)} p90 ${pct(s6.aHist, 0.9, A_BIN).toFixed(2)}`);
     }
     if (c) {
       lines.push(`grid check: ${c.contacts / 2} contacts` + (c.brute ? ` (brute force ${c.bruteContacts / 2}, ${c.mismatch} cells differ)` : '') +

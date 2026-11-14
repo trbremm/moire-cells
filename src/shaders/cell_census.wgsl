@@ -28,7 +28,7 @@ fn census(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       let lk = cell_leak(c);
       if (lk > 0.25) { atomicAdd(&stats.extra[STATS_X_LEAK], 1u); }
       if ((c.flags & CELL_CONV) != 0u) { atomicAdd(&stats.extra[STATS_X_CONV], 1u); }
-      let av = u32(clamp(bio[i].env.z / 0.25, 0.0, 15.0));
+      let av = u32(clamp(bio[i].env.z / STATS_X_AW, 0.0, f32(STATS_X_ABINS - 1u)));
       atomicAdd(&stats.extra[STATS_X_AHIST + av], 1u);
       let sv = u32(clamp(length(vec2f(c.e1, c.e2)) / 0.05, 0.0, 9.0));
       atomicAdd(&stats.extra[STATS_X_SHIST + sv], 1u);

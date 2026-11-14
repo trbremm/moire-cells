@@ -8,13 +8,14 @@
 //   relay  per fate channel: a committed neighbour's signal on that channel -> accumulator
 //   body   x adhesion, y size factor, z motility factor, w spare
 //   acc    state (not inherited as genes): the four leaky accumulators
-//   env    state: x nutrient, y threat the cell felt last tick
+//   env    state: x nutrient, y threat the cell felt last tick; z the A felt (integrated), w converted (step 6)
+//   conv   state (step 6): x the converted share of the neighbourhood (integrated, for the relay); y z w spare
 // The key is the cell's own lattice (Cell.la and Cell.aux carry copies), so it shows in the dot pattern.
 //
 // Seeding: `founders` random genomes (0 = every cell its own), each cell a copy of one of them, scattered at
 // random. A seeded random generator (?seed=N) makes the start repeatable.
 
-export const BIO_FLOATS = 28;
+export const BIO_FLOATS = 32;
 export const BIO_BYTES = BIO_FLOATS * 4;
 
 export const KEY_SPAN = Math.PI / 3;
@@ -110,7 +111,7 @@ export class Genome {
       const g = this.founders.length ? this.founders[Math.floor(this.rng() * this.founders.length)] : randomGenome(this.rng, i);
       const o = i * BIO_FLOATS;
       for (let k = 0; k < BIO_FLOATS; k++) f[o + k] = g[k];
-      for (let k = 20; k < 28; k++) f[o + k] = 0;   // accumulators and felt sources start empty
+      for (let k = 20; k < BIO_FLOATS; k++) f[o + k] = 0;   // accumulators, felt sources and step 6 state start empty
       keys[2 * i] = g[0]; keys[2 * i + 1] = g[1];
     }
     return keys;

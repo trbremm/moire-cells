@@ -10,7 +10,9 @@
 //           drip: each spring's atoms of this tick, shared evenly over the pixels of a small disc (random rounding),
 //           booked as "added" (LG_M_ADD). Per pixel, so overlapping springs need no atomics
 //   count   all the matter in one copy, exact (64-bit, per channel) into a ledger region: the snapshot "in the dish"
-//           (LG_M_DISH) once per frame, or "gone" (LG_M_GONE) when the dish is washed or the grid replaced
+//           (LG_M_DISH) once per frame, or "gone" (LG_M_GONE) when the dish is washed or the grid replaced; with the
+//           snapshot, also the sum of m ln m (m = atoms in a pixel of a substance, in counts) for the ORDER line, as
+//           f32 partial sums, one per workgroup (LG_M_ORDER)
 //   paint   the amounts the drawing shows (per R^2), summed into its layers, into two small textures at grid size
 // Only core WebGPU: i32 storage atomics and workgroup atomics.
 
@@ -40,7 +42,7 @@ struct MatterP {
 struct MatterTick {
   src: u32,                     // word offset of the current copy's channel 0 (in `mg`, which starts after the ledger)
   dst: u32,                     // ... of the copy to write (spread)
-  first: u32,                   // spread: 1 on a tick's first substep (the edge sink and the drip)
+  first: u32,                   // spread: 1 on a tick's first substep (the edge sink); count: 1 = also the ORDER sums
   seed: u32,                    // random stream
   count: u32,                   // spread: springs; count: pixels of that grid (also the channel stride)
   region: u32,                  // count: ledger region (LG_M_DISH or LG_M_GONE)
@@ -174,6 +176,7 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
 // ---------- count ----------
 var<workgroup> wlo: array<atomic<u32>, 13>;
 var<workgroup> whi: array<atomic<u32>, 13>;
+var<workgroup> wml: array<f32, 256>;
 
 // dispatched as 256 workgroups of 256 (a grid-stride loop over the pixels)
 @compute @workgroup_size(256)
@@ -181,19 +184,30 @@ fn count(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_in
          @builtin(workgroup_id) wid: vec3u) {
   var lo: array<u32, 13>;
   var hi: array<u32, 13>;
+  var ml = 0.0;
+  let order = T.first != 0u;
   for (var p = gid.x; p < T.count; p += 65536u) {
     for (var c = 0u; c < NCH; c++) {
       let m = max(mg[T.src + c * T.count + p], 0);
       if (m == 0) { continue; }
       lo[c] += u32(m) & 0xffffu;
       hi[c] += u32(m) >> 16u;
+      if (order) {
+        let a = f32(m) * MP.natoms[c / 4u][c % 4u];   // atoms, in counts
+        ml += a * log(a);
+      }
     }
   }
   for (var c = 0u; c < NCH; c++) {
     if (lo[c] != 0u) { atomicAdd(&wlo[c], lo[c]); }
     if (hi[c] != 0u) { atomicAdd(&whi[c], hi[c]); }
   }
+  wml[li] = ml;
   workgroupBarrier();
+  for (var s = 128u; s > 0u; s >>= 1u) {
+    if (li < s) { wml[li] += wml[li + s]; }
+    workgroupBarrier();
+  }
   if (li < NCH) {
     // the workgroup's total of channel li: H x 2^16 + L, added as a 64-bit number
     let L = atomicLoad(&wlo[li]);
@@ -202,6 +216,7 @@ fn count(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_in
     add64v(at, i32(H >> 16u), H << 16u);
     add64v(at, 0, L);
   }
+  if (order && li == 0u) { atomicStore(&hb[LG_M_ORDER + wid.x], bitcast<i32>(wml[0])); }
 }
 
 // ---------- paint ----------

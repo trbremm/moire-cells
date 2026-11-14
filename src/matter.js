@@ -17,12 +17,15 @@
 //           zero); both pixels work out the same edge from the same numbers, so what one gives the other receives. On a
 //           tick's first substep the pixels on the dish's rim lose a share `edge` per s of their mobile atoms, booked as
 //           "lost" (the sink that keeps the dish from filling up forever).
-// Once per frame (with the heat's ledger): the atoms in the dish per channel (exact, 64-bit); paint writes two small
-// textures with the amounts the drawing shows.
+// Once per frame (with the heat's ledger): the atoms in the dish per channel (exact, 64-bit) and the sum of m ln m for the
+// ORDER line; paint writes two small textures with the amounts the drawing shows.
 //
 // The ledger: added by springs = in the dish + lost at the edge + gone (washed out with Shift+C, or with the old grid on a
 // window resize); rounding = what does not add up. Every amount is whole counts, so it stays at exactly 0.
-
+//
+// ORDER (the entropy panel): how patterned the dish's matter is. p = each pixel's share of each substance's atoms;
+// H = -sum p ln p (Shannon entropy); Hmax = what H would be if the same matter were smeared evenly over the whole dish
+// (ln pixels + the entropy of the mix); ORDER = 1 - H / Hmax: 1 = all in one spot, 0 = evenly smeared.
 
 import { loadShader } from './gpu.js';
 import { HEAT_COMMON_URL, LEDGER_WORDS, fmt } from './heat.js';
@@ -164,6 +167,7 @@ export class Matter {
     this.dish = new Float64Array(NCH);
     this.ledger = null;       // last snapshot (see apply)
     this.hist = [];           // [time, added, lost] for the rates
+    this.orderHist = [];      // [time, order] (the last few minutes)
   }
 
   static async create(device, format, medium) {
@@ -344,7 +348,7 @@ export class Matter {
       u[28 + c] = s.layer;                                // layer
       f[44 + c] = s.reactive ? 1 : 0;                     // react
       f[60 + c] = s.heavy;                                // heavy
-      f[76 + c] = s.atoms.length;                         // atoms per unit
+      f[76 + c] = s.atoms.length;                         // atoms per unit (the ORDER weights by atoms)
     });
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
 
@@ -418,7 +422,7 @@ export class Matter {
     this.drawBG = null;
   }
 
-  /** Once per frame, with the heat's ledger (before its copy): the atoms in the dish. */
+  /** Once per frame, with the heat's ledger (before its copy): the atoms in the dish and the ORDER sums. */
   encodeLedger(encoder) {
     if (!this.bg || this.bufVersion !== this.heat.version) return;
     encoder.clearBuffer(this.heat.buffer, LG_M.DISH * 4, (LG_M.ORDER + ORDER_SLOTS - LG_M.DISH) * 4);
@@ -427,6 +431,7 @@ export class Matter {
     pass.setBindGroup(0, this.bg, [MT_LEDGER * MT_SLOT]);
     pass.dispatchWorkgroups(ORDER_SLOTS);
     pass.end();
+    this.ledgerPixels = this.heat.n;
   }
 
   /** The heat's ledger read-back (Int32 words), in order: book the counters, take the snapshot. */
@@ -442,12 +447,31 @@ export class Matter {
     // atoms, weighting each substance by how many atoms it holds
     const atoms = (arr) => SUBSTANCES.reduce((x, s, c) => x + arr[c] * s.atoms.length, 0);
     const add = atoms(T.add), lost = atoms(T.lost), gone = atoms(T.gone), dish = atoms(this.dish);
+    // ORDER: H = ln M - S / M over (pixel, substance), with M and S in counts of atoms
+    const f = new Float32Array(w.buffer, LG_M.ORDER * 4, ORDER_SLOTS);
+    let S = 0;
+    for (let k = 0; k < ORDER_SLOTS; k++) S += f[k];
+    const M = dish * ATOM_SCALE;
+    let order = null, Hn = null;
+    if (M > 0 && this.ledgerPixels) {
+      const Hs = Math.log(M) - S / M;
+      let Hmix = 0;
+      SUBSTANCES.forEach((s, c) => { const q = this.dish[c] * s.atoms.length / dish; if (q > 0) Hmix -= q * Math.log(q); });
+      const Hmax = Math.log(this.ledgerPixels) + Hmix;
+      Hn = Hs / Hmax;
+      order = Math.max(0, Math.min(1, 1 - Hn));
+    }
     const Hh = this.hist;
     Hh.push([rec.time, add, lost]);
     while (Hh.length > 2 && rec.time - Hh[1][0] >= 1) Hh.shift();
     const dt = rec.time - Hh[0][0];
     const rate = (k) => (dt > 0.05 ? (Hh[Hh.length - 1][k] - Hh[0][k]) / dt : 0);
-    this.ledger = { time: rec.time, add, lost, gone, dish, rounding: add - (dish + lost + gone), rateAdd: rate(1), rateLost: rate(2) };
+    if (order != null) {
+      const O = this.orderHist;
+      if (!O.length || rec.time - O[O.length - 1][0] >= 1) O.push([rec.time, order]);
+      while (O.length > 600) O.shift();
+    }
+    this.ledger = { time: rec.time, add, lost, gone, dish, rounding: add - (dish + lost + gone), rateAdd: rate(1), rateLost: rate(2), order, entropy: Hn };
   }
 
   // ---------- drawing ----------
@@ -503,8 +527,9 @@ export class Matter {
   /** The entropy panel's line. */
   panelLine() {
     const L = this.ledger;
-    if (!L) return 'atoms  …';
-    return `atoms in dish ${fmt(L.dish)} · added ${fmt(L.add)} (+${fmt(L.rateAdd)}/s) · out ${fmt(L.lost + L.gone)} · rounding ${L.rounding === 0 ? '0' : L.rounding.toExponential(1)}`;
+    if (!L) return 'ORDER  …';
+    const o = L.order == null ? '–' : L.order.toFixed(3);
+    return `ORDER  ${o} · atoms in dish ${fmt(L.dish)} · added ${fmt(L.add)} (+${fmt(L.rateAdd)}/s) · out ${fmt(L.lost + L.gone)} · rounding ${L.rounding === 0 ? '0' : L.rounding.toExponential(1)}`;
   }
 
   /** Lines for the F overlay. */
@@ -526,7 +551,8 @@ export class Matter {
         ` · rounding ${L.rounding === 0 ? '0' : L.rounding.toExponential(2)} · per s +${fmt(L.rateAdd)} −${fmt(L.rateLost)}`);
       lines.push('per element (added / in dish / out): ' + Object.entries(el).filter(([, v]) => v.add > 0)
         .map(([a, v]) => `${a} ${fmt(v.add)} / ${fmt(v.dish)} / ${fmt(v.out)}`).join(' · '));
-      lines.push(`substances in dish: ` + SUBSTANCES.map((s, c) => (this.dish[c] > 0 ? `${s.name} ${fmt(this.dish[c])}` : null)).filter(Boolean).join(' · '));
+      lines.push(`order ${L.order == null ? '–' : L.order.toFixed(3)} (entropy ${L.entropy == null ? '–' : L.entropy.toFixed(3)} of the evenly smeared dish)` +
+        ` · substances in dish: ` + SUBSTANCES.map((s, c) => (this.dish[c] > 0 ? `${s.name} ${fmt(this.dish[c])}` : null)).filter(Boolean).join(' · '));
     }
     return lines;
   }

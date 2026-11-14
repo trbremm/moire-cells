@@ -46,7 +46,7 @@ const LG_M_ADD: u32 = 3072u;       // added by the springs
 const LG_M_LOST: u32 = 4736u;      // left the dish at its edge
 const LG_M_GONE: u32 = 6400u;      // washed out (Shift+C) or dropped with the old grid on a resize
 const LG_M_DISH: u32 = 8064u;      // snapshot: in the dish now (cleared before each read-back)
-const LG_M_ORDER: u32 = 9728u;     // (256 words, reserved)
+const LG_M_ORDER: u32 = 9728u;     // snapshot: 256 f32 partial sums of m ln m (the ORDER line's entropy)
 
 // The heat grid's parameters (written once per frame by src/heat.js; 64 bytes)
 struct HeatP {

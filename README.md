@@ -49,7 +49,7 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   - *view* (the eye): the entropy panel, the stats overlay (F), the landscape, which substance is shown, colour by
     fate or lineage, and the other drawing switches;
   - *rules*: every rule that has a key, as a switch with a one-line explanation and its key, grouped as below
-    (the loop, field B, steps 6 to 8, biology, heat and light); settings with several values show the current one
+    (the loop, field B, steps 6 to 8, biology, heat and light, chemistry); settings with several values show the current one
     and change on a tap; the lever has - and +. The switches follow the state, also when a key changes it;
   - *dish* (the dish with three cells): the speed as a row of buttons, new culture (N), new genomes (G), clear
     springs (C), wash the atoms out (Shift+C).
@@ -103,7 +103,9 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
 - **[** / **]**: simulation speed 1× / 2× / 4× / 8× / 16× / 32× / MAX (step C3b: the last three are the timelapse)
 - Part C keys are **Shift + a letter** (step C1: Shift+H heat jitter, Shift+E entropy panel, Shift+R ripples simmer;
   see "Heat and the entropy counter" below; step C2: Shift+L light spot / full field / off, Shift+D day and night;
-  step C3: Shift+S substances shown (summary / each alone / off), Shift+C wash the atoms out)
+  step C3: Shift+S substances shown (summary / each alone / off), Shift+C wash the atoms out; step C4, "Chemistry in
+  the open" below: Shift+M chemistry, Shift+F make fuel by light, Shift+B break fuel, Shift+P swaps, Shift+K sediment,
+  Shift+T trace lowers the spark)
 - right-drag: move the spotlight · wheel: tilt it · Shift+wheel: turn where the light comes from (step C2, "Light" below)
 
 The loop (step 4):
@@ -822,6 +824,125 @@ heat does, and on Direct3D (Chrome and Firefox on Windows) an atomic load is a r
 numbers (WebGPU forbids two writable bindings over the same bytes, but not over separate ranges), and the drip moved
 into the spreading pass, so the grid needs no atomics at all.
 
+## Chemistry in the open (Part C, step C4)
+
+The atoms of step C3 now react with each other, out in the dish, with no cells involved (the cells still ignore the
+atoms; eating is step C5). Light of the right band bonds a giver and a taker into **fuel** (green); heat breaks fuel
+apart again; linkers chain into dark **sediment** crusts that warm up in the light and slowly crack under hard light; a
+free light atom can take a heavy one's place in a fuel (a **swap**); and **trace** makes every reaction start more
+easily where it sits. Energy is the currency throughout: every reaction is paid and booked, and what it releases ends
+up as heat.
+
+**Where to watch it.** The cells are drawn over the substances, and the culture sits in the middle of the default
+spotlight, so most of the chemistry there is hidden (it runs: the culture is hot, so fuel made there burns quickly).
+To see the substrate alone, move the spot beside the culture (right-drag, or the "move light" tool) and drop a light
+and a heavy spring a hundred or two px apart inside it; or switch to full field (Shift+L) and drop springs in the empty
+corners. For example:
+
+    python tools/shot.py --query "spot=190,400,175&speed=8&day=0" --at 30,90,240 \
+      --eval "moire.matter.addSpring(110,400,'light'); moire.matter.addSpring(270,400,'heavy')"
+
+**What it looks like** (that example, seed 3, 2000 cells, noon). After **30 s** both clouds are green: around the light
+spring a disc of pale green fuel dots (gt) with pale pink free atoms and grey linkers between them; around the heavy
+spring, which spreads much more slowly, a tight disc of deeper green (GT) and red (free G and T) dots (its trace
+diamonds show once the spring's marker is gone). By **90 s** the springs have dried up; the light cloud has spread over most of the spot, still
+pale green, and a small flat **crust** of warm grey has formed at the light spring's centre (sediment ll, about 1 per
+R²). The heavy spring has its own crust (LL), smaller and thicker (1.4 per R², fastest there because trace sits there).
+Between the two clouds the fuels mix: gT and Gt, a middle green. By **240 s** the light spring's fuel has mostly burned
+away in the warm spot, leaving a sparse field of grey linkers and the crust, with an empty, fuel-free ring around the
+crust (it is the warmest place in the spot: 6.1 per R² against 4.5 around, because the dark crust catches warm light);
+the heavy cloud is a wide disc of green with red; the mixed fuels between them keep growing (gT and Gt from 0.01 to
+0.05 per R²). Fuel that drifts out of the light keeps (cold and dark: frozen), so the clouds stay green a little beyond
+the spot's rim while they fade inside. In full field the same happens around each spring, everywhere at once.
+
+Honestly: in these runs nothing organises itself into fronts, rings or spots beyond that (the crust with its
+fuel-free halo, the fuel kept just outside the light). The crusts stay small (a few heat pixels at the spring centres),
+so the warming they cause does not feed back strongly enough to spread them.
+
+**The energy table** (`CHEM` in `src/matter.js`, next to `ATOMS`; every number derived from row and group, nothing
+set per substance):
+
+| substance | energy (per unit) | spark | made by |
+|---|---|---|---|
+| free atoms g t l G T L, trace | 0 | | |
+| fuel gt | 0.75 × (1 + 1) = 1.5 | 0.125 × 2 = 0.25 | visible 1 (photon 2 ≥ 1.75) |
+| fuel gT, Gt | 2.25 | 0.375 | visible 2 (photon 3 ≥ 2.625) |
+| fuel GT | 3 | 0.5 | hard (photon 5 ≥ 3.5) |
+| sediment ll | −0.25 × 2 = −0.5 | 0.25 | (heat, downhill) |
+| sediment LL | −1 | 0.5 | (heat, downhill) |
+
+The band that makes a fuel is the lowest whose photon covers the fuel's energy plus its spark. All the factors are
+multiples of 1/16: one count of a substance (4096 per unit) then carries a whole number of heat counts (65 536 per
+energy unit), so every reaction moves energy **exactly**.
+
+**The reactions** (`REACTIONS`, derived from the table; 22 of them), per pixel per tick:
+- **make fuel** (Shift+F): giver + taker → fuel, by light of the fuel's band. The pair catches that band (its optical
+  depth is `kMake` × a b / (a + b) per R²); the photon pays the bond and its spark, the rest becomes heat.
+- **break fuel** (Shift+B): fuel → giver + taker, by heat: rate `kBurn` × exp(−spark / (theta × temperature)), with
+  the temperature the pixel's heat per R². The bond's energy comes out as heat. And by hard light (the fuel catches
+  it, `kPhoto`): photon and bond energy become heat. So fuel keeps where it is cold and dark and burns where it is hot.
+- **swaps** (Shift+P): a free atom takes a partner's place in a fuel and leaves the old one free, by heat (spark of
+  the bond it breaks, rate `kSwap` × amounts). They run by themselves only **downhill**, into a poorer bond. Because
+  heavier fuel holds more energy, the swaps that run are the light atoms taking a heavy atom's place:
+  t + gT → gt + T, g + Gt → gt + G, g + GT → gT + G, t + GT → Gt + T (each releases 0.75 as heat). A choice for you to
+  judge: CLAUDE.md's example T + gt → gT + t would go uphill with this table (it would need 0.75 put in), so it does
+  not run; it could only run if heavy fuel held LESS energy, or if free heavy atoms carried energy of their own.
+- **sediment** (Shift+K): linker + linker → chain, by heat (rate `kSed` × amount², spark of the chain); releases 0.5
+  (ll) or 1 (LL) as heat; it does not spread, so it piles up where it forms. **l + L do not link**: a chain is one row's
+  linkers (there is no mixed sediment channel, and none is needed). Hard light cracks chains back into linkers
+  (`kCrack`; photon minus the chain's energy becomes heat).
+- **sediment is dark**: it catches the warm band (optical depth `dark` per unit per R²), which becomes heat, so crusts
+  warm up in the light. This goes with the chemistry switch, not with Shift+K.
+- **trace lowers the spark** (Shift+T): spark × 1 / (1 + `traceK` × trace per R²), for the reactions driven by heat (the
+  light reactions use a fixed band per fuel). Trace itself never reacts.
+- **chemistry** (Shift+M): everything at once. Off: the atoms only spread, as in step C3. URL `?chem=0`.
+
+**How it is computed** (`react` in `matter.wgsl`). The substances now spread and react tick by tick, inside the heat's
+pass of each tick, after the cells' step and before the heat spreads: so the reactions read this tick's temperature and
+the cells' cover, and the heat they release goes into the heat grid's delta, taken in by the heat's next substep. Each
+pixel works out the light that reaches its substances (the same light as the heat's absorption, after the bare medium
+and the cells took their share), shares each band among its absorbers by optical depth (Beer-Lambert), then runs the
+reactions in table order: each makes floor(x + random) events, capped by what its reactants hold, and an event moves
+whole counts of matter and whole heat counts. So the atoms stay exact to the count, and so does the chemical energy.
+
+**The books.** "Stored" is now the chemical energy in the dish: each substance's amount times its energy (fuel
+positive, sediment negative). Light caught by the substances counts as energy in; it is not heat until a reaction
+releases it. The entropy panel:
+
+    ENTROPY  1.50 M  +15.1 k/s   8×
+    moving 699 · heat in dish 30.6 k · stored 337 · in 1.54 M · rounding +0.0013
+    light in 31.7 k/s → heat 4763/s · chemistry 276/s · passed 26.7 k/s · spot · day 100%
+    ORDER  0.335 · atoms in dish 698 · added 719 (+0/s) · out 20.2 · rounding 0
+
+where in = work + warmth + light absorbed by the medium and cells + light caught by the substances, and rounding = in −
+(moving + heat in dish + stored + heat out + chemical energy that left with matter at the edge or by a wash). On a phone
+the second line is "heat · moving · stored · rounding" and the light line shows what was caught in total. The F overlay
+adds the energy table, the switches and knobs, and per second: fuel made, fuel burned (by heat, by hard light), swaps,
+sediment formed and cracked, and the light the substances caught per band.
+
+Measured (seed 3, two light and two heavy springs, spot): energy rounding between −0.018 and +0.015 over 300 s at 1× (in grew to 5.4 M), −0.086 to +0.009
+over 400 s at 8× (7 M), −0.012 to +0.052 over 400 s at MAX; the same run with the chemistry off: −0.008 to +0.055, so the
+chemistry adds no drift of its own; atoms rounding exactly 0 in every run.
+
+**Knobs** (live in `moire.matter.chem`): `theta` (1/32: the temperature scale of the sparks; the cold dish, about 1 per
+R², is frozen: e^−8 for gt; the empty spot, about 4.5, reacts: e^−1.8; the culture in the spot, about 15, fast),
+`kMake` (1), `kBurn` (0.5 per s), `kPhoto` (0.03), `kSwap` (5 R² per s), `kSed` (2 R² per s), `kCrack` (0.01), `dark`
+(3), `traceK` (3), and the switches `on`, `make`, `burn`, `swap`, `sediment`, `trace`. The sediment's look:
+`moire.matter.params.sedStep` (0.3 per R² per level; it was 1.5, too high to ever show) and `sedAlpha`; a crust is drawn
+as one flat warm-grey patch, its thicker parts as subtle steps inside it. Tuning aid:
+`moire.matter.probeLine(y, x0, x1, step).then(console.log)` prints every substance per R² and the temperature along a
+row of the dish.
+
+**Cost.** At 1× and 8× nothing to see: headless Chrome on the GTX 1650, 2000 cells, two light and two heavy springs,
+9.5 ms per frame at 1× and at 8× (before C4: 9.6 and 9.6; held by the display rate); headed Firefox at 1×, three runs
+each, alternating: 16 ms per frame before, after, and with the chemistry off (the 60 Hz display), the GPU done after
+16 to 20 ms in all three. At the timelapse speeds it shows: MAX reached ×11.6 to ×13.1 against ×13.6 to ×16.5 before
+(Chrome, two runs each); with the chemistry off ×13.9 to ×17.0, so moving the substances' passes into each tick costs
+nothing and the chemistry about 15 to 20 % of the fastest speed. Most of that is spreading: once fuel and sediment
+exist, 13 channels move instead of 7 (sediment does not spread, but it is still copied between the two copies every
+substep). Firefox MAX: ×9.2 against ×12.2 (one run each). The reaction pass itself is light: each pixel reads its 13
+channels, empty pixels stop there, and it needs no atomics on the grid.
+
 ## The look of the landscape
 
 The landscape is drawn as crisp halftone dots, like print: a dot screen lies over the dish, each dot reads what it
@@ -854,7 +975,8 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   nutrient and threat sources and their landscape; `field_prep.wgsl` went with them)
 - `src/matter.js` + `src/shaders/matter.wgsl`, `matter_draw.wgsl`: matter (step C3): the periodic table (atoms by row
   and group, every substance's properties derived from it), the substance grid in the heat buffer, springs, spreading,
-  the atoms ledger and ORDER, and the halftone drawing on the medium lattice
+  the atoms ledger and ORDER, and the halftone drawing on the medium lattice; step C4: the energy table and the
+  reaction list (derived from the same table), the chemistry's knobs and switches, and `react` in `matter.wgsl`
 - `src/cells.js` + `src/shaders/cell_*.wgsl`: the cells. `cell_common.wgsl` holds the cell layout, the per-tick
   uniforms, the grid helpers, the loop's maths (cell beat, membrane, sensing, tuning; prepended after
   field_common) and field B (struct `Fields`, charges, `cell_field_b`); `cell_grid.wgsl` rebuilds the neighbour grid every tick (a counting sort by grid cell) and

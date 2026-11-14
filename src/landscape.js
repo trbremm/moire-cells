@@ -3,8 +3,8 @@
 // Sources live on the CPU as a short list and are uploaded to a fixed-capacity GPU storage buffer
 // (struct Emitter, see field_common.wgsl) whenever they change. Each frame:
 //   compute: field_prep.wgsl turns every emitter into its beat (wavevectors and phases against the medium),
-//   render:  landscape_draw.wgsl evaluates the beat per pixel and adds the soft green / red glow and the
-//            ring markers on top of the background (additive blending).
+//   render:  landscape_draw.wgsl draws the landscape as crisp halftone dots (flat green / red, dot area grows
+//            with the field strength) and the sources' markers over the background.
 //
 // Not yet ported from the reference: sources drifting with the medium and being pushed by stirring,
 // threat fading (amp -0.06 per s, removed below 0.4), nutrient being eaten, and new sources appearing
@@ -23,9 +23,22 @@ export class Landscape {
     this.dirty = true;
     this.view = null;
     this.params = {
-      on: true,           // landscape glow on/off (L key); markers stay
-      glow: 1.0,          // glow gain (1 = reference)
+      on: true,           // landscape on/off (L key); markers stay
+      gain: 1.0,          // field strength gain (1 = the reference's glow quantity)
       markers: 1.0,       // marker gain
+      // halftone screen
+      pitch: 6,           // distance between neighbouring dot centres (CSS px)
+      hex: true,          // triangular (hex) screen; false = square
+      angle: 15,          // screen rotation (degrees); beats lie near 0 or 30 degrees, 15 keeps clear of both
+      threshold: 0.12,    // strength below which there is no dot
+      maxDot: 0.9,        // largest dot radius as a fraction of pitch/2 (1 = neighbours touch; capped at 1)
+      base: 0,            // share of the strength that does not follow the beat (reference glow 0.3; 0 = dots
+                          // only on the beat's blobs, cleaner and with more black between them)
+      ringW: 1.5,         // marker ring stroke (CSS px)
+      // inks (palette colours, 0..255) and the dots' brightness level (0..1)
+      nutColour: [168, 240, 160],
+      thrColour: [255, 112, 98],
+      dotLevel: 0.55,
       maxSources: 6,      // the reference keeps at most 6; adding one more drops the oldest (up to MAX_SOURCES)
       amp: 5,             // strength of a new source (reference)
       range: 9,           // envelope range r0 in units of R (reference: r0^2 = 81 R^2)
@@ -47,11 +60,12 @@ export class Landscape {
     this.prepPipe = d.createComputePipeline({
       label: 'source prep', layout: 'auto', compute: { module: prepMod, entryPoint: 'prep' },
     });
-    const add = { srcFactor: 'one', dstFactor: 'one', operation: 'add' };
+    // premultiplied "over": flat dots stay flat on top of the background (alpha 0 still adds, for soft parts)
+    const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
     this.drawPipe = d.createRenderPipeline({
       label: 'landscape draw', layout: 'auto',
       vertex: { module: drawMod, entryPoint: 'vs' },
-      fragment: { module: drawMod, entryPoint: 'fs', targets: [{ format: this.format, blend: { color: add, alpha: add } }] },
+      fragment: { module: drawMod, entryPoint: 'fs', targets: [{ format: this.format, blend: { color: over, alpha: over } }] },
       primitive: { topology: 'triangle-list' },
     });
 
@@ -59,11 +73,11 @@ export class Landscape {
     this.emitBuf = d.createBuffer({ label: 'sources', size: MAX_SOURCES * EMITTER_BYTES, usage: U.STORAGE | U.COPY_DST });
     this.beatBuf = d.createBuffer({ label: 'source beats', size: MAX_SOURCES * BEAT_BYTES, usage: U.STORAGE });
     this.prepU = d.createBuffer({ label: 'source prep params', size: 16, usage: U.UNIFORM | U.COPY_DST });
-    this.drawU = d.createBuffer({ label: 'landscape draw params', size: 32, usage: U.UNIFORM | U.COPY_DST });
+    this.drawU = d.createBuffer({ label: 'landscape draw params', size: 80, usage: U.UNIFORM | U.COPY_DST });
     const ab = new ArrayBuffer(MAX_SOURCES * EMITTER_BYTES);
     this.emitF = new Float32Array(ab);
     this.emitU = new Uint32Array(ab);
-    this.drawAB = new ArrayBuffer(32);
+    this.drawAB = new ArrayBuffer(80);
     this.drawF = new Float32Array(this.drawAB);
     this.drawI = new Uint32Array(this.drawAB);
 
@@ -140,8 +154,13 @@ export class Landscape {
     const n = this.sources.length;
     if (!n) return;
     const p = this.params;
-    this.drawF[0] = this.view.dpr; this.drawF[1] = this.medium.R; this.drawI[2] = n;
-    this.drawF[3] = p.on ? p.glow : 0; this.drawF[4] = p.markers;
+    const F = this.drawF;
+    F[0] = this.view.dpr; F[1] = this.medium.R; this.drawI[2] = n;
+    F[3] = p.on ? p.gain : 0; F[4] = p.markers;
+    F[5] = Math.max(2, p.pitch); F[6] = p.angle * Math.PI / 180; F[7] = p.threshold;
+    F[8] = Math.max(0, Math.min(1, p.maxDot)); this.drawI[9] = p.hex ? 1 : 0; F[10] = p.base; F[11] = p.ringW;
+    for (let j = 0; j < 3; j++) { F[12 + j] = p.nutColour[j] / 255; F[16 + j] = p.thrColour[j] / 255; }
+    F[15] = F[19] = p.dotLevel;
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG);

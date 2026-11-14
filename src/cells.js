@@ -168,7 +168,13 @@ export class Cells {
       reach: 1.3,     // ... out to this distance, x the contact distance (the sum of the two radii)
       pack: 1,        // same type, different state: push apart only below this x the contact distance (below 1:
                       // they pack closer than contact; 0.85 overlaps them visibly, busy with 3 states)
-      states: 2,      // number of states, 2 to 4
+      states: 3,      // number of states, 2 to 4 (key 0). 3 fits the hex packing: every cell can have only other states
+                      // around it (pinwheel rosettes); 2 cannot, so the packing opens into chains or, squeezed, a
+                      // square checkerboard
+      // rule 2, state flip (key 9; needs 8): a cell with more neighbours of its type in its own state than in another
+      // moves to the state least represented around it (its lattice stays as it is)
+      flip: true,     // key 9 (it only acts while exclusion is on; without it a lineage is all one state)
+      flipRate: 1,    // chance per s that a crowded cell flips (random moments, so neighbours do not all flip at once)
     };
     // drawing (live-tunable: moire.cells.look)
     this.fieldScale = 0.5;     // texels per CSS px of the cells' field texture
@@ -426,6 +432,7 @@ export class Cells {
     f[o + 20] = p.stirReach * p.stirReach; f[o + 21] = p.stir;
     f[o + 22] = p.drift; f[o + 23] = time;
     u[o + 24] = this.genome.ruleBits();
+    f[o + 25] = this.excl.flip ? Math.max(0, this.excl.flipRate) : 0;
     const G = this.genome.params;
     f[o + 28] = G.tau; f[o + 29] = G.release; f[o + 30] = G.reach; f[o + 31] = G.adhesion;
     f[o + 32] = G.adhSigma; f[o + 33] = G.fateAdh; f[o + 34] = this.genome.rules.body ? 1 : 0; f[o + 35] = G.adhBase;
@@ -768,7 +775,7 @@ export class Cells {
     if (s7) {
       // same-state share among same-type neighbours, and what random mixing of the states would give
       const n = s7.perState.reduce((x, y) => x + y, 0), rnd = n ? s7.perState.reduce((x, y) => x + (y / n) ** 2, 0) : 0;
-      lines.push(`step 7: 8 exclusion ${on(X.on)} · ${X.states} states (${s7.perState.slice(0, X.states).join(' / ')} cells) · hard x${X.hard} out to ${X.reach} · other state packs to ${X.pack}` +
+      lines.push(`step 7: 8 exclusion ${on(X.on)} · 9 flip ${on(X.flip)} · ${X.states} states (${s7.perState.slice(0, X.states).join(' / ')} cells) · hard x${X.hard} out to ${X.reach} · other state packs to ${X.pack}` +
         ` · same state among same-type neighbours: touching ${s7.touch ? (100 * s7.touchSame / s7.touch).toFixed(0) : '-'}%, within 1.6 ${s7.pairs ? (100 * s7.same / s7.pairs).toFixed(0) : '-'}%` +
         ` (random mixing ${(100 * rnd).toFixed(0)}%) · per cell ${(s7.touch / Math.max(1, n)).toFixed(2)} touching, ${(s7.pairs / Math.max(1, n)).toFixed(2)} within 1.6`);
     }

@@ -82,6 +82,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var xSame = 0u;                            // ... of which in the same state
   var tAll = 0u;                             // census: same-type neighbours touching (within reach x contact distance)
   var tSame = 0u;                            // ... of which in the same state
+  var nState = array<u32, 4>(0u, 0u, 0u, 0u); // rule 2: same-type neighbours per state within the shell (below)
+  let shell = max(1.05 * S.exclReach, 1.2);   // ... x contact distance: the first ring of neighbours, not the second
 
   // every neighbour within reach: contact push, and (differentiation on) recognition and signals
   let rg = grid_range_n(S, grid_xy(S, c.pos), select(1, i32(FL.bReach), feelB || relayOn));
@@ -131,7 +133,9 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         var Rt = R0;
         var kx = 1.0;
         if (o.kind == c.kind) {
-          let same = cell_state(o, S.states) == myState;
+          let os = cell_state(o, S.states);
+          let same = os == myState;
+          if (d2 < shell * shell * R0 * R0) { nState[min(os, 3u)]++; }
           if (S.xCount != 0u && d2 < 2.56 * R0 * R0) {
             xAll++;
             if (same) { xSame++; }
@@ -286,6 +290,23 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     bio.env.w = S.dt;                                             // converts
   }
   c.flags = select(c.flags & ~CELL_CONV, c.flags | CELL_CONV, bio.env.w > 0.0);
+
+  // step 7, rule 2, state flip: a cell crowded by its own state (more same-type neighbours within the shell, 1.05 x the
+  // exclusion's reach, in its state than in some other) moves, at a random moment (chance S.flip per s), to the state least represented
+  // around it (ties broken at random), like a crowded shell spilling into the next. Only the state changes.
+  if (exclOn && S.flip > 0.0 && rand01(c.seed ^ 0x3c6ef372u, S.tick) < S.flip * S.dt) {
+    let n = max(S.states, 1u);
+    let r0 = u32(rand01(c.seed ^ 0xa54ff53au, S.tick) * f32(n));
+    var best = myState;
+    for (var k = 0u; k < n; k++) {
+      let s = (r0 + k) % n;
+      if (nState[s] < nState[best]) { best = s; }
+    }
+    if (nState[myState] > nState[best]) {
+      let off = (best + 4u * n - key_bin(c, n)) % n;
+      c.flags = (c.flags & ~(3u << CELL_FLIP_SHIFT)) | (off << CELL_FLIP_SHIFT);
+    }
+  }
 
   // gentle pull to the middle, slow drift of the medium (as the reference)
   f += (S.centre - c.pos) * S.pull;

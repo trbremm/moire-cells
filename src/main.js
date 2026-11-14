@@ -34,6 +34,7 @@
 //
 // Part C keys are Shift + a letter (every plain letter is taken by Parts A and B): checked before the plain keys,
 // so Shift+H never also toggles H.
+//   ?show=summary|off|<substance>   step C3: what the substances' halftone shows (Shift+S), e.g. ?show=G
 //
 // Mouse: left tap drops (keys 1 2 3: a ripple, a light spring, a heavy spring), left drag stirs; step C2's spotlight: right-drag moves it, the wheel tilts it,
 // Shift+wheel turns the direction the light comes from.
@@ -44,7 +45,7 @@ import { Medium } from './field.js';
 import { Landscape } from './landscape.js';
 import { Cells, DEFAULT_CELLS, ANCHORS } from './cells.js';
 import { Light } from './light.js';
-import { Matter } from './matter.js';
+import { Matter, SHOWS } from './matter.js';
 
 window.__moireBooted = true;
 
@@ -128,6 +129,7 @@ async function boot() {
     light.heat = cells.heat;
     matter.attach(cells.heat);   // step C3: the substances live in the heat buffer, on its grid
     cells.matter = matter;
+    matter.landscape = landscape;
     lightOptions(light);
     cells.landscape = landscape;
     landscape.cells = cells;
@@ -150,6 +152,7 @@ async function boot() {
     if (params.has('states')) cells.excl.states = Math.max(2, Math.min(4, Number(params.get('states')) || 2));
     if (params.has('heat')) cells.heat.params.kicks = flag('heat');
     if (params.has('simmer')) background.heatOn = flag('simmer');
+    if (params.has('show')) { const i = SHOWS.indexOf(params.get('show')); if (i >= 0) matter.params.show = i; }
     background.heat = cells.heat;
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));
@@ -315,12 +318,12 @@ let tapMode = 0;
 let allKeys = false;   // key ?: the short hint or the full key list
 function hintLine() {
   const short = `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 light spring · 3 heavy spring · ` +
-    'N / G: new culture · [ ]: speed · F: stats · ⇧H ⇧E ⇧L: heat, entropy, light · ?: more';
+    'N / G: new culture · [ ]: speed · F: stats · ⇧E ⇧L ⇧S: entropy, light, substances · ?: more';
   return allKeys ? fullHint() : short;
 }
 function fullHint() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 light spring · 3 heavy spring · ` +
-    'C: clear springs · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · \\: squeeze · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · .: sideways push · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · I: inherit fate · V: view · [ ]: speed · F: stats · Shift+H: jitter from heat / constant · Shift+E: entropy panel · Shift+R: ripples simmer with heat · Shift+L: light spot / full field / off · Shift+D: day and night · Shift+C: wash the atoms out · right-drag: move the spot · wheel: tilt it · Shift+wheel: turn where the light comes from';
+    'C: clear springs · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · \\: squeeze · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · .: sideways push · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · I: inherit fate · V: view · [ ]: speed · F: stats · Shift+H: jitter from heat / constant · Shift+E: entropy panel · Shift+R: ripples simmer with heat · Shift+L: light spot / full field / off · Shift+D: day and night · Shift+S: substances shown (summary / each alone / off) · Shift+C: wash the atoms out · right-drag: move the spot · wheel: tilt it · Shift+wheel: turn where the light comes from';
 }
 
 function tap(x, y) {
@@ -565,6 +568,8 @@ function shiftKey(k) {
     P.mode = P.mode === 'spot' ? 'full' : P.mode === 'full' ? 'off' : 'spot';
     flash(P.mode === 'spot' ? 'light: spotlight (right-drag moves it, the wheel tilts it, Shift+wheel turns where it comes from)'
       : P.mode === 'full' ? 'light: full field, the whole dish lit (clouds drift over)' : 'light off: only the base warmth and the cells\' own motion heat the dish');
+  } else if (k === 's') {
+    flash(matter.cycleShow());
   } else if (k === 'c') {
     matter.wash();
     flash('the dish washed: every atom out (booked as gone in the atoms ledger)');

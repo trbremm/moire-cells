@@ -25,6 +25,7 @@
 //   ?partner=0|1 step 8, rule a: the partner A' felt as a phase current (key Z); ?change=0|1 rule b (key ,);
 //               ?clock=0|1 its mode (key '); ?side=0|1 rule c, sideways push (key .)
 //   ?heat=0     step C1: start with the kicks from heat off (the old constant jitter; Shift+H)
+//   ?entropy=0  step C1: start with the entropy panel hidden (Shift+E)
 //   ?simmer=0   step C1: start with the ripples not driven by heat (Shift+R)
 //
 // Part C keys are Shift + a letter (every plain letter is taken by Parts A and B): checked before the plain keys,
@@ -54,6 +55,7 @@ const SEED = params.has('seed') ? (Number(params.get('seed')) >>> 0) : ((Math.ra
 const canvas = document.getElementById('gpu');
 const overlayEl = document.getElementById('overlay');
 const hintEl = document.getElementById('hint');
+const entropyEl = document.getElementById('entropy');
 
 const debugLog = [];
 if (flag('debug')) {
@@ -153,6 +155,7 @@ async function boot() {
   window.addEventListener('resize', resize);
   setupInput();
   if (flag('overlay')) overlayEl.hidden = false;
+  showEntropy(!params.has('entropy') || flag('entropy'));
   if (params.get('overlay') === 'ghost') overlayEl.style.opacity = '0';   // kept up to date but invisible (for tools/shot.py)
   running = true;
   stage('running');
@@ -211,6 +214,10 @@ function frame(now) {
     device.queue.onSubmittedWorkDone().then(() => { stats.gpuMs += (performance.now() - ts - stats.gpuMs) * 0.3; });
   }
 
+  if (!entropyEl.hidden) {
+    const t = cells.heat.panelText();
+    if (t !== entropyEl.textContent) entropyEl.textContent = t;
+  }
   if (frameNo === 10) stage('running-10-frames');
   if (!overlayEl.hidden && now - stats.lastOverlay > 250) { stats.lastOverlay = now; drawOverlay(); }
   if (!overlayEl.hidden && now - stats.lastProbe > 1000) { stats.lastProbe = now; cells.probe(); }
@@ -261,12 +268,12 @@ let tapMode = 0;
 let allKeys = false;   // key ?: the short hint or the full key list
 function hintLine() {
   const short = `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'N / G: new culture / new genomes · V: view · [ ]: speed · F: stats · ⇧H: heat · ?: all keys';
+    'N / G: new culture / new genomes · V: view · [ ]: speed · F: stats · ⇧H ⇧E: heat, entropy · ?: all keys';
   return allKeys ? fullHint() : short;
 }
 function fullHint() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · \\: squeeze · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · .: sideways push · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats · Shift+H: jitter from heat / constant · Shift+R: ripples simmer with heat';
+    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · \\: squeeze · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · .: sideways push · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats · Shift+H: jitter from heat / constant · Shift+E: entropy panel · Shift+R: ripples simmer with heat';
 }
 
 function tap(x, y) {
@@ -474,10 +481,18 @@ function shiftKey(k) {
     P.kicks = !P.kicks;
     flash(P.kicks ? 'jitter from heat: each cell is kicked in a random direction, harder where it is hot; the kick uses that heat up'
       : 'jitter constant (as before Part C): the heat is still made, spread and leaked, but no longer shakes the cells');
+  } else if (k === 'e') {
+    showEntropy(entropyEl.hidden);
+    flash(`entropy panel ${entropyEl.hidden ? 'hidden' : 'shown'}`);
   } else if (k === 'r') {
     background.heatOn = !background.heatOn;
     flash(`ripples ${background.heatOn ? 'simmer with heat: small random rings where it is hot' : 'no longer driven by heat'}`);
   }
+}
+
+function showEntropy(on) {
+  entropyEl.hidden = !on;
+  document.body.classList.toggle('entropy-on', on);
 }
 
 let flashTimer = 0;

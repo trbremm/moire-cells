@@ -296,6 +296,14 @@ export class Heat {
     this.device.queue.submit([e.finish()]);
   }
 
+  /** The entropy panel's two lines (plain text). */
+  panelText() {
+    const L = this.ledger;
+    if (!L) return 'ENTROPY  …';
+    return `ENTROPY  ${fmt(L.out)}  +${fmt(L.rate.out)}/s\n` +
+      `moving ${fmt(L.moving)} · heat in dish ${fmt(L.heat)} · in ${fmt(L.in)} · rounding ${fmtRound(L.rounding)}`;
+  }
+
   /** Lines for the F overlay. */
   overlayLines(view) {
     const p = this.params, L = this.ledger, on = (x) => (x ? 'on' : 'off');

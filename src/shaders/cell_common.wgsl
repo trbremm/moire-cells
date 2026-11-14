@@ -1,7 +1,7 @@
 // ===== cell_common.wgsl: the cells' state, the simulation uniforms and the neighbour grid =====
 // Not compiled on its own: src/cells.js prepends field_common.wgsl and then this file to every cell shader.
 //
-// Cells live in a fixed-capacity storage buffer (struct Cell, 48 bytes; keep in step with CELL_* in
+// Cells live in a fixed-capacity storage buffer (struct Cell, 56 bytes; keep in step with CELL_* in
 // src/cells.js). Their order never changes, so drawing order is stable and a cell keeps its index.
 //
 // Neighbour grid (rebuilt every tick, see cell_grid.wgsl):
@@ -25,6 +25,8 @@ struct Cell {
                     // offset from the key angle's bin (step 7, rule 2: a crowded cell flips its state)
   seed: u32,        // per-cell random seed
   aux: f32,         // the cell's key scale (log of its lattice period factor; a copy of Bio.key.y)
+  z: vec2f,         // step 8: the phasor the cell emits field A and its partner A' with: (1, 0) = field A as in steps 4 to
+                    // 7; its angle shifts the cell's pinned beat (A turns into A' at 90 degrees), its length scales it
 };
 
 const CELL_ALIVE: u32 = 1u;
@@ -441,7 +443,20 @@ struct Fields {
   pEps: f32,        // ... the current is divided by |A|^2 + |A'|^2 + pEps^2 (so a cell near a zero of both is not flung)
   pOn: u32,         // 1 = the partner is worked out in the step (any step 8 rule on)
   pSgn1: f32,       // the middle wave's direction in the partner: 1 = arrow (all three one way), -1 = symmetric
-  _p10: f32,
+  // rule b, change makes the partner. Mode 0, felt change: a cell emits A' in proportion to the rate of change of the
+  // A it feels, and A in proportion to the rate of change of the A' it feels (its phasor z = (1 + chSign x chGain x
+  // dA'/dt, chGain x dA/dt)). Mode 1, clock: inside the cell a change of A makes A' and a change of A' makes -A, so its
+  // phasor turns at chOmega (a clock hand); the pair it feels pulls its hand toward the neighbours' (chGain rad/s)
+  chGain: f32,      // mode 0: s; mode 1: the pull, rad/s (0 = rule off)
+  chTau: f32,       // the phasor follows its target with this time constant (s)
+  chMax: f32,       // mode 0: ... and stays within chMax of (1, 0) (soft cap)
+  chSign: f32,      // mode 0: the sign of "change of A' makes A" (-1: as Faraday's law, the pair turns; +1: grows)
+  chMode: u32,      // 0 = felt change, 1 = clock
+  chOmega: f32,     // mode 1: the clock's rate (rad/s)
+  chLag: f32,       // mode 1: the hand is pulled toward the neighbours' hand turned back by this much (rad)
+  _p11: f32,
+  _p12: f32,
+  _p13: f32,
 };
 
 // Step 8: the partner A'. Field A of one cell is  amp x envelope x (1/3) sum_m cos(q_m . d + ph_m); its partner is
@@ -526,7 +541,7 @@ fn cell_beat(c: Cell, S: Sim, M: Medium, FL: Fields) -> CellBeat {
   var e: Emitter;
   e.pos = c.pos;
   e.la = lat.x;
-  e.amp = S.emit * charge_a(FL, c.kind) * min(1.0, c.r / S.R);
+  e.amp = S.emit * charge_a(FL, c.kind) * min(1.0, c.r / S.R) * length(c.z);
   e.r0sq = (S.r0 * S.R) * (S.r0 * S.R);
   e.fa = F.x; e.fb = F.y; e.fd = F.z;
   e.kind = KIND_STEM;
@@ -542,6 +557,8 @@ fn cell_beat(c: Cell, S: Sim, M: Medium, FL: Fields) -> CellBeat {
   var pa = ph;                                          // anchor 0: the reference
   if (S.anchor == 1u) { pa = vec3f(0.0); }
   if (S.anchor == 2u) { pa = vec3f(dot(b.q0, o), dot(b.q1, o), dot(b.q2, o)); }
+  // step 8: the phasor's angle shifts the beat: each wave by sgn_m x angle, so A and the partner A' turn into each other
+  if (abs(c.z.y) > 1e-6 || c.z.x < 0.0) { pa += p_sgn(FL.pSgn1) * atan2(c.z.y, c.z.x); }
   cb.ph = pa - TAU * floor(pa / TAU);
   cb.idx = 0u;
   // field B: the same key and stretch, in B's band (the medium's lattice and the cell's both bBand times longer),

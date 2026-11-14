@@ -28,7 +28,8 @@ struct Draw {
   convFill: f32,    // fill of a converted stem cell, as a fraction of field B's ink
   states: f32,      // step 7: number of states, for the state bar (0 = no bar: exclusion off)
   bar: f32,         // the bar's brightness
-  _p5: f32,
+  hand: f32,        // step 8, rule b: the phasor's hand (0 = none)
+  pInk: vec4f,      // the partner A' ink (rgb)
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
@@ -120,11 +121,13 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   let ring = 1.0 - cover(c.r - lw, d, aa);        // clean outline at the rim
   // committed cells get a flat fill in their colour, so tissues read as areas; stem cells stay dark inside
   let fill = select(D.fill, D.fillC, c.kind != KIND_STEM);
-  var fillRgb = col * fill;
+  var fillRgb = col * fill;   // (step 8 may tint it below)
   // step 6, rule 2: a converted cell's outline is drawn in field B's ink, and a converted stem cell is filled with
   // it (flat, at the committed cells' level), so converted areas read as areas
   let conv = D.blue.a > 0.0 && (c.flags & CELL_CONV) != 0u;
   if (conv && c.kind == KIND_STEM) { fillRgb = D.blue.rgb * D.convFill; }
+  // step 8, rule b, clock: a stem cell filled with the partner's ink as far as it emits A' (see the hand below)
+  if (D.hand < 0.0 && c.kind == KIND_STEM) { fillRgb = mix(fillRgb, D.pInk.rgb * 0.55, clamp(c.z.y, 0.0, 1.0)); }
   var rgb = mix(fillRgb, col * D.dots, dot);
   let lineCol = select(col * D.line, D.blue.rgb, conv);
   // step 7: the cell's state as a flat bar through its centre, turned by 180 / states degrees per state (2 states:
@@ -145,6 +148,25 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     rgb = mix(rgb, fillRgb, clearA * dot);
     rgb = mix(rgb, col * D.bar, bar);
   }
+  // step 8, rule b: the phasor as a hand from the centre, in the partner's ink. Felt change (hand > 0): the phasor's
+  // change from (1, 0), its direction where the change points in the (A, A') plane (right: more A; up the screen: more
+  // A'), its length how far. Clock (hand < 0): the clock hand itself, at full length, and the cell is filled with the
+  // partner's ink as far as it emits A' (z.y > 0), so the clock's waves read as yellow bands at any size.
+  var hnd = 0.0;
+  if (D.hand != 0.0) {
+    let clock = D.hand < 0.0;
+    var w = c.z - vec2f(1.0, 0.0);
+    if (clock) { w = c.z; }
+    let wl = length(w);
+    if (wl > 0.05 && c.r * D.dpr > 5.0) {
+      let dir = vec2f(w.x, -w.y) / wl;
+      let len = c.r * 0.85 * select(min(1.0, wl / 0.6), 1.0, clock);
+      let t = clamp(in.local.x * dir.x + in.local.y * dir.y, 0.0, len);
+      let hd = length(in.local - dir * t);
+      hnd = cover(max(0.11 * c.r, 0.6 / D.dpr), hd, aa);
+      rgb = mix(rgb, select(D.pInk.rgb, col * D.line, clock) * abs(D.hand), hnd);
+    }
+  }
   rgb = mix(rgb, lineCol, ring);
   // step 6, rule 1: a cell leaking into field B gets a flat blue centre dot, its area growing with the leak
   var mark = 0.0;
@@ -155,7 +177,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       rgb = mix(rgb, D.blue.rgb, mark);
     }
   }
-  let a = disc * mix(D.fillA, 1.0, max(max(max(ring, dot * (1.0 - clearA)), mark), bar));
+  let a = disc * mix(D.fillA, 1.0, max(max(max(max(ring, dot * (1.0 - clearA)), mark), bar), hnd));
   // rgb is the colour as seen; blend premultiplied (one, one-minus-src-alpha)
   return vec4f(rgb * a, a);
 }

@@ -16,7 +16,7 @@
 //   ?ripple=1   drop a ripple every 0.7 s at varying spots
 //   ?debug=1    copy console warnings and errors into the overlay
 //   ?nogpu=1    pretend WebGPU is missing (to see the fallback message)
-//   ?cells=N    number of cells (default 2000)
+//   ?cells=N    number of cells (default 2000; on a phone or small touch screen fewer, see defaultCells)
 //   ?check=1    compare the cells' neighbour grid with brute force every 2 s (console)
 //   ?seed=N     seed of the random start (cells, genomes); default random
 //   ?speed=N    simulation speed: 1, 2, 4, 8, 16 or 32 ticks of 1/60 s per 1/60 s of real time, or max (keys [ and ])
@@ -145,7 +145,7 @@ async function boot() {
     landscape = await Landscape.create(gpu.device, gpu.format, medium);
     light = await Light.create(gpu.device, gpu.format);
     matter = await Matter.create(gpu.device, gpu.format, medium);
-    cells = await Cells.create(gpu.device, gpu.format, medium, Number(params.get('cells')) || DEFAULT_CELLS, SEED);
+    cells = await Cells.create(gpu.device, gpu.format, medium, Number(params.get('cells')) || defaultCells(), SEED);
     cells.heat.setLight(light);   // step C2: the heat passes absorb the light
     light.heat = cells.heat;
     matter.attach(cells.heat);   // step C3: the substances live in the heat buffer, on its grid
@@ -203,6 +203,17 @@ async function boot() {
   running = true;
   stage('running');
   requestAnimationFrame(frame);
+}
+
+/**
+ * Step C3b: the number of cells when the URL does not say. 2000 on a computer; on a touch screen or a small window,
+ * fewer, by the shorter side (the blob's size): 2000 x (side / 800 px)^2, between 800 and 1500. So a phone (about
+ * 390 px) gets 800 cells of about the computer's size (R about 5 px instead of 3 with 2000) and runs lighter.
+ */
+function defaultCells() {
+  const side = Math.min(window.innerWidth || 800, window.innerHeight || 800);
+  if (!TOUCH && side >= 600) return DEFAULT_CELLS;
+  return Math.max(800, Math.min(1500, Math.round(DEFAULT_CELLS * (side / 800) ** 2)));
 }
 
 /** Step C2: the light's URL options (see the top of this file). */
@@ -305,10 +316,12 @@ function frame(now) {
   }
 
   if (!entropyEl.hidden) {
-    let t = `${cells.heat.panelText()}\n${matter.panelLine()}`;
+    const compact = view.cssW < 560 || view.cssH < 500;   // a phone (either way up): shorter lines
+    let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}`;
     if (paused || speed !== 1) {
       const r = reachedText();
-      t = t.replace('\n', `   ${paused ? 'paused' : r ? `${speedName(speed)} · reached ${r}` : speedName(speed)}\n`);
+      const sp = paused ? 'paused' : r ? (compact ? r : `${speedName(speed)} · reached ${r}`) : speedName(speed);
+      t = t.replace('\n', `${compact ? '  ' : '   '}${sp}\n`);
     }
     if (t !== entropyEl.textContent) entropyEl.textContent = t;
   }

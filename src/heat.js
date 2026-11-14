@@ -363,11 +363,16 @@ export class Heat {
     this.device.queue.submit([e.finish()]);
   }
 
-  /** The entropy panel's two lines (plain text). */
-  panelText() {
+  /** The entropy panel's lines (plain text); compact: shorter lines for a narrow screen (step C3b). */
+  panelText(compact = false) {
     const L = this.ledger;
     if (!L) return 'ENTROPY  …';
     const Lt = this.light, r = L.rate;
+    if (compact) {
+      const light = !Lt || !Lt.on ? 'light off' : `light ${fmt(r.lin)}/s → heat ${fmt(r.labs)}/s · ${Lt.label().replace(' · day', '')}`;
+      return `ENTROPY ${fmt(L.out)} +${fmt(L.rate.out)}/s\n` +
+        `heat ${fmt(L.heat)} · moving ${fmt(L.moving)} · rounding ${fmtRound(L.rounding)}\n` + light;
+    }
     const light = !Lt || !Lt.on ? 'light off'
       : `light in ${fmt(r.lin)}/s → heat ${fmt(r.labs)}/s · passed ${fmt(r.lin - r.labs)}/s · ${Lt.label()}`;
     return `ENTROPY  ${fmt(L.out)}  +${fmt(L.rate.out)}/s\n` +

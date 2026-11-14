@@ -529,11 +529,12 @@ export class Matter {
     return `${describe(s)} alone${amt > 0 ? '' : ' (none in the dish' + (s.kind === 'fuel' || s.kind === 'sediment' ? ': made by the chemistry of C4)' : ')')}`;
   }
 
-  /** The entropy panel's line. */
-  panelLine() {
+  /** The entropy panel's line; compact: shorter, for a narrow screen (step C3b). */
+  panelLine(compact = false) {
     const L = this.ledger;
     if (!L) return 'ORDER  …';
     const o = L.order == null ? '–' : L.order.toFixed(3);
+    if (compact) return `ORDER ${o} · atoms ${fmt(L.dish)} · rounding ${L.rounding === 0 ? '0' : L.rounding.toExponential(1)}`;
     return `ORDER  ${o} · atoms in dish ${fmt(L.dish)} · added ${fmt(L.add)} (+${fmt(L.rateAdd)}/s) · out ${fmt(L.lost + L.gone)} · rounding ${L.rounding === 0 ? '0' : L.rounding.toExponential(1)}`;
   }
 

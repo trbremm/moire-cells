@@ -22,6 +22,8 @@ Usage:
                                                            # shots/shot_t5.png, shots/shot_t30.png, ...
     python tools/shot.py --page reference/neon_organoid_cpu.html --query ""
     python tools/shot.py --query nogpu=1                   # see the no-WebGPU message
+    python tools/shot.py --mobile                          # a phone: 390x844, 3 device px per CSS px, touch (Chrome)
+    python tools/shot.py --mobile --tapel "[data-panel=rules]" --tap 200,300   # finger taps: on a button, on the dish
 
 The page signals progress through <body data-stage="...">; the tool waits for a stage starting with
 'running-10' (ten frames drawn) or for the message box (#msg) to appear. Pages without data-stage
@@ -218,7 +220,7 @@ class Rpc:
 class Chrome:
     """Chrome / Edge via the DevTools protocol."""
 
-    def __init__(self, exe, profile, w, h, extra, dpr=1.0):
+    def __init__(self, exe, profile, w, h, extra, dpr=1.0, mobile=False):
         self.proc = subprocess.Popen(
             [exe, "--headless=new", f"--user-data-dir={profile}", "--remote-debugging-port=0",
              "--no-first-run", "--no-default-browser-check", "--hide-scrollbars",
@@ -242,7 +244,17 @@ class Chrome:
             self.rpc.call(f"{dom}.enable")
         # exact viewport (--window-size includes the window frame)
         self.rpc.call("Emulation.setDeviceMetricsOverride",
-                      {"width": w, "height": h, "deviceScaleFactor": dpr, "mobile": False})
+                      {"width": w, "height": h, "deviceScaleFactor": dpr, "mobile": mobile})
+        if mobile:
+            # a phone: touch only (the page's (any-pointer: fine) is false), taps arrive as touch pointer events
+            self.rpc.call("Emulation.setTouchEmulationEnabled", {"enabled": True, "maxTouchPoints": 5})
+            self.rpc.call("Emulation.setEmitTouchEventsForMouse", {"enabled": True, "configuration": "mobile"})
+
+    def tap(self, x, y):
+        """A finger tap at (x, y) CSS px (real touch input, through the browser's hit testing)."""
+        self.rpc.call("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x, "y": y}]})
+        time.sleep(0.05)
+        self.rpc.call("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
 
     def navigate(self, url):
         self.rpc.call("Page.navigate", {"url": url})
@@ -326,6 +338,14 @@ class Firefox:
             raise RuntimeError(r.get("exceptionDetails", {}).get("text", "exception"))
         return r.get("result", {}).get("value")
 
+    def tap(self, x, y):
+        """A tap at (x, y) CSS px, as page-side touch pointer events (and a click) on the element there."""
+        self.eval(f"""(() => {{ const el = document.elementFromPoint({x}, {y}); if (!el) return;
+          const o = {{clientX: {x}, clientY: {y}, pointerId: 7, bubbles: true, isPrimary: true, pointerType: 'touch', button: 0}};
+          el.dispatchEvent(new PointerEvent('pointerdown', {{...o, buttons: 1}}));
+          el.dispatchEvent(new PointerEvent('pointerup', {{...o, buttons: 0}}));
+          el.dispatchEvent(new MouseEvent('click', {{clientX: {x}, clientY: {y}, bubbles: true}})); }})()""")
+
     def screenshot(self, clip=None):
         p = {"context": self.ctx}
         if clip:
@@ -389,8 +409,13 @@ def main():
     ap.add_argument("--page", default="index.html", help="page path relative to the repo root")
     ap.add_argument("--query", default="overlay=1&ripple=1", help="URL query string without '?'")
     ap.add_argument("--out", default=os.path.join("shots", "shot.png"), help="PNG path (relative to repo root)")
-    ap.add_argument("--size", default="1280x800", help="viewport WxH in CSS pixels")
-    ap.add_argument("--dpr", type=float, default=1.0, help="device pixel ratio (Chrome/Edge; the page draws at up to 2, "
+    ap.add_argument("--size", default="", help="viewport WxH in CSS pixels (default 1280x800; with --mobile 390x844)")
+    ap.add_argument("--mobile", action="store_true", help="a phone: 390x844 unless --size, 3 device px per CSS px unless "
+                    "--dpr, touch only (Chrome/Edge; Firefox gets only the size)")
+    ap.add_argument("--tap", action="append", default=[], help="finger tap at x,y (CSS px; repeatable; after the clicks)")
+    ap.add_argument("--tapel", action="append", default=[], help="finger tap on the centre of the element matching this "
+                                                                "CSS selector, e.g. [data-panel=rules] (repeatable; before --tap)")
+    ap.add_argument("--dpr", type=float, default=0, help="device pixel ratio (Chrome/Edge; the page draws at up to 2, "
                     "so --dpr 2 with --clip x,y,w,h,2 gives a sharp zoom)")
     ap.add_argument("--wait", type=int, default=2500, help="ms to let the page run after it is ready")
     ap.add_argument("--ready-timeout", type=int, default=30000, help="ms to wait for the page to start")
@@ -417,7 +442,8 @@ def main():
         args.browser = "firefox"
     out = args.out if os.path.isabs(args.out) else os.path.join(REPO, args.out)
     os.makedirs(os.path.dirname(out), exist_ok=True)
-    w, h = (int(v) for v in args.size.lower().split("x"))
+    w, h = (int(v) for v in (args.size or ("390x844" if args.mobile else "1280x800")).lower().split("x"))
+    args.dpr = args.dpr or (3.0 if args.mobile else 1.0)
 
     server, port = None, args.port
     if not port:
@@ -437,7 +463,7 @@ def main():
             prefs = {k: json.loads(v) for k, v in (p.split("=", 1) for p in args.pref)}
             driver = Firefox(exe, profile, w, h, args.extra, prefs, args.headed)
         else:
-            driver = Chrome(exe, profile, w, h, args.extra, args.dpr)
+            driver = Chrome(exe, profile, w, h, args.extra, args.dpr, args.mobile)
         driver.navigate(url)
 
         t0, state = time.time(), {}
@@ -466,6 +492,19 @@ def main():
             driver.eval(wheel_js(float(v[0]), float(v[1]), float(v[2]), len(v) > 3 and v[3].lower() in ("1", "shift", "true")))
         for js in args.eval:
             driver.eval(js)
+        for sel in args.tapel:
+            r = driver.eval(f"(() => {{ const e = document.querySelector({json.dumps(sel)}); if (!e) return ''; "
+                            f"const r = e.getBoundingClientRect(); return (r.x + r.width / 2) + ',' + (r.y + r.height / 2); }})()")
+            if not r:
+                print(f"--tapel: nothing matches {sel}")
+                continue
+            x, y = (float(v) for v in r.split(","))
+            driver.tap(x, y)
+            time.sleep(0.15)
+        for t in args.tap:
+            x, y = (float(v) for v in t.split(","))
+            driver.tap(x, y)
+            time.sleep(0.15)
 
         clip = [float(v) for v in args.clip.split(",")] if args.clip else None
         if clip and len(clip) == 4:

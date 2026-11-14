@@ -22,7 +22,8 @@
 //   ?bio=0      start with the biology rules off (D H B T M E): the loop alone
 //   ?excl=0|1   step 7 exclusion off / on from the start (key 8); ?states=2..4 its number of states;
 //               ?flip=0|1 its state flip (key 9)
-//   ?partner=0|1 step 8, rule a: the partner A' felt as a phase current (key Z); ?change=0|1 rule b (key ,)
+//   ?partner=0|1 step 8, rule a: the partner A' felt as a phase current (key Z); ?change=0|1 rule b (key ,);
+//               ?clock=0|1 its mode (key '); ?side=0|1 rule c, sideways push (key .)
 
 import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown } from './gpu.js';
 import { Background } from './background.js';
@@ -115,6 +116,7 @@ async function boot() {
     if (params.has('flip')) cells.excl.flip = flag('flip');
     if (params.has('partner')) cells.partner.on = flag('partner');
     if (params.has('change')) cells.partner.change = flag('change');
+    if (params.has('side')) cells.partner.side = flag('side');
     if (params.has('clock')) cells.partner.chMode = flag('clock') ? 1 : 0;
     if (params.has('states')) cells.excl.states = Math.max(2, Math.min(4, Number(params.get('states')) || 2));
   } catch (e) {
@@ -251,7 +253,7 @@ function hintLine() {
 }
 function fullHint() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
+    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · .: sideways push · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
 }
 
 function tap(x, y) {
@@ -428,6 +430,10 @@ function setupInput() {
       const P = cells.partner;
       P.change = !P.change;
       flash(`change makes the partner ${P.change ? "on: a cell emits A' as the A it feels changes, and A as the A' it feels changes" : 'off'}`);
+    } else if (k === '.') {
+      const P = cells.partner;
+      P.side = !P.side;
+      flash(`sideways push ${P.side ? "on: the partner A' pushes at right angles (cells go round its blobs)" : 'off'}`);
     } else if (k === "'") {
       const P = cells.partner;
       P.chMode = P.chMode ? 0 : 1;

@@ -454,8 +454,11 @@ struct Fields {
   chMode: u32,      // 0 = felt change, 1 = clock
   chOmega: f32,     // mode 1: the clock's rate (rad/s)
   chLag: f32,       // mode 1: the hand is pulled toward the neighbours' hand turned back by this much (rad)
-  _p11: f32,
-  _p12: f32,
+  // rule c, sideways push: the partner pushes at right angles. Mode 0: the force the partner A' makes on the membrane
+  // (as field A's, from its gradient), turned 90 degrees, so cells go round the partner's blobs instead of up them.
+  // Mode 1: perpendicular to the cell's own motion, by the A' it feels (as a charge in a magnetic field), so paths curl
+  side: f32,        // gain (0 = off); mode 0: x field A's force; mode 1: turning rate per tick at full A'
+  sideMode: u32,
   _p13: f32,
 };
 

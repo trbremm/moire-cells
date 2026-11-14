@@ -1,0 +1,271 @@
+// Step C3b: ONE table of every action the page offers: the keyboard handler and the toolbar / panels (src/ui.js) both
+// read it, so a key and its button cannot drift apart.
+//
+// An entry:
+//   id      unique name (the buttons use it: data-action)
+//   keys    the keys that run it: a plain key as e.key lowercased ('p', '[', ' ' for Space), or 'shift+<letter>' for the
+//           Part C keys (Shift + a letter never also runs the plain letter). Empty: a button only.
+//   label   a short name for the button / switch
+//   group   where it sits: 'tool', 'play', 'light', 'view', or a rules group (RULE_GROUPS below)
+//   type    'toggle' (get() is true / false: a switch), 'cycle' (get() is the current setting's name; options() lists
+//           them when the panel can set one directly with set()), 'knob' (get() is the value; run('-') / run('+')
+//           step it), 'do' (a button)
+//   get     the current state, for the switches (the panels poll it, so a change by a key or the console shows too)
+//   run(k)  does it; k is the key pressed (knobs: '-' or '+' from the buttons). Returns the flash text, or nothing.
+//   help    one line in plain words for the panels
+//
+// The flash texts are the ones the keys showed before the table (checked by pressing every key in the old and the new
+// page and comparing the state and the flash after each press).
+
+export const TOOLS = [
+  { id: 'ripple', name: 'ripple', label: 'drop a ripple', key: '1' },
+  { id: 'light', name: 'light spring', label: 'drop a light spring', spring: 'light', key: '2' },
+  { id: 'heavy', name: 'heavy spring', label: 'drop a heavy spring', spring: 'heavy', key: '3' },
+];
+
+export const RULE_GROUPS = [
+  ['loop', 'The loop (step 4)'],
+  ['fieldB', 'Field B (step 5)'],
+  ['meet', 'Where the fields meet (step 6)'],
+  ['excl', 'Exclusion (step 7)'],
+  ['partner', 'Partner fields (step 8)'],
+  ['bio', 'Biology'],
+  ['heatlight', 'Heat and light (Part C)'],
+];
+
+export const SQUEEZE_SOFT = 0.25, SQUEEZE_HARD = 1.2;   // key \ : cells.params.squeeze, normal or pressed together
+
+/**
+ * The table. `app` gives the actions what they act on: the layers (cells, background, landscape, light, matter), the
+ * page's elements and a few functions of main.js (tool, speed, pause, record, overlay, entropy panel, key list).
+ */
+export function makeActions(app) {
+  const C = () => app.cells, rules = () => app.cells.genome.rules, F = () => app.cells.fields;
+  const X = () => app.cells.excl, PT = () => app.cells.partner, LP = () => app.landscape.params;
+  const flip = (o, k) => { o[k] = !o[k]; return o[k]; };
+
+  const A = [
+    // ---------- tools (what a tap / click and a drag on the dish do) ----------
+    ...TOOLS.map((t, i) => ({
+      id: `tool-${t.id}`, keys: t.key ? [t.key] : [], label: t.name, group: 'tool', type: 'tool',
+      get: () => app.tool === i,
+      run: () => app.setTool(i),
+      help: t.id === 'stir' ? 'tap and drag: stir the dish (ripples, and the cells near your finger are pushed along)'
+        : t.id === 'spot' ? 'tap or drag: move the spotlight there (switches the light to spotlight)'
+          : `tap: ${t.label}; drag: stir`,
+    })),
+
+    // ---------- playback ----------
+    { id: 'speed', keys: ['[', ']'], label: 'speed', group: 'play', type: 'knob', get: () => app.speedLabel(),
+      run: (k) => app.stepSpeed(k === ']' || k === '+' ? 1 : -1),
+      help: 'simulation steps per drawn frame' },
+    { id: 'culture', keys: ['n'], label: 'new culture', group: 'play', type: 'do', run: () => newCulture(false),
+      help: 'a fresh blob of stem cells at the centre, the same founder genomes' },
+    { id: 'genomes', keys: ['g'], label: 'new genomes', group: 'play', type: 'do', run: () => newCulture(true),
+      help: 'a fresh blob with fresh random founder genomes' },
+    { id: 'springs', keys: ['c'], label: 'clear springs', group: 'play', type: 'do',
+      run: () => { app.matter.clearSprings(); return 'springs cleared (the atoms already in the dish stay; Shift+C washes them out)'; },
+      help: 'remove the springs (the atoms already in the dish stay)' },
+    { id: 'wash', keys: ['shift+c'], label: 'wash atoms', group: 'play', type: 'do',
+      run: () => { app.matter.wash(); return 'the dish washed: every atom out (booked as gone in the atoms ledger)'; },
+      help: 'every atom out of the dish (booked as gone in the atoms ledger)' },
+
+    // ---------- view (drawing only) ----------
+    { id: 'entropy', keys: ['shift+e'], label: 'entropy panel', group: 'view', type: 'toggle', get: () => !app.entropyEl.hidden,
+      run: () => { app.showEntropy(app.entropyEl.hidden); return `entropy panel ${app.entropyEl.hidden ? 'hidden' : 'shown'}`; },
+      help: 'the energy and matter counters, top right' },
+    { id: 'stats', keys: ['f'], label: 'stats overlay', group: 'view', type: 'toggle', get: () => !app.overlayEl.hidden,
+      run: () => { app.overlayEl.hidden = !app.overlayEl.hidden; if (!app.overlayEl.hidden) app.drawOverlay(); },
+      help: 'frame time, the graphics card and every number, top left' },
+    { id: 'landscape', keys: ['l'], label: 'landscape', group: 'view', type: 'toggle', get: () => LP().on,
+      run: () => `landscape ${flip(LP(), 'on') ? 'on' : 'off: no halftone dots'}`,
+      help: 'all the halftone dots: the cells\' fields and the substances' },
+    { id: 'show', keys: ['shift+s'], label: 'substances shown', group: 'view', type: 'cycle', get: () => app.matter.showName,
+      run: () => app.matter.cycleShow(), help: 'the substances\' dots: summary, each substance alone, or off' },
+    { id: 'colour', keys: ['v'], label: 'colour by', group: 'view', type: 'cycle',
+      get: () => (C().look.view ? 'lineage' : 'fate'), options: () => ['fate', 'lineage'],
+      set: (v) => { C().look.view = v === 'lineage' ? 1 : 0; return `colour by ${C().look.view ? 'lineage (key)' : 'fate'}`; },
+      run: () => { C().look.view = C().look.view ? 0 : 1; return `colour by ${C().look.view ? 'lineage (key)' : 'fate'}`; },
+      help: 'cells coloured by their fate (function) or by their lineage (the genome key\'s hue)' },
+    { id: 'cellField', keys: ['k'], label: 'cells\' field drawn', group: 'view', type: 'toggle', get: () => LP().cellField,
+      run: () => `cells' field ${flip(LP(), 'cellField') ? 'drawn (pale dots)' : 'not drawn'}`,
+      help: 'field A in pale dots (drawing only)' },
+    { id: 'fieldBDrawn', keys: ['j'], label: 'field B drawn', group: 'view', type: 'toggle', get: () => LP().fieldB,
+      run: () => `field B ${flip(LP(), 'fieldB') ? 'drawn (blue dots; open rings where it is negative)' : 'not drawn'}`,
+      help: 'field B as blue dots, open rings where negative (drawing only)' },
+    { id: 'partnerDrawn', keys: [';'], label: 'partner A′ drawn', group: 'view', type: 'toggle', get: () => LP().partner,
+      run: () => `partner A' ${flip(LP(), 'partner') ? 'drawn (yellow dots, while a step 8 rule is on)' : 'not drawn'}`,
+      help: 'the partner field A′ in yellow dots, while a step 8 rule is on (drawing only)' },
+    { id: 'ambient', keys: ['a'], label: 'ambient ripples', group: 'view', type: 'toggle', get: () => app.background.ambient,
+      run: () => `ambient ripples ${flip(app.background, 'ambient') ? 'on' : 'off'}`,
+      help: 'random drops in the background, about one a second' },
+    { id: 'simmer', keys: ['shift+r'], label: 'ripples simmer', group: 'view', type: 'toggle', get: () => app.background.heatOn,
+      run: () => `ripples ${flip(app.background, 'heatOn') ? 'simmer with heat: small random rings where it is hot' : 'no longer driven by heat'}`,
+      help: 'small random rings in the background where the dish is hot' },
+    { id: 'keys', keys: ['?', '/'], label: 'all keys', group: 'view', type: 'toggle', get: () => app.allKeys(),
+      run: () => { app.toggleAllKeys(); }, help: 'the line at the bottom lists every key (keyboard only)', desktop: true },
+
+    // ---------- rules: the loop (step 4) ----------
+    { id: 'contact', keys: ['p'], label: 'contact push', group: 'loop', type: 'toggle', get: () => C().params.contact,
+      run: () => `contact push ${flip(C().params, 'contact') ? 'on' : 'off'}`,
+      help: 'cells push each other apart where they overlap (off: they slide over each other and heap up)' },
+    { id: 'sense', keys: ['s'], label: 'field sensing', group: 'loop', type: 'toggle', get: () => C().params.senseOn,
+      run: () => `field sensing ${flip(C().params, 'senseOn') ? 'on: cells move along the field they feel on their membrane' : 'off'}`,
+      help: 'cells move along the field they feel on their membrane' },
+    { id: 'emit', keys: ['o'], label: 'cells emit', group: 'loop', type: 'toggle', get: () => C().params.emit,
+      run: () => `cells emit ${flip(C().params, 'emit') ? 'on: every cell adds its own beat to the field' : 'off'}`,
+      help: 'every cell adds its own beat to the field (off: no field at all)' },
+    { id: 'shape', keys: ['w'], label: 'active deformation', group: 'loop', type: 'toggle', get: () => C().params.active,
+      run: () => `active deformation ${flip(C().params, 'active') ? 'on: cells stretch along their motion and the pull of the field' : 'off: only contact squeezes them'}`,
+      help: 'cells stretch along their motion and the pull of the field (off: only contact squeezes them)' },
+    { id: 'anchor', keys: ['x'], label: 'beat anchor', group: 'loop', type: 'cycle',
+      get: () => ['sliding', 'pinned', 'still'][C().params.anchor] || '?',
+      run: () => { const p = C().params; p.anchor = (p.anchor + 1) % 3; return `cells' beat: ${app.ANCHORS[p.anchor]}`; },
+      help: 'where a cell\'s beat pattern sits: pinned to the cell, still in the world, or the sliding moiré of the reference' },
+    { id: 'receptor', keys: ['r'], label: 'tune by receptor', group: 'loop', type: 'toggle', get: () => C().params.receptor,
+      run: () => `cells feel other cells ${flip(C().params, 'receptor') ? 'through their genome’s receptor' : 'by likeness to their own lattice'}`,
+      help: 'cells feel others through their genome\'s receptor (off: by likeness to their own lattice)' },
+    { id: 'lever', keys: ['-', '=', '+'], label: 'lever', group: 'loop', type: 'knob', get: () => C().params.lever.toFixed(2),
+      run: (k) => {
+        const p = C().params;
+        p.lever = Math.max(0.05, Math.min(3, Math.round(p.lever * (k === '-' ? 0.8 : 1.25) * 1000) / 1000));
+        return `lever ${p.lever.toFixed(2)}: the cells' lattices ${p.lever < 1 ? 'closer to' : 'further from'} the medium's (1 = as the genome has it)`;
+      },
+      help: 'how different the cells\' lattices are from the medium\'s: smaller = longer beats, bigger clusters' },
+
+    // ---------- field B (step 5) ----------
+    { id: 'feelB', keys: ['q'], label: 'feel field B', group: 'fieldB', type: 'toggle', get: () => F().on,
+      run: () => `field B ${flip(F(), 'on') ? 'felt: cells move along it by the sign rule' : 'not felt (still emitted and drawn)'}`,
+      help: 'cells move along field B by its sign rule (off: still emitted and drawn)' },
+    { id: 'signB', keys: ['u'], label: 'like … like', group: 'fieldB', type: 'cycle', get: () => (F().sign > 0 ? 'repels' : 'attracts'),
+      run: () => { F().sign = -F().sign; return `field B: like ${F().sign > 0 ? 'repels' : 'attracts'} like`; },
+      help: 'B\'s sign rule: like attracts like, or like repels like' },
+    { id: 'likeB', keys: ['y'], label: '"like" means', group: 'fieldB', type: 'cycle', get: () => (F().like ? 'lineage' : 'charge'),
+      run: () => { F().like = F().like ? 0 : 1; return `field B: "like" means ${F().like ? 'a similar key (the same lineage)' : 'the same sign of charge (charges by fate)'}`; },
+      help: 'for B, "like" means the same sign of charge (by fate) or a similar key (lineage)' },
+
+    // ---------- where the fields meet (step 6) ----------
+    { id: 'leak', keys: ['4'], label: 'leak by deformation', group: 'meet', type: 'toggle', get: () => F().leakOn,
+      run: () => `leak by deformation ${flip(F(), 'leakOn') ? 'on: strongly stretched cells leak into field B (blue centre dot)' : 'off'}`,
+      help: 'strongly stretched cells leak part of their A into B (blue centre dot)' },
+    { id: 'conv', keys: ['5'], label: 'conversion A → B', group: 'meet', type: 'toggle', get: () => F().convOn,
+      run: () => `conversion ${flip(F(), 'convOn') ? 'on: cells that feel enough A turn to emitting B (blue outline)' : 'off'}`,
+      help: 'a cell that feels enough A converts and emits more B (blue outline)' },
+    { id: 'convMode', keys: ['6'], label: 'conversion does', group: 'meet', type: 'cycle', get: () => (F().convMode ? 'flip B' : 'boost B'),
+      run: () => { F().convMode = F().convMode ? 0 : 1; return `a converted cell ${F().convMode ? 'flips its B charge' : 'emits more B'}`; },
+      help: 'a converted cell emits more B, or flips the sign of its B charge' },
+    { id: 'relay', keys: ['7'], label: 'relay through B', group: 'meet', type: 'toggle', get: () => F().relayOnKey,
+      run: () => `relay through B ${flip(F(), 'relayOnKey') ? 'on: converted cells excite their neighbours, tire and rest' : 'off'}${F().convOn ? '' : ' (conversion is off: key 5)'}`,
+      help: 'converted cells excite their neighbours, tire and rest, so conversion travels as waves (needs conversion)' },
+
+    // ---------- exclusion (step 7) ----------
+    { id: 'excl', keys: ['8'], label: 'exclusion', group: 'excl', type: 'toggle', get: () => X().on,
+      run: () => `exclusion ${flip(X(), 'on') ? 'on: same fate and same state (the bar) keep apart, other states pack closer' : 'off'}`,
+      help: 'cells of the same fate in the same state (the bar) keep a gap; other states may touch' },
+    { id: 'flip', keys: ['9'], label: 'state flip', group: 'excl', type: 'toggle', get: () => X().flip,
+      run: () => `state flip ${flip(X(), 'flip') ? 'on: a cell crowded by its own state turns to the state least represented around it' : 'off'}${X().on ? '' : ' (exclusion is off: key 8)'}`,
+      help: 'a cell crowded by its own state turns to the state least represented around it (needs exclusion)' },
+    { id: 'states', keys: ['0'], label: 'states', group: 'excl', type: 'cycle', get: () => String(X().states),
+      run: () => { const x = X(); x.states = x.states >= 4 ? 2 : x.states + 1; return `exclusion: ${x.states} states (the bar's directions)${x.on ? '' : ' (exclusion is off: key 8)'}`; },
+      help: 'how many states (directions of the bar): 2, 3 or 4' },
+    { id: 'squeeze', keys: ['\\'], label: 'squeeze hard', group: 'excl', type: 'toggle', get: () => C().params.squeeze > SQUEEZE_SOFT,
+      run: () => {
+        const P = C().params;
+        P.squeeze = P.squeeze > SQUEEZE_SOFT ? SQUEEZE_SOFT : SQUEEZE_HARD;
+        return `squeeze ${P.squeeze > SQUEEZE_SOFT ? 'hard: the pull to the centre presses the drop together (with 2 states (key 0), exclusion (8) and field B not felt (Q): a woven checkerboard)' : 'soft (normal)'}`;
+      },
+      help: 'the pull to the dish centre presses the culture together (2 states, exclusion, B not felt: a woven checkerboard)' },
+
+    // ---------- partner fields (step 8) ----------
+    { id: 'partner', keys: ['z'], label: 'partner A′', group: 'partner', type: 'toggle', get: () => PT().on,
+      run: () => `partner A' ${flip(PT(), 'on') ? "on: cells feel field A and its quarter-period twin A' (yellow dots) as a phase current, and are pushed along it" : 'off'}`,
+      help: 'cells feel A and its quarter-period twin A′ as a phase current and are pushed along it' },
+    { id: 'change', keys: [','], label: 'change makes partner', group: 'partner', type: 'toggle', get: () => PT().change,
+      run: () => `change makes the partner ${flip(PT(), 'change') ? "on: a cell emits A' as the A it feels changes, and A as the A' it feels changes" : 'off'}`,
+      help: 'each cell\'s emission turns between A and A′ (yellow fill and hand)' },
+    { id: 'clock', keys: ["'"], label: 'change mode', group: 'partner', type: 'cycle', get: () => (PT().chMode ? 'clock' : 'felt change'),
+      run: () => {
+        const P = PT();
+        P.chMode = P.chMode ? 0 : 1;
+        return `change makes the partner: ${P.chMode ? "clock (in each cell A turns into A' and back; the neighbours pull the hand)" : "felt change (a cell emits A' as the A it feels changes, and A as the A' changes)"}${P.change ? '' : ' (the rule is off: key ,)'}`;
+      },
+      help: 'clock: in each cell A turns into A′ and back, the neighbours pull the hand; or felt change' },
+    { id: 'side', keys: ['.'], label: 'sideways push', group: 'partner', type: 'toggle', get: () => PT().side,
+      run: () => `sideways push ${flip(PT(), 'side') ? "on: the partner A' pushes at right angles (cells go round its blobs)" : 'off'}`,
+      help: 'the partner pushes at right angles to its pull: curls and spirals' },
+
+    // ---------- biology ----------
+    { id: 'fates', keys: ['d'], label: 'differentiation', group: 'bio', type: 'toggle', get: () => rules().diff,
+      run: () => (flip(rules(), 'diff') ? 'differentiation on: cells read their contacts and choose fates' : 'differentiation off: every cell back to stem'),
+      help: 'cells read their contacts and choose fates (off: every cell back to stem)' },
+    { id: 'adhesion', keys: ['h'], label: 'adhesion', group: 'bio', type: 'toggle', get: () => rules().adh,
+      run: () => `adhesion ${flip(rules(), 'adh') ? 'on: like sticks to like (similar keys, same fate)' : 'off'}`,
+      help: 'like sticks to like (similar keys, same fate)' },
+    { id: 'body', keys: ['b'], label: 'body traits', group: 'bio', type: 'toggle', get: () => rules().body,
+      run: () => `body traits ${flip(rules(), 'body') ? 'on: size and motility from the genome and the fate' : 'off: all cells alike'}`,
+      help: 'size, motility and crawling from the genome and the fate (off: all alike)' },
+    { id: 'turnover', keys: ['t'], label: 'turnover', group: 'bio', type: 'toggle', get: () => rules().turn,
+      run: () => `turnover ${flip(rules(), 'turn') ? 'on: cells die now and then, a neighbour divides into the gap' : 'off'}`,
+      help: 'cells die now and then, a neighbour divides into the gap' },
+    { id: 'mutation', keys: ['m'], label: 'mutation', group: 'bio', type: 'toggle', get: () => rules().mut,
+      run: () => `mutation ${flip(rules(), 'mut') ? 'on: daughters differ a little from their parent' : 'off: daughters are exact copies'}`,
+      help: 'daughters differ a little from their parent (off: exact copies)' },
+    { id: 'inherit', keys: ['i'], label: 'inherit fate', group: 'bio', type: 'toggle', get: () => rules().inherit,
+      run: () => (flip(rules(), 'inherit') ? "daughters inherit their parent's fate" : 'daughters start as stem cells'),
+      help: 'daughters keep their parent\'s fate (off: they start as stem cells)' },
+
+    // ---------- heat and light (Part C) ----------
+    { id: 'kicks', keys: ['shift+h'], label: 'jitter from heat', group: 'heatlight', type: 'toggle', get: () => app.heat.params.kicks,
+      run: () => (flip(app.heat.params, 'kicks')
+        ? 'jitter from heat: each cell is kicked in a random direction, harder where it is hot; the kick uses that heat up'
+        : 'jitter constant (as before Part C): the heat is still made, spread and leaked, but no longer shakes the cells'),
+      help: 'each cell is kicked in a random direction, harder where it is hot (off: the old constant jitter)' },
+    { id: 'lightMode', keys: ['shift+l'], label: 'light', group: 'heatlight', type: 'cycle', get: () => app.light.params.mode,
+      options: () => ['spot', 'full', 'off'],
+      set: (m) => { app.light.params.mode = m; return lightText(m); },
+      run: () => { const P = app.light.params; P.mode = P.mode === 'spot' ? 'full' : P.mode === 'full' ? 'off' : 'spot'; return lightText(P.mode); },
+      help: 'a spotlight, the full field, or no light; what is caught becomes heat' },
+    { id: 'day', keys: ['shift+d'], label: 'day and night', group: 'heatlight', type: 'toggle', get: () => app.light.params.day,
+      run: () => { const P = app.light.params; return flip(P, 'day') ? `day and night: the light rises and falls over ${P.dayPeriod} s` : 'no day and night: the light stays at full day'; },
+      help: 'the light rises and falls over a day of 240 s of simulation time' },
+  ];
+
+  function newCulture(fresh) {
+    app.cells.seed(fresh);
+    app.background.impulse(app.view.cssW / 2, app.view.cssH / 2, 2);   // as the reference's seed()
+    return fresh ? 'new culture, fresh random genomes' : 'new culture, same founder genomes';
+  }
+
+  function lightText(m) {
+    return m === 'spot' ? 'light: spotlight (right-drag moves it, the wheel tilts it, Shift+wheel turns where it comes from)'
+      : m === 'full' ? 'light: full field, the whole dish lit (clouds drift over)' : 'light off: only the base warmth and the cells\' own motion heat the dish';
+  }
+
+  return A;
+}
+
+/** Key maps: { plain: Map(key -> action), shift: Map(letter -> action) }. */
+export function keyMaps(actions) {
+  const plain = new Map(), shift = new Map();
+  for (const a of actions) {
+    for (const k of a.keys) {
+      if (k.startsWith('shift+')) shift.set(k.slice(6), a);
+      else plain.set(k, a);
+    }
+  }
+  return { plain, shift };
+}
+
+/** How a key is written for people: 'Shift+H', 'Space', '[ ]'. */
+export function keyName(k) {
+  if (k === ' ') return 'Space';
+  if (k.startsWith('shift+')) return 'Shift+' + k.slice(6).toUpperCase();
+  return k.length === 1 && /[a-z]/.test(k) ? k.toUpperCase() : k;
+}
+
+export function keysText(a) {
+  if (!a.keys.length) return '';
+  if (a.id === 'lever') return '- =';
+  if (a.id === 'keys') return '?';
+  return a.keys.map(keyName).join(' ');
+}

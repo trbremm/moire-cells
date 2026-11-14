@@ -52,7 +52,8 @@ choose the browser, set "High performance", restart the browser.
 - **V**: colour by fate or by lineage (the key's hue)
 - **[** / **]**: simulation speed 1× / 2× / 4× / 8×
 - Part C keys are **Shift + a letter** (step C1: Shift+H heat jitter, Shift+E entropy panel, Shift+R ripples simmer;
-  see "Heat and the entropy counter" below)
+  see "Heat and the entropy counter" below; step C2: Shift+L light spot / full field / off, Shift+D day and night)
+- right-drag: move the spotlight · wheel: tilt it · Shift+wheel: turn where the light comes from (step C2, "Light" below)
 
 The loop (step 4):
 - **S**: field sensing on/off (the force from the field felt on the membrane)
@@ -173,8 +174,9 @@ neighbour grid and by brute force, and check the sort; result in the console and
 `?excl=0|1`, `?flip=0|1`, `?states=2..4`, `?squeeze=0|1` (step 7, keys 8 9 0 and `\`), `?partner=0|1`, `?change=0|1`, `?clock=0|1`,
 `?side=0|1` (step 8, keys Z , ' .), `?seed=N` (repeatable start: positions, genomes; the run itself drifts apart after a while, because the
 GPU's neighbour order varies), `?speed=1|2|4|8`, `?founders=N`, `?view=1` (lineage colours),
-`?heat=0`, `?entropy=0`, `?simmer=0` (step C1, Shift+H E R).
-In the browser console, `moire.background.params`, `moire.landscape.params`, `moire.medium.params`, `moire.heat.params`,
+`?heat=0`, `?entropy=0`, `?simmer=0` (step C1, Shift+H E R), `?light=spot|full|off`, `?spot=x,y,r`, `?tilt=`, `?az=`, `?day=0`,
+`?hour=`, `?clouds=0` (step C2, see "Light").
+In the browser console, `moire.background.params`, `moire.landscape.params`, `moire.medium.params`, `moire.heat.params`, `moire.light.params`,
 `moire.cells.params` (physics), `moire.cells.look` (drawing) and `moire.genome.params` / `.rules` hold
 live-tunable numbers.
 
@@ -553,7 +555,8 @@ heat). `tools/shot.py --key shift+h` presses Shift + a letter, and the tool prin
 
 Live-tunable in `moire.heat.params`: `kicks`, `spread` (12 R²/s; a warm patch spreads over about sqrt(spread / leak)
 = 5 R), `leak` (0.5 per s), `edge` (extra leak at the dish edge, 0), `warmth` (0.05 per R² per s), `grab`, `kickMax`,
-`pxR` (pixel size in R, 0.5; applied at the next resize). In `moire.background.params`: `heatDrops` (1e-4),
+`pxR` (pixel size in R, 0.5; applied at the next resize). In `moire.background.params`: `heatDrops` (1e-4; since step C2
+grab is 0.00125 and heatDrops 1e-5, see "Light"),
 `heatAmp` (0.3), `heatMaxP` (0.004). The ledger itself: `moire.heat.ledger`, `moire.heat.tot`.
 
 Measured energy flows (seed 3, 2000 cells with the biology, after 60 s): work in about 10 k per s, warmth 1.2 k,
@@ -568,6 +571,104 @@ per frame at 8x) and 0.09 ms on the 693 x 434 grid of 10 000 cells (3 substeps: 
 and read-back once per frame are small next to that. In headed Firefox on this machine: 32 to 38 ms per frame, the
 same as the commit before measured in the same session (25 to 45 ms; Firefox was slow on this machine that day either
 way).
+
+## Light (Part C, step C2)
+
+A light falls on the dish. Where it falls, whatever catches it warms up: the caught light becomes heat in the heat grid
+of step C1, so the cells there shiver more, the ripples simmer more, and the entropy panel shows "light in". The rest
+passes through the dish and is lost. Two modes (Shift+L cycles spotlight / full field / off; the page starts with the
+**spotlight**, because the contrast between the lit middle and the darker rim is the picture):
+- **Spotlight**: a disc of light, by default at the dish centre with a radius of a quarter of the dish's shorter side. Tilt
+  the beam and the spot becomes an ellipse stretched away from the light: the same power spread over a larger area (so
+  dimmer on average, by cos(tilt)), and brighter on the near side (a linear slope across the spot, x (1 + 0.6 sin(tilt))
+  on the near rim, x (1 - 0.6 sin(tilt)) on the far rim; its mean over the ellipse is zero, so the total stays the same).
+- **Full field**: the whole dish lit evenly, with soft cloud patches drifting slowly over (low-frequency noise, about 380
+  px across, drifting 6 px/s; a full cloud takes 45 % of the light).
+- Both follow a gentle **day and night**: the power rises and falls over 240 s of simulation time, between 15 % (night)
+  and 100 % (noon); the page starts at about half past eight in the morning (70 %), and noon comes after 36 s. Shift+D
+  turns the cycle off (then it is always noon).
+
+**Bands.** The light carries four bands on the one energy ladder of Part C (table `BANDS` in `src/light.js`, with
+comments): WARM (photon energy 1, 40 % of the power), VISIBLE 1 (2, 22 %), VISIBLE 2 (3, 22 %) and HARD (5, 16 %). What
+catches a band is a list of absorbers, each with an optical depth per band (Beer-Lambert: the share caught is
+1 - exp(-sum of depth x amount)). In C2 there are two: the bare medium (warm 0.4, so 33 % caught; hard 0.08, 8 %) and the
+cells (one full layer: warm 2.3, 90 %; hard 1.2, 70 %). Nothing catches visible light yet (no pigments, no atoms), so both
+visible bands pass straight through. Later steps add their absorbers (atoms, sediment, the cells' pigment genes) as more
+terms in `absorb()` in `heat.wgsl`.
+
+**How it is computed.** Nothing new per cell except one number: during its step, while the light is on, each cell adds its
+area (in heat pixels) at its centre into a fourth block of the heat buffer, the "cover" (the step pass is at WebGPU's limit
+of 8 storage buffers, so this lives in the heat buffer it already has; the light's numbers come in as a uniform). On each
+tick's first spreading substep every heat pixel works out the light falling on it (`light_factor` in
+`light_common.wgsl`: the spot's ellipse with a crisp 1.5 px rim, or the clouds), reads the 3 x 3 mean of the cover, and
+per band books what arrives and what its absorbers catch (whole counts, random rounding); only the caught part enters the
+pixel, as heat. The cover is cleared after every tick. The drawing reads the same uniform, so what is drawn is exactly
+where the heat goes.
+
+**Ledger.** The entropy panel's "in" is now work + base warmth + absorbed light, and it still balances: over 330 s at 8x
+(seed 3, through a full day and night) the rounding wandered between -0.005 and +0.04 while in grew to 7 M (5e-9). A
+third panel line:
+
+    light in 41.9 k/s → heat 15.9 k/s · passed 26.0 k/s · spot · day 100%
+
+The F overlay adds three lines: the light's settings (mode, power, day level and the hour, spot position, size, tilt and
+direction), the flows per s (in, absorbed, passed, and per band in → absorbed, with totals), and the temperature under the
+cells in the spot and outside it (with the kick size it gives: sigma per axis, before the cell's motility), and of the
+dish's pixels in and out of the spot.
+
+**Retuned heat.** Most heat now comes from light, so a cell's kick takes a smaller share of the heat under it (`grab`
+0.004 -> 0.00125 per tick) and the ripples' simmer chance per temperature squared is smaller (`heatDrops` 1e-4 -> 1e-5);
+the base warmth stays at 0.05 per R² per s as a floor, so the dark dish is never frozen. Measured (seed 3, 2000 cells with
+the biology, light at noon, after 60 s):
+
+| | temperature under the cells (per R²) | kick (R/s per axis) |
+|---|---|---|
+| C1 (before; no light, the old grab) | 4.4 | 0.31 |
+| spotlight: cells in the spot | 13.8 | 0.30 |
+| spotlight: cells outside it | 4.8 | 0.18 |
+| full field (all cells lit) | 12.7 | 0.29 |
+| light off | 4.3 | 0.17 |
+
+So the lit culture shivers about as C1's whole culture did, and the unlit rim visibly less (about 60 %). Energy per s with
+the spot at noon: light in 42 k, absorbed 16 k, passed through 26 k; work by the forces 10 k; warmth 1.2 k. Full field: in
+268 k, absorbed 53 k. The empty dish in the spot warms to about 2 per R² (the bare medium catches 14 % of the light) and
+simmers with small dimples; in full field the whole empty dish simmers that way.
+
+**What it looks like.** A thin, hard-edged ellipse outline in a faded warm white lies over the culture, with a small
+triangle on its rim on the side the light comes from, pointing inward. Inside, a very faint flat tint, posterised into
+bands across the spot when it is tilted (brighter toward the light). The cells inside shiver about as in C1; those outside
+the rim are calmer; the background inside the spot simmers. Over the day the lit middle calms down toward night (at 15 %
+the cells in the spot are only about twice as warm as the rest) and livens up again in the morning. Full field: no outline,
+only a very faint tint over the whole dish, in three flat levels where the clouds pass.
+
+Keys and mouse:
+- **Shift+L**: light: spotlight / full field / off
+- **Shift+D**: day and night cycle on/off
+- **right-drag**: move the spot (its centre follows the pointer; the context menu is off on the canvas)
+- **wheel**: tilt the beam (5 degrees a notch, 0 to 70)
+- **Shift+wheel**: turn the direction the light comes from (15 degrees a notch; browsers report Shift+wheel as a sideways
+  scroll, so either wheel axis counts)
+
+Left tap and left drag keep their meaning (drop, stir). In full field the mouse does not move the light (the hint says so).
+
+URL options: `?light=spot|full|off`, `?spot=x,y,r` (shares of the dish's width, height and shorter side, e.g.
+`?spot=0.3,0.6,0.15`; CSS px if any number is above 2), `?tilt=deg` (0 to 70), `?az=deg` (where the light comes from: 0 from
+the right, 90 from below, 180 from the left, 270 from above; default 225, the upper left), `?day=0` (no cycle: noon),
+`?hour=h` (the hour at the start, 12 = noon), `?clouds=0`. `tools/shot.py --rdrag x1,y1,x2,y2` right-drags and
+`--wheel x,y,dy[,shift]` turns the wheel (dy 100 = one notch down), e.g.
+`python tools/shot.py --wheel 640,400,1000 --wheel 640,400,-300,shift` tilts by 50 degrees and turns by -45.
+
+Live-tunable in `moire.light.params`: `mode`, `power` (14 per R² per s at noon), `x`, `y`, `radius`, `tilt`, `maxTilt`,
+`az`, `near` (0.6), `edge` (1.5 px), `day`, `dayPeriod` (240 s), `dayMin` (0.15), `dayStart`, `clouds`, `cloudSize`,
+`cloudDrift`, `cloudDepth`; drawing: `colour`, `lineAlpha` (0.55), `lineWidth` (1.25 px), `marker` (7 px), `tintAlpha`
+(0.045), `fullTint` (0.025), `tintSteps` (3). The band table: `BANDS` in `src/light.js` (read every frame).
+
+Cost: GTX 1650 in headless Chrome, no change at 2000 cells (8.3 ms per frame before and after, held by the display rate;
+physics probe 0.55 to 0.86 ms against 0.60 to 0.75 before, within its drift); 10 000 cells at 8x, 69 to 74 ms per frame
+against 66 to 69 ms before. Headed Firefox on this machine (it picked the AMD Radeon): 22.7 to 27.8 ms per frame with the
+light on and 19.8 with it off, against 19.5 to 23.3 ms for C1 in the same session; the runs scatter by several ms, so the
+light costs perhaps 2 to 3 ms there (the absorption in the first spreading substep, the cells' cover, two small draws).
+The spot is drawn on a quad around the ellipse only.
 
 ## The look of the landscape
 
@@ -604,6 +705,9 @@ The background ripples stay soft on purpose.
 - `src/heat.js` + `src/shaders/heat_common.wgsl`, `heat.wgsl`: the heat band (step C1): the heat grid and its
   spreading, the energy ledger and its read-back, the entropy panel's text. `heat_common.wgsl` (buffer layout, units,
   struct HeatP) is also prepended to every cell shader; the cells' kicks and deposits are in `cell_step.wgsl`
+- `src/light.js` + `src/shaders/light_common.wgsl`, `light_draw.wgsl`: the light (step C2): its modes, band table, day
+  cycle, clouds and mouse controls, and the uniform shared by the heat passes (`light_common.wgsl` is prepended to
+  `heat.wgsl`, whose `absorb()` turns the caught light into heat) and the drawing (outline, marker, tint)
 - `src/genome.js`: the genome layout, random founders, the rule switches and their numbers (`moire.genome`);
   the GPU side (mutation, key likeness, the `Bio` and `Stats` structs) is in `cell_common.wgsl`, the rules
   themselves in `cell_step.wgsl`
@@ -617,6 +721,7 @@ The background ripples stay soft on purpose.
     python tools/shot.py --query "speed=8&view=1&seed=3" --at 5,30,90,180   # a series in simulation time
     python tools/shot.py --clip 420,250,440,300,2             # only part of the page, enlarged 2x (Chrome)
     python tools/shot.py --dpr 2 --clip 560,330,160,110,5     # the page drawn at 2 device px per CSS px: sharp zooms
+    python tools/shot.py --rdrag 640,400,400,300 --wheel 640,400,600 --wheel 640,400,300,shift   # right-drag, wheel
 
 The tool serves the folder itself, waits in real time until the page has drawn ten frames, then saves the PNG
 and prints the overlay text, any on-page message and the console output. `--help` lists all options.

@@ -1,4 +1,4 @@
-// Boot and frame loop.
+// Boot, frame loop and input.
 //
 // Frame loop: the simulation runs in fixed ticks of 1/60 s (at most MAX_TICKS per frame, so a slow frame
 // slows the simulation instead of exploding it). Each frame:
@@ -8,9 +8,11 @@
 // To add a step (landscape, cells, ...), write a class with resize / compute / render and push it into `layers`.
 //
 // URL parameters (handy for headless screenshots, see tools/shot.py):
+//   ?ripple=1   drop a ripple every 0.7 s at varying spots
 //   ?nogpu=1    pretend WebGPU is missing (to see the fallback message)
 
 import { initGPU, GPUUnavailable, showNoWebGPU, showError, messageIsShown } from './gpu.js';
+import { Background } from './background.js';
 
 window.__moireBooted = true;
 
@@ -22,6 +24,7 @@ const params = new URLSearchParams(location.search);
 const flag = (name) => params.has(name) && params.get(name) !== '0';
 
 const canvas = document.getElementById('gpu');
+const hintEl = document.getElementById('hint');
 
 window.addEventListener('unhandledrejection', (e) => {
   const r = e.reason;
@@ -30,6 +33,7 @@ window.addEventListener('unhandledrejection', (e) => {
 
 let gpu = null;
 let layers = [];
+let background = null;
 let running = false;
 let view = null;
 
@@ -59,10 +63,20 @@ async function boot() {
     showError('GPU error', `${ev.error.constructor.name}: ${ev.error.message}`);
   });
 
-  layers = [];   // the passes come in the next steps
+  stage('create-layers');
+  try {
+    background = await Background.create(gpu.device, gpu.format);
+  } catch (e) {
+    showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));
+    return;
+  }
+  layers = [background];
+  // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
+  window.moire = { gpu, layers, background };
 
   resize();
   window.addEventListener('resize', resize);
+  setupInput();
   running = true;
   stage('running');
   requestAnimationFrame(frame);
@@ -81,7 +95,7 @@ function resize() {
 }
 
 // ---------- loop ----------
-let last = 0, acc = 0, simTime = 0, frameNo = 0;
+let last = 0, acc = 0, simTime = 0, frameNo = 0, nextAutoRipple = 0.3, autoK = 0;
 
 function frame(now) {
   if (!running) return;
@@ -92,6 +106,8 @@ function frame(now) {
   let ticks = Math.floor(acc / TICK);
   if (ticks > MAX_TICKS) { ticks = MAX_TICKS; acc = 0; } else acc -= ticks * TICK;
   simTime += ticks * TICK;
+
+  if (flag('ripple') && simTime >= nextAutoRipple) autoRipple();
 
   const f = { dt: ticks * TICK, tickDt: TICK, ticks, time: simTime, frameNo };
   const device = gpu.device;
@@ -111,6 +127,64 @@ function frame(now) {
   if (frameNo === 10) stage('running-10-frames');
   frameNo++;
   requestAnimationFrame(frame);
+}
+
+function autoRipple() {
+  // deterministic spots spread over the screen (golden-ratio sequence)
+  autoK++;
+  const x = ((autoK * 0.618034 + 0.2) % 1) * view.cssW;
+  const y = ((autoK * 0.754878 + 0.35) % 1) * view.cssH;
+  background.impulse(x, y, 2.0);
+  nextAutoRipple = simTime + 0.7;
+}
+
+// ---------- input ----------
+function setupInput() {
+  const pointer = { down: false, drag: false, x: 0, y: 0, sx: 0, sy: 0 };
+  const pos = (e) => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+
+  canvas.addEventListener('pointerdown', (e) => {
+    const [x, y] = pos(e);
+    Object.assign(pointer, { down: true, drag: false, x, y, sx: x, sy: y });
+    try { canvas.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!pointer.down) return;
+    const [x, y] = pos(e);
+    if (!pointer.drag && Math.hypot(x - pointer.sx, y - pointer.sy) > 6) pointer.drag = true;
+    if (pointer.drag) {
+      // stir: small bumps along the path, spaced about one grid cell apart
+      const dist = Math.hypot(x - pointer.x, y - pointer.y);
+      const n = Math.min(8, Math.max(1, Math.round(dist / background.sc)));
+      for (let k = 1; k <= n; k++) {
+        background.impulse(pointer.x + (x - pointer.x) * k / n, pointer.y + (y - pointer.y) * k / n, 1.2 / Math.sqrt(n));
+      }
+    }
+    pointer.x = x; pointer.y = y;
+  });
+  const up = () => {
+    if (pointer.down && !pointer.drag) background.impulse(pointer.x, pointer.y, 2.5, 1.2 * background.sc);
+    pointer.down = pointer.drag = false;
+  };
+  canvas.addEventListener('pointerup', up);
+  canvas.addEventListener('pointercancel', () => { pointer.down = pointer.drag = false; });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 'a') {
+      background.ambient = !background.ambient;
+      flash(`ambient ripples ${background.ambient ? 'on' : 'off'}`);
+    }
+  });
+}
+
+let flashTimer = 0;
+const hintText = hintEl.textContent;
+function flash(text) {
+  hintEl.textContent = text;
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => { hintEl.textContent = hintText; }, 1600);
 }
 
 boot().catch((e) => { if (!messageIsShown()) showError('Could not start', e.stack || e.message || String(e)); });

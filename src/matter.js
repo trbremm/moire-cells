@@ -29,6 +29,7 @@
 
 import { loadShader } from './gpu.js';
 import { HEAT_COMMON_URL, LEDGER_WORDS, fmt } from './heat.js';
+import { BANDS } from './light.js';
 
 // ---------- the periodic table (CLAUDE.md, Part C): every property derived from ROW and GROUP, nowhere else ----------
 // ROW is size: heavier = slower spreading (later: richer bonds, harder light needed). GROUP is role: a GIVER wants one
@@ -47,6 +48,27 @@ export const ATOMS = {
 // slower; a bonded pair at the speed of its heavier atom, a little slower than that (SPREAD.bond); sediment not at all.
 // (A patch spreads over about sqrt(4 x spread x t): light atoms 17 R in a minute, heavy ones 6 R, trace 2 R.)
 export const SPREAD = { row1: 1.2, perRow: 0.12, bond: 0.7 };
+
+// ---------- the energy table (step C4): every substance's chemical energy and every bond's SPARK, from ROW and GROUP ----
+// Energies are per unit of the substance, in the energy unit of the heat (heat_common.wgsl), so a bond's energy and the
+// heat it becomes are the same numbers. Nothing here is set per substance; change a factor and the whole table follows.
+//   free atoms (and trace)  0: the zero of the scale
+//   FUEL   giver + taker    E = fuelPerRow x (row of the giver + row of the taker): gt 1.5, gT and Gt 2.25, GT 3. Fuel
+//                           holds energy: making it is uphill (paid by light), breaking it is downhill (heat comes out)
+//   SEDIMENT linker chain   E = sedPerRow x (row + row): ll -0.5, LL -1. Below the free linkers: forming it releases a
+//                           little heat; only hard light cracks it back (uphill)
+//   SPARK (activation) of a bond = sparkPerRow x (row + row): gt and ll 0.25, gT Gt 0.375, GT and LL 0.5. Every reaction
+//                           that breaks or makes a bond must first be paid its spark (from light or local heat; downhill
+//                           reactions give it back). Trace in the pixel lowers it: spark / (1 + traceK x trace per R^2)
+//   BAND that makes a fuel  the lowest light band whose photon covers the fuel's energy plus its spark: gt 1.75 ->
+//                           visible 1 (photon 2), gT Gt 2.625 -> visible 2 (3), GT 3.5 -> hard (5)
+// The factors are multiples of 1/16 on purpose: with 65 536 heat counts per energy unit and 4096 counts per atom, one
+// count of a substance carries 16 x E heat counts, a whole number, so every reaction moves energy EXACTLY (no rounding).
+// Swaps: a free atom takes a partner out of a bond and leaves its old partner free; it runs by itself only DOWNHILL, so
+// only into a poorer bond (heavier fuel holds more energy, so the light atoms are the ones that swap: t + gT -> gt + T
+// releases 2.25 - 1.5 = 0.75 as heat; the other way round would have to be paid). l + L do not chain (a chain is one
+// row's linkers: there is no mixed sediment channel).
+export const CHEM = { fuelPerRow: 0.75, sedPerRow: -0.25, sparkPerRow: 0.125 };
 
 // Inks by chemical FUNCTION (faded palette, 0..255): each with a lighter variant for row 1 and a deeper one for row 2;
 // a substance's ink sits between them by the share of its atoms in row 2. Reactive free atoms (givers and takers, hungry
@@ -83,12 +105,78 @@ function derive(atoms) {
   const func = kind === 'atom' ? (reactive ? 'reactive' : 'linker') : kind === 'other' ? 'linker' : kind;
   const layer = { atom: 0, fuel: 1, sediment: 2, trace: 3 }[kind] ?? 0;   // which dot layer draws it
   const name = atoms.length === 1 ? atoms[0] : atoms.join('');
-  return { name, atoms, kind, row, heavy, reactive, spread, func, layer, ink: inkOf(func, heavy) };
+  // step C4, the energy table (CHEM above): energy per unit, the bond's spark, and the light band that makes a fuel
+  const rows = A.reduce((x, a) => x + a.row, 0);
+  const energy = kind === 'fuel' ? CHEM.fuelPerRow * rows : kind === 'sediment' ? CHEM.sedPerRow * rows : 0;
+  const spark = atoms.length > 1 ? CHEM.sparkPerRow * rows : 0;
+  const e16 = Math.round(16 * energy);   // heat counts per count of the substance (exact: see CHEM)
+  if (e16 !== 16 * energy) throw new Error(`energy of ${name} (${energy}) is not a multiple of 1/16`);
+  return { name, atoms, kind, row, heavy, reactive, spread, func, layer, ink: inkOf(func, heavy), energy, spark, e16 };
+}
+
+/** The light band that makes a fuel: the lowest whose photon covers its energy plus its spark (-1: none). */
+export function makingBand(s) {
+  return BANDS.findIndex((b) => b.photon >= s.energy + s.spark);
 }
 
 function inkOf(func, heavy) {
   const I = INKS[func];
   return I.light.map((v, j) => v + (I.heavy[j] - v) * heavy);
+}
+
+// ---------- the reactions (step C4), all derived from the substances above ----------
+// Each: reactants `ins` and products `outs` (channels; one event moves ONE count of each listed channel, so 2 l -> ll
+// lists l twice), what drives it (`by`: 'heat' = a rate x exp(-spark / temperature); 'light' = photons of `band` caught
+// by the reactants), the heat it releases per event (heat counts; for a light reaction the photon's energy minus what
+// goes into bonds), the light it uses per event, and its family (for the counters and the rules):
+//   make   giver + taker -> fuel, by light of the fuel's band (making it is uphill: the photon pays bond and spark, the
+//          rest is heat)
+//   burn   fuel -> giver + taker, by heat (downhill: the bond's energy comes out as heat)
+//   photo  fuel -> giver + taker, by hard light (photon + bond energy -> heat)
+//   swap   free atom + fuel -> poorer fuel + the freed atom, by heat (the energy difference -> heat)
+//   form   linker + linker (same row) -> sediment, by heat (releases a little)
+//   crack  sediment -> linker + linker, by hard light (photon - the chain's energy -> heat)
+export const FAMILIES = ['make', 'burn', 'photo', 'swap', 'form', 'crack'];
+export const HARD = BANDS.length - 1;
+export const REACTIONS = deriveReactions();
+
+function deriveReactions() {
+  const out = [];
+  const ch = (name) => SUBSTANCES.findIndex((s) => s.name === name);
+  const L16 = (b) => Math.round(16 * BANDS[b].photon);
+  const free = SUBSTANCES.map((s, c) => [s, c]).filter(([s]) => s.kind === 'atom');
+  SUBSTANCES.forEach((f, c) => {
+    if (f.kind === 'fuel') {
+      const [x, y] = f.atoms.map(ch);
+      const b = makingBand(f);
+      if (b >= 0) out.push({ fam: 'make', by: 'light', band: b, ins: [x, y], outs: [c], heat16: L16(b) - f.e16, light16: L16(b), spark: f.spark, name: `${f.atoms[0]} + ${f.atoms[1]} → ${f.name}` });
+      out.push({ fam: 'burn', by: 'heat', ins: [c], outs: [x, y], heat16: f.e16, light16: 0, spark: f.spark, name: `${f.name} → ${f.atoms[0]} + ${f.atoms[1]}` });
+      out.push({ fam: 'photo', by: 'light', band: HARD, ins: [c], outs: [x, y], heat16: L16(HARD) + f.e16, light16: L16(HARD), spark: f.spark, name: `${f.name} → ${f.atoms[0]} + ${f.atoms[1]} (hard light)` });
+      // swaps: a free atom of the same group as one of the pair, from the other row, takes that one's place, if that
+      // makes a poorer fuel (downhill)
+      for (const [z, cz] of free) {
+        for (let k = 0; k < 2; k++) {
+          const old = f.atoms[k];
+          if (ATOMS[z.name].group !== ATOMS[old].group || z.name === old) continue;
+          const pair = k === 0 ? [z.name, f.atoms[1]] : [f.atoms[0], z.name];
+          const cn = ch(pair.join(''));
+          if (cn < 0 || SUBSTANCES[cn].e16 >= f.e16) continue;
+          out.push({ fam: 'swap', by: 'heat', ins: [cz, c], outs: [cn, ch(old)], heat16: f.e16 - SUBSTANCES[cn].e16, light16: 0, spark: f.spark, name: `${z.name} + ${f.name} → ${SUBSTANCES[cn].name} + ${old}` });
+        }
+      }
+    }
+    if (f.kind === 'sediment') {
+      const x = ch(f.atoms[0]);
+      out.push({ fam: 'form', by: 'heat', ins: [x, x], outs: [c], heat16: -f.e16, light16: 0, spark: f.spark, name: `${f.atoms[0]} + ${f.atoms[1]} → ${f.name}` });
+      out.push({ fam: 'crack', by: 'light', band: HARD, ins: [c], outs: [x, x], heat16: L16(HARD) + f.e16, light16: L16(HARD), spark: f.spark, name: `${f.name} → ${f.atoms[0]} + ${f.atoms[1]} (hard light)` });
+    }
+  });
+  // every event conserves energy exactly: light in = heat out + change of the bonds' energy
+  for (const r of out) {
+    const dE = r.outs.reduce((x, c) => x + SUBSTANCES[c].e16, 0) - r.ins.reduce((x, c) => x + SUBSTANCES[c].e16, 0);
+    if (r.light16 !== r.heat16 + dE || r.heat16 < 0) throw new Error(`reaction ${r.name} does not balance`);
+  }
+  return out;
 }
 
 /** A substance's name in words, for the flash and the overlay. */
@@ -547,6 +635,9 @@ export class Matter {
       ` · drip ${p.rate} atoms/s for ${p.life} s over ${p.radius} R · edge sink ${p.edge}/s · ${this.nSub} substep(s)` +
       ` · channels moving ${SUBSTANCES.filter((s, c) => this.active & (1 << c)).map((s) => s.name).join(' ') || 'none'}`);
     lines.push('spreading (R²/s, from row and group): ' + SUBSTANCES.map((s) => `${s.name} ${(s.spread * p.spreadGain).toPrecision(2)}`).join(' · '));
+    lines.push('energy table (step C4, from row and group; free atoms 0): ' + SUBSTANCES.filter((s) => s.atoms.length > 1).map((s) =>
+      `${s.name} ${s.energy} (spark ${s.spark}${s.kind === 'fuel' ? ', made by ' + (BANDS[makingBand(s)] || { name: 'nothing' }).name : ''})`).join(' · ') +
+      ` · swaps: ${REACTIONS.filter((r) => r.fam === 'swap').map((r) => r.name).join(', ')}`);
     if (L) {
       const el = {};
       for (const a of Object.keys(ATOMS)) el[a] = { add: 0, dish: 0, out: 0 };

@@ -98,6 +98,14 @@ minimal core first, then ONE rule at a time, so the user can see what each rule 
 3. Cells on the GPU, fixed count (start ~2 000): state in buffers; compute pass with a uniform grid for
    neighbours (count, prefix sum, scatter; or sort by grid index). Soft contact push only. Draw as instanced
    quads: glow body + inner dot grid.
+3b. Genome and specialisation (user decision 2026-11-14, brought forward ahead of step 4):
+   every cell carries a small random genome ("DNA"): a key (identity, also a faint tint), receptors (which keys it
+   responds to, and how picky = SPECIFIC), thresholds with decay (only sustained contact counts = SUFFICIENT),
+   a response table (signal -> fate: epithelium/muscle/neuron/cartilage, and how strongly committed cells signal
+   onward), and body traits (adhesion, size, motility). Interactions are by contact for now; fields can carry them
+   after step 4. Mutation with a fixed cell count: slow turnover, where a cell dies and a neighbour divides into its slot,
+   copying its genome with small random mutations, so lineages compete and spread. Keys toggle turnover,
+   mutation and fate choice; a key re-randomises.
 4. The loop: membrane sensing (segment integrals), force, deformation, strained lattice — ported from the
    reference. Cells now emit into the field too, and the landscape shader includes every cell's field.
    LOOK HERE FIRST: what do thousands of cells do with only the loop? Tune the lever (how different the grids

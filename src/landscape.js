@@ -15,7 +15,7 @@
 import { loadFieldShader, writeEmitter, KIND, EMITTER_FLOATS, EMITTER_BYTES, BEAT_BYTES } from './field.js';
 
 export const MAX_SOURCES = 64;   // GPU buffer capacity
-const DRAW_BYTES = 160;          // struct DrawParams in landscape_draw.wgsl
+const DRAW_BYTES = 192;          // struct DrawParams in landscape_draw.wgsl
 
 export class Landscape {
   constructor(device, format, medium) {
@@ -61,6 +61,15 @@ export class Landscape {
       bMaxDot: 0.9,       // largest ring radius as a fraction of bPitch/2
       bRing: 1.0,         // stroke of the open rings (CSS px; 0 = filled dots)
       bThresh: 0.35,      // strength below which there is no ring
+      // the partner A' of the cells' field A (step 8), from the texture's B channel, on a third screen: filled dots on
+      // its positive part, as A's, in a faded print yellow. Drawn only while a step 8 rule is on (keys Z , .)
+      partner: true,      // drawn on/off (key ;)
+      pGain: 0.5,         // strength gain (as cellGain)
+      pColour: [236, 218, 124],
+      pLevel: 0.42,
+      pAngle: 75,         // screen rotation (degrees; A's is 15, B's 45: the print angles)
+      pPitch: 6,
+      pThresh: 0.12,
       maxSources: 6,      // the reference keeps at most 6; adding one more drops the oldest (up to MAX_SOURCES)
       amp: 5,             // strength of a new source (reference)
       range: 9,           // envelope range r0 in units of R (reference: r0^2 = 81 R^2)
@@ -191,7 +200,8 @@ export class Landscape {
     const n = this.sources.length, p = this.params;
     const C = this.cells, cellOn = !!(C && C.fieldTex && p.cellField && C.emitting());
     const bOn = !!(C && C.fieldTex && p.fieldB && C.fields.emit);
-    if (!n && !cellOn && !bOn) return;
+    const pOn = !!(C && C.fieldTex && p.partner && C.partnerDrawn());
+    if (!n && !cellOn && !bOn && !pOn) return;
     const F = this.drawF;
     F[0] = this.view.dpr; F[1] = this.medium.R; this.drawI[2] = n;
     F[3] = p.on ? p.gain : 0; F[4] = p.markers;
@@ -206,6 +216,8 @@ export class Landscape {
     F[31] = p.bLevel;
     F[32] = bOn ? p.bGain : 0; F[33] = p.bAngle * Math.PI / 180; F[34] = Math.max(2, p.bPitch);
     F[35] = Math.max(0, Math.min(1, p.bMaxDot)); F[36] = p.bRing; F[37] = p.bThresh;
+    for (let j = 0; j < 3; j++) F[40 + j] = p.pColour[j] / 255;
+    F[43] = p.pLevel; F[44] = pOn ? p.pGain : 0; F[45] = p.pAngle * Math.PI / 180; F[46] = Math.max(2, p.pPitch); F[47] = p.pThresh;
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBindGroup());

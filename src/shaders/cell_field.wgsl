@@ -1,6 +1,7 @@
 // The cells' field, scattered into a texture: every cell adds its own beat x envelope over a quad around it
 // (instanced, additive blending into a half-resolution rgba16float texture: field A in channel r, field B in
-// channel g; step 5; field B includes what stretched cells leak into it, step 6). The landscape then reads
+// channel g; step 5; field B includes what stretched cells leak into it, step 6; field A's partner A', the sin
+// twin of its beat, in channel b, step 8). The landscape then reads
 // that texture at each halftone dot (landscape_draw.wgsl), so thousands of emitters cost one quad each instead
 // of a sum over all cells per pixel.
 // Needs field_common.wgsl and cell_common.wgsl in front of it (src/cells.js does that).
@@ -10,6 +11,10 @@ struct FieldDraw {
   view: vec2f,      // dish size (CSS px); the texture covers it
   cutR: f32,        // field A's cut-off (CSS px); it tapers to 0 there
   cutB: f32,        // field B's cut-off (CSS px); the quad's half-size is the larger of the two
+  partner: f32,     // step 8: 1 = also field A's partner A' (channel b)
+  pSgn1: f32,       // its middle wave's direction (Fields.pSgn1)
+  _p1: f32,
+  _p2: f32,
 };
 
 @group(0) @binding(0) var<uniform> D: FieldDraw;
@@ -43,5 +48,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     B = cell_field_b(b, in.world, D.cutB).z;
     if (b.lk.z != 0.0) { B += cell_field_leak(b, in.world, D.cutB).z; }   // its leaked B (step 6, rule 1)
   }
-  return vec4f(cell_field(b, in.world, D.cutR), B, 0.0, 0.0);
+  var P = 0.0;
+  if (D.partner > 0.0) { P = cell_field_ph(b, in.world, D.cutR, p_shift(D.pSgn1)); }
+  return vec4f(cell_field(b, in.world, D.cutR), B, P, 0.0);
 }

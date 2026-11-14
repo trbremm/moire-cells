@@ -13,6 +13,9 @@
 // Field B (step 5, channel g of the same texture) has its own screen on top, turned to another angle (as the
 // separate colour screens of print), in its own ink: an open ring where B is positive, a filled dot where it is
 // negative (the negative charges' field), the size again growing with the strength (bRing 0: filled dots only).
+// The partner A' of the cells' field A (step 8, channel b) has a third screen, turned again, in its own ink: filled
+// dots on its positive part, as field A's. Where a wave travels, A' sits a quarter period ahead of A, so the order
+// of the two inks shows the direction of travel.
 // Edges are anti-aliased over about one device pixel (distance measured in device px), nothing wider.
 // The output is premultiplied and blended "over", so the flat colours stay flat on top of the soft background.
 //
@@ -50,6 +53,11 @@ struct DrawParams {
   bThresh: f32,     // field B's strength below which there is no dot
   _p3: f32,
   _p4: f32,
+  pInk: vec4f,      // step 8, the partner A' of the cells' field A: its ink (rgb) and level
+  pGain: f32,       // its strength gain (0 = not drawn)
+  pAngle: f32,      // its screen rotation (radians)
+  pPitch: f32,      // its screen pitch (CSS px)
+  pThresh: f32,     // its strength below which there is no dot
 };
 
 @group(0) @binding(0) var<uniform> medium: Medium;
@@ -127,6 +135,18 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       let r = D.maxDot * 0.5 * D.pitch * sqrt(cov);
       let ink = select(select(D.nut, D.thr, thr > nut), D.cell, cel > max(nut, thr));
       res = vec4f(ink.rgb * ink.a, 1.0) * disc(length(x - c), r);
+    }
+  }
+
+  // ---- the partner A' (step 8): its own screen, over A's dots ----
+  if (D.pGain > 0.0) {
+    let cp = rot(screen_point(rot(x - o, -D.pAngle), D.pPitch), D.pAngle) + o;
+    let uv = cp * D.fieldScale / vec2f(textureDimensions(cellTex));
+    let v = textureSampleLevel(cellTex, cellSamp, uv, 0.0).b * D.pGain;
+    let cov = clamp((v - D.pThresh) / max(1.0 - D.pThresh, 1e-3), 0.0, 1.0);
+    if (cov > 0.0) {
+      let r = D.maxDot * 0.5 * D.pPitch * sqrt(cov);
+      res = over(vec4f(D.pInk.rgb * D.pInk.a, 1.0) * disc(length(x - cp), r), res);
     }
   }
 

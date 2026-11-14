@@ -6,7 +6,9 @@
 // measured time between frames (see `budgets`), never more than TICK_CAP. The ticks are the same at any speed; only how many run
 // between two drawn frames changes. Space pauses (no ticks; the picture stays). Each frame:
 //   1. every layer's compute(encoder, frame) records its compute passes (in layer order),
-//   2. one render pass to the canvas; every layer's render(pass, frame) draws into it (in layer order),
+//   2. the drawing (step C6n, src/neon.js): the background onto the canvas; the cells into the trail buffer; the other
+//      layers' render(pass, frame) (in layer order) and renderTop into the light buffer, with the cells copied in between;
+//      the halo; the light composited onto the canvas,
 //   3. submit.
 // To add a step (landscape, cells, ...), write a class with resize / compute / render and push it into `layers`.
 //
@@ -36,6 +38,10 @@
 //               dish's width, height and shorter side, or CSS px if any is above 2); ?tilt=deg (0..70); ?az=deg (the
 //               direction the light comes from: 0 right, 90 below, 180 left, 270 above); ?day=0 no day / night cycle
 //               (Shift+D); ?hour=h the hour of the day at the start (12 = noon); ?clouds=0 no clouds (full field)
+//   ?neon=0     step C6n: start with the flat look (key E); ?halo=off|low|medium|high (Shift+1); ?trails=0 (Shift+2);
+//               ?hum=0 (Shift+3); ?cheap=0|1 the phone's cheaper neon path off / on (default: on touch screens and small
+//               windows); ?machinery=1 start with every diagnostic layer shown (Shift+4; default: the clean view)
+//   ?until=T    run until simulation time T (s), then pause, exactly at that tick (for comparing runs; tools/shot.py)
 //
 // Part C keys are Shift + a letter (every plain letter is taken by Parts A and B): checked before the plain keys,
 // so Shift+H never also toggles H.
@@ -60,6 +66,7 @@ import { Matter, SHOWS } from './matter.js';
 import { makeActions, keyMaps, keysText, TOOLS, SQUEEZE_SOFT, SQUEEZE_HARD } from './actions.js';
 import { setupUI } from './ui.js';
 import { Recorder } from './record.js';
+import { Neon, LIGHT_FORMAT } from './neon.js';
 
 window.__moireBooted = true;
 
@@ -77,7 +84,6 @@ const budgets = {
   fast: { ticks: 16, frameMs: 34, hold: 0, calm: 0, ceil: 0 },
 };
 let lastBud = null;   // the budget that limited the last frame (adapted at the next frame, when its time is known)
-const BG = { r: 4 / 255, g: 6 / 255, b: 10 / 255, a: 1 };   // --bg #04060a
 
 const params = new URLSearchParams(location.search);
 const flag = (name) => params.has(name) && params.get(name) !== '0';
@@ -116,6 +122,7 @@ let cells = null;
 let light = null;
 let matter = null;
 let recorder = null;   // step C3b: the video recorder (Shift+V, the record button)
+let neon = null;       // step C6n: the drawing as a whole, and the neon look (src/neon.js)
 let running = false;
 let view = null;
 
@@ -147,12 +154,17 @@ async function boot() {
 
   stage('create-layers');
   try {
+    // step C6n: every layer but the background draws into the light buffers (LIGHT_FORMAT), which src/neon.js
+    // composites onto the canvas
     background = await Background.create(gpu.device, gpu.format);
     medium = new Medium(gpu.device);
-    landscape = await Landscape.create(gpu.device, gpu.format, medium);
-    light = await Light.create(gpu.device, gpu.format);
-    matter = await Matter.create(gpu.device, gpu.format, medium);
-    cells = await Cells.create(gpu.device, gpu.format, medium, Number(params.get('cells')) || defaultCells(), SEED);
+    landscape = await Landscape.create(gpu.device, LIGHT_FORMAT, medium);
+    light = await Light.create(gpu.device, LIGHT_FORMAT);
+    matter = await Matter.create(gpu.device, LIGHT_FORMAT, medium);
+    cells = await Cells.create(gpu.device, LIGHT_FORMAT, medium, Number(params.get('cells')) || defaultCells(), SEED);
+    const small = Math.min(window.innerWidth || 800, window.innerHeight || 800) < 600;
+    neon = await Neon.create(gpu.device, gpu.format, params.has('cheap') ? flag('cheap') : TOUCH || small);
+    neonOptions(neon);
     cells.heat.setLight(light);   // step C2: the heat passes absorb the light
     light.heat = cells.heat;
     matter.attach(cells.heat);   // step C3: the substances live in the heat buffer, on its grid
@@ -199,7 +211,7 @@ async function boot() {
   // read by the heat passes the cells run), and its tint is drawn under them (its outline over them: renderTop)
   layers = [medium, background, landscape, matter, light, cells];
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
-  window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter, eat: cells.eat };
+  window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter, eat: cells.eat, neon };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
   window.moire.budgets = budgets;      // the fast speeds' tick budgets
@@ -252,6 +264,17 @@ function defaultScene() {
   if (!params.has('spot')) light.moveTo(W / 2 + ax[0] * rim, H / 2 + ax[1] * rim);
 }
 
+/** Step C6n: the look's URL options (see the top of this file). */
+function neonOptions(N) {
+  if (params.has('neon')) N.on = flag('neon');
+  if (params.has('halo')) {
+    const h = params.get('halo'), i = ['off', 'low', 'medium', 'high'].indexOf(h);
+    N.params.halo = i >= 0 ? i : Math.max(0, Math.min(3, Math.round(Number(h)) || 0));
+  }
+  if (params.has('trails')) N.params.trails = flag('trails');
+  if (params.has('hum')) N.params.hum = flag('hum');
+}
+
 /** Step C2: the light's URL options (see the top of this file). */
 function lightOptions(L) {
   const P = L.params;
@@ -284,6 +307,7 @@ function resize() {
   if (canvas.height !== pxH) canvas.height = pxH;
   view = { cssW, cssH, dpr, pxW, pxH };
   for (const l of layers) l.resize(view);
+  if (neon) neon.resize(view);
   if (light && light.pendingSpotPx) {
     const [x, y, r] = light.pendingSpotPx;
     light.pendingSpotPx = null;
@@ -322,21 +346,17 @@ function frame(now) {
   if (flag('ripple') && simTime >= nextAutoRipple) autoRipple();
 
   const t0 = performance.now();
-  const f = { dt: ticks * TICK, tickDt: TICK, ticks, time: simTime, frameNo };
+  // realDt and reached: real time, for the drawing only (step C6n: the trails' fade, the hum)
+  const f = { dt: ticks * TICK, tickDt: TICK, ticks, time: simTime, frameNo, realDt: dtReal, reached: paused ? 1 : stats.reached };
   const device = gpu.device;
   const encoder = device.createCommandEncoder({ label: `frame ${frameNo}` });
   for (const l of layers) l.compute(encoder, f);
-  const pass = encoder.beginRenderPass({
-    label: 'screen',
-    colorAttachments: [{
-      view: gpu.context.getCurrentTexture().createView(),
-      clearValue: BG, loadOp: 'clear', storeOp: 'store',
-    }],
-  });
-  for (const l of layers) l.render(pass, f);
-  for (const l of layers) if (l.renderTop) l.renderTop(pass, f);
-  pass.end();
+  neon.tickReal(dtReal);
+  const drawn = { background, cells, under: layers.filter((l) => l !== background && l !== cells), top: layers };
+  neon.encode(encoder, f, gpu.context.getCurrentTexture().createView(), drawn);
   device.queue.submit([encoder.finish()]);
+  const slow = neon.watch(stats.frameMs, dtReal, !paused && speed >= 1 && speed <= 8 && frameNo > 120);
+  if (slow) flash(slow);
   stats.cpuMs += (performance.now() - t0 - stats.cpuMs) * 0.05;
   if (recorder && recorder.on) {
     recorder.capture();   // the frame just drawn, into the recording (in this task, while the canvas holds it)
@@ -363,7 +383,10 @@ function frame(now) {
   }
   if (frameNo === 10) stage('running-10-frames');
   if (!overlayEl.hidden && now - stats.lastOverlay > 250) { stats.lastOverlay = now; drawOverlay(); }
-  if (!overlayEl.hidden && now - stats.lastProbe > 1000) { stats.lastProbe = now; cells.probe(); }
+  if (!overlayEl.hidden && now - stats.lastProbe > 1000) {
+    stats.lastProbe = now;
+    cells.probe().then(() => neon.probe(drawn, f));   // one after the other, so they do not time each other
+  }
   frameNo++;
   requestAnimationFrame(frame);
 }
@@ -415,6 +438,7 @@ function drawOverlay() {
     ...cells.overlayLines(),
     ...matter.overlayLines(),
     ...cells.eat.overlayLines(),
+    neon.overlayLine(),
     `simmer (Shift+R) ${background.heatOn ? 'on' : 'off'}: ripple drops ${background.params.heatDrops} per cell per step x temperature², height ${background.params.heatAmp}`,
     `sim t ${simTime.toFixed(1)} s · speed ${paused ? 'paused' : speedName(speed)}, reached ×${stats.reached.toFixed(2)} (${stats.ticks} ticks this frame` +
       `${!speed || speed >= 16 ? `, budget ${(speed ? budgets.fast : budgets.max).ticks} ticks, gpu done after ${stats.lat.toFixed(1)} ms` : ''}) · seed ${SEED}`,
@@ -457,6 +481,7 @@ function makeApp() {
   return {
     get cells() { return cells; }, get background() { return background; }, get landscape() { return landscape; },
     get light() { return light; }, get matter() { return matter; }, get heat() { return cells.heat; },
+    get neon() { return neon; },
     get view() { return view; },
     overlayEl, entropyEl, ANCHORS,
     get tool() { return tool; },

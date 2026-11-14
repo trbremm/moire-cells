@@ -163,7 +163,7 @@ function frame(now) {
 
   if (frameNo === 10) stage('running-10-frames');
   if (!overlayEl.hidden && now - stats.lastOverlay > 250) { stats.lastOverlay = now; drawOverlay(); }
-  if (!overlayEl.hidden && now - stats.lastProbe > 500) { stats.lastProbe = now; cells.probe(); }
+  if (!overlayEl.hidden && now - stats.lastProbe > 1000) { stats.lastProbe = now; cells.probe(); }
   frameNo++;
   requestAnimationFrame(frame);
 }

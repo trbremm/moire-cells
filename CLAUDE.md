@@ -218,8 +218,14 @@ Each atom is described by TWO numbers only, and every property is DERIVED from t
 ROW (size: heavier = slower spreading, stronger/richer bonds, needs harder light to bond) and GROUP (role).
 - Groups: GIVER (wants one partner) · LINKER (wants two: chains) · TAKER (wants one partner).
 - Rows 1 (light) and 2 (heavy): atoms g t l (light) and G T L (heavy).
-- Plus one rare TRACE atom (row 3, inert): never reacts, barely moves, speeds any reaction where it sits
-  (a catalyst). Cells that hoard it run their engines faster.
+- Plus one rare TRACE atom (row 3, inert): never reacts, barely moves, and LOWERS THE SPARK (activation cost,
+  below) of any reaction where it sits (a catalyst). Cells that hoard it run their engines cheaper.
+- SPARK (activation energy; user 2026-11-14: "energy should pay for chemical reactions too"): every reaction,
+  even one that releases energy, must first be paid a spark, derived from the bond's row (heavier = bigger
+  spark). Downhill reactions give the spark back plus their gain; uphill ones (making fuel) also need the
+  difference, from light or the battery. In the open the spark comes from light or local HEAT (hot spots
+  react, cold ones are frozen); in a cell it comes from the battery, so a cell with an empty battery cannot
+  start anything (it needs a starter charge at birth; a daughter gets a share of the parent's).
 - Bonds: giver + taker = FUEL pairs gt, gT, Gt, GT (energy grows with row: gt cheapest, made by the lower visible
   band; GT richest, needs hard light). Linkers chain into SEDIMENT ll and LL: forming it releases a little
   energy, it does not spread, so it piles up (accumulation only through reaction; the user's two ideas in one
@@ -236,9 +242,10 @@ Cells and engines ("permutators"):
   energy). Storer, sharer and THIEF (pumping from a touching neighbour) are meant to EMERGE from these two
   numbers; never write a "steal" rule.
 - Engines: 2-3 genome slots, each a rearrangement from the table (make or break a given fuel, link sediment,
-  optionally using a light band), with a rate. The energy table does the bookkeeping: a reaction that would take
-  the battery below zero does not run; the inefficiency goes to heat.
-- Energy pays for MOTION only at first (user: "fair"); survival later. Energy-biased turnover: rich cells win
+  optionally using a light band), with a rate. The energy table does the bookkeeping: each run pays its spark
+  and any uphill difference from the battery; a run the battery cannot pay does not happen; the inefficiency
+  goes to heat.
+- Energy pays for MOTION and CHEMICAL REACTIONS (user); survival later. Energy-biased turnover: rich cells win
   the freed slot more often, so good energy handlers spread.
 - The membrane's 6 corners sample the grid too: cells "smell" which way fuel lies.
 - Engines are the cell's first PARTS (the user's body-plus-parts plan): small marks inside the body, coloured by
@@ -251,8 +258,9 @@ C2. Light: full field / spotlight (mouse controls above); warm and hard bands be
 C3. The atom grid without reactions: springs, spreading by row, halftone drawing, key to cycle substances;
     ORDER line in the counter.
 C4. Chemistry in the open (no cells): light makes and breaks bonds by the table, sediment forms and cracks,
-    trace speeds reactions. Watch the substrate alone first.
-C5. Cells eat: exchange, internal stock, battery, one built-in burner for all; energy pays for crawling.
+    sparks from light and local heat, trace lowers the spark. Watch the substrate alone first.
+C5. Cells eat: exchange, internal stock, battery (starter charge), one built-in burner for all; the battery
+    pays for crawling and for each reaction's spark.
 C6. Engines in the genome (2-3 slots, mutate), energy-biased turnover, engines drawn as parts.
 C7. Pumps across contact: storing, sharing, stealing.
 C8. Hard light mutates cells.

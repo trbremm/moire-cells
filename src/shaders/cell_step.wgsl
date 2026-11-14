@@ -18,6 +18,8 @@
 @group(0) @binding(6) var<storage, read> bioPrev: array<Bio>;
 @group(0) @binding(7) var<storage, read_write> bioNext: array<Bio>;
 @group(0) @binding(8) var<storage, read_write> stats: Stats;
+@group(0) @binding(9) var<uniform> med: Medium;
+@group(0) @binding(10) var<uniform> src: Sources;
 
 @compute @workgroup_size(128)
 fn step(@builtin(global_invocation_id) id: vec3u) {
@@ -35,6 +37,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var sig = vec4f(0.0);     // committed neighbours' signals per fate channel
   var nParent = 0u;         // touching neighbours seen so far, and the one picked as parent (sorted slot)
   var parent = 0xffffffffu;
+  // what this cell feels from the sources (nutrient, threat); its neighbours read it next tick
+  bio.env = vec4f(feel_sources(S, src, med, c.pos), 0.0, 0.0);
 
   // every neighbour within reach: contact push, and (differentiation on) recognition and signals
   let rg = grid_range(S, grid_xy(S, c.pos));
@@ -59,14 +63,14 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         // SPECIFIC: my receptor against the neighbour's key (its lattice), a Gaussian in the wavevector difference
         let w = bio.rec.x;
         M += touch * exp(-key_dist2(bio.key.z, bio.key.w, o.la, o.aux) / (2.0 * w * w));
+        let ob = bioPrev[sortIdx[k]];
         // a parent in case this cell dies this tick: one touching neighbour, picked uniformly
         // (reservoir sampling: the n-th candidate replaces the pick with chance 1/n)
         if (dist < R0) {
           nParent++;
-          if (rand01(c.seed ^ 0x27d4eb2fu, S.tick * 64u + nParent) * f32(nParent) < 1.0) { parent = k; }
+          if (rand01(c.seed ^ pcg(S.tick ^ 0x27d4eb2fu), k) * f32(nParent) < 1.0) { parent = k; }
         }
         if (diff || adh) {
-          let ob = bioPrev[sortIdx[k]];
           if (diff && o.kind >= 1u && o.kind <= 4u) { sig[o.kind - 1u] += touch * ob.rec.z; }
           if (adh && dist > 1e-3) {
             // like sticks to like: both cells' stickiness, times how alike their keys are, plus same-fate glue
@@ -153,12 +157,28 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // turnover: now and then a cell dies and a touching neighbour divides into its place, the daughter a copy
   // of the parent's genome (from last tick's buffer, so it does not matter whether the parent changes or dies
   // this tick) with small mutations. Cells that recognise none of their neighbours die sooner.
+  // Nutrient and threat (rule E): a cell in a threat's field dies sooner, and the gap it leaves is not
+  // refilled from next door: its replacement, like a share nutFar of all births, is born next to a
+  // well-fed cell anywhere in the dish. So tissue drains away from threat and grows into nutrient.
   if ((S.rules & RULE_TURN) != 0u && parent != 0xffffffffu) {
-    let rate = S.turnover * (1.0 + S.unhappy * (1.0 - min(M, 1.0)));
+    let threat = S.thrKill * bio.env.y;
+    let rate = S.turnover * (1.0 + S.unhappy * (1.0 - min(M, 1.0))) * (1.0 + threat);
     if (rand01(c.seed ^ 0x165667b1u, S.tick) < rate * S.dt) {
+      let bs = pcg(c.seed ^ pcg(S.tick * 0x9e3779b9u + i));    // this birth's random stream
+      if (S.srcCount > 0u && rand01(bs, 300u) < S.nutFar + (1.0 - S.nutFar) * threat / (1.0 + threat)) {
+        // a far parent: random cells, each accepted with a chance growing with the nutrient it feels
+        // (rejection sampling, up to 16 tries); if none is accepted, the last fed one tried (after a threat
+        // death, the last one tried at all), else the local parent stays
+        for (var t = 0u; t < 16u; t++) {
+          let k = min(u32(rand01(bs, 310u + t) * f32(S.count)), S.count - 1u);
+          let nut = bioPrev[sortIdx[k]].env.x;
+          if ((sorted[k].flags & CELL_ALIVE) == 0u || k == j) { continue; }
+          if (threat > 0.05 || nut > 0.01) { parent = k; }
+          if (rand01(bs, 330u + t) < nut) { parent = k; break; }
+        }
+      }
       let pc = sorted[parent];
       let pi = sortIdx[parent];
-      let bs = pcg(c.seed ^ pcg(S.tick * 0x9e3779b9u + i));    // this birth's random stream
       var nb = bioPrev[pi];
       if ((S.rules & RULE_MUT) != 0u) { nb = mutate(nb, bs, S.mutSize, S.mutJump); }
       let inherit = (S.rules & RULE_INHERIT) != 0u;

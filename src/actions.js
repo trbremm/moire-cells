@@ -63,6 +63,8 @@ export function makeActions(app) {
     { id: 'speed', keys: ['[', ']'], label: 'speed', group: 'play', type: 'knob', get: () => app.speedLabel(),
       run: (k) => app.stepSpeed(k === ']' || k === '+' ? 1 : -1),
       help: 'simulation steps per drawn frame: 1× to 32× (a timelapse), MAX = as many as the GPU fits; the button shows the speed reached' },
+    { id: 'record', keys: ['shift+v'], label: 'record', group: 'play', type: 'toggle', get: () => app.recording(),
+      run: () => app.toggleRecord(), help: 'record the dish (not the panels) as a video file; again to stop and save it' },
     { id: 'culture', keys: ['n'], label: 'new culture', group: 'play', type: 'do', run: () => newCulture(false),
       help: 'a fresh blob of stem cells at the centre, the same founder genomes' },
     { id: 'genomes', keys: ['g'], label: 'new genomes', group: 'play', type: 'do', run: () => newCulture(true),

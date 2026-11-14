@@ -93,8 +93,11 @@ export function setupUI(app) {
   speedBtn.append(el('span', 'set', '1×'), el('span', 'got', ''));
   play.append(speedBtn);
   if (byId.has('record')) {
-    const b = button('record', 'Record the dish as a video (Shift+V); tap again to stop and save', 'btn rec');
+    const ok = app.canRecord();
+    const b = button('record', ok ? 'Record the dish as a video (Shift+V); tap again to stop and save. Only the dish is recorded, not the panels'
+      : 'Recording is not available in this browser (it cannot capture a canvas as video)', 'btn rec');
     b.dataset.action = 'record';
+    b.disabled = !ok;
     play.append(b);
   }
   const panels = el('div', 'grp');

@@ -52,6 +52,7 @@ import { Light } from './light.js';
 import { Matter, SHOWS } from './matter.js';
 import { makeActions, keyMaps, keysText, TOOLS, SQUEEZE_SOFT, SQUEEZE_HARD } from './actions.js';
 import { setupUI } from './ui.js';
+import { Recorder } from './record.js';
 
 window.__moireBooted = true;
 
@@ -84,6 +85,7 @@ const canvas = document.getElementById('gpu');
 const overlayEl = document.getElementById('overlay');
 const hintEl = document.getElementById('hint');
 const entropyEl = document.getElementById('entropy');
+const recEl = document.getElementById('rec');
 
 const debugLog = [];
 if (flag('debug')) {
@@ -106,6 +108,7 @@ let landscape = null;
 let cells = null;
 let light = null;
 let matter = null;
+let recorder = null;   // step C3b: the video recorder (Shift+V, the record button)
 let running = false;
 let view = null;
 
@@ -288,6 +291,11 @@ function frame(now) {
   pass.end();
   device.queue.submit([encoder.finish()]);
   stats.cpuMs += (performance.now() - t0 - stats.cpuMs) * 0.05;
+  if (recorder && recorder.on) {
+    recorder.capture();   // the frame just drawn, into the recording (in this task, while the canvas holds it)
+    const e = Math.floor(recorder.elapsed), t = `REC ${Math.floor(e / 60)}:${String(e % 60).padStart(2, '0')}`;
+    if (recEl.lastChild.textContent !== t) recEl.lastChild.textContent = t;
+  }
 
   // rough GPU latency: time from submit until the queue reports the work done (every 8th frame); the budgets also back
   // off when it runs far behind
@@ -414,11 +422,29 @@ function makeApp() {
       return speedText();
     },
     get paused() { return paused; },
+    recording: () => !!(recorder && recorder.on),
+    canRecord: () => !!(recorder && recorder.supported),
+    toggleRecord,
     togglePause() { paused = !paused; return paused ? 'paused (Space or the button runs it again)' : 'running'; },
     showEntropy, drawOverlay, flash, compass, tiltText, turnText,
     allKeys: () => allKeys,
     toggleAllKeys() { allKeys = !allKeys; hintEl.textContent = hintLine(); },
   };
+}
+
+function toggleRecord() {
+  if (!recorder.supported) return 'recording is not available in this browser (it cannot capture a canvas as video)';
+  if (recorder.on) {
+    recorder.stop();
+    recEl.hidden = true;
+    document.body.classList.remove('recording');
+    return 'recording stopped: saving the video file';
+  }
+  recorder.start(view.cssW, view.cssH);
+  recEl.lastChild.textContent = 'REC 0:00';
+  recEl.hidden = false;
+  document.body.classList.add('recording');
+  return `recording the dish (not the panels) as ${recorder.type.split(';')[0].replace('video/', '')}: Shift+V or the button again stops and saves it`;
 }
 
 function speedText() {
@@ -476,6 +502,9 @@ function tap(x, y) {
 }
 
 function setupInput() {
+  recorder = new Recorder(canvas);
+  recorder.onSaved = (name, size) => flash(`saved ${name} (${(size / 1e6).toFixed(1)} MB)`);
+  window.moire.recorder = recorder;
   const app = makeApp();
   actions = makeActions(app);
   keys = keyMaps(actions);

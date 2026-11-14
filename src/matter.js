@@ -246,7 +246,7 @@ export class Matter {
       thresh: 0.06,       // coverage below which there is no dot
       level: 0.85,        // the inks' brightness
       traceDot: 0.75,     // trace diamonds' size, as a share of a full dot
-      sedStep: 0.3,       // sediment: amount per R^2 per flat level (3 levels)
+      sedStep: 0.3,       // sediment: amount per R^2 where a crust patch starts (its lighter core from 4 x; hard edges)
       sedAlpha: 0.7,      // sediment: opacity of the top level
       ringR: 1.3,         // spring marker radius, in medium R (CSS px x R)
     };

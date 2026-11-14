@@ -173,6 +173,90 @@ Proposed shape (Claude's suggestion, open to change):
 - Draw each field in its own faded colour, added together.
 - Keep to the "minimal core first" advice: start with two fields and no biology, add one rule at a time.
 
+## Part C: light, chemistry and heat (user decision 2026-11-14; NEXT, ahead of Part B)
+Toy, not chemistry or thermodynamics: abstractions built from simple descriptors, judged by how they look.
+Principle: ENERGY is the currency, MATTER is conserved (atoms never made or destroyed, only moved and
+rearranged), and every loss ends up as HEAT, which leaves the dish. Each rule gets an on/off key.
+
+Keys: every letter is already taken by Parts A/B. Part C rules go on SHIFT+letter (main.js lowercases e.key,
+so check e.shiftKey before that), plus the F overlay / hint line. Mouse: left tap/drag stay as they are.
+
+The band ladder (the user's picture: absorb high frequency, emit infrared, but only "my fields interacting"):
+- Light, the fields A/B/A', motion and heat all sit on ONE energy scale, ordered by band (short period = high).
+  Energy only flows DOWN the ladder by itself; the only way up is a cell (or bond) catching light of a matching
+  band, never with full efficiency. Every conversion (absorption, reaction, field conversion of step 6, motion
+  lost to drag) loses part of its energy into heat.
+- HEAT is the lowest band. It is a field like A or B but INCOHERENT: its phase is redrawn every tick, so it gives
+  no steady push, only shaking. Brownian jitter = feeling the heat field (replaces the constant Sim.jitter).
+  Because it is incoherent only its intensity matters, so it is stored as one channel on the substrate grid
+  (spreads fast, fades) rather than summed as lattices.
+- Stability: a kick taken from heat USES that heat up (hot spots cool by stirring their neighbours), and heat
+  leaks out of the dish ("to the sky") at a set rate, which sets the dish's temperature.
+- Heat drives the viscous ripple background (the one soft layer): hot places shimmer, cool places go still.
+
+Entropy counter (user request): on screen, updated every frame, crisp text panel in a corner (Shift key hides).
+- ENTROPY = running total of heat that has left the dish, plus its rate per second.
+- Energy ledger lines: light in, stored (fuel + cell batteries), moving (cells' motion), heat in dish, rounding.
+  "rounding" = what does not add up = numerical error, shown honestly as "free entropy" (user's phrase); fast
+  growth there means a bug.
+- ORDER line (once there is chemistry): how patterned the dish is (e.g. Shannon entropy of the grid's
+  substances). Life's trick to watch: order falls while heat out climbs faster.
+- GPU reduction each frame; read back a few numbers with a small ring of staging buffers, never stall
+  (showing a value 1-2 frames old is fine).
+
+Light (user choices):
+- Two modes: FULL FIELD (whole dish) or SPOTLIGHT. The spot moves and tilts with the mouse: right-drag moves it,
+  wheel tilts it (an oblique beam makes the spot an ellipse, brighter on the near side), Shift+wheel turns the
+  direction the light comes from. Drawn crisp and flat (thin hard-edged ellipse outline or faint flat tint;
+  no glow). Shadows behind cells: maybe later.
+- Bands (same energy scale as the bonds below): WARM (heat only, absorbed by everything, most by dark sediment),
+  two VISIBLE bands (make the lighter bonds, caught by cells with a matching pigment gene), HARD (makes the
+  heaviest bonds, cracks sediment in the open, mostly becomes heat; in a cell it raises mutation).
+
+Substances: a small "periodic table" (user: "think of bands in the periodic table, like you did with light").
+Each atom is described by TWO numbers only, and every property is DERIVED from them, never hand-tuned per atom:
+ROW (size: heavier = slower spreading, stronger/richer bonds, needs harder light to bond) and GROUP (role).
+- Groups: GIVER (wants one partner) · LINKER (wants two: chains) · TAKER (wants one partner).
+- Rows 1 (light) and 2 (heavy): atoms g t l (light) and G T L (heavy).
+- Plus one rare TRACE atom (row 3, inert): never reacts, barely moves, speeds any reaction where it sits
+  (a catalyst). Cells that hoard it run their engines faster.
+- Bonds: giver + taker = FUEL pairs gt, gT, Gt, GT (energy grows with row: gt cheapest, made by the lower visible
+  band; GT richest, needs hard light). Linkers chain into SEDIMENT ll and LL: forming it releases a little
+  energy, it does not spread, so it piles up (accumulation only through reaction; the user's two ideas in one
+  rule); it is dark, so it warms in light; hard light slowly cracks it. Like with like (g+g, t+t): no bond.
+- Grid: 6 atoms + 4 fuels + 2 sediments + trace + heat = 14 channels per pixel (e.g. four rgba textures or
+  storage buffers; f32 preferred for conservation, measure drift in the "rounding" line). About one pixel per
+  half a cell radius. Springs (today's nutrient sources, mouse-dropped) drip atoms in.
+- Look: colour means function. Fuel in the nutrient green as halftone dots; sediment as a flat, crisp, dim layer;
+  free atoms hidden unless a key cycles through them.
+
+Cells and engines ("permutators"):
+- Each cell holds an internal stock of the substances and one ENERGY number (its battery).
+- Membrane exchange by two genes: PERMEABILITY (passive, from more to less) and PUMP (active inward pull, costs
+  energy). Storer, sharer and THIEF (pumping from a touching neighbour) are meant to EMERGE from these two
+  numbers; never write a "steal" rule.
+- Engines: 2-3 genome slots, each a rearrangement from the table (make or break a given fuel, link sediment,
+  optionally using a light band), with a rate. The energy table does the bookkeeping: a reaction that would take
+  the battery below zero does not run; the inefficiency goes to heat.
+- Energy pays for MOTION only at first (user: "fair"); survival later. Energy-biased turnover: rich cells win
+  the freed slot more often, so good energy handlers spread.
+- The membrane's 6 corners sample the grid too: cells "smell" which way fuel lies.
+- Engines are the cell's first PARTS (the user's body-plus-parts plan): small marks inside the body, coloured by
+  reaction; battery = size of the inner core.
+
+Build order (one rule at a time, each with a Shift key, look after each):
+C1. Heat band + entropy counter: heat channel on a grid, jitter from local heat, drag and losses feed it, kicks
+    use it, leak to the sky, ripples respond to heat. Counter with entropy, heat in dish, moving, rounding.
+C2. Light: full field / spotlight (mouse controls above); warm and hard bands become heat where absorbed.
+C3. The atom grid without reactions: springs, spreading by row, halftone drawing, key to cycle substances;
+    ORDER line in the counter.
+C4. Chemistry in the open (no cells): light makes and breaks bonds by the table, sediment forms and cracks,
+    trace speeds reactions. Watch the substrate alone first.
+C5. Cells eat: exchange, internal stock, battery, one built-in burner for all; energy pays for crawling.
+C6. Engines in the genome (2-3 slots, mutate), energy-biased turnover, engines drawn as parts.
+C7. Pumps across contact: storing, sharing, stealing.
+C8. Hard light mutates cells.
+
 ## Ground rules
 - State plainly what was tested and how. "Runs without errors" is not "looks right".
 - Commit working states often, so a bad visual change is easy to undo.

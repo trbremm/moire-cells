@@ -47,7 +47,7 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   - *light* (the sun): spotlight / full field / off, sliders for the tilt and the direction the light comes from,
     day and night;
   - *view* (the eye): the entropy panel, the stats overlay (F), the landscape, which substance is shown, colour by
-    fate or lineage, and the other drawing switches;
+    fate, lineage or strategy (step C6), and the other drawing switches;
   - *rules*: every rule that has a key, as a switch with a one-line explanation and its key, grouped as below
     (the loop, field B, steps 6 to 8, biology, heat and light, chemistry); settings with several values show the current one
     and change on a tap; the lever has - and +. The switches follow the state, also when a key changes it;
@@ -99,14 +99,15 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
 - **M**: mutation on/off (off: daughters are exact copies of their parent)
 - (**E** is free: it switched rule E, nutrient and threat, which went with the sources in step C3)
 - **I**: daughters inherit their parent's fate on/off (default off: they start as stem cells)
-- **V**: colour by fate or by lineage (the key's hue)
+- **V**: colour by fate, by lineage (the key's hue), or by strategy (step C6: how the cell's engines make a living)
 - **[** / **]**: simulation speed 1× / 2× / 4× / 8× / 16× / 32× / MAX (step C3b: the last three are the timelapse)
 - Part C keys are **Shift + a letter** (step C1: Shift+H heat jitter, Shift+E entropy panel, Shift+R ripples simmer;
   see "Heat and the entropy counter" below; step C2: Shift+L light spot / full field / off, Shift+D day and night;
   step C3: Shift+S substances shown (summary / each alone / off), Shift+C wash the atoms out; step C4, "Chemistry in
   the open" below: Shift+M chemistry, Shift+F make fuel by light, Shift+B break fuel, Shift+P swaps, Shift+K sediment,
-  Shift+T trace lowers the spark; step C5, "Cells eat" below: Shift+A cells eat, Shift+U burner, Shift+I reactions
-  inside, Shift+W battery pays crawl, Shift+X heat damage, Shift+G rich cells divide, Shift+N smell)
+  Shift+T trace lowers the spark; step C5, "Cells eat" below: Shift+A cells eat, Shift+U everyone burns, Shift+I reactions
+  inside, Shift+W battery pays crawl, Shift+X heat damage, Shift+G rich cells divide, Shift+N smell; step C6, "Engines in the genome" below: Shift+O engines, Shift+Y
+  pigments, Shift+Q upkeep, Shift+Z gene: heat tolerance, Shift+J gene: permeability)
 - right-drag: move the spotlight · wheel: tilt it · Shift+wheel: turn where the light comes from (step C2, "Light" below)
 
 The loop (step 4):
@@ -230,7 +231,8 @@ neighbour grid and by brute force, and check the sort; result in the console and
 GPU's neighbour order varies), `?speed=1|2|4|8`, `?founders=N`, `?view=1` (lineage colours),
 `?heat=0`, `?entropy=0`, `?simmer=0` (step C1, Shift+H E R), `?light=spot|full|off`, `?spot=x,y,r`, `?tilt=`, `?az=`, `?day=0`,
 `?hour=`, `?clouds=0` (step C2, see "Light"), `?show=summary|off|<substance>` (step C3, e.g. `?show=G`), `?chem=0` (step C4),
-`?eat=0`, `?springs=0` (step C5, see "Cells eat").
+`?eat=0`, `?springs=0` (step C5, see "Cells eat"), `?engines=0`, `?burners=1`, `?view=strategy` (step C6, see "Engines in the
+genome").
 In the browser console, `moire.background.params`, `moire.landscape.params`, `moire.medium.params`, `moire.heat.params`, `moire.light.params`, `moire.matter.params`, `moire.eat.params`,
 `moire.cells.params` (physics), `moire.cells.look` (drawing) and `moire.genome.params` / `.rules` hold
 live-tunable numbers.
@@ -988,7 +990,8 @@ table, relative to the light atoms. So the light atoms pass at 3 per s, light fu
 fuels at 0.25 to 0.36, trace hardly at all (0.04), sediment never. Inflow is scaled down as the stock fills
 (1 − fill). A cell full of fuel near an empty patch lets fuel back out; a cell that burns its fuel keeps pulling more in.
 
-**The burner** (Shift+U): every cell's one built-in engine until C6 puts engines into the genome. Fuel → its two
+**The burner** (Shift+U; since step C6 the rule "everyone burns", off by default, see "Engines in the genome"): every
+cell's one built-in engine until C6 puts engines into the genome. Fuel → its two
 atoms (gt → g + t, GT → G + T, ...), at `kBurner` (2 per s) of the fuel in stock, at most `burnMax` (2 fuel units per s
 per cell). The bond's energy (1.5 for gt up to 3 for GT) goes into the battery, minus `ineff` (25 %) that becomes heat
 at the cell. Each event's **spark** is paid from the battery first and given back (the reaction is downhill), so a
@@ -1059,7 +1062,7 @@ into the dish must go into channels the dish is moving this frame (a channel lef
 the matter's list of moving channels now also counts what the cells hold and what their insides can make, and keeps a
 channel on until a ledger read-back has seen what went into it.
 
-**Keys** (all on by default; each acts only while Shift+A is on): **Shift+A** cells eat · **Shift+U** burner ·
+**Keys** (all on by default; each acts only while Shift+A is on; since C6 Shift+U is "everyone burns", off): **Shift+A** cells eat · **Shift+U** burner ·
 **Shift+I** reactions inside · **Shift+W** battery pays crawl · **Shift+X** heat damage · **Shift+G** rich cells divide
 (energy-biased turnover) · **Shift+N** smell. URL: `?eat=0` (start not eating), `?springs=0` (no default scene).
 
@@ -1080,6 +1083,182 @@ eating (`?eat=0`) 98 ms, so the eating itself costs about 0.4 ms per tick there 
 (88 bytes instead of 56) and the extra dispatches. A lesson: the first version read the dish through atomics in the
 eat pass and smelled in the step: on Direct3D an atomic load is a read-modify-write, and the step's probe at 10 000
 cells went from 3.7 ms per tick (C4) to 6.4; with the plain-read plan dispatch it is 5.3.
+
+## Engines in the genome (Part C, step C6)
+
+Cells no longer all make their living the same way. Every genome now carries three **engine slots**, each one reaction
+of the chemistry's table with a rate (and, for an uphill reaction, the light band its pigment catches), plus two more
+genes, a **heat tolerance** and a **permeability**. Some lineages catch light with a pigment and make fuel with it, some
+burn the fuel they find, most winners do both; a few swap atoms or make sediment for a small gain. The engines are drawn
+as small coloured **parts** inside each cell, and turnover with mutation decides which engine sets spread where. C5's
+built-in burner is now a switch, "everyone burns", off by default.
+
+**The chemistry is symmetric** (the user: "as long as our chemistry enables endothermic and exothermic reactions and their
+inverse, it is close enough"). Every reaction that changes energy exists in both directions, in the open and as an engine:
+- downhill needs only its spark (in the open from the local heat; in a cell from the battery, given back) and releases
+  its energy (in the open as heat; in a cell into the battery, minus `ineff`, 25 %, as heat);
+- uphill needs the energy difference plus the spark (in the open from light of a band that covers both; in a cell the
+  difference from light caught by a pigment, or from the battery, and the spark always from the battery).
+New in the open: the four swaps also run **uphill by light** (gt + T → gT + t, gt + G → Gt + g, gT + G → GT + g,
+Gt + T → GT + t: light upgrades a fuel with a heavy atom and frees a light one), slowly (`kUpSwap` 0.02, a fiftieth of
+fuel making's depth), so C4's look does not change; they count with the swaps (Shift+P). The table now has 24 reactions.
+
+**The engines** (`ENGINES` in `src/matter.js`, derived from the reaction table; a slot names one by its index, and the
+order is part of the genome's meaning):
+
+| # | engine | kind | energy per unit |
+|---|---|---|---|
+| 0-3 | g + t → gt, g + T → gT, G + t → Gt, G + T → GT | uphill: make fuel | stores 1.5, 2.25, 2.25, 3 |
+| 4-7 | gt + T → gT + t, gt + G → Gt + g, gT + G → GT + g, Gt + T → GT + t | uphill swap (frees a light atom) | stores 0.75 |
+| 8-9 | ll → l + l, LL → L + L | uphill: crack sediment | stores 0.5, 1 |
+| 10-13 | gt → g + t, gT → g + T, Gt → G + t, GT → G + T | downhill: burn | releases 1.5 … 3 |
+| 14-17 | t + gT → gt + T, g + Gt → gt + G, g + GT → gT + G, t + GT → Gt + T | downhill swap ("breathing") | releases 0.75 |
+| 18-19 | l + l → ll, L + L → LL | downhill: make sediment (expelled) | releases 0.5, 1 |
+
+A slot holds the engine's index + 32 × a band (0 to 3). For an uphill engine the band says what pays the difference:
+- band 1, 2 or 3: a **pigment** for visible 1, visible 2 or hard light. Its optical depth is `pigK` × the slot's rate; it
+  catches its share of that band of the light falling on the cell (shared by depth with the medium and the cell's body,
+  as the dish's absorption does), in whole photons, one per event. The photon pays the energy that goes into the bonds;
+  a weaker photon takes the rest from the battery; what is left of a photon, and photons with nothing to work on, become
+  heat in the cell. This is a **harvester**.
+- band 0: no pigment, a **storer**: rate × what it works on per s, the battery pays the whole difference: battery energy
+  banked in the stock as fuel (burning it back returns 75 %).
+In every case the uphill engine's **spark is paid from the battery** and lost as heat, and **light never charges the
+battery**: only the downhill engines (and the C5 burner, when "everyone burns" is on) fill it. So a harvester without a
+burner or a breathing swap runs its battery flat and stops: **pure harvesters do not exist** as a strategy that lasts
+(the user: "harvesters should not be able to operate without burning at least a bit"). Downhill engines work as C5's
+burner: rate × what they work on per s (the fuel; the scarcer of an atom and a fuel; pairs of linkers), the spark from
+the battery first (an empty battery starts nothing), at most `engMax` (2 units per s) per slot, a full battery takes
+nothing more. Slots run in order 1, 2, 3, after the membrane and before the reactions inside.
+
+**The other genes.** **Heat tolerance** (founders 10 to 20 per R², C5's global was 15): heat damage uses the cell's own
+(rule Shift+Z; off: the global `tol`). **Permeability** (founders 1.5 to 6 per s, C5's global 3): the membrane's rate for
+the light atoms, each substance scaled by its spreading speed as in C5 (rule Shift+J; off: the global `perm`).
+
+**Tradeoffs** (no gene is free; rule Shift+Q, upkeep): engines cost `upEng` (0.003 energy per s) × the sum of their
+rates, and tolerance costs `upTol` (0.003 per s) × tolerance / 15, from the battery, as heat (what an empty battery
+cannot pay is not paid). Permeability has no upkeep; its cost is emergent: a leaky cell loses its own fuel and atoms and
+lets the light free atoms in (which degrade its rich fuel by the reactions inside); a tight one takes up fuel slowly.
+A harvester also heats itself (each photon's rest, and photons with nothing to make), so tolerance matters in the light.
+
+**Founders** (G, N; `STRATEGIES` in `src/genome.js`): founder k gets the k-th of 12 engine sets, so the default 12 founders
+are 5 burners (gt fast, one heavier fuel slower), 3 harvest + burn (a visible 1 pigment for gt and a gt burner, half also
+a heavy-fuel burner), 2 pigment-heavy cells (gt by visible 1, gT by visible 2, and a small gt burner: every founder that
+harvests also burns) and 2 others (sediment from light linkers, and a breathing swap). With `founders = 0` every cell
+draws one of the 12. Rates are drawn within each set.
+
+**Mutation** (rule M, at every birth): rates × e^(0.1 g), tolerance × e^(0.04 g), permeability × e^(0.08 g) (g a standard
+normal draw; an empty slot stays empty); and with chance `engJump` (0.04 per birth) one slot jumps: to another of the 20
+engines (45 %; an empty slot starts up at a rate of 0.4 to 1.4), to another band, 0 to 3 (30 %), or it empties (25 %).
+
+**What it looks like** (the default scene, 2000 cells, MAX, seeds 3 and 7, Chrome on the GTX 1650; these are the
+numbers with every rule above). At the start the culture is a mix: most cells show a green diamond or two (burners),
+many a small gold disc at the top (a visible 1 pigment), some a sky-blue disc (visible 2), a few a red triangle (a
+breathing swap) or a grey square (sediment). In the first two minutes the cells on the rim by the springs fill their
+green cores; from 2 to 5 minutes the cells in the spotlight with a gold disc AND a green diamond (harvest + burn) have
+the fullest cores (mean battery 0.4 to 0.75 against 0.05 to 0.3 for the burners beside them), win the freed slots
+around them and fill the spot: by 10 minutes 89 % of the cells in the light are harvest + burn, by 20 minutes 88 to 94 %,
+and their lineage has spread into the dark part of the culture too (77 to 82 % of all cells), where it carries its
+pigments uselessly (all batteries in the dark are empty, so there is nothing to select by there; it changes by drift and
+by the lit lineage pushing in). The visible 2 pigment dies out in the light (its fuel gT needs the heavy taker T, which is
+scarce). Cells with a pigment but no burner keep appearing by mutation (a slot jump empties or replaces the burner): 1 to
+5 % of the cells at 2 to 10 minutes, 5 to 10 % at 20 minutes, every one of them with an empty battery (mean 0.00 in the
+light and in the dark): they run flat, never win a slot and are replaced as turnover reaches them. The colour-by-strategy
+view (key V, third press) shows it as areas: the spot a block of gold-and-green split cells, green burners around it.
+
+Census over time (share of all cells harvest only / burn / harvest + burn / other; in brackets: among the cells in the light):
+
+| sim time | seed 3 | seed 7 |
+|---|---|---|
+| 120 s | 1 / 39 / 52 / 8 (1 / 33 / 59 / 8) | 1 / 39 / 40 / 19 (1 / 43 / 41 / 15) |
+| 300 s | 2 / 35 / 58 / 6 (2 / 20 / 76 / 2) | 4 / 31 / 50 / 15 (1 / 33 / 62 / 5) |
+| 600 s | 2 / 33 / 63 / 2 (2 / 7 / 89 / 1) | 5 / 21 / 66 / 8 (0 / 9 / 89 / 1) |
+| 900 s | 3 / 30 / 66 / 1 (1 / 28 / 71 / 0) | 10 / 14 / 71 / 5 (3 / 8 / 84 / 4) |
+| 1200 s | 5 / 18 / 77 / 1 (1 / 5 / 94 / 0) | 10 / 7 / 82 / 1 (7 / 3 / 88 / 2) |
+
+Births and deaths stayed at 41 to 74 per s, cells above half a battery rose from 5 % to 17 to 38 %, and nothing
+collapsed. Seed 7 had two bursts of heat deaths around noon (up to 36 per s for a while, capped by `heatKill` as in C5):
+a dense patch of harvesters in the spot heats itself. An earlier tuning with the pigments at a quarter of their strength
+(pigK 0.03) let the burners win instead (65 % of all cells, 76 % in the light at 15 minutes): the dish's own light
+chemistry, which then caught four times more light than the pigments, fed them.
+
+**Free light atoms and breathers** (the user's question: a "great oxidation"-like moment?). The uphill swaps free light
+atoms (g, t) as waste; the breathing swaps eat them with rich fuel. The panel's FREE LIGHT ATOMS line shows the free g and
+t in the dish and how many cells carry an uphill swap with a pigment and how many a breathing swap. Honestly, at the defaults there was no
+such moment. Over 20 minutes the free light atoms did build up slowly (g from 44 to 73 in seed 3, from 45 to 106 in seed
+7; t the same), but not from the uphill swaps alone (the springs stop at 240 s, and the harvest + burn cells' cycles and
+the dish's own chemistry move light atoms too), and the breathers did not rise after it: cells carrying a breathing swap
+fell from 171 to 89 (seed 3) and from 407 to 155 (seed 7), and the cells carrying an uphill swap with a pigment stayed
+few (6 to 112, mostly in the dark, where they do nothing). The knob that came closest: the uphill swaps in the open 15
+times faster (`moire.matter.chem.kUpSwap = 0.3`, seed 7): the free light atoms rose earlier (88 by 300 s against 60) and
+reached 112 at 20 minutes, the dish's swaps ran at 23 per s, and the breathers kept a foothold in the light (11 % of the
+cells in the spot are "other", mostly breathers, against 0 to 2 % at the defaults; 113 breathers in the light) though
+their total still fell (468 to 293). No rule forces it.
+
+**The census.** The entropy panel has two new lines:
+
+    ENGINES  harvest 10% · burn 7% · both 82% · other 1%  (batteries 0 · 1 · 43 · 0 %) · in the light 7 · 3 · 88 · 2 % · tolerance 16.4 · perm 3.53
+    FREE LIGHT ATOMS  g 106 · t 108 in the dish · cells with an uphill swap 51 · breathers (downhill swap) 155
+
+(share of the cells per strategy, their mean battery, the shares among the cells in the light, the mean tolerance and
+permeability; on a phone a short form). A "harvester" is a cell with an uphill engine that has a pigment; "both" also has
+a burn engine; a storer alone does not make a harvester. The F overlay adds the switches and knobs, the engines' flows per
+s (light the pigments caught per band, made uphill, made by storers, what the batteries paid for sparks and differences,
+idle photons, burned / swapped / chained, into the batteries, the engines' heat, upkeep), per strategy in the light and in
+the dark (cells, mean battery, cells above half, mean rates, tolerance, permeability), the uphill slots per band (storers,
+visible 1, visible 2, hard), the shares every 10 s and the free light atoms, uphill swappers and breathers every 60 s. It
+is counted on the GPU in the ledger pass once per frame and comes back with the energy ledger's read-back (never waits).
+
+**Parts** (the user's body-plus-parts plan; colour means function). Each non-empty slot is a small flat mark with a hard
+edge around the battery's core, at a fixed place (slot 1 up, slot 2 lower right, slot 3 lower left), its area in
+proportion to its rate up to `partRate` (2): **harvester** a disc in its band's colour (visible 1 gold, visible 2 sky
+blue, hard pale violet; `ink` in `BANDS`, `src/light.js`), **storer** a ring in the battery's pale green, **burn** a
+diamond in the fuel's deeper green, **breathing swap** a triangle pointing out, faded red, **sediment** a square, dim warm
+grey. The body keeps its fate colour; the lattice dots dim to 45 % and keep a clear margin around each part; the core is a
+little smaller at full charge (0.36 of the radius instead of 0.55). The parts show while the engines run (Shift+O). A cell
+is about 13 px across at 2000 cells on a computer screen, so zoom in (pinch, or the browser's zoom) to read them.
+
+**Colour by strategy** (key V cycles fate → lineage → strategy; `?view=strategy`): harvester only = its band's colour,
+burn only = green, both = split down the middle (band colour left, green right, a crisp edge), the rest = dim grey; every
+body gets the same flat fill (`strategyFill`, 0.5). Starving cells still dim.
+
+**The books.** Light the pigments catch is energy in (the light line shows "pigments …/s"; "passed" is what nobody
+caught). The pigments put their optical depth down in the heat buffer (three blocks behind the substances, one per band,
+each cell spreading its depth over its 3 × 3 pixels; cleared after each tick), so the dish's absorption (`absorb` in
+`heat.wgsl`) and the substances' light reactions (`react` in `matter.wgsl`) see that much less of the band: light is not
+used twice. Everything else moves whole counts as in C5. Measured (final code, seed 5, MAX): a run through N (120 s), Shift+C (220 s), a resize
+(300 s), G (400 s), a resize back (480 s) and a new spring (520 s): energy rounding between −0.001 and +0.091 while in
+grew to 11.8 M, atoms rounding exactly 0 throughout; the 1200 s runs ended at −0.12 (16.8 M) and +0.092 (20.4 M), atoms 0
+(an earlier version's stress run drifted to −0.18 at 11 M and the same run with the engines off and everyone burning
+stayed within −0.04 to +0.08; the final code's runs are back within ±0.12, of the size C5 showed).
+
+**Rules** (group "Engines in the genome (step C6)" in the rules panel; each acts only while Shift+A is on): **Shift+O**
+engines · **Shift+Y** pigments · **Shift+Q** upkeep · **Shift+Z** gene: heat tolerance · **Shift+J** gene: permeability;
+and in the C5 group **Shift+U** everyone burns (C5's built-in burner, now off by default). URL: `?engines=0`,
+`?burners=1`, `?view=strategy`.
+
+**Knobs** (live in `moire.eat.params`): `engMax` (2 per s per slot), `pigK` (0.12: a pigment's optical depth per unit of
+rate; a rate of 1 catches 11 % of its band), `upEng` (0.003), `upTol` (0.003), `tolRef` (15); `moire.genome.params.engJump`
+(0.04); `moire.matter.chem.kUpSwap` (0.02); the look in `moire.cells.look`: `parts`, `partSize` (0.24 of the radius),
+`partDist` (0.58), `partRate` (2), `partDots` (0.45), `coreParts` (0.36), `burnInk`, `sedInk`, `swapInk`, `otherInk`,
+`strategyFill` (0.5).
+
+**How it is computed.** The genome grew from 32 to 40 floats (`Bio.eng`: the three slots and the tolerance; `Bio.rate`:
+the three rates and the permeability). The eat pass (`cell_eat.wgsl`) also binds the light and this tick's genome copy
+(one bind group per copy of the double-buffered genome): `plan` reads the permeability, `eat` runs the pigments, the
+engines and the upkeep, `ledger` counts the strategies. The step reads the tolerance for heat damage; the drawing reads
+the genome for the parts. The engine table travels in the eat uniform (struct `Eng`). The ledger grew by 3328 words (16
+engine counters and the census).
+
+**Where the colours are decided** (one place, for restyling): the parts' and the strategy view's inks are
+`moire.cells.look` (`burnInk`, `sedInk`, `swapInk`, `otherInk`, `coreInk` for the storer's ring) and the light bands'
+`ink` in `BANDS` (`src/light.js`) for the pigments; the shapes and places are in `cell_draw.wgsl` (step C6 block).
+
+**Cost** (headless Chrome on the GTX 1650, seed 3, 2000 cells, against C5 at commit 0ead2fd, alternating runs): MAX
+reached ×11.4 and ×12.0 against ×12.1 and ×11.4 (no difference beyond the noise); at 1× 8.3 ms per frame in both (held
+by the display), the step's physics 0.62 ms per tick against 0.67. The pigments' blocks are read as one word per band per
+pixel (each cell spreads its depth over its 3 × 3 pixels when it puts it down), as atomic reads are slow on Direct3D.
+Firefox (headed) ran the page without errors.
 
 ## The look of the landscape
 
@@ -1117,7 +1296,9 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   reaction list (derived from the same table), the chemistry's knobs and switches, and `react` in `matter.wgsl`
 - `src/eat.js` + `src/shaders/cell_eat.wgsl`: cells eat (step C5): every cell's stock and battery (their own buffer),
   the membrane, the burner, the reactions inside, deaths and births handing stock back and splitting it, the starter
-  charge, the cells' part of the books, the entropy panel's CELLS line
+  charge, the cells' part of the books, the entropy panel's CELLS line; step C6: the engines (pigments, storers, upkeep,
+  the tolerance and permeability genes), the pigments' blocks in the heat buffer, the census and the ENGINES and FREE
+  LIGHT ATOMS lines; the engine table itself (`ENGINES`) is derived in `src/matter.js` next to the reactions
 - `src/cells.js` + `src/shaders/cell_*.wgsl`: the cells. `cell_common.wgsl` holds the cell layout, the per-tick
   uniforms, the grid helpers, the loop's maths (cell beat, membrane, sensing, tuning; prepended after
   field_common) and field B (struct `Fields`, charges, `cell_field_b`); `cell_grid.wgsl` rebuilds the neighbour grid every tick (a counting sort by grid cell) and
@@ -1131,7 +1312,8 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
 - `src/light.js` + `src/shaders/light_common.wgsl`, `light_draw.wgsl`: the light (step C2): its modes, band table, day
   cycle, clouds and mouse controls, and the uniform shared by the heat passes (`light_common.wgsl` is prepended to
   `heat.wgsl`, whose `absorb()` turns the caught light into heat) and the drawing (outline, marker, tint)
-- `src/genome.js`: the genome layout, random founders, the rule switches and their numbers (`moire.genome`);
+- `src/genome.js`: the genome layout, random founders (step C6: their engine sets, `STRATEGIES`), the rule switches and
+  their numbers (`moire.genome`);
   the GPU side (mutation, key likeness, the `Bio` and `Stats` structs) is in `cell_common.wgsl`, the rules
   themselves in `cell_step.wgsl`
 - `tools/shot.py`: headless screenshots (below)

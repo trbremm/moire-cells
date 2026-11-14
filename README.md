@@ -8,7 +8,8 @@ lattices. This is the WebGPU version (work in progress). The original CPU versio
 
 Online: **https://trbremm.github.io/moire-cells/** (GitHub Pages, published from `main`; give it a minute after a
 push). Some views to try: `?bio=0` (the loop alone, with exclusion), `?cells=10000&bio=0&excl=0&seed=3&change=1&side=1&partner=1`
-(step 8's curling waves); press 2 or 3 and click into the empty dish to drop a spring of atoms (step C3).
+(step 8's curling waves); pick a spring in the toolbar (or press 2 or 3) and tap into the empty dish to drop a spring
+of atoms (step C3). On a phone, tap the dish with the toolbar's tools; everything else is in its panels.
 
 Locally:
 
@@ -29,14 +30,64 @@ Without WebGPU the page shows a message and links to the CPU version.
 picked the AMD Vega instead of the GTX 1650. To change it: Windows Settings > System > Display > Graphics,
 choose the browser, set "High performance", restart the browser.
 
-## Keys and mouse
+## Controls (step C3b)
 
-- click: drop what the tap mode says · drag: stir (ripples, and cells near the pointer are pushed along)
-- **1** / **2** / **3**: tap mode: ripple / light spring / heavy spring (step C3; the hint line shows the mode)
+Everything can be done with a finger or the mouse, through the **toolbar** at the bottom left; the keys (below) still
+work and do exactly the same (one table of actions, `src/actions.js`, drives both). The toolbar folds away to one
+small button (the arrow at its left end; the page remembers it; `?ui=0` starts folded). Hover a button for its name.
+
+- **Tools** (what a tap and a drag on the dish do; one at a time, the active one outlined in cyan):
+  ripple (key 1) · light spring (2) · heavy spring (3): a tap drops one, a drag stirs ·
+  stir: a tap or drag stirs (ripples, and the cells near your finger are pushed along) ·
+  move light (the ellipse): a tap or drag puts the spotlight there (and switches the light to spotlight).
+  With a mouse, as before: right-drag moves the spotlight, the wheel tilts it, Shift+wheel turns it.
+- **Pause / play** (Space) · **speed** (keys [ ]; a tap goes to the next speed, after MAX back to 1×) ·
+  **record** (Shift+V, see below).
+- **Panels** (one open at a time; tap the button again, the ×, or Escape to close):
+  - *light* (the sun): spotlight / full field / off, sliders for the tilt and the direction the light comes from,
+    day and night;
+  - *view* (the eye): the entropy panel, the stats overlay (F), the landscape, which substance is shown, colour by
+    fate or lineage, and the other drawing switches;
+  - *rules*: every rule that has a key, as a switch with a one-line explanation and its key, grouped as below
+    (the loop, field B, steps 6 to 8, biology, heat and light); settings with several values show the current one
+    and change on a tap; the lever has - and +. The switches follow the state, also when a key changes it;
+  - *dish* (the dish with three cells): the speed as a row of buttons, new culture (N), new genomes (G), clear
+    springs (C), wash the atoms out (Shift+C).
+- **Touch:** one finger on the dish is the active tool; two fingers are left to the browser (pinch-zoom). On a
+  touch-only screen the bottom line shows only the short messages after a tap, not the keys.
+- **Speeds:** 1×, 2×, 4×, 8× as before; **16×** and **32×** are a timelapse: more ticks of 1/60 s between two
+  drawn frames (the ticks themselves are the same at every speed, so is the simulation); **MAX** runs as many ticks per
+  frame as the graphics card does while the picture keeps about 50 frames per second. The fast speeds adapt to the
+  measured time between frames (16× and 32× allow down to about 30 frames per second), at most 256 ticks per frame, so
+  the speed a slow card reaches is lower: the speed button shows it under the setting (e.g. "32×" over "×11"), and so
+  do the entropy panel's first line and the F overlay. Measured on this machine (the browsers use the integrated AMD
+  Vega): 2000 cells, Chrome: 32× reaches ×16 at 34 frames/s, MAX ×17 at 53; Firefox: 8× ×8, 32× ×11 at 33, MAX ×11
+  at 57; 10 000 cells, Chrome: 8× ×6.8 at 13 frames/s (as before), 32× ×6.5 at 31, MAX ×6.1 at 55. The energy
+  ledger's rounding stays within ±0.11 (in up to 7.6 M) and the atoms ledger's at 0 at any speed. A spring drips on
+  each tick it lives, so it gives the same amount at any speed.
+- **Recording:** the record button (Shift+V) records **the dish only** (not the toolbar, panels or counters) as a
+  video; a small red "REC 0:12" shows while it runs; pressing it again stops and downloads the file,
+  `moire-cells-YYYY-MM-DD-HHMM.webm`. WebM with VP9 in Chrome and Edge, VP8 in Firefox, MP4 in Safari; at the
+  page's size in CSS pixels (at most 1920 wide), about 8 Mbit/s for 1080p (5 s at 1280 × 800: about 3 MB). Record
+  at 32× or MAX for a timelapse. Where the browser cannot record a canvas, the button is greyed out. Browser
+  recordings usually carry no total length in the file: most players play them fine, some cannot show a seek bar.
+- **On a phone** the page starts with fewer cells (unless `?cells=` says otherwise): 2000 × (shorter side / 800 px)²,
+  between 800 and 1500, on touch screens and windows shorter than 600 px; a phone of 390 px gets 800 cells of about
+  the computer's size. The entropy panel gets shorter lines, panels take at most about half the screen and scroll,
+  buttons are 42 px.
+- URL options: `?speed=32` or `?speed=max`, `?paused=1` (start paused), `?ui=0` (start with the toolbar folded).
+
+## Keyboard shortcuts
+
+- click: what the tool does (a ripple or spring tool drops, the stir tool stirs, the move-light tool moves the spot) ·
+  drag: stir (ripples, and cells near the pointer are pushed along)
+- **1** / **2** / **3**: tool: ripple / light spring / heavy spring (step C3; the toolbar shows the tool)
+- **Space**: pause / play (step C3b)
+- **Shift+V**: record the dish as a video / stop and save it (step C3b)
 - **C**: clear the springs (the atoms already in the dish stay; Shift+C washes them out)
 - **L**: the whole landscape on/off: the cells' field dots and the substances' dots
 - **F**: frame time and adapter overlay
-- **?**: the hint line shows all keys / only the main ones
+- **?**: the hint line shows all keys / the short line
 - **A**: ambient ripples on/off (random drops standing in for the cells' divisions and deaths)
 - **N**: new culture (a fresh blob of stem cells at the centre, the same founder genomes)
 - **G**: new culture with fresh random founder genomes
@@ -49,7 +100,7 @@ choose the browser, set "High performance", restart the browser.
 - (**E** is free: it switched rule E, nutrient and threat, which went with the sources in step C3)
 - **I**: daughters inherit their parent's fate on/off (default off: they start as stem cells)
 - **V**: colour by fate or by lineage (the key's hue)
-- **[** / **]**: simulation speed 1× / 2× / 4× / 8×
+- **[** / **]**: simulation speed 1× / 2× / 4× / 8× / 16× / 32× / MAX (step C3b: the last three are the timelapse)
 - Part C keys are **Shift + a letter** (step C1: Shift+H heat jitter, Shift+E entropy panel, Shift+R ripples simmer;
   see "Heat and the entropy counter" below; step C2: Shift+L light spot / full field / off, Shift+D day and night;
   step C3: Shift+S substances shown (summary / each alone / off), Shift+C wash the atoms out)
@@ -787,7 +838,11 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start
-- `src/main.js`: boot, frame loop, input, overlay. Layers are classes with `resize`, `compute`, `render`;
+- `src/actions.js`: the one table of actions (step C3b): every key and every toolbar button, with its label, group,
+  state, what it does and its one-line explanation
+- `src/ui.js`: the toolbar and its panels (light, view, rules, dish), built from that table; `src/record.js`: the
+  video recording
+- `src/main.js`: boot, frame loop (speeds and their budgets), input, overlay. Layers are classes with `resize`, `compute`, `render`;
   the loop runs every layer's compute passes, then draws all layers into one render pass
 - `src/gpu.js`: adapter/device setup, fallback and error messages, shader loading with readable errors
 - `src/background.js` + `src/shaders/ripple_*.wgsl`, `background_draw.wgsl`: the viscous background (since step C1
@@ -827,7 +882,12 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
     python tools/shot.py --clip 420,250,440,300,2             # only part of the page, enlarged 2x (Chrome)
     python tools/shot.py --dpr 2 --clip 560,330,160,110,5     # the page drawn at 2 device px per CSS px: sharp zooms
     python tools/shot.py --rdrag 640,400,400,300 --wheel 640,400,600 --wheel 640,400,300,shift   # right-drag, wheel
+    python tools/shot.py --mobile                              # a phone: 390x844, 3 device px per CSS px, touch only
+    python tools/shot.py --mobile --tapel "[data-action=tool-heavy]" --tap 200,300   # finger taps: a tool, the dish
+    python tools/shot.py --mobile --size 844x390 --tapel "[data-panel=light]"        # sideways, light panel open
 
 The tool serves the folder itself, waits in real time until the page has drawn ten frames, then saves the PNG
 and prints the overlay text, any on-page message and the console output. `--help` lists all options.
 Headless Chrome and Edge render WebGPU; headless Firefox reports no WebGPU adapter, so Firefox needs `--headed`.
+`--tapel` taps run before `--tap` taps. Firefox cannot be given a phone-narrow viewport this way (its window does not
+go below about 450 px and the resize call then times out): for phone sizes use Chrome's `--mobile`.

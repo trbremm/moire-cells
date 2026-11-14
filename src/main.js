@@ -21,6 +21,7 @@
 //   ?seed=N     seed of the random start (cells, genomes); default random
 //   ?speed=N    simulation speed: 1, 2, 4, 8, 16 or 32 ticks of 1/60 s per 1/60 s of real time, or max (keys [ and ])
 //   ?paused=1   start paused (Space)
+//   ?ui=0|1     step C3b: start with the toolbar folded / unfolded (default: as the page last had it)
 //   ?founders=N founder genomes at the start (0 = every cell its own)
 //   ?view=1     colour by lineage from the start (key V)
 //   ?bio=0      start with the biology rules off (D H B T M): the loop alone

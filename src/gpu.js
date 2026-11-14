@@ -1,7 +1,6 @@
 // WebGPU setup, shader loading and the plain on-screen messages (no WebGPU, device lost, shader errors).
 
 const CPU_LOCAL = 'reference/neon_organoid_cpu.html';
-const CPU_ONLINE = 'https://claude.ai/artifact/ByKBbzmVQTh8MpmKzbg3rT';
 
 // Support as published on web.dev (2025-11-25) and the gpuweb implementation-status wiki (edited 2026-10-02),
 // cross-checked with caniuse.com/webgpu in 2026-11. Update when it changes.
@@ -16,8 +15,7 @@ const SUPPORT_HTML = `
 
 const CPU_LINKS_HTML = `
   <p>The older CPU version runs in any browser:
-  <a href="${CPU_LOCAL}">local copy</a> ·
-  <a href="${CPU_ONLINE}" target="_blank" rel="noopener">online</a></p>`;
+  <a href="${CPU_LOCAL}">${CPU_LOCAL}</a></p>`;
 
 export class GPUUnavailable extends Error {}
 

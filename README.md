@@ -6,6 +6,12 @@ lattices. This is the WebGPU version (work in progress). The original CPU versio
 
 ## Run it
 
+Online: **https://trbremm.github.io/moire-cells/** (GitHub Pages, published from `main`; give it a minute after a
+push). Some views to try: `?bio=0` (the loop alone, with exclusion), `?cells=10000&bio=0&seed=3&change=1&side=1&partner=1`
+(step 8's curling waves).
+
+Locally:
+
 WebGPU needs a page served over http(s), not opened as a file. In the project folder:
 
     python tools/serve.py

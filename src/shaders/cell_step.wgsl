@@ -14,6 +14,9 @@
 @group(0) @binding(3) var<storage, read> starts: array<u32>;
 @group(0) @binding(4) var<storage, read> counts: array<u32>;
 @group(0) @binding(5) var<storage, read_write> cells: array<Cell>;
+@group(0) @binding(6) var<storage, read> bioPrev: array<Bio>;
+@group(0) @binding(7) var<storage, read_write> bioNext: array<Bio>;
+@group(0) @binding(8) var<storage, read_write> stats: Stats;
 
 @compute @workgroup_size(128)
 fn step(@builtin(global_invocation_id) id: vec3u) {
@@ -21,7 +24,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   if (j >= S.count) { return; }
   var c = sorted[j];
   let i = sortIdx[j];
-  if ((c.flags & CELL_ALIVE) == 0u) { cells[i] = c; return; }
+  var bio = bioPrev[i];
+  if ((c.flags & CELL_ALIVE) == 0u) { cells[i] = c; bioNext[i] = bio; return; }
 
   var f = vec2f(0.0);
 
@@ -78,4 +82,5 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   c.r += (S.R - c.r) * min(1.0, S.dt * 0.8);
 
   cells[i] = c;
+  bioNext[i] = bio;
 }

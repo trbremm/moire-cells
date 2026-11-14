@@ -16,13 +16,13 @@ struct Cell {
   pos: vec2f,       // centre (CSS px)
   vel: vec2f,       // velocity (CSS px / s)
   r: f32,           // radius (CSS px); relaxes toward Sim.R
-  la: f32,          // lattice angle (radians)
+  la: f32,          // lattice angle (radians); the cell's key angle (a copy of Bio.key.x)
   e1: f32,          // area-preserving stretch (traceless tensor [[e1, e2], [e2, -e1]]); 0 for now
   e2: f32,
-  kind: u32,        // KIND_* from field_common.wgsl (all stem for now)
+  kind: u32,        // KIND_* from field_common.wgsl: its fate (stem, epithelium, muscle, neuron, cartilage)
   flags: u32,       // bit 0: alive (all alive for now; kept for division and death later)
   seed: u32,        // per-cell random seed
-  aux: f32,         // spare (e.g. differentiation progress later)
+  aux: f32,         // the cell's key scale (log of its lattice period factor; a copy of Bio.key.y)
 };
 
 const CELL_ALIVE: u32 = 1u;
@@ -50,7 +50,65 @@ struct Sim {
   stir: f32,        // stir gain
   drift: f32,       // slow drift of the medium, in units of R per s (0.5 = reference)
   time: f32,        // simulation time (s)
+  rules: u32,       // RULE_* bits: which genome rules are on
+  pad0: u32,
+  pad1: u32,
+  pad2: u32,
 };
+
+// ---------- the genome ----------
+// Every cell carries a Bio record (96 bytes; keep in step with BIO_* in src/cells.js): its genome plus its
+// small mutable state. Bio is double-buffered: each tick reads last tick's copy of every cell (bioPrev) and
+// writes the new one (bioNext), so a newborn copies its parent's genome race-free.
+//
+// The KEY is the cell's own lattice: an angle (hex symmetry: modulo 60 degrees) and a period factor
+// exp(keyS). Two keys are alike when their lattice wavevectors are close: key_dist2 below is the squared
+// wavevector difference in units of the medium's wavenumber (as the reference's receptor tuning).
+struct Bio {
+  key: vec4f,       // x key angle (0..pi/3), y key scale (log period factor), z receptor angle, w receptor scale
+  rec: vec4f,       // x receptor width (pickiness; small = picky), y threshold, z output once committed, w founder id (u32 bits)
+  resp: vec4f,      // per fate channel (epi, mus, neu, cho): how recognised contact feeds that channel (-1..1)
+  relay: vec4f,     // per fate channel: how a committed neighbour's signal on that channel feeds it (-1..1)
+  body: vec4f,      // x adhesion, y size factor, z motility factor, w spare
+  acc: vec4f,       // state, not genes: the four leaky accumulators
+};
+
+const KEY_SPAN: f32 = 1.0471975512;   // key angles live in [0, 60 degrees)
+const KEY_SMAX: f32 = 0.15;           // key scales live in [-0.15, 0.15]
+
+// rule bits in Sim.rules (keep in step with RULE in src/cells.js)
+const RULE_DIFF: u32 = 1u;      // differentiation (contact signalling, accumulators, commitment)
+const RULE_ADH: u32 = 2u;       // adhesion
+const RULE_TURN: u32 = 4u;      // turnover
+const RULE_MUT: u32 = 8u;       // mutation at birth
+const RULE_INHERIT: u32 = 16u;  // a newborn keeps its parent's fate (else it starts as stem)
+const RULE_NUT: u32 = 32u;      // nutrient and threat bias of turnover
+
+// Counters the GPU keeps for the overlay (read back a few times a second; see src/cells.js).
+// The census part (fate, bins, founders) is cleared and refilled by the census pass before each read-back.
+const STATS_EVENTS: u32 = 64u;
+const STATS_ABINS: u32 = 24u;          // key-space bins: 24 angles x 6 scales
+const STATS_SBINS: u32 = 6u;
+const STATS_FWORDS: u32 = 1632u;       // founder bitmap words (52 224 founders; ids wrap beyond)
+struct Stats {
+  fate: array<atomic<u32>, 8>,        // census: cells per fate (0..4)
+  births: atomic<u32>,                // cumulative since the page started
+  deaths: atomic<u32>,
+  nEvents: atomic<u32>,               // births and deaths recorded in `events` since the last read-back
+  pad: array<u32, 5>,
+  events: array<vec4f, 64>,           // x, y, +1 birth / -1 death, 0
+  bins: array<atomic<u32>, 144>,      // census: cells per key bin
+  founders: array<atomic<u32>, 1632>, // census: bit set = that founder line still has cells
+};
+
+// squared wavevector difference between lattices (angle a, log scale s), in units of the medium's wavenumber
+fn key_dist2(a1: f32, s1: f32, a2: f32, s2: f32) -> f32 {
+  var da = a1 - a2;
+  da -= KEY_SPAN * round(da / KEY_SPAN);      // nearest of the three hex directions
+  let k1 = exp(-s1);
+  let k2 = exp(-s2);
+  return k1 * k1 + k2 * k2 - 2.0 * k1 * k2 * cos(da);
+}
 
 // deformation matrix F = [[fa, fb], [fb, fd]] from the stretch (shape() in the reference)
 fn cell_F(c: Cell) -> vec3f {

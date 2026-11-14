@@ -25,7 +25,7 @@ import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageI
 import { Background } from './background.js';
 import { Medium, KIND } from './field.js';
 import { Landscape } from './landscape.js';
-import { Cells, DEFAULT_CELLS } from './cells.js';
+import { Cells, DEFAULT_CELLS, ANCHORS } from './cells.js';
 
 window.__moireBooted = true;
 
@@ -235,7 +235,7 @@ let tapMode = 0;
 
 function hintLine() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · K: cell field · O: emit · S: sense · W: shape · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
+    'C: clear · L: landscape · K: cell field · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
 }
 
 function tap(x, y) {
@@ -337,6 +337,18 @@ function setupInput() {
     } else if (k === 's') {
       cells.params.senseOn = !cells.params.senseOn;
       flash(`field sensing ${cells.params.senseOn ? 'on: cells move along the field they feel on their membrane' : 'off'}`);
+    } else if (k === '-' || k === '=' || k === '+') {
+      const p = cells.params;
+      p.lever = Math.max(0.05, Math.min(3, Math.round(p.lever * (k === '-' ? 0.8 : 1.25) * 1000) / 1000));
+      flash(`lever ${p.lever.toFixed(2)}: the cells' lattices ${p.lever < 1 ? 'closer to' : 'further from'} the medium's (1 = as the genome has it)`);
+    } else if (k === 'x') {
+      const p = cells.params;
+      p.anchor = (p.anchor + 1) % 3;
+      flash(`cells' beat: ${ANCHORS[p.anchor]}`);
+    } else if (k === 'r') {
+      const p = cells.params;
+      p.receptor = !p.receptor;
+      flash(`cells feel other cells ${p.receptor ? 'through their genome’s receptor' : 'by likeness to their own lattice'}`);
     } else if (k === 'w') {
       cells.params.active = !cells.params.active;
       flash(`active deformation ${cells.params.active ? 'on: cells stretch along their motion and the pull of the field' : 'off: only contact squeezes them'}`);

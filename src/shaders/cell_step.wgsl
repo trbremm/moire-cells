@@ -42,7 +42,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   bio.env = select(vec4f(0.0), vec4f(feel_sources(S, src, med, c.pos), 0.0, 0.0), nutOn);
 
   // the loop: the field of the neighbours and the sources, averaged along each membrane segment
-  let sensing = S.sense > 0.0;
+  let sensing = S.sense > 0.0 || S.senseSrc > 0.0;
   let cutR = S.cut * S.R;
   var seg = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
   let mb = membrane(c);
@@ -50,6 +50,12 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let mk0 = me.k01.xy;
   let mk1 = me.k01.zw;
   let mk2 = me.k2a.xy;
+  // what the cell listens to in other cells: its own lattice, or (key R) its genome's receptor
+  let byRec = S.receptor == 1u;
+  let rk0 = select(mk0, lattice_k(bio.key.z, bio.key.w, S.lever, med.k0, 0), byRec);
+  let rk1 = select(mk1, lattice_k(bio.key.z, bio.key.w, S.lever, med.k0, 1), byRec);
+  let rk2 = select(mk2, lattice_k(bio.key.z, bio.key.w, S.lever, med.k0, 2), byRec);
+  let rw = select(S.tuneW, bio.rec.x, byRec);
   var C = vec2f(0.0);                        // contact squeeze (traceless tensor: (xx - yy, 2 xy) parts)
 
   // every neighbour within reach: contact push, and (differentiation on) recognition and signals
@@ -70,8 +76,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           let ob = beats[k];
           if (ob.k2a.z > 0.0) {
             // weight: sign by fates (EMW), receptor tuning by how alike the lattices are, strength, taper
-            let tn = tuning(lattice_dist2(mk0, mk1, mk2, ob.k01.xy, ob.k01.zw, ob.k2a.xy), med.k0, S.tuneW);
-            let w = emw(c.kind, o.kind) * tn * ob.k2a.z * cut_taper(d2, cutR);
+            let tn = tuning(lattice_dist2(rk0, rk1, rk2, ob.k01.xy, ob.k01.zw, ob.k2a.xy), med.k0, rw);
+            let w = S.sense * emw(c.kind, o.kind) * tn * ob.k2a.z * cut_taper(d2, cutR);
             if (w != 0.0) {
               sense_field(&seg, mb, c.pos - ob.q2p.zw, ob.q01.xy, ob.q01.zw, ob.q2p.xy, ob.ph, ob.k2a.w, w);
             }
@@ -143,7 +149,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       let o = e.pos - med.centre;
       let ph = vec3f(bt.ph0 + dot(bt.q0, o), bt.ph1 + dot(bt.q1, o), bt.ph2 + dot(bt.q2, o));
       sense_field(&seg, mb, c.pos - e.pos, bt.q0, bt.q1, bt.q2, ph - TAU * floor(ph / TAU), e.r0sq,
-                  wk * (0.25 + 0.75 * tn) * e.amp);
+                  S.senseSrc * wk * (0.25 + 0.75 * tn) * e.amp);
     }
     // force = sum of (segment mean x outward normal x length) = area x gradient, then a saturating response
     var cf = vec2f(0.0);
@@ -156,7 +162,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     cf *= 1.3 * S.R / max(c.r, 0.1);
     let cm = length(cf);
     let sat = S.senseMax * S.R;
-    if (cm > 1e-6) { f += cf * (S.sense * sat * tanh(cm / sat) / cm); }
+    if (cm > 1e-6) { f += cf * (sat * tanh(cm / sat) / cm); }
   }
 
   // differentiation: leaky accumulators per fate channel (SUFFICIENT: only sustained input crosses the

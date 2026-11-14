@@ -7,7 +7,7 @@ lattices. This is the WebGPU version (work in progress). The original CPU versio
 ## Run it
 
 Online: **https://trbremm.github.io/moire-cells/** (GitHub Pages, published from `main`; give it a minute after a
-push). Some views to try: `?bio=0` (the loop alone, with exclusion), `?cells=10000&bio=0&seed=3&change=1&side=1&partner=1`
+push). Some views to try: `?bio=0` (the loop alone, with exclusion), `?cells=10000&bio=0&excl=0&seed=3&change=1&side=1&partner=1`
 (step 8's curling waves).
 
 Locally:
@@ -436,7 +436,7 @@ a gas, and with the arrow it drives the whole culture off to one side. On top of
   random hour. A clock in step with its neighbours runs at omega − pull x sin(lag), a turn in about 5 s.
   Drawn as a hand on each cell (`moire.cells.look.hand`; hidden on cells smaller than 5 device px), and stem cells are
   filled with the partner's yellow as far as they emit A′, so the waves read as yellow bands at any size.
-  What it looks like: loop only at 10 000 cells (`?cells=10000&bio=0&change=1`, clearest with key 5 off), after about
+  What it looks like: loop only at 10 000 cells (`?cells=10000&bio=0&excl=0&change=1`, clearest with key 5 off), after about
   20 s of patchy disagreement, rings of yellow run INWARD from the culture's rim to its middle, one every 4 to 5 s (the
   rim leads), and the culture breathes with them: field A's bright cores turn dark and back, so the pull between cells
   comes and goes. With a lag of 0.3 or less everything falls into step and blinks as one; at 0.6 with omega 1 the clocks
@@ -452,7 +452,7 @@ and of the step 6 relay's blue, wrap round each other like marbled paper or brea
 and then dissolves into wavy bands; no spiral core lasted. Measured at 10 000 cells loop only: local swirl rms 2.8 to 3.0
 deg/s against 1.0 to 1.1 with rule b alone, about 140 bins of 6 R turning each way (of 950), and the eddies turn over
 fast (correlation with the second before 0.11 to 0.17). Mode 1 changes little (swirl 1.1 to 1.3).
-**The highlight of step 8**: `?cells=10000&bio=0&seed=3&change=1&side=1&partner=1`, curls from about 40 s of simulation
+**The highlight of step 8**: `?cells=10000&bio=0&excl=0&seed=3&change=1&side=1&partner=1`, curls from about 40 s of simulation
 time on (`&speed=2` gets there in 20 s; zoom in on the middle). In comparison runs at the same seed and zoom: b + c makes
 the curls, a sharpens them, the relay (key 5) adds the blue ones; a + c without b stays a calm packing. Rotating clusters
 (a group turning as one) were not seen.

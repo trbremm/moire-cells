@@ -34,6 +34,7 @@ export const RULE_GROUPS = [
   ['bio', 'Biology'],
   ['heatlight', 'Heat and light (Part C)'],
   ['chem', 'Chemistry (step C4)'],
+  ['eat', 'Cells eat (step C5)'],
 ];
 
 export const SQUEEZE_SOFT = 0.25, SQUEEZE_HARD = 1.2;   // key \ : cells.params.squeeze, normal or pressed together
@@ -258,6 +259,35 @@ export function makeActions(app) {
       run: () => `trace ${flip(CH(), 'trace') ? 'lowers the spark: reactions run more easily where trace sits' : 'does nothing'}${chemNote()}`,
       help: 'reactions start more easily where trace sits (a catalyst)' },
   ];
+
+  // ---------- cells eat (step C5) ----------
+  const E = () => app.cells.eat.params;
+  const eatNote = () => (E().on ? '' : ' (cells eat is off: Shift+A)');
+  A.push(
+    { id: 'eat', keys: ['shift+a'], label: 'cells eat', group: 'eat', type: 'toggle', get: () => E().on,
+      run: () => (flip(E(), 'on')
+        ? 'cells eat: they trade substances with the dish through their membrane, burn fuel into their battery (the green core), and pay for crawling with it'
+        : 'cells do not eat: they ignore the substances (as in step C4); their stock and batteries stay as they are'),
+      help: 'cells trade substances with the dish, burn fuel into a battery (the green core) and pay for crawling (off: as in C4)' },
+    { id: 'burner', keys: ['shift+u'], label: 'burner', group: 'eat', type: 'toggle', get: () => E().burner,
+      run: () => `burner ${flip(E(), 'burner') ? 'on: every cell breaks the fuel it holds into atoms; the energy fills its battery, a quarter becomes heat' : 'off: fuel inside a cell stays fuel'}${eatNote()}`,
+      help: 'every cell burns the fuel it holds: the energy fills its battery (the spark is paid from it), a quarter becomes heat' },
+    { id: 'inside', keys: ['shift+i'], label: 'reactions inside', group: 'eat', type: 'toggle', get: () => E().inside,
+      run: () => `reactions inside cells ${flip(E(), 'inside') ? 'on: the swaps, fuel breaking by heat and sediment run inside too, by the same rules (sediment is expelled)' : 'off'}${eatNote()}`,
+      help: 'the chemistry\'s heat-driven reactions run inside cells too (light atoms that get in degrade rich fuel); sediment is expelled' },
+    { id: 'payCrawl', keys: ['shift+w'], label: 'battery pays crawl', group: 'eat', type: 'toggle', get: () => E().pay,
+      run: () => `battery pays for crawling ${flip(E(), 'pay') ? 'on: a cell crawls as fast as its battery allows and pays for it; an empty one only shivers' : 'off: every cell crawls for free'}${eatNote()}`,
+      help: 'a cell crawls as fast as its battery allows and pays for it; an empty one only shivers with the heat' },
+    { id: 'heatDamage', keys: ['shift+x'], label: 'heat damage', group: 'eat', type: 'toggle', get: () => E().heat,
+      run: () => `heat damage ${flip(E(), 'heat') ? `on: cells die faster where the dish is hotter than ${E().tol} per R²` : 'off'}${eatNote()}`,
+      help: 'cells die faster where the dish is hotter than they tolerate' },
+    { id: 'biasTurn', keys: ['shift+g'], label: 'rich cells divide', group: 'eat', type: 'toggle', get: () => E().bias,
+      run: () => `energy-biased turnover ${flip(E(), 'bias') ? 'on: when a cell dies, a neighbour with a fuller battery is more likely to divide into the gap' : 'off: any touching neighbour alike'}${eatNote()}`,
+      help: 'when a cell dies, the neighbour with the fuller battery is more likely to divide into the gap' },
+    { id: 'smell', keys: ['shift+n'], label: 'smell', group: 'eat', type: 'toggle', get: () => E().smell,
+      run: () => `smell ${flip(E(), 'smell') ? 'on: the membrane\'s corners sense fuel; crawling steers up toward it' : 'off'}${eatNote()}`,
+      help: 'the membrane\'s six corners sense fuel; crawling steers gently up toward it' },
+  );
 
   function CH() { return app.matter.chem; }
   function chemNote() { return CH().on ? '' : ' (chemistry is off: Shift+M)'; }

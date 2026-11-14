@@ -41,6 +41,7 @@
 // so Shift+H never also toggles H.
 //   ?show=summary|off|<substance>   step C3: what the substances' halftone shows (Shift+S), e.g. ?show=G
 //   ?chem=0     step C4: start with the chemistry off (Shift+M)
+//   ?eat=0      step C5: start with the cells not eating (Shift+A)
 //   ?springs=0  step C5: the old empty start (no springs; the spot at the centre). The default scene puts a light and a
 //               heavy spring beside the culture with the spot between, see defaultScene
 //
@@ -181,6 +182,7 @@ async function boot() {
     if (params.has('simmer')) background.heatOn = flag('simmer');
     if (params.has('show')) { const i = SHOWS.indexOf(params.get('show')); if (i >= 0) matter.params.show = i; }
     if (params.has('chem')) matter.chem.on = flag('chem');   // step C4: ?chem=0 starts with the chemistry off (Shift+M)
+    if (params.has('eat')) cells.eat.params.on = flag('eat');   // step C5: ?eat=0 starts with the cells not eating
     background.heat = cells.heat;
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));

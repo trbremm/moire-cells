@@ -57,28 +57,35 @@ Biology (toy):
 Background: a damped slow wave field (ripples from divisions, deaths, stirring) plus a drifting sheen, drawn at
 coarse resolution; the sources' landscape is added as a green/red glow.
 
-## Next step: local desktop app, Vulkan-powered (user decision 2026-11-14)
-The user wants the engine on the GPU, as a desktop window on this machine, running on Vulkan. Not a browser page.
+## Next step: GPU engine in the browser with WebGPU (user decision 2026-11-14, final)
+The user wants the engine on the GPU, as a web page using WebGPU, so it is easy to show to friends by link.
+(A desktop Vulkan app was considered the same day and dropped; do not reopen it.)
 The CPU version spends about 13 ms per frame on simulation alone at 520 cells, so it cannot grow.
 
-Machine (checked 2026-11-14): Windows 11, GTX 1650 (4 GB), Python 3.13 installed. No Rust, no CMake, no
-Vulkan SDK on the PATH (`vulkaninfo` not found; the NVIDIA driver itself should still provide Vulkan — verify first).
+Machine: Windows 11, GTX 1650 (4 GB), Python 3.13 installed (enough for a local web server). No Node, Rust
+or CMake assumed; check before relying on any.
 
-Proposed stack (a proposal, not yet confirmed by the user or tried here):
-- Python + `wgpu` (wgpu-py, bindings to wgpu-native) with the backend forced to Vulkan, in a desktop window
-  (glfw or rendercanvas). Shaders in WGSL, including compute shaders for the simulation.
-- Why: nothing to compile, Python is already installed, shader edits reload fast, and the rules can be ported
-  from the reference file almost line by line. It runs on Vulkan without hand-writing Vulkan.
-- Alternatives if the user wants "real" Vulkan: Rust + wgpu (same shaders, needs the Rust toolchain), or
-  C++ with the Vulkan API directly (most work by far; needs the Vulkan SDK and a compiler).
-- CHECK THE CURRENT wgpu-py DOCS before writing code (how to request the Vulkan backend, the window/canvas
-  API, compute pipeline setup). Do not rely on memory for these; the API has changed between versions.
+Stack:
+- Plain static site: `index.html` + JavaScript modules + WGSL shaders (compute shaders for the simulation,
+  render shaders for drawing). No framework and no build step unless one becomes clearly necessary.
+- Run locally with `python -m http.server` and open http://localhost:8000 in Chrome or Edge. WebGPU needs a
+  secure context: localhost and https qualify; opening the file directly (file://) may not work.
+- If WebGPU is missing (`navigator.gpu` undefined or no adapter), show a plain message saying which browsers
+  work and link to the CPU reference page. Never a blank screen.
+- Sharing with friends: any static https host works (GitHub Pages is the obvious free one). Publishing is
+  outward-facing: ask the user before pushing anything public. Whether a claude.ai artifact allows WebGPU is
+  unknown; test once with a tiny page before relying on it.
+- Which browsers and phones support WebGPU changes quickly: CHECK CURRENT SUPPORT, do not rely on memory.
+  Likewise check the current WebGPU / WGSL docs for API details before writing code.
+- Testing: use a browser tool if the session has one (Claude in Chrome or the built-in browser) to load the
+  page and take screenshots; otherwise ask the user what they see. Add a key that shows frame time and the
+  adapter name on screen.
 
 Build order (each step ends in something the user can look at; commit after each). Agreed principle:
 minimal core first, then ONE rule at a time, so the user can see what each rule alone changes:
-1. Window + Vulkan check: open a window, print the adapter name and backend, draw the viscous background
-   (ripple field + sheen) as a full-screen shader. Confirms the stack works on this GPU.
-   Also set up a screenshot-to-file key or flag, so Claude can look at frames.
+1. WebGPU check: a page that gets the GPU adapter, shows its name on screen, and draws the viscous background
+   (ripple field + sheen) as a full-screen shader. Confirms the stack works on this GPU and in the browser.
+   Include the no-WebGPU fallback message from the start.
 
    PART A — minimal core (no biology: no division, death, fates or adhesion matrix)
 2. One field, sources only: full-resolution landscape shader, same beat formula as the reference

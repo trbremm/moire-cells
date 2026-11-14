@@ -354,6 +354,48 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       }
     }
 
+    // ---- the table's reactions inside the cell: the ones driven by heat, by the same rules as in the open (react in
+    // matter.wgsl), with the stock's concentration over the cell's area and the local temperature. No light inside.
+    if ((EP.flags & EF_INSIDE) != 0u) {
+      var rh = 0;
+      for (var r = 0u; r < CP.nrx; r++) {
+        let R = CP.rx[r];
+        if (R.by != 0u) { continue; }
+        if (m[R.ch.x] <= 0) { continue; }
+        var x = R.k * f32(m[R.ch.x]) * exp(-R.spark * sparkScale / (CP.theta * temp)) * EP.dt;
+        if (R.ch.y != NONE) { x *= f32(m[R.ch.y]) * concIn; }
+        var n = i32(floor(x + u01(pcg(rs + r * 0x9e3779b9u + 0x7f4a7c15u))));
+        if (R.ch.y == R.ch.x) {
+          n = min(n, m[R.ch.x] / 2);
+        } else {
+          n = min(n, m[R.ch.x]);
+          if (R.ch.y != NONE) { n = min(n, m[R.ch.y]); }
+        }
+        if (n <= 0) { continue; }
+        m[R.ch.x] -= n;
+        if (R.ch.y != NONE) { m[R.ch.y] -= n; }
+        m[R.ch.z] += n;
+        if (R.ch.w != NONE) { m[R.ch.w] += n; }
+        rh += n * R.heat16;
+        if (R.fam == 1u) { atomicAdd(&wev[EV_IN_BURN], n); }
+        else if (R.fam == 3u) { atomicAdd(&wev[EV_IN_SWAP], n); }
+        else if (R.fam == 4u) { atomicAdd(&wev[EV_IN_FORM], n); }
+      }
+      heat += rh;
+      atomicAdd(&wev[EV_IN_HEAT], rh);
+    }
+
+    // ---- sediment formed inside is expelled where the cell is (it cannot pass the membrane, and it would clog the cell);
+    // while its channel is not moving in the dish (the first frame it appears) it waits inside
+    if (cur != 0u && EP.sedMask != 0u) {
+      for (var k = 0u; k < NCH; k++) {
+        if ((EP.sedMask & (1u << k)) == 0u || m[k] <= 0 || (EP.mask & (1u << k)) == 0u) { continue; }
+        spread9(cur + k * EP.n, idx, m[k]);
+        atomicAdd(&wev[EV_EXPEL], m[k]);
+        m[k] = 0;
+      }
+    }
+
     // write back what changed (only this invocation touches this cell's stock in this dispatch)
     for (var k = 0u; k < NCH; k++) { if (m[k] != m0[k]) { atomicStore(&stock[o + k], m[k]); } }
     if (bat != bat0) { atomicStore(&stock[o + BAT], bat); }

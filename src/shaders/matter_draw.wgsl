@@ -95,17 +95,19 @@ fn cover(c: f32) -> f32 {
 @fragment
 fn fs(in: VSOut) -> @location(0) vec4f {
   let x = in.pos.xy / D.dpr;                         // CSS px
-  // sediment: a flat layer in three crisp levels (anti-aliased by the screen-space slope of the level)
+  // sediment: flat patches with HARD edges, in three crisp levels. The amount is sampled (bilinear, so the patch's
+  // outline follows the grid smoothly instead of in blocks) and then thresholded per screen pixel with no smoothing at
+  // all, so every edge is a clean step (step C5's look fix: the C4 version anti-aliased each level along the slope of
+  // the amount, which on a gentle crust spread each edge over several pixels and read as a soft blurred disc).
+  // Two levels: the patch (from sedStep) and a lighter, thicker core (from 4 x sedStep), so a crust reads as one flat
+  // shape with a clear inner shape, not as a stack of faint rings.
   let sed = textureSampleLevel(texB, samp, uv_of(x), 0.0);
   let lv = sed.z / D.sedStep;
-  let fw = max(fwidth(lv), 1e-4);
-  let steps = clamp((lv - 1.0) / fw + 0.5, 0.0, 1.0) + clamp((lv - 2.0) / fw + 0.5, 0.0, 1.0) + clamp((lv - 3.0) / fw + 0.5, 0.0, 1.0);
   var res = vec4f(0.0);
-  if (steps > 0.0) {
-    let ink = mix(D.sedL.rgb, D.sedH.rgb, clamp(sed.w / max(sed.z, 1e-6), 0.0, 1.0));
-    // the first level is already most of the way (a crust reads as one flat patch, its thicker parts as subtle steps
-    // inside it, not as a soft halo of faint rings)
-    let al = D.sedAlpha * (0.6 * min(steps, 1.0) + 0.2 * max(steps - 1.0, 0.0));
+  if (lv >= 1.0) {
+    let core = lv >= 4.0;
+    let ink = mix(D.sedL.rgb, D.sedH.rgb, clamp(sed.w / max(sed.z, 1e-6), 0.0, 1.0)) * select(1.0, 1.4, core);
+    let al = D.sedAlpha * select(0.8, 1.0, core);
     res = vec4f(ink * al, al);
   }
 

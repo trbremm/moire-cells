@@ -245,7 +245,7 @@ export class Matter {
       thresh: 0.06,       // coverage below which there is no dot
       level: 0.85,        // the inks' brightness
       traceDot: 0.75,     // trace diamonds' size, as a share of a full dot
-      sedStep: 1.5,       // sediment: amount per R^2 per flat level (3 levels)
+      sedStep: 0.3,       // sediment: amount per R^2 per flat level (3 levels)
       sedAlpha: 0.7,      // sediment: opacity of the top level
       ringR: 1.3,         // spring marker radius, in medium R (CSS px x R)
     };
@@ -259,14 +259,14 @@ export class Matter {
       swap: true,         // Shift+P: swaps (a free atom takes a partner out of a richer bond)
       sediment: true,     // Shift+K: linkers chain into sediment (by heat); hard light cracks it
       trace: true,        // Shift+T: trace lowers the spark where it sits
-      theta: 1 / 16,      // temperature scale of the sparks: rate x exp(-spark / (theta x temperature per R^2))
+      theta: 1 / 32,      // temperature scale of the sparks: rate x exp(-spark / (theta x temperature per R^2))
       kMake: 1,           // optical depth of a giver-taker pair for its band, per pair unit per R^2 (pair = a b / (a + b))
-      kBurn: 0.2,         // per s: fuel breaking by heat, before the spark's factor
+      kBurn: 0.5,         // per s: fuel breaking by heat, before the spark's factor
       kPhoto: 0.03,       // optical depth of fuel for hard light (breaking it), per unit per R^2
-      kSwap: 1,           // R^2 per s: swaps, before the spark's factor
-      kSed: 0.5,          // R^2 per s: linker + linker -> sediment, before the spark's factor
-      kCrack: 0.02,       // optical depth of sediment for hard light (cracking it), per unit per R^2
-      dark: 1.5,          // optical depth of sediment for warm light (dark: it warms in the light), per unit per R^2
+      kSwap: 5,           // R^2 per s: swaps, before the spark's factor
+      kSed: 2,            // R^2 per s: linker + linker -> sediment, before the spark's factor
+      kCrack: 0.01,       // optical depth of sediment for hard light (cracking it), per unit per R^2
+      dark: 3,            // optical depth of sediment for warm light (dark: it warms in the light), per unit per R^2
       traceK: 3,          // spark x 1 / (1 + traceK x trace per R^2)
     };
     this.springs = [];        // { x, y, kind, age }

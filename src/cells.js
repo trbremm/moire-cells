@@ -2,7 +2,8 @@
 //
 // State: one storage buffer of struct Cell (cell_common.wgsl, 88 bytes each), in a fixed order: index i is
 // always the same cell, which keeps the drawing order stable.
-// Drawing: instanced quads (cell_draw.wgsl), crisp discs with an outline and the cell's lattice as dots.
+// Drawing: instanced quads (cell_draw.wgsl), crisp discs with an outline and the cell's lattice as dots; step C6n: under
+// the neon look, bright tubes with a dark inside, and the hum (cell_glow.wgsl: each cell's activity, drawing only).
 //
 // Neighbour grid (cell_grid.wgsl), rebuilt every tick on the GPU: a counting sort by grid cell.
 //   counts[g]  cells in grid cell g;  starts[g]  first slot of g in the sorted list;
@@ -35,8 +36,8 @@ import { loadFieldShader, KIND } from './field.js';
 import { Genome, BIO_BYTES } from './genome.js';
 import { Heat, HEAT_COMMON_URL } from './heat.js';
 import { Eat } from './eat.js';
-import { INKS, ENGINES } from './matter.js';
-import { BANDS } from './light.js';
+import { ENGINES } from './matter.js';
+import { pal } from './palette.js';
 
 export const CELL_URL = 'src/shaders/cell_common.wgsl';
 
@@ -62,6 +63,7 @@ const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
 const FIELDS_BYTES = 256;      // struct Fields in cell_common.wgsl
 const FIELD_FORMAT = 'rgba16float';
+const DRAW_BYTES = 400;        // struct Draw in cell_draw.wgsl
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
 export class Cells {
@@ -231,8 +233,7 @@ export class Cells {
       bar: 0.8,       // the bar's brightness (as the outline's)
       hand: 1.0,      // step 8, rule b: brightness of the phasor's hand (0 = none), in the partner's ink
       core: 0.55,     // step C5: radius of a full battery's core, as a share of the cell's radius (area in proportion to the
-                      // charge; 0 = not drawn)
-      coreInk: INKS.fuel.light.map((v) => v * 0.92),   // ... its ink: the fuel's green (energy)
+                      // charge; 0 = not drawn); its ink: the palette's `core` (src/palette.js)
       starve: 0.12,   // ... a cell with less than this share of its battery is drawn dimmer, the emptier the dimmer
       starveDim: 0.4, // ... by up to this much (0 = not at all)
       // step C6: the engines drawn as parts (small flat marks around the core), and the strategy view's inks
@@ -242,12 +243,33 @@ export class Cells {
       partDots: 0.45, // the lattice dots' brightness while parts are drawn, as a share of `dots` (they give the parts room)
       partRate: 2,    // the slot rate at which a part reaches its largest size (area in proportion to the rate below it)
       coreParts: 0.36, // the battery core's radius at full charge while parts are drawn (it gives them room)
-      burnInk: INKS.fuel.heavy,           // a burn engine: the fuel's deeper green (the battery's core is the pale one)
-      sedInk: [150, 138, 120],            // a form (sediment) engine: dim warm grey
-      swapInk: [232, 128, 112],           // a swap engine: faded red (as the reactive free atoms)
-      otherInk: [118, 112, 106],          // strategy view: neither harvest nor burn
       strategyFill: 0.5,                  // strategy view: every body's flat fill, as a share of its strategy's ink
-      // (a harvest engine is drawn in its pigment's light band colour: BANDS[b].ink in src/light.js)
+      // (the parts' inks, by what the engine does: the palette's band (a harvester's pigment), burn, swap, sed; the
+      // strategy view's: band, burn, other; src/palette.js)
+      // ---- step C6n: the neon look (while it is on, key E; these replace the flat look's fills, line and dots) ----
+      tube: 1.1,        // the tube's width (CSS px; at most 0.3 of a small cell's radius)
+      white: 0.6,       // how white-hot the tube's centre line is (0 = its colour all across)
+      innerGlow: 0.08,  // the inside lit by the tube: brightness next to it, as a share of the colour ...
+      innerReach: 0.3,  // ... falling off inward over this share of the radius
+      nFill: 0.03,      // the inside's tint, stem cells ...
+      nFillC: 0.06,     // ... committed cells
+      nFillA: 0.8,      // the inside's opacity (it darkens what lies under the cell)
+      nLine: 1.0,       // the tube's brightness
+      nDots: 0.3,       // the lattice dots' brightness (flat: dots)
+      nStrategyFill: 0.1, // strategy view: the inside's tint
+      coreRim: 0.35,    // the battery core: its lit rim, as a share of its radius ...
+      coreDim: 0.3,     // ... and its inside's brightness, as a share of the rim's
+      partWhite: 0.45,  // the parts' lamps: how white their centre is
+      humDepth: 0.05,   // the hum: the wobble's depth (5 %: brightness between 0.95 and 1.05) ...
+      humRate: 0.9,     // ... its rate (Hz; each cell between 0.6 and 1.4 x this, at its own phase)
+      humIdle: 0.8,     // ... an idle cell's brightness (the busiest: 1.12)
+      nStarveDim: 0.25, // a starving cell's dimming under the neon look (flat: starveDim)
+      humAct: 0.03,     // ... the activity (battery share changed per s of simulation time) at which a cell is 63 % of
+                        // the way to the busiest
+      humTau: 0.6,      // ... the activity's smoothing (s of real time)
+      // step C6n, the clean view (default) or the machinery (View panel, Shift+4 flips every diagnostic layer at once):
+      innerDots: false, // the cell's own lattice as dots inside it (Shift+6)
+      marks: false,     // the diagnostic marks: step 6's leak dot and converted outline, step 7's state bar, step 8's hand
     };
   }
 
@@ -260,7 +282,7 @@ export class Cells {
   async init() {
     const d = this.device;
     const pre = [HEAT_COMMON_URL, CELL_URL];
-    const [drawMod, gridMod, checkMod, stepMod, censusMod, fieldMod, heat] = await Promise.all([
+    const [drawMod, gridMod, checkMod, stepMod, censusMod, fieldMod, heat, glowMod] = await Promise.all([
       loadFieldShader(d, 'src/shaders/cell_draw.wgsl', pre),
       loadFieldShader(d, 'src/shaders/cell_grid.wgsl', pre),
       loadFieldShader(d, 'src/shaders/cell_check.wgsl', pre),
@@ -268,6 +290,7 @@ export class Cells {
       loadFieldShader(d, 'src/shaders/cell_census.wgsl', pre),
       loadFieldShader(d, 'src/shaders/cell_field.wgsl', pre),
       Heat.create(d),
+      loadFieldShader(d, 'src/shaders/cell_glow.wgsl', pre),
     ]);
     this.heat = heat;           // step C1: the heat band (src/heat.js)
     this.eat = null;            // step C5: the cells' stock and battery (src/eat.js; made at the end of init)
@@ -349,10 +372,19 @@ export class Cells {
     this.eat = await Eat.create(d, this);
     this.heat.eat = this.eat;
 
-    this.drawU = d.createBuffer({ label: 'cell draw params', size: 256, usage: U.UNIFORM | U.COPY_DST });
-    this.drawAB = new ArrayBuffer(256);
+    this.drawU = d.createBuffer({ label: 'cell draw params', size: DRAW_BYTES, usage: U.UNIFORM | U.COPY_DST });
+    this.drawAB = new ArrayBuffer(DRAW_BYTES);
     this.drawData = new Float32Array(this.drawAB);
     this.drawU32 = new Uint32Array(this.drawAB);
+    // step C6n: the cells' activity for the hum (cell_glow.wgsl; drawing only)
+    this.glowBuf = d.createBuffer({ label: 'cell glow (drawing)', size: n * 8, usage: U.STORAGE | U.COPY_SRC });
+    this.glowU = d.createBuffer({ label: 'cell glow params', size: 16, usage: U.UNIFORM | U.COPY_DST });
+    this.glowPipe = d.createComputePipeline({ label: 'cell glow', layout: 'auto', compute: { module: glowMod, entryPoint: 'main' } });
+    this.glowBG = d.createBindGroup({
+      label: 'cell glow', layout: this.glowPipe.getBindGroupLayout(0),
+      entries: [{ binding: 0, resource: { buffer: this.glowU } }, { binding: 1, resource: { buffer: this.cellBuf } },
+        { binding: 2, resource: { buffer: this.glowBuf } }],
+    });
     // one per genome copy (step C6: the parts read the engines; bioBuf[bioCur] is the current one)
     this.drawBGs = this.bioBuf.map((bio) => d.createBindGroup({
       layout: this.drawPipe.getBindGroupLayout(0),
@@ -360,6 +392,7 @@ export class Cells {
         { binding: 0, resource: { buffer: this.drawU } },
         { binding: 1, resource: { buffer: this.cellBuf } },
         { binding: 2, resource: { buffer: bio } },
+        { binding: 3, resource: { buffer: this.glowBuf } },
       ],
     }));
   }
@@ -1022,33 +1055,71 @@ export class Cells {
     }
   }
 
-  render(pass) {
-    const v = this.view, L = this.look, a = this.drawData;
+  /**
+   * Step C6n: the cells' activity for the hum (drawing only; src/neon.js calls it each frame while the hum is on): how fast
+   * each battery changes, smoothed (cell_glow.wgsl).
+   */
+  encodeGlow(encoder, f) {
+    const keep = Math.exp(-Math.max(0, f.realDt || 0) / Math.max(1e-3, this.look.humTau));
+    const ab = new ArrayBuffer(16), u = new Uint32Array(ab), x = new Float32Array(ab);
+    u[0] = this.count; x[1] = f.dt; x[2] = keep;
+    this.device.queue.writeBuffer(this.glowU, 0, ab);
+    const pass = encoder.beginComputePass({ label: 'cell glow' });
+    pass.setPipeline(this.glowPipe);
+    pass.setBindGroup(0, this.glowBG);
+    pass.dispatchWorkgroups(Math.ceil(this.count / 256));
+    pass.end();
+  }
+
+  /** Step C6n, for tuning the hum (console): percentiles of the cells' activity (battery share changed per s). */
+  async glowStats() {
+    const d = this.device, n = this.count;
+    const rb = d.createBuffer({ size: n * 8, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+    const e = d.createCommandEncoder();
+    e.copyBufferToBuffer(this.glowBuf, 0, rb, 0, n * 8);
+    d.queue.submit([e.finish()]);
+    await rb.mapAsync(GPUMapMode.READ);
+    const f = new Float32Array(rb.getMappedRange().slice(0));
+    rb.destroy();
+    const a = Array.from({ length: n }, (_, i) => f[2 * i + 1]).sort((x, y) => x - y);
+    const q = (p) => a[Math.min(n - 1, Math.floor(p * n))];
+    return { p10: q(0.1), p50: q(0.5), p90: q(0.9), p99: q(0.99), max: a[n - 1] };
+  }
+
+  render(pass, frame = {}) {
+    const v = this.view, L = this.look, a = this.drawData, P = pal();
+    const look = frame.look || {}, neon = !!look.neon, hum = neon && !!look.hum;
     a[0] = v.cssW; a[1] = v.cssH; a[2] = v.dpr; a[3] = this.R;
-    a[4] = L.fill; a[5] = L.fillA; a[6] = L.line; a[7] = L.lineW;
-    a[8] = L.dots; a[9] = L.dotR; a[10] = L.period; a[11] = L.view; a[12] = L.fillC; a[13] = this.params.lever;
+    a[4] = neon ? L.nFill : L.fill; a[5] = neon ? L.nFillA : L.fillA; a[6] = neon ? L.nLine : L.line; a[7] = L.lineW;
+    a[8] = L.innerDots ? (neon ? L.nDots : L.dots) : 0; a[9] = L.dotR; a[10] = L.period; a[11] = L.view; a[12] = neon ? L.nFillC : L.fillC; a[13] = this.params.lever;
     // step 6 marks, in field B's ink (the landscape's), a little brighter than its halftone
-    const F = this.fields, bc = this.landscape ? this.landscape.params.bColour : [128, 158, 255];
-    a[14] = F.leakOn ? L.leakDot : 0; a[15] = L.leakMin;
-    a[16] = bc[0] / 255 * 0.85; a[17] = bc[1] / 255 * 0.85; a[18] = bc[2] / 255 * 0.85; a[19] = F.convOn ? 1 : 0; a[20] = L.convFill;
+    const F = this.fields, bc = P.field.B;
+    a[14] = F.leakOn && L.marks ? L.leakDot : 0; a[15] = L.leakMin;
+    a[16] = bc[0] / 255 * 0.85; a[17] = bc[1] / 255 * 0.85; a[18] = bc[2] / 255 * 0.85; a[19] = F.convOn && L.marks ? 1 : 0; a[20] = L.convFill;
     // step 7: the state bar (only while exclusion is on)
     const X = this.excl;
-    a[21] = X.on && L.stateMark ? Math.max(1, Math.min(4, Math.round(X.states))) : 0; a[22] = L.bar;
+    a[21] = X.on && L.stateMark && L.marks ? Math.max(1, Math.min(4, Math.round(X.states))) : 0; a[22] = L.bar;
     // step 8: the phasor's hand, in the partner's ink
-    const pc = this.landscape ? this.landscape.params.pColour : [236, 218, 124];
-    a[23] = this.partner.change ? (this.partner.chMode ? -L.hand : L.hand) : 0; a[24] = pc[0] / 255; a[25] = pc[1] / 255; a[26] = pc[2] / 255;
+    const pc = P.field.P;
+    a[23] = this.partner.change && L.marks ? (this.partner.chMode ? -L.hand : L.hand) : 0; a[24] = pc[0] / 255; a[25] = pc[1] / 255; a[26] = pc[2] / 255;
     // step C5: the battery's core and the starving cells' dimming (while the cells eat)
     const eating = this.eat && this.eat.params.on;
-    a[28] = eating ? L.core : 0; a[29] = eating ? L.starveDim : 0; a[30] = L.starve;
-    for (let k = 0; k < 3; k++) a[32 + k] = L.coreInk[k] / 255;
+    a[28] = eating ? L.core : 0; a[29] = eating ? (neon ? L.nStarveDim : L.starveDim) : 0; a[30] = L.starve;
+    for (let k = 0; k < 3; k++) a[32 + k] = P.core[k] / 255;
     // step C6: the parts (while the engines run) and the strategy view's inks
-    const inks = [BANDS[1].ink, BANDS[2].ink, BANDS[3].ink, L.burnInk, L.sedInk, L.swapInk, L.otherInk];
+    const inks = [P.band[1], P.band[2], P.band[3], P.burn, P.sed, P.swap, P.other];
     inks.forEach((ink, j) => { for (let k = 0; k < 3; k++) a[36 + 4 * j + k] = ink[k] / 255; });
     a[39] = L.parts && this.eat && this.eat.rule('engines') ? 1 : 0; a[43] = L.partSize; a[47] = L.partDist;
     const kinds = (lo) => ENGINES.slice(lo, lo + 16).reduce((m, e, k) => m | (e.kind << (2 * k)), 0) >>> 0;
     this.drawU32[51] = kinds(0); this.drawU32[35] = kinds(16);   // the engines' kinds, 2 bits each
-    a[55] = Math.max(1e-3, L.partRate); a[59] = L.coreParts; a[63] = L.strategyFill;
-    if (a[39] > 0) a[8] = L.dots * L.partDots;
+    a[55] = Math.max(1e-3, L.partRate); a[59] = L.coreParts; a[63] = neon ? L.nStrategyFill : L.strategyFill;
+    if (a[39] > 0) a[8] *= L.partDots;
+    // step C6n: the palette's fate inks, the neon look and the hum
+    P.fate.forEach((ink, j) => { for (let k = 0; k < 3; k++) a[64 + 4 * j + k] = ink[k] / 255; });
+    a[84] = neon ? 1 : 0; a[85] = L.tube; a[86] = L.white; a[87] = L.innerReach;
+    a[88] = L.innerGlow; a[89] = L.coreRim; a[90] = L.partWhite; a[91] = L.coreDim;
+    a[92] = hum ? L.humDepth : 0; a[93] = L.humRate; a[94] = (frame.now || 0) % 3600; a[95] = hum ? 1 : 0;
+    a[96] = hum ? L.humIdle : 1; a[97] = L.humAct; a[98] = P.lineage.base; a[99] = P.lineage.amp;
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBGs[this.bioCur]);

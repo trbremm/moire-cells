@@ -40,7 +40,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var parent = 0xffffffffu;
   let nutOn = (S.rules & RULE_NUT) != 0u;
   // what this cell feels from the sources (nutrient, threat); its neighbours read it next tick
-  bio.env = select(vec4f(0.0), vec4f(feel_sources(S, src, med, c.pos), 0.0, 0.0), nutOn);
+  bio.env = vec4f(select(vec2f(0.0), feel_sources(S, src, med, c.pos), nutOn), bio.env.zw);
 
   // the loop: the field of the neighbours and the sources, averaged along each membrane segment
   let sensing = S.sense > 0.0 || S.senseSrc > 0.0;
@@ -65,8 +65,11 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let myQA = charge_a(FL, c.kind);
   // rule 1 (step 6), leak by deformation: a cell whose strained A lattice reaches B's band also listens to B
   // through its A charge, in the share it leaks (me.lk.w): its charge in B is its own B charge plus that
-  let myQB = charge_b(FL, c.kind) + FL.leak * me.lk.w * myQA;
+  // (rule 2: a converted cell listens to B with the charge it emits with)
+  let myQB = cell_charge_b(FL, c) + FL.leak * me.lk.w * myQA;
   var gB = vec2f(0.0);
+  // rule 2 (step 6), conversion: how much A this cell feels at its centre (its neighbours' A field, tuned)
+  var aFelt = 0.0;
 
   // every neighbour within reach: contact push, and (differentiation on) recognition and signals
   let rg = grid_range_n(S, grid_xy(S, c.pos), select(1, i32(FL.bReach), feelB));
@@ -95,13 +98,14 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
             if (ob.lk.z != 0.0) { gB += w * cell_field_leak(ob, c.pos, cutB).xy; }   // its leaked B (rule 1)
           }
         }
-        if (sensing && d2 < cutR * cutR) {
+        if (d2 < cutR * cutR) {
           let ob = beats[k];
           if (ob.k2a.z > 0.0) {
             // weight: sign by fates (EMW), receptor tuning by how alike the lattices are, strength, taper
             let tn = tuning(lattice_dist2(rk0, rk1, rk2, ob.k01.xy, ob.k01.zw, ob.k2a.xy), med.k0, rw);
+            aFelt += tn * cell_field(ob, c.pos, cutR);
             let w = S.sense * myQA * emw(c.kind, o.kind) * tn * ob.k2a.z * cut_taper(d2, cutR);
-            if (w != 0.0) {
+            if (sensing && w != 0.0) {
               sense_field(&seg, mb, c.pos - ob.q2p.zw, ob.q01.xy, ob.q01.zw, ob.q2p.xy, ob.ph, ob.k2a.w, w);
             }
           }
@@ -216,6 +220,18 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     c.kind = KIND_STEM;
   }
 
+  // rule 2 (step 6), conversion A -> B: the A felt goes through a leaky integrator (bio.env.z, time constant
+  // convTau), and the cell converts above convOn and converts back below convOff (hysteresis, so it does not
+  // flicker). A converted cell emits B more strongly, or of the other sign (cell_beat); it shows a blue outline.
+  bio.env.z += (aFelt - bio.env.z) * min(1.0, S.dt / max(FL.convTau, 1e-3));
+  if (FL.conv > 0.0) {
+    if (bio.env.w < 0.5 && bio.env.z > FL.convOn) { bio.env.w = 1.0; }
+    if (bio.env.w > 0.5 && bio.env.z < FL.convOff) { bio.env.w = 0.0; }
+  } else {
+    bio.env.w = 0.0;
+  }
+  c.flags = select(c.flags & ~CELL_CONV, c.flags | CELL_CONV, bio.env.w > 0.5);
+
   // gentle pull to the middle, slow drift of the medium (as the reference)
   f += (S.centre - c.pos) * S.pull;
   f += S.drift * S.R * vec2f(sin(c.pos.y * 0.011 + S.time * 0.10), sin(c.pos.x * 0.012 - S.time * 0.08));
@@ -302,6 +318,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       if ((S.rules & RULE_MUT) != 0u) { nb = mutate(nb, bs, S.mutSize, S.mutJump); }
       let inherit = (S.rules & RULE_INHERIT) != 0u;
       if (!inherit) { nb.acc = vec4f(0.0); }
+      nb.env = vec4f(0.0);                      // a newborn has felt nothing yet and is not converted
       nb.body.w = TAU * rand01(bs, 200u);
       // record the death and the birth (counters always, positions while there is room)
       atomicAdd(&stats.deaths, 1u);

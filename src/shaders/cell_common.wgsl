@@ -137,7 +137,8 @@ struct Bio {
   relay: vec4f,     // per fate channel: how a committed neighbour's signal on that channel feeds it (-1..1)
   body: vec4f,      // x adhesion, y size factor, z motility factor, w spare
   acc: vec4f,       // state, not genes: the four leaky accumulators
-  env: vec4f,       // state: x nutrient, y threat felt last tick (neighbours read it when picking a parent)
+  env: vec4f,       // state: x nutrient, y threat felt last tick (neighbours read it when picking a parent);
+                    // z the A felt, through a leaky integrator, w converted (1) or not (0) (step 6, rule 2)
 };
 
 // The sources (nutrient, threat) for the cells: two vec4 per source, written by src/cells.js every frame:
@@ -417,6 +418,15 @@ fn charge_b(F: Fields, kind: u32) -> f32 {
   if (kind < 4u) { return F.qB[kind]; }
   return F.q4.y;
 }
+// a cell's B charge, after conversion (step 6, rule 2): a converted cell emits B more strongly (mode 0:
+// x (1 + conv)) or of the other sign (mode 1: x -conv), and listens to B with the same charge
+fn cell_charge_b(F: Fields, c: Cell) -> f32 {
+  let q = charge_b(F, c.kind);
+  if (F.conv > 0.0 && (c.flags & CELL_CONV) != 0u) {
+    return select(q * (1.0 + F.conv), -q * F.conv, F.convMode == 1u);
+  }
+  return q;
+}
 
 // Field B of one cell at x, before the sign rule: strength x envelope x (1/3) sum_m cos(q_m . (x - centre)),
 // tapered to 0 at cutR. Its gradient (what a cell feels: membrane integral = area x gradient for a field this
@@ -502,7 +512,7 @@ fn cell_beat(c: Cell, S: Sim, M: Medium, FL: Fields) -> CellBeat {
   eb.fa = FB.x; eb.fb = FB.y; eb.fd = FB.z;
   let bb = make_beat(eb, MB);
   let rB = FL.bR0 * S.R;
-  let qb = charge_b(FL, c.kind);
+  let qb = cell_charge_b(FL, c);
   cb.b01 = vec4f(bb.q0, bb.q1);
   cb.b2a = vec4f(bb.q2, FL.bEmit * qb * min(1.0, c.r / S.R), rB * rB);
   // rule 1, leak by deformation: a stretched cell's A lattice is squeezed the other way; where one of its three

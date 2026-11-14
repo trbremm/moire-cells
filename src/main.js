@@ -107,6 +107,7 @@ async function boot() {
       // the loop alone: no fates, adhesion, body traits, turnover, mutation or nutrient/threat biology
       Object.assign(cells.genome.rules, { diff: false, adh: false, body: false, turn: false, mut: false, nut: false });
       cells.fields.sign = 1;   // like repels like: islands and a labyrinth of strands (key U flips)
+      Object.assign(cells.fields, { convUp: 2.0, convDown: 1.25 });   // the loop alone feels less A (step 6, rule 2)
     }
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));
@@ -242,7 +243,7 @@ function hintLine() {
 }
 function fullHint() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
+    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
 }
 
 function tap(x, y) {
@@ -387,6 +388,14 @@ function setupInput() {
       const F = cells.fields;
       F.leakOn = !F.leakOn;
       flash(`leak by deformation ${F.leakOn ? 'on: strongly stretched cells leak into field B (blue centre dot)' : 'off'}`);
+    } else if (k === '5') {
+      const F = cells.fields;
+      F.convOn = !F.convOn;
+      flash(`conversion ${F.convOn ? 'on: cells that feel enough A turn to emitting B (blue outline)' : 'off'}`);
+    } else if (k === '6') {
+      const F = cells.fields;
+      F.convMode = F.convMode ? 0 : 1;
+      flash(`a converted cell ${F.convMode ? 'flips its B charge' : 'emits more B'}`);
     } else if (k === 'l') {
       landscape.params.on = !landscape.params.on;
       flash(`landscape ${landscape.params.on ? 'on' : 'off'}`);

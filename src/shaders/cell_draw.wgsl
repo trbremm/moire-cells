@@ -117,7 +117,9 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   // committed cells get a flat fill in their colour, so tissues read as areas; stem cells stay dark inside
   let fill = select(D.fill, D.fillC, c.kind != KIND_STEM);
   var rgb = mix(col * fill, col * D.dots, dot);
-  rgb = mix(rgb, col * D.line, ring);
+  // step 6, rule 2: a converted cell's outline is drawn in field B's ink
+  let lineCol = select(col * D.line, D.blue.rgb, D.blue.a > 0.0 && (c.flags & CELL_CONV) != 0u);
+  rgb = mix(rgb, lineCol, ring);
   // step 6, rule 1: a cell leaking into field B gets a flat blue centre dot, its area growing with the leak
   var mark = 0.0;
   if (D.leakDot > 0.0) {

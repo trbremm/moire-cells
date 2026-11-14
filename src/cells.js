@@ -47,7 +47,7 @@ export const MAX_CELLS = 262144;
 
 const SIM_BYTES = 256;         // struct Sim
 const SLOT = 256;              // uniform slot stride (minUniformBufferOffsetAlignment is at most 256)
-const SLOTS = 128;             // ticks that can be encoded in one frame
+const SLOTS = 320;             // ticks that can be encoded in one frame (main.js runs at most 256, plus warm-up)
 const BLOCK = 512;             // scan block (cell_grid.wgsl)
 const BRUTE_MAX = 20000;       // largest count the ?check brute force runs on
 const STATS_BYTES = 8512;      // struct Stats in cell_common.wgsl (counters, events, census, step 6 census)

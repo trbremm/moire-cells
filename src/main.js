@@ -15,6 +15,8 @@
 
 import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown } from './gpu.js';
 import { Background } from './background.js';
+import { Medium } from './field.js';
+import { Landscape } from './landscape.js';
 
 window.__moireBooted = true;
 
@@ -45,6 +47,8 @@ window.addEventListener('unhandledrejection', (e) => {
 let gpu = null;
 let layers = [];
 let background = null;
+let medium = null;
+let landscape = null;
 let running = false;
 let view = null;
 
@@ -77,15 +81,20 @@ async function boot() {
   stage('create-layers');
   try {
     background = await Background.create(gpu.device, gpu.format);
+    medium = new Medium(gpu.device);
+    landscape = await Landscape.create(gpu.device, gpu.format, medium);
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));
     return;
   }
-  layers = [background];
+  // the medium first: it writes the lattice every field-reading layer uses
+  layers = [medium, background, landscape];
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
-  window.moire = { gpu, layers, background };
+  window.moire = { gpu, layers, background, medium, landscape };
 
   resize();
+  landscape.seed();
+  for (const s of landscape.sources) background.impulse(s.x, s.y, 3);
   window.addEventListener('resize', resize);
   setupInput();
   if (flag('overlay')) overlayEl.hidden = false;
@@ -170,6 +179,7 @@ function drawOverlay() {
     `vendor ${esc(i.vendor || '?')} · arch ${esc(i.architecture || '?')}${i.device ? ' · device ' + esc(i.device) : ''}`,
     `canvas ${view.pxW}×${view.pxH} (dpr ${view.dpr.toFixed(2)}) · ${gpu.format}`,
     `ripple grid ${background.gw}×${background.gh} (${background.sc} css px/cell) · ambient ${background.ambient ? 'on' : 'off'}`,
+    `sources ${landscape.sources.length}/${landscape.params.maxSources} · landscape ${landscape.params.on ? 'on' : 'off'} · R ${medium.R.toFixed(2)} px · medium ${(medium.la0 * 180 / Math.PI).toFixed(2)}°`,
     `sim t ${simTime.toFixed(1)} s`,
   ];
   if (debugLog.length) lines.push('', ...debugLog.map(esc));
@@ -220,6 +230,9 @@ function setupInput() {
     } else if (k === 'a') {
       background.ambient = !background.ambient;
       flash(`ambient ripples ${background.ambient ? 'on' : 'off'}`);
+    } else if (k === 'l') {
+      landscape.params.on = !landscape.params.on;
+      flash(`landscape ${landscape.params.on ? 'on' : 'off'}`);
     }
   });
 }

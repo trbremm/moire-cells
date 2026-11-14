@@ -32,15 +32,24 @@ export function writeEmitter(f32, u32, i, e) {
   u32[o + 8] = e.kind; u32[o + 9] = 0;
 }
 
-let commonText = null;
-/** Load a WGSL file with field_common.wgsl prepended (errors in either file name the right file and line). */
-export async function loadFieldShader(device, url) {
-  if (commonText === null) {
-    const res = await fetch(COMMON_URL, { cache: 'no-cache' });
-    if (!res.ok) throw new Error(`Could not load shader ${COMMON_URL}: HTTP ${res.status}`);
-    commonText = (await res.text()).replace(/\s*$/, '\n\n');
+const texts = new Map();
+async function shaderText(url) {
+  if (!texts.has(url)) {
+    const res = await fetch(url, { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`Could not load shader ${url}: HTTP ${res.status}`);
+    texts.set(url, (await res.text()).replace(/\s*$/, '\n\n'));
   }
-  return loadShader(device, url, { prefix: commonText, prefixName: COMMON_URL });
+  return texts.get(url);
+}
+
+/**
+ * Load a WGSL file with field_common.wgsl prepended, and after it any `extra` shared files (e.g. the cells'
+ * cell_common.wgsl). Errors in any of them name the right file and line.
+ */
+export async function loadFieldShader(device, url, extra = []) {
+  const names = [COMMON_URL, ...extra];
+  const prefixes = await Promise.all(names.map(async (name) => ({ name, text: await shaderText(name) })));
+  return loadShader(device, url, { prefixes });
 }
 
 export class Medium {

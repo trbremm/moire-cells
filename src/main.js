@@ -12,11 +12,13 @@
 //   ?ripple=1   drop a ripple every 0.7 s at varying spots
 //   ?debug=1    copy console warnings and errors into the overlay
 //   ?nogpu=1    pretend WebGPU is missing (to see the fallback message)
+//   ?cells=N    number of cells (default 2000)
 
 import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown } from './gpu.js';
 import { Background } from './background.js';
 import { Medium, KIND } from './field.js';
 import { Landscape } from './landscape.js';
+import { Cells, DEFAULT_CELLS } from './cells.js';
 
 window.__moireBooted = true;
 
@@ -49,6 +51,7 @@ let layers = [];
 let background = null;
 let medium = null;
 let landscape = null;
+let cells = null;
 let running = false;
 let view = null;
 
@@ -83,14 +86,15 @@ async function boot() {
     background = await Background.create(gpu.device, gpu.format);
     medium = new Medium(gpu.device);
     landscape = await Landscape.create(gpu.device, gpu.format, medium);
+    cells = await Cells.create(gpu.device, gpu.format, medium, Number(params.get('cells')) || DEFAULT_CELLS);
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));
     return;
   }
   // the medium first: it writes the lattice every field-reading layer uses
-  layers = [medium, background, landscape];
+  layers = [medium, background, landscape, cells];
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
-  window.moire = { gpu, layers, background, medium, landscape };
+  window.moire = { gpu, layers, background, medium, landscape, cells };
 
   resize();
   landscape.seed();

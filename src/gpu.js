@@ -142,21 +142,29 @@ function webglRenderer() {
 
 /**
  * Fetch a WGSL file and compile it. Throws an Error with readable compiler messages on failure.
- * Shared snippets can be prepended via `prefix` (plain text concatenation; no #include); `prefixName` is the
- * file the prefix came from, so messages point at the right file and line.
+ * Shared snippets can be prepended (plain text concatenation; no #include): either one `prefix` text named
+ * `prefixName`, or a list `prefixes` of { name, text }. Messages point at the right file and line.
  */
-export async function loadShader(device, url, { prefix = '', prefixName = 'prefix' } = {}) {
+export async function loadShader(device, url, { prefix = '', prefixName = 'prefix', prefixes = null } = {}) {
   const res = await fetch(url, { cache: 'no-cache' });
   if (!res.ok) throw new Error(`Could not load shader ${url}: HTTP ${res.status}`);
-  const code = prefix + (await res.text());
+  const parts = prefixes || (prefix ? [{ name: prefixName, text: prefix }] : []);
+  // first line (1-based) of each prefix in the joined code
+  const spans = [];
+  let line = 1;
+  for (const p of parts) { spans.push({ name: p.name, from: line }); line += p.text.split('\n').length - 1; }
+  const bodyFrom = line;
+  const code = parts.map((p) => p.text).join('') + (await res.text());
   const module = device.createShaderModule({ label: url, code });
   const ci = await module.getCompilationInfo();
   const errors = ci.messages.filter((m) => m.type === 'error');
-  const prefixLines = prefix ? prefix.split('\n').length - 1 : 0;
-  // "file:line" of a message, in the prefix or in the file itself
-  const where = (m) => (m.lineNum <= prefixLines
-    ? `${prefixName}:${m.lineNum}:${m.linePos}`
-    : `${url}:${m.lineNum - prefixLines}:${m.linePos}`);
+  // "file:line" of a message, in a prefix or in the file itself
+  const where = (m) => {
+    if (m.lineNum >= bodyFrom) return `${url}:${m.lineNum - bodyFrom + 1}:${m.linePos}`;
+    let sp = spans[0];
+    for (const s of spans) if (m.lineNum >= s.from) sp = s;
+    return `${sp.name}:${m.lineNum - sp.from + 1}:${m.linePos}`;
+  };
   for (const m of ci.messages) {
     if (m.type !== 'error') console.warn(`${where(m)} ${m.type}: ${m.message}`);
   }

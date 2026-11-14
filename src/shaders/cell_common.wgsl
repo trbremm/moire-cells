@@ -64,8 +64,12 @@ struct Sim {
   adhBase: f32,     // stickiness every pair loses: unlike neighbours (stick below this) push off a little
   crawl: f32,       // crawling speed, in units of R per s (times the motility factor)
   turnRate: f32,    // how fast a crawling cell's heading wanders (rad^2 / s)
-  pad4: f32,
-  pad5: f32,
+  turnover: f32,    // deaths per cell per s (each dead cell is reborn as a neighbour's daughter)
+  unhappy: f32,     // extra death rate for cells that recognise none of their neighbours (x turnover)
+  mutSize: f32,     // size of the small mutations (1 = the steps in mutate())
+  mutJump: f32,     // chance per birth that one gene jumps to a fresh random value
+  pad6: f32,
+  pad7: f32,
 };
 
 // fate-typical body: size and motility factors per fate (stem, epithelium, muscle, neuron, cartilage)
@@ -132,6 +136,62 @@ struct Stats {
   bins: array<atomic<u32>, 144>,      // census: cells per key bin
   founders: array<atomic<u32>, 1632>, // census: bit set = that founder line still has cells
 };
+
+// standard normal random number (Box-Muller) from two uniform draws of stream (a, b)
+fn gauss(a: u32, b: u32) -> f32 {
+  let u1 = max(rand01(a, b * 2u), 1e-7);
+  let u2 = rand01(a, b * 2u + 1u);
+  return sqrt(-2.0 * log(u1)) * cos(TAU * u2);
+}
+
+// one gene nudged by a Gaussian step, kept in [lo, hi]; k numbers the gene in the random stream
+fn nudge(v: f32, step: f32, lo: f32, hi: f32, seed: u32, k: u32) -> f32 {
+  return clamp(v + step * gauss(seed, k), lo, hi);
+}
+
+// a daughter's genome: every gene nudged a little (size x the steps below), and with chance `jump` one gene
+// drawn afresh over its whole range. The accumulators and heading are state, not genes: the caller sets them.
+fn mutate(p: Bio, seed: u32, size: f32, jump: f32) -> Bio {
+  var b = p;
+  let ka = size * 0.03;     // key angles: about 2 degrees
+  let ks = size * 0.012;    // key scales
+  b.key.x = b.key.x + ka * gauss(seed, 1u);
+  b.key.x -= KEY_SPAN * floor(b.key.x / KEY_SPAN);
+  b.key.y = nudge(b.key.y, ks, -KEY_SMAX, KEY_SMAX, seed, 2u);
+  b.key.z = b.key.z + ka * gauss(seed, 3u);
+  b.key.z -= KEY_SPAN * floor(b.key.z / KEY_SPAN);
+  b.key.w = nudge(b.key.w, ks, -KEY_SMAX, KEY_SMAX, seed, 4u);
+  b.rec.x = clamp(b.rec.x * exp(size * 0.06 * gauss(seed, 5u)), 0.03, 0.4);
+  b.rec.y = nudge(b.rec.y, size * 0.05, 0.2, 3.0, seed, 6u);
+  b.rec.z = nudge(b.rec.z, size * 0.05, 0.0, 2.0, seed, 7u);
+  for (var c = 0u; c < 4u; c++) {
+    b.resp[c] = nudge(b.resp[c], size * 0.05, -1.0, 1.0, seed, 8u + c);
+    b.relay[c] = nudge(b.relay[c], size * 0.05, -1.0, 1.0, seed, 12u + c);
+  }
+  b.body.x = nudge(b.body.x, size * 0.03, 0.0, 1.0, seed, 16u);
+  b.body.y = nudge(b.body.y, size * 0.02, 0.8, 1.25, seed, 17u);
+  b.body.z = clamp(b.body.z * exp(size * 0.06 * gauss(seed, 18u)), 0.3, 3.0);
+  // the occasional big jump: one gene redrawn over its whole range
+  if (rand01(seed, 101u) < jump) {
+    let g = min(u32(rand01(seed, 102u) * 18.0), 17u);
+    let u = rand01(seed, 103u);
+    switch g {
+      case 0u: { b.key.x = u * KEY_SPAN; }
+      case 1u: { b.key.y = (2.0 * u - 1.0) * KEY_SMAX; }
+      case 2u: { b.key.z = u * KEY_SPAN; }
+      case 3u: { b.key.w = (2.0 * u - 1.0) * KEY_SMAX; }
+      case 4u: { b.rec.x = 0.06 * pow(0.25 / 0.06, u); }
+      case 5u: { b.rec.y = 0.6 + u; }
+      case 6u: { b.rec.z = 0.4 + u; }
+      case 7u, 8u, 9u, 10u: { b.resp[g - 7u] = 2.0 * u - 1.0; }
+      case 11u, 12u, 13u, 14u: { b.relay[g - 11u] = 2.0 * u - 1.0; }
+      case 15u: { b.body.x = u; }
+      case 16u: { b.body.y = 0.85 + 0.3 * u; }
+      default: { b.body.z = 0.5 * pow(4.0, u); }
+    }
+  }
+  return b;
+}
 
 // squared wavevector difference between lattices (angle a, log scale s), in units of the medium's wavenumber
 fn key_dist2(a1: f32, s1: f32, a2: f32, s2: f32) -> f32 {

@@ -108,6 +108,12 @@ async function boot() {
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
   window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
+  // births and deaths drop small ripples into the background (a birth a bump, a death a dip)
+  cells.onEvents = (events) => {
+    const amp = cells.genome.params.ripple;
+    if (!(amp > 0)) return;
+    for (const [x, y, sign] of events) background.impulse(x, y, sign > 0 ? amp : -0.7 * amp);
+  };
 
   resize();
   landscape.seed();
@@ -220,7 +226,7 @@ let tapMode = 0;
 
 function hintLine() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · V: view · [ ]: speed · F: stats';
+    'C: clear · L: landscape · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · V: view · [ ]: speed · F: stats';
 }
 
 function tap(x, y) {
@@ -293,6 +299,14 @@ function setupInput() {
       const r = cells.genome.rules;
       r.body = !r.body;
       flash(`body traits ${r.body ? 'on: size and motility from the genome and the fate' : 'off: all cells alike'}`);
+    } else if (k === 't') {
+      const r = cells.genome.rules;
+      r.turn = !r.turn;
+      flash(`turnover ${r.turn ? 'on: cells die now and then, a neighbour divides into the gap' : 'off'}`);
+    } else if (k === 'm') {
+      const r = cells.genome.rules;
+      r.mut = !r.mut;
+      flash(`mutation ${r.mut ? 'on: daughters differ a little from their parent' : 'off: daughters are exact copies'}`);
     } else if (k === 'v') {
       cells.look.view = cells.look.view ? 0 : 1;
       flash(`colour by ${cells.look.view ? 'lineage (key)' : 'fate'}`);

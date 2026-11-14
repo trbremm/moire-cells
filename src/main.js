@@ -326,15 +326,26 @@ function tap(x, y) {
 
 function setupInput() {
   hintEl.textContent = hintLine();
-  const pointer = { down: false, drag: false, x: 0, y: 0, sx: 0, sy: 0 };
+  const pointer = { down: false, drag: false, light: false, x: 0, y: 0, sx: 0, sy: 0 };
   const pos = (e) => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
 
   canvas.addEventListener('pointerdown', (e) => {
     const [x, y] = pos(e);
-    Object.assign(pointer, { down: true, drag: false, x, y, sx: x, sy: y });
+    if (e.button === 2) {
+      // step C2: right button moves the spotlight (the spot's centre follows the pointer)
+      if (light.modeIndex !== 1) { flash('the spotlight is off: Shift+L until it says "spotlight"'); return; }
+      Object.assign(pointer, { down: false, drag: false, light: true });
+      light.moveTo(x, y);
+      try { canvas.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      return;
+    }
+    if (e.button !== 0) return;
+    Object.assign(pointer, { down: true, drag: false, light: false, x, y, sx: x, sy: y });
     try { canvas.setPointerCapture(e.pointerId); } catch { /* ignore */ }
   });
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   canvas.addEventListener('pointermove', (e) => {
+    if (pointer.light) { const [x, y] = pos(e); light.moveTo(x, y); return; }
     if (!pointer.down) return;
     const [x, y] = pos(e);
     if (!pointer.drag && Math.hypot(x - pointer.sx, y - pointer.sy) > 6) pointer.drag = true;
@@ -349,13 +360,31 @@ function setupInput() {
     }
     pointer.x = x; pointer.y = y;
   });
-  const up = () => {
+  const up = (e) => {
+    if (pointer.light) { if (e.button === 2 || !e.buttons) pointer.light = false; return; }
+    if (e.button !== 0) return;
     if (pointer.down && !pointer.drag) tap(pointer.x, pointer.y);
     pointer.down = pointer.drag = false;
     cells.release();
   };
   canvas.addEventListener('pointerup', up);
-  canvas.addEventListener('pointercancel', () => { pointer.down = pointer.drag = false; cells.release(); });
+  canvas.addEventListener('pointercancel', () => { pointer.down = pointer.drag = pointer.light = false; cells.release(); });
+  // step C2: the wheel tilts the spotlight, Shift+wheel turns the direction it comes from. Browsers turn Shift+wheel
+  // into a sideways scroll (deltaX), so either axis counts; one notch (about 100 px) = 5 degrees of tilt, 15 of turn.
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    if (light.modeIndex !== 1) { flash('the wheel tilts the spotlight: Shift+L until it says "spotlight"'); return; }
+    const unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 800 : 1;
+    const d = (Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX) * unit;
+    if (e.shiftKey) {
+      light.turnBy(d * 0.15);
+      flash(`the light comes from ${compass(light.params.az)} (${light.params.az.toFixed(0)}°)`);
+    } else {
+      light.tiltBy(d * 0.05);
+      const t = light.params.tilt;
+      flash(t < 0.5 ? 'the light falls straight down' : `the light falls tilted by ${t.toFixed(0)}° (from ${compass(light.params.az)}): the spot stretches away from it, brighter on its near side`);
+    }
+  }, { passive: false });
 
   window.addEventListener('keydown', (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;

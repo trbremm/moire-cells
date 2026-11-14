@@ -16,6 +16,7 @@ Usage:
     python tools/shot.py --key f                           # press F (toggles the overlay)
     python tools/shot.py --key shift+h                     # Shift + a letter (the Part C keys)
     python tools/shot.py --click 640,400 --drag 200,600,900,500
+    python tools/shot.py --rdrag 640,400,500,300 --wheel 640,400,600 --wheel 640,400,300,shift   # right-drag, wheel
     python tools/shot.py --eval "window.someTweak = 1"      # any JS before waiting
     python tools/shot.py --query speed=8 --at 5,30,90      # a series at these SIMULATION times (s):
                                                            # shots/shot_t5.png, shots/shot_t30.png, ...
@@ -363,15 +364,23 @@ def key_js(k):
             f"window.dispatchEvent(new KeyboardEvent('keyup', {opts}));")
 
 
-def pointer_js(points):
-    """Pointer down at the first point, moves through the rest, up at the last (CSS pixels)."""
+def pointer_js(points, button=0):
+    """Pointer down at the first point, moves through the rest, up at the last (CSS pixels). button 2 = right."""
     pts = json.dumps(points)
+    held = 2 if button == 2 else 1
     return f"""(() => {{
       const c = document.querySelector('canvas'); const pts = {pts};
       const ev = (t, p) => c.dispatchEvent(new PointerEvent(t, {{clientX: p[0], clientY: p[1], pointerId: 1,
-        bubbles: true, isPrimary: true, pointerType: 'mouse', buttons: t === 'pointerup' ? 0 : 1}}));
+        bubbles: true, isPrimary: true, pointerType: 'mouse', button: t === 'pointermove' ? -1 : {button},
+        buttons: t === 'pointerup' ? 0 : {held}}}));
       ev('pointerdown', pts[0]); for (const p of pts.slice(1)) ev('pointermove', p); ev('pointerup', pts[pts.length - 1]);
     }})()"""
+
+
+def wheel_js(x, y, dy, shift):
+    """One wheel event at (x, y) CSS px: dy pixels (100 = about one notch; negative = up), with Shift if asked."""
+    return (f"document.querySelector('canvas').dispatchEvent(new WheelEvent('wheel', {{clientX: {x}, clientY: {y}, "
+            f"deltaY: {dy}, deltaMode: 0, shiftKey: {'true' if shift else 'false'}, bubbles: true, cancelable: true}}));")
 
 
 def main():
@@ -389,6 +398,9 @@ def main():
     ap.add_argument("--key", action="append", default=[], help="press a key after start (repeatable)")
     ap.add_argument("--click", action="append", default=[], help="click at x,y (CSS px; repeatable)")
     ap.add_argument("--drag", action="append", default=[], help="drag x1,y1,x2,y2 (CSS px; repeatable)")
+    ap.add_argument("--rdrag", action="append", default=[], help="right-button drag x1,y1,x2,y2 (CSS px; repeatable)")
+    ap.add_argument("--wheel", action="append", default=[], help="wheel x,y,dy[,shift] (dy 100 = one notch down; "
+                                                                 "repeatable)")
     ap.add_argument("--eval", action="append", default=[], help="run JS in the page after start (repeatable)")
     ap.add_argument("--extra", action="append", default=[], help="extra browser flag (repeatable; use --extra=--flag)")
     ap.add_argument("--pref", action="append", default=[], help="Firefox pref name=json_value (repeatable)")
@@ -446,6 +458,12 @@ def main():
         for d in args.drag:
             x1, y1, x2, y2 = (float(v) for v in d.split(","))
             driver.eval(pointer_js([[x1 + (x2 - x1) * i / 24, y1 + (y2 - y1) * i / 24] for i in range(25)]))
+        for d in args.rdrag:
+            x1, y1, x2, y2 = (float(v) for v in d.split(","))
+            driver.eval(pointer_js([[x1 + (x2 - x1) * i / 24, y1 + (y2 - y1) * i / 24] for i in range(25)], button=2))
+        for wspec in args.wheel:
+            v = wspec.split(",")
+            driver.eval(wheel_js(float(v[0]), float(v[1]), float(v[2]), len(v) > 3 and v[3].lower() in ("1", "shift", "true")))
         for js in args.eval:
             driver.eval(js)
 

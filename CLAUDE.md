@@ -230,8 +230,10 @@ ROW (size: heavier = slower spreading, stronger/richer bonds, needs harder light
   band; GT richest, needs hard light). Linkers chain into SEDIMENT ll and LL: forming it releases a little
   energy, it does not spread, so it piles up (accumulation only through reaction; the user's two ideas in one
   rule); it is dark, so it warms in light; hard light slowly cracks it. Like with like (g+g, t+t): no bond.
-- SWAPS (the permutation itself): a free atom can take a partner out of a weaker bond (e.g. T + gt -> gT + t),
-  releasing the bond difference as heat. Same table, same spark rule, in the open and inside cells.
+- SWAPS (the permutation itself): a free atom takes a partner's place where that RELEASES energy, the difference
+  going to heat. Same table, same spark rule, in the open and inside cells. As built in C4 (fuel energy grows with
+  row), the swaps that run are LIGHT free atoms displacing heavy ones (t + gT -> gt + T, g + GT -> gT + G, ...):
+  light free atoms are the "vandals" that degrade rich fuel. l + L do not chain (one sediment per row).
 - Grid: 6 atoms + 4 fuels + 2 sediments + trace + heat = 14 channels per pixel (e.g. four rgba textures or
   storage buffers; f32 preferred for conservation, measure drift in the "rounding" line). About one pixel per
   half a cell radius. SPRINGS (mouse-dropped) drip atoms in.
@@ -241,7 +243,7 @@ the substances to emerge naturally as those." The hand-made nutrient and threat 
 - Food is not a label: a substance is food for a cell if that cell's engines can get energy from it. One
   lineage's food can be another's useless or harmful substance.
 - Harm is not a label either. It emerges from two things already in the plan: (1) the same reactions run inside
-  a cell as outside, so a reactive free atom (e.g. heavy taker T) that gets in swaps the cell's fuel apart,
+  a cell as outside, so a reactive free atom (a light one, see SWAPS) that gets in degrades the cell's rich fuel,
   wasting what its engines need and dumping heat inside; (2) HEAT DAMAGE: a cell's death rate rises when its
   local temperature is above a tolerance (a genome trait later). So threats are whatever makes a place too hot:
   reactive chemistry, a strong spotlight, a crowd of busy cells.

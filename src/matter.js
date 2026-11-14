@@ -45,7 +45,7 @@ export const ATOMS = {
 
 // How fast things spread (R^2 per s of simulation time): row 1 quickly, each row further down SPREAD.perRow times
 // slower; a bonded pair at the speed of its heavier atom, a little slower than that (SPREAD.bond); sediment not at all.
-// (A patch spreads over about sqrt(4 x spread x t): light atoms 15 R in a minute, heavy ones 6 R, trace 2 R.)
+// (A patch spreads over about sqrt(4 x spread x t): light atoms 17 R in a minute, heavy ones 6 R, trace 2 R.)
 export const SPREAD = { row1: 1.2, perRow: 0.12, bond: 0.7 };
 
 // Inks by chemical FUNCTION (faded palette, 0..255): each with a lighter variant for row 1 and a deeper one for row 2;

@@ -35,8 +35,8 @@ const LIGHT_COMMON_URL = 'src/shaders/light_common.wgsl';
 
 export const HEAT_COMMON_URL = 'src/shaders/heat_common.wgsl';
 export const HEAT_SCALE = 65536;          // counts per energy unit (HEAT_SCALE in heat_common.wgsl)
-export const LEDGER_WORDS = 11520;              // LEDGER_WORDS in heat_common.wgsl (words 3072 on: step C3's matter ledger;
-                                                // 10240 on: step C4's chemistry)
+export const LEDGER_WORDS = 15872;              // LEDGER_WORDS in heat_common.wgsl (words 3072 on: step C3's matter ledger;
+                                                // 10240 on: step C4's chemistry; 11520 on: step C5, cells eat)
 // ledger regions [first word, slots]; OUT, HEAT and MOVE are 64-bit (the carry words follow 64 words later)
 const LG = { WORK: [0, 256], BASE: [256, 64], OUT: [320, 64], HEAT: [448, 64], MOVE: [576, 64], DRAG: [704, 160], KICK: [864, 160] };
 const LG_WIDE = new Set(['OUT', 'HEAT', 'MOVE']);
@@ -80,6 +80,7 @@ export class Heat {
     this.cellBuf = null; this.count = 0;
     this.light = null;      // step C2: the light (src/light.js; its uniform is bound to the heat passes)
     this.matter = null;     // step C3: the substance grid (src/matter.js), whose channels live in this buffer too
+    this.eat = null;        // step C5: the cells' eating (src/eat.js), which books into this ledger too
     // ledger (cumulative since the page started; energy units)
     this.tot = { work: 0, base: 0, out: 0, drag: 0, kick: 0, lin: [0, 0, 0, 0], labs: [0, 0, 0, 0] };
     this.ledger = null;     // last snapshot: { time, moving, heat, in, out, rounding, rate }
@@ -280,6 +281,7 @@ export class Heat {
     pass.setPipeline(this.pipes.sum_cells); pass.dispatchWorkgroups(Math.ceil(this.count / 64));
     pass.end();
     if (this.matter) this.matter.encodeLedger(encoder);                  // step C3: the atoms in the dish, the order
+    if (this.eat) this.eat.encodeLedger(encoder);                        // step C5: the atoms and energy in the cells
     encoder.copyBufferToBuffer(this.buffer, 0, rb.buf, 0, LEDGER_WORDS * 4);
     encoder.clearBuffer(this.buffer, 0, LG.HEAT[0] * 4);                  // work, warmth, out: counted from here on
     encoder.clearBuffer(this.buffer, LG.DRAG[0] * 4, (LEDGER_WORDS - LG.DRAG[0]) * 4);   // drag, kicks
@@ -305,7 +307,8 @@ export class Heat {
       const { rec: r, words: w } = this.pending.get(this.nextSeq);
       this.pending.delete(this.nextSeq++);
       // (the matter first: step C4's chemical energy is part of the energy books)
-      if (w) { if (this.matter) this.matter.apply(r, w); this.apply(r, w); }
+      // (step C5: the cells' stock first, which both books include)
+      if (w) { if (this.eat) this.eat.apply(r, w); if (this.matter) this.matter.apply(r, w); this.apply(r, w); }
     }
   }
 
@@ -331,7 +334,9 @@ export class Heat {
     // step C4: the light the substances caught (into bonds, the rest as heat), the chemical energy in the dish, and the
     // chemical energy that left with matter (at the edge, washed out, on a resize)
     const C = this.matter && this.matter.ledger ? this.matter.ledger.chem : { light: 0, dish: 0, out: 0 };
-    const moving = sum('MOVE'), heat = sum('HEAT'), inn = T.work + T.base + labs + C.light;
+    // step C5: the cells' chemical energy (their stock) and their batteries are stored too; the starter charges came in
+    const cellsE = (C.cells || 0) + (C.bat || 0);
+    const moving = sum('MOVE'), heat = sum('HEAT'), inn = T.work + T.base + labs + C.light + (C.start || 0);
     // the heat under the cells / pixels in the light and the rest, as temperatures (heat per R^2)
     const ts = this.tempScale;
     const spot = [0, 1, 2, 3].map((k) => {
@@ -344,8 +349,8 @@ export class Heat {
     const h0 = H[0], dt = rec.time - h0[0];
     const rate = (k) => (dt > 0.05 ? (H[H.length - 1][k] - h0[k]) / dt : 0);
     this.ledger = {
-      time: rec.time, moving, heat, in: inn, out: T.out, rounding: inn - (moving + heat + T.out + C.dish + C.out),
-      chem: C.dish, chemOut: C.out,
+      time: rec.time, moving, heat, in: inn, out: T.out, rounding: inn - (moving + heat + T.out + C.dish + cellsE + C.out),
+      chem: C.dish + cellsE, chemDish: C.dish, chemCells: C.cells || 0, bat: C.bat || 0, chemOut: C.out,
       light: { in: lin, abs: labs, chem: C.light, pass: lin - labs - C.light },
       rate: {
         work: rate(1), base: rate(2), out: rate(3), drag: rate(4), kick: rate(5), lin: rate(6), labs: rate(7),
@@ -381,7 +386,8 @@ export class Heat {
     const L = this.ledger;
     if (!L) return 'ENTROPY  …';
     const Lt = this.light, r = L.rate;
-    // step C4: "stored" is the chemical energy in the dish (fuel's bonds, minus the sediment's); the light the substances
+    // step C4: "stored" is the chemical energy in the dish (fuel's bonds, minus the sediment's; step C5: plus the cells'
+    // stock and batteries); the light the substances
     // catch goes partly into bonds and is not heat until a reaction releases it
     if (compact) {
       const light = !Lt || !Lt.on ? 'light off' : `light ${fmt(r.lin)}/s → caught ${fmt(r.labs + r.lchem)}/s · ${Lt.label().replace(' · day', '')}`;
@@ -405,7 +411,7 @@ export class Heat {
       const sigma = HEAT_V0_PX * Math.sqrt(Math.max(0, L.kickPerTick)) / this.R;
       const r = L.rate;
       lines.push(`energy per s: in ${fmt(r.work + r.base + r.labs + r.lchem)} (work by forces ${fmt(r.work)}, warmth ${fmt(r.base)}, light ${fmt(r.labs)}` +
-        ` + caught by the substances ${fmt(r.lchem)}) · stored in bonds ${fmt(L.chem)}, out with matter ${fmt(L.chemOut)} · drag → heat ${fmt(r.drag)}` +
+        ` + caught by the substances ${fmt(r.lchem)}) · stored ${fmt(L.chem)} (in the dish's bonds ${fmt(L.chemDish)}, in the cells' stock ${fmt(L.chemCells)}, batteries ${fmt(L.bat)}), out with matter ${fmt(L.chemOut)} · drag → heat ${fmt(r.drag)}` +
         ` · kicks ← heat ${fmt(r.kick)} · out ${fmt(r.out)} · mean temperature ${(L.heat / area).toFixed(3)}/R² · kick ≈ ${sigma.toFixed(3)} R/s per axis` +
         ` (the old jitter ≈ 0.13) · rounding ${fmtRound(L.rounding)} (${L.in > 0 ? (L.rounding / L.in).toExponential(1) : '-'} of in)`);
     }

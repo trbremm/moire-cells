@@ -17,8 +17,7 @@
 //   react   step C4: one tick of chemistry per pixel (at the end of this file)
 // Only core WebGPU: i32 storage atomics and workgroup atomics.
 
-const NCH: u32 = 13u;
-const ATOM_SCALE: f32 = 4096.0;   // counts per atom-unit (ATOM_SCALE in src/matter.js)
+// (NCH and ATOM_SCALE are in heat_common.wgsl since step C5)
 
 struct MatterP {
   hw: u32,                      // grid width and height (the heat grid's)
@@ -58,32 +57,7 @@ struct Spring {
 };
 struct Springs { s: array<Spring, 16>, };
 
-// step C4: one reaction of the table (src/matter.js, REACTIONS); one event moves one count of each channel listed
-struct Rx {
-  ch: vec4u,                    // reactants x, y and products z, w (255: none); 2 l -> ll lists l twice
-  by: u32,                      // 0: by heat (rate x exp(-spark / (theta x temperature))); 1: by light of `band`
-  band: u32,
-  fam: u32,                     // family, for the counters (make, burn, photo, swap, form, crack)
-  _p0: u32,
-  heat16: i32,                  // heat counts released per event
-  light16: i32,                 // light counts used per event (by light)
-  k: f32,                       // by heat: rate constant (per s for one reactant, R^2 per s for two); by light: the
-                                // reactants' optical depth per unit amount per R^2
-  spark: f32,                   // the bond's spark (energy units)
-};
-struct ChemP {
-  nrx: u32,                     // reactions in rx
-  traceOn: u32,                 // 1: trace lowers the spark
-  trace: u32,                   // trace's channel
-  light: u32,                   // 1: the light is on
-  theta: f32,                   // temperature scale of the sparks
-  tempScale: f32,               // heat counts in a pixel x tempScale = temperature (heat per R^2)
-  dt: f32,                      // s per tick
-  traceK: f32,                  // spark x 1 / (1 + traceK x trace per R^2)
-  dark: array<vec4f, 4>,        // per channel: optical depth for the WARM band per unit per R^2 (sediment: dark)
-  rx: array<Rx, 24>,
-};
-const NONE: u32 = 255u;
+// (struct Rx and ChemP, step C4's reaction table, are in heat_common.wgsl since step C5: the cells' eat pass reads them too)
 
 @group(0) @binding(0) var<uniform> MP: MatterP;
 @group(0) @binding(1) var<uniform> T: MatterTick;

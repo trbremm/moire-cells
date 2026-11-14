@@ -180,6 +180,22 @@ function deriveReactions() {
   return out;
 }
 
+/**
+ * Step C5: every channel the cells' insides can make from the channels in `active`: their burner (fuel -> its atoms, as
+ * the burn reactions) and the heat-driven reactions (whatever the switches: the closure only has to be wide enough).
+ */
+export function insideProducts(active) {
+  let m = active;
+  for (let grew = true; grew;) {
+    grew = false;
+    for (const r of REACTIONS) {
+      if (r.by !== 'heat') continue;
+      if (r.ins.every((c) => m & (1 << c))) for (const c of r.outs) if (!(m & (1 << c))) { m |= 1 << c; grew = true; }
+    }
+  }
+  return m;
+}
+
 /** A substance's name in words, for the flash and the overlay. */
 export function describe(s) {
   const role = (a) => `${ATOMS[a].row === 1 ? 'light' : 'heavy'} ${ATOMS[a].group}`;
@@ -287,6 +303,9 @@ export class Matter {
     this.ctot = { light: new Float64Array(BANDS.length), rx: new Float64Array(FAMILIES.length) };
     this.chist = [];          // [time, ...events per family, light caught] for the rates
     this.light = null;        // step C4: the light (its uniform is bound to the reactions; set by main.js)
+    this.eat = null;          // step C5: the cells' eating (src/eat.js; set by main.js): their stock is in the atoms ledger
+    this.snapTime = -1e9;     // step C5: the frame time of the last ledger read-back applied
+    this.maskHist = [];       // step C5: [frame time, channels moving] of the frames since
     this.rxOn = [];           // the reactions sent to the GPU this frame
   }
 
@@ -387,6 +406,22 @@ export class Matter {
   /** Word offset of copy k's channel 0, counted from the end of the ledger (the grid binding's start), for n pixels. */
   copyBase(k, n = this.heat.n) { return this.heat.extraBase(n) - LEDGER_WORDS + k * NCH * n; }
 
+  /**
+   * Step C5: the word offset in the heat buffer of the copy current at the start of the cells' tick t of this frame
+   * (the cells' warm-up ticks come first; the substances sit those out), for the cells' step and eat pass; outside a
+   * frame (`outside`), the current copy. 0: no grid yet.
+   */
+  copyAt(t, outside = false) {
+    const H = this.heat;
+    if (!H || !H.buffer || this.bufVersion !== H.version) return 0;
+    const mt = t - (this.warm || 0);
+    const c = !outside && this.ticks && this.active && mt >= 0 ? this.cur ^ ((mt * this.nSub) & 1) : this.cur;
+    return LEDGER_WORDS + this.copyBase(c);
+  }
+
+  /** Step C5: the channels in `mask` count as seen now (the cells just put matter into them outside a frame). */
+  touch(mask) { for (let c = 0; c < NCH; c++) if (mask & (1 << c)) this.seen[c] = this.time; }
+
   resize(view) {
     // keep the springs at the same place relative to the dish
     if (this.view && (this.view.cssW !== view.cssW || this.view.cssH !== view.cssH)) {
@@ -468,7 +503,9 @@ export class Matter {
     // the channels worth spreading: matter in the dish at the last read-back, or a spring dripping it, within the last
     // 2 s (so both copies of a channel left out are certainly all zero); the others are skipped (most are empty)
     this.time = frame.time;
-    for (let c = 0; c < NCH; c++) if (this.dish[c] > 0) this.seen[c] = frame.time;
+    // (step C5: and what the cells hold, as they let it out into the dish)
+    const held = this.eat && this.eat.ledger ? this.eat.ledger.stock : null;
+    for (let c = 0; c < NCH; c++) if (this.dish[c] > 0 || (held && held[c] > 0)) this.seen[c] = frame.time;
     for (const sp of order) for (const a of Object.keys(SPRING_KINDS[sp.kind].mix)) this.seen[CH[a]] = frame.time;
     for (const s of this.springs) s.age += ticks * dt;
     this.springs = this.springs.filter((s) => s.age < p.life);
@@ -483,6 +520,14 @@ export class Matter {
         if (r.ins.every((c) => active & (1 << c))) for (const c of r.outs) if (!(active & (1 << c))) { active |= 1 << c; grew = true; }
       }
     }
+    // step C5: and every channel the cells' insides can make from what is there (their burner and the reactions inside,
+    // whose products they let out); and the channels of the frames whose read-back has not come yet stay on: the cells
+    // may have put matter into them, which the next read-back will show (a channel left out must be all zero in both
+    // copies, see the top of this file)
+    if (this.eat && this.eat.params.on) active = insideProducts(active);
+    this.maskHist = (this.maskHist || []).filter(([t]) => t > this.snapTime);
+    for (const [, m] of this.maskHist) active |= m;
+    this.maskHist.push([frame.time, active]);
     this.react = (rx.length > 0 || (this.dark && (active & SED_MASK) !== 0)) && active !== 0;
     this.active = active;
 
@@ -646,6 +691,10 @@ export class Matter {
     // atoms, weighting each substance by how many atoms it holds
     const atoms = (arr) => SUBSTANCES.reduce((x, s, c) => x + arr[c] * s.atoms.length, 0);
     const add = atoms(T.add), lost = atoms(T.lost), gone = atoms(T.gone), dish = atoms(this.dish);
+    // step C5: the atoms inside the cells (src/eat.js reads them from the same read-back, just before)
+    const EL = this.eat && this.eat.ledger && this.eat.ledger.time === rec.time ? this.eat.ledger : null;
+    const cells = EL ? EL.atoms : 0;
+    this.snapTime = rec.time;
     // ORDER: H = ln M - S / M over (pixel, substance), with M and S in counts of atoms
     const f = new Float32Array(w.buffer, LG_M.ORDER * 4, ORDER_SLOTS);
     let S = 0;
@@ -686,7 +735,10 @@ export class Matter {
     const crate = (k) => (cdt > 0.05 ? (CHs[CHs.length - 1][k] - CHs[0][k]) / cdt : 0);
     chem.rate = Object.fromEntries(FAMILIES.map((f, k) => [f, crate(1 + k)]));
     chem.lightRate = BANDS.map((b, k) => crate(1 + FAMILIES.length + k));
-    this.ledger = { time: rec.time, add, lost, gone, dish, rounding: add - (dish + lost + gone), rateAdd: rate(1), rateLost: rate(2), order, entropy: Hn, chem };
+    // step C5: the cells' chemical energy (their stock) and their batteries are stored energy too; the starter charges
+    // came in
+    chem.cells = EL ? EL.chem : 0; chem.bat = EL ? EL.bat : 0; chem.start = this.eat ? this.eat.start : 0;
+    this.ledger = { time: rec.time, add, lost, gone, dish, cells, rounding: add - (dish + cells + lost + gone), rateAdd: rate(1), rateLost: rate(2), order, entropy: Hn, chem };
   }
 
   /**
@@ -772,8 +824,9 @@ export class Matter {
     const L = this.ledger;
     if (!L) return 'ORDER  …';
     const o = L.order == null ? '–' : L.order.toFixed(3);
-    if (compact) return `ORDER ${o} · atoms ${fmt(L.dish)} · rounding ${L.rounding === 0 ? '0' : L.rounding.toExponential(1)}`;
-    return `ORDER  ${o} · atoms in dish ${fmt(L.dish)} · added ${fmt(L.add)} (+${fmt(L.rateAdd)}/s) · out ${fmt(L.lost + L.gone)} · rounding ${L.rounding === 0 ? '0' : L.rounding.toExponential(1)}`;
+    const inCells = L.cells > 0 ? ` · in cells ${fmt(L.cells)}` : '';
+    if (compact) return `ORDER ${o} · atoms ${fmt(L.dish)}${L.cells > 0 ? ' + ' + fmt(L.cells) : ''} · rounding ${L.rounding === 0 ? '0' : L.rounding.toExponential(1)}`;
+    return `ORDER  ${o} · atoms in dish ${fmt(L.dish)}${inCells} · added ${fmt(L.add)} (+${fmt(L.rateAdd)}/s) · out ${fmt(L.lost + L.gone)} · rounding ${L.rounding === 0 ? '0' : L.rounding.toExponential(1)}`;
   }
 
   /** Lines for the F overlay. */
@@ -805,7 +858,7 @@ export class Matter {
       SUBSTANCES.forEach((s, c) => {
         for (const a of s.atoms) { el[a].add += this.tot.add[c]; el[a].dish += this.dish[c]; el[a].out += this.tot.lost[c] + this.tot.gone[c]; }
       });
-      lines.push(`atoms ledger: added ${fmt(L.add)} = in dish ${fmt(L.dish)} + lost at the edge ${fmt(L.lost)} + washed / resized ${fmt(L.gone)}` +
+      lines.push(`atoms ledger: added ${fmt(L.add)} = in dish ${fmt(L.dish)} + in cells ${fmt(L.cells)} + lost at the edge ${fmt(L.lost)} + washed / resized / gone ${fmt(L.gone)}` +
         ` · rounding ${L.rounding === 0 ? '0' : L.rounding.toExponential(2)} · per s +${fmt(L.rateAdd)} −${fmt(L.rateLost)}`);
       lines.push('per element (added / in dish / out): ' + Object.entries(el).filter(([, v]) => v.add > 0)
         .map(([a, v]) => `${a} ${fmt(v.add)} / ${fmt(v.dish)} / ${fmt(v.out)}`).join(' · '));

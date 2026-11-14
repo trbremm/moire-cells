@@ -137,7 +137,7 @@ function inkOf(func, heavy) {
 //   swap   free atom + fuel -> poorer fuel + the freed atom, by heat (the energy difference -> heat)
 //   form   linker + linker (same row) -> sediment, by heat (releases a little)
 //   crack  sediment -> linker + linker, by hard light (photon - the chain's energy -> heat)
-export const FAMILIES = ['make', 'burn', 'photo', 'swap', 'form', 'crack'];
+export const FAMILIES = ['make', 'burn', 'photo', 'swap', 'form', 'crack'];   // (step C6's 'upswap' is counted as 'swap')
 export const HARD = BANDS.length - 1;
 export const REACTIONS = deriveReactions();
 
@@ -163,6 +163,10 @@ function deriveReactions() {
           const cn = ch(pair.join(''));
           if (cn < 0 || SUBSTANCES[cn].e16 >= f.e16) continue;
           out.push({ fam: 'swap', by: 'heat', ins: [cz, c], outs: [cn, ch(old)], heat16: f.e16 - SUBSTANCES[cn].e16, light16: 0, spark: f.spark, name: `${z.name} + ${f.name} → ${SUBSTANCES[cn].name} + ${old}` });
+          // step C6: and its inverse, uphill, by light of the lowest band that covers the difference and the spark
+          // (poorer fuel + the heavy atom -> richer fuel + a free light atom); slow in the open (kUpSwap)
+          const dE = f.e16 - SUBSTANCES[cn].e16, ub = BANDS.findIndex((b) => b.photon >= dE / 16 + f.spark);
+          out.push({ fam: 'upswap', by: 'light', band: ub, ins: [cn, ch(old)], outs: [c, cz], heat16: L16(ub) - dE, light16: L16(ub), spark: f.spark, name: `${SUBSTANCES[cn].name} + ${old} → ${f.name} + ${z.name}` });
         }
       }
     }
@@ -180,16 +184,57 @@ function deriveReactions() {
   return out;
 }
 
+// ---------- step C6: the ENGINES a genome can carry, also derived from the table ----------
+// An engine slot names one of these by its index (Bio.eng in cell_common.wgsl). Every engine is one reaction of REACTIONS,
+// run inside the cell on its stock; the table does the bookkeeping:
+// The set is SYMMETRIC (the user: "endothermic and exothermic reactions and their inverse"): every reaction of the table
+// that changes energy is an engine in both directions.
+//   UPHILL (kind 0, "harvest"): make fuel (g + t -> gt, ...), uphill swaps (gT + G -> GT + g, ...: light upgrades a fuel
+//            and frees a light atom), crack sediment (ll -> l + l). What pays the energy difference: the slot's band
+//            gene. Band 1 to 3: a PIGMENT catches that band of the light on the cell, one photon per event (a photon
+//            below the difference takes the rest from the battery; the rest of a photon is heat). Band 0: no pigment, a
+//            STORER: the battery pays the whole difference (battery energy banked as fuel in the stock). The spark is
+//            always paid from the battery and lost as heat. Light never charges the battery.
+//   DOWNHILL (kinds 1 burn, 2 swap, 3 form): burn fuel, swap (a light atom takes a heavy one's place: "breathing"),
+//            form sediment. The spark is paid from the battery and given back; the energy released goes into the
+//            battery minus a share as heat. Only these fill a battery.
+// In this order (4 make, 4 uphill swaps, 2 crack, 4 burn, 4 swap, 2 form = 20), so the order is part of the genome's
+// meaning: keep it (a slot holds the index + 32 x its band, 0 to 3).
+export const ENGINE_KINDS = ['harvest', 'burn', 'swap', 'form'];
+export const ENGINES = deriveEngines();
+
+function deriveEngines() {
+  const order = [['make', 0], ['upswap', 0], ['crack', 0], ['burn', 1], ['swap', 2], ['form', 3]];
+  const out = [];
+  const dE = (ins, outs) => outs.reduce((x, c) => x + SUBSTANCES[c].e16, 0) - ins.reduce((x, c) => x + SUBSTANCES[c].e16, 0);
+  for (const [fam, kind] of order) {
+    for (const r of REACTIONS) {
+      if (r.fam !== fam) continue;
+      const d = dE(r.ins, r.outs);
+      // g16: per event, heat counts stored in bonds (uphill, d > 0) or released (downhill, d < 0)
+      out.push({ kind, fam, ins: r.ins, outs: r.outs, g16: Math.abs(d), spark: r.spark, band: r.band ?? 0, name: r.name.replace(' (hard light)', '') });
+      if ((kind === 0) !== (d > 0)) throw new Error(`engine ${r.name} is not ${kind === 0 ? 'uphill' : 'downhill'}`);
+    }
+  }
+  // every downhill engine's inverse is an uphill one and back (the set is symmetric)
+  const key = (e) => `${[...e.ins].sort()}>${[...e.outs].sort()}`, inv = (e) => `${[...e.outs].sort()}>${[...e.ins].sort()}`;
+  const keys = new Set(out.map(key));
+  if (out.length !== 20 || out.some((e) => e.g16 <= 0 || !keys.has(inv(e)))) throw new Error('engine table is not as expected');
+  return out;
+}
+/** An engine's index by its reaction's name (as in REACTIONS, e.g. 'gt → g + t'). */
+export function engineIndex(name) { return ENGINES.findIndex((e) => e.name === name); }
+
 /**
  * Step C5: every channel the cells' insides can make from the channels in `active`: their burner (fuel -> its atoms, as
  * the burn reactions) and the heat-driven reactions (whatever the switches: the closure only has to be wide enough).
+ * Step C6: and their engines (make fuel too).
  */
 export function insideProducts(active) {
   let m = active;
   for (let grew = true; grew;) {
     grew = false;
-    for (const r of REACTIONS) {
-      if (r.by !== 'heat') continue;
+    for (const r of [...REACTIONS.filter((x) => x.by === 'heat'), ...ENGINES]) {
       if (r.ins.every((c) => m & (1 << c))) for (const c of r.outs) if (!(m & (1 << c))) { m |= 1 << c; grew = true; }
     }
   }
@@ -227,7 +272,7 @@ const DRAW_BYTES = 224;                   // struct DrawP in matter_draw.wgsl
 const K_MAX = 0.2;
 const LG_M = { ADD: 3072, LOST: 4736, GONE: 6400, DISH: 8064, ORDER: 9728 };   // heat_common.wgsl
 const LG_C = { LIGHT: 10240, RX: 10752 };   // step C4 (heat_common.wgsl): light caught per band, events per family
-const MAX_RX = 24;                          // struct ChemP's reactions (REACTIONS has 22)
+const MAX_RX = 24;                          // struct ChemP's reactions (REACTIONS has 24 since step C6's uphill swaps)
 const RX_BYTES = 48;                        // struct Rx
 const CP_BYTES = 96 + MAX_RX * RX_BYTES;    // struct ChemP
 const NONE = 255;                           // no channel (Rx.ch)
@@ -281,6 +326,7 @@ export class Matter {
       kBurn: 0.5,         // per s: fuel breaking by heat, before the spark's factor
       kPhoto: 0.03,       // optical depth of fuel for hard light (breaking it), per unit per R^2
       kSwap: 5,           // R^2 per s: swaps, before the spark's factor
+      kUpSwap: 0.02,      // step C6: optical depth of a fuel + heavy atom pair for the uphill swap's band (slow: kMake / 50)
       kSed: 2,            // R^2 per s: linker + linker -> sediment, before the spark's factor
       kCrack: 0.01,       // optical depth of sediment for hard light (cracking it), per unit per R^2
       dark: 3,            // optical depth of sediment for warm light (dark: it warms in the light), per unit per R^2
@@ -615,8 +661,8 @@ export class Matter {
    */
   writeChem(dt) {
     const p = this.chem, H = this.heat;
-    const famOn = { make: p.make, burn: p.burn, photo: p.burn, swap: p.swap, form: p.sediment, crack: p.sediment };
-    const famK = { make: p.kMake, burn: p.kBurn, photo: p.kPhoto, swap: p.kSwap, form: p.kSed, crack: p.kCrack };
+    const famOn = { make: p.make, burn: p.burn, photo: p.burn, swap: p.swap, upswap: p.swap, form: p.sediment, crack: p.sediment };
+    const famK = { make: p.kMake, burn: p.kBurn, photo: p.kPhoto, swap: p.kSwap, upswap: p.kUpSwap, form: p.kSed, crack: p.kCrack };
     const lightOn = !!(this.light && this.light.on);
     const list = p.on ? REACTIONS.filter((r) => famOn[r.fam] && (r.by === 'heat' || lightOn) && famK[r.fam] > 0).slice(0, MAX_RX) : [];
     this.rxOn = list;
@@ -629,7 +675,7 @@ export class Matter {
     list.forEach((r, k) => {
       const o = (96 + k * RX_BYTES) / 4;
       u[o] = r.ins[0]; u[o + 1] = r.ins.length > 1 ? r.ins[1] : NONE; u[o + 2] = r.outs[0]; u[o + 3] = r.outs.length > 1 ? r.outs[1] : NONE;
-      u[o + 4] = r.by === 'light' ? 1 : 0; u[o + 5] = r.band ?? 0; u[o + 6] = FAMILIES.indexOf(r.fam); u[o + 7] = 0;
+      u[o + 4] = r.by === 'light' ? 1 : 0; u[o + 5] = r.band ?? 0; u[o + 6] = FAMILIES.indexOf(r.fam === 'upswap' ? 'swap' : r.fam); u[o + 7] = 0;
       i32[o + 8] = r.heat16; i32[o + 9] = r.light16; f[o + 10] = Math.max(0, famK[r.fam]); f[o + 11] = r.spark;
     });
     this.device.queue.writeBuffer(this.chemBuf, 0, this.chemAB);
@@ -847,7 +893,7 @@ export class Matter {
     const C = this.chem, on = (x) => (x ? 'on' : 'off');
     lines.push(`chemistry (step C4) Shift+M ${on(C.on)}: F make fuel by light ${on(C.make)} · B break fuel (heat, hard light) ${on(C.burn)}` +
       ` · P swaps ${on(C.swap)} · K sediment ${on(C.sediment)} · T trace lowers the spark ${on(C.trace)} · ${this.rxOn.length} reactions running` +
-      ` · theta ${+C.theta.toFixed(4)} · k make ${C.kMake}, burn ${C.kBurn}/s, photo ${C.kPhoto}, swap ${C.kSwap}, sediment ${C.kSed}, crack ${C.kCrack}, dark ${C.dark}, trace ${C.traceK}`);
+      ` · theta ${+C.theta.toFixed(4)} · k make ${C.kMake}, burn ${C.kBurn}/s, photo ${C.kPhoto}, swap ${C.kSwap} (uphill by light ${C.kUpSwap}), sediment ${C.kSed}, crack ${C.kCrack}, dark ${C.dark}, trace ${C.traceK}`);
     if (L && L.chem) {
       const K = L.chem, R = K.rate;
       lines.push(`chemistry per s: fuel made ${fmt(R.make)} · burned ${fmt(R.burn + R.photo)} (by heat ${fmt(R.burn)}, by hard light ${fmt(R.photo)})` +

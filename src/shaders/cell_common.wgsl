@@ -87,7 +87,8 @@ struct Sim {
   unhappy: f32,     // extra death rate for cells that recognise none of their neighbours (x turnover)
   mutSize: f32,     // size of the small mutations (1 = the steps in mutate())
   mutJump: f32,     // chance per birth that one gene jumps to a fresh random value
-  _free42: f32,     // spare (42..45: the nutrient and threat numbers until step C3)
+  engJump: f32,     // step C6: chance per birth that one engine slot jumps (another reaction or pigment band, or empty)
+                    // (42..45 held the nutrient and threat numbers until step C3)
   _free43: f32,
   matterCur: u32,   // step C5: word offset in the heat buffer of the substances' current copy (channel 0) this tick; 0 =
                     // no substance grid
@@ -160,7 +161,16 @@ struct Bio {
                     // rule 3: seconds converted so far), w < 0 resting (seconds left), 0 neither (step 6)
   conv: vec4f,      // state (step 6): x the converted share of the neighbourhood, through the same integrator
                     // (rule 3, relay); y z w spare
+  // ---- step C6: engines and the genes of the membrane and the heat (src/genome.js; ENGINES in src/matter.js) ----
+  eng: vec4f,       // x y z: the three engine slots, each the engine's index + 32 x its pigment's light band (a whole number);
+                    // w: the heat tolerance (temperature, heat per R^2)
+  rate: vec4f,      // x y z: each slot's rate (0 = empty); w: the permeability (per s, for the light atoms)
 };
+const ENG_RATE_MAX: f32 = 6.0;     // largest rate of an engine slot
+const ENG_COUNT: u32 = 20u;        // engines in ENGINES (src/matter.js)
+fn eng_index(code: f32) -> u32 { return min(u32(round(max(code, 0.0))) & 31u, ENG_COUNT - 1u); }
+// the slot's band: 1..3 a pigment for that light band (visible 1, visible 2, hard), 0 none (an uphill engine is then a storer)
+fn eng_band(code: f32) -> u32 { return min(u32(round(max(code, 0.0))) >> 5u, 3u); }
 
 const KEY_SPAN: f32 = 1.0471975512;   // key angles live in [0, 60 degrees)
 const KEY_SMAX: f32 = 0.15;           // key scales live in [-0.15, 0.15]
@@ -227,7 +237,7 @@ fn nudge(v: f32, step: f32, lo: f32, hi: f32, seed: u32, k: u32) -> f32 {
 
 // a daughter's genome: every gene nudged a little (size x the steps below), and with chance `jump` one gene
 // drawn afresh over its whole range. The accumulators and heading are state, not genes: the caller sets them.
-fn mutate(p: Bio, seed: u32, size: f32, jump: f32) -> Bio {
+fn mutate(p: Bio, seed: u32, size: f32, jump: f32, engJump: f32) -> Bio {
   var b = p;
   let ka = size * 0.03;     // key angles: about 2 degrees
   let ks = size * 0.012;    // key scales
@@ -264,6 +274,29 @@ fn mutate(p: Bio, seed: u32, size: f32, jump: f32) -> Bio {
       case 15u: { b.body.x = u; }
       case 16u: { b.body.y = 0.85 + 0.3 * u; }
       default: { b.body.z = 0.5 * pow(4.0, u); }
+    }
+  }
+  // step C6: the engines' rates (an empty slot stays empty), the tolerance and the permeability, nudged (multiplicative)
+  for (var k = 0u; k < 3u; k++) {
+    if (b.rate[k] > 0.0) { b.rate[k] = clamp(b.rate[k] * exp(size * 0.1 * gauss(seed, 110u + k)), 0.02, ENG_RATE_MAX); }
+  }
+  b.eng.w = clamp(b.eng.w * exp(size * 0.04 * gauss(seed, 114u)), 3.0, 60.0);
+  b.rate.w = clamp(b.rate.w * exp(size * 0.08 * gauss(seed, 115u)), 0.2, 20.0);
+  // ... and now and then one slot jumps: to another engine (an empty slot starts up at a small rate), to another pigment
+  // band (or none: an uphill engine then runs on the battery, a storer), or it empties
+  if (rand01(seed, 120u) < engJump) {
+    let k = min(u32(rand01(seed, 121u) * 3.0), 2u);
+    let u = rand01(seed, 122u);
+    let v = rand01(seed, 123u);
+    let e = eng_index(b.eng[k]);
+    let band = eng_band(b.eng[k]);
+    if (u < 0.45) {
+      b.eng[k] = f32(min(u32(v * f32(ENG_COUNT)), ENG_COUNT - 1u) + 32u * band);
+      if (b.rate[k] <= 0.0) { b.rate[k] = 0.4 + rand01(seed, 124u); }
+    } else if (u < 0.75) {
+      b.eng[k] = f32(e + 32u * min(u32(v * 4.0), 3u));
+    } else {
+      b.rate[k] = 0.0;
     }
   }
   return b;
@@ -452,6 +485,7 @@ const EAT_PAY: u32 = 1u;
 const EAT_HEAT: u32 = 2u;
 const EAT_BIAS: u32 = 4u;
 const EAT_SMELL: u32 = 8u;
+const EAT_TOLG: u32 = 16u;   // step C6: heat damage by each cell's own tolerance gene (else the global `tol`)
 const FUEL_CH: u32 = 6u;   // the first fuel channel (gt, gT, Gt, GT: 6 .. 9; src/matter.js SUBSTANCES)
 
 // Step 8: the partner A'. Field A of one cell is  amp x envelope x (1/3) sum_m cos(q_m . d + ph_m); its partner is

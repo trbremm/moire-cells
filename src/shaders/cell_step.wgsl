@@ -1,4 +1,4 @@
-// One simulation tick for every cell: soft contact push, gentle pull to the dish centre, slow drift of the
+// One simulation tick for every cell: contact signalling and fate choice from the genome, soft contact push, gentle pull to the dish centre, slow drift of the
 // medium, soft walls, stirring, damped (viscous) velocity and a little Brownian jitter.
 // Needs field_common.wgsl and cell_common.wgsl in front of it (src/cells.js does that).
 //
@@ -28,36 +28,72 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   if ((c.flags & CELL_ALIVE) == 0u) { cells[i] = c; bioNext[i] = bio; return; }
 
   var f = vec2f(0.0);
+  let diff = (S.rules & RULE_DIFF) != 0u;
+  var M = 0.0;              // recognised contact: sum over touching neighbours of (contact x key match)
+  var sig = vec4f(0.0);     // committed neighbours' signals per fate channel
 
-  // soft contact push: an overlap spring against every touching neighbour
-  if (S.stiffness > 0.0) {
-    let rg = grid_range(S, grid_xy(S, c.pos));
-    for (var gy = rg.y; gy <= rg.w; gy++) {
-      for (var gx = rg.x; gx <= rg.z; gx++) {
-        let g = grid_index(S, vec2i(gx, gy));
-        let s = starts[g];
-        let e = s + counts[g];
-        for (var k = s; k < e; k++) {
-          if (k == j) { continue; }
-          let o = sorted[k];
-          if ((o.flags & CELL_ALIVE) == 0u) { continue; }
-          let d = o.pos - c.pos;
-          let R0 = c.r + o.r;
-          let d2 = dot(d, d);
-          if (d2 >= R0 * R0) { continue; }
-          let dist = sqrt(d2);
-          var u: vec2f;
-          if (dist > 1e-3) {
-            u = d / dist;
-          } else {
-            // exactly on top of each other: push apart in a direction set by the pair
-            let a = TAU * rand01(min(i, sortIdx[k]) * 7919u + max(i, sortIdx[k]), 17u);
-            u = vec2f(cos(a), sin(a)) * select(-1.0, 1.0, i < sortIdx[k]);
+  // every neighbour within reach: contact push, and (differentiation on) recognition and signals
+  let rg = grid_range(S, grid_xy(S, c.pos));
+  for (var gy = rg.y; gy <= rg.w; gy++) {
+    for (var gx = rg.x; gx <= rg.z; gx++) {
+      let g = grid_index(S, vec2i(gx, gy));
+      let s = starts[g];
+      let e = s + counts[g];
+      for (var k = s; k < e; k++) {
+        if (k == j) { continue; }
+        let o = sorted[k];
+        if ((o.flags & CELL_ALIVE) == 0u) { continue; }
+        let d = o.pos - c.pos;
+        let R0 = c.r + o.r;
+        let d2 = dot(d, d);
+        let reach = S.reach * R0;
+        if (d2 >= reach * reach) { continue; }
+        let dist = sqrt(d2);
+
+        // contact: 1 when touching, fading to 0 at the reach (cells a hair apart still talk)
+        let touch = clamp((reach - dist) / (reach - R0 + 1e-3), 0.0, 1.0);
+        if (diff) {
+          // SPECIFIC: my receptor against the neighbour's key (its lattice), a Gaussian in the wavevector difference
+          let w = bio.rec.x;
+          M += touch * exp(-key_dist2(bio.key.z, bio.key.w, o.la, o.aux) / (2.0 * w * w));
+          if (o.kind >= 1u && o.kind <= 4u) {
+            let out = bioPrev[sortIdx[k]].rec.z;
+            sig[o.kind - 1u] += touch * out;
           }
-          f -= u * S.stiffness * (R0 - dist);
         }
+
+        if (dist >= R0 || S.stiffness <= 0.0) { continue; }
+        // soft contact push: an overlap spring
+        var u: vec2f;
+        if (dist > 1e-3) {
+          u = d / dist;
+        } else {
+          // exactly on top of each other: push apart in a direction set by the pair
+          let a = TAU * rand01(min(i, sortIdx[k]) * 7919u + max(i, sortIdx[k]), 17u);
+          u = vec2f(cos(a), sin(a)) * select(-1.0, 1.0, i < sortIdx[k]);
+        }
+        f -= u * S.stiffness * (R0 - dist);
       }
     }
+  }
+
+  // differentiation: leaky accumulators per fate channel (SUFFICIENT: only sustained input crosses the
+  // threshold); a stem cell commits to its strongest channel above threshold, a committed cell falls back to
+  // stem only when its channel drops below release x threshold (sticky)
+  if (diff) {
+    let input = bio.resp * M + bio.relay * sig;
+    bio.acc += (input - bio.acc) * min(1.0, S.dt / S.tau);
+    let thr = bio.rec.y;
+    if (c.kind == KIND_STEM) {
+      var best = 0u;
+      for (var ch = 1u; ch < 4u; ch++) { if (bio.acc[ch] > bio.acc[best]) { best = ch; } }
+      if (bio.acc[best] > thr) { c.kind = best + 1u; }
+    } else if (c.kind <= 4u) {
+      if (bio.acc[c.kind - 1u] < S.release * thr) { c.kind = KIND_STEM; }
+    }
+  } else {
+    bio.acc = vec4f(0.0);
+    c.kind = KIND_STEM;
   }
 
   // gentle pull to the middle, slow drift of the medium (as the reference)

@@ -107,6 +107,7 @@ async function boot() {
   layers = [medium, background, landscape, cells];
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
   window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome };
+  window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
 
   resize();
   landscape.seed();
@@ -219,7 +220,7 @@ let tapMode = 0;
 
 function hintLine() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · A: ambient · N / G: new culture / new genomes · P: push · V: view · [ ]: speed · F: stats';
+    'C: clear · L: landscape · A: ambient · N / G: new culture / new genomes · P: push · D: fates · V: view · [ ]: speed · F: stats';
 }
 
 function tap(x, y) {
@@ -280,6 +281,10 @@ function setupInput() {
       cells.seed(k === 'g');
       background.impulse(view.cssW / 2, view.cssH / 2, 2);   // as the reference's seed()
       flash(k === 'g' ? 'new culture, fresh random genomes' : 'new culture, same founder genomes');
+    } else if (k === 'd') {
+      const r = cells.genome.rules;
+      r.diff = !r.diff;
+      flash(r.diff ? 'differentiation on: cells read their contacts and choose fates' : 'differentiation off: every cell back to stem');
     } else if (k === 'v') {
       cells.look.view = cells.look.view ? 0 : 1;
       flash(`colour by ${cells.look.view ? 'lineage (key)' : 'fate'}`);

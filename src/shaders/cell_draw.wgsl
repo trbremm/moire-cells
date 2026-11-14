@@ -20,6 +20,10 @@ struct Draw {
   dotR: f32,        // dot radius, as a fraction of the dot spacing
   period: f32,      // dot spacing per unit lattice period, in units of R (0.62 = the medium's period)
   mode: f32,        // 0 = colour by fate, 1 = colour by lineage (the key's hue)
+  fillC: f32,       // disc fill of committed (non-stem) cells
+  _p0: f32,
+  _p1: f32,
+  _p2: f32,
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
@@ -106,7 +110,9 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   let lw = min(D.lineW, 0.22 * c.r);              // thinner outline on small cells, so they do not turn solid
   let dot = select(0.0, cover(D.dotR * s, dd, aad) * cover(c.r - lw - 0.12 * D.R, d, aa), D.dots > 0.0);
   let ring = 1.0 - cover(c.r - lw, d, aa);        // clean outline at the rim
-  var rgb = mix(col * D.fill, col * D.dots, dot);
+  // committed cells get a flat fill in their colour, so tissues read as areas; stem cells stay dark inside
+  let fill = select(D.fill, D.fillC, c.kind != KIND_STEM);
+  var rgb = mix(col * fill, col * D.dots, dot);
   rgb = mix(rgb, col * D.line, ring);
   let a = disc * mix(D.fillA, 1.0, max(ring, dot));
   // rgb is the colour as seen; blend premultiplied (one, one-minus-src-alpha)

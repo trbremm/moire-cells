@@ -38,18 +38,29 @@ choose the browser, set "High performance", restart the browser.
 - **B**: body traits on/off (size, motility and crawling from the genome and the fate; off: all alike, no crawling)
 - **T**: turnover on/off (cells die now and then and a neighbour divides into the gap)
 - **M**: mutation on/off (off: daughters are exact copies of their parent)
-- **E**: nutrient and threat on/off (off: the cells ignore the sources)
+- **E**: nutrient and threat biology on/off (off: the sources no longer steer turnover; the cells still feel
+  their field through the loop, key S)
 - **I**: daughters inherit their parent's fate on/off (default off: they start as stem cells)
 - **V**: colour by fate or by lineage (the key's hue)
 - **[** / **]**: simulation speed 1× / 2× / 4× / 8×
+
+The loop (step 4):
+- **S**: field sensing on/off (the force from the field felt on the membrane)
+- **O**: cells emit on/off (off: only the sources make a field)
+- **W**: active deformation on/off (off: only contact squeezes the cells)
+- **X**: where a cell's beat is anchored: pinned to the cell (default) / still in the world / sliding moiré
+  (the reference)
+- **R**: tuning toward other cells by the genome's receptor instead of likeness to the own lattice (default off)
+- **K**: the cells' field drawn in the halftone on/off (drawing only)
+- **-** / **=**: the lever, smaller / larger (how different the cells' lattices are from the medium's)
 
 A fresh load starts with the reference's sources: two nutrient (green), one threat (red). At most 6 sources,
 as in the reference; one more replaces the oldest (`moire.landscape.params.maxSources`, up to 64).
 Sources do not drift, fade or get eaten yet.
 
 Cells (step 3): a fixed number of cells, 2000 by default, starting as a packed blob of stem cells. They push
-each other apart where they overlap, drift slowly, jitter a little and stay off the dish edge. They do not
-sense the field yet (step 4). Their radius is the reference's R (5 to 9 px), smaller when that many cells
+each other apart where they overlap, drift slowly, jitter a little and stay off the dish edge. Since step 4
+they also emit into the field and feel it (below). Their radius is the reference's R (5 to 9 px), smaller when that many cells
 would not fit (about 2.9 px at 10 000 and 1.3 px at 50 000 on a 1280 × 800 window).
 
 ## Genome and specialisation (step 3b)
@@ -114,7 +125,8 @@ fateAdh, adhBase, crawl, turnRate, turnover, unhappy, mutSize, mutJump, nutFar, 
 and `moire.genome.rules` (the switches above). `founders` is the number of founder genomes at a fresh start
 (12; 0 = every cell its own random genome, which gives more fates at first and lineages dying out fast).
 
-URL options: `?overlay=1` (overlay from the start), `?ripple=1` (a ripple every 0.7 s),
+URL options: `?overlay=1` (overlay from the start; `?overlay=ghost` keeps it up to date but invisible, so
+`tools/shot.py` can print it without it covering the shot), `?bio=0` (start with D H B T M E off: the loop alone), `?ripple=1` (a ripple every 0.7 s),
 `?debug=1` (console warnings into the overlay), `?nogpu=1` (show the no-WebGPU message),
 `?cells=N` (number of cells, default 2000), `?check=1` (every 2 s, count the cells' contacts through the
 neighbour grid and by brute force, and check the sort; result in the console and the overlay),
@@ -123,6 +135,60 @@ GPU's neighbour order varies), `?speed=1|2|4|8`, `?founders=N`, `?view=1` (linea
 In the browser console, `moire.background.params`, `moire.landscape.params`, `moire.medium.params`,
 `moire.cells.params` (physics), `moire.cells.look` (drawing) and `moire.genome.params` / `.rules` hold
 live-tunable numbers.
+
+## The loop (step 4)
+
+Every cell is an emitter: its lattice (its key, its fate's period, and its stretch) beats against the
+medium's lattice, and that beat, times a power-law envelope (range r0 = 2.2 R), is its field. Every cell feels
+the field of its neighbours (within 3.6 R, found through the grid) and of the sources on its membrane, moves
+along it, and is stretched by it, which changes its lattice, which changes what it emits and feels: the loop.
+Ported from the reference, with the changes marked:
+- **Membrane sensing**: 6 straight segments of the stretched outline; the field is averaged exactly along each
+  (cos at the midpoint × sinc of half the phase change). Force = Σ segment × outward normal (area × gradient),
+  × 1.3 R / r, saturating (tanh) at 3 R/s. Weights: the reference's sign table (fate × emitter kind: like fates
+  attract, unlike repel a little, nutrient attracts, threat repels) × tuning (a Gaussian in the difference
+  between the two strained lattices) × a smooth taper near 3.6 R (new; the reference cut off hard).
+  New: the cells' part has a gain of 10 (`sense`; the reference's 1 is too weak to matter against the contact
+  push at 2000 cells), the sources keep 1 (`senseSrc`); the tuning width is 0.5 (`tuneW`; reference 0.177,
+  which lets only near-identical keys feel each other).
+- **Deformation**: an area-preserving stretch (capped at 0.5) relaxing toward a target: contact squeezes along
+  the contact axis; actively (W) a stretch along the cell's motion and toward the field's pull on its outline;
+  muscle along its crawling heading. The stretched lattice is the one the cell emits and senses with, and the
+  one drawn: cells are drawn as ellipses with their dots on it.
+- **Beat anchor (X), new**: in the reference a cell's lattice is anchored at the cell, so its moiré slides many
+  times faster than the cell moves (the same lever as in the LESSON of the brief). With thousands of moving
+  cells that turns the field into noise: at gain 1 nothing changes, at high gain the blob only jitters.
+  Pinned (default) keeps the beat's pattern still relative to the cell, bright at its centre with hex rings at
+  the beat period; still in the world anchors the cell's lattice at the dish centre like the medium's.
+- **The lever** (`- =`, default 0.4): scales how far each cell's lattice angle and period are from the
+  medium's. Smaller = longer beats = bigger rosettes; 1 = the genome's keys as they are.
+- **Receptor tuning (R), option**: a cell feels other cells through its genome's receptor (angle, period,
+  width) instead of likeness to its own lattice, so A may feel B without B feeling A. No clear gain in the look
+  so far; off by default.
+- **Drawing the cells' field (K)**: summing thousands of emitters per pixel does not scale, so each cell adds
+  its field over one quad into a half-resolution float texture (additive), and the halftone dots read it: pale
+  warm dots (`moire.landscape.params.cellColour`, `cellLevel` 0.32, `cellGain`), positive part only. Under a
+  packed tissue they are hidden; they show as halos around loose cells and clusters.
+
+What it looks like (seed 3, 2000 cells): with the biology off (`?bio=0`) the middle stays packed and the rim
+breaks into small rosettes (one cell with 3 to 7 around it, each with a halo of pale dots) that drift off as
+groups. With the biology on, stem cells gather into flower-like rosettes with radially stretched "petals",
+epithelium forms ribbons and sheets of stretched cells, and the culture spreads wider. W off keeps the
+rosettes but rounds the cells; X to the sliding moiré loosens everything into a mixed, noisier culture.
+
+Live-tunable in `moire.cells.params`: `sense`, `senseSrc`, `senseMax`, `tuneW`, `lever`, `anchor` (0 sliding,
+1 pinned, 2 world), `receptor`, `emit`, `r0`, `cut`, `active`, `shapeRate`. The F overlay's "loop" line shows the
+switches and, once per simulation second, the cells' mean speed, net displacement per second (low against the
+speed = jittering on the spot), mean stretch and spread (RMS distance from their centre, in R).
+
+Cost (F overlay probe, per simulation tick, GPU time): GTX 1650 in headless Chrome, grid 0.1 ms + physics
+0.3 ms at 2000 cells, 0.14 + 0.6 ms at 10 000; the AMD Vega in Firefox, physics 2.5 ms at 2000 cells (so 8×
+speed there costs about 20 ms a frame).
+
+On the lattice scale: the field's lattice keeps the medium's period (0.62 × the screen-based R, 9 px here)
+rather than following the cells' radius (6.5 px at 2000 cells, 2.9 px at 10 000). Tried at 2000 cells: tying
+it to the cell radius makes the source rosettes smaller and sparser and the cells cluster less; and at 10 000
+cells it would bring the beats down toward the halftone pitch.
 
 ## The look of the landscape
 
@@ -149,8 +215,10 @@ The background ripples stay soft on purpose.
 - `src/landscape.js` + `src/shaders/field_prep.wgsl`, `landscape_draw.wgsl`: the sources, their per-frame beat
   prep, and the green / red halftone landscape with ring markers
 - `src/cells.js` + `src/shaders/cell_*.wgsl`: the cells. `cell_common.wgsl` holds the cell layout, the per-tick
-  uniforms and the grid helpers (prepended after field_common); `cell_grid.wgsl` rebuilds the neighbour grid
-  every tick (a counting sort by grid cell); `cell_step.wgsl` moves the cells; `cell_draw.wgsl` draws them;
+  uniforms, the grid helpers and the loop's maths (cell beat, membrane, sensing, tuning; prepended after
+  field_common); `cell_grid.wgsl` rebuilds the neighbour grid every tick (a counting sort by grid cell) and
+  works out every cell's beat; `cell_step.wgsl` moves the cells; `cell_field.wgsl` scatters the cells' field
+  into its texture; `cell_draw.wgsl` draws them;
   `cell_check.wgsl` is the `?check=1` test; `cell_census.wgsl` counts fates, key bins and founder lines for the overlay
 - `src/genome.js`: the genome layout, random founders, the rule switches and their numbers (`moire.genome`);
   the GPU side (mutation, key likeness, the `Bio` and `Stats` structs) is in `cell_common.wgsl`, the rules

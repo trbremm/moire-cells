@@ -46,7 +46,9 @@ const SPOT_SHIFT: u32 = 6u;
 
 // Step C2: the light caught in pixel i (at grid position p), per band, in counts: .in what arrives, .abs what is caught.
 // The absorbers: the bare medium (tauMed, everywhere) and the cells (tauCell x their cover, the 3 x 3 mean of what they
-// put down this tick). Later absorbers (atoms, sediment, pigments) add their tau x amount to `tau` here.
+// put down this tick). Later absorbers (atoms, sediment, pigments) add their tau x amount to `tau` here; the substances'
+// amounts are in this same buffer since step C3 (src/matter.js: copy k, channel c at LEDGER_WORDS + 4n + (13 k + c) n;
+// the current copy is the matter's, not the heat's, so C4 will pass its offset in).
 struct Caught { inc: vec4i, abs: vec4i, };
 fn absorb(i: u32, p: vec2u) -> Caught {
   var r: Caught;

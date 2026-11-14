@@ -23,6 +23,11 @@
 // block of the buffer during their step); the ledger books, per band, the light arriving and the light absorbed (the
 // difference passed through and is lost). Once per frame it also sums the heat under the cells in the light and under
 // the rest, for the overlay.
+//
+// Step C3, matter (src/matter.js): the substances' 13 channels live in this buffer too, behind the heat's blocks (so the
+// cells' step, at WebGPU's limit of 8 storage buffers, can reach them later), and book into this ledger (words 3072 on);
+// this module makes room for them (extraBlocks), calls the matter's drain on a resize and its ledger pass once per frame,
+// and hands it the read-back.
 
 import { loadShader } from './gpu.js';
 
@@ -30,7 +35,7 @@ const LIGHT_COMMON_URL = 'src/shaders/light_common.wgsl';
 
 export const HEAT_COMMON_URL = 'src/shaders/heat_common.wgsl';
 export const HEAT_SCALE = 65536;          // counts per energy unit (HEAT_SCALE in heat_common.wgsl)
-const LEDGER_WORDS = 3072;
+export const LEDGER_WORDS = 10240;              // LEDGER_WORDS in heat_common.wgsl (words 3072 on: step C3's matter ledger)
 // ledger regions [first word, slots]; OUT, HEAT and MOVE are 64-bit (the carry words follow 64 words later)
 const LG = { WORK: [0, 256], BASE: [256, 64], OUT: [320, 64], HEAT: [448, 64], MOVE: [576, 64], DRAG: [704, 160], KICK: [864, 160] };
 const LG_WIDE = new Set(['OUT', 'HEAT', 'MOVE']);
@@ -73,6 +78,7 @@ export class Heat {
     this.trash = [];
     this.cellBuf = null; this.count = 0;
     this.light = null;      // step C2: the light (src/light.js; its uniform is bound to the heat passes)
+    this.matter = null;     // step C3: the substance grid (src/matter.js), whose channels live in this buffer too
     // ledger (cumulative since the page started; energy units)
     this.tot = { work: 0, base: 0, out: 0, drag: 0, kick: 0, lin: [0, 0, 0, 0], labs: [0, 0, 0, 0] };
     this.ledger = null;     // last snapshot: { time, moving, heat, in, out, rounding, rate }
@@ -155,8 +161,15 @@ export class Heat {
   offsetAt(t) { return this.offset(this.cur ^ ((t * this.nSub) & 1)); }
   /** Word offset of the cells' cover (step C2). */
   get coverOffset() { return LEDGER_WORDS + 3 * this.n; }
-  /** Bytes of the whole heat buffer. */
-  get bytes() { return (LEDGER_WORDS + 4 * this.n) * 4; }
+  /** Bytes of the whole heat buffer (with step C3's substance channels behind the heat's blocks). */
+  get bytes() { return (LEDGER_WORDS + (4 + this.extraBlocks) * this.n) * 4; }
+  /** Blocks of n words that other bands keep in this buffer (step C3: the substances, 2 copies of 13 channels). */
+  get extraBlocks() { return this.matter ? this.matter.blocks : 0; }
+  /** Word offset of the first block after the heat's own (step C3: the substances' copy 0, channel 0), for n pixels. */
+  extraBase(n = this.n) { return LEDGER_WORDS + 4 * n; }
+
+  /** Step C3: the substance grid. Called once by main.js, before the first resize (the buffer makes room for it). */
+  setMatter(matter) { this.matter = matter; }
   /** Whether the light is on this frame (then the cells put down their cover and the pixels absorb). */
   get lightOn() { return !!(this.light && this.light.on); }
 
@@ -226,6 +239,7 @@ export class Heat {
       pass.setBindGroup(0, O.bg, [HT_DRAIN * HT_SLOT]);
       pass.dispatchWorkgroups(Math.ceil(O.n / 256));
       pass.end();
+      if (this.matter) this.matter.encodeDrain(encoder, O.buffer, O.n);   // step C3: its atoms leave with the old dish
       encoder.copyBufferToBuffer(O.buffer, 0, this.buffer, 0, LEDGER_WORDS * 4);
       this.trash.push(O.buffer);
       this.old = null;
@@ -259,6 +273,7 @@ export class Heat {
     pass.setPipeline(this.pipes.sum_heat); pass.dispatchWorkgroups(Math.ceil(this.n / 256));
     pass.setPipeline(this.pipes.sum_cells); pass.dispatchWorkgroups(Math.ceil(this.count / 64));
     pass.end();
+    if (this.matter) this.matter.encodeLedger(encoder);                  // step C3: the atoms in the dish, the order
     encoder.copyBufferToBuffer(this.buffer, 0, rb.buf, 0, LEDGER_WORDS * 4);
     encoder.clearBuffer(this.buffer, 0, LG.HEAT[0] * 4);                  // work, warmth, out: counted from here on
     encoder.clearBuffer(this.buffer, LG.DRAG[0] * 4, (LEDGER_WORDS - LG.DRAG[0]) * 4);   // drag, kicks
@@ -283,7 +298,7 @@ export class Heat {
     while (this.pending.has(this.nextSeq)) {
       const { rec: r, words: w } = this.pending.get(this.nextSeq);
       this.pending.delete(this.nextSeq++);
-      if (w) this.apply(r, w);
+      if (w) { this.apply(r, w); if (this.matter) this.matter.apply(r, w); }
     }
   }
 

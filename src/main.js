@@ -34,7 +34,8 @@
 //
 // Part C keys are Shift + a letter (every plain letter is taken by Parts A and B): checked before the plain keys,
 // so Shift+H never also toggles H.
-// Mouse: left tap drops (key 1: a ripple), left drag stirs; step C2's spotlight: right-drag moves it, the wheel tilts it,
+//
+// Mouse: left tap drops (keys 1 2 3: a ripple, a light spring, a heavy spring), left drag stirs; step C2's spotlight: right-drag moves it, the wheel tilts it,
 // Shift+wheel turns the direction the light comes from.
 
 import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown } from './gpu.js';
@@ -43,6 +44,7 @@ import { Medium } from './field.js';
 import { Landscape } from './landscape.js';
 import { Cells, DEFAULT_CELLS, ANCHORS } from './cells.js';
 import { Light } from './light.js';
+import { Matter } from './matter.js';
 
 window.__moireBooted = true;
 
@@ -84,6 +86,7 @@ let medium = null;
 let landscape = null;
 let cells = null;
 let light = null;
+let matter = null;
 let running = false;
 let view = null;
 
@@ -119,9 +122,12 @@ async function boot() {
     medium = new Medium(gpu.device);
     landscape = await Landscape.create(gpu.device, gpu.format, medium);
     light = await Light.create(gpu.device, gpu.format);
+    matter = await Matter.create(gpu.device, gpu.format, medium);
     cells = await Cells.create(gpu.device, gpu.format, medium, Number(params.get('cells')) || DEFAULT_CELLS, SEED);
     cells.heat.setLight(light);   // step C2: the heat passes absorb the light
     light.heat = cells.heat;
+    matter.attach(cells.heat);   // step C3: the substances live in the heat buffer, on its grid
+    cells.matter = matter;
     lightOptions(light);
     cells.landscape = landscape;
     landscape.cells = cells;
@@ -151,9 +157,9 @@ async function boot() {
   }
   // the medium first: it writes the lattice every field-reading layer uses; the light before the cells (its uniform is
   // read by the heat passes the cells run), and its tint is drawn under them (its outline over them: renderTop)
-  layers = [medium, background, landscape, light, cells];
+  layers = [medium, background, landscape, matter, light, cells];
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
-  window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light };
+  window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   // births and deaths drop small ripples into the background (a birth a bump, a death a dip)
   cells.onEvents = (events) => {
@@ -255,7 +261,7 @@ function frame(now) {
   }
 
   if (!entropyEl.hidden) {
-    const t = cells.heat.panelText();
+    const t = `${cells.heat.panelText()}\n${matter.panelLine()}`;
     if (t !== entropyEl.textContent) entropyEl.textContent = t;
   }
   if (frameNo === 10) stage('running-10-frames');
@@ -285,6 +291,7 @@ function drawOverlay() {
     `ripple grid ${background.gw}×${background.gh} (${background.sc} css px/cell) · ambient ${background.ambient ? 'on' : 'off'}`,
     `tap ${TAP_MODES[tapMode].name} · landscape ${landscape.params.on ? 'on' : 'off'} · R ${medium.R.toFixed(2)} px · medium ${(medium.la0 * 180 / Math.PI).toFixed(2)}°`,
     ...cells.overlayLines(),
+    ...matter.overlayLines(),
     `simmer (Shift+R) ${background.heatOn ? 'on' : 'off'}: ripple drops ${background.params.heatDrops} per cell per step x temperature², height ${background.params.heatAmp}`,
     `sim t ${simTime.toFixed(1)} s · speed ${speed}× · seed ${SEED}`,
   ];
@@ -297,25 +304,30 @@ function esc(s) {
 }
 
 // ---------- input ----------
-// what a click drops (key 1)
+// what a click drops (keys 1, 2, 3; step C3: springs of atoms replace the old nutrient and threat sources)
 const TAP_MODES = [
   { name: 'ripple', label: 'drop a ripple' },
+  { name: 'light spring', label: 'drop a light spring', spring: 'light' },
+  { name: 'heavy spring', label: 'drop a heavy spring', spring: 'heavy' },
 ];
 let tapMode = 0;
 
 let allKeys = false;   // key ?: the short hint or the full key list
 function hintLine() {
-  const short = `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · ` +
-    'N / G: new culture / genomes · V: view · [ ]: speed · F: stats · ⇧H ⇧E ⇧L: heat, entropy, light · ?: more';
+  const short = `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 light spring · 3 heavy spring · ` +
+    'N / G: new culture · [ ]: speed · F: stats · ⇧H ⇧E ⇧L: heat, entropy, light · ?: more';
   return allKeys ? fullHint() : short;
 }
 function fullHint() {
-  return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · ` +
-    'L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · \\: squeeze · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · .: sideways push · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · I: inherit fate · V: view · [ ]: speed · F: stats · Shift+H: jitter from heat / constant · Shift+E: entropy panel · Shift+R: ripples simmer with heat · Shift+L: light spot / full field / off · Shift+D: day and night · right-drag: move the spot · wheel: tilt it · Shift+wheel: turn where the light comes from';
+  return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 light spring · 3 heavy spring · ` +
+    'C: clear springs · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · \\: squeeze · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · .: sideways push · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · I: inherit fate · V: view · [ ]: speed · F: stats · Shift+H: jitter from heat / constant · Shift+E: entropy panel · Shift+R: ripples simmer with heat · Shift+L: light spot / full field / off · Shift+D: day and night · Shift+C: wash the atoms out · right-drag: move the spot · wheel: tilt it · Shift+wheel: turn where the light comes from';
 }
 
 function tap(x, y) {
-  background.impulse(x, y, 2.5, 1.2 * background.sc);
+  const m = TAP_MODES[tapMode];
+  if (!m.spring) { background.impulse(x, y, 2.5, 1.2 * background.sc); return; }
+  matter.addSpring(x, y, m.spring);
+  background.impulse(x, y, 3);   // a spring lands with a ripple, as the old sources did
 }
 
 function setupInput() {
@@ -394,9 +406,12 @@ function setupInput() {
     } else if (k === 'a') {
       background.ambient = !background.ambient;
       flash(`ambient ripples ${background.ambient ? 'on' : 'off'}`);
-    } else if (k === '1') {
-      tapMode = 0;
-      flash(`click drops: ${TAP_MODES[tapMode].name}`);
+    } else if (k === '1' || k === '2' || k === '3') {
+      tapMode = Number(k) - 1;
+      flash(`click drops: ${TAP_MODES[tapMode].label.replace(/^drop /, '')}`);
+    } else if (k === 'c') {
+      matter.clearSprings();
+      flash('springs cleared (the atoms already in the dish stay; Shift+C washes them out)');
     } else if (k === 'n' || k === 'g') {
       cells.seed(k === 'g');
       background.impulse(view.cssW / 2, view.cssH / 2, 2);   // as the reference's seed()
@@ -550,6 +565,9 @@ function shiftKey(k) {
     P.mode = P.mode === 'spot' ? 'full' : P.mode === 'full' ? 'off' : 'spot';
     flash(P.mode === 'spot' ? 'light: spotlight (right-drag moves it, the wheel tilts it, Shift+wheel turns where it comes from)'
       : P.mode === 'full' ? 'light: full field, the whole dish lit (clouds drift over)' : 'light off: only the base warmth and the cells\' own motion heat the dish');
+  } else if (k === 'c') {
+    matter.wash();
+    flash('the dish washed: every atom out (booked as gone in the atoms ledger)');
   } else if (k === 'd') {
     const P = light.params;
     P.day = !P.day;

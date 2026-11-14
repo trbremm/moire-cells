@@ -12,13 +12,21 @@ Started 2026-11-14, spun out of the `moire-experiment` project (sibling folder; 
 - Not an ML or graphics specialist. They test by watching; ask what they see.
 
 ## The look (the user's words)
-Faded neon colours on black. A fluid background that feels viscous, with subtle ripples.
+Neon colours on black (see the LOOK DECISION 2026-11-15 below). A fluid background that feels viscous, with subtle ripples.
 Current palette: stem warm white, epithelium cyan, muscle pink, neuron violet, cartilage amber,
-nutrient green, threat red. Keep it soft; avoid saturated or busy.
-UPDATE 2026-11-14 (user): "neon" was only a colour reference, NOT an effect to imitate. No blur, no glow, no
-bloom. Think 80s graphic art: crisp, flat, graphic shapes with clean hard edges, and the faded palette above.
-Soft in colour, sharp in form. (The reference CPU page still glows; that part of it is no longer the target.)
-User choices: source landscape = crisp HALFTONE DOTS on the lattice (dot size shows field strength, flat colour);
+nutrient green, threat red. Avoid busy (colours: see the LOOK DECISION below, now brighter neon).
+LOOK DECISION 2026-11-15 (user, REPLACES the 2026-11-14 "no glow, crisp flat 80s graphic art" rule): "I don't
+want it to look like 80s computer graphics, I want it to look like 80s NEON COLOUR LIGHTS. Think of video clip
+graphics." User's picks:
+- NEON TUBES: outlines drawn as thin bright tubes, a sharp almost white-hot core line with a TIGHT coloured halo;
+  insides mostly dark, like real neon signs. Glow is back, but tight (not the soft wash of the CPU reference).
+- BRIGHTER COLOURS: move the palette from faded pastel toward stronger neon (hot pink, cyan, violet, ...); same
+  colour meanings (fate, function), just more lit.
+- LIGHT TRAILS: moving cells leave short fading streaks (long exposure / video feedback).
+- FLICKER / HUM: tubes brighten and dim slightly; busy cells (burning fuel, running engines) shine brighter.
+- Not chosen: background perspective grid / scanlines.
+(Older note, superseded: "neon was only a colour reference, crisp flat shapes, no glow".)
+User choices: source landscape = HALFTONE DOTS on the lattice (dot size shows amount; under the neon look they may glow softly as small lights);
 viscous ripple background = keep soft as it is (the one deliberately soft layer).
 User answers after Part A (2026-11-14):
 - COLOUR MEANS SOMETHING: colours represent function and specialisation. In a later iteration cells will also have
@@ -302,6 +310,12 @@ C6. Engines in the genome (2-3 slots, mutate), pigments (cells catch a visible b
     Uphill: difference + spark (light outside; inside: difference from pigment light or the battery, spark from
     the battery). Battery-paid uphill engines are STORERS (bank energy as fuel).
     heat tolerance and permeability as genes, engines drawn as parts.
+C6n. NEON LOOK (user 2026-11-15, right after C6): restyle all drawing per the LOOK DECISION: neon-tube cell
+    outlines (sharp core + tight halo, e.g. a small bloom pass on a half-resolution buffer, or analytic halos in
+    the shaders), brighter palette, light trails (fading accumulation buffer for the cells, not for the panels),
+    flicker/hum with busier cells brighter; substances, springs, spotlight and parts restyled to match; the
+    ripple background stays soft and dark underneath. Each effect its own switch (trails, hum, halo strength).
+    Must stay fast on phones (cheap path / auto-off on small GPUs).
 C6b. CHARGE (user 2026-11-15): givers +1, takers -1, linkers 0, bonds neutral (every reaction already conserves
     charge). A SCREENED charge field on the substrate grid (its own decay law: exponential cut-off, like charge in
     salty water; one channel + a few relaxation passes per tick); free atoms drift in it, so fast light atoms
@@ -315,7 +329,7 @@ C6c. ELASTIC HONEYCOMB CELLS (user 2026-11-15: "cluster in honeycomb shape and d
     sensing already uses) each with its own distance from the centre, plus an orientation that turns to face
     neighbours; elastic: springs back toward round with area kept, underdamped so a pushed cell wobbles a little;
     contact flattens the sides facing neighbours, so packed tissue tiles into hexagons and free edges stay
-    rounded. Drawn as crisp flat polygons (slightly rounded corners allowed), shared walls straight; the inner
+    rounded. Drawn as NEON TUBE outlines (see the look decision), shared walls straight; the inner
     parts (battery core, engines) sit inside. Sensing integrates along the real sides. Lively, not stiff.
 C6d. CHARGE PER SIDE (dipoles): each side holds its own charge (a cell that eats on one side gets charged
     there); an outside field pulls the + and - ends opposite ways, so cells turn, line up and stretch along the

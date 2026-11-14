@@ -432,12 +432,15 @@ export class Matter {
   }
 
   // ---------- springs ----------
-  /** Drop a spring at CSS px (x, y): kind 'light' or 'heavy'. */
-  addSpring(x, y, kind) {
+  /** Drop a spring at CSS px (x, y): kind 'light' or 'heavy'; life: s it drips (default params.life; step C5). */
+  addSpring(x, y, kind, life = null) {
     const cap = Math.max(1, Math.min(MAX_SPRINGS, Math.round(this.params.maxSprings)));
     while (this.springs.length >= cap) this.springs.shift();
-    this.springs.push({ x, y, kind, age: 0 });
+    this.springs.push({ x, y, kind, age: 0, life });
   }
+
+  /** A spring's life (s): its own, or params.life. */
+  lifeOf(s) { return s.life ?? this.params.life; }
 
   clearSprings() { this.springs.length = 0; }
 
@@ -496,10 +499,10 @@ export class Matter {
     const p = this.params, dt = frame.tickDt, a = H.px / H.R;
     // springs: each drips on every tick of this frame on which it is still younger than its life (counted per tick, so
     // a spring gives the same amount at any speed, also with hundreds of ticks per frame), then ages and dries up.
-    // Written youngest first, so the springs still dripping on tick t are the first nsAt(t).
-    const order = this.springs.slice().sort((x, y) => x.age - y.age);
+    // Written longest-lived first (most life left), so the springs still dripping on tick t are the first nsAt(t).
+    const order = this.springs.slice().sort((x, y) => (this.lifeOf(y) - y.age) - (this.lifeOf(x) - x.age));
     const ns = this.writeSprings(dt, order, ticks * dt);
-    const nsAt = (t) => { let k = 0; while (k < ns && order[k].age + (t + 1) * dt < p.life) k++; return k; };
+    const nsAt = (t) => { let k = 0; while (k < ns && order[k].age + (t + 1) * dt < this.lifeOf(order[k])) k++; return k; };
     // the channels worth spreading: matter in the dish at the last read-back, or a spring dripping it, within the last
     // 2 s (so both copies of a channel left out are certainly all zero); the others are skipped (most are empty)
     this.time = frame.time;
@@ -508,7 +511,7 @@ export class Matter {
     for (let c = 0; c < NCH; c++) if (this.dish[c] > 0 || (held && held[c] > 0)) this.seen[c] = frame.time;
     for (const sp of order) for (const a of Object.keys(SPRING_KINDS[sp.kind].mix)) this.seen[CH[a]] = frame.time;
     for (const s of this.springs) s.age += ticks * dt;
-    this.springs = this.springs.filter((s) => s.age < p.life);
+    this.springs = this.springs.filter((s) => s.age < this.lifeOf(s));
     let active = 0;
     for (let c = 0; c < NCH; c++) if (frame.time - this.seen[c] < 2) active |= 1 << c;
     // step C4: the reactions on this frame, and every channel they can make from what is there (so a product's channel
@@ -641,7 +644,7 @@ export class Matter {
     F.fill(0);
     for (let k = 0; k < n; k++) {
       const s = list[k], K = SPRING_KINDS[s.kind], o = k * SPRING_FLOATS;
-      F[o] = s.x; F[o + 1] = s.y; F[o + 2] = rad; F[o + 3] = Math.max(0, 1 - (s.age + aged) / p.life);
+      F[o] = s.x; F[o + 1] = s.y; F[o + 2] = rad; F[o + 3] = Math.max(0, 1 - (s.age + aged) / this.lifeOf(s));
       F[o + 4 + 13] = discPixels(s.x / H.px, s.y / H.px, Math.max(rad / H.px, 0.75), H.hw, H.hh);   // amt[13]: its disc's pixels
       for (const [atom, share] of Object.entries(K.mix)) F[o + 4 + CH[atom]] = p.rate * share * dt * ATOM_SCALE;
       const ink = springInk(s.kind);
@@ -833,7 +836,7 @@ export class Matter {
   overlayLines() {
     const p = this.params, L = this.ledger;
     const lines = [];
-    const sp = this.springs.map((s) => `${s.kind} ${Math.max(0, p.life - s.age).toFixed(0)} s left`).join(', ');
+    const sp = this.springs.map((s) => `${s.kind} ${Math.max(0, this.lifeOf(s) - s.age).toFixed(0)} s left`).join(', ');
     lines.push(`matter (step C3): shown ${this.showName} (Shift+S) · springs ${this.springs.length}/${p.maxSprings}${sp ? ': ' + sp : ''}` +
       ` · drip ${p.rate} atoms/s for ${p.life} s over ${p.radius} R · edge sink ${p.edge}/s · ${this.nSub} substep(s)` +
       ` · channels moving ${SUBSTANCES.filter((s, c) => this.active & (1 << c)).map((s) => s.name).join(' ') || 'none'}`);

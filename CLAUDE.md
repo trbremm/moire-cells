@@ -118,8 +118,7 @@ minimal core first, then ONE rule at a time, so the user can see what each rule 
 Each new rule gets an on/off key, so its effect can be seen by toggling it.
 Keep `reference/neon_organoid_cpu.html` as the behavioural reference for the loop (step 4) and the biology
 (Part B); the multi-field ideas in "Design direction" below are new and have no reference.
-Claude cannot see the window: after each step, ask the user what they see, or save a screenshot to a file
-and read it.
+After each step, look at the page (browser tool screenshot) or ask the user what they see before moving on.
 
 ## Design direction: several separate fields, like the forces of matter (user idea, 2026-11-14; not built)
 This is the heart of the project now (build steps 5–8 above); the user is excited about it.

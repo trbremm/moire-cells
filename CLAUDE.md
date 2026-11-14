@@ -26,6 +26,11 @@ graphics." User's picks:
 - FLICKER / HUM: tubes brighten and dim slightly; busy cells (burning fuel, running engines) shine brighter.
 - Not chosen: background perspective grid / scanlines.
 (Older note, superseded: "neon was only a colour reference, crisp flat shapes, no glow".)
+CLEAN DEFAULT VIEW (user 2026-11-15): "Simplify what is shown: fields (dots) can be hidden, just the cells,
+interesting materials, the substrate. Nothing algorithmic." Default shows cells, materials (fuel, crusts, faint
+free atoms, as material: glowing dust/crusts, not a lattice dot screen), the soft substrate, the light, springs.
+The moire field dots, inner lattice dots, lattice halftone and diagnostic marks are hidden by default and live
+behind a "machinery" switch in the View panel.
 User choices: source landscape = HALFTONE DOTS on the lattice (dot size shows amount; under the neon look they may glow softly as small lights);
 viscous ripple background = keep soft as it is (the one deliberately soft layer).
 User answers after Part A (2026-11-14):

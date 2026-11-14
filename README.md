@@ -77,6 +77,13 @@ Exclusion (step 7):
   least represented around it
 - **0**: number of states: 2 / 3 (default) / 4
 
+Partner fields (step 8; all off by default, and the page looks as before until one is on):
+- **Z**: rule a, the partner A′ felt as a phase current (cells pushed the way the pair's phase travels)
+- **,** (comma): rule b, change makes the partner: each cell's emission turns between A and A′ (yellow fill and hand)
+- **'** (apostrophe): rule b's mode: clock (default) / felt change
+- **.** (full stop): rule c, sideways push: the partner's force turned 90 degrees
+- **;**: the partner A′ drawn (yellow dots) on/off, while a step 8 rule is on
+
 A fresh load starts with the reference's sources: two nutrient (green), one threat (red). At most 6 sources,
 as in the reference; one more replaces the oldest (`moire.landscape.params.maxSources`, up to 64).
 Sources do not drift, fade or get eaten yet.
@@ -153,7 +160,8 @@ URL options: `?overlay=1` (overlay from the start; `?overlay=ghost` keeps it up 
 `?debug=1` (console warnings into the overlay), `?nogpu=1` (show the no-WebGPU message),
 `?cells=N` (number of cells, default 2000), `?check=1` (every 2 s, count the cells' contacts through the
 neighbour grid and by brute force, and check the sort; result in the console and the overlay),
-`?excl=0|1`, `?flip=0|1`, `?states=2..4` (step 7, keys 8 9 0), `?seed=N` (repeatable start: positions, genomes; the run itself drifts apart after a while, because the
+`?excl=0|1`, `?flip=0|1`, `?states=2..4` (step 7, keys 8 9 0), `?partner=0|1`, `?change=0|1`, `?clock=0|1`,
+`?side=0|1` (step 8, keys Z , ' .), `?seed=N` (repeatable start: positions, genomes; the run itself drifts apart after a while, because the
 GPU's neighbour order varies), `?speed=1|2|4|8`, `?founders=N`, `?view=1` (lineage colours).
 In the browser console, `moire.background.params`, `moire.landscape.params`, `moire.medium.params`,
 `moire.cells.params` (physics), `moire.cells.look` (drawing) and `moire.genome.params` / `.rules` hold
@@ -384,6 +392,84 @@ Live-tunable in `moire.cells.excl`: `on`, `hard`, `reach`, `pack`, `states`, `fl
 
 Cost (physics per tick): GTX 1650 in headless Chrome, 2000 cells about 0.37 ms off and 0.40 to 0.45 ms on; 10 000
 cells 1.05 and 1.14 ms. The AMD Vega in headed Firefox: 3.3 ms at 2000 cells with 8 and 9 on, 62 fps at 1x.
+
+## Partner fields (step 8)
+
+The user's idea after electric and magnetic fields: a field with a partner at right angles, where a change in one makes
+the other, so signals travel instead of sitting still. Three rules, built and looked at one at a time, each with its key,
+all off by default. Since waves and swirls are motion, a new overlay line measures rotation (below).
+
+**The partner A′.** Field A of a cell is its pinned beat, three cosine waves; the partner is the same beat a quarter
+period out of step, the sine twin. Together (A + i A′) they carry a phase. Which way each of the three sine waves runs is
+a choice: the cell's three beat waves lie 0, 60 and 120 degrees apart, and "one way" gives every cell an arrow (its
+partner is a dipole across it; `moire.cells.partner.arrow = true`), while "symmetric" (default) makes them a triad 120
+degrees apart, so a lone cell has no arrow and its partner is weak close to it. Every cell carries a phasor z (`Cell.z`)
+that turns and scales its beat: at 90 degrees its A has become A′. The partner goes into the field texture's B channel
+and is drawn on its own halftone screen (75 degrees, filled dots in a faded yellow; `moire.landscape.params.pColour`,
+`pLevel`, `pGain`, `pAngle`, `pPitch`, `pThresh`; key ;), only while a step 8 rule is on.
+
+**Rule a, phase current (key Z).** On the membrane (in one pass with field A, with the same weights) the cell feels A
+and A′, their means and gradients, and is pushed along the current j = A grad A′ − A′ grad A divided by A² + A′² + eps²:
+the direction in which the pair's phase runs, `gain` x R x (R x the phase gradient) per s, saturating at `sat` R/s.
+What it does: nothing visible on its own. With every phasor at (1, 0) the pair has almost no phase to follow (seed 3,
+2000 cells loop only: speed 4.4 px/s and spread 43.8 R at 60 s, as without). At gain 20 to 50 it turns the rosettes into
+a gas, and with the arrow it drives the whole culture off to one side. On top of rule b it adds little to the motion
+(swirl 1.2 against 1.1 deg/s at 10 000 cells), but it sharpens rule c's curls (below). Kept, off.
+
+**Rule b, change makes the partner (key ,; its mode, key ').** Two readings of "a change in A makes A′ and back":
+- *Felt change* (mode 0): a cell emits A′ in proportion to how fast the A it feels changes, and A in proportion to how
+  fast the A′ it feels changes (`chGain` 2 s; the rates are the slopes of the step 6 integrator; the phasor follows in
+  `chTau` 0.3 s, soft cap `chMax` 1.5, `chSign` −1 as in Faraday's law). Measured: the phasors only shimmer with the
+  cells' jitter (65 % of the cells off (1, 0) by more than 0.25, each hand its own way), no waves. For a field that sits
+  still this rule just damps out; it is the cells' small motions that keep kicking it.
+- *Clock* (mode 1, default): the change happens inside the cell. Its A turns into A′ and its A′ into −A, so its phasor
+  turns at `omega` (2.5 rad/s), a clock hand; the pair it feels from its neighbours (their phasors, each seen through its
+  beat) pulls its hand toward theirs turned back by `lag` (1.0 rad), at up to `pull` (1.5 rad/s). Each clock starts at a
+  random hour. A clock in step with its neighbours runs at omega − pull x sin(lag), a turn in about 5 s.
+  Drawn as a hand on each cell (`moire.cells.look.hand`; hidden on cells smaller than 5 device px), and stem cells are
+  filled with the partner's yellow as far as they emit A′, so the waves read as yellow bands at any size.
+  What it looks like: loop only at 10 000 cells (`?cells=10000&bio=0&change=1`, clearest with key 5 off), after about
+  20 s of patchy disagreement, rings of yellow run INWARD from the culture's rim to its middle, one every 4 to 5 s (the
+  rim leads), and the culture breathes with them: field A's bright cores turn dark and back, so the pull between cells
+  comes and goes. With a lag of 0.3 or less everything falls into step and blinks as one; at 0.6 with omega 1 the clocks
+  nearly stop in step (omega − pull x sin(lag) close to 0) and the culture freezes into a mottle. At 2000 cells the culture
+  turns looser and busier (speed 7.5 against 4.4 px/s) and the rings are patchy. With the biology the fates form as usual
+  (seed 3 at 160 s: stem 957, epithelium 375, neuron 529, cartilage 133, against 975 / 513 / 391 / 108 without).
+
+**Rule c, sideways push (key .).** The force the partner A′ makes on the membrane (from its gradient, scaled and
+saturating as field A's) applied at right angles (mode 0, default; `sideGain` 1). Mode 1 (`sideMode`) instead turns the
+cell's velocity by the A′ it feels, as a charge in a magnetic field. Alone it does nothing visible (no phases, a weak
+partner). With the clock (rule b) the inward rings break up and their fronts CURL: hooks and small spirals of yellow,
+and of the step 6 relay's blue, wrap round each other like marbled paper or breaking waves. Each curl lives about 2 to 3 s
+and then dissolves into wavy bands; no spiral core lasted. Measured at 10 000 cells loop only: local swirl rms 2.8 to 3.0
+deg/s against 1.0 to 1.1 with rule b alone, about 140 bins of 6 R turning each way (of 950), and the eddies turn over
+fast (correlation with the second before 0.11 to 0.17). Mode 1 changes little (swirl 1.1 to 1.3).
+**The highlight of step 8**: `?cells=10000&bio=0&seed=3&change=1&side=1&partner=1`, curls from about 40 s of simulation
+time on (`&speed=2` gets there in 20 s; zoom in on the middle). In comparison runs at the same seed and zoom: b + c makes
+the curls, a sharpens them, the relay (key 5) adds the blue ones; a + c without b stays a calm packing. Rotating clusters
+(a group turning as one) were not seen.
+
+**Rotation numbers (F overlay, "rotation" line).** About once a second the cells are read back and compared with the
+copy before: the culture's spin (the best rigid-rotation fit about its centre, deg/s, + = clockwise on screen); the local
+swirl (the velocity averaged in 6 R bins, half its vorticity, RMS over the bins), the same after taking out the spin
+("eddies"), how many bins turn faster than 3 deg/s each way, and how well each bin's turning matches the second before
+(near 1: the same eddies keep turning; near 0: new ones every second). Baselines (seed 3): spin about 0, swirl 0.9 to 1.5
+deg/s, loop only and with the biology. 5 s means in brackets.
+
+Tried and dropped: the arrow partner with the clock scrambles the phases (each direction couples with its own delay), so
+symmetric is the default. Spirals by stirring across a step 6 relay ring (no step 8 rule): the cut front curls for a few
+seconds, then the dense middle's pacemaker takes over again with target rings.
+
+Live-tunable in `moire.cells.partner`: `on`, `gain`, `sat`, `eps`, `arrow` (rule a); `change`, `chMode`, `chGain`,
+`chTau`, `chMax`, `chSign`, `omega`, `pull`, `lag` (rule b); `side`, `sideGain`, `sideMode` (rule c). State: `Cell.z` the
+phasor (the Cell is now 56 bytes), `Bio.conv.y` the A′ felt (felt change), `Bio.conv.z` 1 while the clock runs; census
+`Stats.extra[74..75]` (phasors off (1, 0), in the step 8 overlay line). Fields uniform 192 bytes.
+
+Cost (physics per tick, GPU probe, GTX 1650 in headless Chrome; the probe drifts by about 0.1 ms between runs): 2000 cells 0.59 to
+0.64 ms with step 8 off and 0.64 to 0.66 ms with all three rules on; 10 000 cells 1.10 to 1.21 and 1.05 to 1.09 ms. The
+commit before step 8, measured in the same session, gave 0.66 to 0.71 and 1.11 to 1.21 ms, so the larger Cell (56
+bytes) and the partner's extra sine on the membrane cost nothing measurable. The AMD Vega in headed Firefox: 3.9 ms at
+2000 cells with all three on (3.3 ms in step 7), 80 fps at 1x; `?check=1` passes there and in Chrome.
 
 ## The look of the landscape
 

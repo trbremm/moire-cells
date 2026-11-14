@@ -21,7 +21,8 @@ struct Cell {
   e2: f32,
   kind: u32,        // KIND_* from field_common.wgsl: its fate (stem, epithelium, muscle, neuron, cartilage)
   flags: u32,       // bit 0: alive; bit 1: converted (step 6, rule 2); bits 8..15: leak level 0..255 (step 6,
-                    // rule 1), written by the step pass for the drawing and the census
+                    // rule 1), written by the step pass for the drawing and the census; bits 16..17: the state's
+                    // offset from the key angle's bin (step 7, rule 2: a crowded cell flips its state)
   seed: u32,        // per-cell random seed
   aux: f32,         // the cell's key scale (log of its lattice period factor; a copy of Bio.key.y)
 };
@@ -29,6 +30,7 @@ struct Cell {
 const CELL_ALIVE: u32 = 1u;
 const CELL_CONV: u32 = 2u;          // converted (step 6, rule 2): emits field B more strongly or with flipped sign
 const CELL_LEAK_SHIFT: u32 = 8u;    // bits 8..15: leak level x 255 (step 6, rule 1)
+const CELL_FLIP_SHIFT: u32 = 16u;   // bits 16..17: state offset 0..3 (step 7, rule 2)
 fn cell_leak(c: Cell) -> f32 { return f32((c.flags >> CELL_LEAK_SHIFT) & 255u) / 255.0; }
 
 // Per-tick simulation uniforms (written by src/cells.js; keep the order in step with writeSim there).
@@ -55,7 +57,7 @@ struct Sim {
   drift: f32,       // slow drift of the medium, in units of R per s (0.5 = reference)
   time: f32,        // simulation time (s)
   rules: u32,       // RULE_* bits: which genome rules are on
-  pad0: u32,
+  flip: f32,        // step 7, rule 2: chance per s that a cell crowded by its own state flips (0 = off)
   pad1: u32,
   pad2: u32,
   tau: f32,         // accumulator time constant (s): brief bumps fade, only sustained input counts
@@ -178,10 +180,15 @@ fn feel_sources(S: Sim, src: Sources, med: Medium, p: vec2f) -> vec2f {
 const KEY_SPAN: f32 = 1.0471975512;   // key angles live in [0, 60 degrees)
 const KEY_SMAX: f32 = 0.15;           // key scales live in [-0.15, 0.15]
 
-// step 7: a cell's state, 0 .. n-1: which of n equal bins of the hex lattice's 60 degrees its lattice angle lies in
-fn cell_state(c: Cell, n: u32) -> u32 {
+// step 7: a cell's state, 0 .. n-1: which of n equal bins of the hex lattice's 60 degrees its lattice angle lies in,
+// shifted by its flip offset (rule 2; 0 at birth). The offset changes the state, not the lattice, so a flipped cell
+// keeps its key, its adhesion and its field.
+fn key_bin(c: Cell, n: u32) -> u32 {
   let m = max(n, 1u);
   return min(u32(fract(c.la / KEY_SPAN) * f32(m)), m - 1u);
+}
+fn cell_state(c: Cell, n: u32) -> u32 {
+  return (key_bin(c, n) + ((c.flags >> CELL_FLIP_SHIFT) & 3u)) % max(n, 1u);
 }
 
 // rule bits in Sim.rules (keep in step with RULE in src/cells.js)

@@ -242,7 +242,7 @@ function hintLine() {
 }
 function fullHint() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
+    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
 }
 
 function tap(x, y) {
@@ -383,6 +383,10 @@ function setupInput() {
       const F = cells.fields;
       F.like = F.like ? 0 : 1;
       flash(`field B: "like" means ${F.like ? 'a similar key (the same lineage)' : 'the same sign of charge (charges by fate)'}`);
+    } else if (k === '4') {
+      const F = cells.fields;
+      F.leakOn = !F.leakOn;
+      flash(`leak by deformation ${F.leakOn ? 'on: strongly stretched cells leak into field B (blue centre dot)' : 'off'}`);
     } else if (k === 'l') {
       landscape.params.on = !landscape.params.on;
       flash(`landscape ${landscape.params.on ? 'on' : 'off'}`);

@@ -24,6 +24,15 @@ fn census(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       atomicAdd(&stats.bins[s * STATS_ABINS + a], 1u);
       let fid = u32(bio[i].rec.w) % (STATS_FWORDS * 32u);
       atomicOr(&stats.founders[fid / 32u], 1u << (fid % 32u));
+      // step 6: leaking and converted cells, and histograms of the A felt, the stretch and the leak level
+      let lk = cell_leak(c);
+      if (lk > 0.25) { atomicAdd(&stats.extra[STATS_X_LEAK], 1u); }
+      if ((c.flags & CELL_CONV) != 0u) { atomicAdd(&stats.extra[STATS_X_CONV], 1u); }
+      let av = u32(clamp(bio[i].env.z / 0.25, 0.0, 15.0));
+      atomicAdd(&stats.extra[STATS_X_AHIST + av], 1u);
+      let sv = u32(clamp(length(vec2f(c.e1, c.e2)) / 0.05, 0.0, 9.0));
+      atomicAdd(&stats.extra[STATS_X_SHIST + sv], 1u);
+      atomicAdd(&stats.extra[STATS_X_LHIST + u32(clamp(lk * 10.0, 0.0, 9.0))], 1u);
     }
   }
   workgroupBarrier();

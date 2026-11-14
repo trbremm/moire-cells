@@ -49,12 +49,13 @@ const SLOT = 256;              // uniform slot stride (minUniformBufferOffsetAli
 const SLOTS = 128;             // ticks that can be encoded in one frame
 const BLOCK = 512;             // scan block (cell_grid.wgsl)
 const BRUTE_MAX = 20000;       // largest count the ?check brute force runs on
-const STATS_BYTES = 8192;      // struct Stats in cell_common.wgsl (counters, events, census)
+const STATS_BYTES = 8448;      // struct Stats in cell_common.wgsl (counters, events, census, step 6 census)
+const STATS_EXTRA = 8192;      // byte offset of Stats.extra (step 6 census: STATS_X_* in cell_common.wgsl)
 const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder bitmap) in struct Stats
 const STATS_EVENTS = 64;
 const MAX_SRC = 16;            // sources the cells feel (MAX_CELL_SOURCES in cell_common.wgsl)
-const CELL_BEAT_BYTES = 112;   // struct CellBeat in cell_common.wgsl
-const FIELDS_BYTES = 96;       // struct Fields in cell_common.wgsl
+const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
+const FIELDS_BYTES = 128;      // struct Fields in cell_common.wgsl
 const FIELD_FORMAT = 'rgba16float';
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
@@ -128,6 +129,13 @@ export class Cells {
                       // on, repelling keeps cells apart so fates rarely form; ?bio=0 sets +1 (the labyrinth)
       like: 0,        // what "like" means: 0 = by charge (signed charges multiply), 1 = by key (lineage)
       likeW: 0.15,    // lineage likeness width (Gaussian in the key difference)
+      // step 6, rule 1: leak by deformation (key 4). A stretched cell's A lattice is squeezed the other way; when
+      // one of its wavevectors comes near B's band, that share of its A emission goes into B instead (as a slow
+      // plane-wave beat pinned to the cell), and it listens to B through its A charge in the same share
+      leakOn: false,  // key 4 (off by default: see the README)
+      leak: 1,        // strength of the leaked B, per unit A emission (and of the A charge it listens to B with)
+      leakW: 0.1,     // how close the strained A lattice must come to B's band (Gaussian width of the pair's beat
+                      // wavevector, in units of the medium's wavenumber; an unstretched cell is about 0.33 away)
     };
     // drawing (live-tunable: moire.cells.look)
     this.fieldScale = 0.5;     // texels per CSS px of the cells' field texture
@@ -142,6 +150,8 @@ export class Cells {
       dots: 0.85,     // dot brightness (0 = no dots)
       dotR: 0.21,     // dot radius as a fraction of the dot spacing (reference: 2.7 / 16)
       period: 0.62,   // dot spacing per lattice period, in units of R (the medium's period is 0.62 R)
+      leakDot: 0.42,  // step 6: largest blue centre dot of a leaking cell, as a fraction of its radius (0 = none)
+      leakMin: 0.2,   // leak level below which no dot is drawn
     };
   }
 
@@ -235,8 +245,8 @@ export class Cells {
     this.simF = new Float32Array(this.simAB);
     this.simU = new Uint32Array(this.simAB);
 
-    this.drawU = d.createBuffer({ label: 'cell draw params', size: 64, usage: U.UNIFORM | U.COPY_DST });
-    this.drawData = new Float32Array(16);
+    this.drawU = d.createBuffer({ label: 'cell draw params', size: 80, usage: U.UNIFORM | U.COPY_DST });
+    this.drawData = new Float32Array(20);
     this.drawBG = d.createBindGroup({
       layout: this.drawPipe.getBindGroupLayout(0),
       entries: [
@@ -401,6 +411,7 @@ export class Cells {
     f[18] = Math.max(0.005, F.likeW);
     u[19] = Math.max(1, Math.min(4, Math.ceil(F.cut * this.R / this.grid.cs - 1e-6)));   // grid block radius for B's reach
     f[20] = F.emit ? 1 : 0; f[21] = F.strain;
+    f[22] = F.leakOn ? F.leak : 0; f[23] = Math.max(0.005, F.leakW);
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -526,13 +537,16 @@ export class Cells {
       let clusters = 0;
       for (const b of bins) if (b >= big) clusters++;
       let founders = 0;
-      for (let w = STATS_CENSUS / 4 + 144; w < u.length; w++) { let x = u[w]; while (x) { x &= x - 1; founders++; } }
+      for (let w = STATS_CENSUS / 4 + 144; w < STATS_EXTRA / 4; w++) { let x = u[w]; while (x) { x &= x - 1; founders++; } }
+      // step 6: leaking and converted cells, histograms (STATS_X_* in cell_common.wgsl)
+      const X = u.subarray(STATS_EXTRA / 4, STATS_EXTRA / 4 + 64);
+      const step6 = { leak: X[0], conv: X[1], aHist: Array.from(X.subarray(2, 18)), sHist: Array.from(X.subarray(18, 28)), lHist: Array.from(X.subarray(28, 38)) };
       const H = this.statsHist;
       H.push([time, births, deaths]);
       while (H.length > 2 && time - H[0][0] > 2) H.shift();
       const h0 = H[0], dt = time - h0[0];
       const rate = dt > 0.2 ? [((births - h0[1]) >>> 0) / dt, ((deaths - h0[2]) >>> 0) / dt] : [0, 0];
-      this.stats = { time, fate, births, deaths, clusters, founders, birthRate: rate[0], deathRate: rate[1] };
+      this.stats = { time, fate, births, deaths, clusters, founders, birthRate: rate[0], deathRate: rate[1], step6 };
       if (events.length && this.onEvents) this.onEvents(events);
     } catch (e) {
       // device lost or page closing: nothing to show
@@ -667,6 +681,13 @@ export class Cells {
     const F = this.fields, L = this.landscape;
     lines.push(`field B: Q felt ${on(F.on)} · J drawn ${on(L && L.params.fieldB)} · U like ${F.sign > 0 ? 'repels' : 'attracts'} like · like = ${F.like ? 'similar key (lineage)' : 'charge'}` +
       ` · band ${F.band} · r0 ${F.r0} R · cut ${F.cut} R · gain ${F.gain} · charges ${F.chargeB.join(' ')}`);
+    const s6 = st && st.step6;
+    if (s6) {
+      // a histogram's value below which a share p of the cells lie (bins of width w)
+      const pct = (h, p, w) => { const n = h.reduce((x, y) => x + y, 0); let acc = 0; for (let k = 0; k < h.length; k++) { acc += h[k]; if (acc >= p * n) return (k + 1) * w; } return h.length * w; };
+      lines.push(`step 6: 4 leak ${on(F.leakOn)} (${s6.leak} cells leaking) · stretch p50 ${pct(s6.sHist, 0.5, 0.05).toFixed(2)} p90 ${pct(s6.sHist, 0.9, 0.05).toFixed(2)}` +
+        ` · stretched > 0.35: ${s6.sHist.slice(7).reduce((x, y) => x + y, 0)} · leak level > 0.5: ${s6.lHist.slice(5).reduce((x, y) => x + y, 0)}`);
+    }
     if (c) {
       lines.push(`grid check: ${c.contacts / 2} contacts` + (c.brute ? ` (brute force ${c.bruteContacts / 2}, ${c.mismatch} cells differ)` : '') +
         ` · ${c.badSort} bad slots · overlap mean ${(100 * c.ovMean).toFixed(1)}% max ${(100 * c.ovMax).toFixed(1)}%`);
@@ -748,6 +769,10 @@ export class Cells {
     a[0] = v.cssW; a[1] = v.cssH; a[2] = v.dpr; a[3] = this.R;
     a[4] = L.fill; a[5] = L.fillA; a[6] = L.line; a[7] = L.lineW;
     a[8] = L.dots; a[9] = L.dotR; a[10] = L.period; a[11] = L.view; a[12] = L.fillC; a[13] = this.params.lever;
+    // step 6 marks, in field B's ink (the landscape's), a little brighter than its halftone
+    const F = this.fields, bc = this.landscape ? this.landscape.params.bColour : [128, 158, 255];
+    a[14] = F.leakOn ? L.leakDot : 0; a[15] = L.leakMin;
+    a[16] = bc[0] / 255 * 0.85; a[17] = bc[1] / 255 * 0.85; a[18] = bc[2] / 255 * 0.85; a[19] = 0;
     this.device.queue.writeBuffer(this.drawU, 0, a);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG);

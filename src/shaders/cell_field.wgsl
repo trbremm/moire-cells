@@ -1,6 +1,6 @@
 // The cells' field, scattered into a texture: every cell adds its own beat x envelope over a quad around it
 // (instanced, additive blending into a half-resolution rgba16float texture: field A in channel r, field B in
-// channel g; step 5). The landscape then reads
+// channel g; step 5; field B includes what stretched cells leak into it, step 6). The landscape then reads
 // that texture at each halftone dot (landscape_draw.wgsl), so thousands of emitters cost one quad each instead
 // of a sum over all cells per pixel.
 // Needs field_common.wgsl and cell_common.wgsl in front of it (src/cells.js does that).
@@ -29,7 +29,7 @@ fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VSOut
   let w = b.q2p.zw + corner[vi] * max(D.cutR, D.cutB);
   var o: VSOut;
   o.pos = vec4f(w.x / D.view.x * 2.0 - 1.0, 1.0 - w.y / D.view.y * 2.0, 0.0, 1.0);
-  if (b.k2a.z == 0.0 && b.b2a.z == 0.0) { o.pos = vec4f(2.0, 2.0, 2.0, 1.0); }   // not emitting: outside the clip volume
+  if (b.k2a.z == 0.0 && b.b2a.z == 0.0 && b.lk.z == 0.0) { o.pos = vec4f(2.0, 2.0, 2.0, 1.0); }   // not emitting: outside the clip volume
   o.world = w;
   o.id = ii;
   return o;
@@ -39,6 +39,9 @@ fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VSOut
 fn fs(in: VSOut) -> @location(0) vec4f {
   let b = beats[in.id];
   var B = 0.0;
-  if (D.cutB > 0.0) { B = cell_field_b(b, in.world, D.cutB).z; }
+  if (D.cutB > 0.0) {
+    B = cell_field_b(b, in.world, D.cutB).z;
+    if (b.lk.z != 0.0) { B += cell_field_leak(b, in.world, D.cutB).z; }   // its leaked B (step 6, rule 1)
+  }
   return vec4f(cell_field(b, in.world, D.cutR), B, 0.0, 0.0);
 }

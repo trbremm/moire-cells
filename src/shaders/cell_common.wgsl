@@ -20,12 +20,16 @@ struct Cell {
   e1: f32,          // area-preserving stretch (traceless tensor [[e1, e2], [e2, -e1]]), length at most 0.5
   e2: f32,
   kind: u32,        // KIND_* from field_common.wgsl: its fate (stem, epithelium, muscle, neuron, cartilage)
-  flags: u32,       // bit 0: alive (all alive for now; kept for division and death later)
+  flags: u32,       // bit 0: alive; bit 1: converted (step 6, rule 2); bits 8..15: leak level 0..255 (step 6,
+                    // rule 1), written by the step pass for the drawing and the census
   seed: u32,        // per-cell random seed
   aux: f32,         // the cell's key scale (log of its lattice period factor; a copy of Bio.key.y)
 };
 
 const CELL_ALIVE: u32 = 1u;
+const CELL_CONV: u32 = 2u;          // converted (step 6, rule 2): emits field B more strongly or with flipped sign
+const CELL_LEAK_SHIFT: u32 = 8u;    // bits 8..15: leak level x 255 (step 6, rule 1)
+fn cell_leak(c: Cell) -> f32 { return f32((c.flags >> CELL_LEAK_SHIFT) & 255u) / 255.0; }
 
 // Per-tick simulation uniforms (written by src/cells.js; keep the order in step with writeSim there).
 struct Sim {
@@ -191,7 +195,14 @@ struct Stats {
   events: array<vec4f, 64>,           // x, y, +1 birth / -1 death, 0
   bins: array<atomic<u32>, 144>,      // census: cells per key bin
   founders: array<atomic<u32>, 1632>, // census: bit set = that founder line still has cells
+  extra: array<atomic<u32>, 64>,      // census (step 6): see STATS_X_* below
 };
+// step 6 census counters in Stats.extra
+const STATS_X_LEAK: u32 = 0u;       // cells leaking (leak level above 0.25)
+const STATS_X_CONV: u32 = 1u;       // converted cells
+const STATS_X_AHIST: u32 = 2u;      // 16 bins: the A a cell feels (its integrator), 0.25 wide from 0 (below 0 in bin 0)
+const STATS_X_SHIST: u32 = 18u;     // 10 bins: stretch length, 0.05 wide (0 .. 0.5)
+const STATS_X_LHIST: u32 = 28u;     // 10 bins: leak level, 0.1 wide
 
 // standard normal random number (Box-Muller) from two uniform draws of stream (a, b)
 fn gauss(a: u32, b: u32) -> f32 {
@@ -369,7 +380,7 @@ fn sense_field(seg: ptr<function, array<f32, 6>>, mb: Membrane, rel: vec2f, q0: 
 // in its own band: every lattice involved (the cell's and the medium's) is `bBand` times longer, so A and B
 // make no slow beat with each other; it reaches further (power law from a larger r0) and has its own sign rule.
 // Each fate carries a charge per field: how strongly it emits into that field and listens to it.
-// Written once per frame by src/cells.js (writeFields; keep in step); 96 bytes.
+// Written once per frame by src/cells.js (writeFields; keep in step); 128 bytes.
 struct Fields {
   qA: vec4f,        // field A charge per fate: stem, epithelium, muscle, neuron (1 = as in step 4)
   qB: vec4f,        // field B charge per fate (signed: like charges repel, when bSign = 1)
@@ -386,6 +397,16 @@ struct Fields {
   bReach: u32,      // neighbour block radius in grid cells that covers bCut (1 = the usual 3 x 3)
   bEmit: f32,       // 1 = cells emit into B, 0 = not
   bStrain: f32,     // how much the cell's stretch strains its B lattice (1 = fully, as field A; 0 = not at all)
+  // ---- step 6: where the fields meet, in the cells ----
+  leak: f32,        // rule 1, leak by deformation: strength of the A emission that lands in B's band (0 = off)
+  leakW: f32,       // how close the strained A lattice must come to B's band (Gaussian width in the beat
+                    // wavevector, in units of the medium's wavenumber)
+  conv: f32,        // rule 2, conversion A -> B: how much more B a converted cell emits (0 = off)
+  convMode: u32,    // 0 = a converted cell emits B x (1 + conv); 1 = its B charge flips sign (x conv)
+  convOn: f32,      // the A felt (leaky integrator) above which a cell converts
+  convOff: f32,     // ... and below which it converts back (hysteresis)
+  convTau: f32,     // the integrator's time constant (s)
+  _p6: f32,
 };
 
 fn charge_a(F: Fields, kind: u32) -> f32 {
@@ -422,7 +443,7 @@ fn cell_lattice(c: Cell, lever: f32) -> vec2f {
   return vec2f(base + lever * (c.la - base), lever * (c.aux + log(kind_period(c.kind))));
 }
 
-// A cell's beat, computed once per tick (cell_grid.wgsl, scatter) for everyone who senses or draws it (112 bytes;
+// A cell's beat, computed once per tick (cell_grid.wgsl, scatter) for everyone who senses or draws it (128 bytes;
 // keep in step with CELL_BEAT_BYTES in src/cells.js). The phases are taken at the cell's own centre, so the
 // field near it is  amp * envelope * (1/3) sum_m cos(q_m . (x - pos) + ph_m)  with small cosine arguments.
 struct CellBeat {
@@ -435,6 +456,9 @@ struct CellBeat {
   // field B (step 5): its own band, always pinned to the cell (phase 0 at the centre)
   b01: vec4f,       // B's beat wavevectors q0 (xy) and q1 (zw)
   b2a: vec4f,       // q2 (xy), signed strength = the cell's B charge x size (z), envelope range squared (w)
+  // step 6, rule 1: the leak, the cell's strained A lattice beating against B's medium lattice (one plane wave,
+  // the best-matching direction), pinned to the cell, with B's envelope
+  lk: vec4f,        // beat wavevector (xy), strength (z; 0 = no leak), leak level 0..1 (w)
 };
 
 // The cell as a field emitter: strength min(1, r/R) (times Sim.emit), range r0 = Sim.r0 x R. Its lattice is
@@ -478,9 +502,46 @@ fn cell_beat(c: Cell, S: Sim, M: Medium, FL: Fields) -> CellBeat {
   eb.fa = FB.x; eb.fb = FB.y; eb.fd = FB.z;
   let bb = make_beat(eb, MB);
   let rB = FL.bR0 * S.R;
+  let qb = charge_b(FL, c.kind);
   cb.b01 = vec4f(bb.q0, bb.q1);
-  cb.b2a = vec4f(bb.q2, FL.bEmit * charge_b(FL, c.kind) * min(1.0, c.r / S.R), rB * rB);
+  cb.b2a = vec4f(bb.q2, FL.bEmit * qb * min(1.0, c.r / S.R), rB * rB);
+  // rule 1, leak by deformation: a stretched cell's A lattice is squeezed the other way; where one of its three
+  // wavevectors comes close to one of B's medium wavevectors (B's band: bBand x the medium's period), that pair
+  // makes a slow beat, and that share of the cell's A emission lands in field B. Its level is a Gaussian in the
+  // pair's beat wavevector |q|: 1 for a perfect match, small for an unstretched cell (|q| about k0 / 3).
+  // The leaked B is that one beat, a plane wave pinned to the cell (stripes across the stretch axis), with B's
+  // envelope; the A it emits loses the same share.
+  cb.lk = vec4f(0.0);
+  if (FL.leak > 0.0) {
+    var best = vec2f(1e9);
+    for (var m = 0; m < 3; m++) {
+      let k = emitter_k(e, M, m);
+      for (var n = 0; n < 3; n++) {
+        let kb = medium_k(MB, n);
+        let d1 = k - kb;
+        let d2 = k + kb;
+        if (dot(d1, d1) < dot(best, best)) { best = d1; }
+        if (dot(d2, d2) < dot(best, best)) { best = d2; }
+      }
+    }
+    let L = exp(-dot(best, best) / (2.0 * FL.leakW * FL.leakW * M.k0 * M.k0));
+    cb.lk = vec4f(best, FL.leak * FL.bEmit * L * e.amp, L);
+    cb.k2a.z = e.amp * (1.0 - L);
+  }
   return cb;
+}
+
+// The leaked B of one cell at x (rule 1): strength x B's envelope x cos(q . (x - centre)), tapered to 0 at cutR.
+// Returns (gradient xy, value z), as cell_field_b.
+fn cell_field_leak(b: CellBeat, x: vec2f, cutR: f32) -> vec3f {
+  let d = x - b.q2p.zw;
+  let d2 = dot(d, d);
+  let inv = 1.0 / (1.0 + d2 / b.b2a.w);
+  let a = dot(b.lk.xy, d);
+  let cs = cos(a);
+  let genv = d * (-2.0 / b.b2a.w * inv * inv);
+  let t = cut_taper(d2, cutR) * b.lk.z;
+  return vec3f((genv * cs - inv * sin(a) * b.lk.xy) * t, inv * cs * t);
 }
 
 // the field's taper near the cut-off: 1 out to 0.7 x cutR, then smoothly down to 0 at cutR, so a neighbour

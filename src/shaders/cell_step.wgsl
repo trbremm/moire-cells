@@ -63,7 +63,9 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let feelB = FL.bGain > 0.0;
   let cutB = FL.bCut * S.R;
   let myQA = charge_a(FL, c.kind);
-  let myQB = charge_b(FL, c.kind);
+  // rule 1 (step 6), leak by deformation: a cell whose strained A lattice reaches B's band also listens to B
+  // through its A charge, in the share it leaks (me.lk.w): its charge in B is its own B charge plus that
+  let myQB = charge_b(FL, c.kind) + FL.leak * me.lk.w * myQA;
   var gB = vec2f(0.0);
 
   // every neighbour within reach: contact push, and (differentiation on) recognition and signals
@@ -86,9 +88,12 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           // repels, opposite attracts); or by key: lineage likeness (Gaussian in the key difference) x |charges|
           var w = -FL.bSign * myQB;
           if (FL.bLike == 1u) {
-            w = -FL.bSign * abs(myQB) * sign(ob.b2a.z) * exp(-key_dist2(c.la, c.aux, o.la, o.aux) / (2.0 * FL.bLikeW * FL.bLikeW));
+            w = -FL.bSign * abs(myQB) * sign(ob.b2a.z + ob.lk.z) * exp(-key_dist2(c.la, c.aux, o.la, o.aux) / (2.0 * FL.bLikeW * FL.bLikeW));
           }
-          if (w != 0.0 && ob.b2a.z != 0.0) { gB += w * cell_field_b(ob, c.pos, cutB).xy; }
+          if (w != 0.0) {
+            if (ob.b2a.z != 0.0) { gB += w * cell_field_b(ob, c.pos, cutB).xy; }
+            if (ob.lk.z != 0.0) { gB += w * cell_field_leak(ob, c.pos, cutB).xy; }   // its leaked B (rule 1)
+          }
         }
         if (sensing && d2 < cutR * cutR) {
           let ob = beats[k];
@@ -324,6 +329,9 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     }
   }
 
+  // the leak level, for the drawing and the census (a newborn starts at 0)
+  if (c.seed != sorted[j].seed) { c.flags &= ~(255u << CELL_LEAK_SHIFT); }
+  else { c.flags = (c.flags & ~(255u << CELL_LEAK_SHIFT)) | (u32(round(clamp(me.lk.w, 0.0, 1.0) * 255.0)) << CELL_LEAK_SHIFT); }
   cells[i] = c;
   bioNext[i] = bio;
 }

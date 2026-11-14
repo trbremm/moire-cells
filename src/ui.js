@@ -148,6 +148,10 @@ export function setupUI(app) {
         : 'Move the spot with the move-light tool or a right-drag; the wheel tilts it, Shift+wheel turns it.'));
     },
     view(body) {
+      // step C6n: the look first (neon, halo, trails, hum, clean / machinery), then what is drawn
+      body.append(el('h3', '', 'Look'));
+      for (const a of app.actions) if (a.group === 'look' && !(a.desktop && app.touch)) body.append(row(a));
+      body.append(el('h3', '', 'What is drawn'));
       for (const a of app.actions) if (a.group === 'view' && !(a.desktop && app.touch)) body.append(row(a));
     },
     rules(body) {

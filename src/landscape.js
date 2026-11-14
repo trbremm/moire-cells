@@ -28,17 +28,16 @@ export class Landscape {
       threshold: 0.12,    // strength below which there is no dot
       maxDot: 0.9,        // largest dot radius as a fraction of pitch/2 (1 = neighbours touch; capped at 1)
       // the cells' field (step 4): positive part only, in a pale warm ink (the stem colour, dimmer)
-      cellField: true,    // drawn on/off (key K)
+      cellField: false,   // drawn on/off (key K; step C6n: off in the clean view, the default)
       cellGain: 0.5,      // strength gain of the cells' field (1 left a grey haze in every gap once field B opened
                           // the culture up)
-      cellColour: [241, 236, 223],
-      cellLevel: 0.32,
+      cellLevel: 0.32,    // (its ink, and B's and A''s below: the palette's field.A, B, P, src/palette.js; step C6n: the
+                          // level x the palette's levels.field / 0.32)
       // field B (step 5), from the same texture's G channel, on its own screen: open rings where positive, filled
       // dots where negative, in a faded print blue. B sums many cells (about 20 in a crowd), hence the low gain;
       // the high threshold leaves black where the culture is loose, so the rings mark the crowded parts
-      fieldB: true,       // drawn on/off (key J)
+      fieldB: false,      // drawn on/off (key J; step C6n: off in the clean view)
       bGain: 0.03,        // strength gain
-      bColour: [128, 158, 255],
       bLevel: 0.5,
       bAngle: 45,         // screen rotation (degrees; A's screen is at 15)
       bPitch: 8,          // distance between B's rings (CSS px)
@@ -47,9 +46,8 @@ export class Landscape {
       bThresh: 0.35,      // strength below which there is no ring
       // the partner A' of the cells' field A (step 8), from the texture's B channel, on a third screen: filled dots on
       // its positive part, as A's, in a faded print yellow. Drawn only while a step 8 rule is on (keys Z , .)
-      partner: true,      // drawn on/off (key ;)
+      partner: false,     // drawn on/off (key ;; step C6n: off in the clean view)
       pGain: 0.5,         // strength gain (as cellGain)
-      pColour: [236, 218, 124],
       pLevel: 0.42,
       pAngle: 75,         // screen rotation (degrees; A's is 15, B's 45: the print angles)
       pPitch: 6,

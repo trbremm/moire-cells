@@ -321,6 +321,7 @@ export function setupUI(app) {
     const st = document.documentElement.style;
     st.setProperty('--ui-h', `${root.offsetHeight}px`);
     st.setProperty('--bar-w', `${bar.offsetWidth}px`);
+    st.setProperty('--bar-h', `${bar.offsetHeight}px`);
   }
   if (window.ResizeObserver) new ResizeObserver(layout).observe(root);
   layout();

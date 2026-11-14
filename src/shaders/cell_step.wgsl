@@ -403,12 +403,21 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   }
   // crawling: each cell slowly wanders on its own heading (Bio.body.w), a persistent random walk, so the
   // tissue stays fluid enough for cells to change neighbours and sort out
+  var motor = vec2f(0.0);    // the cell's own motor, in units of R / s (before motility and the battery's gate)
   if (S.crawl > 0.0) {
     let g = sqrt(-2.0 * log(max(rand01(c.seed ^ 0x9e3779b9u, S.tick), 1e-7))) * cos(TAU * rand01(c.seed ^ 0x85ebca6bu, S.tick));
     bio.body.w += g * sqrt(2.0 * S.turnRate * S.dt);
     bio.body.w -= TAU * floor(bio.body.w / TAU);
-    f += S.crawl * S.R * mot * vec2f(cos(bio.body.w), sin(bio.body.w));
+    motor += S.crawl * vec2f(cos(bio.body.w), sin(bio.body.w));
   }
+  // step C5: the battery gates the motor (full speed from FL.crawlFull of the battery, none when it is empty) and pays
+  // for it: crawlCost x the work of crawling at that speed against the drag (its motion energy x (1 - damping^2) per
+  // tick), paid by the eat pass after this step (Cell.pay)
+  let payOn = (FL.eat & EAT_PAY) != 0u;
+  let gate = select(1.0, clamp(c.bat / max(FL.crawlFull, 1e-3), 0.0, 1.0), payOn);
+  let fMotor = motor * S.R * mot * gate;
+  f += fMotor;
+  c.pay = select(0, heat_counts(FL.crawlCost * heat_ke(fMotor) * (1.0 - S.damping * S.damping)), payOn);
   // viscous, nearly overdamped motion, in three parts whose energies the heat band books (step C1; energy 0.5 (v/10)^2):
   //   drag   v1 = damping x v0: the motion it takes (L) becomes heat under the cell
   //   force  v2 = v1 + (1 - damping) f: the work the forces do (W: fields, contact, crawling, stirring) comes in

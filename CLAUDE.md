@@ -331,6 +331,20 @@ C6c. ELASTIC HONEYCOMB CELLS (user 2026-11-15: "cluster in honeycomb shape and d
     contact flattens the sides facing neighbours, so packed tissue tiles into hexagons and free edges stay
     rounded. Drawn as NEON TUBE outlines (see the look decision), shared walls straight; the inner
     parts (battery core, engines) sit inside. Sensing integrates along the real sides. Lively, not stiff.
+    MEMBRANE CHEMISTRY (user 2026-11-15: "can excretion be harmful to some? the membrane should react with
+    chemicals, not only through heat; elasticity could be genetic"). Cells already excrete: waste leaks out
+    through the membrane by concentration, and sediment made inside is expelled. Make the membrane a material:
+    - Each side has an INTEGRITY. The membrane is built from LINKER chains taken from the cell's stock; a gene sets
+      the MIX of light (l) and heavy (L) linkers, and one sets THICKNESS.
+    - Derived rule: a free reactive atom (giver or taker) at a side BITES chains of ITS OWN ROW (light atoms bite
+      l-membranes, heavy atoms bite L-membranes), at a rate from the table's sparks. Bites cost integrity.
+    - Repair uses linkers from stock + battery. Low integrity -> leakier and softer; zero -> the cell BURSTS and
+      spills its contents (food for neighbours).
+    - ELASTICITY is genetic: stiffness derives from the mix and thickness (heavy and thick = stiff, resistant,
+      costly; light and thin = soft, cheap, vulnerable), plus a small stiffness gene.
+    - Expected emergent harm: burners and light-swap harvesters excrete free LIGHT atoms, which eat light
+      membranes; one lineage's waste is another's poison, and resistant lineages pay for it. No rule names a
+      toxin. (C7 pumps add active excretion.)
 C6d. CHARGE PER SIDE (dipoles): each side holds its own charge (a cell that eats on one side gets charged
     there); an outside field pulls the + and - ends opposite ways, so cells turn, line up and stretch along the
     field, which strains their lattice and changes their field again (a form <-> field loop, like the loved

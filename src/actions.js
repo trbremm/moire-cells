@@ -33,6 +33,7 @@ export const RULE_GROUPS = [
   ['partner', 'Partner fields (step 8)'],
   ['bio', 'Biology'],
   ['heatlight', 'Heat and light (Part C)'],
+  ['chem', 'Chemistry (step C4)'],
 ];
 
 export const SQUEEZE_SOFT = 0.25, SQUEEZE_HARD = 1.2;   // key \ : cells.params.squeeze, normal or pressed together
@@ -234,7 +235,32 @@ export function makeActions(app) {
     { id: 'day', keys: ['shift+d'], label: 'day and night', group: 'heatlight', type: 'toggle', get: () => app.light.params.day,
       run: () => { const P = app.light.params; return flip(P, 'day') ? `day and night: the light rises and falls over ${P.dayPeriod} s` : 'no day and night: the light stays at full day'; },
       help: 'the light rises and falls over a day of 240 s of simulation time' },
+
+    // ---------- chemistry in the open (step C4) ----------
+    { id: 'chem', keys: ['shift+m'], label: 'chemistry', group: 'chem', type: 'toggle', get: () => CH().on,
+      run: () => (flip(CH(), 'on')
+        ? 'chemistry on: atoms bond into fuel in the light, fuel burns where it is hot, linkers crust into sediment'
+        : 'chemistry off: the atoms only spread (as in step C3)'),
+      help: 'every reaction at once (off: the atoms only spread, and nothing catches light)' },
+    { id: 'makeFuel', keys: ['shift+f'], label: 'make fuel by light', group: 'chem', type: 'toggle', get: () => CH().make,
+      run: () => `make fuel by light ${flip(CH(), 'make') ? 'on: a giver and a taker bond into green fuel where light of the fuel\'s band falls' : 'off'}${chemNote()}`,
+      help: 'a giver and a taker bond into fuel where light of its band falls (gt: visible 1, gT Gt: visible 2, GT: hard)' },
+    { id: 'burnFuel', keys: ['shift+b'], label: 'break fuel by heat', group: 'chem', type: 'toggle', get: () => CH().burn,
+      run: () => `break fuel ${flip(CH(), 'burn') ? 'on: fuel falls apart where it is hot (and in hard light), its energy becomes heat' : 'off: fuel keeps'}${chemNote()}`,
+      help: 'fuel falls apart where it is hot, or in hard light; its energy becomes heat (cold and dark: it keeps)' },
+    { id: 'swaps', keys: ['shift+p'], label: 'swaps', group: 'chem', type: 'toggle', get: () => CH().swap,
+      run: () => `swaps ${flip(CH(), 'swap') ? 'on: a free light atom takes the place of a heavy one in a fuel (t + gT → gt + T), heat comes out' : 'off'}${chemNote()}`,
+      help: 'a free light atom takes a heavy one\'s place in a fuel (t + gT → gt + T); the difference becomes heat' },
+    { id: 'sediment', keys: ['shift+k'], label: 'sediment', group: 'chem', type: 'toggle', get: () => CH().sediment,
+      run: () => `sediment ${flip(CH(), 'sediment') ? 'on: linkers chain into dark crusts where it is warm; hard light cracks them' : 'off'}${chemNote()}`,
+      help: 'linkers chain into dark crusts where it is warm (they warm up in the light); hard light slowly cracks them' },
+    { id: 'traceSpark', keys: ['shift+t'], label: 'trace lowers the spark', group: 'chem', type: 'toggle', get: () => CH().trace,
+      run: () => `trace ${flip(CH(), 'trace') ? 'lowers the spark: reactions run more easily where trace sits' : 'does nothing'}${chemNote()}`,
+      help: 'reactions start more easily where trace sits (a catalyst)' },
   ];
+
+  function CH() { return app.matter.chem; }
+  function chemNote() { return CH().on ? '' : ' (chemistry is off: Shift+M)'; }
 
   function newCulture(fresh) {
     app.cells.seed(fresh);

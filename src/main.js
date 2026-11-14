@@ -46,10 +46,9 @@ import { Landscape } from './landscape.js';
 import { Cells, DEFAULT_CELLS, ANCHORS } from './cells.js';
 import { Light } from './light.js';
 import { Matter, SHOWS } from './matter.js';
+import { makeActions, keyMaps, keysText, TOOLS, SQUEEZE_SOFT, SQUEEZE_HARD } from './actions.js';
 
 window.__moireBooted = true;
-
-const SQUEEZE_SOFT = 0.25, SQUEEZE_HARD = 1.2;   // key \ : cells.params.squeeze, normal or pressed together
 
 const TICK = 1 / 60;
 const MAX_TICKS = 4;
@@ -292,7 +291,7 @@ function drawOverlay() {
     `vendor ${esc(i.vendor || '?')} · arch ${esc(i.architecture || '?')}${i.device ? ' · device ' + esc(i.device) : ''}`,
     `canvas ${view.pxW}×${view.pxH} (dpr ${view.dpr.toFixed(2)}) · ${gpu.format}`,
     `ripple grid ${background.gw}×${background.gh} (${background.sc} css px/cell) · ambient ${background.ambient ? 'on' : 'off'}`,
-    `tap ${TAP_MODES[tapMode].name} · landscape ${landscape.params.on ? 'on' : 'off'} · R ${medium.R.toFixed(2)} px · medium ${(medium.la0 * 180 / Math.PI).toFixed(2)}°`,
+    `tap ${TOOLS[tool].name} · landscape ${landscape.params.on ? 'on' : 'off'} · R ${medium.R.toFixed(2)} px · medium ${(medium.la0 * 180 / Math.PI).toFixed(2)}°`,
     ...cells.overlayLines(),
     ...matter.overlayLines(),
     `simmer (Shift+R) ${background.heatOn ? 'on' : 'off'}: ripple drops ${background.params.heatDrops} per cell per step x temperature², height ${background.params.heatAmp}`,
@@ -307,33 +306,75 @@ function esc(s) {
 }
 
 // ---------- input ----------
-// what a click drops (keys 1, 2, 3; step C3: springs of atoms replace the old nutrient and threat sources)
-const TAP_MODES = [
-  { name: 'ripple', label: 'drop a ripple' },
-  { name: 'light spring', label: 'drop a light spring', spring: 'light' },
-  { name: 'heavy spring', label: 'drop a heavy spring', spring: 'heavy' },
-];
-let tapMode = 0;
-
+// Every key and button runs an entry of ONE action table (src/actions.js); what a tap / click drops is the tool
+// (keys 1, 2, 3; step C3: springs of atoms replace the old nutrient and threat sources).
+let tool = 0;
 let allKeys = false;   // key ?: the short hint or the full key list
+let actions = [];
+let keys = null;
+
 function hintLine() {
-  const short = `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 light spring · 3 heavy spring · ` +
+  const short = `click: ${TOOLS[tool].label} · drag: stir · 1 ripple · 2 light spring · 3 heavy spring · ` +
     'N / G: new culture · [ ]: speed · F: stats · ⇧E ⇧L ⇧S: entropy, light, substances · ?: more';
   return allKeys ? fullHint() : short;
 }
+/** Every key, from the action table, plus the mouse. */
 function fullHint() {
-  return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 light spring · 3 heavy spring · ` +
-    'C: clear springs · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · \\: squeeze · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · .: sideways push · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · I: inherit fate · V: view · [ ]: speed · F: stats · Shift+H: jitter from heat / constant · Shift+E: entropy panel · Shift+R: ripples simmer with heat · Shift+L: light spot / full field / off · Shift+D: day and night · Shift+S: substances shown (summary / each alone / off) · Shift+C: wash the atoms out · right-drag: move the spot · wheel: tilt it · Shift+wheel: turn where the light comes from';
+  const list = actions.filter((a) => a.keys.length).map((a) => `${keysText(a)}: ${a.label}`);
+  return `click: ${TOOLS[tool].label} · drag: stir · ${list.join(' · ')} · right-drag: move the spot · wheel: tilt it · ` +
+    'Shift+wheel: turn where the light comes from';
+}
+
+/** The app as the action table sees it (src/actions.js). */
+function makeApp() {
+  return {
+    get cells() { return cells; }, get background() { return background; }, get landscape() { return landscape; },
+    get light() { return light; }, get matter() { return matter; }, get heat() { return cells.heat; },
+    get view() { return view; },
+    overlayEl, entropyEl, ANCHORS,
+    get tool() { return tool; },
+    setTool(i) { tool = i; return `click drops: ${TOOLS[tool].label.replace(/^drop /, '')}`; },
+    speedLabel: () => `${speed}×`,
+    stepSpeed(d) {
+      const i = SPEEDS.indexOf(speed);
+      speed = SPEEDS[Math.max(0, Math.min(SPEEDS.length - 1, (i < 0 ? 0 : i) + d))];
+      return `speed ${speed}×`;
+    },
+    showEntropy, drawOverlay,
+    allKeys: () => allKeys,
+    toggleAllKeys() { allKeys = !allKeys; hintEl.textContent = hintLine(); },
+  };
+}
+
+/** Run an action (from a key or a button); k = the key, or '-' / '+' for a knob's buttons. */
+function runAction(a, k) {
+  const text = a.run(k);
+  if (text) flash(text);
+}
+
+function onKey(e) {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  // Part C: Shift + a letter (before the plain keys, which lowercase e.key; Shift + a non-letter, such as ? or +, goes on)
+  if (e.shiftKey && /^[a-z]$/i.test(e.key)) {
+    const a = keys.shift.get(e.key.toLowerCase());
+    if (a) runAction(a, `shift+${e.key.toLowerCase()}`);
+    return;
+  }
+  const k = e.key.toLowerCase();
+  const a = keys.plain.get(k);
+  if (a) runAction(a, k);
 }
 
 function tap(x, y) {
-  const m = TAP_MODES[tapMode];
+  const m = TOOLS[tool];
   if (!m.spring) { background.impulse(x, y, 2.5, 1.2 * background.sc); return; }
   matter.addSpring(x, y, m.spring);
   background.impulse(x, y, 3);   // a spring lands with a ripple, as the old sources did
 }
 
 function setupInput() {
+  actions = makeActions(makeApp());
+  keys = keyMaps(actions);
   hintEl.textContent = hintLine();
   const pointer = { down: false, drag: false, light: false, x: 0, y: 0, sx: 0, sy: 0 };
   const pos = (e) => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
@@ -395,189 +436,7 @@ function setupInput() {
     }
   }, { passive: false });
 
-  window.addEventListener('keydown', (e) => {
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
-    // Part C: Shift + a letter (before the plain keys, which lowercase e.key; Shift + a non-letter, such as ? or +, goes on)
-    if (e.shiftKey && /^[a-z]$/i.test(e.key)) { shiftKey(e.key.toLowerCase()); return; }
-    const k = e.key.toLowerCase();
-    if (k === 'f') {
-      overlayEl.hidden = !overlayEl.hidden;
-      if (!overlayEl.hidden) drawOverlay();
-    } else if (k === '?' || k === '/') {
-      allKeys = !allKeys;
-      hintEl.textContent = hintLine();
-    } else if (k === 'a') {
-      background.ambient = !background.ambient;
-      flash(`ambient ripples ${background.ambient ? 'on' : 'off'}`);
-    } else if (k === '1' || k === '2' || k === '3') {
-      tapMode = Number(k) - 1;
-      flash(`click drops: ${TAP_MODES[tapMode].label.replace(/^drop /, '')}`);
-    } else if (k === 'c') {
-      matter.clearSprings();
-      flash('springs cleared (the atoms already in the dish stay; Shift+C washes them out)');
-    } else if (k === 'n' || k === 'g') {
-      cells.seed(k === 'g');
-      background.impulse(view.cssW / 2, view.cssH / 2, 2);   // as the reference's seed()
-      flash(k === 'g' ? 'new culture, fresh random genomes' : 'new culture, same founder genomes');
-    } else if (k === 'd') {
-      const r = cells.genome.rules;
-      r.diff = !r.diff;
-      flash(r.diff ? 'differentiation on: cells read their contacts and choose fates' : 'differentiation off: every cell back to stem');
-    } else if (k === 'h') {
-      const r = cells.genome.rules;
-      r.adh = !r.adh;
-      flash(`adhesion ${r.adh ? 'on: like sticks to like (similar keys, same fate)' : 'off'}`);
-    } else if (k === 'b') {
-      const r = cells.genome.rules;
-      r.body = !r.body;
-      flash(`body traits ${r.body ? 'on: size and motility from the genome and the fate' : 'off: all cells alike'}`);
-    } else if (k === 't') {
-      const r = cells.genome.rules;
-      r.turn = !r.turn;
-      flash(`turnover ${r.turn ? 'on: cells die now and then, a neighbour divides into the gap' : 'off'}`);
-    } else if (k === 'm') {
-      const r = cells.genome.rules;
-      r.mut = !r.mut;
-      flash(`mutation ${r.mut ? 'on: daughters differ a little from their parent' : 'off: daughters are exact copies'}`);
-    } else if (k === 'i') {
-      const r = cells.genome.rules;
-      r.inherit = !r.inherit;
-      flash(r.inherit ? "daughters inherit their parent's fate" : 'daughters start as stem cells');
-    } else if (k === 'v') {
-      cells.look.view = cells.look.view ? 0 : 1;
-      flash(`colour by ${cells.look.view ? 'lineage (key)' : 'fate'}`);
-    } else if (k === '[' || k === ']') {
-      const i = SPEEDS.indexOf(speed);
-      speed = SPEEDS[Math.max(0, Math.min(SPEEDS.length - 1, (i < 0 ? 0 : i) + (k === ']' ? 1 : -1)))];
-      flash(`speed ${speed}×`);
-    } else if (k === 'p') {
-      cells.params.contact = !cells.params.contact;
-      flash(`contact push ${cells.params.contact ? 'on' : 'off'}`);
-    } else if (k === 's') {
-      cells.params.senseOn = !cells.params.senseOn;
-      flash(`field sensing ${cells.params.senseOn ? 'on: cells move along the field they feel on their membrane' : 'off'}`);
-    } else if (k === '-' || k === '=' || k === '+') {
-      const p = cells.params;
-      p.lever = Math.max(0.05, Math.min(3, Math.round(p.lever * (k === '-' ? 0.8 : 1.25) * 1000) / 1000));
-      flash(`lever ${p.lever.toFixed(2)}: the cells' lattices ${p.lever < 1 ? 'closer to' : 'further from'} the medium's (1 = as the genome has it)`);
-    } else if (k === 'x') {
-      const p = cells.params;
-      p.anchor = (p.anchor + 1) % 3;
-      flash(`cells' beat: ${ANCHORS[p.anchor]}`);
-    } else if (k === 'r') {
-      const p = cells.params;
-      p.receptor = !p.receptor;
-      flash(`cells feel other cells ${p.receptor ? 'through their genome’s receptor' : 'by likeness to their own lattice'}`);
-    } else if (k === 'w') {
-      cells.params.active = !cells.params.active;
-      flash(`active deformation ${cells.params.active ? 'on: cells stretch along their motion and the pull of the field' : 'off: only contact squeezes them'}`);
-    } else if (k === 'o') {
-      cells.params.emit = !cells.params.emit;
-      flash(`cells emit ${cells.params.emit ? 'on: every cell adds its own beat to the field' : 'off'}`);
-    } else if (k === 'k') {
-      landscape.params.cellField = !landscape.params.cellField;
-      flash(`cells' field ${landscape.params.cellField ? 'drawn (pale dots)' : 'not drawn'}`);
-    } else if (k === 'j') {
-      landscape.params.fieldB = !landscape.params.fieldB;
-      flash(`field B ${landscape.params.fieldB ? 'drawn (blue dots; open rings where it is negative)' : 'not drawn'}`);
-    } else if (k === 'q') {
-      const F = cells.fields;
-      F.on = !F.on;
-      flash(`field B ${F.on ? 'felt: cells move along it by the sign rule' : 'not felt (still emitted and drawn)'}`);
-    } else if (k === 'u') {
-      const F = cells.fields;
-      F.sign = -F.sign;
-      flash(`field B: like ${F.sign > 0 ? 'repels' : 'attracts'} like`);
-    } else if (k === 'y') {
-      const F = cells.fields;
-      F.like = F.like ? 0 : 1;
-      flash(`field B: "like" means ${F.like ? 'a similar key (the same lineage)' : 'the same sign of charge (charges by fate)'}`);
-    } else if (k === '4') {
-      const F = cells.fields;
-      F.leakOn = !F.leakOn;
-      flash(`leak by deformation ${F.leakOn ? 'on: strongly stretched cells leak into field B (blue centre dot)' : 'off'}`);
-    } else if (k === '5') {
-      const F = cells.fields;
-      F.convOn = !F.convOn;
-      flash(`conversion ${F.convOn ? 'on: cells that feel enough A turn to emitting B (blue outline)' : 'off'}`);
-    } else if (k === '6') {
-      const F = cells.fields;
-      F.convMode = F.convMode ? 0 : 1;
-      flash(`a converted cell ${F.convMode ? 'flips its B charge' : 'emits more B'}`);
-    } else if (k === '7') {
-      const F = cells.fields;
-      F.relayOnKey = !F.relayOnKey;
-      flash(`relay through B ${F.relayOnKey ? 'on: converted cells excite their neighbours, tire and rest' : 'off'}${F.convOn ? '' : ' (conversion is off: key 5)'}`);
-    } else if (k === '8') {
-      const X = cells.excl;
-      X.on = !X.on;
-      flash(`exclusion ${X.on ? 'on: same fate and same state (the bar) keep apart, other states pack closer' : 'off'}`);
-    } else if (k === '9') {
-      const X = cells.excl;
-      X.flip = !X.flip;
-      flash(`state flip ${X.flip ? 'on: a cell crowded by its own state turns to the state least represented around it' : 'off'}${X.on ? '' : ' (exclusion is off: key 8)'}`);
-    } else if (k === '0') {
-      const X = cells.excl;
-      X.states = X.states >= 4 ? 2 : X.states + 1;
-      flash(`exclusion: ${X.states} states (the bar's directions)${X.on ? '' : ' (exclusion is off: key 8)'}`);
-    } else if (k === '\\') {
-      const P = cells.params;
-      P.squeeze = P.squeeze > SQUEEZE_SOFT ? SQUEEZE_SOFT : SQUEEZE_HARD;
-      flash(`squeeze ${P.squeeze > SQUEEZE_SOFT ? 'hard: the pull to the centre presses the drop together (with 2 states (key 0), exclusion (8) and field B not felt (Q): a woven checkerboard)' : 'soft (normal)'}`);
-    } else if (k === 'z') {
-      const P = cells.partner;
-      P.on = !P.on;
-      flash(`partner A' ${P.on ? "on: cells feel field A and its quarter-period twin A' (yellow dots) as a phase current, and are pushed along it" : 'off'}`);
-    } else if (k === ',') {
-      const P = cells.partner;
-      P.change = !P.change;
-      flash(`change makes the partner ${P.change ? "on: a cell emits A' as the A it feels changes, and A as the A' it feels changes" : 'off'}`);
-    } else if (k === '.') {
-      const P = cells.partner;
-      P.side = !P.side;
-      flash(`sideways push ${P.side ? "on: the partner A' pushes at right angles (cells go round its blobs)" : 'off'}`);
-    } else if (k === "'") {
-      const P = cells.partner;
-      P.chMode = P.chMode ? 0 : 1;
-      flash(`change makes the partner: ${P.chMode ? "clock (in each cell A turns into A' and back; the neighbours pull the hand)" : "felt change (a cell emits A' as the A it feels changes, and A as the A' changes)"}${P.change ? '' : ' (the rule is off: key ,)'}`);
-    } else if (k === ';') {
-      landscape.params.partner = !landscape.params.partner;
-      flash(`partner A' ${landscape.params.partner ? 'drawn (yellow dots, while a step 8 rule is on)' : 'not drawn'}`);
-    } else if (k === 'l') {
-      landscape.params.on = !landscape.params.on;
-      flash(`landscape ${landscape.params.on ? 'on' : 'off: no halftone dots'}`);
-    }
-  });
-}
-
-/** Part C keys (Shift + letter). */
-function shiftKey(k) {
-  if (k === 'h') {
-    const P = cells.heat.params;
-    P.kicks = !P.kicks;
-    flash(P.kicks ? 'jitter from heat: each cell is kicked in a random direction, harder where it is hot; the kick uses that heat up'
-      : 'jitter constant (as before Part C): the heat is still made, spread and leaked, but no longer shakes the cells');
-  } else if (k === 'e') {
-    showEntropy(entropyEl.hidden);
-    flash(`entropy panel ${entropyEl.hidden ? 'hidden' : 'shown'}`);
-  } else if (k === 'r') {
-    background.heatOn = !background.heatOn;
-    flash(`ripples ${background.heatOn ? 'simmer with heat: small random rings where it is hot' : 'no longer driven by heat'}`);
-  } else if (k === 'l') {
-    const P = light.params;
-    P.mode = P.mode === 'spot' ? 'full' : P.mode === 'full' ? 'off' : 'spot';
-    flash(P.mode === 'spot' ? 'light: spotlight (right-drag moves it, the wheel tilts it, Shift+wheel turns where it comes from)'
-      : P.mode === 'full' ? 'light: full field, the whole dish lit (clouds drift over)' : 'light off: only the base warmth and the cells\' own motion heat the dish');
-  } else if (k === 's') {
-    flash(matter.cycleShow());
-  } else if (k === 'c') {
-    matter.wash();
-    flash('the dish washed: every atom out (booked as gone in the atoms ledger)');
-  } else if (k === 'd') {
-    const P = light.params;
-    P.day = !P.day;
-    flash(P.day ? `day and night: the light rises and falls over ${P.dayPeriod} s` : 'no day and night: the light stays at full day');
-  }
+  window.addEventListener('keydown', onKey);
 }
 
 /** A compass word for the direction the light comes from (screen: 0 = right, 90 = below). */

@@ -214,7 +214,7 @@ class Rpc:
 class Chrome:
     """Chrome / Edge via the DevTools protocol."""
 
-    def __init__(self, exe, profile, w, h, extra):
+    def __init__(self, exe, profile, w, h, extra, dpr=1.0):
         self.proc = subprocess.Popen(
             [exe, "--headless=new", f"--user-data-dir={profile}", "--remote-debugging-port=0",
              "--no-first-run", "--no-default-browser-check", "--hide-scrollbars",
@@ -238,7 +238,7 @@ class Chrome:
             self.rpc.call(f"{dom}.enable")
         # exact viewport (--window-size includes the window frame)
         self.rpc.call("Emulation.setDeviceMetricsOverride",
-                      {"width": w, "height": h, "deviceScaleFactor": 1, "mobile": False})
+                      {"width": w, "height": h, "deviceScaleFactor": dpr, "mobile": False})
 
     def navigate(self, url):
         self.rpc.call("Page.navigate", {"url": url})
@@ -374,6 +374,8 @@ def main():
     ap.add_argument("--query", default="overlay=1&ripple=1", help="URL query string without '?'")
     ap.add_argument("--out", default=os.path.join("shots", "shot.png"), help="PNG path (relative to repo root)")
     ap.add_argument("--size", default="1280x800", help="viewport WxH in CSS pixels")
+    ap.add_argument("--dpr", type=float, default=1.0, help="device pixel ratio (Chrome/Edge; the page draws at up to 2, "
+                    "so --dpr 2 with --clip x,y,w,h,2 gives a sharp zoom)")
     ap.add_argument("--wait", type=int, default=2500, help="ms to let the page run after it is ready")
     ap.add_argument("--ready-timeout", type=int, default=30000, help="ms to wait for the page to start")
     ap.add_argument("--port", type=int, default=0, help="use an already running server on this port")
@@ -416,7 +418,7 @@ def main():
             prefs = {k: json.loads(v) for k, v in (p.split("=", 1) for p in args.pref)}
             driver = Firefox(exe, profile, w, h, args.extra, prefs, args.headed)
         else:
-            driver = Chrome(exe, profile, w, h, args.extra)
+            driver = Chrome(exe, profile, w, h, args.extra, args.dpr)
         driver.navigate(url)
 
         t0, state = time.time(), {}

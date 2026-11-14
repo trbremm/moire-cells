@@ -51,6 +51,8 @@ choose the browser, set "High performance", restart the browser.
 - **I**: daughters inherit their parent's fate on/off (default off: they start as stem cells)
 - **V**: colour by fate or by lineage (the key's hue)
 - **[** / **]**: simulation speed 1× / 2× / 4× / 8×
+- Part C keys are **Shift + a letter** (step C1: Shift+H heat jitter, Shift+E entropy panel, Shift+R ripples simmer;
+  see "Heat and the entropy counter" below)
 
 The loop (step 4):
 - **S**: field sensing on/off (the force from the field felt on the membrane)
@@ -170,8 +172,9 @@ URL options: `?overlay=1` (overlay from the start; `?overlay=ghost` keeps it up 
 neighbour grid and by brute force, and check the sort; result in the console and the overlay),
 `?excl=0|1`, `?flip=0|1`, `?states=2..4`, `?squeeze=0|1` (step 7, keys 8 9 0 and `\`), `?partner=0|1`, `?change=0|1`, `?clock=0|1`,
 `?side=0|1` (step 8, keys Z , ' .), `?seed=N` (repeatable start: positions, genomes; the run itself drifts apart after a while, because the
-GPU's neighbour order varies), `?speed=1|2|4|8`, `?founders=N`, `?view=1` (lineage colours).
-In the browser console, `moire.background.params`, `moire.landscape.params`, `moire.medium.params`,
+GPU's neighbour order varies), `?speed=1|2|4|8`, `?founders=N`, `?view=1` (lineage colours),
+`?heat=0`, `?entropy=0`, `?simmer=0` (step C1, Shift+H E R).
+In the browser console, `moire.background.params`, `moire.landscape.params`, `moire.medium.params`, `moire.heat.params`,
 `moire.cells.params` (physics), `moire.cells.look` (drawing) and `moire.genome.params` / `.rules` hold
 live-tunable numbers.
 
@@ -479,6 +482,93 @@ commit before step 8, measured in the same session, gave 0.66 to 0.71 and 1.11 t
 bytes) and the partner's extra sine on the membrane cost nothing measurable. The AMD Vega in headed Firefox: 3.9 ms at
 2000 cells with all three on (3.3 ms in step 7), 80 fps at 1x; `?check=1` passes there and in Chrome.
 
+## Heat and the entropy counter (Part C, step C1)
+
+The first step of Part C (light, chemistry and heat; see `CLAUDE.md`). Every bit of motion the cells lose ends up as
+**heat**, the lowest band of the energy ladder. Heat is a field like A or B but *incoherent*: it has no lattice and no
+phase, only an amount per place, so it pushes nowhere in particular; it only shakes. The cells' Brownian jitter is now
+"feeling the heat": a cell is kicked in a random direction each tick, harder where it is hot, and the kick uses that
+heat up. Heat spreads fast, leaks out of the dish "to the sky", and makes the soft ripple background simmer.
+
+**What it looks like.** About as lively as before, a little more where the culture is busy. The heat gathers where
+the cells are and move most: under a busy culture the temperature is about 10 times the empty dish's (seed 3, 2000
+cells with the biology: about 3.4 per R² under the cells, from 1.7 to 4.9 between the coolest and hottest tenth; 0.3 in
+the empty dish). There the background simmers with small soft blips, while the empty dish stays smooth. Stir hard with
+the mouse and the stirred path heats up (the stir's work becomes heat through the drag): for a few seconds the cells
+there boil, then the heat leaks away. Stragglers out in the cool dish barely shiver. The loop-only view (`?bio=0`) is
+calmer, so it runs cooler: its kicks are about as big as the old constant jitter.
+
+**Energy.** One unit is the motion of a cell moving at 10 CSS px/s carrying 0.5 (energy 0.5 x (v / 10 px/s)^2). Each
+tick a cell's velocity update is split into three parts, each booked:
+- drag (the damping, v x 0.85): the motion it removes becomes heat in the 3 x 3 heat pixels under the cell;
+- force (+ 0.15 x the sum of the forces: fields, contact, crawling, centre pull, walls, stirring): the change of motion
+  energy it makes is the **work** coming in (it can be negative: a force that brakes a cell gives energy back);
+- kick (a random velocity, Gaussian per axis): its mean energy is a share `grab` (0.004 per tick) of the heat under the
+  cell, capped at `kickMax` (2 R/s per axis), times the cell's motility; its actual energy change is taken from the heat
+  (a kick against the motion gives some back).
+A cell that dies hands its motion to the heat too, and so does every cell when N or G starts a new culture. Kicks
+consume heat and the heat leaks out, so the loop motion -> drag -> heat -> kicks -> motion cannot run away: at 8x for
+600 s of simulation the temperature, the kick size and the rates stayed level.
+
+**The heat grid.** One channel on a coarse grid, about one pixel per half a cell radius (396 x 247 for 2000 cells on a
+1280 x 800 window; coarser beyond 300 000 pixels, e.g. 693 x 434 at 10 000 cells). All amounts are whole numbers of
+counts (65 536 per unit) in i32, because WebGPU's atomics are i32 / u32 only: the cells add to a delta with atomic adds,
+and whole numbers make the spreading exact (what one pixel gives, its neighbour receives, to the count). One storage
+buffer holds `[ledger | delta | heat copy 0 | heat copy 1]` (`heat_common.wgsl`); each tick the spreading pass
+(`heat.wgsl`, explicit, 4 substeps of k = 0.2 at 2000 cells) takes in the delta, adds the base warmth, leaks a share,
+and spreads. The layout is channel-major, so later steps can add the other channels (atoms, fuels, sediment: 14 in
+all) as more blocks of the same buffer. The step pass was at WebGPU's limit of 8 storage buffers, so it now finds where
+a grid cell's cells end from the next grid cell's start instead of reading `counts`, which frees the slot for the heat.
+
+**Ripples.** Each ripple cell gets a small random bump with a chance that grows with the square of the temperature
+under it (`ripple_step.wgsl`), so hot places fill with small rings and cool places go still. The ambient drops (key A)
+stay as they were.
+
+**The entropy counter** (top right, every frame; Shift+E hides it):
+
+    ENTROPY  2.06 M  +10.5 k/s
+    moving 924 · heat in dish 21.1 k · in 2.09 M · rounding +0.027
+
+- ENTROPY: all the heat that has left the dish so far, and how fast it leaves now (per second of simulation time);
+- moving: the cells' motion energy now; heat in dish: the heat on the grid now;
+- in: all the energy put in so far: the work of the forces on the cells plus the base warmth;
+- rounding: in − (moving + heat in dish + ENTROPY), what does not add up. It is the rounding of each cell's energy
+  changes to whole counts and of the 32-bit float arithmetic: the "free entropy" of numerical error. Measured: it
+  wanders within a few hundredths of a unit (0.07 at most, at 10 000 cells) while in grows to millions (1e-8 of in
+  or less), through new cultures, hard
+  stirring, Shift+H and window resizes. Growing fast would mean a bug.
+The GPU sums the heat and the motion once per frame, and copies the ledger (4 KB) into one of three read-back buffers,
+read without waiting (the panel is 1 to 2 frames behind; if all three are busy, the counters keep adding up until the
+next copy). The F overlay has two more lines: the grid and its knobs, and the energy flows per second (work in,
+warmth in, drag to heat, kicks from heat, out), the mean temperature and the mean kick size.
+
+Keys (Part C uses Shift + a letter; every plain letter is taken):
+- **Shift+H**: jitter from heat on/off (off: the old constant jitter, which moves the position and involves no energy;
+  the heat is still made, spread and leaked)
+- **Shift+E**: entropy panel shown/hidden
+- **Shift+R**: ripples simmer with heat on/off
+
+URL options: `?heat=0` (kicks off at the start), `?entropy=0` (panel hidden), `?simmer=0` (ripples not driven by
+heat). `tools/shot.py --key shift+h` presses Shift + a letter, and the tool prints the entropy panel.
+
+Live-tunable in `moire.heat.params`: `kicks`, `spread` (12 R²/s; a warm patch spreads over about sqrt(spread / leak)
+= 5 R), `leak` (0.5 per s), `edge` (extra leak at the dish edge, 0), `warmth` (0.05 per R² per s), `grab`, `kickMax`,
+`pxR` (pixel size in R, 0.5; applied at the next resize). In `moire.background.params`: `heatDrops` (1e-4),
+`heatAmp` (0.3), `heatMaxP` (0.004). The ledger itself: `moire.heat.ledger`, `moire.heat.tot`.
+
+Measured energy flows (seed 3, 2000 cells with the biology, after 60 s): work in about 10 k per s, warmth 1.2 k,
+drag to heat 16 to 17 k, kicks from heat 6 to 7 k (the kicks recycle about 40 % of the heat the drag makes), out
+11 k; mean kick 0.35 R/s per axis against 0.13 R/s for the old jitter (the old one moved the position; as a velocity
+kick that is the same spreading). Loop only (`?bio=0`): work 5 k per s, kicks 0.14 R/s. 10 000 cells loop only: 0.23 R/s.
+
+Cost: GTX 1650 in headless Chrome, frame time unchanged (9.7 ms before and after; physics probe 0.74 to 0.86 ms
+against 0.85 before at 2000 cells, 1.19 against 0.98 ms at 10 000: the 9 heat reads and 9 atomic adds per cell);
+the heat's spreading pass 0.03 ms per substep on the 396 x 247 grid (4 substeps: 0.12 ms per tick, so about 1 ms
+per frame at 8x) and 0.09 ms on the 693 x 434 grid of 10 000 cells (3 substeps: 0.26 ms per tick); the ledger's sums
+and read-back once per frame are small next to that. In headed Firefox on this machine: 32 to 38 ms per frame, the
+same as the commit before measured in the same session (25 to 45 ms; Firefox was slow on this machine that day either
+way).
+
 ## The look of the landscape
 
 The sources' landscape is drawn as crisp halftone dots, like print: a triangular dot screen lies over the
@@ -497,7 +587,8 @@ The background ripples stay soft on purpose.
 - `src/main.js`: boot, frame loop, input, overlay. Layers are classes with `resize`, `compute`, `render`;
   the loop runs every layer's compute passes, then draws all layers into one render pass
 - `src/gpu.js`: adapter/device setup, fallback and error messages, shader loading with readable errors
-- `src/background.js` + `src/shaders/ripple_*.wgsl`, `background_draw.wgsl`: the viscous background
+- `src/background.js` + `src/shaders/ripple_*.wgsl`, `background_draw.wgsl`: the viscous background (since step C1
+  it reads the heat grid: hot places simmer)
 - `src/shaders/field_common.wgsl`: the field's maths (lattices, beat against the medium, envelope), shared by
   every shader that draws or senses the field; `src/field.js` prepends it (`loadFieldShader`) and owns the
   medium's breathing lattice (`Medium`, a layer that runs first)
@@ -510,6 +601,9 @@ The background ripples stay soft on purpose.
   (A into r, B into g) into their texture; `cell_draw.wgsl` draws them;
   `cell_check.wgsl` is the `?check=1` test; `cell_census.wgsl` counts fates, key bins and founder lines for the overlay,
   and the step 6 counters and histograms
+- `src/heat.js` + `src/shaders/heat_common.wgsl`, `heat.wgsl`: the heat band (step C1): the heat grid and its
+  spreading, the energy ledger and its read-back, the entropy panel's text. `heat_common.wgsl` (buffer layout, units,
+  struct HeatP) is also prepended to every cell shader; the cells' kicks and deposits are in `cell_step.wgsl`
 - `src/genome.js`: the genome layout, random founders, the rule switches and their numbers (`moire.genome`);
   the GPU side (mutation, key likeness, the `Bio` and `Stats` structs) is in `cell_common.wgsl`, the rules
   themselves in `cell_step.wgsl`

@@ -51,6 +51,7 @@ export function randomGenome(rng, founder) {
   g[16] = U(rng, 0, 1);                  // adhesion
   g[17] = U(rng, 0.85, 1.15);            // size
   g[18] = logU(rng, 0.5, 2);             // motility
+  g[19] = U(rng, 0, 2 * Math.PI);        // crawling heading (state, not a gene)
   return g;
 }
 
@@ -65,8 +66,14 @@ export class Genome {
       tau: 2.0,         // accumulator time constant (s): brief contacts fade, sustained ones add up
       release: 0.3,     // a committed cell returns to stem when its channel falls below release x threshold
       reach: 1.15,      // neighbours closer than reach x (r_i + r_j) are in contact (signals, adhesion)
+      adhesion: 0.6,    // adhesion pull at full stickiness (as the contact push of an overlap of 0.6 R)
+      adhSigma: 0.12,   // how alike keys must be to stick (Gaussian width in the wavevector difference)
+      fateAdh: 0.5,     // extra stickiness between cells of the same committed fate
+      adhBase: 0.25,    // stickiness every pair loses (unlike neighbours push off a little; helps sorting)
+      crawl: 0.6,       // crawling speed (R / s, times the motility factor); body traits (key B)
+      turnRate: 0.5,    // how fast a crawling cell's heading wanders (rad^2 / s)
     };
-    this.rules = { diff: true, adh: true, turn: true, mut: true, nut: true, inherit: false };
+    this.rules = { diff: true, adh: true, body: true, turn: true, mut: true, nut: true, inherit: false };
   }
 
   /** Bits for Sim.rules. */

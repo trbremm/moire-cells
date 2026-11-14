@@ -17,6 +17,13 @@
 // Spring markers: a crisp ring in the spring's ink (thicker for a heavy spring) and a centre dot that shrinks as the
 // spring dries up; dots touching the ring or the centre dot are left out whole (a keyline, as the old source markers).
 // Edges are anti-aliased over about one device pixel; the output is premultiplied, blended "over".
+// Step C6n, DUST (D.style = 1, the default): the substances as MATERIAL instead of a dot screen. A fine grid of squares
+// fixed in the dish (D.dust.x CSS px); each square holds at most one speck of each kind, at a place jittered by a hash of
+// the square (so nothing moves or flickers), present when another hash lies below the kind's coverage there (so the
+// number of specks follows the amount), its radius growing a little with the amount: fuel as green glow-dust, free atoms
+// fainter (red to grey-blue by their mix), trace as rare small bright sparks. A pixel looks at the 2 x 2 squares nearest
+// it (a speck is smaller than half a square), reading the amounts once per square at its centre. Sediment stays the
+// solid crust below. Under the neon look a speck is brighter at its centre (a tiny lamp; src/neon.js adds the halo).
 
 struct DrawP {
   dpr: f32,
@@ -33,8 +40,8 @@ struct DrawP {
   ringR: f32,         // spring marker radius (CSS px)
   level: f32,         // the inks' brightness
   traceDot: f32,      // trace diamonds' size, as a share of a full dot
-  _p0: f32,
-  _p1: f32,
+  style: f32,         // step C6n: 0 = halftone on the medium lattice, 1 = dust (material)
+  neon: f32,          // step C6n: 1 = the neon look (the specks and dots get a brighter centre)
   reactL: vec4f,      // inks: reactive free atoms (row 1, row 2), linkers, fuels, sediment, trace
   reactH: vec4f,
   linkL: vec4f,
@@ -44,7 +51,8 @@ struct DrawP {
   sedL: vec4f,
   sedH: vec4f,
   trace: vec4f,
-  _p2: vec4f,
+  dust: vec4f,        // step C6n, dust: x the grid's square (CSS px), y z a speck's radius at a small and a large amount,
+                      // w the free atoms' brightness (share of the fuel's)
 };
 
 struct Spring {
@@ -92,6 +100,65 @@ fn cover(c: f32) -> f32 {
   return select(0.0, k, k >= D.thresh);
 }
 
+fn hash3(p: vec2f, k: f32) -> vec3f {
+  var q = fract(vec3f(p.x, p.y, k) * vec3f(0.1031, 0.1030, 0.0973));
+  q += dot(q, q.yxz + 33.33);
+  return fract((q.xxy + q.yxx) * q.zyx);
+}
+
+// one speck: coverage-weighted premultiplied colour at x (centre c, radius r, ink)
+fn speck(x: vec2f, c: vec2f, r: f32, ink: vec3f) -> vec4f {
+  let d = length(x - c);
+  let a = disc(d, r);
+  if (a <= 0.0) { return vec4f(0.0); }
+  let hot = select(1.0, 1.0 + 0.7 * clamp(1.0 - d / max(r, 1e-3), 0.0, 1.0), D.neon > 0.5);
+  return vec4f(ink * hot, 1.0) * a;
+}
+
+// step C6n: the substances as dust (see the top of this file); `under` holds the sediment
+fn dust(x: vec2f, under: vec4f) -> vec4f {
+  var res = under;
+  let cs = D.dust.x;
+  let base = floor(x / cs - 0.5);
+  for (var k = 0; k < 4; k++) {
+    let g = base + vec2f(f32(k & 1), f32(k >> 1));
+    let centre = (g + 0.5) * cs;
+    let va = textureSampleLevel(texA, samp, uv_of(centre), 0.0);
+    let vb = textureSampleLevel(texB, samp, uv_of(centre), 0.0);
+    // free atoms: faint
+    let ca = cover(va.x);
+    if (ca > 0.0) {
+      let h = hash3(g, 1.0);
+      if (h.z < ca) {
+        let rs = clamp(va.y / va.x, 0.0, 1.0);
+        let hs = clamp(va.z / va.x, 0.0, 1.0);
+        let ink = mix(mix(D.linkL.rgb, D.linkH.rgb, hs), mix(D.reactL.rgb, D.reactH.rgb, hs), rs) * D.level * D.dust.w;
+        res = over(speck(x, (g + h.xy) * cs, mix(D.dust.y, D.dust.z, ca) * 0.8, ink), res);
+      }
+    }
+    // fuel: green glow-dust
+    let cf = cover(vb.x);
+    if (cf > 0.0) {
+      let h = hash3(g, 2.0);
+      if (h.z < cf) {
+        let ink = mix(D.fuelL.rgb, D.fuelH.rgb, clamp(vb.y / vb.x, 0.0, 1.0)) * D.level;
+        res = over(speck(x, (g + h.xy) * cs, mix(D.dust.y, D.dust.z, cf), ink), res);
+      }
+    }
+    // trace: rare small sparks
+    let ct = cover(va.w);
+    if (ct > 0.0) {
+      let h = hash3(g, 3.0);
+      if (h.z < 0.35 * ct) {
+        let q = abs(x - (g + h.xy) * cs);
+        let r = D.dust.z * 1.1;
+        res = over(vec4f(D.trace.rgb * D.level * 1.2, 1.0) * disc((q.x + q.y) * 0.7071, r * 0.7071), res);
+      }
+    }
+  }
+  return res;
+}
+
 @fragment
 fn fs(in: VSOut) -> @location(0) vec4f {
   let x = in.pos.xy / D.dpr;                         // CSS px
@@ -109,6 +176,19 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     let ink = mix(D.sedL.rgb, D.sedH.rgb, clamp(sed.w / max(sed.z, 1e-6), 0.0, 1.0)) * select(1.0, 1.4, core);
     let al = D.sedAlpha * select(0.8, 1.0, core);
     res = vec4f(ink * al, al);
+  }
+  if (D.style > 0.5) {
+    // step C6n: dust, and the springs' markers over it
+    var mk = vec4f(0.0);
+    for (var k = 0u; k < D.nSprings; k++) {
+      let s = SP.s[k];
+      let rr = D.ringR;
+      let rc = 0.32 * rr * sqrt(clamp(s.pos.w, 0.0, 1.0)) + 0.6;
+      let d = length(x - s.pos.xy);
+      let a = max(disc(abs(d - rr), 0.5 * s.ink.w), disc(d, rc));
+      mk = over(vec4f(s.ink.rgb, 1.0) * a, mk);
+    }
+    return over(mk, dust(x, res));
   }
 
   // the medium's lattice: spacing 2 / sqrt 3 x its period, rows along la0 + 30 degrees

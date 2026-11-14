@@ -71,11 +71,13 @@ Where the fields meet (step 6):
   conversion travels as waves
 
 Exclusion (step 7):
-- **8**: exclusion on/off (default off): cells of the same fate in the same state (the bar across each cell) keep a
+- **8**: exclusion on/off (default off; on with `?bio=0`): cells of the same fate in the same state (the bar across each cell) keep a
   gap; other states may touch
 - **9**: state flip on/off (default on; acts only while 8 is on): a cell crowded by its own state turns to the state
   least represented around it
 - **0**: number of states: 2 / 3 (default) / 4
+- **`\`** (backslash): squeeze on/off: the pull to the dish centre normal (0.25) or hard (1.2). With 2 states, exclusion on and
+  field B not felt (Q): the woven checkerboard (`?bio=0&states=2&squeeze=1`, then Q)
 
 Partner fields (step 8; all off by default, and the page looks as before until one is on):
 - **Z**: rule a, the partner A′ felt as a phase current (cells pushed the way the pair's phase travels)
@@ -156,11 +158,11 @@ and `moire.genome.rules` (the switches above). `founders` is the number of found
 (12; 0 = every cell its own random genome, which gives more fates at first and lineages dying out fast).
 
 URL options: `?overlay=1` (overlay from the start; `?overlay=ghost` keeps it up to date but invisible, so
-`tools/shot.py` can print it without it covering the shot), `?bio=0` (start with D H B T M E off: the loop alone), `?ripple=1` (a ripple every 0.7 s),
+`tools/shot.py` can print it without it covering the shot), `?bio=0` (start with D H B T M E off: the loop alone; field B like repels like, exclusion on), `?ripple=1` (a ripple every 0.7 s),
 `?debug=1` (console warnings into the overlay), `?nogpu=1` (show the no-WebGPU message),
 `?cells=N` (number of cells, default 2000), `?check=1` (every 2 s, count the cells' contacts through the
 neighbour grid and by brute force, and check the sort; result in the console and the overlay),
-`?excl=0|1`, `?flip=0|1`, `?states=2..4` (step 7, keys 8 9 0), `?partner=0|1`, `?change=0|1`, `?clock=0|1`,
+`?excl=0|1`, `?flip=0|1`, `?states=2..4`, `?squeeze=0|1` (step 7, keys 8 9 0 and `\`), `?partner=0|1`, `?change=0|1`, `?clock=0|1`,
 `?side=0|1` (step 8, keys Z , ' .), `?seed=N` (repeatable start: positions, genomes; the run itself drifts apart after a while, because the
 GPU's neighbour order varies), `?speed=1|2|4|8`, `?founders=N`, `?view=1` (lineage colours).
 In the browser console, `moire.background.params`, `moire.landscape.params`, `moire.medium.params`,
@@ -346,7 +348,7 @@ share a place; cells in different states may.
   (2 states: upright and lying; 3: three directions 60 degrees apart), with the lattice dots cleared around it, so it
   reads as one clean print mark. Only while exclusion is on (`moire.cells.look.stateMark`, `bar` brightness).
 
-**Rule 1, exclusion (key 8, off by default).** Same type, same state: the contact push reaches out to `reach` 1.3 x
+**Rule 1, exclusion (key 8, off by default, on with `?bio=0` since the user chose that).** Same type, same state: the contact push reaches out to `reach` 1.3 x
 the contact distance (the two radii) and is `hard` 4 times as stiff. Same type, other state: they push apart only
 below `pack` x the contact distance (default 1, plain contact; 0.85 lets them sink into each other, which looked
 cluttered, worst with 3 states). Different types: as before. The motion integration stays stable at these numbers

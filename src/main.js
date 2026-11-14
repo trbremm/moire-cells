@@ -33,6 +33,8 @@ import { Cells, DEFAULT_CELLS, ANCHORS } from './cells.js';
 
 window.__moireBooted = true;
 
+const SQUEEZE_SOFT = 0.25, SQUEEZE_HARD = 1.2;   // key \ : cells.params.squeeze, normal or pressed together
+
 const TICK = 1 / 60;
 const MAX_TICKS = 4;
 const BG = { r: 4 / 255, g: 6 / 255, b: 10 / 255, a: 1 };   // --bg #04060a
@@ -111,8 +113,10 @@ async function boot() {
       // the loop alone: no fates, adhesion, body traits, turnover, mutation or nutrient/threat biology
       Object.assign(cells.genome.rules, { diff: false, adh: false, body: false, turn: false, mut: false, nut: false });
       cells.fields.sign = 1;   // like repels like: islands and a labyrinth of strands (key U flips)
+      cells.excl.on = true;    // step 7 exclusion: pinwheel rosettes (key 8; the user chose it as this view's default)
     }
     if (params.has('excl')) cells.excl.on = flag('excl');
+    if (params.has('squeeze')) cells.params.squeeze = flag('squeeze') ? SQUEEZE_HARD : SQUEEZE_SOFT;
     if (params.has('flip')) cells.excl.flip = flag('flip');
     if (params.has('partner')) cells.partner.on = flag('partner');
     if (params.has('change')) cells.partner.change = flag('change');
@@ -253,7 +257,7 @@ function hintLine() {
 }
 function fullHint() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · .: sideways push · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
+    'C: clear · L: landscape · K: cell field · J: field B · Q: feel B · U: B like repels/attracts · Y: B like by charge/lineage · 4: leak A→B by stretch · 5: conversion A→B · 6: conversion boost/flip · 7: relay through B · 8: exclusion · 9: state flip · 0: 2/3/4 states · \\: squeeze · Z: partner A′ (phase current) · ,: change makes partner · ’ (apostrophe): felt change / clock · .: sideways push · ;: partner drawn · O: emit · S: sense · W: shape · X: beat anchor · R: receptor · - =: lever · A: ambient · N / G: new culture / new genomes · P: push · D: fates · H: adhesion · B: body · T: turnover · M: mutation · E: nutrient/threat · I: inherit fate · V: view · [ ]: speed · F: stats';
 }
 
 function tap(x, y) {
@@ -422,6 +426,10 @@ function setupInput() {
       const X = cells.excl;
       X.states = X.states >= 4 ? 2 : X.states + 1;
       flash(`exclusion: ${X.states} states (the bar's directions)${X.on ? '' : ' (exclusion is off: key 8)'}`);
+    } else if (k === '\\') {
+      const P = cells.params;
+      P.squeeze = P.squeeze > SQUEEZE_SOFT ? SQUEEZE_SOFT : SQUEEZE_HARD;
+      flash(`squeeze ${P.squeeze > SQUEEZE_SOFT ? 'hard: the pull to the centre presses the drop together (with 2 states (key 0), exclusion (8) and field B not felt (Q): a woven checkerboard)' : 'soft (normal)'}`);
     } else if (k === 'z') {
       const P = cells.partner;
       P.on = !P.on;

@@ -351,6 +351,20 @@ C6d. CHARGE PER SIDE (dipoles): each side holds its own charge (a cell that eats
     step 8 curls). Expect chains, head-to-tail threads, alternating stripes. Own switch.
 C7. Pumps across contact: storing, sharing, stealing. Membrane VOLTAGE (charge difference pumped across the
     membrane) as a second battery; stealing charged atoms fights the voltage it builds.
+    PUMPS AS GENES, BOTH WAYS (user 2026-11-15: "active chemical excretion without forcing the behaviour"): a pump
+    slot in the genome = (substance, direction IN or OUT, rate). Moving a substance down its gradient is free
+    (that is just leaking); moving it UP the gradient costs battery, more the steeper the gradient. Mutation
+    picks substance and direction at random; no rule says "excrete", "toxin" or "steal". Selection decides:
+    e.g. pumping light atoms OUT protects the cell's own rich fuel and membrane from vandals (self-protection),
+    and as a side effect poisons light-membrane neighbours; pumping fuel IN from a touching neighbour is
+    stealing; pumping fuel OUT next to kin is sharing.
+C7b. CATALYSTS (user asked 2026-11-15; Claude's proposal, both derived, no per-substance tuning):
+    - Engines are already the cells' catalysts (enzymes); the open dish has only trace.
+    - CRYSTAL SEEDING: sediment lowers the spark of its own formation (crust grows on crust: autocatalysis).
+      Expected: crusts become spreading fronts and spots, the first patterns the substrate makes by itself.
+    - TRACE AS COFACTOR: an engine's rate scales with the trace inside the cell (saturating), so trace becomes
+      a scarce vitamin worth finding, hoarding and (with pumps) stealing.
+    Each its own switch.
 C8. Hard light mutates cells.
 C9. DIVISION AND DEATH WITH A CHANGING COUNT (Part B step 9, pulled in for the experiments; user 2026-11-15: "play
     with cell division too"): fixed-capacity buffers with an alive flag; a cell divides when its battery (and

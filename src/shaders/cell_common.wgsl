@@ -78,15 +78,19 @@ struct Sim {
   emit: f32,        // cells' emission strength (0 = cells do not emit)
   r0: f32,          // a cell's envelope range r0, in units of R (reference 2.2)
   cut: f32,         // how far a cell feels another's field, in units of R (reference 3.6)
-  sense: f32,       // gain of the force from the field felt on the membrane (0 = off; 1 = reference)
+  sense: f32,       // gain of the force from the other cells' field felt on the membrane (0 = off; 1 = reference)
   tuneW: f32,       // receptor tuning width: how alike two lattices must be to feel each other (reference 0.177)
   srcAmp: f32,      // strength of a fresh source (reference 5)
   senseMax: f32,    // the field force saturates at this speed, in units of R per s (reference 3)
   activeGain: f32,  // active deformation gain: stretch along the cell's motion and the field's pull (0 = off)
   shapeRate: f32,   // how fast the shape follows its target (1/s; reference 3)
-  pad16: f32,
-  pad17: f32,
-  pad18: f32,
+  anchor: u32,      // where a cell's beat is anchored (key X): 0 = its lattice at the cell, so the moire slides
+                    // as the cell moves (the reference); 1 = the beat pattern pinned to the cell, bright at its
+                    // centre; 2 = its lattice anchored at the dish centre like the medium's, so the moire stands
+                    // still in the world and only the envelope moves with the cell
+  senseSrc: f32,    // gain of the sources' part of the field force (1 = reference)
+  receptor: u32,    // tuning toward other cells (key R): 0 = by the cell's own lattice (like feels like, the
+                    // reference); 1 = by its genome's receptor (angle, period, width), so A may feel B but not back
   pad19: f32,
   pad20: f32,
   pad21: f32,
@@ -306,6 +310,13 @@ fn tuning(dist2: f32, k0: f32, w: f32) -> f32 {
   return exp(-dist2 / (6.0 * w * w * k0 * k0));
 }
 
+// the 3 wavevectors of an unstrained lattice (angle, log period factor) as seen through the lever
+fn lattice_k(angle: f32, logp: f32, lever: f32, k0: f32, m: i32) -> vec2f {
+  let base = P3 * round(angle / P3);
+  let a = base + lever * (angle - base) + f32(m) * P3;
+  return k0 * exp(-lever * logp) * vec2f(cos(a), sin(a));
+}
+
 // A cell's membrane: 6 straight segments of its (stretched) outline. mid = segment midpoint relative to the
 // cell's centre; edge = the segment as a vector, going round in increasing angle, so (edge.y, -edge.x) is the
 // outward normal times the segment's length.
@@ -395,7 +406,10 @@ fn cell_beat(c: Cell, S: Sim, M: Medium) -> CellBeat {
   cb.k01 = vec4f(emitter_k(e, M, 0), emitter_k(e, M, 1));
   cb.k2a = vec4f(emitter_k(e, M, 2), e.amp, e.r0sq);
   let ph = vec3f(b.ph0 + dot(b.q0, o), b.ph1 + dot(b.q1, o), b.ph2 + dot(b.q2, o));
-  cb.ph = ph - TAU * floor(ph / TAU);
+  var pa = ph;                                          // anchor 0: the reference
+  if (S.anchor == 1u) { pa = vec3f(0.0); }
+  if (S.anchor == 2u) { pa = vec3f(dot(b.q0, o), dot(b.q1, o), dot(b.q2, o)); }
+  cb.ph = pa - TAU * floor(pa / TAU);
   cb.idx = 0u;
   return cb;
 }

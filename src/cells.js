@@ -50,6 +50,7 @@ const STATS_EVENTS = 64;
 const MAX_SRC = 16;            // sources the cells feel (MAX_CELL_SOURCES in cell_common.wgsl)
 const CELL_BEAT_BYTES = 80;    // struct CellBeat in cell_common.wgsl
 const FIELD_FORMAT = 'rgba16float';
+export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
 export class Cells {
   constructor(device, format, medium, count, seed) {
@@ -85,16 +86,23 @@ export class Cells {
                       // with r up to about 1.3 R for big cells); the grid is at least `cut` wide too
       // the loop (step 4)
       emit: true,     // cells emit into the field (key O)
-      lever: 1.0,     // how different the cells' lattices are from the medium's (keys - and =): scales each
-                      // key's angle and period difference from the medium (1 = as the genome has it)
+      lever: 0.4,     // how different the cells' lattices are from the medium's (keys - and =): scales each
+                      // key's angle and period difference from the medium (1 = as the genome has it; smaller =
+                      // longer beats, so bigger clusters)
       r0: 2.2,        // a cell's envelope range, in units of R (reference: r0^2 = 4.84 R^2)
       cut: 3.6,       // how far a cell's field reaches (sensed and drawn), in units of R (reference 3.6)
-      sense: 1.0,     // force from the field felt on the membrane (0 = off; key S toggles)
-      senseOn: true,
-      tuneW: 0.177,   // receptor tuning width (reference: exp(-|dk|^2 / (3 x 0.0625 k0^2)))
+      sense: 10,      // gain of the force from the other cells' field felt on the membrane (1 = reference, which
+                      // is too weak to matter against the contact push at 2000 cells)
+      senseSrc: 1.0,  // gain of the force from the sources' field (1 = reference)
+      senseOn: true,  // field sensing on/off (key S)
+      receptor: false, // tuning toward other cells by the genome's receptor instead of the own lattice (key R)
+      tuneW: 0.5,     // tuning width toward other cells' lattices (reference 0.177: only near-identical keys)
       senseMax: 3.0,  // the field force saturates at this speed (R / s; reference 3)
       active: true,   // active deformation (key W): stretch along the motion and the field's pull
       shapeRate: 3,   // how fast the shape follows its target (1/s; reference 3)
+      anchor: 1,      // where a cell's beat is anchored (key X): 0 = its lattice at the cell, the moire sliding as
+                      // it moves (reference); 1 = the beat pinned to the cell, bright at its centre; 2 = its
+                      // lattice anchored at the dish centre, the moire standing still in the world
     };
     // drawing (live-tunable: moire.cells.look)
     this.fieldScale = 0.5;     // texels per CSS px of the cells' field texture
@@ -348,9 +356,10 @@ export class Cells {
     f[o + 38] = G.turnover; f[o + 39] = G.unhappy; f[o + 40] = G.mutSize; f[o + 41] = G.mutJump;
     f[o + 42] = G.nutFar; f[o + 43] = G.thrKill; u[o + 44] = this.srcCount; f[o + 45] = G.beatMix;
     f[o + 46] = p.lever; f[o + 47] = p.emit ? 1 : 0; f[o + 48] = p.r0; f[o + 49] = p.cut;
-    f[o + 50] = p.senseOn ? p.sense : 0; f[o + 51] = p.tuneW;
+    f[o + 50] = p.senseOn ? p.sense : 0; f[o + 51] = p.tuneW; f[o + 57] = p.senseOn ? p.senseSrc : 0;
+    u[o + 58] = p.receptor ? 1 : 0;
     f[o + 52] = this.landscape ? this.landscape.params.amp : 5; f[o + 53] = p.senseMax;
-    f[o + 54] = p.active ? 1 : 0; f[o + 55] = p.shapeRate;
+    f[o + 54] = p.active ? 1 : 0; f[o + 55] = p.shapeRate; u[o + 56] = p.anchor;
   }
 
   /** Record the grid build for the tick whose uniforms are in slot k. */
@@ -609,7 +618,7 @@ export class Cells {
     }
     lines.push(`rules: D differentiation ${on(r.diff)} · H adhesion ${on(r.adh)} · B body ${on(r.body)} · T turnover ${on(r.turn)} · M mutation ${on(r.mut)} · E nutrient/threat ${on(r.nut)} · I inherit fate ${on(r.inherit)} · view ${this.look.view ? 'lineage' : 'fate'}`);
     const mo = this.motion;
-    lines.push(`loop: S sense ${on(p.senseOn)} · O emit ${on(p.emit)} · W active shape ${on(p.active)} · lever ${p.lever.toFixed(2)}` +
+    lines.push(`loop: S sense ${on(p.senseOn)} · O emit ${on(p.emit)} · W active shape ${on(p.active)} · X beat ${ANCHORS[p.anchor] || p.anchor} · R tuning by ${p.receptor ? 'receptor' : 'own lattice'} · lever ${p.lever.toFixed(2)}` +
       (mo ? ` · speed ${mo.speed.toFixed(1)} px/s · net ${mo.net == null ? '-' : mo.net.toFixed(1)} px/s · stretch ${mo.stretch.toFixed(2)} · spread ${mo.spread.toFixed(1)} R` : ''));
     if (c) {
       lines.push(`grid check: ${c.contacts / 2} contacts` + (c.brute ? ` (brute force ${c.bruteContacts / 2}, ${c.mismatch} cells differ)` : '') +

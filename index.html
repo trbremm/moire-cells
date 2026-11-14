@@ -168,6 +168,17 @@ body.entropy-on #overlay { top: 116px; }
   .ui input[type="range"]::-moz-range-thumb { width: 14px; height: 26px; }
 }
 
+/* step C3b: recording, top left (outside the recorded dish: only the canvas is recorded) */
+#rec {
+  position: absolute; top: 14px; left: max(16px, env(safe-area-inset-left, 0px));
+  display: flex; align-items: center; gap: 7px; padding: 3px 8px 3px 7px;
+  background: var(--panel); border: 1px solid var(--thr); border-radius: 3px;
+  color: var(--thr); font-size: 11px; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; pointer-events: none;
+}
+#rec[hidden] { display: none; }
+#rec .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--thr); }
+body.recording #overlay { margin-top: 30px; }
+
 /* plain message: no WebGPU, device lost, shader error */
 #msg {
   position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center;
@@ -195,6 +206,7 @@ body.entropy-on #overlay { top: 116px; }
 <pre id="overlay" hidden></pre>
 <pre id="entropy" hidden></pre>
 <p id="hint"></p>
+<div id="rec" hidden><span class="dot"></span><span>REC 0:00</span></div>
 <div id="msg" hidden><div class="box" id="msgbox"></div></div>
 
 <noscript>

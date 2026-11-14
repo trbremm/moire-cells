@@ -103,7 +103,9 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   var res = vec4f(0.0);
   if (steps > 0.0) {
     let ink = mix(D.sedL.rgb, D.sedH.rgb, clamp(sed.w / max(sed.z, 1e-6), 0.0, 1.0));
-    let al = D.sedAlpha * steps / 3.0;
+    // the first level is already most of the way (a crust reads as one flat patch, its thicker parts as subtle steps
+    // inside it, not as a soft halo of faint rings)
+    let al = D.sedAlpha * (0.6 * min(steps, 1.0) + 0.2 * max(steps - 1.0, 0.0));
     res = vec4f(ink * al, al);
   }
 

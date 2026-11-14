@@ -27,7 +27,7 @@ choose the browser, set "High performance", restart the browser.
 - click: drop what the tap mode says · drag: stir (ripples, and cells near the pointer are pushed along)
 - **1** / **2** / **3**: tap mode: ripple / nutrient source / threat source (the hint line shows the mode)
 - **C**: clear all sources
-- **L**: landscape glow on/off (the sources' ring markers stay)
+- **L**: landscape dots on/off (the sources' ring markers stay)
 - **F**: frame time and adapter overlay
 - **A**: ambient ripples on/off (random drops standing in for the cells' divisions and deaths)
 - **N**: new culture (a fresh blob of stem cells at the centre)
@@ -49,6 +49,18 @@ neighbour grid and by brute force, and check the sort; result in the console and
 In the browser console, `moire.background.params`, `moire.landscape.params`, `moire.medium.params`,
 `moire.cells.params` (physics) and `moire.cells.look` (drawing) hold live-tunable numbers.
 
+## The look of the landscape
+
+The sources' landscape is drawn as crisp halftone dots, like print: a triangular dot screen lies over the
+dish, each dot reads the field at its own centre, and its area grows with the field strength (flat colour,
+no glow; a weak field draws no dot). The beat's hex blobs therefore show as rosettes of bigger dots.
+Where nutrient and threat overlap, the stronger one takes the dot. The ring markers are a clean stroke and
+a centre dot; dots under them are left out. Knobs in `moire.landscape.params`: `pitch` (6 CSS px between
+dots), `hex` (false = square screen), `angle` (screen turned 15°), `threshold` (0.12), `maxDot` (0.9 of
+half the pitch), `base` (0; the reference's glow used 0.3, which fills the troughs near a source with small
+dots), `dotLevel` (0.55, dot brightness), `nutColour` / `thrColour` (palette), `ringW`, `markers`, `gain`.
+The background ripples stay soft on purpose.
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start
@@ -60,7 +72,7 @@ In the browser console, `moire.background.params`, `moire.landscape.params`, `mo
   every shader that draws or senses the field; `src/field.js` prepends it (`loadFieldShader`) and owns the
   medium's breathing lattice (`Medium`, a layer that runs first)
 - `src/landscape.js` + `src/shaders/field_prep.wgsl`, `landscape_draw.wgsl`: the sources, their per-frame beat
-  prep, and the per-pixel green / red landscape with ring markers
+  prep, and the green / red halftone landscape with ring markers
 - `src/cells.js` + `src/shaders/cell_*.wgsl`: the cells. `cell_common.wgsl` holds the cell layout, the per-tick
   uniforms and the grid helpers (prepended after field_common); `cell_grid.wgsl` rebuilds the neighbour grid
   every tick (a counting sort by grid cell); `cell_step.wgsl` moves the cells; `cell_draw.wgsl` draws them;

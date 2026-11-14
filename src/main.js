@@ -13,6 +13,7 @@
 //   ?debug=1    copy console warnings and errors into the overlay
 //   ?nogpu=1    pretend WebGPU is missing (to see the fallback message)
 //   ?cells=N    number of cells (default 2000)
+//   ?check=1    compare the cells' neighbour grid with brute force every 2 s (console)
 
 import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown } from './gpu.js';
 import { Background } from './background.js';
@@ -87,6 +88,7 @@ async function boot() {
     medium = new Medium(gpu.device);
     landscape = await Landscape.create(gpu.device, gpu.format, medium);
     cells = await Cells.create(gpu.device, gpu.format, medium, Number(params.get('cells')) || DEFAULT_CELLS);
+    if (flag('check')) cells.enableCheck();
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));
     return;

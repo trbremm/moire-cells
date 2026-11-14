@@ -28,8 +28,8 @@
 // (ln pixels + the entropy of the mix); ORDER = 1 - H / Hmax: 1 = all in one spot, 0 = evenly smeared.
 
 import { loadShader } from './gpu.js';
-import { HEAT_COMMON_URL, LEDGER_WORDS, fmt } from './heat.js';
-import { BANDS } from './light.js';
+import { HEAT_COMMON_URL, HEAT_SCALE, LEDGER_WORDS, fmt } from './heat.js';
+import { BANDS, LIGHT_COMMON_URL } from './light.js';
 
 // ---------- the periodic table (CLAUDE.md, Part C): every property derived from ROW and GROUP, nowhere else ----------
 // ROW is size: heavier = slower spreading (later: richer bonds, harder light needed). GROUP is role: a GIVER wants one
@@ -209,6 +209,12 @@ const SPRING_FLOATS = 24;                 // struct Spring: pos (4), amt (16), i
 const DRAW_BYTES = 224;                   // struct DrawP in matter_draw.wgsl
 const K_MAX = 0.2;
 const LG_M = { ADD: 3072, LOST: 4736, GONE: 6400, DISH: 8064, ORDER: 9728 };   // heat_common.wgsl
+const LG_C = { LIGHT: 10240, RX: 10752 };   // step C4 (heat_common.wgsl): light caught per band, events per family
+const MAX_RX = 24;                          // struct ChemP's reactions (REACTIONS has 22)
+const RX_BYTES = 48;                        // struct Rx
+const CP_BYTES = 96 + MAX_RX * RX_BYTES;    // struct ChemP
+const NONE = 255;                           // no channel (Rx.ch)
+const SED_MASK = SUBSTANCES.reduce((m, s, c) => (s.kind === 'sediment' ? m | (1 << c) : m), 0);
 const ORDER_SLOTS = 256;
 
 // what Shift+S shows: the summary, each substance alone, nothing
@@ -243,6 +249,26 @@ export class Matter {
       sedAlpha: 0.7,      // sediment: opacity of the top level
       ringR: 1.3,         // spring marker radius, in medium R (CSS px x R)
     };
+    // step C4, chemistry in the open (live-tunable: moire.matter.chem). The switches are the rules (Shift+M and the
+    // others, src/actions.js); the numbers are the knobs. Energies and sparks are not here: they come from the table
+    // (CHEM, derive). Rates are per s of simulation time; amounts per R^2.
+    this.chem = {
+      on: true,           // Shift+M: the chemistry as a whole
+      make: true,         // Shift+F: light makes fuel (giver + taker -> fuel, by the fuel's band)
+      burn: true,         // Shift+B: fuel breaks back into its atoms (by heat; and by hard light)
+      swap: true,         // Shift+P: swaps (a free atom takes a partner out of a richer bond)
+      sediment: true,     // Shift+K: linkers chain into sediment (by heat); hard light cracks it
+      trace: true,        // Shift+T: trace lowers the spark where it sits
+      theta: 1 / 16,      // temperature scale of the sparks: rate x exp(-spark / (theta x temperature per R^2))
+      kMake: 1,           // optical depth of a giver-taker pair for its band, per pair unit per R^2 (pair = a b / (a + b))
+      kBurn: 0.2,         // per s: fuel breaking by heat, before the spark's factor
+      kPhoto: 0.03,       // optical depth of fuel for hard light (breaking it), per unit per R^2
+      kSwap: 1,           // R^2 per s: swaps, before the spark's factor
+      kSed: 0.5,          // R^2 per s: linker + linker -> sediment, before the spark's factor
+      kCrack: 0.02,       // optical depth of sediment for hard light (cracking it), per unit per R^2
+      dark: 1.5,          // optical depth of sediment for warm light (dark: it warms in the light), per unit per R^2
+      traceK: 3,          // spark x 1 / (1 + traceK x trace per R^2)
+    };
     this.springs = [];        // { x, y, kind, age }
     this.seen = new Float64Array(NCH).fill(-1e9);   // when each channel last had matter (or a spring dripping it)
     this.time = 0;
@@ -256,6 +282,11 @@ export class Matter {
     this.ledger = null;       // last snapshot (see apply)
     this.hist = [];           // [time, added, lost] for the rates
     this.orderHist = [];      // [time, order] (the last few minutes)
+    // step C4: cumulative light caught by the substances per band (energy units) and events per family (substance units)
+    this.ctot = { light: new Float64Array(BANDS.length), rx: new Float64Array(FAMILIES.length) };
+    this.chist = [];          // [time, ...events per family, light caught] for the rates
+    this.light = null;        // step C4: the light (its uniform is bound to the reactions; set by main.js)
+    this.rxOn = [];           // the reactions sent to the GPU this frame
   }
 
   static async create(device, format, medium) {
@@ -272,8 +303,11 @@ export class Matter {
     const fres = await fetch('src/shaders/field_common.wgsl', { cache: 'no-cache' });
     if (!fres.ok) throw new Error('Could not load shader src/shaders/field_common.wgsl');
     const field = (await fres.text()).replace(/\s*$/, '\n\n');
+    const lres = await fetch(LIGHT_COMMON_URL, { cache: 'no-cache' });
+    if (!lres.ok) throw new Error(`Could not load shader ${LIGHT_COMMON_URL}: HTTP ${lres.status}`);
+    const lightC = (await lres.text()).replace(/\s*$/, '\n\n');
     const [mod, drawMod] = await Promise.all([
-      loadShader(d, 'src/shaders/matter.wgsl', { prefixes: [{ name: HEAT_COMMON_URL, text: common }] }),
+      loadShader(d, 'src/shaders/matter.wgsl', { prefixes: [{ name: HEAT_COMMON_URL, text: common }, { name: LIGHT_COMMON_URL, text: lightC }] }),
       loadShader(d, 'src/shaders/matter_draw.wgsl', { prefixes: [{ name: 'src/shaders/field_common.wgsl', text: field }] }),
     ]);
     const C = GPUShaderStage.COMPUTE, U = GPUBufferUsage;
@@ -285,6 +319,8 @@ export class Matter {
         { binding: 2, visibility: C, buffer: { type: 'storage' } },
         { binding: 3, visibility: C, buffer: { type: 'uniform' } },
         { binding: 4, visibility: C, buffer: { type: 'storage' } },
+        { binding: 5, visibility: C, buffer: { type: 'uniform' } },   // step C4: the light (light_common.wgsl)
+        { binding: 6, visibility: C, buffer: { type: 'uniform' } },   // step C4: the chemistry (struct ChemP)
       ],
     });
     this.texBgl = d.createBindGroupLayout({
@@ -297,7 +333,7 @@ export class Matter {
     const layout = d.createPipelineLayout({ label: 'matter', bindGroupLayouts: [this.bgl] });
     const paintLayout = d.createPipelineLayout({ label: 'matter paint', bindGroupLayouts: [this.bgl, this.texBgl] });
     this.pipes = {};
-    for (const e of ['spread', 'count']) {
+    for (const e of ['spread', 'count', 'react']) {
       this.pipes[e] = d.createComputePipeline({ label: `matter ${e}`, layout, compute: { module: mod, entryPoint: e } });
     }
     this.pipes.paint = d.createComputePipeline({ label: 'matter paint', layout: paintLayout, compute: { module: mod, entryPoint: 'paint' } });
@@ -307,6 +343,8 @@ export class Matter {
     this.tickAB = new ArrayBuffer(MT_SLOTS * MT_SLOT);
     this.springBuf = d.createBuffer({ label: 'springs', size: MAX_SPRINGS * SPRING_FLOATS * 4, usage: U.UNIFORM | U.COPY_DST });
     this.springF = new Float32Array(MAX_SPRINGS * SPRING_FLOATS);
+    this.chemBuf = d.createBuffer({ label: 'chemistry', size: CP_BYTES, usage: U.UNIFORM | U.COPY_DST });
+    this.chemAB = new ArrayBuffer(CP_BYTES);
 
     // drawing
     const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
@@ -339,6 +377,8 @@ export class Matter {
         { binding: 2, resource: { buffer, offset: 0, size: LEDGER_WORDS * 4 } },   // the ledger, atomic
         { binding: 3, resource: { buffer: this.springBuf } },
         { binding: 4, resource: { buffer, offset: LEDGER_WORDS * 4 } },   // ... the grid blocks behind it, plain (matter.wgsl)
+        { binding: 5, resource: { buffer: this.light.buffer } },
+        { binding: 6, resource: { buffer: this.chemBuf } },
       ],
     });
   }
@@ -397,8 +437,14 @@ export class Matter {
     pass.end();
   }
 
-  /** Springs and spreading for the frame's ticks, then the drawing's textures. */
-  encodeFrame(encoder, frame) {
+  /**
+   * The frame's set-up (after the heat's beginFrame): the springs, the spreading's and the reactions' parameters and
+   * every tick's slots. `warm`: the cells' warm-up ticks that run before this frame's real ticks (the substances sit
+   * those out, so matter tick t is the heat's tick warm + t). Then encodeTick for each tick, inside the heat's pass of
+   * that tick, and endTicks.
+   */
+  beginFrame(encoder, frame, warm = 0) {
+    this.ticks = 0;
     const H = this.heat;
     if (!H || !H.buffer) return;
     if (this.bufVersion !== H.version) {
@@ -409,6 +455,8 @@ export class Matter {
     }
     const ticks = frame.ticks;
     if (!ticks) return;
+    this.ticks = ticks;
+    this.warm = warm;
     const p = this.params, dt = frame.tickDt, a = H.px / H.R;
     // springs: each drips on every tick of this frame on which it is still younger than its life (counted per tick, so
     // a spring gives the same amount at any speed, also with hundreds of ticks per frame), then ages and dries up.
@@ -425,6 +473,16 @@ export class Matter {
     this.springs = this.springs.filter((s) => s.age < p.life);
     let active = 0;
     for (let c = 0; c < NCH; c++) if (frame.time - this.seen[c] < 2) active |= 1 << c;
+    // step C4: the reactions on this frame, and every channel they can make from what is there (so a product's channel
+    // spreads, both copies, from the tick it first appears)
+    const rx = this.writeChem(dt);
+    for (let grew = true; grew;) {
+      grew = false;
+      for (const r of rx) {
+        if (r.ins.every((c) => active & (1 << c))) for (const c of r.outs) if (!(active & (1 << c))) { active |= 1 << c; grew = true; }
+      }
+    }
+    this.react = (rx.length > 0 || (this.dark && (active & SED_MASK) !== 0)) && active !== 0;
     this.active = active;
 
     // spreading per substep, per channel
@@ -446,40 +504,87 @@ export class Matter {
 
     const T = new Uint32Array(this.tickAB), w = MT_SLOT / 4;
     const seed0 = (frame.frameNo * 2654435761 + 0x7f4a7c15) >>> 0;
+    this.seed0 = seed0;
     for (let t = 0; t < ticks; t++) {
       const nt = nsAt(t);
+      const heatWord = H.offsetAt(warm + t) - LEDGER_WORDS;   // the heat copy current in this tick (index into the grid binding)
       for (let s = 0; s < this.nSub; s++) {
         const o = (t * MAX_SUB + s) * w, c = this.cur ^ ((t * this.nSub + s) & 1);
         T[o] = this.copyBase(c); T[o + 1] = this.copyBase(c ^ 1); T[o + 2] = s === 0 ? 1 : 0;
         T[o + 3] = Math.imul(seed0 + t * 131 + s * 7, 2654435761) >>> 0; T[o + 4] = nt; T[o + 5] = 0;
+        T[o + 6] = heatWord;
       }
     }
     const last = (ticks - 1) * MAX_SUB + MAX_SUB;
     this.device.queue.writeBuffer(this.tickBuf, 0, this.tickAB, 0, Math.min(last, MT_LEDGER) * MT_SLOT);
-    const pass = encoder.beginComputePass({ label: 'matter' });
-    const wx = Math.ceil(H.hw / 8), wy = Math.ceil(H.hh / 8);
-    if (active) {
-      // (with nothing in the dish and no spring, both copies are all zero: nothing to spread, and the copies stay put)
-      pass.setPipeline(this.pipes.spread);
-      for (let t = 0; t < ticks; t++) {
-        for (let s = 0; s < this.nSub; s++) {
-          pass.setBindGroup(0, this.bg, [(t * MAX_SUB + s) * MT_SLOT]);
-          pass.dispatchWorkgroups(Math.ceil(H.hw / 16), Math.ceil(H.hh / 4));
-        }
-      }
-      this.cur ^= (ticks * this.nSub) & 1;
+  }
+
+  /**
+   * Tick t of this frame, recorded into the heat's pass of that tick (after the cells' step, before the heat spreads):
+   * the spreading substeps, then the reactions in the copy they leave (which read the heat and the cells' cover of this
+   * tick and put the heat they release into the delta the heat's spreading takes in next).
+   * (With nothing in the dish and no spring, both copies are all zero: nothing to spread or react, the copies stay put.)
+   */
+  encodeTick(pass, t) {
+    if (!this.active || t >= this.ticks) return;
+    const H = this.heat;
+    pass.setPipeline(this.pipes.spread);
+    for (let s = 0; s < this.nSub; s++) {
+      pass.setBindGroup(0, this.bg, [(t * MAX_SUB + s) * MT_SLOT]);
+      pass.dispatchWorkgroups(Math.ceil(H.hw / 16), Math.ceil(H.hh / 4));
     }
+    if (this.react) {
+      // the tick's last substep's slot: its dst is the copy after this tick's spreading
+      pass.setPipeline(this.pipes.react);
+      pass.setBindGroup(0, this.bg, [(t * MAX_SUB + this.nSub - 1) * MT_SLOT]);
+      pass.dispatchWorkgroups(Math.ceil(H.hw / 8), Math.ceil(H.hh / 8));
+    }
+  }
+
+  /** After the frame's ticks (before the heat's endFrame, which counts the dish): the current copy, the drawing's textures. */
+  endTicks(encoder) {
+    const H = this.heat;
+    if (!this.ticks) return;
+    if (this.active) this.cur ^= (this.ticks * this.nSub) & 1;
     // the ledger / paint slot: the current copy after the ticks
-    const L = MT_LEDGER * w;
-    T[L] = this.copyBase(this.cur); T[L + 1] = 0; T[L + 2] = 1; T[L + 3] = seed0; T[L + 4] = H.n; T[L + 5] = LG_M.DISH;
+    const T = new Uint32Array(this.tickAB), L = MT_LEDGER * MT_SLOT / 4;
+    T[L] = this.copyBase(this.cur); T[L + 1] = 0; T[L + 2] = 1; T[L + 3] = this.seed0; T[L + 4] = H.n; T[L + 5] = LG_M.DISH;
     this.device.queue.writeBuffer(this.tickBuf, MT_LEDGER * MT_SLOT, this.tickAB, MT_LEDGER * MT_SLOT, MT_SLOT);
-    if (this.tex && show !== 'off') {
+    if (this.tex && this.showName !== 'off') {
+      const pass = encoder.beginComputePass({ label: 'matter paint' });
       pass.setPipeline(this.pipes.paint);
       pass.setBindGroup(0, this.bg, [MT_LEDGER * MT_SLOT]);
       pass.setBindGroup(1, this.texBG);
-      pass.dispatchWorkgroups(wx, wy);
+      pass.dispatchWorkgroups(Math.ceil(H.hw / 8), Math.ceil(H.hh / 8));
+      pass.end();
     }
-    pass.end();
+  }
+
+  /**
+   * Step C4: the reactions switched on, into the chemistry uniform (struct ChemP in matter.wgsl), with their rate
+   * constants from the knobs; returns the list. The table itself (energies, sparks, bands, what makes what) is REACTIONS.
+   */
+  writeChem(dt) {
+    const p = this.chem, H = this.heat;
+    const famOn = { make: p.make, burn: p.burn, photo: p.burn, swap: p.swap, form: p.sediment, crack: p.sediment };
+    const famK = { make: p.kMake, burn: p.kBurn, photo: p.kPhoto, swap: p.kSwap, form: p.kSed, crack: p.kCrack };
+    const lightOn = !!(this.light && this.light.on);
+    const list = p.on ? REACTIONS.filter((r) => famOn[r.fam] && (r.by === 'heat' || lightOn) && famK[r.fam] > 0).slice(0, MAX_RX) : [];
+    this.rxOn = list;
+    const u = new Uint32Array(this.chemAB), f = new Float32Array(this.chemAB), i32 = new Int32Array(this.chemAB);
+    u[0] = list.length; u[1] = p.trace ? 1 : 0; u[2] = CH.trace; u[3] = lightOn ? 1 : 0;
+    f[4] = Math.max(1e-6, p.theta); f[5] = H.tempScale; f[6] = dt; f[7] = Math.max(0, p.traceK);
+    // sediment is dark: it catches warm light (as heat) while the chemistry is on, whatever the rules
+    this.dark = p.on && lightOn && p.dark > 0;
+    SUBSTANCES.forEach((s, c) => { f[8 + c] = s.kind === 'sediment' && this.dark ? p.dark : 0; });
+    list.forEach((r, k) => {
+      const o = (96 + k * RX_BYTES) / 4;
+      u[o] = r.ins[0]; u[o + 1] = r.ins.length > 1 ? r.ins[1] : NONE; u[o + 2] = r.outs[0]; u[o + 3] = r.outs.length > 1 ? r.outs[1] : NONE;
+      u[o + 4] = r.by === 'light' ? 1 : 0; u[o + 5] = r.band ?? 0; u[o + 6] = FAMILIES.indexOf(r.fam); u[o + 7] = 0;
+      i32[o + 8] = r.heat16; i32[o + 9] = r.light16; f[o + 10] = Math.max(0, famK[r.fam]); f[o + 11] = r.spark;
+    });
+    this.device.queue.writeBuffer(this.chemBuf, 0, this.chemAB);
+    return list;
   }
 
   /** Write the springs uniform for this frame (`list` in this order; `aged`: the age they reach this frame); returns how many. */
@@ -564,7 +669,23 @@ export class Matter {
       if (!O.length || rec.time - O[O.length - 1][0] >= 1) O.push([rec.time, order]);
       while (O.length > 600) O.shift();
     }
-    this.ledger = { time: rec.time, add, lost, gone, dish, rounding: add - (dish + lost + gone), rateAdd: rate(1), rateLost: rate(2), order, entropy: Hn };
+    // step C4: light caught by the substances, events per family, and the chemical energy: in the dish (each substance's
+    // amount x its energy) and gone out with matter (lost at the edge, washed out, dropped on a resize). All exact.
+    const CT = this.ctot;
+    for (let b = 0; b < BANDS.length; b++) CT.light[b] += wide(LG_C.LIGHT + 128 * b) / HEAT_SCALE;
+    for (let k = 0; k < FAMILIES.length; k++) CT.rx[k] += wide(LG_C.RX + 128 * k) / ATOM_SCALE;
+    const byE = (arr) => SUBSTANCES.reduce((x, s, c) => x + arr[c] * s.energy, 0);
+    const chem = { light: CT.light.reduce((a, b) => a + b, 0), dish: byE(this.dish), out: byE(T.lost) + byE(T.gone) };
+    chem.fuel = SUBSTANCES.reduce((x, s, c) => x + (s.kind === 'fuel' ? this.dish[c] : 0), 0);
+    chem.sed = SUBSTANCES.reduce((x, s, c) => x + (s.kind === 'sediment' ? this.dish[c] : 0), 0);
+    const CHs = this.chist;
+    CHs.push([rec.time, ...CT.rx, ...CT.light]);
+    while (CHs.length > 2 && rec.time - CHs[1][0] >= 1) CHs.shift();
+    const cdt = rec.time - CHs[0][0];
+    const crate = (k) => (cdt > 0.05 ? (CHs[CHs.length - 1][k] - CHs[0][k]) / cdt : 0);
+    chem.rate = Object.fromEntries(FAMILIES.map((f, k) => [f, crate(1 + k)]));
+    chem.lightRate = BANDS.map((b, k) => crate(1 + FAMILIES.length + k));
+    this.ledger = { time: rec.time, add, lost, gone, dish, rounding: add - (dish + lost + gone), rateAdd: rate(1), rateLost: rate(2), order, entropy: Hn, chem };
   }
 
   // ---------- drawing ----------

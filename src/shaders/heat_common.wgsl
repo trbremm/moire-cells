@@ -25,7 +25,7 @@
 
 const HEAT_SCALE: f32 = 65536.0;   // counts per energy unit
 const HEAT_V0: f32 = 10.0;         // CSS px / s: the speed whose motion energy is 0.5 units
-const LEDGER_WORDS: u32 = 10240u;
+const LEDGER_WORDS: u32 = 11520u;
 const LG_WORK: u32 = 0u;     // 256 slots: work done on the cells by the forces (fields, contact, crawling, stirring)
 const LG_BASE: u32 = 256u;   // 64: the base warmth put into the dish
 const LG_OUT: u32 = 320u;    // 64, 64-bit: heat that leaked out of the dish (to the sky, at the edge, on a resize)
@@ -47,6 +47,9 @@ const LG_M_LOST: u32 = 4736u;      // left the dish at its edge
 const LG_M_GONE: u32 = 6400u;      // washed out (Shift+C) or dropped with the old grid on a resize
 const LG_M_DISH: u32 = 8064u;      // snapshot: in the dish now (cleared before each read-back)
 const LG_M_ORDER: u32 = 9728u;     // snapshot: 256 f32 partial sums of m ln m (the ORDER line's entropy)
+// step C4, chemistry (src/matter.js, matter.wgsl's react): 64-bit, 64 slots (128 words each)
+const LG_C_LIGHT: u32 = 10240u;    // 4 bands: light caught by the substances (into bonds, and the rest as heat)
+const LG_C_RX: u32 = 10752u;       // 6 families (make, burn, photo, swap, form, crack): events, in counts of substance
 
 // The heat grid's parameters (written once per frame by src/heat.js; 64 bytes)
 struct HeatP {

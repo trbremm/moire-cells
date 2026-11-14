@@ -150,6 +150,7 @@ async function boot() {
     cells.heat.setLight(light);   // step C2: the heat passes absorb the light
     light.heat = cells.heat;
     matter.attach(cells.heat);   // step C3: the substances live in the heat buffer, on its grid
+    matter.light = light;        // step C4: the reactions read the light
     cells.matter = matter;
     matter.landscape = landscape;
     lightOptions(light);

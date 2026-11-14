@@ -14,6 +14,7 @@
 //           snapshot, also the sum of m ln m (m = atoms in a pixel of a substance, in counts) for the ORDER line, as
 //           f32 partial sums, one per workgroup (LG_M_ORDER)
 //   paint   the amounts the drawing shows (per R^2), summed into its layers, into two small textures at grid size
+//   react   step C4: one tick of chemistry per pixel (at the end of this file)
 // Only core WebGPU: i32 storage atomics and workgroup atomics.
 
 const NCH: u32 = 13u;
@@ -46,7 +47,7 @@ struct MatterTick {
   seed: u32,                    // random stream
   count: u32,                   // spread: springs; count: pixels of that grid (also the channel stride)
   region: u32,                  // count: ledger region (LG_M_DISH or LG_M_GONE)
-  _p0: u32,
+  heat: u32,                    // step C4: word offset (in `mg`) of the heat copy current in this tick
   _p1: u32,
 };
 
@@ -56,6 +57,33 @@ struct Spring {
   ink: vec4f,                   // drawing only
 };
 struct Springs { s: array<Spring, 16>, };
+
+// step C4: one reaction of the table (src/matter.js, REACTIONS); one event moves one count of each channel listed
+struct Rx {
+  ch: vec4u,                    // reactants x, y and products z, w (255: none); 2 l -> ll lists l twice
+  by: u32,                      // 0: by heat (rate x exp(-spark / (theta x temperature))); 1: by light of `band`
+  band: u32,
+  fam: u32,                     // family, for the counters (make, burn, photo, swap, form, crack)
+  _p0: u32,
+  heat16: i32,                  // heat counts released per event
+  light16: i32,                 // light counts used per event (by light)
+  k: f32,                       // by heat: rate constant (per s for one reactant, R^2 per s for two); by light: the
+                                // reactants' optical depth per unit amount per R^2
+  spark: f32,                   // the bond's spark (energy units)
+};
+struct ChemP {
+  nrx: u32,                     // reactions in rx
+  traceOn: u32,                 // 1: trace lowers the spark
+  trace: u32,                   // trace's channel
+  light: u32,                   // 1: the light is on
+  theta: f32,                   // temperature scale of the sparks
+  tempScale: f32,               // heat counts in a pixel x tempScale = temperature (heat per R^2)
+  dt: f32,                      // s per tick
+  traceK: f32,                  // spark x 1 / (1 + traceK x trace per R^2)
+  dark: array<vec4f, 4>,        // per channel: optical depth for the WARM band per unit per R^2 (sediment: dark)
+  rx: array<Rx, 24>,
+};
+const NONE: u32 = 255u;
 
 @group(0) @binding(0) var<uniform> MP: MatterP;
 @group(0) @binding(1) var<uniform> T: MatterTick;
@@ -67,6 +95,8 @@ struct Springs { s: array<Spring, 16>, };
 @group(0) @binding(2) var<storage, read_write> hb: array<atomic<i32>>;
 @group(0) @binding(4) var<storage, read_write> mg: array<i32>;
 @group(0) @binding(3) var<uniform> SP: Springs;
+@group(0) @binding(5) var<uniform> LP: LightP;    // step C4: the light (light_common.wgsl)
+@group(0) @binding(6) var<uniform> CP: ChemP;     // step C4: the reactions
 @group(1) @binding(0) var texA: texture_storage_2d<rgba16float, write>;
 @group(1) @binding(1) var texB: texture_storage_2d<rgba16float, write>;
 
@@ -241,4 +271,133 @@ fn paint(@builtin(global_invocation_id) id: vec3u) {
   }
   textureStore(texA, vec2i(id.xy), a);
   textureStore(texB, vec2i(id.xy), b);
+}
+
+// ---------- react (step C4) ----------
+// One tick of chemistry in every pixel, in place in the copy this tick's spreading left (T.dst of the tick's last
+// substep), after the cells' step and before the heat spreads (it runs inside the heat's pass of the tick). Per pixel:
+//   temperature  the pixel's heat (the heat copy current in this tick) per R^2
+//   light        what reaches the substances: the band's light on the pixel (as the heat's absorb()) after the bare medium
+//                and the cells took their share (exp(-their optical depth)); per band, the substances' absorbers (each
+//                light reaction's reactants: a pair a b / (a + b), or the one reactant, x its k; and the dark sediment
+//                for the warm band) catch 1 - exp(-their summed depth) of it, shared by depth
+//   reactions    in table order; each makes floor(x + random) events, x from its rate (by heat: k x amounts x
+//                exp(-spark / (theta x temperature)) x dt, spark lowered by trace) or from the photons its share holds
+//                (by light: share / light16), capped by what the reactants have. An event moves whole counts and whole
+//                heat counts (heat16, light16 are exact; see CHEM in src/matter.js), so matter and energy stay exact
+// The heat released goes into the delta (taken in by the heat's next spreading substep); the light caught and the
+// events are counted per workgroup into the ledger (LG_C_LIGHT, LG_C_RX).
+var<workgroup> wfam: array<atomic<i32>, 6>;
+var<workgroup> wlit: array<atomic<i32>, 4>;
+
+@compute @workgroup_size(8, 8)
+fn react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index) li: u32,
+         @builtin(workgroup_id) wid: vec3u, @builtin(num_workgroups) nw: vec3u) {
+  if (id.x < MP.hw && id.y < MP.hh) {
+    let i = id.y * MP.hw + id.x;
+    let base = T.dst;
+    var m: array<i32, 13>;
+    var m0: array<i32, 13>;
+    var stuff = 0;
+    for (var c = 0u; c < NCH; c++) {
+      if ((MP.moving & (1u << c)) != 0u) { m[c] = mg[base + c * MP.n + i]; }
+      m0[c] = m[c];
+      if (c != CP.trace) { stuff += m[c]; }
+    }
+    if (stuff > 0) {
+      let conc = MP.conc;
+      let temp = max(f32(mg[T.heat + i]) * CP.tempScale, 1e-4);
+      var sparkScale = 1.0;
+      if (CP.traceOn != 0u) { sparkScale = 1.0 / (1.0 + CP.traceK * f32(m[CP.trace]) * conc); }
+      let rs = mpcg(i ^ T.seed ^ 0x2545f491u);
+      var heat = 0;
+      var lit = vec4i(0);
+
+      // the light that reaches the substances, per band (counts per pixel per tick)
+      var et = vec4f(0.0);
+      if (CP.light != 0u && LP.mode != LIGHT_OFF) {
+        let s = light_factor(LP, (vec2f(id.xy) + 0.5) * MP.px);
+        if (s > 0.0) {
+          let co = 3u * MP.n;   // the cells' cover (heat_common.wgsl), written by their step this tick
+          var cov = 0;
+          for (var dy = -1; dy <= 1; dy++) {
+            for (var dx = -1; dx <= 1; dx++) {
+              let q = clamp(vec2i(id.xy) + vec2i(dx, dy), vec2i(0), vec2i(i32(MP.hw) - 1, i32(MP.hh) - 1));
+              cov += mg[co + u32(q.y) * MP.hw + u32(q.x)];
+            }
+          }
+          let cover = f32(cov) / (9.0 * COVER_SCALE);
+          et = LP.power * s * exp(-(LP.tauMed + LP.tauCell * cover));
+        }
+      }
+      // optical depths of the absorbers, per reaction and per band
+      var tau: array<f32, 24>;
+      var tsum = vec4f(0.0);
+      var tdark = 0.0;
+      if (any(et > vec4f(0.0))) {
+        for (var r = 0u; r < CP.nrx; r++) {
+          let R = CP.rx[r];
+          if (R.by != 1u) { continue; }
+          let a = f32(m[R.ch.x]) * conc;
+          var amt = a;
+          if (R.ch.y != NONE) {
+            let b = f32(m[R.ch.y]) * conc;
+            amt = a * b / max(a + b, 1e-12);
+          }
+          tau[r] = R.k * amt;
+          tsum[R.band] += tau[r];
+        }
+        for (var c = 0u; c < NCH; c++) { tdark += CP.dark[c / 4u][c % 4u] * f32(m[c]) * conc; }
+        tsum.x += tdark;
+      }
+      let caught = et * (1.0 - exp(-tsum));
+      if (tdark > 0.0) {
+        // the dark sediment's share of the warm light: heat
+        let q = i32(floor(caught.x * tdark / tsum.x + u01(mpcg(rs + 0x5bd1e995u))));
+        heat += q;
+        lit.x += q;
+      }
+
+      for (var r = 0u; r < CP.nrx; r++) {
+        let R = CP.rx[r];
+        var x = 0.0;
+        if (R.by == 0u) {
+          x = R.k * f32(m[R.ch.x]) * exp(-R.spark * sparkScale / (CP.theta * temp)) * CP.dt;
+          if (R.ch.y != NONE) { x *= f32(m[R.ch.y]) * conc; }
+        } else if (tau[r] > 0.0) {
+          x = caught[R.band] * tau[r] / tsum[R.band] / f32(R.light16);
+        }
+        var n = i32(floor(x + u01(mpcg(rs + r * 0x9e3779b9u))));
+        if (R.ch.y == R.ch.x) {
+          n = min(n, m[R.ch.x] / 2);
+        } else {
+          n = min(n, m[R.ch.x]);
+          if (R.ch.y != NONE) { n = min(n, m[R.ch.y]); }
+        }
+        if (n <= 0) { continue; }
+        m[R.ch.x] -= n;
+        if (R.ch.y != NONE) { m[R.ch.y] -= n; }
+        m[R.ch.z] += n;
+        if (R.ch.w != NONE) { m[R.ch.w] += n; }
+        heat += n * R.heat16;
+        if (R.by == 1u) { lit[R.band] += n * R.light16; }
+        atomicAdd(&wfam[R.fam], n);
+      }
+
+      for (var c = 0u; c < NCH; c++) {
+        if (m[c] != m0[c]) { mg[base + c * MP.n + i] = m[c]; }
+      }
+      if (heat != 0) { mg[i] += heat; }   // the delta (heat_common.wgsl: the first block behind the ledger)
+      for (var b = 0u; b < 4u; b++) {
+        if (lit[b] != 0) { atomicAdd(&wlit[b], lit[b]); }
+      }
+    }
+  }
+  workgroupBarrier();
+  let slot = (wid.y * nw.x + wid.x) & 63u;
+  if (li < 6u) {
+    add64(LG_C_RX + 128u * li + slot, atomicLoad(&wfam[li]));
+  } else if (li < 10u) {
+    add64(LG_C_LIGHT + 128u * (li - 6u) + slot, atomicLoad(&wlit[li - 6u]));
+  }
 }

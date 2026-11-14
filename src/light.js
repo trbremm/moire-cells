@@ -52,7 +52,9 @@ export class Light {
     // live-tunable: moire.light.params
     this.params = {
       mode: 'spot',       // 'spot' | 'full' | 'off' (Shift+L cycles)
-      power: 14,          // energy per R^2 per s falling on the dish at full day, straight down, no cloud
+      power: 33,          // energy per s per 100 CSS px^2 falling on the dish at full day, straight down, no cloud
+                          // (per dish area, not per cell area, so the kicks it gives scale with the cells' radius:
+                          // 33 is about 14 per R^2 at 2000 cells on a 1280 x 800 window, R 6.5 px)
       x: 0.5, y: 0.5,     // the spot's centre, as a share of the dish's width and height
       radius: 0.25,       // the beam's radius, as a share of the dish's shorter side
       tilt: 0,            // degrees from straight down (0 to maxTilt; mouse wheel)
@@ -176,8 +178,8 @@ export class Light {
     f[12] = 0.83 * drift + 3.1; f[13] = 0.31 * drift + 7.7; f[14] = 1 / cs; f[15] = Math.max(0, Math.min(1, p.cloudDepth));
     // per band: counts per heat pixel per tick where the light factor is 1
     const H = this.heat;
-    const a = H && H.R ? H.px / H.R : 0.5, dt = frame.tickDt || 1 / 60;
-    const perPx = Math.max(0, p.power) * this.dayLevel * a * a * dt * HEAT_SCALE;
+    const px = H && H.px ? H.px : 3, dt = frame.tickDt || 1 / 60;
+    const perPx = Math.max(0, p.power) / 100 * this.dayLevel * px * px * dt * HEAT_SCALE;
     BANDS.forEach((b, k) => {
       f[16 + k] = perPx * b.share;
       f[20 + k] = Math.max(0, b.medium);
@@ -220,7 +222,7 @@ export class Light {
   overlayLine() {
     const p = this.params, on = (x) => (x ? 'on' : 'off'), sp = this.view ? this.spot() : { x: 0, y: 0, r: 0 };
     const h = this.hourAt(this.time), hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
-    let s = `light (Shift+L) ${p.mode}: power ${p.power}/R²/s · day ${Math.round(this.dayLevel * 100)}% at ` +
+    let s = `light (Shift+L) ${p.mode}: power ${p.power}/100 px²/s · day ${Math.round(this.dayLevel * 100)}% at ` +
       `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')} (Shift+D cycle ${on(p.day)}, ${p.dayPeriod} s, night ${Math.round(p.dayMin * 100)}%)`;
     if (this.modeIndex === 1) {
       s += ` · spot at ${sp.x.toFixed(0)},${sp.y.toFixed(0)} r ${sp.r.toFixed(0)} px · tilt ${p.tilt.toFixed(0)}° (wheel) · from ${p.az.toFixed(0)}° (Shift+wheel)`;

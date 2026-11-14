@@ -624,12 +624,14 @@ the biology, light at noon, after 60 s):
 | | temperature under the cells (per R²) | kick (R/s per axis) |
 |---|---|---|
 | C1 (before; no light, the old grab) | 4.4 | 0.31 |
-| spotlight: cells in the spot | 13.8 | 0.30 |
-| spotlight: cells outside it | 4.8 | 0.18 |
+| spotlight: cells in the spot | 14.8 | 0.32 |
+| spotlight: cells outside it | 5.0 | 0.18 |
 | full field (all cells lit) | 12.7 | 0.29 |
 | light off | 4.3 | 0.17 |
 
-So the lit culture shivers about as C1's whole culture did, and the unlit rim visibly less (about 60 %). Energy per s with
+So the lit culture shivers about as C1's whole culture did, and the unlit rim visibly less (about 55 %). At 10 000 cells
+loop only (`?cells=10000&bio=0`) the kicks are 0.36 R/s in the spot and 0.12 outside (C1: 0.23 everywhere), and the
+difference shows plainly: inside the spot the labyrinth of worms melts into an even, shimmering crowd; outside it stays. Energy per s with
 the spot at noon: light in 42 k, absorbed 16 k, passed through 26 k; work by the forces 10 k; warmth 1.2 k. Full field: in
 268 k, absorbed 53 k. The empty dish in the spot warms to about 2 per R² (the bare medium catches 14 % of the light) and
 simmers with small dimples; in full field the whole empty dish simmers that way.
@@ -658,7 +660,8 @@ the right, 90 from below, 180 from the left, 270 from above; default 225, the up
 `--wheel x,y,dy[,shift]` turns the wheel (dy 100 = one notch down), e.g.
 `python tools/shot.py --wheel 640,400,1000 --wheel 640,400,-300,shift` tilts by 50 degrees and turns by -45.
 
-Live-tunable in `moire.light.params`: `mode`, `power` (14 per R² per s at noon), `x`, `y`, `radius`, `tilt`, `maxTilt`,
+Live-tunable in `moire.light.params`: `mode`, `power` (33 per 100 CSS px² per s at noon: per dish area, not per cell, so
+the kicks it gives scale with the cells' radius; about 14 per R² at 2000 cells), `x`, `y`, `radius`, `tilt`, `maxTilt`,
 `az`, `near` (0.6), `edge` (1.5 px), `day`, `dayPeriod` (240 s), `dayMin` (0.15), `dayStart`, `clouds`, `cloudSize`,
 `cloudDrift`, `cloudDepth`; drawing: `colour`, `lineAlpha` (0.55), `lineWidth` (1.25 px), `marker` (7 px), `tintAlpha`
 (0.045), `fullTint` (0.025), `tintSteps` (3). The band table: `BANDS` in `src/light.js` (read every frame).

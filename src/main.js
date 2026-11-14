@@ -14,6 +14,10 @@
 //   ?nogpu=1    pretend WebGPU is missing (to see the fallback message)
 //   ?cells=N    number of cells (default 2000)
 //   ?check=1    compare the cells' neighbour grid with brute force every 2 s (console)
+//   ?seed=N     seed of the random start (cells, genomes); default random
+//   ?speed=N    simulation speed: 1, 2, 4 or 8 ticks of 1/60 s per 1/60 s of real time (keys [ and ])
+//   ?founders=N founder genomes at the start (0 = every cell its own)
+//   ?view=1     colour by lineage from the start (key V)
 
 import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown } from './gpu.js';
 import { Background } from './background.js';
@@ -29,6 +33,10 @@ const BG = { r: 4 / 255, g: 6 / 255, b: 10 / 255, a: 1 };   // --bg #04060a
 
 const params = new URLSearchParams(location.search);
 const flag = (name) => params.has(name) && params.get(name) !== '0';
+
+const SPEEDS = [1, 2, 4, 8];
+let speed = Math.max(1, Math.min(8, Number(params.get('speed')) || 1));
+const SEED = params.has('seed') ? (Number(params.get('seed')) >>> 0) : ((Math.random() * 4294967296) >>> 0);
 
 const canvas = document.getElementById('gpu');
 const overlayEl = document.getElementById('overlay');
@@ -87,7 +95,9 @@ async function boot() {
     background = await Background.create(gpu.device, gpu.format);
     medium = new Medium(gpu.device);
     landscape = await Landscape.create(gpu.device, gpu.format, medium);
-    cells = await Cells.create(gpu.device, gpu.format, medium, Number(params.get('cells')) || DEFAULT_CELLS);
+    cells = await Cells.create(gpu.device, gpu.format, medium, Number(params.get('cells')) || DEFAULT_CELLS, SEED);
+    if (params.has('founders')) cells.genome.params.founders = Number(params.get('founders')) || 0;
+    if (flag('view')) cells.look.view = 1;
     if (flag('check')) cells.enableCheck();
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));
@@ -96,7 +106,7 @@ async function boot() {
   // the medium first: it writes the lattice every field-reading layer uses
   layers = [medium, background, landscape, cells];
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
-  window.moire = { gpu, layers, background, medium, landscape, cells };
+  window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome };
 
   resize();
   landscape.seed();
@@ -131,9 +141,9 @@ function frame(now) {
   last = now;
   stats.frameMs += (dtReal * 1000 - stats.frameMs) * 0.05;
 
-  acc += dtReal;
+  acc += dtReal * speed;
   let ticks = Math.floor(acc / TICK);
-  if (ticks > MAX_TICKS) { ticks = MAX_TICKS; acc = 0; } else acc -= ticks * TICK;
+  if (ticks > MAX_TICKS * speed) { ticks = MAX_TICKS * speed; acc = 0; } else acc -= ticks * TICK;
   simTime += ticks * TICK;
 
   if (flag('ripple') && simTime >= nextAutoRipple) autoRipple();
@@ -188,7 +198,7 @@ function drawOverlay() {
     `ripple grid ${background.gw}×${background.gh} (${background.sc} css px/cell) · ambient ${background.ambient ? 'on' : 'off'}`,
     `tap ${TAP_MODES[tapMode].name} · sources ${landscape.sources.length}/${landscape.params.maxSources} · landscape ${landscape.params.on ? 'on' : 'off'} · R ${medium.R.toFixed(2)} px · medium ${(medium.la0 * 180 / Math.PI).toFixed(2)}°`,
     ...cells.overlayLines(),
-    `sim t ${simTime.toFixed(1)} s`,
+    `sim t ${simTime.toFixed(1)} s · speed ${speed}× · seed ${SEED}`,
   ];
   if (debugLog.length) lines.push('', ...debugLog.map(esc));
   overlayEl.innerHTML = lines.join('\n');
@@ -209,7 +219,7 @@ let tapMode = 0;
 
 function hintLine() {
   return `click: ${TAP_MODES[tapMode].label} · drag: stir · 1 ripple · 2 nutrient · 3 threat · ` +
-    'C: clear sources · L: landscape · A: ambient ripples · N: new culture · P: contact push · F: frame time';
+    'C: clear · L: landscape · A: ambient · N / G: new culture / new genomes · P: push · V: view · [ ]: speed · F: stats';
 }
 
 function tap(x, y) {
@@ -266,10 +276,17 @@ function setupInput() {
     } else if (k === 'c') {
       landscape.clear();
       flash('sources cleared');
-    } else if (k === 'n') {
-      cells.seed();
+    } else if (k === 'n' || k === 'g') {
+      cells.seed(k === 'g');
       background.impulse(view.cssW / 2, view.cssH / 2, 2);   // as the reference's seed()
-      flash('new culture');
+      flash(k === 'g' ? 'new culture, fresh random genomes' : 'new culture, same founder genomes');
+    } else if (k === 'v') {
+      cells.look.view = cells.look.view ? 0 : 1;
+      flash(`colour by ${cells.look.view ? 'lineage (key)' : 'fate'}`);
+    } else if (k === '[' || k === ']') {
+      const i = SPEEDS.indexOf(speed);
+      speed = SPEEDS[Math.max(0, Math.min(SPEEDS.length - 1, (i < 0 ? 0 : i) + (k === ']' ? 1 : -1)))];
+      flash(`speed ${speed}×`);
     } else if (k === 'p') {
       cells.params.contact = !cells.params.contact;
       flash(`contact push ${cells.params.contact ? 'on' : 'off'}`);

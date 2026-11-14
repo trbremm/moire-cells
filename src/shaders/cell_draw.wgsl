@@ -19,7 +19,7 @@ struct Draw {
   dots: f32,        // dot brightness (0 = no dots)
   dotR: f32,        // dot radius, as a fraction of the dot spacing
   period: f32,      // dot spacing per unit lattice period, in units of R (0.62 = the medium's period)
-  _pad: f32,
+  mode: f32,        // 0 = colour by fate, 1 = colour by lineage (the key's hue)
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
@@ -40,6 +40,14 @@ fn cell_colour(kind: u32) -> vec3f {
     case 4u: { return vec3f(240.0, 201.0, 135.0) / 255.0; }
     default: { return vec3f(241.0, 236.0, 223.0) / 255.0; }
   }
+}
+
+// lineage colour: the key angle (60 degrees of hex symmetry) goes once round the hue circle, so related
+// cells (close keys) get close hues; the key scale shifts lightness a little. Faded, as the fate palette.
+fn key_colour(c: Cell) -> vec3f {
+  let h = fract(c.la / KEY_SPAN);
+  let rgb = 0.64 + 0.26 * cos(TAU * (h + vec3f(0.0, -1.0 / 3.0, 1.0 / 3.0)));
+  return rgb * (1.0 + 0.8 * c.aux);
 }
 
 @vertex
@@ -88,12 +96,12 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   let d = length(in.local);
   let aa = max(fwidth(d), 0.35 / D.dpr);
   // the cell's own lattice as sharp dots (the reference turns its dot pattern by la + 90 degrees)
-  let s = D.period * D.R * kind_period(c.kind);
+  let s = D.period * D.R * kind_period(c.kind) * exp(c.aux);   // the key scale stretches the period
   let dd = hex_dist(in.local, s, c.la + 1.5707963);
   let aad = max(fwidth(dd), 0.35 / D.dpr);       // derivatives before any discard
   let disc = cover(c.r, d, aa);
   if (disc <= 0.0) { discard; }
-  let col = cell_colour(c.kind);
+  let col = select(cell_colour(c.kind), key_colour(c), D.mode > 0.5);
 
   let lw = min(D.lineW, 0.22 * c.r);              // thinner outline on small cells, so they do not turn solid
   let dot = select(0.0, cover(D.dotR * s, dd, aad) * cover(c.r - lw - 0.12 * D.R, d, aa), D.dots > 0.0);

@@ -22,6 +22,7 @@
 //      ?check=1  every 2 s, compare the grid's contacts with a brute-force count (console and overlay)
 
 import { loadFieldShader, KIND } from './field.js';
+import { Genome, BIO_BYTES } from './genome.js';
 
 export const CELL_URL = 'src/shaders/cell_common.wgsl';
 
@@ -33,15 +34,17 @@ const ALIVE = 1;
 export const DEFAULT_CELLS = 2000;
 export const MAX_CELLS = 262144;
 
-const SIM_BYTES = 96;          // struct Sim
+const SIM_BYTES = 192;         // struct Sim
 const SLOT = 256;              // uniform slot stride (minUniformBufferOffsetAlignment is at most 256)
 const SLOTS = 128;             // ticks that can be encoded in one frame
 const BLOCK = 512;             // scan block (cell_grid.wgsl)
 const BRUTE_MAX = 20000;       // largest count the ?check brute force runs on
+const STATS_BYTES = 8192;      // struct Stats in cell_common.wgsl (counters, events, census)
 
 export class Cells {
-  constructor(device, format, medium, count) {
+  constructor(device, format, medium, count, seed) {
     this.device = device;
+    this.genome = new Genome(seed);
     this.format = format;
     this.medium = medium;
     this.count = Math.max(1, Math.min(MAX_CELLS, Math.round(count) || DEFAULT_CELLS));
@@ -72,6 +75,7 @@ export class Cells {
     };
     // drawing (live-tunable: moire.cells.look)
     this.look = {
+      view: 0,        // 0 = colour by fate, 1 = colour by lineage (the key's hue)
       fill: 0.09,     // disc fill, as a fraction of the cell colour over black
       fillA: 0.88,    // disc opacity (1 = background fully hidden under a cell)
       line: 0.72,     // outline brightness
@@ -82,8 +86,8 @@ export class Cells {
     };
   }
 
-  static async create(device, format, medium, count) {
-    const c = new Cells(device, format, medium, count);
+  static async create(device, format, medium, count, seed) {
+    const c = new Cells(device, format, medium, count, seed);
     await c.init();
     return c;
   }
@@ -114,7 +118,7 @@ export class Cells {
       return { bgl, pl: d.createPipelineLayout({ label, bindGroupLayouts: [bgl] }) };
     };
     this.gridL = layout('cell grid', [sim, ro(1), rw(2), rw(3), rw(4), rw(5), rw(6), rw(7)]);
-    this.stepL = layout('cell step', [sim, ro(1), ro(2), ro(3), ro(4), rw(5)]);
+    this.stepL = layout('cell step', [sim, ro(1), ro(2), ro(3), ro(4), rw(5), ro(6), rw(7), rw(8)]);
     this.checkL = layout('cell check', [sim, ro(1), ro(2), ro(3), ro(4), ro(5), rw(6),
       { binding: 7, visibility: C, buffer: { type: 'uniform' } }]);
     const pipe = (L, module, entryPoint) => d.createComputePipeline({
@@ -131,6 +135,10 @@ export class Cells {
     this.sortedBuf = d.createBuffer({ label: 'cells sorted', size: n * CELL_BYTES, usage: U.STORAGE });
     this.sortIdxBuf = d.createBuffer({ label: 'cell sort index', size: n * 4, usage: U.STORAGE });
     this.cellGridBuf = d.createBuffer({ label: 'cell grid slot', size: n * 8, usage: U.STORAGE });
+    // the Bio records (genome + state), double-buffered: bioBuf[bioCur] holds the current tick's
+    this.bioBuf = [0, 1].map((k) => d.createBuffer({ label: `cell bio ${k}`, size: n * BIO_BYTES, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC }));
+    this.bioCur = 0;
+    this.statsBuf = d.createBuffer({ label: 'cell stats', size: STATS_BYTES, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
     this.simBuf = d.createBuffer({ label: 'cell sim params', size: SLOTS * SLOT, usage: U.UNIFORM | U.COPY_DST });
     this.simAB = new ArrayBuffer(SLOTS * SLOT);
     this.simF = new Float32Array(this.simAB);
@@ -184,32 +192,47 @@ export class Cells {
         b(2, this.countsBuf), b(3, this.startsBuf), b(4, this.blockBuf), b(5, this.cellGridBuf),
         b(6, this.sortedBuf), b(7, this.sortIdxBuf)],
     });
-    this.stepBG = d.createBindGroup({
-      label: 'cell step', layout: this.stepL.bgl,
-      entries: [{ binding: 0, resource: { buffer: this.simBuf, size: SIM_BYTES } }, b(1, this.sortedBuf),
-        b(2, this.sortIdxBuf), b(3, this.startsBuf), b(4, this.countsBuf), b(5, this.cellBuf)],
-    });
+    // two step bind groups: stepBG[k] reads bioBuf[k] and writes bioBuf[1 - k]
+    this.stepBG = [0, 1].map((k) => this.makeStepBG(this.cellBuf, this.bioBuf[k], this.bioBuf[1 - k], this.statsBuf));
     this.makeCheck();
   }
 
-  /** A fresh culture: all stem cells in a round blob at the dish centre, a little looser than packed. */
-  seed() {
+  makeStepBG(cellBuf, bioPrev, bioNext, statsBuf) {
+    const b = (binding, buffer) => ({ binding, resource: { buffer } });
+    return this.device.createBindGroup({
+      label: 'cell step', layout: this.stepL.bgl,
+      entries: [{ binding: 0, resource: { buffer: this.simBuf, size: SIM_BYTES } }, b(1, this.sortedBuf),
+        b(2, this.sortIdxBuf), b(3, this.startsBuf), b(4, this.countsBuf), b(5, cellBuf),
+        b(6, bioPrev), b(7, bioNext), b(8, statsBuf)],
+    });
+  }
+
+  /**
+   * A fresh culture: all stem cells in a round blob at the dish centre, a little looser than packed, each a
+   * copy of one of the founder genomes. fresh = true draws new founders (key G); else the same ones (key N).
+   */
+  seed(fresh = false) {
     const { cssW: W, cssH: H } = this.view;
-    const n = this.count, R = this.R;
+    const n = this.count, R = this.R, rng = this.genome.rng;
+    if (fresh) this.genome.newFounders();
+    const bab = new ArrayBuffer(n * BIO_BYTES);
+    const keys = this.genome.fill(new Float32Array(bab), new Uint32Array(bab), n);
     const ab = new ArrayBuffer(n * CELL_BYTES);
     const f = new Float32Array(ab), u = new Uint32Array(ab);
     const spread = R * Math.sqrt(n / 0.85);  // blob radius at 0.85 area fraction (overlaps settle in the warm-up)
     for (let i = 0; i < n; i++) {
-      const a = Math.random() * 2 * Math.PI, dd = Math.sqrt(Math.random()) * spread;
+      const a = rng() * 2 * Math.PI, dd = Math.sqrt(rng()) * spread;
       const o = i * CELL_FLOATS;
       f[o] = W / 2 + Math.cos(a) * dd; f[o + 1] = H / 2 + Math.sin(a) * dd;
       f[o + 2] = 0; f[o + 3] = 0;
       f[o + 4] = R;
-      f[o + 5] = Math.random() * Math.PI / 3;          // lattice angle, as the reference's makeCell
+      f[o + 5] = keys[2 * i];                          // lattice angle = the key angle
       f[o + 6] = 0; f[o + 7] = 0;
-      u[o + 8] = KIND.STEM; u[o + 9] = ALIVE; u[o + 10] = (Math.random() * 4294967296) >>> 0; f[o + 11] = 0;
+      u[o + 8] = KIND.STEM; u[o + 9] = ALIVE; u[o + 10] = (rng() * 4294967296) >>> 0;
+      f[o + 11] = keys[2 * i + 1];                     // key scale
     }
     this.device.queue.writeBuffer(this.cellBuf, 0, ab);
+    this.device.queue.writeBuffer(this.bioBuf[this.bioCur], 0, bab);
     this.warm = Math.max(0, Math.round(this.params.warmup));
   }
 
@@ -232,6 +255,7 @@ export class Cells {
     f[o + 16] = P.x; f[o + 17] = P.y; f[o + 18] = P.vx * on; f[o + 19] = P.vy * on;
     f[o + 20] = p.stirReach * p.stirReach; f[o + 21] = p.stir;
     f[o + 22] = p.drift; f[o + 23] = time;
+    u[o + 24] = this.genome.ruleBits();
   }
 
   /** Record the grid build for the tick whose uniforms are in slot k. */
@@ -252,9 +276,10 @@ export class Cells {
   encodeStep(encoder, k) {
     const pass = encoder.beginComputePass({ label: 'cell step' });
     pass.setPipeline(this.pipes.step);
-    pass.setBindGroup(0, this.stepBG, [k * SLOT]);
+    pass.setBindGroup(0, this.stepBG[this.bioCur], [k * SLOT]);
     pass.dispatchWorkgroups(Math.ceil(this.count / 128));
     pass.end();
+    this.bioCur ^= 1;
   }
 
   compute(encoder, frame) {
@@ -304,12 +329,12 @@ export class Cells {
       if (!this.scratchBuf) {
         this.scratchBuf = d.createBuffer({ label: 'cells probe scratch', size: this.count * CELL_BYTES, usage: GPUBufferUsage.STORAGE });
       }
-      const b = (binding, buffer) => ({ binding, resource: { buffer } });
-      const scratchBG = d.createBindGroup({
-        label: 'cell step (probe)', layout: this.stepL.bgl,
-        entries: [{ binding: 0, resource: { buffer: this.simBuf, size: SIM_BYTES } }, b(1, this.sortedBuf),
-          b(2, this.sortIdxBuf), b(3, this.startsBuf), b(4, this.countsBuf), b(5, this.scratchBuf)],
-      });
+      if (!this.scratchStats) {
+        this.scratchStats = d.createBuffer({ label: 'cells probe stats', size: STATS_BYTES, usage: GPUBufferUsage.STORAGE });
+        this.scratchBio = d.createBuffer({ label: 'cells probe bio', size: this.count * BIO_BYTES, usage: GPUBufferUsage.STORAGE });
+      }
+      // the probe writes only to scratch buffers, so it changes nothing the simulation sees
+      const scratchBG = this.makeStepBG(this.scratchBuf, this.bioBuf[this.bioCur], this.scratchBio, this.scratchStats);
       const record = (fn) => { const e = d.createCommandEncoder({ label: 'cells probe' }); for (let k = 0; k < K; k++) fn(e); return e.finish(); };
       const gridCB = record((e) => this.encodeGrid(e, 0));
       const stepCB = record((e) => {
@@ -419,7 +444,7 @@ export class Cells {
     const v = this.view, L = this.look, a = this.drawData;
     a[0] = v.cssW; a[1] = v.cssH; a[2] = v.dpr; a[3] = this.R;
     a[4] = L.fill; a[5] = L.fillA; a[6] = L.line; a[7] = L.lineW;
-    a[8] = L.dots; a[9] = L.dotR; a[10] = L.period; a[11] = 0;
+    a[8] = L.dots; a[9] = L.dotR; a[10] = L.period; a[11] = L.view;
     this.device.queue.writeBuffer(this.drawU, 0, a);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG);

@@ -1,0 +1,100 @@
+// The cells' genome ("DNA"): random at the start, copied with small mutations at each birth.
+//
+// Layout: struct Bio in cell_common.wgsl, 24 floats (96 bytes) per cell, double-buffered on the GPU.
+//   key    x key angle (0..60 deg), y key scale (log period factor, -0.15..0.15),
+//          z receptor angle, w receptor scale            -> WHICH keys the cell recognises (specific)
+//   rec    x receptor width (pickiness), y threshold, z output once committed, w founder id (u32 bits)
+//   resp   per fate channel (epithelium, muscle, neuron, cartilage): recognised contact -> accumulator
+//   relay  per fate channel: a committed neighbour's signal on that channel -> accumulator
+//   body   x adhesion, y size factor, z motility factor, w spare
+//   acc    state (not inherited as genes): the four leaky accumulators
+// The key is the cell's own lattice (Cell.la and Cell.aux carry copies), so it shows in the dot pattern.
+//
+// Seeding: `founders` random genomes (0 = every cell its own), each cell a copy of one of them, scattered at
+// random. A seeded random generator (?seed=N) makes the start repeatable.
+
+export const BIO_FLOATS = 24;
+export const BIO_BYTES = BIO_FLOATS * 4;
+
+export const KEY_SPAN = Math.PI / 3;
+export const KEY_SMAX = 0.15;
+
+// rule bits (keep in step with RULE_* in cell_common.wgsl)
+export const RULE = { DIFF: 1, ADH: 2, TURN: 4, MUT: 8, INHERIT: 16, NUT: 32 };
+
+/** Small seeded random generator (mulberry32): returns a function giving floats in [0, 1). */
+export function makeRng(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const U = (rng, a, b) => a + (b - a) * rng();
+const logU = (rng, a, b) => a * Math.pow(b / a, rng());
+
+/** One random genome, as a plain array of BIO_FLOATS numbers (founder id in slot 7 as a float to bit-cast). */
+export function randomGenome(rng, founder) {
+  const g = new Array(BIO_FLOATS).fill(0);
+  g[0] = U(rng, 0, KEY_SPAN); g[1] = U(rng, -KEY_SMAX, KEY_SMAX);
+  g[2] = U(rng, 0, KEY_SPAN); g[3] = U(rng, -KEY_SMAX, KEY_SMAX);
+  g[4] = logU(rng, 0.06, 0.25);          // receptor width
+  g[5] = U(rng, 0.6, 1.6);               // threshold
+  g[6] = U(rng, 0.4, 1.4);               // output once committed
+  g[7] = founder;                        // founder id (written as u32 bits)
+  for (let c = 0; c < 4; c++) g[8 + c] = U(rng, -1, 1);    // resp
+  for (let c = 0; c < 4; c++) g[12 + c] = U(rng, -1, 1);   // relay
+  g[16] = U(rng, 0, 1);                  // adhesion
+  g[17] = U(rng, 0.85, 1.15);            // size
+  g[18] = logU(rng, 0.5, 2);             // motility
+  return g;
+}
+
+export class Genome {
+  constructor(seed) {
+    this.seed = seed >>> 0;
+    this.rng = makeRng(this.seed);
+    this.founders = [];
+    // live-tunable (moire.genome.params); the rule switches are keys
+    this.params = {
+      founders: 12,     // founder genomes at a fresh start (0 = every cell its own random genome)
+    };
+    this.rules = { diff: true, adh: true, turn: true, mut: true, nut: true, inherit: false };
+  }
+
+  /** Bits for Sim.rules. */
+  ruleBits() {
+    const r = this.rules;
+    return (r.diff ? RULE.DIFF : 0) | (r.adh ? RULE.ADH : 0) | (r.turn ? RULE.TURN : 0) |
+      (r.mut ? RULE.MUT : 0) | (r.inherit ? RULE.INHERIT : 0) | (r.nut ? RULE.NUT : 0);
+  }
+
+  /** Draw a fresh set of founder genomes (key G). With founders = 0, every cell gets its own (made in fill). */
+  newFounders() {
+    const n = Math.max(0, Math.round(this.params.founders));
+    this.founders = [];
+    for (let k = 0; k < n; k++) this.founders.push(randomGenome(this.rng, k));
+  }
+
+  /**
+   * Fill the Bio records of n cells (Float32Array f / Uint32Array u over the same buffer) and return each
+   * cell's key (angle, scale) for the Cell copies. Each cell is a copy of a random founder.
+   */
+  fill(f, u, n) {
+    if (!this.founders.length && this.params.founders > 0) this.newFounders();
+    const keys = new Float32Array(n * 2);
+    for (let i = 0; i < n; i++) {
+      const g = this.founders.length ? this.founders[Math.floor(this.rng() * this.founders.length)] : randomGenome(this.rng, i);
+      const o = i * BIO_FLOATS;
+      for (let k = 0; k < BIO_FLOATS; k++) f[o + k] = g[k];
+      u[o + 7] = g[7] >>> 0;
+      for (let k = 20; k < 24; k++) f[o + k] = 0;   // accumulators start empty
+      keys[2 * i] = g[0]; keys[2 * i + 1] = g[1];
+    }
+    return keys;
+  }
+}

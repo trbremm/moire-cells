@@ -105,7 +105,8 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   see "Heat and the entropy counter" below; step C2: Shift+L light spot / full field / off, Shift+D day and night;
   step C3: Shift+S substances shown (summary / each alone / off), Shift+C wash the atoms out; step C4, "Chemistry in
   the open" below: Shift+M chemistry, Shift+F make fuel by light, Shift+B break fuel, Shift+P swaps, Shift+K sediment,
-  Shift+T trace lowers the spark)
+  Shift+T trace lowers the spark; step C5, "Cells eat" below: Shift+A cells eat, Shift+U burner, Shift+I reactions
+  inside, Shift+W battery pays crawl, Shift+X heat damage, Shift+G rich cells divide, Shift+N smell)
 - right-drag: move the spotlight · wheel: tilt it · Shift+wheel: turn where the light comes from (step C2, "Light" below)
 
 The loop (step 4):
@@ -196,14 +197,15 @@ The rules, each with its key:
   muscle 1.1 / 0.8, neuron 0.85 / 1.4, cartilage 1.15 / 0.4). Each cell also crawls slowly on a wandering
   heading (0.6 R per s × motility); without crawling a packed blob is jammed and hardly sorts.
 - **T, turnover**: each cell dies at 0.02 per s, up to 3× faster when it recognises none of its neighbours.
-  A touching neighbour, picked at random, divides into its place; the daughter starts small and grows.
+  A touching neighbour, picked at random (since step C5, rule Shift+G: weighted by its battery), divides into its
+  place; the daughter starts small and grows.
   The genome is double-buffered on the GPU, so the daughter copies its parent's genome from last tick.
 - **M, mutation**: every gene of a daughter is nudged a little (key angle by about 2°), and with chance 3 %
   one gene is drawn afresh.
 - *(gone in step C3)* **E, nutrient and threat**: each cell felt the sources' beat at its centre (the same maths as the
   halftone dots, positive part). Threat raised the death rate (× 1 + 6 × threat), and a cell killed by
   threat was refilled far away instead of from next door. 30 % of all births went to a well-fed cell anywhere in
-  the dish. Growth by energy (step C5) is to take its place.
+  the dish. Growth by energy (step C5, "Cells eat") took its place.
 - **I, inherit**: daughters take their parent's fate and counters instead of starting as stem cells.
   Off by default (in the one run compared, seed 3, it gave larger, bolder epithelium areas).
 
@@ -227,8 +229,9 @@ neighbour grid and by brute force, and check the sort; result in the console and
 `?side=0|1` (step 8, keys Z , ' .), `?seed=N` (repeatable start: positions, genomes; the run itself drifts apart after a while, because the
 GPU's neighbour order varies), `?speed=1|2|4|8`, `?founders=N`, `?view=1` (lineage colours),
 `?heat=0`, `?entropy=0`, `?simmer=0` (step C1, Shift+H E R), `?light=spot|full|off`, `?spot=x,y,r`, `?tilt=`, `?az=`, `?day=0`,
-`?hour=`, `?clouds=0` (step C2, see "Light"), `?show=summary|off|<substance>` (step C3, e.g. `?show=G`).
-In the browser console, `moire.background.params`, `moire.landscape.params`, `moire.medium.params`, `moire.heat.params`, `moire.light.params`, `moire.matter.params`,
+`?hour=`, `?clouds=0` (step C2, see "Light"), `?show=summary|off|<substance>` (step C3, e.g. `?show=G`), `?chem=0` (step C4),
+`?eat=0`, `?springs=0` (step C5, see "Cells eat").
+In the browser console, `moire.background.params`, `moire.landscape.params`, `moire.medium.params`, `moire.heat.params`, `moire.light.params`, `moire.matter.params`, `moire.eat.params`,
 `moire.cells.params` (physics), `moire.cells.look` (drawing) and `moire.genome.params` / `.rules` hold
 live-tunable numbers.
 
@@ -798,7 +801,8 @@ centres of its two kinds of triangle), and each carries one layer, so layers nev
   threat red, faded; linkers (l L) a dim, quiet grey-blue; lighter for row 1, deeper for row 2;
 - **fuels** on one set of triangle centres, in the old nutrient green (C4 on);
 - **trace** on the other set, as small pale silver diamonds;
-- **sediment** not as dots but a flat, dim brown-grey layer in three crisp levels, under the dots (C4 on).
+- **sediment** not as dots but a flat, dim brown-grey layer under the dots (C4 on); since step C5 a flat patch with
+  hard edges and a lighter core, see "Cells eat".
 
 Shift+S cycles: summary / each substance alone (g, t, l, G, T, L, gt, gT, Gt, GT, ll, LL, trace) / off; a short flash
 names what is shown (and says when a substance is not in the dish yet), and so does the F overlay. A paint pass sums the
@@ -833,13 +837,15 @@ free light atom can take a heavy one's place in a fuel (a **swap**); and **trace
 easily where it sits. Energy is the currency throughout: every reaction is paid and booked, and what it releases ends
 up as heat.
 
-**Where to watch it.** The cells are drawn over the substances, and the culture sits in the middle of the default
-spotlight, so most of the chemistry there is hidden (it runs: the culture is hot, so fuel made there burns quickly).
+**Where to watch it.** (Since step C5 the page starts with a light and a heavy spring beside the culture and the spot
+between them, see "Cells eat"; with `?springs=0` it starts as described here.) The cells are drawn over the substances,
+and the culture sits in the middle of the default spotlight, so most of the chemistry there is hidden (it runs: the
+culture is hot, so fuel made there burns quickly).
 To see the substrate alone, move the spot beside the culture (right-drag, or the "move light" tool) and drop a light
 and a heavy spring a hundred or two px apart inside it; or switch to full field (Shift+L) and drop springs in the empty
 corners. For example:
 
-    python tools/shot.py --query "spot=190,400,175&speed=8&day=0" --at 30,90,240 \
+    python tools/shot.py --query "spot=190,400,175&speed=8&day=0&springs=0" --at 30,90,240 \
       --eval "moire.matter.addSpring(110,400,'light'); moire.matter.addSpring(270,400,'heavy')"
 
 **What it looks like** (that example, seed 3, 2000 cells, noon). After **30 s** both clouds are green: around the light
@@ -929,7 +935,8 @@ R², is frozen: e^−8 for gt; the empty spot, about 4.5, reacts: e^−1.8; the 
 `kMake` (1), `kBurn` (0.5 per s), `kPhoto` (0.03), `kSwap` (5 R² per s), `kSed` (2 R² per s), `kCrack` (0.01), `dark`
 (3), `traceK` (3), and the switches `on`, `make`, `burn`, `swap`, `sediment`, `trace`. The sediment's look:
 `moire.matter.params.sedStep` (0.3 per R² per level; it was 1.5, too high to ever show) and `sedAlpha`; a crust is drawn
-as one flat warm-grey patch, its thicker parts as subtle steps inside it. Tuning aid:
+as one flat warm-grey patch, its thicker parts as subtle steps inside it (step C5: two levels with hard edges, see "Cells
+eat"). Tuning aid:
 `moire.matter.probeLine(y, x0, x1, step).then(console.log)` prints every substance per R² and the temperature along a
 row of the dish.
 
@@ -942,6 +949,137 @@ nothing and the chemistry about 15 to 20 % of the fastest speed. Most of that is
 exist, 13 channels move instead of 7 (sediment does not spread, but it is still copied between the two copies every
 substep). Firefox MAX: ×9.2 against ×12.2 (one run each). The reaction pass itself is light: each pixel reads its 13
 channels, empty pixels stop there, and it needs no atomics on the grid.
+
+## Cells eat (Part C, step C5)
+
+The cells now live on the chemistry of C4. Every cell holds a small **stock** of the substances and a **battery**
+(energy). Its membrane lets substances in and out, a built-in **burner** turns the fuel it holds into battery charge,
+and the battery pays for crawling. Cells that sit in fuel fill up; cells far from it run down and go quiet; where a
+cell dies, what it held goes back into the dish. No engines in the genome yet (C6), no pumps between cells (C7).
+
+**What it looks like** (the default scene, seed 3, 2000 cells, 8×). The page now starts with a light and a heavy spring
+just beyond the culture's right rim (below it on a tall phone screen), with the spotlight centred on the rim between
+them, so the chemistry and the eating show without doing anything (`?springs=0`: the old empty start). Every cell
+has a flat pale-green **core** in its middle: its battery, the core's area in proportion to the charge (green: the
+fuel's colour, energy). At the start every cell has a small core (the starter charge). Within a minute the cells on
+the rim by the springs have big cores, the light spring's cloud of green fuel dots has a bite out of it where they sit,
+and a few of them crawl out into the cloud. Far from the springs the cores shrink to dots and vanish, and those cells
+are drawn dimmer (down to 60 % at an empty battery) and stop crawling: they only shiver with the heat, so they pack
+rounder and still. By 2 minutes a lobe of fed cells (cyan epithelium, violet neuron, white stem cells, all with big
+cores) has pushed into the light spring's cloud; the cloud's edge against the culture is a clean front with no
+dots behind it. By 10 minutes (MAX) the culture has shifted over both springs: the fed half sits in the spot with big
+cores, the cloud survives only beyond the culture's front, and the far half is dim and still. The dish never runs
+away: over 600 s the number of cells with more than half a battery rose from about 10 to 150-170 (8 %), the empty ones
+(under 5 %) fell from 1700 to about 1300 of 2000, births and deaths stayed at 40 to 65 per s (as before C5).
+
+**Stock and battery.** One more storage buffer, 16 numbers per cell: the 13 substances in the dish's own units (4096
+counts per atom-unit) and the battery in the heat's units (65 536 counts per energy unit), all whole counts, so the
+atoms stay exact. Stock and battery are only ever moved: through the membrane, by a reaction (the energy table's
+numbers), at a death (the dead cell's stock goes back to the dish where it died, spread over its 3 × 3 pixels; its
+battery becomes heat there), at a birth (the newborn takes half its parent's stock and battery: a split, not a copy),
+and at a new culture (N, G: every cell's stock goes back to the dish, its battery becomes heat, then every cell gets a
+**starter charge** of 40 % of a battery, booked as energy coming in). A cell holds at most `capR2` = 2 atom-units per R²
+of its area; its battery holds `batMax` = 4 energy units.
+
+**The membrane** (rule *cells eat*, Shift+A, the master switch): passive exchange with the 3 × 3 heat pixels under the
+cell, by concentration: outside, what those pixels hold over their area; inside, the stock over the cell's area. Each
+tick every substance moves a share of the way to equal concentrations: `perm` (3 per s) × its spreading speed from the
+table, relative to the light atoms. So the light atoms pass at 3 per s, light fuel gt at 2.1, heavy atoms and the heavy
+fuels at 0.25 to 0.36, trace hardly at all (0.04), sediment never. Inflow is scaled down as the stock fills
+(1 − fill). A cell full of fuel near an empty patch lets fuel back out; a cell that burns its fuel keeps pulling more in.
+
+**The burner** (Shift+U): every cell's one built-in engine until C6 puts engines into the genome. Fuel → its two
+atoms (gt → g + t, GT → G + T, ...), at `kBurner` (2 per s) of the fuel in stock, at most `burnMax` (2 fuel units per s
+per cell). The bond's energy (1.5 for gt up to 3 for GT) goes into the battery, minus `ineff` (25 %) that becomes heat
+at the cell. Each event's **spark** is paid from the battery first and given back (the reaction is downhill), so a
+battery holding less than one spark starts nothing; trace inside the cell lowers the spark, as in the open. A full
+battery burns nothing more. The atoms the burner frees leave through the membrane, and the light remakes fuel from them
+out in the spot: a cycle.
+
+**Reactions inside** (Shift+I): the table's heat-driven reactions of C4 run inside every cell by the same rules as in
+the open, with the stock's concentration over the cell's area and the temperature under the cell: fuel breaking by heat
+(wasted as heat, not into the battery), swaps (a light free atom that got in degrades rich fuel, t + gT → gt + T, heat
+out) and sediment forming from linkers. There is no light inside (until pigments in C6), so no fuel making and no hard
+light inside. **Sediment formed inside is expelled** where the cell is, onto the dish (it cannot pass the membrane, and
+kept inside it would fill the cell with dead weight; expelled, a busy culture leaves crusts behind). Measured, the
+inside reactions are small next to the burner (fuel broken by heat inside: 0.3 to 6 units per s, while the burners put
+2 to 30 energy units per s into the batteries; swaps under 1 per s).
+
+**Energy pays** (Shift+W, battery pays crawl): a cell's crawling (its wandering heading, and smell's steering) is
+gated by its battery: full speed from `crawlFull` (30 %) of a battery up, in proportion below it, none when empty.
+Brownian kicks from the heat stay free, so an empty cell still shivers. Crawling costs the battery `crawlCost` (0.012)
+× the work of crawling at that speed against the drag (its motion energy × (1 − 0.85²) per tick). The battery's energy
+goes into the motion, which the drag turns into heat as before; in the books it replaces that much of the "work coming
+in". A choice for you to judge: paying the full work (cost 1) emptied every battery within seconds (2000 cells crawl
+away about 3000 energy units per s, more than the springs' fuel holds), so the motor is 80 times "better than physics".
+The other cost of living is turnover: every death turns a battery into heat (deaths run at about 2.5 % of the cells per
+s), and that is what empties the cells far from fuel within a minute or two.
+
+**Heat damage** (Shift+X): a cell's death rate rises where the temperature under it is above the **tolerance** `tol`
+(15 per R²; a global knob now, a gene in C6): by `heatKill` (0.1 per s) × (temperature / tol − 1), at most `heatKill`
+(from twice the tolerance). The culture in the spot is 12 to 16 per R² at noon, so the effect is a gentle extra turnover
+in the hottest middle of the spot around noon (heat deaths a few per s then, none at night). It needs turnover on (T).
+Lesson: the first version had no cap, and a hot patch ran away (deaths and births heat the dish, which killed more,
+up to 30 000 deaths per s and 400 per R²); the cap keeps it bounded.
+
+**Energy-biased turnover** (Shift+G, "rich cells divide"): when a cell dies, the touching neighbour that divides into
+its slot is picked with weight `biasFloor` (0.05) + its battery share, so full cells win the slots around them and
+their lineages spread from the fuel side (colour by lineage, V, shows it). This replaces the old nutrient rule.
+
+**Smell** (Shift+N): the membrane's 6 corners (the outline's own geometry) read the fuels in the substance grid (each
+weighted by its energy); their spread across the corners gives the fuel gradient, which steers the crawl up toward the
+fuel: `smellGain` (0.5 R per s) × tanh(gradient / `smellHalf`), gated by the battery like the crawl. A/B at 180 s: with
+smell, 40 to 67 cells above half a battery at 80 to 120 s against 14 to 35 without, and the fuel in the dish eaten down
+to 224 units against 325.
+
+**The books.** The atoms ledger is now added = in the dish + **in cells** + out; the panel's ORDER line says "in cells".
+The energy books: "stored" = the dish's chemical energy + the cells' stock's chemical energy + their batteries, and
+"in" includes the starter charges. A fifth panel line:
+
+    CELLS  batteries 948 (full 8%, empty 64%) · atoms inside 658 · fuel inside 45.1 · burner +24.8/s · crawl −5.98/s
+
+(full: more than half a battery; empty: under 5 %; fuel inside: the chemical energy of the cells' stock; burner: energy
+into batteries per s; crawl: paid per s). The F overlay adds the switches and knobs, the flows per s (fuel burned →
+battery + heat, crawl paid, inside reactions, atoms in and out, what deaths hand back), what the cells hold per
+substance, how many cells are above half, empty, stuffed, and hotter than the tolerance, and the heat deaths per s.
+Measured (seed 3, default scene): 600 s at MAX, energy rounding +0.02 to +0.07 while in grew to 10 M, atoms rounding
+exactly 0 throughout; 600 s at 8×, +0.046 to +0.059 (in 7.9 M), atoms 0; a run at 8× through N, Shift+C, a window resize, G, and Shift+A off and on again: energy
+rounding within ±0.021, atoms 0.
+
+**How it is computed** (`src/eat.js`, `cell_eat.wgsl`). The cells' step pass is at WebGPU's limit of 8 storage
+buffers, so eating is its own pass each tick, after the step and before the dish spreads, with four dispatches:
+*dump* (a slot whose cell died this tick hands the dead cell's stock and battery back), *split* (each newborn takes
+half its parent's), *plan* (every cell reads the dish plainly: what its membrane lets in or out this tick, the
+temperature under it, and the smell at its corners) and *eat* (pays the crawl, moves the planned matter with atomic
+adds and "takes" only where something moves, runs the burner and the reactions inside, expels sediment). A "take"
+subtracts what is wanted and gives back what was not there, so two cells drawing on one pixel never drive it below
+zero and never get more than it held. The step reads only a few numbers from the Cell record (battery share, the
+smell gradient) and writes the crawl's cost, the dead cell's place and the parent for the eat pass. Matter written
+into the dish must go into channels the dish is moving this frame (a channel left out must be zero in both copies), so
+the matter's list of moving channels now also counts what the cells hold and what their insides can make, and keeps a
+channel on until a ledger read-back has seen what went into it.
+
+**Keys** (all on by default; each acts only while Shift+A is on): **Shift+A** cells eat · **Shift+U** burner ·
+**Shift+I** reactions inside · **Shift+W** battery pays crawl · **Shift+X** heat damage · **Shift+G** rich cells divide
+(energy-biased turnover) · **Shift+N** smell. URL: `?eat=0` (start not eating), `?springs=0` (no default scene).
+
+**Knobs** (live in `moire.eat.params`): `perm` (3 per s), `capR2` (2 per R²), `batMax` (4), `kBurner` (2 per s),
+`burnMax` (2 per s), `ineff` (0.25), `starter` (0.4 of a battery), `crawlFull` (0.3), `crawlCost` (0.012), `tol`
+(15 per R²), `heatKill` (0.1 per s), `biasFloor` (0.05), `smellGain` (0.5 R per s), `smellHalf` (0.05 energy per R²
+per R). The look in `moire.cells.look`: `core` (0.55: a full core's radius as a share of the cell's), `coreInk`,
+`starve` (0.12: below this share of a battery a cell dims) and `starveDim` (0.4). The default scene: `SCENE` in
+`src/main.js` (springs' life 240 s, distance from the culture). The sediment's look (step C5's first fix): crusts are now
+flat patches with hard edges, thresholded per screen pixel in two levels (the patch from `sedStep` and a lighter core
+from 4 × `sedStep`), no smoothing; the C4 version anti-aliased each level along the slope of the amount, which on a
+gentle crust spread each edge over several pixels and read as a soft blurred disc.
+
+**Cost** (headless Chrome on the GTX 1650, seed 3, compared with C4 at commit 1ae88e5 with the same two springs and
+spot). 2000 cells: 9.4 ms per frame at 1× against 9.3 (held by the display); MAX reached ×11.3 to ×12.7 against ×12.7
+to ×13.8 (about 8 % slower). 10 000 cells at 8×: 111 ms per frame (×4.8) against 89 ms (×6.0); with the cells not
+eating (`?eat=0`) 98 ms, so the eating itself costs about 0.4 ms per tick there and the rest is the larger cell record
+(88 bytes instead of 56) and the extra dispatches. A lesson: the first version read the dish through atomics in the
+eat pass and smelled in the step: on Direct3D an atomic load is a read-modify-write, and the step's probe at 10 000
+cells went from 3.7 ms per tick (C4) to 6.4; with the plain-read plan dispatch it is 5.3.
 
 ## The look of the landscape
 
@@ -977,6 +1115,9 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   and group, every substance's properties derived from it), the substance grid in the heat buffer, springs, spreading,
   the atoms ledger and ORDER, and the halftone drawing on the medium lattice; step C4: the energy table and the
   reaction list (derived from the same table), the chemistry's knobs and switches, and `react` in `matter.wgsl`
+- `src/eat.js` + `src/shaders/cell_eat.wgsl`: cells eat (step C5): every cell's stock and battery (their own buffer),
+  the membrane, the burner, the reactions inside, deaths and births handing stock back and splitting it, the starter
+  charge, the cells' part of the books, the entropy panel's CELLS line
 - `src/cells.js` + `src/shaders/cell_*.wgsl`: the cells. `cell_common.wgsl` holds the cell layout, the per-tick
   uniforms, the grid helpers, the loop's maths (cell beat, membrane, sensing, tuning; prepended after
   field_common) and field B (struct `Fields`, charges, `cell_field_b`); `cell_grid.wgsl` rebuilds the neighbour grid every tick (a counting sort by grid cell) and

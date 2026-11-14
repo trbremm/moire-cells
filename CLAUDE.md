@@ -283,7 +283,12 @@ C4. Chemistry in the open (no cells): light makes and breaks bonds by the table,
 C5. Cells eat: exchange, internal stock, battery (starter charge), one built-in burner for all; the battery
     pays for crawling and for each reaction's spark; the table's reactions also run inside cells (swaps);
     heat damage; energy-biased turnover (replaces the old nutrient rule).
-C6. Engines in the genome (2-3 slots, mutate), heat tolerance as a gene, engines drawn as parts.
+    AS BUILT (C5): src/eat.js + cell_eat.wgsl; Cell record 88 bytes; battery drawn as a pale-green core (full = 0.55 R);
+    lessons: heat damage needs a cap (deaths heat the dish and can run away; capped at heatKill); crawling pays
+    only 0.012 of the real work (full work emptied batteries in seconds); most battery energy leaves through
+    turnover (a death turns the battery into heat); heat damage acts only with turnover (T) on.
+C6. Engines in the genome (2-3 slots, mutate), pigments (cells catch a visible band for uphill reactions),
+    heat tolerance and permeability as genes, engines drawn as parts.
 C7. Pumps across contact: storing, sharing, stealing.
 C8. Hard light mutates cells.
 

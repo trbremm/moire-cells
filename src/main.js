@@ -1,4 +1,4 @@
-// Boot, frame loop and input.
+// Boot, frame loop, input and the F overlay.
 //
 // Frame loop: the simulation runs in fixed ticks of 1/60 s (at most MAX_TICKS per frame, so a slow frame
 // slows the simulation instead of exploding it). Each frame:
@@ -8,10 +8,12 @@
 // To add a step (landscape, cells, ...), write a class with resize / compute / render and push it into `layers`.
 //
 // URL parameters (handy for headless screenshots, see tools/shot.py):
+//   ?overlay=1  show the frame-time / adapter overlay from the start
 //   ?ripple=1   drop a ripple every 0.7 s at varying spots
+//   ?debug=1    copy console warnings and errors into the overlay
 //   ?nogpu=1    pretend WebGPU is missing (to see the fallback message)
 
-import { initGPU, GPUUnavailable, showNoWebGPU, showError, messageIsShown } from './gpu.js';
+import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown } from './gpu.js';
 import { Background } from './background.js';
 
 window.__moireBooted = true;
@@ -24,8 +26,17 @@ const params = new URLSearchParams(location.search);
 const flag = (name) => params.has(name) && params.get(name) !== '0';
 
 const canvas = document.getElementById('gpu');
+const overlayEl = document.getElementById('overlay');
 const hintEl = document.getElementById('hint');
 
+const debugLog = [];
+if (flag('debug')) {
+  for (const level of ['warn', 'error']) {
+    const orig = console[level].bind(console);
+    console[level] = (...args) => { debugLog.push(`${level}: ${args.join(' ')}`); if (debugLog.length > 8) debugLog.shift(); orig(...args); };
+  }
+  window.addEventListener('error', (e) => debugLog.push(`error: ${e.message}`));
+}
 window.addEventListener('unhandledrejection', (e) => {
   const r = e.reason;
   showError('Something went wrong', (r && (r.stack || r.message)) || String(r));
@@ -77,6 +88,7 @@ async function boot() {
   resize();
   window.addEventListener('resize', resize);
   setupInput();
+  if (flag('overlay')) overlayEl.hidden = false;
   running = true;
   stage('running');
   requestAnimationFrame(frame);
@@ -95,12 +107,14 @@ function resize() {
 }
 
 // ---------- loop ----------
+const stats = { frameMs: 16.7, cpuMs: 0, gpuMs: 0, lastOverlay: 0 };
 let last = 0, acc = 0, simTime = 0, frameNo = 0, nextAutoRipple = 0.3, autoK = 0;
 
 function frame(now) {
   if (!running) return;
   const dtReal = last ? Math.min(0.25, (now - last) / 1000) : TICK;
   last = now;
+  stats.frameMs += (dtReal * 1000 - stats.frameMs) * 0.05;
 
   acc += dtReal;
   let ticks = Math.floor(acc / TICK);
@@ -109,6 +123,7 @@ function frame(now) {
 
   if (flag('ripple') && simTime >= nextAutoRipple) autoRipple();
 
+  const t0 = performance.now();
   const f = { dt: ticks * TICK, tickDt: TICK, ticks, time: simTime, frameNo };
   const device = gpu.device;
   const encoder = device.createCommandEncoder({ label: `frame ${frameNo}` });
@@ -123,8 +138,16 @@ function frame(now) {
   for (const l of layers) l.render(pass, f);
   pass.end();
   device.queue.submit([encoder.finish()]);
+  stats.cpuMs += (performance.now() - t0 - stats.cpuMs) * 0.05;
+
+  // rough GPU latency: time from submit until the queue reports the work done (every 15th frame)
+  if (frameNo % 15 === 0) {
+    const ts = performance.now();
+    device.queue.onSubmittedWorkDone().then(() => { stats.gpuMs += (performance.now() - ts - stats.gpuMs) * 0.3; });
+  }
 
   if (frameNo === 10) stage('running-10-frames');
+  if (!overlayEl.hidden && now - stats.lastOverlay > 250) { stats.lastOverlay = now; drawOverlay(); }
   frameNo++;
   requestAnimationFrame(frame);
 }
@@ -136,6 +159,25 @@ function autoRipple() {
   const y = ((autoK * 0.754878 + 0.35) % 1) * view.cssH;
   background.impulse(x, y, 2.0);
   nextAutoRipple = simTime + 0.7;
+}
+
+function drawOverlay() {
+  const i = gpu.info;
+  const lines = [
+    `<b>${(stats.frameMs).toFixed(1)} ms</b> per frame  (${(1000 / stats.frameMs).toFixed(0)} fps)`,
+    `cpu encode ${stats.cpuMs.toFixed(2)} ms · gpu done after ~${stats.gpuMs.toFixed(1)} ms`,
+    `adapter  <b>${esc(adapterName(i))}</b>${i.isFallbackAdapter ? '  (software fallback)' : ''}`,
+    `vendor ${esc(i.vendor || '?')} · arch ${esc(i.architecture || '?')}${i.device ? ' · device ' + esc(i.device) : ''}`,
+    `canvas ${view.pxW}×${view.pxH} (dpr ${view.dpr.toFixed(2)}) · ${gpu.format}`,
+    `ripple grid ${background.gw}×${background.gh} (${background.sc} css px/cell) · ambient ${background.ambient ? 'on' : 'off'}`,
+    `sim t ${simTime.toFixed(1)} s`,
+  ];
+  if (debugLog.length) lines.push('', ...debugLog.map(esc));
+  overlayEl.innerHTML = lines.join('\n');
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
 
 // ---------- input ----------
@@ -172,7 +214,10 @@ function setupInput() {
   window.addEventListener('keydown', (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const k = e.key.toLowerCase();
-    if (k === 'a') {
+    if (k === 'f') {
+      overlayEl.hidden = !overlayEl.hidden;
+      if (!overlayEl.hidden) drawOverlay();
+    } else if (k === 'a') {
       background.ambient = !background.ambient;
       flash(`ambient ripples ${background.ambient ? 'on' : 'off'}`);
     }

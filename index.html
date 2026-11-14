@@ -26,6 +26,17 @@ body {
 }
 canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: crosshair; }
 
+/* frame-time / adapter readout, toggled with F */
+#overlay {
+  position: absolute; top: 14px; left: max(16px, env(safe-area-inset-left, 0px));
+  margin: 0; padding: 8px 10px; max-width: calc(100% - 32px);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  color: var(--dim); white-space: pre-wrap; pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+#overlay b { color: var(--epi); font-weight: 500; }
+#overlay[hidden] { display: none; }
+
 #hint {
   position: absolute; bottom: 14px; right: max(16px, env(safe-area-inset-right, 0px));
   margin: 0; color: var(--dim); opacity: 0.7; pointer-events: none; text-align: right;
@@ -55,7 +66,8 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 </head>
 <body>
 <canvas id="gpu" aria-label="Dark viscous fluid background with slow ripples"></canvas>
-<p id="hint">click: drop a ripple · drag: stir · A: ambient ripples</p>
+<pre id="overlay" hidden></pre>
+<p id="hint">click: drop a ripple · drag: stir · F: frame time · A: ambient ripples</p>
 <div id="msg" hidden><div class="box" id="msgbox"></div></div>
 
 <noscript>

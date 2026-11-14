@@ -25,7 +25,7 @@
 
 const HEAT_SCALE: f32 = 65536.0;   // counts per energy unit
 const HEAT_V0: f32 = 10.0;         // CSS px / s: the speed whose motion energy is 0.5 units
-const LEDGER_WORDS: u32 = 11520u;
+const LEDGER_WORDS: u32 = 15872u;
 const LG_WORK: u32 = 0u;     // 256 slots: work done on the cells by the forces (fields, contact, crawling, stirring)
 const LG_BASE: u32 = 256u;   // 64: the base warmth put into the dish
 const LG_OUT: u32 = 320u;    // 64, 64-bit: heat that leaked out of the dish (to the sky, at the edge, on a resize)
@@ -50,6 +50,43 @@ const LG_M_ORDER: u32 = 9728u;     // snapshot: 256 f32 partial sums of m ln m (
 // step C4, chemistry (src/matter.js, matter.wgsl's react): 64-bit, 64 slots (128 words each)
 const LG_C_LIGHT: u32 = 10240u;    // 4 bands: light caught by the substances (into bonds, and the rest as heat)
 const LG_C_RX: u32 = 10752u;       // 6 families (make, burn, photo, swap, form, crack): events, in counts of substance
+// step C5, cells eat (src/eat.js, cell_eat.wgsl): 64-bit, 64 slots (128 words each) unless said otherwise
+const LG_K_STOCK: u32 = 11520u;    // snapshot, per channel (13): the substances inside the cells (counts)
+const LG_K_BAT: u32 = 13184u;      // snapshot: the cells' batteries (heat counts)
+const LG_K_START: u32 = 13312u;    // the starter charges given to new cultures (heat counts; energy in)
+const LG_K_EV: u32 = 13440u;       // 16 counters (EV_* in cell_eat.wgsl)
+const LG_K_COUNT: u32 = 15488u;    // snapshot, 5 classes x 64 slots (i32): cells with a battery above half, below 5 %,
+                                   //   stock above half full, all cells, and cells hotter than the tolerance
+
+const NCH: u32 = 13u;               // step C3: substance channels
+const ATOM_SCALE: f32 = 4096.0;     // counts per atom-unit (ATOM_SCALE in src/matter.js)
+
+// step C4: one reaction of the table (src/matter.js, REACTIONS); one event moves one count of each channel listed
+struct Rx {
+  ch: vec4u,                    // reactants x, y and products z, w (255: none); 2 l -> ll lists l twice
+  by: u32,                      // 0: by heat (rate x exp(-spark / (theta x temperature))); 1: by light of `band`
+  band: u32,
+  fam: u32,                     // family, for the counters (make, burn, photo, swap, form, crack)
+  _p0: u32,
+  heat16: i32,                  // heat counts released per event
+  light16: i32,                 // light counts used per event (by light)
+  k: f32,                       // by heat: rate constant (per s for one reactant, R^2 per s for two); by light: the
+                                // reactants' optical depth per unit amount per R^2
+  spark: f32,                   // the bond's spark (energy units)
+};
+struct ChemP {
+  nrx: u32,                     // reactions in rx
+  traceOn: u32,                 // 1: trace lowers the spark
+  trace: u32,                   // trace's channel
+  light: u32,                   // 1: the light is on
+  theta: f32,                   // temperature scale of the sparks
+  tempScale: f32,               // heat counts in a pixel x tempScale = temperature (heat per R^2)
+  dt: f32,                      // s per tick
+  traceK: f32,                  // spark x 1 / (1 + traceK x trace per R^2)
+  dark: array<vec4f, 4>,        // per channel: optical depth for the WARM band per unit per R^2 (sediment: dark)
+  rx: array<Rx, 24>,
+};
+const NONE: u32 = 255u;
 
 // The heat grid's parameters (written once per frame by src/heat.js; 64 bytes)
 struct HeatP {

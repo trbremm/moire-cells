@@ -1,8 +1,8 @@
 // ===== cell_common.wgsl: the cells' state, the simulation uniforms and the neighbour grid =====
 // Not compiled on its own: src/cells.js prepends field_common.wgsl and then this file to every cell shader.
 //
-// Cells live in a fixed-capacity storage buffer (struct Cell, 56 bytes; keep in step with CELL_* in
-// src/cells.js). Their order never changes, so drawing order is stable and a cell keeps its index.
+// Cells live in a fixed-capacity storage buffer (struct Cell, 88 bytes; keep in step with CELL_* in
+// src/cells.js, and CELL_FLOATS in heat.wgsl). Their order never changes, so drawing order is stable and a cell keeps its index.
 //
 // Neighbour grid (rebuilt every tick, see cell_grid.wgsl):
 //   counts[g]   cells in grid cell g                        (atomic counter, then plain counts)
@@ -27,12 +27,23 @@ struct Cell {
   aux: f32,         // the cell's key scale (log of its lattice period factor; a copy of Bio.key.y)
   z: vec2f,         // step 8: the phasor the cell emits field A and its partner A' with: (1, 0) = field A as in steps 4 to
                     // 7; its angle shifts the cell's pinned beat (A turns into A' at 90 degrees), its length scales it
+  // ---- step C5, cells eat (the stock and the battery themselves live in their own buffer, cell_eat.wgsl) ----
+  dead: vec2f,      // where the cell that died in this slot this tick was (with CELL_BORN; its stock goes back there)
+  bat: f32,         // the battery as a share of its capacity, 0..1 (written by the eat pass; read by the step's crawl and
+                    // turnover, and by the drawing)
+  pay: i32,         // what this tick's crawling costs the battery (heat counts; the step works it out, the eat pass pays)
+  mom: u32,         // a newborn's parent (its index in `cells`), with CELL_BORN
+  fill: f32,        // how full the cell's stock is, as a share of its capacity (eat pass; for the overlay)
+  smell: vec2f,     // the fuel gradient its membrane's corners smelled (eat pass, plan; energy per R^2 per R), which
+                    // the next tick's step steers by
 };
 
 const CELL_ALIVE: u32 = 1u;
 const CELL_CONV: u32 = 2u;          // converted (step 6, rule 2): emits field B more strongly or with flipped sign
 const CELL_LEAK_SHIFT: u32 = 8u;    // bits 8..15: leak level x 255 (step 6, rule 1)
 const CELL_FLIP_SHIFT: u32 = 16u;   // bits 16..17: state offset 0..3 (step 7, rule 2)
+const CELL_BORN: u32 = 4u;          // step C5: born this tick (the step sets it; the eat pass hands the dead cell's stock
+                                    // back to the dish, gives the newborn half its parent's, and clears it)
 fn cell_leak(c: Cell) -> f32 { return f32((c.flags >> CELL_LEAK_SHIFT) & 255u) / 255.0; }
 
 // Per-tick simulation uniforms (written by src/cells.js; keep the order in step with writeSim there).
@@ -78,7 +89,8 @@ struct Sim {
   mutJump: f32,     // chance per birth that one gene jumps to a fresh random value
   _free42: f32,     // spare (42..45: the nutrient and threat numbers until step C3)
   _free43: f32,
-  _free44: u32,
+  matterCur: u32,   // step C5: word offset in the heat buffer of the substances' current copy (channel 0) this tick; 0 =
+                    // no substance grid
   _free45: f32,
   // ---- the loop (step 4): cells emit into the field and feel it on their membrane ----
   lever: f32,       // how different the cells' lattices are from the medium's (1 = the keys as they are;
@@ -182,7 +194,7 @@ struct Stats {
   births: atomic<u32>,                // cumulative since the page started
   deaths: atomic<u32>,
   nEvents: atomic<u32>,               // births and deaths recorded in `events` since the last read-back
-  pad: u32,
+  heatDeaths: atomic<u32>,            // step C5: of the deaths, those from heat damage (cumulative)
   xPairs: array<atomic<u32>, 4>,      // step 7 (cleared every frame, counted on its last tick): neighbour pairs of the
                                       // same type within 1.6 x contact distance: [0] all, [1] of the same state;
                                       // touching (within reach x contact distance): [2] all, [3] of the same state
@@ -367,7 +379,7 @@ fn sense_field(seg: ptr<function, array<f32, 6>>, mb: Membrane, rel: vec2f, q0: 
 // in its own band: every lattice involved (the cell's and the medium's) is `bBand` times longer, so A and B
 // make no slow beat with each other; it reaches further (power law from a larger r0) and has its own sign rule.
 // Each fate carries a charge per field: how strongly it emits into that field and listens to it.
-// Written once per frame by src/cells.js (writeFields; keep in step); 144 bytes.
+// Written once per frame by src/cells.js (writeFields; keep in step); 256 bytes.
 struct Fields {
   qA: vec4f,        // field A charge per fate: stem, epithelium, muscle, neuron (1 = as in step 4)
   qB: vec4f,        // field B charge per fate (signed: like charges repel, when bSign = 1)
@@ -420,7 +432,27 @@ struct Fields {
   side: f32,        // gain (0 = off); mode 0: x field A's force; mode 1: turning rate per tick at full A'
   sideMode: u32,
   _p13: f32,
+  // ---- step C5, cells eat: what the step needs (the eat pass has its own uniform, cell_eat.wgsl) ----
+  eat: u32,         // bits: EAT_PAY battery pays the crawl, EAT_HEAT heat damage, EAT_BIAS energy-biased turnover,
+                    // EAT_SMELL smell (all 0 while "cells eat" is off)
+  crawlFull: f32,   // battery share at and above which a cell crawls at full speed (below: in proportion)
+  crawlCost: f32,   // battery paid per unit of the crawl's work (the rest of the work comes in from outside, as before)
+  tol: f32,         // heat damage: the temperature (heat per R^2) a cell tolerates
+  heatKill: f32,    // ... extra deaths per s x (temperature / tol - 1) above it, at most heatKill
+  bias: f32,        // energy-biased turnover: a neighbour's weight as parent = bias + its battery share
+  smell: f32,       // smell: crawl speed up the fuel gradient at a strong gradient (R / s, x motility, x the battery's gate)
+  smellHalf: f32,   // ... the fuel gradient (energy per R^2 per R) at which the steering is tanh(1) of full
+  _p14: f32,        // spare
+  _p15: u32,
+  _p16: f32,
+  _p17: f32,
+  _p18: vec4f,
 };
+const EAT_PAY: u32 = 1u;
+const EAT_HEAT: u32 = 2u;
+const EAT_BIAS: u32 = 4u;
+const EAT_SMELL: u32 = 8u;
+const FUEL_CH: u32 = 6u;   // the first fuel channel (gt, gT, Gt, GT: 6 .. 9; src/matter.js SUBSTANCES)
 
 // Step 8: the partner A'. Field A of one cell is  amp x envelope x (1/3) sum_m cos(q_m . d + ph_m); its partner is
 // the same beat a quarter period out of step,  amp x envelope x (1/3) sum_m sgn_m sin(q_m . d + ph_m). The pair is

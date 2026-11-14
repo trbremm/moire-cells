@@ -1,6 +1,6 @@
 // The cells: a fixed number of them, all state on the GPU.
 //
-// State: one storage buffer of struct Cell (cell_common.wgsl, 48 bytes each), in a fixed order: index i is
+// State: one storage buffer of struct Cell (cell_common.wgsl, 88 bytes each), in a fixed order: index i is
 // always the same cell, which keeps the drawing order stable.
 // Drawing: instanced quads (cell_draw.wgsl), crisp discs with an outline and the cell's lattice as dots.
 //
@@ -34,11 +34,13 @@
 import { loadFieldShader, KIND } from './field.js';
 import { Genome, BIO_BYTES } from './genome.js';
 import { Heat, HEAT_COMMON_URL } from './heat.js';
+import { Eat } from './eat.js';
 
 export const CELL_URL = 'src/shaders/cell_common.wgsl';
 
-// struct Cell in cell_common.wgsl: pos.xy, vel.xy, r, la, e1, e2, kind (u32), flags (u32), seed (u32), aux, z.xy
-export const CELL_FLOATS = 14;
+// struct Cell in cell_common.wgsl: pos.xy, vel.xy, r, la, e1, e2, kind (u32), flags (u32), seed (u32), aux, z.xy;
+// step C5: dead.xy, bat, pay (i32), mom (u32), fill, smell.xy (CELL_FLOATS in heat.wgsl too)
+export const CELL_FLOATS = 22;
 export const CELL_BYTES = CELL_FLOATS * 4;
 const ALIVE = 1;
 
@@ -56,7 +58,7 @@ const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder 
 const STATS_EVENTS = 64;
 const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_AW in cell_common.wgsl)
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
-const FIELDS_BYTES = 192;      // struct Fields in cell_common.wgsl
+const FIELDS_BYTES = 256;      // struct Fields in cell_common.wgsl
 const FIELD_FORMAT = 'rgba16float';
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
@@ -248,6 +250,7 @@ export class Cells {
       Heat.create(d),
     ]);
     this.heat = heat;           // step C1: the heat band (src/heat.js)
+    this.eat = null;            // step C5: the cells' stock and battery (src/eat.js; made at the end of init)
     // the cells' field: plain additive blending into a float texture (signed values add up)
     const add = { srcFactor: 'one', dstFactor: 'one', operation: 'add' };
     this.fieldPipe = d.createRenderPipeline({
@@ -321,6 +324,10 @@ export class Cells {
     this.simAB = new ArrayBuffer(SLOTS * SLOT);
     this.simF = new Float32Array(this.simAB);
     this.simU = new Uint32Array(this.simAB);
+
+    // step C5: the stock and battery of every cell, and the pass that eats (src/eat.js)
+    this.eat = await Eat.create(d, this);
+    this.heat.eat = this.eat;
 
     this.drawU = d.createBuffer({ label: 'cell draw params', size: 112, usage: U.UNIFORM | U.COPY_DST });
     this.drawData = new Float32Array(28);
@@ -452,8 +459,10 @@ export class Cells {
       u[o + 8] = KIND.STEM; u[o + 9] = ALIVE; u[o + 10] = (rng() * 4294967296) >>> 0;
       f[o + 11] = keys[2 * i + 1];                     // key scale
       f[o + 12] = 1; f[o + 13] = 0;                    // step 8: the phasor of field A and its partner
+      f[o + 16] = this.eat.starterShare;               // step C5: the battery share (the starter charge, below)
     }
     this.heat.depositAll();     // step C1: the old cells' motion becomes heat (queued before they are overwritten)
+    this.eat.reset();           // step C5: the old cells' stock back to the dish, the starter charge into every battery
     this.device.queue.writeBuffer(this.cellBuf, 0, ab);
     this.device.queue.writeBuffer(this.bioBuf[this.bioCur], 0, bab);
     this.warm = Math.max(0, Math.round(this.params.warmup));
@@ -487,7 +496,8 @@ export class Cells {
     f[o + 32] = G.adhSigma; f[o + 33] = G.fateAdh; f[o + 34] = this.genome.rules.body ? 1 : 0; f[o + 35] = G.adhBase;
     f[o + 36] = this.genome.rules.body ? G.crawl : 0; f[o + 37] = G.turnRate;
     f[o + 38] = G.turnover; f[o + 39] = G.unhappy; f[o + 40] = G.mutSize; f[o + 41] = G.mutJump;
-    f[o + 42] = 0; f[o + 43] = 0; u[o + 44] = 0; f[o + 45] = 0;   // spare (the nutrient and threat numbers until step C3)
+    f[o + 42] = 0; f[o + 43] = 0; f[o + 45] = 0;   // spare (the nutrient and threat numbers until step C3)
+    u[o + 44] = this.matter ? this.matter.copyAt(k) : 0;   // step C5: the substances' current copy at this tick
     f[o + 46] = p.lever; f[o + 47] = p.emit ? 1 : 0; f[o + 48] = p.r0; f[o + 49] = p.cut;
     f[o + 50] = p.senseOn ? p.sense : 0; f[o + 51] = p.tuneW; f[o + 57] = 0;
     u[o + 58] = p.receptor ? 1 : 0;
@@ -518,6 +528,11 @@ export class Cells {
     f[37] = P.change ? (P.chMode ? P.pull : P.chGain) : 0; f[38] = Math.max(1e-3, P.chTau); f[39] = Math.max(0.01, P.chMax); f[40] = P.chSign;
     u[41] = P.chMode ? 1 : 0; f[42] = P.omega; f[43] = P.lag;
     f[44] = P.side ? (P.sideMode ? P.sideGain / 60 : P.sideGain) : 0; u[45] = P.sideMode ? 1 : 0;
+    // step C5: what the step needs of the cells' eating (src/eat.js): the switches (all off while it is off) and knobs
+    const E = this.eat.params, rule = (k) => this.eat.rule(k);
+    u[47] = (rule('pay') ? 1 : 0) | (rule('heat') ? 2 : 0) | (rule('bias') ? 4 : 0) | (rule('smell') ? 8 : 0);
+    f[48] = Math.max(1e-3, E.crawlFull); f[49] = Math.max(0, E.crawlCost); f[50] = Math.max(1e-3, E.tol); f[51] = Math.max(0, E.heatKill);
+    f[52] = Math.max(0, E.biasFloor); f[53] = Math.max(0, E.smellGain); f[54] = Math.max(1e-6, E.smellHalf);
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -566,6 +581,7 @@ export class Cells {
     // C4: and react, each tick inside the heat's pass (after the cells' step, before the heat spreads)
     const M = this.matter;
     if (M) M.beginFrame(encoder, frame, warm);
+    this.eat.beginFrame(frame, ticks);   // step C5: after the matter's, which decides the channels the cells may write into
     for (let t = 0; t < ticks; t++) {
       const time = frame.time - Math.max(0, ticks - 1 - t) * frame.tickDt * (t < warm ? 0 : 1);
       this.writeSim(t, frame.tickDt, time, t === ticks - 1);
@@ -580,6 +596,7 @@ export class Cells {
       // ?check runs between the grid build and the move, so both see the same positions
       if (t === ticks - 1) this.maybeCheck(encoder, t, frame);
       this.encodeStep(encoder, t);
+      this.eat.encodeTick(encoder, t, SLOT);   // step C5: the cells eat (after their step, before the dish spreads)
       this.heat.encodeTick(encoder, t, M && t >= warm ? (pass) => M.encodeTick(pass, t - warm) : null);
     }
     if (M) M.endTicks(encoder);

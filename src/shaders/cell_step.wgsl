@@ -513,6 +513,14 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       d.seed = pcg(bs ^ 0x5bd1e995u);
       d.aux = nb.key.y;
       d.z = vec2f(1.0, 0.0);
+      // step C5: the eat pass hands the dead cell's stock back to the dish where it died, and gives the newborn half of
+      // its parent's stock and battery (the newborn's battery share until then: half the parent's)
+      d.flags = CELL_ALIVE | CELL_BORN;
+      d.dead = c.pos;
+      d.mom = pi;
+      d.bat = 0.5 * pc.bat;
+      d.pay = 0;
+      d.fill = 0.5 * pc.fill;
       eDeath = heat_ke(c.vel);
       c = d;
       bio = nb;

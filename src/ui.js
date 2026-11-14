@@ -6,7 +6,7 @@
 // button, the TOOLS (what a tap and a drag on the dish do), playback (pause, speed, record), and the panel buttons
 // (light, view, rules, dish). Folded, only the fold button stays. Style: the page's look, thin outlines, flat, no glow.
 
-import { TOOLS, keysText } from './actions.js';
+import { TOOLS, RULE_GROUPS, keysText } from './actions.js';
 import { springInk } from './matter.js';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -50,6 +50,7 @@ function el(tag, cls, text) {
 const PANELS = [
   { id: 'light', icon: 'sun', title: 'Light: spotlight, full field or off; tilt and direction' },
   { id: 'view', icon: 'eye', title: 'View: what is drawn' },
+  { id: 'rules', icon: 'rules', title: 'Rules: every rule as a switch' },
   { id: 'dish', icon: 'dish', title: 'Dish: speed, new culture, springs and atoms' },
 ];
 
@@ -145,6 +146,14 @@ export function setupUI(app) {
     },
     view(body) {
       for (const a of app.actions) if (a.group === 'view' && !(a.desktop && app.touch)) body.append(row(a));
+    },
+    rules(body) {
+      for (const [g, title] of RULE_GROUPS) {
+        const list = app.actions.filter((a) => a.group === g);
+        if (!list.length) continue;
+        body.append(el('h3', '', title));
+        for (const a of list) body.append(row(a));
+      }
     },
     dish(body) {
       body.append(speedRow());

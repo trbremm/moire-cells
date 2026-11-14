@@ -487,9 +487,23 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // this tick) with small mutations. Cells that recognise none of their neighbours die sooner.
   // (Until step C3, rule E let a threat source raise the death rate and send births to cells fed by a nutrient
   // source; growth by energy replaces it in step C5.)
-  if ((S.rules & RULE_TURN) != 0u && parent != 0xffffffffu) {
+  // Step C5, heat damage: where the dish under the cell (its 3 x 3 pixels) is hotter than the tolerance, the death rate
+  // rises by heatKill per s x (temperature / tol - 1), at most heatKill (from twice the tolerance on: a bound, as the
+  // deaths and births themselves heat the dish, which could otherwise run away); such a death is replaced in the same
+  // way (so with turnover off, nothing dies, from heat either).
+  let turnOn = (S.rules & RULE_TURN) != 0u;
+  var hot = 0.0;
+  if ((FL.eat & EAT_HEAT) != 0u && turnOn) {
+    var hs = hsum;
+    if (!kicks) { for (var q = 0; q < 9; q++) { hs += atomicLoad(&hb[S.heatCur + hidx[q]]); } }
+    let temp = f32(hs) / 9.0 * HP.tempScale;
+    hot = FL.heatKill * clamp(temp / max(FL.tol, 1e-3) - 1.0, 0.0, 1.0);
+  }
+  if (turnOn && parent != 0xffffffffu) {
     let rate = S.turnover * (1.0 + S.unhappy * (1.0 - min(M, 1.0)));
-    if (rand01(c.seed ^ 0x165667b1u, S.tick) < rate * S.dt) {
+    let ud = rand01(c.seed ^ 0x165667b1u, S.tick);
+    if (ud < (rate + hot) * S.dt) {
+      if (ud < hot * S.dt) { atomicAdd(&stats.heatDeaths, 1u); }
       let bs = pcg(c.seed ^ pcg(S.tick * 0x9e3779b9u + i));    // this birth's random stream
       let pc = sorted[parent];
       let pi = beats[parent].idx;

@@ -656,7 +656,7 @@ export class Cells {
       rb.buf.unmap();
       const f = new Float32Array(u.buffer);
       const fate = Array.from(u.subarray(0, 5));
-      const births = u[8], deaths = u[9];
+      const births = u[8], deaths = u[9], heatDeaths = u[11];   // (step C5: of the deaths, from heat damage)
       const nEv = Math.min(u[10], STATS_EVENTS);
       const events = [];
       for (let e = 0; e < nEv; e++) events.push([f[16 + 4 * e], f[17 + 4 * e], f[18 + 4 * e]]);
@@ -691,11 +691,11 @@ export class Cells {
         this.aQuant = Q ? { up: Q.up + (now.up - Q.up) * k, down: Q.down + (now.down - Q.down) * k, time } : { ...now, time };
       }
       const H = this.statsHist;
-      H.push([time, births, deaths]);
+      H.push([time, births, deaths, heatDeaths]);
       while (H.length > 2 && time - H[0][0] > 2) H.shift();
       const h0 = H[0], dt = time - h0[0];
-      const rate = dt > 0.2 ? [((births - h0[1]) >>> 0) / dt, ((deaths - h0[2]) >>> 0) / dt] : [0, 0];
-      this.stats = { time, fate, births, deaths, clusters, founders, birthRate: rate[0], deathRate: rate[1], step6, step7, step8 };
+      const rate = dt > 0.2 ? [((births - h0[1]) >>> 0) / dt, ((deaths - h0[2]) >>> 0) / dt, ((heatDeaths - h0[3]) >>> 0) / dt] : [0, 0, 0];
+      this.stats = { time, fate, births, deaths, heatDeaths, clusters, founders, birthRate: rate[0], deathRate: rate[1], heatDeathRate: rate[2], step6, step7, step8 };
       if (events.length && this.onEvents) this.onEvents(events);
     } catch (e) {
       // device lost or page closing: nothing to show
@@ -879,7 +879,8 @@ export class Cells {
     if (st) {
       const F = st.fate;
       lines.push(`fates: stem <b>${F[0]}</b> · epithelium <b>${F[1]}</b> · muscle <b>${F[2]}</b> · neuron <b>${F[3]}</b> · cartilage <b>${F[4]}</b>`);
-      lines.push(`lineages: ${st.founders} founder lines · ${st.clusters} key clusters · births ${st.birthRate.toFixed(1)}/s · deaths ${st.deathRate.toFixed(1)}/s`);
+      lines.push(`lineages: ${st.founders} founder lines · ${st.clusters} key clusters · births ${st.birthRate.toFixed(1)}/s · deaths ${st.deathRate.toFixed(1)}/s` +
+        ` (from heat ${st.heatDeathRate.toFixed(1)}/s; ${st.heatDeaths} so far)`);
     }
     lines.push(`rules: D differentiation ${on(r.diff)} · H adhesion ${on(r.adh)} · B body ${on(r.body)} · T turnover ${on(r.turn)} · M mutation ${on(r.mut)} · I inherit fate ${on(r.inherit)} · view ${this.look.view ? 'lineage' : 'fate'}`);
     const mo = this.motion;

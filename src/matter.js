@@ -1,6 +1,6 @@
 // Matter (Part C, step C3): the atom grid, without reactions. SPRINGS (mouse-dropped, tap modes 2 and 3) drip atoms into
-// the dish; the atoms spread (light ones quickly, heavy ones slowly) and leave at the dish's edge. Cells ignore them in
-// C3. (Not drawn yet: the F overlay shows the atoms ledger.)
+// the dish; the atoms spread (light ones quickly, heavy ones slowly), leave at the dish's edge, and are drawn as crisp
+// halftone dots on the medium lattice (dot size = amount). Cells ignore them in C3.
 //
 // Storage: 13 channels (6 atoms g t l G T L, 4 fuels gt gT Gt GT, 2 sediments ll LL, trace; heat is the 14th, in
 // src/heat.js) on the heat grid's pixels (same size and geometry, so later steps react them together), as more blocks
@@ -17,7 +17,8 @@
 //           zero); both pixels work out the same edge from the same numbers, so what one gives the other receives. On a
 //           tick's first substep the pixels on the dish's rim lose a share `edge` per s of their mobile atoms, booked as
 //           "lost" (the sink that keeps the dish from filling up forever).
-// Once per frame (with the heat's ledger): the atoms in the dish per channel (exact, 64-bit).
+// Once per frame (with the heat's ledger): the atoms in the dish per channel (exact, 64-bit); paint writes two small
+// textures with the amounts the drawing shows.
 //
 // The ledger: added by springs = in the dish + lost at the edge + gone (washed out with Shift+C, or with the old grid on a
 // window resize); rounding = what does not add up. Every amount is whole counts, so it stays at exactly 0.
@@ -44,6 +45,18 @@ export const ATOMS = {
 // (A patch spreads over about sqrt(4 x spread x t): light atoms 15 R in a minute, heavy ones 6 R, trace 2 R.)
 export const SPREAD = { row1: 1.2, perRow: 0.12, bond: 0.7 };
 
+// Inks by chemical FUNCTION (faded palette, 0..255): each with a lighter variant for row 1 and a deeper one for row 2;
+// a substance's ink sits between them by the share of its atoms in row 2. Reactive free atoms (givers and takers, hungry
+// for a partner) in the old threat red; linkers dim and quiet; fuels in the old nutrient green; sediment a dim flat
+// brown-grey; trace a pale silver, drawn as a small diamond instead of a dot.
+export const INKS = {
+  reactive: { light: [250, 170, 150], heavy: [214, 98, 86] },
+  linker: { light: [150, 158, 176], heavy: [104, 112, 132] },
+  fuel: { light: [196, 242, 178], heavy: [124, 204, 128] },
+  sediment: { light: [96, 86, 74], heavy: [74, 64, 56] },
+  trace: { light: [222, 222, 232], heavy: [222, 222, 232] },
+};
+
 // The 13 channels, in buffer order. A substance is just its atoms; its kind follows from their groups:
 // one giver or taker or linker = a free atom, giver + taker = FUEL, linker + linker = SEDIMENT, the inert atom = trace.
 export const SUBSTANCES = [
@@ -67,14 +80,28 @@ function derive(atoms) {
   const func = kind === 'atom' ? (reactive ? 'reactive' : 'linker') : kind === 'other' ? 'linker' : kind;
   const layer = { atom: 0, fuel: 1, sediment: 2, trace: 3 }[kind] ?? 0;   // which dot layer draws it
   const name = atoms.length === 1 ? atoms[0] : atoms.join('');
-  return { name, atoms, kind, row, heavy, reactive, spread, func, layer };
+  return { name, atoms, kind, row, heavy, reactive, spread, func, layer, ink: inkOf(func, heavy) };
+}
+
+function inkOf(func, heavy) {
+  const I = INKS[func];
+  return I.light.map((v, j) => v + (I.heavy[j] - v) * heavy);
+}
+
+/** A substance's name in words, for the flash and the overlay. */
+export function describe(s) {
+  const role = (a) => `${ATOMS[a].row === 1 ? 'light' : 'heavy'} ${ATOMS[a].group}`;
+  if (s.kind === 'atom') return `free atom ${s.name} (${role(s.atoms[0])}${s.reactive ? ', reactive' : ''})`;
+  if (s.kind === 'fuel') return `fuel ${s.name} (${role(s.atoms[0])} + ${role(s.atoms[1])})`;
+  if (s.kind === 'sediment') return `sediment ${s.name} (${s.atoms[0] === 'l' ? 'light' : 'heavy'} linker chain)`;
+  return 'trace (the rare inert atom)';
 }
 
 // The springs' mixes (shares of the dripped atoms). Tap mode 2 = LIGHT spring (row 1), tap mode 3 = HEAVY spring
 // (row 2, plus a little trace).
 export const SPRING_KINDS = {
-  light: { label: 'light spring', mix: { g: 1 / 3, t: 1 / 3, l: 1 / 3 } },
-  heavy: { label: 'heavy spring', mix: { G: 0.32, T: 0.32, L: 0.32, trace: 0.04 } },
+  light: { label: 'light spring', mix: { g: 1 / 3, t: 1 / 3, l: 1 / 3 }, stroke: 1.25 },
+  heavy: { label: 'heavy spring', mix: { G: 0.32, T: 0.32, L: 0.32, trace: 0.04 }, stroke: 2.25 },
 };
 
 export const ATOM_SCALE = 4096;          // counts per atom-unit (ATOM_SCALE in matter.wgsl)
@@ -88,9 +115,13 @@ const MT_WASH = MT_LEDGER + 2;            // slot: Shift+C
 const MT_SLOTS = MT_LEDGER + 3;
 export const MAX_SPRINGS = 16;            // the springs uniform's capacity
 const SPRING_FLOATS = 24;                 // struct Spring: pos (4), amt (16), ink (4)
+const DRAW_BYTES = 224;                   // struct DrawP in matter_draw.wgsl
 const K_MAX = 0.2;
 const LG_M = { ADD: 3072, LOST: 4736, GONE: 6400, DISH: 8064, ORDER: 9728 };   // heat_common.wgsl
 const ORDER_SLOTS = 256;
+
+// what Shift+S shows: the summary, each substance alone, nothing
+export const SHOWS = ['summary', ...SUBSTANCES.map((s) => s.name), 'off'];
 
 export class Matter {
   constructor(device, format, medium) {
@@ -98,9 +129,11 @@ export class Matter {
     this.format = format;
     this.medium = medium;
     this.heat = null;
+    this.landscape = null;    // key L hides the whole landscape, this included (set by main.js)
     this.blocks = 2 * NCH;    // blocks of n words in the heat buffer
     // live-tunable: moire.matter.params
     this.params = {
+      show: 0,            // index into SHOWS (Shift+S cycles)
       edge: 1,            // share of the mobile atoms on the dish's rim pixels that leaves per s (the sink)
       spreadGain: 1,      // multiplies every substance's spreading (SPREAD above stays the source of truth)
       // springs
@@ -108,6 +141,16 @@ export class Matter {
       life: 60,           // s of simulation time a spring drips before it dries up (and is removed)
       radius: 1,          // the disc it drips over, in cell radii R (at most 7 heat pixels)
       maxSprings: 12,     // one more removes the oldest (up to MAX_SPRINGS)
+      // drawing: halftone dots on the medium lattice
+      step: 2,            // dot spacing in medium lattice spacings (the medium's lattice spacing is 2 / sqrt 3 x its period)
+      maxDot: 0.9,        // largest dot radius, as a share of half the distance between neighbouring dots of two layers
+      half: 0.6,          // amount per R^2 at which a dot covers half its largest area (dot area = c / (c + half))
+      thresh: 0.06,       // coverage below which there is no dot
+      level: 0.85,        // the inks' brightness
+      traceDot: 0.75,     // trace diamonds' size, as a share of a full dot
+      sedStep: 1.5,       // sediment: amount per R^2 per flat level (3 levels)
+      sedAlpha: 0.7,      // sediment: opacity of the top level
+      ringR: 1.3,         // spring marker radius, in medium R (CSS px x R)
     };
     this.springs = [];        // { x, y, kind, age }
     this.seen = new Float64Array(NCH).fill(-1e9);   // when each channel last had matter (or a spring dripping it)
@@ -134,7 +177,13 @@ export class Matter {
     const res = await fetch(HEAT_COMMON_URL, { cache: 'no-cache' });
     if (!res.ok) throw new Error(`Could not load shader ${HEAT_COMMON_URL}: HTTP ${res.status}`);
     const common = (await res.text()).replace(/\s*$/, '\n\n');
-    const mod = await loadShader(d, 'src/shaders/matter.wgsl', { prefixes: [{ name: HEAT_COMMON_URL, text: common }] });
+    const fres = await fetch('src/shaders/field_common.wgsl', { cache: 'no-cache' });
+    if (!fres.ok) throw new Error('Could not load shader src/shaders/field_common.wgsl');
+    const field = (await fres.text()).replace(/\s*$/, '\n\n');
+    const [mod, drawMod] = await Promise.all([
+      loadShader(d, 'src/shaders/matter.wgsl', { prefixes: [{ name: HEAT_COMMON_URL, text: common }] }),
+      loadShader(d, 'src/shaders/matter_draw.wgsl', { prefixes: [{ name: 'src/shaders/field_common.wgsl', text: field }] }),
+    ]);
     const C = GPUShaderStage.COMPUTE, U = GPUBufferUsage;
     this.bgl = d.createBindGroupLayout({
       label: 'matter',
@@ -146,17 +195,39 @@ export class Matter {
         { binding: 4, visibility: C, buffer: { type: 'storage' } },
       ],
     });
+    this.texBgl = d.createBindGroupLayout({
+      label: 'matter paint',
+      entries: [
+        { binding: 0, visibility: C, storageTexture: { access: 'write-only', format: 'rgba16float' } },
+        { binding: 1, visibility: C, storageTexture: { access: 'write-only', format: 'rgba16float' } },
+      ],
+    });
     const layout = d.createPipelineLayout({ label: 'matter', bindGroupLayouts: [this.bgl] });
+    const paintLayout = d.createPipelineLayout({ label: 'matter paint', bindGroupLayouts: [this.bgl, this.texBgl] });
     this.pipes = {};
     for (const e of ['spread', 'count']) {
       this.pipes[e] = d.createComputePipeline({ label: `matter ${e}`, layout, compute: { module: mod, entryPoint: e } });
     }
+    this.pipes.paint = d.createComputePipeline({ label: 'matter paint', layout: paintLayout, compute: { module: mod, entryPoint: 'paint' } });
     this.paramBuf = d.createBuffer({ label: 'matter params', size: MP_BYTES, usage: U.UNIFORM | U.COPY_DST });
     this.paramAB = new ArrayBuffer(MP_BYTES);
     this.tickBuf = d.createBuffer({ label: 'matter tick params', size: MT_SLOTS * MT_SLOT, usage: U.UNIFORM | U.COPY_DST });
     this.tickAB = new ArrayBuffer(MT_SLOTS * MT_SLOT);
     this.springBuf = d.createBuffer({ label: 'springs', size: MAX_SPRINGS * SPRING_FLOATS * 4, usage: U.UNIFORM | U.COPY_DST });
     this.springF = new Float32Array(MAX_SPRINGS * SPRING_FLOATS);
+
+    // drawing
+    const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
+    this.drawPipe = d.createRenderPipeline({
+      label: 'matter draw', layout: 'auto',
+      vertex: { module: drawMod, entryPoint: 'vs' },
+      fragment: { module: drawMod, entryPoint: 'fs', targets: [{ format: this.format, blend: { color: over, alpha: over } }] },
+      primitive: { topology: 'triangle-list' },
+    });
+    this.drawU = d.createBuffer({ label: 'matter draw params', size: DRAW_BYTES, usage: U.UNIFORM | U.COPY_DST });
+    this.drawAB = new ArrayBuffer(DRAW_BYTES);
+    this.sampler = d.createSampler({ label: 'matter', magFilter: 'linear', minFilter: 'linear' });
+    this.tex = null;          // [A, B] at the grid's size
   }
 
   /** The heat band whose buffer and grid the substances share. Called once by main.js, before the first resize. */
@@ -164,6 +235,8 @@ export class Matter {
     this.heat = heat;
     heat.setMatter(this);
   }
+
+  get showName() { return SHOWS[this.params.show] || 'summary'; }
 
   makeBG(buffer) {
     return this.device.createBindGroup({
@@ -232,7 +305,7 @@ export class Matter {
     pass.end();
   }
 
-  /** Springs and spreading for the frame's ticks. */
+  /** Springs and spreading for the frame's ticks, then the drawing's textures. */
   encodeFrame(encoder, frame) {
     const H = this.heat;
     if (!H || !H.buffer) return;
@@ -240,6 +313,7 @@ export class Matter {
       this.bufVersion = H.version;
       this.cur = 0;
       this.bg = this.makeBG(H.buffer);
+      this.makeTextures();
     }
     const ticks = frame.ticks;
     if (!ticks) return;
@@ -262,7 +336,8 @@ export class Matter {
     this.nSub = Math.max(1, Math.min(MAX_SUB, Math.ceil(Math.max(...kTot) / K_MAX)));
     const f = new Float32Array(this.paramAB), u = new Uint32Array(this.paramAB);
     u[0] = H.hw; u[1] = H.hh; u[2] = H.n; u[3] = this.copyBase(0);
-    u[4] = 0; u[5] = 0; u[6] = this.nSub; u[7] = active;
+    const show = this.showName;
+    u[4] = show === 'off' ? 0 : show === 'summary' ? 1 : 2; u[5] = Math.max(0, CH[show] ?? 0); u[6] = this.nSub; u[7] = active;
     f[8] = H.px; f[9] = 1 / (ATOM_SCALE * a * a); f[10] = 1 - Math.exp(-Math.max(0, p.edge) * dt);
     SUBSTANCES.forEach((s, c) => {
       f[12 + c] = Math.min(K_MAX, kTot[c] / this.nSub);   // k
@@ -285,6 +360,7 @@ export class Matter {
     const last = (ticks - 1) * MAX_SUB + MAX_SUB;
     this.device.queue.writeBuffer(this.tickBuf, 0, this.tickAB, 0, Math.min(last, MT_LEDGER) * MT_SLOT);
     const pass = encoder.beginComputePass({ label: 'matter' });
+    const wx = Math.ceil(H.hw / 8), wy = Math.ceil(H.hh / 8);
     if (active) {
       // (with nothing in the dish and no spring, both copies are all zero: nothing to spread, and the copies stay put)
       pass.setPipeline(this.pipes.spread);
@@ -300,6 +376,12 @@ export class Matter {
     const L = MT_LEDGER * w;
     T[L] = this.copyBase(this.cur); T[L + 1] = 0; T[L + 2] = 1; T[L + 3] = seed0; T[L + 4] = H.n; T[L + 5] = LG_M.DISH;
     this.device.queue.writeBuffer(this.tickBuf, MT_LEDGER * MT_SLOT, this.tickAB, MT_LEDGER * MT_SLOT, MT_SLOT);
+    if (this.tex && show !== 'off') {
+      pass.setPipeline(this.pipes.paint);
+      pass.setBindGroup(0, this.bg, [MT_LEDGER * MT_SLOT]);
+      pass.setBindGroup(1, this.texBG);
+      pass.dispatchWorkgroups(wx, wy);
+    }
     pass.end();
   }
 
@@ -314,10 +396,26 @@ export class Matter {
       F[o] = s.x; F[o + 1] = s.y; F[o + 2] = rad; F[o + 3] = Math.max(0, 1 - s.age / p.life);
       F[o + 4 + 13] = discPixels(s.x / H.px, s.y / H.px, Math.max(rad / H.px, 0.75), H.hw, H.hh);   // amt[13]: its disc's pixels
       for (const [atom, share] of Object.entries(K.mix)) F[o + 4 + CH[atom]] = p.rate * share * dt * ATOM_SCALE;
+      const ink = springInk(s.kind);
+      F[o + 20] = ink[0] / 255; F[o + 21] = ink[1] / 255; F[o + 22] = ink[2] / 255; F[o + 23] = K.stroke;
     }
     this.device.queue.writeBuffer(this.springBuf, 0, F);
     this.nSprings = n;
     return n;
+  }
+
+  makeTextures() {
+    const H = this.heat;
+    if (this.tex) for (const t of this.tex) t.destroy();
+    this.tex = [0, 1].map((k) => this.device.createTexture({
+      label: `matter shown ${k}`, size: [H.hw, H.hh], format: 'rgba16float',
+      usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
+    }));
+    this.texBG = this.device.createBindGroup({
+      label: 'matter paint', layout: this.texBgl,
+      entries: [{ binding: 0, resource: this.tex[0].createView() }, { binding: 1, resource: this.tex[1].createView() }],
+    });
+    this.drawBG = null;
   }
 
   /** Once per frame, with the heat's ledger (before its copy): the atoms in the dish. */
@@ -352,10 +450,55 @@ export class Matter {
     this.ledger = { time: rec.time, add, lost, gone, dish, rounding: add - (dish + lost + gone), rateAdd: rate(1), rateLost: rate(2) };
   }
 
-  // ---------- layer (nothing drawn yet) ----------
+  // ---------- drawing ----------
   compute() {}
 
-  render() {}
+  render(pass) {
+    if (!this.tex || !this.view || this.showName === 'off') return;
+    if (this.landscape && !this.landscape.params.on) return;
+    const p = this.params, H = this.heat;
+    if (!this.drawBG) {
+      this.drawBG = this.device.createBindGroup({
+        layout: this.drawPipe.getBindGroupLayout(0),
+        entries: [
+          { binding: 0, resource: { buffer: this.medium.buffer } },
+          { binding: 1, resource: { buffer: this.drawU } },
+          { binding: 2, resource: this.tex[0].createView() },
+          { binding: 3, resource: this.tex[1].createView() },
+          { binding: 4, resource: this.sampler },
+          { binding: 5, resource: { buffer: this.springBuf } },
+        ],
+      });
+    }
+    const f = new Float32Array(this.drawAB), u = new Uint32Array(this.drawAB);
+    f[0] = this.view.dpr; f[1] = Math.max(0.5, p.step); f[2] = Math.max(0, Math.min(1, p.maxDot)); f[3] = Math.max(1e-4, p.half);
+    f[4] = H.px; f[5] = H.hw; f[6] = H.hh; f[7] = p.thresh;
+    u[8] = this.nSprings || 0; f[9] = Math.max(1e-4, p.sedStep); f[10] = p.sedAlpha; f[11] = p.ringR * this.medium.R;
+    f[12] = p.level; f[13] = p.traceDot;
+    const put = (o, rgb) => { f[o] = rgb[0] / 255; f[o + 1] = rgb[1] / 255; f[o + 2] = rgb[2] / 255; f[o + 3] = 1; };
+    put(16, INKS.reactive.light); put(20, INKS.reactive.heavy); put(24, INKS.linker.light); put(28, INKS.linker.heavy);
+    put(32, INKS.fuel.light); put(36, INKS.fuel.heavy); put(40, INKS.sediment.light); put(44, INKS.sediment.heavy);
+    put(48, INKS.trace.light);
+    this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
+    pass.setPipeline(this.drawPipe);
+    pass.setBindGroup(0, this.drawBG);
+    pass.draw(3);
+  }
+
+  /** Shift+S: the next view (summary, each substance alone, off); returns its description. */
+  cycleShow() {
+    const p = this.params;
+    p.show = (p.show + 1) % SHOWS.length;
+    return this.showText();
+  }
+
+  showText() {
+    const name = this.showName;
+    if (name === 'off') return 'substances not drawn';
+    if (name === 'summary') return 'substances: summary (free atoms red to grey dots, fuels green, sediment flat, trace diamonds)';
+    const s = SUBSTANCES[CH[name]], amt = this.dish[CH[name]];
+    return `${describe(s)} alone${amt > 0 ? '' : ' (none in the dish' + (s.kind === 'fuel' || s.kind === 'sediment' ? ': made by the chemistry of C4)' : ')')}`;
+  }
 
   /** The entropy panel's line. */
   panelLine() {
@@ -369,7 +512,7 @@ export class Matter {
     const p = this.params, L = this.ledger;
     const lines = [];
     const sp = this.springs.map((s) => `${s.kind} ${Math.max(0, p.life - s.age).toFixed(0)} s left`).join(', ');
-    lines.push(`matter (step C3): springs ${this.springs.length}/${p.maxSprings}${sp ? ': ' + sp : ''}` +
+    lines.push(`matter (step C3): shown ${this.showName} (Shift+S) · springs ${this.springs.length}/${p.maxSprings}${sp ? ': ' + sp : ''}` +
       ` · drip ${p.rate} atoms/s for ${p.life} s over ${p.radius} R · edge sink ${p.edge}/s · ${this.nSub} substep(s)` +
       ` · channels moving ${SUBSTANCES.filter((s, c) => this.active & (1 << c)).map((s) => s.name).join(' ') || 'none'}`);
     lines.push('spreading (R²/s, from row and group): ' + SUBSTANCES.map((s) => `${s.name} ${(s.spread * p.spreadGain).toPrecision(2)}`).join(' · '));
@@ -398,4 +541,17 @@ function discPixels(cx, cy, r, w, h) {
     }
   }
   return Math.max(1, n);
+}
+
+/** A spring's marker ink: its atoms' inks, weighted by its mix. */
+function springInk(kind) {
+  const mix = SPRING_KINDS[kind].mix, ink = [0, 0, 0];
+  let tot = 0;
+  for (const [a, share] of Object.entries(mix)) {
+    if (a === 'trace') continue;
+    const s = SUBSTANCES[CH[a]];
+    for (let j = 0; j < 3; j++) ink[j] += s.ink[j] * share;
+    tot += share;
+  }
+  return ink.map((v) => v / tot);
 }

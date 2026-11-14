@@ -11,6 +11,7 @@
 //           booked as "added" (LG_M_ADD). Per pixel, so overlapping springs need no atomics
 //   count   all the matter in one copy, exact (64-bit, per channel) into a ledger region: the snapshot "in the dish"
 //           (LG_M_DISH) once per frame, or "gone" (LG_M_GONE) when the dish is washed or the grid replaced
+//   paint   the amounts the drawing shows (per R^2), summed into its layers, into two small textures at grid size
 // Only core WebGPU: i32 storage atomics and workgroup atomics.
 
 const NCH: u32 = 13u;
@@ -21,8 +22,8 @@ struct MatterP {
   hh: u32,
   n: u32,                       // hw x hh
   base: u32,                    // (word offset of copy 0, channel 0; the tick slots carry the current copies)
-  show: u32,                    // (the drawing's, from step C3's next commit)
-  solo: u32,
+  show: u32,                    // what paint writes: 0 nothing, 1 the summary, 2 one substance alone
+  solo: u32,                    // ... that substance's channel
   nSub: u32,                    // spreading substeps per tick
   moving: u32,                  // bit c: channel c has matter (or a spring dripping it); the others are all zero, skipped
   px: f32,                      // CSS px per pixel
@@ -50,7 +51,7 @@ struct MatterTick {
 struct Spring {
   pos: vec4f,                   // x, y (CSS px), radius of its disc (CSS px), share of its life left
   amt: array<vec4f, 4>,         // counts per tick, per channel (fractional; random rounding); [13] = pixels in its disc
-  ink: vec4f,                   // (the drawing's)
+  ink: vec4f,                   // drawing only
 };
 struct Springs { s: array<Spring, 16>, };
 
@@ -64,6 +65,8 @@ struct Springs { s: array<Spring, 16>, };
 @group(0) @binding(2) var<storage, read_write> hb: array<atomic<i32>>;
 @group(0) @binding(4) var<storage, read_write> mg: array<i32>;
 @group(0) @binding(3) var<uniform> SP: Springs;
+@group(1) @binding(0) var texA: texture_storage_2d<rgba16float, write>;
+@group(1) @binding(1) var texB: texture_storage_2d<rgba16float, write>;
 
 fn mpcg(v: u32) -> u32 {
   let s = v * 747796405u + 2891336453u;
@@ -199,4 +202,28 @@ fn count(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_in
     add64v(at, i32(H >> 16u), H << 16u);
     add64v(at, 0, L);
   }
+}
+
+// ---------- paint ----------
+// texA: free atoms (all), of which reactive, of which heavy; trace.  texB: fuels, of which heavy; sediment, of which heavy.
+@compute @workgroup_size(8, 8)
+fn paint(@builtin(global_invocation_id) id: vec3u) {
+  if (id.x >= MP.hw || id.y >= MP.hh) { return; }
+  let i = id.y * MP.hw + id.x;
+  var a = vec4f(0.0);
+  var b = vec4f(0.0);
+  for (var c = 0u; c < NCH; c++) {
+    if (MP.show == 2u && c != MP.solo) { continue; }
+    let v = min(f32(max(mg[T.src + c * MP.n + i], 0)) * MP.conc, 60000.0);
+    if (v <= 0.0) { continue; }
+    let h = MP.heavy[c / 4u][c % 4u];
+    switch MP.layer[c / 4u][c % 4u] {
+      case 0u: { a += vec4f(v, v * MP.react[c / 4u][c % 4u], v * h, 0.0); }
+      case 1u: { b += vec4f(v, v * h, 0.0, 0.0); }
+      case 2u: { b += vec4f(0.0, 0.0, v, v * h); }
+      default: { a.w += v; }
+    }
+  }
+  textureStore(texA, vec2i(id.xy), a);
+  textureStore(texB, vec2i(id.xy), b);
 }

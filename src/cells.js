@@ -65,19 +65,19 @@ export class Cells {
       wall: 2,        // soft wall stiffness (reference)
       drift: 0.15,    // slow drift of the medium, in units of R / s (reference 0.5, which tears a blob without
                       // adhesion; 0 = still)
-      warmup: 120,    // ticks run at once after a reset, so a new culture starts settled
+      warmup: 180,    // ticks run at once after a reset, so a new culture starts settled
       stir: 0.5,      // how strongly a drag pushes cells along (reference 0.5)
       stirReach: 110, // how far from the pointer a drag reaches (CSS px; reference sqrt(12000))
       range: 2.2,     // grid cell size in units of R (must be >= the largest interaction range: 2 r for contact)
     };
     // drawing (live-tunable: moire.cells.look)
     this.look = {
-      fill: 0.13,     // disc fill, as a fraction of the cell colour over black
+      fill: 0.09,     // disc fill, as a fraction of the cell colour over black
       fillA: 0.88,    // disc opacity (1 = background fully hidden under a cell)
-      line: 0.78,     // outline brightness
+      line: 0.72,     // outline brightness
       lineW: 1.1,     // outline width (CSS px)
-      dots: 0.5,      // dot brightness (0 = no dots)
-      dotR: 0.17,     // dot radius as a fraction of the dot spacing (reference: 2.7 / 16)
+      dots: 0.85,     // dot brightness (0 = no dots)
+      dotR: 0.21,     // dot radius as a fraction of the dot spacing (reference: 2.7 / 16)
       period: 0.62,   // dot spacing per lattice period, in units of R (the medium's period is 0.62 R)
     };
   }
@@ -198,7 +198,7 @@ export class Cells {
     const n = this.count, R = this.R;
     const ab = new ArrayBuffer(n * CELL_BYTES);
     const f = new Float32Array(ab), u = new Uint32Array(ab);
-    const spread = R * Math.sqrt(n / 0.7);   // blob radius at 0.7 area fraction
+    const spread = R * Math.sqrt(n / 0.85);  // blob radius at 0.85 area fraction (overlaps settle in the warm-up)
     for (let i = 0; i < n; i++) {
       const a = Math.random() * 2 * Math.PI, dd = Math.sqrt(Math.random()) * spread;
       const o = i * CELL_FLOATS;

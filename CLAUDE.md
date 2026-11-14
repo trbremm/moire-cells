@@ -15,6 +15,9 @@ Started 2026-11-14, spun out of the `moire-experiment` project (sibling folder; 
 Faded neon colours on black. A fluid background that feels viscous, with subtle ripples.
 Current palette: stem warm white, epithelium cyan, muscle pink, neuron violet, cartilage amber,
 nutrient green, threat red. Keep it soft; avoid saturated or busy.
+UPDATE 2026-11-14 (user): "neon" was only a colour reference, NOT an effect to imitate. No blur, no glow, no
+bloom. Think 80s graphic art: crisp, flat, graphic shapes with clean hard edges, and the faded palette above.
+Soft in colour, sharp in form. (The reference CPU page still glows; that part of it is no longer the target.)
 
 ## Files
 - `reference/neon_organoid_cpu.html` — the working CPU version (single file, Canvas 2D, about 520 cells).

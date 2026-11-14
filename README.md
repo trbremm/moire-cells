@@ -70,6 +70,13 @@ Where the fields meet (step 6):
 - **7**: relay through B on/off (default on; needs 5): converted cells excite their neighbours, tire and rest, so
   conversion travels as waves
 
+Exclusion (step 7):
+- **8**: exclusion on/off (default off): cells of the same fate in the same state (the bar across each cell) keep a
+  gap; other states may touch
+- **9**: state flip on/off (default on; acts only while 8 is on): a cell crowded by its own state turns to the state
+  least represented around it
+- **0**: number of states: 2 / 3 (default) / 4
+
 A fresh load starts with the reference's sources: two nutrient (green), one threat (red). At most 6 sources,
 as in the reference; one more replaces the oldest (`moire.landscape.params.maxSources`, up to 64).
 Sources do not drift, fade or get eaten yet.
@@ -146,7 +153,7 @@ URL options: `?overlay=1` (overlay from the start; `?overlay=ghost` keeps it up 
 `?debug=1` (console warnings into the overlay), `?nogpu=1` (show the no-WebGPU message),
 `?cells=N` (number of cells, default 2000), `?check=1` (every 2 s, count the cells' contacts through the
 neighbour grid and by brute force, and check the sort; result in the console and the overlay),
-`?seed=N` (repeatable start: positions, genomes; the run itself drifts apart after a while, because the
+`?excl=0|1`, `?flip=0|1`, `?states=2..4` (step 7, keys 8 9 0), `?seed=N` (repeatable start: positions, genomes; the run itself drifts apart after a while, because the
 GPU's neighbour order varies), `?speed=1|2|4|8`, `?founders=N`, `?view=1` (lineage colours).
 In the browser console, `moire.background.params`, `moire.landscape.params`, `moire.medium.params`,
 `moire.cells.params` (physics), `moire.cells.look` (drawing) and `moire.genome.params` / `.rules` hold
@@ -316,6 +323,68 @@ Cost (physics per tick): GTX 1650 in headless Chrome, 2000 cells 0.77 ms with th
 10 000 cells 1.30 and 1.56 ms. The AMD Vega in headed Firefox: 3.9 ms at 2000 cells (3.2 ms before step 6), 31 fps
 at 4x speed.
 
+## Exclusion (step 7)
+
+The brief's "Pauli exclusion", as a pattern rule, not physics: two cells of the same TYPE in the same STATE do not
+share a place; cells in different states may.
+- **Type = fate** (stem, epithelium, muscle, neuron, cartilage). It is the cell's "kind of particle", and it is what
+  the biology already uses for "like" (adhesion, field A's sign table). Loop only (`?bio=0`) every cell is stem, so
+  the state alone decides.
+- **State = the cell's lattice angle, cut into 2, 3 or 4 bins** (key 0), like spin up / down: the key angle's 60
+  degrees (the hex lattice repeats every 60) in equal parts. It lives in the lattice, as the brief asks, and costs
+  no memory. Rule 2 below adds an offset (`Cell.flags` bits 16-17, 0 at birth) that changes the state without
+  turning the lattice, so a flipped cell keeps its key, its adhesion and its field.
+- Drawn as a flat **bar** through the cell's centre in the cell's colour, turned 180 / states degrees per state
+  (2 states: upright and lying; 3: three directions 60 degrees apart), with the lattice dots cleared around it, so it
+  reads as one clean print mark. Only while exclusion is on (`moire.cells.look.stateMark`, `bar` brightness).
+
+**Rule 1, exclusion (key 8, off by default).** Same type, same state: the contact push reaches out to `reach` 1.3 x
+the contact distance (the two radii) and is `hard` 4 times as stiff. Same type, other state: they push apart only
+below `pack` x the contact distance (default 1, plain contact; 0.85 lets them sink into each other, which looked
+cluttered, worst with 3 states). Different types: as before. The motion integration stays stable at these numbers
+(the damped update tolerates a stiffness far beyond this), so no extra cap was needed, and no jitter showed.
+The F overlay's "step 7" line counts, among same-type neighbours, the share in the same state, touching and within
+1.6 x contact distance, against what random mixing of the states would give.
+
+**Rule 2, state flip (key 9, on; needs 8).** A cell that has more neighbours of its type in its own state than in some
+other state (within the "shell", 1.05 x the exclusion reach) moves, at a random moment (`flipRate` 1 per s, so
+neighbours do not all flip at once), to the state least represented around it. Like a crowded shell spilling into
+the next one. It also evens out the states: the 12 founders give the states unequal shares (seed 3, 2 states: 494 /
+1506 cells; 3 states: 494 / 0 / 1506, as no founder key lies between 20 and 40 degrees), and the flip brings them to
+a third each within seconds.
+
+What it looks like (seed 3, 2000 cells, at 90 s loop only and 160 s with the biology; shots compared at the same seed
+with the keys on and off):
+- **Rule 1 alone, 2 states, loop only** (`?founders=0` for even states): the rosettes break up. A rosette needs a
+  centre touching six neighbours, and two states cannot alternate around a triangle, so the packing opens into
+  short tangled chains in which upright and lying bars alternate (| - | -), with small 2 x 2 checkerboards. Touching
+  same-state pairs: 0 % (57 % without; random 50 %); touching neighbours per cell 2.0 instead of 3.0.
+- **Squeezed** (`moire.cells.params.squeeze = 1.2`, field B not felt): 2 states turn the hex packing into a
+  **square checkerboard**, rows of | - | - like a woven basket, the clearest picture of the rule. The drop also
+  swells: spread 29 R instead of 19 R, exclusion holding the crowd up against the pull ("degeneracy pressure").
+- **3 states + flip, loop only** (the defaults when you press 8): the picture is the loop's again (rosettes, worms;
+  spread 46 R, 2.9 touching neighbours per cell against 3.1 off), but each rosette is a **pinwheel**: the centre in
+  one state, the ring around it alternating the other two, a perfect 3-colouring (touching same-state 0 %, within 1.6
+  x contact 17 % against 33 % random). Seen best zoomed in; at 10 000 cells the bars become a fine texture.
+- **With the biology**, rule 1 alone pulls the tissues apart: a lineage shares one key, so a clonal patch is all
+  one state and may not touch itself (touching same-fate neighbours per cell 1.2 instead of 6.4; at 160 s cartilage
+  16 cells instead of 153). The culture becomes a speckled mix of cyan and violet chains. With the flip and 3 states
+  the tissues hold again (stem 1127, epithelium 397, neuron 352, cartilage 123 against 952 / 549 / 374 / 121 off),
+  each tissue a mosaic of bar directions, but looser than without exclusion (2.8 touching same-fate neighbours per
+  cell), so the domains are smaller. With 2 states and the flip they stay loose (frustrated, as above).
+- Shells around a source: not seen at the scale of a nutrient source; the stem cells do not crowd there enough. The
+  shell picture shows at the scale of one rosette (its centre is the attractor; the first ring fills with the other
+  states).
+- Squeezed hard with 3 states and the flip, the drop "boils" (mean speed 17.5 px/s against 3.4 off): the pull presses
+  same-state cells together faster than flips can sort them.
+
+Live-tunable in `moire.cells.excl`: `on`, `hard`, `reach`, `pack`, `states`, `flip`, `flipRate`. Sim uniforms `excl`,
+`exclReach`, `pack`, `states`, `flip`, and `xCount` (the frame's last tick counts neighbour pairs into
+`Stats.xPairs`, cleared every frame); the census counts cells per state (`Stats.extra[70..73]`).
+
+Cost (physics per tick): GTX 1650 in headless Chrome, 2000 cells about 0.37 ms off and 0.40 to 0.45 ms on; 10 000
+cells 1.05 and 1.14 ms. The AMD Vega in headed Firefox: 3.3 ms at 2000 cells with 8 and 9 on, 62 fps at 1x.
+
 ## The look of the landscape
 
 The sources' landscape is drawn as crisp halftone dots, like print: a triangular dot screen lies over the
@@ -359,6 +428,7 @@ The background ripples stay soft on purpose.
     python tools/shot.py --browser chrome --key f --click 400,300 --drag 600,600,1100,450
     python tools/shot.py --query "speed=8&view=1&seed=3" --at 5,30,90,180   # a series in simulation time
     python tools/shot.py --clip 420,250,440,300,2             # only part of the page, enlarged 2x (Chrome)
+    python tools/shot.py --dpr 2 --clip 560,330,160,110,5     # the page drawn at 2 device px per CSS px: sharp zooms
 
 The tool serves the folder itself, waits in real time until the page has drawn ten frames, then saves the PNG
 and prints the overlay text, any on-page message and the console output. `--help` lists all options.

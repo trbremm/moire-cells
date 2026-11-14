@@ -60,7 +60,7 @@ export class Heat {
       leak: 0.5,        // share of the heat that leaks out to the sky per s (sets the dish's temperature)
       edge: 0,          // extra share per s that leaks at the dish edge (0 = an insulated edge)
       warmth: 0.05,     // base warmth put in everywhere (units per R^2 per s), so the dish is never at zero
-      grab: 0.004,      // share of the heat under a cell (its 3 x 3 pixels) that one kick takes on average, per tick
+      grab: 0.00125,    // share of the heat under a cell (its 3 x 3 pixels) that one kick takes on average, per tick
       kickMax: 2,       // largest kick, R / s per axis
       pxR: 0.5,         // heat pixel size in units of the cells' radius R
     };

@@ -27,7 +27,7 @@ export class Background {
       viscosity: 0.015, // extra damping of short waves (not in the reference; 0 = off, 0.04 = very soft)
       ripple: 1.0,      // drawing gain for the ripples
       sheen: 1.0,       // drawing gain for the sheen
-      heatDrops: 1e-4,  // step C1: chance per ripple cell per step of a small bump, x the temperature squared (heat per R^2)
+      heatDrops: 1e-5,  // step C1: chance per ripple cell per step of a small bump, x the temperature squared (heat per R^2)
       heatAmp: 0.3,     // ... the bump's height (a tap is about 2.5, spread over a few cells)
       heatMaxP: 0.004,  // ... the chance is capped here
     };

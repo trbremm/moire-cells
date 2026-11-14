@@ -130,7 +130,7 @@ async function boot() {
   // the medium first: it writes the lattice every field-reading layer uses
   layers = [medium, background, landscape, cells];
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
-  window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome };
+  window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   // births and deaths drop small ripples into the background (a birth a bump, a death a dip)
   cells.onEvents = (events) => {

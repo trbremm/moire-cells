@@ -15,7 +15,7 @@
 //   moire.genome.cloneAll(i)    copy cell i's genes (default: the first live cell's) to every live cell; moire.genome.setAll(
 //                               field, value) or setAll({ field: value, ... }) one gene for all; moire.genome.get(i); the gene
 //                               names: moire.genome.GENES; engineCode(name, band), pumpCode(substance, 'in' | 'out')
-//   moire.lab.view(name)        for screenshots: 'clean' | 'fate' | 'lineage' | 'strategy' | 'charge' | 'machinery'; returns the
+//   moire.lab.view(name)        for screenshots: 'clean' | 'fate' | 'lineage' | 'strategy' | 'charge' | 'walls' | 'machinery'; returns the
 //                               previous view for moire.lab.restoreView(prev)
 // URL options handled here, once the page runs: ?snap=<file> (load a snapshot; its settings replace the page's), then
 // ?clone=1 (cloneAll of the first live cell; ?clone=@N: of slot N) and ?genes=adhesion:0.8,motility:0.5 (setAll each).

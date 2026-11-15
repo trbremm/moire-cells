@@ -33,7 +33,7 @@ Condition file (JSON; every key but "name" optional):
       "evals": [{"t": 0, "js": "moire.cells.params.stiffness = 9"},
                 {"t": 60, "js": "await moire.tissue.stir(640, 400, 12, 0, 20)"}],   # statements; await allowed
       "shots": [{"t": 60}, {"t": 120, "view": "lineage", "panel": true, "name": "end"}],
-                                                   # view: clean (default) fate lineage strategy charge machinery;
+                                                   # view: clean (default) fate lineage strategy charge walls machinery;
                                                    # panel: keep the entropy panel in the picture
       "clips": [{"t": 30, "until": 50, "speed": 8}],   # a .webm of t 30..50 s recorded at 8x (events inside it happen at
                                                        # its end)

@@ -59,6 +59,18 @@
 //   split  a newborn takes a share r / (r + r_parent) of every side of its parent's membrane (as both have about the same
 //          integrity after); dump and reset hand membranes back to the dish as free linkers
 //   ledger the membranes' linkers count in the cells' l and L (the atoms' books), and the membrane census (LG_MB)
+//
+// Step C6d, CHARGE PER SIDE (src/dipole.js): Cell.sideQ spreads the stock's net charge over the six sides (its sum is kept
+// equal to qNet, so it is a distribution of the charge, never new charge; a neutral cell can be polarised).
+//   plan   each charged channel's THROUGH-FLOW: the exchange as if each side traded with the dish just outside it (the
+//          concentration there, bilinear, against the cell's), less the cell's mean exchange, so the part that only says
+//          WHERE the charge came in or went out: z x that onto each side (the cell's real exchange is unchanged); a side
+//          facing more givers than the others takes + in there, one facing fewer lets + out. The side charges also even
+//          out (dpRelax per s) toward an even spread (against which the step's polarisation by the field works), each
+//          side within dpCap x the cell's mobile charge / 6 of its even share (a side cannot hold charge the cell does not)
+//   eat    the side charges are put back on the new net charge (each side's difference from the even share kept, the sum
+//          = qNet), and with dipoles on the cell puts its charge into the substrate's field at its sides' middles (so its
+//          dipole shows in phi), else at its centre as before
 
 // A TAKE from a word other invocations may also change (a grid pixel, a parent's stock): subtract what is wanted, keep
 // what was there (at most the want), and add back the rest. Whatever the order, no word goes below zero for good and
@@ -136,7 +148,12 @@ struct EatP {
   qFeel: u32,              // plan: 1 = work out the gradient of phi across the membrane (Cell.efield)
   phiOff: u32,             // word offset of phi in mg (the plain view behind the ledger)
   qCodes: u32,             // the channels' charges (CHARGE_CODES)
-  _c5: u32, _c6: u32, _c7: u32, _c8: u32, _c9: u32,
+  // ---- step C6d, charge per side (src/dipole.js) ----
+  dpFlags: u32,            // DPE_* below
+  dpFlow: f32,             // the through-flow's weight (1: each side gets the charge that passes it)
+  dpRelax: f32,            // the side charges even out within the cell at this rate (1 / s)
+  dpSpare: f32,
+  dpCap: f32,              // a side's charge differs from the even share by at most dpCap x (the mobile charge / 6)
   photon16: vec4i,         // per light band: one photon's energy in heat counts per event (16 x its energy)
   ratio: array<vec4f, 4>,  // per channel: its spreading speed / the light atoms' (scales the permeability gene; sediment 0)
   eng: array<Eng, 24>,     // ENGINES (18)
@@ -153,6 +170,9 @@ const MBF_ON: u32 = 1u;      // membrane chemistry (master): material, integrity
 const MBF_BITE: u32 = 2u;    // ... bites
 const MBF_BURST: u32 = 4u;   // ... bursting (only while turnover is on)
 const MBF_SEL: u32 = 8u;     // ion selectivity gene
+// step C6d: charge per side
+const DPE_ON: u32 = 1u;      // the side charges move (else they are kept even: the net charge / 6)
+const DPE_DEPOSIT: u32 = 2u; // the cells put their charge into the substrate's field at their sides (else at the centre)
 fn mb_flags() -> u32 { return bitcast<u32>(EP.mb0.x); }
 // what a side of cell c wants, in linker counts, for its genes' thickness (per R of membrane x its rest length)
 fn memb_want(r: f32, thick: f32) -> f32 { return max(thick, 0.0) * EP.mb0.w * r / EP.R * ATOM_SCALE; }
@@ -418,6 +438,25 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   // ion selectivity gene lets givers (+) through x (1 + s) and takers (-) x (1 - s)
   let leak = select(1.0, min(1.0 + EP.mb1.x * (1.0 - integ), EP.mb3.z), membOn);
   let selOn = (mbf & MBF_SEL) != 0u;
+  // step C6d: the through-flow onto each side (charge, counts per tick), the points just outside the sides' middles, each
+  // side's share of the perimeter, and the mobile charge in the stock (atom-units)
+  let dpOn = (EP.dpFlags & DPE_ON) != 0u && (c.flags & CELL_ALIVE) != 0u && !husk;
+  var dq = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  var sp: array<vec2f, 6>;
+  var sw = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  var mob = 0.0;
+  let mbd = membrane(c);
+  if (dpOn) {
+    var L = 0.0;
+    for (var k = 0u; k < 6u; k++) {
+      let e = mbd.edge[k];
+      let len = length(e);
+      sp[k] = c.pos + mbd.mid[k] + vec2f(e.y, -e.x) / max(len, 1e-6) * (0.5 * HP.px);
+      sw[k] = len;
+      L += len;
+    }
+    for (var k = 0u; k < 6u; k++) { sw[k] /= max(L, 1e-6); }
+  }
   for (var k = 0u; k < NCH; k++) {
     var n = 0;
     var pk = select(ep_f(EP.perm, k), pgene * ep_f(EP.ratio, k), permG) * leak;
@@ -434,9 +473,44 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
         n = i32(floor(j + u01(pcg(rs + k * 0x85ebca6bu))));
         n = clamp(n, -Mi, Mo);
       }
+      // step C6d: this channel's through-flow, if it is charged: per side its share of the perimeter x the exchange's
+      // rate x (the concentration outside that side - the mean outside), in the units of jeq (9 pixels' worth)
+      let z = charge_of(EP.qCodes, k);
+      if (dpOn && z != 0) {
+        mob += f32(Mi) / ATOM_SCALE;
+        var cs: array<f32, 6>;
+        var cm = 0.0;
+        for (var a = 0u; a < 6u; a++) { cs[a] = grid_bilinear(base, sp[a]); cm += sw[a] * cs[a]; }
+        let kf = f32(z) * min(1.0, pk * EP.dt) * 9.0 * areaPx / (Ao + areaPx);
+        for (var a = 0u; a < 6u; a++) { dq[a] += kf * sw[a] * (cs[a] - cm); }
+      }
     }
     flux[fo + k] = n;
   }
+  // step C6d: the side charges: each side's difference from the even share D (sum 0) gets the through-flow and relaxes
+  // (dpRelax per s) toward 0; kept within dpCap x mobile / 6. The even share stays the last net charge / 6 (the eat dispatch
+  // puts it on the new one)
+  var sq = c.sideQ;
+  if (dpOn) {
+    var mean = 0.0;
+    for (var a = 0u; a < 6u; a++) { mean += sq[a]; }
+    mean /= 6.0;
+    var D: array<f32, 6>;
+    let kr = min(1.0, EP.dpRelax * EP.dt);
+    let cap = EP.dpCap * mob / 6.0;
+    var dm = 0.0;
+    for (var a = 0u; a < 6u; a++) {
+      D[a] = sq[a] - mean;
+      D[a] += -D[a] * kr + EP.dpFlow * dq[a] / ATOM_SCALE;
+      D[a] = clamp(D[a], -cap, cap);
+      dm += D[a] / 6.0;
+    }
+    for (var a = 0u; a < 6u; a++) { sq[a] = D[a] - dm + mean; }
+  } else {
+    let e = select(0.0, c.qNet / 6.0, (c.flags & CELL_ALIVE) != 0u && !husk);
+    sq = array<f32, 6>(e, e, e, e, e, e);
+  }
+  cells[i].sideQ = sq;
   // step C6c, BITES: a free reactive atom outside a side bites the chains of its own row (g, t the l part; G, T the L part),
   // at kBite x its concentration there (units per R^2, the pixel just outside the side's middle) x the side's length (R)
   // x the share of that row in the side's weave x exp(-the chain's spark / (theta x temperature)); counts, rounded at
@@ -530,6 +604,22 @@ fn phi_bilinear(p: vec2f) -> f32 {
   let v10 = bitcast<f32>(mg[EP.phiOff + u32(a0.y) * HP.hw + u32(a1.x)]);
   let v01 = bitcast<f32>(mg[EP.phiOff + u32(a1.y) * HP.hw + u32(a0.x)]);
   let v11 = bitcast<f32>(mg[EP.phiOff + u32(a1.y) * HP.hw + u32(a1.x)]);
+  return mix(mix(v00, v10, f.x), mix(v01, v11, f.x), f.y);
+}
+
+// step C6d: a substance channel (plain view, its block at base in mg) at a position (CSS px), bilinear between the pixel
+// centres, clamped into the grid (counts per pixel)
+fn grid_bilinear(base: u32, p: vec2f) -> f32 {
+  let gp = p / HP.px - 0.5;
+  let b = floor(gp);
+  let f = gp - b;
+  let hi = vec2i(i32(HP.hw) - 1, i32(HP.hh) - 1);
+  let a0 = clamp(vec2i(b), vec2i(0), hi);
+  let a1 = clamp(vec2i(b) + 1, vec2i(0), hi);
+  let v00 = f32(max(mg[base + u32(a0.y) * HP.hw + u32(a0.x)], 0));
+  let v10 = f32(max(mg[base + u32(a0.y) * HP.hw + u32(a1.x)], 0));
+  let v01 = f32(max(mg[base + u32(a1.y) * HP.hw + u32(a0.x)], 0));
+  let v11 = f32(max(mg[base + u32(a1.y) * HP.hw + u32(a1.x)], 0));
   return mix(mix(v00, v10, f.x), mix(v01, v11, f.x), f.y);
 }
 
@@ -895,7 +985,26 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     let qu = f32(qn) / ATOM_SCALE;
     cells[i].qNet = qu;
     cells[i].q = tanh(qu * EP.qInv);
-    if (EP.qOff != 0u && qn != 0) {
+    // step C6d: the side charges on the new net charge (each side's difference from the even share kept, the sum = qNet)
+    var sq = c.sideQ;
+    var sm = 0.0;
+    for (var k = 0u; k < 6u; k++) { sm += sq[k]; }
+    let sd = (qu - sm) / 6.0;
+    for (var k = 0u; k < 6u; k++) { sq[k] += sd; }
+    cells[i].sideQ = sq;
+    let dpDep = (EP.dpFlags & (DPE_ON | DPE_DEPOSIT)) == (DPE_ON | DPE_DEPOSIT);
+    if (EP.qOff != 0u && dpDep) {
+      // ... and puts them into the substrate's field at its sides' middles (cloud in cell at each; whole counts, the last
+      // side taking the remainder, so the cell puts down exactly its net charge)
+      let mbe = membrane(c);
+      var left = qn;
+      for (var k = 0u; k < 6u; k++) {
+        var ck = i32(round(sq[k] * ATOM_SCALE));
+        if (k == 5u) { ck = left; }
+        left -= ck;
+        if (ck != 0) { deposit_q(c.pos + mbe.mid[k], ck); }
+      }
+    } else if (EP.qOff != 0u && qn != 0) {
       let gp = c.pos / HP.px - 0.5;
       let b0 = floor(gp);
       let fr = gp - b0;
@@ -934,6 +1043,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       cells[i].fill = 0.0;
       cells[i].q = 0.0;
       cells[i].qNet = 0.0;
+      cells[i].sideQ = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
       atomicAdd(&wmb[MB_BURSTS - 16u], 1);
     }
     cells[i].integ = ig;
@@ -945,6 +1055,24 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
 }
 
 fn u01(h: u32) -> f32 { return f32(h >> 8u) / 16777216.0; }
+
+// step C6d: put n charge counts down in the cells' charge block at position p (cloud in cell over the 4 pixels around it)
+fn deposit_q(p: vec2f, n: i32) {
+  let gp = p / HP.px - 0.5;
+  let b0 = floor(gp);
+  let fr = gp - b0;
+  let hi = vec2i(i32(HP.hw) - 1, i32(HP.hh) - 1);
+  let p00 = clamp(vec2i(b0), vec2i(0), hi);
+  let p11 = clamp(vec2i(b0) + 1, vec2i(0), hi);
+  let w00 = i32(round(f32(n) * (1.0 - fr.x) * (1.0 - fr.y)));
+  let w10 = i32(round(f32(n) * fr.x * (1.0 - fr.y)));
+  let w01 = i32(round(f32(n) * (1.0 - fr.x) * fr.y));
+  let w11 = n - w00 - w10 - w01;
+  if (w00 != 0) { atomicAdd(&hb[EP.qOff + u32(p00.y) * HP.hw + u32(p00.x)], w00); }
+  if (w10 != 0) { atomicAdd(&hb[EP.qOff + u32(p00.y) * HP.hw + u32(p11.x)], w10); }
+  if (w01 != 0) { atomicAdd(&hb[EP.qOff + u32(p11.y) * HP.hw + u32(p00.x)], w01); }
+  if (w11 != 0) { atomicAdd(&hb[EP.qOff + u32(p11.y) * HP.hw + u32(p11.x)], w11); }
+}
 
 // ---------- ledger (once per frame) ----------
 var<workgroup> wlo: array<atomic<u32>, 14>;

@@ -228,6 +228,7 @@ export class Eat {
     u[104] = Q && Q.feelOn ? 1 : 0;
     u[105] = Q && H.buffer ? H.chargeOffset - LEDGER_WORDS : 0;
     u[106] = CHARGE_CODES;
+    this.cells.dipole.writeEat(u, f, 107);   // step C6d: charge per side
     BANDS.forEach((b, k) => { i[112 + k] = Math.round(16 * b.photon); });
     ENGINES.forEach((e, k) => {
       const o = 132 + 8 * k;

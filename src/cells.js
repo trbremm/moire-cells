@@ -38,16 +38,18 @@ import { Heat, HEAT_COMMON_URL } from './heat.js';
 import { Eat } from './eat.js';
 import { ENGINES } from './matter.js';
 import { pal } from './palette.js';
+import { Dipole, STATS_DIP, DIP_WORDS } from './dipole.js';
 
 export const CELL_URL = 'src/shaders/cell_common.wgsl';
 
 // struct Cell in cell_common.wgsl: pos.xy, vel.xy, r, la, e1, e2, kind (u32), flags (u32), seed (u32), aux, z.xy;
 // step C5: dead.xy, bat, pay (i32), mom (u32), fill, smell.xy; step C6b: q, qNet, efield.xy (CELL_FLOATS in heat.wgsl too);
 // step C6c, the honeycomb outline (words 26..59): rad[6] (26), radV[6] (32), theta (38), spin (39), ea.xy (40), alpha[6] (42),
-// and reserved per side, zero for now: integ[6] (48, membrane chemistry), sideQ[6] (54, step C6d)
+// and per side: integ[6] (48, membrane chemistry), sideQ[6] (54, step C6d: each side's charge)
 export const CELL_FLOATS = 60;
 export const CELL_BYTES = CELL_FLOATS * 4;
-const CELL_CORE_BYTES = 104;   // step C6c: struct CellCore (the grid's sorted copy: Cell without the outline and per-side slots)
+const CELL_CORE_BYTES = 112;   // step C6c: struct CellCore (the grid's sorted copy: Cell without the outline and per-side slots;
+                               // step C6d: + the dipole, 104 until then)
 const ALIVE = 1;
 
 export const DEFAULT_CELLS = 2000;
@@ -58,15 +60,16 @@ const SLOT = 256;              // uniform slot stride (minUniformBufferOffsetAli
 const SLOTS = 320;             // ticks that can be encoded in one frame (main.js runs at most 256, plus warm-up)
 const BLOCK = 512;             // scan block (cell_grid.wgsl)
 const BRUTE_MAX = 20000;       // largest count the ?check brute force runs on
-const STATS_BYTES = 8512;      // struct Stats in cell_common.wgsl (counters, events, census, step 6 census)
+const STATS_BYTES = 8576;      // struct Stats in cell_common.wgsl (counters, events, census, step 6 census; step C6d: + dip)
 const STATS_EXTRA = 8192;      // byte offset of Stats.extra (step 6 census: STATS_X_* in cell_common.wgsl)
 const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder bitmap) in struct Stats
 const STATS_EVENTS = 64;
 const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_AW in cell_common.wgsl)
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
-const FIELDS_BYTES = 288;      // struct Fields in cell_common.wgsl (step C6c: + memb)
+const FIELDS_BYTES = 320;      // struct Fields in cell_common.wgsl (step C6c: + memb; step C6d: + dip0..dip2)
 const FIELD_FORMAT = 'rgba16float';
-const DRAW_BYTES = 480;        // struct Draw in cell_draw.wgsl (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane)
+const DRAW_BYTES = 512;        // struct Draw in cell_draw.wgsl (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
+                               // step C6d: + the dipoles)
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
 export class Cells {
@@ -304,7 +307,12 @@ export class Cells {
       membInner: 0.45,  // a heavy membrane's second, inner tube: its brightness (0 = none)
       membWide: 0.3,    // a thick membrane's tube is up to this much wider (at 2.5 x the founders' usual thickness)
       membFlash: 1.5,   // a burst cell's flash (0 = none)
+      // step C6d, the dipoles' look (while they are on)
+      dipTint: 0.6,     // each side's tube tinted toward the + ink (rose) or the - ink (blue) by its charge, at most this much
+      dipArrow: 0.9,    // with the machinery (the marks): an arrow from - to + across each polarised cell, its brightness
+      dipTwoTone: 0.85, // colour by charge (V): a polarised cell's body in two halves, + rose and - blue, this strong at a full dipole
     };
+    this.dipole = new Dipole(this);   // step C6d: charge per side (src/dipole.js)
   }
 
   static async create(device, format, medium, count, seed) {
@@ -637,6 +645,7 @@ export class Cells {
     u[46] = SH.on ? 1 : 0;
     f[60] = om * om; f[61] = 2 * Math.max(0, SH.zeta) * om; f[62] = Math.max(0, SH.turn); f[63] = Math.max(0, SH.jelly);
     this.eat.membrane.writeFields(u, f, 64);   // step C6c: genetic elasticity, damaged sides softer, bursting
+    this.dipole.writeFields(u, f, 68);         // step C6d: the dipoles
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -695,6 +704,7 @@ export class Cells {
     this.device.queue.writeBuffer(this.simBuf, 0, this.simAB, 0, ticks * SLOT);
     this.writeFields();
     encoder.clearBuffer(this.statsBuf, 48, 16);   // step 7: neighbour pairs by state, counted on the last tick
+    encoder.clearBuffer(this.statsBuf, STATS_DIP, DIP_WORDS * 4);   // step C6d: the dipoles' census, also on the last tick
     for (let t = 0; t < ticks; t++) {
       this.encodeGrid(encoder, t);
       // ?check runs between the grid build and the move, so both see the same positions
@@ -741,7 +751,7 @@ export class Cells {
     if (!rb) return;
     rb.busy = true;
     encoder.clearBuffer(this.statsBuf, 0, 32);                       // fate counts
-    encoder.clearBuffer(this.statsBuf, STATS_CENSUS, STATS_BYTES - STATS_CENSUS);   // key bins, founder bitmap
+    encoder.clearBuffer(this.statsBuf, STATS_CENSUS, STATS_DIP - STATS_CENSUS);   // key bins, founder bitmap (not the dipoles')
     const pass = encoder.beginComputePass({ label: 'cell census' });
     pass.setPipeline(this.pipes.census);
     pass.setBindGroup(0, this.censusBG[this.bioCur], [k * SLOT]);
@@ -800,6 +810,7 @@ export class Cells {
       const h0 = H[0], dt = time - h0[0];
       const rate = dt > 0.2 ? [((births - h0[1]) >>> 0) / dt, ((deaths - h0[2]) >>> 0) / dt, ((heatDeaths - h0[3]) >>> 0) / dt] : [0, 0, 0];
       this.stats = { time, fate, births, deaths, heatDeaths, clusters, founders, birthRate: rate[0], deathRate: rate[1], heatDeathRate: rate[2], step6, step7, step8 };
+      this.dipole.apply(time, new Int32Array(u.buffer, STATS_DIP, DIP_WORDS));   // step C6d
       if (events.length && this.onEvents) this.onEvents(events);
     } catch (e) {
       // device lost or page closing: nothing to show
@@ -1270,6 +1281,7 @@ export class Cells {
     const MB = this.eat && this.eat.membrane;
     a[112] = L.membLook && MB && MB.rule('on') ? 1 : 0; a[113] = L.membDim; a[114] = L.membBreak; a[115] = L.membInner;
     a[116] = L.membFlicker; a[117] = L.membFlash; a[118] = L.membWide; a[119] = MB ? MB.params.tRef : 0.012;
+    this.dipole.writeDraw(a, 120, L, L.view === 3);   // step C6d: the dipoles' look
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBGs[this.bioCur]);

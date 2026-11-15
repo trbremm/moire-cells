@@ -39,6 +39,7 @@ export const RULE_GROUPS = [
   ['eat', 'Cells eat (step C5)'],
   ['engines', 'Engines in the genome (step C6)'],
   ['charge', 'Charge (step C6b)'],
+  ['membrane', 'Membrane chemistry (step C6c)'],
 ];
 
 export const VIEWS = ['fate', 'lineage', 'strategy', 'charge'];   // key V: what the cells' bodies are coloured by (cells.look.view)
@@ -379,6 +380,27 @@ export function makeActions(app) {
     { id: 'chargeContours', keys: ['shift+0'], label: 'charge contours', group: 'look', type: 'toggle', get: () => Q().contours,
       run: () => `charge field ${flip(Q(), 'contours') ? 'drawn as contour lines: rose where it is +, blue where it is −' : 'not drawn'}${qNote()}`,
       help: 'the substrate\'s charge field as thin contour lines, + rose and − blue (also part of the machinery)' },
+  );
+
+  // ---------- membrane chemistry (step C6c; panel only: no keys are free) ----------
+  const MB = () => app.cells.eat.membrane.params;
+  const mbNote = () => (!E().on ? ' (cells eat is off: Shift+A)' : MB().on ? '' : ' (membrane chemistry is off)');
+  A.push(
+    { id: 'membrane', keys: [], label: 'membrane chemistry', group: 'membrane', type: 'toggle', get: () => MB().on,
+      run: () => `membrane chemistry ${flip(MB(), 'on') ? 'on: each membrane is woven from linkers (light l, heavy L) out of the cell’s stock; a bitten side leaks and goes soft; the tubes show it' : 'off: membranes are what they were, untouched (no bites, no repair)'}${E().on ? '' : ' (cells eat is off: Shift+A)'}`,
+      help: 'each membrane is a weave of linkers from the cell’s stock (its mix and thickness are genes); damaged sides leak and go soft; the tubes show their state' },
+    { id: 'membBites', keys: [], label: 'bites', group: 'membrane', type: 'toggle', get: () => MB().bites,
+      run: () => `bites ${flip(MB(), 'bites') ? 'on: free givers and takers bite membrane chains of their own row (light atoms the light weave, heavy the heavy), faster where it is hot' : 'off: free atoms leave membranes alone'}${mbNote()}`,
+      help: 'free givers and takers outside a cell bite membrane chains of their own row: light atoms the light weave (l), heavy atoms the heavy (L)' },
+    { id: 'membBurst', keys: [], label: 'bursting', group: 'membrane', type: 'toggle', get: () => MB().burst,
+      run: () => `bursting ${flip(MB(), 'burst') ? 'on: a membrane bitten nearly through bursts, the cell spills everything and a neighbour divides into the gap' : 'off: a bitten cell only leaks'}${mbNote()}${app.cells.genome.rules.turn ? '' : ' (needs turnover: T)'}`,
+      help: 'a membrane bitten nearly through bursts: the cell spills its contents (food for its neighbours) and a neighbour divides into the gap (needs turnover)' },
+    { id: 'membElastic', keys: [], label: 'gene: elasticity', group: 'membrane', type: 'toggle', get: () => MB().elastic,
+      run: () => `elasticity ${flip(MB(), 'elastic') ? 'is genetic: heavy, thick membranes are stiff, light thin ones soft and wobbly' : 'the same for all cells (the shape panel’s stiffness)'}${mbNote()}`,
+      help: 'each cell’s stiffness comes from its membrane: heavy and thick = stiff, light and thin = soft (times a small stiffness gene)' },
+    { id: 'membSelect', keys: [], label: 'gene: ion selectivity', group: 'membrane', type: 'toggle', get: () => MB().select,
+      run: () => `ion selectivity ${flip(MB(), 'select') ? 'is a gene: some membranes let givers (+) through more easily than takers (−), or the other way round' : 'off: givers and takers pass alike'}${mbNote()}`,
+      help: 'a gene lets givers (+) through the membrane more easily than takers (−), or the other way round, so cells can become charged' },
   );
 
   // step C6n: the clean view (default) or the machinery: every diagnostic layer at once

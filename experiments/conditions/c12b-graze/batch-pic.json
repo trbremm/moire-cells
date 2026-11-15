@@ -1,0 +1,7 @@
+{
+ "batch": "c12b-graze-pic",
+ "runs": [
+  "pic-on.json",
+  "pic-off.json"
+ ]
+}

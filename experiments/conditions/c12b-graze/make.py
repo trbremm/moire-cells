@@ -2,6 +2,7 @@
     python experiments/conditions/c12b-graze/make.py
 
   graze-on / graze-off   the default scene, 15 simulated minutes, grazing on and ?graze=0 (seeds 3 and 7: batch.json)
+  pic-on / pic-off       close-ups of the colony over the springs at 10 min (seed 7; batch-pic.json)
   same-on / same-off     the default scene with its light and heavy spring dropped at ONE place (halfway between the usual
                          two), 8 min: the test of the co-location explanation (soap needs one l AND one L; the default
                          springs put them into two crusts 144 px apart)
@@ -58,8 +59,17 @@ def main():
             "evals": [{"t": 0, "js": SAME}] + [{"t": t, "js": DIAG} for t in (240, 480)],
             "shots": [{"t": 240}, {"t": 480}],
         })
+        # pictures: the colony over the springs at 10 min, close up (3 device px per CSS px), seed 7
+        write(f"pic-{tag}", {
+            "name": f"c12b-graze-pic-{tag}",
+            "description": f"the C12b supply fix: close-ups of the colony over the default springs, grazing {tag}, seed 7",
+            "query": {**q, "seed": 7}, "duration": 600, "sample_every": 60,
+            "shots": [{"t": 600, "crop": [760, 270, 240, 260], "scale": 3, "name": f"graze-{tag}-close"}, {"t": 600}],
+        })
     with open(os.path.join(HERE, "batch.json"), "w", encoding="utf-8") as fh:
         json.dump({"batch": "c12b-graze", "runs": ["graze-on.json", "graze-off.json"], "seeds": [3, 7]}, fh, indent=1)
+    with open(os.path.join(HERE, "batch-pic.json"), "w", encoding="utf-8") as fh:
+        json.dump({"batch": "c12b-graze-pic", "runs": ["pic-on.json", "pic-off.json"]}, fh, indent=1)
     with open(os.path.join(HERE, "batch-same.json"), "w", encoding="utf-8") as fh:
         json.dump({"batch": "c12b-same", "runs": ["same-on.json", "same-off.json"]}, fh, indent=1)
 

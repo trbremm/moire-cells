@@ -3,10 +3,11 @@
 
 From experiments/conditions/oxygen (the oxygen retry: a never-drying light spring at (875, 328), a slow heavy spring at (875, 472)
 re-dropped for 2 s of every 20 s, 1280 x 800):
-  spot-on / spot-off      the default spotlight, 50 min, ?excited=1 / ?excited=0          (batch-spot.json: seeds 3 and 7)
-  full-on / full-off      the whole dish lit (?light=full), 50 min                         (batch-full.json: seeds 3 and 7)
+  spot-on / spot-off      the default spotlight, 40 min, ?excited=1 / ?excited=0          (batch-spot.json: seeds 3 and 7)
+  full-on / full-off      the whole dish lit (?light=full), 40 min                         (batch-full.json: seed 3)
   upswap-on / upswap-off  the spotlight with the uphill swaps in the open x15 (kUpSwap 0.3: more light-made waste), 40 min,
                           seed 3                                                           (batch-upswap.json)
+(40 min instead of the oxygen retry's 50, and the whole dish with one seed: GPU time; one stream at a time runs fastest.)
 Shots every 10 min (clean and strategy view) and close-ups of the light spring (the haze) at 20 min and at the end.
 """
 import json
@@ -39,7 +40,7 @@ def write(name, cond):
 
 
 def main():
-    for src, tag, D, extra in (("o-spot.json", "spot", 3000, None), ("o-full.json", "full", 3000, None),
+    for src, tag, D, extra in (("o-spot.json", "spot", 2400, None), ("o-full.json", "full", 2400, None),
                                ("o-spot-upswap.json", "upswap", 2400, None)):
         base = load(src)
         for on in (True, False):
@@ -56,8 +57,10 @@ def main():
             c["snapshots"] = [{"t": D, "grid": True}]
             c["sample_every"] = 20
             write(f"{tag}-{'on' if on else 'off'}", c)
-    for tag, seeds in (("spot", [3, 7]), ("full", [3, 7]), ("upswap", None)):
+    for tag, seeds in (("spot", [3, 7]), ("full", [3]), ("upswap", None)):
         b = {"batch": f"c12c-{tag}", "runs": [f"{tag}-on.json", f"{tag}-off.json"]}
+        if tag == "full":
+            b["runs"] = ["full-on.json", "full-off.json"]
         if seeds:
             b["seeds"] = seeds
         with open(os.path.join(HERE, f"batch-{tag}.json"), "w", encoding="utf-8") as fh:

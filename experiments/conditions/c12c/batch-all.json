@@ -1,0 +1,2 @@
+{"batch": "c12c-all", "description": "every C12c oxygen run, one after another (one stream runs fastest)",
+ "runs": ["spot-on.json", "spot-off.json", "upswap-on.json", "upswap-off.json", "full-on.json", "full-off.json"], "seeds": [3]}

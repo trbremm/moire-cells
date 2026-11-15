@@ -1606,7 +1606,8 @@ membrane's segment k (`membrane(c).mid[k]`, `.edge[k]`, its outward normal (edge
 (`cell_common.wgsl`, `CELL_FLOATS` in `src/cells.js` and `heat.wgsl`) grew from 104 to 240 bytes; the new words:
 26-31 `rad[6]`, 32-37 `radV[6]` (the corners' speeds), 38 `theta`, 39 `spin`, 40-41 `ea`, 42-47 `alpha[6]`, and
 **48-53 `integ[6]`** (each side's integrity, since the membrane chemistry below) and **54-59 `sideQ[6]`** (each side's
-charge, since step C6d: see "Step C6d: charge per side"). The
+charge, since step C6d: see "Step C6d: charge per side"); step C7 added 60-62 `nbr` (the touching neighbour across each side,
+16 bits each) and 63 `volt` (the membrane voltage): 256 bytes. The
 step pass reads each cell whole from its own slot and writes it back whole, so whatever another pass writes there (as the
 eat pass writes `smell` and `efield`) survives; a newborn starts with zeros (the membrane chemistry gives it a share of its parent's sides),
 and with the honeycomb off the sides are the ellipse's 6 segments. The step's neighbours come from the grid's sorted
@@ -1966,6 +1967,191 @@ Draw (`cell_draw.wgsl`): d per cell in the vertex shader; the side's tint from `
 **Checked.** No WebGPU errors in Chrome (headless, also at phone size 390 × 844, where the panel shows the short line)
 and Firefox (headed, 1600 × 1000). The census counts with dipole-dipole off too (for the comparisons). Not bit-repeatable,
 so every comparison above is one run each.
+
+## Step C7: pumps and membrane voltage
+
+The user (CLAUDE.md, C7): "active chemical excretion without forcing the behaviour". Every genome now carries two **pump
+slots**. A pump slot is three genes: a **substance** (any that spreads: the six atoms, the four fuels, trace; never
+sediment), a **direction** (IN or OUT) and a **rate**. Pumping a substance down its gradient is free (it only adds to the
+membrane's passive leak); pumping it up its gradient costs the battery, more the steeper the gradient. No rule says what
+to pump, which way, or why: "exporter", "thief", "sharer", "poisoner" are only words for watching what selection makes of
+the pumps. Charged atoms (givers +1, takers -1) pumped across the membrane build a **membrane voltage**, which makes
+pumping more of the same sign the same way dearer, and pays part of its energy back into the battery as it leaks: a
+second battery.
+
+**What it looks like.** In the clean view a cell with a pump carries small **notches** on its membrane, like the engines'
+parts but on the tube: at the middle of every other side (slot 1 on three alternate sides of the outline, slot 2 on the three
+between) a tiny triangle just inside the tube, in the substance's ink (the reactive free atoms' red, the fuels' green, the
+linkers' grey-blue, trace silver; the heavier row deeper), pointing IN toward the centre or OUT with its tip on the tube,
+its size with the rate; the tube's short segment there takes the same ink. At 2000 cells on a computer screen they read as
+small coloured ticks round the rim of a cell; zoom in to see which way they point. Most cells have none (pumps have to earn
+their place). A lineage that carries a pump shows as a patch of cells with the same ticks. With **the machinery** (Shift+4)
+a cell with a membrane voltage also gets a faint rim just inside its tube, rose for + (it pumped givers in or takers out)
+and blue for -, full at a voltage of 0.5.
+
+**What happened** (the default scene, 2000 cells, MAX, Chrome headless on this machine; seeds 3 and 7, 20-minute runs with
+the pumps on and with `?pumps=0`, 10-minute runs with other settings; `moire.pumps.stats()` sampled along the way; not
+bit-repeatable, so every comparison is one run each, and repeats went different ways). Plainly:
+- **Pumps neither die out nor take over.** At the start 17 to 34 % of the cells carry a pump (the founders' lineages that
+  got one). Over 20 minutes the share rose to 32 to 36 % (seed 3) and 44 to 58 % (seed 7). Much of what the census lists is
+  carried along by lineages that win for other reasons (their engines): with the pumps switched off the genes still drift
+  and spread, and the controls show the same kind of list (seed 3 with the pumps off, 10 minutes: "OUT l" in 172 cells with
+  batteries of 0.55, though nothing was pumped). So a gene only means something where it differs between on and off.
+- **Exporters of light givers in the spot (seed 7).** The clearest case. A founder lineage carries "OUT g" (pumping out the
+  light giver g). With the pumps on, in two of three seed-7 runs (one of them with the capacitance at 0.3), its carriers rose
+  from about 190 to 270 to 340 cells, two thirds of them in the light, harvest + burn cells, with batteries of 0.33 to 0.49
+  against 0.06 to 0.10 for the cells without a pump; in the third run they stayed at about 130 (battery 0.16). With the pumps
+  off the same lineage stayed at 120 to 180 cells with batteries of 0.02 to 0.2, and with the pumps on but **not across
+  contact** it shrank to 85 cells with empty batteries. So its advantage came through the contact sides: these cells push
+  their light givers into their neighbours (everything pushed into neighbours: 2.9 to 4.6 units per s at 15 to 20 minutes,
+  against 1.2 to 2.5 pulled), and keep less of the vandal g inside, which degrades rich fuel there. Nobody told them to; the
+  neighbours get the g. It shows in the charges: at 20 minutes 534 cells were net negative and 377 net positive (the control:
+  311 and 401), as exporting + leaves a cell -. In the clean view they are the cells in the spot with small red ticks round
+  their rims (red: the reactive light atoms' ink), pointing out.
+- **Fuel taken from neighbours.** Fuel pulled across contact into the pumping cell ran at 0.1 to 0.9 units per s at 10 to 20
+  minutes in every run (fuel pushed out into neighbours: 0.02 to 0.3). The carriers of IN Gt and IN gT are mostly harvest +
+  burn cells; their advantage is small and comes and goes (seed 7: IN Gt 77 to 206 carriers at batteries 0.12 to 0.30; the
+  control 130 to 280 at 0.0 to 0.17).
+- **Importers of the heavy taker (seed 7).** "IN T" (pulling in the heavy taker T) rose in two seed-7 runs with the pumps on
+  (20 minutes: 88 carriers, battery 0.39 against 0.14 without a pump; 10 minutes without contact: 169 carriers, battery 0.63,
+  three quarters in the light) and in no control. T is the scarce half of the heavier fuels (gT, GT); in the C6 runs the visible
+  2 pigment died out for lack of it. Whether these cells make gT with it was not measured. In seed 3 IN T carriers were
+  common too but unfed (batteries 0.0 to 0.1): riding along.
+- **The voltage builds where charge is pumped one way.** With the default capacitance most cells' voltage is near zero
+  (mean |V| 0.001 to 0.03); the exporters and importers of charged atoms reach 0.05 to 0.25, and 100 to 160 cells are above
+  0.1 when they are common (seed 7). The battery then pays more for the voltage than for the gradients (seed 7 at 20 minutes:
+  1.76 energy per s against 1.25, and 0.8 per s came back into the batteries as the voltage leaked). With a capacitance three
+  times smaller (0.03) the voltage became the main cost and the light-giver exporters of seed 7 did not rise (215 carriers,
+  battery 0.10); with 0.3 it never mattered (|V| 0.001).
+- **Small in the books.** All pumping together cost the batteries 0.4 to 3.9 energy per s, against 20 to 30 per s the burners
+  put in. The dish's entropy and its rate were 2 to 8 % higher with the pumps on, and slightly fewer cells were above half a
+  battery (table).
+- **What did not show.** No lineage of "excreters" of light atoms into the dish near the springs (the free sides put 0.07 to
+  1.8 units per s into the dish, much of it the seed-7 exporters at the culture's rim); no change in the free light atoms (g at
+  20 minutes 69 to 80 with the pumps, 65 to 77 without), so no "great oxidation" from pumping either; no clear change in heavy
+  membranes or bursts (heavy membranes, a lineage marker, went either way); the dipoles' head-to-tail order stayed the same
+  (+0.20 to +0.21).
+
+Numbers at 20 minutes (the second run with the pumps on in brackets; it had the capacitance at 0.1 too, but the code before the
+last fix to contact, and its seed-3 run showed the atoms' rounding at -2 counts from 900 s, the bug since fixed):
+
+| | seed 3 on (repeat) | seed 3 off | seed 7 on (repeat) | seed 7 off |
+|---|---|---|---|---|
+| cells with an active pump | 32 % (36 %) | (genes only) | 58 % (44 %) | (genes only) |
+| top pump genes (share of all cells) | OUT l 7, OUT T 6, IN T 3 % | - | OUT g 13, IN Gt 10, OUT l 7 % (OUT g 7, IN gT 5, IN T 4 %) | - |
+| mean battery: a rising gene's carriers / cells without a pump | OUT l 0.62 / 0.24 (OUT l 0.11 / 0.29) | OUT gT 0.54 / 0.30 | OUT g 0.38 / 0.10 (IN T 0.39 / 0.14) | OUT g 0.02 / 0.28 |
+| battery paid for pumping (energy / s) | 0.56 (0.39) | 0 | 3.85 (1.05) | 0 |
+| moved into the dish / from the dish / across contact (units / s) | 0.22 / 0.16 / 1.43 | 0 | 1.77 / 0.70 / 7.14 | 0 |
+| mean \|voltage\|, cells above 0.1 | 0.001, 5 | 0 | 0.025, 154 (0.003, 13) | 0 |
+| cells above half a battery | 509 (454) | 537 | 323 (369) | 433 |
+| free light atoms g / t | 69 / 71 (73 / 77) | 65 / 66 | 79 / 73 (80 / 81) | 77 / 75 |
+| net + / net - cells | 355 / 411 (345 / 507) | 371 / 370 | 377 / 534 (386 / 425) | 401 / 311 |
+| entropy (heat out), its rate | 16.0 M, +17.1 k/s (16.2 M, +17.9 k/s) | 15.6 M, +16.5 k/s | 19.2 M, +21.8 k/s (18.9 M, +21.0 k/s) | 18.6 M, +20.3 k/s |
+| atoms and charge rounding | 0 | 0 | 0 | 0 |
+
+"OUT l" and "OUT gT" in seed 3 are hitchhikers (they rode on winning lineages in pumps-off runs too). Words for what emerged,
+for watching: **exporters** (OUT g in the spot, into their neighbours), **takers of neighbours' fuel** (IN fuel across
+contact), **importers of the scarce heavy taker** (IN T).
+
+**Tuning and the defaults.** Costs: base 0.1 and 0.1 per e-fold keep pumping cheap next to the engines (a pump moving 0.3 units
+per s up one or two e-folds costs 0.06 to 0.1 per s; the upkeep of a rate-1 slot 0.003 per s), so a weak pump is nearly
+neutral and selection acts on what it does more than on its price (other costs were not tried). Capacitance: 0.3, 0.1 and 0.03
+per R tried (above); 0.1 chosen, where the voltage matters for the cells that pump one sign hard and not for the rest. The
+voltage's leak 0.5 per s, back to the battery 0.5. Founders: a third with one weak pump; mutation as below.
+
+**Where a pump works.** On all six sides of the cell, a sixth of its rate each:
+- a side touching a neighbour that touches it back (each cell records the touching neighbour across each of its sides,
+  `Cell.nbr`, found by the step from its neighbour loop: the nearest touching cell whose direction is closest to the side's
+  middle; two cells that list each other are in **contact**) trades with that neighbour's **stock** (rule "pumps across
+  contact"): an IN pump pulls from it, an OUT pump pushes into it;
+- a free side trades with the **dish** just outside it (the pixel beyond the side's middle): OUT puts the substance there,
+  IN takes it from there.
+
+**How much.** Per s a slot moves rate x the source's amount per cell volume: IN from a free side, the concentration in that
+pixel x the cell's area; IN from a neighbour, or OUT, the stock that gives. An inflow is scaled by the room left in the
+cell (as the passive exchange), a push into a neighbour by the room left in it. The rate is the gene's, at most `maxRate`
+(4 per s; the gene may drift to 6).
+
+**What it costs** (per unit moved, energy units; all of it heat at the cell): with x = ln((c_to + eps) / (c_from + eps)),
+the e-folds up the gradient (concentrations in units per R^2, eps 0.01): nothing if x <= 0 (down the gradient); else
+`base` (0.1) x min(x / `ramp`, 1) (ramp 0.5: the base cost grows smoothly from equal concentrations) + `grad` (0.1) x
+min(x, `lnMax`) (lnMax 5). Plus **upkeep**, `upkeep` (0.003 energy per s) x the slot's rate, as for the engines. For
+comparison: burning a unit of the light fuel gt gives 1.5 (1.125 after the burner's heat share), the heavy fuel GT 3.
+
+**The battery decides.** The plan works out what the cell's pumps want this tick and what that costs (the gradients and the
+voltage's work, below); if the battery (after this tick's crawl) cannot pay it all, every pump is scaled down to what it
+can. A pump the battery cannot pay does not run.
+
+**Membrane voltage** (rule "membrane voltage"). Each cell keeps the charge its own pumps moved across its membrane (+ in;
+stock word 14) and the energy stored in it (word 15). The voltage V = that charge / the capacitance (`vCap` 0.1 atom-units
+per unit of voltage, x r / R), the energy q^2 / 2C. Moving charge with a pump does work against the voltage: the battery
+pays the energy the move adds (so pumping a sign the same way again costs V per unit, growing as V grows; pumping the other
+sign, or the other way, lowers the voltage and costs nothing for it). The voltage **leaks back** through the membrane at
+`vLeak` (0.5 per s) x the permeability gene / 3 x the damaged membrane's leak (step C6c), so a leaky or bitten membrane cannot
+hold a voltage. Whatever the stored energy holds above q^2 / 2C after the leak is freed: as heat, or with the rule **voltage
+pays the battery** a share `v2bEff` (0.5) back into the battery (as far as it has room). A cell that pumped charge up a
+voltage gets half of the voltage's energy back as it relaxes: a second, leaky battery. Stealing charged atoms from a
+neighbour builds a voltage like any other pumping, so it fights itself.
+The voltage feeds the charge picture where it is natural: the charge a pump moves enters (or leaves) through the side it
+passes, so it goes into that side's charge (step C6d's dipoles), and the atoms it moves into or out of the dish are the
+substrate field's charge (step C6b) as always. The voltage is not added to the cell's charge q (that stays its stock's net
+charge).
+
+**Switches** (rules panel, group "Pumps (step C7)"; panel only, as no keys are left): **pumps** (the master) · **pumps across
+contact** · **membrane voltage** · **voltage pays the battery**. Knobs with - and +: **base cost**, **gradient cost**, **max
+rate**, **voltage leak**, **voltage to battery**. URL: `?pumps=0`, `?pumpcontact=0`, `?voltage=0`, `?v2b=0`. Console:
+`moire.pumps.params` (also `ramp`, `lnMax`, `eps`, `upkeep`, `vCap`, `contactCap`), `moire.genome.params.pumpJump` (0.04),
+the look in `moire.cells.look` (`pumpParts`, `pumpSize` 0.2 of r, `pumpRate` 1.5, `pumpTint` 0.7, `voltRim` 0.7, `voltFull`
+0.5), `await moire.pumps.stats()` (per pump gene: carriers, their mean battery, |voltage|, how many in the light, fuel and
+free light atoms inside).
+
+**Genes, founders and mutation.** `Bio.pump` (the genome grew from 44 to 48 floats): two codes (channel + 16 x direction)
+and two rates. About a third of the founders get one weak pump (rate 0.1 to 0.5) of a random substance and direction, the
+rest none; they come from their own random stream (`?seed=` keeps every other gene as it was). At each birth: rates x
+e^(0.1 g) (an empty slot stays empty), and with chance `pumpJump` (0.04 per birth) one slot jumps: to another substance (40 %;
+an empty slot starts up at 0.1 to 0.5), to the other direction (30 %), or it empties (30 %).
+
+**The census.** A PUMPS line in the entropy panel:
+
+    PUMPS  active 30% (top OUT T 9%, IN L 3%, IN T 3%) · |voltage| 0.00 (4 cells > 0.1) · paid 0.45/s · moved to dish 0.11/s, from dish 0.32/s, across contact 1.36/s
+
+(cells with a slot at rate 0.05 or more; the three commonest pump genes and their share of the cells; mean |voltage| and
+the cells above 0.1; battery energy paid for pumping per s (gradients, voltage, upkeep); substance units moved per s into
+and out of the dish and across contact). On a phone `PUMPS 30% · OUT T 9% IN L 3% · |V| 0.00 · paid 0.45/s`. The F overlay
+adds the switches and knobs, the carriers' mean battery against the others', the fed cells (battery at least 0.3) with a
+pump, every gene with its carriers (and how many of them are fed), the flows per s by class (light atoms, heavy atoms,
+linkers, fuel, trace) into the dish, out of it, pulled from neighbours and pushed into them, the energy paid and freed, and
+the numbers every 10 s.
+
+**The books.** Matter is only moved, in whole counts. Race-free and exact across contact: only the pumping cell's plan writes
+its requests (flux words 16..29: per side two signed 16-bit counts, one per slot); its eat applies them to its own stock,
+and the neighbour's eat reads the same words and applies the reverse to its own. A request may take at most 1/24 of the
+source stock (whole counts) per side, slot and tick, so 6 sides x 2 slots x (pulled + pushed) can never take a stock below
+zero; the requests and the cap are worked out from the stocks as they are when the plan runs, and both cells apply them
+before anything else changes the stocks. (The first version rounded each request at random before capping it, and a stock
+of a few counts could go one count below zero: the atoms' rounding showed -1 count, the charge's +1, in a 10-minute run.)
+Energy: battery -> heat (gradients, upkeep), battery -> the voltage's store -> heat or battery; the voltage's store counts
+with the batteries in "stored". Checked: a 660 s run at MAX (seed 5) through N (120 s), a wash (Shift+C, 220 s), a resize
+(300 s), G (400 s), a resize back (480 s) and a new spring (520 s): atoms and charge rounding exactly 0 throughout, energy
+rounding between -0.062 and +0.007 while in grew to 9.6 M; the final 20-minute runs of seeds 3 and 7: atoms and charge 0,
+energy -0.005 to +0.082 (in 16 to 19 M).
+
+**How it is computed.** Plan (`cell_eat.wgsl`, plain reads): per slot and side, the source and destination amounts and
+concentrations (the neighbour's stock and radius, or the pixel outside the side), the wanted counts and their cost, the
+voltage's work, the battery's scaling, the rounding; the charge into the side's through-flow (C6d); the requests into flux.
+Eat: right after the crawl, the own requests, the neighbours' requests on this cell (reversed), the takes and adds at the
+free sides, the payment, the voltage (work, leak, release); deaths, bursts and new cultures hand the voltage's energy back as
+heat with the battery, a birth splits it. Step (`cell_step.wgsl`): the touching neighbour across each side, in vectors in the
+neighbour loop (only while pumping across contact is on; the Cell record grew from 240 to 256 bytes: `nbr`, 16 bits per side,
+and `volt`). Ledger: the census (64 numbers) and 32 counters (`LG_PU`; LEDGER_WORDS 21 760). Draw: the notches from the
+genome, each side's middle from the vertex shader.
+
+**Cost** (headless Chrome, 2000 cells, seed 3, MAX, mean speed reached from 40 to 150 s, alternating runs in one session): the
+commit before (1555e51) ×11.81 and ×11.72, now ×11.20 and ×11.19 (about 5 % slower), now with `?pumps=0` ×11.43 and ×11.42.
+A lesson: the first version picked a pump slot in the mutation by a number (`b.pump[k]`) and a substance from a constant
+array, and the whole step ran a quarter slower on Direct3D (×9.1), even with the pumps off; written with whole vectors and
+selects it costs nothing measurable. Firefox (headed, 1600 × 1000) and Chrome at phone size (390 × 844: the short PUMPS line
+fits, the rules panel shows the new group with its touch buttons) ran without errors.
 
 ## The look of the landscape
 

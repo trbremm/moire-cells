@@ -51,7 +51,7 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
     the landscape, which substance is shown, colour by fate, lineage, strategy (step C6) or charge (step C6b), and the
     other drawing switches;
   - *rules*: every rule that has a key, as a switch with a one-line explanation and its key, grouped as below
-    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge, membrane chemistry (step C6c, panel only), charge per side (step C6d, panel only: the dipoles' switches and six knobs with - and +), pumps (step C7, panel only: four switches and five knobs with - and +), catalysts (step C7b, panel only: two switches and four knobs), hard light (step C8, panel only: one switch and three knobs)); settings with several values show the current one
+    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge, membrane chemistry (step C6c, panel only), charge per side (step C6d, panel only: the dipoles' switches and six knobs with - and +), pumps (step C7, panel only: four switches and five knobs with - and +), catalysts (step C7b, panel only: two switches and four knobs), hard light (step C8, panel only: one switch and three knobs), division (step C9, panel only: the mode and five knobs)); settings with several values show the current one
     and change on a tap; the lever and the stiffness have - and +. The switches follow the state, also when a key changes it;
   - *dish* (the dish with three cells): the speed as a row of buttons, new culture (N), new genomes (G), clear
     springs (C), wash the atoms out (Shift+C).
@@ -81,7 +81,8 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   step C6n: `?neon=0`, `?halo=off|low|medium|high`, `?trails=0`, `?hum=0`, `?machinery=1`, `?cheap=0|1`, and
   `?until=T` (run to simulation time T, then pause at exactly that tick); step C6b: `?charge=0`, `?qstock=0`, `?qfeel=0`,
   `?contours=1`, `?view=charge`; step C6c: `?honeycomb=0` (the ellipse cells), `?membrane=0` (no membrane chemistry),
-  `?bites=0`, `?burst=0`, `?elastic=0`, `?selectivity=0`; step C6d: `?dipoles=0`, `?dd=0`, `?dphi=0`, `?dfield=0`; step C7: `?pumps=0`, `?pumpcontact=0`, `?voltage=0`, `?v2b=0`; step C7b: `?crystal=0`, `?cofactor=0`; step C8: `?hardmut=0`.
+  `?bites=0`, `?burst=0`, `?elastic=0`, `?selectivity=0`; step C6d: `?dipoles=0`, `?dd=0`, `?dphi=0`, `?dfield=0`; step C7: `?pumps=0`, `?pumpcontact=0`, `?voltage=0`, `?v2b=0`; step C7b: `?crystal=0`, `?cofactor=0`; step C8: `?hardmut=0`; step C9: `?divide=0` (the old turnover, a fixed count), `?cap=N` (the capacity), `?divat=`,
+  `?divcost=`, `?starve=`, `?crowd=`, `?age=` (the division's knobs).
 
 ## Keyboard shortcuts
 
@@ -101,7 +102,8 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
 - **D**: differentiation on/off (off: every cell goes back to stem and stays there)
 - **H**: adhesion on/off (like sticks to like)
 - **B**: body traits on/off (size, motility and crawling from the genome and the fate; off: all alike, no crawling)
-- **T**: turnover on/off (cells die now and then and a neighbour divides into the gap)
+- **T**: the life cycle on/off: births and deaths (step C9: by division, the count rising and falling, the default; or by the
+  old turnover, a fixed count, where a dead cell's slot goes at once to a neighbour's daughter: rules panel, Division)
 - **M**: mutation on/off (off: daughters are exact copies of their parent)
 - **E**: the neon look on/off (step C6n; off: the flat look of steps 1 to C6). Until step C3 E switched rule E,
   nutrient and threat, which went with the sources
@@ -172,7 +174,8 @@ to emerge from the chemistry.
 Cells (step 3): a fixed number of cells, 2000 by default, starting as a packed blob of stem cells. They push
 each other apart where they overlap, drift slowly, jitter a little and stay off the dish edge. Since step 4
 they also emit into the field and feel it (below). Their radius is the reference's R (5 to 9 px), smaller when that many cells
-would not fit (about 2.9 px at 10 000 and 1.3 px at 50 000 on a 1280 × 800 window).
+would not fit (about 2.9 px at 10 000 and 1.3 px at 50 000 on a 1280 × 800 window). Since step C9 the number changes: cells
+divide and die, in buffers with room for 3 times the starting number (`?cap=N`); `?divide=0` keeps the old fixed count.
 
 ## Genome and specialisation (step 3b)
 
@@ -2354,6 +2357,147 @@ MAX, from 40 to 150 s, alternating): before (C7b) ×11.01 and ×11.04, with C8 �
 Firefox (headed) and Chrome at phone size (390 × 844) ran without errors; the phone's line fits, the rules panel shows the
 new group with its buttons. Nothing new is drawn.
 
+## Step C9: division and death with a changing count
+
+Until now the number of cells never changed: when a cell died, a touching neighbour divided into its place at once
+(turnover). Now cells **divide** when their battery can pay for a daughter and **die for good** when they starve, overheat
+or burst, so the number of cells rises and falls with the energy the dish catches. The old turnover stays as a switch.
+
+**What it looks like** (the default scene, 2000 cells, MAX, seeds 3 and 7).
+- **The dark clears out.** In the first minute nothing seems to change, except that the cells far from the spot dim and then
+  slowly fade out (a starving cell's tube fades as its starvation time runs down). Between about 80 and 120 s they die in a
+  wave from the far side: whole tracts of the old blob go dark, a few small islands of fading cells last a little longer, and
+  dust (the dead cells' atoms) is left where they were. By the first night (150 s) only a colony **in the spotlight** is
+  left, 400 to 520 cells, most of them (86 % in seed 3) in the light. Pictures: `shots/c9/s3_div_t60.png`, `shots/c9/s3_dark_t120.png`
+  (the fading, in darkness) (screenshots are not in the repository).
+- **The colony grows outward from the light.** With the morning it fills up: cells divide at its edge (a dividing pair
+  flashes white-hot for half a second, then two small cells grow back to full size, side by side), it spreads past the rim
+  of the spot into the dark on the side of the old culture, and by 5 to 10 minutes it holds 1000 to 1300 cells, about two
+  thirds of them in the light. It stays one patch (1 to 5 patches of 3 or more cells, the largest holding 97 % of them).
+  Inside it the tissue is packed and nobody divides ("crowded"); births happen along the edge and in the holes deaths leave.
+  Pictures: `shots/c9/s3_div_t600.png`, `shots/c9/zoom_flash_t270.png` (a close look: honeycomb tissue, white pairs that
+  have just divided).
+- **The count breathes with the day** and then slowly settles. Births run at 15 to 30 per s around noon and 5 to 10 at
+  night; the count rises by day and stalls or falls at night (the COUNT sparkline in the panel shows the waves), peaks at
+  1240 to 1310 at about 10 minutes, and then falls slowly to 650 to 750 at 20 minutes: the springs dried up after
+  4 minutes, and the colony shrinks toward what the spot can feed (in turnover the same dish holds about 300 to 400 cells
+  above half a battery). It never died out in the default scene.
+- **Full field** (`?light=full`): the whole culture is lit, so after the same first collapse (to 435 to 510 at the first
+  night: the far cells had no fuel yet) it grows outward in every direction, a ragged round colony that by 20 minutes covers
+  most of the dish's height, 3700 to 3800 cells. With `?cap=2000` it fills its capacity at about 9 minutes and stays at
+  exactly 2000: births equal deaths (8 per s), about 1200 cells are ready to divide and find no free slot (170 tries per s):
+  turnover again, but chosen by the energy. Pictures: `shots/c9/s3_full_t1200.png`.
+- **Darkness** (`?light=off`): no light, no fuel made, so the culture dies out: down to 380 cells in 41 small patches at
+  2 minutes, all gone by 4 minutes. The springs only drip atoms, which nobody can eat without light. (A valid outcome: a
+  dish without an energy source cannot keep cells.)
+- **800 cells** (bigger cells, R from the starting number): the same story at a smaller scale, peaking at 750 at 6 minutes;
+  here bursts dominate the deaths (8 to 13 per s: the free light atoms the burners release bite the light membranes) and
+  the colony shrinks to about 225 by 20 minutes. Picture: `shots/c9/s3_800_t600.png`.
+
+**Numbers** (the panel's DIVISION and ENTROPY numbers; cells alive at a time; entropy = heat out, M = millions; one run
+each, not bit-repeatable; the capacity is 6000 unless noted):
+
+| run | 2 min | 2.5 min (night) | 5 min | 10 min | 15 min | 20 min | entropy at 20 min | entropy rate at 20 min (/s) |
+|---|---|---|---|---|---|---|---|---|
+| seed 3, division (default) | 805 | 490 | 1122 | 1298 | 955 | 677 | 15.4 M | 13.5 k |
+| seed 7, division | 619 | 403 | 888 | 1242 | 974 | 749 | 15.4 M | 14.1 k |
+| seed 3, turnover (`?divide=0`) | 2000 | 2000 | 2000 | 2000 | 2000 | 2000 | 17.1 M | 18.7 k |
+| seed 7, turnover | 2000 | 2000 | 2000 | 2000 | 2000 | 2000 | 18.8 M | 22.0 k |
+| seed 3, full field | 774 | 435 | 1319 | 2539 | 3276 | 3683 | 56.0 M | 61.6 k |
+| seed 3, full field, `?cap=2000` | 838 | 510 | 1267 | 2000 | 2000 | 2000 | 49.3 M | 47.9 k |
+| seed 3, darkness | 382 | 44 | 0 (from 4 min) | 0 | 0 | 0 | 1.77 M | 1.2 k (warmth only) |
+| seed 3, 800 cells (capacity 2400) | 434 | 484 | 641 | 484 | 278 | 224 | 17.4 M | 12.7 k |
+| seed 3, `?cap=2000` | 805 | 517 | 995 | 1501 | 862 | 496 | 16.5 M | 12.8 k |
+| seed 3, `?cap=10000` | 729 | 501 | 1271 | 1470 | 998 | 772 | 15.7 M | 14.7 k |
+
+Deaths by cause, seed 3 division, per s (around noon / at night): starved 1 to 5 / 3 to 5, heat 0 to 3.4 (only around
+noon) / 0, burst 3 to 9 / 0.3 to 1, age 3 to 6. In the spot scene the capacity never mattered (the count stays far below it:
+`?cap=2000` and `?cap=10000` differ from the default only by the runs' noise). The **entropy** is a little lower with
+division (15.4 M against 17.1 and 18.8 M with turnover, 20 minutes): fewer cells crawl, and the cells that are left are the
+fed ones (22 to 25 % of them above half a battery at 20 minutes against 16 % in turnover). With the whole dish lit the
+entropy is three to four times as high: the cells catch more light and burn more fuel; the culture's size follows. Atoms
+and charge rounding stayed exactly 0 in every run, the energy rounding between −0.07 and +0.21 (in up to 56 M).
+
+**How it works.**
+- **Capacity and free slots.** The cells' buffers have a fixed number of slots: `?cap=N`, by default 3 times the starting
+  number (6000 for 2000 cells; with `?divide=0` the starting number itself, as a fixed count needs no room). A slot is a
+  cell while its flags have ALIVE. Each tick the neighbour grid's counting sort puts every dead slot into one more bucket
+  after the last grid cell (`cell_grid.wgsl`), so the sorted list holds the live cells first (`starts[gw gh]` of them) and
+  then the **free slots**. A dividing cell takes the next free slot with an atomic counter (`Stats.claim`, cleared before
+  each tick); when none is left, it waits. No read-back and no stall: everything stays on the GPU. Every pass skips the
+  free slots: the step runs over the live part of the sorted list only, the eat, census, ledger and heat passes check
+  ALIVE, the drawing emits nothing for them, and the field draws nothing (their beat has no strength).
+- **Division** (in the step, `cell_step.wgsl`): a cell may divide when its battery holds at least `divAt` (0.6) of its
+  capacity, it has grown back to `minSize` (0.9) of its full size, and it is not **crowded**: the sum of its overlaps with
+  its neighbours (each as a share of the contact distance) is at most `crowd` (0.6). Packed tissue has no room, so only
+  the edge and the holes divide. A cell that may divides at a chance of `rate` (0.5) per s. Its daughter goes into the free
+  slot, the two side by side along the mother's long axis (her stretch's direction, either end; at random when she is
+  round), each `apart` (0.4) of her radius from where she was, both at `split` (0.71: about half her area each) of her
+  radius, growing back to full size. The daughter's genome is a copy with mutation (`daughter_genome`, shared with the
+  turnover, including step C8's hard light dose), her membrane and battery come from the split below, and she starts at
+  rest (no motion energy is made).
+- **The cost and the split** (in the eat pass, `cell_eat.wgsl` split): the division's **cost**, `cost` (0.4 energy units,
+  a tenth of a full battery), leaves the mother's battery as heat where she is; then her stock, battery, membrane voltage and
+  membrane linkers are **split** in half between the two, in whole counts (matter exact, energy exact to the count).
+- **Death** (in the step): a cell dies for good when it **starved** (its battery below `starveAt`, 3 %, for `starveTime`,
+  30 s; it fades out meanwhile), of **heat** damage (step C5's rule), when it **burst** (step C6c, after its flash), or by
+  a small background **age** rate (`age`, 0.002 per s, times the turnover's "unhappy" factor for a cell that recognises
+  none of its neighbours: so a cell lives a few minutes at most even when fed, and the colony keeps changing). The eat pass
+  hands its stock and membrane back to the dish where it died and its battery (and voltage's energy) as heat, as at any
+  death; its motion becomes heat too; its slot is free from the next tick.
+- **Turnover** (`?divide=0`, or the switch): exactly as before, a fixed count. Both modes run only while the life cycle
+  (key T, until now "turnover") is on. Switching at runtime is safe: from division to turnover the count stays where it is
+  (free slots stay free), and back.
+- **The look:** both cells of a division flash: their tubes go white-hot and brighter for `look.flashTime` (0.5 s), fading
+  fast (`moire.division.look.flash`, 1.2); a starving cell fades out as its starvation time runs down (to 15 % at the end,
+  `look.fade` 0.85) and then is gone; a birth drops a small bump into the ripples, a death a dip (as the old reference did).
+  Kept subtle: at most a few dozen flashes per s, each half a second, over a colony of a thousand.
+
+**Defaults and why.** Division is the default: it looks right (the culture finds its light and grows from it, the dark
+clears out) and it stayed alive for 20 minutes in every lit run. The first versions of the numbers were the ones tested;
+nothing needed a hand rule to keep the count up. The collapse in the first two minutes is real: the starting blob of 2000
+holds far more cells than the spot can feed (in turnover 93 % of them had an empty battery at 2 minutes).
+
+**Switch and knobs** (rules panel, group "Division (step C9)"; panel only, no keys are free): **division (changing count)**
+(off: the old turnover); knobs with - and +: **division threshold** (`divAt`), **division cost** (`cost`), **starvation
+time** (`starveTime`), **crowding limit** (`crowd`), **background deaths** (`age`). Key **T** is now "life cycle" (births
+and deaths at all, in either mode). URL: `?divide=0`, `?cap=N`, `?divat=`, `?divcost=`, `?starve=` (the starvation time),
+`?crowd=`, `?age=`. Console: `moire.division.params` (also `rate`, `minSize`, `split`, `apart`, `starveAt`),
+`moire.division.look`, `await moire.division.stats()` (the live cells: how many, the share in the light, mean battery,
+the culture's centre and spread, and its patches of touching cells: how many, the largest, the share in patches of 20 or
+more).
+
+**The census.** A DIVISION line and a COUNT line in the entropy panel:
+
+    DIVISION  cells 1298 of 6000 · births 12.8/s · deaths 13.1/s: starved 4.8, heat 0.0, burst 3.4, age 4.9 · ready 428 (crowded 406) · starving 144
+    COUNT  ▅▅▅▆▆▆▇▇▇▇▇█████▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇  last 2.9 min, 1239 to 1310
+
+(cells alive and the capacity; births and deaths per s over the last 10 s, the deaths by cause; the cells ready to divide
+now, and of them those too crowded; the cells starving; "no free slot" when the capacity is full. COUNT: the number alive
+every 5 s, the last 3 minutes, as block characters scaled from 0 to the largest; on a phone the line is
+`DIVISION 716/2400 · +0.7 −2.3/s ▅▆▆▇…` with 16 samples). With turnover it says `DIVISION off: turnover keeps the count at
+2000 cells (births = deaths 44.0/s)`. The F overlay adds the knobs, the totals per cause, the energy the divisions' cost
+turned into heat, the last `stats()` and the count every minute. The cells' line in the overlay now reads "cells 1298 alive
+of 6000 slots (started with 2000)". Counted on the GPU: the counters in `Stats.div` (the step), read back with the census
+every 4 frames (the live count is the census's sum of the fates); the divisions' cost in the heat's ledger (`LG_DIV`;
+`LEDGER_WORDS` 22 528).
+
+**A fix on the way.** A cell that died could leave a stale pump request behind (step C7's pumps across contact): its plan
+no longer ran, but a touching neighbour's eat still applied the reverse of its last request, which made or lost a little
+matter (the atoms' rounding drifted to 0.02). The plan of a free slot now clears its requests, and a neighbour skips a dead
+cell.
+
+**Checked.** 660 s at MAX (seed 5) through N (120 s), a wash (220 s), a resize (300 s), G (400 s), a resize back (480 s),
+new springs (520 s), switching to turnover (580 s) and back (620 s), and T off and on (640, 650 s): atoms and charge
+rounding exactly 0, energy rounding between −0.004 and +0.038 (in 6 M); N and G bring the count back to 2000. The ten
+20-minute runs above: atoms and charge 0. **Cost** (headless Chrome, 2000 cells, seed 3, MAX, from 40 to 150 s): before
+(C8) ×11.17 and ×11.30; division (the default, capacity 6000) ×11.07 and ×11.13; turnover with a capacity of 6000 ×9.92
+and ×10.06, with the capacity at the starting number ×10.91 and ×10.96 (hence `?divide=0` now defaults to that capacity).
+So the 4000 free slots cost about 9 % while the count is still high (every per-slot pass runs over the whole capacity),
+and division itself costs nothing more. With the whole dish lit and 3700 cells the speed falls to ×6. Firefox (headed)
+ran without errors and draws the COUNT line; Chrome at phone size (390 × 844): the compact line fits, the rules panel
+shows the new group with its buttons, console clean.
+
 ## The look of the landscape
 
 Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the
@@ -2406,6 +2550,10 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
 - `src/catalysts.js`: the catalysts (step C7b): the switches and knobs, the census (from the heat's ledger read-back), the
   CATALYSTS panel line, the overlay and `stats()` (the crusts as patches); crystal seeding itself is in `react` in
   `matter.wgsl` (struct ChemP `cry`), the cofactor in the engine loop of `cell_eat.wgsl` (`cofactor()`, struct EatP `cat`)
+- `src/division.js`: division and death with a changing count (step C9): the mode and knobs, the counters (from the cells'
+  stats read-back), the DIVISION and COUNT panel lines, the overlay and `stats()` (where the cells are: light, patches); the
+  free-slot list is built by the grid (`cell_grid.wgsl`: the dead slots' bucket), the divisions and deaths are in
+  `cell_step.wgsl`, the division's cost and the split in `cell_eat.wgsl` (split), the flash and the fading in `cell_draw.wgsl`
 - `src/hardlight.js`: hard light mutates (step C8): the switch and knobs, the census (from the heat's ledger read-back),
   the HARD LIGHT panel line, the overlay and `stats()` (touching neighbours' likeness, light and dark); the dose is kept
   in `cell_eat.wgsl` (Cell.flags bits 19..31, struct EatP `hl`), the mutation at a birth in `cell_step.wgsl` (struct

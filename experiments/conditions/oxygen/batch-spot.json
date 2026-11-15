@@ -1,0 +1,11 @@
+{
+ "batch": "batch-spot",
+ "description": "Oxygen retry, the core runs.",
+ "runs": [
+  "o-spot.json"
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

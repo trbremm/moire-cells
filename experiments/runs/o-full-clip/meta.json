@@ -1,0 +1,211 @@
+{
+  "name": "o-full-clip",
+  "description": "Clip of the whole-dish seed-3 run's key phase: loaded from its snapshot at 1800 s (o-full_s3), heavy pulses as before until 200 s, then a .webm of run time 200..600 s (sim 2000..2400: the membranes go and the colony booms in o-full_s3) at MAX; during the clip the heavy spring drips once for 40 s (the same tenth of a spring, front-loaded: events inside a clip wait for its end).",
+  "condition": {
+    "name": "o-full-clip",
+    "description": "Clip of the whole-dish seed-3 run's key phase: loaded from its snapshot at 1800 s (o-full_s3), heavy pulses as before until 200 s, then a .webm of run time 200..600 s (sim 2000..2400: the membranes go and the colony booms in o-full_s3) at MAX; during the clip the heavy spring drips once for 40 s (the same tenth of a spring, front-loaded: events inside a clip wait for its end).",
+    "query": {
+      "snap": "experiments/runs/o-full_s3/snapshots/snap_t1800.json",
+      "light": "full",
+      "seed": 3
+    },
+    "duration": 600,
+    "sample_every": 20,
+    "evals": [
+      {
+        "t": 0,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+      },
+      {
+        "t": 20,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+      },
+      {
+        "t": 40,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+      },
+      {
+        "t": 60,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+      },
+      {
+        "t": 80,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+      },
+      {
+        "t": 100,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+      },
+      {
+        "t": 120,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+      },
+      {
+        "t": 140,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+      },
+      {
+        "t": 160,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+      },
+      {
+        "t": 180,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+      },
+      {
+        "t": 200,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 40); return moire.matter.springs.length"
+      }
+    ],
+    "shots": [
+      {
+        "t": 200
+      },
+      {
+        "t": 600
+      }
+    ],
+    "clips": [
+      {
+        "t": 200,
+        "until": 600,
+        "speed": "max",
+        "name": "full_s3_skin-drop_2000-2400"
+      }
+    ]
+  },
+  "url": "http://localhost:56637/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/runs/o-full_s3/snapshots/snap_t1800.json&light=full&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "8d95007af50a6bbab62c347116567e6f62f37fa8",
+  "dirty": false,
+  "started": "2026-11-15T22:47:15",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": true,
+    "notes": [],
+    "rebased": null,
+    "rounding": {
+      "energy": 0.045623779296875,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": 0.045623779296875,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 2674,
+    "time": 1799.9999999989734
+  },
+  "t_start": 1799.9999999989734,
+  "sim_s": 600.0,
+  "run_wall_s": 131.09,
+  "speed_reached": 4.58,
+  "samples": 31,
+  "shots": [
+    "shots/t200.png",
+    "shots/t600.png"
+  ],
+  "snapshots": [],
+  "clips": [
+    {
+      "file": "clips/full_s3_skin-drop_2000-2400.webm",
+      "t_end": 600.0000000003599,
+      "bytes": 88877897
+    }
+  ],
+  "evals": [
+    {
+      "t": 0.0,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))",
+      "result": [
+        "light 1000000000 1800",
+        "heavy 2 0",
+        "heavy 2 0"
+      ]
+    },
+    {
+      "t": 19.999999999989313,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))",
+      "result": [
+        "light 1000000000 1820",
+        "heavy 2 0"
+      ]
+    },
+    {
+      "t": 39.999999999976126,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))",
+      "result": [
+        "light 1000000000 1840",
+        "heavy 2 0"
+      ]
+    },
+    {
+      "t": 59.99999999996203,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))",
+      "result": [
+        "light 1000000000 1860",
+        "heavy 2 0"
+      ]
+    },
+    {
+      "t": 79.99999999994657,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))",
+      "result": [
+        "light 1000000000 1880",
+        "heavy 2 0"
+      ]
+    },
+    {
+      "t": 99.99999999993247,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))",
+      "result": [
+        "light 1000000000 1900",
+        "heavy 2 0"
+      ]
+    },
+    {
+      "t": 119.99999999992315,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))",
+      "result": [
+        "light 1000000000 1920",
+        "heavy 2 0"
+      ]
+    },
+    {
+      "t": 139.99999999990837,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))",
+      "result": [
+        "light 1000000000 1940",
+        "heavy 2 0"
+      ]
+    },
+    {
+      "t": 159.99999999989564,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))",
+      "result": [
+        "light 1000000000 1960",
+        "heavy 2 0"
+      ]
+    },
+    {
+      "t": 179.99999999987745,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))",
+      "result": [
+        "light 1000000000 1980",
+        "heavy 2 0"
+      ]
+    },
+    {
+      "t": 199.99999999986449,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 40); return moire.matter.springs.length",
+      "result": 2
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T22:49:58",
+  "wall_s": 163.33
+}

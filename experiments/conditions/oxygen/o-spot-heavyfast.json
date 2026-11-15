@@ -1,0 +1,64 @@
+{
+ "name": "o-spot-heavyfast",
+ "description": "Oxygen retry variant: never-drying light spring plus a never-drying heavy spring (full rate), 40 min, spotlight.",
+ "query": {
+  "seed": 3
+ },
+ "duration": 2400,
+ "sample_every": 20,
+ "shots": [
+  {
+   "t": 600
+  },
+  {
+   "t": 600,
+   "view": "strategy"
+  },
+  {
+   "t": 1200
+  },
+  {
+   "t": 1200,
+   "view": "strategy"
+  },
+  {
+   "t": 1800
+  },
+  {
+   "t": 1800,
+   "view": "strategy"
+  },
+  {
+   "t": 2400
+  },
+  {
+   "t": 2400,
+   "view": "strategy"
+  },
+  {
+   "t": 2400,
+   "view": "lineage",
+   "panel": true
+  }
+ ],
+ "snapshots": [
+  {
+   "t": 600,
+   "grid": true
+  },
+  {
+   "t": 1200,
+   "grid": true
+  },
+  {
+   "t": 1800,
+   "grid": true
+  }
+ ],
+ "evals": [
+  {
+   "t": 0,
+   "js": "moire.matter.clearSprings(); moire.matter.addSpring(875, 328, 'light', 1e9); moire.matter.addSpring(875, 472, 'heavy', 1e9); return moire.matter.springs.map(s => s.kind + ' ' + s.life)"
+  }
+ ]
+}

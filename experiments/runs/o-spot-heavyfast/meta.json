@@ -1,0 +1,112 @@
+{
+  "name": "o-spot-heavyfast",
+  "description": "Oxygen retry variant: never-drying light spring plus a never-drying heavy spring (full rate), 40 min, spotlight.",
+  "condition": {
+    "name": "o-spot-heavyfast",
+    "description": "Oxygen retry variant: never-drying light spring plus a never-drying heavy spring (full rate), 40 min, spotlight.",
+    "query": {
+      "seed": 3
+    },
+    "duration": 2400,
+    "sample_every": 20,
+    "shots": [
+      {
+        "t": 600
+      },
+      {
+        "t": 600,
+        "view": "strategy"
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "view": "strategy"
+      },
+      {
+        "t": 1800
+      },
+      {
+        "t": 1800,
+        "view": "strategy"
+      },
+      {
+        "t": 2400
+      },
+      {
+        "t": 2400,
+        "view": "strategy"
+      },
+      {
+        "t": 2400,
+        "view": "lineage",
+        "panel": true
+      }
+    ],
+    "snapshots": [
+      {
+        "t": 600,
+        "grid": true
+      },
+      {
+        "t": 1200,
+        "grid": true
+      },
+      {
+        "t": 1800,
+        "grid": true
+      }
+    ],
+    "evals": [
+      {
+        "t": 0,
+        "js": "moire.matter.clearSprings(); moire.matter.addSpring(875, 328, 'light', 1e9); moire.matter.addSpring(875, 472, 'heavy', 1e9); return moire.matter.springs.map(s => s.kind + ' ' + s.life)"
+      }
+    ]
+  },
+  "url": "http://localhost:54478/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "2e60c45b1b3da0f58d0b5d0635967bba616831b0",
+  "dirty": false,
+  "started": "2026-11-15T22:14:12",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 2400.0,
+  "run_wall_s": 1922.65,
+  "speed_reached": 1.25,
+  "samples": 121,
+  "shots": [
+    "shots/t600.png",
+    "shots/t600_strategy.png",
+    "shots/t1200.png",
+    "shots/t1200_strategy.png",
+    "shots/t1800.png",
+    "shots/t1800_strategy.png",
+    "shots/t2400.png",
+    "shots/t2400_strategy.png",
+    "shots/t2400_lineage.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t600.json",
+    "snapshots/snap_t1200.json",
+    "snapshots/snap_t1800.json"
+  ],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.matter.clearSprings(); moire.matter.addSpring(875, 328, 'light', 1e9); moire.matter.addSpring(875, 472, 'heavy', 1e9); return moire.matter.springs.map(s => s.kind + ' ' + s.life)",
+      "result": [
+        "light 1000000000",
+        "heavy 1000000000"
+      ]
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T22:47:12",
+  "wall_s": 1980.7
+}

@@ -83,6 +83,8 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   `?contours=1`, `?view=charge`; step C6c: `?honeycomb=0` (the ellipse cells), `?membrane=0` (no membrane chemistry),
   `?bites=0`, `?burst=0`, `?elastic=0`, `?selectivity=0`; step C6d: `?dipoles=0`, `?dd=0`, `?dphi=0`, `?dfield=0`; step C7: `?pumps=0`, `?pumpcontact=0`, `?voltage=0`, `?v2b=0`; step C7b: `?crystal=0`, `?cofactor=0`; step C8: `?hardmut=0`; step C9: `?divide=0` (the old turnover, a fixed count), `?cap=N` (the capacity), `?divat=`,
   `?divcost=`, `?starve=`, `?crowd=`, `?age=` (the division's knobs).
+  Experiments (see "Experiments: tools"): `?mut=0` (mutation off), `?life=0` (life cycle off), `?snap=<file>` (load a
+  saved state), `?clone=1` (every cell gets the first cell's genes; `?clone=@N`: slot N's), `?genes=adhesion:0.8,motility:0.5`.
 
 ## Keyboard shortcuts
 
@@ -2588,6 +2590,10 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   the GPU side (mutation, key likeness, the `Bio` and `Stats` structs) is in `cell_common.wgsl`, the rules
   themselves in `cell_step.wgsl`
 - `tools/shot.py`: headless screenshots (below)
+- `src/lab.js`: the experiments' helpers on `window.moire` (`sample`, `tissue`, genome edits, views for screenshots, the
+  `?snap= ?clone= ?genes=` options); `src/snapshot.js`: save and load the whole state
+- `tools/experiment.py`: the headless experiment runner; `tools/summarise.py`: tables and plots of its runs;
+  `experiments/conditions/`: condition files; `experiments/runs/`: their numbers (see "Experiments: tools")
 
 ## Screenshots without a browser tool
 
@@ -2608,3 +2614,152 @@ and prints the overlay text, any on-page message and the console output. `--help
 Headless Chrome and Edge render WebGPU; headless Firefox reports no WebGPU adapter, so Firefox needs `--headed`.
 `--tapel` taps run before `--tap` taps. Firefox cannot be given a phone-narrow viewport this way (its window does not
 go below about 450 px and the resize call then times out): for phone sizes use Chrome's `--mobile`.
+
+## Experiments: tools
+
+Tooling for the experiments phase: run a condition headless at MAX speed, timed by **simulated** time, and keep its
+numbers (mainly the entropy), pictures and states. Python standard library only; Chrome (headless) by default.
+
+### Run a condition
+
+    python tools/experiment.py experiments/conditions/default-2min.json
+    python tools/experiment.py experiments/conditions/tissue-40.json
+    python tools/experiment.py experiments/conditions/batch-example.json           # a batch, once per seed
+    python tools/experiment.py cond.json --seeds 3,7,11                            # any condition once per seed
+    python tools/experiment.py cond.json --only quick-full --duration 30           # one run of a batch, shorter
+    python tools/experiment.py cond.json --browser firefox                         # Firefox (a window opens)
+
+The page opens with `?speed=max&until=0&overlay=ghost&ui=0` plus the condition's URL options, so it waits paused at
+t = 0 (after its warm-up; or right after its `?snap=` state has loaded). The runner then walks through the condition's
+events in simulated time and pauses **exactly** at each (`moire.control.runUntil(t)`): evals first, then the sample,
+screenshots, snapshots, clips. Each run writes `experiments/runs/<name>/` (a rerun replaces it):
+
+- `samples.csv`: one row per sample: `trun` (s since the run's start), `t` (simulation time), `wall`, and every number of
+  the entropy panel and of the ledgers and censuses behind it (about 500 columns; list them with
+  `python tools/summarise.py <run> --list`). The main ones: `heat.out` (ENTROPY: all heat that left the dish),
+  `heat.rate.out` (its rate), `heat.heat` (heat in the dish), `heat.moving`, `heat.chem` (stored), `heat.in`,
+  `heat.rounding` (energy), `matter.order` (ORDER), `matter.rounding` and `charge.qRound` (atoms and charge: always 0),
+  `alive`, `cells.bat` (batteries), `engines.all.<k>.n` (cells per strategy: 0 harvest, 1 burn, 2 both, 3 other),
+  `engines.free.g` and `.t` (free light atoms), `dish.<substance>`, `inside.<substance>`, `charge.*`, `membrane.*`,
+  `dipole.*`, `pumps.*`, `catalysts.*`, `hardlight.*`, `division.rate.births`, `division.deaths`,
+  `division.rate.starved` (and `.heat`, `.burst`, `.age`), `motion.*`; with `"tissue": true` also `tissue.*` (below)
+- `panel.txt`: the entropy panel's text at every sample; `meta.json`: the exact URL, the condition, the git commit (and
+  whether the tree had changes), browser and version, adapter, wall time, simulated time, the speed reached (simulated s
+  per wall s while running), status and error, console errors, eval results; `console.log`: the page's console
+- `shots/*.png`, `clips/*.webm`, `snapshots/*.json`
+
+A run that hangs (simulation time stuck for `stall` wall seconds, default 60), whose page shows its error box, throws,
+or whose eval fails is recorded as **failed** (status and error in `meta.json`, the console in `console.log`) and the
+batch goes on (`--strict`: console errors fail a run too). Each run gets its own browser, closed at its end.
+
+A condition file (every key but `name` optional; the comments in brackets are not part of the JSON):
+
+    {
+      "name": "tissue-40",
+      "description": "40 cells, one genome cloned, no evolution; a stir at 40 s",
+      "query": {"seed": 3, "cells": 40, "mut": 0, "life": 0, "clone": 1, "genes": "adhesion:0.9,motility:0.6"},
+      "size": "1280x800",
+      "duration": 60,                     (simulated s from the start)
+      "sample_every": 5,                  (simulated s; 0: only at the start and the end)
+      "tissue": true,                     (sample moire.tissue.stats() too)
+      "evals": [{"t": 0, "js": "moire.cells.params.stiffness = 9"},
+                {"t": 40, "js": "await moire.tissue.stir(560, 400, 14, 0, 12)"}],
+      "shots": [{"t": 0}, {"t": 60, "view": "lineage", "panel": true, "name": "end"}],
+      "clips": [{"t": 10, "until": 20, "speed": 8}],
+      "snapshots": [{"t": 60, "grid": false}],
+      "stall": 60, "timeout": 0
+    }
+
+- `query`: URL options (README "Controls" and the steps' sections). All times are run times (s since the start).
+- `evals`: statements run in the page (`await` allowed; a `return` value is kept in `meta.json`). If an eval moves the
+  clock (e.g. `moire.loadSnapshot`), the run's timeline moves with it; a stir moves it by a fraction of a second.
+- `shots`: `view` is `clean` (default: colour by fate, no machinery), `fate`, `lineage`, `strategy`, `charge` or
+  `machinery`; the panels are hidden unless `"panel": true`.
+- `clips`: a .webm of the dish from `t` to `until`, recorded while it runs at `speed` (default 8); events inside that span
+  happen at its end; at least 2 s of real time is recorded (shorter recordings can come out empty).
+- `snapshots`: `moire.snapshot()` saved as JSON (`"grid": false`: cells and settings only, much smaller).
+
+A batch file: `{"batch": "name", "seeds": [3, 7], "runs": ["quick.json", {an inline condition}, ...]}` (file names
+relative to the batch file); with seeds (or `--seeds`) every run goes once per seed, named `<name>_s<seed>`.
+
+### Summarise
+
+    python tools/summarise.py experiments/runs/default-2min experiments/runs/snap-b --times 0,60,120 \
+        --cols alive,heat.out,heat.rate.out,matter.order --plot heat.rate.out,alive,matter.order \
+        --out experiments/summaries/smoke
+
+prints a markdown table (one row per run, each column at each time: the sample nearest it) and, with `--out`, writes
+`summary.md` and one SVG plot per `--plot` column (every run a line, at most 8; a legend, labels at the line ends, a
+tooltip on every point, a dark version for a dark screen). matplotlib is not used (it is not installed here).
+
+### Snapshots: save and load the whole state
+
+- `await moire.snapshot({ grid })` returns the whole state as JSON: every switch and knob, the live cells' raw records
+  (Cell: position, velocity, radius, lattice angle, shape, outline corners, orientation, membrane integrity, side
+  charges, neighbours, voltage; Bio: genome and its state; stock: substances, battery, membrane, pumped charge), the
+  cells' Stats buffer (counters), the springs, the ledgers' running totals, the simulation time and tick, and with
+  `grid` (the default) the substrate grid (heat, the 13 substances, the charge field) as whole counts. Arrays are gzipped
+  base64: about 1.1 MB for 2000 cells with the grid at 1280 x 800, a few kB for 40 cells without it. `measures` inside it
+  is a `moire.sample()` of that moment.
+- `await moire.loadSnapshot(obj)` puts it back; `?snap=experiments/runs/x/snapshots/snap_t60.json` loads a file of the site
+  at the start (its starting number and capacity size the page; its settings replace the page's: change knobs afterwards
+  with evals). The rules panel's last group, **Save and load the state**, has the same as two buttons (a file download
+  and a file picker; also `moire.snapshotDownload()`, `moire.snapshotUpload()`).
+- **Exactness and the books.** Both happen while paused, after every read-back in flight has come home and one extra
+  ledger pass at the frozen state, so the running totals belong to exactly that state. On load the buffers are written,
+  the totals are **set** to the snapshot's (entropy = heat out, light in, warmth, atoms added / lost / gone, the cells'
+  counters, the starter charges), and every rate history starts again. In a window of the same size with the same
+  starting number (what `?snap=` gives) the load is exact: checked here, a snapshot taken right after loading is
+  bit-identical (cells, genomes, stocks, stats, grid, books) to the one loaded, in Chrome and in Firefox and across the
+  two, and the atoms' and charge's rounding stay 0 while it runs on; the energy's rounding keeps its value. Into another
+  window size or starting number the load is a best effort: the cells move with the dish's centre, the page's own grid
+  stays where the sizes differ, and the books are **re-based** (the atoms' difference per substance booked as added, the
+  energy's as warmth), so all three rounding lines start again from 0; the result says so (`exact: false`, `notes`,
+  `rebased`). Running on is not bit-deterministic (the GPU passes' per-frame random seeds are not part of the state).
+
+### Tissues: few cells, no evolution, measures
+
+- Setting up: `?cells=40&mut=0&life=0&clone=1` (mutation off; life cycle off: nobody is born or dies; every cell gets
+  the first live cell's genes) and `?genes=adhesion:0.9,size:1,motility:0.5` (genes for every cell). From the console:
+  `await moire.genome.cloneAll(i)`, `await moire.genome.setAll('stiffness', 1.5)` or `setAll({ mix: 0.8, thickness: 0.03 })`,
+  `await moire.genome.get(i)`. Gene names (`moire.genome.GENES`): `keyAngle keyScale recAngle recScale recWidth threshold
+  output founder resp0..3 relay0..3 adhesion size motility eng0..2 tolerance rate0..2 permeability mix thickness
+  stiffness selectivity pump0 pump1 pumpRate0 pumpRate1`; engine and pump slot codes from
+  `moire.genome.engineCode('gt → g + t', band)` and `moire.genome.pumpCode('g', 'out')`. `?founders=1` (one founder
+  genome) also gives a single genome, from birth.
+- `await moire.tissue.stats()`: touching pairs (closer than the genome's contact reach, 1.15 x the sum of the radii),
+  `clusters` (groups of 2 or more), `clusters3`, `isolated`, `largest`, `inLargest`, `sizes` (the 10 largest),
+  `contacts` (per cell), `compactLargest` and `compactMean` (cell area over a round blob of the same spread: about 0.9 for
+  a packed disc, above 1 where cells overlap, about 1.5 / n for a chain of n), `rgLargest` (its spread, in R); and against
+  the previous call: `persistence` (share of the touching pairs then that still touch), `gained` and `lost` (pairs per s),
+  `ageMean` and `ageMedian` (how long the touching pairs have touched, s, counted from the first call), `move` (R per s),
+  `internal` (the largest cluster's cells moving against each other, R per s, its drift taken out), `shape` (corner
+  radii change, share of the radius per s), `turn` (degrees per s). `await moire.tissue.stir(x, y, dx, dy, frames)`: a
+  mouse stir (run at 1x, then the speed and the pause are put back), for "does it survive a stir".
+- In a condition, `"tissue": true` samples them as `tissue.*`.
+
+### What is kept in git
+
+`experiments/conditions/`, each run's `samples.csv`, `meta.json` and `console.log`, and `experiments/summaries/`
+(markdown and SVG) are committed. Screenshots (`shots/` folders, ignored everywhere), clips (`*.webm`), snapshots and
+`panel.txt` are ignored; pictures and states worth keeping go into `experiments/keep/` by hand (committed: keep it small,
+the repository is public).
+
+### Smoke tests (2026-11-15, GTX 1650, headless Chrome 157 unless said)
+
+- `default-2min` (2000 cells, seed 3, 120 s at x11.8): CSV, panel, 4 shots, a snapshot of 1.1 MB. The count falls from
+  1984 to 809 (the dark clears out, as in step C9), the entropy rate from 16 k/s to 7 k/s; atoms and charge rounding 0
+  all the way. Table and plots: `experiments/summaries/smoke/`.
+- `tissue-40` (40 cells, one genome, no evolution, adhesion 0.9, motility 0.6, 60 s at x27): one cluster of all 40 the
+  whole time, about 8 contacts per cell (packed and overlapping: compactness about 2), persistence 0.93 to 0.99 per 5 s,
+  the contacts' age growing with the run; the stir at 40 s doubles `move` for a moment, the cluster stays whole.
+- `snap-a`, then `snap-b`: a snapshot at 30 s, loaded into a new page and saved again at once: bit-identical; 60 s more
+  with atoms and charge rounding 0. The same in Firefox, loading Chrome's file. `tissue-reload`: tissue-40's cells-only
+  snapshot (a best-effort load: books re-based, rounding 0).
+- Batches with seeds; a run whose eval throws and one that hangs (both recorded as failed, the batch went on); a .webm
+  clip; a load into another window size and starting number; the phone layout (the new group sits at the end of the
+  rules panel). Console clean in Chrome and Firefox (only Chrome's usual powerPreference warning).
+
+Known issues: ORDER is blank (`matter.order` missing) in the very first sample of a run (no tick has run yet, so the
+substances' parameters are not on the GPU yet); the entropy rate is 0 there too (its window needs two read-backs).
+Starting a page takes about 15 s of wall time in headless Chrome.

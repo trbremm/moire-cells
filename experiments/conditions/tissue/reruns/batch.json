@@ -1,0 +1,11 @@
+{
+ "batch": "tissue-reruns",
+ "runs": [
+  "../hold/th-Boff.json",
+  "../hold/th-jitter-0.2.json",
+  "../hold/th-key-0.8.json",
+  "../hold/th-n100.json",
+  "../types/tt-dah-mild.json",
+  "../types/tt-same.json"
+ ]
+}

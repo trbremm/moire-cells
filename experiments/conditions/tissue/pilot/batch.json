@@ -1,0 +1,9 @@
+{
+ "batch": "tissue-pilot",
+ "runs": [
+  "tp-base.json",
+  "tp-squeeze.json",
+  "tp-adh-hi.json",
+  "tp-nosense.json"
+ ]
+}

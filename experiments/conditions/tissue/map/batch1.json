@@ -1,0 +1,19 @@
+{
+ "batch": "tissue-map-1",
+ "runs": [
+  "tm-a0.4-s0.json",
+  "tm-a0.4-s5.json",
+  "tm-a0.4-s10.json",
+  "tm-a0.4-s20.json",
+  "tm-a0.6-s0.json",
+  "tm-a0.6-s5.json",
+  "tm-a0.6-s10.json",
+  "tm-a0.6-s20.json",
+  "tm-a0.8-s0.json",
+  "tm-a0.8-s5.json",
+  "tm-a0.8-s10.json",
+  "tm-a0.8-s20.json",
+  "tm-a1-s0.json",
+  "tm-a1-s5.json"
+ ]
+}

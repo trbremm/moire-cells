@@ -1,0 +1,77 @@
+{
+ "name": "th-Bfate-gain2",
+ "description": "field B per fate, like attracts, gain 2 (baseline 0.6)",
+ "series": "hold",
+ "tissue_setting": {
+  "knobs": {
+   "charge.params.stock": false,
+   "cells.fields.gain": 2
+  },
+  "genes": {},
+  "typeB": null,
+  "query": {},
+  "extra_js": ""
+ },
+ "query": {
+  "seed": 3,
+  "cells": 40,
+  "mut": 0,
+  "life": 0,
+  "clone": 1,
+  "springs": 0,
+  "light": "off",
+  "day": 0
+ },
+ "duration": 120,
+ "sample_every": 5,
+ "tissue": true,
+ "evals": [
+  {
+   "t": 0,
+   "js": "const T = await import('/experiments/tissue/tissue-lab.js'); window.__T = T;\nconst knobs = T.apply({\"cells.params.squeeze\": 0, \"genome.rules.diff\": false, \"eat.params.pay\": false, \"charge.params.stock\": false, \"cells.fields.gain\": 2});\nconst g = {\"keyAngle\": 0.35, \"keyScale\": 0.05, \"recAngle\": 0.35, \"recScale\": 0.05, \"recWidth\": 0.15, \"adhesion\": 0.6, \"size\": 1, \"motility\": 1, \"mix\": 0, \"thickness\": 0.012, \"stiffness\": 1, \"pumpRate0\": 0, \"pumpRate1\": 0, \"rate0\": 2, \"rate1\": 0, \"rate2\": 0}; g.eng0 = moire.genome.engineCode('gt → g + t', 0);\nconst b = null;\nawait T.genes(g, b);\n\nreturn { knobs, genes: g, typeB: b, m: await T.measure({ every: 1 }) };"
+  },
+  {
+   "t": 60,
+   "js": "return await __T.measure({ every: 1 });"
+  },
+  {
+   "t": 80,
+   "js": "return await __T.measure({ every: 1 });"
+  },
+  {
+   "t": 82,
+   "js": "return await __T.stirThrough();"
+  },
+  {
+   "t": 120,
+   "js": "return await __T.measure({ every: 1 });"
+  }
+ ],
+ "shots": [
+  {
+   "t": 60
+  },
+  {
+   "t": 80
+  },
+  {
+   "t": 120
+  },
+  {
+   "t": 120,
+   "view": "lineage"
+  }
+ ],
+ "snapshots": [
+  {
+   "t": 80,
+   "grid": false,
+   "name": "prestir"
+  },
+  {
+   "t": 120,
+   "grid": false,
+   "name": "end"
+  }
+ ]
+}

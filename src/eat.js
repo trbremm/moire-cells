@@ -41,7 +41,7 @@
 
 import { loadFieldShader } from './field.js';
 import { HEAT_COMMON_URL, HEAT_SCALE, LEDGER_WORDS, fmt } from './heat.js';
-import { SUBSTANCES, NCH, CH, ATOM_SCALE, ENGINES, ENGINE_KINDS, CHARGE_CODES } from './matter.js';
+import { SUBSTANCES, NCH, NCH_CELL, CH, ATOM_SCALE, ENGINES, ENGINE_KINDS, CHARGE_CODES } from './matter.js';
 import { BANDS, LIGHT_COMMON_URL } from './light.js';
 import { Membrane, MB_SNAP_WORDS } from './membrane.js';
 import { Pumps, PU_SNAP_WORDS } from './pumps.js';
@@ -332,7 +332,7 @@ export class Eat {
     const wide = (a) => { let s = 0; for (let k = a; k < a + 64; k++) s += w[k + 64] * 4294967296 + (w[k] >>> 0); return s; };
     const plain = (a) => { let s = 0; for (let k = a; k < a + 64; k++) s += w[k]; return s; };
     const stock = new Float64Array(NCH);
-    for (let c = 0; c < NCH; c++) stock[c] = wide(LG_K.STOCK + 128 * c) / ATOM_SCALE;
+    for (let c = 0; c < NCH_CELL; c++) stock[c] = wide(LG_K.STOCK + 128 * c) / ATOM_SCALE;   // (step C12: the cells hold 0..12; the rest 0)
     const bat = wide(LG_K.BAT) / HEAT_SCALE;
     this.start += wide(LG_K.START) / HEAT_SCALE;
     const T = this.tot;

@@ -115,7 +115,10 @@ export async function measure({ every = 2, offset = 1, reach = null } = {}) {
   // step C10: where the contacts sit on the cells' walls (front, side, back), the glue, the junctions' maturity
   if (M().walls && M().walls.params.on) {
     const w = await M().walls.stats();
-    out.walls = { contactAt: w.contactAt, glue: w.glue, matured: w.matured, effMean: w.effMean, matureMean: w.matureMean, classes: w.classes };
+    out.walls = { contactAt: w.contactAt, glue: w.glue, matured: w.matured, effMean: w.effMean, matureMean: w.matureMean, classes: w.classes,
+      // step C11: contacts on the sticky sides against chance, glued bonds per cell, chains and rings of glued bonds
+      onSticky: w.onSticky, stickyChance: w.stickyChance, bondsPerCell: w.bondsPerCell, chains: w.chains, inChains: w.inChains,
+      longestChain: w.longestChain, rings: w.rings, inRings: w.inRings };
   }
   window.__tissueLast = out;
   return out;

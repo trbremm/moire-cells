@@ -1,0 +1,11 @@
+{
+ "name": "c11-speed-off",
+ "description": "Speed: the default scene, 2000 cells, seed 3, MAX, 150 simulated s (the speed reached, mean of 'reached' from 40 to 150 s); C11's turning and division by the front off",
+ "query": {
+  "seed": 3,
+  "turn": 0,
+  "divfront": 0
+ },
+ "duration": 150,
+ "sample_every": 10
+}

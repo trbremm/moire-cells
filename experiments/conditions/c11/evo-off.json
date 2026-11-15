@@ -1,0 +1,71 @@
+{
+ "name": "c11-evo-off",
+ "description": "Step C11 evolution control: the default scene with the glue's turning and division by the front off (?turn=0&divfront=0; the free base glue kept), 20 minutes",
+ "query": {
+  "turn": 0,
+  "divfront": 0
+ },
+ "duration": 1200,
+ "sample_every": 30,
+ "evals": [
+  {
+   "t": 120,
+   "js": "return await moire.walls.stats()"
+  },
+  {
+   "t": 300,
+   "js": "return await moire.walls.stats()"
+  },
+  {
+   "t": 600,
+   "js": "return await moire.walls.stats()"
+  },
+  {
+   "t": 900,
+   "js": "return await moire.walls.stats()"
+  },
+  {
+   "t": 1200,
+   "js": "return await moire.walls.stats()"
+  },
+  {
+   "t": 1200,
+   "js": "return await moire.division.stats()"
+  }
+ ],
+ "shots": [
+  {
+   "t": 300
+  },
+  {
+   "t": 600
+  },
+  {
+   "t": 600,
+   "view": "walls"
+  },
+  {
+   "t": 1200
+  },
+  {
+   "t": 1200,
+   "view": "walls"
+  },
+  {
+   "t": 1200,
+   "view": "machinery"
+  },
+  {
+   "t": 1200,
+   "view": "lineage",
+   "panel": true
+  }
+ ],
+ "snapshots": [
+  {
+   "t": 1200,
+   "grid": false,
+   "name": "end"
+  }
+ ]
+}

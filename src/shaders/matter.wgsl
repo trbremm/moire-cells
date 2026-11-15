@@ -15,6 +15,8 @@
 //           f32 partial sums, one per workgroup (LG_M_ORDER)
 //   paint   the amounts the drawing shows (per R^2), summed into its layers, into two small textures at grid size
 //   react   step C4: one tick of chemistry per pixel (at the end of this file)
+//   oil_rho, oil_blur  step C12: once per tick, before the spreading: the oil's share, the amphiphiles' film, the smoothed
+//           share (src/oil.js); spread then lets every substance with a polarity drift by them (phase separation)
 // Only core WebGPU: i32 storage atomics and workgroup atomics.
 
 // (NCH and ATOM_SCALE are in heat_common.wgsl since step C5)
@@ -42,6 +44,16 @@ struct MatterP {
                                 // charge put down this tick (0 = none); z: the channels' charges (CHARGE_CODES); w: spare
   cq: vec4f,                    // x: L = (screening length / pixel)^2; y: strength x the atom-units per R^2 of one count;
                                 // z: the relaxation's over-relaxation weight; w: the drift (x the spreading; 1 = Einstein)
+  // ---- step C12, oils and water (src/oil.js) ----
+  oil: vec4u,                   // x: word offset in `mg` of the oil's 4 blocks (rho, film, obar, the smoothing's half way; 0
+                                // = no oil passes this frame); y: bit 0 phase separation, bit 1 amphiphiles (boundary pull,
+                                // skin); z: the smoothing's sigma (f32 bits, pixels)
+  ok: vec4f,                    // x: gain; y: 1 / full per count (x atoms = share of a full pixel); z: 1 / filmFull per
+                                // count; w: skin
+  chi: array<vec4f, 4>,         // per channel: the bulk pull (oil 1, polar -1, amphiphiles and neutral 0; immobile 0)
+  beta: array<vec4f, 4>,        // per channel: the boundary pull (amphiphiles)
+  vol: array<vec4f, 4>,         // per channel: atoms per count that count in the oil's share (rho)
+  fill: array<vec4u, 4>,        // per channel: what fills a pixel against its drift: 0 nothing, 1 the oil (rho), 2 the film
 };
 
 struct MatterTick {
@@ -57,7 +69,7 @@ struct MatterTick {
 
 struct Spring {
   pos: vec4f,                   // x, y (CSS px), radius of its disc (CSS px), share of its life left
-  amt: array<vec4f, 4>,         // counts per tick, per channel (fractional; random rounding); [13] = pixels in its disc
+  amt: array<vec4f, 5>,         // counts per tick, per channel (fractional; random rounding); [16] = pixels in its disc
   ink: vec4f,                   // drawing only
 };
 struct Springs { s: array<Spring, 16>, };
@@ -78,6 +90,7 @@ struct Springs { s: array<Spring, 16>, };
 @group(0) @binding(6) var<uniform> CP: ChemP;     // step C4: the reactions
 @group(1) @binding(0) var texA: texture_storage_2d<rgba16float, write>;
 @group(1) @binding(1) var texB: texture_storage_2d<rgba16float, write>;
+@group(1) @binding(2) var texC: texture_storage_2d<rgba16float, write>;   // step C12: oil, amphiphiles, polar, apolar
 
 fn mpcg(v: u32) -> u32 {
   let s = v * 747796405u + 2891336453u;
@@ -105,8 +118,8 @@ fn add64v(lo: u32, carry: i32, low: u32) {
 }
 
 // ---------- spread ----------
-var<workgroup> wlost: array<atomic<i32>, 13>;
-var<workgroup> wadd: array<atomic<i32>, 13>;
+var<workgroup> wlost: array<atomic<i32>, 16>;
+var<workgroup> wadd: array<atomic<i32>, 16>;
 
 // what flows across the edge from its second pixel (holding ms) to its first (holding mf): random rounding with r, capped
 // at a quarter of the giver's amount (a pixel has at most 4 edges). Antisymmetric by construction: both pixels call it
@@ -129,6 +142,41 @@ fn edge_flow_q(mf: i32, ms: i32, pf: f32, ps: f32, k: f32, zq: f32, r: f32) -> i
   return clamp(f, -(max(mf, 0) >> 2u), max(ms, 0) >> 2u);
 }
 fn phi_at(o: u32) -> f32 { return bitcast<f32>(mg[o]); }
+
+// Step C12: the same with the oil's drift too. uf, us: the PULL at the two pixels (oil_pull: a substance drifts toward the
+// higher); rf, rs: the room each has for it (room: oil fills a pixel, a film fills it); Ff, Fs: the film there (the skin
+// slows the oil crossing it: k / (1 + skin x their mean)). The charge's drift (zq, pf, ps) and the pull add into one drive
+// D toward the first pixel (in units of the thermal energy), and the flow from the second pixel to the first is
+//   ks x (B(-D) x ms x rf - B(D) x mf x rs),   B(x) = x / (e^x - 1)
+// (the Scharfetter-Gummel flux of semiconductor models: with no drive it is plain spreading, ks (ms - mf), and at rest
+// mf / ms is exactly e^D x the rooms' ratio, whichever way round the grid the matter went, so the drops' outline comes from
+// the smoothing, which is round, not from the grid's axes: the plain upwind drift of step C6b made the droplets diamonds).
+// D is capped so that ks x |D| <= DRIFT_MAX. Antisymmetric as the others: both pixels of the edge call it with the same
+// numbers in the same order.
+fn bern(x: f32) -> f32 { return select(x / (exp(x) - 1.0), 1.0 - 0.5 * x, abs(x) < 1e-3); }
+fn oil_edge(mf: i32, ms: i32, k: f32, zq: f32, pf: f32, ps: f32, uf: f32, us: f32, rf: f32, rs: f32, Ff: f32, Fs: f32,
+            skin: f32, r: f32) -> i32 {
+  let ks = k / (1.0 + skin * 0.5 * (Ff + Fs));
+  let dm = DRIFT_MAX / max(ks, 1e-6);
+  let D = clamp(zq * (ps - pf) + (uf - us), -dm, dm);
+  let f = i32(floor(ks * (bern(-D) * f32(max(ms, 0)) * rf - bern(D) * f32(max(mf, 0)) * rs) + r));
+  return clamp(f, -(max(mf, 0) >> 2u), max(ms, 0) >> 2u);
+}
+// the pull of a substance (bulk chi, boundary beta) where the smoothed oil share is ob, x gain
+fn oil_pull(G: f32, chi: f32, bet: f32, ob: f32) -> f32 { return G * (chi * ob + bet * (4.0 * ob * (1.0 - ob))); }
+// step C12: the oil's blocks: rho (the oil's share), film, obar (rho smoothed, at most 1), as f32 bits
+fn oil_rho_at(i: u32) -> f32 { return bitcast<f32>(mg[MP.oil.x + i]); }
+fn oil_film_at(i: u32) -> f32 { return bitcast<f32>(mg[MP.oil.x + MP.n + i]); }
+fn oil_obar_at(i: u32) -> f32 { return bitcast<f32>(mg[MP.oil.x + 2u * MP.n + i]); }
+fn mp4(a: array<vec4f, 4>, c: u32) -> f32 { return a[c / 4u][c % 4u]; }
+// the room a pixel has for a channel that fills it (1: all, ROOM_MIN: full or more). Never 0: a pixel packed fuller than
+// full (a spring dripping into a droplet) still lets its matter out, and the droplet swells until it is full, not more
+const ROOM_MIN: f32 = 0.05;
+fn room(fill: u32, rho: f32, film: f32) -> f32 {
+  if (fill == 1u) { return clamp(1.0 - rho, ROOM_MIN, 1.0); }
+  if (fill == 2u) { return clamp(1.0 - film, ROOM_MIN, 1.0); }
+  return 1.0;
+}
 
 @compute @workgroup_size(16, 4)
 fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index) li: u32,
@@ -166,7 +214,18 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       if (hasU) { pU = phi_at(po + i - MP.hw); }
       if (hasD) { pD = phi_at(po + i + MP.hw); }
     }
-    for (var c = 0u; c < NCH; c++) {
+    // step C12: the oil's share, film and smoothed share here and at the 4 neighbours (for the phase separation's drift)
+    let oilOn = MP.oil.x != 0u && (MP.oil.y & 1u) != 0u;
+    var oR = vec4f(0.0); var oF = vec4f(0.0); var oB = vec4f(0.0);   // at L R U D: rho, film, obar
+    var cR = 0.0; var cF = 0.0; var cB = 0.0;                        // here
+    if (oilOn) {
+      cR = oil_rho_at(i); cF = oil_film_at(i); cB = oil_obar_at(i);
+      if (hasL) { oR.x = oil_rho_at(i - 1u); oF.x = oil_film_at(i - 1u); oB.x = oil_obar_at(i - 1u); }
+      if (hasR) { oR.y = oil_rho_at(i + 1u); oF.y = oil_film_at(i + 1u); oB.y = oil_obar_at(i + 1u); }
+      if (hasU) { oR.z = oil_rho_at(i - MP.hw); oF.z = oil_film_at(i - MP.hw); oB.z = oil_obar_at(i - MP.hw); }
+      if (hasD) { oR.w = oil_rho_at(i + MP.hw); oF.w = oil_film_at(i + MP.hw); oB.w = oil_obar_at(i + MP.hw); }
+    }
+    for (var c = 0u; c < NGRID; c++) {
       if ((MP.moving & (1u << c)) == 0u) { continue; }
       let s0 = T.src + c * MP.n;
       let m = mg[s0 + i];
@@ -175,7 +234,37 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       if (k > 0.0) {
         let cs = c * 0x9e3779b9u;
         let zq = select(0.0, f32(charge_of(MP.chg.z, c)) * MP.cq.w, po != 0u);
-        if (zq != 0.0) {
+        let chi = select(0.0, mp4(MP.chi, c), oilOn);
+        let bet = select(0.0, mp4(MP.beta, c), oilOn);
+        if (chi != 0.0 || bet != 0.0) {
+          // step C12, phase separation: the pull u = gain x (chi x obar + beta x 4 obar (1 - obar)) (a higher u draws the
+          // substance), the charge's drift on top; what may drift is x the room the receiving pixel has; the oil crossing
+          // a film is slowed (skin). Every edge's numbers in the same order from both sides (antisymmetric, exact)
+          // (each pixel's numbers by the same scalar functions, and each edge by oil_edge with (first, second) in the same
+          // order from both sides, so the two pixels of an edge get the same flow to the bit: L = (i - 1, i), R = (i, i + 1),
+          // U = (i - hw, i), D = (i, i + hw))
+          let G = MP.ok.x;
+          let fl = MP.fill[c / 4u][c % 4u];
+          let skin = select(0.0, MP.ok.w, fl == 1u);
+          let uC = oil_pull(G, chi, bet, cB);
+          let rC = room(fl, cR, cF);
+          if (hasL) {
+            acc -= oil_edge(mg[s0 + i - 1u], m, k, zq, pL, pC, oil_pull(G, chi, bet, oB.x), uC, room(fl, oR.x, oF.x), rC,
+                            oF.x, cF, skin, u01(mpcg(eL + cs)));
+          }
+          if (hasR) {
+            acc += oil_edge(m, mg[s0 + i + 1u], k, zq, pC, pR, uC, oil_pull(G, chi, bet, oB.y), rC, room(fl, oR.y, oF.y),
+                            cF, oF.y, skin, u01(mpcg(eR + cs)));
+          }
+          if (hasU) {
+            acc -= oil_edge(mg[s0 + i - MP.hw], m, k, zq, pU, pC, oil_pull(G, chi, bet, oB.z), uC, room(fl, oR.z, oF.z), rC,
+                            oF.z, cF, skin, u01(mpcg(eU + cs)));
+          }
+          if (hasD) {
+            acc += oil_edge(m, mg[s0 + i + MP.hw], k, zq, pC, pD, uC, oil_pull(G, chi, bet, oB.w), rC, room(fl, oR.w, oF.w),
+                            cF, oF.w, skin, u01(mpcg(eD + cs)));
+          }
+        } else if (zq != 0.0) {
           if (hasL) { acc -= edge_flow_q(mg[s0 + i - 1u], m, pL, pC, k, zq, u01(mpcg(eL + cs))); }
           if (hasR) { acc += edge_flow_q(m, mg[s0 + i + 1u], pC, pR, k, zq, u01(mpcg(eR + cs))); }
           if (hasU) { acc -= edge_flow_q(mg[s0 + i - MP.hw], m, pU, pC, k, zq, u01(mpcg(eU + cs))); }
@@ -197,7 +286,7 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
         var add = 0;
         for (var k = 0u; k < 16u; k++) {
           if ((drip & (1u << k)) == 0u) { continue; }
-          let a = SP.s[k].amt[c / 4u][c % 4u] / max(SP.s[k].amt[3].y, 1.0);   // amt[13]: the disc's pixels
+          let a = SP.s[k].amt[c / 4u][c % 4u] / max(SP.s[k].amt[4].x, 1.0);   // amt[16]: the disc's pixels
           if (a > 0.0) { add += i32(floor(a + u01(mpcg(eI + c * 0x85ebca6bu + k * 0x27d4eb2fu)))); }
         }
         acc += add;
@@ -207,25 +296,107 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     }
   }
   workgroupBarrier();
-  if (first && li < NCH) {
+  if (first && li < NGRID) {
     let slot = (wid.y * nw.x + wid.x) & 63u;
-    add64(LG_M_LOST + 128u * li + slot, atomicLoad(&wlost[li]));
-    add64(LG_M_ADD + 128u * li + slot, atomicLoad(&wadd[li]));
+    add64(lg_mc(LG_M_LOST, li) + slot, atomicLoad(&wlost[li]));
+    add64(lg_mc(LG_M_ADD, li) + slot, atomicLoad(&wadd[li]));
   }
 }
 
+// ---------- oil_rho, oil_blur (step C12) ----------
+// Once per tick, before the spreading's substeps (on the tick's current copy, T.src): rho (the oil's share: the counts of
+// every channel x its oil volume, MP.vol, x 1 / full), film (the amphiphiles' atoms x 1 / filmFull), then obar: rho
+// smoothed by a Gaussian (sigma: src/oil.js params.blur, pixels; separable, through a 4th block), at most 1 (at the dish's
+// edge the missing pixels count as the edge pixel itself). A narrow kernel (3 x 3, 5 x 5) made the droplets diamonds: the
+// rim then is a pixel wide and the grid's axes show. Written as f32 bits into the oil's blocks (MP.oil.x).
+@compute @workgroup_size(8, 8)
+fn oil_rho(@builtin(global_invocation_id) id: vec3u) {
+  if (id.x >= MP.hw || id.y >= MP.hh) { return; }
+  let i = id.y * MP.hw + id.x;
+  var v = 0.0;
+  var f = 0.0;
+  for (var c = 0u; c < NGRID; c++) {
+    if ((MP.moving & (1u << c)) == 0u) { continue; }
+    let vo = mp4(MP.vol, c);
+    let fl = MP.fill[c / 4u][c % 4u];
+    if (vo == 0.0 && fl != 2u) { continue; }
+    let m = f32(max(mg[T.src + c * MP.n + i], 0));
+    v += vo * m;
+    if (fl == 2u) { f += mp4(MP.natoms, c) * m; }
+  }
+  mg[MP.oil.x + i] = bitcast<i32>(v * MP.ok.y);
+  mg[MP.oil.x + MP.n + i] = bitcast<i32>(f * MP.ok.z);
+}
+// the smoothing: a Gaussian of sigma MP.oil.z (f32 bits, pixels), separable: along x into the 4th block, then along y
+fn oil_gauss(o: u32, i: vec2i, d: vec2i) -> f32 {
+  let sg = max(bitcast<f32>(MP.oil.z), 0.3);
+  let r = min(i32(ceil(2.5 * sg)), 8);
+  var s = 0.0;
+  var ws = 0.0;
+  for (var k = -r; k <= r; k++) {
+    let q = clamp(i + k * d, vec2i(0), vec2i(i32(MP.hw) - 1, i32(MP.hh) - 1));
+    let w = exp(-0.5 * f32(k * k) / (sg * sg));
+    s += w * bitcast<f32>(mg[o + u32(q.y) * MP.hw + u32(q.x)]);
+    ws += w;
+  }
+  return s / ws;
+}
+@compute @workgroup_size(8, 8)
+fn oil_blur(@builtin(global_invocation_id) id: vec3u) {
+  if (id.x >= MP.hw || id.y >= MP.hh) { return; }
+  mg[MP.oil.x + 3u * MP.n + id.y * MP.hw + id.x] = bitcast<i32>(oil_gauss(MP.oil.x, vec2i(id.xy), vec2i(1, 0)));
+}
+@compute @workgroup_size(8, 8)
+fn oil_blur_y(@builtin(global_invocation_id) id: vec3u) {
+  if (id.x >= MP.hw || id.y >= MP.hh) { return; }
+  let s = oil_gauss(MP.oil.x + 3u * MP.n, vec2i(id.xy), vec2i(0, 1));
+  mg[MP.oil.x + 2u * MP.n + id.y * MP.hw + id.x] = bitcast<i32>(min(s, 1.0));
+}
+
 // ---------- count ----------
-var<workgroup> wlo: array<atomic<u32>, 13>;
-var<workgroup> whi: array<atomic<u32>, 13>;
+var<workgroup> wlo: array<atomic<u32>, 16>;
+var<workgroup> whi: array<atomic<u32>, 16>;
 var<workgroup> wml: array<vec2f, 256>;   // x: m ln m (ORDER); y: phi^2 (step C6b)
 var<workgroup> wpm: atomic<i32>;          // step C6b: the largest |phi| (f32 bits)
+var<workgroup> wos: array<atomic<i32>, 10>;   // step C12: the oil's census (OS_* below)
+
+// step C12, the oil's census (LG_OIL_SNAP, 16 slots each; src/oil.js): pixels with rho >= 1/2 (the oily area); Gray's quad
+// counts of that set for its Euler number (quads with 1 pixel in, 3 in, 2 diagonal); the amphiphiles' atoms on the
+// boundary (0.15 < rho < 0.85) and in all (counts / 16); the oil's counts / 16 in the oily area; boundary pixels; the
+// polar matter's counts / 16 inside the oily area and in all
+const OS_AREA: u32 = 0u;
+const OS_N1: u32 = 1u;
+const OS_N3: u32 = 2u;
+const OS_ND: u32 = 3u;
+const OS_AMPB: u32 = 4u;
+const OS_AMPT: u32 = 5u;
+const OS_OILIN: u32 = 6u;
+const OS_EDGE: u32 = 7u;
+const OS_POLIN: u32 = 8u;
+const OS_POLT: u32 = 9u;
+fn oil_in(x: i32, y: i32) -> u32 {
+  if (x < 0 || y < 0 || x >= i32(MP.hw) || y >= i32(MP.hh)) { return 0u; }
+  return select(0u, 1u, oil_rho_at(u32(y) * MP.hw + u32(x)) >= 0.5);
+}
+// the quad of pixels (x - 1 .. x, y - 1 .. y): Euler number (8-connected) = (n1 - n3 - 2 nd) / 4
+fn quad(os: ptr<function, array<i32, 10>>, x: i32, y: i32) {
+  let a = oil_in(x - 1, y - 1);
+  let b = oil_in(x, y - 1);
+  let c = oil_in(x - 1, y);
+  let d = oil_in(x, y);
+  let s = a + b + c + d;
+  if (s == 1u) { (*os)[OS_N1] += 1; }
+  else if (s == 3u) { (*os)[OS_N3] += 1; }
+  else if (s == 2u && a == d) { (*os)[OS_ND] += 1; }
+}
 
 // dispatched as 256 workgroups of 256 (a grid-stride loop over the pixels)
 @compute @workgroup_size(256)
 fn count(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_index) li: u32,
          @builtin(workgroup_id) wid: vec3u) {
-  var lo: array<u32, 13>;
-  var hi: array<u32, 13>;
+  var lo: array<u32, 16>;
+  var hi: array<u32, 16>;
+  var os: array<i32, 10>;   // step C12: the oil's census, this invocation's part
   var ml = 0.0;
   let order = T.first != 0u;
   // step C6b: with the snapshot, the potential's spread (sum of phi^2) and its largest size
@@ -238,7 +409,10 @@ fn count(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_in
       p2 += ph * ph;
       pm = max(pm, abs(ph));
     }
-    for (var c = 0u; c < NCH; c++) {
+    var amp = 0;   // step C12: this pixel's amphiphile atoms, oil, polar matter (counts / 16)
+    var oilc = 0;
+    var pol = 0;
+    for (var c = 0u; c < NGRID; c++) {
       let m = max(mg[T.src + c * T.count + p], 0);
       if (m == 0) { continue; }
       lo[c] += u32(m) & 0xffffu;
@@ -247,12 +421,32 @@ fn count(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_in
         let a = f32(m) * MP.natoms[c / 4u][c % 4u];   // atoms, in counts
         ml += a * log(a);
       }
+      let fl = MP.fill[c / 4u][c % 4u];
+      if (fl == 2u) { amp += (m * i32(mp4(MP.natoms, c))) >> 4u; }
+      if (fl == 1u) { oilc += m >> 4u; }
+      if (mp4(MP.chi, c) < 0.0) { pol += (m * i32(mp4(MP.natoms, c))) >> 4u; }
+    }
+    // step C12: the oil's census, with the snapshot (not inside an `if (oilCensus)`: see the Direct3D note above)
+    if (T.first != 0u && MP.oil.x != 0u) {
+      let r = oil_rho_at(p);
+      let x = i32(p % MP.hw);
+      let y = i32(p / MP.hw);
+      if (r >= 0.5) { os[OS_AREA] += 1; os[OS_OILIN] += oilc; os[OS_POLIN] += pol; }
+      if (r > 0.15 && r < 0.85) { os[OS_EDGE] += 1; os[OS_AMPB] += amp; }
+      os[OS_AMPT] += amp;
+      os[OS_POLT] += pol;
+      // the 2 x 2 quads with this pixel as their bottom-right corner (and, on the last column and row, the ones beyond)
+      quad(&os, x, y);
+      if (x == i32(MP.hw) - 1) { quad(&os, x + 1, y); }
+      if (y == i32(MP.hh) - 1) { quad(&os, x, y + 1); }
+      if (x == i32(MP.hw) - 1 && y == i32(MP.hh) - 1) { quad(&os, x + 1, y + 1); }
     }
   }
-  for (var c = 0u; c < NCH; c++) {
+  for (var c = 0u; c < NGRID; c++) {
     if (lo[c] != 0u) { atomicAdd(&wlo[c], lo[c]); }
     if (hi[c] != 0u) { atomicAdd(&whi[c], hi[c]); }
   }
+  for (var k = 0u; k < 10u; k++) { if (os[k] != 0) { atomicAdd(&wos[k], os[k]); } }
   wml[li] = vec2f(ml, p2);
   if (phiOn && pm > 0.0) { atomicMax(&wpm, bitcast<i32>(pm)); }
   workgroupBarrier();
@@ -265,13 +459,17 @@ fn count(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_in
     let mx = atomicLoad(&wpm);
     if (mx > 0) { atomicMax(&hb[LG_Q_PMAX], mx); }
   }
-  if (li < NCH) {
+  if (li < NGRID) {
     // the workgroup's total of channel li: H x 2^16 + L, added as a 64-bit number
     let L = atomicLoad(&wlo[li]);
     let H = atomicLoad(&whi[li]);
-    let at = T.region + 128u * li + (wid.x & 63u);
+    let at = lg_mc(T.region, li) + (wid.x & 63u);
     add64v(at, i32(H >> 16u), H << 16u);
     add64v(at, 0, L);
+  }
+  if (order && li >= 32u && li < 42u) {
+    let v = atomicLoad(&wos[li - 32u]);
+    if (v != 0) { atomicAdd(&hb[LG_OIL_SNAP + 16u * (li - 32u) + (wid.x & 15u)], v); }
   }
   if (order && li == 0u) { atomicStore(&hb[LG_M_ORDER + wid.x], bitcast<i32>(wml[0].x)); }
 }
@@ -288,7 +486,7 @@ fn relax(id: vec2u, parity: u32) {
   if (id.x >= MP.hw || id.y >= MP.hh || ((id.x + id.y) & 1u) != parity) { return; }
   let i = id.y * MP.hw + id.x;
   var q = 0;
-  for (var c = 0u; c < NCH; c++) {
+  for (var c = 0u; c < NGRID; c++) {
     let z = charge_of(MP.chg.z, c);
     if (z != 0 && (MP.moving & (1u << c)) != 0u) { q += z * mg[T.dst + c * MP.n + i]; }
   }
@@ -317,20 +515,28 @@ fn paint(@builtin(global_invocation_id) id: vec3u) {
   let i = id.y * MP.hw + id.x;
   var a = vec4f(0.0);
   var b = vec4f(0.0);
-  for (var c = 0u; c < NCH; c++) {
+  var o = vec4f(0.0);   // step C12: the oil's share (as rho), the film's share, polar atoms, apolar atoms (per R^2)
+  for (var c = 0u; c < NGRID; c++) {
     if (MP.show == 2u && c != MP.solo) { continue; }
-    let v = min(f32(max(mg[T.src + c * MP.n + i], 0)) * MP.conc, 60000.0);
+    let mc = f32(max(mg[T.src + c * MP.n + i], 0));
+    let v = min(mc * MP.conc, 60000.0);
     if (v <= 0.0) { continue; }
     let h = MP.heavy[c / 4u][c % 4u];
+    let chi = mp4(MP.chi, c);
+    let na = mp4(MP.natoms, c);
+    if (chi < 0.0) { o.z += v * na; } else if (chi > 0.0 || mp4(MP.beta, c) > 0.0) { o.w += v * na; }
     switch MP.layer[c / 4u][c % 4u] {
       case 0u: { a += vec4f(v, v * MP.react[c / 4u][c % 4u], v * h, 0.0); }
       case 1u: { b += vec4f(v, v * h, 0.0, 0.0); }
       case 2u: { b += vec4f(0.0, 0.0, v, v * h); }
+      case 4u: { o.x += mp4(MP.vol, c) * mc * MP.ok.y; }
+      case 5u: { o.x += mp4(MP.vol, c) * mc * MP.ok.y; o.y += na * mc * MP.ok.z; }
       default: { a.w += v; }
     }
   }
   textureStore(texA, vec2i(id.xy), a);
   textureStore(texB, vec2i(id.xy), b);
+  textureStore(texC, vec2i(id.xy), min(o, vec4f(60000.0)));
 }
 
 // ---------- react (step C4) ----------
@@ -347,7 +553,7 @@ fn paint(@builtin(global_invocation_id) id: vec3u) {
 //                heat counts (heat16, light16 are exact; see CHEM in src/matter.js), so matter and energy stay exact
 // The heat released goes into the delta (taken in by the heat's next spreading substep); the light caught and the
 // events are counted per workgroup into the ledger (LG_C_LIGHT, LG_C_RX).
-var<workgroup> wfam: array<atomic<i32>, 6>;
+var<workgroup> wfam: array<atomic<i32>, 10>;
 var<workgroup> wlit: array<atomic<i32>, 4>;
 
 @compute @workgroup_size(8, 8)
@@ -356,10 +562,10 @@ fn react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
   if (id.x < MP.hw && id.y < MP.hh) {
     let i = id.y * MP.hw + id.x;
     let base = T.dst;
-    var m: array<i32, 13>;
-    var m0: array<i32, 13>;
+    var m: array<i32, 16>;
+    var m0: array<i32, 16>;
     var stuff = 0;
-    for (var c = 0u; c < NCH; c++) {
+    for (var c = 0u; c < NGRID; c++) {
       if ((MP.moving & (1u << c)) != 0u) { m[c] = mg[base + c * MP.n + i]; }
       m0[c] = m[c];
       if (c != CP.trace) { stuff += m[c]; }
@@ -397,7 +603,7 @@ fn react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
         }
       }
       // optical depths of the absorbers, per reaction and per band
-      var tau: array<f32, 24>;
+      var tau: array<f32, 32>;
       var tsum = vec4f(0.0);
       var tdark = 0.0;
       if (any(et > vec4f(0.0))) {
@@ -413,7 +619,7 @@ fn react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
           tau[r] = R.k * amt;
           tsum[R.band] += tau[r];
         }
-        for (var c = 0u; c < NCH; c++) { tdark += CP.dark[c / 4u][c % 4u] * f32(m[c]) * conc; }
+        for (var c = 0u; c < NGRID; c++) { tdark += CP.dark[c / 4u][c % 4u] * f32(m[c]) * conc; }
         tsum.x += tdark;
       }
       let caught = et * (1.0 - exp(-tsum));
@@ -464,7 +670,7 @@ fn react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
         atomicAdd(&wfam[R.fam], n);
       }
 
-      for (var c = 0u; c < NCH; c++) {
+      for (var c = 0u; c < NGRID; c++) {
         if (m[c] != m0[c]) { mg[base + c * MP.n + i] = m[c]; }
       }
       if (heat != 0) { mg[i] += heat; }   // the delta (heat_common.wgsl: the first block behind the ledger)
@@ -479,5 +685,7 @@ fn react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
     add64(LG_C_RX + 128u * li + slot, atomicLoad(&wfam[li]));
   } else if (li < 10u) {
     add64(LG_C_LIGHT + 128u * (li - 6u) + slot, atomicLoad(&wlit[li - 6u]));
+  } else if (li < 14u) {
+    add64(LG_OIL_RX + 128u * (li - 10u) + slot, atomicLoad(&wfam[li - 4u]));   // step C12: families 6..9
   }
 }

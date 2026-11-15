@@ -1,0 +1,10 @@
+{
+ "name": "c12-speed-nooil",
+ "description": "Speed: the default scene, 2000 cells, seed 3, MAX, 150 simulated s (the mean of 'reached' from 40 to 150 s) with ?oil=0",
+ "query": {
+  "seed": 3,
+  "oil": 0
+ },
+ "duration": 150,
+ "sample_every": 10
+}

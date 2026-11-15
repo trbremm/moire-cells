@@ -1,0 +1,16 @@
+{
+  "name": "c12-sub-oil",
+  "description": "Step C12, the substrate alone: one cell (so R = 9), no springs of the default scene, light off; two oil springs (pure oil lL) dripping for 150 s. Do droplets form, grow and merge?",
+  "query": {"seed": 3, "cells": 1, "springs": 0, "light": "off"},
+  "size": "1280x800",
+  "duration": 900,
+  "sample_every": 30,
+  "evals": [
+    {"t": 0, "js": "moire.matter.addSpring(450, 400, 'oil', 150); moire.matter.addSpring(830, 400, 'oil', 150)"},
+    {"t": 120, "js": "await moire.oil.stats()"},
+    {"t": 300, "js": "await moire.oil.stats()"},
+    {"t": 600, "js": "await moire.oil.stats()"},
+    {"t": 900, "js": "await moire.oil.stats()"}
+  ],
+  "shots": [{"t": 30}, {"t": 120}, {"t": 300}, {"t": 600}, {"t": 900, "panel": true, "name": "end"}]
+}

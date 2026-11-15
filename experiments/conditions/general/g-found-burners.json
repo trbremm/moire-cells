@@ -1,0 +1,39 @@
+{
+  "name": "g-found-burners",
+  "description": "All founders burners (gt and gT burners), other genes as founded.",
+  "query": {},
+  "duration": 1200,
+  "sample_every": 10,
+  "shots": [
+    {
+      "t": 120
+    },
+    {
+      "t": 300
+    },
+    {
+      "t": 600
+    },
+    {
+      "t": 900
+    },
+    {
+      "t": 1200
+    },
+    {
+      "t": 1200,
+      "view": "strategy"
+    },
+    {
+      "t": 1200,
+      "view": "lineage",
+      "panel": true
+    }
+  ],
+  "evals": [
+    {
+      "t": 0,
+      "js": "const G = moire.genome; return await G.setAll({eng0: G.engineCode('gt → g + t', 1), rate0: 2.25, eng1: G.engineCode('gT → g + T', 1), rate1: 1.75, eng2: G.engineCode('gt → g + t', 1), rate2: 0})"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "batch": "division",
+  "description": "Series 6: division knobs.",
+  "seeds": [
+    3
+  ],
+  "runs": [
+    "g-div-turnover.json",
+    "g-div-cheap.json",
+    "g-div-costly.json",
+    "g-div-thrlow.json",
+    "g-div-thrhigh.json",
+    "g-div-starveshort.json",
+    "g-div-starvelong.json",
+    "g-div-crowdloose.json",
+    "g-div-crowdtight.json"
+  ]
+}

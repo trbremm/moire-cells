@@ -1,0 +1,39 @@
+{
+  "name": "g-spr-many",
+  "description": "Six springs (3 light, 3 heavy, alternating) on a ring inside the spot, never drying.",
+  "query": {},
+  "duration": 1200,
+  "sample_every": 10,
+  "shots": [
+    {
+      "t": 120
+    },
+    {
+      "t": 300
+    },
+    {
+      "t": 600
+    },
+    {
+      "t": 900
+    },
+    {
+      "t": 1200
+    },
+    {
+      "t": 1200,
+      "view": "strategy"
+    },
+    {
+      "t": 1200,
+      "view": "lineage",
+      "panel": true
+    }
+  ],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.matter.clearSprings(); moire.matter.addSpring(1017, 400, 'light', 1e9); moire.matter.addSpring(942, 530, 'heavy', 1e9); moire.matter.addSpring(792, 530, 'light', 1e9); moire.matter.addSpring(717, 400, 'heavy', 1e9); moire.matter.addSpring(792, 270, 'light', 1e9); moire.matter.addSpring(942, 270, 'heavy', 1e9); return moire.matter.springs.length"
+    }
+  ]
+}

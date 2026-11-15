@@ -1,0 +1,39 @@
+{
+  "name": "g-mut-high",
+  "description": "Mutation high: mutSize 3, mutJump 0.1, engine and pump slot jumps 0.12 (defaults 1, 0.03, 0.04, 0.04).",
+  "query": {},
+  "duration": 1200,
+  "sample_every": 10,
+  "shots": [
+    {
+      "t": 120
+    },
+    {
+      "t": 300
+    },
+    {
+      "t": 600
+    },
+    {
+      "t": 900
+    },
+    {
+      "t": 1200
+    },
+    {
+      "t": 1200,
+      "view": "strategy"
+    },
+    {
+      "t": 1200,
+      "view": "lineage",
+      "panel": true
+    }
+  ],
+  "evals": [
+    {
+      "t": 0,
+      "js": "Object.assign(moire.genome.params, {mutSize: 3, mutJump: 0.1, engJump: 0.12, pumpJump: 0.12}); return moire.genome.params"
+    }
+  ]
+}

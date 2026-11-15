@@ -1,0 +1,39 @@
+{
+  "name": "g-spr-both",
+  "description": "Default two springs (light + heavy) that never dry up.",
+  "query": {},
+  "duration": 1200,
+  "sample_every": 10,
+  "shots": [
+    {
+      "t": 120
+    },
+    {
+      "t": 300
+    },
+    {
+      "t": 600
+    },
+    {
+      "t": 900
+    },
+    {
+      "t": 1200
+    },
+    {
+      "t": 1200,
+      "view": "strategy"
+    },
+    {
+      "t": 1200,
+      "view": "lineage",
+      "panel": true
+    }
+  ],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.matter.springs.forEach(s => s.life = 1e9); return moire.matter.springs.length"
+    }
+  ]
+}

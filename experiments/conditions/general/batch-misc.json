@@ -1,0 +1,15 @@
+{
+  "batch": "misc",
+  "description": "Series 5, 7, 8, 11.",
+  "seeds": [
+    3
+  ],
+  "runs": [
+    "g-tol-low.json",
+    "g-charge-off.json",
+    "g-dipoles-off.json",
+    "g-bites-high.json",
+    "g-cells-800.json",
+    "g-cells-6000.json"
+  ]
+}

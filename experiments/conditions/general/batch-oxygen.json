@@ -1,0 +1,12 @@
+{
+  "batch": "oxygen",
+  "description": "Series 10: the oxygen-like story.",
+  "seeds": [
+    3,
+    7
+  ],
+  "runs": [
+    "g-oxy-upswap.json",
+    "g-oxy-control.json"
+  ]
+}

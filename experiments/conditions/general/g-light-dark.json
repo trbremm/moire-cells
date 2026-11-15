@@ -1,0 +1,29 @@
+{
+  "name": "g-light-dark",
+  "description": "Darkness: no light at all.",
+  "query": {
+    "light": "off"
+  },
+  "duration": 600,
+  "sample_every": 10,
+  "shots": [
+    {
+      "t": 120
+    },
+    {
+      "t": 300
+    },
+    {
+      "t": 600
+    },
+    {
+      "t": 600,
+      "view": "strategy"
+    },
+    {
+      "t": 600,
+      "view": "lineage",
+      "panel": true
+    }
+  ]
+}

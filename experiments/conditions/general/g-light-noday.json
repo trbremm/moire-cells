@@ -1,0 +1,35 @@
+{
+  "name": "g-light-noday",
+  "description": "Spotlight, no day/night cycle (always noon).",
+  "query": {
+    "day": 0
+  },
+  "duration": 1200,
+  "sample_every": 10,
+  "shots": [
+    {
+      "t": 120
+    },
+    {
+      "t": 300
+    },
+    {
+      "t": 600
+    },
+    {
+      "t": 900
+    },
+    {
+      "t": 1200
+    },
+    {
+      "t": 1200,
+      "view": "strategy"
+    },
+    {
+      "t": 1200,
+      "view": "lineage",
+      "panel": true
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "batch": "trace",
+  "description": "Series 3: trace and cofactor.",
+  "seeds": [
+    3,
+    7
+  ],
+  "runs": [
+    "g-trace-none.json",
+    "g-trace-nocofactor.json"
+  ]
+}

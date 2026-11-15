@@ -1,0 +1,41 @@
+{
+  "name": "g-spr-spread",
+  "description": "Six springs spread over the whole dish, full-field light, never drying.",
+  "query": {
+    "light": "full"
+  },
+  "duration": 1200,
+  "sample_every": 10,
+  "shots": [
+    {
+      "t": 120
+    },
+    {
+      "t": 300
+    },
+    {
+      "t": 600
+    },
+    {
+      "t": 900
+    },
+    {
+      "t": 1200
+    },
+    {
+      "t": 1200,
+      "view": "strategy"
+    },
+    {
+      "t": 1200,
+      "view": "lineage",
+      "panel": true
+    }
+  ],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.matter.clearSprings(); moire.matter.addSpring(320, 200, 'light', 1e9); moire.matter.addSpring(640, 130, 'heavy', 1e9); moire.matter.addSpring(960, 200, 'light', 1e9); moire.matter.addSpring(320, 600, 'heavy', 1e9); moire.matter.addSpring(640, 670, 'light', 1e9); moire.matter.addSpring(960, 600, 'heavy', 1e9); return moire.matter.springs.length"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "g-div-crowdtight",
+  "description": "Crowding tight: crowd limit 0.2: only nearly free cells divide.",
+  "query": {
+    "crowd": 0.2
+  },
+  "duration": 1200,
+  "sample_every": 10,
+  "shots": [
+    {
+      "t": 120
+    },
+    {
+      "t": 300
+    },
+    {
+      "t": 600
+    },
+    {
+      "t": 900
+    },
+    {
+      "t": 1200
+    },
+    {
+      "t": 1200,
+      "view": "strategy"
+    },
+    {
+      "t": 1200,
+      "view": "lineage",
+      "panel": true
+    }
+  ]
+}

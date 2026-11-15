@@ -1,0 +1,47 @@
+{
+  "name": "g-oxy-upswap",
+  "description": "Oxygen story: uphill swaps in the open 15x (kUpSwap 0.3), full field, 40 min.",
+  "query": {
+    "light": "full"
+  },
+  "duration": 2400,
+  "sample_every": 10,
+  "shots": [
+    {
+      "t": 120
+    },
+    {
+      "t": 300
+    },
+    {
+      "t": 600
+    },
+    {
+      "t": 900
+    },
+    {
+      "t": 1200
+    },
+    {
+      "t": 1800
+    },
+    {
+      "t": 2400
+    },
+    {
+      "t": 2400,
+      "view": "strategy"
+    },
+    {
+      "t": 2400,
+      "view": "lineage",
+      "panel": true
+    }
+  ],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.matter.chem.kUpSwap = 0.3; return moire.matter.chem.kUpSwap"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "batch": "pumps",
+  "description": "Series 12: pumps, long.",
+  "seeds": [
+    3
+  ],
+  "runs": [
+    "g-pump-on.json",
+    "g-pump-nocontact.json",
+    "g-pump-off.json"
+  ]
+}

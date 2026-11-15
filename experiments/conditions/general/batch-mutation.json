@@ -1,0 +1,13 @@
+{
+  "batch": "mutation",
+  "description": "Series 4: mutation.",
+  "seeds": [
+    3,
+    7
+  ],
+  "runs": [
+    "g-mut-off.json",
+    "g-mut-high.json",
+    "g-mut-nohard.json"
+  ]
+}

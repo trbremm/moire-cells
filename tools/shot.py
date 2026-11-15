@@ -113,6 +113,9 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
 class Server(socketserver.ThreadingMixIn, http.server.HTTPServer):
     daemon_threads = True
     allow_reuse_address = True
+    # the page asks for about 30 modules and shaders at once; with the default backlog of 5, Windows refuses some
+    # connections (ERR_CONNECTION_REFUSED) and the page does not start
+    request_queue_size = 128
 
 
 def free_port():

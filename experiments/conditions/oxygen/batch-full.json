@@ -1,0 +1,11 @@
+{
+ "batch": "batch-full",
+ "description": "Oxygen retry, the core runs.",
+ "runs": [
+  "o-full.json"
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

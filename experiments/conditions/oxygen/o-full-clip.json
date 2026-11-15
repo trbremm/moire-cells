@@ -1,0 +1,73 @@
+{
+ "name": "o-full-clip",
+ "description": "Clip of the whole-dish seed-3 run's key phase: loaded from its snapshot at 1800 s (o-full_s3), heavy pulses as before until 200 s, then a .webm of run time 200..600 s (sim 2000..2400: the membranes go and the colony booms in o-full_s3) at MAX; during the clip the heavy spring drips once for 40 s (the same tenth of a spring, front-loaded: events inside a clip wait for its end).",
+ "query": {
+  "snap": "experiments/runs/o-full_s3/snapshots/snap_t1800.json",
+  "light": "full",
+  "seed": 3
+ },
+ "duration": 600,
+ "sample_every": 20,
+ "evals": [
+  {
+   "t": 0,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+  },
+  {
+   "t": 20,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+  },
+  {
+   "t": 40,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+  },
+  {
+   "t": 60,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+  },
+  {
+   "t": 80,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+  },
+  {
+   "t": 100,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+  },
+  {
+   "t": 120,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+  },
+  {
+   "t": 140,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+  },
+  {
+   "t": 160,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+  },
+  {
+   "t": 180,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life + ' ' + s.age.toFixed(0))"
+  },
+  {
+   "t": 200,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 40); return moire.matter.springs.length"
+  }
+ ],
+ "shots": [
+  {
+   "t": 200
+  },
+  {
+   "t": 600
+  }
+ ],
+ "clips": [
+  {
+   "t": 200,
+   "until": 600,
+   "speed": "max",
+   "name": "full_s3_skin-drop_2000-2400"
+  }
+ ]
+}

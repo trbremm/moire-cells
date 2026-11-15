@@ -1,0 +1,8 @@
+{
+ "batch": "batch-var-b",
+ "description": "Oxygen retry, the variants (seed 3).",
+ "runs": [
+  "o-full-hold.json",
+  "o-spot-heavyfast.json"
+ ]
+}

@@ -1,0 +1,669 @@
+{
+ "name": "o-spot",
+ "description": "Oxygen retry: a never-drying light spring (default place) plus a slow heavy spring (default place, dripping 2 s of every 20 s = a tenth of a spring), 50 min, spotlight (default).",
+ "query": {},
+ "duration": 3000,
+ "sample_every": 20,
+ "shots": [
+  {
+   "t": 600
+  },
+  {
+   "t": 600,
+   "view": "strategy"
+  },
+  {
+   "t": 1200
+  },
+  {
+   "t": 1200,
+   "view": "strategy"
+  },
+  {
+   "t": 1800
+  },
+  {
+   "t": 1800,
+   "view": "strategy"
+  },
+  {
+   "t": 2400
+  },
+  {
+   "t": 2400,
+   "view": "strategy"
+  },
+  {
+   "t": 3000
+  },
+  {
+   "t": 3000,
+   "view": "strategy"
+  },
+  {
+   "t": 3000,
+   "view": "lineage",
+   "panel": true
+  }
+ ],
+ "snapshots": [
+  {
+   "t": 600,
+   "grid": true
+  },
+  {
+   "t": 1200,
+   "grid": true
+  },
+  {
+   "t": 1800,
+   "grid": true
+  },
+  {
+   "t": 2400,
+   "grid": true
+  }
+ ],
+ "evals": [
+  {
+   "t": 0,
+   "js": "moire.matter.clearSprings(); moire.matter.addSpring(875, 328, 'light', 1e9); moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life)"
+  },
+  {
+   "t": 20,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 40,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 60,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 80,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 100,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 120,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 140,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 160,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 180,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 200,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 220,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 240,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 260,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 280,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 300,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 320,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 340,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 360,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 380,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 400,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 420,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 440,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 460,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 480,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 500,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 520,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 540,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 560,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 580,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 600,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 620,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 640,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 660,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 680,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 700,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 720,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 740,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 760,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 780,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 800,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 820,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 840,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 860,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 880,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 900,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 920,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 940,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 960,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 980,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1000,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1020,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1040,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1060,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1080,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1100,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1120,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1140,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1160,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1180,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1200,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1220,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1240,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1260,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1280,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1300,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1320,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1340,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1360,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1380,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1400,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1420,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1440,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1460,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1480,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1500,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1520,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1540,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1560,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1580,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1600,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1620,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1640,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1660,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1680,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1700,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1720,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1740,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1760,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1780,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1800,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1820,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1840,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1860,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1880,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1900,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1920,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1940,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1960,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 1980,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2000,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2020,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2040,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2060,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2080,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2100,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2120,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2140,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2160,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2180,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2200,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2220,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2240,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2260,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2280,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2300,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2320,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2340,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2360,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2380,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2400,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2420,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2440,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2460,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2480,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2500,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2520,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2540,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2560,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2580,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2600,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2620,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2640,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2660,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2680,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2700,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2720,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2740,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2760,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2780,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2800,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2820,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2840,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2860,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2880,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2900,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2920,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2940,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2960,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 2980,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  }
+ ]
+}

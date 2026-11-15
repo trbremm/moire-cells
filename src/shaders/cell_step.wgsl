@@ -51,10 +51,16 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // ... the contacts: each neighbour's wall caps how far out each corner may sit (bound), pulls the hexagon round so a
   // side faces it (torque, weighted by closeness tw), and slides each corner round toward the corner of its tile (slide:
   // the slope of the soft-nearest wall's distance along the corner's direction, sw its weight)
-  var bound = array<f32, 6>(1e9, 1e9, 1e9, 1e9, 1e9, 1e9);
-  var slide = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-  var sw = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  // (corners 0..3 in the A vectors, 4 and 5 in the B ones: the neighbour loop works on all six at once, no array indexing)
+  var boundA = vec4f(1e9);
+  var boundB = vec2f(1e9);
+  var slideA = vec4f(0.0);
+  var slideB = vec2f(0.0);
+  var swA = vec4f(0.0);
+  var swB = vec2f(0.0);
   let hu = hex_dirs(c);
+  let huX = array<vec4f, 2>(vec4f(hu[0].x, hu[1].x, hu[2].x, hu[3].x), vec4f(hu[4].x, hu[5].x, 0.0, 0.0));
+  let huY = array<vec4f, 2>(vec4f(hu[0].y, hu[1].y, hu[2].y, hu[3].y), vec4f(hu[4].y, hu[5].y, 0.0, 0.0));
   let rot6 = vec2f(cos(6.0 * c.theta), -sin(6.0 * c.theta));
   var torque = 0.0;
   var tw = 0.0;
@@ -140,22 +146,30 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           let dh = sqrt(d2);
           let uh = d / dh;
           let wall = 0.5 * dh + (c.r * c.r - o.r * o.r) / (2.0 * dh);
-          for (var k = 0; k < 6; k++) {
-            let cu = dot(uh, hu[k]);
-            if (cu > 0.05) {
-              let b = wall / cu;
-              bound[k] = min(bound[k], b);
-              // the tile's corners are where its boundary is farthest from the centre: along the corner's direction the
-              // wall's distance b grows as the corner turns away from the wall's normal, d(log b)/d(angle) = -(uh . u_perp)
-              // / (uh . u); summed over the walls weighted by (b / r)^-12 (a soft minimum: at a tile corner the two walls'
-              // slopes cancel smoothly, so the corner settles there instead of chattering)
-              if (b < 2.5 * c.r) {
-                let wb = pow(max(b / c.r, 0.2), -12.0);
-                slide[k] -= wb * (uh.y * hu[k].x - uh.x * hu[k].y) / cu;
-                sw[k] += wb;
-              }
-            }
-          }
+          // per corner: cu = uh . u (the corner's direction against the wall's normal), b = wall / cu its distance to the
+          // wall along its direction (only for corners facing the wall, cu > 0.05)
+          let cuA = uh.x * huX[0] + uh.y * huY[0];
+          let cuB = (uh.x * huX[1] + uh.y * huY[1]).xy;
+          let bA = wall / max(cuA, vec4f(0.05));
+          let bB = wall / max(cuB, vec2f(0.05));
+          let okA = cuA > vec4f(0.05);
+          let okB = cuB > vec2f(0.05);
+          boundA = select(boundA, min(boundA, bA), okA);
+          boundB = select(boundB, min(boundB, bB), okB);
+          // the tile's corners are where its boundary is farthest from the centre: along the corner's direction the wall's
+          // distance b grows as the corner turns away from the wall's normal, d(log b)/d(angle) = -(uh . u_perp) / (uh . u);
+          // summed over the walls weighted by (b / r)^-12 (a soft minimum: at a tile corner the two walls' slopes cancel
+          // smoothly, so the corner settles there instead of chattering)
+          let xA = max(bA / c.r, vec4f(0.2));
+          let xB = max(bB / c.r, vec2f(0.2));
+          let x4A = (xA * xA) * (xA * xA);
+          let x4B = (xB * xB) * (xB * xB);
+          let wA = select(vec4f(0.0), 1.0 / (x4A * x4A * x4A), okA & (bA < vec4f(2.5 * c.r)));
+          let wB = select(vec2f(0.0), 1.0 / (x4B * x4B * x4B), okB & (bB < vec2f(2.5 * c.r)));
+          slideA -= wA * (uh.y * huX[0] - uh.x * huY[0]) / max(cuA, vec4f(0.05));
+          slideB -= wB * (uh.y * huX[1] - uh.x * huY[1]).xy / max(cuB, vec2f(0.05));
+          swA += wA;
+          swB += wB;
           // ... and turns the hexagon so a side (its middle at theta + 30 + k x 60 degrees) faces the neighbour: a pull of
           // sin(6 delta), delta the neighbour's angle from the nearest side's middle (= -Im(u^6 e^{-6 i theta}))
           let wt = clamp((1.2 * R0 - dh) / (0.3 * R0), 0.0, 1.0);
@@ -278,6 +292,10 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
 
   // step 8: the field A and partner A' this cell feels from its neighbours: the mean over the membrane, and the gradient
   // (sum of segment mean x outward normal x length = area x gradient; the outline's area is 2.6 r^2)
+  // step C6c: the six corners' walls and slides as arrays again, for the shape (below)
+  let bound = array<f32, 6>(boundA.x, boundA.y, boundA.z, boundA.w, boundB.x, boundB.y);
+  let slide = array<f32, 6>(slideA.x, slideA.y, slideA.z, slideA.w, slideB.x, slideB.y);
+  let sw = array<f32, 6>(swA.x, swA.y, swA.z, swA.w, swB.x, swB.y);
   // (step C6c: a honeycomb cell's outline encloses its rest area, hexSize x pi r^2; the gradient divides by that, and the
   // force is scaled back to the ellipse cell's 2.6 r^2, so a lone cell feels the same push in both shapes)
   let sArea = select(2.598 * c.r * c.r, S.hexSize * 3.14159265 * c.r * c.r, hexShape);

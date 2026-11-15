@@ -1,0 +1,47 @@
+{
+  "name": "g-oxy-lightsprings",
+  "description": "Oxygen story, second try: two light springs that never dry (as g-spr-light), 40 min: does breathing follow the armour?",
+  "query": {},
+  "duration": 2400,
+  "sample_every": 20,
+  "shots": [
+    {
+      "t": 300
+    },
+    {
+      "t": 600
+    },
+    {
+      "t": 1200
+    },
+    {
+      "t": 1800
+    },
+    {
+      "t": 2400
+    },
+    {
+      "t": 1200,
+      "view": "strategy"
+    },
+    {
+      "t": 1800,
+      "view": "strategy"
+    },
+    {
+      "t": 2400,
+      "view": "strategy"
+    },
+    {
+      "t": 2400,
+      "view": "lineage",
+      "panel": true
+    }
+  ],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.matter.clearSprings(); moire.matter.addSpring(875, 328, 'light', 1e9); moire.matter.addSpring(875, 472, 'light', 1e9); return moire.matter.springs.length"
+    }
+  ]
+}

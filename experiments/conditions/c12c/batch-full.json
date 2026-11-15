@@ -1,0 +1,11 @@
+{
+ "batch": "c12c-full",
+ "runs": [
+  "full-on.json",
+  "full-off.json"
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

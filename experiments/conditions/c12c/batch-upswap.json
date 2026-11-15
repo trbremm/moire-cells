@@ -1,0 +1,7 @@
+{
+ "batch": "c12c-upswap",
+ "runs": [
+  "upswap-on.json",
+  "upswap-off.json"
+ ]
+}

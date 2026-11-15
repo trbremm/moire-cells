@@ -40,6 +40,7 @@ export const RULE_GROUPS = [
   ['engines', 'Engines in the genome (step C6)'],
   ['charge', 'Charge (step C6b)'],
   ['membrane', 'Membrane chemistry (step C6c)'],
+  ['dipole', 'Charge per side (step C6d)'],
 ];
 
 export const VIEWS = ['fate', 'lineage', 'strategy', 'charge'];   // key V: what the cells' bodies are coloured by (cells.look.view)
@@ -401,6 +402,32 @@ export function makeActions(app) {
     { id: 'membSelect', keys: [], label: 'gene: ion selectivity', group: 'membrane', type: 'toggle', get: () => MB().select,
       run: () => `ion selectivity ${flip(MB(), 'select') ? 'is a gene: some membranes let givers (+) through more easily than takers (−), or the other way round' : 'off: givers and takers pass alike'}${mbNote()}`,
       help: 'a gene lets givers (+) through the membrane more easily than takers (−), or the other way round, so cells can become charged' },
+  );
+
+  // ---------- charge per side: dipoles (step C6d; panel only: no keys are free) ----------
+  const DP = () => app.cells.dipole.params;
+  const dpNote = () => (DP().on ? '' : ' (dipoles are off)');
+  const knob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'dipole', type: 'knob', get: () => DP()[key].toFixed(digits),
+    run: (k) => { const p = DP(); p[key] = Math.max(lo, Math.min(hi, +(p[key] * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}${dpNote()}`; }, help });
+  A.push(
+    { id: 'dipoles', keys: [], label: 'dipoles', group: 'dipole', type: 'toggle', get: () => DP().on,
+      run: () => `dipoles ${flip(DP(), 'on') ? 'on: each side of a cell holds its own charge, where the charged atoms came in or went out; + and − ends make the cell a dipole' : 'off: a cell’s charge is spread evenly round it'}${E().on ? '' : ' (cells eat is off: Shift+A)'}`,
+      help: 'each side of a cell holds its own share of the cell’s charge, from where charged atoms came in or went out; a cell with a + end and a − end is a dipole' },
+    { id: 'dipDD', keys: [], label: 'dipole-dipole', group: 'dipole', type: 'toggle', get: () => DP().dd,
+      run: () => `dipole-dipole ${flip(DP(), 'dd') ? 'on: neighbouring dipoles turn each other to line up head to tail, attract head to tail and push apart side by side' : 'off: dipoles do not feel each other'}${dpNote()}`,
+      help: 'neighbouring dipoles turn each other to line up head to tail, attract head to tail and push apart side by side (short range)' },
+    { id: 'dipPhi', keys: [], label: 'substrate field on the sides', group: 'dipole', type: 'toggle', get: () => DP().phi,
+      run: () => `the substrate’s charge field ${flip(DP(), 'phi') ? 'pulls the + and − ends of each cell opposite ways' : 'does not act on the side charges (only on the net charge, Shift+9)'}${dpNote()}`,
+      help: 'the substrate’s charge field (Shift+7) pulls a cell’s + end and − end opposite ways' },
+    { id: 'dipField', keys: [], label: 'field turns and stretches cells', group: 'dipole', type: 'toggle', get: () => DP().field,
+      run: () => `the field ${flip(DP(), 'field') ? 'turns each dipole toward it (the cell and the charges in it) and stretches the cell along it, which strains its lattice' : 'does not turn or stretch the cells'}${dpNote()}`,
+      help: 'the field at a dipole turns it toward the field (the cell and the charges inside it) and stretches the cell along it: the strained lattice changes its fields (a form ↔ field loop)' },
+    knob('dipRelax', 'evening out', 'relax', 0.05, 10, 1.5, 2, 'how fast the side charges even out inside the cell (per s; small = long-lived dipoles)'),
+    knob('dipHalf', 'dipole scale', 'pHalf', 0.0005, 0.05, 1.5, 4, 'the charge difference (atom-units) that counts as a strong dipole: smaller = more cells strongly polarised'),
+    knob('dipTurn', 'turning', 'turn', 1, 300, 1.5, 0, 'how hard the field turns a dipole cell (the honeycomb’s own turning toward its neighbours is 40)'),
+    knob('dipPush', 'dipole push', 'push', 0.05, 10, 1.5, 2, 'how hard dipoles attract head to tail and push apart side by side'),
+    knob('dipRange', 'dipole range', 'range', 1, 1.5, 1.1, 2, 'how far dipoles feel each other, × the contact distance'),
+    knob('dipStretch', 'stretch along the field', 'stretch', 0.02, 0.5, 1.4, 2, 'how far a polarised cell stretches along the field'),
   );
 
   // step C6n: the clean view (default) or the machinery: every diagnostic layer at once

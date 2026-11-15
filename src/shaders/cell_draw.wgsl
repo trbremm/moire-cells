@@ -68,6 +68,8 @@ struct Draw {
   // ---- step C6b: the charge view (mode 3) ----
   qPos: vec4f,      // a cell with net + charge (its stock holds more givers): the charge contours' + ink
   qNeg: vec4f,      // ... net -: the - ink
+  // ---- step C6c: the honeycomb outline ----
+  hexDraw: vec4f,   // x: corner rounding radius (share of r); y: the tube's gap inside the wall (CSS px, at most 0.08 r)
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
@@ -77,9 +79,39 @@ struct Draw {
 
 struct VSOut {
   @builtin(position) pos: vec4f,
-  @location(0) local: vec2f,                     // position in the cell's unstretched frame (CSS px)
+  @location(0) local: vec2f,                     // position in the cell's unstretched frame (CSS px); step C6c, a
+                                                 // honeycomb cell: the offset from its centre on screen
   @location(1) @interpolate(flat) id: u32,
+  // step C6c: a honeycomb cell's outline, its 6 sides as lines n . x = h (outward normals n, distances h from the centre):
+  // nn0 = n0 n1, nn1 = n2 n3, nn2 = n4 n5, hh0 = h0..h3, hh1 = h4, h5, the corner rounding radius, 1 (= a honeycomb cell)
+  @location(2) @interpolate(flat) nn0: vec4f,
+  @location(3) @interpolate(flat) nn1: vec4f,
+  @location(4) @interpolate(flat) nn2: vec4f,
+  @location(5) @interpolate(flat) hh0: vec4f,
+  @location(6) @interpolate(flat) hh1: vec4f,
 };
+
+// Step C6c: how far inside a honeycomb outline a point p is (relative to the centre). Inside each side's line by
+// a_k = h_k - n_k . p; the polygon is where all are positive, the distance inside it is their minimum, and each corner is
+// rounded by rc: next to corner k (sides k - 1 and k) the two lines' distances a, b give
+// max(rc, min(a, b)) - |max(rc - (a, b), 0)| (a quarter circle where both are within rc; the "round intersection").
+// Taking the minimum over the corners never folds over itself, however short a side, and keeps every side straight
+// (so shared walls stay straight). Outside it falls below 0 about as the distance does (enough for the anti-aliasing).
+fn hex_inside(p: vec2f, in: VSOut) -> f32 {
+  let n = array<vec2f, 6>(in.nn0.xy, in.nn0.zw, in.nn1.xy, in.nn1.zw, in.nn2.xy, in.nn2.zw);
+  let h = array<f32, 6>(in.hh0.x, in.hh0.y, in.hh0.z, in.hh0.w, in.hh1.x, in.hh1.y);
+  let rc = in.hh1.z;
+  var a: array<f32, 6>;
+  for (var k = 0; k < 6; k++) { a[k] = h[k] - (n[k].x * p.x + n[k].y * p.y); }
+  var e = 1e9;
+  for (var k = 0; k < 6; k++) {
+    let x = a[(k + 5) % 6];
+    let y = a[k];
+    let q = max(vec2f(rc - x, rc - y), vec2f(0.0));
+    e = min(e, max(rc, min(x, y)) - length(q));
+  }
+  return e;
+}
 
 // the fate's ink (stem, epithelium, muscle, neuron, cartilage), from the palette in use (src/palette.js)
 fn cell_colour(kind: u32) -> vec3f {
@@ -113,18 +145,45 @@ fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VSOut
   // two triangles: corners (-1,-1) (1,-1) (-1,1) / (-1,1) (1,-1) (1,1)
   let corner = array<vec2f, 6>(vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(-1.0, 1.0),
                                vec2f(-1.0, 1.0), vec2f(1.0, -1.0), vec2f(1.0, 1.0));
-  let half = c.r + 1.5 / D.dpr;                  // room for the anti-aliased edge
-  let l = corner[vi] * half;
-  let F = cell_F(c);
-  let w = c.pos + vec2f(F.x * l.x + F.y * l.y, F.y * l.x + F.z * l.y);
-  o.pos = vec4f(w.x / D.view.x * 2.0 - 1.0, 1.0 - w.y / D.view.y * 2.0, 0.0, 1.0);
-  if ((c.flags & CELL_ALIVE) == 0u) { o.pos = vec4f(2.0, 2.0, 2.0, 1.0); }   // outside the clip volume
-  o.local = l;
   o.id = ii;
+  o.hh1 = vec4f(0.0);
+  if ((c.flags & CELL_HEX) != 0u) {
+    // step C6c: a honeycomb cell, on a square around its farthest corner; its sides' lines for the fragment shader
+    let P = hex_corners(c);
+    var rmax = 0.0;
+    var hmin = 1e9;
+    var n: array<vec2f, 6>;                      // side k's outward normal (side k: corner k to corner k + 1)
+    var h: array<f32, 6>;                        // ... and its distance from the centre
+    for (var k = 0; k < 6; k++) {
+      rmax = max(rmax, c.rad[k]);
+      let e = P[(k + 1) % 6] - P[k];
+      n[k] = vec2f(e.y, -e.x) / max(length(e), 1e-6);
+      h[k] = n[k].x * P[k].x + n[k].y * P[k].y;
+      hmin = min(hmin, h[k]);
+    }
+    o.nn0 = vec4f(n[0], n[1]);
+    o.nn1 = vec4f(n[2], n[3]);
+    o.nn2 = vec4f(n[4], n[5]);
+    o.hh0 = vec4f(h[0], h[1], h[2], h[3]);
+    o.hh1 = vec4f(h[4], h[5], min(D.hexDraw.x * c.r, 0.8 * max(hmin, 0.0)), 1.0);
+    let l = corner[vi] * (rmax + 1.5 / D.dpr);
+    let w = c.pos + l;
+    o.pos = vec4f(w.x / D.view.x * 2.0 - 1.0, 1.0 - w.y / D.view.y * 2.0, 0.0, 1.0);
+    o.local = l;
+  } else {
+    let half = c.r + 1.5 / D.dpr;                  // room for the anti-aliased edge
+    let l = corner[vi] * half;
+    let F = cell_F(c);
+    let w = c.pos + vec2f(F.x * l.x + F.y * l.y, F.y * l.x + F.z * l.y);
+    o.pos = vec4f(w.x / D.view.x * 2.0 - 1.0, 1.0 - w.y / D.view.y * 2.0, 0.0, 1.0);
+    o.local = l;
+  }
+  if ((c.flags & CELL_ALIVE) == 0u) { o.pos = vec4f(2.0, 2.0, 2.0, 1.0); }   // outside the clip volume
   return o;
 }
 
 // coverage of "distance < edge" with a one-pixel anti-aliased step (aa = CSS px per device px)
+fn cover_in(e: f32, aa: f32) -> f32 { return clamp(e / aa + 0.5, 0.0, 1.0); }   // ... of "at least 0 inside" (e: how far in)
 fn cover(edge: f32, d: f32, aa: f32) -> f32 {
   return clamp((edge - d) / aa + 0.5, 0.0, 1.0);
 }
@@ -161,16 +220,26 @@ fn hex_dist(p: vec2f, s: f32, a: f32) -> f32 {
 @fragment
 fn fs(in: VSOut) -> @location(0) vec4f {
   let c = cells[in.id];
-  let d = length(in.local);
-  let aa = max(fwidth(d), 0.35 / D.dpr);
+  // the position in the cell's own (unstretched) frame, for the inside (lattice dots, core, parts, marks), and ein, how far
+  // inside the drawn outline a pixel is: an ellipse cell's r - |lp|; step C6c, a honeycomb cell: inside the rounded
+  // hexagon (exact distance), less the tube's gap from the wall (so two neighbours' tubes do not merge into one thick line)
+  var lp = in.local;
+  var ein = c.r - length(in.local);
+  if (in.hh1.w > 0.5) {
+    let F = cell_F(c);                             // its inverse: [[fd, -fb], [-fb, fa]]
+    lp = vec2f(F.z * in.local.x - F.y * in.local.y, F.x * in.local.y - F.y * in.local.x);
+    ein = hex_inside(in.local, in) - min(D.hexDraw.y, 0.08 * c.r);
+  }
+  let d = length(lp);
+  let aa = max(fwidth(ein), 0.35 / D.dpr);
   // the cell's own lattice as sharp dots (the reference turns its dot pattern by la + 90 degrees): the lattice
   // it emits with (key and fate, scaled by the lever), drawn in the unstretched frame and mapped through the
   // stretch with the outline, so the dots sit on the strained lattice
   let lat = cell_lattice(c, D.lever);
   let s = D.period * D.R * exp(lat.y);
-  let dd = hex_dist(in.local, s, lat.x + 1.5707963);
+  let dd = hex_dist(lp, s, lat.x + 1.5707963);
   let aad = max(fwidth(dd), 0.35 / D.dpr);       // derivatives before any discard
-  let disc = cover(c.r, d, aa);
+  let disc = cover_in(ein, aa);
   if (disc <= 0.0) { discard; }
   var col = select(cell_colour(c.kind), key_colour(c), D.mode > 0.5);
   // step C6: the genome's engines (for the parts and the strategy view)
@@ -191,7 +260,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   if (strategyView) {
     // harvest: the pigment's band colour; burn: the fuel's green; both: split down the middle, band left, green right
     // (a crisp edge); neither: dim grey
-    if (harvestBand > 0u && burns) { col = mix(D.inkBurn.rgb, band_ink(harvestBand), cover(0.0, in.local.x, aa)); }
+    if (harvestBand > 0u && burns) { col = mix(D.inkBurn.rgb, band_ink(harvestBand), cover(0.0, lp.x, aa)); }
     else if (harvestBand > 0u) { col = band_ink(harvestBand); }
     else if (burns) { col = D.inkBurn.rgb; }
     else { col = D.inkOther.rgb; }
@@ -200,14 +269,14 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   let neon = D.neon.x > 0.5;
   // thinner outline on small cells, so they do not turn solid (neon: the tube, a little wider)
   let lw = select(min(D.lineW, 0.22 * c.r), min(D.neon.y, 0.3 * c.r), neon);
-  let dot = select(0.0, cover(D.dotR * s, dd, aad) * cover(c.r - lw - 0.12 * D.R, d, aa), D.dots > 0.0);
-  let ring = 1.0 - cover(c.r - lw, d, aa);        // clean outline at the rim
+  let dot = select(0.0, cover(D.dotR * s, dd, aad) * cover_in(ein - lw - 0.12 * D.R, aa), D.dots > 0.0);
+  let ring = 1.0 - cover_in(ein - lw, aa);        // clean outline at the rim
   // committed cells get a flat fill in their colour, so tissues read as areas; stem cells stay dark inside
   // (neon: every inside dark, a faint tint; the fills come from src/cells.js by the look)
   let fill = select(select(D.fill, D.fillC, c.kind != KIND_STEM), D.inkOther.w, strategyView || chargeView);
   var fillRgb = col * fill;   // (step 8 may tint it below)
   // step C6n: neon, the tube lights the inside near it (a soft glow falling off inward)
-  if (neon) { fillRgb += col * D.neon2.x * exp(-max(c.r - lw - d, 0.0) / max(D.neon.w * c.r, 1e-3)); }
+  if (neon) { fillRgb += col * D.neon2.x * exp(-max(ein - lw, 0.0) / max(D.neon.w * c.r, 1e-3)); }
   // step 6, rule 2: a converted cell's outline is drawn in field B's ink, and a converted stem cell is filled with
   // it (flat, at the committed cells' level), so converted areas read as areas
   let conv = D.blue.a > 0.0 && (c.flags & CELL_CONV) != 0u;
@@ -242,7 +311,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       if (h * D.dpr < 0.6) { continue; }
       let th = -1.5707963 + f32(k) * 2.0943951;               // up, lower right, lower left (screen y down)
       let ax = vec2f(cos(th), sin(th));
-      let p = in.local - ax * (D.ink3.w * c.r);
+      let p = lp - ax * (D.ink3.w * c.r);
       let q = vec2f(p.x * ax.x + p.y * ax.y, p.y * ax.x - p.x * ax.y);   // along the outward axis, across
       var dd2 = length(q) - h;                                  // harvest: a disc in its band's colour
       var ink = band_ink(eng_band(g.eng[k]));
@@ -263,7 +332,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   var lineCol = select(col * D.line, D.blue.rgb, conv);
   if (neon) {
     // step C6n: the tube's cross-section: white-hot along its centre line, its colour toward its edges
-    let prof = clamp(1.0 - abs(d - (c.r - 0.5 * lw)) / max(0.5 * lw, 1e-3), 0.0, 1.0);
+    let prof = clamp(1.0 - abs(ein - 0.5 * lw) / max(0.5 * lw, 1e-3), 0.0, 1.0);
     lineCol = mix(lineCol, vec3f(max(max(lineCol.r, lineCol.g), lineCol.b)), D.neon.z * prof * prof);
     lineCol = mix(lineCol, vec3f(1.0), 0.6 * D.neon.z * prof * prof * prof);
   }
@@ -273,10 +342,10 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   var clearA = 0.0;
   if (D.states > 0.0) {
     let n = u32(D.states);
-    let th = f32(cell_state(c, n)) * 3.14159265 / f32(n) + 1.5707963;
+    let th = f32(cell_state(c.la, c.flags, n)) * 3.14159265 / f32(n) + 1.5707963;
     let dir = vec2f(cos(th), sin(th));
-    let along = abs(in.local.x * dir.x + in.local.y * dir.y);     // (the builtin dot() is shadowed above)
-    let across = abs(in.local.y * dir.x - in.local.x * dir.y);
+    let along = abs(lp.x * dir.x + lp.y * dir.y);     // (the builtin dot() is shadowed above)
+    let across = abs(lp.y * dir.x - lp.x * dir.y);
     let bd = length(vec2f(max(along - 0.55 * c.r, 0.0), across));
     let bw = max(0.13 * c.r, 0.6 / D.dpr);
     bar = cover(bw, bd, aa);
@@ -298,8 +367,8 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     if (wl > 0.05 && c.r * D.dpr > 5.0) {
       let dir = vec2f(w.x, -w.y) / wl;
       let len = c.r * 0.85 * select(min(1.0, wl / 0.6), 1.0, clock);
-      let t = clamp(in.local.x * dir.x + in.local.y * dir.y, 0.0, len);
-      let hd = length(in.local - dir * t);
+      let t = clamp(lp.x * dir.x + lp.y * dir.y, 0.0, len);
+      let hd = length(lp - dir * t);
       hnd = cover(max(0.11 * c.r, 0.6 / D.dpr), hd, aa);
       rgb = mix(rgb, select(D.pInk.rgb, col * D.line, clock) * abs(D.hand), hnd);
     }

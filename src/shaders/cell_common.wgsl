@@ -1,7 +1,7 @@
 // ===== cell_common.wgsl: the cells' state, the simulation uniforms and the neighbour grid =====
 // Not compiled on its own: src/cells.js prepends field_common.wgsl and then this file to every cell shader.
 //
-// Cells live in a fixed-capacity storage buffer (struct Cell, 104 bytes; keep in step with CELL_* in
+// Cells live in a fixed-capacity storage buffer (struct Cell, 240 bytes; keep in step with CELL_* in
 // src/cells.js, and CELL_FLOATS in heat.wgsl). Their order never changes, so drawing order is stable and a cell keeps its index.
 //
 // Neighbour grid (rebuilt every tick, see cell_grid.wgsl):
@@ -41,7 +41,33 @@ struct Cell {
   qNet: f32,        // its stock's net charge (atom-units: givers minus takers)
   efield: vec2f,    // the gradient of the substrate's screened potential across its membrane (plan; phi per R), which the
                     // next tick's step pushes it by (x -q)
+  // ---- step C6c, elastic honeycomb cells: the outline as 6 corners (valid while flags has CELL_HEX) ----
+  // Corner k sits at distance rad[k] from the centre in the direction theta + k x 60 degrees + alpha[k]; side k runs from
+  // corner k to corner k + 1 (the membrane's segment k). Written by the step pass only (cell_step.wgsl, "honeycomb").
+  rad: array<f32, 6>,   // each corner's distance from the centre (CSS px)
+  radV: array<f32, 6>,  // ... and its speed (CSS px / s; the corners are underdamped springs, so a pushed cell wobbles)
+  theta: f32,       // the hexagon's orientation (radians, 0..2 pi): the direction of corner 0
+  spin: f32,        // ... and its turning rate (rad / s), driven by the contacts (a side turns to face each neighbour)
+  ea: vec2f,        // the active stretch the rest shape follows (motion, the field's pull, muscle; as e1, e2 in the old
+                    // ellipse cells); e1, e2 themselves are then worked out from the corners (their second moment)
+  alpha: array<f32, 6>, // each corner's slide round from its regular direction theta + k x 60 degrees (radians, at most
+                    // HEX_SLIDE), toward the corner of its tile, so a cell with 5 or 7 neighbours still shares straight walls
+  // reserved per side, not used yet (zero): side k = the side from corner k to corner k + 1
+  integ: array<f32, 6>, // C6c, membrane chemistry (the next worker): each side's integrity
+  sideQ: array<f32, 6>, // C6d: each side's charge (dipoles)
 };
+
+// Step C6c: the part of a cell its neighbours read, the grid's sorted copy (cell_grid.wgsl scatter; 104 bytes, keep in step
+// with CELL_CORE_BYTES in src/cells.js): Cell without the honeycomb outline and the per-side slots, so the step's neighbour
+// loop reads no more memory than before the Cell grew (a cell reads its own outline from its own slot in `cells`)
+struct CellCore {
+  pos: vec2f, vel: vec2f, r: f32, la: f32, e1: f32, e2: f32, kind: u32, flags: u32, seed: u32, aux: f32, z: vec2f,
+  dead: vec2f, bat: f32, pay: i32, mom: u32, fill: f32, smell: vec2f, q: f32, qNet: f32, efield: vec2f,
+};
+fn cell_core(c: Cell) -> CellCore {
+  return CellCore(c.pos, c.vel, c.r, c.la, c.e1, c.e2, c.kind, c.flags, c.seed, c.aux, c.z,
+                  c.dead, c.bat, c.pay, c.mom, c.fill, c.smell, c.q, c.qNet, c.efield);
+}
 
 const CELL_ALIVE: u32 = 1u;
 const CELL_CONV: u32 = 2u;          // converted (step 6, rule 2): emits field B more strongly or with flipped sign
@@ -49,6 +75,8 @@ const CELL_LEAK_SHIFT: u32 = 8u;    // bits 8..15: leak level x 255 (step 6, rul
 const CELL_FLIP_SHIFT: u32 = 16u;   // bits 16..17: state offset 0..3 (step 7, rule 2)
 const CELL_BORN: u32 = 4u;          // step C5: born this tick (the step sets it; the eat pass hands the dead cell's stock
                                     // back to the dish, gives the newborn half its parent's, and clears it)
+const CELL_HEX: u32 = 8u;           // step C6c: the cell's outline is its 6 corners (rad, theta); else the stretched hexagon
+                                    // of the ellipse cells (set and cleared by the step pass, as the honeycomb rule is on)
 fn cell_leak(c: Cell) -> f32 { return f32((c.flags >> CELL_LEAK_SHIFT) & 255u) / 255.0; }
 
 // Per-tick simulation uniforms (written by src/cells.js; keep the order in step with writeSim there).
@@ -94,10 +122,10 @@ struct Sim {
   mutJump: f32,     // chance per birth that one gene jumps to a fresh random value
   engJump: f32,     // step C6: chance per birth that one engine slot jumps (another reaction or pigment band, or empty)
                     // (42..45 held the nutrient and threat numbers until step C3)
-  _free43: f32,
+  hexSize: f32,     // step C6c: a honeycomb cell's area at rest, as a share of pi r^2
   matterCur: u32,   // step C5: word offset in the heat buffer of the substances' current copy (channel 0) this tick; 0 =
                     // no substance grid
-  _free45: f32,
+  hexTurnDamp: f32, // step C6c: how fast the hexagon's turning is damped (1/s)
   // ---- the loop (step 4): cells emit into the field and feel it on their membrane ----
   lever: f32,       // how different the cells' lattices are from the medium's (1 = the keys as they are;
                     // smaller = closer to the medium, so longer and slower beats)
@@ -106,7 +134,8 @@ struct Sim {
   cut: f32,         // how far a cell feels another's field, in units of R (reference 3.6)
   sense: f32,       // gain of the force from the other cells' field felt on the membrane (0 = off; 1 = reference)
   tuneW: f32,       // receptor tuning width: how alike two lattices must be to feel each other (reference 0.177)
-  _free52: f32,     // spare (the sources' strength until step C3)
+  hexBulge: f32,    // step C6c: how far free corners may grow to keep the area when sides are pressed flat (x their rest)
+                    // (word 52 held the sources' strength until step C3)
   senseMax: f32,    // the field force saturates at this speed, in units of R per s (reference 3)
   activeGain: f32,  // active deformation gain: stretch along the cell's motion and the field's pull (0 = off)
   shapeRate: f32,   // how fast the shape follows its target (1/s; reference 3)
@@ -114,7 +143,9 @@ struct Sim {
                     // as the cell moves (the reference); 1 = the beat pattern pinned to the cell, bright at its
                     // centre; 2 = its lattice anchored at the dish centre like the medium's, so the moire stands
                     // still in the world and only the envelope moves with the cell
-  _free57: f32,     // spare (the sources' sensing gain until step C3)
+  hexSnap: f32,     // step C6c: a neighbour's wall up to this x a corner's rest distance draws the corner out to it (the
+                    // gap between touching cells closes); further, the corner stays free (word 57: the sources' sensing gain
+                    // until step C3)
   receptor: u32,    // tuning toward other cells (key R): 0 = by the cell's own lattice (like feels like, the
                     // reference); 1 = by its genome's receptor (angle, period, width), so A may feel B but not back
   // ---- step 7: exclusion. Cells of the same type (fate) in the same state (their lattice angle, cut into
@@ -183,12 +214,13 @@ const KEY_SMAX: f32 = 0.15;           // key scales live in [-0.15, 0.15]
 // step 7: a cell's state, 0 .. n-1: which of n equal bins of the hex lattice's 60 degrees its lattice angle lies in,
 // shifted by its flip offset (rule 2; 0 at birth). The offset changes the state, not the lattice, so a flipped cell
 // keeps its key, its adhesion and its field.
-fn key_bin(c: Cell, n: u32) -> u32 {
+// (step C6c: by the lattice angle la and the flags, so it works on a Cell and on its neighbours' CellCore alike)
+fn key_bin(la: f32, n: u32) -> u32 {
   let m = max(n, 1u);
-  return min(u32(fract(c.la / KEY_SPAN) * f32(m)), m - 1u);
+  return min(u32(fract(la / KEY_SPAN) * f32(m)), m - 1u);
 }
-fn cell_state(c: Cell, n: u32) -> u32 {
-  return (key_bin(c, n) + ((c.flags >> CELL_FLIP_SHIFT) & 3u)) % max(n, 1u);
+fn cell_state(la: f32, flags: u32, n: u32) -> u32 {
+  return (key_bin(la, n) + ((flags >> CELL_FLIP_SHIFT) & 3u)) % max(n, 1u);
 }
 
 // rule bits in Sim.rules (keep in step with RULE in src/cells.js)
@@ -317,12 +349,14 @@ fn key_dist2(a1: f32, s1: f32, a2: f32, s2: f32) -> f32 {
 }
 
 // deformation matrix F = [[fa, fb], [fb, fd]] from the stretch (shape() in the reference)
-fn cell_F(c: Cell) -> vec3f {
-  let eps = sqrt(c.e1 * c.e1 + c.e2 * c.e2);
+fn cell_F(c: Cell) -> vec3f { return stretch_F(vec2f(c.e1, c.e2)); }
+// ... from a stretch e = (e1, e2): F = exp([[e1, e2], [e2, -e1]]) (determinant 1: area kept)
+fn stretch_F(e: vec2f) -> vec3f {
+  let eps = length(e);
   if (eps < 1e-4) { return vec3f(1.0, 0.0, 1.0); }
   let ch = cosh(eps);
   let sh = sinh(eps) / eps;
-  return vec3f(ch + sh * c.e1, sh * c.e2, ch - sh * c.e1);
+  return vec3f(ch + sh * e.x, sh * e.y, ch - sh * e.x);
 }
 
 // ---------- the loop (step 4): emitting, sensing, deforming ----------
@@ -365,7 +399,51 @@ fn lattice_k(angle: f32, logp: f32, lever: f32, k0: f32, m: i32) -> vec2f {
   return k0 * exp(-lever * logp) * vec2f(cos(a), sin(a));
 }
 
-// A cell's membrane: 6 straight segments of its (stretched) outline. mid = segment midpoint relative to the
+// ---------- step C6c: elastic honeycomb cells ----------
+// The directions of a honeycomb cell's corners: corner k at theta + k x 60 degrees + alpha[k] (each corner may slide up to
+// HEX_SLIDE round from its regular place, toward the corner of the tile its neighbours leave it)
+const HEX_SLIDE: f32 = 0.42;     // radians (24 degrees): neighbouring corners stay at least 12 degrees apart
+fn hex_dirs(c: Cell) -> array<vec2f, 6> {
+  var u: array<vec2f, 6>;
+  var al = c.alpha;
+  for (var k = 0; k < 6; k++) {
+    let a = c.theta + f32(k) * P3 + al[k];
+    u[k] = vec2f(cos(a), sin(a));
+  }
+  return u;
+}
+// the corners relative to the centre (CSS px)
+fn hex_corners(c: Cell) -> array<vec2f, 6> {
+  var u = hex_dirs(c);
+  var r = c.rad;
+  for (var k = 0; k < 6; k++) { u[k] *= r[k]; }
+  return u;
+}
+// a honeycomb cell's rest shape: its corners (directions u) on the ellipse of the stretch e (each at 1 / |F^-1 u|), the
+// whole scaled to the area A0
+fn hex_rest(e: vec2f, u: array<vec2f, 6>, A0: f32) -> array<f32, 6> {
+  let F = stretch_F(e);                        // determinant 1, so F^-1 = [[fd, -fb], [-fb, fa]]
+  var r: array<f32, 6>;
+  for (var k = 0; k < 6; k++) {
+    let v = vec2f(F.z * u[k].x - F.y * u[k].y, F.x * u[k].y - F.y * u[k].x);
+    r[k] = 1.0 / max(length(v), 1e-6);
+  }
+  let s = sqrt(A0 / max(hex_area(r, u), 1e-9));
+  for (var k = 0; k < 6; k++) { r[k] *= s; }
+  return r;
+}
+// the area of the hexagon with corner distances r along the directions u (6 triangles of two neighbouring corners)
+fn hex_area(r: array<f32, 6>, u: array<vec2f, 6>) -> f32 {
+  var s = 0.0;
+  for (var k = 0; k < 6; k++) {
+    let a = u[k];
+    let b = u[(k + 1) % 6];
+    s += r[k] * r[(k + 1) % 6] * (a.x * b.y - a.y * b.x);
+  }
+  return 0.5 * s;
+}
+
+// A cell's membrane: 6 straight segments of its (stretched) outline (step C6c: of its honeycomb outline). mid = segment midpoint relative to the
 // cell's centre; edge = the segment as a vector, going round in increasing angle, so (edge.y, -edge.x) is the
 // outward normal times the segment's length.
 struct Membrane {
@@ -374,12 +452,17 @@ struct Membrane {
 };
 
 fn membrane(c: Cell) -> Membrane {
-  let F = cell_F(c);
   var P: array<vec2f, 6>;
-  for (var a = 0; a < 6; a++) {
-    let t = f32(a) * P3;
-    let u = vec2f(cos(t), sin(t));
-    P[a] = c.r * vec2f(F.x * u.x + F.y * u.y, F.y * u.x + F.z * u.y);
+  if ((c.flags & CELL_HEX) != 0u) {
+    // step C6c: the honeycomb cell's real outline, its 6 corners
+    P = hex_corners(c);
+  } else {
+    let F = cell_F(c);
+    for (var a = 0; a < 6; a++) {
+      let t = f32(a) * P3;
+      let u = vec2f(cos(t), sin(t));
+      P[a] = c.r * vec2f(F.x * u.x + F.y * u.y, F.y * u.x + F.z * u.y);
+    }
   }
   var mb: Membrane;
   for (var a = 0; a < 6; a++) {
@@ -469,7 +552,7 @@ struct Fields {
   // Mode 1: perpendicular to the cell's own motion, by the A' it feels (as a charge in a magnetic field), so paths curl
   side: f32,        // gain (0 = off); mode 0: x field A's force; mode 1: turning rate per tick at full A'
   sideMode: u32,
-  _p13: f32,
+  hexOn: u32,       // step C6c: 1 = elastic honeycomb cells (the outline is 6 springy corners), 0 = the old ellipse cells
   // ---- step C5, cells eat: what the step needs (the eat pass has its own uniform, cell_eat.wgsl) ----
   eat: u32,         // bits: EAT_PAY battery pays the crawl, EAT_HEAT heat damage, EAT_BIAS energy-biased turnover,
                     // EAT_SMELL smell (all 0 while "cells eat" is off)
@@ -485,7 +568,8 @@ struct Fields {
   qStock: u32,      // 1: a cell's charge in field B is qB x its Cell.q (from its stock); 0: the fixed charge of its fate
   qStockB: f32,     // ... x this (the fixed per-fate charges are about 1)
   qSat: f32,        // the grid's push saturates at this speed (R / s)
-  _p18: vec4f,
+  hex: vec4f,       // step C6c: x the corners' spring (omega^2, 1/s^2), y their damping (1/s), z the contacts' turning pull on
+                    // the hexagon (1/s^2), w jelly: how much the corners lag the centre's change of velocity (0 = rigid)
 };
 const EAT_PAY: u32 = 1u;
 const EAT_HEAT: u32 = 2u;

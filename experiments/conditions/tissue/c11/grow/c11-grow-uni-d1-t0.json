@@ -1,0 +1,106 @@
+{
+ "name": "c11-grow-uni-d1-t0",
+ "series": "grow",
+ "description": "uniform; one founder grows to 100 cells, daughters across the front; glue turning off; field A not felt",
+ "tissue_setting": {
+  "knobs": {
+   "cells.params.senseOn": false,
+   "division.params.divAt": 0.003,
+   "division.params.cost": 0,
+   "division.params.starveAt": 0,
+   "division.params.age": 0,
+   "membrane.params.burst": false,
+   "walls.params.turn": false
+  },
+  "genes": {
+   "adhesion": 0.8,
+   "a1": 0.0,
+   "a2": 0.0,
+   "divAxis": 1,
+   "rate0": 0
+  },
+  "typeB": null,
+  "query": {
+   "cells": 1,
+   "cap": 100,
+   "life": 1,
+   "mut": 0
+  },
+  "extra_js": "",
+  "fronts": "random"
+ },
+ "query": {
+  "seed": 3,
+  "cells": 1,
+  "mut": 0,
+  "life": 1,
+  "clone": 1,
+  "springs": 0,
+  "light": "off",
+  "day": 0,
+  "cap": 100
+ },
+ "duration": 120,
+ "sample_every": 5,
+ "tissue": true,
+ "evals": [
+  {
+   "t": 0,
+   "js": "const T = await import('/experiments/tissue/tissue-lab.js'); window.__T = T;\nconst knobs = T.apply({\"cells.params.squeeze\": 0, \"genome.rules.diff\": false, \"eat.params.pay\": false, \"walls.params.cost\": false, \"cells.params.senseOn\": false, \"division.params.divAt\": 0.003, \"division.params.cost\": 0, \"division.params.starveAt\": 0, \"division.params.age\": 0, \"membrane.params.burst\": false, \"walls.params.turn\": false});\nconst g = {\"keyAngle\": 0.35, \"keyScale\": 0.05, \"recAngle\": 0.35, \"recScale\": 0.05, \"recWidth\": 0.15, \"size\": 1, \"motility\": 1, \"mix\": 0, \"thickness\": 0.012, \"stiffness\": 1, \"pumpRate0\": 0, \"pumpRate1\": 0, \"rate0\": 0, \"rate1\": 0, \"rate2\": 0, \"w\": 0, \"divAxis\": 1, \"adhesion\": 0.8, \"a1\": 0.0, \"a2\": 0.0}; g.eng0 = moire.genome.engineCode('gt → g + t', 0);\nawait T.genes(g, null);\nconst fr = await T.fronts({\"mode\": \"random\"});\n\nreturn { knobs, genes: g, fronts: fr, m: await T.measure({ every: 1 }) };"
+  },
+  {
+   "t": 60,
+   "js": "return await __T.measure({ every: 1 });"
+  },
+  {
+   "t": 80,
+   "js": "return await __T.measure({ every: 1 });"
+  },
+  {
+   "t": 82,
+   "js": "return await __T.stirThrough();"
+  },
+  {
+   "t": 120,
+   "js": "return await __T.measure({ every: 1 });"
+  }
+ ],
+ "shots": [
+  {
+   "t": 30
+  },
+  {
+   "t": 60
+  },
+  {
+   "t": 80
+  },
+  {
+   "t": 120
+  },
+  {
+   "t": 80,
+   "view": "walls"
+  },
+  {
+   "t": 120,
+   "view": "walls"
+  },
+  {
+   "t": 80,
+   "view": "machinery"
+  }
+ ],
+ "snapshots": [
+  {
+   "t": 80,
+   "grid": false,
+   "name": "prestir"
+  },
+  {
+   "t": 120,
+   "grid": false,
+   "name": "end"
+  }
+ ]
+}

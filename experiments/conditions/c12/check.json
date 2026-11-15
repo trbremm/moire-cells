@@ -1,0 +1,82 @@
+{
+ "name": "c12-check",
+ "description": "Step C12 books check: 360 s at MAX (seed 5) through oil, emulsion and soap springs, N (60 s), a wash (100 s), a resize (150 s), G (200 s), a resize back (220 s), new springs of every kind (240 s), the oil's switches at runtime (260 to 310 s), a snapshot saved and loaded at once (330 s); atoms and charge rounding must stay 0",
+ "query": {
+  "seed": 5
+ },
+ "duration": 360,
+ "sample_every": 10,
+ "resizes": [
+  {
+   "t": 150,
+   "size": "1000x700"
+  },
+  {
+   "t": 220,
+   "size": "1280x800"
+  }
+ ],
+ "evals": [
+  {
+   "t": 5,
+   "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.25, v.cssH * 0.3, 'oil', 100); moire.matter.addSpring(v.cssW * 0.25, v.cssH * 0.7, 'emulsion', 100); moire.matter.addSpring(v.cssW * 0.75, v.cssH * 0.7, 'soap', 100); return moire.matter.springs.length"
+  },
+  {
+   "t": 60,
+   "js": "return moire.control.action('culture')"
+  },
+  {
+   "t": 100,
+   "js": "return moire.control.action('wash')"
+  },
+  {
+   "t": 105,
+   "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.3, 'emulsion', 200); return 1"
+  },
+  {
+   "t": 200,
+   "js": "return moire.control.action('genomes')"
+  },
+  {
+   "t": 240,
+   "js": "{ const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.5, 'light'); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.5, 'heavy'); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.3, 'oil'); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.7, 'soap'); } return moire.matter.springs.length"
+  },
+  {
+   "t": 260,
+   "js": "moire.oil.params.phase = false; return 'phase off'"
+  },
+  {
+   "t": 270,
+   "js": "moire.oil.params.phase = true; moire.oil.params.amphi = false; return 'phase on, amphi off'"
+  },
+  {
+   "t": 280,
+   "js": "moire.oil.params.amphi = true; moire.oil.params.fusion = false; return 'amphi on, fusion off'"
+  },
+  {
+   "t": 290,
+   "js": "moire.oil.params.fusion = true; moire.oil.params.on = false; return 'fusion on, oil off'"
+  },
+  {
+   "t": 300,
+   "js": "moire.oil.params.on = true; moire.oil.params.polarity = true; return 'oil on, polarity view'"
+  },
+  {
+   "t": 310,
+   "js": "moire.oil.params.polarity = false; return 'polarity off'"
+  },
+  {
+   "t": 330,
+   "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }"
+  }
+ ],
+ "shots": [
+  {
+   "t": 50
+  },
+  {
+   "t": 360
+  }
+ ],
+ "stall": 120
+}

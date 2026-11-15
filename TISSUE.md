@@ -257,6 +257,153 @@ cells in one piece, the ball whole; runs `experiments/runs/c10/c10-tr-*`).
 Next, if wanted: a rule that lets contacts set the front (the side away from all contacts becomes the "apical" back, as cells
 in an epithelium polarise), or division along the front: either would let a sticky-sided lineage grow into a palisade or a cyst.
 
+## C11: glue turns cells
+
+Step C11 (README, "Step C11: glue turns cells") lets the glue TURN a cell: a contact's adhesion pulls harder where the wall is
+stickier, off the line between the centres, so the same pull turns the cell (its front and its outline) until its sticky part
+faces the neighbour; and a dividing cell puts its daughter along its front, across it or between (gene divAxis). The same lab as
+C10 (40 cells, one genome cloned, mutation, the life cycle and differentiation off, no squeeze, dark dish, no springs, the walls'
+cost off, crawling free; measures every 5 s, a stir through the largest cluster at 82 s, the end at 120 s; fronts at random at the
+start; `experiments/tissue/c11.py`, runs `experiments/runs/tissue-c11/`, table `experiments/tissue/c11-sweep.csv`). Five hand-set
+patterns: the C10 four (**uniform** a0 0.8; **polar** a0 0.4, a1 0.5: front 0.9, flanks 0.4, back 0; **two-ended** a0 0.5, a2 0.5:
+ends 1, flanks 0; **sticky sides** a0 0.5, a2 −0.5: flanks 1, ends 0) and **epithelial** (a0 0.5, a1 −0.3, a2 −0.4: flanks 0.9, back
+0.4, front (the apex) 0), each with field A not felt and with the long beat (lever 0.2), the glue's turning on and off
+(`walls.params.turn`), maturation on, at 40 cells and (long beat only) 100. Then **growth**: ONE founder cell (`?cells=1`,
+capacity 100, `?life=1`, mutation off) whose battery pays for its divisions (starter charge 0.4 of the battery, division free and
+allowed from 0.003 of it, no engines, no starving, no background deaths, no bursting), so its line grows for about seven
+generations (54 to 77 cells by 80 s), daughters along the front (divAxis 0) or across it (1), turning on and off, field A off.
+New measures (`moire.walls.stats()`): the contacts on sticky sides against chance, the glued bonds per cell (touching pairs holding
+at least 0.2 glue), chains and rings of glued bonds.
+
+**In short:** turning makes every patterned wall link better, and the pattern now shows as SHAPE. Where C10's patterned cells broke a
+sheet into small units (they could not turn their sticky side to a neighbour), with turning the cells swing their sticky parts
+together: contacts per cell up by a third to double (field A off: polar 1.6 → 2.3, two-ended 1.3 → 2.7, sticky sides 1.3 → 2.9,
+epithelial 1.8 → 3.0), glued bonds per cell up by half, contact persistence up (0.74 to 0.85 → 0.82 to 0.96), and with the long beat
+two-ended and sticky-sided cells hold as ONE tissue (scores 0.35 → 0.87 and 0.49 → 0.77 at 40 cells; 0.63 → 0.88 and 0.61 → 0.86 at
+100), where without turning they were loose islands. The turning itself is calm: 10 to 30 degrees per s on average over the touching
+cells, most of it while a contact settles. What each pattern makes, in tissue words:
+- **Polar** (front sticky): **rosettes**. Almost every cell ends in a trefoil of three (some four) cells whose sticky fronts meet in
+  the middle, like little pinwheels; at 100 cells with the long beat the trefoils join side by side into a lace of rosettes.
+  Contacts at the front 0.82 (field off; 0.64 without turning; random 0.33), on sticky sides 0.93 against 0.45 by chance. The score
+  stays low (0.12 to 0.38): it makes many small units, not one sheet (islands 0.87 to 0.92, stable). No hollow ring: a rosette of
+  three has no room for a lumen, and nothing pushes the fronts apart.
+- **Two-ended** (both ends sticky): a **net of short chains**, cells joined end to end, the joints bright bars in the walls view,
+  the chains branching and crossing into one loose tissue; at 40 cells with the long beat a compact sheet with arms of end-to-end
+  cells reaching out from it.
+- **Sticky sides** (flanks sticky): **stacks and palisade rows** inside one sheet: cells lie side by side with their sticky flanks
+  together, so the walls view shows parallel bright lines (rows of cells like a palisade); field off, compact clumps of such rows.
+- **Epithelial** (flanks sticky, back a little, apex not): **small cords and trefoils with a free apical side**: groups of 3 to 10
+  cells joined by their flanks, the non-sticky apices all on the outside (contacts at the apex 0.02, against 0.10 without
+  turning); stable as islands (0.91 to 0.97, the stillest contacts of all, persistence 0.92 to 0.97).
+- **Uniform**: as before, one honeycomb sheet (1.00); the turning there is a few degrees per s (maturity makes the walls a little
+  uneven) and changes nothing.
+
+**Growth from one founder.** Division by the front builds the lineage's direction into the tissue: a **uniform** founder dividing
+across its front grows an **elongated sheet** (elongation 2.6, against 1.3 with the turning off), because all daughters keep the
+inherited front and divide the same way (with the turning off, the front is carried by the outline's 60-degree lock and wanders,
+so the axis is lost; along the front: 2.1 against 1.4). A **polar** founder grows a field of trefoil **rosettes** (not a cyst:
+daughters sit side by side, turn their sticky fronts together in threes and split off); a **two-ended** founder a branched **net of
+end-to-end chains** (along the front: score 0.63 against 0.28 without turning); a **sticky-sided** founder dividing along its front
+puts each daughter at a non-sticky end, and with turning the pair swings round flank to flank, so the line grows into one compact
+**cluster of pinwheels** (0.70), while without turning it stays scattered pairs and short stacks (0.11; 10 chains of glued cells, the
+longest 9); an **epithelial** founder dividing across its front grows **short cords** one to two cells thick, apices out (islands
+0.92). No hollow ring, cyst or lumen formed in any run: nothing in the toy makes the inside of a ring empty (no fluid, no apical
+repulsion), and growth here is fast and in the open, so daughters fill any gap. (Rings are counted as closed loops of 5 or more
+glued cells with two bonds each: 0 everywhere.)
+
+The 40- and 100-cell lab (score with the islands score in brackets; at 80 s, before the stir):
+
+| pattern, field, cells | turning | score (islands) | contacts per cell | persistence | glued bonds per cell | contacts on sticky sides (chance) | contacts front / flank / back | turning (deg/s) |
+|---|---|---|---|---|---|---|---|---|
+| uniform, field A off, 40 | off | 1.00 (1.00) | 4.75 | 1.00 | 4.75 | - | 0.36 / 0.34 / 0.30 | 0.0 |
+| uniform, field A off, 40 | on | 1.00 (1.00) | 4.75 | 1.00 | 4.75 | - | 0.35 / 0.31 / 0.34 | 3.9 |
+| polar, field A off, 40 | off | 0.15 (0.76) | 1.64 | 0.83 | 1.40 | 0.83 (0.48) | 0.64 / 0.27 / 0.09 | 0.0 |
+| polar, field A off, 40 | on | 0.12 (0.87) | 2.33 | 0.93 | 2.15 | 0.93 (0.45) | 0.82 / 0.13 / 0.04 | 9.7 |
+| two-ended, field A off, 40 | off | 0.13 (0.59) | 1.27 | 0.74 | 0.90 | 0.81 (0.53) | 0.50 / 0.12 / 0.38 | 0.0 |
+| two-ended, field A off, 40 | on | 0.50 (0.73) | 2.72 | 0.82 | 2.25 | 0.78 (0.56) | 0.44 / 0.10 / 0.46 | 16.3 |
+| sticky sides, field A off, 40 | off | 0.13 (0.61) | 1.31 | 0.76 | 1.20 | 0.64 (0.49) | 0.31 / 0.41 / 0.28 | 0.0 |
+| sticky sides, field A off, 40 | on | 0.63 (0.82) | 2.86 | 0.84 | 2.45 | 0.72 (0.56) | 0.28 / 0.46 / 0.27 | 17.5 |
+| epithelial, field A off, 40 | off | 0.19 (0.70) | 1.80 | 0.85 | 1.60 | 0.82 (0.62) | 0.10 / 0.38 / 0.53 | 0.0 |
+| epithelial, field A off, 40 | on | 0.31 (0.91) | 2.96 | 0.96 | 2.80 | 0.91 (0.62) | 0.02 / 0.48 / 0.50 | 9.8 |
+| uniform, long beat, 40 | off | 1.00 (1.00) | 6.57 | 1.00 | 6.70 | - | 0.36 / 0.33 / 0.32 | 0.0 |
+| uniform, long beat, 40 | on | 1.00 (1.00) | 6.13 | 1.00 | 6.20 | - | 0.36 / 0.33 / 0.31 | 3.5 |
+| polar, long beat, 40 | off | 0.22 (0.73) | 2.76 | 0.75 | 1.65 | 0.73 (0.47) | 0.53 / 0.32 / 0.15 | 0.0 |
+| polar, long beat, 40 | on | 0.38 (0.92) | 3.59 | 0.94 | 2.85 | 0.71 (0.48) | 0.50 / 0.33 / 0.17 | 21.9 |
+| two-ended, long beat, 40 | off | 0.35 (0.76) | 3.73 | 0.82 | 2.10 | 0.57 (0.54) | 0.34 / 0.26 / 0.40 | 0.0 |
+| two-ended, long beat, 40 | on | 0.87 (0.87) | 4.42 | 0.90 | 2.85 | 0.60 (0.50) | 0.35 / 0.22 / 0.44 | 29.7 |
+| sticky sides, long beat, 40 | off | 0.49 (0.78) | 3.96 | 0.82 | 2.25 | 0.47 (0.48) | 0.34 / 0.34 / 0.32 | 0.0 |
+| sticky sides, long beat, 40 | on | 0.77 (0.84) | 4.22 | 0.88 | 2.90 | 0.56 (0.50) | 0.33 / 0.40 / 0.27 | 26.0 |
+| epithelial, long beat, 40 | off | 0.69 (0.84) | 3.99 | 0.87 | 2.30 | 0.68 (0.60) | 0.27 / 0.36 / 0.36 | 0.0 |
+| epithelial, long beat, 40 | on | 0.69 (0.97) | 4.22 | 0.97 | 3.45 | 0.74 (0.58) | 0.17 / 0.41 / 0.42 | 17.5 |
+| uniform, long beat, 100 | off | 1.00 (1.00) | 6.52 | 1.00 | 6.90 | - | 0.33 / 0.34 / 0.33 | 0.0 |
+| uniform, long beat, 100 | on | 0.99 (0.99) | 6.83 | 0.99 | 6.88 | - | 0.32 / 0.33 / 0.36 | 3.6 |
+| polar, long beat, 100 | off | 0.28 (0.64) | 3.18 | 0.69 | 1.74 | 0.65 (0.49) | 0.47 / 0.34 / 0.19 | 0.0 |
+| polar, long beat, 100 | on | 0.38 (0.87) | 3.39 | 0.87 | 2.52 | 0.76 (0.49) | 0.58 / 0.29 / 0.13 | 23.0 |
+| two-ended, long beat, 100 | off | 0.63 (0.79) | 4.13 | 0.80 | 2.52 | 0.53 (0.48) | 0.34 / 0.32 / 0.34 | 0.0 |
+| two-ended, long beat, 100 | on | 0.88 (0.94) | 4.93 | 0.95 | 3.02 | 0.57 (0.51) | 0.36 / 0.27 / 0.37 | 25.0 |
+| sticky sides, long beat, 100 | off | 0.61 (0.81) | 3.78 | 0.84 | 2.12 | 0.56 (0.50) | 0.31 / 0.37 / 0.32 | 0.0 |
+| sticky sides, long beat, 100 | on | 0.86 (0.91) | 4.96 | 0.91 | 3.32 | 0.56 (0.50) | 0.30 / 0.39 / 0.31 | 25.2 |
+| epithelial, long beat, 100 | off | 0.55 (0.83) | 3.99 | 0.84 | 2.84 | 0.69 (0.60) | 0.25 / 0.35 / 0.40 | 0.0 |
+| epithelial, long beat, 100 | on | 0.66 (0.92) | 4.23 | 0.92 | 3.24 | 0.74 (0.60) | 0.18 / 0.40 / 0.42 | 19.3 |
+
+Growth from one founder (field A off; at 80 s; the islands score is not meaningful here, as the count grows):
+
+| founder's pattern, daughters | turning | cells at 80 s | groups (clusters) | contacts per cell | persistence | glued bonds per cell | elongation | contacts on sticky sides (chance) | score |
+|---|---|---|---|---|---|---|---|---|---|
+| uniform, along | off | 54 | 1.00 | 4.67 | 1.00 | 4.67 | 1.37 | - | 1.00 |
+| uniform, along | on | 63 | 1.00 | 4.73 | 1.00 | 4.73 | 2.08 | - | 1.00 |
+| uniform, across | off | 64 | 1.00 | 4.83 | 1.00 | 4.84 | 1.29 | - | 1.00 |
+| uniform, across | on | 57 | 1.00 | 4.63 | 1.00 | 4.63 | 2.61 | - | 1.00 |
+| polar, along | off | 75 | 16.14 | 1.99 | 0.79 | 1.71 | 3.04 | 0.80 (0.50) | 0.10 |
+| polar, along | on | 75 | 12.86 | 2.70 | 0.91 | 2.32 | 2.04 | 0.92 (0.48) | 0.15 |
+| polar, across | off | 77 | 12.00 | 2.06 | 0.76 | 1.53 | 1.67 | 0.82 (0.50) | 0.11 |
+| polar, across | on | 75 | 12.43 | 2.57 | 0.91 | 2.29 | 1.93 | 0.95 (0.48) | 0.22 |
+| two-ended, along | off | 75 | 5.86 | 2.58 | 0.80 | 1.87 | 1.35 | 0.83 (0.67) | 0.28 |
+| two-ended, along | on | 74 | 3.00 | 2.83 | 0.81 | 2.35 | 1.36 | 0.78 (0.56) | 0.63 |
+| two-ended, across | off | 75 | 6.71 | 2.22 | 0.77 | 1.55 | 1.41 | 0.86 (0.67) | 0.17 |
+| two-ended, across | on | 75 | 3.14 | 3.01 | 0.83 | 2.40 | 1.89 | 0.81 (0.60) | 0.52 |
+| sticky sides, along | off | 75 | 10.43 | 1.73 | 0.66 | 1.09 | 2.51 | 0.48 (0.33) | 0.11 |
+| sticky sides, along | on | 75 | 3.00 | 3.28 | 0.85 | 2.53 | 1.07 | 0.70 (0.53) | 0.70 |
+| sticky sides, across | off | 75 | 10.14 | 1.88 | 0.61 | 1.17 | 2.84 | 0.50 (0.33) | 0.08 |
+| sticky sides, across | on | 75 | 3.14 | 2.77 | 0.80 | 2.27 | 1.11 | 0.77 (0.57) | 0.54 |
+| epithelial, along | off | 75 | 8.86 | 2.56 | 0.84 | 2.05 | 2.73 | 0.94 (0.67) | 0.21 |
+| epithelial, along | on | 75 | 4.57 | 3.23 | 0.95 | 3.15 | 1.81 | 0.85 (0.62) | 0.38 |
+| epithelial, across | off | 75 | 9.00 | 2.50 | 0.82 | 2.00 | 2.01 | 0.90 (0.67) | 0.16 |
+| epithelial, across | on | 75 | 3.43 | 3.32 | 0.92 | 3.04 | 1.19 | 0.86 (0.62) | 0.65 |
+
+(One run each, seed 3; differences of less than about 0.3 in the score near the edge are noise, see "How the runs were made".)
+
+Stored (`experiments/tissue/configs/c11-<name>/`: condition, cells-only snapshot at 120 s, measures, one picture at 120 s, after the
+stir; reload with `?snap=`; pictures at 80 s, before the stir, in `experiments/keep/c11/`):
+
+| configuration | what it is | reload (after the local server's address) |
+|---|---|---|
+| [c11-pol-lb-t1-100](experiments/tissue/configs/c11-pol-lb-t1-100/) | polar walls, 100 cells, long beat, turning: a lace of trefoil rosettes, sticky fronts in the middle | `?snap=experiments/tissue/configs/c11-pol-lb-t1-100/snapshot.json` |
+| [c11-end-lb-t1-100](experiments/tissue/configs/c11-end-lb-t1-100/) | two-ended walls, 100 cells, long beat, turning: one tissue of end-to-end chains (0.88) | `?snap=experiments/tissue/configs/c11-end-lb-t1-100/snapshot.json` |
+| [c11-end-lb-t1](experiments/tissue/configs/c11-end-lb-t1/) | two-ended, 40 cells: a compact sheet with arms of end-to-end cells (0.87) | `?snap=experiments/tissue/configs/c11-end-lb-t1/snapshot.json` |
+| [c11-sid-lb-t1-100](experiments/tissue/configs/c11-sid-lb-t1-100/) | sticky sides, 100 cells, long beat, turning: one sheet with palisade rows (0.86) | `?snap=experiments/tissue/configs/c11-sid-lb-t1-100/snapshot.json` |
+| [c11-epi-off-t1](experiments/tissue/configs/c11-epi-off-t1/) | epithelial walls, field A off: trefoils and short cords, apices out (islands 0.91) | `?snap=experiments/tissue/configs/c11-epi-off-t1/snapshot.json` |
+| [c11-grow-uni-d1-t1](experiments/tissue/configs/c11-grow-uni-d1-t1/) | one uniform founder, daughters across the front: an elongated honeycomb sheet (elongation 2.6) | `?snap=experiments/tissue/configs/c11-grow-uni-d1-t1/snapshot.json` |
+| [c11-grow-pol-d1-t1](experiments/tissue/configs/c11-grow-pol-d1-t1/) | one polar founder, across: a field of rosettes | `?snap=experiments/tissue/configs/c11-grow-pol-d1-t1/snapshot.json` |
+| [c11-grow-sid-d0-t1](experiments/tissue/configs/c11-grow-sid-d0-t1/) | one sticky-sided founder, along: a compact cluster of pinwheels (0.70) | `?snap=experiments/tissue/configs/c11-grow-sid-d0-t1/snapshot.json` |
+| [c11-grow-epi-d1-t1](experiments/tissue/configs/c11-grow-epi-d1-t1/) | one epithelial founder, across: short cords, apices out (islands 0.92) | `?snap=experiments/tissue/configs/c11-grow-epi-d1-t1/snapshot.json` |
+
+Pictures (80 s, before the stir; walls view: grey uniform, coral polar, mint two-ended, magenta sticky sides, bright tube = sticky
+side): `experiments/keep/c11/polar-rosettes-100_walls.jpg` (and `polar-noturn-100_walls.jpg`, the same without turning),
+`sticky-sides-100_walls.jpg`, `two-ended-40_walls.jpg` (and `two-ended-noturn-40_walls.jpg`), `epithelial-40_clean.jpg`,
+`grow-uniform-across_clean.jpg`, `grow-polar-across_walls.jpg`, `grow-epithelial-across_clean.jpg`,
+`grow-sticky-sides-along_walls.jpg`.
+
+Snapshots saved before C11 load with the turning, division by the front and the free base glue off and run on as saved (checked:
+`c10-pol-off-m0-al`, `c10-uni-lb-100-al` (all 100 cells still one sheet after 40 s), and the pre-C10 `th-Bfate`; runs
+`experiments/runs/c11/c11-reload-*`).
+
+How the turning was tuned (trial runs, not kept: 40 cells, field off): at rotational drag 1 (a disc dragged over its whole
+footprint) the turning, about 6 degrees per s, already raised the contacts per cell (polar 1.4 → 2.1, two-ended 1.3 → 2.0, sticky
+sides 1.3 → 2.0); turning strength 5 (= drag 0.2, the default) raised them more (two-ended 3.1, score 0.29 → 0.61); 20 gave no more
+(polar 2.4). A first form of the torque (r x F with the glue not anchored to the turning
+cell) made cells spin and linked worse (persistence 0.60 against 0.87); see the README.
+
 ## How the runs were made
 
 - **Few cells, no evolution.** 40 cells (also 20, 100, 300), one genome cloned to every cell (`?clone=1`), mutation and the
@@ -658,4 +805,5 @@ Every stable run (120), with its kind and scores; open the folder for its pictur
 - `experiments/tissue/analyse.py`: the measures, the two scores, `sweep.csv`, and `configs/` for the stable runs
 - `experiments/tissue/tables.py` and `notes.json` (the plain-words column): the tables above; `crop.ps1`: crops the shots (Windows PowerShell, System.Drawing)
 - `experiments/runs/tissue/<run>/`: `samples.csv`, `meta.json`, `console.log` of every run (shots and snapshots there are not kept)
+- Steps C10 and C11: `experiments/tissue/c10.py`, `experiments/tissue/c11.py` (conditions and analysis), runs in `experiments/runs/tissue-c10/` and `experiments/runs/tissue-c11/`, tables `c10-sweep.csv` and `c11-sweep.csv`
 - No change to `src/`: every knob used is reachable from the console (`moire.cells.params`, `.shape`, `.fields`, `.excl`, `.partner`, `moire.genome.params` / `.rules`, `moire.charge.params`, ...), and the genes through `moire.genome.setAll`.

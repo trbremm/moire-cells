@@ -37,7 +37,7 @@ export const GENES = {
   mix: 40, thickness: 41, stiffness: 42, selectivity: 43, pump0: 44, pump1: 45, pumpRate0: 46, pumpRate1: 47,
   // step C10, the patterned walls: a0 is the adhesion gene itself; a1 the polar part, a2 the two-fold part, w how much the front
   // follows the dipole
-  a0: 16, a1: 48, a2: 49, w: 50, wallFront: 50,
+  a0: 16, a1: 48, a2: 49, w: 50, wallFront: 50, divAxis: 51,   // (step C11: divAxis, 0 along the front .. 1 across)
 };
 // words 19..31 are the cell's state, not genes (heading, accumulators, felt fields, conversion)
 const STATE = new Set([19, ...Array.from({ length: 12 }, (_, k) => 20 + k)]);
@@ -82,6 +82,7 @@ function gather(M, ctl) {
   flatten(M.hardlight.census, 'hardlight', out);
   flatten(M.division.census, 'division', out);
   flatten(M.walls.census, 'walls', out);         // step C10: the patterned walls' census
+  if (M.oil) { flatten(M.oil.census, 'oil', out); if (M.oil.last) flatten({ ...M.oil.last, sizes: undefined }, 'oilstats', out); }   // step C12
   if (M.walls.near) flatten(M.walls.near, 'wallstats', out);
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;

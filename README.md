@@ -39,7 +39,9 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
 - **Tools** (what a tap and a drag on the dish do; one at a time, the active one outlined in cyan):
   ripple (key 1) · light spring (2) · heavy spring (3): a tap drops one, a drag stirs ·
   stir: a tap or drag stirs (ripples, and the cells near your finger are pushed along) ·
-  move light (the ellipse): a tap or drag puts the spotlight there (and switches the light to spotlight).
+  move light (the ellipse): a tap or drag puts the spotlight there (and switches the light to spotlight) ·
+  oil spring (the drop; step C12, no key): a tap drops a spring of oil, of oil with a little soap (the default), or of
+  soap, as the rules panel's "oil tool drops" says.
   With a mouse, as before: right-drag moves the spotlight, the wheel tilts it, Shift+wheel turns it.
 - **Pause / play** (Space) · **speed** (keys [ ]; a tap goes to the next speed, after MAX back to 1×) ·
   **record** (Shift+V, see below).
@@ -47,11 +49,13 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   - *light* (the sun): spotlight / full field / off, sliders for the tilt and the direction the light comes from,
     day and night;
   - *view* (the eye): first the **look** (step C6n: neon, halo, trails, hum, show the machinery, substances as dust or
-    halftone, the lattice inside the cells; step C6b: the charge contours; step C6c: corner rounding), then the entropy panel, the stats overlay (F),
+    halftone, the lattice inside the cells; step C6b: the charge contours; step C6c: corner rounding; step C12: oil films
+    drawn, polarity wash), then the entropy panel, the stats overlay (F),
     the landscape, which substance is shown, colour by fate, lineage, strategy (step C6), charge (step C6b) or wall pattern
     (step C10), and the other drawing switches;
   - *rules*: every rule that has a key, as a switch with a one-line explanation and its key, grouped as below
-    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge, membrane chemistry (step C6c, panel only), charge per side (step C6d, panel only: the dipoles' switches and six knobs with - and +), pumps (step C7, panel only: four switches and five knobs with - and +), catalysts (step C7b, panel only: two switches and four knobs), hard light (step C8, panel only: one switch and three knobs), division (step C9, panel only: the mode and five knobs), patterned walls (step C10, panel only: four switches and five knobs)); settings with several values show the current one
+    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge, membrane chemistry (step C6c, panel only), charge per side (step C6d, panel only: the dipoles' switches and six knobs with - and +), pumps (step C7, panel only: four switches and five knobs with - and +), catalysts (step C7b, panel only: two switches and four knobs), hard light (step C8, panel only: one switch and three knobs), division (step C9, panel only: the mode and five knobs), patterned walls (step C10, panel only: four switches and six knobs, the sixth, free base glue, since step C11), glue turns cells (step C11, panel only: two switches and two knobs), oils and water (step C12, panel only: four
+    switches, what the oil tool drops, and four knobs)); settings with several values show the current one
     and change on a tap; the lever and the stiffness have - and +. The switches follow the state, also when a key changes it;
   - *dish* (the dish with three cells): the speed as a row of buttons, new culture (N), new genomes (G), clear
     springs (C), wash the atoms out (Shift+C).
@@ -83,7 +87,12 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   `?contours=1`, `?view=charge`; step C6c: `?honeycomb=0` (the ellipse cells), `?membrane=0` (no membrane chemistry),
   `?bites=0`, `?burst=0`, `?elastic=0`, `?selectivity=0`; step C6d: `?dipoles=0`, `?dd=0`, `?dphi=0`, `?dfield=0`; step C7: `?pumps=0`, `?pumpcontact=0`, `?voltage=0`, `?v2b=0`; step C7b: `?crystal=0`, `?cofactor=0`; step C8: `?hardmut=0`; step C9: `?divide=0` (the old turnover, a fixed count), `?cap=N` (the capacity), `?divat=`,
   `?divcost=`, `?starve=`, `?crowd=`, `?age=` (the division's knobs); step C10: `?walls=0` (every side as sticky as the
-  adhesion gene, as before), `?wallfront=0`, `?wallcost=0`, `?mature=0`, `?view=walls`.
+  adhesion gene, as before), `?wallfront=0`, `?wallcost=0`, `?mature=0`, `?view=walls`; step C11: `?turn=0` (the glue does not
+  turn the cells), `?divfront=0` (divisions along the long axis, as in step C9), `?freeglue=x` (the free base glue; 0 = all glue costs,
+  as in step C10); step C12: `?oil=0` (no oil forms
+  or separates), `?phase=0` (no phase separation: everything only spreads), `?amphi=0` (no amphiphiles made, no boundary
+  pull, no skin), `?fusion=0` (no membrane fusion), `?oilspring=oil|emulsion|soap` (what the oil tool drops),
+  `?polarity=1` (the polarity wash shown).
   Experiments (see "Experiments: tools"): `?mut=0` (mutation off), `?life=0` (life cycle off), `?snap=<file>` (load a
   saved state), `?clone=1` (every cell gets the first cell's genes; `?clone=@N`: slot N's), `?genes=adhesion:0.8,motility:0.5`.
 
@@ -2525,7 +2534,7 @@ In the default scene the colony in the light is **looser** than before: with the
 membrane has the linkers for it and its battery pays the upkeep, and most cells lack the linkers for most of the run (the mean glue
 held is 0.02 to 0.28 of the 0.5 to 0.7 the genes ask for), so neighbours that hold no glue push off a little (the adhesion's
 `adhBase`, as unlike neighbours always did) and the colony becomes a foam of cells with dark gaps between them, with whitish
-matured patches where linkers are plenty (near the springs). With `?wallcost=0` it packs as before.
+matured patches where linkers are plenty (near the springs). With `?wallcost=0` it packs as before. (Since step C11 the first 0.5 of every side's glue is free, so the colony packs again: "Step C11: glue turns cells".)
 
 **The pattern.** Three smooth genes in the cell's own frame set each side's adhesion:
 
@@ -2676,6 +2685,368 @@ copy grew from 112 to 120 bytes (read for every neighbour of every cell each tic
 pass works out six cosines per cell. Worth measuring again on a quiet GPU. Firefox (headed, 1600 × 1000) ran at ×2.2 at 8× on the
 shared GPU (not comparable either).
 
+## Step C11: glue turns cells
+
+The user (CLAUDE.md, C11): "yes absolutely" to the idea that a sticky side pulling on a neighbour pulls off-centre, so the same
+pull also turns the cell until its sticky sides face its neighbours; and division along (or across) the front, so daughters land
+where the pattern says. Plus the walls' cost retuned ("your call"), so the default colony packs as a honeycomb again.
+
+**What it looks like.** Nothing new is drawn: the change is in how cells sit. In the **tissue lab** (few cells, one hand-set wall
+pattern, no evolution) the cells now swing their sticky parts toward each other within a second or two of meeting and then sit
+still, so each pattern shows as a shape: **polar** cells (front sticky) close into trefoil **rosettes**, three cells with their
+sticky fronts in the middle like a pinwheel; **two-ended** cells join end to end into a **net of short chains** (bright bars at the
+joints in the walls view); cells with **sticky sides** lie flank to flank in **palisade rows** inside one sheet; an **epithelial**
+pattern (flanks sticky, apex not) makes small **cords and trefoils with the apices outside**. A founder cell that divides by its
+front grows its lineage's direction into the tissue: a plain founder dividing across its front grows an **elongated sheet**.
+No hollow ring or cyst formed (TISSUE.md, "C11: glue turns cells"). In the **default scene** the colony packs as a honeycomb again
+(the wall-cost retune, below): at 5 minutes the walls are whiter (more matured junctions) and the dark gaps between the cells of
+C10's foam are mostly gone, except at the starving rim. With **the machinery** (Shift+4) the front ticks show the cells' fronts
+turning; the WALLS line shows the turning rate and where the contacts sit.
+
+**How the turning works** (`cell_step.wgsl`, in the neighbour loop, "step C11"). The adhesion of a contact acts along the whole
+shared wall, through bonds anchored in both membranes. The wall's two ends sit 30 degrees either side of the line between the two
+centres (one side of a hexagon) and its middle on that line; the glue at each of the three points is the smaller of the two cells'
+adhesion there (each cell's adhesion round its wall: `wall_at`, linear between its six sides' middles, from the effective per-side
+adhesion of step C10, so maturity and cost count). Where the wall is stickier the bonds pull harder, so the pull's point of action
+lies off the centre line and the pull turns the cell: torque = r x F summed along the wall. It is worked out as the pull's virtual
+work: the change of the wall's mean glue as THIS cell turns a little (± 0.1 rad), times K h beta / 3 (K the pull per unit of glue,
+from the same factors as the adhesion force: likeness, fate glue, adhesion, R, contact stiffness, touch; h the wall's half-length, a
+hexagon's side at the contact's distance; beta 30 degrees), which is r x F for a glue that changes evenly along the wall. Where the
+neighbour's glue is the smaller, a turn of this cell changes nothing there and gives no torque from there. Each cell works out its
+own torque from the same wall the same way, so there is no race; nothing says "face your neighbour".
+
+A first version took r x F with the glue as it stands at the wall, not anchored to the cell that turns: where the neighbour's
+pattern limited the glue, the torque never went away and cells kept spinning (in the lab: turning 1 rad/s at turning strength 20,
+contact persistence down from 0.87 to 0.60). The virtual-work form stops a cell once its own sticky part faces the contact.
+
+**The body turns** overdamped: rate = turning strength / rotational drag x torque / (r² / 2) rad/s (a disc dragged over its
+substrate has a rotational drag of r² / 2 against the motion's drag of 1: in this simulation velocity = force), at most 3 rad/s.
+Defaults: turning strength 1 (the torque as derived), rotational drag **0.2**: a cell turns its body five times as easily as a disc
+dragged over its whole footprint. At 1 the turning (about 6 degrees per s) already helped, but slowly against crawling (0.6 R/s),
+which breaks contacts (lab, 40 cells, field A off, contacts per cell: polar 1.4 → 2.1, two-ended 1.3 → 2.0, sticky sides 1.3 → 2.0);
+at 0.2 more (two-ended 3.1, its score 0.29 → 0.61); a strength of 20 gave no more (polar 2.4, sticky sides lost persistence). The **front** (C10) and the honeycomb's **orientation** turn together with the body, and the dipole field's torque (C6d)
+turns the body at the rate it reached before. The hexagon's own pull toward its neighbours (step C6c: a side faces each neighbour)
+and its corners' slides now only fit the OUTLINE to its tile: they no longer turn the front. (Before C11 the front was carried by
+every turn of the outline, which locks it every 60 degrees: a cell could never have turned its sticky side round in a tissue.)
+With the turning off (`?turn=0`) everything is exactly as in step C10. Ellipse cells (honeycomb off) turn only their front.
+
+**Division by the front** (`cell_step.wgsl`, division). The daughter is put along the mother's front (gene **divAxis** 0), across it
+(1) or at that share of a right angle between, either end at random; daughters inherit the front (as since C10). divAxis is
+Bio.wall.w (until now spare), drifts by 0.04 a birth like a1 and a2 (within 0..1, times the hard light's factor), and the founders'
+is anywhere from 0 to 1 (its own random stream: `?seed=` keeps every other gene). Off (`?divfront=0`), or with the walls off: the
+long axis, as in step C9. So a polar cell dividing along its front puts its daughter ahead of it, back to front; across, side by
+side with both fronts the same way; a two-ended cell along its front, end to end (sticky to sticky); a cell with sticky flanks
+across its front, flank to flank.
+
+**The walls' cost, retuned: a free base glue** (`cell_eat.wgsl`). Step C10's cost made the default colony a loose foam: a side held
+glue only from linkers beyond its membrane's own want, and in the default scene the membranes themselves are far from full for
+minutes (mean integrity 0.03 at 30 s, 0.6 at 5 min), so most sides held none (glue at the contacts 0.04 at 5 min, seed 3) and
+touching cells pushed each other off (the loss every pair pays, adhBase 0.25). Now each side holds up to **freeGlue** (0.5) of
+adhesion at no cost, as every side did before C10 (the old adhesion gene was free; the founders' a0 is 0 to 1, mean 0.5); only what a
+side asks ABOVE it (a sticky side's extra, a matured junction's extra) is built from linkers and pays upkeep, exactly as in C10. So a
+plain wall packs, and a patterned one still pays for its sticky parts. Why this and not the other options: a lower linker price per
+glue does not help (a side whose membrane is not yet full holds no extra linker at all, whatever the price); letting the glue take
+linkers before the membrane would empty the membranes (and burst cells) in a colony that has too few linkers anyway. Knob **free
+base glue** (Patterned walls group), `?freeglue=x` (0: every bit of glue costs, as in C10).
+
+Default scene, seed 3, 300 s (`experiments/keep/c11/cost-before-c10_t300.jpg` against `cost-after-c11_t300.jpg`, a crop of the
+colony's middle; runs in the scratchpad, numbers from the panel and `walls.stats()`):
+
+| at 300 s | C10 as merged | C10 with `?wallcost=0` | C11 (default) | C11 with `?turn=0&divfront=0` |
+|---|---|---|---|---|
+| cells | 1241 | 1352 | 1255 | 1248 |
+| glue held at the contacts (the smaller side) | 0.04 | 0.76 | 0.33 | 0.36 |
+| glue held per side / asked | 0.10 / 0.59 | 0.97 / 0.97 | 0.44 / 0.78 | 0.45 / 0.88 |
+| touching pairs per cell | 2.53 | 2.70 | 2.67 | 2.59 |
+| matured contacts | 2 % | 54 % | 27 % | 39 % |
+| linkers in adhesion, upkeep | 11.6, 0.90/s | 0, 0 | 6.5, 0.48/s | 6.8, 0.50/s |
+
+(At 60 s, while the membranes are still empty: glue at contacts 0.035 in C10, 0.44 now.) So the colony holds about as many
+contacts as with no cost at all, while the sticky extras (a matured junction asks up to twice its pattern) still cost linkers and
+upkeep.
+
+**Switches and knobs.** Rules panel, group **Glue turns cells (step C11)**: **glue turns cells** (`?turn=0`), **division by the
+front** (`?divfront=0`), knobs with − and +: **turning strength** (`turnGain`, 1) and **rotational drag** (`rotDrag`, 0.2). Group
+Patterned walls: **free base glue** (`freeGlue`, 0.5, `?freeglue=`). Console: `moire.walls.params` (turn, divFront, turnGain,
+rotDrag, freeGlue); the gene by name for the lab: `moire.genome.setAll({ divAxis: 1 })`. Constants in `cell_step.wgsl`: the rate's
+cap TURN_MAX (3 rad/s), the small turn the glue's change is measured over TURN_DA (0.1 rad). No keys (none are free): panel only.
+
+**The census.** The WALLS line now starts with
+
+    WALLS  contacts on sticky sides 93% (chance 47%) · turning 6.1°/s · a0 ...
+
+(the contacts that sit on a STICKY side of a patterned cell, one whose pattern from the genes, without the maturity, is in the
+upper half of the cell's own range, against the share of such sides; uniform cells are not counted; and the mean turning rate the
+glue gives the cells that touch another). On a phone `· sticky 93/47% · 6.1°/s`. Counted on the GPU on the frame's last tick
+(Stats.wall, now 32 words: Stats 8768 bytes), in `moire.sample()` as `walls.onSticky`, `walls.stickyChance`, `walls.turnRate`
+(rad/s). The F overlay adds a line with the switches, the knobs and the numbers. `await moire.walls.stats()` adds `onSticky` and
+`stickyChance` (the same, from the cells read back), `bondsPerCell` (touching pairs holding at least 0.2 glue, per cell), `chains`
+(groups of 3 or more glued cells, each with at most two bonds and no loop), `inChains`, `longestChain`, `rings` (groups of 5 or more,
+each with exactly two bonds: a closed loop of single cells round a hole), `inRings`.
+
+**In the tissue lab** (TISSUE.md, "C11: glue turns cells": 50 runs, 40 and 100 cells, five hand-set patterns, field A off and the
+long beat, turning on against off, and growth from one founder; walls' cost off as in C10). Turning raised the contacts per cell
+of every patterned wall by a third to double (field A off: polar 1.6 → 2.3, two-ended 1.3 → 2.7, sticky sides 1.3 → 2.9, epithelial
+1.8 → 3.0), the glued bonds by about half and the contacts' persistence (0.74 to 0.85 → 0.82 to 0.96); with the long beat two-ended and
+sticky-sided cells now hold as one tissue (score 0.35 → 0.87 and 0.49 → 0.77 at 40 cells, 0.63 → 0.88 and 0.61 → 0.86 at 100).
+Polar cells put 82 % of their contacts on the front (64 % without turning, 33 % by chance) and make rosettes of three. The mean
+turning rate over the touching cells was 10 to 30 degrees per s. Growth: a uniform founder dividing across its front grew an
+elongated sheet (elongation 2.6 against 1.3 without the turning, which also decouples the front from the outline's 60-degree lock,
+so the lineage keeps its axis); two-ended founders a net of chains, polar founders a field of rosettes, epithelial founders short
+cords with the apices out; no hollow ring or cyst (nothing in the toy empties a lumen). Nine configurations are stored in
+`experiments/tissue/configs/c11-*`; pictures in `experiments/keep/c11/`.
+
+**Evolution** (the default scene, 2000 cells, division, MAX, headless Chrome; seeds 3 and 7, 20 minutes, C11 on (the defaults)
+against `?turn=0&divfront=0` (the free base glue in both); runs `experiments/runs/c11/c11-evo-*`; one run each, not
+bit-repeatable; the GPU was shared with other workers' runs, about ×0.4 to ×0.5):
+
+| run | cells 2 / 5 / 10 / 15 / 20 min | entropy at 20 min (rate) | uniform / polar / two-ended / sides at 20 min (%) | mean a1, a2 at 20 min | contacts on sticky sides at 10 min (chance) | turning at 10 min (deg/s) | glue at contacts | glued bonds per cell | contacts at front / flank / back | ORDER |
+|---|---|---|---|---|---|---|---|---|---|---|
+| seed 3, C11 on | 822 / 1249 / 1177 / 920 / 550 | 17.0 M (13.4 k/s) | 3 / 48 / 48 / 2 | +0.23, +0.41 | 0.51 (0.52) | 7.1 | 0.31 | 2.39 | 0.35 / 0.32 / 0.33 | 0.22 |
+| seed 3, off | 829 / 1169 / 1391 / 1174 / 654 | 17.4 M (13.7 k/s) | 1 / 64 / 3 / 32 | +0.30, −0.32 | 0.51 (0.51) | 0 | 0.21 | 1.79 | 0.34 / 0.33 / 0.33 | 0.22 |
+| seed 7, C11 on | 766 / 1094 / 1426 / 1057 / 631 | 17.5 M (13.7 k/s) | 3 / 55 / 29 / 13 | +0.08, +0.17 | 0.50 (0.50) | 10.2 | 0.26 | 2.19 | 0.34 / 0.33 / 0.33 | 0.22 |
+| seed 7, off | 720 / 1168 / 1367 / 1110 / 571 | 18.6 M (14.8 k/s) | 1 / 37 / 52 / 11 | +0.38, +0.47 | 0.50 (0.49) | 0 | 0.27 | 1.93 | 0.34 / 0.32 / 0.34 | 0.22 |
+
+Plainly: **no visible selection of wall patterns, and no patterned tissue in the default scene.** The patterns drift as in C10
+(uniform walls fall from 60 to 75 % at 2 minutes to 1 to 3 % by 20 minutes, with the turning and without), and which pattern ends
+up common follows the winning lineages (seed 3 with C11: two-ended 48 %; its control: sticky sides 32 %; seed 7 the other way
+round), as in C10's runs. In the colony the contacts sit on sticky sides only as often as chance (0.50 against 0.50) and at the
+front, flank and back a third each: the cells do turn (7 to 10 degrees per s on average), but in a packed, crowded colony every
+side touches someone, the sticky ones and the others alike, so turning cannot choose; the fed cells also crawl, divide and die
+every few minutes. What the turning does show: more glued bonds per cell (2.2 to 2.4 against 1.8 to 1.9) and fewer loose chains of
+glued cells (4 to 6 against 12 to 24 at 20 minutes). Count, entropy (17.0 to 18.6 M; the turning's runs 2 to 6 % lower, within the
+runs' spread) and ORDER (0.22) are the same. Atoms and charge rounding exactly 0 in every sample of the four runs; the energy's
+between −0.035 and +0.12.
+
+**Checked.** The books: a 700 s run at MAX (seed 5; `experiments/runs/c11/c11-check`) through N (120 s), a wash (220 s), a resize
+to 1000 × 700 (300 s), G (400 s), a resize back (480 s), two new springs (520 s), every walls switch at runtime (560 to 610 s), the
+turning and division by the front off and on again, turning strength 5 with no free base glue, the defaults back (620 to 632 s), and
+a snapshot saved and loaded at once (640 s: exact): atoms and charge rounding exactly 0 and the energy's between +0.004 and +0.095
+(in 6.6 M), except in the two samples taken in the paused instant of each resize (atoms 881 and 363: the old grid not yet drained,
+the same artefact as in step C10's check; 10 s later 0 again). The four 20-minute evolution runs and the 50 lab runs: atoms and
+charge 0 in every sample. Snapshots from before C11 (C10's stored configurations) load with the turning, division by the front and
+the free base glue off (the note says so) and run on as saved; older ones as before (walls off). No WebGPU errors in Chrome
+(headless; also at phone size 390 × 844: the short WALLS line, two lines there, the rules panel shows the new group with its two
+switches and two knobs) or Firefox (headed, 1600 × 1000, the walls view and `?turn=0`); only Chrome's usual powerPreference warning.
+Not bit-repeatable: every comparison above is one run each.
+
+**Cost (speed).** Measured as before (headless Chrome, 2000 cells, seed 3, MAX, the mean speed reached from 40 to 150 s), alternating
+C10 (8e51206), C11 and C11 with `?turn=0&divfront=0`, but the GPU was saturated the whole time by other workers' runs (six other
+pages), so every run reached only about real time: C10 ×1.04 and ×0.80, C11 ×0.83 and ×0.80, C11 off ×0.82 and ×0.80. No cost shows
+above that noise. What it costs in principle: per touching pair with the turning on, nine lookups of the glue round the wall (one
+angle each, `wall_at_a`) and three atan2 in the neighbour loop; per cell a few extra words in the census on the frame's last tick.
+The Cell, CellCore and Bio records are unchanged (the gene took Bio.wall.w, spare until now); Stats grew by 32 bytes. Worth measuring
+again on a quiet GPU.
+
+## Step C12: oils and water
+
+The user (CLAUDE.md, C12): "try to build molecules that are polar and apolar; we can simplify their charges combining
+without actual physics". Molecules now have a POLARITY worked out from their atoms' charges and where those sit; water-shy
+matter (oil) gathers with its own kind into droplets, water-loving matter is pushed out of them, and molecules with a
+charged head on an oily tail (amphiphiles: soap) gather on the rims. All of it in the open dish; the cells meet oil
+through their membranes.
+
+**What it looks like.** Oil shows as **dark glossy droplets**: a disc a shade darker than the dish (the ripples under it
+go quiet), a soft sheen just inside the rim on the side facing the light (up and left), and the **rim as one thin bright
+line whose colour drifts slowly along it and in time**, as an oil slick's. Oil still dissolved (too thin to separate) is
+only a faint haze. **Soap** (the amphiphiles) shows as **thin pearly lines**: around a coated droplet a second, white
+line just outside its rainbow rim (an emulsion droplet looks like a ring in a ring); soap dissolved deep inside oil is not
+drawn. Nothing else changes in the clean view. With **the machinery** (Shift+4), or the view panel's **polarity wash**,
+water-loving matter is washed warm (orange) and water-shy matter cool (blue), flat and faint.
+Pictures (kept in `experiments/keep/c12/`): `oil-droplets.png` (sixteen dark droplets with rainbow rims),
+`emulsion-coated-droplets.png` (the same with soap: each rim inside a pearly ring), `soap-rings.png` (soap alone, zoomed:
+every blob a hollow ring with a rainbow rim outside and inside and a pearly halo, like vesicles), `soap-foam-600s.png` (the
+same later: the rings filled in, their halos joined into a net), `cells-with-oil-droplet.png` (a coated droplet at the
+colony's edge, cells sitting over it), `diamonds-before-the-fix.png` (what the first scheme did: see below).
+
+**The polarity rule** (written once, `polarity()` in `src/matter.js`; every substance's numbers come from it). A charged
+atom (a giver +1, a taker −1) is water-loving; a linker that sits in a chain (bonded to another linker) is water-shy. Read
+along the molecule:
+
+    head = charged atoms / atoms        tail = chained linkers / atoms
+
+- **amphiphile**: all the charged atoms at ONE end, a chain behind them (a charged head on an oily tail: soap, lipid);
+- **polar**: charged atoms anywhere else (a lone ion; both ends charged; the fuels: a neutral molecule of a + and a − part
+  still counts, because polarity is where the charge sits, not its sum);
+- **apolar**: a chain and no charged atom (oil; the crusts too, but they do not move);
+- neutral: neither (a lone linker, trace): no part in it.
+
+Two numbers then say how it moves: the **bulk pull** chi = tail − head (oil +1: gathers into oil; ions and fuels −1: pushed
+out; an amphiphile's head and tail cancel: 0) and the **boundary pull** beta = 2 × min(tail, head) for an amphiphile (2/3 for
+glL and tlL; 0 for the rest), toward the oil-water boundary.
+
+| substance | atoms | class | head | tail | chi | beta | charge | energy | spreads (R²/s) |
+|---|---|---|---|---|---|---|---|---|---|
+| g t G T | 1 | polar | 1 | 0 | −1 | 0 | ±1 | 0 | 1.2 / 0.14 |
+| l L, trace | 1 | neutral | 0 | 0 | 0 | 0 | 0 | 0 | 1.2 / 0.14 / 0.017 |
+| gt gT Gt GT (fuels) | 2 | polar | 1 | 0 | −1 | 0 | 0 | 1.5 to 3 | 0.84 / 0.10 |
+| ll LL (crust) | 2 | apolar | 0 | 1 | +1 | 0 | 0 | −0.5 / −1 | 0 |
+| **lL (oil)** | 2 | apolar | 0 | 1 | +1 | 0 | 0 | −0.75 | 0.10 |
+| **glL, tlL (amphiphiles)** | 3 | amphiphile | 1/3 | 2/3 | 0 | 2/3 | +1 / −1 | −0.25 | 0.071 |
+
+**The new molecules** are the smallest that fit the bond rules (linkers want two partners and chain; givers and takers want
+one). The table had no mobile oil (ll and LL pile up as crust) and no amphiphile. Now:
+- **oil lL**: a light and a heavy linker chained. Derived rule for the kind: a chain of ONE row is regular and packs into a
+  solid crust (the old sediment); a chain of MIXED rows cannot pack into a crystal, so it stays liquid: it moves (at the
+  speed of its heavier atom, × 0.7 for its bond, as a fuel) and is water-shy. Until now l + L did not chain at all.
+- **amphiphiles glL (+1) and tlL (−1)**: a light giver or taker as a HEAD on the light end of an oil chain (the end where
+  its bond is cheaper: rows 1 + 1). Three atoms, so slower (× 0.7 per bond).
+
+**Energies, derived.** Every bond's energy now comes from its two atoms' groups and rows: each group brings a tendency (a
+charged atom half the fuel's factor, +0.375; a linker half the chain's, −0.125), and bond(a, b) = (tendency a + tendency b)
+× (row a + row b). That gives the old numbers for every fuel (giver-taker: 0.75 per row) and crust (linker-linker: −0.25 per
+row), and for the new charged-linker bond (the head) 0.25 per row, uphill. A molecule's energy is the sum of its bonds'
+(oil −0.75, an amphiphile −0.75 + 0.5 = −0.25); a bond's spark is 0.125 × its rows, as before.
+
+**The reactions** (in the same table, both ways, atoms and charge conserved; open dish only):
+
+| family | reaction | by | heat per event | spark |
+|---|---|---|---|---|
+| oil | l + L → lL | heat (k 2 R²/s, as the crust) | 0.75 | 0.375 |
+| oilcrack | lL → l + L | hard light (photon 5) | 4.25 | 0.375 |
+| head | g + lL → glL, t + lL → tlL | visible 1 (photon 2; the head bond is 0.5 uphill, + its spark 0.25) | 1.5 | 0.25 |
+| unhead | glL → g + lL, tlL → t + lL | heat (k 0.5 /s, as fuel burning) | 0.5 | 0.25 |
+
+The warm band is heat only, so the lowest band that makes bonds is visible 1 (the table's `bondBand`; the fuels' bands are
+unchanged). Inside the cells these do not run: the cells' stock has the 13 old channels only (`NCH_CELL`), so the oil and the
+amphiphiles are the open dish's (a reaction with `open` is skipped by the cells' reaction loop). The cells meet oil through
+their membranes (below).
+
+**Phase separation** (`matter.wgsl`: `oil_rho`, `oil_blur`, `oil_blur_y` once per tick before the spreading, then the
+spreading's `oil_edge`). Per pixel:
+- **rho**, the oil's share: the water-shy mobile matter there (the oil's chained atoms, and the amphiphiles' tails at
+  `tailVol`) over `full` (1.5 atoms per R² fill a pixel);
+- **obar**, rho smoothed by a Gaussian of `blur` (2) pixels, at most 1: what a molecule "sees" of the oil around it;
+- **film**, the amphiphiles' share: their atoms over `filmFull` (0.6 per R²).
+
+Every substance with a polarity is drawn up the pull **u = gain × (chi × obar + beta × 4 obar (1 − obar))** (gain 9, in
+units of the thermal energy): oil climbs toward oil, ions and fuels slide out of it, soap climbs to where obar is a half,
+the rim. Across each edge between two pixels the spreading and the pull (and the charge's drift of step C6b, for the
+charged ones) make one **Scharfetter-Gummel flux**, `k (B(−D) m_s room_f − B(D) m_f room_s)` with B(x) = x / (eˣ − 1) and D
+the drive across the edge: no drive, plain spreading; at rest the amounts follow e^u exactly, whichever way round the grid
+they went. The **room** is 1 − rho for oil and 1 − film for soap (at least 0.05): a droplet fills up and then grows in area,
+a film stays thin. **Skin**: oil crossing an edge where there is soap is slowed to k / (1 + skin × the film there), skin 4: a
+coated droplet holds its oil. Whole counts, every edge worked out from the same numbers by both its pixels, so the atoms
+and the charge stay exact. Oil separates where rho (1 − rho) × gain is above 1; below that it stays dissolved; around a
+droplet about e^(−gain/2) of a full pixel stays dissolved.
+
+Two things that did not work, kept for the record: the plain upwind drift of step C6b with a 3 × 3 or 5 × 5 smoothing made
+every droplet a **diamond** (its rim was a pixel wide and the grid's axes showed); a wider Gaussian alone made them softer
+diamonds; the Scharfetter-Gummel flux made them round. And a pixel's room may not reach 0: with room 0 a droplet's inside
+froze, and a spring dripping into it packed it three times fuller than full.
+
+**Membranes: fusion** (`cell_eat.wgsl`, the eat pass, just before the membrane's repair; ChemP `fuse`). The membrane is woven
+from linker chains (step C6c), so it is oily. A cell whose membrane is short of linkers takes in the oil under it (its 3 × 3
+pixels): each unit opens into one l and one L in its stock, and the repair weaves them in as usual. Up to `fuseK` (1) × the
+shortfall per s (the larger of the l and the L its sides still want, less what the stock already holds), as far as the
+battery can pay: the chain's energy (0.75 per unit: the weave holds its linkers at the free linkers' energy, step C6c) and
+its spark (0.375, as heat). So fusing oil is dearer than weaving free linkers, and a cell does it only where free linkers
+are short and oil is there. The other way needs no rule: a burst or a death spills the membrane as free l and L, which chain
+into oil again where l meets L. Amphiphiles are not a membrane material (the cells' stock has no channel for them): the
+simplest choice, left open.
+
+**Springs.** The **oil tool** (the drop in the toolbar; no key is free) drops a spring of **oil** (lL), **oil + soap** (by
+atoms 90 % oil, 5 % glL, 5 % tlL: the default) or **soap** (glL and tlL half and half: neutral overall), as the rules panel's
+"oil tool drops" says (`?oilspring=`). A spring of molecules brings their chemical energy with it (oil −0.75 per unit), so
+the energy ledger counts the springs' chemical energy as energy in (`chem.added`; 0 for the atom springs, as before).
+
+**What the substrate did alone** (headless Chrome, one cell (so the cells' radius is 9 px and the grid 4.5 px a pixel),
+no default springs, the light off unless said; the GPU shared all the while with up to eight other workers' runs, so the
+runs reached only ×0.6 to ×10; numbers from `moire.sample()` and `moire.oil.stats()`; one run each, not bit-repeatable):
+- **One oil spring** (150 s; run with the first scheme, see above, so its droplet was a diamond): the oil gathers into
+  **one droplet** around the spring at once; it stays one droplet and creeps outward slowly as the last oil comes in; 77 to
+  95 % of the oil inside it, the rest dissolved around it. Sixteen springs 70 px apart (also the first scheme) **merged**
+  while they were dripping into one quilted puddle with water holes, the holes closing within a few minutes into one big
+  drop.
+- **Sixteen small oil springs 120 px apart** (20 s each): sixteen round droplets of 26 R², growing to 42 R² in 5 minutes
+  (filling up to `full` from their overpacked start) and **not merging or ripening** in that time (the oil between them is
+  scarce at gain 9): no coarsening to see within 5 to 20 minutes unless droplets touch. ORDER falls from 0.42 to 0.27 as
+  they swell (it measures how concentrated each substance is, and a droplet that fills out spreads its oil).
+- **The same with oil + soap**: sixteen **coated droplets** (a white soap line just outside each rainbow rim), 70 % of the
+  soap on the rims, 5 % inside the oil, 24 % dissolved in the water; stable for 10 minutes, no merging.
+- **Soap alone**: each blob of soap first gathers, then **hollows into a ring** (by 3 to 5 minutes all sixteen were rings:
+  `stats()` 16 droplets, 16 rings): the soap's tails make it oily, its heads pull it to the oil-water boundary, and a blob's
+  middle is no boundary, so the soap leaves it. Vesicle-like compartments, the hoped-for look. Later (10 minutes) the rings
+  had **filled in again** (16 discs, 91 % of the soap on rims) and their dilute halos joined into a net with diamond-shaped
+  holes, like a foam: the rings are a stage, not an end.
+- **Oil from the chemistry** (a light and a heavy spring 120 px apart, the whole dish lit, 20 minutes): l + L chain into oil
+  slowly (0.02 to 0.09 units per s), because the same linkers chain into crust faster (ll and LL, with crystal seeding:
+  about 550 units each by 10 minutes against 16 of oil). One **small coated droplet** appears at the heavy spring at about 4
+  minutes (where the slow L is dense and the fast l arrives) and grows to 35 R² (39 units of oil) by 20 minutes. Soap is made
+  by the light wherever g or t meet oil (up to 2 heads per s) and taken off by heat about as fast: 6 to 13 units stay, most
+  of it dissolved, 7 to 23 % on the rim.
+
+**With cells** (the default scene, seed 3, 10 minutes instead of 20 because the GPU ran at ×0.4; an oil + soap spring
+dripping for 240 s at the colony's upper edge in both runs; with oil on and with `?oil=0`, where the spring's oil and soap
+only spread):
+- The oil becomes **one coated droplet** at the colony's edge (90 R², 648 units of oil, all of it in the droplet by 10
+  minutes); the cells crawl over it (the drawing puts the cells on top). With `?oil=0` the same oil spreads out invisibly.
+- **Fusion is a trickle**: 8 units of oil taken into membranes in 10 minutes (up to 0.03 per s), because a cell fuses only
+  where its membrane is short and its battery pays 1.1 per unit; free linkers from the springs and from bursts serve the
+  membranes first. Membranes the same either way (mean integrity 0.67 against 0.70; l in membranes 42 against 49, L 10
+  against 7).
+- **ORDER is higher with the oil gathered**: 0.39 against 0.24 at 10 minutes (0.49 against 0.38 at 2 minutes): the separated
+  oil is concentrated where the control's is smeared. The entropy (heat out) is the same within noise (9.63 M against 9.47 M),
+  the count too (1459 against 1388 cells: one run each, and the count swings by more than that).
+- In the default scene without an oil spring, the springs' l and L make almost no oil (0.04 units by 3 minutes: the
+  linkers go into crusts and membranes first).
+
+**Switches** (rules panel, group "Oils and water (step C12)"; panel only): **oils and water** (the master: the oil's and
+soap's reactions, the separation, fusion, the look) · **phase separation** (off: everything only spreads) ·
+**amphiphiles** (off: no heads put on or taken off, no rim pull, no skin) · **membrane fusion** · **oil tool drops**
+(oil, oil + soap, soap). View panel (look): **oil films drawn**, **polarity wash** (also part of the machinery, Shift+4).
+URL: `?oil=0`, `?phase=0`, `?amphi=0`, `?fusion=0`, `?oilspring=oil|emulsion|soap`, `?polarity=1`.
+
+**Knobs** (`moire.oil.params`; four in the panel): `gain` (9: the pull; below about 4 nothing separates), `full` (1.5 atoms
+per R²), `blur` (2 pixels: the smoothing, the rims' roundness), `tailVol` (1: soap's tails count as oil), `filmFull` (0.6),
+`skin` (4), `kOil` (2 R²/s), `kCrack` (0.01), `kHead` (1), `kUnhead` (0.5 /s), `fuseK` (1 /s); the look: `filmAlpha`
+(0.55), `lineW` (1.1), `irid` (0.7: how much the rim's colour drifts), `gloss` (0.7), `amphLine` (1), `polAlpha` (0.45).
+`await moire.oil.stats()` reads the grid back and finds the droplets (8-connected pixels with rho at least a half), the
+rings among them (a droplet around a patch of water that does not reach the dish's edge: vesicle-like) and where the soap
+sits (on rims, inside oil, in water).
+
+**The census.** An OIL line in the entropy panel:
+
+    OIL  oil 863 · soap 64.1 · droplets ~16 (49.5 R²) · oil in droplets 95% · soap on boundaries 70%
+
+(oil and soap in the dish, in units; droplets from the Euler number of the oily pixels, counted on the GPU from 2 × 2 quads,
+so a ring counts 0, and their mean area; the oil's share inside droplets; the soap's share on rims, where rho is between
+0.15 and 0.85; with fusion acting also `fused …/s`). On a phone `OIL 863 · soap 64.1 · drops 16 (49.5 R²)`. The F overlay
+adds the switches and knobs, every substance's polarity, and the census in full. `moire.sample()` includes `oil.*` and the
+last `stats()` as `oilstats.*`.
+
+**How it is computed.** The grid holds 16 channels (13 before): `heat_common.wgsl`'s `NGRID`; the cells' stock keeps 13
+(`NCH`, `NCH_CELL` in `src/matter.js`), so the cells' code is unchanged but for skipping the open dish's reactions and the
+fusion block. The oil's 4 blocks (rho, film, obar, the smoothing's half way) sit behind the two copies of the substances
+(the heat buffer grew by 10 blocks of the grid: 6 for the new channels' two copies, 4 for the oil). The matter ledger of the
+new channels and the oil's counters live at `LG_OIL` (words 23040 on; `LEDGER_WORDS` grew to 25 600, words 22528 to 23039
+left free); `lg_mc` maps a channel's ledger word. The reaction table holds up to 32 (30 now). Struct MatterP grew to 688
+bytes, ChemP by `fuse` (its reactions from byte 128), the springs' uniform to 28 floats a spring, the draw uniform to 336
+bytes; the paint pass writes a third texture. Old snapshots (13 substances) load: the grid's blocks are matched by name and
+the new channels start empty.
+
+**Checked** (the books): a 360 s run at MAX (seed 5, `experiments/conditions/c12/check.json`) through oil, oil + soap and soap
+springs, N (60 s), a wash (100 s), a resize to 1000 × 700 (150 s), G (200 s), a resize back (220 s), new springs of every kind
+(240 s), switching phase separation, amphiphiles, fusion and the master off and on and the polarity view (260 to 310 s), and a
+snapshot saved and loaded at once (330 s: exact): atoms and charge rounding exactly 0 and the energy's between −0.014 and +0.056
+(in 4.4 M), except in the one sample taken in the same paused instant as each resize (the old grid not yet drained: atoms 1277
+and 1575; 10 s later 0 again; the same as in step C10). The first try of this check stopped at the resize with a GPU error from
+the drawing's timing probe (`src/neon.js`: it recorded its commands, waited for the queue, and submitted them after a resize
+had replaced a buffer they used; on a busy GPU the wait is long): the probe now records right before it submits, and the
+check passed. Every other run above: atoms and charge 0 in every sample, energy within ±0.09. A snapshot saved before step C12
+(`experiments/tissue/configs/c10-end-lb-100-al/snapshot.json`, 13 substances) loads with `?snap=` and runs 60 s with atoms and
+charge 0. No WebGPU errors in Chrome (headless), at phone size (390 × 844, touch: the toolbar wraps into two rows with the
+drop, a tap on it and two taps on the dish drop two oil springs, the panel shows the short OIL line) or Firefox (headed,
+1600 × 1000, oil + soap and soap springs in the default scene).
+
+**Cost (speed).** Measured as the earlier steps were (headless Chrome, 2000 cells, seed 3, MAX, the mean speed reached from 40
+to 150 s, `experiments/conditions/c12/speed.json`), alternating, but with the GPU shared by up to eight other workers' runs the
+whole time, so the numbers say little: the commit before C12 ×0.49 and ×0.60, C12 ×0.47, C12 with `?oil=0` ×0.68. No cost
+shows above that noise. What it costs in principle: in the default scene (almost no oil) only the three more channels in the
+loops (empty ones are skipped) and 10 more grid blocks of memory (about 4 MB: a grid of 396 × 247 at 1280 × 800); while oil or soap is in the
+dish, three more dispatches per tick (the oil's share and the smoothing, 2 × 11 reads a pixel) and every polar channel's
+spreading through the Scharfetter-Gummel path (two exponentials an edge). Worth measuring again on a quiet GPU.
+
 ## The look of the landscape
 
 Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the
@@ -2737,7 +3108,17 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   side's pattern, linker want and upkeep are worked out in `cell_eat.wgsl` (Cell.wadh), the smaller side of each contact, the
   maturation, the front and the inheritance in `cell_step.wgsl`, the side lookup and the genes' drift in `cell_common.wgsl`
   (wall_side, mutate), the lean copy's walls in `cell_grid.wgsl` (scatter, cell_core), the look in `cell_draw.wgsl`;
-  `experiments/tissue/c10.py`: the tissue lab's C10 conditions and their analysis
+  `experiments/tissue/c10.py`: the tissue lab's C10 conditions and their analysis. Step C11 adds to the same files: the glue's torque
+  and the body's turning, the division by the front and the census of turning and contacts on sticky sides in `cell_step.wgsl`,
+  `wall_at` (the glue round the wall) in `cell_common.wgsl`, the free base glue in `cell_eat.wgsl`, the switches, knobs, panel and
+  `stats()` (contacts on sticky sides, glued bonds, chains, rings) in `src/walls.js`, the gene `divAxis` in `src/genome.js`;
+  `experiments/tissue/c11.py`: the tissue lab's C11 conditions and their analysis
+- `src/oil.js`: oils and water (step C12): the switches and knobs (`moire.oil.params`), the oil's words of the matter
+  uniform and the fusion's of the chemistry's, the census (from the heat's ledger read-back), the OIL panel line, the
+  overlay and `stats()` (droplets, rings, where the soap sits, from the grid); the polarity rule, the new molecules and
+  their reactions are in `src/matter.js` (`polarity`, `SUBSTANCES`, `REACTIONS`), the phase separation in `matter.wgsl`
+  (`oil_rho`, `oil_blur`, `oil_blur_y`, `oil_edge` in `spread`, the census in `count`), the fusion in `cell_eat.wgsl`, the
+  look in `matter_draw.wgsl` (`oil_layer`)
 - `src/hardlight.js`: hard light mutates (step C8): the switch and knobs, the census (from the heat's ledger read-back),
   the HARD LIGHT panel line, the overlay and `stats()` (touching neighbours' likeness, light and dark); the dose is kept
   in `cell_eat.wgsl` (Cell.flags bits 19..31, struct EatP `hl`), the mutation at a birth in `cell_step.wgsl` (struct

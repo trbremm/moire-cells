@@ -1,0 +1,139 @@
+{
+  "name": "c11-reload-c10-pol-off-m0-al",
+  "description": "a stored configuration from before C11 (c10-pol-off-m0-al) loads with C11 off and runs on",
+  "condition": {
+    "name": "c11-reload-c10-pol-off-m0-al",
+    "description": "a stored configuration from before C11 (c10-pol-off-m0-al) loads with C11 off and runs on",
+    "query": {
+      "cells": 40,
+      "seed": 3
+    },
+    "duration": 40,
+    "sample_every": 10,
+    "tissue": true,
+    "evals": [
+      {
+        "t": 0,
+        "js": "const S = await (await fetch('/experiments/tissue/configs/c10-pol-off-m0-al/snapshot.json')).json(); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, turn: moire.walls.params.turn, divFront: moire.walls.params.divFront, freeGlue: moire.walls.params.freeGlue, walls: moire.walls.params.on }"
+      },
+      {
+        "t": 40,
+        "js": "const T = await import('/experiments/tissue/tissue-lab.js'); return await T.measure({ every: 1 })"
+      }
+    ],
+    "shots": [
+      {
+        "t": 0
+      },
+      {
+        "t": 40
+      }
+    ]
+  },
+  "url": "http://localhost:58803/index.html?speed=max&until=0&overlay=ghost&ui=0&cells=40&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "9f9cc11fbbf0ea45c12573499cba23daa8704bbf",
+  "dirty": true,
+  "started": "2026-11-15T22:04:56",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 40.0,
+  "run_wall_s": 12.95,
+  "speed_reached": 3.09,
+  "samples": 5,
+  "shots": [
+    "shots/t0.png",
+    "shots/t40.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "const S = await (await fetch('/experiments/tissue/configs/c10-pol-off-m0-al/snapshot.json')).json(); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, turn: moire.walls.params.turn, divFront: moire.walls.params.divFront, freeGlue: moire.walls.params.freeGlue, walls: moire.walls.params.on }",
+      "result": {
+        "exact": false,
+        "notes": [
+          "no grid in the snapshot (cells only): the page's grid kept",
+          "saved before step C11: glue turning and division by the front off, no free base glue (as it ran)"
+        ],
+        "turn": false,
+        "divFront": false,
+        "freeGlue": 0,
+        "walls": true
+      }
+    },
+    {
+      "t": 40.000000000003794,
+      "js": "const T = await import('/experiments/tissue/tissue-lab.js'); return await T.measure({ every: 1 })",
+      "result": {
+        "t": 160.00000000000182,
+        "n": 40,
+        "R": 9,
+        "largest": 7,
+        "cx": 668.0824061802456,
+        "cy": 423.2716369628906,
+        "box": [
+          645.5485582351685,
+          387.89739513397217,
+          691.2558946609497,
+          456.5144395828247
+        ],
+        "elong": 2.2863728288671683,
+        "hole": 1.0721800367502852,
+        "edge": 0.8571428571428571,
+        "deg": [
+          11,
+          14,
+          10,
+          5
+        ],
+        "fates": [
+          40,
+          0,
+          0,
+          0,
+          0
+        ],
+        "chainy": 0.5714285714285714,
+        "boxAll": [
+          386.08990955352783,
+          107.14598369598389,
+          795.7229356765747,
+          613.4532823562622
+        ],
+        "walls": {
+          "contactAt": [
+            0.66,
+            0.28,
+            0.06
+          ],
+          "glue": 0.565,
+          "matured": 0,
+          "effMean": 0.383,
+          "matureMean": 0,
+          "classes": {
+            "uniform": 0,
+            "polar": 1,
+            "two-ended": 0,
+            "sticky sides": 0
+          },
+          "onSticky": 0.9,
+          "stickyChance": 0.5,
+          "bondsPerCell": 1.1,
+          "chains": 0,
+          "inChains": 0,
+          "longestChain": 0,
+          "rings": 0,
+          "inRings": 0
+        }
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T22:05:49",
+  "wall_s": 53.05
+}

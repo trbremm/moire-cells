@@ -187,7 +187,8 @@ struct EatP {
   // ---- step C10, patterned walls (src/walls.js) ----
   wl0: vec4f,              // x: WL_* bits (u32); y the pattern strength (x a1, a2); z the maturity factor's extra at full
                            // maturity (the cap - 1; 0 while junctions do not mature); w linker per R of side at adhesion 1 (atom-units)
-  wl1: vec4f,              // x the upkeep: heat counts per tick per R of side at adhesion 1; y z w spare
+  wl1: vec4f,              // x the upkeep: heat counts per tick per R of side at adhesion 1; y step C11: the FREE base glue (the
+                           // adhesion every side holds at no cost; only what a side asks above it is built and paid); z w spare
 };
 // step C7b: the cofactor's factor for a cell holding `tr` trace per R^2 (1 while the rule is off)
 fn cofactor(tr: f32) -> f32 {
@@ -1020,6 +1021,37 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       atomicAdd(&wev[EV_RELEASE], down);
     }
 
+    // ---- step C12, MEMBRANE FUSION (src/oil.js, CP.fuse): the membrane is linker chains, so it is oily: oil (lL) under a
+    // cell whose membrane is short of linkers is taken in, each unit opening into one l and one L in the stock (the repair
+    // below weaves them in, the rest stays in the stock), the battery paying the chain's energy (uphill) and its spark (as
+    // heat). Up to fuse.y x the shortfall per s (the larger of the l and the L the sides still want, less what the stock holds)
+    if (CP.fuse.x > 0.0 && (mb_flags() & MBF_ON) != 0u && (EP.flags & EF_EAT) != 0u && cur != 0u && (EP.mask & (1u << OIL_CH)) != 0u) {
+      let gf = bio[i].memb;
+      let wf = max(memb_want(c.r, gf.y), 1.0);
+      let mxf = clamp(gf.x, 0.0, 1.0);
+      var shL = 0.0;
+      var shH = 0.0;
+      for (var k = 0u; k < 6u; k++) {
+        shL += max((1.0 - mxf) * wf - f32(atomicLoad(&stock[o + MB_L0 + k])), 0.0);
+        shH += max(mxf * wf - f32(atomicLoad(&stock[o + MB_H0 + k])), 0.0);
+      }
+      let per = i32(CP.fuse.z) + i32(CP.fuse.w);
+      var nf = i32(floor(CP.fuse.y * EP.dt * max(max(shL - f32(m[MB_CH_L]), shH - f32(m[MB_CH_H])), 0.0) + u01(pcg(rs + 0x6b43a9b5u))));
+      nf = min(nf, max(bat, 0) / max(per, 1));
+      if (nf > 0) {
+        let part = nf / 9;
+        var got = 0;
+        for (var q = 0; q < 9; q++) { got += take_hb(cur + OIL_CH * EP.n + idx[q], select(part, nf - 8 * part, q == 4)); }
+        if (got > 0) {
+          m[MB_CH_L] += got;
+          m[MB_CH_H] += got;
+          bat -= got * per;
+          heat += got * i32(CP.fuse.w);
+          atomicAdd(&hb[LG_OIL_FUSE + (i & 15u)], got);
+        }
+      }
+    }
+
     // ---- step C6c, the membrane: the linkers the plan's bites broke out go free into the dish (into the stock while their
     // channel is not moving); then REPAIR: each side short of what the genes ask weaves linkers in from the stock (repK of
     // the shortfall per s, in the genes' mix), each paying its chain's spark from the battery, as heat (the weave holds them
@@ -1052,6 +1084,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     let wallOn = (wlf & WL_ON) != 0u;
     let wCost = wallOn && (wlf & WL_COST) != 0u;
     var aReq = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    var aPay = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);    // step C11: the part of it above the free base glue (what costs)
     var wX = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);      // the extra linker counts each side wants for its adhesion
     if (wallOn) {
       let mbw = membrane(c);
@@ -1062,7 +1095,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         let cs = dot(normalize(mbw.mid[k] + vec2f(1e-6, 0.0)), uf);
         let p = clamp(a0 + EP.wl0.y * (gw.x * cs + gw.y * (2.0 * cs * cs - 1.0)), 0.0, 1.0);
         aReq[k] = min(p * (1.0 + EP.wl0.z * wall_mature(c.mature, k)), WALL_AMAX);
-        if (wCost && membOn) { wX[k] = memb_want(c.r, EP.wl0.w * aReq[k]); }
+        aPay[k] = select(aReq[k], max(aReq[k] - EP.wl1.y, 0.0), wCost);
+        if (wCost && membOn) { wX[k] = memb_want(c.r, EP.wl0.w * aPay[k]); }
       }
     }
     if (membOn) {
@@ -1124,7 +1158,9 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     // side holds beyond its membrane's want, over what its adhesion wants; the membrane itself fills first), and the battery
     // pays an UPKEEP for the glue it holds, upkeep x adhesion x the side's length (R) per s, as heat; what it cannot pay, it
     // cannot hold (every side x the share paid). Without the membrane chemistry there is no material to count (only the
-    // upkeep). Off: no cost, the sides hold what the pattern and the maturity ask
+    // upkeep). Off: no cost, the sides hold what the pattern and the maturity ask.
+    // Step C11: the cost is charged only for what a side asks ABOVE the free base glue (wl1.y): the base is held at no cost, as
+    // every side's adhesion was before step C10, so a colony short of linkers still packs; a sticky side's extra is paid
     if (wallOn) {
       var av = array<f32, 6>(1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
       var linkC = 0.0;
@@ -1136,7 +1172,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           av[k] = clamp(extra / wX[k], 0.0, 1.0);
           linkC += min(extra, wX[k]);
         }
-        if (wCost) { up += EP.wl1.x * aReq[k] * av[k] * sideR; }
+        if (wCost) { up += EP.wl1.x * aPay[k] * av[k] * sideR; }
       }
       var pf = 1.0;
       var pay = 0;
@@ -1147,7 +1183,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         if (pay < owe) { pf = clamp(f32(pay) / up, 0.0, 1.0); }
       }
       var e = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-      for (var k = 0u; k < 6u; k++) { e[k] = clamp(aReq[k] * av[k] * pf / WALL_AMAX, 0.0, 1.0); }
+      for (var k = 0u; k < 6u; k++) { e[k] = clamp((aReq[k] - aPay[k] + aPay[k] * av[k] * pf) / WALL_AMAX, 0.0, 1.0); }
       cells[i].wadh = array<u32, 2>(pack4x8unorm(vec4f(e[0], e[1], e[2], e[3])), pack4x8unorm(vec4f(e[4], e[5], 0.0, 0.0)));
       cells[i].wlink = u32(round(linkC));
       cells[i].wpay = u32(pay);
@@ -1305,7 +1341,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       var rh = 0;
       for (var r = 0u; r < CP.nrx; r++) {
         let R = CP.rx[r];
-        if (R.by != 0u) { continue; }
+        if (R.by != 0u || R.open != 0u) { continue; }   // (step C12: oil and amphiphiles are the open dish's only)
         if (m[R.ch.x] <= 0) { continue; }
         var x = R.k * f32(m[R.ch.x]) * exp(-R.spark * sparkScale / (CP.theta * temp)) * EP.dt;
         if (R.ch.y != NONE) { x *= f32(m[R.ch.y]) * concIn; }

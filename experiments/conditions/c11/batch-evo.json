@@ -1,0 +1,11 @@
+{
+ "batch": "c11-evo",
+ "seeds": [
+  3,
+  7
+ ],
+ "runs": [
+  "evo-on.json",
+  "evo-off.json"
+ ]
+}

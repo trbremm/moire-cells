@@ -62,6 +62,13 @@
 //   ?walls=0      step C10: start with the patterned walls off (every side as sticky as the adhesion gene, as before);
 //               ?wallfront=0 the front not following the dipole, ?wallcost=0 adhesion free (no linkers, no upkeep), ?mature=0
 //               junctions not maturing (rules panel, Patterned walls); ?view=walls colour by wall pattern
+//   ?turn=0       step C11: start with the glue not turning the cells; ?divfront=0 divisions along the long axis, not by the front
+//               (rules panel, Glue turns cells); ?freeglue=x the free base glue (each side holds this much adhesion at no
+//               cost; 0 = every bit of glue costs, as in step C10)
+//   ?oil=0        step C12: start with oils and water off (no oil forms or separates); ?phase=0 no phase separation (oil
+//               and the rest only spread), ?amphi=0 no amphiphiles (soap), ?fusion=0 no membrane fusion (cells do not take
+//               oil into their membranes); ?oilspring=oil|emulsion|soap what the oil tool
+//               drops; ?polarity=1 the polarity wash shown (rules panel, Oils and water; view panel)
 //   ?mut=0      start with mutation off (key M); ?life=0 with the life cycle off (key T: no births, no deaths)
 //   Experiments (src/lab.js, src/snapshot.js; README "Experiments: tools"): ?snap=<file> loads a snapshot at the start (its
 //               starting number and capacity, its settings); ?clone=1 copies the first live cell's genes to every cell
@@ -77,7 +84,7 @@
 //   ?springs=0  step C5: the old empty start (no springs; the spot at the centre). The default scene puts a light and a
 //               heavy spring beside the culture with the spot between, see defaultScene
 //
-// Mouse: left tap drops (keys 1 2 3: a ripple, a light spring, a heavy spring), left drag stirs; step C2's spotlight: right-drag moves it, the wheel tilts it,
+// Mouse: left tap drops (keys 1 2 3: a ripple, a light spring, a heavy spring; step C12's oil tool, no key: an oil spring), left drag stirs; step C2's spotlight: right-drag moves it, the wheel tilts it,
 // Shift+wheel turns the direction the light comes from.
 
 import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown } from './gpu.js';
@@ -284,9 +291,18 @@ async function boot() {
     }
     {   // step C10: patterned walls
       const WP = cells.walls.params;
-      for (const [q, k] of [['walls', 'on'], ['wallfront', 'front'], ['wallcost', 'cost'], ['mature', 'mature']]) {
+      for (const [q, k] of [['walls', 'on'], ['wallfront', 'front'], ['wallcost', 'cost'], ['mature', 'mature'], ['turn', 'turn'], ['divfront', 'divFront']]) {
         if (params.has(q)) WP[k] = flag(q);
       }
+      const fg = Number(params.get('freeglue'));   // step C11: the free base glue
+      if (params.has('freeglue') && Number.isFinite(fg)) WP.freeGlue = fg;
+    }
+    {   // step C12: oils and water
+      const OP = matter.oil.params;
+      for (const [q, k] of [['oil', 'on'], ['phase', 'phase'], ['amphi', 'amphi'], ['fusion', 'fusion'], ['polarity', 'polarity']]) {
+        if (params.has(q)) OP[k] = flag(q);
+      }
+      if (['oil', 'emulsion', 'soap'].includes(params.get('oilspring'))) OP.spring = params.get('oilspring');
     }
     background.heat = cells.heat;
   } catch (e) {
@@ -299,7 +315,7 @@ async function boot() {
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
   window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter, eat: cells.eat, neon, charge,
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
-    division: cells.division, walls: cells.walls };
+    division: cells.division, walls: cells.walls, oil: matter.oil };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
   window.moire.budgets = budgets;      // the fast speeds' tick budgets
@@ -511,7 +527,7 @@ function frame(now) {
 
   if (!entropyEl.hidden) {
     const compact = view.cssW < 560 || view.cssH < 500;   // a phone (either way up): shorter lines
-    let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}\n${charge.panelLine(compact)}\n${cells.eat.membrane.panelLine(compact)}\n${cells.dipole.panelLine(compact)}\n${cells.eat.pumps.panelLine(compact)}\n${cells.eat.catalysts.panelLine(compact)}\n${cells.eat.hardlight.panelLine(compact)}\n${cells.division.panelLine(compact)}\n${cells.walls.panelLine(compact)}`;
+    let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}\n${charge.panelLine(compact)}\n${cells.eat.membrane.panelLine(compact)}\n${cells.dipole.panelLine(compact)}\n${cells.eat.pumps.panelLine(compact)}\n${cells.eat.catalysts.panelLine(compact)}\n${cells.eat.hardlight.panelLine(compact)}\n${cells.division.panelLine(compact)}\n${cells.walls.panelLine(compact)}\n${matter.oil.panelLine(compact)}`;
     if (paused || speed !== 1) {
       const r = reachedText();
       const sp = paused ? 'paused' : r ? (compact ? r : `${speedName(speed)} · reached ${r}`) : speedName(speed);
@@ -584,6 +600,7 @@ function drawOverlay() {
     ...cells.eat.hardlight.overlayLines(),
     ...cells.division.overlayLines(),
     ...cells.walls.overlayLines(),
+    ...matter.oil.overlayLines(),
     neon.overlayLine(),
     `simmer (Shift+R) ${background.heatOn ? 'on' : 'off'}: ripple drops ${background.params.heatDrops} per cell per step x temperature², height ${background.params.heatAmp}`,
     `sim t ${simTime.toFixed(1)} s · speed ${paused ? 'paused' : speedName(speed)}, reached ×${stats.reached.toFixed(2)} (${stats.ticks} ticks this frame` +
@@ -727,7 +744,7 @@ function tap(x, y) {
   const m = TOOLS[tool];
   if (m.stir) { background.impulse(x, y, 1.2); return; }   // the stir tool: a tap is a small stir bump
   if (!m.spring) { background.impulse(x, y, 2.5, 1.2 * background.sc); return; }
-  matter.addSpring(x, y, m.spring);
+  matter.addSpring(x, y, m.oilSpring ? matter.oil.params.spring : m.spring);   // (step C12: the oil tool's choice)
   background.impulse(x, y, 3);   // a spring lands with a ripple, as the old sources did
 }
 

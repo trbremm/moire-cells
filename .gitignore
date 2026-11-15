@@ -4,3 +4,6 @@ experiments/runs/*/clips/
 experiments/runs/*/snapshots/
 experiments/runs/*/panel.txt
 *.webm
+experiments/runs/*/*/clips/
+experiments/runs/*/*/snapshots/
+experiments/runs/*/*/panel.txt

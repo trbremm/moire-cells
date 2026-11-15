@@ -120,6 +120,8 @@ const WL_ON: u32 = 1u;           // patterned walls (master): per-side adhesion,
 const WL_FRONT: u32 = 2u;        // ... the front follows the dipole (gene w)
 const WL_COST: u32 = 4u;         // ... adhesion costs linkers in the membrane and battery upkeep
 const WL_MATURE: u32 = 8u;       // ... junctions mature (a side that keeps touching gets stickier)
+const WL_TURN: u32 = 16u;        // step C11: the glue turns the cell (a contact's adhesion pulls off-centre: a torque)
+const WL_DIVFRONT: u32 = 32u;    // step C11: a division is placed by the front (along or across it, the gene Bio.wall.w)
 fn wall_q8(a: f32) -> u32 { let t = a / TAU; return u32(round((t - floor(t)) * 256.0)) & 255u; }
 fn wall_dq8(q: u32) -> f32 { return f32(q & 255u) * (TAU / 256.0); }
 // the side (0..5) whose span holds the direction d, for a hexagon turned by th
@@ -135,6 +137,17 @@ fn wall_get(w0: u32, w1: u32, k: u32) -> f32 {
 }
 // the orientation the side lookup uses: the hexagon's theta at the 8 bits its neighbours see (0 for an ellipse cell)
 fn wall_theta(flags: u32, th8: u32) -> f32 { return select(0.0, wall_dq8(th8), (flags & CELL_HEX) != 0u); }
+// step C11: the effective adhesion round the wall at the direction d, from the six sides' values, linear between the sides'
+// middles (side k's middle at th + (k + 1/2) x 60 degrees): a smooth version of wall_get(wall_side(...)), for the glue's torque
+fn wall_at(w0: u32, w1: u32, th: f32, d: vec2f) -> f32 { return wall_at_a(w0, w1, th, atan2(d.y, d.x)); }
+// ... at the direction's angle ang (radians)
+fn wall_at_a(w0: u32, w1: u32, th: f32, ang: f32) -> f32 {
+  var a = (ang - th) / P3 - 0.5;
+  a -= 6.0 * floor(a / 6.0);
+  let k0 = min(u32(a), 5u);
+  let k1 = (k0 + 1u) % 6u;
+  return mix(wall_get(w0, w1, k0), wall_get(w0, w1, k1), a - f32(k0));
+}
 // a side's junction maturity
 fn wall_mature(m: array<u32, 3>, k: u32) -> f32 {
   var mm = m;
@@ -294,7 +307,8 @@ struct Bio {
   // ---- step C10: the walls' pattern genes (src/walls.js; a0, the overall stickiness, is body.x: the adhesion gene) ----
   wall: vec4f,      // x a1: the polar part (+: the front sticky, the back not; -: the other way), -1..1; y a2: the two-fold part
                     // (+: the ends sticky, the sides not; -: the sides sticky), -1..1; z w: how much the front follows the
-                    // dipole, 0..1; w spare
+                    // dipole, 0..1; w step C11: the DIVISION AXIS, 0..1: a daughter is put along the front (0), across it (1) or
+                    // at that share of a right angle between
 };
 // step C7: a pump slot's channel, direction (1 = OUT) and the substances it may pump: PUMP_NCH of them, channels 0..9 and
 // trace (12), not the sediments ll, LL (PUMP_CHANNELS in src/genome.js)
@@ -361,7 +375,7 @@ struct Stats {
   div: array<atomic<u32>, 15>,        // counters (cumulative since the page started; DV_* below), and the census's snapshot
   claim: atomic<u32>,                 // free slots claimed by dividing cells this tick (cleared before every tick's step)
   // ---- step C10, patterned walls (src/walls.js): a census, cleared every frame, counted on its last tick (WS_* below) ----
-  wall: array<atomic<u32>, 24>,
+  wall: array<atomic<u32>, 32>,       // (24 words until step C11)
 };
 // step C10: Stats.wall (signed sums are added as i32 bits and read back as Int32)
 const WS_N: u32 = 0u;           // cells counted
@@ -386,6 +400,13 @@ const WS_A1S: u32 = 18u;        // sum of a1 x 1000 (i32)
 const WS_A2S: u32 = 19u;        // sum of a2 x 1000 (i32)
 const WS_ASK: u32 = 20u;        // sum of the sides' mean adhesion asked for (pattern x maturity) x 1000
 const WS_FRONTP: u32 = 21u;     // touching pairs (both sides) where this cell meets the other with its front (within 30 degrees)
+// step C11, glue turns the cell
+const WS_TQ: u32 = 22u;         // cells with a contact: sum of |the glue's turning rate| x 1000 (mrad / s)
+const WS_TQN: u32 = 23u;        // ... those cells
+const WS_STK: u32 = 24u;        // contacts (each cell's own sides; patterned cells only) sitting on a STICKY side: one whose pattern
+                                // (the genes, without the maturity) is in the upper half of the cell's own range
+const WS_STKC: u32 = 25u;       // ... by chance: the sum over those contacts of the cell's share of sticky sides x 1000
+const WS_STKN: u32 = 26u;       // ... the contacts counted
 // step C9: Stats.div. Counters (0..7, cumulative): births by division, deaths by cause (a cell dies when it STARVED: its
 // battery below starveAt for starveTime; of HEAT damage; when it BURST; or by the background AGE rate), and divisions that
 // found NO free SLOT (every slot of the capacity taken). A snapshot (8.., cleared every frame, counted on its last tick, as
@@ -534,7 +555,8 @@ fn mutate(p: Bio, seed: u32, size: f32, jump: f32, engJump: f32, pumpJump: f32) 
   }
   // step C10: the walls' pattern genes drift (a1, a2 within -1..1; w within 0..1; additive steps, as the adhesion gene's)
   b.wall = vec4f(nudge(b.wall.x, size * 0.04, -1.0, 1.0, seed, 140u), nudge(b.wall.y, size * 0.04, -1.0, 1.0, seed, 141u),
-                 nudge(b.wall.z, size * 0.04, 0.0, 1.0, seed, 142u), b.wall.w);
+                 nudge(b.wall.z, size * 0.04, 0.0, 1.0, seed, 142u), nudge(b.wall.w, size * 0.04, 0.0, 1.0, seed, 143u));
+  // (step C11: w, the division axis, drifts the same way)
   return b;
 }
 
@@ -811,7 +833,9 @@ struct Fields {
   // ---- step C10, patterned walls (src/walls.js) ----
   wl0: vec4f,       // x bits WL_*; y the front's turning toward the dipole (rad / s at w x |d| = 1); z junctions mature at this
                     // rate while touching (1 / s); w ... and fade at this rate once the contact is lost (1 / s)
-  wl1: vec4f,       // x the census's pattern threshold (|a1| or |a2| below it: uniform); y z w spare
+  wl1: vec4f,       // x the census's pattern threshold (|a1| or |a2| below it: uniform); y the pattern strength; z the maturity
+                    // factor's extra at full maturity; w step C11: the glue's turning, turning strength / rotational drag (the
+                    // body turns at w x torque / (r^2 / 2) rad / s; 0 = off)
 };
 // step C9: Fields.dv0.x bits
 const DV_ON: u32 = 1u;

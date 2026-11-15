@@ -1,0 +1,478 @@
+{
+  "name": "c12b-heat-on_s3",
+  "description": "step C12b, experiment 3: the default scene with soap and oil dripped (5 s of every 30 s) in the hot spot and at the colony's cool far rim, 20 min, lipid membranes on",
+  "condition": {
+    "name": "c12b-heat-on_s3",
+    "description": "step C12b, experiment 3: the default scene with soap and oil dripped (5 s of every 30 s) in the hot spot and at the colony's cool far rim, 20 min, lipid membranes on",
+    "query": {
+      "seed": 3
+    },
+    "duration": 1200,
+    "sample_every": 30,
+    "evals": [
+      {
+        "t": 0,
+        "js": "const s = moire.light.spot(), v = moire.control.view(); window.__lip = [[s.x, s.y], [v.cssW - s.x, s.y]]; return window.__lip"
+      },
+      {
+        "t": 0,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 30,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 60,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 90,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 120,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 150,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 180,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 210,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 240,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 270,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 300,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 300,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+      },
+      {
+        "t": 330,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 360,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 390,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 420,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 450,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 480,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 510,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 540,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 570,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 600,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 600,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+      },
+      {
+        "t": 630,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 660,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 690,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 720,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 750,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 780,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 810,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 840,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 870,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 900,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 900,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+      },
+      {
+        "t": 930,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 960,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 990,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 1020,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 1050,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 1080,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 1110,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 1140,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 1170,
+        "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+      },
+      {
+        "t": 1200,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+      }
+    ],
+    "shots": [
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "panel": true,
+        "name": "panel"
+      },
+      {
+        "t": 1200,
+        "view": "lineage",
+        "name": "lineage"
+      }
+    ]
+  },
+  "url": "http://localhost:49526/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "be96783301e31f451b31ec31927ad1c53a69b6b8",
+  "dirty": true,
+  "started": "2026-11-15T23:33:02",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 456.68,
+  "speed_reached": 2.63,
+  "samples": 41,
+  "shots": [
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t1200.png",
+    "shots/panel.png",
+    "shots/lineage.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "const s = moire.light.spot(), v = moire.control.view(); window.__lip = [[s.x, s.y], [v.cssW - s.x, s.y]]; return window.__lip",
+      "result": [
+        [
+          866.2975947988946,
+          400
+        ],
+        [
+          413.7024052011054,
+          400
+        ]
+      ]
+    },
+    {
+      "t": 0,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 6
+    },
+    {
+      "t": 30.000000000000195,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 6
+    },
+    {
+      "t": 59.99999999999924,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 6
+    },
+    {
+      "t": 89.9999999999978,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 6
+    },
+    {
+      "t": 119.99999999999626,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 6
+    },
+    {
+      "t": 150.0000000000002,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 6
+    },
+    {
+      "t": 180.00000000000375,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 6
+    },
+    {
+      "t": 210.00000000000938,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 6
+    },
+    {
+      "t": 240.00000000001526,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 270.0000000000181,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 300.0000000000148,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 300.0000000000148,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })",
+      "result": "{\"all\":{\"n\":1429,\"oilGene\":0.17213036628165318,\"wallGene\":0.327886221876291,\"head\":0.04968500732424023,\"row\":0.2444538596717405,\"thick\":0.016265521984432672,\"soapP\":0.005549970750962211,\"soapM\":0.0049591811909552135,\"oil\":0.0015765778079076277,\"ll\":0.00015085806289363192,\"LL\":0.00002784809088523443,\"stiff\":0.34946143607897967,\"cover\":0.0020394535234200973,\"oilShare\":0.03604742106779733,\"bat\":0.5078165923239386},\"lit\":{\"n\":817,\"oilGene\":0.14802555334164375,\"wallGene\":0.29753029179694346,\"head\":0.10383196713373229,\"row\":0.22085074229323223,\"thick\":0.014224448980822832,\"soapP\":0.0071801847460220315,\"soapM\":0.005931989653457773,\"oil\":0.001371610120869033,\"ll\":0.00026386312347001224,\"LL\":0.000048409768971848223,\"stiff\":0.2777545779633757,\"cover\":0.0035647714818281442,\"oilShare\":0.02388620891032872,\"bat\":0.7023697319637752},\"dark\":{\"n\":612,\"oilGene\":0.2043095038175808,\"wallGene\":0.3684103965083612,\"head\":-0.022599414512941163,\"row\":0.2759632500283438,\"thick\":0.018990287742519665,\"soapP\":0.0033736883425245097,\"soapM\":0.003660513684640523,\"oil\":0.0018502029718137254,\"ll\":0,\"LL\":3.9892258986928106e-7,\"stiff\":0.445187748301935,\"cover\":0.000003203895937459951,\"oilShare\":0.052282241872784,\"bat\":0.24809450885049658},\"founders\":[{\"founder\":9,\"n\":1330,\"oilGene\":0.17585906034564824,\"wallGene\":0.308030843217262,\"head\":0.052784151448062935,\"row\":0.21168172812155847,\"thick\":0.01635984089803231,\"soapP\":0.005172477091165414,\"soapM\":0.0044147233317669175,\"oil\":0.0014872386043233083,\"ll\":0.00016153665413533834,\"LL\":0.000029920993890977445,\"stiff\":0.32920536635706876,\"cover\":0.0021829082510197054,\"oilShare\":0.03377807263256181,\"bat\":0.5267921017524891},{\"founder\":1,\"n\":60,\"oilGene\":0.09941062216336528,\"wallGene\":0.6904238179326058,\"head\":-0.09162307685861985,\"row\":0.868377615014712,\"thick\":0.016565510855677226,\"soapP\":0.0129638671875,\"soapM\":0.015185546875,\"oil\":0.003055826822916667,\"ll\":0.00001220703125,\"LL\":0,\"stiff\":0.6525925925925921,\"cover\":0.0001851851851851852,\"oilShare\":0.08465141612200432,\"bat\":0.24021453857421876},{\"founder\":5,\"n\":18,\"oilGene\":0.0528172591002658,\"wallGene\":0.7380782349242104,\"head\":0.35568322903580135,\"row\":0.489295009109709,\"thick\":0.006840180463364555,\"soapP\":0.0008273654513888889,\"soapM\":0.001003689236111111,\"oil\":0.00002712673611111111,\"ll\":0,\"LL\":0,\"stiff\":0.28525780682643426,\"cover\":0,\"oilShare\":0.0009440813362381991,\"bat\":0.33243751525878906},{\"founder\":10,\"n\":6,\"oilGene\":0.06990227103233337,\"wallGene\":0.0893390824397405,\"head\":-0.03794883734857043,\"row\":0.2359906087319056,\"thick\":0.010310552781447768,\"soapP\":0.012491861979166666,\"soapM\":0.010986328125,\"oil\":0.000732421875,\"ll\":0,\"LL\":0,\"stiff\":0.7320261437908496,\"cover\":0,\"oilShare\":0.01721132897603486,\"bat\":0.06613349914550781},{\"founder\":2,\"n\":6,\"oilGene\":0.0660342484091719,\"wallGene\":0.027787698122362297,\"head\":0.3253860144565503,\"row\":0.8184533218542734,\"thick\":0.010492031928151846,\"soapP\":0.0013020833333333333,\"soapM\":0.0016276041666666667,\"oil\":0.00016276041666666666,\"ll\":0,\"LL\":0,\"stiff\":0.3660130718954248,\"cover\":0,\"oilShare\":0.01895424836601307,\"bat\":0.15535418192545572},{\"founder\":4,\"n\":6,\"oilGene\":0.2736678173144658,\"wallGene\":0.5159278263648351,\"head\":-0.5152083486318588,\"row\":0.07680388043324153,\"thick\":0.021162438206374645,\"soapP\":0.016194661458333332,\"soapM\":0.023396809895833332,\"oil\":0.004353841145833333,\"ll\":0,\"LL\":0,\"stiff\":0.6370370370370371,\"cover\":0,\"oilShare\":0.0911764705882353,\"bat\":0.4794603983561198},{\"founder\":3,\"n\":3,\"oilGene\":0.902923047542572,\"wallGene\":0.11974154536922772,\"head\":0.4195558528105418,\"row\":0.030137712756792705,\"thick\":0.0386661613980929,\"soapP\":0.026285807291666668,\"soapM\":0.023274739583333332,\"oil\":0.019856770833333332,\"ll\":0,\"LL\":0,\"stiff\":2.278867102396514,\"cover\":0,\"oilShare\":0.2422657952069717,\"bat\":0.14465967814127603}]}"
+    },
+    {
+      "t": 330.00000000001415,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 360.00000000001484,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 390.00000000001563,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 420.00000000001245,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 450.00000000001273,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 480.0000000000159,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 510.0000000000125,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 539.999999999996,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 569.9999999999816,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 599.9999999999702,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 599.9999999999702,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })",
+      "result": "{\"all\":{\"n\":1548,\"oilGene\":0.2743963449882062,\"wallGene\":0.27964480194679486,\"head\":0.10981265037111188,\"row\":0.3382504215662233,\"thick\":0.012889470516864057,\"soapP\":0.009350838279231267,\"soapM\":0.006830890665374677,\"oil\":0.0034075596535852715,\"ll\":0.0001220703125,\"LL\":0.0000498374919250646,\"stiff\":0.43379777406225206,\"cover\":0.002459846987890763,\"oilShare\":0.078967168262654,\"bat\":0.42706487591568504},\"lit\":{\"n\":861,\"oilGene\":0.29906591424355056,\"wallGene\":0.27110447744870264,\"head\":0.10573073719064602,\"row\":0.39657957438578556,\"thick\":0.011252735861232039,\"soapP\":0.00922261768655633,\"soapM\":0.0070710043735482,\"oil\":0.0034942449731416958,\"ll\":0.00021947136324041813,\"LL\":0.00008960329558652729,\"stiff\":0.35587438227323454,\"cover\":0.0044225820409464585,\"oilShare\":0.08138203791001504,\"bat\":0.6115736701070362},\"dark\":{\"n\":687,\"oilGene\":0.24347858788653004,\"wallGene\":0.2903481780644913,\"head\":0.11492841055798392,\"row\":0.265147946198475,\"thick\":0.014940749321084095,\"soapP\":0.009511533956513829,\"soapM\":0.006529962131550218,\"oil\":0.0032989191002547307,\"ll\":0,\"LL\":0,\"stiff\":0.5314572214135534,\"cover\":0,\"oilShare\":0.07594067224172538,\"bat\":0.19582459673263794},\"founders\":[{\"founder\":9,\"n\":1538,\"oilGene\":0.2755016435777299,\"wallGene\":0.2762312381837144,\"head\":0.11040275556160081,\"row\":0.33474378024366586,\"thick\":0.012884843289599025,\"soapP\":0.00936401525926528,\"soapM\":0.006850065273488297,\"oil\":0.003413841535273082,\"ll\":0.00012286400763979194,\"LL\":0.00005016153283485046,\"stiff\":0.43176181612653736,\"cover\":0.0024758407914531213,\"oilShare\":0.07855163738664092,\"bat\":0.42972717731609766},{\"founder\":1,\"n\":10,\"oilGene\":0.10440142191946507,\"wallGene\":0.8046509087085724,\"head\":0.019054472073912622,\"row\":0.8775718569755554,\"thick\":0.013601138070225716,\"soapP\":0.00732421875,\"soapM\":0.0038818359375,\"oil\":0.00244140625,\"ll\":0,\"LL\":0,\"stiff\":0.7469281045751633,\"cover\":0,\"oilShare\":0.14287581699346402,\"bat\":0.017602920532226562}]}"
+    },
+    {
+      "t": 629.9999999999604,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 659.9999999999521,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 689.99999999993,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 719.9999999999156,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 749.9999999999025,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 779.9999999998837,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 809.9999999998693,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 839.9999999998573,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 869.9999999998452,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 899.9999999998283,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 899.9999999998283,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })",
+      "result": "{\"all\":{\"n\":1086,\"oilGene\":0.30025629506180146,\"wallGene\":0.325445802225414,\"head\":-0.010269426461566466,\"row\":0.3632333086063686,\"thick\":0.017931886764910435,\"soapP\":0.010384294429097605,\"soapM\":0.01055919443485267,\"oil\":0.006023709067104052,\"ll\":0.00010071362799263352,\"LL\":0.00008834923169889503,\"stiff\":0.518857954477065,\"cover\":0.0021961025048447855,\"oilShare\":0.13304866452412767,\"bat\":0.37007855227419467},\"lit\":{\"n\":661,\"oilGene\":0.2912521121349628,\"wallGene\":0.3142918054051077,\"head\":0.007661445778562108,\"row\":0.3643872144791606,\"thick\":0.01622171445190343,\"soapP\":0.011490860793305597,\"soapM\":0.012399462816754917,\"oil\":0.006852558268721634,\"ll\":0.00016509963596822994,\"LL\":0.00014478536308623299,\"stiff\":0.4147844917089383,\"cover\":0.003582411280195385,\"oilShare\":0.11422483264611955,\"bat\":0.5009738962516842},\"dark\":{\"n\":425,\"oilGene\":0.3142604478021317,\"wallGene\":0.34279354786829036,\"head\":-0.03815720658091938,\"row\":0.3614386455900967,\"thick\":0.020591707703493098,\"soapP\":0.008663258272058823,\"soapM\":0.007697035845588235,\"oil\":0.004734604779411765,\"ll\":5.744485294117647e-7,\"LL\":5.744485294117647e-7,\"stiff\":0.6807227989234907,\"cover\":0.00003998462129950019,\"oilShare\":0.16232525951557086,\"bat\":0.16649779375861673},\"founders\":[{\"founder\":9,\"n\":1086,\"oilGene\":0.30025629506180146,\"wallGene\":0.325445802225414,\"head\":-0.010269426461566466,\"row\":0.3632333086063686,\"thick\":0.017931886764910435,\"soapP\":0.010384294429097605,\"soapM\":0.01055919443485267,\"oil\":0.006023709067104052,\"ll\":0.00010071362799263352,\"LL\":0.00008834923169889503,\"stiff\":0.518857954477065,\"cover\":0.0021961025048447855,\"oilShare\":0.13304866452412767,\"bat\":0.37007855227419467}]}"
+    },
+    {
+      "t": 929.9999999998117,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 959.9999999997981,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 989.999999999807,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 1019.9999999998174,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 1049.999999999793,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 1079.9999999997715,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 1109.9999999997494,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 1139.9999999997356,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 1169.999999999714,
+      "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 1199.999999999692,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })",
+      "result": "{\"all\":{\"n\":875,\"oilGene\":0.3518045503719311,\"wallGene\":0.34973382227122785,\"head\":0.07256974174720901,\"row\":0.42054308114829475,\"thick\":0.0165373503507248,\"soapP\":0.014262555803571428,\"soapM\":0.013205078125,\"oil\":0.008896763392857143,\"ll\":0.00029129464285714284,\"LL\":0.00004715401785714286,\"stiff\":0.46717609710550867,\"cover\":0.006948272642390285,\"oilShare\":0.15605378151260516,\"bat\":0.3054908534458705},\"lit\":{\"n\":568,\"oilGene\":0.33884291807136296,\"wallGene\":0.3189587901800569,\"head\":0.09772901127810105,\"row\":0.4622948190772149,\"thick\":0.01676187560931307,\"soapP\":0.015275552239216549,\"soapM\":0.013835208516725352,\"oil\":0.00863217635893486,\"ll\":0.0004483075209066901,\"LL\":0.00007049130721830986,\"stiff\":0.38856209150326815,\"cover\":0.010680751173708914,\"oilShare\":0.12257893767835785,\"bat\":0.37940518285187197},\"dark\":{\"n\":307,\"oilGene\":0.37578568114301475,\"wallGene\":0.4066726438601043,\"head\":0.02602099551415793,\"row\":0.34329556602247496,\"thick\":0.016121942054704803,\"soapP\":0.012388347414495115,\"soapM\":0.012039234273208469,\"oil\":0.009386292497964169,\"ll\":7.95246335504886e-7,\"LL\":0.00000397623167752443,\"stiff\":0.6126248110536296,\"cover\":0.00004257946392454919,\"oilShare\":0.21798769453492564,\"bat\":0.1687373058803695},\"founders\":[{\"founder\":9,\"n\":875,\"oilGene\":0.3518045503719311,\"wallGene\":0.34973382227122785,\"head\":0.07256974174720901,\"row\":0.42054308114829475,\"thick\":0.0165373503507248,\"soapP\":0.014262555803571428,\"soapM\":0.013205078125,\"oil\":0.008896763392857143,\"ll\":0.00029129464285714284,\"LL\":0.00004715401785714286,\"stiff\":0.46717609710550867,\"cover\":0.006948272642390285,\"oilShare\":0.15605378151260516,\"bat\":0.3054908534458705}]}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T23:41:17",
+  "wall_s": 495.35
+}

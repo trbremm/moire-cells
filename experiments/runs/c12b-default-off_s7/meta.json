@@ -1,0 +1,101 @@
+{
+  "name": "c12b-default-off_s7",
+  "description": "step C12b, experiment 2: the default scene, 20 min, lipid membranes off",
+  "condition": {
+    "name": "c12b-default-off_s7",
+    "description": "step C12b, experiment 2: the default scene, 20 min, lipid membranes off",
+    "query": {
+      "lipids": 0,
+      "seed": 7
+    },
+    "duration": 1200,
+    "sample_every": 30,
+    "evals": [
+      {
+        "t": 300,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+      },
+      {
+        "t": 600,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+      },
+      {
+        "t": 900,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+      },
+      {
+        "t": 1200,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+      }
+    ],
+    "shots": [
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "panel": true,
+        "name": "panel"
+      },
+      {
+        "t": 1200,
+        "view": "lineage",
+        "name": "lineage"
+      }
+    ]
+  },
+  "url": "http://localhost:60185/index.html?speed=max&until=0&overlay=ghost&ui=0&lipids=0&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "f0623c9c068f8417d433efd70227b4194c740d71",
+  "dirty": true,
+  "started": "2026-11-15T23:40:35",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 478.33,
+  "speed_reached": 2.51,
+  "samples": 41,
+  "shots": [
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t1200.png",
+    "shots/panel.png",
+    "shots/lineage.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 299.99999999999795,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })",
+      "result": "{\"all\":{\"n\":1554,\"oilGene\":0.588469694891736,\"wallGene\":0.4536426441754907,\"head\":-0.4764436653352545,\"row\":0.3013149851812062,\"thick\":0.030136039109146667,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.446124301453815},\"lit\":{\"n\":828,\"oilGene\":0.65140036500401,\"wallGene\":0.4711264245954999,\"head\":-0.6517558314641803,\"row\":0.3156363597828085,\"thick\":0.0339668654906451,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.6573780446812727},\"dark\":{\"n\":726,\"oilGene\":0.5166975256727788,\"wallGene\":0.4337024648534968,\"head\":-0.27650086429565324,\"row\":0.28498151662731264,\"thick\":0.025766997450908786,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.20519028025225175},\"founders\":[{\"founder\":3,\"n\":1066,\"oilGene\":0.7096694591149381,\"wallGene\":0.44976840165070664,\"head\":-0.8128879561279437,\"row\":0.3319108021781058,\"thick\":0.03645447930661825,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.5004230950160501},{\"founder\":1,\"n\":295,\"oilGene\":0.20961962088437402,\"wallGene\":0.6004748093311565,\"head\":0.4912349838321492,\"row\":0.20836657823016078,\"thick\":0.013201478688772451,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.3585019386420816},{\"founder\":7,\"n\":100,\"oilGene\":0.8829028105735779,\"wallGene\":0.10401238983497024,\"head\":-0.2764794444665313,\"row\":0.16168900810182094,\"thick\":0.029850923595950006,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.32199970245361326},{\"founder\":9,\"n\":60,\"oilGene\":0.08136997901213666,\"wallGene\":0.6035270859797796,\"head\":0.23722250921030838,\"row\":0.35602871884281434,\"thick\":0.011293896555434913,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.26610902150472004},{\"founder\":4,\"n\":19,\"oilGene\":0.07563563053937335,\"wallGene\":0.05281346079917919,\"head\":-0.14035579248478539,\"row\":0.16399194457029043,\"thick\":0.013401180113616743,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.178813332005551},{\"founder\":10,\"n\":11,\"oilGene\":0.11564945294098421,\"wallGene\":0.05891029773788019,\"head\":-0.2974193412810564,\"row\":0.9258810119195418,\"thick\":0.011897906618700787,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.21328770030628552},{\"founder\":8,\"n\":2,\"oilGene\":0.10015123337507248,\"wallGene\":0.03676971048116684,\"head\":0.29098257422447205,\"row\":0.9584313035011292,\"thick\":0.008721924386918545,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.011388778686523438},{\"founder\":0,\"n\":1,\"oilGene\":0.054471056908369064,\"wallGene\":0.02961154282093048,\"head\":0.0017866278067231178,\"row\":0.21040664613246918,\"thick\":0.010824224911630154,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.13516616821289062}]}"
+    },
+    {
+      "t": 599.9999999999012,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })",
+      "result": "{\"all\":{\"n\":1549,\"oilGene\":0.6462377091547897,\"wallGene\":0.4499079607620419,\"head\":-0.7072863604216864,\"row\":0.3271903059673192,\"thick\":0.04455569897777731,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.365280402560939},\"lit\":{\"n\":930,\"oilGene\":0.6109651657522366,\"wallGene\":0.4585517616176437,\"head\":-0.7019731962272237,\"row\":0.31297416674594086,\"thick\":0.04182131281422992,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.49698875591319097},\"dark\":{\"n\":619,\"oilGene\":0.6992319989195304,\"wallGene\":0.4369213132730118,\"head\":-0.7152689819093282,\"row\":0.3485489642482269,\"thick\":0.04866390436081297,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.16739870850989816},\"founders\":[{\"founder\":3,\"n\":1537,\"oilGene\":0.6480881595351959,\"wallGene\":0.4485961330159905,\"head\":-0.7151774481816305,\"row\":0.32720518306506075,\"thick\":0.04471604092465926,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.367499833612684},{\"founder\":1,\"n\":9,\"oilGene\":0.24302521016862658,\"wallGene\":0.7641400562392341,\"head\":0.5049668840236134,\"row\":0.33742743896113503,\"thick\":0.014846886973828077,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.025950961642795138},{\"founder\":7,\"n\":3,\"oilGene\":0.9078277945518494,\"wallGene\":0.17930475622415543,\"head\":-0.30117879807949066,\"row\":0.2888568739096324,\"thick\":0.0515336108704408,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.24618021647135416}]}"
+    },
+    {
+      "t": 899.9999999997606,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })",
+      "result": "{\"all\":{\"n\":699,\"oilGene\":0.5724157957727881,\"wallGene\":0.5429004064184189,\"head\":-0.5971681638187776,\"row\":0.336273111825681,\"thick\":0.052284300412572336,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.2717725238063305},\"lit\":{\"n\":447,\"oilGene\":0.5990557157678292,\"wallGene\":0.5526369920404632,\"head\":-0.6163588575602111,\"row\":0.3039110458963311,\"thick\":0.051830008475451626,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.337163340592011},\"dark\":{\"n\":252,\"oilGene\":0.5251616519720604,\"wallGene\":0.5256295581126497,\"head\":-0.5631275284917109,\"row\":0.3936772525813135,\"thick\":0.05309012777722692,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.1557816702222067},\"founders\":[{\"founder\":3,\"n\":698,\"oilGene\":0.5720401988498184,\"wallGene\":0.5434743566972265,\"head\":-0.5972979201649697,\"row\":0.3362966274918006,\"thick\":0.052263255415212116,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.2719081507029711},{\"founder\":7,\"n\":1,\"oilGene\":0.8345824480056763,\"wallGene\":0.1422831118106842,\"head\":-0.5065982341766357,\"row\":0.31985917687416077,\"thick\":0.06697370857000351,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.17710494995117188}]}"
+    },
+    {
+      "t": 1199.9999999995644,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })",
+      "result": "{\"all\":{\"n\":480,\"oilGene\":0.5646277858807783,\"wallGene\":0.44918284819383797,\"head\":-0.40766369990694024,\"row\":0.38999276959802953,\"thick\":0.03827498833561549,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.28137415250142417},\"lit\":{\"n\":313,\"oilGene\":0.5831208478052395,\"wallGene\":0.4716220662063256,\"head\":-0.39643165635498473,\"row\":0.3933945384959634,\"thick\":0.036537656137279384,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.3445396910841092},\"dark\":{\"n\":167,\"oilGene\":0.5299671368846324,\"wallGene\":0.40712611024228934,\"head\":-0.4287153743486294,\"row\":0.3836169991486087,\"thick\":0.041531185809143646,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.16298604725363725},\"founders\":[{\"founder\":3,\"n\":480,\"oilGene\":0.5646277858807783,\"wallGene\":0.44918284819383797,\"head\":-0.40766369990694024,\"row\":0.38999276959802953,\"thick\":0.03827498833561549,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.28137415250142417}]}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T23:49:18",
+  "wall_s": 522.67
+}

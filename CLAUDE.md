@@ -376,6 +376,23 @@ C9. DIVISION AND DEATH WITH A CHANGING COUNT (Part B step 9, pulled in for the e
     stock) can pay for a daughter (split, conserved), dies when it starves or overheats; the count rises and
     falls with the energy the dish catches. Fixed-count turnover stays as a switch for comparison.
 
+C10. PATTERNED WALLS: EVOLVABLE ADHESION PER SIDE (user 2026-11-15: "evolve walls with different adhesion levels
+    on different parts of it"; on Claude's proposal: "I want those effects to combine"). All parts below act
+    TOGETHER (each keeps its own switch for comparison):
+    - Each of the 6 sides has its own adhesion. A few smooth genes set the pattern around the wall: overall
+      stickiness, a front/back (polar) part, an ends/sides (two-fold) part; mutation drifts them.
+    - The pattern hangs on the cell's FRONT, which COMBINES (a) the inherited body orientation (daughters inherit
+      it at division, so tissues keep a shared direction) and (b) the charge dipole (C6d): a gene sets how much
+      the front follows the dipole, so chemistry -> polarity -> stickiness can evolve.
+    - A contact holds by the smaller of the two touching sides' values (both must be sticky), times the existing
+      adhesion matrix and knobs.
+    - COST: adhesion molecules are built from linkers in the membrane (per side, like C6c) plus battery upkeep,
+      so stickiness is paid where it is used.
+    - MATURATION: a side that keeps touching gets stickier (junctions mature), fading when contact is lost.
+    - Test first in the tissue lab with hand-set patterns (uniform, polar, two-ended, sticky sides: expect sheets,
+      cysts with a lumen, chains, palisades), then with evolution. Lessons from the tissue series: the default
+      moire beat shakes small tissues apart (a long beat glues); long-range like-attracts-like gathers cells.
+
 EXPERIMENTS (user 2026-11-15; after C6..C9 are all done): run experiments with interesting, different
 conditions and RECORD anything interesting: patterns, behaviours, and the statistics, MAINLY ENTROPY (entropy
 rate, heat out vs ORDER, rounding/"free entropy"), plus counts, strategies, free light atoms (oxygen-like

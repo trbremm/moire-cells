@@ -1,0 +1,81 @@
+{
+ "name": "c12b-lab-walled",
+ "series": "c12b-lab",
+ "description": "step C12b lab: 40 cloned cells, walled membrane ({\"oilShare\": 0.0, \"wall\": 1.0, \"wallRow\": 0.5}), light off; soap, oil and linker springs for 30 s; stir at 82 s",
+ "query": {
+  "seed": 3,
+  "cells": 40,
+  "mut": 0,
+  "life": 0,
+  "clone": 1,
+  "springs": 0,
+  "light": "off",
+  "day": 0
+ },
+ "size": "640x400",
+ "dpr": 3,
+ "duration": 120,
+ "sample_every": 5,
+ "tissue": true,
+ "evals": [
+  {
+   "t": 0,
+   "js": "const T = await import('/experiments/tissue/tissue-lab.js'); window.__T = T;\nconst knobs = T.apply({\"cells.look.nStarveDim\": 0, \"cells.look.starveDim\": 0, \"cells.params.squeeze\": 0, \"genome.rules.diff\": false, \"eat.params.pay\": false, \"walls.params.cost\": false, \"cells.params.lever\": 0.2, \"walls.params.turn\": true});\nconst g = {\"keyAngle\": 0.35, \"keyScale\": 0.05, \"recAngle\": 0.35, \"recScale\": 0.05, \"recWidth\": 0.15, \"size\": 1, \"motility\": 1, \"thickness\": 0.012, \"stiffness\": 1, \"pumpRate0\": 0, \"pumpRate1\": 0, \"rate0\": 2, \"rate1\": 0, \"rate2\": 0, \"w\": 0, \"divAxis\": 0, \"adhesion\": 0.8, \"a1\": 0.0, \"a2\": 0.0, \"head\": 0.0, \"oilShare\": 0.0, \"wall\": 1.0, \"wallRow\": 0.5}; g.eng0 = moire.genome.engineCode('gt → g + t', 0);\nawait T.genes(g, null);\nconst fr = await T.fronts({ mode: 'random' });\nconst sp = await T.lipidSprings({ kinds: ['soap', 'oil', 'linker'], ring: 4, n: 4, life: 30 });\nreturn { knobs, genes: g, springs: sp, m: await T.measure({ every: 1 }) };"
+  },
+  {
+   "t": 60,
+   "js": "return await __T.lipidMeasure();"
+  },
+  {
+   "t": 80,
+   "js": "return await __T.lipidMeasure();"
+  },
+  {
+   "t": 82,
+   "js": "return await __T.stirThrough();"
+  },
+  {
+   "t": 83,
+   "js": "return await __T.lipidMeasure();"
+  },
+  {
+   "t": 120,
+   "js": "return await __T.lipidMeasure();"
+  }
+ ],
+ "shots": [
+  {
+   "t": 30
+  },
+  {
+   "t": 60
+  },
+  {
+   "t": 80
+  },
+  {
+   "t": 83
+  },
+  {
+   "t": 120
+  },
+  {
+   "t": 80,
+   "view": "machinery"
+  }
+ ],
+ "clips": [
+  {
+   "t": 81,
+   "until": 86,
+   "speed": 1
+  }
+ ],
+ "snapshots": [
+  {
+   "t": 80,
+   "grid": false,
+   "name": "prestir"
+  }
+ ]
+}

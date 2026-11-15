@@ -194,3 +194,46 @@ export async function stirThrough({ step = 14, frames = 12 } = {}) {
   await M().tissue.stir(x, y, step, 0, frames);
   return { x, y, cx: m.cx, cy: m.cy };
 }
+
+/**
+ * Step C12b: lipid springs at the largest cluster's centre and on a ring around it (radius in R), each dripping for `life` s:
+ * kinds as matter springs ('soap', 'oil', 'emulsion', 'linker', ...). The cells take the soap and oil in by fusion and build
+ * crust walls from the linkers (their genes decide what), so every lipid in a membrane came in through a spring (exact books).
+ */
+export async function lipidSprings({ kinds = ['soap'], ring = 0, n = 4, life = 30 } = {}) {
+  const m = await measure({ every: 1 }), R = M().cells.R, out = [];
+  for (const kind of kinds) {
+    M().matter.addSpring(m.cx, m.cy, kind, life);
+    out.push([kind, 'centre']);
+    for (let k = 0; ring > 0 && k < n; k++) {
+      const a = 2 * Math.PI * (k + 0.5) / n;
+      M().matter.addSpring(m.cx + ring * R * Math.cos(a), m.cy + ring * R * Math.sin(a), kind, life);
+      out.push([kind, k]);
+    }
+  }
+  return { cx: m.cx, cy: m.cy, springs: out.length };
+}
+
+/**
+ * Step C12b: the membranes' make-up and stiffness (moire.lipids.stats(), its 'all' group), and the outlines' motion: the
+ * corners' mean speed (R / s: the wobble) and how far the corners are from the outline's mean distance (the std of rad / its
+ * mean: 0 = a regular hexagon), each over the live honeycomb cells; plus contacts per cell from measure().
+ */
+export async function lipidMeasure() {
+  const s = await M().lipids.stats();
+  const C = M().cells, n = C.count, F = CELL_FLOATS, R = C.R;
+  const ab = await readBuffer(M().gpu.device, C.cellBuf, 0, n * F * 4);
+  const f = new Float32Array(ab), u = new Uint32Array(ab);
+  let cells = 0, speed = 0, dev = 0;
+  for (let i = 0; i < n; i++) {
+    const o = i * F;
+    if (!(u[o + 9] & 1) || !(u[o + 9] & 8)) continue;
+    let mr = 0;
+    for (let k = 0; k < 6; k++) mr += f[o + 26 + k] / 6;
+    let v = 0, d2 = 0;
+    for (let k = 0; k < 6; k++) { v += Math.abs(f[o + 32 + k]) / 6; d2 += (f[o + 26 + k] / mr - 1) ** 2 / 6; }
+    cells++; speed += v / R; dev += Math.sqrt(d2);
+  }
+  const m = await measure({ every: 1 });
+  return { lipids: s.all, wobble: cells ? speed / cells : 0, cornerDev: cells ? dev / cells : 0, contacts: m.contacts ?? m.meanDeg ?? null, measure: m };
+}

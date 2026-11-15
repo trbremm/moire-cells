@@ -684,7 +684,7 @@ export class Matter {
     // 2 s (so both copies of a channel left out are certainly all zero); the others are skipped (most are empty)
     this.time = frame.time;
     // (step C5: and what the cells hold, as they let it out into the dish)
-    const held = this.eat && this.eat.ledger ? this.eat.ledger.stock : null;
+    const held = this.eat && this.eat.ledger ? (this.eat.ledger.held || this.eat.ledger.stock) : null;   // (step C12b: + the lipids)
     for (let c = 0; c < NCH; c++) if (this.dish[c] > 0 || (held && held[c] > 0)) this.seen[c] = frame.time;
     for (const sp of order) for (const a of Object.keys(SPRING_KINDS[sp.kind].mix)) this.seen[CH[a]] = frame.time;
     for (const s of this.springs) s.age += ticks * dt;

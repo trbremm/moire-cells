@@ -92,7 +92,8 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   as in step C10); step C12: `?oil=0` (no oil forms
   or separates), `?phase=0` (no phase separation: everything only spreads), `?amphi=0` (no amphiphiles made, no boundary
   pull, no skin), `?fusion=0` (no membrane fusion), `?oilspring=oil|emulsion|soap` (what the oil tool drops),
-  `?polarity=1` (the polarity wash shown).
+  `?polarity=1` (the polarity wash shown); step C12b: `?lipids=0` (the C6c linker membrane, as before), `?lipheat=0` (heat does
+  not fluidise the bilayer), `?crack=0` (walls never crack), `?lipheads=0` (the soap heads do not charge the cells).
   Experiments (see "Experiments: tools"): `?mut=0` (mutation off), `?life=0` (life cycle off), `?snap=<file>` (load a
   saved state), `?clone=1` (every cell gets the first cell's genes; `?clone=@N`: slot N's), `?genes=adhesion:0.8,motility:0.5`.
 
@@ -3047,6 +3048,216 @@ loops (empty ones are skipped) and 10 more grid blocks of memory (about 4 MB: a 
 dish, three more dispatches per tick (the oil's share and the smoothing, 2 × 11 reads a pixel) and every polar channel's
 spreading through the Scharfetter-Gummel path (two exponentials an edge). Worth measuring again on a quiet GPU.
 
+## Step C12b: lipid membranes
+
+The user, 2026-11-15: "Lipids should be connected with elasticity. In the membrane." Then, unsure: "I just know that bacteria
+have a lipid membrane." So, closer to real cells: the membrane of step C6c (a weave of linkers) becomes a LIPID layer. SOAP (the
+amphiphiles of step C12: a charged head on an oily tail) is the bilayer itself; OIL slips in between the soap's tails and
+stiffens it (as cholesterol and hopanoids do); CRUST builds a rigid, brittle WALL outside it (as a bacterium's cell wall). How
+stiff each side is follows from what it is made of, by the polarity numbers of step C12, never by a number set per molecule.
+
+**What it looks like.** In the clean view the membranes now say what they are made of, inside the existing neon tubes. A **soap** membrane is a
+thin **pearly** tube whose colour drifts softly along it and in time (pinks, greens, blues over the cell's own colour, like the
+soap films of step C12). An **oily** membrane (soap with oil between its tails) is a **deeper, glossier** tube: a little wider,
+more saturated in the cell's colour, with a sharper white-hot core. A **walled** cell has a flat, crisp **amber rim of crust**
+outside its tube, laid as small bricks (a light ll crust amber, a heavy LL one deeper brown; a partial or cracked wall shows as
+scattered bricks), and its tube sits a little further in, so walled cells in a tissue are separated by their crust like plant
+cells. In motion: soap cells wobble slower and further when shoved, oily ones less, walled ones hardly at all, and a shoved
+walled cell loses bricks (its wall cracks). Pictures (`experiments/keep/c12b/`): `lab-soap-oily-walled.jpg` (the same 40
+cloned cells with a soap, an oily and a walled membrane, side by side), `lab-stir-soap-oily-walled.jpg` (the same just after a
+stir), `lab-warm-soap-oily.jpg` (soap and oily membranes in a warm dish: pearly against deep red-orange).
+
+**The make-up.** Each of the six sides of a cell holds five kinds of molecule, in its own words of the stock (32..61): soap glL
+(+1), soap tlL (−1), oil lL, light crust ll and heavy crust LL. What a side wants comes from four genes:
+- **thickness** (C6c's gene, unchanged): bilayer molecules per R of membrane; a side wants thickness × its rest length (1.1 r);
+- **oil share** (C6c's MIX gene, `memb.x`, now read as oil per soap, 0..1): of the bilayer, oil/(1 + oil) is oil and the rest
+  soap; a soap molecule holds at most one oil between its tails (`oilCap`), so oil beyond the soap there is shed;
+- **wall** (`lip.x`, new): the crust wanted, as a share of a full wall (a full wall holds as much crust as the bilayer holds
+  lipid); **wall row** (`lip.z`): its heavy (LL) share;
+- **head** (`lip.y`, −1..1): which head the soap the cell makes carries (+1 all glL, −1 all tlL).
+The small **stiffness gene** stays. Founders: the oil share is the old mix gene's values (so most founders are nearly pure
+soap and a quarter oily, 0.55 to 0.9); a quarter of the founders (1, 5, 9 of 12) build walls (0.4 to 0.9 of a full wall), the
+rest at most a trace; heads anywhere from mostly − to mostly +. Mutation: small additive steps (0.03 to 0.04 a birth). The genome
+grew from 52 to 56 floats (`Bio.lip`).
+
+The **integrity** of a side (step C6c's: leak, hold, softness, bursting) is now its bilayer's: soap plus the oil between its
+tails, over what the thickness asks. The wall does not seal.
+
+**Stiffness, derived.** From the polarity numbers (`polarity()` in `src/matter.js`; head = the charged atoms' share, tail =
+the chained linkers' share; soap glL: 1 head atom, 2 tail atoms; oil lL: 0 and 2):
+
+    packing   = (tail atoms / head atoms over the side's bilayer) / (pure soap's: 2 / 1)      1 for pure soap, 2 for one oil per soap
+    heat      = 2 / (1 + T / Tref)                                                           2 cold, 1 at Tref (3), ~1/T hot
+    bilayer k = packing × heat × (soft + (1 − soft) × integrity) × sqrt(thickness / tRef) × the stiffness gene
+    side k    = bilayer k + wall cover × (4 − bilayer k)                                     a crust is a crystal: the stiffest (4)
+
+(clamped to 0.25 .. 4; `soft` and `tRef` are C6c's knobs). Each honeycomb corner's spring (step C6c) takes the mean of its two
+sides' k (omega² × k, the damping × sqrt k: every cell keeps its damping ratio, so a soft cell wobbles slower and further). In
+the default scene the dark part of the dish is about 1 to 2 (heat per R²) and the spot 8 to 10: pure soap 1.2 to 1.5 in the dark
+and about 0.5 in the spot; with one oil per soap twice that; a full wall 4. The same **fluidity**, 1 / (1 + bilayer k), also sets
+how fast a side reseals (its bilayer rebuilds at repK × 2 / (1 + k)) and how exposed it is to bites (× 2 / (1 + k)): soap is
+soft, wobbly, quick to heal and easy to bite.
+
+**Supply.** In this order, every tick, in the eat pass:
+- **fusion** (the C12 switch "membrane fusion", now for soap too): a side short of soap or oil takes it from the dish under the
+  cell as it is, up to `fuseK` (1) of its shortfall per s; free (self-assembly: no bond changes); soap of the head the gene
+  prefers first, then the other;
+- the **builder**: what is still short is MADE from the stock's atoms: soap = a head (g or t by the head gene, the other if that
+  one is short) + l + L, oil = l + L, crust = l + l or L + L, in that order (bilayer first). Each molecule pays its bonds' sparks
+  from the battery (soap 0.625, oil 0.375, ll 0.25, LL 0.5) and releases its bonds' energy (soap 0.25, oil 0.75, ll 0.5, LL 1),
+  both as heat at the cell (the reaction table's numbers: no new constants). A cell with an empty battery builds nothing;
+- **shed**: a side holding more than shedAt (1.25) × what it wants lets the extra into the dish whole (where it gathers into soap
+  films and oil droplets, or sits as crust).
+Bursts and deaths spill the membrane's molecules into the dish as they are (matter exact). With the lipid membranes switched
+off at runtime every lipid is shed (at shedK, 1 per s) and the C6c weave takes over; switched on, the old weave keeps only the
+walls' glue (below) and sheds the rest into the stock.
+
+**Bites, derived from the atoms** (C6c's rule, generalised): a free reactive atom outside a side bites the chains of its own
+row, so each lipid by the linkers its chain holds: soap and oil (l + L) by both light and heavy atoms, a light crust (ll) only by
+light atoms, a heavy crust (LL) only by heavy ones; at kBite × the atoms' concentration × the side's length × that kind's share
+of the side's linkers × exp(−its chain's spark / (theta × T)) (chain sparks: ll 0.25, soap and oil 0.375, LL 0.5). The WALL is
+outside: the bilayer is exposed only where no crust covers it (× (1 − cover)), and a fluid bilayer more than a packed one
+(× 2 / (1 + k)). A bite pulls the molecule out whole into the dish. So a heavy (LL) wall shields a soap bilayer from the free
+light atoms completely; a light (ll) wall is itself eaten by them.
+
+**Brittle walls.** A wall CRACKS where its cell is jolted: when a corner's speed over its own wobble's angular frequency (the
+swing it is in, as a share of r) exceeds `crackAt` (0.1), half the crust of its two sides breaks off per tick into the dish.
+Slow packing does not crack a wall; a stir, a crowd pushing through, a division next door does.
+
+**Charge.** The soap heads carry charge: a membrane's glL count +1 each, its tlL −1, in the cell's net charge (field B's q, the
+substrate's field), and, with the dipoles on (step C6d), each side's heads stay on that side (the mobile charge moves round them).
+The books count the membrane's molecules as their atoms (exact as before).
+
+**The walls' glue (C10, C11).** Adhesion molecules are still built from linkers in the C6c weave's words: with the lipid
+membranes on, those words hold ONLY the glue (no membrane of their own), woven in the wall's row (`lip.z`), with the same
+sparks, upkeep and free base glue as in step C11. So glue and membrane are separate materials, both from the stock.
+
+**The books.** Atoms and charge: the membranes' molecules count as their atoms in the cells' ledger (g, t, l, L), so every move
+(fusion, building, bites, sheds, cracks, bursts) is exact to the count. Energy: the lipids' chemical energy (below the free
+atoms': soap −0.25, oil −0.75, ll −0.5, LL −1 per unit) is summed on the GPU (LG_LIP_E, 64-bit) and counted as stored; the
+builder's sparks and released energy go to heat; fusion, bites, sheds, cracks and spills move molecules with their energy.
+
+**Switches** (rules panel, group "Lipid membranes (step C12b)"; panel only): **lipid membranes** (the master; off = the C6c
+linker membrane exactly as before) · **heat fluidises** · **walls crack** · **soap heads charge**; knobs **soap stiff at**
+(Tref), **wall cracks at**, **lipid fusion**. URL: `?lipids=0`, `?lipheat=0`, `?crack=0`, `?lipheads=0`. Old snapshots load
+with the lipid membranes off and run as saved. Console: `moire.lipids.params` (on, heat, crack, heads, tRef 3, crackAt 0.1,
+crackLoss 0.5, fuseK 1, oilCap 1, kMin 0.25), `moire.lipids.look` (pearl 0.55, gloss 0.5, rim 0.22, rimBright 0.8, brick
+0.42), `await moire.lipids.stats()` (per founder lineage and lit/dark: genes, what the membranes hold, stiffness, cover, battery).
+
+**The census.** A LIPIDS line in the entropy panel:
+
+    LIPIDS  soap 20.4 (+11.2 −9.2) · oil 4.2 · wall 3.1 · genes: oil 0.21 wall 0.19 · walled 12% · stiffness 0.62 · per s: made 1.2 fused 0.1 bitten 0.3+0.1 cracked 0.05 · lit: oil … | dark: oil …
+
+(the molecules in all membranes, units; the mean oil share and wall genes; cells whose wall covers at least half; the mean side
+stiffness; per s: made from atoms, fused from the dish, bitten out of the bilayer + the wall, cracked off; in the light and in
+the dark: the oil gene, stiffness and temperature). On a phone `LIPIDS soap 20.4 · oil 4.2 · wall 3.1 · stiff 0.62`.
+
+**How it is computed.** `cell_eat.wgsl`: `plan` (the integrity, the bites, the heads on the side charges), `eat` (fusion, the
+builder, cracks, sheds, the stiffness and the look into `Cell.lip`, the heads in the net charge), `give_back` and `split` (spills
+and a newborn's share r / (r + r_parent) of each side), `ledger` (books and census). `cell_step.wgsl`: each corner's stiffness from
+`Cell.lip` (Fields.memb bit MB_LIPID). The Cell record grew from 288 to 312 bytes (`lip[6]`: per side 8 bits each of stiffness / 4,
+the wall's heavy share, the bilayer's oil share, the wall's cover), the stock from 32 to 64 words, struct EatP by `lp[9]` (1648
+bytes), the Draw uniform by `lip`, `lip2`, `lipInk[3]` (944 bytes); the ledger uses the words step C12 left free (22528..23039).
+
+**Experiment 1: the tissue lab** (`experiments/tissue/c12b.py`, conditions `experiments/conditions/c12b/lab-*.json`; 40 cloned
+cells, no mutation, no turnover, the C11 lab's uniform glue (adhesion 0.8, lever 0.2, turning on), soap, oil and linker springs at
+the cluster for 30 s, a stir through it at 82 s; 640 × 400 CSS px at 3 device px; one run each). The same cells with three
+membranes, and two of them in a warm dish (the whole dish lit, no day cycle):
+
+| membrane | dish T | stiffness (80 s) | wall cover | corner speed at rest (R/s) | shape change (/s) | contacts per cell | during the stir: stiffness, corner speed | wall after the stir |
+|---|---|---|---|---|---|---|---|---|
+| soap | 0.4 | 1.19 | – | 0.18 | 0.021 | 6.4 | 0.31, 1.85 | – |
+| soap + one oil per soap | 0.3 | 2.72 | – | 0.19 | 0.012 | 5.5 | 0.52, 1.42 | – |
+| soap + a full wall | 0.4 | 3.49 | 0.77 | 0.22 | 0.012 | 7.0 | 1.68, 1.48 | 0.39 (0.53 at 120 s) |
+| soap, warm | 6.6 | 0.62 | – | 0.30 | 0.020 | 6.5 | 0.29, 1.76 | – |
+| soap + oil, warm | 6.4 | 1.27 | – | 0.25 | 0.017 | 7.2 | 0.46, 1.71 | – |
+
+Plainly: the derivation does what it says (oil doubles the stiffness, heat halves it, a wall takes it near the top), and the
+stirred cells' outlines change most where the membrane is soap (shape change 0.021 against 0.012 per s at rest). The stir itself
+heats the dish for a moment, so every bilayer goes soft while it is stirred (stiffness 0.3 to 0.5); the wall holds better
+(1.7), and half of it cracks off (cover 0.77 → 0.39), then grows back as far as the cell still holds linkers. The pictures show the
+difference best as colour and line (pearly thin soap, deep glossy oil, amber brick walls); the wobble shows in motion (the run's
+clip, `clips/`, not kept). All clusters held together (40 of 40, contact persistence 0.95 to 1); the membrane's make-up did not
+change whether the tissue links, only how its cells move and look.
+
+**Experiment 2: the default scene** (seeds 3 and 7, 20 min at MAX, lipid membranes on and `?lipids=0`; conditions
+`default-on.json`, `default-off.json`):
+
+| run | cells (5 / 10 / 20 min) | soap in all membranes (20 min) | mean integrity (20 min) | bursts/s (mean) | ENTROPY (20 min) | ORDER (20 min) |
+|---|---|---|---|---|---|---|
+| on, seed 3 | 1406 / 1712 / 579 | 0.52 | 0.03 | 0 | 18.5 M | 0.231 |
+| on, seed 7 | 1132 / 1697 / 664 | 0.31 | 0.01 | 0 | 20.7 M | 0.238 |
+| off, seed 3 | 1250 / 1511 / 746 | (C6c weave) | 0.84 | 3.7 | 17.6 M | 0.222 |
+| off, seed 7 | 1554 / 1549 / 480 | (C6c weave) | 0.53 | 0.6 | 18.0 M | 0.217 |
+
+**In the default scene the cells can hardly build lipid membranes.** Every soap and oil molecule needs a heavy linker L, and the
+default springs' L is almost all locked in heavy crust (LL) within minutes (the C6c finding, now decisive): at 4 minutes all the
+cells together held 0.28 units of L against about 100 units of soap a culture of a thousand would want. So the bilayers stay
+nearly empty (integrity 0.00 to 0.03 against 0.5 to 0.8 for the C6c weave), the tubes are drawn thin and dim (unbuilt), no
+membrane bursts (none is ever whole), and the walls that the walled founders build from light linkers (0.27 per s) crack off
+in the jostling colony about as fast (0.2 per s). The culture's count, ENTROPY and ORDER are the same within the run-to-run swing
+(the count crashes every night in both, the day cycle). The lineage genes drift the same way with and without lipids (the wall
+gene rose from 0.19 to 0.44 to 0.51 with them and to 0.37 to 0.45 without, where it does nothing): hitch-hiking on the founders'
+other genes, not selection. To see lipid membranes in the default scene, give it lipids: drop soap and oil with the oil tool next
+to the colony (experiment 3), or a slow heavy spring (experiment 4).
+
+**Experiment 3: heat** (seed 3, 20 min; the default scene plus a soap and an oil spring dripping 5 s of every 30 s in the hot spot
+and the same at the colony's far, cool rim; `heat-on.json`, `heat-off.json`). With lipids to take up, the membranes fill: soap in
+all membranes 15 units at 5 minutes, 24 at 20 (+12.5 −11.6: the heads balance), oil 7.8, mean integrity 0.11 → 0.43; fusion
+brings 1.6 molecules per s, the builder only 0.04 (still no L in the cells), bites take 1.2 per s back out of the bilayers; bursts
+1.1 per s against 3.6 per s with the C6c weave fed the same oil. Stiffness, in the light (the spot, temperature 7 to 14) and in the
+dark (2 to 3):
+
+| t | lit cells | lit T | lit oil gene | lit stiffness | dark cells | dark T | dark oil gene | dark stiffness |
+|---|---|---|---|---|---|---|---|---|
+| 5 min | 817 | 13.6 | 0.15 | 0.28 | 612 | 3.1 | 0.20 | 0.45 |
+| 10 min | 861 | 7.0 | 0.30 | 0.36 | 687 | 2.5 | 0.24 | 0.53 |
+| 15 min | 661 | 5.2 | 0.29 | 0.41 | 425 | 2.6 | 0.31 | 0.68 |
+| 20 min | 568 | 11.0 | 0.34 | 0.39 | 307 | 3.3 | 0.38 | 0.61 |
+
+**No homeoviscous adaptation showed.** The hot cells are softer (0.3 to 0.4 against 0.45 to 0.7) only because heat fluidises
+their bilayers; the oil share gene is no higher in the spot (0.34 against 0.38 at 20 minutes), and by then one lineage (founder 9)
+had taken the whole dish, so there were no separate hot and cool lineages to compare. (The cool supply at the far rim was mostly
+left alone: the colony drifts into the spot.) With `?lipids=0` founder 1 took the dish instead: one run each, so nothing can be
+read into it. Picture: `heat-on-600s-colony.jpg` (the fed colony at 10 minutes, at the screen's own scale: the tubes pearly and
+iridescent where the soap is).
+
+**Experiment 4: the oxygen hook.** (seed 3, 20 min; the oxygen retry's springs: a never-drying light spring and a heavy one dripping 2 s of every
+20 s, spotlight; `oxygen-on.json`, `oxygen-off.json`). The free light atoms build up as in the oxygen runs (g and t about 140 each at
+5 minutes, 480 at 10, 1070 at 20; the same with `?lipids=0`). But the slow heavy spring's L still goes to crust, so again the cells
+build almost no bilayer (soap in all membranes 0.04 to 0.19 units, integrity 0.00): what soap they fuse is bitten straight back out
+(fused 0.11 to 0.31 per s, bitten out of bilayers 0.11 to 0.31 per s, the same numbers), and the light crust walls are bitten too
+(0.1 to 0.2 per s). So the hoped-for story (vandals eating soft soap membranes, wall-building or oily lineages rising) **did not
+show**: there were no soap membranes to eat. The wall gene fell (0.39 at 10 min → 0.30 at 20) where it rose with the C6c weave
+(0.41 → 0.75, where it does nothing), and one lineage (founder 1, mostly − heads) held the whole dish; one run each, so this is no
+evidence of selection. With `?lipids=0` the C6c weaves were bitten through and burst often (15 to 37 per s), with lipids nothing
+burst (no membrane was ever whole). The culture was larger with lipids at 20 minutes (2305 against 2008 cells): one run each.
+The obvious next try is the same set-up with a soap spring next to the light spring.
+
+**Checked** (the books; `experiments/conditions/c12b/check.json`, seed 5, 420 s at MAX): soap, oil, emulsion and linker springs,
+a quarter of the cells given a wall and oil (30 s), N (60 s), a wash (100 s), a resize to 1000 × 700 (150 s), G (200 s), a resize
+back (220 s), springs of every kind (240 s), every new switch off and on at runtime and the membrane chemistry, fusion, bites and
+elasticity too (255 to 340 s), a snapshot saved and loaded at once (380 s: exact). Atoms and charge rounding exactly 0 in every
+sample except the two taken in the same paused instant as each resize (the old grid not yet drained: atoms 2086 and 1997, as in
+steps C10 and C12; 10 s later 0 again); energy rounding between −0.033 and +0.007 in 4.4 M. Every 20-minute run: atoms and charge
+0 in every sample, energy within ±0.10 in 17 to 21 M. A snapshot saved before C12b (`experiments/tissue/configs/c11-end-lb-t1`:
+cells of 72 words, genomes of 52, stocks of 32) loads with `?snap=`, the lipid membranes off ("saved before step C12b: lipid
+membranes off (as it ran)"), and runs 60 s with atoms and charge 0. No WebGPU errors in Chrome (headless, every run above; at phone
+size 390 × 844 with the rules panel open at the new group, the panel showing the short LIPIDS line) or in Firefox (headed, 1280 ×
+800, the default scene and 40 cells given soap, oil and walls). Not bit-repeatable: every comparison above is one run each.
+
+**Cost.** Not measured on a quiet GPU (the GPU was shared with a long oxygen run all the while; the runs reached ×2.5 to ×15). In
+principle: the eat pass reads and writes 30 more words per cell and runs the bites, fusion, builder, cracks and sheds per side;
+the stock doubled (64 words), the Cell grew by 24 bytes; the oil's grid passes now run whenever membranes hold lipids (their
+channels stay active).
+
+**Known issues and open questions.**
+- The default scene's chemistry leaves no heavy linker for soap, so lipid membranes are rare there unless soap or oil is given.
+  Options for the user to decide (none is a rule yet): drop a soap or emulsion spring in the default scene; let some free L escape
+  the crust (weaker crystal seeding for LL); or let the builder make soap from what is common. Left as found.
+- Walls in a dense, jostling colony crack about as fast as they are built; in a quiet tissue (the lab) they hold.
+- The head gene drifts but nothing selects it yet (heads balance in the colony: +12.5 −11.6).
+
 ## The look of the landscape
 
 Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the
@@ -3119,6 +3330,13 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   their reactions are in `src/matter.js` (`polarity`, `SUBSTANCES`, `REACTIONS`), the phase separation in `matter.wgsl`
   (`oil_rho`, `oil_blur`, `oil_blur_y`, `oil_edge` in `spread`, the census in `count`), the fusion in `cell_eat.wgsl`, the
   look in `matter_draw.wgsl` (`oil_layer`)
+- `src/lipids.js`: lipid membranes (step C12b): the switches and knobs (`moire.lipids.params`, `.look`), the lipid table derived
+  from the atoms (`LIPID_TABLE`: head and tail atoms, chain and bond sparks, the bonds' energy, linkers by row), the eat pass's
+  words (struct EatP `lp`), the census (from the heat's ledger read-back: LG_LIP_E, LG_LIP_S, LG_LIP_C), the LIPIDS panel line,
+  the overlay and `stats()` (per founder lineage, lit and dark); the membrane itself is in `cell_eat.wgsl` (stock words 32..61;
+  the bites in `plan`, fusion, the builder, cracks, shedding, the stiffness and the heads' charge in `eat`, the books and the census
+  in `ledger`), the corners' stiffness in `cell_step.wgsl` (MB_LIPID), the look in `cell_draw.wgsl` (Draw `lip`, `lip2`, `lipInk`);
+  `experiments/tissue/c12b.py`: the lab's conditions; `experiments/conditions/c12b/make.py`: experiments 2 to 4
 - `src/hardlight.js`: hard light mutates (step C8): the switch and knobs, the census (from the heat's ledger read-back),
   the HARD LIGHT panel line, the overlay and `stats()` (touching neighbours' likeness, light and dark); the dose is kept
   in `cell_eat.wgsl` (Cell.flags bits 19..31, struct EatP `hl`), the mutation at a birth in `cell_step.wgsl` (struct

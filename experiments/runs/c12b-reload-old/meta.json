@@ -1,0 +1,79 @@
+{
+  "name": "c12b-reload-old",
+  "description": "Step C12b: a snapshot saved before C12b (cells of 72 words, genomes of 52, stocks of 32; c11-end-lb-t1) loads with the lipid membranes off and runs 60 s; books exact",
+  "condition": {
+    "name": "c12b-reload-old",
+    "description": "Step C12b: a snapshot saved before C12b (cells of 72 words, genomes of 52, stocks of 32; c11-end-lb-t1) loads with the lipid membranes off and runs 60 s; books exact",
+    "query": {
+      "snap": "experiments/tissue/configs/c11-end-lb-t1/snapshot.json"
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "evals": [
+      {
+        "t": 1,
+        "js": "return { lipids: moire.lipids.params.on, cells: moire.cells.alive }"
+      }
+    ],
+    "shots": [
+      {
+        "t": 60
+      }
+    ]
+  },
+  "url": "http://localhost:62424/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/tissue/configs/c11-end-lb-t1/snapshot.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "be96783301e31f451b31ec31927ad1c53a69b6b8",
+  "dirty": true,
+  "started": "2026-11-15T23:32:20",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": false,
+    "notes": [
+      "no grid in the snapshot (cells only): the page's grid kept",
+      "saved before step C12b: lipid membranes off (as it ran)"
+    ],
+    "rebased": {
+      "atoms": {},
+      "energy": 9182.796478271484
+    },
+    "rounding": {
+      "energy": 0,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": -0.0001220703125,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 40,
+    "time": 119.99999999999447
+  },
+  "t_start": 119.99999999999447,
+  "sim_s": 60.0,
+  "run_wall_s": 2.17,
+  "speed_reached": 27.6,
+  "samples": 7,
+  "shots": [
+    "shots/t60.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 1.0000000000000284,
+      "js": "return { lipids: moire.lipids.params.on, cells: moire.cells.alive }",
+      "result": {
+        "lipids": false,
+        "cells": 40
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T23:32:56",
+  "wall_s": 35.56
+}

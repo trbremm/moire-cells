@@ -1,0 +1,593 @@
+{
+  "name": "c12b-lab-oily-warm",
+  "description": "step C12b lab: 40 cloned cells, oily-warm membrane ({\"oilShare\": 1.0, \"wall\": 0.0, \"wallRow\": 0.5}), light full; soap, oil and linker springs for 30 s; stir at 82 s",
+  "condition": {
+    "name": "c12b-lab-oily-warm",
+    "series": "c12b-lab",
+    "description": "step C12b lab: 40 cloned cells, oily-warm membrane ({\"oilShare\": 1.0, \"wall\": 0.0, \"wallRow\": 0.5}), light full; soap, oil and linker springs for 30 s; stir at 82 s",
+    "query": {
+      "seed": 3,
+      "cells": 40,
+      "mut": 0,
+      "life": 0,
+      "clone": 1,
+      "springs": 0,
+      "light": "full",
+      "day": 0
+    },
+    "size": "640x400",
+    "dpr": 3,
+    "duration": 120,
+    "sample_every": 5,
+    "tissue": true,
+    "evals": [
+      {
+        "t": 0,
+        "js": "const T = await import('/experiments/tissue/tissue-lab.js'); window.__T = T;\nconst knobs = T.apply({\"cells.look.nStarveDim\": 0, \"cells.look.starveDim\": 0, \"cells.params.squeeze\": 0, \"genome.rules.diff\": false, \"eat.params.pay\": false, \"walls.params.cost\": false, \"cells.params.lever\": 0.2, \"walls.params.turn\": true});\nconst g = {\"keyAngle\": 0.35, \"keyScale\": 0.05, \"recAngle\": 0.35, \"recScale\": 0.05, \"recWidth\": 0.15, \"size\": 1, \"motility\": 1, \"thickness\": 0.012, \"stiffness\": 1, \"pumpRate0\": 0, \"pumpRate1\": 0, \"rate0\": 2, \"rate1\": 0, \"rate2\": 0, \"w\": 0, \"divAxis\": 0, \"adhesion\": 0.8, \"a1\": 0.0, \"a2\": 0.0, \"head\": 0.0, \"oilShare\": 1.0, \"wall\": 0.0, \"wallRow\": 0.5}; g.eng0 = moire.genome.engineCode('gt \u2192 g + t', 0);\nawait T.genes(g, null);\nconst fr = await T.fronts({ mode: 'random' });\nconst sp = await T.lipidSprings({ kinds: ['soap', 'oil', 'linker'], ring: 4, n: 4, life: 30 });\nreturn { knobs, genes: g, springs: sp, m: await T.measure({ every: 1 }) };"
+      },
+      {
+        "t": 60,
+        "js": "return await __T.lipidMeasure();"
+      },
+      {
+        "t": 80,
+        "js": "return await __T.lipidMeasure();"
+      },
+      {
+        "t": 82,
+        "js": "return await __T.stirThrough();"
+      },
+      {
+        "t": 83,
+        "js": "return await __T.lipidMeasure();"
+      },
+      {
+        "t": 120,
+        "js": "return await __T.lipidMeasure();"
+      }
+    ],
+    "shots": [
+      {
+        "t": 30
+      },
+      {
+        "t": 60
+      },
+      {
+        "t": 80
+      },
+      {
+        "t": 83
+      },
+      {
+        "t": 120
+      },
+      {
+        "t": 80,
+        "view": "machinery"
+      }
+    ],
+    "clips": [
+      {
+        "t": 81,
+        "until": 86,
+        "speed": 1
+      }
+    ],
+    "snapshots": [
+      {
+        "t": 80,
+        "grid": false,
+        "name": "prestir"
+      }
+    ]
+  },
+  "url": "http://localhost:62456/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&cells=40&mut=0&life=0&clone=1&springs=0&light=full&day=0",
+  "browser": "chrome",
+  "size": "640x400",
+  "commit": "be96783301e31f451b31ec31927ad1c53a69b6b8",
+  "dirty": true,
+  "started": "2026-11-15T23:26:56",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 120.0,
+  "run_wall_s": 11.87,
+  "speed_reached": 10.11,
+  "samples": 25,
+  "shots": [
+    "shots/t30.png",
+    "shots/t60.png",
+    "shots/t80.png",
+    "shots/t80_machinery.png",
+    "shots/t86.1.png",
+    "shots/t120.png"
+  ],
+  "snapshots": [
+    "snapshots/prestir.json"
+  ],
+  "clips": [
+    {
+      "file": "clips/clip_t81-86.webm",
+      "t_end": 85.99999999999946,
+      "bytes": 1151283
+    }
+  ],
+  "evals": [
+    {
+      "t": 0,
+      "js": "const T = await import('/experiments/tissue/tissue-lab.js'); window.__T = T;\nconst knobs = T.apply({\"cells.look.nStarveDim\": 0, \"cells.look.starveDim\": 0, \"cells.params.squeeze\": 0, \"genome.rules.diff\": false, \"eat.params.pay\": false, \"walls.params.cost\": false, \"cells.params.lever\": 0.2, \"walls.params.turn\": true});\nconst g = {\"keyAngle\": 0.35, \"keyScale\": 0.05, \"recAngle\": 0.35, \"recScale\": 0.05, \"recWidth\": 0.15, \"size\": 1, \"motility\": 1, \"thickness\": 0.012, \"stiffness\": 1, \"pumpRate0\": 0, \"pumpRate1\": 0, \"rate0\": 2, \"rate1\": 0, \"rate2\": 0, \"w\": 0, \"divAxis\": 0, \"adhesion\": 0.8, \"a1\": 0.0, \"a2\": 0.0, \"head\": 0.0, \"oilShare\": 1.0, \"wall\": 0.0, \"wallRow\": 0.5}; g.eng0 = moire.genome.engineCode('gt \u2192 g + t', 0);\nawait T.genes(g, null);\nconst fr = await T.fronts({ mode: 'random' });\nconst sp = await T.lipidSprings({ kinds: ['soap', 'oil', 'linker'], ring: 4, n: 4, life: 30 });\nreturn { knobs, genes: g, springs: sp, m: await T.measure({ every: 1 }) };",
+      "result": {
+        "knobs": {
+          "cells.look.nStarveDim": 0,
+          "cells.look.starveDim": 0,
+          "cells.params.squeeze": 0,
+          "genome.rules.diff": false,
+          "eat.params.pay": false,
+          "walls.params.cost": false,
+          "cells.params.lever": 0.2,
+          "walls.params.turn": true
+        },
+        "genes": {
+          "keyAngle": 0.35,
+          "keyScale": 0.05,
+          "recAngle": 0.35,
+          "recScale": 0.05,
+          "recWidth": 0.15,
+          "size": 1,
+          "motility": 1,
+          "thickness": 0.012,
+          "stiffness": 1,
+          "pumpRate0": 0,
+          "pumpRate1": 0,
+          "rate0": 2,
+          "rate1": 0,
+          "rate2": 0,
+          "w": 0,
+          "divAxis": 0,
+          "adhesion": 0.8,
+          "a1": 0,
+          "a2": 0,
+          "head": 0,
+          "oilShare": 1,
+          "wall": 0,
+          "wallRow": 0.5,
+          "eng0": 10
+        },
+        "springs": {
+          "cx": 321.53505859375,
+          "cy": 196.1686569213867,
+          "springs": 15
+        },
+        "m": {
+          "t": 0,
+          "n": 40,
+          "R": 7.341235409880772,
+          "largest": 40,
+          "cx": 321.53505859375,
+          "cy": 196.1686569213867,
+          "box": [
+            267.0776047706604,
+            142.32348203659058,
+            367.88054943084717,
+            245.89650869369507
+          ],
+          "elong": 1.0583529711757813,
+          "hole": 0.910632572579713,
+          "edge": 0.2,
+          "deg": [
+            0,
+            0,
+            5,
+            35
+          ],
+          "fates": [
+            34,
+            3,
+            1,
+            2,
+            0
+          ],
+          "chainy": 0.125,
+          "boxAll": [
+            267.0776047706604,
+            142.32348203659058,
+            367.88054943084717,
+            245.89650869369507
+          ],
+          "walls": {
+            "contactAt": [
+              0.362,
+              0.311,
+              0.327
+            ],
+            "glue": 0.429,
+            "matured": 0,
+            "effMean": 0.46,
+            "matureMean": 0.256,
+            "classes": {
+              "uniform": 1,
+              "polar": 0,
+              "two-ended": 0,
+              "sticky sides": 0
+            },
+            "onSticky": null,
+            "stickyChance": null,
+            "bondsPerCell": 4.3,
+            "chains": 0,
+            "inChains": 0,
+            "longestChain": 0,
+            "rings": 0,
+            "inRings": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 59.999999999999986,
+      "js": "return await __T.lipidMeasure();",
+      "result": {
+        "lipids": {
+          "n": 40,
+          "oilGene": 1,
+          "wallGene": 0,
+          "head": 0,
+          "row": 0.5,
+          "thick": 0.012000000104308128,
+          "soapP": 0.02386474609375,
+          "soapM": 0.01651611328125,
+          "oil": 0.040167236328125,
+          "ll": 0,
+          "LL": 0,
+          "stiff": 1.2321568627450987,
+          "cover": 0,
+          "oilShare": 0.49831699346405217,
+          "bat": 0.31452789306640627
+        },
+        "wobble": 0.22815245230308373,
+        "cornerDev": 0.21926459892150682,
+        "contacts": null,
+        "measure": {
+          "t": 59.999999999999986,
+          "n": 40,
+          "R": 7.341235409880772,
+          "largest": 40,
+          "cx": 336.7869819641113,
+          "cy": 214.95777893066406,
+          "box": [
+            290.37203884124756,
+            179.31654262542725,
+            375.3842830657959,
+            256.6792049407959
+          ],
+          "elong": 1.3486957117352063,
+          "hole": 0.11925927580782374,
+          "edge": 0.15,
+          "deg": [
+            0,
+            0,
+            2,
+            38
+          ],
+          "fates": [
+            40,
+            0,
+            0,
+            0,
+            0
+          ],
+          "chainy": 0.05,
+          "boxAll": [
+            290.37203884124756,
+            179.31654262542725,
+            375.3842830657959,
+            256.6792049407959
+          ],
+          "walls": {
+            "contactAt": [
+              0.325,
+              0.336,
+              0.339
+            ],
+            "glue": 1.583,
+            "matured": 0.972,
+            "effMean": 1.446,
+            "matureMean": 0.806,
+            "classes": {
+              "uniform": 1,
+              "polar": 0,
+              "two-ended": 0,
+              "sticky sides": 0
+            },
+            "onSticky": null,
+            "stickyChance": null,
+            "bondsPerCell": 7.15,
+            "chains": 0,
+            "inChains": 0,
+            "longestChain": 0,
+            "rings": 0,
+            "inRings": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 79.99999999999976,
+      "js": "return await __T.lipidMeasure();",
+      "result": {
+        "lipids": {
+          "n": 40,
+          "oilGene": 1,
+          "wallGene": 0,
+          "head": 0,
+          "row": 0.5,
+          "thick": 0.012000000104308128,
+          "soapP": 0.023931884765625,
+          "soapM": 0.016351318359375,
+          "oil": 0.04027099609375,
+          "ll": 0,
+          "LL": 0,
+          "stiff": 1.2739869281045757,
+          "cover": 0,
+          "oilShare": 0.49941176470588217,
+          "bat": 0.30750102996826173
+        },
+        "wobble": 0.24663391835160028,
+        "cornerDev": 0.24521333911527562,
+        "contacts": null,
+        "measure": {
+          "t": 79.99999999999976,
+          "n": 40,
+          "R": 7.341235409880772,
+          "largest": 40,
+          "cx": 351.3064468383789,
+          "cy": 205.80333137512207,
+          "box": [
+            295.6920461654663,
+            167.9748477935791,
+            397.418004989624,
+            248.95084190368652
+          ],
+          "elong": 1.417638037290392,
+          "hole": 0.16480132022273333,
+          "edge": 0.15,
+          "deg": [
+            0,
+            0,
+            2,
+            38
+          ],
+          "fates": [
+            40,
+            0,
+            0,
+            0,
+            0
+          ],
+          "chainy": 0.05,
+          "boxAll": [
+            295.6920461654663,
+            167.9748477935791,
+            397.418004989624,
+            248.95084190368652
+          ],
+          "walls": {
+            "contactAt": [
+              0.385,
+              0.315,
+              0.301
+            ],
+            "glue": 1.554,
+            "matured": 0.923,
+            "effMean": 1.438,
+            "matureMean": 0.796,
+            "classes": {
+              "uniform": 1,
+              "polar": 0,
+              "two-ended": 0,
+              "sticky sides": 0
+            },
+            "onSticky": null,
+            "stickyChance": null,
+            "bondsPerCell": 7.15,
+            "chains": 0,
+            "inChains": 0,
+            "longestChain": 0,
+            "rings": 0,
+            "inRings": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 85.99999999999946,
+      "js": "return await __T.stirThrough();",
+      "result": {
+        "x": 266.28759384155273,
+        "y": 209.621590423584,
+        "cx": 350.28759384155273,
+        "cy": 209.621590423584
+      }
+    },
+    {
+      "t": 86.09999999999945,
+      "js": "return await __T.lipidMeasure();",
+      "result": {
+        "lipids": {
+          "n": 40,
+          "oilGene": 1,
+          "wallGene": 0,
+          "head": 0,
+          "row": 0.5,
+          "thick": 0.012000000104308128,
+          "soapP": 0.023974609375,
+          "soapM": 0.0163330078125,
+          "oil": 0.04024658203125,
+          "ll": 0,
+          "LL": 0,
+          "stiff": 0.4580392156862746,
+          "cover": 0,
+          "oilShare": 0.4989379084967319,
+          "bat": 0.30447969436645506
+        },
+        "wobble": 1.7056105674076882,
+        "cornerDev": 0.3022655566647522,
+        "contacts": null,
+        "measure": {
+          "t": 86.09999999999945,
+          "n": 40,
+          "R": 7.341235409880772,
+          "largest": 40,
+          "cx": 361.5133056640625,
+          "cy": 209.5716365814209,
+          "box": [
+            306.45309352874756,
+            168.41558265686035,
+            404.8497066497803,
+            253.8569393157959
+          ],
+          "elong": 1.3409051481825496,
+          "hole": 0.2485591351989295,
+          "edge": 0.15,
+          "deg": [
+            0,
+            0,
+            2,
+            38
+          ],
+          "fates": [
+            40,
+            0,
+            0,
+            0,
+            0
+          ],
+          "chainy": 0.05,
+          "boxAll": [
+            306.45309352874756,
+            168.41558265686035,
+            404.8497066497803,
+            253.8569393157959
+          ],
+          "walls": {
+            "contactAt": [
+              0.287,
+              0.318,
+              0.395
+            ],
+            "glue": 1.561,
+            "matured": 0.958,
+            "effMean": 1.439,
+            "matureMean": 0.797,
+            "classes": {
+              "uniform": 1,
+              "polar": 0,
+              "two-ended": 0,
+              "sticky sides": 0
+            },
+            "onSticky": null,
+            "stickyChance": null,
+            "bondsPerCell": 7.15,
+            "chains": 0,
+            "inChains": 0,
+            "longestChain": 0,
+            "rings": 0,
+            "inRings": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 119.99999999999984,
+      "js": "return await __T.lipidMeasure();",
+      "result": {
+        "lipids": {
+          "n": 40,
+          "oilGene": 1,
+          "wallGene": 0,
+          "head": 0,
+          "row": 0.5,
+          "thick": 0.012000000104308128,
+          "soapP": 0.02493896484375,
+          "soapM": 0.015240478515625,
+          "oil": 0.03992919921875,
+          "ll": 0,
+          "LL": 0,
+          "stiff": 0.9731372549019603,
+          "cover": 0,
+          "oilShare": 0.4980882352941175,
+          "bat": 0.3104265213012695
+        },
+        "wobble": 0.24574916887331252,
+        "cornerDev": 0.22266128097747587,
+        "contacts": null,
+        "measure": {
+          "t": 119.99999999999984,
+          "n": 40,
+          "R": 7.341235409880772,
+          "largest": 40,
+          "cx": 397.0270378112793,
+          "cy": 217.42719841003418,
+          "box": [
+            354.5248966217041,
+            174.89254188537598,
+            440.41864585876465,
+            270.10061740875244
+          ],
+          "elong": 1.362747516204671,
+          "hole": 0.23657840498612023,
+          "edge": 0.15,
+          "deg": [
+            0,
+            0,
+            2,
+            38
+          ],
+          "fates": [
+            40,
+            0,
+            0,
+            0,
+            0
+          ],
+          "chainy": 0.05,
+          "boxAll": [
+            354.5248966217041,
+            174.89254188537598,
+            440.41864585876465,
+            270.10061740875244
+          ],
+          "walls": {
+            "contactAt": [
+              0.315,
+              0.339,
+              0.346
+            ],
+            "glue": 1.567,
+            "matured": 0.986,
+            "effMean": 1.439,
+            "matureMean": 0.797,
+            "classes": {
+              "uniform": 1,
+              "polar": 0,
+              "two-ended": 0,
+              "sticky sides": 0
+            },
+            "onSticky": null,
+            "stickyChance": null,
+            "bondsPerCell": 7.15,
+            "chains": 0,
+            "inChains": 0,
+            "longestChain": 0,
+            "rings": 0,
+            "inRings": 0
+          }
+        }
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T23:27:48",
+  "wall_s": 51.92
+}

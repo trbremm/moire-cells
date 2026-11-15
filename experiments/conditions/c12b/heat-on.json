@@ -1,0 +1,210 @@
+{
+ "name": "c12b-heat-on",
+ "description": "step C12b, experiment 3: the default scene with soap and oil dripped (5 s of every 30 s) in the hot spot and at the colony's cool far rim, 20 min, lipid membranes on",
+ "query": {},
+ "duration": 1200,
+ "sample_every": 30,
+ "evals": [
+  {
+   "t": 0,
+   "js": "const s = moire.light.spot(), v = moire.control.view(); window.__lip = [[s.x, s.y], [v.cssW - s.x, s.y]]; return window.__lip"
+  },
+  {
+   "t": 0,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 30,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 60,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 90,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 120,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 150,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 180,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 210,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 240,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 270,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 300,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 300,
+   "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+  },
+  {
+   "t": 330,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 360,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 390,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 420,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 450,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 480,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 510,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 540,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 570,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 600,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 600,
+   "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+  },
+  {
+   "t": 630,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 660,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 690,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 720,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 750,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 780,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 810,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 840,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 870,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 900,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 900,
+   "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+  },
+  {
+   "t": 930,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 960,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 990,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 1020,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 1050,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 1080,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 1110,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 1140,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 1170,
+   "js": "for (const [x, y] of window.__lip) { moire.matter.addSpring(x, y - 12, 'soap', 5); moire.matter.addSpring(x, y + 12, 'oil', 5); } return moire.matter.springs.length"
+  },
+  {
+   "t": 1200,
+   "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+  }
+ ],
+ "shots": [
+  {
+   "t": 300
+  },
+  {
+   "t": 600
+  },
+  {
+   "t": 1200
+  },
+  {
+   "t": 1200,
+   "panel": true,
+   "name": "panel"
+  },
+  {
+   "t": 1200,
+   "view": "lineage",
+   "name": "lineage"
+  }
+ ]
+}

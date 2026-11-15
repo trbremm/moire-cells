@@ -92,7 +92,8 @@ export class Membrane {
   /** The step's words in struct Fields (memb, from word 64; src/cells.js writeFields). */
   writeFields(u, f, o) {
     const p = this.params;
-    u[o] = (this.rule('elastic') ? 1 : 0) | (this.rule('on') ? 2 : 0) | (this.burstOn ? 4 : 0);
+    u[o] = (this.rule('elastic') ? 1 : 0) | (this.rule('on') ? 2 : 0) | (this.burstOn ? 4 : 0) |
+      (this.eat.lipids && this.eat.lipids.active ? 8 : 0);   // step C12b: MB_LIPID, each corner's stiffness from its sides' lipids
     f[o + 1] = Math.max(1e-4, p.tRef); f[o + 2] = Math.max(0.02, Math.min(1, p.soft)); f[o + 3] = 0;
   }
 
@@ -174,6 +175,13 @@ export class Membrane {
     if (!this.params.on) return 'MEMBRANE  chemistry off (rules panel)';
     if (!C || !C.n) return 'MEMBRANE  …';
     const r = C.rate, pc = (x) => `${Math.round(100 * x / C.n)}%`;
+    // step C12b: with the lipid membranes on, the integrity is the bilayer's, the mix gene is the oil share (the LIPIDS line) and
+    // the old weave holds only the walls' glue
+    if (this.eat.lipids && this.eat.lipids.active) {
+      if (compact) return `MEMBRANE intact ${C.integ.toFixed(2)} · bursts ${fmt(r.bursts)}/s · |sel| ${C.asel.toFixed(2)}`;
+      return `MEMBRANE  lipid bilayer: thickness ${C.thick.toFixed(3)} · integrity ${C.integ.toFixed(2)} (whole ${pc(C.whole)}, damaged ${C.damaged})` +
+        ` · bursts ${fmt(r.bursts)}/s · glue linkers l ${fmt(C.ml)} L ${fmt(C.mh)} · |selectivity| ${C.asel.toFixed(2)}`;
+    }
     if (compact) return `MEMBRANE mix ${C.mix.toFixed(2)} · intact ${C.integ.toFixed(2)} · bursts ${fmt(r.bursts)}/s · |sel| ${C.asel.toFixed(2)}`;
     return `MEMBRANE  mix ${C.mix.toFixed(2)} (heavy ${pc(C.heavy)}) · thickness ${C.thick.toFixed(3)} · integrity ${C.integ.toFixed(2)}` +
       ` (whole ${pc(C.whole)}, damaged ${C.damaged}) · bursts ${fmt(r.bursts)}/s · in membranes l ${fmt(C.ml)} L ${fmt(C.mh)}` +

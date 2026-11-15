@@ -403,6 +403,48 @@ C11. GLUE TURNS THE CELL + DIVISION ALONG THE FRONT (user 2026-11-15: "yes absol
     Claude's call (user): retune so the default colony packs as a honeycomb again while glue still costs.
 OXYGEN RETRY (user yes): a never-drying light spring plus a slow heavy spring, 40-60 min, watching the swap rate
     inside cells (cells.rate.inSwap), not the carrier count; whole dish lit and spotlight.
+ORDER AGREED (user 2026-11-15 "Do it"): C12 oils and water -> C13 fields as genes and guides -> C14 primordial soup.
+C12. OILS AND WATER, POLAR AND APOLAR MOLECULES (user: "try to build molecules that are polar and apolar; we can
+    simplify their charges combining without actual physics"):
+    - POLARITY is derived from the atoms by simple combination, no physics: charged atoms (givers +, takers -) are
+      water-loving; linkers (0) are water-shy. A molecule's polarity = how much charge it carries AND where:
+      all-linker = APOLAR (oil); charged parts on both ends or spread = POLAR; a charged HEAD on one end with a
+      linker TAIL = AMPHIPHILE (soap/lipid-like). A neutral molecule made of + and - parts still counts as polar.
+    - Water-shy substances gather with their own kind on the grid (phase separation: droplets, films that grow and
+      merge); polar ones avoid oil; amphiphiles collect at oil-water boundaries (films, and hopefully micelles,
+      bilayers, vesicles: protocell-like compartments in the open dish). Matter conserved exactly.
+    - Membranes are linker-built, so they are oily: droplets can fuse into membranes, bursts spill oil.
+    - Look: oil as a glossy film; boundaries as thin bright (maybe iridescent) neon lines; not busy.
+    AS BUILT (C12): oil lL (mixed-row linker chain; one-row chains still pack into crust), soap glL (+1) / tlL (-1);
+    each substance has chi (bulk pull) and beta (boundary pull) from polarity(); exact Scharfetter-Gummel flux on the
+    grid (plain upwind made diamond droplets); oil tool (drop icon); fusion = a cell short of linkers takes oil in.
+    Seen: coated droplets (emulsion) stable 10 min; soap blobs hollow into vesicle-like rings, then refill into a foam
+    net; the default scene makes almost no oil (linkers go to crust faster); fusion is a trickle (8 units / 10 min).
+C12b. LIPID MEMBRANES, ELASTICITY FROM THE LIPIDS (user 2026-11-15: "Lipids should be connected with elasticity. In
+    the membrane"; NEXT after merging C11 + C12, ahead of C13). The membrane (C6c) becomes a LIPID layer and its
+    elasticity is DERIVED from which lipids it is made of, using the C12 polarity numbers (no per-molecule tuning):
+    - Membrane material = the chain-carrying molecules in the cell's stock: crust chains ll/LL, oil lL, soap glL/tlL.
+      Cells get them by fusing oil and soap from the dish (extend C12 fusion to soap) or by making them inside
+      (let the C12 oil/soap reactions run in cells too, paid from the battery like any reaction).
+    - Derived mechanics: the oily TAIL share packs the layer -> STIFF (holds its hexagon, resists bites, costly);
+      the charged HEAD share makes it FLUID -> soft, wobbly, reseals fast (soap self-assembles), but bends easily;
+      one-row crust chains -> rigid and brittle (cracks rather than bends). Thickness gene stays; the C6c light/heavy
+      mix gene becomes a LIPID MIX gene (what the cell builds its membrane from); the small stiffness gene stays.
+    - Heads carry charge: a membrane rich in glL (+) or tlL (-) charges its sides, feeding C6d dipoles and field B.
+    - Bursts spill the lipids, which go back into droplets / soap films in the dish (matter exact).
+    - REFINED after the user's doubt ("I just know that bacteria have a lipid membrane"), closer to real cells:
+      SOAP (head + tail) is the bilayer itself, soft and fluid; OIL slips in between the tails and stiffens it
+      (like cholesterol / hopanoids); CRUST chains form a rigid WALL outside it (like a bacterial cell wall, the part
+      that really holds a bacterium's shape). HEAT makes the bilayer more fluid, so lineages in hot places may evolve
+      oilier, stiffer membranes (real bacteria do this: "homeoviscous adaptation"). Watch for it; never write it.
+    - Expected look: soft wobbly soap-skinned cells next to stiff oily ones holding crisp hexagons; tissue mechanics
+      (packing, linking) now follow the chemistry the lineage eats and makes. Own switch (off = C6c linker membrane).
+LATER, PURIST VERSION (user 2026-11-15: hoped for "a more game of life situation", surprised how many abstractions
+    were needed; chose to KEEP GOING with lipids (C12b) and the oxygen story, "I can go back to the purist version
+    later"). Idea on file: a separate small page "moire life": cells of a few colours, pairwise push/pull through
+    the moire beat of their lattices as the ONLY rule (ring-shaped, not a plain falloff), no energy/chemistry/heat/
+    noise after the start, a random-rules button and a gallery of kept rule sets (particle-life genre).
+    Also on file: prune the big sim's defaults to rules that showed a visible effect.
 PROPOSED NEXT (user 2026-11-15, ideas under discussion, not agreed in detail):
 - OILS: a water-shy property derived from the atoms (uncharged linker-rich molecules are oily); oily substances
   gather with their own kind on the grid (phase separation: droplets, films), membranes are oil, droplets can fuse

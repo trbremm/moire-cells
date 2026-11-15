@@ -124,6 +124,48 @@ export class Membrane {
     }
   }
 
+  /**
+   * For tuning and the time series (console, tools): reads the cells and genomes back and compares the fed cells (battery
+   * at least `fed`) with the rest: count, heavy membranes (mix above 0.5), mean mix, thickness, integrity, whole share,
+   * husks; and over the cells with a clear ion selectivity (|s| above 0.2) how their charge q goes with s.
+   */
+  async stats(fed = 0.3) {
+    const C = this.eat.cells, d = C.device, n = C.count, F = 60, B = 44;
+    const read = async (src, bytes) => {
+      const buf = d.createBuffer({ size: bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+      const e = d.createCommandEncoder();
+      e.copyBufferToBuffer(src, 0, buf, 0, bytes);
+      d.queue.submit([e.finish()]);
+      await buf.mapAsync(GPUMapMode.READ);
+      const f = new Float32Array(buf.getMappedRange().slice(0));
+      buf.destroy();
+      return f;
+    };
+    const f = await read(C.cellBuf, n * F * 4), g = await read(C.bioBuf[C.bioCur], n * B * 4);
+    const u = new Uint32Array(f.buffer);
+    const grp = () => ({ n: 0, heavy: 0, mix: 0, thick: 0, integ: 0, whole: 0, husk: 0 });
+    const G = { fed: grp(), rest: grp() };
+    let sq = 0, ss = 0, sqs = 0, ns = 0, agree = 0, charged = 0;
+    for (let i = 0; i < n; i++) {
+      const o = i * F, b = i * B;
+      if (!(u[o + 9] & 1)) continue;
+      const x = f[o + 16] >= fed ? G.fed : G.rest;
+      let im = 0;
+      for (let k = 0; k < 6; k++) im += f[o + 48 + k] / 6;
+      x.n++; x.mix += g[b + 40]; x.thick += g[b + 41]; x.integ += im;
+      if (g[b + 40] > 0.5) x.heavy++;
+      if (u[o + 9] & 0x40000) x.whole++;
+      if (u[o + 9] & 0xf0) x.husk++;
+      const s = g[b + 43], q = f[o + 22];
+      if (Math.abs(s) > 0.2) {
+        ns++; sq += q; ss += s; sqs += q * s;
+        if (Math.abs(q) > 0.1) { charged++; if (Math.sign(q) === Math.sign(s)) agree++; }
+      }
+    }
+    for (const x of Object.values(G)) for (const k of ['mix', 'thick', 'integ']) x[k] = x.n ? x[k] / x.n : 0;
+    return { ...G, sel: { n: ns, charged, sameSign: agree, meanQS: ns ? sqs / ns : 0 } };
+  }
+
   /** The entropy panel's MEMBRANE line. */
   panelLine(compact = false) {
     const C = this.census;

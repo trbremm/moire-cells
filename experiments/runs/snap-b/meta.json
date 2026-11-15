@@ -1,0 +1,71 @@
+{
+  "name": "snap-b",
+  "description": "Snapshot check, part 2: load snap-a's snapshot, snapshot again at once (must match bit for bit), run 60 s more (atoms and charge rounding must stay 0).",
+  "condition": {
+    "name": "snap-b",
+    "description": "Snapshot check, part 2: load snap-a's snapshot, snapshot again at once (must match bit for bit), run 60 s more (atoms and charge rounding must stay 0).",
+    "query": {
+      "snap": "experiments/runs/snap-a/snapshots/snap_t30.json"
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "snapshots": [
+      {
+        "t": 0,
+        "grid": true,
+        "name": "reloaded"
+      }
+    ],
+    "shots": [
+      {
+        "t": 0
+      },
+      {
+        "t": 60
+      }
+    ]
+  },
+  "url": "http://localhost:52913/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/runs/snap-a/snapshots/snap_t30.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "ae493ae0ed8078815a75fbfb8e82090ed4bb385f",
+  "dirty": false,
+  "started": "2026-11-15T09:22:34",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": true,
+    "notes": [],
+    "rebased": null,
+    "rounding": {
+      "energy": 0.0120086669921875,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": 0.0120086669921875,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 1781,
+    "time": 29.99999999999993
+  },
+  "t_start": 29.99999999999993,
+  "sim_s": 60.0,
+  "run_wall_s": 5.51,
+  "speed_reached": 10.88,
+  "samples": 7,
+  "shots": [
+    "shots/t0.png",
+    "shots/t60.png"
+  ],
+  "snapshots": [
+    "snapshots/reloaded.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-15T09:23:00",
+  "wall_s": 25.71
+}

@@ -1,0 +1,76 @@
+{
+  "name": "tissue-reload",
+  "description": "Load tissue-40's cells-only snapshot (a best-effort load: the books are re-based) and watch it for 30 s.",
+  "condition": {
+    "name": "tissue-reload",
+    "description": "Load tissue-40's cells-only snapshot (a best-effort load: the books are re-based) and watch it for 30 s.",
+    "query": {
+      "snap": "experiments/runs/tissue-40/snapshots/tissue-end.json"
+    },
+    "duration": 30,
+    "sample_every": 10,
+    "tissue": true,
+    "shots": [
+      {
+        "t": 0
+      }
+    ]
+  },
+  "url": "http://localhost:52913/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/runs/tissue-40/snapshots/tissue-end.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "ae493ae0ed8078815a75fbfb8e82090ed4bb385f",
+  "dirty": false,
+  "started": "2026-11-15T09:23:00",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": false,
+    "notes": [
+      "no grid in the snapshot (cells only): the page's grid kept"
+    ],
+    "rebased": {
+      "atoms": {
+        "g": -114.0634765625,
+        "t": -114.1025390625,
+        "l": -117.366943359375,
+        "G": -114.401611328125,
+        "T": -114.324951171875,
+        "L": -115.130126953125,
+        "gt": 2.067626953125,
+        "gT": 0.10693359375,
+        "Gt": 0.19140625,
+        "GT": 0.1103515625,
+        "trace": -14.364501953125
+      },
+      "energy": -4902.13525390625
+    },
+    "rounding": {
+      "energy": 0,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": 0.0003204345703125,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 40,
+    "time": 59.99999999999999
+  },
+  "t_start": 59.99999999999999,
+  "sim_s": 30.0,
+  "run_wall_s": 1.53,
+  "speed_reached": 19.56,
+  "samples": 4,
+  "shots": [
+    "shots/t0.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-15T09:23:20",
+  "wall_s": 20.19
+}

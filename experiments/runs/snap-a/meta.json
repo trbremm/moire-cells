@@ -1,0 +1,42 @@
+{
+  "name": "snap-a",
+  "description": "Snapshot check, part 1: run 30 s from seed 3, save a snapshot with the grid.",
+  "condition": {
+    "name": "snap-a",
+    "description": "Snapshot check, part 1: run 30 s from seed 3, save a snapshot with the grid.",
+    "query": {
+      "seed": 3
+    },
+    "duration": 30,
+    "sample_every": 10,
+    "snapshots": [
+      {
+        "t": 30,
+        "grid": true
+      }
+    ]
+  },
+  "url": "http://localhost:52913/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "ae493ae0ed8078815a75fbfb8e82090ed4bb385f",
+  "dirty": false,
+  "started": "2026-11-15T09:22:13",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 30.0,
+  "run_wall_s": 2.7,
+  "speed_reached": 11.12,
+  "samples": 4,
+  "shots": [],
+  "snapshots": [
+    "snapshots/snap_t30.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-15T09:22:34",
+  "wall_s": 20.83
+}

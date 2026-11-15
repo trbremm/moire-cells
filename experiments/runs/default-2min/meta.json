@@ -1,0 +1,63 @@
+{
+  "name": "default-2min",
+  "description": "Smoke test: the default page (2000 cells, spotlight, two springs, division on) for 2 simulated minutes.",
+  "condition": {
+    "name": "default-2min",
+    "description": "Smoke test: the default page (2000 cells, spotlight, two springs, division on) for 2 simulated minutes.",
+    "query": {
+      "seed": 3
+    },
+    "duration": 120,
+    "sample_every": 5,
+    "shots": [
+      {
+        "t": 0
+      },
+      {
+        "t": 60
+      },
+      {
+        "t": 120
+      },
+      {
+        "t": 120,
+        "view": "lineage",
+        "panel": true
+      }
+    ],
+    "snapshots": [
+      {
+        "t": 120,
+        "grid": true
+      }
+    ]
+  },
+  "url": "http://localhost:52913/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "ae493ae0ed8078815a75fbfb8e82090ed4bb385f",
+  "dirty": false,
+  "started": "2026-11-15T09:21:15",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 120.0,
+  "run_wall_s": 10.14,
+  "speed_reached": 11.83,
+  "samples": 25,
+  "shots": [
+    "shots/t0.png",
+    "shots/t60.png",
+    "shots/t120.png",
+    "shots/t120_lineage.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t120.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-15T09:21:49",
+  "wall_s": 34.32
+}

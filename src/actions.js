@@ -43,6 +43,7 @@ export const RULE_GROUPS = [
   ['dipole', 'Charge per side (step C6d)'],
   ['pumps', 'Pumps (step C7)'],
   ['catalysts', 'Catalysts (step C7b)'],
+  ['hardlight', 'Hard light (step C8)'],
 ];
 
 export const VIEWS = ['fate', 'lineage', 'strategy', 'charge'];   // key V: what the cells' bodies are coloured by (cells.look.view)
@@ -472,6 +473,19 @@ export function makeActions(app) {
     cknob('crystalFloor', 'spark floor', 'floor', 0.02, 1, 1.25, 2, 'the seeded spark never falls below this share of itself'),
     cknob('cofF0', 'speed without trace', 'f0', 0.02, 1, 1.25, 2, 'how fast an engine runs with no trace inside the cell, as a share of its rate'),
     cknob('cofHalf', 'trace half', 'tHalf', 1e-5, 1, 1.5, 5, 'trace per R² inside a cell that brings its engines half the way from the floor to full speed'),
+  );
+
+  // ---------- hard light mutates (step C8; panel only: no keys are free) ----------
+  const HL = () => app.cells.eat.hardlight.params;
+  const hknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'hardlight', type: 'knob', get: () => HL()[key].toFixed(digits),
+    run: (k) => { const p = HL(); p[key] = Math.max(lo, Math.min(hi, +(p[key] * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    { id: 'hardmut', keys: [], label: 'hard light mutates', group: 'hardlight', type: 'toggle', get: () => HL().on,
+      run: () => `hard light ${flip(HL(), 'on') ? 'mutates: a cell keeps a dose of the hard light its body caught (fading as it is repaired), and its daughters mutate more, in proportion' : 'does not mutate: every birth mutates the same, in the light or in the dark'}${rules().mut ? '' : ' (mutation, key M, is off: only the hard light’s part mutates)'}`,
+      help: 'the hard light a cell’s body catches leaves a dose (fading as it is repaired); a daughter’s genome mutates × (1 + gain × the parent’s dose)' },
+    hknob('hardGain', 'mutation per dose', 'gain', 0.001, 2, 1.5, 3, 'extra mutation per energy unit of hard light dose: a daughter mutates × (1 + this × the parent’s dose)'),
+    hknob('hardMax', 'largest factor', 'maxFactor', 1, 100, 1.5, 1, 'a daughter mutates at most this many times the usual'),
+    hknob('hardRepair', 'repair time', 'repair', 1, 300, 1.5, 0, 'seconds over which a cell repairs its hard light dose (the dose fades with this time constant)'),
   );
 
   // step C6n: the clean view (default) or the machinery: every diagnostic layer at once

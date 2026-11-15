@@ -177,6 +177,10 @@ struct EatP {
   // ---- step C7b, catalysts (src/catalysts.js) ----
   cat: vec4f,              // x 1 = trace as cofactor: an engine's rate x (f0 + (1 - f0) x tr / (tr + tHalf)), tr the trace inside
                            // per R^2; y f0; z tHalf (trace per R^2); w spare
+  // ---- step C8, hard light mutates (src/hardlight.js) ----
+  hl: vec4f,               // x 1 = the cells keep a hard light DOSE (Cell.flags bits 19..31): the hard light their body caught
+                           // (counts of 1 / DOSE_SCALE energy units), y the share of it repaired per tick; z the extra mutation
+                           // per energy unit of dose (Fields.hm.x; the census only); w spare
 };
 // step C7b: the cofactor's factor for a cell holding `tr` trace per R^2 (1 while the rule is off)
 fn cofactor(tr: f32) -> f32 {
@@ -1346,6 +1350,33 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       im /= 6.0;
     }
     var fl2 = c.flags;
+    // ---- step C8: the hard light DOSE. The hard light falling on the cell, shared by optical depth between the medium, the
+    // cell's body and its hard light pigments (as the pigments' catch above): what the BODY catches adds to the dose, which is
+    // repaired at hl.y per tick. (A hard pigment takes its share first: a sunscreen, if one evolves.) The step reads the
+    // parent's dose at a birth and scales the mutation by it. Off: the dose is cleared
+    if (EP.hl.x > 0.0) {
+      var dose = i32(fl2 >> CELL_DOSE_SHIFT);
+      var add = 0.0;
+      if (LP.mode != LIGHT_OFF) {
+        let lf = light_factor(LP, c.pos);
+        if (lf > 0.0) {
+          var th = 0.0;
+          if ((EP.flags & EF_ENG) != 0u && (EP.flags & EF_PIG) != 0u) {
+            for (var k = 0u; k < 3u; k++) {
+              if (b.rate[k] > 0.0 && EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) == 3u) { th += EP.pigK * b.rate[k]; }
+            }
+          }
+          let tot = LP.tauMed.w + LP.tauCell.w + th;
+          add = LP.power.w * lf * areaPx / (HP.px * HP.px) * (1.0 - exp(-tot)) * LP.tauCell.w / max(tot, 1e-6) / HEAT_SCALE * DOSE_SCALE;
+        }
+      }
+      let rd = pcg(rs + 0x5f356495u);
+      dose += i32(floor(add + u01(rd))) - i32(floor(f32(dose) * EP.hl.y + u01(pcg(rd))));
+      dose = clamp(dose, 0, i32(CELL_DOSE_MAX));
+      fl2 = (fl2 & ((1u << CELL_DOSE_SHIFT) - 1u)) | (u32(dose) << CELL_DOSE_SHIFT);
+    } else {
+      fl2 &= (1u << CELL_DOSE_SHIFT) - 1u;
+    }
     if (membOn && im >= EP.mb1.z) { fl2 |= CELL_WHOLE; }
     let burst = membOn && (mbf & MBF_BURST) != 0u && (fl2 & CELL_WHOLE) != 0u && im < EP.mb1.y && bitL + bitH > 0;
     if (burst) {
@@ -1438,6 +1469,8 @@ const CT_PUMP_TR: u32 = 8u;    // ... their trace per R^2 x 1e6
 const CT_BAT: u32 = 9u;        // cells with an engine: battery x 1000
 const CT_FED: u32 = 10u;       // cells with an engine and a battery of at least 0.3
 const CT_FED_F: u32 = 11u;     // ... their factor x 1000
+// step C8: the hard light census's snapshot (HL_* in cell_common.wgsl; LG_HL)
+var<workgroup> whl: array<atomic<i32>, 8>;
 
 @compute @workgroup_size(64)
 fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index) li: u32, @builtin(workgroup_id) wid: vec3u) {
@@ -1563,6 +1596,11 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       if (lit) { atomicAdd(&wcat[CT_NL], 1); atomicAdd(&wcat[CT_FL], i32(round(cf * 1000.0))); }
       if (fed) { atomicAdd(&wcat[CT_FED], 1); atomicAdd(&wcat[CT_FED_F], i32(round(cf * 1000.0))); }
     }
+    // step C8: the hard light dose, in the light and in the dark
+    let dz = i32(c.flags >> CELL_DOSE_SHIFT);
+    if (lit) { atomicAdd(&whl[HL_NL], 1); atomicAdd(&whl[HL_DL], dz); }
+    else { atomicAdd(&whl[HL_ND], 1); atomicAdd(&whl[HL_DD], dz); }
+    if (EP.hl.z * f32(dz) / DOSE_SCALE >= 0.5) { atomicAdd(&whl[HL_HOT], 1); }
     var tp = false;
     for (var s = 0u; s < 2u; s++) { tp = tp || (gp[2u + s] >= PUMP_ACTIVE && pump_ch(gp[s]) == CP.trace && !pump_out(gp[s])); }
     if (tp) {
@@ -1575,6 +1613,9 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
   if (li < 16u) {
     let v = atomicLoad(&wcat[li]);
     if (v != 0) { atomicAdd(&hb[LG_CAT + 16u * li + (wid.x & 15u)], v); }
+  } else if (li < 24u) {
+    let v = atomicLoad(&whl[li - 16u]);
+    if (v != 0) { atomicAdd(&hb[LG_HL + 16u * (li - 16u) + (wid.x & 15u)], v); }
   }
   for (var q = li; q < PU_SNAP; q += 64u) {
     let v = atomicLoad(&wpus[q]);

@@ -56,7 +56,7 @@
 //               ?cofactor=0 the engines' rates not scaled by the trace inside (rules panel, Catalysts)
 //   ?hardmut=0    step C8: start with hard light not mutating the cells (rules panel, Hard light)
 //   ?divide=0     step C9: the old turnover, a fixed count (default 1: cells divide and die, the count changes); ?cap=N the
-//               capacity (slots; default 3 x the starting number); ?divat=x the division threshold (battery share),
+//               capacity (slots; default 3 x the starting number, with ?divide=0 the starting number); ?divat=x the division threshold (battery share),
 //               ?divcost=x its cost (energy units), ?starve=s the starvation time, ?crowd=x the crowding limit, ?age=x the
 //               background death rate per s (rules panel, Division)
 //
@@ -181,7 +181,9 @@ async function boot() {
     light = await Light.create(gpu.device, LIGHT_FORMAT);
     matter = await Matter.create(gpu.device, LIGHT_FORMAT, medium);
     charge = await Charge.create(gpu.device, LIGHT_FORMAT);
-    cells = await Cells.create(gpu.device, LIGHT_FORMAT, medium, Number(params.get('cells')) || defaultCells(), SEED, Number(params.get('cap')) || 0);
+    cells = await Cells.create(gpu.device, LIGHT_FORMAT, medium, Number(params.get('cells')) || defaultCells(), SEED,
+      // step C9: the capacity; with ?divide=0 (a fixed count) no room beyond the starting number unless ?cap= asks for it
+      Number(params.get('cap')) || (params.has('divide') && !flag('divide') ? Number(params.get('cells')) || defaultCells() : 0));
     const small = Math.min(window.innerWidth || 800, window.innerHeight || 800) < 600;
     neon = await Neon.create(gpu.device, gpu.format, params.has('cheap') ? flag('cheap') : TOUCH || small);
     neonOptions(neon);

@@ -1,0 +1,92 @@
+{
+ "batch": "c11-reload",
+ "runs": [
+  {
+   "name": "c11-reload-c10-pol-off-m0-al",
+   "description": "a stored configuration from before C11 (c10-pol-off-m0-al) loads with C11 off and runs on",
+   "query": {
+    "cells": 40,
+    "seed": 3
+   },
+   "duration": 40,
+   "sample_every": 10,
+   "tissue": true,
+   "evals": [
+    {
+     "t": 0,
+     "js": "const S = await (await fetch('/experiments/tissue/configs/c10-pol-off-m0-al/snapshot.json')).json(); const r = await moire.loadSnapshot(S); return {{ exact: r.exact, notes: r.notes, turn: moire.walls.params.turn, divFront: moire.walls.params.divFront, freeGlue: moire.walls.params.freeGlue, walls: moire.walls.params.on }}"
+    },
+    {
+     "t": 40,
+     "js": "const T = await import('/experiments/tissue/tissue-lab.js'); return await T.measure({ every: 1 })"
+    }
+   ],
+   "shots": [
+    {
+     "t": 0
+    },
+    {
+     "t": 40
+    }
+   ]
+  },
+  {
+   "name": "c11-reload-c10-uni-lb-100-al",
+   "description": "a stored configuration from before C11 (c10-uni-lb-100-al) loads with C11 off and runs on",
+   "query": {
+    "cells": 100,
+    "seed": 3
+   },
+   "duration": 40,
+   "sample_every": 10,
+   "tissue": true,
+   "evals": [
+    {
+     "t": 0,
+     "js": "const S = await (await fetch('/experiments/tissue/configs/c10-uni-lb-100-al/snapshot.json')).json(); const r = await moire.loadSnapshot(S); return {{ exact: r.exact, notes: r.notes, turn: moire.walls.params.turn, divFront: moire.walls.params.divFront, freeGlue: moire.walls.params.freeGlue, walls: moire.walls.params.on }}"
+    },
+    {
+     "t": 40,
+     "js": "const T = await import('/experiments/tissue/tissue-lab.js'); return await T.measure({ every: 1 })"
+    }
+   ],
+   "shots": [
+    {
+     "t": 0
+    },
+    {
+     "t": 40
+    }
+   ]
+  },
+  {
+   "name": "c11-reload-th-Bfate",
+   "description": "a stored configuration from before C11 (th-Bfate) loads with C11 off and runs on",
+   "query": {
+    "cells": 40,
+    "seed": 3
+   },
+   "duration": 40,
+   "sample_every": 10,
+   "tissue": true,
+   "evals": [
+    {
+     "t": 0,
+     "js": "const S = await (await fetch('/experiments/tissue/configs/th-Bfate/snapshot.json')).json(); const r = await moire.loadSnapshot(S); return {{ exact: r.exact, notes: r.notes, turn: moire.walls.params.turn, divFront: moire.walls.params.divFront, freeGlue: moire.walls.params.freeGlue, walls: moire.walls.params.on }}"
+    },
+    {
+     "t": 40,
+     "js": "const T = await import('/experiments/tissue/tissue-lab.js'); return await T.measure({ every: 1 })"
+    }
+   ],
+   "shots": [
+    {
+     "t": 0
+    },
+    {
+     "t": 40
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,68 @@
+{
+ "name": "c11-evo-on",
+ "description": "Step C11 evolution: the default scene (2000 cells, spotlight, two springs, division on), C11 on (glue turns cells, division by the front, the free base glue: the defaults), 20 minutes",
+ "query": {},
+ "duration": 1200,
+ "sample_every": 30,
+ "evals": [
+  {
+   "t": 120,
+   "js": "return await moire.walls.stats()"
+  },
+  {
+   "t": 300,
+   "js": "return await moire.walls.stats()"
+  },
+  {
+   "t": 600,
+   "js": "return await moire.walls.stats()"
+  },
+  {
+   "t": 900,
+   "js": "return await moire.walls.stats()"
+  },
+  {
+   "t": 1200,
+   "js": "return await moire.walls.stats()"
+  },
+  {
+   "t": 1200,
+   "js": "return await moire.division.stats()"
+  }
+ ],
+ "shots": [
+  {
+   "t": 300
+  },
+  {
+   "t": 600
+  },
+  {
+   "t": 600,
+   "view": "walls"
+  },
+  {
+   "t": 1200
+  },
+  {
+   "t": 1200,
+   "view": "walls"
+  },
+  {
+   "t": 1200,
+   "view": "machinery"
+  },
+  {
+   "t": 1200,
+   "view": "lineage",
+   "panel": true
+  }
+ ],
+ "snapshots": [
+  {
+   "t": 1200,
+   "grid": false,
+   "name": "end"
+  }
+ ]
+}

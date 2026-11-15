@@ -1,0 +1,9 @@
+{
+  "batch": "example",
+  "description": "A batch: each run once per seed. Runs are condition files (relative to this file) or inline conditions.",
+  "seeds": [3, 7],
+  "runs": [
+    "quick.json",
+    {"name": "quick-full", "description": "As quick, under the full-field light.", "query": {"light": "full"}, "duration": 20, "sample_every": 5}
+  ]
+}

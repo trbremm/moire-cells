@@ -1,0 +1,9 @@
+{
+  "name": "tissue-reload",
+  "description": "Load tissue-40's cells-only snapshot (a best-effort load: the books are re-based) and watch it for 30 s.",
+  "query": {"snap": "experiments/runs/tissue-40/snapshots/tissue-end.json"},
+  "duration": 30,
+  "sample_every": 10,
+  "tissue": true,
+  "shots": [{"t": 0}]
+}

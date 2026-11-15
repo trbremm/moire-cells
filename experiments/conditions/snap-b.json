@@ -1,0 +1,9 @@
+{
+  "name": "snap-b",
+  "description": "Snapshot check, part 2: load snap-a's snapshot, snapshot again at once (must match bit for bit), run 60 s more (atoms and charge rounding must stay 0).",
+  "query": {"snap": "experiments/runs/snap-a/snapshots/snap_t30.json"},
+  "duration": 60,
+  "sample_every": 10,
+  "snapshots": [{"t": 0, "grid": true, "name": "reloaded"}],
+  "shots": [{"t": 0}, {"t": 60}]
+}

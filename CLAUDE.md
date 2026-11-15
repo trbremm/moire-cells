@@ -432,6 +432,11 @@ C12b. LIPID MEMBRANES, ELASTICITY FROM THE LIPIDS (user 2026-11-15: "Lipids shou
       mix gene becomes a LIPID MIX gene (what the cell builds its membrane from); the small stiffness gene stays.
     - Heads carry charge: a membrane rich in glL (+) or tlL (-) charges its sides, feeding C6d dipoles and field B.
     - Bursts spill the lipids, which go back into droplets / soap films in the dish (matter exact).
+    - REFINED after the user's doubt ("I just know that bacteria have a lipid membrane"), closer to real cells:
+      SOAP (head + tail) is the bilayer itself, soft and fluid; OIL slips in between the tails and stiffens it
+      (like cholesterol / hopanoids); CRUST chains form a rigid WALL outside it (like a bacterial cell wall, the part
+      that really holds a bacterium's shape). HEAT makes the bilayer more fluid, so lineages in hot places may evolve
+      oilier, stiffer membranes (real bacteria do this: "homeoviscous adaptation"). Watch for it; never write it.
     - Expected look: soft wobbly soap-skinned cells next to stiff oily ones holding crisp hexagons; tissue mechanics
       (packing, linking) now follow the chemistry the lineage eats and makes. Own switch (off = C6c linker membrane).
 PROPOSED NEXT (user 2026-11-15, ideas under discussion, not agreed in detail):

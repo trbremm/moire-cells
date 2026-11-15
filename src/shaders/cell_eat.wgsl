@@ -184,6 +184,10 @@ struct EatP {
   // ---- step C9, division and death with a changing count (src/division.js) ----
   dv: vec4u,               // x reset: how many slots the new culture fills (slots 0 .. x - 1 get the starter charge); y the
                            // division's cost (heat counts, from the mother's battery, as heat); z, w spare
+  // ---- step C10, patterned walls (src/walls.js) ----
+  wl0: vec4f,              // x: WL_* bits (u32); y the pattern strength (x a1, a2); z the maturity factor's extra at full
+                           // maturity (the cap - 1; 0 while junctions do not mature); w linker per R of side at adhesion 1 (atom-units)
+  wl1: vec4f,              // x the upkeep: heat counts per tick per R of side at adhesion 1; y z w spare
 };
 // step C7b: the cofactor's factor for a cell holding `tr` trace per R^2 (1 while the rule is off)
 fn cofactor(tr: f32) -> f32 {
@@ -1040,18 +1044,41 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     }
     if (bitL + bitH > 0) { atomicAdd(&wmb[MB_BITTEN - 16u], 1); }
     let want = max(memb_want(c.r, gm.y), 1.0);
+    // ---- step C10, PATTERNED WALLS: each side's adhesion as the genes ask for it, P = clamp(a0 + s (a1 cos psi + a2 cos 2 psi),
+    // 0, 1) (psi the side's middle from the front), x the junction's maturity factor (1 + (cap - 1) x maturity). With the cost on,
+    // the adhesion molecules are built from LINKERS in the membrane: a side wants, on top of its membrane, linkPer x adhesion x
+    // its rest length of linker (in the membrane's mix), woven by the same repair and paying the same sparks
+    let wlf = bitcast<u32>(EP.wl0.x);
+    let wallOn = (wlf & WL_ON) != 0u;
+    let wCost = wallOn && (wlf & WL_COST) != 0u;
+    var aReq = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    var wX = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);      // the extra linker counts each side wants for its adhesion
+    if (wallOn) {
+      let mbw = membrane(c);
+      let uf = vec2f(cos(c.front), sin(c.front));
+      let gw = bio[i].wall;
+      let a0 = clamp(bio[i].body.x, 0.0, 1.0);
+      for (var k = 0u; k < 6u; k++) {
+        let cs = dot(normalize(mbw.mid[k] + vec2f(1e-6, 0.0)), uf);
+        let p = clamp(a0 + EP.wl0.y * (gw.x * cs + gw.y * (2.0 * cs * cs - 1.0)), 0.0, 1.0);
+        aReq[k] = min(p * (1.0 + EP.wl0.z * wall_mature(c.mature, k)), WALL_AMAX);
+        if (wCost && membOn) { wX[k] = memb_want(c.r, EP.wl0.w * aReq[k]); }
+      }
+    }
     if (membOn) {
       let mix = clamp(gm.x, 0.0, 1.0);
-      let wl = (1.0 - mix) * want;
-      let wh = mix * want;
+      var wl: array<f32, 6>;
+      var wh: array<f32, 6>;
       var nl: array<i32, 6>;
       var nh: array<i32, 6>;
       var tl = 0;
       var th = 0;
       let kr = EP.mb0.z * EP.dt;
       for (var k = 0u; k < 6u; k++) {
-        nl[k] = max(i32(floor(kr * max(wl - f32(sl[k]), 0.0) + u01(pcg(rs + k * 0x7feb352du + 0x1d8e4e27u)))), 0);
-        nh[k] = max(i32(floor(kr * max(wh - f32(sh[k]), 0.0) + u01(pcg(rs + k * 0x846ca68bu + 0x5a3b9b5du)))), 0);
+        wl[k] = (1.0 - mix) * (want + wX[k]);
+        wh[k] = mix * (want + wX[k]);
+        nl[k] = max(i32(floor(kr * max(wl[k] - f32(sl[k]), 0.0) + u01(pcg(rs + k * 0x7feb352du + 0x1d8e4e27u)))), 0);
+        nh[k] = max(i32(floor(kr * max(wh[k] - f32(sh[k]), 0.0) + u01(pcg(rs + k * 0x846ca68bu + 0x5a3b9b5du)))), 0);
         tl += nl[k];
         th += nh[k];
       }
@@ -1082,9 +1109,9 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       var shed = 0;
       let ks = EP.mb3.y * EP.dt;
       for (var k = 0u; k < 6u; k++) {
-        let xl = f32(sl[k]) - EP.mb3.x * wl - 1.0;
+        let xl = f32(sl[k]) - EP.mb3.x * wl[k] - 1.0;
         if (xl > 0.0) { let a = min(i32(ceil(ks * xl)), sl[k]); sl[k] -= a; m[MB_CH_L] += a; shed += a; }
-        let xh = f32(sh[k]) - EP.mb3.x * wh - 1.0;
+        let xh = f32(sh[k]) - EP.mb3.x * wh[k] - 1.0;
         if (xh > 0.0) { let a = min(i32(ceil(ks * xh)), sh[k]); sh[k] -= a; m[MB_CH_H] += a; shed += a; }
       }
       atomicAdd(&wmb[MB_SHED - 16u], shed);
@@ -1092,6 +1119,38 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     for (var k = 0u; k < 6u; k++) {
       if (sl[k] != sl0[k]) { atomicStore(&stock[o + MB_L0 + k], sl[k]); }
       if (sh[k] != sh0[k]) { atomicStore(&stock[o + MB_H0 + k], sh[k]); }
+    }
+    // ---- step C10: what each side's adhesion really is. With the cost on: as far as its extra linkers are there (what the
+    // side holds beyond its membrane's want, over what its adhesion wants; the membrane itself fills first), and the battery
+    // pays an UPKEEP for the glue it holds, upkeep x adhesion x the side's length (R) per s, as heat; what it cannot pay, it
+    // cannot hold (every side x the share paid). Without the membrane chemistry there is no material to count (only the
+    // upkeep). Off: no cost, the sides hold what the pattern and the maturity ask
+    if (wallOn) {
+      var av = array<f32, 6>(1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+      var linkC = 0.0;
+      var up = 0.0;
+      let sideR = EP.mb0.w * c.r / EP.R;
+      for (var k = 0u; k < 6u; k++) {
+        if (wCost && membOn && wX[k] >= 1.0) {
+          let extra = max(f32(sl[k] + sh[k]) - want, 0.0);
+          av[k] = clamp(extra / wX[k], 0.0, 1.0);
+          linkC += min(extra, wX[k]);
+        }
+        if (wCost) { up += EP.wl1.x * aReq[k] * av[k] * sideR; }
+      }
+      var pf = 1.0;
+      var pay = 0;
+      if (wCost && up > 0.0) {
+        let owe = i32(floor(up + u01(pcg(rs + 0x2f6b9e1du))));   // (rounded at random: on average exactly the upkeep)
+        pay = clamp(owe, 0, max(bat, 0));
+        if (pay > 0) { bat -= pay; heat += pay; }
+        if (pay < owe) { pf = clamp(f32(pay) / up, 0.0, 1.0); }
+      }
+      var e = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      for (var k = 0u; k < 6u; k++) { e[k] = clamp(aReq[k] * av[k] * pf / WALL_AMAX, 0.0, 1.0); }
+      cells[i].wadh = array<u32, 2>(pack4x8unorm(vec4f(e[0], e[1], e[2], e[3])), pack4x8unorm(vec4f(e[4], e[5], 0.0, 0.0)));
+      cells[i].wlink = u32(round(linkC));
+      cells[i].wpay = u32(pay);
     }
 
     // the temperature under the cell (its 3 x 3 pixels' mean, from the plan pass), for the sparks of the reactions inside
@@ -1411,6 +1470,9 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     if (fl2 != c.flags) { cells[i].flags = fl2; }
   } else if (husk) {
     cells[i].integ = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    cells[i].wadh = array<u32, 2>(0u, 0u);   // step C10: a burst cell holds nothing
+    cells[i].wpay = 0u;
+    cells[i].wlink = 0u;
   }
   flush_counters(li, slot);
 }

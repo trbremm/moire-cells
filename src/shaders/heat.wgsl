@@ -35,7 +35,7 @@ struct HeatTick {
 @group(0) @binding(3) var<storage, read> cellsF: array<f32>;   // struct Cell as raw floats (26 per cell; pos, vel first)
 @group(0) @binding(4) var<uniform> LP: LightP;                  // step C2: the light (light_common.wgsl)
 
-const CELL_FLOATS: u32 = 64u;   // as CELL_FLOATS in src/cells.js (step C6c: 240-byte cells; step C7: 256)
+const CELL_FLOATS: u32 = 72u;   // as CELL_FLOATS in src/cells.js (step C6c: 240-byte cells; step C7: 256; step C10: 288)
 
 // per workgroup: [0] warmth, [1] leak, [2..5] light in per band, [6..9] light absorbed per band
 var<workgroup> wsum: array<atomic<i32>, 10>;

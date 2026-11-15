@@ -1,0 +1,160 @@
+{
+  "name": "c10-evo-lb-off_s3",
+  "description": "Step C10 evolution: the default scene (2000 cells, spotlight, two springs, division on), patterned walls OFF, 20 minutes, the long beat (lever 0.2), the control",
+  "condition": {
+    "name": "c10-evo-lb-off_s3",
+    "description": "Step C10 evolution: the default scene (2000 cells, spotlight, two springs, division on), patterned walls OFF, 20 minutes, the long beat (lever 0.2), the control",
+    "query": {
+      "walls": 0,
+      "seed": 3
+    },
+    "duration": 1200,
+    "sample_every": 30,
+    "evals": [
+      {
+        "t": 0,
+        "js": "moire.cells.params.lever = 0.2"
+      },
+      {
+        "t": 300,
+        "js": "return null"
+      },
+      {
+        "t": 600,
+        "js": "return null"
+      },
+      {
+        "t": 900,
+        "js": "return null"
+      },
+      {
+        "t": 1200,
+        "js": "return null"
+      },
+      {
+        "t": 1200,
+        "js": "return await moire.division.stats()"
+      }
+    ],
+    "shots": [
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 600,
+        "view": "walls"
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "view": "walls"
+      },
+      {
+        "t": 1200,
+        "view": "machinery"
+      },
+      {
+        "t": 1200,
+        "view": "lineage",
+        "panel": true
+      }
+    ],
+    "snapshots": [
+      {
+        "t": 1200,
+        "grid": false,
+        "name": "end"
+      }
+    ]
+  },
+  "url": "http://localhost:51084/index.html?speed=max&until=0&overlay=ghost&ui=0&walls=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "1c142b01e33c7209de52f35619d37ae7d68369f1",
+  "dirty": true,
+  "started": "2026-11-15T13:11:56",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 1463.38,
+  "speed_reached": 0.82,
+  "samples": 41,
+  "shots": [
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t600_walls.png",
+    "shots/t1200.png",
+    "shots/t1200_walls.png",
+    "shots/t1200_machinery.png",
+    "shots/t1200_lineage.png"
+  ],
+  "snapshots": [
+    "snapshots/end.json"
+  ],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.cells.params.lever = 0.2",
+      "result": null
+    },
+    {
+      "t": 300.00000000004303,
+      "js": "return null",
+      "result": null
+    },
+    {
+      "t": 599.9999999997895,
+      "js": "return null",
+      "result": null
+    },
+    {
+      "t": 899.9999999995166,
+      "js": "return null",
+      "result": null
+    },
+    {
+      "t": 1199.9999999992488,
+      "js": "return null",
+      "result": null
+    },
+    {
+      "t": 1199.9999999992488,
+      "js": "return await moire.division.stats()",
+      "result": {
+        "time": 1199.9999999992488,
+        "n": 509,
+        "litShare": 0.6954813359528488,
+        "bat": 0.36303250775590157,
+        "centre": [
+          752,
+          407
+        ],
+        "spreadR": 19.8,
+        "patches": 3,
+        "largest": 487,
+        "inBig": 0.957,
+        "sizes": [
+          487,
+          4,
+          3,
+          2,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T13:37:16",
+  "wall_s": 1520.26
+}

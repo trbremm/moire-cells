@@ -1,0 +1,167 @@
+{
+ "name": "c10-uni-lb-100-al",
+ "series": "more",
+ "description": "uniform; long beat; 100 cells; fronts aligned",
+ "setting": "cells.params.lever=0.2; walls.params.cost=False; gene adhesion=0.8; gene a1=0.0; gene a2=0.0; gene w=0",
+ "seed": 3,
+ "cells": 100,
+ "hold": 1.0,
+ "persist": 0.9995224450000001,
+ "reform": 1.0,
+ "score": 0.9995224450000001,
+ "iscore": 0.9995224450000001,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 6.951428571428571,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 1.65349831,
+ "rg": 5.499044501428571,
+ "internal": 0.17756888483333333,
+ "move": 0.22402009133333334,
+ "shape": 0.005386116893333333,
+ "ageMedian80": 80.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 7.013333333333333,
+ "end_clusters": 1.0,
+ "elong80": 1.1572931537540916,
+ "hole80": 0.7454371104703521,
+ "chainy80": 0.02,
+ "edge80": 0.07,
+ "elong120": 1.1633158785531093,
+ "hole120": 0.7832768093971825,
+ "chainy120": 0.02,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "100/0/0/0/0",
+ "entropyRate": 691.3205658571429,
+ "heatOut120": 111543.803,
+ "speed": 2.91,
+ "status": "ok",
+ "front80": 0.33,
+ "side80": 0.338,
+ "back80": 0.332,
+ "glue80": 1.596,
+ "matured80": 0.997,
+ "front120": 0.318,
+ "side120": 0.352,
+ "back120": 0.33,
+ "glue120": 1.599,
+ "matured120": 1,
+ "measures_t80": {
+  "t": 79.99999999999879,
+  "n": 100,
+  "R": 9,
+  "largest": 100,
+  "cx": 615.3753619384765,
+  "cy": 400.55589385986326,
+  "box": [
+   538.6512804031372,
+   317.38129138946533,
+   690.7336168289185,
+   485.5164842605591
+  ],
+  "elong": 1.1572931537540916,
+  "hole": 0.7454371104703521,
+  "edge": 0.07,
+  "deg": [
+   0,
+   0,
+   2,
+   98
+  ],
+  "fates": [
+   100,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.02,
+  "boxAll": [
+   538.6512804031372,
+   317.38129138946533,
+   690.7336168289185,
+   485.5164842605591
+  ],
+  "walls": {
+   "contactAt": [
+    0.33,
+    0.338,
+    0.332
+   ],
+   "glue": 1.596,
+   "matured": 0.997,
+   "effMean": 1.509,
+   "matureMean": 0.884,
+   "classes": {
+    "uniform": 1,
+    "polar": 0,
+    "two-ended": 0,
+    "sticky sides": 0
+   }
+  }
+ },
+ "measures_t120": {
+  "t": 119.99999999999784,
+  "n": 100,
+  "R": 9,
+  "largest": 100,
+  "cx": 655.1929632568359,
+  "cy": 391.8940155029297,
+  "box": [
+   570.783350944519,
+   308.5852918624878,
+   729.1421766281128,
+   472.25641345977783
+  ],
+  "elong": 1.1633158785531093,
+  "hole": 0.7832768093971825,
+  "edge": 0.07,
+  "deg": [
+   0,
+   0,
+   2,
+   98
+  ],
+  "fates": [
+   100,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.02,
+  "boxAll": [
+   570.783350944519,
+   308.5852918624878,
+   729.1421766281128,
+   472.25641345977783
+  ],
+  "walls": {
+   "contactAt": [
+    0.318,
+    0.352,
+    0.33
+   ],
+   "glue": 1.599,
+   "matured": 1,
+   "effMean": 1.511,
+   "matureMean": 0.887,
+   "classes": {
+    "uniform": 1,
+    "polar": 0,
+    "two-ended": 0,
+    "sticky sides": 0
+   }
+  }
+ },
+ "url": "index.html?snap=experiments/tissue/configs/c10-uni-lb-100-al/snapshot.json",
+ "run": "experiments/runs/tissue-c10/c10-uni-lb-100-al",
+ "commit": "cf40d8264bee0d23a7d90db226df9426eb002df9"
+}

@@ -1,0 +1,1 @@
+{"batch": "c10-evo-lb", "description": "Step C10: the long beat (lever 0.2), walls on vs off, seed 3, 20 minutes", "seeds": [3], "runs": ["evo-lb.json", "evo-lb-off.json"]}

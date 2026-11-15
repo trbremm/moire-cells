@@ -1,7 +1,7 @@
 // ===== cell_common.wgsl: the cells' state, the simulation uniforms and the neighbour grid =====
 // Not compiled on its own: src/cells.js prepends field_common.wgsl and then this file to every cell shader.
 //
-// Cells live in a fixed-capacity storage buffer (struct Cell, 256 bytes since step C7; keep in step with CELL_* in
+// Cells live in a fixed-capacity storage buffer (struct Cell, 288 bytes since step C10, 256 since C7; keep in step with CELL_* in
 // src/cells.js, and CELL_FLOATS in heat.wgsl). Their order never changes, so drawing order is stable and a cell keeps its index.
 // Step C9: Sim.count is the CAPACITY; a slot is a live cell while its flags have CELL_ALIVE. The grid sorts the dead slots
 // into one more bucket after the last grid cell (cell_grid.wgsl), so sorted[0 .. starts[gw gh]) are the live cells and the
@@ -69,6 +69,16 @@ struct Cell {
                     // are in CONTACT, and their pumps may move matter between their stocks (cell_eat.wgsl)
   volt: f32,        // the membrane VOLTAGE (the charge the cell's pumps have moved across its membrane / its capacitance;
                     // energy per unit of charge; written by the eat pass), for the drawing and the census
+  // ---- step C10, patterned walls (src/walls.js; the record is 288 bytes since C10) ----
+  front: f32,       // the cell's FRONT (radians, 0..2 pi): the direction its wall pattern hangs on. Body-fixed (it turns with the
+                    // honeycomb), inherited at a birth, and pulled round toward the dipole by the gene w (step)
+  mature: array<u32, 3>, // each side's junction MATURITY 0..1 (pack2x16unorm: sides 2k, 2k + 1 in word k): rises while the side
+                    // touches a sticky neighbour, fades when the contact is lost (step)
+  wadh: array<u32, 2>, // each side's EFFECTIVE adhesion (pattern x maturity x what the linkers and the battery pay for) / WALL_AMAX,
+                    // pack4x8unorm: sides 0..3 in word 0, 4 and 5 in the low half of word 1 (the eat pass writes it; the step and
+                    // the neighbours read it)
+  wlink: u32,       // linker counts the membrane holds for adhesion (beyond what the membrane itself wants; eat pass, census)
+  wpay: u32,        // heat counts the battery paid this tick as the adhesion's upkeep (eat pass, census)
 };
 const NBR_NONE: u32 = 0xffffu;
 fn nbr_at(w: array<u32, 3>, k: u32) -> u32 { return (w[k >> 1u] >> (16u * (k & 1u))) & 0xffffu; }
@@ -79,18 +89,56 @@ fn nbr_side(w: array<u32, 3>, i: u32) -> u32 {
   return 6u;
 }
 
-// Step C6c: the part of a cell its neighbours read, the grid's sorted copy (cell_grid.wgsl scatter; 112 bytes, keep in step
+// Step C6c: the part of a cell its neighbours read, the grid's sorted copy (cell_grid.wgsl scatter; 120 bytes since C10, keep in step
 // with CELL_CORE_BYTES in src/cells.js): Cell without the honeycomb outline and the per-side slots, so the step's neighbour
 // loop reads little more memory than before the Cell grew (a cell reads its own outline from its own slot in `cells`).
 // Step C6d: plus the cell's DIPOLE (dip: its saturated dipole vector, from its side charges, worked out once per tick by the
 // scatter), which is all a neighbour needs of the six side charges
+// Step C10: plus the walls (wadh: x the effective adhesion of sides 0..3; y those of sides 4, 5 in the low half, the hexagon's
+// orientation theta in bits 16..23 and the front in bits 24..31, 8 bits each): what a neighbour needs to find the side facing it
+// and how sticky it is, and what a turnover daughter inherits. 120 bytes
 struct CellCore {
   pos: vec2f, vel: vec2f, r: f32, la: f32, e1: f32, e2: f32, kind: u32, flags: u32, seed: u32, aux: f32, z: vec2f,
   dead: vec2f, bat: f32, pay: i32, mom: u32, fill: f32, smell: vec2f, q: f32, qNet: f32, efield: vec2f, dip: vec2f,
+  wadh: vec2<u32>,
 };
 fn cell_core(c: Cell, dip: vec2f) -> CellCore {
+  let w = vec2u(c.wadh[0], (c.wadh[1] & 0xffffu) | (wall_q8(c.theta) << 16u) | (wall_q8(c.front) << 24u));
   return CellCore(c.pos, c.vel, c.r, c.la, c.e1, c.e2, c.kind, c.flags, c.seed, c.aux, c.z,
-                  c.dead, c.bat, c.pay, c.mom, c.fill, c.smell, c.q, c.qNet, c.efield, dip);
+                  c.dead, c.bat, c.pay, c.mom, c.fill, c.smell, c.q, c.qNet, c.efield, dip, w);
+}
+
+// ---------- step C10: patterned walls (src/walls.js) ----------
+// Each of the 6 sides has its own adhesion. The genes (Bio.body.x = a0, the overall stickiness: the adhesion gene; Bio.wall.x =
+// a1, the front/back part; Bio.wall.y = a2, the ends/sides part) give the pattern P(psi) = clamp(a0 + s (a1 cos psi + a2 cos 2 psi),
+// 0, 1) (s the pattern strength knob), psi the side's middle direction measured from the cell's FRONT (Cell.front). A contact holds
+// by the smaller of the two touching sides' effective values (Cell.wadh, the eat pass). Which side faces a neighbour: by the
+// direction to it against the hexagon's orientation theta, at the 8 bits the neighbours see (so the cell and its neighbour find the
+// same pair of sides): side k spans theta + k x 60 .. theta + (k + 1) x 60 degrees (its corners' regular places; an ellipse cell: 0)
+const WALL_AMAX: f32 = 3.0;      // the largest effective adhesion a side can hold (pattern 1 x a maturity factor of 3)
+const WL_ON: u32 = 1u;           // patterned walls (master): per-side adhesion, the smaller side holds
+const WL_FRONT: u32 = 2u;        // ... the front follows the dipole (gene w)
+const WL_COST: u32 = 4u;         // ... adhesion costs linkers in the membrane and battery upkeep
+const WL_MATURE: u32 = 8u;       // ... junctions mature (a side that keeps touching gets stickier)
+fn wall_q8(a: f32) -> u32 { let t = a / TAU; return u32(round((t - floor(t)) * 256.0)) & 255u; }
+fn wall_dq8(q: u32) -> f32 { return f32(q & 255u) * (TAU / 256.0); }
+// the side (0..5) whose span holds the direction d, for a hexagon turned by th
+fn wall_side(th: f32, d: vec2f) -> u32 {
+  var a = atan2(d.y, d.x) - th;
+  a -= TAU * floor(a / TAU);
+  return min(u32(a / P3), 5u);
+}
+// side k's effective adhesion from the packed words (the low half of w1 holds sides 4, 5)
+fn wall_get(w0: u32, w1: u32, k: u32) -> f32 {
+  let v = select(unpack4x8unorm(w1 & 0xffffu), unpack4x8unorm(w0), k < 4u);
+  return v[k & 3u] * WALL_AMAX;
+}
+// the orientation the side lookup uses: the hexagon's theta at the 8 bits its neighbours see (0 for an ellipse cell)
+fn wall_theta(flags: u32, th8: u32) -> f32 { return select(0.0, wall_dq8(th8), (flags & CELL_HEX) != 0u); }
+// a side's junction maturity
+fn wall_mature(m: array<u32, 3>, k: u32) -> f32 {
+  var mm = m;
+  return unpack2x16unorm(mm[min(k >> 1u, 2u)])[k & 1u];
 }
 
 const CELL_ALIVE: u32 = 1u;
@@ -212,7 +260,7 @@ fn fate_motility(kind: u32) -> f32 {
 }
 
 // ---------- the genome ----------
-// Every cell carries a Bio record (192 bytes since step C7; keep in step with BIO_* in src/genome.js): its genome plus its
+// Every cell carries a Bio record (208 bytes since step C10, 192 since C7; keep in step with BIO_* in src/genome.js): its genome plus its
 // small mutable state. Bio is double-buffered: each tick reads last tick's copy of every cell (bioPrev) and
 // writes the new one (bioNext), so a newborn copies its parent's genome race-free.
 //
@@ -243,6 +291,10 @@ struct Bio {
   // ---- step C7: the two PUMP SLOTS (src/genome.js, src/pumps.js, cell_eat.wgsl) ----
   pump: vec4f,      // x y: each slot's code, a whole number: the substance's channel (0..12; never sediment) + 16 x its direction
                     // (0 IN, 1 OUT); z w: each slot's rate (per s; 0 = an empty slot)
+  // ---- step C10: the walls' pattern genes (src/walls.js; a0, the overall stickiness, is body.x: the adhesion gene) ----
+  wall: vec4f,      // x a1: the polar part (+: the front sticky, the back not; -: the other way), -1..1; y a2: the two-fold part
+                    // (+: the ends sticky, the sides not; -: the sides sticky), -1..1; z w: how much the front follows the
+                    // dipole, 0..1; w spare
 };
 // step C7: a pump slot's channel, direction (1 = OUT) and the substances it may pump: PUMP_NCH of them, channels 0..9 and
 // trace (12), not the sediments ll, LL (PUMP_CHANNELS in src/genome.js)
@@ -308,7 +360,32 @@ struct Stats {
   // ---- step C9, division and death with a changing count (src/division.js) ----
   div: array<atomic<u32>, 15>,        // counters (cumulative since the page started; DV_* below), and the census's snapshot
   claim: atomic<u32>,                 // free slots claimed by dividing cells this tick (cleared before every tick's step)
+  // ---- step C10, patterned walls (src/walls.js): a census, cleared every frame, counted on its last tick (WS_* below) ----
+  wall: array<atomic<u32>, 24>,
 };
+// step C10: Stats.wall (signed sums are added as i32 bits and read back as Int32)
+const WS_N: u32 = 0u;           // cells counted
+const WS_A0: u32 = 1u;          // sum of a0 (the adhesion gene) x 1000
+const WS_A1: u32 = 2u;          // sum of |a1| x 1000
+const WS_A2: u32 = 3u;          // sum of |a2| x 1000
+const WS_UNI: u32 = 4u;         // cells with a uniform pattern (|a1| and |a2| below the threshold)
+const WS_POL: u32 = 5u;         // ... polar (|a1| the larger)
+const WS_END: u32 = 6u;         // ... two-ended (a2 > 0 the larger)
+const WS_SID: u32 = 7u;         // ... sticky sides (a2 < 0 the larger)
+const WS_MAT: u32 = 8u;         // sum of the sides' mean maturity x 1000
+const WS_EFF: u32 = 9u;         // sum of the sides' mean effective adhesion x 1000
+const WS_LINK: u32 = 10u;       // linker counts held for adhesion (Cell.wlink)
+const WS_PAY: u32 = 11u;        // heat counts paid as upkeep on the tick before (Cell.wpay)
+const WS_W: u32 = 12u;          // sum of the gene w x 1000
+const WS_PAIRS: u32 = 13u;      // touching pairs (counted from both sides)
+const WS_GLUE: u32 = 14u;       // ... sum of their glue min(A_i, A_j) x 1000
+const WS_MATP: u32 = 15u;       // ... of them with both sides matured above half
+const WS_FD: u32 = 16u;         // polarised cells (|d| above DIP_MIN): sum of cos(front, dipole) x 1000 (i32)
+const WS_FDN: u32 = 17u;        // ... those cells
+const WS_A1S: u32 = 18u;        // sum of a1 x 1000 (i32)
+const WS_A2S: u32 = 19u;        // sum of a2 x 1000 (i32)
+const WS_ASK: u32 = 20u;        // sum of the sides' mean adhesion asked for (pattern x maturity) x 1000
+const WS_FRONTP: u32 = 21u;     // touching pairs (both sides) where this cell meets the other with its front (within 30 degrees)
 // step C9: Stats.div. Counters (0..7, cumulative): births by division, deaths by cause (a cell dies when it STARVED: its
 // battery below starveAt for starveTime; of HEAT damage; when it BURST; or by the background AGE rate), and divisions that
 // found NO free SLOT (every slot of the capacity taken). A snapshot (8.., cleared every frame, counted on its last tick, as
@@ -455,6 +532,9 @@ fn mutate(p: Bio, seed: u32, size: f32, jump: f32, engJump: f32, pumpJump: f32) 
     }
     b.pump = select(vec4f(f32(nc), b.pump.y, rate, b.pump.w), vec4f(b.pump.x, f32(nc), b.pump.z, rate), s1);
   }
+  // step C10: the walls' pattern genes drift (a1, a2 within -1..1; w within 0..1; additive steps, as the adhesion gene's)
+  b.wall = vec4f(nudge(b.wall.x, size * 0.04, -1.0, 1.0, seed, 140u), nudge(b.wall.y, size * 0.04, -1.0, 1.0, seed, 141u),
+                 nudge(b.wall.z, size * 0.04, 0.0, 1.0, seed, 142u), b.wall.w);
   return b;
 }
 
@@ -634,7 +714,7 @@ fn sense_field(seg: ptr<function, array<f32, 6>>, mb: Membrane, rel: vec2f, q0: 
 // in its own band: every lattice involved (the cell's and the medium's) is `bBand` times longer, so A and B
 // make no slow beat with each other; it reaches further (power law from a larger r0) and has its own sign rule.
 // Each fate carries a charge per field: how strongly it emits into that field and listens to it.
-// Written once per frame by src/cells.js (writeFields; keep in step); a 320-byte buffer (256 until step C6c, 288 until C6d).
+// Written once per frame by src/cells.js (writeFields; keep in step); 416 bytes since step C10 (256 until C6c, 288 until C6d).
 struct Fields {
   qA: vec4f,        // field A charge per fate: stem, epithelium, muscle, neuron (1 = as in step 4)
   qB: vec4f,        // field B charge per fate (signed: like charges repel, when bSign = 1)
@@ -728,6 +808,10 @@ struct Fields {
   dv2: vec4f,       // x a cell may divide once its radius is at least this share of its full size; y the mother's and the
                     // daughter's radius right after (share of the mother's); z how far apart they are put (share of her
                     // radius); w spare
+  // ---- step C10, patterned walls (src/walls.js) ----
+  wl0: vec4f,       // x bits WL_*; y the front's turning toward the dipole (rad / s at w x |d| = 1); z junctions mature at this
+                    // rate while touching (1 / s); w ... and fade at this rate once the contact is lost (1 / s)
+  wl1: vec4f,       // x the census's pattern threshold (|a1| or |a2| below it: uniform); y z w spare
 };
 // step C9: Fields.dv0.x bits
 const DV_ON: u32 = 1u;

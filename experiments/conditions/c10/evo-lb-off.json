@@ -1,0 +1,12 @@
+{
+  "name": "c10-evo-lb-off",
+  "description": "Step C10 evolution: the default scene (2000 cells, spotlight, two springs, division on), patterned walls OFF, 20 minutes, the long beat (lever 0.2), the control",
+  "query": {"walls": 0},
+  "duration": 1200,
+  "sample_every": 30,
+  "evals": [{"t": 0, "js": "moire.cells.params.lever = 0.2"}, {"t": 300, "js": "return null"}, {"t": 600, "js": "return null"},
+            {"t": 900, "js": "return null"}, {"t": 1200, "js": "return null"},
+            {"t": 1200, "js": "return await moire.division.stats()"}],
+  "shots": [{"t": 300}, {"t": 600}, {"t": 600, "view": "walls"}, {"t": 1200}, {"t": 1200, "view": "walls"}, {"t": 1200, "view": "machinery"}, {"t": 1200, "view": "lineage", "panel": true}],
+  "snapshots": [{"t": 1200, "grid": false, "name": "end"}]
+}

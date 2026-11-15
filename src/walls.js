@@ -36,6 +36,21 @@
 // the junctions, turns the front and counts the census (Stats.wall) on the frame's last tick. With the walls off, everything is
 // as before step C10 (the old adhesion formula, no linker want, no upkeep, a daughter's hexagon turned at random).
 //
+// Step C11 (user 2026-11-15: "yes absolutely"), on top:
+//   turning     GLUE TURNS THE CELL. A contact's adhesion acts along the whole shared wall; where the wall is stickier it pulls
+//               harder, so the pull's point of action lies off the line between the centres, and the same pull gives a torque
+//               r x F that turns the cell until its sticky part faces the neighbour. The wall's two ends sit 30 degrees either
+//               side of the centre line; the glue at each end is the smaller of the two cells' adhesion there (wall_at: linear
+//               between the six sides' middles); glue changing evenly along a wall of half-length h puts the point of action
+//               g1 h / (3 g0) off the line, so torque = - K h (g+ - g-) / 6 (K the pull per unit of glue). The neighbour finds the
+//               same two ends the other way round: an equal and opposite torque (no race). The body turns overdamped, at
+//               turnGain / rotDrag x torque / (r^2 / 2) rad/s (a disc's rotational drag on its substrate; the motion's drag is 1),
+//               at most 3 rad/s; the front and the hexagon turn with it. The hexagon's own pull toward its neighbours (step C6c) and
+//               its corner slides then only fit the OUTLINE to its tile: they no longer turn the front (with the turning off,
+//               everything is as in step C10). No rule says "face your neighbour".
+//   division    DIVISION BY THE FRONT: the daughter is put along the mother's front, across it, or at a share of a right angle
+//               between (the gene divAxis, Bio.wall.w, 0..1, mutating like a1, a2), either end; off: the long axis (step C9)
+//
 // This module holds the switches and knobs (moire.walls.params, .look), writes the step's, the eat pass's and the drawing's words,
 // reads the census back (with the cells' stats), and gives the WALLS panel line, the overlay and stats() for the experiments.
 
@@ -45,7 +60,7 @@ import { BIO_FLOATS } from './genome.js';
 import { ATOM_SCALE } from './matter.js';
 
 export const STATS_WALL = 8640;   // byte offset of Stats.wall in struct Stats (cell_common.wgsl)
-export const WALL_WORDS = 24;
+export const WALL_WORDS = 32;     // (24 until step C11)
 const AMAX = 3;                   // WALL_AMAX: the largest effective adhesion a side can hold
 const CLASSES = ['uniform', 'polar', 'two-ended', 'sticky sides'];
 
@@ -75,6 +90,15 @@ export class Walls {
       linkPer: 0.012,    // linker (atom-units) per R of side at adhesion 1 (as much again as the founders' thin membrane)
       upkeep: 0.001,     // energy per s per R of side at adhesion 1 (a fully sticky cell, about 6.6 R of wall: 0.0066 / s)
       patternMin: 0.15,  // the census: |a1| and |a2| both below this counts as a uniform wall
+      // step C11, glue turns the cell (rules panel, group "Glue turns cells (step C11)"; ?turn=0, ?divfront=0)
+      turn: true,        // a contact's adhesion pulls harder where the wall is stickier, off the line between the centres: a torque
+                         // that turns the cell (its body: the front and the hexagon) until its sticky sides face its neighbours
+      divFront: true,    // a division puts the daughter by the front: along it, across it or between (the gene Bio.wall.w); off:
+                         // along the long axis, as step C9
+      turnGain: 1,       // the torque's strength (1: as derived from the pull)
+      rotDrag: 0.2,      // the rotational drag, x a disc's r^2 / 2 (the motion's drag is 1: velocity = force). 0.2: a cell turns its
+                         // body 5 x as easily as a disc dragged over its whole footprint would (at 1 the turning, 1 to 6 degrees per s,
+                         // was too slow to act before crawling broke a contact; tissue lab, README "Step C11")
     };
     // the look (moire.walls.look; drawing only)
     this.look = {
@@ -88,6 +112,7 @@ export class Walls {
     this.census = null;
     this.series = [];    // [time, uniform, polar, two-ended, sides, mean maturity] every 30 s of simulation time
     this.near = null;    // the last stats() result
+    this.bondMin = 0.2;  // stats(): a touching pair holding at least this much glue is a glued BOND (chains and rings)
     this.dt = 1 / 60;
   }
 
@@ -95,7 +120,8 @@ export class Walls {
   rule(k) { return !!(this.params.on && this.params[k]); }
 
   flags() {
-    return (this.params.on ? 1 : 0) | (this.rule('front') ? 2 : 0) | (this.rule('cost') ? 4 : 0) | (this.rule('mature') ? 8 : 0);
+    return (this.params.on ? 1 : 0) | (this.rule('front') ? 2 : 0) | (this.rule('cost') ? 4 : 0) | (this.rule('mature') ? 8 : 0) |
+      (this.rule('turn') ? 16 : 0) | (this.rule('divFront') ? 32 : 0);
   }
 
   /** The step's words (struct Fields wl0, wl1, from word o). */
@@ -103,7 +129,8 @@ export class Walls {
     const p = this.params;
     u[o] = this.flags(); f[o + 1] = Math.max(0, p.frontRate); f[o + 2] = Math.max(0, p.matureRate); f[o + 3] = Math.max(0, p.matureFade);
     f[o + 4] = Math.max(0, p.patternMin); f[o + 5] = Math.max(0, p.strength);
-    f[o + 6] = this.rule('mature') ? Math.max(0, Math.min(AMAX, p.matureCap) - 1) : 0; f[o + 7] = 0;
+    f[o + 6] = this.rule('mature') ? Math.max(0, Math.min(AMAX, p.matureCap) - 1) : 0;
+    f[o + 7] = this.rule('turn') ? Math.max(0, p.turnGain) / Math.max(1e-3, p.rotDrag) : 0;   // step C11
   }
 
   /** The eat pass's words (struct EatP wl0, wl1, from word o). */
@@ -136,6 +163,9 @@ export class Walls {
       linkers: w[10] / ATOM_SCALE, upkeep: w[11] / HEAT_SCALE / Math.max(1e-6, this.dt),
       pairs: pairs / 2, glue: w[14] / 1000 / pm, maturedPairs: w[15] / pm, frontPairs: w[21] / pm,
       frontDip: w[17] ? s[16] / 1000 / w[17] : null, polarised: w[17],
+      // step C11: the glue's turning (mean |rate| over the cells with a contact, rad/s), the contacts on sticky sides against chance
+      turnRate: w[23] ? w[22] / 1000 / w[23] : 0, turning: w[23],
+      onSticky: w[26] ? w[24] / w[26] : null, stickyChance: w[26] ? w[25] / 1000 / w[26] : null, stickyN: w[26],
     };
     const S = this.series, last = S[S.length - 1];
     if (last && time < last[0]) S.length = 0;
@@ -152,8 +182,13 @@ export class Walls {
     if (!p.on) return compact ? 'WALLS off' : 'WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)';
     if (!this.cells.genome.rules.adh) return compact ? 'WALLS · adhesion off (H)' : 'WALLS  on, but adhesion itself is off (key H)';
     if (!C || !C.n) return 'WALLS  …';
-    if (compact) return `WALLS uni ${pct(C.uniform)} pol ${pct(C.polar)} end ${pct(C.ends)} sid ${pct(C.sides)} · mature ${C.mature.toFixed(2)} · ${fmt(C.upkeep)}/s`;
-    return `WALLS  a0 ${C.a0.toFixed(2)} · |a1| ${C.a1.toFixed(2)} · |a2| ${C.a2.toFixed(2)} · uniform ${pct(C.uniform)}, polar ${pct(C.polar)}, two-ended ${pct(C.ends)}, sides ${pct(C.sides)}` +
+    const sticky = C.onSticky != null ? `${pct(C.onSticky)} (chance ${pct(C.stickyChance)})` : '-';
+    const turn = p.turn ? `turning ${(C.turnRate * 180 / Math.PI).toFixed(1)}°/s` : 'turning off';
+    if (compact) {
+      return `WALLS uni ${pct(C.uniform)} pol ${pct(C.polar)} end ${pct(C.ends)} sid ${pct(C.sides)} · mature ${C.mature.toFixed(2)} · ${fmt(C.upkeep)}/s` +
+        ` · sticky ${C.onSticky != null ? `${pct(C.onSticky)}/${pct(C.stickyChance)}` : '-'}${p.turn ? ` · ${(C.turnRate * 180 / Math.PI).toFixed(1)}°/s` : ''}`;
+    }
+    return `WALLS  contacts on sticky sides ${sticky} · ${turn} · a0 ${C.a0.toFixed(2)} · |a1| ${C.a1.toFixed(2)} · |a2| ${C.a2.toFixed(2)} · uniform ${pct(C.uniform)}, polar ${pct(C.polar)}, two-ended ${pct(C.ends)}, sides ${pct(C.sides)}` +
       ` · mature ${C.mature.toFixed(2)} (contacts ${pct(C.maturedPairs)})${p.mature ? '' : ' off'} · glue ${C.eff.toFixed(2)} of ${C.ask.toFixed(2)} asked` +
       `${p.cost ? ` · in adhesion: linkers ${fmt(C.linkers)}, upkeep ${fmt(C.upkeep)}/s` : ' · cost off'}`;
   }
@@ -162,7 +197,9 @@ export class Walls {
   overlayLines() {
     const p = this.params, C = this.census, on = (x) => (x ? 'on' : 'off');
     const lines = [`patterned walls (step C10) ${on(p.on)} · front follows the dipole ${on(p.front)} (${p.frontRate} rad/s at w|d| = 1) · cost ${on(p.cost)} (linker ${p.linkPer} per R at adhesion 1, upkeep ${p.upkeep}/s per R)` +
-      ` · junctions mature ${on(p.mature)} (rise ${p.matureRate}/s, fade ${p.matureFade}/s, up to x${p.matureCap}) · pattern strength ${p.strength}`];
+      ` · junctions mature ${on(p.mature)} (rise ${p.matureRate}/s, fade ${p.matureFade}/s, up to x${p.matureCap}) · pattern strength ${p.strength}`,
+      `glue turns cells (step C11) ${on(p.turn)} (strength ${p.turnGain}, rotational drag ${p.rotDrag} x r²/2) · division by the front ${on(p.divFront)}` +
+      (C && C.n ? ` · turning ${(C.turnRate * 180 / Math.PI).toFixed(2)}°/s over ${C.turning} cells with a contact · contacts on sticky sides ${C.onSticky != null ? `${(100 * C.onSticky).toFixed(1)}% (chance ${(100 * C.stickyChance).toFixed(1)}%, ${C.stickyN} contacts of patterned cells)` : '-'}` : '')];
     if (C && C.n) {
       lines.push(`walls: ${C.n} cells · a0 ${C.a0.toFixed(3)} · a1 ${C.a1s.toFixed(3)} (|a1| ${C.a1.toFixed(3)}) · a2 ${C.a2s.toFixed(3)} (|a2| ${C.a2.toFixed(3)}) · w ${C.w.toFixed(2)}` +
         ` · contacts ${C.pairs}, glue ${C.glue.toFixed(2)}, meeting with the front ${Math.round(100 * C.frontPairs)}%` +
@@ -213,6 +250,20 @@ export class Walls {
     }
     const at = [0, 0, 0];   // contacts at the front, the side, the back (from each cell of a pair)
     let pairs = 0, glue = 0, matured = 0;
+    // step C11: per cell its pattern's sticky sides (the genes round the wall from the front, without the maturity: the upper half of
+    // its own range; uniform cells, range below 0.1, are not counted), and the glued bonds (touching, glue at least bondMin)
+    const sticky = new Map(), bonds = new Map();
+    let onS = 0, chance = 0, nS = 0;
+    for (const i of live) {
+      const o = i * F, b = i * B, th = th8(o), pk = [];
+      for (let k = 0; k < 6; k++) {
+        const cs = Math.cos(th + (k + 0.5) * Math.PI / 3 - f[o + 64]);
+        pk.push(Math.max(0, Math.min(1, g[b + 16] + this.params.strength * (g[b + 48] * cs + g[b + 49] * (2 * cs * cs - 1)))));
+      }
+      const lo = Math.min(...pk), hi = Math.max(...pk), mid = (lo + hi) / 2;
+      if (hi - lo > 0.1) { const s = pk.map((v) => v >= mid); sticky.set(i, { s, share: s.filter(Boolean).length / 6 }); }
+      bonds.set(i, []);
+    }
     for (const i of live) {
       const o = i * F, x = f[o], y = f[o + 1], gx = Math.floor(x / cs), gy = Math.floor(y / cs);
       for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) {
@@ -223,22 +274,46 @@ export class Walls {
           let psi = Math.atan2(dy, dx) - f[o + 64];
           psi = Math.abs(Math.atan2(Math.sin(psi), Math.cos(psi)));
           at[psi < Math.PI / 3 ? 0 : psi > 2 * Math.PI / 3 ? 2 : 1]++;
+          const st = sticky.get(i);
+          if (st) { nS++; chance += st.share; if (st.s[sideOf(o, dx, dy)]) onS++; }
           if (j > i) {
             const ki = sideOf(o, dx, dy), kj = sideOf(p, -dx, -dy);
+            const gl = Math.min(side(o, ki), side(p, kj));
             pairs++;
-            glue += Math.min(side(o, ki), side(p, kj));
+            glue += gl;
             if (mat(o, ki) > 0.5 && mat(p, kj) > 0.5) matured++;
+            if (gl >= this.bondMin) { bonds.get(i).push(j); bonds.get(j).push(i); }
           }
         }
       }
     }
     const m = Math.max(1, live.length), ta = Math.max(1, at[0] + at[1] + at[2]);
+    // the glued bonds' groups: a CHAIN is a group of 3 or more whose cells all have at most 2 bonds and no loop (n - 1 bonds), a RING
+    // one of 5 or more whose cells all have exactly 2 (a closed loop of single cells round a hole: a cyst's wall in one layer; a loop
+    // of 3 or 4 is a compact rosette, not counted)
+    const seen = new Set();
+    let chains = 0, rings = 0, inChains = 0, inRings = 0, longest = 0, deg = 0;
+    for (const i of live) {
+      deg += bonds.get(i).length;
+      if (seen.has(i)) continue;
+      const grp = [i];
+      seen.add(i);
+      for (let q = 0; q < grp.length; q++) for (const j of bonds.get(grp[q])) if (!seen.has(j)) { seen.add(j); grp.push(j); }
+      if (grp.length < 3) continue;
+      const ds = grp.map((k) => bonds.get(k).length), e = ds.reduce((a, b) => a + b, 0) / 2;
+      if (ds.every((x) => x === 2)) { if (grp.length >= 5) { rings++; inRings += grp.length; } } else if (ds.every((x) => x <= 2) && e === grp.length - 1) {
+        chains++; inChains += grp.length; longest = Math.max(longest, grp.length);
+      }
+    }
     this.near = {
       time: window.moire && window.moire.time ? window.moire.time() : 0, n: live.length,
       classes: Object.fromEntries(CLASSES.map((k, j) => [k, +(cls[j] / m).toFixed(3)])),
       effMean: +(eff / 6 / m).toFixed(3), matureMean: +(mt / 6 / m).toFixed(3),
       pairs, glue: pairs ? +(glue / pairs).toFixed(3) : 0, matured: pairs ? +(matured / pairs).toFixed(3) : 0,
       contactAt: at.map((x) => +(x / ta).toFixed(3)),   // a random arrangement: 1/3 each
+      // step C11: contacts on the sticky sides (of patterned cells) against chance; the glued bonds per cell; chains and rings
+      onSticky: nS ? +(onS / nS).toFixed(3) : null, stickyChance: nS ? +(chance / nS).toFixed(3) : null, stickyContacts: nS,
+      bondsPerCell: +(deg / m).toFixed(3), chains, inChains, longestChain: longest, rings, inRings,
     };
     return this.near;
   }

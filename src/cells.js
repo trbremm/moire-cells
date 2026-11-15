@@ -67,8 +67,8 @@ const SLOT = 256;              // uniform slot stride (minUniformBufferOffsetAli
 const SLOTS = 320;             // ticks that can be encoded in one frame (main.js runs at most 256, plus warm-up)
 const BLOCK = 512;             // scan block (cell_grid.wgsl)
 const BRUTE_MAX = 20000;       // largest count the ?check brute force runs on
-const STATS_BYTES = 8736;      // struct Stats in cell_common.wgsl (counters, events, census, step 6 census; step C6d: + dip;
-                               // step C9: + div, claim; step C10: + wall)
+const STATS_BYTES = 8768;      // struct Stats in cell_common.wgsl (counters, events, census, step 6 census; step C6d: + dip;
+                               // step C9: + div, claim; step C10: + wall; step C11: wall 24 -> 32 words)
 const STATS_EXTRA = 8192;      // byte offset of Stats.extra (step 6 census: STATS_X_* in cell_common.wgsl)
 const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder bitmap) in struct Stats
 const STATS_EVENTS = 64;

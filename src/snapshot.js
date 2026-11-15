@@ -349,6 +349,11 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     if (opts.settings !== false && !(S.settings && S.settings['walls.params'])) {
       M.walls.params.on = false;
       notes.push('saved before step C10: patterned walls off (as it ran)');
+    } else if (opts.settings !== false && !('turn' in S.settings['walls.params'])) {
+      // step C11: a snapshot from before the glue turned cells runs on as it was saved: no turning, divisions by the long axis
+      M.walls.params.turn = false;
+      M.walls.params.divFront = false;
+      notes.push('saved before step C11: glue turning and division by the front off (as it ran)');
     }
     if (S.founders) M.genome.founders = clone(S.founders);
 
@@ -385,7 +390,8 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     q.writeBuffer(C.eat.stockBuf, 0, su);
     const stats = await unpack(S.stats);
     if (stats.byteLength === C.statsBuf.size) q.writeBuffer(C.statsBuf, 0, stats);
-    else if (oldC10 && stats.byteLength === C.statsBuf.size - 96) q.writeBuffer(C.statsBuf, 0, stats);   // (step C10 appended Stats.wall)
+    else if (stats.byteLength < C.statsBuf.size && stats.byteLength >= C.statsBuf.size - 128) q.writeBuffer(C.statsBuf, 0, stats);   // (step C10
+    // appended Stats.wall, step C11 widened it: the counters are in front, the census words behind are refilled every frame)
     else notes.push('stats buffer size differs: counters start from the page\'s');
     if (gridOK) writeGrid(M, await unpack(S.grid.data));
 

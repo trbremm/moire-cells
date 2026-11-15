@@ -59,6 +59,10 @@
 //               capacity (slots; default 3 x the starting number, with ?divide=0 the starting number); ?divat=x the division threshold (battery share),
 //               ?divcost=x its cost (energy units), ?starve=s the starvation time, ?crowd=x the crowding limit, ?age=x the
 //               background death rate per s (rules panel, Division)
+//   ?mut=0      start with mutation off (key M); ?life=0 with the life cycle off (key T: no births, no deaths)
+//   Experiments (src/lab.js, src/snapshot.js; README "Experiments: tools"): ?snap=<file> loads a snapshot at the start (its
+//               starting number and capacity, its settings); ?clone=1 copies the first live cell's genes to every cell
+//               (?clone=@N: slot N's); ?genes=adhesion:0.8,motility:0.5 sets genes for every cell
 //
 // Part C keys are Shift + a letter (every plain letter is taken by Parts A and B): checked before the plain keys,
 // so Shift+H never also toggles H.
@@ -85,6 +89,8 @@ import { setupUI } from './ui.js';
 import { Recorder } from './record.js';
 import { Neon, LIGHT_FORMAT } from './neon.js';
 import { Charge } from './charge.js';
+import { setupLab } from './lab.js';
+import { fetchSnapshot } from './snapshot.js';
 
 window.__moireBooted = true;
 
@@ -171,6 +177,16 @@ async function boot() {
     showError('GPU error', `${ev.error.constructor.name}: ${ev.error.message}`);
   });
 
+  // experiments: ?snap=<file>, fetched first, as its starting number and capacity size the buffers
+  let snap = null, snapError = null;
+  if (params.has('snap')) {
+    stage('fetch-snapshot');
+    try { snap = await fetchSnapshot(params.get('snap')); } catch (e) { snapError = e; }
+  }
+  const nCells = snap ? snap.start : Number(params.get('cells')) || defaultCells();
+  // step C9: the capacity; with ?divide=0 (a fixed count) no room beyond the starting number unless ?cap= asks for it
+  const nCap = snap ? snap.count : Number(params.get('cap')) || (params.has('divide') && !flag('divide') ? nCells : 0);
+
   stage('create-layers');
   try {
     // step C6n: every layer but the background draws into the light buffers (LIGHT_FORMAT), which src/neon.js
@@ -181,9 +197,7 @@ async function boot() {
     light = await Light.create(gpu.device, LIGHT_FORMAT);
     matter = await Matter.create(gpu.device, LIGHT_FORMAT, medium);
     charge = await Charge.create(gpu.device, LIGHT_FORMAT);
-    cells = await Cells.create(gpu.device, LIGHT_FORMAT, medium, Number(params.get('cells')) || defaultCells(), SEED,
-      // step C9: the capacity; with ?divide=0 (a fixed count) no room beyond the starting number unless ?cap= asks for it
-      Number(params.get('cap')) || (params.has('divide') && !flag('divide') ? Number(params.get('cells')) || defaultCells() : 0));
+    cells = await Cells.create(gpu.device, LIGHT_FORMAT, medium, nCells, SEED, nCap);
     const small = Math.min(window.innerWidth || 800, window.innerHeight || 800) < 600;
     neon = await Neon.create(gpu.device, gpu.format, params.has('cheap') ? flag('cheap') : TOUCH || small);
     neonOptions(neon);
@@ -214,6 +228,8 @@ async function boot() {
       cells.fields.sign = 1;   // like repels like: islands and a labyrinth of strands (key U flips)
       cells.excl.on = true;    // step 7 exclusion: pinwheel rosettes (key 8; the user chose it as this view's default)
     }
+    if (params.has('mut')) cells.genome.rules.mut = flag('mut');    // experiments: ?mut=0 mutation off (key M)
+    if (params.has('life')) cells.genome.rules.turn = flag('life'); // ?life=0 the life cycle off (key T)
     if (params.has('excl')) cells.excl.on = flag('excl');
     if (params.has('squeeze')) cells.params.squeeze = flag('squeeze') ? SQUEEZE_HARD : SQUEEZE_SOFT;
     if (params.has('flip')) cells.excl.flip = flag('flip');
@@ -286,16 +302,51 @@ async function boot() {
   };
 
   resize();
-  defaultScene();
+  if (!snap) defaultScene();   // (a snapshot brings its own springs)
   window.addEventListener('resize', resize);
   setupInput();
   if (flag('overlay')) overlayEl.hidden = false;
   showEntropy(!params.has('entropy') || flag('entropy'));
   if (params.get('overlay') === 'ghost') overlayEl.style.opacity = '0';   // kept up to date but invisible (for tools/shot.py)
+  window.moire.adapter = () => adapterName(gpu.info);
+  window.moire.control = control;
+  setupLab(window.moire, control, { params, snap, snapError });   // experiments: sample, snapshots, tissue, genome edits
   running = true;
   stage('running');
   requestAnimationFrame(frame);
 }
+
+/**
+ * Experiments (src/lab.js, tools/experiment.py): the frame loop's controls. runUntil(t): run (at the set speed) until
+ * simulation time t, then pause exactly there (as ?until=T; null: no limit). setTime is for loading a snapshot.
+ */
+const control = {
+  time: () => simTime,
+  setTime(t) { simTime = Number(t) || 0; },
+  paused: () => paused,
+  setPaused(b) { paused = !!b; if (ui) ui.refresh(); },
+  speed: () => speedName(speed),
+  setSpeed(s) {
+    const v = String(s).toLowerCase() === 'max' ? 0 : Math.max(1, Math.min(32, Number(s) || 1));
+    speed = SPEEDS.includes(v) ? v : SPEEDS.reduce((a, b) => (b && Math.abs(b - v) < Math.abs(a - v) ? b : a), 1);
+    if (ui) ui.refresh();
+    return speedName(speed);
+  },
+  reached: () => stats.reached,
+  runUntil(t) {
+    until = t == null || !Number.isFinite(Number(t)) ? -1 : Math.max(0, Number(t));
+    delete document.body.dataset.until;
+    paused = until >= 0 && until - simTime < TICK / 2;
+    if (paused) document.body.dataset.until = 'reached';
+    if (ui) ui.refresh();
+  },
+  view: () => view,
+  resize: () => resize(),
+  get seed() { return SEED; },
+  action(id) { const a = actions.find((x) => x.id === id); if (a) runAction(a, ''); return !!a; },
+  actionState(id) { const a = actions.find((x) => x.id === id); return a && a.get ? a.get() : undefined; },
+  flash: (t) => flash(t),
+};
 
 /**
  * Step C3b: the number of cells when the URL does not say. 2000 on a computer; on a touch screen or a small window,
@@ -391,7 +442,7 @@ function resize() {
 // ---------- loop ----------
 const stats = { frameMs: 16.7, iv: 16.7, cpuMs: 0, gpuMs: 0, lastOverlay: 0, lastProbe: 0, reached: 1, ticks: 0, lat: 0 };
 let last = 0, acc = 0, simTime = 0, frameNo = 0, nextAutoRipple = 0.3, autoK = 0;
-const UNTIL = params.has('until') ? Math.max(0, Number(params.get('until')) || 0) : -1;   // ?until=T
+let until = params.has('until') ? Math.max(0, Number(params.get('until')) || 0) : -1;   // ?until=T (control.runUntil)
 
 function frame(now) {
   if (!running) return;
@@ -410,9 +461,9 @@ function frame(now) {
     const cap = speed >= 16 ? Math.min(TICK_CAP, budgets.fast.ticks) : MAX_TICKS * speed;
     if (ticks > cap) { ticks = cap; acc = 0; if (speed >= 16) bud = budgets.fast; } else acc -= ticks * TICK;
   }
-  if (UNTIL >= 0 && !paused) {
+  if (until >= 0 && !paused) {
     // ?until=T: never past T; pause on reaching it (the same tick in every run)
-    const left = Math.max(0, Math.round((UNTIL - simTime) / TICK));
+    const left = Math.max(0, Math.round((until - simTime) / TICK));
     if (ticks >= left) { ticks = left; paused = true; acc = 0; bud = null; document.body.dataset.until = 'reached'; }
   }
   simTime += ticks * TICK;

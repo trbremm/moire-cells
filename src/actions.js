@@ -44,6 +44,7 @@ export const RULE_GROUPS = [
   ['pumps', 'Pumps (step C7)'],
   ['catalysts', 'Catalysts (step C7b)'],
   ['hardlight', 'Hard light (step C8)'],
+  ['division', 'Division (step C9)'],
 ];
 
 export const VIEWS = ['fate', 'lineage', 'strategy', 'charge'];   // key V: what the cells' bodies are coloured by (cells.look.view)
@@ -268,9 +269,9 @@ export function makeActions(app) {
     { id: 'body', keys: ['b'], label: 'body traits', group: 'bio', type: 'toggle', get: () => rules().body,
       run: () => `body traits ${flip(rules(), 'body') ? 'on: size and motility from the genome and the fate' : 'off: all cells alike'}`,
       help: 'size, motility and crawling from the genome and the fate (off: all alike)' },
-    { id: 'turnover', keys: ['t'], label: 'turnover', group: 'bio', type: 'toggle', get: () => rules().turn,
-      run: () => `turnover ${flip(rules(), 'turn') ? 'on: cells die now and then, a neighbour divides into the gap' : 'off'}`,
-      help: 'cells die now and then, a neighbour divides into the gap' },
+    { id: 'turnover', keys: ['t'], label: 'life cycle', group: 'bio', type: 'toggle', get: () => rules().turn,
+      run: () => `life cycle ${flip(rules(), 'turn') ? (app.cells.division.params.on ? 'on: cells divide when their battery can pay for it and die when they starve or overheat (step C9)' : 'on: turnover, cells die now and then, a neighbour divides into the gap') : 'off: nothing is born and nothing dies'}`,
+      help: 'births and deaths (step C9: by division, the count changes; or by turnover, a fixed count: rules panel, Division)' },
     { id: 'mutation', keys: ['m'], label: 'mutation', group: 'bio', type: 'toggle', get: () => rules().mut,
       run: () => `mutation ${flip(rules(), 'mut') ? 'on: daughters differ a little from their parent' : 'off: daughters are exact copies'}`,
       help: 'daughters differ a little from their parent (off: exact copies)' },
@@ -486,6 +487,27 @@ export function makeActions(app) {
     hknob('hardGain', 'mutation per dose', 'gain', 0.001, 2, 1.5, 3, 'extra mutation per energy unit of hard light dose: a daughter mutates × (1 + this × the parent’s dose)'),
     hknob('hardMax', 'largest factor', 'maxFactor', 1, 100, 1.5, 1, 'a daughter mutates at most this many times the usual'),
     hknob('hardRepair', 'repair time', 'repair', 1, 300, 1.5, 0, 'seconds over which a cell repairs its hard light dose (the dose fades with this time constant)'),
+  );
+
+  // ---------- division and death with a changing count (step C9; panel only: no keys are free) ----------
+  const DV = () => app.cells.division.params;
+  const dknob = (id, label, key, lo, hi, step, digits, help, add = false) => ({ id, keys: [], label, group: 'division', type: 'knob',
+    get: () => DV()[key].toFixed(digits),
+    run: (k) => {
+      const p = DV(), up = k !== '-';
+      const v = add ? p[key] + (up ? step : -step) : p[key] <= 0 ? (up ? hi / 100 : 0) : p[key] * (up ? step : 1 / step);
+      p[key] = Math.max(lo, Math.min(hi, +v.toPrecision(3)));
+      return `${label} ${p[key].toFixed(digits)}`;
+    }, help });
+  A.push(
+    { id: 'divide', keys: [], label: 'division (changing count)', group: 'division', type: 'toggle', get: () => DV().on,
+      run: () => `${flip(DV(), 'on') ? 'division: a cell divides into a free slot when its battery can pay for a daughter, and dies for good when it starves, overheats or bursts; the count rises and falls' : 'turnover: a fixed count, a dead cell\u2019s slot goes at once to a neighbour\u2019s daughter'}${rules().turn ? '' : ' (the life cycle is off: T)'}`,
+      help: 'on: cells divide (battery and room permitting) and die for good, the count changes; off: the old turnover, a fixed count' },
+    dknob('divAt', 'division threshold', 'divAt', 0.1, 1, 0.05, 2, 'a cell may divide once its battery holds this share of its capacity', true),
+    dknob('divCost', 'division cost', 'cost', 0, 4, 1.5, 2, 'energy a division takes from the mother\u2019s battery, as heat (the rest is split between the two)'),
+    dknob('starveTime', 'starvation time', 'starveTime', 2, 600, 1.5, 0, 'seconds a cell lives with an (almost) empty battery before it dies; it fades out meanwhile'),
+    dknob('crowd', 'crowding limit', 'crowd', 0, 3, 1.3, 2, 'a cell divides only while its overlaps with its neighbours sum to at most this (packed tissue: no room)'),
+    dknob('age', 'background deaths', 'age', 0, 0.2, 2, 4, 'deaths per cell per s from nothing in particular (age), on top of starving, heat and bursting'),
   );
 
   // step C6n: the clean view (default) or the machinery: every diagnostic layer at once

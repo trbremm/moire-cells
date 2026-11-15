@@ -181,6 +181,9 @@ struct EatP {
   hl: vec4f,               // x 1 = the cells keep a hard light DOSE (Cell.flags bits 19..31): the hard light their body caught
                            // (counts of 1 / DOSE_SCALE energy units), y the share of it repaired per tick; z the extra mutation
                            // per energy unit of dose (Fields.hm.x; the census only); w spare
+  // ---- step C9, division and death with a changing count (src/division.js) ----
+  dv: vec4u,               // x reset: how many slots the new culture fills (slots 0 .. x - 1 get the starter charge); y the
+                           // division's cost (heat counts, from the mother's battery, as heat); z, w spare
 };
 // step C7b: the cofactor's factor for a cell holding `tr` trace per R^2 (1 while the rule is off)
 fn cofactor(tr: f32) -> f32 {
@@ -438,8 +441,15 @@ fn split(@builtin(global_invocation_id) id: vec3u) {
   if (i >= S.count) { return; }
   let c = cells[i];
   if ((c.flags & CELL_BORN) == 0u) { return; }
-  let pi = min(c.mom, S.count - 1u);
+  // step C9: a cell that died for good (division mode) only had its stock handed back (dump); its slot is now free
+  if ((c.flags & CELL_ALIVE) == 0u) { cells[i].flags = c.flags & ~CELL_BORN; return; }
+  let pi = min(c.mom & ~MOM_DIV, S.count - 1u);
   if (pi != i) {
+    // step C9: a division's daughter: first the division's cost, from the mother's battery, as heat where she is
+    if ((c.mom & MOM_DIV) != 0u && EP.dv.y > 0u) {
+      let cost = take_stock(pi * SW + BAT, i32(EP.dv.y));
+      if (cost > 0) { spread9(LEDGER_WORDS, footprint(cells[pi].pos), cost); atomicAdd(&hb[LG_DIV + (i & 15u)], cost); }
+    }
     for (var k = 0u; k <= BAT; k++) {
       let h = atomicLoad(&stock[pi * SW + k]);
       let got = take_stock(pi * SW + k, h / 2);
@@ -471,6 +481,12 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   let i = id.x;
   if (i >= S.count) { return; }
   let c = cells[i];
+  if ((c.flags & CELL_ALIVE) == 0u) {
+    // step C9: a free slot (or a cell that died this tick) asks nothing of its neighbours: its pump requests, which their
+    // eat applies in reverse, are cleared (stale ones would make or lose matter)
+    for (var k = 16u; k < 30u; k++) { flux[i * SW + k] = 0; }
+    return;
+  }
   let fo = i * SW;
   let idx = footprint(c.pos);
   let lw = LEDGER_WORDS;
@@ -886,7 +902,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         let j = cell_nbr(c, k);
         if (j >= S.count || j == i || nbr_side(c.nbr, j) != k) { continue; }   // (once per neighbour, as its plan counts it)
         let q = nbr_side(cells[j].nbr, i);
-        if (q >= 6u) { continue; }
+        if (q >= 6u || (cells[j].flags & CELL_ALIVE) == 0u) { continue; }   // (step C9: not a cell that died this tick)
         let w = flux[j * SW + 16u + q];
         if (w == 0) { continue; }
         let a = unpack2(w);
@@ -1475,12 +1491,13 @@ var<workgroup> whl: array<atomic<i32>, 8>;
 @compute @workgroup_size(64)
 fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index) li: u32, @builtin(workgroup_id) wid: vec3u) {
   let i = id.x;
+  var ml = 0;
+  var mh = 0;
+  var evc = 0;
   if (i < S.count) {
     // step C6c: the membrane's linkers count with the cells' l and L (the atoms' books)
-    var ml = 0;
-    var mh = 0;
     for (var k = 0u; k < 6u; k++) { ml += max(atomicLoad(&stock[i * SW + MB_L0 + k]), 0); mh += max(atomicLoad(&stock[i * SW + MB_H0 + k]), 0); }
-    let evc = max(atomicLoad(&stock[i * SW + EVW]), 0);   // step C7: the voltage's energy counts as stored, with the battery
+    evc = max(atomicLoad(&stock[i * SW + EVW]), 0);   // step C7: the voltage's energy counts as stored, with the battery
     for (var k = 0u; k <= BAT; k++) {
       var v = max(atomicLoad(&stock[i * SW + k]), 0);
       if (k == MB_CH_L) { v += ml; }
@@ -1490,6 +1507,9 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       atomicAdd(&wlo[k], u32(v) & 0xffffu);
       atomicAdd(&whi[k], u32(v) >> 16u);
     }
+  }
+  // step C9: the census counts the live cells only (the books above count every slot: a free one holds nothing)
+  if (i < S.count && (cells[i].flags & CELL_ALIVE) != 0u) {
     let c = cells[i];
     if (c.bat > 0.5) { atomicAdd(&wcnt[0], 1); }
     if (c.bat < 0.05) { atomicAdd(&wcnt[1], 1); }
@@ -1654,8 +1674,10 @@ fn reset(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
   let slot = wid.x & 63u;
   if (i < arrayLength(&cells)) {   // (not S.count: a reset can run before the first tick has written a Sim slot)
     give_back(i, cells[i].pos, EP.resetCur, slot);
-    atomicStore(&stock[i * SW + BAT], EP.starter);
-    add64(LG_K_START + slot, EP.starter);
+    if (i < EP.dv.x) {   // step C9: only the slots the new culture fills (the rest stay free)
+      atomicStore(&stock[i * SW + BAT], EP.starter);
+      add64(LG_K_START + slot, EP.starter);
+    }
   }
   flush_counters(li, slot);
 }

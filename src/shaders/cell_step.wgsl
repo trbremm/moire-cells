@@ -26,11 +26,13 @@
 @compute @workgroup_size(128)
 fn step(@builtin(global_invocation_id) id: vec3u) {
   let j = id.x;
-  if (j >= S.count) { return; }
+  // step C9: the live cells are the sorted list's first starts[gw gh] (the dead slots' bucket follows: the free slots)
+  let aliveN = min(starts[S.gw * S.gh], S.count);
+  if (j >= aliveN) { return; }
   let i = beats[j].idx;              // the cell's own slot in `cells` (sortIdx, carried in its beat)
   var c = cells[i];                  // (step C6c: from its own slot, whole; the same as its sorted copy, which has no outline)
   var bio = bioPrev[i];
-  if ((c.flags & CELL_ALIVE) == 0u) { cells[i] = c; bioNext[i] = bio; return; }
+  if ((c.flags & CELL_ALIVE) == 0u) { return; }   // (never: the grid sorted it among the live cells)
 
   // step C6c, elastic honeycomb cells: a cell without a honeycomb outline yet (the rule just switched on, or a newborn)
   // starts from its ellipse: each corner on the ellipse of its stretch, the whole at the rest area, the hexagon turned at
@@ -69,6 +71,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let diff = (S.rules & RULE_DIFF) != 0u;
   let adh = (S.rules & RULE_ADH) != 0u && S.adhesion > 0.0;
   var M = 0.0;              // recognised contact: sum over touching neighbours of (contact x key match)
+  var comp = 0.0;           // step C9, crowding: the sum of the overlaps, each as a share of the contact distance
   var sig = vec4f(0.0);     // committed neighbours' signals per fate channel
   var wParent = 0.0;        // touching neighbours' weight so far, and the one picked as parent (sorted slot); step C5,
   var parent = 0xffffffffu; // energy-biased turnover: a neighbour weighs FL.bias + its battery share (else all 1)
@@ -167,7 +170,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     for (var gx = rg.x; gx <= rg.z; gx++) {
       let g = grid_index(S, vec2i(gx, gy));
       let s = starts[g];
-      let e = select(starts[g + 1u], S.count, g + 1u >= S.gw * S.gh);
+      let e = starts[g + 1u];          // (step C9: starts[gw gh], after the last grid cell, is the live cells' end)
       for (var k = s; k < e; k++) {
         if (k == j) { continue; }
         let o = sorted[k];
@@ -353,6 +356,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           }
         }
 
+        comp += max(R0 - dist, 0.0) / R0;
         if (dist >= max(R0, Rt) || S.stiffness <= 0.0) { continue; }
         // soft contact push: an overlap spring (step 7: to Rt, kx times as hard)
         var u: vec2f;
@@ -880,7 +884,11 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       c.flags &= ~CELL_BURST_MASK;
     }
   }
-  if (turnOn && parent != 0xffffffffu) {
+  // step C9: which life cycle runs while turnover (key T) is on: TURNOVER keeps the count (a dead cell's slot goes at once to a
+  // touching neighbour's daughter, below) or DIVISION changes it (cells divide into free slots and die for good, after it)
+  let divOn = (bitcast<u32>(FL.dv0.x) & DV_ON) != 0u;
+  bio.env.y = max(bio.env.y - S.dt, 0.0);   // the division flash runs down (the drawing)
+  if (turnOn && !divOn && parent != 0xffffffffu) {
     let rate = S.turnover * (1.0 + S.unhappy * (1.0 - min(M, 1.0)));
     let ud = select(rand01(c.seed ^ 0x165667b1u, S.tick), -1.0, burstDie);
     if (ud < (rate + hot) * S.dt) {
@@ -888,38 +896,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       let bs = pcg(c.seed ^ pcg(S.tick * 0x9e3779b9u + i));    // this birth's random stream
       let pc = sorted[parent];
       let pi = beats[parent].idx;
-      var nb = bioPrev[pi];
-      // step C8, hard light mutates: the parent's hard light dose (Cell.flags, from the eat pass) scales this copy's mutation,
-      // x (1 + hm.x x dose), at most hm.y x (the small steps' size and every jump's chance alike); with mutation off (key M)
-      // only the extra part mutates, so in the dark a lineage then stays pure
-      let pdose = cell_dose(pc.flags);
-      let hx = select(0.0, min(FL.hm.x * pdose, max(FL.hm.y - 1.0, 0.0)), FL.hm.x > 0.0);
-      let mOn = (S.rules & RULE_MUT) != 0u;
-      let ms = select(0.0, 1.0, mOn) + hx;
-      let e0 = nb.eng.xyz;                      // (to count the slot jumps: an engine or pump slot changed, started or emptied)
-      let r0 = nb.rate.xyz > vec3f(0.0);
-      let q0 = nb.pump.xy;
-      let qr0 = nb.pump.zw > vec2f(0.0);
-      if (ms > 0.0) {
-        nb = mutate(nb, bs, S.mutSize * ms, min(S.mutJump * ms, 1.0), min(S.engJump * ms, 1.0), min(FL.memb.w * ms, 1.0));
-      }
-      if (FL.hm.x > 0.0 || mOn) {
-        let lit = pdose >= 1.0;
-        let jumped = any(nb.eng.xyz != e0) || any((nb.rate.xyz > vec3f(0.0)) != r0) || any(nb.pump.xy != q0) ||
-                     any((nb.pump.zw > vec2f(0.0)) != qr0);
-        atomicAdd(&hb[LG_HL + 16u * HL_BIRTHS + (i & 15u)], 1);
-        atomicAdd(&hb[LG_HL + 16u * HL_FSUM + (i & 15u)], i32(round(select(1.0, ms, ms > 0.0) * 1000.0)));
-        if (lit) {
-          atomicAdd(&hb[LG_HL + 16u * HL_HIT + (i & 15u)], 1);
-          atomicAdd(&hb[LG_HL + 16u * HL_HIT_F + (i & 15u)], i32(round(ms * 1000.0)));
-        }
-        if (jumped) { atomicAdd(&hb[LG_HL + 16u * select(HL_JUMP_CLEAN, HL_JUMP_HIT, lit) + (i & 15u)], 1); }
-      }
-      let inherit = (S.rules & RULE_INHERIT) != 0u;
-      if (!inherit) { nb.acc = vec4f(0.0); }
-      nb.env = vec4f(0.0);                      // a newborn has felt nothing yet and is not converted
-      nb.conv = vec4f(0.0);
-      nb.body.w = TAU * rand01(bs, 200u);
+      let nb = daughter_genome(bioPrev[pi], bs, cell_dose(pc.flags), i);
       // record the death and the birth (counters always, positions while there is room)
       atomicAdd(&stats.deaths, 1u);
       atomicAdd(&stats.births, 1u);
@@ -937,8 +914,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       d.la = nb.key.x;
       d.e1 = 0.0;
       d.e2 = 0.0;
-      d.kind = select(KIND_STEM, pc.kind, inherit);
-      d.flags = CELL_ALIVE;
+      d.kind = select(KIND_STEM, pc.kind, (S.rules & RULE_INHERIT) != 0u);
       d.seed = pcg(bs ^ 0x5bd1e995u);
       d.aux = nb.key.y;
       d.z = vec2f(1.0, 0.0);
@@ -956,6 +932,97 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       bio = nb;
     }
   }
+  // step C9, DIVISION (changing count): a cell dies for good when it STARVED (its battery below dv1.x for dv1.y s), of HEAT
+  // damage (the rate above), when it BURST (after its flash), or by the background AGE rate (dv1.z, x the turnover's
+  // "unhappy" factor for a cell that recognises none of its neighbours); its slot is then free (the eat pass hands its stock
+  // back to the dish and its battery as heat, as at any death). A cell DIVIDES when its battery is at least dv0.y of its
+  // capacity, it has grown to dv2.x of its size and it is not crowded (the sum of its overlaps at most dv0.z), at a chance of
+  // dv0.w per s: it claims a free slot (none left: the capacity is full, it waits) and its daughter goes there, the two side by
+  // side along the mother's long axis (at random if she is round), both at dv2.y of her radius; the eat pass then takes the
+  // division's cost from her battery (as heat) and splits her stock, battery and membrane between the two.
+  var died = false;
+  if (turnOn && divOn) {
+    bio.env.x = select(0.0, bio.env.x + S.dt, c.bat < FL.dv1.x);   // how long it has been starving
+    var cause = 0u;
+    if (burstDie) {
+      cause = DV_BURST;
+    } else if (bio.env.x >= FL.dv1.y) {
+      cause = DV_STARVED;
+    } else {
+      let ud = rand01(c.seed ^ 0x165667b1u, S.tick);
+      let age = FL.dv1.z * (1.0 + S.unhappy * (1.0 - min(M, 1.0)));
+      if (ud < hot * S.dt) { cause = DV_HEAT; } else if (ud < (hot + age) * S.dt) { cause = DV_AGE; }
+    }
+    if (cause != 0u) {
+      atomicAdd(&stats.div[cause], 1u);
+      atomicAdd(&stats.deaths, 1u);
+      if (cause == DV_HEAT) { atomicAdd(&stats.heatDeaths, 1u); }
+      let ev = atomicAdd(&stats.nEvents, 1u);
+      if (ev < STATS_EVENTS) { stats.events[ev] = vec4f(c.pos, -1.0, 0.0); }
+      eDeath = heat_ke(c.vel);                  // its motion becomes heat
+      c.vel = vec2f(0.0);
+      c.flags = CELL_BORN;                      // dead (no CELL_ALIVE): the eat pass hands its stock back where it is
+      c.dead = c.pos;
+      c.mom = 0xffffffffu;
+      c.bat = 0.0;
+      c.fill = 0.0;
+      c.pay = 0;
+      died = true;
+    } else if (c.bat >= FL.dv0.y && c.r >= FL.dv2.x * S.R * size && bt == 0u) {
+      if (S.xCount != 0u) {
+        atomicAdd(&stats.div[DV_READY], 1u);
+        if (comp > FL.dv0.z) { atomicAdd(&stats.div[DV_CROWDED], 1u); }
+      }
+      if (comp <= FL.dv0.z && rand01(c.seed ^ 0x51ed270bu, S.tick) < FL.dv0.w * S.dt) {
+        let t = atomicAdd(&stats.claim, 1u);
+        if (t < S.count - aliveN) {
+          let k = beats[aliveN + t].idx;          // a free slot (dead at this tick's grid build)
+          let bs = pcg(c.seed ^ pcg(S.tick * 0x9e3779b9u + i));
+          var nb = daughter_genome(bio, bs, cell_dose(c.flags), i);
+          // side by side along the long axis (the stretch's direction, either end), or at random
+          let es = vec2f(c.e1, c.e2);
+          var ang = TAU * rand01(bs, 201u);
+          if (length(es) > 0.05) { ang = 0.5 * atan2(es.y, es.x) + select(0.0, 3.14159265, rand01(bs, 202u) < 0.5); }
+          let u = vec2f(cos(ang), sin(ang));
+          let r0 = c.r;
+          let np = clamp(c.pos + u * (FL.dv2.z * r0), vec2f(0.0), vec2f(S.W, S.H));
+          c.pos = clamp(c.pos - u * (FL.dv2.z * r0), vec2f(0.0), vec2f(S.W, S.H));
+          c.r = FL.dv2.y * r0;
+          for (var q = 0; q < 6; q++) { c.rad[q] *= FL.dv2.y; c.radV[q] = 0.0; }
+          c.bat *= 0.5;
+          c.fill *= 0.5;
+          var d: Cell;
+          d.pos = np;
+          d.r = FL.dv2.y * r0;
+          d.la = nb.key.x;
+          d.kind = select(KIND_STEM, c.kind, (S.rules & RULE_INHERIT) != 0u);
+          d.flags = CELL_ALIVE | CELL_BORN | (c.flags & CELL_WHOLE);
+          d.seed = pcg(bs ^ 0x5bd1e995u);
+          d.aux = nb.key.y;
+          d.z = vec2f(1.0, 0.0);
+          d.dead = np;                            // (the slot's stock is empty: it was handed back when its cell died)
+          d.mom = i | MOM_DIV;                    // the eat pass: the division's cost, then the split
+          d.bat = c.bat;
+          d.fill = c.fill;
+          d.integ = c.integ;                      // (until the eat pass works out its own)
+          d.nbr = array<u32, 3>(0xffffffffu, 0xffffffffu, 0xffffffffu);
+          nb.env.y = FL.dv1.w;                    // both flash
+          bio.env.y = FL.dv1.w;
+          cells[k] = d;
+          bioNext[k] = nb;
+          atomicAdd(&stats.div[DV_BIRTHS], 1u);
+          atomicAdd(&stats.births, 1u);
+          let ev = atomicAdd(&stats.nEvents, 1u);
+          if (ev < STATS_EVENTS) { stats.events[ev] = vec4f(np, 1.0, 0.0); }
+        } else {
+          atomicAdd(&stats.div[DV_NOSLOT], 1u);
+        }
+      }
+    }
+    if (S.xCount != 0u && !died && bio.env.x > 0.0) { atomicAdd(&stats.div[DV_STARVING], 1u); }
+  } else {
+    bio.env.x = 0.0;
+  }
 
   // step C1: the heat under the cell gets the drag's loss and a dead cell's motion, minus what the kick took, spread
   // evenly over the 3 x 3 pixels it read (whole counts, the remainder to the middle); the ledger books the work, the
@@ -971,7 +1038,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   }
   // step C2: while the light is on, the cell puts down its area (in heat pixel areas) at its centre, so the light's
   // absorption knows where cells are (heat.wgsl reads the 3 x 3 mean; cleared after the tick)
-  if ((HP.flags & 2u) != 0u) {
+  if ((HP.flags & 2u) != 0u && !died) {
     let cov = i32(round(3.14159265 * c.r * c.r / (HP.px * HP.px) * COVER_SCALE));
     let cp = heat_xy(HP, c.pos);
     atomicAdd(&hb[LEDGER_WORDS + 3u * HP.n + u32(cp.y) * HP.hw + u32(cp.x)], cov);
@@ -982,7 +1049,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   if (cKick != 0) { atomicAdd(&hb[LG_KICK + slot], cKick); }
 
   // the leak level, for the drawing and the census (a newborn starts at 0)
-  if (c.seed != sorted[j].seed) { c.flags &= ~(255u << CELL_LEAK_SHIFT); }
+  if (c.seed != sorted[j].seed || died) { c.flags &= ~(255u << CELL_LEAK_SHIFT); }
   else { c.flags = (c.flags & ~(255u << CELL_LEAK_SHIFT)) | (u32(round(clamp(me.lk.w, 0.0, 1.0) * 255.0)) << CELL_LEAK_SHIFT); }
   // step C7: the neighbours across the sides, 16 bits each (none while the pumps across contact are off)
   c.nbr = array<u32, 3>(nbIA.x | (nbIA.y << 16u), nbIA.z | (nbIA.w << 16u), nbIB.x | (nbIB.y << 16u));
@@ -1000,4 +1067,40 @@ const HEX_SPACE: f32 = 3.0;       // ... and how fast neighbouring corners even 
 fn hex_target(r0: f32, b: f32, snap: f32) -> f32 {
   let w = 1.0 - smoothstep(r0, snap * r0, b);
   return min(mix(r0, b, w), b);
+}
+
+// A daughter's genome (turnover and, step C9, division): the parent's p copied with mutation (cell_common.wgsl mutate; its
+// state reset: the accumulators unless fates are inherited, what it felt, its heading), and the step C8 census of the birth.
+// Step C8, hard light mutates: the parent's hard light dose (Cell.flags, from the eat pass) scales this copy's mutation,
+// x (1 + hm.x x dose), at most hm.y x (the small steps' size and every jump's chance alike); with mutation off (key M) only the
+// extra part mutates, so in the dark a lineage then stays pure. bs: the birth's random stream; i: the slot counting it.
+fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
+  var nb = p;
+  let hx = select(0.0, min(FL.hm.x * pdose, max(FL.hm.y - 1.0, 0.0)), FL.hm.x > 0.0);
+  let mOn = (S.rules & RULE_MUT) != 0u;
+  let ms = select(0.0, 1.0, mOn) + hx;
+  let e0 = nb.eng.xyz;                      // (to count the slot jumps: an engine or pump slot changed, started or emptied)
+  let r0 = nb.rate.xyz > vec3f(0.0);
+  let q0 = nb.pump.xy;
+  let qr0 = nb.pump.zw > vec2f(0.0);
+  if (ms > 0.0) {
+    nb = mutate(nb, bs, S.mutSize * ms, min(S.mutJump * ms, 1.0), min(S.engJump * ms, 1.0), min(FL.memb.w * ms, 1.0));
+  }
+  if (FL.hm.x > 0.0 || mOn) {
+    let lit = pdose >= 1.0;
+    let jumped = any(nb.eng.xyz != e0) || any((nb.rate.xyz > vec3f(0.0)) != r0) || any(nb.pump.xy != q0) ||
+                 any((nb.pump.zw > vec2f(0.0)) != qr0);
+    atomicAdd(&hb[LG_HL + 16u * HL_BIRTHS + (i & 15u)], 1);
+    atomicAdd(&hb[LG_HL + 16u * HL_FSUM + (i & 15u)], i32(round(select(1.0, ms, ms > 0.0) * 1000.0)));
+    if (lit) {
+      atomicAdd(&hb[LG_HL + 16u * HL_HIT + (i & 15u)], 1);
+      atomicAdd(&hb[LG_HL + 16u * HL_HIT_F + (i & 15u)], i32(round(ms * 1000.0)));
+    }
+    if (jumped) { atomicAdd(&hb[LG_HL + 16u * select(HL_JUMP_CLEAN, HL_JUMP_HIT, lit) + (i & 15u)], 1); }
+  }
+  if ((S.rules & RULE_INHERIT) == 0u) { nb.acc = vec4f(0.0); }
+  nb.env = vec4f(0.0);                      // a newborn has felt nothing yet and is not converted (step C9: nor starving)
+  nb.conv = vec4f(0.0);
+  nb.body.w = TAU * rand01(bs, 200u);
+  return nb;
 }

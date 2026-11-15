@@ -142,7 +142,7 @@ export class Charge {
     let cellsQ = 0;
     if (S) SUBSTANCES.forEach((s, c) => { cellsQ += S[c] * s.charge; });
     const n = this.heat ? this.heat.n : 1;
-    const cells = this.cells ? this.cells.count : 1;
+    const cells = this.cells ? Math.max(1, this.cells.alive) : 1;   // (step C9: the live cells)
     this.ledger = {
       time: rec.time, plus, minus, net: plus - minus, cellsQ, total: plus - minus + cellsQ, ...this.books(plus - minus + cellsQ),
       pos: v(0), neg: v(1), neutral: Math.max(0, cells - v(0) - v(1)), meanQ: v(2) / 1000 / cells, meanNet: v(3) / 1000 / cells,
@@ -174,11 +174,12 @@ export class Charge {
     e.copyBufferToBuffer(C.cellBuf, 0, buf, 0, n * F * 4);
     d.queue.submit([e.finish()]);
     await buf.mapAsync(GPUMapMode.READ);
-    const f = new Float32Array(buf.getMappedRange().slice(0));
+    const f = new Float32Array(buf.getMappedRange().slice(0)), fu = new Uint32Array(f.buffer);
     buf.unmap(); buf.destroy();
     const net = [], q = [];
     let pos = 0, neg = 0, ef = 0;
     for (let i = 0; i < n; i++) {
+      if (!(fu[i * F + 9] & 1)) continue;   // step C9: live cells only
       net.push(Math.abs(f[i * F + 23])); q.push(f[i * F + 22]);
       if (f[i * F + 23] > 0) pos += f[i * F + 23]; else neg -= f[i * F + 23];
       ef += Math.hypot(f[i * F + 24], f[i * F + 25]);
@@ -186,7 +187,7 @@ export class Charge {
     // charged cells (|q| > 0.3) within 2.5 R of each other: how many pairs have the same sign, against random mixing of
     // the signs (do like charges keep apart, and opposite ones pair up?)
     const ch = [];
-    for (let i = 0; i < n; i++) if (Math.abs(f[i * F + 22]) > 0.3) ch.push([f[i * F], f[i * F + 1], Math.sign(f[i * F + 22])]);
+    for (let i = 0; i < n; i++) if ((fu[i * F + 9] & 1) && Math.abs(f[i * F + 22]) > 0.3) ch.push([f[i * F], f[i * F + 1], Math.sign(f[i * F + 22])]);
     let same = 0, pairs = 0;
     const r2 = (2.5 * C.R) ** 2;
     for (let a = 0; a < ch.length; a++) {

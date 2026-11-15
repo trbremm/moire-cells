@@ -50,7 +50,10 @@ import { HardLight, HL_SNAP_WORDS } from './hardlight.js';
 
 const SW = 32;                      // stock words per cell (cell_eat.wgsl; 16 until step C6c's membranes, words 16..27; step C7:
                                     // 14 the pumped charge across the membrane, 15 the voltage's energy)
-const EP_BYTES = 1456;              // struct EatP (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat; step C8: + hl)
+const EP_BYTES = 1472;              // struct EatP (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat; step C8: + hl;
+                                    // step C9: + dv)
+const EP_DV = 364;                  // ... its word dv (step C9)
+const LG_DIV = 22272;               // heat_common.wgsl: step C9's counters (the divisions' cost)
 const EP_CAT = 356;                 // ... its word cat (step C7b)
 const EP_HL = 360;                  // ... its word hl (step C8)
 const EP_PU = 344;                  // ... its word pu0
@@ -252,6 +255,8 @@ export class Eat {
     this.pumps.write(u, f, EP_PU, dt);  // step C7
     this.catalysts.writeEat(f, EP_CAT); // step C7b
     this.hardlight.writeEat(f, EP_HL, dt); // step C8
+    // step C9: a reset fills the first `start` slots (they get the starter charge); a division's cost (heat counts)
+    u[EP_DV] = this.cells.start; u[EP_DV + 1] = this.cells.division.costCounts; u[EP_DV + 2] = 0; u[EP_DV + 3] = 0;
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
   }
 
@@ -357,6 +362,10 @@ export class Eat {
     this.ledger = { time: rec.time, stock, atoms, chem, bat, start: this.start, full: cnt[0], empty: cnt[1], stuffed: cnt[2], n: cnt[3], hot: cnt[4], rate, rate2 };
     this.catalysts.apply(rec, w);  // step C7b (after the ledger: it reads the trace in the cells)
     this.hardlight.apply(rec, w);  // step C8
+    // step C9: the energy the divisions' cost turned into heat
+    let dc = 0;
+    for (let k = 0; k < 16; k++) dc += w[LG_DIV + k];
+    this.cells.division.applyLedger(rec.time, dc / HEAT_SCALE);
   }
 
   /**

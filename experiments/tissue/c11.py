@@ -90,10 +90,12 @@ def condition(name, series, desc, genes, knobs, fronts="random", query=None, cel
 
 def make():
     out = {}
-    # series "pat" (40 cells) and "big" (100 cells): the five patterns x field A off / long beat x turning on / off
+    # series "pat" (40 cells): the five patterns x field A off / long beat x turning on / off; "big" (100 cells): the long beat only
     for series, cells in (("pat", 40), ("big", 100)):
         for pk, (pdesc, a0, a1, a2) in PATTERNS.items():
             for fk, (fdesc, fknobs) in FIELDS.items():
+                if cells == 100 and fk != "lb":
+                    continue   # (100 cells: the long beat only, for time: the GPU was shared)
                 for tk in ("t1", "t0"):
                     knobs = dict(fknobs)
                     knobs["walls.params.turn"] = tk == "t1"

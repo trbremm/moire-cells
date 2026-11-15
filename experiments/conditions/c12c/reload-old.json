@@ -1,0 +1,20 @@
+{
+ "name": "c12c-reload-old",
+ "description": "Step C12c: a snapshot saved before C12c (commit 035d3e9, 16 substances; made by experiments/runs/c12c-old-snap, kept locally) loads with the excited waste off and runs 60 s; books exact",
+ "query": {
+  "snap": "experiments/runs/c12c-old-snap/snapshots/snap_t90.json"
+ },
+ "duration": 60,
+ "sample_every": 10,
+ "evals": [
+  {
+   "t": 1,
+   "js": "return { excited: moire.excited.params.on, graze: moire.lipids.params.graze, cells: moire.cells.alive }"
+  }
+ ],
+ "shots": [
+  {
+   "t": 60
+  }
+ ]
+}

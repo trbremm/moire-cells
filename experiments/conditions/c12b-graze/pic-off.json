@@ -1,0 +1,26 @@
+{
+ "name": "c12b-graze-pic-off",
+ "description": "the C12b supply fix: close-ups of the colony over the default springs, grazing off, seed 7",
+ "query": {
+  "graze": 0,
+  "seed": 7
+ },
+ "duration": 600,
+ "sample_every": 60,
+ "shots": [
+  {
+   "t": 600,
+   "crop": [
+    760,
+    270,
+    240,
+    260
+   ],
+   "scale": 3,
+   "name": "graze-off-close"
+  },
+  {
+   "t": 600
+  }
+ ]
+}

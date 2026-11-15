@@ -51,7 +51,7 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
     the landscape, which substance is shown, colour by fate, lineage, strategy (step C6) or charge (step C6b), and the
     other drawing switches;
   - *rules*: every rule that has a key, as a switch with a one-line explanation and its key, grouped as below
-    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge, membrane chemistry (step C6c, panel only), charge per side (step C6d, panel only: the dipoles' switches and six knobs with - and +), pumps (step C7, panel only: four switches and five knobs with - and +)); settings with several values show the current one
+    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge, membrane chemistry (step C6c, panel only), charge per side (step C6d, panel only: the dipoles' switches and six knobs with - and +), pumps (step C7, panel only: four switches and five knobs with - and +), catalysts (step C7b, panel only: two switches and four knobs)); settings with several values show the current one
     and change on a tap; the lever and the stiffness have - and +. The switches follow the state, also when a key changes it;
   - *dish* (the dish with three cells): the speed as a row of buttons, new culture (N), new genomes (G), clear
     springs (C), wash the atoms out (Shift+C).
@@ -81,7 +81,7 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   step C6n: `?neon=0`, `?halo=off|low|medium|high`, `?trails=0`, `?hum=0`, `?machinery=1`, `?cheap=0|1`, and
   `?until=T` (run to simulation time T, then pause at exactly that tick); step C6b: `?charge=0`, `?qstock=0`, `?qfeel=0`,
   `?contours=1`, `?view=charge`; step C6c: `?honeycomb=0` (the ellipse cells), `?membrane=0` (no membrane chemistry),
-  `?bites=0`, `?burst=0`, `?elastic=0`, `?selectivity=0`; step C6d: `?dipoles=0`, `?dd=0`, `?dphi=0`, `?dfield=0`; step C7: `?pumps=0`, `?pumpcontact=0`, `?voltage=0`, `?v2b=0`.
+  `?bites=0`, `?burst=0`, `?elastic=0`, `?selectivity=0`; step C6d: `?dipoles=0`, `?dd=0`, `?dphi=0`, `?dfield=0`; step C7: `?pumps=0`, `?pumpcontact=0`, `?voltage=0`, `?v2b=0`; step C7b: `?crystal=0`, `?cofactor=0`.
 
 ## Keyboard shortcuts
 
@@ -2153,6 +2153,122 @@ array, and the whole step ran a quarter slower on Direct3D (×9.1), even with th
 selects it costs nothing measurable. Firefox (headed, 1600 × 1000) and Chrome at phone size (390 × 844: the short PUMPS line
 fits, the rules panel shows the new group with its touch buttons) ran without errors.
 
+## Step C7b: catalysts
+
+The cells' engines are already their catalysts (enzymes); out in the dish only trace lowered the sparks (step C4). Two
+more rules, both **derived** (nothing is set per substance), each its own switch:
+- **Crystal seeding**: sediment lowers the spark of its **own** formation. Light linker chains (ll) make l + l → ll start
+  more easily where ll already lies, heavy chains (LL) do the same for L + L → LL: crust grows on crust.
+- **Trace as cofactor**: an engine runs faster the more trace the cell holds, down to a floor without any. Trace was meant
+  to become a scarce vitamin.
+
+**Crystal seeding, how it works.** The spark of a chain's formation x max(`floor`, 1 / (1 + s / `s0`)), where s is the
+sediment of that same kind already there: the pixel's own, or the mean of its 4 neighbours' if that is more (so a crust
+also grows at its edge, into the next pixel). The neighbours are read from the copy the tick's spreading started from
+(last tick's sediment), so no pixel reads what another one is writing. **In the open only**: inside a cell there is never
+any sediment to seed on (what forms there is expelled at once, step C5), so the same rule would do nothing there. Defaults:
+`s0` 0.05 per R² (a thin crust already halves the spark), `floor` 0.1.
+
+**What it looks like, honestly.** Crusts did **not** become travelling fronts or spots. What seeding does:
+- **Crusts start where they never would have.** In cool light unseeded chains hardly ever form (the spark's factor is
+  e^-6 or less), so the linkers a spring drips just spread out as a faint free haze. With seeding, the first few chains at
+  the spring's centre lower the spark for the next ones and a crust takes off there. The clearest case: the substrate alone
+  in a dim full field (light power 10 instead of 33, no day cycle, the temperature 1.3 to 1.7 per R², the cells not
+  eating), a light and a heavy spring dropped side by side. After 300 s, seeded: a flat warm-grey disc of crust with a
+  lighter core at the light spring (ll 38 units, 133 crust pixels), most free linkers used up (29 left); unseeded: no crust
+  at the light spring at all, only the haze (ll 6.7, 31 crust pixels, all of them at the heavy spring; 63 free linkers).
+  The heavy spring has its crust either way (its trace lowers the spark already). Pictures: `shots/c7b/dimcrust_cr1_t300.png`
+  and `shots/c7b/dimcrust_cr0_t300.png` (not in the repository).
+- **In the warm spot it changes little.** There the spark is small anyway (seeding takes its factor from 0.17 to at most
+  0.64), and chains form at the springs' centres, where the linkers are dense, with or without it.
+- **Crusts get a little more compact.** Seeded crust pulls the linkers onto itself, so less crust forms elsewhere: in the
+  default scene at 20 minutes 576 and 621 crust pixels in 2 to 3 patches (seeds 3 and 7) against 649 and 708 in 3 to 5
+  patches without, about the same amount of sediment (ll 202 to 209 against 192 to 202), fewer free linkers (29 to 32
+  against 38 to 41).
+- **In the cold dark dish nothing happens either way**: outside the light the dish is at about 0.1 per R², and even the
+  seeded spark (a tenth of itself) leaves a factor of e^-8.
+- **No balance of growth and cracking** showed: hard light cracks crust in the spot, and seeding makes the freed linkers
+  chain again on the same crust, so the crust stays where it is.
+
+Why no fronts: forming a chain needs **two** free linkers to meet, so its rate goes with the linkers' concentration
+squared. Seeding takes away the spark's brake, never that one. Away from the springs the free linkers are thin (0.02 to
+0.05 per R²), so a crust's edge eats them at about one count a second and creeps forward by roughly a pixel in five
+minutes. Stronger seeding did not change it: substrate alone in the warm spot, s0 0.2 / floor 0.25, s0 0.05 / 0.1 and s0
+0.01 / 0.02 gave 166, 172 and 181 crust pixels at 220 to 320 s, against 148 without. Fronts would need linker-rich water
+(many light springs, springs that never dry up) or a rule where a single linker joins an existing chain (first order in
+the linker), which is a different rule than "sediment lowers its spark"; not built.
+
+**Trace as cofactor, how it works.** Every engine slot's rate x (`f0` + (1 - `f0`) x tr / (tr + `tHalf`)), tr the cell's
+trace per R² of its area (`cell_eat.wgsl`). For a harvester the pigment still catches the same photons (its amount is the
+gene); the engine can use only that share of them, the rest become heat, like photons with nothing to work on. Storers,
+burners, swaps and sediment engines simply run at the scaled rate. Upkeep is still paid on the gene's rate. The C5 burner
+("everyone burns") is not an engine of the genome and is not scaled. Defaults: `f0` 0.35, `tHalf` 0.002 per R² (a cell of
+3 R² holding 0.006 units of trace, 25 counts, runs half way between). Measured: trace hardly passes a membrane (its
+permeability is a twenty-fifth of the light atoms'), all the dish's trace comes from the heavy spring (4 % of its drip), and
+over 20 minutes the cells together hold about 19 units of it, spread over 290 to 360 of the 2000 cells.
+
+**What happened** (the default scene, 2000 cells, MAX, seeds 3 and 7, 20 minutes with both rules on and with
+`?crystal=0&cofactor=0`; not bit-repeatable, one run each):
+- **The engines ran at 37 to 46 % of full speed on average** (rising slowly as trace spreads into the cells), the cells
+  with a battery of 0.3 or more at 41 to 73 %: the fed cells are the trace holders, so trace matters where it can.
+- **It cost the culture energy in seed 3, little in seed 7**: mean battery 0.17 against 0.24 (seed 3) and 0.17 against
+  0.17 (seed 7); cells above half a battery 317 against 503, and 319 against 334. The strategies hardly moved (harvest +
+  burn 66 to 67 % either way); in seed 7 fewer "other" cells (5 against 10 %). Tuning: with f0 0.5 the engines ran at 51 to
+  55 % and the culture stayed nearer the control; with f0 0.25 at 28 to 32 %, and the cells above half a battery fell to 66
+  to 155 (of 2000) at 400 to 550 s: too hard.
+- **Trace did not become a hoarded vitamin.** The trace inside the cells was the same with and without the rule (19.1 and
+  18.9 units against 18.8 and 21.6 at 20 minutes); cells carrying an active "IN trace" pump numbered 11 to 33 with the rule
+  against 7 to 34 without, came and went in both, and their batteries were empty (0.00 to 0.08). Pumping trace in is
+  pumping up a steep gradient from water that holds very little of it near most cells, so the price is high and the gain
+  small. Nothing rose.
+
+| at about 20 minutes | seed 3 on | seed 3 off | seed 7 on | seed 7 off |
+|---|---|---|---|---|
+| crust pixels (patches) | 576 (2) | 649 (5) | 621 (3) | 708 (3) |
+| sediment ll / LL in the dish | 202 / 224 | 192 / 215 | 209 / 222 | 202 / 215 |
+| free light linkers l | 32 | 41 | 29 | 38 |
+| engines' speed: all / fed cells | 46 % / 73 % | (100 %) | 46 % / 67 % | (100 %) |
+| trace in cells / in the dish | 19.1 / 38.4 | 18.8 / 38.7 | 18.9 / 38.7 | 21.6 / 35.9 |
+| cells holding ≥ tHalf of trace | 355 | 361 | 325 | 285 |
+| IN-trace pump carriers (battery) | 24 (0.08) | 11 (0.10) | 26 (0.00) | 15 (0.06) |
+| mean battery, cells above half | 0.17, 317 | 0.24, 503 | 0.17, 319 | 0.17, 334 |
+| strategies h / b / h+b / o (%) | 7 / 23 / 67 / 3 | 11 / 19 / 69 / 1 | 9 / 20 / 66 / 5 | 8 / 16 / 66 / 10 |
+| entropy (heat out) | 15.0 M | 16.3 M | 18.1 M | 18.7 M |
+
+**The look.** Nothing new is drawn: crusts are drawn as before (flat warm-grey patches with a lighter core and hard edges,
+the clean view's solid crusts). Under the culture they are hidden by the cells, as before; a seeded crust in the open looks
+like the spring crusts of C4, a disc at the spring.
+
+**Switches** (rules panel, group "Catalysts (step C7b)"; panel only, no keys are left): **crystal seeding** · **trace as
+cofactor**. Knobs with - and +: **seeding scale** (`s0`), **spark floor** (`floor`), **speed without trace** (`f0`),
+**trace half** (`tHalf`). URL: `?crystal=0`, `?cofactor=0`. Console: `moire.catalysts.params`, `await
+moire.catalysts.stats()` (the crusts as patches, from the grid: crust pixels at the drawing's sedStep, patches, the largest,
+edge pixels, the ll and LL in crust).
+
+**The census.** A CATALYSTS line in the entropy panel:
+
+    CATALYSTS  crust ll 56.8 LL 62.5 · engines at 36% (in the light 37%, fed cells 35%) · trace in cells 0.30, in the dish 15.9 · cells with trace ≥ half 16 · IN-trace pumps 6 (battery 0.00 vs 0.02)
+
+(seed 3, early in a run: crust in the dish, the engines' mean speed, the trace inside and outside the cells, the cells
+holding at least tHalf, the IN-trace pump carriers and their battery against all cells'; on a phone
+`CATALYSTS ll 40.0 LL 46.2 · engines 36% · trace 0.33`). The F overlay adds the knobs, the trace inside per
+cell, the carriers' trace, the last crust stats and the numbers every 10 s. Counted on the GPU in the eat pass's ledger
+dispatch (LG_CAT, 16 numbers x 16 slots; LEDGER_WORDS 22 016), read back with the energy ledger.
+
+**The books.** Nothing new moves: a spark is a rate, and the cofactor only changes how many events run, so the atoms, the
+charge and the energy stay exact as before. Checked: 660 s at MAX (seed 5) through N (120 s), a wash (220 s), a resize
+(300 s), G (400 s), a resize back (480 s) and new springs (520 s): atoms and charge rounding exactly 0, energy rounding
+between -0.033 and +0.069 while in grew to 8.7 M.
+
+**How it is computed.** Seeding: `react` in `matter.wgsl`, for the "form" reactions only (and only where the pixel holds
+linkers); the numbers travel in struct ChemP's new `cry` (its reactions now start at byte 112). Cofactor: the engine loop
+in `cell_eat.wgsl` (`cofactor()`), the numbers in struct EatP's new `cat` (1440 bytes). Census: the eat pass's ledger
+dispatch.
+
+**Cost** (headless Chrome, 2000 cells, seed 3, MAX, mean speed reached from 40 to 150 s, alternating runs): the commit
+before (cf967bc) ×11.29 and ×11.33, with C7b ×11.07 and ×11.15 (about 1.5 % slower). Firefox (headed) and Chrome at phone
+size (390 × 844) ran without errors; the phone's panel line fits, the rules panel shows the new group with its buttons.
+
 ## The look of the landscape
 
 Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the
@@ -2202,6 +2318,9 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   the pumps themselves are planned and applied in `cell_eat.wgsl` (plan, eat; the voltage in stock words 14 and 15), the
   touching neighbour across each side is found in `cell_step.wgsl` (Cell.nbr), the genes and their mutation in `src/genome.js`
   and `cell_common.wgsl` (Bio.pump, mutate), the notches and the voltage's rim in `cell_draw.wgsl`
+- `src/catalysts.js`: the catalysts (step C7b): the switches and knobs, the census (from the heat's ledger read-back), the
+  CATALYSTS panel line, the overlay and `stats()` (the crusts as patches); crystal seeding itself is in `react` in
+  `matter.wgsl` (struct ChemP `cry`), the cofactor in the engine loop of `cell_eat.wgsl` (`cofactor()`, struct EatP `cat`)
 - `src/dipole.js`: charge per side, the dipoles (step C6d): the switches and knobs, the census (from the cells' stats
   read-back), `stats()` (threads, with a shuffled control), the DIPOLES panel line and the overlay; the side charges' flow
   and evening out are in `cell_eat.wgsl` (plan, eat), the turning, polarising, push and stretch in `cell_step.wgsl`, the

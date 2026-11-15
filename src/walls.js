@@ -79,8 +79,8 @@ export class Walls {
     // the look (moire.walls.look; drawing only)
     this.look = {
       sticky: 0.25,      // a side's tube is this much brighter at full adhesion and this much dimmer at none (0.5: as before)
-      junction: 0.5,     // a matured junction's tube whiter, by this much at full maturity (both cells' tubes: a bright shared wall)
-      junctionGlow: 0.3, // ... and brighter by this much
+      junction: 0.3,     // a matured junction's tube whiter, by this much at full maturity (both cells' tubes: a bright shared wall)
+      junctionGlow: 0.12, // ... and brighter by this much
       frontTick: 0.8,    // the machinery: a small tick from the centre toward the front (brightness, 0 = none)
       viewTube: 0.7,     // the walls view: the tubes' shading by adhesion (0..1: dark where not sticky)
       viewFill: 0.45,    // ... the body's fill in its pattern's ink

@@ -1,0 +1,14 @@
+{
+  "batch": "springs",
+  "description": "Series 2: springs (never drying).",
+  "seeds": [
+    3
+  ],
+  "runs": [
+    "g-spr-both.json",
+    "g-spr-light.json",
+    "g-spr-heavy.json",
+    "g-spr-many.json",
+    "g-spr-spread.json"
+  ]
+}

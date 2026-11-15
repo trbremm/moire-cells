@@ -1,0 +1,35 @@
+{
+  "name": "g-div-thrhigh",
+  "description": "Division threshold high: divides at 90 % battery.",
+  "query": {
+    "divat": 0.9
+  },
+  "duration": 1200,
+  "sample_every": 10,
+  "shots": [
+    {
+      "t": 120
+    },
+    {
+      "t": 300
+    },
+    {
+      "t": 600
+    },
+    {
+      "t": 900
+    },
+    {
+      "t": 1200
+    },
+    {
+      "t": 1200,
+      "view": "strategy"
+    },
+    {
+      "t": 1200,
+      "view": "lineage",
+      "panel": true
+    }
+  ]
+}

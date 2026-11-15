@@ -1,0 +1,12 @@
+{
+  "batch": "founders",
+  "description": "Series 9: founders all burners vs all harvesters.",
+  "seeds": [
+    3,
+    7
+  ],
+  "runs": [
+    "g-found-burners.json",
+    "g-found-harvesters.json"
+  ]
+}

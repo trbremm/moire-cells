@@ -1,0 +1,14 @@
+{
+  "batch": "light",
+  "description": "Series 1: the light.",
+  "seeds": [
+    3,
+    7
+  ],
+  "runs": [
+    "g-light-spot.json",
+    "g-light-full.json",
+    "g-light-dark.json",
+    "g-light-noday.json"
+  ]
+}

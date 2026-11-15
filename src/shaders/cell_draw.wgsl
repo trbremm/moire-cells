@@ -89,6 +89,8 @@ struct VSOut {
   @location(4) @interpolate(flat) nn2: vec4f,
   @location(5) @interpolate(flat) hh0: vec4f,
   @location(6) @interpolate(flat) hh1: vec4f,
+  @location(7) lp: vec2f,                        // the position in the cell's unstretched frame (= local for an ellipse cell;
+                                                 // a honeycomb cell: F^-1 local, for the inside: dots, core, parts, marks)
 };
 
 // Step C6c: how far inside a honeycomb outline a point p is (relative to the centre). Inside each side's line by
@@ -170,6 +172,8 @@ fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VSOut
     let w = c.pos + l;
     o.pos = vec4f(w.x / D.view.x * 2.0 - 1.0, 1.0 - w.y / D.view.y * 2.0, 0.0, 1.0);
     o.local = l;
+    let F = cell_F(c);                             // its inverse: [[fd, -fb], [-fb, fa]]
+    o.lp = vec2f(F.z * l.x - F.y * l.y, F.x * l.y - F.y * l.x);
   } else {
     let half = c.r + 1.5 / D.dpr;                  // room for the anti-aliased edge
     let l = corner[vi] * half;
@@ -177,6 +181,7 @@ fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VSOut
     let w = c.pos + vec2f(F.x * l.x + F.y * l.y, F.y * l.x + F.z * l.y);
     o.pos = vec4f(w.x / D.view.x * 2.0 - 1.0, 1.0 - w.y / D.view.y * 2.0, 0.0, 1.0);
     o.local = l;
+    o.lp = l;
   }
   if ((c.flags & CELL_ALIVE) == 0u) { o.pos = vec4f(2.0, 2.0, 2.0, 1.0); }   // outside the clip volume
   return o;
@@ -223,13 +228,9 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   // the position in the cell's own (unstretched) frame, for the inside (lattice dots, core, parts, marks), and ein, how far
   // inside the drawn outline a pixel is: an ellipse cell's r - |lp|; step C6c, a honeycomb cell: inside the rounded
   // hexagon (exact distance), less the tube's gap from the wall (so two neighbours' tubes do not merge into one thick line)
-  var lp = in.local;
+  let lp = in.lp;
   var ein = c.r - length(in.local);
-  if (in.hh1.w > 0.5) {
-    let F = cell_F(c);                             // its inverse: [[fd, -fb], [-fb, fa]]
-    lp = vec2f(F.z * in.local.x - F.y * in.local.y, F.x * in.local.y - F.y * in.local.x);
-    ein = hex_inside(in.local, in) - min(D.hexDraw.y, 0.08 * c.r);
-  }
+  if (in.hh1.w > 0.5) { ein = hex_inside(in.local, in) - min(D.hexDraw.y, 0.08 * c.r); }
   let d = length(lp);
   let aa = max(fwidth(ein), 0.35 / D.dpr);
   // the cell's own lattice as sharp dots (the reference turns its dot pattern by la + 90 degrees): the lattice

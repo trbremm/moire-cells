@@ -439,6 +439,12 @@ C12b. LIPID MEMBRANES, ELASTICITY FROM THE LIPIDS (user 2026-11-15: "Lipids shou
       oilier, stiffer membranes (real bacteria do this: "homeoviscous adaptation"). Watch for it; never write it.
     - Expected look: soft wobbly soap-skinned cells next to stiff oily ones holding crisp hexagons; tissue mechanics
       (packing, linking) now follow the chemistry the lineage eats and makes. Own switch (off = C6c linker membrane).
+LATER, PURIST VERSION (user 2026-11-15: hoped for "a more game of life situation", surprised how many abstractions
+    were needed; chose to KEEP GOING with lipids (C12b) and the oxygen story, "I can go back to the purist version
+    later"). Idea on file: a separate small page "moire life": cells of a few colours, pairwise push/pull through
+    the moire beat of their lattices as the ONLY rule (ring-shaped, not a plain falloff), no energy/chemistry/heat/
+    noise after the start, a random-rules button and a gallery of kept rule sets (particle-life genre).
+    Also on file: prune the big sim's defaults to rules that showed a visible effect.
 PROPOSED NEXT (user 2026-11-15, ideas under discussion, not agreed in detail):
 - OILS: a water-shy property derived from the atoms (uncharged linker-rich molecules are oily); oily substances
   gather with their own kind on the grid (phase separation: droplets, films), membranes are oil, droplets can fuse

@@ -27,6 +27,7 @@ Condition file (JSON; every key but "name" optional):
       "description": "plain words",
       "query": {"seed": 3, "light": "spot"},        # URL options (README: URL options); speed=max, until=0 are added
       "size": "1280x800",                          # viewport, CSS px
+      "dpr": 1,                                    # device px per CSS px (Chrome; 2 or 3 for close-up pictures)
       "duration": 120,                             # simulated seconds (from the start, or from the snapshot's time)
       "sample_every": 5,                           # s of simulated time between samples (0 = only at the start and end)
       "tissue": false,                             # also sample moire.tissue.stats() (tissue.*)
@@ -172,6 +173,7 @@ def run_condition(cond, out_dir, port, args):
     duration = float(cond.get("duration", 120))
     size = cond.get("size", args.size)
     w, h = (int(v) for v in size.lower().split("x"))
+    dpr = float(cond.get("dpr", 1))
     browser = cond.get("browser", args.browser)
     query = {**BASE_QUERY, **{k: str(v) for k, v in cond.get("query", {}).items()}}
     url = f"http://localhost:{port}/index.html?" + urllib.parse.urlencode(query, safe=",:@/")
@@ -201,7 +203,7 @@ def run_condition(cond, out_dir, port, args):
         else:
             driver = shot.Chrome(exe, profile, w, h, ["--disable-background-timer-throttling",
                                                       "--disable-renderer-backgrounding",
-                                                      "--disable-backgrounding-occluded-windows"])
+                                                      "--disable-backgrounding-occluded-windows"], dpr)
             try:
                 meta["browser_version"] = driver.rpc.call("Browser.getVersion").get("product", "")
             except Exception:  # noqa: BLE001
@@ -313,7 +315,7 @@ def run_condition(cond, out_dir, port, args):
             for _, _, kind, spec in group:
                 if kind == "resize" and browser != "firefox":
                     rw, rh = (int(v) for v in spec["size"].lower().split("x"))
-                    driver.rpc.call("Emulation.setDeviceMetricsOverride", {"width": rw, "height": rh, "deviceScaleFactor": 1, "mobile": False})
+                    driver.rpc.call("Emulation.setDeviceMetricsOverride", {"width": rw, "height": rh, "deviceScaleFactor": dpr, "mobile": False})
                     time.sleep(1.0)   # the page sees the resize on its next frames (it is paused: it redraws)
                     print(f"[{name}] resized to {rw}x{rh}")
                 elif kind == "eval":

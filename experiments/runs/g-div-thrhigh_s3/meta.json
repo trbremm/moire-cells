@@ -1,0 +1,69 @@
+{
+  "name": "g-div-thrhigh_s3",
+  "description": "Division threshold high: divides at 90 % battery.",
+  "condition": {
+    "name": "g-div-thrhigh_s3",
+    "description": "Division threshold high: divides at 90 % battery.",
+    "query": {
+      "divat": 0.9,
+      "seed": 3
+    },
+    "duration": 1200,
+    "sample_every": 20,
+    "shots": [
+      {
+        "t": 120
+      },
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 900
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "view": "strategy"
+      },
+      {
+        "t": 1200,
+        "view": "lineage",
+        "panel": true
+      }
+    ]
+  },
+  "url": "http://localhost:62993/index.html?speed=max&until=0&overlay=ghost&ui=0&divat=0.9&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "39448ce9208fc14807fb452d32158d5169191baa",
+  "dirty": false,
+  "started": "2026-11-15T11:16:02",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 324.05,
+  "speed_reached": 3.7,
+  "samples": 61,
+  "shots": [
+    "shots/t120.png",
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t900.png",
+    "shots/t1200.png",
+    "shots/t1200_strategy.png",
+    "shots/t1200_lineage.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-15T11:22:00",
+  "wall_s": 358.29
+}

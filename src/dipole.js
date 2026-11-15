@@ -215,7 +215,7 @@ export class Dipole {
     if (!C || !C.cells) return 'DIPOLES  …';
     const pc = Math.round(100 * C.polShare);
     const sg = (x) => `${x >= 0 ? '+' : '−'}${Math.abs(x).toFixed(2)}`;
-    if (compact) return `DIPOLES |d| ${C.meanD.toFixed(2)} · polarised ${pc}% · aligned ${C.order.toFixed(2)} · head-to-tail ${sg(C.chain)} · threads ${C.mid}`;
+    if (compact) return `DIPOLES |d| ${C.meanD.toFixed(2)} · polarised ${pc}% · head-to-tail ${sg(C.chain)} · threads ${C.mid}`;
     return `DIPOLES  |d| ${C.meanD.toFixed(2)} · polarised ${C.polarised} (${pc}%) · neighbours aligned ${C.order.toFixed(2)}` +
       ` · head-to-tail ${sg(C.chain)} · in threads ${C.mid} (ends ${C.ends}) · along the field ${C.align.toFixed(2)}`;
   }

@@ -8,7 +8,8 @@
 //              records (48 floats: genome and its state) and the stock records (32 words: substances, battery, membrane, ...)
 //   stats      the cells' Stats buffer (the cumulative division counters and the like)
 //   grid       optional (opts.grid, default true): the substrate grid, as whole counts: the heat's delta and current copy, the
-//              13 substances' current copy, and the charge field phi (16 blocks of hw x hh words)
+//              substances' current copy (16 since step C12, 13 before), and the charge field phi (19 blocks of hw x hh
+//              words; 16 before step C12: such a snapshot loads, its blocks matched by name, the new channels empty)
 //   springs    the springs (place, kind, age, life)
 //   books      the ledgers' running totals (heat: work, warmth, out = ENTROPY, light; atoms: added, lost, gone; chemistry: light
 //              caught, events; the cells' counters, starter charges, ...), so the entropy counter and the books continue
@@ -152,6 +153,7 @@ export function settingObjects(M) {
     'division.params': M.division.params, 'division.look': M.division.look, 'background.params': M.background.params,
     'landscape.params': M.landscape.params, 'medium.params': M.medium.params, 'neon.params': M.neon.params,
     'walls.params': M.walls.params, 'walls.look': M.walls.look,   // step C10
+    ...(M.oil ? { 'oil.params': M.oil.params } : {}),            // step C12
   };
 }
 const SCALARS = [['neon.on', (M) => M.neon, 'on'], ['background.heatOn', (M) => M.background, 'heatOn'], ['background.ambient', (M) => M.background, 'ambient']];
@@ -191,6 +193,7 @@ function captureBooks(M) {
       light: Array.from(Mt.ctot.light), rx: Array.from(Mt.ctot.rx) },
     eat: { tot: clone(E.tot), tot2: clone(E.tot2), start: E.start },
     membrane: clone(M.membrane.tot), pumps: clone(M.pumps.tot), hardlight: clone(M.hardlight.tot),
+    oil: M.oil ? clone(M.oil.tot) : null,   // step C12
     division: { costTot: M.division.costTot || 0 },
     rounding: {
       energy: H.ledger ? H.ledger.rounding : null, atoms: Mt.ledger ? Mt.ledger.rounding : null,
@@ -202,8 +205,10 @@ function captureBooks(M) {
 function restoreBooks(M, B) {
   const H = M.heat, Mt = M.matter, E = M.eat;
   H.tot = clone(B.heat);
-  Mt.tot.add.set(B.matter.add); Mt.tot.lost.set(B.matter.lost); Mt.tot.gone.set(B.matter.gone);
-  Mt.ctot.light.set(B.matter.light); Mt.ctot.rx.set(B.matter.rx);
+  // (step C12: a snapshot from before has 13 substances and 6 families: the rest start at 0)
+  for (const k of ['add', 'lost', 'gone']) { Mt.tot[k].fill(0); Mt.tot[k].set(B.matter[k].slice(0, Mt.tot[k].length)); }
+  Mt.ctot.light.set(B.matter.light); Mt.ctot.rx.fill(0); Mt.ctot.rx.set(B.matter.rx.slice(0, Mt.ctot.rx.length));
+  if (M.oil) M.oil.tot = { fused: (B.oil && B.oil.fused) || 0 };
   E.tot = clone(B.eat.tot); E.tot2 = clone(B.eat.tot2); E.start = B.eat.start;
   M.membrane.tot = clone(B.membrane); M.pumps.tot = clone(B.pumps); M.hardlight.tot = clone(B.hardlight);
   M.division.costTot = B.division.costTot;
@@ -211,7 +216,7 @@ function restoreBooks(M, B) {
 
 /** Every rate history and time series starts again (their windows would span the jump in time). */
 function clearHistories(M) {
-  const mods = [M.heat, M.matter, M.eat, M.membrane, M.pumps, M.catalysts, M.hardlight, M.dipole, M.division, M.cells, M.charge];
+  const mods = [M.heat, M.matter, M.eat, M.membrane, M.pumps, M.catalysts, M.hardlight, M.dipole, M.division, M.cells, M.charge, M.oil].filter(Boolean);   // (step C12: + the oil)
   for (const m of mods) {
     for (const k of Object.keys(m)) if (/(^hist|Hist$|hist\d$|^series$)/.test(k) && Array.isArray(m[k])) m[k] = [];
   }
@@ -231,7 +236,7 @@ function gridOffsets(M) {
 
 async function readGrid(M) {
   const d = M.gpu.device, H = M.heat, o = gridOffsets(M), n = o.n;
-  const staging = d.createBuffer({ size: 16 * n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+  const staging = d.createBuffer({ size: (3 + NCH) * n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
   const e = d.createCommandEncoder({ label: 'lab grid read-back' });
   e.copyBufferToBuffer(H.buffer, o.delta * 4, staging, 0, n * 4);
   e.copyBufferToBuffer(H.buffer, o.heat * 4, staging, n * 4, n * 4);
@@ -244,13 +249,17 @@ async function readGrid(M) {
   return out;
 }
 
-function writeGrid(M, w) {
+/** `names`: the snapshot's block names (grid.blocks); a substance it does not have (saved before step C12) is left empty. */
+function writeGrid(M, w, names) {
   const q = M.gpu.device.queue, H = M.heat, o = gridOffsets(M), n = o.n;
   const block = (k, len = 1) => w.subarray(k * n, (k + len) * n);
-  q.writeBuffer(H.buffer, o.delta * 4, block(0));
-  for (const c of o.heatCopies) q.writeBuffer(H.buffer, c * 4, block(1));
-  for (const c of o.matterCopies) q.writeBuffer(H.buffer, c * 4, block(2, NCH));
-  q.writeBuffer(H.buffer, o.phi * 4, block(2 + NCH));
+  const at = (name) => names.indexOf(name);
+  q.writeBuffer(H.buffer, o.delta * 4, block(at('delta')));
+  for (const c of o.heatCopies) q.writeBuffer(H.buffer, c * 4, block(at('heat')));
+  const subs = new Int32Array(NCH * n);
+  SUBSTANCES.forEach((s, c) => { const k = at(s.name); if (k >= 0) subs.set(block(k), c * n); });
+  for (const c of o.matterCopies) q.writeBuffer(H.buffer, c * 4, subs);
+  q.writeBuffer(H.buffer, o.phi * 4, block(at('phi')));
   H.cur = 0; M.matter.cur = 0;
   M.charge.phiLive = true;
 }
@@ -394,7 +403,7 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     else if (stats.byteLength < C.statsBuf.size && stats.byteLength >= C.statsBuf.size - 128) q.writeBuffer(C.statsBuf, 0, stats);   // (step C10
     // appended Stats.wall, step C11 widened it: the counters are in front, the census words behind are refilled every frame)
     else notes.push('stats buffer size differs: counters start from the page\'s');
-    if (gridOK) writeGrid(M, await unpack(S.grid.data));
+    if (gridOK) writeGrid(M, await unpack(S.grid.data), S.grid.blocks || ['delta', 'heat', ...SUBSTANCES.slice(0, 13).map((s) => s.name), 'phi']);
 
     // springs, time, the JS-side state
     M.matter.springs = clone(S.springs || []).map((s) => (sameView ? s : { ...s, x: s.x + dx, y: s.y + dy }));

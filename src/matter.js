@@ -3,9 +3,10 @@
 // the medium lattice (dot size = amount). Step C4: they react in the open (the energy table CHEM and the reaction list
 // REACTIONS below; matter.wgsl's react, run every tick inside the heat's pass). The cells still ignore them (C5).
 //
-// Storage: 13 channels (6 atoms g t l G T L, 4 fuels gt gT Gt GT, 2 sediments ll LL, trace; heat is the 14th, in
-// src/heat.js) on the heat grid's pixels (same size and geometry, so later steps react them together), as more blocks
-// of the heat buffer (heat_common.wgsl): two copies of 13 blocks, ping-pong. The cells' step is at WebGPU's limit of 8
+// Storage: 16 channels (6 atoms g t l G T L, 4 fuels gt gT Gt GT, 2 sediments ll LL, trace; step C12: oil lL and the
+// amphiphiles glL, tlL; heat is in src/heat.js) on the heat grid's pixels (same size and geometry, so later steps react
+// them together), as more blocks of the heat buffer (heat_common.wgsl): two copies of 16 blocks, ping-pong, and (step C12)
+// 3 blocks the oil's passes work out each tick. The cells hold the first 13 (NCH_CELL) in their stock. The cells' step is at WebGPU's limit of 8
 // storage buffers and already binds the heat buffer, so the cells can reach the atoms there later (C5) without one more.
 // Amounts are whole counts (ATOM_SCALE per atom-unit) in i32, like the heat: atomics are integer only, and whole counts
 // make moving matter around EXACT, so matter is conserved to the count.
@@ -32,6 +33,7 @@ import { loadShader } from './gpu.js';
 import { HEAT_COMMON_URL, HEAT_SCALE, LEDGER_WORDS, fmt } from './heat.js';
 import { BANDS, LIGHT_COMMON_URL } from './light.js';
 import { FLAT, pal } from './palette.js';
+import { Oil } from './oil.js';
 
 // ---------- the periodic table (CLAUDE.md, Part C): every property derived from ROW and GROUP, nowhere else ----------
 // ROW is size: heavier = slower spreading (later: richer bonds, harder light needed). GROUP is role: a GIVER wants one
@@ -78,6 +80,40 @@ export const SPREAD = { row1: 1.2, perRow: 0.12, bond: 0.7 };
 // row's linkers: there is no mixed sediment channel).
 export const CHEM = { fuelPerRow: 0.75, sedPerRow: -0.25, sparkPerRow: 0.125 };
 
+// Step C12: every BOND's energy from its two atoms' GROUPS and ROWS, so molecules of more than two atoms follow from the
+// same two factors: each group brings a TENDENCY, a charged atom (giver, taker) half the fuel's factor, a linker half the
+// chain's, and bond(a, b) = (tendency a + tendency b) x (row a + row b). Giver-taker: fuelPerRow (the fuels, as before);
+// linker-linker: sedPerRow (the chains, as before); and the new charged-linker bond (an amphiphile's HEAD on its oily tail)
+// halfway between: (0.375 - 0.125) = 0.25 per row, uphill (putting a head on stores a little, as making fuel does, less).
+// A molecule's energy is the sum of its bonds'. A bond's SPARK is sparkPerRow x (row a + row b), whatever the groups.
+const TEND = { giver: CHEM.fuelPerRow / 2, taker: CHEM.fuelPerRow / 2, linker: CHEM.sedPerRow / 2, inert: 0 };
+const bondE = (a, b) => (TEND[a.group] + TEND[b.group]) * (a.row + b.row);
+const bondSpark = (a, b) => CHEM.sparkPerRow * (a.row + b.row);
+
+// ---------- step C12: POLARITY, from the atoms' charges and where they sit (no physics; the user: "we can simplify their
+// charges combining") ----------
+// A charged atom (a giver +1, a taker -1) is water-loving; a linker that sits in a CHAIN (bonded to another linker) is
+// water-shy. Read along the molecule (its atoms in chain order):
+//   head = charged atoms / atoms, tail = chained linkers / atoms
+//   AMPHIPHILE  the charged atoms all at ONE end, and a chain behind them (a charged head on an oily tail: soap, lipid)
+//   POLAR       charged atoms anywhere else (a lone ion; both ends charged; a neutral molecule of + and - parts, as the
+//               fuels, still counts: polarity is where the charge sits, not its sum)
+//   APOLAR      a chain and no charged atom (oil; also the crust, which does not move)
+//   neutral     neither (a lone linker, trace): takes no part
+// Two numbers then say how it moves on the grid (src/oil.js, matter.wgsl): the bulk pull chi = tail - head (an amphiphile's
+// head and tail cancel: 0), up the oil's share (chi > 0 gathers into oil, chi < 0 is pushed out of it); and the boundary
+// pull beta = 2 x min(tail, head) for an amphiphile (0 for the rest), toward the oil-water boundary (where the oil's share
+// is a half).
+export function polarity(A) {
+  const n = A.length, ch = A.map((a) => a.charge !== 0), lk = A.map((a) => a.group === 'linker');
+  const charged = ch.filter(Boolean).length;
+  const chained = lk.filter((x, i) => x && ((i > 0 && lk[i - 1]) || (i < n - 1 && lk[i + 1]))).length;
+  const head = charged / n, tail = chained / n;
+  const oneEnd = charged > 0 && chained > 0 && (ch.slice(0, charged).every(Boolean) || ch.slice(n - charged).every(Boolean));
+  const cls = oneEnd ? 'amphiphile' : charged > 0 ? 'polar' : chained > 0 ? 'apolar' : 'neutral';
+  return { cls, head, tail, chi: oneEnd ? 0 : tail - head, beta: oneEnd ? 2 * Math.min(tail, head) : 0, chained };
+}
+
 // Inks by chemical FUNCTION (faded palette, 0..255): each with a lighter variant for row 1 and a deeper one for row 2;
 // a substance's ink sits between them by the share of its atoms in row 2. Reactive free atoms (givers and takers, hungry
 // for a partner) in the old threat red; linkers dim and quiet; fuels in the old nutrient green; sediment a dim flat
@@ -85,42 +121,62 @@ export const CHEM = { fuelPerRow: 0.75, sedPerRow: -0.25, sparkPerRow: 0.125 };
 // Step C6n: the inks live in src/palette.js (FLAT and NEON, the same meanings); INKS is the flat one (the toolbar's icons).
 export const INKS = FLAT.substances;
 
-// The 13 channels, in buffer order. A substance is just its atoms; its kind follows from their groups:
-// one giver or taker or linker = a free atom, giver + taker = FUEL, linker + linker = SEDIMENT, the inert atom = trace.
+// The 16 channels, in buffer order. A substance is just its atoms (in chain order); its kind follows from their groups:
+// one giver or taker or linker = a free atom, giver + taker = FUEL, a chain of linkers of ONE row = SEDIMENT (a regular
+// chain packs into a solid crust), the inert atom = trace; step C12: a chain of linkers of MIXED rows = OIL (it cannot
+// pack into a crystal, so it stays liquid: mobile and water-shy), and a charged atom on one end of an oil chain =
+// AMPHIPHILE. The new molecules are the smallest that fit the bond rules: the light and the heavy linker chained (lL),
+// and a light giver or taker as its head on the light end (glL +1, tlL -1; the head takes the end where its bond is
+// cheaper: rows 1 + 1).
 export const SUBSTANCES = [
   ['g'], ['t'], ['l'], ['G'], ['T'], ['L'],
   ['g', 't'], ['g', 'T'], ['G', 't'], ['G', 'T'],
   ['l', 'l'], ['L', 'L'],
   ['trace'],
+  ['l', 'L'], ['g', 'l', 'L'], ['t', 'l', 'L'],   // step C12
 ].map((atoms) => derive(atoms));
-export const NCH = SUBSTANCES.length;   // 13
+export const NCH = SUBSTANCES.length;   // 16 (13 until step C12)
+export const NCH_CELL = 13;             // step C12: the cells' stock holds channels 0..12 (oil and amphiphiles stay in the open)
 export const CH = Object.fromEntries(SUBSTANCES.map((s, c) => [s.name, c]));
+if (CH.lL !== 13) throw new Error('heat_common.wgsl expects the oil (lL) in channel 13 (OIL_CH)');
+if (NCH > 16) throw new Error('the shaders hold 16 channels at most (array<vec4f, 4>; 2 bits of charge each in a u32)');
 
 function derive(atoms) {
   const A = atoms.map((a) => ATOMS[a]);
   const groups = A.map((a) => a.group).sort().join('+');
+  const pol = polarity(A);   // step C12
+  const allLink = A.every((a) => a.group === 'linker');
   const kind = atoms.length === 1 ? (A[0].group === 'inert' ? 'trace' : 'atom')
-    : groups === 'giver+taker' ? 'fuel' : groups === 'linker+linker' ? 'sediment' : 'other';
+    : groups === 'giver+taker' ? 'fuel'
+      : allLink ? (A.every((a) => a.row === A[0].row) ? 'sediment' : 'oil')
+        : pol.cls === 'amphiphile' ? 'amphiphile' : 'other';
   const row = Math.max(...A.map((a) => a.row));
   const heavy = A.filter((a) => a.row >= 2).length / A.length;          // share of its atoms in row 2 or below
   const reactive = kind === 'atom' && (A[0].group === 'giver' || A[0].group === 'taker');
-  const spread = kind === 'sediment' ? 0 : SPREAD.row1 * SPREAD.perRow ** (row - 1) * (atoms.length > 1 ? SPREAD.bond : 1);
+  const spread = kind === 'sediment' ? 0 : SPREAD.row1 * SPREAD.perRow ** (row - 1) * SPREAD.bond ** (atoms.length - 1);
   const func = kind === 'atom' ? (reactive ? 'reactive' : 'linker') : kind === 'other' ? 'linker' : kind;
-  const layer = { atom: 0, fuel: 1, sediment: 2, trace: 3 }[kind] ?? 0;   // which dot layer draws it
+  const layer = { atom: 0, fuel: 1, sediment: 2, trace: 3, oil: 4, amphiphile: 5 }[kind] ?? 0;   // which drawing layer
   const name = atoms.length === 1 ? atoms[0] : atoms.join('');
-  // step C4, the energy table (CHEM above): energy per unit, the bond's spark, and the light band that makes a fuel
-  const rows = A.reduce((x, a) => x + a.row, 0);
-  const energy = kind === 'fuel' ? CHEM.fuelPerRow * rows : kind === 'sediment' ? CHEM.sedPerRow * rows : 0;
-  const spark = atoms.length > 1 ? CHEM.sparkPerRow * rows : 0;
+  // step C4, the energy table (CHEM above): energy per unit, the bond's spark, and the light band that makes a fuel.
+  // Step C12: the sum of its bonds' energies (bondE: the same numbers for the fuels and the sediments as before), and the
+  // spark of its first bond (the one its reactions make and break: a fuel's or a chain's only bond, an amphiphile's head)
+  let energy = 0;
+  for (let k = 1; k < A.length; k++) energy += bondE(A[k - 1], A[k]);
+  const spark = atoms.length > 1 ? bondSpark(A[0], A[1]) : 0;
   const e16 = Math.round(16 * energy);   // heat counts per count of the substance (exact: see CHEM)
   if (e16 !== 16 * energy) throw new Error(`energy of ${name} (${energy}) is not a multiple of 1/16`);
   const charge = A.reduce((x, a) => x + a.charge, 0);   // step C6b: the sum of its atoms' charges (GROUP_CHARGE)
-  return { name, atoms, kind, row, heavy, reactive, spread, func, layer, ink: inkOf(func, heavy), energy, spark, e16, charge };
+  return { name, atoms, kind, row, heavy, reactive, spread, func, layer, ink: inkOf(func, heavy), energy, spark, e16, charge,
+    polarity: pol.cls, head: pol.head, tail: pol.tail, chi: pol.chi, beta: pol.beta, chained: pol.chained };
 }
 
 /** The light band that makes a fuel: the lowest whose photon covers its energy plus its spark (-1: none). */
 export function makingBand(s) {
-  return BANDS.findIndex((b) => b.photon >= s.energy + s.spark);
+  return bondBand(s.energy + s.spark);
+}
+/** Step C12: the lowest band that makes bonds (warm light is heat only) whose photon covers the energy e (-1: none). */
+export function bondBand(e) {
+  return BANDS.findIndex((b, k) => k > 0 && b.photon >= e);
 }
 
 function inkOf(func, heavy, inks = INKS) {
@@ -140,7 +196,14 @@ function inkOf(func, heavy, inks = INKS) {
 //   swap   free atom + fuel -> poorer fuel + the freed atom, by heat (the energy difference -> heat)
 //   form   linker + linker (same row) -> sediment, by heat (releases a little)
 //   crack  sediment -> linker + linker, by hard light (photon - the chain's energy -> heat)
-export const FAMILIES = ['make', 'burn', 'photo', 'swap', 'form', 'crack'];   // (step C6's 'upswap' is counted as 'swap')
+// Step C12, in the open dish only (`open`: the cells' stock has no channel for them), the same two rules, both ways:
+//   oil      l + L -> lL, by heat (a chain forming releases a little: 0.75), as sediment forms
+//   oilcrack lL -> l + L, by hard light (photon - the chain's energy -> heat), as sediment cracks
+//   head     g + lL -> glL, t + lL -> tlL, by light of the lowest bond-making band (visible 1: the head bond is uphill, 0.5
+//            plus its spark 0.25), as fuel is made
+//   unhead   glL -> g + lL, tlL -> t + lL, by heat (the head's bond energy -> heat), as fuel burns
+export const FAMILIES = ['make', 'burn', 'photo', 'swap', 'form', 'crack', 'oil', 'oilcrack', 'head', 'unhead'];   // (step C6's
+                                                                                                         // 'upswap' is counted as 'swap')
 export const HARD = BANDS.length - 1;
 export const REACTIONS = deriveReactions();
 
@@ -177,6 +240,19 @@ function deriveReactions() {
       const x = ch(f.atoms[0]);
       out.push({ fam: 'form', by: 'heat', ins: [x, x], outs: [c], heat16: -f.e16, light16: 0, spark: f.spark, name: `${f.atoms[0]} + ${f.atoms[1]} → ${f.name}` });
       out.push({ fam: 'crack', by: 'light', band: HARD, ins: [c], outs: [x, x], heat16: L16(HARD) + f.e16, light16: L16(HARD), spark: f.spark, name: `${f.name} → ${f.atoms[0]} + ${f.atoms[1]} (hard light)` });
+    }
+    // step C12: oil (a mixed chain) forms and cracks as sediment does; an amphiphile's head goes on by light, off by heat
+    if (f.kind === 'oil') {
+      const [x, y] = f.atoms.map(ch);
+      out.push({ fam: 'oil', by: 'heat', open: true, ins: [x, y], outs: [c], heat16: -f.e16, light16: 0, spark: f.spark, name: `${f.atoms[0]} + ${f.atoms[1]} → ${f.name}` });
+      out.push({ fam: 'oilcrack', by: 'light', band: HARD, open: true, ins: [c], outs: [x, y], heat16: L16(HARD) + f.e16, light16: L16(HARD), spark: f.spark, name: `${f.name} → ${f.atoms[0]} + ${f.atoms[1]} (hard light)` });
+    }
+    if (f.kind === 'amphiphile') {
+      const h = ch(f.atoms[0]), tl = ch(f.atoms.slice(1).join(''));
+      const d = f.e16 - SUBSTANCES[h].e16 - SUBSTANCES[tl].e16, b = bondBand(d / 16 + f.spark);   // uphill: d > 0
+      const tn = SUBSTANCES[tl].name;
+      out.push({ fam: 'head', by: 'light', band: b, open: true, ins: [h, tl], outs: [c], heat16: L16(b) - d, light16: L16(b), spark: f.spark, name: `${f.atoms[0]} + ${tn} → ${f.name}` });
+      out.push({ fam: 'unhead', by: 'heat', open: true, ins: [c], outs: [h, tl], heat16: d, light16: 0, spark: f.spark, name: `${f.name} → ${f.atoms[0]} + ${tn}` });
     }
   });
   // every event conserves energy exactly: light in = heat out + change of the bonds' energy
@@ -251,7 +327,7 @@ export function insideProducts(active) {
   let m = active;
   for (let grew = true; grew;) {
     grew = false;
-    for (const r of [...REACTIONS.filter((x) => x.by === 'heat'), ...ENGINES]) {
+    for (const r of [...REACTIONS.filter((x) => x.by === 'heat' && !x.open), ...ENGINES]) {   // (step C12: not the open dish's)
       if (r.ins.every((c) => m & (1 << c))) for (const c of r.outs) if (!(m & (1 << c))) { m |= 1 << c; grew = true; }
     }
   }
@@ -264,6 +340,8 @@ export function describe(s) {
   if (s.kind === 'atom') return `free atom ${s.name} (${role(s.atoms[0])}${s.reactive ? ', reactive' : ''})`;
   if (s.kind === 'fuel') return `fuel ${s.name} (${role(s.atoms[0])} + ${role(s.atoms[1])})`;
   if (s.kind === 'sediment') return `sediment ${s.name} (${s.atoms[0] === 'l' ? 'light' : 'heavy'} linker chain)`;
+  if (s.kind === 'oil') return `oil ${s.name} (a light and a heavy linker chained: apolar, water-shy)`;
+  if (s.kind === 'amphiphile') return `amphiphile ${s.name} (${role(s.atoms[0])} head on an oil tail: soap-like, charge ${s.charge > 0 ? '+' : ''}${s.charge})`;
   return 'trace (the rare inert atom)';
 }
 
@@ -276,10 +354,15 @@ export const SPRING_KINDS = {
   // test spring (light givers + heavy takers) that polarises the cells near it
   linker: { label: 'linker spring (lab)', mix: { l: 0.5, L: 0.5 }, stroke: 1.5 },
   ions: { label: 'ion spring (lab)', mix: { g: 0.5, T: 0.5 }, stroke: 1.5 },
+  // step C12: springs of whole molecules (the oil tool drops one of these, as the dish panel chooses; shares of the atoms)
+  oil: { label: 'oil spring', mix: { lL: 1 }, stroke: 1.75 },
+  emulsion: { label: 'oil + soap spring', mix: { lL: 0.9, glL: 0.05, tlL: 0.05 }, stroke: 1.75 },
+  soap: { label: 'soap spring', mix: { glL: 0.5, tlL: 0.5 }, stroke: 1.75 },
 };
+export const OIL_SPRINGS = ['oil', 'emulsion', 'soap'];   // step C12: what the oil tool drops (src/oil.js params.spring)
 
 export const ATOM_SCALE = 4096;          // counts per atom-unit (ATOM_SCALE in matter.wgsl)
-const MP_BYTES = 400;                     // struct MatterP (step C6b: + chg, cq)
+const MP_BYTES = 688;                     // struct MatterP (step C6b: + chg, cq; step C12: + the oil's, 400 until then)
 const MT_SLOT = 256;                      // struct MatterTick slots, bound with a dynamic offset
 const MAX_TICKS = 320;                    // as SLOTS in cells.js
 const MAX_SUB = 4;                        // spreading substeps per tick at most
@@ -288,15 +371,23 @@ const MT_DRAIN = MT_LEDGER + 1;           // slot: the old grid on a resize
 const MT_WASH = MT_LEDGER + 2;            // slot: Shift+C
 const MT_SLOTS = MT_LEDGER + 3;
 export const MAX_SPRINGS = 16;            // the springs uniform's capacity
-const SPRING_FLOATS = 24;                 // struct Spring: pos (4), amt (16), ink (4)
-const DRAW_BYTES = 224;                   // struct DrawP in matter_draw.wgsl
+const SPRING_FLOATS = 28;                 // struct Spring: pos (4), amt (20: 16 channels, [16] its disc's pixels), ink (4)
+const DRAW_BYTES = 336;                   // struct DrawP in matter_draw.wgsl (224 until step C12)
 const K_MAX = 0.2;
 const LG_M = { ADD: 3072, LOST: 4736, GONE: 6400, DISH: 8064, ORDER: 9728 };   // heat_common.wgsl
 const LG_C = { LIGHT: 10240, RX: 10752 };
+// step C12 (heat_common.wgsl): the ledger of channels 13..15, the oil's 4 families, the oil's snapshot
+const LG_OIL = 23040, LG_OIL_RX = 24576, LG_OIL_SNAP = 25088;
+const REGION = { ADD: 0, LOST: 1, GONE: 2, DISH: 3 };
+/** The ledger word of channel c in a matter region ('ADD', 'LOST', 'GONE', 'DISH'), as lg_mc in heat_common.wgsl. */
+export function lgM(region, c) { return c < NCH_CELL ? LG_M[region] + 128 * c : LG_OIL + 384 * REGION[region] + 128 * (c - NCH_CELL); }
+/** The ledger word of a reaction family's events. */
+function lgRx(k) { return k < 6 ? LG_C.RX + 128 * k : LG_OIL_RX + 128 * (k - 6); }
 const LG_Q_PHI = 19200;                     // step C6b (heat_common.wgsl): phi's spread (256 f32), then its largest size   // step C4 (heat_common.wgsl): light caught per band, events per family
-const MAX_RX = 24;                          // struct ChemP's reactions (REACTIONS has 24 since step C6's uphill swaps)
+const MAX_RX = 32;                          // struct ChemP's reactions (REACTIONS has 24 since step C6's uphill swaps, 30 since C12)
 const RX_BYTES = 48;                        // struct Rx
-const CP_RX = 112;                          // struct ChemP: its first reaction's byte offset (96 until step C7b's cry)
+const CP_RX = 128;                          // struct ChemP: its first reaction's byte offset (96 until step C7b's cry, 112 until
+                                            // step C12's fuse)
 const CP_BYTES = CP_RX + MAX_RX * RX_BYTES; // struct ChemP
 const NONE = 255;                           // no channel (Rx.ch)
 const SED_MASK = SUBSTANCES.reduce((m, s, c) => (s.kind === 'sediment' ? m | (1 << c) : m), 0);
@@ -312,7 +403,9 @@ export class Matter {
     this.medium = medium;
     this.heat = null;
     this.landscape = null;    // key L hides the whole landscape, this included (set by main.js)
-    this.blocks = 2 * NCH;    // blocks of n words in the heat buffer
+    this.blocks = 2 * NCH + 4;   // blocks of n words in the heat buffer (step C12: + the oil's rho, film, obar, a scratch)
+    this.oil = new Oil(this);    // step C12: oils and water (src/oil.js)
+    this.CH = CH; this.SUBSTANCES = SUBSTANCES;
     // live-tunable: moire.matter.params
     this.params = {
       show: 0,            // index into SHOWS (Shift+S cycles)
@@ -428,12 +521,13 @@ export class Matter {
       entries: [
         { binding: 0, visibility: C, storageTexture: { access: 'write-only', format: 'rgba16float' } },
         { binding: 1, visibility: C, storageTexture: { access: 'write-only', format: 'rgba16float' } },
+        { binding: 2, visibility: C, storageTexture: { access: 'write-only', format: 'rgba16float' } },   // step C12: oil
       ],
     });
     const layout = d.createPipelineLayout({ label: 'matter', bindGroupLayouts: [this.bgl] });
     const paintLayout = d.createPipelineLayout({ label: 'matter paint', bindGroupLayouts: [this.bgl, this.texBgl] });
     this.pipes = {};
-    for (const e of ['spread', 'count', 'react', 'relax_red', 'relax_black']) {   // (relax: step C6b's charge field)
+    for (const e of ['spread', 'count', 'react', 'relax_red', 'relax_black', 'oil_rho', 'oil_blur', 'oil_blur_y']) {   // (relax: step C6b's charge field; oil_*: C12)
       this.pipes[e] = d.createComputePipeline({ label: `matter ${e}`, layout, compute: { module: mod, entryPoint: e } });
     }
     this.pipes.paint = d.createComputePipeline({ label: 'matter paint', layout: paintLayout, compute: { module: mod, entryPoint: 'paint' } });
@@ -485,6 +579,8 @@ export class Matter {
 
   /** Word offset of copy k's channel 0, counted from the end of the ledger (the grid binding's start), for n pixels. */
   copyBase(k, n = this.heat.n) { return this.heat.extraBase(n) - LEDGER_WORDS + k * NCH * n; }
+  /** Step C12: word offset (in the grid binding) of the oil's 4 blocks (rho, film, obar, scratch), behind the two copies. */
+  oilBase(n = this.heat.n) { return this.copyBase(2, n); }
 
   /**
    * Step C5: the word offset in the heat buffer of the copy current at the start of the cells' tick t of this frame
@@ -638,6 +734,9 @@ export class Matter {
     u[93] = qOn && Q.cellsDeposit ? H.chargeOffset + H.n - LEDGER_WORDS : 0;
     u[94] = CHARGE_CODES; u[95] = 0;
     if (qOn) { const r = Q.relaxNumbers(1 / (ATOM_SCALE * a * a)); for (let k = 0; k < 4; k++) f[96 + k] = r[k]; }
+    // step C12: the oil's words (src/oil.js); its passes run while oil or amphiphiles are in the dish
+    const oilMask = (1 << CH.lL) | (1 << CH.glL) | (1 << CH.tlL);
+    this.oilRun = this.oil.writeMatter(u, f, SUBSTANCES, this.oilBase(), 1 / (ATOM_SCALE * a * a), (active & oilMask) !== 0);
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
 
     const T = new Uint32Array(this.tickAB), w = MT_SLOT / 4;
@@ -666,6 +765,16 @@ export class Matter {
   encodeTick(pass, t) {
     if (!this.active || t >= this.ticks) return;
     const H = this.heat;
+    if (this.oilRun) {
+      // step C12: the oil's share, film and smoothed share, from the tick's current copy (the first substep's src)
+      pass.setBindGroup(0, this.bg, [(t * MAX_SUB) * MT_SLOT]);
+      pass.setPipeline(this.pipes.oil_rho);
+      pass.dispatchWorkgroups(Math.ceil(H.hw / 8), Math.ceil(H.hh / 8));
+      pass.setPipeline(this.pipes.oil_blur);
+      pass.dispatchWorkgroups(Math.ceil(H.hw / 8), Math.ceil(H.hh / 8));
+      pass.setPipeline(this.pipes.oil_blur_y);
+      pass.dispatchWorkgroups(Math.ceil(H.hw / 8), Math.ceil(H.hh / 8));
+    }
     pass.setPipeline(this.pipes.spread);
     for (let s = 0; s < this.nSub; s++) {
       pass.setBindGroup(0, this.bg, [(t * MAX_SUB + s) * MT_SLOT]);
@@ -723,8 +832,11 @@ export class Matter {
    */
   writeChem(dt) {
     const p = this.chem, H = this.heat;
-    const famOn = { make: p.make, burn: p.burn, photo: p.burn, swap: p.swap, upswap: p.swap, form: p.sediment, crack: p.sediment };
-    const famK = { make: p.kMake, burn: p.kBurn, photo: p.kPhoto, swap: p.kSwap, upswap: p.kUpSwap, form: p.kSed, crack: p.kCrack };
+    const O = this.oil, OP = O.params;   // step C12: the oil's reactions (src/oil.js switches and knobs)
+    const famOn = { make: p.make, burn: p.burn, photo: p.burn, swap: p.swap, upswap: p.swap, form: p.sediment, crack: p.sediment,
+      oil: O.rule('on'), oilcrack: O.rule('on'), head: O.rule('amphi'), unhead: O.rule('amphi') };
+    const famK = { make: p.kMake, burn: p.kBurn, photo: p.kPhoto, swap: p.kSwap, upswap: p.kUpSwap, form: p.kSed, crack: p.kCrack,
+      oil: OP.kOil, oilcrack: OP.kCrack, head: OP.kHead, unhead: OP.kUnhead };
     const lightOn = !!(this.light && this.light.on);
     const list = p.on ? REACTIONS.filter((r) => famOn[r.fam] && (r.by === 'heat' || lightOn) && famK[r.fam] > 0).slice(0, MAX_RX) : [];
     this.rxOn = list;
@@ -737,10 +849,12 @@ export class Matter {
     // step C7b: crystal seeding (src/catalysts.js): words 24..27 (struct ChemP cry)
     f[24] = 0; f[25] = 0; f[26] = 1; f[27] = 0;
     if (this.catalysts) this.catalysts.writeChem(f, 24);
+    // step C12: membrane fusion (words 28..31, struct ChemP fuse)
+    this.oil.writeFuse(f, 28, -SUBSTANCES[CH.lL].e16, Math.round(16 * SUBSTANCES[CH.lL].spark));
     list.forEach((r, k) => {
       const o = (CP_RX + k * RX_BYTES) / 4;
       u[o] = r.ins[0]; u[o + 1] = r.ins.length > 1 ? r.ins[1] : NONE; u[o + 2] = r.outs[0]; u[o + 3] = r.outs.length > 1 ? r.outs[1] : NONE;
-      u[o + 4] = r.by === 'light' ? 1 : 0; u[o + 5] = r.band ?? 0; u[o + 6] = FAMILIES.indexOf(r.fam === 'upswap' ? 'swap' : r.fam); u[o + 7] = 0;
+      u[o + 4] = r.by === 'light' ? 1 : 0; u[o + 5] = r.band ?? 0; u[o + 6] = FAMILIES.indexOf(r.fam === 'upswap' ? 'swap' : r.fam); u[o + 7] = r.open ? 1 : 0;
       i32[o + 8] = r.heat16; i32[o + 9] = r.light16; f[o + 10] = Math.max(0, famK[r.fam]); f[o + 11] = r.spark;
     });
     this.device.queue.writeBuffer(this.chemBuf, 0, this.chemAB);
@@ -756,10 +870,11 @@ export class Matter {
     for (let k = 0; k < n; k++) {
       const s = list[k], K = SPRING_KINDS[s.kind], o = k * SPRING_FLOATS;
       F[o] = s.x; F[o + 1] = s.y; F[o + 2] = rad; F[o + 3] = Math.max(0, 1 - (s.age + aged) / this.lifeOf(s));
-      F[o + 4 + 13] = discPixels(s.x / H.px, s.y / H.px, Math.max(rad / H.px, 0.75), H.hw, H.hh);   // amt[13]: its disc's pixels
-      for (const [atom, share] of Object.entries(K.mix)) F[o + 4 + CH[atom]] = p.rate * share * dt * ATOM_SCALE;
+      F[o + 4 + 16] = discPixels(s.x / H.px, s.y / H.px, Math.max(rad / H.px, 0.75), H.hw, H.hh);   // amt[16]: its disc's pixels
+      // (step C12: a mix's shares are of the atoms, so a molecule of n atoms drips 1 / n as many units)
+      for (const [atom, share] of Object.entries(K.mix)) F[o + 4 + CH[atom]] = p.rate * share / SUBSTANCES[CH[atom]].atoms.length * dt * ATOM_SCALE;
       const ink = springInk(s.kind, pal().substances);
-      F[o + 20] = ink[0] / 255; F[o + 21] = ink[1] / 255; F[o + 22] = ink[2] / 255; F[o + 23] = K.stroke;
+      F[o + 24] = ink[0] / 255; F[o + 25] = ink[1] / 255; F[o + 26] = ink[2] / 255; F[o + 27] = K.stroke;
     }
     this.device.queue.writeBuffer(this.springBuf, 0, F);
     this.nSprings = n;
@@ -769,13 +884,14 @@ export class Matter {
   makeTextures() {
     const H = this.heat;
     if (this.tex) for (const t of this.tex) t.destroy();
-    this.tex = [0, 1].map((k) => this.device.createTexture({
+    this.tex = [0, 1, 2].map((k) => this.device.createTexture({
       label: `matter shown ${k}`, size: [H.hw, H.hh], format: 'rgba16float',
       usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
     }));
     this.texBG = this.device.createBindGroup({
       label: 'matter paint', layout: this.texBgl,
-      entries: [{ binding: 0, resource: this.tex[0].createView() }, { binding: 1, resource: this.tex[1].createView() }],
+      entries: [{ binding: 0, resource: this.tex[0].createView() }, { binding: 1, resource: this.tex[1].createView() },
+        { binding: 2, resource: this.tex[2].createView() }],
     });
     this.drawBG = null;
   }
@@ -785,6 +901,9 @@ export class Matter {
     if (!this.bg || this.bufVersion !== this.heat.version) return;
     encoder.clearBuffer(this.heat.buffer, LG_M.DISH * 4, (LG_M.ORDER + ORDER_SLOTS - LG_M.DISH) * 4);
     encoder.clearBuffer(this.heat.buffer, LG_Q_PHI * 4, (256 + 4) * 4);   // step C6b: phi's spread and largest size
+    // step C12: the oil channels' DISH snapshot and the oil's census
+    encoder.clearBuffer(this.heat.buffer, lgM('DISH', NCH_CELL) * 4, 3 * 128 * 4);
+    encoder.clearBuffer(this.heat.buffer, LG_OIL_SNAP * 4, 256 * 4);
     const pass = encoder.beginComputePass({ label: 'matter ledger' });
     pass.setPipeline(this.pipes.count);
     pass.setBindGroup(0, this.bg, [MT_LEDGER * MT_SLOT]);
@@ -798,10 +917,10 @@ export class Matter {
     const wide = (a) => { let s = 0; for (let k = a; k < a + 64; k++) s += w[k + 64] * 4294967296 + (w[k] >>> 0); return s; };
     const T = this.tot;
     for (let c = 0; c < NCH; c++) {
-      T.add[c] += wide(LG_M.ADD + 128 * c) / ATOM_SCALE;
-      T.lost[c] += wide(LG_M.LOST + 128 * c) / ATOM_SCALE;
-      T.gone[c] += wide(LG_M.GONE + 128 * c) / ATOM_SCALE;
-      this.dish[c] = wide(LG_M.DISH + 128 * c) / ATOM_SCALE;
+      T.add[c] += wide(lgM('ADD', c)) / ATOM_SCALE;
+      T.lost[c] += wide(lgM('LOST', c)) / ATOM_SCALE;
+      T.gone[c] += wide(lgM('GONE', c)) / ATOM_SCALE;
+      this.dish[c] = wide(lgM('DISH', c)) / ATOM_SCALE;
     }
     // atoms, weighting each substance by how many atoms it holds
     const atoms = (arr) => SUBSTANCES.reduce((x, s, c) => x + arr[c] * s.atoms.length, 0);
@@ -838,9 +957,10 @@ export class Matter {
     // amount x its energy) and gone out with matter (lost at the edge, washed out, dropped on a resize). All exact.
     const CT = this.ctot;
     for (let b = 0; b < BANDS.length; b++) CT.light[b] += wide(LG_C.LIGHT + 128 * b) / HEAT_SCALE;
-    for (let k = 0; k < FAMILIES.length; k++) CT.rx[k] += wide(LG_C.RX + 128 * k) / ATOM_SCALE;
+    for (let k = 0; k < FAMILIES.length; k++) CT.rx[k] += wide(lgRx(k)) / ATOM_SCALE;
     const byE = (arr) => SUBSTANCES.reduce((x, s, c) => x + arr[c] * s.energy, 0);
-    const chem = { light: CT.light.reduce((a, b) => a + b, 0), dish: byE(this.dish), out: byE(T.lost) + byE(T.gone) };
+    // (step C12: springs of molecules bring chemical energy in with them: `added`, counted as energy in)
+    const chem = { light: CT.light.reduce((a, b) => a + b, 0), dish: byE(this.dish), out: byE(T.lost) + byE(T.gone), added: byE(T.add) };
     chem.fuel = SUBSTANCES.reduce((x, s, c) => x + (s.kind === 'fuel' ? this.dish[c] : 0), 0);
     chem.sed = SUBSTANCES.reduce((x, s, c) => x + (s.kind === 'sediment' ? this.dish[c] : 0), 0);
     const CHs = this.chist;
@@ -854,6 +974,7 @@ export class Matter {
     // came in
     chem.cells = EL ? EL.chem : 0; chem.bat = EL ? EL.bat : 0; chem.start = this.eat ? this.eat.start : 0;
     this.ledger = { time: rec.time, add, lost, gone, dish, cells, rounding: add - (dish + cells + lost + gone), rateAdd: rate(1), rateLost: rate(2), order, entropy: Hn, chem };
+    this.oil.apply(rec, w, (this.heat.px / this.heat.R) ** 2);   // step C12: the oil's census
   }
 
   /**
@@ -901,6 +1022,7 @@ export class Matter {
           { binding: 3, resource: this.tex[1].createView() },
           { binding: 4, resource: this.sampler },
           { binding: 5, resource: { buffer: this.springBuf } },
+          { binding: 6, resource: this.tex[2].createView() },   // step C12: the oil's
         ],
       });
     }
@@ -916,6 +1038,11 @@ export class Matter {
     put(32, I.fuel.light); put(36, I.fuel.heavy); put(40, I.sediment.light); put(44, I.sediment.heavy);
     put(48, I.trace.light);
     f[52] = Math.max(1, p.dustCell); f[53] = p.dustR[0]; f[54] = p.dustR[1]; f[55] = p.dustAtoms;
+    // step C12: the oil's look (src/oil.js)
+    const OP = this.oil.params, IO = P.oil || FLAT.oil, IP = P.polarity || FLAT.polarity;
+    f[56] = OP.on && OP.look ? 1 : 0; f[57] = Math.max(0.75, OP.lineW * this.view.dpr); f[58] = (performance.now() / 1000) % 3600; f[59] = OP.irid;
+    f[60] = OP.filmAlpha; f[61] = OP.gloss; f[62] = OP.amphLine * P.levels.substances / 0.62; f[63] = OP.polarity ? OP.polAlpha : 0;
+    put(64, IO.film); put(68, IO.edge); put(72, IO.amph); put(76, IP.polar); put(80, IP.apolar);
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG);

@@ -1,0 +1,31 @@
+{
+ "runs": [
+  {
+   "name": "c12-cells-s3-oil",
+   "description": "Step C12 with cells: the default scene (2000 cells, a light and a heavy spring, the spot), seed 3, plus an oil + soap spring at the culture's upper edge (dripping 240 s); oils and water on (default); 10 minutes (the GPU was shared with up to 8 other runs).",
+   "query": {"seed": 3},
+   "size": "1280x800",
+   "duration": 600,
+   "sample_every": 30,
+   "evals": [
+    {"t": 0, "js": "moire.matter.addSpring(640, 160, 'emulsion', 240); return moire.matter.springs.length"},
+    {"t": 120, "js": "return await moire.oil.stats()"},
+    {"t": 300, "js": "return await moire.oil.stats()"},
+    {"t": 600, "js": "return await moire.oil.stats()"}
+   ],
+   "shots": [{"t": 120}, {"t": 300}, {"t": 600, "name": "end"}, {"t": 600, "panel": true, "name": "end_panel"}]
+  },
+  {
+   "name": "c12-cells-s3-nooil",
+   "description": "The same with oils and water off (?oil=0): the spring's oil and soap only spread, no reactions, no separation, no fusion.",
+   "query": {"seed": 3, "oil": 0},
+   "size": "1280x800",
+   "duration": 600,
+   "sample_every": 30,
+   "evals": [
+    {"t": 0, "js": "moire.matter.addSpring(640, 160, 'emulsion', 240); return moire.matter.springs.length"}
+   ],
+   "shots": [{"t": 120}, {"t": 300}, {"t": 600, "name": "end"}, {"t": 600, "panel": true, "name": "end_panel"}]
+  }
+ ]
+}

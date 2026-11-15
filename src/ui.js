@@ -17,6 +17,8 @@ const ICONS = {
   ripple: '<circle cx="10" cy="10" r="1.8" fill="currentColor" stroke="none"/><circle cx="10" cy="10" r="5"/><circle cx="10" cy="10" r="8.2" stroke-dasharray="2.2 2.2"/>',
   light: () => `<circle cx="10" cy="10" r="5.5" style="stroke:${rgb(springInk('light'))}" stroke-width="1.25"/><circle cx="10" cy="10" r="1.6" style="fill:${rgb(springInk('light'))}" stroke="none"/>`,
   heavy: () => `<circle cx="10" cy="10" r="5.5" style="stroke:${rgb(springInk('heavy'))}" stroke-width="2.25"/><circle cx="10" cy="10" r="2.2" style="fill:${rgb(springInk('heavy'))}" stroke="none"/>`,
+  // step C12: an oil droplet (a drop's outline with a sheen), in the oil's and the soap's inks
+  oil: () => `<path d="M10 2.6c-2.6 3.6-5 6.6-5 9.4a5 5 0 0 0 10 0c0-2.8-2.4-5.8-5-9.4z" style="stroke:${rgb(springInk('oil'))}" stroke-width="1.5"/><path d="M7.6 12.2a2.6 2.6 0 0 0 1.6 2.4" style="stroke:${rgb(springInk('soap'))}" stroke-width="1.1"/>`,
   stir: '<path d="M2.5 13.5c1.6-3.2 3.4-4.8 5.4-4.8 3 0 3 4.6 6 4.6 1.4 0 2.6-1.1 3.6-3.3"/><path d="M14.6 10.2l3-.3.4 3"/>',
   spot: '<ellipse cx="10.5" cy="10" rx="7" ry="4.6"/><path d="M1.6 10l3.4-2.2v4.4z" fill="currentColor" stroke="none"/>',
   pause: '<path d="M6 4.5v11M14 4.5v11" stroke-width="3"/>',

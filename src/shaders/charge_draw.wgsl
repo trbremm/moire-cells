@@ -1,7 +1,7 @@
-// Step C6b: the screened charge field's potential phi drawn as thin crisp contour lines (src/charge.js; drawing only, under
+// Step C6b: the screened charge field's potential phi drawn as thin crisp contour lines (src/charge.js; drawing only, over
 // the cells; under the neon look they get the halo's tight glow like every line). A full-screen triangle; each pixel reads
-// phi bilinearly from the grid (the heat buffer's phi block, plain f32 bits) and draws a line where phi crosses a multiple
-// of `step` (not 0: most of the dish sits near 0), at most `levels` lines each way: + in one ink, - in the other. The
+// phi bilinearly from the grid (the heat buffer's phi block, plain f32 bits) and draws a line where |phi| crosses step,
+// 2 step, 4 step, ... (not 0: most of the dish sits near 0), `levels` lines each way: + in one ink, - in the other. The
 // line keeps its width on screen (the distance to the level is measured in screen pixels, through fwidth), and lines that
 // crowd closer than about 2 pixels fade out instead of filling the place.
 
@@ -44,14 +44,16 @@ fn fs(@builtin(position) fc: vec4f) -> @location(0) vec4f {
   let p01 = phi_px(i.x, i.y + 1);
   let p11 = phi_px(i.x + 1, i.y + 1);
   let phi = mix(mix(p00, p10, f.x), mix(p01, p11, f.x), f.y);
-  let v = phi / C.step;
-  let fw = max(fwidth(v), 1e-6);                 // level steps per device pixel
+  // the levels double: step, 2 step, 4 step, ... (so a faint field near the cells and a strong one in a separated cloud
+  // both get a few lines); v counts them, 0 at the first
+  let v = log2(max(abs(phi), 1e-12) / C.step);
+  let fw = max(fwidth(v), 1e-6);                 // levels per device pixel
   let n = round(v);
   let d = abs(v - n) / fw;                       // device pixels to the nearest level
   let lw = C.lineW * C.dpr;
   var a = 1.0 - smoothstep(0.5 * lw - 0.5, 0.5 * lw + 0.5, d);
   a *= 1.0 - smoothstep(0.25, 0.5, fw);          // crowded lines (closer than 2 to 4 px) fade out
-  if (n == 0.0 || abs(n) > f32(C.levels) || a <= 0.0) { return vec4f(0.0); }
-  let ink = select(C.neg, C.pos, n > 0.0);
+  if (n < 0.0 || n >= f32(C.levels) || a <= 0.0) { return vec4f(0.0); }
+  let ink = select(C.neg, C.pos, phi > 0.0);
   return vec4f(ink.rgb * a, a * ink.w);
 }

@@ -64,8 +64,8 @@ export class Charge {
                           // charged cell phi changes by about 0.01 to 0.05 per R, so a charged cell drifts at 0.2 to 1 R / s)
       feelSat: 1,         // ... saturating at this speed (R / s)
       // drawing (Shift+0): contour lines of phi
-      step: 0.25,         // phi between two lines
-      levels: 4,          // lines each way (+ and -) at most
+      step: 0.01,         // the first line's phi; each further line at twice the last (0.01, 0.02, ... 1.28)
+      levels: 8,          // lines each way (+ and -) at most
       lineW: 1.1,         // line width (CSS px)
       alpha: 0.85,        // brightness
     };
@@ -143,10 +143,23 @@ export class Charge {
     const n = this.heat ? this.heat.n : 1;
     const cells = this.cells ? this.cells.count : 1;
     this.ledger = {
-      time: rec.time, plus, minus, net: plus - minus, cellsQ, total: plus - minus + cellsQ,
+      time: rec.time, plus, minus, net: plus - minus, cellsQ, total: plus - minus + cellsQ, ...this.books(plus - minus + cellsQ),
       pos: v(0), neg: v(1), neutral: Math.max(0, cells - v(0) - v(1)), meanQ: v(2) / 1000 / cells, meanNet: v(3) / 1000 / cells,
       phiRms: Math.sqrt(Math.max(0, p2) / Math.max(1, n)), phiMax: pmax,
     };
+  }
+
+  /**
+   * The charge's books, from the atoms ledger (src/matter.js; exact counts): charge added by the springs = in the dish +
+   * in the cells + out (lost at the edge, washed, dropped on a resize). Every reaction conserves charge, so the rounding
+   * is exactly 0, as the atoms'.
+   */
+  books(inside) {
+    const M = this.matter;
+    if (!M) return { qAdd: 0, qOut: 0, qRound: 0 };
+    let add = 0, out = 0;
+    SUBSTANCES.forEach((s, c) => { add += s.charge * M.tot.add[c]; out += s.charge * (M.tot.lost[c] + M.tot.gone[c]); });
+    return { qAdd: add, qOut: out, qRound: add - (inside + out) };
   }
 
   /** For tools and the console: the numbers of the last read-back. */
@@ -169,10 +182,25 @@ export class Charge {
       if (f[i * F + 23] > 0) pos += f[i * F + 23]; else neg -= f[i * F + 23];
       ef += Math.hypot(f[i * F + 24], f[i * F + 25]);
     }
+    // charged cells (|q| > 0.3) within 2.5 R of each other: how many pairs have the same sign, against random mixing of
+    // the signs (do like charges keep apart, and opposite ones pair up?)
+    const ch = [];
+    for (let i = 0; i < n; i++) if (Math.abs(f[i * F + 22]) > 0.3) ch.push([f[i * F], f[i * F + 1], Math.sign(f[i * F + 22])]);
+    let same = 0, pairs = 0;
+    const r2 = (2.5 * C.R) ** 2;
+    for (let a = 0; a < ch.length; a++) {
+      for (let b = a + 1; b < ch.length; b++) {
+        if ((ch[a][0] - ch[b][0]) ** 2 + (ch[a][1] - ch[b][1]) ** 2 > r2) continue;
+        pairs++; if (ch[a][2] === ch[b][2]) same++;
+      }
+    }
+    const np = ch.filter((c) => c[2] > 0).length, nm = ch.length - np, nn = ch.length;
+    const rnd = nn > 1 ? (np * (np - 1) + nm * (nm - 1)) / (nn * (nn - 1)) : 0;
     net.sort((a, b) => a - b);
     const p = (x) => +net[Math.min(n - 1, Math.floor(x * n))].toPrecision(3);
     return { net: { p50: p(0.5), p90: p(0.9), p99: p(0.99), max: p(1 - 1e-9) }, sumPos: pos, sumNeg: neg,
-      qAbove: q.filter((x) => Math.abs(x) > 0.5).length, qMeanAbs: q.reduce((a, b) => a + Math.abs(b), 0) / n, efMean: ef / n };
+      qAbove: q.filter((x) => Math.abs(x) > 0.5).length, qMeanAbs: q.reduce((a, b) => a + Math.abs(b), 0) / n, efMean: ef / n,
+      charged: [np, nm], nearPairs: pairs, sameShare: pairs ? same / pairs : null, randomShare: rnd };
   }
 
   /**
@@ -245,6 +273,7 @@ export class Charge {
       ` · ${P.sweeps} sweeps/tick (ω ${P.omega}) · cells in rho ${on(P.cellsIn)} · cell q = ${P.qB} tanh(net / ${P.qHalf}) · feel ${P.feelGain} R/s (≤ ${P.feelSat})`];
     if (L) {
       lines.push(`CHARGE free in the dish: + ${fmt(L.plus)} − ${fmt(L.minus)} (net ${L.net.toFixed(2)}) · in the cells ${L.cellsQ.toFixed(2)} · dish + cells ${L.total.toFixed(2)}` +
+        ` · books: added by springs ${L.qAdd.toFixed(2)} = dish + cells + out ${L.qOut.toFixed(2)}, rounding ${L.qRound === 0 ? '0' : L.qRound.toExponential(1)}` +
         ` · cells net + ${L.pos}, net − ${L.neg}, neutral ${L.neutral} (|q| > 0.1) · mean |q| ${L.meanQ.toFixed(3)}, mean |net| ${L.meanNet.toFixed(3)} units` +
         ` · phi rms ${L.phiRms.toFixed(3)}, max ${L.phiMax.toFixed(3)}`);
     }
@@ -255,7 +284,10 @@ export class Charge {
   resize(view) { this.view = view; }
   compute() {}
 
-  render(pass) {
+  render() {}
+
+  /** Over the cells (they hold most of the charge, and their dark insides would hide the lines under them). */
+  renderTop(pass) {
     const H = this.heat;
     if (!this.contoursOn || !this.view || !H || !H.buffer || !this.phiLive) return;
     if (!this.drawBG || this.bgVersion !== H.version) {

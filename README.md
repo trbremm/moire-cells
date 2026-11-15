@@ -47,12 +47,12 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   - *light* (the sun): spotlight / full field / off, sliders for the tilt and the direction the light comes from,
     day and night;
   - *view* (the eye): first the **look** (step C6n: neon, halo, trails, hum, show the machinery, substances as dust or
-    halftone, the lattice inside the cells; step C6b: the charge contours), then the entropy panel, the stats overlay (F),
+    halftone, the lattice inside the cells; step C6b: the charge contours; step C6c: corner rounding), then the entropy panel, the stats overlay (F),
     the landscape, which substance is shown, colour by fate, lineage, strategy (step C6) or charge (step C6b), and the
     other drawing switches;
   - *rules*: every rule that has a key, as a switch with a one-line explanation and its key, grouped as below
-    (the loop, field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge); settings with several values show the current one
-    and change on a tap; the lever has - and +. The switches follow the state, also when a key changes it;
+    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge); settings with several values show the current one
+    and change on a tap; the lever and the stiffness have - and +. The switches follow the state, also when a key changes it;
   - *dish* (the dish with three cells): the speed as a row of buttons, new culture (N), new genomes (G), clear
     springs (C), wash the atoms out (Shift+C).
 - **Touch:** one finger on the dish is the active tool; two fingers are left to the browser (pinch-zoom). On a
@@ -80,7 +80,7 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
 - URL options: `?speed=32` or `?speed=max`, `?paused=1` (start paused), `?ui=0` (start with the toolbar folded);
   step C6n: `?neon=0`, `?halo=off|low|medium|high`, `?trails=0`, `?hum=0`, `?machinery=1`, `?cheap=0|1`, and
   `?until=T` (run to simulation time T, then pause at exactly that tick); step C6b: `?charge=0`, `?qstock=0`, `?qfeel=0`,
-  `?contours=1`, `?view=charge`.
+  `?contours=1`, `?view=charge`; step C6c: `?honeycomb=0` (the ellipse cells).
 
 ## Keyboard shortcuts
 
@@ -269,7 +269,9 @@ Ported from the reference, with the changes marked:
 - **Deformation**: an area-preserving stretch (capped at 0.5) relaxing toward a target: contact squeezes along
   the contact axis; actively (W) a stretch along the cell's motion and toward the field's pull on its outline;
   muscle along its crawling heading. The stretched lattice is the one the cell emits and senses with, and the
-  one drawn: cells are drawn as ellipses with their dots on it.
+  one drawn: cells are drawn as ellipses with their dots on it. (Since step C6c the outline is an elastic honeycomb cell
+  by default and the stretch is worked out from it; the ellipse cells are the switch's off state. See "Step C6c: elastic
+  honeycomb cells" below.)
 - **Beat anchor (X), new**: in the reference a cell's lattice is anchored at the cell, so its moiré slides many
   times faster than the cell moves (the same lever as in the LESSON of the brief). With thousands of moving
   cells that turns the field into noise: at gain 1 nothing changes, at high gain the blob only jitters.
@@ -1519,6 +1521,123 @@ atoms rounding exactly 0 throughout; the charge's books balanced to exactly 0 in
 resize. No WebGPU errors in Chrome (headless), Firefox (headed, 1600 x 1000) and Chrome at phone size (390 x 844); the
 rules panel shows the new group, and Shift+7 to Shift+0 and U switch as described.
 
+## Step C6c: elastic honeycomb cells
+
+The user, 2026-11-15: "I want them to cluster in honeycomb shape and deform elastically." This is the first half of
+C6c, the shape and its drawing; the membrane's chemistry (integrity, bites, repair, bursting, material genes) is the
+next step and has its slots reserved (below).
+
+**What it looks like.** A lone cell is a soft hexagon with rounded corners, nearly round. Where cells touch, the sides
+facing each other press flat into one **shared straight wall**, so a packed tissue reads as a neon **honeycomb**, or
+rather a foam: most cells have 5 to 7 sides, and patches of one fate look like stained glass. Two neighbours' tubes run
+side by side along their wall with a thin dark gap between them, like two real neon tubes (on a phone or a zoom; at one
+device pixel per CSS pixel they merge into one lit wall). At the culture's rim the free sides stay round and bulge a
+little outward (a cell pressed flat on some sides makes up the area on the others). Cells are **elastic**: stir the
+dish and the cells you hit squash on the side they were pushed (to about two thirds of their radius), spring back within
+half a second, overshoot a little and settle; in a jostling tissue the walls keep breathing by about a tenth. A small
+newborn squeezed between big neighbours gets a small, often three- or four-sided tile until it has grown. At 10 000 cells
+the loop's rosettes show as pinwheels of kite-shaped cells (`?cells=10000&bio=0&excl=0&seed=3&change=1&side=1&partner=1`,
+zoom in).
+
+**How the shape works** (all in the step pass, `cell_step.wgsl`, "honeycomb"):
+- The outline is **6 corners**: corner k at distance `rad[k]` from the centre, in the direction theta + k × 60 degrees +
+  `alpha[k]`. Side k runs from corner k to corner k + 1; these are the same 6 membrane segments the sensing always used
+  (`membrane()` in `cell_common.wgsl` now returns the real corners).
+- **Rest shape:** the hexagon whose corners lie on the ellipse of the cell's active stretch (`ea`: the old target's
+  active part: along its motion, toward the field's pull, muscle along its heading; it follows its target at `shapeRate`
+  as the ellipse did), scaled to the rest area pi r² (the ellipse cell's area).
+- **Walls:** for every neighbour closer than 1.4 × the sum of the radii, the wall is the line where the two cells'
+  power distances |x - p|² - r² are equal: the midline between the centres, shifted toward the smaller cell. Both cells
+  find the same line, so they share it. No corner may pass it (the polygon stays inside the half-plane exactly when its
+  corners do), which is why the state is corner distances rather than side distances. Along each corner's direction the
+  nearest wall is the edge of the cell's tile in the power diagram.
+- **Targets:** a corner whose wall is nearer than its rest place goes to the wall (contact presses the side flat); a
+  wall a little further (up to `snap` = 1.5 × the rest place) still draws the corner out to it, less the further it is,
+  so touching cells close the gap and share the wall, as cells in a tissue do; beyond that the corner is free. The free
+  corners scale together (down to 0.75, up to `bulge` = 1.5) until the area is the rest area again.
+- **Elastic:** each corner is an **underdamped spring** toward its target, 1.6 Hz at stiffness 1, damping ratio 0.35
+  (a push swings back about once and has settled after about 0.8 s); a wall stops a corner at once (it can only move back
+  in). **Jelly:** the corners lag the centre's change of velocity (drag and forces, not the heat kicks; `jelly` 0.3), so
+  a cell that is shoved squashes and wobbles.
+- **Sliding corners:** with the corners fixed at 60 degrees apart, a cell with 5 or 7 neighbours can only touch its walls
+  at points, and the first version looked like separate hexagon tiles with gaps between them. So each corner slides round
+  (at most 24 degrees) toward the corner of its tile: up the slope of the wall's distance along its direction (the walls
+  weighted by (distance / r)^-12, a soft minimum, so a corner settles at a tile corner instead of chattering), back toward
+  its regular place when no wall is near, and neighbouring corners keep an even spacing, so two corners do not crowd into
+  one tile corner (a five-sided tile reads as a pentagon, not a triangle). The mean slide goes into theta.
+- **Turning:** the hexagon turns so a side faces each touching neighbour (a pull of sin 6 delta per neighbour, delta its
+  angle from the nearest side's middle; `turn` 40, damped by `turnDamp` 8).
+- The corners are kept convex and within 0.3 to 2.2 r.
+
+**What the shape changes in the rest of the simulation.**
+- **Sensing** follows the real outline: the field integral on the 6 sides, the quadrupole (the field's pull on the
+  outline, which drives the active stretch), the eat pass's smell and its charge-field gradient at the corners. The
+  field force is scaled by the rest area (2.6 r² / pi r²), so a lone cell feels the same push as the ellipse cell did.
+- **The stretch** e1, e2 is worked out from the outline: its second moment of area about the centre, normalised to
+  determinant 1, is exp(2 e). So the strained lattice (k = F^-1 k0), the field the cell emits, the leak of step 6 and
+  the census's stretch histogram all follow the real shape. A cell in the middle of a honeycomb is nearly unstretched
+  (the old passive squeeze along each contact is replaced by the flat walls); a rim cell is stretched along its free side.
+- **Not the motion:** the shape is **kinematic**. It never pushes a cell: the contact push keeps the centres apart as
+  before (unchanged; a tissue's centres still sit at about 0.91 of the sum of the radii), and the walls only decide
+  where each outline ends, so outlines never overlap although the cells' circles do. Nothing in the shape takes energy
+  from or gives energy to the motion, so it is outside the energy books, which balance as before.
+
+**The switches and knobs.** Rules panel, group "Cell shape (step C6c)": **honeycomb shapes** (on; off = the stretched
+ellipse cells of steps 4 to C6b, for comparison; switching back on rebuilds every outline from its ellipse) and
+**stiffness** (- / +, × 1.4 a step; the wobble's frequency goes with its square root). View panel, look: **corner
+rounding** (0.3 of the radius; 0 = sharp hexagons, 0.6 nearly round; the walls stay straight). There are no keys left, so
+these are panel only; `?honeycomb=0` starts with the ellipse cells. Console: `moire.cells.shape` (on, stiffness,
+wobbleHz, zeta, size, bulge, snap, turn, turnDamp, jelly), `moire.cells.look.corner` and `.wallGap` (each tube 0.45 px
+inside its wall, at most 0.08 r); the sliding's rates are constants in `cell_step.wgsl` (HEX_SLIDE_RATE 8, HEX_SLIDE_BACK
+1.5, HEX_SPACE 3; HEX_SLIDE, 24 degrees, in `cell_common.wgsl`). `moire.cells.shapeStats()` measures the shapes (below).
+
+**How it is drawn** (`cell_draw.wgsl`). A honeycomb cell is drawn on a square around its farthest corner. The vertex
+shader works out the 6 sides as lines (outward normal, distance from the centre) and hands them on; the fragment shader
+measures how far inside each line a pixel is and takes, over the corners, the "round intersection" of the corner's two
+sides (straight where the sides are, rounded within rc of both). That never folds over on itself, however short a side,
+and keeps shared walls straight. The tube, the inner glow, the tint and the anti-aliasing use that distance; the inside
+(battery core, engine lamps, lattice dots, marks) is drawn in the cell's stretched frame as before (interpolated from the
+vertices). A first try that shrank the hexagon by rc and measured the distance to it folded over on short sides (cells
+drawn with a second ring inside).
+
+**Per-side state** (for the membrane chemistry and step C6d). Side k = the side from corner k to corner k + 1 = the
+membrane's segment k (`membrane(c).mid[k]`, `.edge[k]`, its outward normal (edge.y, -edge.x)). The Cell record
+(`cell_common.wgsl`, `CELL_FLOATS` in `src/cells.js` and `heat.wgsl`) grew from 104 to 240 bytes; the new words:
+26-31 `rad[6]`, 32-37 `radV[6]` (the corners' speeds), 38 `theta`, 39 `spin`, 40-41 `ea`, 42-47 `alpha[6]`, and
+reserved, zero for now: **48-53 `integ[6]`** (each side's integrity) and **54-59 `sideQ[6]`** (each side's charge). The
+step pass reads each cell whole from its own slot and writes it back whole, so whatever another pass writes there (as the
+eat pass writes `smell` and `efield`) survives; a newborn starts with zeros (the next worker must give it whole sides),
+and with the honeycomb off the sides are the ellipse's 6 segments. The step's neighbours come from the grid's sorted
+copy, now a lean `CellCore` (the first 104 bytes, `cell_core()`), so the neighbour loop reads no more memory than before;
+a rule that needs a NEIGHBOUR's per-side state (dipoles, C6d) has to add it to CellCore or read `cells` by index.
+
+**Numbers** (headless Chrome on this machine, 2000 cells, seed 3, default scene, MAX, at 30 s; `shapeStats()` over pairs
+of cells whose power-diagram tiles share a wall, the gap between their outlines along the line between the centres, in
+units of R):
+- honeycomb: gap 0.025 / 0.083 / 0.23 R (10th / 50th / 90th percentile), outlines meeting within 0.05 R 27 %,
+  overlapping by more than 0.05 R 0.1 %; corners at 0.92 / 1.06 / 1.26 r. With the cells held still (no crawling,
+  drift, kicks or field forces, 20 s): gap 0.003 / 0.054 / 0.23 R, 47 % meeting, so the gaps left in a live culture are
+  mostly the corners following moving walls;
+- ellipse cells: gap -0.55 / -0.21 / +0.23 R: 69 % of neighbouring pairs overlap visibly;
+- a stirred cell (121 px/s): its corners went to 0.63 to 0.8 r on the side it was pushed, back at 0.45 s, 5 to 10 %
+  over, then settled into the tissue's breathing (about ± 0.1 r) within about 0.6 s;
+- the loop alone (`?bio=0`, 60 s): a packed drop in both shapes (spread 30.2 R honeycomb, 29.4 R ellipses), the
+  honeycomb showing grain lines like a polycrystal; step 8's curling culture at 10 000 cells (60 s): local swirl
+  2.3 deg/s (ellipses 2.6), 194 of 1000 bins turning faster than 3 deg/s (227), and a more fingered rim.
+
+**Cost.** Same session, alternating: 2000 cells MAX ×12.0 to ×12.4 (the commit before C6c: ×12.9 to ×13.0), the
+physics probe about 0.5 ms per tick in both; 10 000 cells ×2.75 to ×3.14 against ×2.33 to ×3.43 with the ellipse
+cells (the speed reached varies by about 20 % between runs here), drawing 1.33 against 0.95 ms per frame (the squares
+are larger and each pixel measures six lines). Firefox (headed, 1600 x 1000, 2000 cells): ×7.2 against ×7.7, physics
+1.13 against 0.80 ms per tick. Two lessons: the bigger Cell made the neighbour loop about a third slower until the sorted
+copy went back to 104 bytes (CellCore); and Firefox's compiler was slow with the corners' arrays indexed inside the
+neighbour loop (1.59 ms) until the six corners were worked on at once in vectors.
+
+**Checked.** A 320 s run at MAX: energy rounding +0.026 in 4.45 M in, atoms and charge rounding exactly 0. Switching the
+honeycomb off and on at runtime (every outline rebuilt, overlaps 66 % with the ellipses, 0.1 % again with the
+honeycomb), the stiffness knob, no WebGPU errors in Chrome (headless, also at phone size 390 x 844) and Firefox
+(headed). Not bit-repeatable (the GPU's neighbour order varies), so the comparisons above are statistics of one run each.
+
 ## The look of the landscape
 
 Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the
@@ -1571,7 +1690,7 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
 - `src/cells.js` + `src/shaders/cell_*.wgsl`: the cells. `cell_common.wgsl` holds the cell layout, the per-tick
   uniforms, the grid helpers, the loop's maths (cell beat, membrane, sensing, tuning; prepended after
   field_common) and field B (struct `Fields`, charges, `cell_field_b`); `cell_grid.wgsl` rebuilds the neighbour grid every tick (a counting sort by grid cell) and
-  works out every cell's beat; `cell_step.wgsl` moves the cells; `cell_field.wgsl` scatters the cells' fields
+  works out every cell's beat; `cell_step.wgsl` moves the cells (step C6c: and their honeycomb outlines); `cell_field.wgsl` scatters the cells' fields
   (A into r, B into g) into their texture; `cell_draw.wgsl` draws them;
   `cell_check.wgsl` is the `?check=1` test; `cell_census.wgsl` counts fates, key bins and founder lines for the overlay,
   and the step 6 counters and histograms

@@ -398,9 +398,10 @@ Snapshots saved before C11 load with the turning, division by the front and the 
 `c10-pol-off-m0-al`, `c10-uni-lb-100-al` (all 100 cells still one sheet after 40 s), and the pre-C10 `th-Bfate`; runs
 `experiments/runs/c11/c11-reload-*`).
 
-How the turning was tuned: at rotational drag 1 (a disc dragged over its whole footprint) the turning was 1 to 6 degrees per s and
-changed little; turning strength 5 (= drag 0.2, the default) and 20 were tried on polar, two-ended and sticky sides (40 cells,
-field off): 5 gave the clear gains above, 20 no more. A first form of the torque (r x F with the glue not anchored to the turning
+How the turning was tuned (trial runs, not kept: 40 cells, field off): at rotational drag 1 (a disc dragged over its whole
+footprint) the turning, about 6 degrees per s, already raised the contacts per cell (polar 1.4 → 2.1, two-ended 1.3 → 2.0, sticky
+sides 1.3 → 2.0); turning strength 5 (= drag 0.2, the default) raised them more (two-ended 3.1, score 0.29 → 0.61); 20 gave no more
+(polar 2.4). A first form of the torque (r x F with the glue not anchored to the turning
 cell) made cells spin and linked worse (persistence 0.60 against 0.87); see the README.
 
 ## How the runs were made

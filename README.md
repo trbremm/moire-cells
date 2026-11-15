@@ -51,7 +51,7 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
     the landscape, which substance is shown, colour by fate, lineage, strategy (step C6), charge (step C6b) or wall pattern
     (step C10), and the other drawing switches;
   - *rules*: every rule that has a key, as a switch with a one-line explanation and its key, grouped as below
-    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge, membrane chemistry (step C6c, panel only), charge per side (step C6d, panel only: the dipoles' switches and six knobs with - and +), pumps (step C7, panel only: four switches and five knobs with - and +), catalysts (step C7b, panel only: two switches and four knobs), hard light (step C8, panel only: one switch and three knobs), division (step C9, panel only: the mode and five knobs), patterned walls (step C10, panel only: four switches and five knobs)); settings with several values show the current one
+    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge, membrane chemistry (step C6c, panel only), charge per side (step C6d, panel only: the dipoles' switches and six knobs with - and +), pumps (step C7, panel only: four switches and five knobs with - and +), catalysts (step C7b, panel only: two switches and four knobs), hard light (step C8, panel only: one switch and three knobs), division (step C9, panel only: the mode and five knobs), patterned walls (step C10, panel only: four switches and six knobs, the sixth, free base glue, since step C11), glue turns cells (step C11, panel only: two switches and two knobs)); settings with several values show the current one
     and change on a tap; the lever and the stiffness have - and +. The switches follow the state, also when a key changes it;
   - *dish* (the dish with three cells): the speed as a row of buttons, new culture (N), new genomes (G), clear
     springs (C), wash the atoms out (Shift+C).
@@ -83,7 +83,9 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   `?contours=1`, `?view=charge`; step C6c: `?honeycomb=0` (the ellipse cells), `?membrane=0` (no membrane chemistry),
   `?bites=0`, `?burst=0`, `?elastic=0`, `?selectivity=0`; step C6d: `?dipoles=0`, `?dd=0`, `?dphi=0`, `?dfield=0`; step C7: `?pumps=0`, `?pumpcontact=0`, `?voltage=0`, `?v2b=0`; step C7b: `?crystal=0`, `?cofactor=0`; step C8: `?hardmut=0`; step C9: `?divide=0` (the old turnover, a fixed count), `?cap=N` (the capacity), `?divat=`,
   `?divcost=`, `?starve=`, `?crowd=`, `?age=` (the division's knobs); step C10: `?walls=0` (every side as sticky as the
-  adhesion gene, as before), `?wallfront=0`, `?wallcost=0`, `?mature=0`, `?view=walls`.
+  adhesion gene, as before), `?wallfront=0`, `?wallcost=0`, `?mature=0`, `?view=walls`; step C11: `?turn=0` (the glue does not
+  turn the cells), `?divfront=0` (divisions along the long axis, as in step C9), `?freeglue=x` (the free base glue; 0 = all glue costs,
+  as in step C10).
   Experiments (see "Experiments: tools"): `?mut=0` (mutation off), `?life=0` (life cycle off), `?snap=<file>` (load a
   saved state), `?clone=1` (every cell gets the first cell's genes; `?clone=@N`: slot N's), `?genes=adhesion:0.8,motility:0.5`.
 
@@ -2525,7 +2527,7 @@ In the default scene the colony in the light is **looser** than before: with the
 membrane has the linkers for it and its battery pays the upkeep, and most cells lack the linkers for most of the run (the mean glue
 held is 0.02 to 0.28 of the 0.5 to 0.7 the genes ask for), so neighbours that hold no glue push off a little (the adhesion's
 `adhBase`, as unlike neighbours always did) and the colony becomes a foam of cells with dark gaps between them, with whitish
-matured patches where linkers are plenty (near the springs). With `?wallcost=0` it packs as before.
+matured patches where linkers are plenty (near the springs). With `?wallcost=0` it packs as before. (Since step C11 the first 0.5 of every side's glue is free, so the colony packs again: "Step C11: glue turns cells".)
 
 **The pattern.** Three smooth genes in the cell's own frame set each side's adhesion:
 
@@ -2676,6 +2678,159 @@ copy grew from 112 to 120 bytes (read for every neighbour of every cell each tic
 pass works out six cosines per cell. Worth measuring again on a quiet GPU. Firefox (headed, 1600 × 1000) ran at ×2.2 at 8× on the
 shared GPU (not comparable either).
 
+## Step C11: glue turns cells
+
+The user (CLAUDE.md, C11): "yes absolutely" to the idea that a sticky side pulling on a neighbour pulls off-centre, so the same
+pull also turns the cell until its sticky sides face its neighbours; and division along (or across) the front, so daughters land
+where the pattern says. Plus the walls' cost retuned ("your call"), so the default colony packs as a honeycomb again.
+
+**What it looks like.** Nothing new is drawn: the change is in how cells sit. In the **tissue lab** (few cells, one hand-set wall
+pattern, no evolution) the cells now swing their sticky parts toward each other within a second or two of meeting and then sit
+still, so each pattern shows as a shape: **polar** cells (front sticky) close into trefoil **rosettes**, three cells with their
+sticky fronts in the middle like a pinwheel; **two-ended** cells join end to end into a **net of short chains** (bright bars at the
+joints in the walls view); cells with **sticky sides** lie flank to flank in **palisade rows** inside one sheet; an **epithelial**
+pattern (flanks sticky, apex not) makes small **cords and trefoils with the apices outside**. A founder cell that divides by its
+front grows its lineage's direction into the tissue: a plain founder dividing across its front grows an **elongated sheet**.
+No hollow ring or cyst formed (TISSUE.md, "C11: glue turns cells"). In the **default scene** the colony packs as a honeycomb again
+(the wall-cost retune, below): at 5 minutes the walls are whiter (more matured junctions) and the dark gaps between the cells of
+C10's foam are mostly gone, except at the starving rim. With **the machinery** (Shift+4) the front ticks show the cells' fronts
+turning; the WALLS line shows the turning rate and where the contacts sit.
+
+**How the turning works** (`cell_step.wgsl`, in the neighbour loop, "step C11"). The adhesion of a contact acts along the whole
+shared wall, through bonds anchored in both membranes. The wall's two ends sit 30 degrees either side of the line between the two
+centres (one side of a hexagon) and its middle on that line; the glue at each of the three points is the smaller of the two cells'
+adhesion there (each cell's adhesion round its wall: `wall_at`, linear between its six sides' middles, from the effective per-side
+adhesion of step C10, so maturity and cost count). Where the wall is stickier the bonds pull harder, so the pull's point of action
+lies off the centre line and the pull turns the cell: torque = r x F summed along the wall. It is worked out as the pull's virtual
+work: the change of the wall's mean glue as THIS cell turns a little (± 0.1 rad), times K h beta / 3 (K the pull per unit of glue,
+from the same factors as the adhesion force: likeness, fate glue, adhesion, R, contact stiffness, touch; h the wall's half-length, a
+hexagon's side at the contact's distance; beta 30 degrees), which is r x F for a glue that changes evenly along the wall. Where the
+neighbour's glue is the smaller, a turn of this cell changes nothing there and gives no torque from there. Each cell works out its
+own torque from the same wall the same way, so there is no race; nothing says "face your neighbour".
+
+A first version took r x F with the glue as it stands at the wall, not anchored to the cell that turns: where the neighbour's
+pattern limited the glue, the torque never went away and cells kept spinning (in the lab: turning 1 rad/s at turning strength 20,
+contact persistence down from 0.87 to 0.60). The virtual-work form stops a cell once its own sticky part faces the contact.
+
+**The body turns** overdamped: rate = turning strength / rotational drag x torque / (r² / 2) rad/s (a disc dragged over its
+substrate has a rotational drag of r² / 2 against the motion's drag of 1: in this simulation velocity = force), at most 3 rad/s.
+Defaults: turning strength 1 (the torque as derived), rotational drag **0.2**: a cell turns its body five times as easily as a disc
+dragged over its whole footprint. At 1 the turning (about 6 degrees per s) already helped, but slowly against crawling (0.6 R/s),
+which breaks contacts (lab, 40 cells, field A off, contacts per cell: polar 1.4 → 2.1, two-ended 1.3 → 2.0, sticky sides 1.3 → 2.0);
+at 0.2 more (two-ended 3.1, its score 0.29 → 0.61); a strength of 20 gave no more (polar 2.4, sticky sides lost persistence). The **front** (C10) and the honeycomb's **orientation** turn together with the body, and the dipole field's torque (C6d)
+turns the body at the rate it reached before. The hexagon's own pull toward its neighbours (step C6c: a side faces each neighbour)
+and its corners' slides now only fit the OUTLINE to its tile: they no longer turn the front. (Before C11 the front was carried by
+every turn of the outline, which locks it every 60 degrees: a cell could never have turned its sticky side round in a tissue.)
+With the turning off (`?turn=0`) everything is exactly as in step C10. Ellipse cells (honeycomb off) turn only their front.
+
+**Division by the front** (`cell_step.wgsl`, division). The daughter is put along the mother's front (gene **divAxis** 0), across it
+(1) or at that share of a right angle between, either end at random; daughters inherit the front (as since C10). divAxis is
+Bio.wall.w (until now spare), drifts by 0.04 a birth like a1 and a2 (within 0..1, times the hard light's factor), and the founders'
+is anywhere from 0 to 1 (its own random stream: `?seed=` keeps every other gene). Off (`?divfront=0`), or with the walls off: the
+long axis, as in step C9. So a polar cell dividing along its front puts its daughter ahead of it, back to front; across, side by
+side with both fronts the same way; a two-ended cell along its front, end to end (sticky to sticky); a cell with sticky flanks
+across its front, flank to flank.
+
+**The walls' cost, retuned: a free base glue** (`cell_eat.wgsl`). Step C10's cost made the default colony a loose foam: a side held
+glue only from linkers beyond its membrane's own want, and in the default scene the membranes themselves are far from full for
+minutes (mean integrity 0.03 at 30 s, 0.6 at 5 min), so most sides held none (glue at the contacts 0.04 at 5 min, seed 3) and
+touching cells pushed each other off (the loss every pair pays, adhBase 0.25). Now each side holds up to **freeGlue** (0.5) of
+adhesion at no cost, as every side did before C10 (the old adhesion gene was free; the founders' a0 is 0 to 1, mean 0.5); only what a
+side asks ABOVE it (a sticky side's extra, a matured junction's extra) is built from linkers and pays upkeep, exactly as in C10. So a
+plain wall packs, and a patterned one still pays for its sticky parts. Why this and not the other options: a lower linker price per
+glue does not help (a side whose membrane is not yet full holds no extra linker at all, whatever the price); letting the glue take
+linkers before the membrane would empty the membranes (and burst cells) in a colony that has too few linkers anyway. Knob **free
+base glue** (Patterned walls group), `?freeglue=x` (0: every bit of glue costs, as in C10).
+
+Default scene, seed 3, 300 s (`experiments/keep/c11/cost-before-c10_t300.jpg` against `cost-after-c11_t300.jpg`, a crop of the
+colony's middle; runs in the scratchpad, numbers from the panel and `walls.stats()`):
+
+| at 300 s | C10 as merged | C10 with `?wallcost=0` | C11 (default) | C11 with `?turn=0&divfront=0` |
+|---|---|---|---|---|
+| cells | 1241 | 1352 | 1255 | 1248 |
+| glue held at the contacts (the smaller side) | 0.04 | 0.76 | 0.33 | 0.36 |
+| glue held per side / asked | 0.10 / 0.59 | 0.97 / 0.97 | 0.44 / 0.78 | 0.45 / 0.88 |
+| touching pairs per cell | 2.53 | 2.70 | 2.67 | 2.59 |
+| matured contacts | 2 % | 54 % | 27 % | 39 % |
+| linkers in adhesion, upkeep | 11.6, 0.90/s | 0, 0 | 6.5, 0.48/s | 6.8, 0.50/s |
+
+(At 60 s, while the membranes are still empty: glue at contacts 0.035 in C10, 0.44 now.) So the colony holds about as many
+contacts as with no cost at all, while the sticky extras (a matured junction asks up to twice its pattern) still cost linkers and
+upkeep.
+
+**Switches and knobs.** Rules panel, group **Glue turns cells (step C11)**: **glue turns cells** (`?turn=0`), **division by the
+front** (`?divfront=0`), knobs with − and +: **turning strength** (`turnGain`, 1) and **rotational drag** (`rotDrag`, 0.2). Group
+Patterned walls: **free base glue** (`freeGlue`, 0.5, `?freeglue=`). Console: `moire.walls.params` (turn, divFront, turnGain,
+rotDrag, freeGlue); the gene by name for the lab: `moire.genome.setAll({ divAxis: 1 })`. Constants in `cell_step.wgsl`: the rate's
+cap TURN_MAX (3 rad/s), the small turn the glue's change is measured over TURN_DA (0.1 rad). No keys (none are free): panel only.
+
+**The census.** The WALLS line now starts with
+
+    WALLS  contacts on sticky sides 93% (chance 47%) · turning 6.1°/s · a0 ...
+
+(the contacts that sit on a STICKY side of a patterned cell, one whose pattern from the genes, without the maturity, is in the
+upper half of the cell's own range, against the share of such sides; uniform cells are not counted; and the mean turning rate the
+glue gives the cells that touch another). On a phone `· sticky 93/47% · 6.1°/s`. Counted on the GPU on the frame's last tick
+(Stats.wall, now 32 words: Stats 8768 bytes), in `moire.sample()` as `walls.onSticky`, `walls.stickyChance`, `walls.turnRate`
+(rad/s). The F overlay adds a line with the switches, the knobs and the numbers. `await moire.walls.stats()` adds `onSticky` and
+`stickyChance` (the same, from the cells read back), `bondsPerCell` (touching pairs holding at least 0.2 glue, per cell), `chains`
+(groups of 3 or more glued cells, each with at most two bonds and no loop), `inChains`, `longestChain`, `rings` (groups of 5 or more,
+each with exactly two bonds: a closed loop of single cells round a hole), `inRings`.
+
+**In the tissue lab** (TISSUE.md, "C11: glue turns cells": 50 runs, 40 and 100 cells, five hand-set patterns, field A off and the
+long beat, turning on against off, and growth from one founder; walls' cost off as in C10). Turning raised the contacts per cell
+of every patterned wall by a third to double (field A off: polar 1.6 → 2.3, two-ended 1.3 → 2.7, sticky sides 1.3 → 2.9, epithelial
+1.8 → 3.0), the glued bonds by about half and the contacts' persistence (0.74 to 0.85 → 0.82 to 0.96); with the long beat two-ended and
+sticky-sided cells now hold as one tissue (score 0.35 → 0.87 and 0.49 → 0.77 at 40 cells, 0.63 → 0.88 and 0.61 → 0.86 at 100).
+Polar cells put 82 % of their contacts on the front (64 % without turning, 33 % by chance) and make rosettes of three. The mean
+turning rate over the touching cells was 10 to 30 degrees per s. Growth: a uniform founder dividing across its front grew an
+elongated sheet (elongation 2.6 against 1.3 without the turning, which also decouples the front from the outline's 60-degree lock,
+so the lineage keeps its axis); two-ended founders a net of chains, polar founders a field of rosettes, epithelial founders short
+cords with the apices out; no hollow ring or cyst (nothing in the toy empties a lumen). Nine configurations are stored in
+`experiments/tissue/configs/c11-*`; pictures in `experiments/keep/c11/`.
+
+**Evolution** (the default scene, 2000 cells, division, MAX, headless Chrome; seeds 3 and 7, 20 minutes, C11 on (the defaults)
+against `?turn=0&divfront=0` (the free base glue in both); runs `experiments/runs/c11/c11-evo-*`; one run each, not
+bit-repeatable; the GPU was shared with other workers' runs, about ×0.4 to ×0.5):
+
+| run | cells 2 / 5 / 10 / 15 / 20 min | entropy at 20 min (rate) | uniform / polar / two-ended / sides at 20 min (%) | mean a1, a2 at 20 min | contacts on sticky sides at 10 min (chance) | turning at 10 min (deg/s) | glue at contacts | glued bonds per cell | contacts at front / flank / back | ORDER |
+|---|---|---|---|---|---|---|---|---|---|---|
+| seed 3, C11 on | 822 / 1249 / 1177 / 920 / 550 | 17.0 M (13.4 k/s) | 3 / 48 / 48 / 2 | +0.23, +0.41 | 0.51 (0.52) | 7.1 | 0.31 | 2.39 | 0.35 / 0.32 / 0.33 | 0.22 |
+| seed 3, off | 829 / 1169 / 1391 / 1174 / 654 | 17.4 M (13.7 k/s) | 1 / 64 / 3 / 32 | +0.30, −0.32 | 0.51 (0.51) | 0 | 0.21 | 1.79 | 0.34 / 0.33 / 0.33 | 0.22 |
+| seed 7, C11 on | 766 / 1094 / 1426 / 1057 / 631 | 17.5 M (13.7 k/s) | 3 / 55 / 29 / 13 | +0.08, +0.17 | 0.50 (0.50) | 10.2 | 0.26 | 2.19 | 0.34 / 0.33 / 0.33 | 0.22 |
+| seed 7, off | 720 / 1168 / 1367 / 1110 / 571 | 18.6 M (14.8 k/s) | 1 / 37 / 52 / 11 | +0.38, +0.47 | 0.50 (0.49) | 0 | 0.27 | 1.93 | 0.34 / 0.32 / 0.34 | 0.22 |
+
+Plainly: **no visible selection of wall patterns, and no patterned tissue in the default scene.** The patterns drift as in C10
+(uniform walls fall from 60 to 75 % at 2 minutes to 1 to 3 % by 20 minutes, with the turning and without), and which pattern ends
+up common follows the winning lineages (seed 3 with C11: two-ended 48 %; its control: sticky sides 32 %; seed 7 the other way
+round), as in C10's runs. In the colony the contacts sit on sticky sides only as often as chance (0.50 against 0.50) and at the
+front, flank and back a third each: the cells do turn (7 to 10 degrees per s on average), but in a packed, crowded colony every
+side touches someone, the sticky ones and the others alike, so turning cannot choose; the fed cells also crawl, divide and die
+every few minutes. What the turning does show: more glued bonds per cell (2.2 to 2.4 against 1.8 to 1.9) and fewer loose chains of
+glued cells (4 to 6 against 12 to 24 at 20 minutes). Count, entropy (17.0 to 18.6 M; the turning's runs 2 to 6 % lower, within the
+runs' spread) and ORDER (0.22) are the same. Atoms and charge rounding exactly 0 in every sample of the four runs; the energy's
+between −0.035 and +0.12.
+
+**Checked.** The books: a 700 s run at MAX (seed 5; `experiments/runs/c11/c11-check`) through N (120 s), a wash (220 s), a resize
+to 1000 × 700 (300 s), G (400 s), a resize back (480 s), two new springs (520 s), every walls switch at runtime (560 to 610 s), the
+turning and division by the front off and on again, turning strength 5 with no free base glue, the defaults back (620 to 632 s), and
+a snapshot saved and loaded at once (640 s: exact): atoms and charge rounding exactly 0 and the energy's between +0.004 and +0.095
+(in 6.6 M), except in the two samples taken in the paused instant of each resize (atoms 881 and 363: the old grid not yet drained,
+the same artefact as in step C10's check; 10 s later 0 again). The four 20-minute evolution runs and the 50 lab runs: atoms and
+charge 0 in every sample. Snapshots from before C11 (C10's stored configurations) load with the turning, division by the front and
+the free base glue off (the note says so) and run on as saved; older ones as before (walls off). No WebGPU errors in Chrome
+(headless; also at phone size 390 × 844: the short WALLS line, two lines there, the rules panel shows the new group with its two
+switches and two knobs) or Firefox (headed, 1600 × 1000, the walls view and `?turn=0`); only Chrome's usual powerPreference warning.
+Not bit-repeatable: every comparison above is one run each.
+
+**Cost (speed).** Measured as before (headless Chrome, 2000 cells, seed 3, MAX, the mean speed reached from 40 to 150 s), alternating
+C10 (8e51206), C11 and C11 with `?turn=0&divfront=0`, but the GPU was saturated the whole time by other workers' runs (six other
+pages), so every run reached only about real time: C10 ×1.04 and ×0.80, C11 ×0.83 and ×0.80, C11 off ×0.82 and ×0.80. No cost shows
+above that noise. What it costs in principle: per touching pair with the turning on, nine lookups of the glue round the wall (one
+angle each, `wall_at_a`) and three atan2 in the neighbour loop; per cell a few extra words in the census on the frame's last tick.
+The Cell, CellCore and Bio records are unchanged (the gene took Bio.wall.w, spare until now); Stats grew by 32 bytes. Worth measuring
+again on a quiet GPU.
+
 ## The look of the landscape
 
 Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the
@@ -2737,7 +2892,11 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   side's pattern, linker want and upkeep are worked out in `cell_eat.wgsl` (Cell.wadh), the smaller side of each contact, the
   maturation, the front and the inheritance in `cell_step.wgsl`, the side lookup and the genes' drift in `cell_common.wgsl`
   (wall_side, mutate), the lean copy's walls in `cell_grid.wgsl` (scatter, cell_core), the look in `cell_draw.wgsl`;
-  `experiments/tissue/c10.py`: the tissue lab's C10 conditions and their analysis
+  `experiments/tissue/c10.py`: the tissue lab's C10 conditions and their analysis. Step C11 adds to the same files: the glue's torque
+  and the body's turning, the division by the front and the census of turning and contacts on sticky sides in `cell_step.wgsl`,
+  `wall_at` (the glue round the wall) in `cell_common.wgsl`, the free base glue in `cell_eat.wgsl`, the switches, knobs, panel and
+  `stats()` (contacts on sticky sides, glued bonds, chains, rings) in `src/walls.js`, the gene `divAxis` in `src/genome.js`;
+  `experiments/tissue/c11.py`: the tissue lab's C11 conditions and their analysis
 - `src/hardlight.js`: hard light mutates (step C8): the switch and knobs, the census (from the heat's ledger read-back),
   the HARD LIGHT panel line, the overlay and `stats()` (touching neighbours' likeness, light and dark); the dose is kept
   in `cell_eat.wgsl` (Cell.flags bits 19..31, struct EatP `hl`), the mutation at a birth in `cell_step.wgsl` (struct

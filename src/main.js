@@ -42,6 +42,9 @@
 //               ?hum=0 (Shift+3); ?cheap=0|1 the phone's cheaper neon path off / on (default: on touch screens and small
 //               windows); ?machinery=1 start with every diagnostic layer shown (Shift+4; default: the clean view)
 //   ?until=T    run until simulation time T (s), then pause, exactly at that tick (for comparing runs; tools/shot.py)
+//   ?charge=0   step C6b: start with the charge field off (Shift+7); ?qstock=0 the cells' B charges by fate instead of
+//               from their stock (Shift+8); ?qfeel=0 the cells not feeling the grid's field (Shift+9); ?contours=1 the
+//               charge field's contour lines drawn (Shift+0)
 //
 // Part C keys are Shift + a letter (every plain letter is taken by Parts A and B): checked before the plain keys,
 // so Shift+H never also toggles H.
@@ -67,6 +70,7 @@ import { makeActions, keyMaps, keysText, TOOLS, SQUEEZE_SOFT, SQUEEZE_HARD } fro
 import { setupUI } from './ui.js';
 import { Recorder } from './record.js';
 import { Neon, LIGHT_FORMAT } from './neon.js';
+import { Charge } from './charge.js';
 
 window.__moireBooted = true;
 
@@ -121,6 +125,7 @@ let landscape = null;
 let cells = null;
 let light = null;
 let matter = null;
+let charge = null;     // step C6b: the screened charge field (src/charge.js)
 let recorder = null;   // step C3b: the video recorder (Shift+V, the record button)
 let neon = null;       // step C6n: the drawing as a whole, and the neon look (src/neon.js)
 let running = false;
@@ -161,6 +166,7 @@ async function boot() {
     landscape = await Landscape.create(gpu.device, LIGHT_FORMAT, medium);
     light = await Light.create(gpu.device, LIGHT_FORMAT);
     matter = await Matter.create(gpu.device, LIGHT_FORMAT, medium);
+    charge = await Charge.create(gpu.device, LIGHT_FORMAT);
     cells = await Cells.create(gpu.device, LIGHT_FORMAT, medium, Number(params.get('cells')) || defaultCells(), SEED);
     const small = Math.min(window.innerWidth || 800, window.innerHeight || 800) < 600;
     neon = await Neon.create(gpu.device, gpu.format, params.has('cheap') ? flag('cheap') : TOUCH || small);
@@ -171,6 +177,10 @@ async function boot() {
     matter.light = light;        // step C4: the reactions read the light
     cells.matter = matter;
     matter.eat = cells.eat;      // step C5: the atoms inside the cells are in the matter's ledger
+    // step C6b: the charge field's blocks live in the heat buffer, it is solved in the matter's ticks, the cells eat by it
+    Object.assign(charge, { heat: cells.heat, matter, eat: cells.eat, cells });
+    cells.heat.charge = charge; matter.charge = charge; cells.charge = charge; cells.eat.charge = charge;
+    chargeOptions(charge);
     matter.landscape = landscape;
     lightOptions(light);
     cells.landscape = landscape;
@@ -209,9 +219,9 @@ async function boot() {
   }
   // the medium first: it writes the lattice every field-reading layer uses; the light before the cells (its uniform is
   // read by the heat passes the cells run), and its tint is drawn under them (its outline over them: renderTop)
-  layers = [medium, background, landscape, matter, light, cells];
+  layers = [medium, background, landscape, matter, charge, light, cells];   // (step C6b: the charge's contours over the substances)
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
-  window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter, eat: cells.eat, neon };
+  window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter, eat: cells.eat, neon, charge };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
   window.moire.budgets = budgets;      // the fast speeds' tick budgets
@@ -273,6 +283,15 @@ function neonOptions(N) {
   }
   if (params.has('trails')) N.params.trails = flag('trails');
   if (params.has('hum')) N.params.hum = flag('hum');
+}
+
+/** Step C6b: the charge's URL options (see the top of this file). */
+function chargeOptions(Q) {
+  const P = Q.params;
+  if (params.has('charge')) P.on = flag('charge');
+  if (params.has('qstock')) P.stock = flag('qstock');
+  if (params.has('qfeel')) P.feel = flag('qfeel');
+  if (params.has('contours')) P.contours = flag('contours');
 }
 
 /** Step C2: the light's URL options (see the top of this file). */
@@ -379,7 +398,7 @@ function frame(now) {
 
   if (!entropyEl.hidden) {
     const compact = view.cssW < 560 || view.cssH < 500;   // a phone (either way up): shorter lines
-    let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}`;
+    let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}\n${charge.panelLine(compact)}`;
     if (paused || speed !== 1) {
       const r = reachedText();
       const sp = paused ? 'paused' : r ? (compact ? r : `${speedName(speed)} · reached ${r}`) : speedName(speed);
@@ -444,6 +463,7 @@ function drawOverlay() {
     ...cells.overlayLines(),
     ...matter.overlayLines(),
     ...cells.eat.overlayLines(),
+    ...charge.overlayLines(),
     neon.overlayLine(),
     `simmer (Shift+R) ${background.heatOn ? 'on' : 'off'}: ripple drops ${background.params.heatDrops} per cell per step x temperature², height ${background.params.heatAmp}`,
     `sim t ${simTime.toFixed(1)} s · speed ${paused ? 'paused' : speedName(speed)}, reached ×${stats.reached.toFixed(2)} (${stats.ticks} ticks this frame` +
@@ -488,6 +508,7 @@ function makeApp() {
   return {
     get cells() { return cells; }, get background() { return background; }, get landscape() { return landscape; },
     get light() { return light; }, get matter() { return matter; }, get heat() { return cells.heat; },
+    get charge() { return charge; },
     get neon() { return neon; },
     get view() { return view; },
     overlayEl, entropyEl, ANCHORS,

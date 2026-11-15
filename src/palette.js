@@ -20,7 +20,9 @@
 //                  sediment a dark flat crust, trace pale silver. A spring's marker mixes its atoms' inks
 //   spot           the spotlight's outline (warm white, as the light)
 //   field          the cells' fields drawn as halftone (keys K J ;): A pale warm, B print blue, the partner A' yellow
-//   levels         how bright some layers are drawn: substances (the dots' ink), field (A's dots), spot (outline)
+//   charge         step C6b: the screened charge field's contour lines (machinery): + (givers' excess) a warm rose, - (takers')
+//                  an ice blue, the usual colours of an electrostatic map
+//   levels         how bright some layers are drawn: substances (the dots' ink), field (A's dots), spot (outline), charge
 
 export const FLAT = {
   name: 'flat',
@@ -41,7 +43,8 @@ export const FLAT = {
   },
   spot: [242, 228, 200],
   field: { A: [241, 236, 223], B: [128, 158, 255], P: [236, 218, 124] },
-  levels: { substances: 0.85, field: 0.32, spot: 0.55 },
+  charge: { pos: [236, 132, 146], neg: [128, 184, 236] },
+  levels: { substances: 0.85, field: 0.32, spot: 0.55, charge: 0.7 },
 };
 
 // NEON: the same meanings, lit. Fates as the classic neon-sign gases and coatings: warm white (stem), cyan
@@ -66,7 +69,8 @@ export const NEON = {
   },
   spot: [255, 232, 196],
   field: { A: [255, 222, 184], B: [64, 132, 255], P: [255, 226, 64] },
-  levels: { substances: 0.62, field: 0.2, spot: 0.4 },
+  charge: { pos: [255, 70, 110], neg: [70, 170, 255] },
+  levels: { substances: 0.62, field: 0.2, spot: 0.4, charge: 0.55 },
 };
 
 /** The look in use: neon (true) or the flat palette (key E; src/neon.js keeps it). */

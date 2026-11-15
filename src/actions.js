@@ -37,6 +37,7 @@ export const RULE_GROUPS = [
   ['chem', 'Chemistry (step C4)'],
   ['eat', 'Cells eat (step C5)'],
   ['engines', 'Engines in the genome (step C6)'],
+  ['charge', 'Charge (step C6b)'],
 ];
 
 export const VIEWS = ['fate', 'lineage', 'strategy'];   // key V: what the cells' bodies are coloured by (cells.look.view)
@@ -339,17 +340,38 @@ export function makeActions(app) {
       help: 'each cell\'s membrane lets substances through at its own rate, set by its genome (off: the same for all)' },
   );
 
+  // ---------- charge (step C6b; Shift + the digit keys 7 to 0, by their place on the keyboard) ----------
+  const Q = () => app.charge.params;
+  const qNote = () => (Q().on ? '' : ' (the charge field is off: Shift+7)');
+  A.push(
+    { id: 'chargeField', keys: ['shift+7'], label: 'charge field', group: 'charge', type: 'toggle', get: () => Q().on,
+      run: () => (flip(Q(), 'on')
+        ? 'charge field on: givers (+) and takers (−) make a screened field on the substrate; the free charged atoms drift in it, so a cloud spreads as pairs'
+        : 'charge field off: the free atoms only spread (as before step C6b)'),
+      help: 'givers (+1) and takers (−1) make a screened field (it fades over a few cell radii); free charged atoms drift in it, so fast and slow partners stay together' },
+    { id: 'chargeStock', keys: ['shift+8'], label: 'cells\' charge from stock', group: 'charge', type: 'toggle', get: () => Q().stock,
+      run: () => `a cell's charge in field B ${flip(Q(), 'stock') ? 'comes from what it holds: the net charge of its stock (givers minus takers)' : 'is the fixed charge of its fate (step 5)'}${app.cells.eat.params.on ? '' : ' (cells eat is off: Shift+A, so the fixed charges apply)'}`,
+      help: 'a cell\'s charge in field B is the net charge of its stock (off: the fixed charge per fate of step 5)' },
+    { id: 'chargeFeel', keys: ['shift+9'], label: 'cells feel the charge field', group: 'charge', type: 'toggle', get: () => Q().feel,
+      run: () => `cells ${flip(Q(), 'feel') ? 'feel the charge field: a charged cell drifts down (+) or up (−) the substrate\'s potential' : 'do not feel the charge field (field B still carries their charge)'}${qNote()}`,
+      help: 'a charged cell is pushed through the substrate\'s field: + toward − clouds and back (needs the charge field)' },
+    { id: 'chargeContours', keys: ['shift+0'], label: 'charge contours', group: 'look', type: 'toggle', get: () => Q().contours,
+      run: () => `charge field ${flip(Q(), 'contours') ? 'drawn as contour lines: rose where it is +, blue where it is −' : 'not drawn'}${qNote()}`,
+      help: 'the substrate\'s charge field as thin contour lines, + rose and − blue (also part of the machinery)' },
+  );
+
   // step C6n: the clean view (default) or the machinery: every diagnostic layer at once
   function machinery() {
     const L = LP(), K = C().look;
-    return L.cellField && L.fieldB && K.innerDots && K.marks && app.matter.params.style === 'halftone';
+    return L.cellField && L.fieldB && K.innerDots && K.marks && app.matter.params.style === 'halftone' && Q().contours;
   }
   function setMachinery(on) {
     const L = LP(), K = C().look;
     L.cellField = L.fieldB = L.partner = on;
     K.innerDots = K.marks = on;
     app.matter.params.style = on ? 'halftone' : 'dust';
-    return on ? 'the machinery: the fields\' dots, the lattice inside the cells, the substances as halftone, the marks of steps 6 to 8'
+    Q().contours = on;   // step C6b: the charge field's contour lines
+    return on ? 'the machinery: the fields\' dots, the lattice inside the cells, the substances as halftone, the marks of steps 6 to 8, the charge contours'
       : 'clean: the cells, the materials and the light (Shift+4: the machinery)';
   }
   function styleText() {

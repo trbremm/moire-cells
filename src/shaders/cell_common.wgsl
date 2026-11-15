@@ -3,6 +3,9 @@
 //
 // Cells live in a fixed-capacity storage buffer (struct Cell, 256 bytes since step C7; keep in step with CELL_* in
 // src/cells.js, and CELL_FLOATS in heat.wgsl). Their order never changes, so drawing order is stable and a cell keeps its index.
+// Step C9: Sim.count is the CAPACITY; a slot is a live cell while its flags have CELL_ALIVE. The grid sorts the dead slots
+// into one more bucket after the last grid cell (cell_grid.wgsl), so sorted[0 .. starts[gw gh]) are the live cells and the
+// rest of the sorted list (their beats' idx) is the list of FREE slots a dividing cell claims from (cell_step.wgsl).
 //
 // Neighbour grid (rebuilt every tick, see cell_grid.wgsl):
 //   counts[g]   cells in grid cell g                        (atomic counter, then plain counts)
@@ -32,7 +35,7 @@ struct Cell {
   bat: f32,         // the battery as a share of its capacity, 0..1 (written by the eat pass; read by the step's crawl and
                     // turnover, and by the drawing)
   pay: i32,         // what this tick's crawling costs the battery (heat counts; the step works it out, the eat pass pays)
-  mom: u32,         // a newborn's parent (its index in `cells`), with CELL_BORN
+  mom: u32,         // a newborn's parent (its index in `cells`), with CELL_BORN (step C9: | MOM_DIV for a division's daughter)
   fill: f32,        // how full the cell's stock is, as a share of its capacity (eat pass; for the overlay)
   smell: vec2f,     // the fuel gradient its membrane's corners smelled (eat pass, plan; energy per R^2 per R), which
                     // the next tick's step steers by
@@ -223,7 +226,8 @@ struct Bio {
   relay: vec4f,     // per fate channel: how a committed neighbour's signal on that channel feeds it (-1..1)
   body: vec4f,      // x adhesion, y size factor, z motility factor, w spare
   acc: vec4f,       // state, not genes: the four leaky accumulators
-  env: vec4f,       // state: x y spare (the nutrient and threat felt, until step C3);
+  env: vec4f,       // state: x step C9, how long the cell has been starving (s; division mode); y step C9, the division
+                    // flash still to run (s; the drawing); (x y held the nutrient and threat felt until step C3);
                     // z the A felt, through a leaky integrator; w > 0 converted (rule 2: 1; with the relay,
                     // rule 3: seconds converted so far), w < 0 resting (seconds left), 0 neither (step 6)
   conv: vec4f,      // state (step 6): x the converted share of the neighbourhood, through the same integrator
@@ -301,7 +305,24 @@ struct Stats {
   extra: array<atomic<u32>, 80>,      // census (step 6): see STATS_X_* below
   dip: array<atomic<u32>, 16>,        // step C6d (cleared every frame, counted on its last tick): STATS_D_* below; signed sums
                                       // are added as i32 bits (two's complement) and read back as Int32
+  // ---- step C9, division and death with a changing count (src/division.js) ----
+  div: array<atomic<u32>, 15>,        // counters (cumulative since the page started; DV_* below), and the census's snapshot
+  claim: atomic<u32>,                 // free slots claimed by dividing cells this tick (cleared before every tick's step)
 };
+// step C9: Stats.div. Counters (0..7, cumulative): births by division, deaths by cause (a cell dies when it STARVED: its
+// battery below starveAt for starveTime; of HEAT damage; when it BURST; or by the background AGE rate), and divisions that
+// found NO free SLOT (every slot of the capacity taken). A snapshot (8.., cleared every frame, counted on its last tick, as
+// the step 7 pairs): the cells starving now, those READY to divide (battery and size), and of them those CROWDED.
+const DV_BIRTHS: u32 = 0u;
+const DV_STARVED: u32 = 1u;
+const DV_HEAT: u32 = 2u;
+const DV_BURST: u32 = 3u;
+const DV_AGE: u32 = 4u;
+const DV_NOSLOT: u32 = 5u;
+const DV_SNAP: u32 = 8u;         // the snapshot's first word
+const DV_STARVING: u32 = 8u;
+const DV_READY: u32 = 9u;
+const DV_CROWDED: u32 = 10u;
 // step C6d census counters in Stats.dip (pairs of touching neighbours both polarised, |d| above DIP_MIN, counted from both sides)
 const STATS_D_PAIRS: u32 = 0u;      // such pairs
 const STATS_D_COS: u32 = 1u;        // ... sum of cos(angle between their dipoles) x 1000 (polar order; random: 0)
@@ -698,7 +719,21 @@ struct Fields {
   // ---- step C8, hard light mutates (src/hardlight.js) ----
   hm: vec4f,        // x the extra mutation per energy unit of hard light dose (0 = off): a birth's mutation x (1 + x dose of the
                     // parent), at most y x (with mutation itself off, key M, only the extra part); z, w spare
+  // ---- step C9, division and death with a changing count (src/division.js) ----
+  dv0: vec4f,       // x bits DV_ON (division mode: cells divide into free slots and die for good; else turnover keeps the
+                    // count); y the battery share from which a cell may divide; z crowding: the sum of its overlaps (each as a
+                    // share of the contact distance) above which it may not; w the chance per s that a ready cell divides
+  dv1: vec4f,       // x the battery share below which a cell is starving; y the starvation time (s) after which it dies;
+                    // z the background death rate (per s; x the turnover's "unhappy" factor); w the division flash (s)
+  dv2: vec4f,       // x a cell may divide once its radius is at least this share of its full size; y the mother's and the
+                    // daughter's radius right after (share of the mother's); z how far apart they are put (share of her
+                    // radius); w spare
 };
+// step C9: Fields.dv0.x bits
+const DV_ON: u32 = 1u;
+// step C9: a daughter of a DIVISION (not a turnover birth) has this bit set in Cell.mom: the eat pass's split takes the
+// division's cost from the mother's battery first
+const MOM_DIV: u32 = 0x80000000u;
 // step C8: a cell's hard light DOSE lives in Cell.flags bits 19..31 (written by the eat pass): the hard light its body caught,
 // fading as it is repaired, in DOSE_SCALE counts per energy unit (at most 8191 counts)
 const CELL_DOSE_SHIFT: u32 = 19u;

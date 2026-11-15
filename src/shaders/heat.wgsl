@@ -200,7 +200,8 @@ fn drain(@builtin(global_invocation_id) id: vec3u, @builtin(workgroup_id) wid: v
 @compute @workgroup_size(64)
 fn sum_cells(@builtin(global_invocation_id) id: vec3u, @builtin(workgroup_id) wid: vec3u,
              @builtin(local_invocation_index) li: u32) {
-  if (id.x < HT.count) {
+  // (step C9: a free slot has no motion and is not counted)
+  if (id.x < HT.count && (bitcast<u32>(cellsF[id.x * CELL_FLOATS + 9u]) & 1u) != 0u) {
     let o = id.x * CELL_FLOATS;
     add64(LG_MOVE + (wid.x & 63u), heat_counts(heat_ke(vec2f(cellsF[o + 2u], cellsF[o + 3u]))));
     // step C2: the heat under the cells in the light and under the rest (the pixel at the cell's centre)

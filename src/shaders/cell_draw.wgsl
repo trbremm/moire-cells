@@ -86,6 +86,9 @@ struct Draw {
   pump2: vec4f,     // x: the rate at which a notch reaches its full size; y: how much the tube's segment at a notch takes the
                     // substance's ink (0..1); z w spare
   pumpInk: array<vec4f, 13>,   // each substance's ink (its palette colour, by chemical function and row)
+  // ---- step C9: division and death (src/division.js; cells.look.div*) ----
+  div: vec4f,       // x: a division's flash (brightness, 0 = none); y: its length (s); z: how far a starving cell fades out
+                    // before it dies (0..1); w: 1 / the starvation time (s)
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
@@ -184,6 +187,8 @@ fn hum_bright(c: Cell, i: u32) -> f32 {
 @vertex
 fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VSOut {
   var o: VSOut;
+  o.id = ii;
+  if ((cells[ii].flags & CELL_ALIVE) == 0u) { o.pos = vec4f(2.0, 2.0, 2.0, 1.0); return o; }   // step C9: a free slot: nothing
   let c = cells[ii];
   // two triangles: corners (-1,-1) (1,-1) (-1,1) / (-1,1) (1,-1) (1,1)
   let corner = array<vec2f, 6>(vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(-1.0, 1.0),
@@ -554,6 +559,13 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     lineCol = mix(lineCol, vec3f(1.0), fa) * (1.0 + D.memb2.y * fa);
     rgb += col * 0.25 * D.memb2.y * fa * fa;
   }
+  // step C9: a division's flash: both tubes white-hot for a moment (Bio.env.y: the flash still to run), fading quickly
+  if (D.div.x > 0.0 && g.env.y > 0.0) {
+    let fd = clamp(g.env.y / max(D.div.y, 1e-3), 0.0, 1.0);
+    let f2 = fd * fd;
+    lineCol = mix(lineCol, vec3f(1.0), 0.7 * f2) * (1.0 + D.div.x * f2);
+    rgb += col * 0.1 * D.div.x * f2;
+  }
   rgb = mix(rgb, lineCol, ring);
   // step 6, rule 1: a cell leaking into field B gets a flat blue centre dot, its area growing with the leak
   var mark = 0.0;
@@ -566,9 +578,12 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   }
   // step C5: a starving cell (battery below D.starve) is drawn dimmer, down to 1 - D.dim at an empty battery
   if (D.dim > 0.0) { rgb *= 1.0 - D.dim * (1.0 - smoothstep(0.0, max(D.starve, 1e-3), c.bat)); }
+  // step C9: a starving cell (division mode) fades out as its starvation time runs down, and dies when it is over
+  let fade = D.div.z * smoothstep(0.0, 1.0, g.env.x * D.div.w);
+  rgb *= 1.0 - fade;
   // step C6n: the hum (1 when it is off or the look is flat)
   rgb *= hum_bright(c, in.id);
-  let a = disc * mix(D.fillA, 1.0, max(max(max(max(max(max(max(max(ring, ring2), dot * (1.0 - clearA)), mark), bar), hnd), coreA), partA), notch));
+  let a = (1.0 - 0.6 * fade) * disc * mix(D.fillA, 1.0, max(max(max(max(max(max(max(max(ring, ring2), dot * (1.0 - clearA)), mark), bar), hnd), coreA), partA), notch));
   // rgb is the colour as seen; blend premultiplied (one, one-minus-src-alpha)
   return vec4f(rgb * a, a);
 }

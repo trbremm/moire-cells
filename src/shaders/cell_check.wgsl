@@ -27,12 +27,14 @@ fn check(@builtin(global_invocation_id) id: vec3u) {
   let i = id.x;
   if (i >= S.count) { return; }
   let c = cells[i];
+  let live = (c.flags & CELL_ALIVE) != 0u;   // step C9: a free slot touches nothing
 
   var brute = 0u;
-  if (C.brute == 1u) {
+  if (C.brute == 1u && live) {
     for (var j = 0u; j < S.count; j++) {
       if (j == i) { continue; }
       let o = cells[j];
+      if ((o.flags & CELL_ALIVE) == 0u) { continue; }
       let d = o.pos - c.pos;
       let R0 = c.r + o.r;
       if (dot(d, d) < R0 * R0) { brute++; }
@@ -41,7 +43,8 @@ fn check(@builtin(global_invocation_id) id: vec3u) {
 
   var viaGrid = 0u;
   var maxOv = 0.0;
-  let rg = grid_range(S, grid_xy(S, c.pos));
+  var rg = grid_range(S, grid_xy(S, c.pos));
+  if (!live) { rg = vec4i(0, 0, -1, -1); }
   for (var gy = rg.y; gy <= rg.w; gy++) {
     for (var gx = rg.x; gx <= rg.z; gx++) {
       let g = grid_index(S, vec2i(gx, gy));
@@ -63,8 +66,9 @@ fn check(@builtin(global_invocation_id) id: vec3u) {
   // the sort: slot i of the sorted list
   let so = sorted[i];
   let sg = grid_index(S, grid_xy(S, so.pos));
-  let inRange = i >= starts[sg] && i < starts[sg] + counts[sg];
+  let aliveN = starts[S.gw * S.gh];        // step C9: the sorted list's free slots follow the live cells
+  let inRange = (i >= starts[sg] && i < starts[sg] + counts[sg]) || i >= aliveN;
   let src = cells[sortIdx[i]];
-  let same = all(src.pos == so.pos) && src.seed == so.seed;
+  let same = (all(src.pos == so.pos) && src.seed == so.seed) || i >= aliveN;
   result[i] = vec4u(brute, viaGrid, bitcast<u32>(maxOv), select(0u, 1u, inRange && same));
 }

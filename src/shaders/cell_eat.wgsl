@@ -579,7 +579,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     if (contact) {
       for (var k = 0u; k < 6u; k++) {
         let j = cell_nbr(c, k);
-        if (j >= S.count || j == i) { continue; }
+        if (j >= S.count || j == i || nbr_side(c.nbr, j) != k) { continue; }   // (a neighbour counts once: on its first side)
         let fj = cells[j].flags;
         if ((fj & CELL_ALIVE) == 0u || (cell_burst(fj) != 0u && (mbf & MBF_BURST) != 0u)) { continue; }
         if (nbr_side(cells[j].nbr, i) < 6u) { jn[k] = j; }
@@ -872,7 +872,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     if ((puf & PUF_CONTACT) != 0u && S.count <= NBR_NONE) {
       for (var k = 0u; k < 6u; k++) {
         let j = cell_nbr(c, k);
-        if (j >= S.count || j == i) { continue; }
+        if (j >= S.count || j == i || nbr_side(c.nbr, j) != k) { continue; }   // (once per neighbour, as its plan counts it)
         let q = nbr_side(cells[j].nbr, i);
         if (q >= 6u) { continue; }
         let w = flux[j * SW + 16u + q];

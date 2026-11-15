@@ -22,6 +22,9 @@
 //   pump   step C7, genes of the two PUMP SLOTS (src/pumps.js): x y each slot's code, a whole number: the substance's channel
 //          (0..12, SUBSTANCES order; sediment is never pumped) + 16 x its direction (0 IN, 1 OUT); z w each slot's rate (per s:
 //          the share of the source side's amount, per cell volume, it moves; 0 = an empty slot)
+//   wall   step C10, genes of the PATTERNED WALLS (src/walls.js): x a1, the polar part of the wall's adhesion (front sticky: +);
+//          y a2, the two-fold part (ends sticky: +, sides sticky: -); z w, how much the front follows the charge dipole; w spare.
+//          The overall stickiness a0 is the adhesion gene (body.x)
 // The key is the cell's own lattice (Cell.la and Cell.aux carry copies), so it shows in the dot pattern.
 //
 // Seeding: `founders` random genomes (0 = every cell its own), each cell a copy of one of them, scattered at
@@ -29,7 +32,7 @@
 
 import { ENGINES, engineIndex } from './matter.js';
 
-export const BIO_FLOATS = 48;   // (40 until step C6c's membrane genes, 44 until step C7's pumps)
+export const BIO_FLOATS = 52;   // (40 until step C6c's membrane genes, 44 until step C7's pumps, 48 until step C10's walls)
 export const BIO_BYTES = BIO_FLOATS * 4;
 
 export const KEY_SPAN = Math.PI / 3;
@@ -55,7 +58,7 @@ const U = (rng, a, b) => a + (b - a) * rng();
 const logU = (rng, a, b) => a * Math.pow(b / a, rng());
 
 /** One random genome, as a plain array of BIO_FLOATS numbers. */
-export function randomGenome(rng, founder, mrng = rng, prng = mrng) {
+export function randomGenome(rng, founder, mrng = rng, prng = mrng, wrng = prng) {
   const g = new Array(BIO_FLOATS).fill(0);
   g[0] = U(rng, 0, KEY_SPAN); g[1] = U(rng, -KEY_SMAX, KEY_SMAX);
   g[2] = U(rng, 0, KEY_SPAN); g[3] = U(rng, -KEY_SMAX, KEY_SMAX);
@@ -72,7 +75,14 @@ export function randomGenome(rng, founder, mrng = rng, prng = mrng) {
   engines(g, rng, STRATEGIES[Math.floor(rng() * STRATEGIES.length)]);
   membrane(g, mrng, mrng() < 0.25);   // step C6c (its own random stream, so a seed's founders keep their other genes)
   pumps(g, prng);                      // step C7 (its own stream too)
+  walls(g, wrng);                      // step C10 (and its own)
   return g;
+}
+
+// Step C10: the founders' walls are NEAR-UNIFORM (a small polar part a1 and two-fold part a2, so any pattern must evolve), and
+// the gene w (how much the front follows the dipole) anywhere from 0 to 0.5. Mutation drifts all three (cell_common.wgsl mutate)
+function walls(g, rng) {
+  g[48] = U(rng, -0.08, 0.08); g[49] = U(rng, -0.08, 0.08); g[50] = U(rng, 0, 0.5); g[51] = 0;
 }
 
 // Step C6: the founders' engine sets, so a new culture neither starves at once nor is all alike. Each founder gets one
@@ -156,6 +166,7 @@ export class Genome {
     this.rng = makeRng(this.seed);
     this.mrng = makeRng(this.seed ^ 0x6c6c6c6c);   // step C6c: the membrane genes' own stream
     this.prng = makeRng(this.seed ^ 0x70756d70);   // step C7: the pump genes' own stream
+    this.wrng = makeRng(this.seed ^ 0x77616c6c);   // step C10: the walls' genes' own stream
     this.founders = [];
     // live-tunable (moire.genome.params); the rule switches are keys
     this.params = {
@@ -194,7 +205,7 @@ export class Genome {
     const n = Math.max(0, Math.round(this.params.founders));
     this.founders = [];
     for (let k = 0; k < n; k++) {
-      const g = randomGenome(this.rng, k, this.mrng, this.prng);
+      const g = randomGenome(this.rng, k, this.mrng, this.prng, this.wrng);
       engines(g, this.rng, STRATEGIES[k % STRATEGIES.length]);   // step C6: a spread of engine sets over the founders
       membrane(g, this.mrng, k % 4 === 3);                         // step C6c: mostly light thin membranes, a few heavy
       this.founders.push(g);
@@ -209,9 +220,9 @@ export class Genome {
     if (!this.founders.length && this.params.founders > 0) this.newFounders();
     const keys = new Float32Array(n * 2);
     for (let i = 0; i < n; i++) {
-      const g = this.founders.length ? this.founders[Math.floor(this.rng() * this.founders.length)] : randomGenome(this.rng, i, this.mrng, this.prng);
+      const g = this.founders.length ? this.founders[Math.floor(this.rng() * this.founders.length)] : randomGenome(this.rng, i, this.mrng, this.prng, this.wrng);
       const o = i * BIO_FLOATS;
-      for (let k = 0; k < BIO_FLOATS; k++) f[o + k] = g[k];
+      for (let k = 0; k < BIO_FLOATS; k++) f[o + k] = g[k] ?? 0;   // (founders from a snapshot before step C10 lack the walls' genes)
       for (let k = 20; k < 32; k++) f[o + k] = 0;   // accumulators and step 6 state start empty (32..47: step C6's, C6c's and C7's genes)
       keys[2 * i] = g[0]; keys[2 * i + 1] = g[1];
     }

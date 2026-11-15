@@ -45,10 +45,12 @@ export const RULE_GROUPS = [
   ['catalysts', 'Catalysts (step C7b)'],
   ['hardlight', 'Hard light (step C8)'],
   ['division', 'Division (step C9)'],
+  ['walls', 'Patterned walls (step C10)'],
   ['state', 'Save and load the state (experiments)'],
 ];
 
-export const VIEWS = ['fate', 'lineage', 'strategy', 'charge'];   // key V: what the cells' bodies are coloured by (cells.look.view)
+export const VIEWS = ['fate', 'lineage', 'strategy', 'charge', 'walls'];   // key V: what the cells' bodies are coloured by (cells.look.view;
+                                                                         // step C10: + the wall pattern)
 
 export const SQUEEZE_SOFT = 0.25, SQUEEZE_HARD = 1.2;   // key \ : cells.params.squeeze, normal or pressed together
 
@@ -511,6 +513,37 @@ export function makeActions(app) {
     dknob('age', 'background deaths', 'age', 0, 0.2, 2, 4, 'deaths per cell per s from nothing in particular (age), on top of starving, heat and bursting'),
   );
 
+  // ---------- patterned walls, evolvable adhesion per side (step C10; panel only: no keys are free) ----------
+  const WL = () => app.cells.walls.params;
+  const wlNote = () => (!WL().on ? ' (patterned walls are off)' : rules().adh ? '' : ' (adhesion is off: H)');
+  const wknob = (id, label, key, lo, hi, step, digits, help, add = false) => ({ id, keys: [], label, group: 'walls', type: 'knob',
+    get: () => WL()[key].toFixed(digits),
+    run: (k) => {
+      const p = WL(), up = k !== '-';
+      const v = add ? p[key] + (up ? step : -step) : p[key] <= 0 ? (up ? hi / 100 : 0) : p[key] * (up ? step : 1 / step);
+      p[key] = Math.max(lo, Math.min(hi, +v.toPrecision(3)));
+      return `${label} ${p[key].toFixed(digits)}${wlNote()}`;
+    }, help });
+  A.push(
+    { id: 'walls', keys: [], label: 'patterned walls', group: 'walls', type: 'toggle', get: () => WL().on,
+      run: () => `patterned walls ${flip(WL(), 'on') ? 'on: each of a cell’s six sides has its own stickiness (genes a0, a1, a2 round the wall from its front); a contact holds by the less sticky of the two sides' : 'off: every side as sticky as the adhesion gene, as before'}${rules().adh ? '' : ' (adhesion is off: H)'}`,
+      help: 'each side its own adhesion, from three genes: overall a0 (the adhesion gene), front/back a1, ends/sides a2; a contact holds by the smaller of the two touching sides' },
+    { id: 'wallFront', keys: [], label: 'front follows the dipole', group: 'walls', type: 'toggle', get: () => WL().front,
+      run: () => `the front ${flip(WL(), 'front') ? 'follows the charge dipole, as far as the gene w says (and it turns with the body)' : 'is the inherited body orientation alone (it turns with the body)'}${wlNote()}`,
+      help: 'the front (where the pattern hangs) is fixed in the body and inherited; the gene w lets the charge dipole turn it toward its + end' },
+    { id: 'wallCost', keys: [], label: 'adhesion costs', group: 'walls', type: 'toggle', get: () => WL().cost,
+      run: () => `adhesion ${flip(WL(), 'cost') ? 'costs: its molecules are linkers woven into the membrane, and the battery pays an upkeep for the glue a side holds' : 'is free'}${wlNote()}`,
+      help: 'adhesion molecules are made of linkers in the membrane (per side), and the battery pays an upkeep per sticky side; what is not paid is not held' },
+    { id: 'wallMature', keys: [], label: 'junctions mature', group: 'walls', type: 'toggle', get: () => WL().mature,
+      run: () => `junctions ${flip(WL(), 'mature') ? 'mature: a side that keeps touching a sticky neighbour gets stickier, and loses it when the contact ends' : 'do not mature'}${wlNote()}`,
+      help: 'a side that keeps touching a sticky neighbour grows stickier (up to the cap); it fades when the contact is lost' },
+    wknob('wallStrength', 'pattern strength', 'strength', 0, 4, 1.5, 2, 'how strongly the genes a1 and a2 shape the wall (0: uniform walls whatever the genes)'),
+    wknob('wallFrontRate', 'front turning', 'frontRate', 0, 20, 1.5, 2, 'how fast the dipole turns the front (rad/s at w × |dipole| = 1)'),
+    wknob('wallMatureRate', 'maturation rate', 'matureRate', 0, 10, 1.5, 3, 'how fast a touching side matures (per s); it fades at its own rate once the contact is lost'),
+    wknob('wallMatureCap', 'maturity cap', 'matureCap', 1, 3, 0.25, 2, 'a fully mature junction holds this many times its pattern’s adhesion', true),
+    wknob('wallUpkeep', 'cost per adhesion', 'upkeep', 0, 0.1, 1.5, 4, 'battery upkeep per s per R of side at adhesion 1 (the linkers come on top)'),
+  );
+
   // experiments (src/lab.js, src/snapshot.js): the whole state to a file and back
   const lab = () => window.moire;
   A.push(
@@ -553,7 +586,9 @@ export function makeActions(app) {
     const v = VIEWS[C().look.view] || 'fate';
     return v === 'lineage' ? 'colour by lineage (key)' : v === 'strategy'
       ? 'colour by strategy: gold harvesters (light), green burners, half and half both, grey the others'
-      : v === 'charge' ? 'colour by charge: rose cells hold more givers (+), blue more takers (−), grey neutral' : 'colour by fate';
+      : v === 'charge' ? 'colour by charge: rose cells hold more givers (+), blue more takers (−), grey neutral'
+        : v === 'walls' ? 'colour by wall pattern (step C10): coral polar, mint two-ended, magenta sticky sides, grey uniform; bright tube = sticky side'
+          : 'colour by fate';
   }
 
   function CH() { return app.matter.chem; }

@@ -89,6 +89,12 @@ struct Draw {
   // ---- step C9: division and death (src/division.js; cells.look.div*) ----
   div: vec4f,       // x: a division's flash (brightness, 0 = none); y: its length (s); z: how far a starving cell fades out
                     // before it dies (0..1); w: 1 / the starvation time (s)
+  // ---- step C10: the patterned walls' look (src/walls.js writeDraw; walls.look) ----
+  wall: vec4f,      // x: 1 = draw the walls (a side's tube brighter where it is sticky); y: how much brighter at full adhesion
+                    // (and dimmer at none); z: a matured junction's tube whiter by this much; w: the machinery's tick toward the front
+  wall2: vec4f,     // x: the walls view (mode 4): the tubes' shading by adhesion; y: ... the body's fill; z: the pattern threshold
+                    // (|a1|, |a2| below it: uniform); w: a matured junction's tube brighter by this much
+  wallInk: array<vec4f, 4>,   // the walls view's inks: uniform, polar, two-ended, sticky sides
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
@@ -315,7 +321,17 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   let strategyView = D.mode > 1.5 && D.mode < 2.5;
   // step C6b, colour by charge: the dim grey of "other" toward the + or - ink by the cell's charge q (its stock's net
   // charge, saturating: the one field B and the substrate's field see)
-  let chargeView = D.mode > 2.5;
+  let chargeView = D.mode > 2.5 && D.mode < 3.5;
+  // step C10, the walls view (mode 4): the body in its wall pattern's ink (from the genes a1, a2: uniform, polar, two-ended,
+  // sticky sides); the tubes below are shaded strongly by each side's adhesion, so the pattern itself shows
+  let wallsView = D.mode > 3.5;
+  if (wallsView) {
+    let a1 = g.wall.x;
+    let a2 = g.wall.y;
+    var wc = 0u;
+    if (max(abs(a1), abs(a2)) >= D.wall2.z) { wc = select(select(3u, 2u, a2 > 0.0), 1u, abs(a1) >= abs(a2)); }
+    col = D.wallInk[wc].rgb;
+  }
   if (chargeView) { col = mix(D.inkOther.rgb, select(D.qNeg.rgb, D.qPos.rgb, c.q > 0.0), clamp(abs(c.q), 0.0, 1.0)); }
   // step C6d: the pixel's offset from the centre on screen (a honeycomb cell: local; an ellipse cell: F lp), and the dipole
   let dipv = in.dipv;
@@ -350,7 +366,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   var inner = 0.0;         // the heavy membrane's inner tube
   let bt = cell_burst(c.flags);
   var sd = vec2f(0.0);
-  if (D.memb.x > 0.5 || D.dip.x > 0.0 || D.pump.x > 0.5) { sd = memb_side(in.local, lp, c.r, in); }
+  if (D.memb.x > 0.5 || D.dip.x > 0.0 || D.pump.x > 0.5 || D.wall.x > 0.5) { sd = memb_side(in.local, lp, c.r, in); }
   let side = u32(sd.x);
   if (D.memb.x > 0.5) {
     ig = clamp(c.integ[side], 0.0, 1.0);
@@ -383,7 +399,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   }
   // committed cells get a flat fill in their colour, so tissues read as areas; stem cells stay dark inside
   // (neon: every inside dark, a faint tint; the fills come from src/cells.js by the look)
-  let fill = select(select(D.fill, D.fillC, c.kind != KIND_STEM), D.inkOther.w, strategyView || chargeView);
+  let fill = select(select(select(D.fill, D.fillC, c.kind != KIND_STEM), D.inkOther.w, strategyView || chargeView), D.wall2.y, wallsView);
   var fillRgb = col * fill;   // (step 8 may tint it below)
   // step C6n: neon, the tube lights the inside near it (a soft glow falling off inward)
   if (neon) { fillRgb += col * D.neon2.x * exp(-max(ein - lw, 0.0) / max(D.neon.w * c.r, 1e-3)); }
@@ -447,6 +463,16 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     let tq = tanh((sqv[min(side, 5u)] - c.qNet / 6.0) * 2.6 * D.dip.z);
     lineCol = mix(lineCol, select(D.qNeg.rgb, D.qPos.rgb, tq > 0.0) * max(D.line, 0.7), D.dip.x * abs(tq));
   }
+  // step C10: the patterned walls. A side's tube is brighter where the side is sticky (its effective adhesion) and dimmer where it
+  // is not; a matured junction's tube is whiter and brighter, so a matured contact reads as a bright shared wall (both cells'
+  // tubes). The walls view shades the tubes much more strongly, so each cell's pattern shows round its rim
+  if (D.wall.x > 0.5) {
+    let aE = min(wall_get(c.wadh[0], c.wadh[1], side), 1.0);
+    let mtr = wall_mature(c.mature, side) * aE;
+    let gain = select(D.wall.y, D.wall2.x, wallsView);
+    lineCol *= (1.0 - gain) + 2.0 * gain * aE;
+    lineCol = mix(lineCol, vec3f(max(max(lineCol.r, lineCol.g), lineCol.b)), D.wall.z * mtr) * (1.0 + D.wall2.w * mtr);
+  }
   if (neon) {
     // step C6n: the tube's cross-section: white-hot along its centre line, its colour toward its edges
     let prof = clamp(1.0 - abs(ein - 0.5 * lw) / max(0.5 * lw, 1e-3), 0.0, 1.0);
@@ -507,6 +533,17 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       let tint = mix(D.qNeg.rgb, D.qPos.rgb, clamp(along / max(L, 1e-3) + 0.5, 0.0, 1.0));
       rgb = mix(rgb, mix(tint, vec3f(1.0), 0.25) * D.dip.y, ar);
       hnd = max(hnd, ar);
+    }
+  }
+  // step C10, the machinery: a small tick from inside the cell toward its FRONT (the direction its wall pattern hangs on)
+  if (D.wall.w > 0.0 && c.r * D.dpr > 4.0) {
+    let uf = vec2f(cos(c.front), sin(c.front));
+    let along = pw.x * uf.x + pw.y * uf.y;
+    let across = abs(pw.y * uf.x - pw.x * uf.y);
+    let tk = cover(max(0.07 * c.r, 0.5 / D.dpr), length(vec2f(max(abs(along - 0.62 * c.r) - 0.2 * c.r, 0.0), across)), aa);
+    if (tk > 0.0) {
+      rgb = mix(rgb, mix(col, vec3f(1.0), 0.35) * D.wall.w, tk);
+      hnd = max(hnd, tk);
     }
   }
   // step C7: the pumps as parts on the membrane. Slot 1 sits on sides 0, 2, 4, slot 2 on sides 1, 3, 5 (a pump works on every

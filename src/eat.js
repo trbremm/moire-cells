@@ -50,9 +50,10 @@ import { HardLight, HL_SNAP_WORDS } from './hardlight.js';
 
 const SW = 32;                      // stock words per cell (cell_eat.wgsl; 16 until step C6c's membranes, words 16..27; step C7:
                                     // 14 the pumped charge across the membrane, 15 the voltage's energy)
-const EP_BYTES = 1472;              // struct EatP (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat; step C8: + hl;
-                                    // step C9: + dv)
+const EP_BYTES = 1504;              // struct EatP (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat; step C8: + hl;
+                                    // step C9: + dv; step C10: + wl0, wl1)
 const EP_DV = 364;                  // ... its word dv (step C9)
+const EP_WL = 368;                  // ... its word wl0 (step C10)
 const LG_DIV = 22272;               // heat_common.wgsl: step C9's counters (the divisions' cost)
 const EP_CAT = 356;                 // ... its word cat (step C7b)
 const EP_HL = 360;                  // ... its word hl (step C8)
@@ -257,6 +258,7 @@ export class Eat {
     this.hardlight.writeEat(f, EP_HL, dt); // step C8
     // step C9: a reset fills the first `start` slots (they get the starter charge); a division's cost (heat counts)
     u[EP_DV] = this.cells.start; u[EP_DV + 1] = this.cells.division.costCounts; u[EP_DV + 2] = 0; u[EP_DV + 3] = 0;
+    this.cells.walls.writeEat(u, f, EP_WL, dt);   // step C10: the walls' pattern, maturity, linker cost and upkeep
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
   }
 

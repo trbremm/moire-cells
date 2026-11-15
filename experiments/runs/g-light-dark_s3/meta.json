@@ -1,0 +1,61 @@
+{
+  "name": "g-light-dark_s3",
+  "description": "Darkness: no light at all.",
+  "condition": {
+    "name": "g-light-dark_s3",
+    "description": "Darkness: no light at all.",
+    "query": {
+      "light": "off",
+      "seed": 3
+    },
+    "duration": 600,
+    "sample_every": 10,
+    "shots": [
+      {
+        "t": 120
+      },
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 600,
+        "view": "strategy"
+      },
+      {
+        "t": 600,
+        "view": "lineage",
+        "panel": true
+      }
+    ]
+  },
+  "url": "http://localhost:63465/index.html?speed=max&until=0&overlay=ghost&ui=0&light=off&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c",
+  "dirty": true,
+  "started": "2026-11-15T10:21:16",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 600.0,
+  "run_wall_s": 145.38,
+  "speed_reached": 4.13,
+  "samples": 61,
+  "shots": [
+    "shots/t120.png",
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t600_strategy.png",
+    "shots/t600_lineage.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-15T10:24:45",
+  "wall_s": 209.08
+}

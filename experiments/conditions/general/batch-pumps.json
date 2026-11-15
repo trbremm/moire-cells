@@ -6,7 +6,6 @@
   ],
   "runs": [
     "g-pump-on.json",
-    "g-pump-nocontact.json",
-    "g-pump-off.json"
+    "g-pump-nocontact.json"
   ]
 }

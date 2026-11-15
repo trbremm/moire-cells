@@ -2,8 +2,7 @@
   "batch": "trace",
   "description": "Series 3: trace and cofactor.",
   "seeds": [
-    3,
-    7
+    3
   ],
   "runs": [
     "g-trace-none.json",

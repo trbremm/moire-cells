@@ -1,0 +1,68 @@
+{
+  "name": "g-light-spot_s3",
+  "description": "Default page: spotlight, day cycle, two springs (4 min), division.",
+  "condition": {
+    "name": "g-light-spot_s3",
+    "description": "Default page: spotlight, day cycle, two springs (4 min), division.",
+    "query": {
+      "seed": 3
+    },
+    "duration": 1200,
+    "sample_every": 10,
+    "shots": [
+      {
+        "t": 120
+      },
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 900
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "view": "strategy"
+      },
+      {
+        "t": 1200,
+        "view": "lineage",
+        "panel": true
+      }
+    ]
+  },
+  "url": "http://localhost:63465/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "e82e84d5ce129fadea3cab6fb84fed046023884c",
+  "dirty": false,
+  "started": "2026-11-15T09:30:17",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 387.41,
+  "speed_reached": 3.1,
+  "samples": 121,
+  "shots": [
+    "shots/t120.png",
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t900.png",
+    "shots/t1200.png",
+    "shots/t1200_strategy.png",
+    "shots/t1200_lineage.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-15T09:37:39",
+  "wall_s": 442.3
+}

@@ -1,12 +1,144 @@
 {
   "batch": "oxygen",
-  "description": "Series 10: the oxygen-like story.",
-  "seeds": [
-    3,
-    7
-  ],
+  "description": "Series 10: the oxygen-like story (kUpSwap 0.3 in seeds 3 and 7; the control in seed 3 only).",
   "runs": [
-    "g-oxy-upswap.json",
-    "g-oxy-control.json"
+    {
+      "name": "g-oxy-upswap_s3",
+      "description": "Oxygen story: uphill swaps in the open 15x (kUpSwap 0.3), full field, 40 min.",
+      "query": {
+        "light": "full",
+        "seed": 3
+      },
+      "duration": 2400,
+      "sample_every": 20,
+      "shots": [
+        {
+          "t": 120
+        },
+        {
+          "t": 300
+        },
+        {
+          "t": 600
+        },
+        {
+          "t": 900
+        },
+        {
+          "t": 1200
+        },
+        {
+          "t": 1800
+        },
+        {
+          "t": 2400
+        },
+        {
+          "t": 2400,
+          "view": "strategy"
+        },
+        {
+          "t": 2400,
+          "view": "lineage",
+          "panel": true
+        }
+      ],
+      "evals": [
+        {
+          "t": 0,
+          "js": "moire.matter.chem.kUpSwap = 0.3; return moire.matter.chem.kUpSwap"
+        }
+      ]
+    },
+    {
+      "name": "g-oxy-upswap_s7",
+      "description": "Oxygen story: uphill swaps in the open 15x (kUpSwap 0.3), full field, 40 min.",
+      "query": {
+        "light": "full",
+        "seed": 7
+      },
+      "duration": 2400,
+      "sample_every": 20,
+      "shots": [
+        {
+          "t": 120
+        },
+        {
+          "t": 300
+        },
+        {
+          "t": 600
+        },
+        {
+          "t": 900
+        },
+        {
+          "t": 1200
+        },
+        {
+          "t": 1800
+        },
+        {
+          "t": 2400
+        },
+        {
+          "t": 2400,
+          "view": "strategy"
+        },
+        {
+          "t": 2400,
+          "view": "lineage",
+          "panel": true
+        }
+      ],
+      "evals": [
+        {
+          "t": 0,
+          "js": "moire.matter.chem.kUpSwap = 0.3; return moire.matter.chem.kUpSwap"
+        }
+      ]
+    },
+    {
+      "name": "g-oxy-control_s3",
+      "description": "Oxygen control: full field, kUpSwap default 0.02, 40 min.",
+      "query": {
+        "light": "full",
+        "seed": 3
+      },
+      "duration": 2400,
+      "sample_every": 20,
+      "shots": [
+        {
+          "t": 120
+        },
+        {
+          "t": 300
+        },
+        {
+          "t": 600
+        },
+        {
+          "t": 900
+        },
+        {
+          "t": 1200
+        },
+        {
+          "t": 1800
+        },
+        {
+          "t": 2400
+        },
+        {
+          "t": 2400,
+          "view": "strategy"
+        },
+        {
+          "t": 2400,
+          "view": "lineage",
+          "panel": true
+        }
+      ]
+    }
   ]
 }

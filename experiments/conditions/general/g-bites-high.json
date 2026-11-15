@@ -3,7 +3,7 @@
   "description": "Membrane bites 5x (kBite 0.25, default 0.05).",
   "query": {},
   "duration": 1200,
-  "sample_every": 10,
+  "sample_every": 20,
   "shots": [
     {
       "t": 120

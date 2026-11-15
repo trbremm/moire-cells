@@ -3,7 +3,7 @@
   "description": "Pumps on (default), 30 min.",
   "query": {},
   "duration": 1800,
-  "sample_every": 10,
+  "sample_every": 20,
   "shots": [
     {
       "t": 120

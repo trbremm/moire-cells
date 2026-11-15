@@ -1,0 +1,90 @@
+{
+  "name": "g-found-harvesters_s3",
+  "description": "All founders harvesters (two pigments: gt by visible 1, gT by visible 2, small gt burner).",
+  "condition": {
+    "name": "g-found-harvesters_s3",
+    "description": "All founders harvesters (two pigments: gt by visible 1, gT by visible 2, small gt burner).",
+    "query": {
+      "seed": 3
+    },
+    "duration": 1200,
+    "sample_every": 20,
+    "shots": [
+      {
+        "t": 120
+      },
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 900
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "view": "strategy"
+      },
+      {
+        "t": 1200,
+        "view": "lineage",
+        "panel": true
+      }
+    ],
+    "evals": [
+      {
+        "t": 0,
+        "js": "const G = moire.genome; return await G.setAll({eng0: G.engineCode('g + t \u2192 gt', 1), rate0: 1.4, eng1: G.engineCode('g + T \u2192 gT', 2), rate1: 1.0, eng2: G.engineCode('gt \u2192 g + t', 1), rate2: 0.55})"
+      }
+    ]
+  },
+  "url": "http://localhost:63577/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "6dd356e5480d673125f7895e47bc14226abf28fb",
+  "dirty": true,
+  "started": "2026-11-15T10:56:40",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 331.7,
+  "speed_reached": 3.62,
+  "samples": 61,
+  "shots": [
+    "shots/t120.png",
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t900.png",
+    "shots/t1200.png",
+    "shots/t1200_strategy.png",
+    "shots/t1200_lineage.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "const G = moire.genome; return await G.setAll({eng0: G.engineCode('g + t \u2192 gt', 1), rate0: 1.4, eng1: G.engineCode('g + T \u2192 gT', 2), rate1: 1.0, eng2: G.engineCode('gt \u2192 g + t', 1), rate2: 0.55})",
+      "result": {
+        "cells": 1984,
+        "set": {
+          "eng0": 32,
+          "rate0": 1.4,
+          "eng1": 65,
+          "rate1": 1,
+          "eng2": 42,
+          "rate2": 0.55
+        }
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T11:02:50",
+  "wall_s": 369.98
+}

@@ -108,6 +108,9 @@ const LG_OIL: u32 = 23040u;
 const LG_OIL_RX: u32 = 24576u;
 const LG_OIL_SNAP: u32 = 25088u;
 const LG_OIL_FUSE: u32 = 25344u;    // + 2304: oil taken into membranes (counts of lL), 16 slots, since the last read-back
+// the C12b supply fix (2026-11-16), cells graze crust (src/lipids.js, cell_eat.wgsl): 8 counters x 16 slots (i32) since the last
+// read-back (LC_GRAZE_* in cell_eat.wgsl): crust taken in (ll, LL), put into walls whole, cracked (ll, LL), heat counts paid
+const LG_LIP_G: u32 = 25360u;
 const OIL_CH: u32 = 13u;            // the oil's channel (lL; src/matter.js checks)
 
 const NCH: u32 = 13u;               // step C3: substance channels the CELLS hold (their stock; channels 0..12)

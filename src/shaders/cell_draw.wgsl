@@ -76,6 +76,10 @@ struct Draw {
                     // membrane's second, inner tube (brightness, 0 = none)
   memb2: vec4f,     // x: the flicker's depth; y: a burst's flash brightness; z: how much wider a thick membrane's tube is (at
                     // 2.5 x tRef); w: tRef (the founders' usual thickness)
+  // ---- step C6d: the dipoles' look (src/dipole.js writeDraw) ----
+  dip: vec4f,       // x: each side's tube tinted toward the + / - ink by its charge, at most this much (0 = none); y: the
+                    // machinery's arrow from - to + (brightness, 0 = none); z: 1 / pHalf; w: colour by charge, the two-tone body
+  dip2: vec4f,      // x: 1 = dipoles on; y z w spare
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
@@ -97,6 +101,7 @@ struct VSOut {
   @location(6) @interpolate(flat) hh1: vec4f,
   @location(7) lp: vec2f,                        // the position in the cell's unstretched frame (= local for an ellipse cell;
                                                  // a honeycomb cell: F^-1 local, for the inside: dots, core, parts, marks)
+  @location(8) @interpolate(flat) dipv: vec2f,   // step C6d: the cell's saturated dipole (on screen, length 0..1)
 };
 
 // Step C6c: how far inside a honeycomb outline a point p is (relative to the centre). Inside each side's line by
@@ -210,6 +215,8 @@ fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VSOut
     o.lp = l;
   }
   if ((c.flags & CELL_ALIVE) == 0u) { o.pos = vec4f(2.0, 2.0, 2.0, 1.0); }   // outside the clip volume
+  o.dipv = vec2f(0.0);
+  if (D.dip2.x > 0.5) { o.dipv = dip_sat(cell_dipole_raw(c, membrane(c)), D.dip.z); }
   return o;
 }
 
@@ -284,6 +291,18 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   // charge, saturating: the one field B and the substrate's field see)
   let chargeView = D.mode > 2.5;
   if (chargeView) { col = mix(D.inkOther.rgb, select(D.qNeg.rgb, D.qPos.rgb, c.q > 0.0), clamp(abs(c.q), 0.0, 1.0)); }
+  // step C6d: the pixel's offset from the centre on screen (a honeycomb cell: local; an ellipse cell: F lp), and the dipole
+  let dipv = in.dipv;
+  let dipm = length(dipv);
+  let Fd = cell_F(c);
+  let pw = select(vec2f(Fd.x * lp.x + Fd.y * lp.y, Fd.y * lp.x + Fd.z * lp.y), in.local, in.hh1.w > 0.5);
+  // ... colour by charge: a polarised cell's body in two halves across its dipole, + rose toward its + end, - blue toward its
+  // - end (a crisp edge through the centre), the stronger the dipole the more
+  if (chargeView && D.dip.w > 0.0 && dipm > 0.05) {
+    let sdp = (pw.x * dipv.x + pw.y * dipv.y) / dipm;
+    let two = mix(D.qNeg.rgb, D.qPos.rgb, cover(0.0, -sdp, aa));
+    col = mix(col, two, D.dip.w * clamp(dipm, 0.0, 1.0));
+  }
   if (strategyView) {
     // harvest: the pigment's band colour; burn: the fuel's green; both: split down the middle, band left, green right
     // (a crisp edge); neither: dim grey
@@ -304,9 +323,10 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   var mDim = 1.0;          // its brightness
   var inner = 0.0;         // the heavy membrane's inner tube
   let bt = cell_burst(c.flags);
+  var sd = vec2f(0.0);
+  if (D.memb.x > 0.5 || D.dip.x > 0.0) { sd = memb_side(in.local, lp, c.r, in); }
+  let side = u32(sd.x);
   if (D.memb.x > 0.5) {
-    let sd = memb_side(in.local, lp, c.r, in);
-    let side = u32(sd.x);
     ig = clamp(c.integ[side], 0.0, 1.0);
     let gmb = g.memb;
     lw *= (0.75 + 0.25 * ig) * (1.0 + D.memb2.z * clamp((gmb.y / max(D.memb2.w, 1e-4) - 1.0) / 1.5, 0.0, 1.0));
@@ -394,6 +414,13 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     }
   }
   var lineCol = select(col * D.line, D.blue.rgb, conv);
+  // step C6d: each side's tube tinted toward the + ink (rose) or the - ink (blue) by its charge's difference from the even
+  // share (a side's share of the dipole: about |p| / 2.6), slightly (the tube's white-hot centre stays)
+  if (D.dip.x > 0.0) {
+    var sqv = c.sideQ;
+    let tq = tanh((sqv[min(side, 5u)] - c.qNet / 6.0) * 2.6 * D.dip.z);
+    lineCol = mix(lineCol, select(D.qNeg.rgb, D.qPos.rgb, tq > 0.0) * max(D.line, 0.7), D.dip.x * abs(tq));
+  }
   if (neon) {
     // step C6n: the tube's cross-section: white-hot along its centre line, its colour toward its edges
     let prof = clamp(1.0 - abs(ein - 0.5 * lw) / max(0.5 * lw, 1e-3), 0.0, 1.0);
@@ -435,6 +462,25 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       let hd = length(lp - dir * t);
       hnd = cover(max(0.11 * c.r, 0.6 / D.dpr), hd, aa);
       rgb = mix(rgb, select(D.pInk.rgb, col * D.line, clock) * abs(D.hand), hnd);
+    }
+  }
+  // step C6d, the machinery: an arrow across a polarised cell from its - end to its + end (its length with the dipole), the
+  // shaft from the - ink to the + ink, a small head at the + end
+  if (D.dip.y > 0.0 && dipm > 0.15 && c.r * D.dpr > 4.0) {
+    let u = dipv / dipm;
+    let L = 1.1 * c.r * sqrt(min(dipm, 1.0));
+    let along = pw.x * u.x + pw.y * u.y;
+    let across = abs(pw.y * u.x - pw.x * u.y);
+    let hl = 0.35 * c.r;                                         // the head's length
+    let sw = max(0.09 * c.r, 0.5 / D.dpr);
+    let shaft = cover(sw, length(vec2f(max(abs(along + 0.5 * hl) - 0.5 * (L - hl), 0.0), across)), aa);
+    let ht = 0.5 * L - along;                                   // the head: a triangle from the tip back hl
+    let head = select(0.0, cover(0.0, across - 0.6 * hl * clamp(ht / hl, 0.0, 1.0), aa) * cover(0.0, -ht, aa) * cover(hl, ht, aa), ht < hl + aa);
+    let ar = max(shaft, head);
+    if (ar > 0.0) {
+      let tint = mix(D.qNeg.rgb, D.qPos.rgb, clamp(along / max(L, 1e-3) + 0.5, 0.0, 1.0));
+      rgb = mix(rgb, mix(tint, vec3f(1.0), 0.25) * D.dip.y, ar);
+      hnd = max(hnd, ar);
     }
   }
   // step C6c: the membrane's dimming and flicker, the heavy membrane's inner tube, a burst's flash (white, fading over

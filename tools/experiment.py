@@ -261,7 +261,7 @@ def run_condition(cond, out_dir, port, args):
                 f.write(driver.screenshot())
             page.js("(() => { moire.lab.restoreView(window.__labPrev); const s = document.getElementById('lab-shot-css');"
                     " if (s) s.remove(); })()")
-            return os.path.relpath(path, rd)
+            return os.path.relpath(path, rd).replace(os.sep, "/")
 
         def clip(spec, trun):
             end = float(spec.get("until", trun + 10))
@@ -294,7 +294,7 @@ def run_condition(cond, out_dir, port, args):
                 return {"file": None, "t_end": t_end - t_start, "error": "empty recording"}
             with open(path, "wb") as f:
                 f.write(base64.b64decode(data))
-            return {"file": os.path.relpath(path, rd), "t_end": t_end - t_start, "bytes": os.path.getsize(path)}
+            return {"file": os.path.relpath(path, rd).replace(os.sep, "/"), "t_end": t_end - t_start, "bytes": os.path.getsize(path)}
 
         events = build_events(cond, duration)
         snap_files, shot_files, clip_files, eval_results = [], [], [], []
@@ -341,7 +341,7 @@ def run_condition(cond, out_dir, port, args):
                     os.makedirs(os.path.dirname(p), exist_ok=True)
                     with open(p, "w", encoding="utf-8") as f:
                         json.dump(S, f)
-                    snap_files.append(os.path.relpath(p, rd))
+                    snap_files.append(os.path.relpath(p, rd).replace(os.sep, "/"))
                 elif kind == "clip":
                     c = clip(spec, trun)
                     if c:

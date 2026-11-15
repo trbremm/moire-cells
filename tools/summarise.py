@@ -227,7 +227,7 @@ def main():
             fn = "plot_" + "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in c) + ".svg"
             if svg_plot(runs, c, os.path.join(out, fn)):
                 plots.append((c, fn))
-        lines = ["# Experiment summary", "", "Runs: " + ", ".join(f"`{os.path.relpath(r['dir'], REPO)}`" for r in runs), "",
+        lines = ["# Experiment summary", "", "Runs: " + ", ".join(f"`{os.path.relpath(r['dir'], REPO).replace(os.sep, '/')}`" for r in runs), "",
                  md, ""]
         for r in runs:
             m = r["meta"]

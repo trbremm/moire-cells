@@ -46,6 +46,12 @@ export const ATOMS = {
   trace: { row: 3, group: 'inert' },   // rare; never reacts, barely moves (C4: lowers the spark where it sits)
 };
 
+// Step C6b, CHARGE, from the GROUP alone (the same rule for every row): a giver is +1, a taker -1, a linker and the inert
+// trace 0. A substance's charge is the sum of its atoms' (every fuel is a giver + a taker: 0; sediment, linkers: 0). Every
+// reaction moves atoms without changing their groups, so it conserves charge; deriveReactions and deriveEngines check it.
+export const GROUP_CHARGE = { giver: 1, taker: -1, linker: 0, inert: 0 };
+for (const a of Object.values(ATOMS)) a.charge = GROUP_CHARGE[a.group];
+
 // How fast things spread (R^2 per s of simulation time): row 1 quickly, each row further down SPREAD.perRow times
 // slower; a bonded pair at the speed of its heavier atom, a little slower than that (SPREAD.bond); sediment not at all.
 // (A patch spreads over about sqrt(4 x spread x t): light atoms 17 R in a minute, heavy ones 6 R, trace 2 R.)
@@ -108,7 +114,8 @@ function derive(atoms) {
   const spark = atoms.length > 1 ? CHEM.sparkPerRow * rows : 0;
   const e16 = Math.round(16 * energy);   // heat counts per count of the substance (exact: see CHEM)
   if (e16 !== 16 * energy) throw new Error(`energy of ${name} (${energy}) is not a multiple of 1/16`);
-  return { name, atoms, kind, row, heavy, reactive, spread, func, layer, ink: inkOf(func, heavy), energy, spark, e16 };
+  const charge = A.reduce((x, a) => x + a.charge, 0);   // step C6b: the sum of its atoms' charges (GROUP_CHARGE)
+  return { name, atoms, kind, row, heavy, reactive, spread, func, layer, ink: inkOf(func, heavy), energy, spark, e16, charge };
 }
 
 /** The light band that makes a fuel: the lowest whose photon covers its energy plus its spark (-1: none). */
@@ -177,8 +184,21 @@ function deriveReactions() {
     const dE = r.outs.reduce((x, c) => x + SUBSTANCES[c].e16, 0) - r.ins.reduce((x, c) => x + SUBSTANCES[c].e16, 0);
     if (r.light16 !== r.heat16 + dE || r.heat16 < 0) throw new Error(`reaction ${r.name} does not balance`);
   }
+  checkCharge(out, 'reaction');
   return out;
 }
+
+/** Step C6b: every reaction (or engine) conserves charge: the charges of its products add up to its reactants'. */
+function checkCharge(list, what) {
+  const q = (chs) => chs.reduce((x, c) => x + SUBSTANCES[c].charge, 0);
+  for (const r of list) if (q(r.ins) !== q(r.outs)) throw new Error(`${what} ${r.name} does not conserve charge`);
+}
+
+/** Step C6b: the charges as one word for the shaders, 2 bits per channel (0: none, 1: +1, 2: -1; heat_common.wgsl). */
+export const CHARGE_CODES = SUBSTANCES.reduce((m, s, c) => {
+  if (Math.abs(s.charge) > 1) throw new Error(`charge of ${s.name} (${s.charge}) does not fit the shaders' code`);
+  return (m | ((s.charge > 0 ? 1 : s.charge < 0 ? 2 : 0) << (2 * c))) >>> 0;
+}, 0);
 
 // ---------- step C6: the ENGINES a genome can carry, also derived from the table ----------
 // An engine slot names one of these by its index (Bio.eng in cell_common.wgsl). Every engine is one reaction of REACTIONS,
@@ -216,6 +236,7 @@ function deriveEngines() {
   const key = (e) => `${[...e.ins].sort()}>${[...e.outs].sort()}`, inv = (e) => `${[...e.outs].sort()}>${[...e.ins].sort()}`;
   const keys = new Set(out.map(key));
   if (out.length !== 20 || out.some((e) => e.g16 <= 0 || !keys.has(inv(e)))) throw new Error('engine table is not as expected');
+  checkCharge(out, 'engine');
   return out;
 }
 /** An engine's index by its reaction's name (as in REACTIONS, e.g. 'gt → g + t'). */

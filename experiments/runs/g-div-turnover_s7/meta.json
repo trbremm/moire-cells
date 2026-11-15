@@ -1,0 +1,69 @@
+{
+  "name": "g-div-turnover_s7",
+  "description": "Fixed count: the old turnover (?divide=0), 2000 cells.",
+  "condition": {
+    "name": "g-div-turnover_s7",
+    "description": "Fixed count: the old turnover (?divide=0), 2000 cells.",
+    "query": {
+      "divide": 0,
+      "seed": 7
+    },
+    "duration": 1200,
+    "sample_every": 20,
+    "shots": [
+      {
+        "t": 120
+      },
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 900
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "view": "strategy"
+      },
+      {
+        "t": 1200,
+        "view": "lineage",
+        "panel": true
+      }
+    ]
+  },
+  "url": "http://localhost:63153/index.html?speed=max&until=0&overlay=ghost&ui=0&divide=0&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "adf3d6c97370802fd8324445e748ee1c000d4268",
+  "dirty": false,
+  "started": "2026-11-15T12:45:18",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 1435.4,
+  "speed_reached": 0.84,
+  "samples": 61,
+  "shots": [
+    "shots/t120.png",
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t900.png",
+    "shots/t1200.png",
+    "shots/t1200_strategy.png",
+    "shots/t1200_lineage.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-15T13:10:12",
+  "wall_s": 1494.49
+}

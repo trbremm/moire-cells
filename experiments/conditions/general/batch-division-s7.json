@@ -1,12 +1,10 @@
 {
   "batch": "division-s7",
-  "description": "Series 6, seed 7 repeats of the main contrasts.",
+  "description": "Series 6, seed 7: turnover against division (the default seed-7 run is g-light-spot_s7).",
   "seeds": [
     7
   ],
   "runs": [
-    "g-div-turnover.json",
-    "g-div-cheap.json",
-    "g-div-costly.json"
+    "g-div-turnover.json"
   ]
 }

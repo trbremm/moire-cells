@@ -1,0 +1,94 @@
+{
+  "name": "g-img-burners",
+  "description": "Picture rerun of g-found-burners (seed 3): strategy view through the sweep.",
+  "condition": {
+    "name": "g-img-burners",
+    "description": "Picture rerun of g-found-burners (seed 3): strategy view through the sweep.",
+    "query": {
+      "seed": 3
+    },
+    "duration": 700,
+    "sample_every": 20,
+    "shots": [
+      {
+        "t": 60,
+        "view": "strategy"
+      },
+      {
+        "t": 200,
+        "view": "strategy"
+      },
+      {
+        "t": 280,
+        "view": "strategy"
+      },
+      {
+        "t": 360,
+        "view": "strategy"
+      },
+      {
+        "t": 440,
+        "view": "strategy"
+      },
+      {
+        "t": 520,
+        "view": "strategy"
+      },
+      {
+        "t": 700,
+        "view": "strategy"
+      }
+    ],
+    "evals": [
+      {
+        "t": 0,
+        "js": "const G = moire.genome; return await G.setAll({eng0: G.engineCode('gt \u2192 g + t', 1), rate0: 2.25, eng1: G.engineCode('gT \u2192 g + T', 1), rate1: 1.75, eng2: G.engineCode('gt \u2192 g + t', 1), rate2: 0})"
+      }
+    ]
+  },
+  "url": "http://localhost:58130/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "adf3d6c97370802fd8324445e748ee1c000d4268",
+  "dirty": false,
+  "started": "2026-11-15T12:02:34",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 700.0,
+  "run_wall_s": 320.6,
+  "speed_reached": 2.18,
+  "samples": 36,
+  "shots": [
+    "shots/t60_strategy.png",
+    "shots/t200_strategy.png",
+    "shots/t280_strategy.png",
+    "shots/t360_strategy.png",
+    "shots/t440_strategy.png",
+    "shots/t520_strategy.png",
+    "shots/t700_strategy.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "const G = moire.genome; return await G.setAll({eng0: G.engineCode('gt \u2192 g + t', 1), rate0: 2.25, eng1: G.engineCode('gT \u2192 g + T', 1), rate1: 1.75, eng2: G.engineCode('gt \u2192 g + t', 1), rate2: 0})",
+      "result": {
+        "cells": 1984,
+        "set": {
+          "eng0": 42,
+          "rate0": 2.25,
+          "eng1": 43,
+          "rate1": 1.75,
+          "eng2": 42,
+          "rate2": 0
+        }
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T12:08:33",
+  "wall_s": 359.42
+}

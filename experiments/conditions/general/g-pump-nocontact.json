@@ -1,10 +1,10 @@
 {
   "name": "g-pump-nocontact",
-  "description": "Contact pumping off (?pumpcontact=0), 30 min.",
+  "description": "Contact pumping off (?pumpcontact=0), 20 min.",
   "query": {
     "pumpcontact": 0
   },
-  "duration": 1800,
+  "duration": 1200,
   "sample_every": 20,
   "shots": [
     {
@@ -23,14 +23,11 @@
       "t": 1200
     },
     {
-      "t": 1800
-    },
-    {
-      "t": 1800,
+      "t": 1200,
       "view": "strategy"
     },
     {
-      "t": 1800,
+      "t": 1200,
       "view": "lineage",
       "panel": true
     }

@@ -1,0 +1,73 @@
+{
+  "name": "g-img-heavy",
+  "description": "Picture rerun of g-spr-heavy (seed 3): strategy and clean views through the crash and the takeover.",
+  "query": {
+    "seed": 3
+  },
+  "duration": 1000,
+  "sample_every": 20,
+  "shots": [
+    {
+      "t": 60,
+      "view": "strategy"
+    },
+    {
+      "t": 60,
+      "view": "clean"
+    },
+    {
+      "t": 170,
+      "view": "strategy"
+    },
+    {
+      "t": 170,
+      "view": "clean"
+    },
+    {
+      "t": 400,
+      "view": "strategy"
+    },
+    {
+      "t": 400,
+      "view": "clean"
+    },
+    {
+      "t": 700,
+      "view": "strategy"
+    },
+    {
+      "t": 700,
+      "view": "clean"
+    },
+    {
+      "t": 760,
+      "view": "strategy"
+    },
+    {
+      "t": 760,
+      "view": "clean"
+    },
+    {
+      "t": 820,
+      "view": "strategy"
+    },
+    {
+      "t": 820,
+      "view": "clean"
+    },
+    {
+      "t": 1000,
+      "view": "strategy"
+    },
+    {
+      "t": 1000,
+      "view": "clean"
+    }
+  ],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.matter.clearSprings(); moire.matter.addSpring(875, 328, 'heavy', 1e9); moire.matter.addSpring(875, 472, 'heavy', 1e9); return moire.matter.springs.length"
+    }
+  ]
+}

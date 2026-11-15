@@ -1,8 +1,8 @@
 {
   "name": "g-pump-on",
-  "description": "Pumps on (default), 30 min.",
+  "description": "Pumps on (default), 20 min.",
   "query": {},
-  "duration": 1800,
+  "duration": 1200,
   "sample_every": 20,
   "shots": [
     {
@@ -21,14 +21,11 @@
       "t": 1200
     },
     {
-      "t": 1800
-    },
-    {
-      "t": 1800,
+      "t": 1200,
       "view": "strategy"
     },
     {
-      "t": 1800,
+      "t": 1200,
       "view": "lineage",
       "panel": true
     }

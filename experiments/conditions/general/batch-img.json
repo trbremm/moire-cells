@@ -1,0 +1,8 @@
+{
+  "batch": "img",
+  "description": "Picture reruns.",
+  "runs": [
+    "g-img-burners.json",
+    "g-img-heavy.json"
+  ]
+}

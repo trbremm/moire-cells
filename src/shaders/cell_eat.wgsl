@@ -1020,6 +1020,37 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       atomicAdd(&wev[EV_RELEASE], down);
     }
 
+    // ---- step C12, MEMBRANE FUSION (src/oil.js, CP.fuse): the membrane is linker chains, so it is oily: oil (lL) under a
+    // cell whose membrane is short of linkers is taken in, each unit opening into one l and one L in the stock (the repair
+    // below weaves them in, the rest stays in the stock), the battery paying the chain's energy (uphill) and its spark (as
+    // heat). Up to fuse.y x the shortfall per s (the larger of the l and the L the sides still want, less what the stock holds)
+    if (CP.fuse.x > 0.0 && (mb_flags() & MBF_ON) != 0u && (EP.flags & EF_EAT) != 0u && cur != 0u && (EP.mask & (1u << OIL_CH)) != 0u) {
+      let gf = bio[i].memb;
+      let wf = max(memb_want(c.r, gf.y), 1.0);
+      let mxf = clamp(gf.x, 0.0, 1.0);
+      var shL = 0.0;
+      var shH = 0.0;
+      for (var k = 0u; k < 6u; k++) {
+        shL += max((1.0 - mxf) * wf - f32(atomicLoad(&stock[o + MB_L0 + k])), 0.0);
+        shH += max(mxf * wf - f32(atomicLoad(&stock[o + MB_H0 + k])), 0.0);
+      }
+      let per = i32(CP.fuse.z) + i32(CP.fuse.w);
+      var nf = i32(floor(CP.fuse.y * EP.dt * max(max(shL - f32(m[MB_CH_L]), shH - f32(m[MB_CH_H])), 0.0) + u01(pcg(rs + 0x6b43a9b5u))));
+      nf = min(nf, max(bat, 0) / max(per, 1));
+      if (nf > 0) {
+        let part = nf / 9;
+        var got = 0;
+        for (var q = 0; q < 9; q++) { got += take_hb(cur + OIL_CH * EP.n + idx[q], select(part, nf - 8 * part, q == 4)); }
+        if (got > 0) {
+          m[MB_CH_L] += got;
+          m[MB_CH_H] += got;
+          bat -= got * per;
+          heat += got * i32(CP.fuse.w);
+          atomicAdd(&hb[LG_OIL_FUSE + (i & 15u)], got);
+        }
+      }
+    }
+
     // ---- step C6c, the membrane: the linkers the plan's bites broke out go free into the dish (into the stock while their
     // channel is not moving); then REPAIR: each side short of what the genes ask weaves linkers in from the stock (repK of
     // the shortfall per s, in the genes' mix), each paying its chain's spark from the battery, as heat (the weave holds them
@@ -1305,7 +1336,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       var rh = 0;
       for (var r = 0u; r < CP.nrx; r++) {
         let R = CP.rx[r];
-        if (R.by != 0u) { continue; }
+        if (R.by != 0u || R.open != 0u) { continue; }   // (step C12: oil and amphiphiles are the open dish's only)
         if (m[R.ch.x] <= 0) { continue; }
         var x = R.k * f32(m[R.ch.x]) * exp(-R.spark * sparkScale / (CP.theta * temp)) * EP.dt;
         if (R.ch.y != NONE) { x *= f32(m[R.ch.y]) * concIn; }

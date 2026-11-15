@@ -91,7 +91,15 @@ const LG_HL: u32 = 22016u;
 // step C9, division (src/division.js; cell_eat.wgsl split): 16 numbers x 16 slots (i32), counters since the last read-back:
 // [0] the heat counts the divisions' cost took from the mothers' batteries (the rest spare)
 const LG_DIV: u32 = 22272u;
-// step C12, oils and water (src/oil.js, matter.wgsl): LG_OIL (words 22528 .. 23040 left free for other steps)
+// step C12b, lipid membranes (src/lipids.js, cell_eat.wgsl), in the words step C12 left free (22528 .. 23039):
+//   LG_LIP_E  the lipids' chemical energy in all membranes (heat counts, as a positive magnitude: the lipids' energy is below the
+//             free atoms'), a snapshot, 64-bit, 64 slots (128 words)
+//   LG_LIP_S  the census, 16 numbers x 16 slots (i32), a snapshot (the ledger pass)
+//   LG_LIP_C  8 counters x 16 slots (i32) since the last read-back (the eat pass; LC_* in cell_eat.wgsl)
+const LG_LIP_E: u32 = 22528u;
+const LG_LIP_S: u32 = 22656u;
+const LG_LIP_C: u32 = 22912u;
+// step C12, oils and water (src/oil.js, matter.wgsl): LG_OIL (words 22528 .. 23040 left free for other steps; step C12b uses them)
 //   + 0     the matter ledger of channels 13..15 (oil, the amphiphiles): ADD, LOST, GONE, DISH, 3 channels x 128 words each
 //           (lg_mc maps a channel's word for every region)
 //   + 1536  4 families' events (oil formed, oil cracked, head put on, head taken off): 64-bit, 64 slots, 128 words each

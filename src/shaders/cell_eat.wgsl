@@ -1,7 +1,8 @@
 // Cells eat (Part C, step C5): every cell's STOCK of the 13 substances and its BATTERY, in their own buffer (32 i32 per
 // cell: channels 0..12 in substance counts, ATOM_SCALE per unit, as the grid; word 13 the battery in heat counts,
 // HEAT_SCALE per energy unit; 14, 15 spare; step C6c: 16..21 the light linkers l woven into each side of the membrane,
-// 22..27 the heavy linkers L, in counts; 28..31 spare). field_common.wgsl, heat_common.wgsl and cell_common.wgsl are prepended
+// 22..27 the heavy linkers L, in counts; 28..31 spare; step C12b: 64 words a cell, 32..61 the LIPID membrane, per kind (soap glL,
+// soap tlL, oil lL, crust ll, crust LL) 6 sides of molecule counts; 62, 63 spare). field_common.wgsl, heat_common.wgsl and cell_common.wgsl are prepended
 // (src/eat.js). Every amount is a whole count and every move is an atomic add or a "take" (below), so matter stays
 // exact to the count and energy to the heat count.
 //
@@ -93,7 +94,7 @@
 @group(0) @binding(2) var<storage, read_write> stockP: array<i32>;
 @group(0) @binding(7) var<storage, read_write> mg: array<i32>;
 
-const SW: u32 = 32u;       // stock words per cell (16 until step C6c)
+const SW: u32 = 64u;       // stock words per cell (16 until step C6c, 32 until step C12b)
 const BAT: u32 = 13u;      // the battery's word
 // step C6c: the membrane's words (per side: light linkers l, then heavy L) and the linker channels (SUBSTANCES order: g t l
 // G T L ...; src/eat.js checks)
@@ -189,6 +190,20 @@ struct EatP {
                            // maturity (the cap - 1; 0 while junctions do not mature); w linker per R of side at adhesion 1 (atom-units)
   wl1: vec4f,              // x the upkeep: heat counts per tick per R of side at adhesion 1; y step C11: the FREE base glue (the
                            // adhesion every side holds at no cost; only what a side asks above it is built and paid); z w spare
+  // ---- step C12b, lipid membranes (src/lipids.js) ----
+  lp: array<vec4f, 9>,     // [0] x LPF_* bits (u32); y Tref (the temperature at which pure soap has stiffness 1: the heat's factor is
+                           //     2 / (1 + T / Tref)); z crackAt (a corner's sudden strain, its speed over its own wobble's angular
+                           //     frequency, as a share of r, beyond which its sides' wall cracks); w the share of a cracked side's crust
+                           //     that breaks off per tick
+                           // [1] the polarity's atoms (polarity() in src/matter.js, head x atoms and tail x atoms): x soap's head
+                           //     atoms, y soap's tail atoms, z oil's head atoms, w oil's tail atoms
+                           // [2] per kind (soap, oil, crust ll, crust LL) the chain's spark (energy units): a bite's exp(-spark / theta T)
+                           // [3] ... the heat counts the builder's sparks cost per molecule made from atoms (from the battery)
+                           // [4] ... the heat counts making it releases (its bonds' energy, downhill)
+                           // [5] x fusion's rate (share of the shortfall per s); y the oil one soap molecule holds between its tails
+                           //     at most; z the stiffness floor; w a fully damaged side's share of its stiffness (as soft)
+                           // [6] per kind its LIGHT linkers (l) in the chain, [7] its HEAVY linkers (L): what bites by row
+                           // [8] x the honeycomb corners' angular frequency at stiffness 1 (1/s; Fields.hex.x = its square); y z w spare
 };
 // step C7b: the cofactor's factor for a cell holding `tr` trace per R^2 (1 while the rule is off)
 fn cofactor(tr: f32) -> f32 {
@@ -241,6 +256,47 @@ const MBF_ON: u32 = 1u;      // membrane chemistry (master): material, integrity
 const MBF_BITE: u32 = 2u;    // ... bites
 const MBF_BURST: u32 = 4u;   // ... bursting (only while turnover is on)
 const MBF_SEL: u32 = 8u;     // ion selectivity gene
+// step C12b, LIPID MEMBRANES (src/lipids.js): stock words 32..61, per kind LK_* six sides of molecule counts. The bilayer is
+// SOAP (glL +, tlL -: a charged head on an oily tail), OIL (lL) slips in between the soap's tails (at most lp[5].y per soap
+// molecule) and stiffens it; the WALL outside it is crust (ll, LL: one-row chains, a crystal): rigid and brittle
+const LP0: u32 = 32u;
+const LK_GP: u32 = 0u;       // soap glL (+)
+const LK_TM: u32 = 1u;       // soap tlL (-)
+const LK_OIL: u32 = 2u;      // oil lL
+const LK_CL: u32 = 3u;       // crust ll (a light wall)
+const LK_CH: u32 = 4u;       // crust LL (a heavy wall)
+const LPF_ON: u32 = 1u;      // the lipid membranes (master; off: the C6c linker membrane)
+const LPF_HEAT: u32 = 2u;    // ... heat makes the bilayer fluid (stiffness x 2 / (1 + T / Tref))
+const LPF_CRACK: u32 = 4u;   // ... a strained wall cracks
+const LPF_HEADS: u32 = 8u;   // ... the soap's heads charge the cell and its sides
+fn lp_flags() -> u32 { return bitcast<u32>(EP.lp[0].x); }
+fn lpw(kind: u32, side: u32) -> u32 { return LP0 + 6u * kind + side; }
+// a lipid kind's channel in the dish (SUBSTANCES order; src/lipids.js checks)
+fn lk_ch(k: u32) -> u32 { return select(select(select(select(11u, 10u, k == 3u), 13u, k == 2u), 15u, k == 1u), 14u, k == 0u); }
+// a per-kind number from a vec4 (soap, oil, ll, LL): the two soaps share x
+fn lk_of(v: vec4f, k: u32) -> f32 { return select(select(select(v.w, v.z, k == 3u), v.y, k == 2u), v.x, k <= 1u); }
+// the BILAYER's stiffness from its lipids (S soap, O oil molecules): the polarity's tail atoms over its head atoms (packing over
+// fluidity), relative to pure soap's (1 for pure soap; oil adds tails and no heads: stiffer), x 2 / (1 + T / Tref) (heat fluidises
+// it: 2 when cold, 1 at Tref, falling as 1 / T when hot)
+fn lip_kb(S: f32, O: f32, T: f32) -> f32 {
+  let head = S * EP.lp[1].x + O * EP.lp[1].z;
+  let tail = S * EP.lp[1].y + O * EP.lp[1].w;
+  if (head <= 0.0) { return 0.0; }
+  let rho = (tail / head) / max(EP.lp[1].y / max(EP.lp[1].x, 1e-6), 1e-6);
+  var hf = 1.0;
+  if ((lp_flags() & LPF_HEAT) != 0u) { hf = 2.0 / (1.0 + max(T, 0.0) / EP.lp[0].y); }
+  return rho * hf;
+}
+// step C12b: the lipid counters (LG_LIP_C + 16 q + slot) and census (LG_LIP_S + 16 q + slot; the ledger pass)
+const LC_BITE_B: u32 = 0u;   // counters: bilayer molecules bitten out
+const LC_BITE_W: u32 = 1u;   // ... wall molecules bitten out
+const LC_SOAP: u32 = 2u;     // ... soap made from atoms (the builder)
+const LC_OIL: u32 = 3u;      // ... oil made
+const LC_WALL: u32 = 4u;     // ... crust made
+const LC_FUSED: u32 = 5u;    // ... lipid molecules taken in from the dish (fusion)
+const LC_SHED: u32 = 6u;     // ... lipid molecules shed into the dish
+const LC_CRACK: u32 = 7u;    // ... crust broken off by cracks
+var<workgroup> wlp: array<atomic<i32>, 8>;
 // step C6d: charge per side
 const DPE_ON: u32 = 1u;      // the side charges move (else they are kept even: the net charge / 6)
 const DPE_DEPOSIT: u32 = 2u; // the cells put their charge into the substrate's field at their sides (else at the centre)
@@ -399,6 +455,21 @@ fn give_back(i: u32, p: vec2f, cur: u32, slot: u32) {
       gone += m;
     }
   }
+  // step C12b: the lipid membrane's molecules, as themselves (soap, oil and crust into the dish, where they gather into droplets
+  // and films, or sit as crust)
+  for (var w = 0u; w < 30u; w++) {
+    let m = atomicExchange(&stock[i * SW + LP0 + w], 0);
+    if (m <= 0) { continue; }
+    let c = lk_ch(w / 6u);
+    let na = i32(ep_f(EP.natoms, c));
+    if (cur != 0u && (EP.mask & (1u << c)) != 0u) {
+      spread9(cur + c * EP.n, idx, m);
+      back += m * na;
+    } else {
+      add64(lg_mc(LG_M_GONE, c) + slot, m);
+      gone += m * na;
+    }
+  }
   // (step C7: and the energy stored in its membrane voltage, as heat with the battery; the voltage itself is gone)
   atomicStore(&stock[i * SW + VQ], 0);
   let b = atomicExchange(&stock[i * SW + BAT], 0) + max(atomicExchange(&stock[i * SW + EVW], 0), 0);
@@ -420,6 +491,10 @@ fn flush_counters(li: u32, slot: u32) {
     // step C6c: the membrane's counters (16 slots, i32: cleared at each read-back)
     let v = atomicLoad(&wmb[li - 32u]);
     if (v != 0) { atomicAdd(&hb[LG_MB + 16u * (16u + li - 32u) + (slot & 15u)], v); }
+  } else if (li < 56u) {
+    // step C12b: the lipid counters (16 slots, i32: cleared at each read-back)
+    let v = atomicLoad(&wlp[li - 48u]);
+    if (v != 0) { atomicAdd(&hb[LG_LIP_C + 16u * (li - 48u) + (slot & 15u)], v); }
   }
   if (li < 32u) {
     // step C7: the pumps' counters (16 slots, i32: cleared at each read-back)
@@ -473,6 +548,12 @@ fn split(@builtin(global_invocation_id) id: vec3u) {
       let got = take_stock(pi * SW + MB_L0 + k, i32(floor(f32(h) * sh)));
       if (got > 0) { atomicAdd(&stock[i * SW + MB_L0 + k], got); }
     }
+    // step C12b: and the same share of each side's lipids (the bilayer and the wall)
+    for (var w = 0u; w < 30u; w++) {
+      let h = atomicLoad(&stock[pi * SW + LP0 + w]);
+      let got = take_stock(pi * SW + LP0 + w, i32(floor(f32(h) * sh)));
+      if (got > 0) { atomicAdd(&stock[i * SW + LP0 + w], got); }
+    }
   }
   cells[i].flags = c.flags & ~CELL_BORN;
 }
@@ -489,7 +570,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   if ((c.flags & CELL_ALIVE) == 0u) {
     // step C9: a free slot (or a cell that died this tick) asks nothing of its neighbours: its pump requests, which their
     // eat applies in reverse, are cleared (stale ones would make or lose matter)
-    for (var k = 16u; k < 30u; k++) { flux[i * SW + k] = 0; }
+    for (var k = 16u; k < 40u; k++) { flux[i * SW + k] = 0; }   // (step C12b: and the lipid bites, 32..38)
     return;
   }
   let fo = i * SW;
@@ -515,11 +596,22 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   var mh: array<i32, 6>;
   var integ = 0.0;
   let want = max(memb_want(c.r, gm.y), 1.0);
+  // step C12b: with the lipid membranes on, the old weave holds only the walls' glue (step C10) and the integrity is the
+  // BILAYER's (soap + the oil between its tails, over what the thickness asks); the lipids take room in the cell too
+  let lipOn = membOn && (lp_flags() & LPF_ON) != 0u;
+  var lpm: array<array<i32, 6>, 5>;
+  var headQ = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);   // the soap heads' charge per side (atom-units)
+  let headsOn = (lp_flags() & LPF_HEADS) != 0u;
   for (var k = 0u; k < 6u; k++) {
     ml[k] = stockP[fo + MB_L0 + k];
     mh[k] = stockP[fo + MB_H0 + k];
     atomsIn += f32(ml[k] + mh[k]);
-    integ += min(f32(ml[k] + mh[k]) / want, 1.0);
+    for (var q = 0u; q < 5u; q++) { lpm[q][k] = stockP[fo + lpw(q, k)]; }
+    let S = f32(lpm[LK_GP][k] + lpm[LK_TM][k]);
+    atomsIn += 3.0 * S + 2.0 * f32(lpm[LK_OIL][k] + lpm[LK_CL][k] + lpm[LK_CH][k]);
+    if (headsOn) { headQ[k] = f32(lpm[LK_GP][k] - lpm[LK_TM][k]) / ATOM_SCALE; }
+    if (lipOn) { integ += min((S + min(f32(lpm[LK_OIL][k]), EP.lp[5].y * S)) / want, 1.0); }
+    else { integ += min(f32(ml[k] + mh[k]) / want, 1.0); }
   }
   integ /= 6.0;
   // a stock needs a closed membrane to hold it: the capacity x (hold + (1 - hold) x mean integrity)
@@ -706,6 +798,8 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   // (dpRelax per s) toward 0; kept within dpCap x mobile / 6. The even share stays the last net charge / 6 (the eat dispatch
   // puts it on the new one)
   var sq = c.sideQ;
+  // step C12b: the soap heads' charge sits on its own side: the mobile part is what the through-flow and the relaxation work on
+  if (dpOn) { for (var a = 0u; a < 6u; a++) { sq[a] -= headQ[a]; } }
   if (dpOn) {
     var mean = 0.0;
     for (var a = 0u; a < 6u; a++) { mean += sq[a]; }
@@ -725,7 +819,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     let e = select(0.0, c.qNet / 6.0, (c.flags & CELL_ALIVE) != 0u && !husk);
     sq = array<f32, 6>(e, e, e, e, e, e);
   }
-  cells[i].sideQ = sq;
+  // (the heads go back on below, after the lipids' bites)
   // step C6c, BITES: a free reactive atom outside a side bites the chains of its own row (g, t the l part; G, T the L part),
   // at kBite x its concentration there (units per R^2, the pixel just outside the side's middle) x the side's length (R)
   // x the share of that row in the side's weave x exp(-the chain's spark / (theta x temperature)); counts, rounded at
@@ -766,6 +860,64 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   }
   flux[fo + 13u] = bl;
   flux[fo + 14u] = bh;
+  // step C12b, BITES ON THE LIPIDS (the same rule, derived from the atoms): a free reactive atom at a side bites the chains of its
+  // own row, so each lipid kind by the light linkers (l) and heavy linkers (L) its chain holds: soap and oil (one l, one L) by
+  // both rows, a light crust (ll) only by light atoms, a heavy one (LL) only by heavy atoms; x exp(-its chain's spark / (theta x
+  // temperature)); x that kind's share of the side's linkers. The WALL is outside: the bilayer is exposed only where no crust
+  // covers it (1 - cover), and a fluid bilayer more than a packed one (x 2 / (1 + its stiffness): 1 for pure soap at Tref). A
+  // bite pulls the molecule out WHOLE into the dish (soap and oil gather into films and droplets there, crust sits as crust):
+  // matter, charge and energy move as they are
+  var lb = array<i32, 5>(0, 0, 0, 0, 0);
+  var lbB = 0;
+  var lbW = 0;
+  if (lipOn && (mbf & MBF_BITE) != 0u && cur != 0u && (c.flags & CELL_ALIVE) != 0u && !husk) {
+    let mbn = membrane(c);
+    let tmp = max(f32(hsum) / 9.0 * HP.tempScale, 1e-4);
+    let conc = EP.R * EP.R / (ATOM_SCALE * HP.px * HP.px);
+    let mL = (EP.mask & 3u) != 0u;
+    let mH = (EP.mask & 24u) != 0u;
+    for (var k = 0u; k < 6u; k++) {
+      var lam = 0.0;
+      for (var q = 0u; q < 5u; q++) { lam += f32(lpm[q][k]) * (lk_of(EP.lp[6], q) + lk_of(EP.lp[7], q)); }
+      if (lam <= 0.0) { continue; }
+      let e = mbn.edge[k];
+      let len = length(e);
+      let nrm = vec2f(e.y, -e.x) / max(len, 1e-6);
+      let px = heat_xy(HP, c.pos + mbn.mid[k] + nrm * (0.5 * HP.px));
+      let pi = u32(px.y) * HP.hw + u32(px.x);
+      let base = cur - lw;
+      var cl = 0.0;
+      var ch = 0.0;
+      if (mL) { cl = f32(max(mg[base + pi], 0) + max(mg[base + EP.n + pi], 0)); }
+      if (mH) { ch = f32(max(mg[base + 3u * EP.n + pi], 0) + max(mg[base + 4u * EP.n + pi], 0)); }
+      if (cl + ch <= 0.0) { continue; }
+      let S = f32(lpm[LK_GP][k] + lpm[LK_TM][k]);
+      let cover = clamp(f32(lpm[LK_CL][k] + lpm[LK_CH][k]) / want, 0.0, 1.0);
+      let expB = (1.0 - cover) * 2.0 / (1.0 + lip_kb(S, min(f32(lpm[LK_OIL][k]), EP.lp[5].y * S), tmp));
+      let x0 = EP.mb0.y * len / EP.R * ATOM_SCALE * EP.dt * conc / lam;
+      for (var q = 0u; q < 5u; q++) {
+        let n0 = lpm[q][k];
+        if (n0 <= 0 || (EP.mask & (1u << lk_ch(q))) == 0u) { continue; }
+        let x = x0 * select(expB, 1.0, q >= LK_CL) * exp(-lk_of(EP.lp[2], q) / (EP.mb1.w * tmp)) * f32(n0) *
+                (cl * lk_of(EP.lp[6], q) + ch * lk_of(EP.lp[7], q));
+        let n = min(i32(floor(x + u01(pcg(rs + k * 0x2545f491u + q * 0x9e3779b1u + 0x7a3c5b1du)))), n0);
+        if (n > 0) {
+          lpm[q][k] = n0 - n;
+          stockP[fo + lpw(q, k)] = n0 - n;
+          lb[q] += n;
+          if (q >= LK_CL) { lbW += n; } else { lbB += n; }
+        }
+      }
+    }
+  }
+  for (var q = 0u; q < 5u; q++) { flux[fo + 32u + q] = lb[q]; }
+  flux[fo + 37u] = lbB;
+  flux[fo + 38u] = lbW;
+  // ... and the side charges get the soap heads back (those still there after the bites; with the dipoles off they stay even)
+  if (headsOn && dpOn) {
+    for (var k = 0u; k < 6u; k++) { sq[k] += f32(lpm[LK_GP][k] - lpm[LK_TM][k]) / ATOM_SCALE; }
+  }
+  cells[i].sideQ = sq;
   // smell: the fuels (each weighted by its energy) at the membrane's 6 corners; for a field v = v0 + G . x sampled at a
   // regular hexagon, sum v x = G sum |x|^2 / 2, so G = 2 sum v x / sum |x|^2 (here in energy per R^2 per R)
   var g = vec2f(0.0);
@@ -1025,7 +1177,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     // cell whose membrane is short of linkers is taken in, each unit opening into one l and one L in the stock (the repair
     // below weaves them in, the rest stays in the stock), the battery paying the chain's energy (uphill) and its spark (as
     // heat). Up to fuse.y x the shortfall per s (the larger of the l and the L the sides still want, less what the stock holds)
-    if (CP.fuse.x > 0.0 && (mb_flags() & MBF_ON) != 0u && (EP.flags & EF_EAT) != 0u && cur != 0u && (EP.mask & (1u << OIL_CH)) != 0u) {
+    // (step C12b: with the lipid membranes on, the oil and soap join the membrane as themselves instead: below)
+    if (CP.fuse.x > 0.0 && (mb_flags() & MBF_ON) != 0u && (lp_flags() & LPF_ON) == 0u && (EP.flags & EF_EAT) != 0u && cur != 0u && (EP.mask & (1u << OIL_CH)) != 0u) {
       let gf = bio[i].memb;
       let wf = max(memb_want(c.r, gf.y), 1.0);
       let mxf = clamp(gf.x, 0.0, 1.0);
@@ -1076,6 +1229,10 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     }
     if (bitL + bitH > 0) { atomicAdd(&wmb[MB_BITTEN - 16u], 1); }
     let want = max(memb_want(c.r, gm.y), 1.0);
+    // step C12b: with the lipid membranes on, the old weave holds only the walls' glue (wantW 0: no membrane of its own), woven in
+    // the wall's row (Bio.lip.z, the heavy share); the membrane itself is the lipid layer below
+    let lipOn = membOn && (lp_flags() & LPF_ON) != 0u;
+    let wantW = select(want, 0.0, lipOn);
     // ---- step C10, PATTERNED WALLS: each side's adhesion as the genes ask for it, P = clamp(a0 + s (a1 cos psi + a2 cos 2 psi),
     // 0, 1) (psi the side's middle from the front), x the junction's maturity factor (1 + (cap - 1) x maturity). With the cost on,
     // the adhesion molecules are built from LINKERS in the membrane: a side wants, on top of its membrane, linkPer x adhesion x
@@ -1100,7 +1257,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       }
     }
     if (membOn) {
-      let mix = clamp(gm.x, 0.0, 1.0);
+      let mix = clamp(select(gm.x, bio[i].lip.z, lipOn), 0.0, 1.0);
       var wl: array<f32, 6>;
       var wh: array<f32, 6>;
       var nl: array<i32, 6>;
@@ -1109,8 +1266,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       var th = 0;
       let kr = EP.mb0.z * EP.dt;
       for (var k = 0u; k < 6u; k++) {
-        wl[k] = (1.0 - mix) * (want + wX[k]);
-        wh[k] = mix * (want + wX[k]);
+        wl[k] = (1.0 - mix) * (wantW + wX[k]);
+        wh[k] = mix * (wantW + wX[k]);
         nl[k] = max(i32(floor(kr * max(wl[k] - f32(sl[k]), 0.0) + u01(pcg(rs + k * 0x7feb352du + 0x1d8e4e27u)))), 0);
         nh[k] = max(i32(floor(kr * max(wh[k] - f32(sh[k]), 0.0) + u01(pcg(rs + k * 0x846ca68bu + 0x5a3b9b5du)))), 0);
         tl += nl[k];
@@ -1168,7 +1325,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       let sideR = EP.mb0.w * c.r / EP.R;
       for (var k = 0u; k < 6u; k++) {
         if (wCost && membOn && wX[k] >= 1.0) {
-          let extra = max(f32(sl[k] + sh[k]) - want, 0.0);
+          let extra = max(f32(sl[k] + sh[k]) - wantW, 0.0);
           av[k] = clamp(extra / wX[k], 0.0, 1.0);
           linkC += min(extra, wX[k]);
         }
@@ -1188,6 +1345,247 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       cells[i].wlink = u32(round(linkC));
       cells[i].wpay = u32(pay);
     }
+
+    // ---- step C12b, LIPID MEMBRANES (src/lipids.js). Each side's bilayer is SOAP (glL +, tlL -) with OIL (lL) between its tails,
+    // and outside it a WALL of crust (ll, LL). What a side wants: the thickness gene x its rest length of bilayer molecules, of which
+    // the oil share gene (memb.x: oil per soap, 0..1) is oil and the rest soap; and the wall gene (lip.x) x as much again of crust,
+    // in the wall's row (lip.z: the heavy share). In this order:
+    //   bitten  the molecules the plan's bites pulled out go into the dish whole (flux 32..36)
+    //   fusion  (the C12 switch) a side short of soap or oil takes it from the dish under the cell, as it is: soap of either head
+    //           (the gene's head first) and oil join the bilayer for free (self-assembly; no bond changes)
+    //   builder what is still short is MADE from the stock's atoms: soap = a head (g or t, by the head gene; the other if short) +
+    //           l + L, oil = l + L, crust = l + l or L + L; each molecule pays its bonds' sparks from the battery and releases its
+    //           bonds' energy, both as heat at the cell (the table's numbers: soap 0.625 + 0.25, oil 0.375 + 0.75, ll 0.25 + 0.5,
+    //           LL 0.5 + 1). The bilayer rebuilds at repK x 2 / (1 + its stiffness) (a fluid bilayer reseals faster), the wall at repK
+    //   crack   a WALL is a crystal: rigid and brittle. Where the outline is jolted (a corner's speed over its wobble's angular
+    //           frequency, omega0 x sqrt(the side's stiffness): the swing it is in, as a share of r, above crackAt) the crust of its
+    //           two sides breaks off (lp[0].w of it per tick) into the dish as crust. Slow packing does not crack it; a shove does
+    //   shed    a side holding more than shedAt x what it wants (the oil: also more than its soap holds) lets the extra into the
+    //           dish whole; with the lipid membranes off every lipid is shed so (the C6c weave takes over)
+    //   then each side's integrity (the bilayer's), its STIFFNESS (the bilayer's lip_kb x (soft + (1 - soft) x integrity) x
+    //   sqrt(thickness / tRef) x the stiffness gene, then the wall's cover takes it toward LIP_KMAX) and the look into Cell.lip
+    var lpm: array<array<i32, 6>, 5>;
+    for (var q = 0u; q < 5u; q++) { for (var k = 0u; k < 6u; k++) { lpm[q][k] = atomicLoad(&stock[o + lpw(q, k)]); } }
+    let lpm0 = lpm;
+    var heads0 = 0;
+    for (var k = 0u; k < 6u; k++) { heads0 += lpm[LK_GP][k] - lpm[LK_TM][k]; }
+    for (var q = 0u; q < 5u; q++) {
+      let n = flux[fo + 32u + q];
+      if (n > 0) { spread9(cur + lk_ch(q) * EP.n, idx, n); }   // (the plan bites only kinds whose channel is moving)
+    }
+    atomicAdd(&wlp[LC_BITE_B], flux[fo + 37u]);
+    atomicAdd(&wlp[LC_BITE_W], flux[fo + 38u]);
+    let tmpL = max(bitcast<f32>(flux[fo + 15u]), 1e-4);
+    let gl = bio[i].lip;
+    let oilShare = clamp(gm.x, 0.0, 1.0);
+    let wS = select(0.0, want / (1.0 + oilShare), lipOn);                 // soap a side wants (molecules)
+    let wO = select(0.0, want * oilShare / (1.0 + oilShare), lipOn);      // oil
+    let wW = select(0.0, want * clamp(gl.x, 0.0, 1.0), lipOn);            // crust (a full wall: as much as the bilayer)
+    let wWh = wW * clamp(gl.z, 0.0, 1.0);                                  // ... of it heavy (LL)
+    let wWl = wW - wWh;                                                    // ... light (ll)
+    let pG = clamp(0.5 + 0.5 * gl.y, 0.0, 1.0);                            // the head gene: the share of + heads (glL)
+    if (lipOn && cur != 0u) {
+      // fusion: the soap and oil under the cell join the bilayer as they are (the C12 switch "membrane fusion")
+      if (CP.fuse.x > 0.0) {
+        var shS = 0.0;
+        var shO = 0.0;
+        for (var k = 0u; k < 6u; k++) {
+          let S = f32(lpm[LK_GP][k] + lpm[LK_TM][k]);
+          shS += max(wS - S, 0.0);
+          shO += max(min(wO, EP.lp[5].y * max(S, wS)) - f32(lpm[LK_OIL][k]), 0.0);
+        }
+        let kf = EP.lp[5].x * EP.dt;
+        var nS = i32(floor(kf * shS + u01(pcg(rs + 0x4f1bbcdcu))));
+        let nO = i32(floor(kf * shO + u01(pcg(rs + 0x2b5f8a61u))));
+        // soap: the head the gene prefers first, then the other
+        let first = select(LK_TM, LK_GP, pG >= 0.5);
+        var gotS = array<i32, 2>(0, 0);   // [0] glL, [1] tlL
+        for (var pp = 0u; pp < 2u; pp++) {
+          let q = select(LK_GP + LK_TM - first, first, pp == 0u);
+          let ch = lk_ch(q);
+          if (nS <= 0 || (EP.mask & (1u << ch)) == 0u) { continue; }
+          let part = nS / 9;
+          var got = 0;
+          for (var z = 0; z < 9; z++) { got += take_hb(cur + ch * EP.n + idx[z], select(part, nS - 8 * part, z == 4)); }
+          gotS[q] += got;
+          nS -= got;
+        }
+        var gotO = 0;
+        if (nO > 0 && (EP.mask & (1u << OIL_CH)) != 0u) {
+          let part = nO / 9;
+          for (var z = 0; z < 9; z++) { gotO += take_hb(cur + OIL_CH * EP.n + idx[z], select(part, nO - 8 * part, z == 4)); }
+        }
+        atomicAdd(&wlp[LC_FUSED], gotS[0] + gotS[1] + gotO);
+        // into the sides, each up to its shortfall from a random first side round (any rest to the last side)
+        let k0 = pcg(rs + 0x61c88647u) % 6u;
+        for (var j = 0u; j < 6u; j++) {
+          let k = (k0 + j) % 6u;
+          let S = lpm[LK_GP][k] + lpm[LK_TM][k];
+          var need = i32(ceil(max(wS - f32(S), 0.0)));
+          if (j == 5u) { need = gotS[0] + gotS[1]; }
+          let a = min(need, gotS[0]);
+          lpm[LK_GP][k] += a; gotS[0] -= a; need -= a;
+          let b2 = min(need, gotS[1]);
+          lpm[LK_TM][k] += b2; gotS[1] -= b2;
+          var needO = i32(ceil(max(wO - f32(lpm[LK_OIL][k]), 0.0)));
+          if (j == 5u) { needO = gotO; }
+          let c2 = min(needO, gotO);
+          lpm[LK_OIL][k] += c2; gotO -= c2;
+        }
+      }
+      // the builder: what is still short, made from the stock's atoms
+      let kr = EP.mb0.z * EP.dt;
+      var rS: array<i32, 6>;
+      var rO: array<i32, 6>;
+      var rWl: array<i32, 6>;
+      var rWh: array<i32, 6>;
+      var tS = 0;
+      var tO = 0;
+      var tWl = 0;
+      var tWh = 0;
+      for (var k = 0u; k < 6u; k++) {
+        let S = f32(lpm[LK_GP][k] + lpm[LK_TM][k]);
+        let Oe = min(f32(lpm[LK_OIL][k]), EP.lp[5].y * S);
+        let kb = kr * 2.0 / (1.0 + lip_kb(S, Oe, tmpL));
+        let hs = pcg(rs + k * 0x7feb352du + 0x3c6ef372u);
+        rS[k] = max(i32(floor(kb * max(wS - S, 0.0) + u01(hs))), 0);
+        rO[k] = max(i32(floor(kb * max(min(wO, EP.lp[5].y * max(S, wS)) - f32(lpm[LK_OIL][k]), 0.0) + u01(pcg(hs)))), 0);
+        rWl[k] = max(i32(floor(kr * max(wWl - f32(lpm[LK_CL][k]), 0.0) + u01(pcg(hs + 1u)))), 0);
+        rWh[k] = max(i32(floor(kr * max(wWh - f32(lpm[LK_CH][k]), 0.0) + u01(pcg(hs + 2u)))), 0);
+        tS += rS[k]; tO += rO[k]; tWl += rWl[k]; tWh += rWh[k];
+      }
+      let spS = i32(EP.lp[3].x);
+      let spO = i32(EP.lp[3].y);
+      let spL = i32(EP.lp[3].z);
+      let spH = i32(EP.lp[3].w);
+      var paid = 0;
+      var made = 0;
+      // soap first (the bilayer itself): heads, l, L and the sparks
+      if (tS > 0) {
+        let can = min(min(m[0] + m[1], min(m[MB_CH_L], m[MB_CH_H])), max(bat, 0) / max(spS, 1));
+        let f = min(1.0, f32(max(can, 0)) / f32(tS));
+        var remG = max(m[0], 0);
+        var remT = max(m[1], 0);
+        var nG = 0;
+        var nT = 0;
+        for (var k = 0u; k < 6u; k++) {
+          let sk = i32(floor(f32(rS[k]) * f));
+          if (sk <= 0) { continue; }
+          var g1 = min(min(i32(floor(f32(sk) * pG + u01(pcg(rs + k * 0x1b873593u + 0x0d1f5ab3u)))), sk), remG);
+          var t1 = sk - g1;
+          if (t1 > remT) { t1 = remT; g1 = min(sk - t1, remG); }
+          remG -= g1; remT -= t1;
+          lpm[LK_GP][k] += g1; lpm[LK_TM][k] += t1;
+          nG += g1; nT += t1;
+        }
+        let ns = nG + nT;
+        m[0] -= nG; m[1] -= nT; m[MB_CH_L] -= ns; m[MB_CH_H] -= ns;
+        bat -= ns * spS; paid += ns * spS; heat += ns * (spS + i32(EP.lp[4].x));
+        atomicAdd(&wlp[LC_SOAP], ns);
+      }
+      // then the oil between the tails
+      if (tO > 0) {
+        let can = min(min(m[MB_CH_L], m[MB_CH_H]), max(bat, 0) / max(spO, 1));
+        let f = min(1.0, f32(max(can, 0)) / f32(tO));
+        var no = 0;
+        for (var k = 0u; k < 6u; k++) { let a = i32(floor(f32(rO[k]) * f)); lpm[LK_OIL][k] += a; no += a; }
+        m[MB_CH_L] -= no; m[MB_CH_H] -= no;
+        bat -= no * spO; paid += no * spO; heat += no * (spO + i32(EP.lp[4].y));
+        atomicAdd(&wlp[LC_OIL], no);
+      }
+      // then the wall
+      if (tWl > 0) {
+        let can = min(m[MB_CH_L] / 2, max(bat, 0) / max(spL, 1));
+        let f = min(1.0, f32(max(can, 0)) / f32(tWl));
+        var nw = 0;
+        for (var k = 0u; k < 6u; k++) { let a = i32(floor(f32(rWl[k]) * f)); lpm[LK_CL][k] += a; nw += a; }
+        m[MB_CH_L] -= 2 * nw;
+        bat -= nw * spL; paid += nw * spL; heat += nw * (spL + i32(EP.lp[4].z));
+        made += nw;
+      }
+      if (tWh > 0) {
+        let can = min(m[MB_CH_H] / 2, max(bat, 0) / max(spH, 1));
+        let f = min(1.0, f32(max(can, 0)) / f32(tWh));
+        var nw = 0;
+        for (var k = 0u; k < 6u; k++) { let a = i32(floor(f32(rWh[k]) * f)); lpm[LK_CH][k] += a; nw += a; }
+        m[MB_CH_H] -= 2 * nw;
+        bat -= nw * spH; paid += nw * spH; heat += nw * (spH + i32(EP.lp[4].w));
+        made += nw;
+      }
+      atomicAdd(&wlp[LC_WALL], made);
+      atomicAdd(&wmb[MB_SPARK - 16u], paid);
+      // a jolted wall cracks (a crystal does not bend): the crust of the sides at a corner swinging further than crackAt x r
+      if ((lp_flags() & LPF_CRACK) != 0u && (c.flags & CELL_HEX) != 0u) {
+        var crk = 0;
+        for (var k = 0u; k < 6u; k++) {
+          let w0 = lpm[LK_CL][k] + lpm[LK_CH][k];
+          if (w0 <= 0) { continue; }
+          let om = EP.lp[8].x * sqrt(max(LIP_KMAX * unpack4x8unorm(c.lip[k]).x, 0.25));
+          let dev = max(abs(c.radV[k]), abs(c.radV[(k + 1u) % 6u])) / max(om * c.r, 1e-3);
+          if (dev <= EP.lp[0].z) { continue; }
+          for (var q = LK_CL; q <= LK_CH; q++) {
+            let n0 = lpm[q][k];
+            if (n0 <= 0 || (EP.mask & (1u << lk_ch(q))) == 0u) { continue; }
+            let a = min(i32(ceil(f32(n0) * EP.lp[0].w)), n0);
+            lpm[q][k] -= a;
+            spread9(cur + lk_ch(q) * EP.n, idx, a);
+            crk += a;
+          }
+        }
+        atomicAdd(&wlp[LC_CRACK], crk);
+      }
+    }
+    // shed: what a side holds beyond shedAt x its want (oil: also beyond what its soap holds) goes into the dish whole; with the lipid
+    // membranes off the wants are 0, so every lipid is shed (at shedK per s); with the membrane chemistry off nothing changes
+    if (membOn && cur != 0u) {
+      let ks = EP.mb3.y * EP.dt;
+      var shd = 0;
+      for (var k = 0u; k < 6u; k++) {
+        let S = lpm[LK_GP][k] + lpm[LK_TM][k];
+        // the soap's limit, for both heads together (the head in surplus over the gene's share goes first)
+        let xs = f32(S) - EP.mb3.x * wS - 1.0;
+        let qs = select(LK_TM, LK_GP, f32(lpm[LK_GP][k]) > pG * f32(S));
+        for (var q = 0u; q < 5u; q++) {
+          var lim = EP.mb3.x * select(wWh, wWl, q == LK_CL);
+          if (q == LK_OIL) { lim = min(EP.mb3.x * wO, EP.lp[5].y * f32(S)); }
+          var x = f32(lpm[q][k]) - lim - 1.0;
+          if (q <= LK_TM) { x = select(-1.0, xs, q == qs); }
+          if (x <= 0.0 || lpm[q][k] <= 0 || (EP.mask & (1u << lk_ch(q))) == 0u) { continue; }
+          let a = min(i32(ceil(ks * x)), lpm[q][k]);
+          lpm[q][k] -= a;
+          spread9(cur + lk_ch(q) * EP.n, idx, a);
+          shd += a;
+        }
+      }
+      atomicAdd(&wlp[LC_SHED], shd);
+    }
+    for (var q = 0u; q < 5u; q++) {
+      for (var k = 0u; k < 6u; k++) {
+        if (lpm[q][k] != lpm0[q][k]) { atomicStore(&stock[o + lpw(q, k)], lpm[q][k]); }
+      }
+    }
+    var heads1 = 0;
+    var lipI = array<f32, 6>(1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+    var lipL = array<u32, 6>(0u, 0u, 0u, 0u, 0u, 0u);
+    var bitB = 0;
+    if (lipOn) { bitB = flux[fo + 37u]; }
+    let thickF = sqrt(max(gm.y, 1e-4) / max(EP.mb3.w, 1e-4)) * gm.z;
+    for (var k = 0u; k < 6u; k++) {
+      heads1 += lpm[LK_GP][k] - lpm[LK_TM][k];
+      if (!lipOn) { continue; }
+      let S = f32(lpm[LK_GP][k] + lpm[LK_TM][k]);
+      let Oe = min(f32(lpm[LK_OIL][k]), EP.lp[5].y * S);
+      let W = f32(lpm[LK_CL][k] + lpm[LK_CH][k]);
+      let ib = clamp((S + Oe) / want, 0.0, 1.0);
+      let cover = clamp(W / want, 0.0, 1.0);
+      var kk = lip_kb(S, Oe, tmpL) * (EP.lp[5].w + (1.0 - EP.lp[5].w) * ib) * thickF;
+      kk = clamp(mix(kk, LIP_KMAX, cover), EP.lp[5].z, LIP_KMAX);
+      lipI[k] = ib;
+      lipL[k] = pack4x8unorm(vec4f(kk / LIP_KMAX, select(0.0, f32(lpm[LK_CH][k]) / max(W, 1.0), W > 0.0),
+                                   select(0.0, Oe / max(S + Oe, 1.0), S + Oe > 0.0), cover));
+    }
+    if ((lp_flags() & LPF_HEADS) == 0u) { heads0 = 0; heads1 = 0; }
+    cells[i].lip = lipL;
 
     // the temperature under the cell (its 3 x 3 pixels' mean, from the plan pass), for the sparks of the reactions inside
     let temp = max(bitcast<f32>(flux[fo + 15u]), 1e-4);
@@ -1410,15 +1808,21 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     // over the 4 pixels around its centre, by their nearness), so the substrate's field sees the charge the cell took in
     var qn = 0;
     for (var k = 0u; k < NCH; k++) { qn += charge_of(EP.qCodes, k) * m[k]; }
+    qn += heads1;   // step C12b: the soap heads in its membrane (glL +, tlL -; 0 while LPF_HEADS is off)
     let qu = f32(qn) / ATOM_SCALE;
     cells[i].qNet = qu;
     cells[i].q = tanh(qu * EP.qInv);
     // step C6d: the side charges on the new net charge (each side's difference from the even share kept, the sum = qNet)
+    // (step C12b: with the dipoles on, the soap heads' charge stays on its own side: taken off, the mobile rest put on the stock's
+    // net charge, and the heads put back as they are now)
     var sq = c.sideQ;
+    let hside = (EP.dpFlags & DPE_ON) != 0u && (lp_flags() & LPF_HEADS) != 0u;
+    if (hside) { for (var k = 0u; k < 6u; k++) { sq[k] -= f32(lpm0[LK_GP][k] - lpm0[LK_TM][k]) / ATOM_SCALE; } }
     var sm = 0.0;
     for (var k = 0u; k < 6u; k++) { sm += sq[k]; }
-    let sd = (qu - sm) / 6.0;
+    let sd = (qu - select(0.0, f32(heads1) / ATOM_SCALE, hside) - sm) / 6.0;
     for (var k = 0u; k < 6u; k++) { sq[k] += sd; }
+    if (hside) { for (var k = 0u; k < 6u; k++) { sq[k] += f32(lpm[LK_GP][k] - lpm[LK_TM][k]) / ATOM_SCALE; } }
     cells[i].sideQ = sq;
     let dpDep = (EP.dpFlags & (DPE_ON | DPE_DEPOSIT)) == (DPE_ON | DPE_DEPOSIT);
     if (EP.qOff != 0u && dpDep) {
@@ -1457,7 +1861,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     var im = 1.0;
     if (membOn) {
       im = 0.0;
-      for (var k = 0u; k < 6u; k++) { ig[k] = clamp(f32(sl[k] + sh[k]) / want, 0.0, 1.0); im += ig[k]; }
+      for (var k = 0u; k < 6u; k++) { ig[k] = select(clamp(f32(sl[k] + sh[k]) / want, 0.0, 1.0), lipI[k], lipOn); im += ig[k]; }
       im /= 6.0;
     }
     var fl2 = c.flags;
@@ -1489,7 +1893,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       fl2 &= (1u << CELL_DOSE_SHIFT) - 1u;
     }
     if (membOn && im >= EP.mb1.z) { fl2 |= CELL_WHOLE; }
-    let burst = membOn && (mbf & MBF_BURST) != 0u && (fl2 & CELL_WHOLE) != 0u && im < EP.mb1.y && bitL + bitH > 0;
+    let burst = membOn && (mbf & MBF_BURST) != 0u && (fl2 & CELL_WHOLE) != 0u && im < EP.mb1.y && bitL + bitH + bitB > 0;
     if (burst) {
       give_back(i, c.pos, cur, slot);
       fl2 = (fl2 & ~CELL_BURST_MASK) | (1u << CELL_BURST_SHIFT);
@@ -1506,6 +1910,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     if (fl2 != c.flags) { cells[i].flags = fl2; }
   } else if (husk) {
     cells[i].integ = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    cells[i].lip = array<u32, 6>(0u, 0u, 0u, 0u, 0u, 0u);   // step C12b
     cells[i].wadh = array<u32, 2>(0u, 0u);   // step C10: a burst cell holds nothing
     cells[i].wpay = 0u;
     cells[i].wlink = 0u;
@@ -1585,6 +1990,12 @@ const CT_FED: u32 = 10u;       // cells with an engine and a battery of at least
 const CT_FED_F: u32 = 11u;     // ... their factor x 1000
 // step C8: the hard light census's snapshot (HL_* in cell_common.wgsl; LG_HL)
 var<workgroup> whl: array<atomic<i32>, 8>;
+// step C12b: the lipids' chemical energy (heat counts, its magnitude) and census (a snapshot, LG_LIP_S + 16 v): 0..4 the molecules in
+// all membranes per kind (counts: glL, tlL, lL, ll, LL); 5 cells; sums x 1000 of 6 the oil share gene, 7 the wall gene, 8 the
+// sides' mean stiffness; 9 cells whose wall covers at least half; in the light (spot or full field): 10 cells, sums of 11 the oil
+// gene x 1000, 12 the stiffness x 1000, 13 the temperature x 100; 14 all cells' temperature x 100; 15 the light's wall gene x 1000
+var<workgroup> wle: atomic<i32>;
+var<workgroup> wlps: array<atomic<i32>, 16>;
 
 @compute @workgroup_size(64)
 fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index) li: u32, @builtin(workgroup_id) wid: vec3u) {
@@ -1596,10 +2007,21 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     // step C6c: the membrane's linkers count with the cells' l and L (the atoms' books)
     for (var k = 0u; k < 6u; k++) { ml += max(atomicLoad(&stock[i * SW + MB_L0 + k]), 0); mh += max(atomicLoad(&stock[i * SW + MB_H0 + k]), 0); }
     evc = max(atomicLoad(&stock[i * SW + EVW]), 0);   // step C7: the voltage's energy counts as stored, with the battery
+    // step C12b: the lipid membrane's molecules count as their atoms with the cells' g, t, l and L (the atoms' and charge's books),
+    // and their chemical energy (below the free atoms') on its own (LG_LIP_E)
+    var lk = array<i32, 5>(0, 0, 0, 0, 0);
+    for (var q = 0u; q < 5u; q++) { for (var k = 0u; k < 6u; k++) { lk[q] += max(atomicLoad(&stock[i * SW + lpw(q, k)]), 0); } }
+    var le = 0;
+    for (var q = 0u; q < 5u; q++) { le -= lk[q] * ep_i(EP.e16, lk_ch(q)); }
+    if (le != 0) { atomicAdd(&wle, le); }
+    for (var q = 0u; q < 5u; q++) { if (lk[q] != 0) { atomicAdd(&wlps[q], lk[q]); } }
+    let lAtoms = lk[LK_GP] + lk[LK_TM] + lk[LK_OIL];
     for (var k = 0u; k <= BAT; k++) {
       var v = max(atomicLoad(&stock[i * SW + k]), 0);
-      if (k == MB_CH_L) { v += ml; }
-      if (k == MB_CH_H) { v += mh; }
+      if (k == MB_CH_L) { v += ml + lAtoms + 2 * lk[LK_CL]; }
+      if (k == MB_CH_H) { v += mh + lAtoms + 2 * lk[LK_CH]; }
+      if (k == 0u) { v += lk[LK_GP]; }
+      if (k == 1u) { v += lk[LK_TM]; }
       if (k == BAT) { v += evc; }
       if (v == 0) { continue; }
       atomicAdd(&wlo[k], u32(v) & 0xffffu);
@@ -1680,6 +2102,24 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       if (abs(c.q) > 0.3) { atomicAdd(&wmbs[MB_SELQ], 1); }
     }
     atomicAdd(&wmbs[MB_QSEL], i32(round(c.q * gm.w * 1000.0)));
+    // step C12b: the lipid census (genes, stiffness, temperature; in the light and in all)
+    var ks = 0.0;
+    var wc = 0.0;
+    for (var k = 0u; k < 6u; k++) { let lq = lip_side(c, k); ks += lq.x * LIP_KMAX / 6.0; wc += lq.w / 6.0; }
+    let tc = f32(hs) / 9.0 * HP.tempScale;
+    atomicAdd(&wlps[5], 1);
+    atomicAdd(&wlps[6], i32(round(gm.x * 1000.0)));
+    atomicAdd(&wlps[7], i32(round(b.lip.x * 1000.0)));
+    atomicAdd(&wlps[8], i32(round(ks * 1000.0)));
+    if (wc >= 0.5) { atomicAdd(&wlps[9], 1); }
+    atomicAdd(&wlps[14], i32(round(min(tc, 1e5) * 100.0)));
+    if (lit) {
+      atomicAdd(&wlps[10], 1);
+      atomicAdd(&wlps[11], i32(round(gm.x * 1000.0)));
+      atomicAdd(&wlps[12], i32(round(ks * 1000.0)));
+      atomicAdd(&wlps[13], i32(round(min(tc, 1e5) * 100.0)));
+      atomicAdd(&wlps[15], i32(round(b.lip.x * 1000.0)));
+    }
     // step C7: the pumps' census (PS_* above)
     let gp = b.pump;
     var act = false;
@@ -1742,7 +2182,10 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
   if (li < 16u) {
     let v = atomicLoad(&wmbs[li]);
     if (v != 0) { atomicAdd(&hb[LG_MB + 16u * li + (wid.x & 15u)], v); }
+    let w = atomicLoad(&wlps[li]);   // step C12b
+    if (w != 0) { atomicAdd(&hb[LG_LIP_S + 16u * li + (wid.x & 15u)], w); }
   }
+  if (li == 63u) { add64(LG_LIP_E + (wid.x & 63u), atomicLoad(&wle)); }   // step C12b: the lipids' energy
   if (li < 4u) {
     let v = atomicLoad(&wq[li]);
     if (v != 0) { atomicAdd(&hb[LG_Q_CEN + 16u * li + (wid.x & 15u)], v); }

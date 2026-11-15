@@ -92,7 +92,8 @@ export class Membrane {
   /** The step's words in struct Fields (memb, from word 64; src/cells.js writeFields). */
   writeFields(u, f, o) {
     const p = this.params;
-    u[o] = (this.rule('elastic') ? 1 : 0) | (this.rule('on') ? 2 : 0) | (this.burstOn ? 4 : 0);
+    u[o] = (this.rule('elastic') ? 1 : 0) | (this.rule('on') ? 2 : 0) | (this.burstOn ? 4 : 0) |
+      (this.eat.lipids && this.eat.lipids.active ? 8 : 0);   // step C12b: MB_LIPID, each corner's stiffness from its sides' lipids
     f[o + 1] = Math.max(1e-4, p.tRef); f[o + 2] = Math.max(0.02, Math.min(1, p.soft)); f[o + 3] = 0;
   }
 

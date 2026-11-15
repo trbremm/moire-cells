@@ -55,6 +55,7 @@ export const FLAT = {
   field: { A: [241, 236, 223], B: [128, 158, 255], P: [236, 218, 124] },
   charge: { pos: [236, 132, 146], neg: [128, 184, 236] },
   walls: { uniform: [118, 112, 106], polar: [236, 140, 104], ends: [124, 214, 172], sides: [206, 136, 222] },
+  lipid: { crustLight: [176, 128, 72], crustHeavy: [120, 84, 56], pearl: [236, 226, 246] },   // step C12b: the walls' crust, soap's pearl
   levels: { substances: 0.85, field: 0.32, spot: 0.55, charge: 0.7 },
 };
 
@@ -86,6 +87,7 @@ export const NEON = {
   field: { A: [255, 222, 184], B: [64, 132, 255], P: [255, 226, 64] },
   charge: { pos: [255, 70, 110], neg: [70, 170, 255] },
   walls: { uniform: [128, 128, 148], polar: [255, 110, 60], ends: [60, 255, 170], sides: [255, 60, 230] },
+  lipid: { crustLight: [200, 128, 44], crustHeavy: [132, 72, 32], pearl: [246, 232, 255] },   // step C12b: the walls' crust, soap's pearl
   levels: { substances: 0.62, field: 0.2, spot: 0.4, charge: 0.55 },
 };
 

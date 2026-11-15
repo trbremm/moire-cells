@@ -48,10 +48,10 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
     day and night;
   - *view* (the eye): first the **look** (step C6n: neon, halo, trails, hum, show the machinery, substances as dust or
     halftone, the lattice inside the cells; step C6b: the charge contours; step C6c: corner rounding), then the entropy panel, the stats overlay (F),
-    the landscape, which substance is shown, colour by fate, lineage, strategy (step C6) or charge (step C6b), and the
-    other drawing switches;
+    the landscape, which substance is shown, colour by fate, lineage, strategy (step C6), charge (step C6b) or wall pattern
+    (step C10), and the other drawing switches;
   - *rules*: every rule that has a key, as a switch with a one-line explanation and its key, grouped as below
-    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge, membrane chemistry (step C6c, panel only), charge per side (step C6d, panel only: the dipoles' switches and six knobs with - and +), pumps (step C7, panel only: four switches and five knobs with - and +), catalysts (step C7b, panel only: two switches and four knobs), hard light (step C8, panel only: one switch and three knobs), division (step C9, panel only: the mode and five knobs)); settings with several values show the current one
+    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge, membrane chemistry (step C6c, panel only), charge per side (step C6d, panel only: the dipoles' switches and six knobs with - and +), pumps (step C7, panel only: four switches and five knobs with - and +), catalysts (step C7b, panel only: two switches and four knobs), hard light (step C8, panel only: one switch and three knobs), division (step C9, panel only: the mode and five knobs), patterned walls (step C10, panel only: four switches and five knobs)); settings with several values show the current one
     and change on a tap; the lever and the stiffness have - and +. The switches follow the state, also when a key changes it;
   - *dish* (the dish with three cells): the speed as a row of buttons, new culture (N), new genomes (G), clear
     springs (C), wash the atoms out (Shift+C).
@@ -82,7 +82,8 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   `?until=T` (run to simulation time T, then pause at exactly that tick); step C6b: `?charge=0`, `?qstock=0`, `?qfeel=0`,
   `?contours=1`, `?view=charge`; step C6c: `?honeycomb=0` (the ellipse cells), `?membrane=0` (no membrane chemistry),
   `?bites=0`, `?burst=0`, `?elastic=0`, `?selectivity=0`; step C6d: `?dipoles=0`, `?dd=0`, `?dphi=0`, `?dfield=0`; step C7: `?pumps=0`, `?pumpcontact=0`, `?voltage=0`, `?v2b=0`; step C7b: `?crystal=0`, `?cofactor=0`; step C8: `?hardmut=0`; step C9: `?divide=0` (the old turnover, a fixed count), `?cap=N` (the capacity), `?divat=`,
-  `?divcost=`, `?starve=`, `?crowd=`, `?age=` (the division's knobs).
+  `?divcost=`, `?starve=`, `?crowd=`, `?age=` (the division's knobs); step C10: `?walls=0` (every side as sticky as the
+  adhesion gene, as before), `?wallfront=0`, `?wallcost=0`, `?mature=0`, `?view=walls`.
   Experiments (see "Experiments: tools"): `?mut=0` (mutation off), `?life=0` (life cycle off), `?snap=<file>` (load a
   saved state), `?clone=1` (every cell gets the first cell's genes; `?clone=@N`: slot N's), `?genes=adhesion:0.8,motility:0.5`.
 
@@ -118,7 +119,8 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   C6b, "Charge" below)
 - **I**: daughters inherit their parent's fate on/off (default off: they start as stem cells)
 - **V**: colour by fate, by lineage (the key's hue), by strategy (step C6: how the cell's engines make a living), or by
-  charge (step C6b: rose net +, blue net -, grey neutral)
+  charge (step C6b: rose net +, blue net -, grey neutral), or by wall pattern (step C10: coral polar, mint two-ended, magenta
+  sticky sides, grey uniform)
 - **[** / **]**: simulation speed 1× / 2× / 4× / 8× / 16× / 32× / MAX (step C3b: the last three are the timelapse)
 - Part C keys are **Shift + a letter** (step C1: Shift+H heat jitter, Shift+E entropy panel, Shift+R ripples simmer;
   see "Heat and the entropy counter" below; step C2: Shift+L light spot / full field / off, Shift+D day and night;
@@ -2500,6 +2502,180 @@ and division itself costs nothing more. With the whole dish lit and 3700 cells t
 ran without errors and draws the COUNT line; Chrome at phone size (390 × 844): the compact line fits, the rules panel
 shows the new group with its buttons, console clean.
 
+## Step C10: patterned walls
+
+The user (CLAUDE.md, C10): "evolve walls with different adhesion levels on different parts of it", and, on Claude's proposal,
+"I want those effects to combine". Each of the six sides of a cell now has its own stickiness, set by a few genes round the wall;
+the pattern hangs on the cell's FRONT, which a daughter inherits and the charge dipole can turn; a contact holds only as well as
+the LESS sticky of the two touching sides; glue costs linkers in the membrane and battery upkeep; and a contact that lasts
+matures and grows stickier. All of it is on by default, each part with its own switch.
+
+**What it looks like.** In the clean view (default) the change is in the tubes: a sticky side's tube is a little brighter, a
+side with no glue a little dimmer (±25 %, so a wall of middling stickiness looks as before), and a junction that has matured
+(two sides that have held each other for some seconds) goes whiter and a touch brighter on both cells, so a matured contact
+reads as a bright shared wall. In a held tissue the shared walls inside are all whitish and the free rim stays the cells' own
+colour (picture: `shots/c10/zoom/c10-uni-lb-100-al_clean.png`, not in the repository; the stored configuration
+`experiments/tissue/configs/c10-uni-lb-100-al/clean.jpg`). With **the machinery** (Shift+4) every cell also carries a short tick
+from its centre toward its front. **Colour by wall pattern** (V, the fifth view; `?view=walls`) fills each body in its pattern's
+ink, grey uniform, coral polar (front sticky, back not, or the other way), mint two-ended (both ends sticky), magenta sticky
+sides, and shades the tubes strongly by each side's glue, so a two-ended cell shows two bright ends and dark flanks, and a chain
+of them reads as bright bars between the cells.
+
+In the default scene the colony in the light is **looser** than before: with the cost on, a cell holds glue only where its
+membrane has the linkers for it and its battery pays the upkeep, and most cells lack the linkers for most of the run (the mean glue
+held is 0.02 to 0.28 of the 0.5 to 0.7 the genes ask for), so neighbours that hold no glue push off a little (the adhesion's
+`adhBase`, as unlike neighbours always did) and the colony becomes a foam of cells with dark gaps between them, with whitish
+matured patches where linkers are plenty (near the springs). With `?wallcost=0` it packs as before.
+
+**The pattern.** Three smooth genes in the cell's own frame set each side's adhesion:
+
+    P(psi) = clamp(a0 + s (a1 cos psi + a2 cos 2 psi), 0, 1)
+
+psi the direction of the side's middle measured from the cell's front, s the pattern strength (knob, 1). **a0** is the overall
+stickiness: it is the adhesion gene itself (Bio.body.x), so a uniform wall is exactly the old adhesion gene. **a1** is the
+polar part (+: the front sticky and the back not; −: the other way). **a2** is the two-fold part (+: both ends sticky and the
+flanks not; −: the flanks sticky and the ends not). Mutation drifts a1, a2 and w (below) by 0.04 a birth (a normal step, kept
+within −1..1 and 0..1; times the step C8 hard light factor, like every gene); the founders' walls are near-uniform (|a1|, |a2| up
+to 0.08), so a pattern has to evolve. New genes in Bio.wall (the genome grew from 48 to 52 floats), from their own random
+stream (`?seed=` keeps every other gene).
+
+**The front.** Cell.front (radians) is a direction fixed in the cell's body: it turns as the honeycomb hexagon turns (the contacts'
+turning, step C6c), and a daughter **inherits** it: at a division (step C9) she gets her mother's front and her mother's hexagon
+(orientation, outline and corner slides: before C10 her hexagon started turned at random); at a turnover birth the parent's front
+and orientation from the lean copy. The gene **w** (0..1) lets the charge dipole (step C6d) pull the front round: toward the
+dipole's + end at `frontRate` (0.5 rad/s) × w × |d| × the sine of the angle between them. With w = 0 the front is the inherited
+orientation alone; with w = 1 and a strong dipole it follows the dipole within a few seconds; a weak or passing dipole barely
+moves it, so the front stays a property of the cell. The founders' w is 0 to 0.5. A culture's founders get their fronts from
+their seeds (all directions).
+
+**The contact.** A contact holds by the SMALLER of the two touching sides' effective adhesion (both must be sticky), times what
+the adhesion already had for matching (the keys' likeness, the J of the reference, and the same-fate glue):
+
+    pull = (min(A_i, A_j) x (likeness + same-fate glue) - adhBase) x strength x R x contact stiffness
+
+where it was (sqrt(a0_i a0_j) x likeness + same-fate glue − adhBase) × the same. So a pair of uniform cells with the same a0 holds
+as before (a0 × likeness), the same-fate glue now needs glue molecules too, and a pair whose touching sides hold nothing pushes
+off a little (− adhBase), as unlike neighbours always did. Which side faces the neighbour: by the direction to it against each
+hexagon's orientation (side k spans theta + k × 60 .. (k + 1) × 60 degrees; `wall_side` in `cell_common.wgsl`), at the 8 bits of
+theta the neighbours see, so both cells of a contact pick the same pair of sides and the forces stay equal and opposite.
+
+**Cost.** Adhesion molecules are made of **linkers** in the membrane. A side wants, on top of its membrane (step C6c),
+`linkPer` (0.012 atom-units per R of side, as much again as the founders' thin membrane) × its adhesion × its rest length, in the
+membrane's own mix of l and L, woven by the membrane's repair (paying the same sparks from the battery). The membrane itself fills
+first: a side holds glue only as far as it holds linkers beyond its membrane's want. And the battery pays an **upkeep** for the
+glue held, `upkeep` (0.001 energy per s per R of side at adhesion 1; a fully sticky cell has about 6.6 R of wall: 0.0066 per s,
+about two engine rate-units' upkeep) × adhesion × the side's length, as heat; what it cannot pay it cannot hold (every side × the
+share paid). So stickiness is paid for where it is used, in matter and in energy. Without the membrane chemistry there is no
+material to count (only the upkeep). Derived only: no cost depends on the pattern itself.
+
+**Maturation.** A side that keeps touching a sticky neighbour matures: its maturity rises at `matureRate` (0.2 per s, by how fully
+it touches) toward 1 and fades at `matureFade` (0.5 per s) once the contact is lost; a junction holds × (1 + (`matureCap` − 1) ×
+maturity), up to × 2 (and wants that much more linker and upkeep).
+
+**Switches** (rules panel, group "Patterned walls (step C10)"; panel only, no keys are free): **patterned walls** (the master;
+off: the adhesion of steps 3b to C9, exactly: the old formula, no linker want, no upkeep, a daughter's hexagon turned at random) ·
+**front follows the dipole** · **adhesion costs** · **junctions mature**. Knobs with − and +: **pattern strength**, **front
+turning**, **maturation rate**, **maturity cap**, **cost per adhesion** (the upkeep). URL: `?walls=0`, `?wallfront=0`,
+`?wallcost=0`, `?mature=0`, `?view=walls`. Console: `moire.walls.params` (also `matureFade`, `linkPer`, `patternMin`),
+`moire.walls.look` (`sticky` 0.25, `junction` 0.3, `junctionGlow` 0.12, `frontTick` 0.8, `viewTube` 0.7, `viewFill` 0.3),
+`await moire.walls.stats()` (where on the walls the contacts sit: front, flank, back; the glue; the matured share), and the genes
+by name for the tissue lab: `moire.genome.setAll({ a0: 0.5, a1: 0, a2: 0.5, w: 0 })` (`a0` is `adhesion`).
+
+**The census.** A WALLS line in the entropy panel:
+
+    WALLS  a0 0.60 · |a1| 0.45 · |a2| 0.37 · uniform 4%, polar 56%, two-ended 20%, sides 19% · mature 0.07 (contacts 6%) · glue 0.15 of 0.64 asked · in adhesion: linkers 21.1, upkeep 1.50/s
+
+(the mean genes; the pattern classes: uniform when |a1| and |a2| are both below 0.15, else polar when |a1| is the larger, else
+two-ended or sticky sides by the sign of a2; the sides' mean maturity and the share of contacts whose side has matured above half;
+the mean glue held against the mean asked for; the linkers held for adhesion and the upkeep paid per s). On a phone
+`WALLS uni 4% pol 56% end 20% sid 19% · mature 0.07 · 1.50/s`. The F overlay adds the switches and knobs, the signed means of a1
+and a2, w, the contacts and their glue, the share meeting with the front, how well the front follows the dipole (the mean cos over
+the polarised cells) and the classes every 30 s. Counted on the GPU by the step on the frame's last tick (Stats.wall, 24 words;
+the genes also while the walls are off, for the controls), read back with the cells' census; in `moire.sample()` as `walls.*`
+(and the last `stats()` as `wallstats.*`).
+
+**How it is computed.** The eat pass (`cell_eat.wgsl`, right in the membrane's repair) works out each side's pattern (from the
+genes, the front and the side's real middle), its maturity factor, the extra linker it wants (the repair weaves it), what it
+holds, the upkeep and the share paid, and writes each side's effective adhesion (Cell.wadh, 8 bits a side, 0..3), the linkers
+held for adhesion and the upkeep paid (Cell.wlink, wpay). The grid's scatter copies it into the lean neighbour copy with the
+hexagon's orientation and the front (8 bits each: CellCore grew from 112 to 120 bytes). The step (`cell_step.wgsl`) takes the
+smaller side of each contact in the neighbour loop, matures the junctions (Cell.mature, 16 bits a side), turns the front, makes the
+inheritance and counts the census. The Cell record grew from 256 to 288 bytes (words 64..71: front, mature[3], wadh[2], wlink,
+wpay), Fields to 416, EatP to 1504, Draw to 864, Stats to 8736 bytes. Snapshots: the walls' state is in the Cell and Bio records
+and `walls.params`; a snapshot saved before C10 (cells of 64 words, genomes of 48) loads with the new words empty and the walls
+**off**, so it runs on as it was saved (the stored tissue configurations load and run as before: checked below).
+
+**The books.** The adhesion's linkers sit in the membrane's words, so they count with the cells' l and L (the atoms' books, exact);
+weaving them pays the membrane's sparks; the upkeep goes from the batteries to heat. Nothing else moves matter or energy.
+
+**In the tissue lab** (hand-set patterns, no evolution; the whole series in TISSUE.md, "C10: patterned walls in the tissue lab").
+With the front fixed in each cell and nothing that turns a cell's sticky side toward its neighbours, a patterned wall cuts a
+sheet into small units of a shape the pattern sets, and the contacts sit exactly where the pattern says: **polar** cells make
+front-to-front pairs and little rosettes of 3 to 5 with their sticky fronts in the middle (contacts at the front 56 to 70 %);
+**two-ended** cells make dumbbells and short chains, 2 to 4 cells end to end (contacts at the flanks 2 to 9 %), the joints bright
+bars in the walls view; **sticky sides** make side-by-side pairs and small rafts (contacts at the flanks 44 to 71 %). None makes a
+tissue by itself (scores 0.06 to 0.15 with field A off, against 1.0 for a uniform wall); the long beat (lever 0.2) glues them back
+into loose nets and islands (0.16 to 0.55, islands up to 0.85). A uniform wall makes the honeycomb sheet as before, its inner
+junctions all matured (bright shared walls). No cyst with a lumen, bilayer, long chain or palisade in 120 s. With the cost on (a
+linker spring under the cells, dark dish) the tissue holds while the batteries last and lets go when they are empty (about 90 s).
+The front follows the dipole when w = 1 (mean cos between front and dipole 0.49 to 0.65, against −0.08 to 0.12 with w = 0).
+Pictures (not in the repository): `shots/c10/zoom/c10-pol-off-m0-al_walls.png` (rosettes), `shots/c10/zoom/c10-end-off-m1-al_walls.png`
+(dumbbells and chains), `shots/c10/zoom/c10-end-off-m1-al_machinery.png` (the front ticks); stored: `experiments/tissue/configs/c10-*/clean.jpg`.
+
+**Evolution** (the default scene, 2000 cells, division, MAX, headless Chrome; seeds 3 and 7, 20 minutes, walls on (the defaults)
+against `?walls=0`; and seed 3 with the long beat, `lever 0.2`, both ways; one run each, not bit-repeatable; the walls' genes are
+counted in the controls too, where they drift without acting):
+
+| run | cells 2 / 5 / 10 / 15 / 20 min | entropy at 20 min (rate) | uniform / polar / two-ended / sides at 20 min | mean a1, a2 (|a1|, |a2|) at 20 min | glue held / asked | linkers in adhesion, upkeep |
+|---|---|---|---|---|---|---|
+| seed 3, walls on | 908 / 1368 / 1406 / 986 / 633 | 18.0 M (14.5 k/s) | 2 / 49 / 46 / 3 % | −0.08, +0.44 (0.53, 0.53) | 0.26 / 0.53 | 16.9, 1.24 /s |
+| seed 3, walls off | 807 / 1107 / 1489 / 1154 / 730 | 16.3 M (14.3 k/s) | 3 / 61 / 17 / 18 % | −0.32, +0.02 (0.52, 0.38) | - | - |
+| seed 7, walls on | 647 / 1410 / 1642 / 869 / 621 | 19.4 M (15.6 k/s) | 2 / 33 / 2 / 63 % | −0.17, −0.57 (0.45, 0.61) | 0.02 / 0.54 | 1.8, 0.11 /s |
+| seed 7, walls off | 642 / 1180 / 1705 / 1186 / 858 | 17.9 M (16.6 k/s) | 4 / 46 / 42 / 8 % | −0.22, +0.36 (0.49, 0.50) | - | - |
+| seed 3, long beat, walls on | 797 / 1104 / 1772 / 848 / 587 | 16.4 M (12.9 k/s) | 6 / 32 / 51 / 11 % | −0.07, +0.37 (0.42, 0.54) | 0.28 / 0.69 | 16.8, 1.25 /s |
+| seed 3, long beat, walls off | 824 / 1520 / 1790 / 791 / 509 | 15.8 M (12.2 k/s) | 3 / 61 / 18 / 18 % | +0.58, −0.03 (0.61, 0.44) | - | - |
+
+Plainly:
+- **Patterns appear fast, but by drift, not (visibly) by selection.** Within 5 minutes fewer than a sixth of the cells have a
+  uniform wall, by 20 minutes 2 to 6 %, in the controls exactly as with the walls on. The genes move 0.04 a birth, and in the
+  spotlight the hard light (step C8) multiplies every mutation by 3 to 10, so a lineage's a1 and a2 wander across their whole range
+  in some tens of generations. Which pattern ends up common follows the winning lineages (seed 7 with the walls on: sticky sides
+  63 %; without: two-ended 42 %), and the signs differ between seeds and between on and off. The one hint of something more: the
+  three runs with the walls on ended with larger |a2| (0.53 to 0.61) than their controls (0.38 to 0.50), and seed 3 went two-ended
+  both times (46 % and 51 %, a2 +0.44 and +0.37) where its controls stayed polar. One run each: a hint only.
+- **The tissue does not look patterned.** Where the contacts sit on the walls is random (front / flank / back a third each, in
+  every run), because the fronts are not tied to anything the neighbours do: a colony's cells point every way. What does show is
+  the cost: most cells hold little glue (the glue held 0.26 of the 0.53 to 0.69 asked in seed 3; almost none in seed 7, whose
+  colony built few membranes: mean integrity 0.28), so the colony is a looser foam with dark gaps between the cells, with whitish
+  matured walls in patches where linkers are plenty (near the springs and in the old culture's middle). Pictures:
+  `shots/c10/zoom/evo-on_s7_clean.png`, `..._walls.png` (not in the repository; runs `experiments/runs/c10/c10-evo-*`).
+- **Count and entropy.** The counts follow step C9's course (the dark clears in two minutes, the colony grows from the light,
+  peaks at 10 minutes, shrinks as the springs dry up); at 20 minutes 633 and 621 cells with the walls on against 730 and 858 off,
+  but 587 against 509 with the long beat: no clear difference. The entropy (heat out) at 20 minutes was a little higher with the
+  walls on in all three pairs (+4 to +10 %; the upkeep itself is only about 1.2 energy per s of the 13 to 17 thousand per s that
+  leave as heat); ORDER the same (0.21 to 0.22).
+- **The long beat** (the tissue series' glue) made no visible tissue in the default scene either: the colony's cells are fed,
+  divide and move, and the field holds them only loosely.
+
+**Checked.** The books: a 700 s run at MAX (seed 5) through N (120 s), a wash (220 s), a resize to 1000 × 700 (300 s), G (400 s), a
+resize back (480 s), two new springs (520 s), switching the walls off and on, the cost, the maturation, the front and the honeycomb
+at runtime (560 to 610 s) and a snapshot saved and loaded at once (640 s: exact): atoms and charge rounding exactly 0 and the
+energy's between −0.097 and −0.003 (in 7.5 M), except in the one sample taken in the same paused instant as each resize (the old
+grid not yet drained into the new one: atoms 927 and 405, energy 42 k and 22 k; 10 s later 0 again). The same run with `?walls=0`
+shows the same two samples (880 and 376 atoms), so that is the experiment tool sampling mid-resize, not the walls (the run's
+count also falls the same way after G in both: 32 and 48 cells at 590 s). The six 20-minute runs and the 56 tissue runs: atoms
+and charge 0 in every sample, energy between −0.13 and +0.12. The tissue series' stored configurations (saved before C10) reload
+with the walls off and keep their form (TISSUE.md). No WebGPU errors in Chrome (headless; also at phone size 390 × 844: the short
+WALLS line fits, the rules panel shows the group with its switches and knobs) or Firefox (headed, 1600 × 1000, the walls view).
+**Cost (speed).** Measured as the earlier steps were (headless Chrome, 2000 cells, seed 3, MAX, the mean speed reached from 40 to
+150 s), but the GPU was shared the whole time with another worker's experiment runs (two to three pages at once), so the numbers
+say little: alternating runs gave the commit before C10 ×9.3 and ×1.54, C10 ×1.59 and ×1.42, C10 with `?walls=0` ×1.53 and
+×9.19 (the two ×9 runs fell into a quiet moment); the three run side by side at once (sharing the GPU equally) gave ×0.66
+(before), ×0.71 (C10) and ×0.68 (`?walls=0`). So no cost shows above the noise; what it costs in principle: the lean neighbour
+copy grew from 112 to 120 bytes (read for every neighbour of every cell each tick), the Cell from 256 to 288 bytes, and the eat
+pass works out six cosines per cell. Worth measuring again on a quiet GPU. Firefox (headed, 1600 × 1000) ran at ×2.2 at 8× on the
+shared GPU (not comparable either).
+
 ## The look of the landscape
 
 Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the
@@ -2556,6 +2732,12 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   stats read-back), the DIVISION and COUNT panel lines, the overlay and `stats()` (where the cells are: light, patches); the
   free-slot list is built by the grid (`cell_grid.wgsl`: the dead slots' bucket), the divisions and deaths are in
   `cell_step.wgsl`, the division's cost and the split in `cell_eat.wgsl` (split), the flash and the fading in `cell_draw.wgsl`
+- `src/walls.js`: patterned walls (step C10): the switches and knobs, the census (from the cells' stats read-back,
+  Stats.wall), the WALLS panel line, the overlay and `stats()` (where on the walls the contacts sit, the glue, the junctions); each
+  side's pattern, linker want and upkeep are worked out in `cell_eat.wgsl` (Cell.wadh), the smaller side of each contact, the
+  maturation, the front and the inheritance in `cell_step.wgsl`, the side lookup and the genes' drift in `cell_common.wgsl`
+  (wall_side, mutate), the lean copy's walls in `cell_grid.wgsl` (scatter, cell_core), the look in `cell_draw.wgsl`;
+  `experiments/tissue/c10.py`: the tissue lab's C10 conditions and their analysis
 - `src/hardlight.js`: hard light mutates (step C8): the switch and knobs, the census (from the heat's ledger read-back),
   the HARD LIGHT panel line, the overlay and `stats()` (touching neighbours' likeness, light and dark); the dose is kept
   in `cell_eat.wgsl` (Cell.flags bits 19..31, struct EatP `hl`), the mutation at a birth in `cell_step.wgsl` (struct
@@ -2667,13 +2849,14 @@ A condition file (every key but `name` optional; the comments in brackets are no
       "shots": [{"t": 0}, {"t": 60, "view": "lineage", "panel": true, "name": "end"}],
       "clips": [{"t": 10, "until": 20, "speed": 8}],
       "snapshots": [{"t": 60, "grid": false}],
+      "resizes": [{"t": 30, "size": "1000x700"}],   (step C10: the window resized, Chrome only, before the evals at that time)
       "stall": 60, "timeout": 0
     }
 
 - `query`: URL options (README "Controls" and the steps' sections). All times are run times (s since the start).
 - `evals`: statements run in the page (`await` allowed; a `return` value is kept in `meta.json`). If an eval moves the
   clock (e.g. `moire.loadSnapshot`), the run's timeline moves with it; a stir moves it by a fraction of a second.
-- `shots`: `view` is `clean` (default: colour by fate, no machinery), `fate`, `lineage`, `strategy`, `charge` or
+- `shots`: `view` is `clean` (default: colour by fate, no machinery), `fate`, `lineage`, `strategy`, `charge`, `walls` (step C10) or
   `machinery`; the panels are hidden unless `"panel": true`.
 - `clips`: a .webm of the dish from `t` to `until`, recorded while it runs at `speed` (default 8); events inside that span
   happen at its end; at least 2 s of real time is recorded (shorter recordings can come out empty).
@@ -2724,7 +2907,7 @@ tooltip on every point, a dark version for a dark screen). matplotlib is not use
   `await moire.genome.cloneAll(i)`, `await moire.genome.setAll('stiffness', 1.5)` or `setAll({ mix: 0.8, thickness: 0.03 })`,
   `await moire.genome.get(i)`. Gene names (`moire.genome.GENES`): `keyAngle keyScale recAngle recScale recWidth threshold
   output founder resp0..3 relay0..3 adhesion size motility eng0..2 tolerance rate0..2 permeability mix thickness
-  stiffness selectivity pump0 pump1 pumpRate0 pumpRate1`; engine and pump slot codes from
+  stiffness selectivity pump0 pump1 pumpRate0 pumpRate1`, and since step C10 `a0` (= adhesion) `a1 a2 w` (the walls); engine and pump slot codes from
   `moire.genome.engineCode('gt → g + t', band)` and `moire.genome.pumpCode('g', 'out')`. `?founders=1` (one founder
   genome) also gives a single genome, from birth.
 - `await moire.tissue.stats()`: touching pairs (closer than the genome's contact reach, 1.15 x the sum of the radii),

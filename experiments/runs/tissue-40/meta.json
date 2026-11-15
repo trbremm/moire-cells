@@ -1,0 +1,78 @@
+{
+  "name": "tissue-40",
+  "description": "Tissue setup smoke test: 40 cells, one genome cloned to all, mutation and life cycle off; tissue measures every 5 s; a stir at 40 s; snapshot (cells only) at the end.",
+  "condition": {
+    "name": "tissue-40",
+    "description": "Tissue setup smoke test: 40 cells, one genome cloned to all, mutation and life cycle off; tissue measures every 5 s; a stir at 40 s; snapshot (cells only) at the end.",
+    "query": {
+      "seed": 3,
+      "cells": 40,
+      "mut": 0,
+      "life": 0,
+      "clone": 1,
+      "genes": "adhesion:0.9,motility:0.6"
+    },
+    "duration": 60,
+    "sample_every": 5,
+    "tissue": true,
+    "evals": [
+      {
+        "t": 40,
+        "js": "await moire.tissue.stir(560, 400, 14, 0, 12)"
+      }
+    ],
+    "shots": [
+      {
+        "t": 0
+      },
+      {
+        "t": 35
+      },
+      {
+        "t": 60,
+        "view": "lineage",
+        "panel": true
+      }
+    ],
+    "snapshots": [
+      {
+        "t": 60,
+        "grid": false,
+        "name": "tissue-end"
+      }
+    ]
+  },
+  "url": "http://localhost:52913/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&cells=40&mut=0&life=0&clone=1&genes=adhesion:0.9,motility:0.6",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "ae493ae0ed8078815a75fbfb8e82090ed4bb385f",
+  "dirty": false,
+  "started": "2026-11-15T09:21:49",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 2.34,
+  "speed_reached": 25.64,
+  "samples": 13,
+  "shots": [
+    "shots/t0.png",
+    "shots/t35.png",
+    "shots/t60_lineage.png"
+  ],
+  "snapshots": [
+    "snapshots/tissue-end.json"
+  ],
+  "clips": [],
+  "evals": [
+    {
+      "t": 40.000000000000014,
+      "js": "await moire.tissue.stir(560, 400, 14, 0, 12)",
+      "result": null
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T09:22:13",
+  "wall_s": 23.99
+}

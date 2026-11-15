@@ -2748,9 +2748,9 @@ the repository is public).
 ### Smoke tests (2026-11-15, GTX 1650, headless Chrome 157 unless said)
 
 - `default-2min` (2000 cells, seed 3, 120 s at x11.8): CSV, panel, 4 shots, a snapshot of 1.1 MB. The count falls from
-  1984 to 809 (the dark clears out, as in step C9), the entropy rate from 16 k/s to 7 k/s; atoms and charge rounding 0
-  all the way. Table and plots: `experiments/summaries/smoke/`.
-- `tissue-40` (40 cells, one genome, no evolution, adhesion 0.9, motility 0.6, 60 s at x27): one cluster of all 40 the
+  1984 to about 810 (the dark clears out, as in step C9; two runs gave 809 and 813: not bit-deterministic), the entropy rate from 16 k/s to 7 k/s; atoms and charge rounding 0
+  all the way. Table and plots: `experiments/summaries/smoke/` and `experiments/summaries/tissue-smoke/`.
+- `tissue-40` (40 cells, one genome, no evolution, adhesion 0.9, motility 0.6, 60 s at x23 to x27): one cluster of all 40 the
   whole time, about 8 contacts per cell (packed and overlapping: compactness about 2), persistence 0.93 to 0.99 per 5 s,
   the contacts' age growing with the run; the stir at 40 s doubles `move` for a moment, the cluster stays whole.
 - `snap-a`, then `snap-b`: a snapshot at 30 s, loaded into a new page and saved again at once: bit-identical; 60 s more

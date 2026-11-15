@@ -1334,7 +1334,7 @@ export class Cells {
     const PU = this.pumps;
     a[128] = L.pumpParts && PU && PU.rule('on') ? 1 : 0; a[129] = L.pumpSize; a[130] = PU && PU.rule('voltage') && L.marks ? L.voltRim : 0;
     a[131] = Math.max(1e-3, L.voltFull); a[132] = Math.max(1e-3, L.pumpRate); a[133] = L.pumpTint;
-    SUBSTANCES.forEach((sb, c) => {
+    SUBSTANCES.slice(0, 13).forEach((sb, c) => {   // (step C12: the 13 the cells hold; the oil and amphiphiles stay in the open)
       const I = P.substances[sb.func] || P.substances.linker;
       for (let k = 0; k < 3; k++) a[136 + 4 * c + k] = (I.light[k] + (I.heavy[k] - I.light[k]) * sb.heavy) / 255;
     });

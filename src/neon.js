@@ -277,14 +277,16 @@ export class Neon {
         this.scratch = d.createTexture({ label: 'neon probe', size: [v.pxW, v.pxH], format: this.canvasFormat, usage: GPUTextureUsage.RENDER_ATTACHMENT });
       }
       const view = this.scratch.createView(), g = { ...f, dt: 0, realDt: 0 }, trails = P.trails;
-      const e = d.createCommandEncoder({ label: 'neon probe' });
-      P.trails = false;
-      try { for (let k = 0; k < K; k++) this.encode(e, g, view, L); } finally { P.trails = trails; }
-      const cb = e.finish();
       const timed = async (cbs) => { const t0 = performance.now(); q.submit(cbs); await q.onSubmittedWorkDone(); return performance.now() - t0; };
       await q.onSubmittedWorkDone();
       const base = await timed([]);
-      const t = Math.max(0, (await timed([cb])) - base) / K;
+      // (step C12: encoded right before its submit, with no wait between: encoded before the waits, a window resize in
+      // them destroyed buffers it holds, "used in submit while destroyed", on a busy GPU)
+      if (!this.tex || !this.scratch || this.scratch.width !== this.view.pxW || this.scratch.height !== this.view.pxH) return;
+      const e = d.createCommandEncoder({ label: 'neon probe' });
+      P.trails = false;
+      try { for (let k = 0; k < K; k++) this.encode(e, g, view, L); } finally { P.trails = trails; }
+      const t = Math.max(0, (await timed([e.finish()])) - base) / K;
       this.timing = this.timing == null ? t : this.timing + (t - this.timing) * 0.3;
     } finally {
       this.probing = false;

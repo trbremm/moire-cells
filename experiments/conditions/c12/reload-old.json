@@ -1,0 +1,14 @@
+{
+ "name": "c12-reload-old",
+ "description": "Step C12: a snapshot saved before C12 (13 substances) loads, the new channels empty; run 60 s; books exact",
+ "query": {
+  "snap": "experiments/tissue/configs/c10-end-lb-100-al/snapshot.json"
+ },
+ "duration": 60,
+ "sample_every": 10,
+ "shots": [
+  {
+   "t": 60
+  }
+ ]
+}

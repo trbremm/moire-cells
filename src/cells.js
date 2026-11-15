@@ -67,7 +67,7 @@ const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder 
 const STATS_EVENTS = 64;
 const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_AW in cell_common.wgsl)
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
-const FIELDS_BYTES = 320;      // struct Fields in cell_common.wgsl (step C6c: + memb; step C6d: + dip0..dip2)
+const FIELDS_BYTES = 336;      // struct Fields in cell_common.wgsl (step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm)
 const FIELD_FORMAT = 'rgba16float';
 const DRAW_BYTES = 752;        // struct Draw in cell_draw.wgsl (step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
                                // step C6d: + the dipoles)
@@ -660,6 +660,7 @@ export class Cells {
     this.eat.membrane.writeFields(u, f, 64);   // step C6c: genetic elasticity, damaged sides softer, bursting
     this.dipole.writeFields(u, f, 68);         // step C6d: the dipoles
     f[67] = Math.max(0, this.genome.params.pumpJump ?? 0);   // step C7: pump slot jumps per birth (Fields.memb.w)
+    this.eat.hardlight.writeFields(f, 80);     // step C8: hard light mutates (Fields.hm)
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 

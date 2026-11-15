@@ -889,7 +889,32 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       let pc = sorted[parent];
       let pi = beats[parent].idx;
       var nb = bioPrev[pi];
-      if ((S.rules & RULE_MUT) != 0u) { nb = mutate(nb, bs, S.mutSize, S.mutJump, S.engJump, FL.memb.w); }
+      // step C8, hard light mutates: the parent's hard light dose (Cell.flags, from the eat pass) scales this copy's mutation,
+      // x (1 + hm.x x dose), at most hm.y x (the small steps' size and every jump's chance alike); with mutation off (key M)
+      // only the extra part mutates, so in the dark a lineage then stays pure
+      let pdose = cell_dose(pc.flags);
+      let hx = select(0.0, min(FL.hm.x * pdose, max(FL.hm.y - 1.0, 0.0)), FL.hm.x > 0.0);
+      let mOn = (S.rules & RULE_MUT) != 0u;
+      let ms = select(0.0, 1.0, mOn) + hx;
+      let e0 = nb.eng.xyz;                      // (to count the slot jumps: an engine or pump slot changed, started or emptied)
+      let r0 = nb.rate.xyz > vec3f(0.0);
+      let q0 = nb.pump.xy;
+      let qr0 = nb.pump.zw > vec2f(0.0);
+      if (ms > 0.0) {
+        nb = mutate(nb, bs, S.mutSize * ms, min(S.mutJump * ms, 1.0), min(S.engJump * ms, 1.0), min(FL.memb.w * ms, 1.0));
+      }
+      if (FL.hm.x > 0.0 || mOn) {
+        let lit = pdose >= 1.0;
+        let jumped = any(nb.eng.xyz != e0) || any((nb.rate.xyz > vec3f(0.0)) != r0) || any(nb.pump.xy != q0) ||
+                     any((nb.pump.zw > vec2f(0.0)) != qr0);
+        atomicAdd(&hb[LG_HL + 16u * HL_BIRTHS + (i & 15u)], 1);
+        atomicAdd(&hb[LG_HL + 16u * HL_FSUM + (i & 15u)], i32(round(select(1.0, ms, ms > 0.0) * 1000.0)));
+        if (lit) {
+          atomicAdd(&hb[LG_HL + 16u * HL_HIT + (i & 15u)], 1);
+          atomicAdd(&hb[LG_HL + 16u * HL_HIT_F + (i & 15u)], i32(round(ms * 1000.0)));
+        }
+        if (jumped) { atomicAdd(&hb[LG_HL + 16u * select(HL_JUMP_CLEAN, HL_JUMP_HIT, lit) + (i & 15u)], 1); }
+      }
       let inherit = (S.rules & RULE_INHERIT) != 0u;
       if (!inherit) { nb.acc = vec4f(0.0); }
       nb.env = vec4f(0.0);                      // a newborn has felt nothing yet and is not converted

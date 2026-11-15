@@ -695,7 +695,28 @@ struct Fields {
   dip2: vec4f,      // x the charges turn within the cell toward the field (rad / s at full torque); y the substrate field's
                     // weight in the field, against the neighbours' dipoles (1); z the field polarises the cell: the source of side
                     // charge along it (atom-units per s at a full field: dpRelax x polar x pHalf / 2.6); w spare
+  // ---- step C8, hard light mutates (src/hardlight.js) ----
+  hm: vec4f,        // x the extra mutation per energy unit of hard light dose (0 = off): a birth's mutation x (1 + x dose of the
+                    // parent), at most y x (with mutation itself off, key M, only the extra part); z, w spare
 };
+// step C8: a cell's hard light DOSE lives in Cell.flags bits 19..31 (written by the eat pass): the hard light its body caught,
+// fading as it is repaired, in DOSE_SCALE counts per energy unit (at most 8191 counts)
+const CELL_DOSE_SHIFT: u32 = 19u;
+const CELL_DOSE_MAX: u32 = 8191u;
+const DOSE_SCALE: f32 = 16.0;
+fn cell_dose(flags: u32) -> f32 { return f32(flags >> CELL_DOSE_SHIFT) / DOSE_SCALE; }
+// ... and its census (LG_HL in heat_common.wgsl): the snapshot (eat ledger) and the counters (the step's births)
+const HL_NL: u32 = 0u;         // cells in the light
+const HL_DL: u32 = 1u;         // ... their dose (counts)
+const HL_ND: u32 = 2u;         // cells in the dark
+const HL_DD: u32 = 3u;         // ... their dose (counts)
+const HL_HOT: u32 = 4u;        // cells whose dose would mutate their daughters at least 1.5 x as much
+const HL_BIRTHS: u32 = 8u;     // births
+const HL_FSUM: u32 = 9u;       // ... the sum of their mutation factor x 1000
+const HL_HIT: u32 = 10u;       // births from a parent with a dose of at least 1 energy unit ("lit parents")
+const HL_HIT_F: u32 = 11u;     // ... their factor x 1000
+const HL_JUMP_HIT: u32 = 12u;  // engine or pump slot jumps at the births from lit parents
+const HL_JUMP_CLEAN: u32 = 13u; // ... from the others
 const DP_ON: u32 = 1u;       // dipoles (master): the side charges make a dipole (lean copy, drawing)
 const DP_DD: u32 = 2u;       // dipole-dipole between near cells: torque (head-to-tail lines up), push (head-to-tail attract,
                              // side-by-side repel)

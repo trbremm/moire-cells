@@ -33,7 +33,7 @@
 
 const HEAT_SCALE: f32 = 65536.0;   // counts per energy unit
 const HEAT_V0: f32 = 10.0;         // CSS px / s: the speed whose motion energy is 0.5 units
-const LEDGER_WORDS: u32 = 21760u;   // (19200 until step C6b, 19712 until step C6c, 20224 until step C7)
+const LEDGER_WORDS: u32 = 22016u;   // (19200 until step C6b, 19712 until step C6c, 20224 until step C7, 21760 until C7b)
 const LG_WORK: u32 = 0u;     // 256 slots: work done on the cells by the forces (fields, contact, crawling, stirring)
 const LG_BASE: u32 = 256u;   // 64: the base warmth put into the dish
 const LG_OUT: u32 = 320u;    // 64, 64-bit: heat that leaked out of the dish (to the sky, at the edge, on a resize)
@@ -79,6 +79,9 @@ const LG_MB: u32 = 19712u;
 // step C7, pumps (src/pumps.js, cell_eat.wgsl): 96 numbers x 16 slots (i32): 0..63 a snapshot (the ledger pass, every frame),
 // 64..95 counters since the last read-back (the eat pass); PC_* in cell_eat.wgsl
 const LG_PU: u32 = 20224u;
+// step C7b, catalysts (src/catalysts.js, cell_eat.wgsl): 16 numbers x 16 slots (i32), a snapshot (the ledger pass, every
+// frame); CT_* in cell_eat.wgsl
+const LG_CAT: u32 = 21760u;
 
 const NCH: u32 = 13u;               // step C3: substance channels
 const ATOM_SCALE: f32 = 4096.0;     // counts per atom-unit (ATOM_SCALE in src/matter.js)
@@ -112,6 +115,10 @@ struct ChemP {
   dt: f32,                      // s per tick
   traceK: f32,                  // spark x 1 / (1 + traceK x trace per R^2)
   dark: array<vec4f, 4>,        // per channel: optical depth for the WARM band per unit per R^2 (sediment: dark)
+  cry: vec4f,                   // step C7b, crystal seeding (src/catalysts.js): x 1 = on; y 1 / s0 (per unit per R^2); z the
+                                // spark's floor (a share of it); w spare. Sediment lowers the spark of its OWN formation:
+                                // spark x max(floor, 1 / (1 + s / s0)), s the chain already there (the pixel's own, or the
+                                // mean of its 4 neighbours' if more: crust grows on crust and at its edge)
   rx: array<Rx, 24>,
 };
 const NONE: u32 = 255u;

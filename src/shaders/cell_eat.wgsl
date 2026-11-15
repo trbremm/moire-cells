@@ -174,7 +174,15 @@ struct EatP {
   pu2: vec4f,              // x eps (units per R^2, so an empty side costs finitely); y the gradient term's cap (e-folds); z the base
                            // cost's ramp (e-folds: the cost grows smoothly from 0 at equal concentrations); w the most a pump moves from
                            // one cell's stock to another per side and slot per tick (share of the source; 1 / 24 keeps every stock >= 0)
+  // ---- step C7b, catalysts (src/catalysts.js) ----
+  cat: vec4f,              // x 1 = trace as cofactor: an engine's rate x (f0 + (1 - f0) x tr / (tr + tHalf)), tr the trace inside
+                           // per R^2; y f0; z tHalf (trace per R^2); w spare
 };
+// step C7b: the cofactor's factor for a cell holding `tr` trace per R^2 (1 while the rule is off)
+fn cofactor(tr: f32) -> f32 {
+  if (EP.cat.x <= 0.0) { return 1.0; }
+  return EP.cat.y + (1.0 - EP.cat.y) * tr / (tr + max(EP.cat.z, 1e-9));
+}
 // step C7: pumps
 const PUF_ON: u32 = 1u;        // pumps (master): the genome's pump slots move substances across the membrane
 const PUF_CONTACT: u32 = 2u;   // ... across contact: a side touching a neighbour pumps from / into the neighbour's stock
@@ -1111,8 +1119,11 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         }
       }
       let cap = i32(EP.engMax);
+      // step C7b, trace as cofactor: every engine runs at cof of its rate (a pigment's engine uses only that share of the
+      // photons it caught; the rest are photons with nothing to work on: heat)
+      let cof = cofactor(f32(max(m[CP.trace], 0)) * concIn);
       for (var k = 0u; k < 3u; k++) {
-        let rk = b.rate[k];
+        let rk = b.rate[k] * cof;
         if (rk <= 0.0) { continue; }
         let E = EP.eng[eng_index(b.eng[k])];
         let sp16 = max(i32(ceil(E.spark * sparkScale * 16.0)), 1);
@@ -1137,7 +1148,9 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           if (np <= 0) { continue; }
           let d16 = max(E.g16 - ph16, 0);
           let c16 = sp16 + d16;                                 // from the battery per event
-          var n = min(np, min(a, cap));
+          var nu = np;                                          // the photons the engine can use (the cofactor's share)
+          if (band != 0u && cof < 1.0) { nu = i32(floor(f32(np) * cof + u01(pcg(rs + k * 0x1b873593u + 0x0badf00du)))); }
+          var n = min(nu, min(a, cap));
           n = max(min(n, bat / c16), 0);
           if (band == 0u) { np = n; }                           // (a storer has no photons to waste)
           m[E.ch.x] -= n;
@@ -1411,6 +1424,20 @@ const PS_EV: u32 = 10u;
 const PS_GENE: u32 = 16u;
 const PS_GENE_FED: u32 = 38u;
 var<workgroup> wpus: array<atomic<i32>, 64>;
+// step C7b: the catalysts' census (CT_*; LG_CAT, src/catalysts.js)
+var<workgroup> wcat: array<atomic<i32>, 16>;
+const CT_N: u32 = 0u;          // cells with an engine
+const CT_F: u32 = 1u;          // ... their cofactor factor x 1000
+const CT_TR: u32 = 2u;         // all cells: trace inside per R^2 x 1e6
+const CT_HAS: u32 = 3u;        // cells holding at least tHalf of trace per R^2
+const CT_NL: u32 = 4u;         // cells with an engine in the light
+const CT_FL: u32 = 5u;         // ... their factor x 1000
+const CT_PUMP: u32 = 6u;       // cells with an active "IN trace" pump slot
+const CT_PUMP_BAT: u32 = 7u;   // ... their battery x 1000
+const CT_PUMP_TR: u32 = 8u;    // ... their trace per R^2 x 1e6
+const CT_BAT: u32 = 9u;        // cells with an engine: battery x 1000
+const CT_FED: u32 = 10u;       // cells with an engine and a battery of at least 0.3
+const CT_FED_F: u32 = 11u;     // ... their factor x 1000
 
 @compute @workgroup_size(64)
 fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index) li: u32, @builtin(workgroup_id) wid: vec3u) {
@@ -1524,8 +1551,31 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     atomicAdd(&wpus[PS_VOLT], i32(round(vc * 1000.0)));
     if (abs(vc) > 0.1) { atomicAdd(&wpus[PS_VCELLS], 1); }
     atomicAdd(&wpus[PS_EV], evc >> 8u);
+    // step C7b: the catalysts' census (the cofactor's factor as the eat pass works it out)
+    let trc = f32(max(atomicLoad(&stock[i * SW + CP.trace]), 0)) / (ATOM_SCALE * max(3.14159265 * c.r * c.r / (EP.R * EP.R), 1e-3));
+    let cf = cofactor(trc);
+    atomicAdd(&wcat[CT_TR], i32(round(min(trc, 1000.0) * 1e6)));
+    if (trc >= EP.cat.z) { atomicAdd(&wcat[CT_HAS], 1); }
+    if (any(b.rate.xyz > vec3f(0.0))) {
+      atomicAdd(&wcat[CT_N], 1);
+      atomicAdd(&wcat[CT_F], i32(round(cf * 1000.0)));
+      atomicAdd(&wcat[CT_BAT], i32(round(c.bat * 1000.0)));
+      if (lit) { atomicAdd(&wcat[CT_NL], 1); atomicAdd(&wcat[CT_FL], i32(round(cf * 1000.0))); }
+      if (fed) { atomicAdd(&wcat[CT_FED], 1); atomicAdd(&wcat[CT_FED_F], i32(round(cf * 1000.0))); }
+    }
+    var tp = false;
+    for (var s = 0u; s < 2u; s++) { tp = tp || (gp[2u + s] >= PUMP_ACTIVE && pump_ch(gp[s]) == CP.trace && !pump_out(gp[s])); }
+    if (tp) {
+      atomicAdd(&wcat[CT_PUMP], 1);
+      atomicAdd(&wcat[CT_PUMP_BAT], i32(round(c.bat * 1000.0)));
+      atomicAdd(&wcat[CT_PUMP_TR], i32(round(min(trc, 1000.0) * 1e6)));
+    }
   }
   workgroupBarrier();
+  if (li < 16u) {
+    let v = atomicLoad(&wcat[li]);
+    if (v != 0) { atomicAdd(&hb[LG_CAT + 16u * li + (wid.x & 15u)], v); }
+  }
   for (var q = li; q < PU_SNAP; q += 64u) {
     let v = atomicLoad(&wpus[q]);
     if (v != 0) { atomicAdd(&hb[LG_PU + 16u * q + (wid.x & 15u)], v); }

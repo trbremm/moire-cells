@@ -292,7 +292,8 @@ const LG_C = { LIGHT: 10240, RX: 10752 };
 const LG_Q_PHI = 19200;                     // step C6b (heat_common.wgsl): phi's spread (256 f32), then its largest size   // step C4 (heat_common.wgsl): light caught per band, events per family
 const MAX_RX = 24;                          // struct ChemP's reactions (REACTIONS has 24 since step C6's uphill swaps)
 const RX_BYTES = 48;                        // struct Rx
-const CP_BYTES = 96 + MAX_RX * RX_BYTES;    // struct ChemP
+const CP_RX = 112;                          // struct ChemP: its first reaction's byte offset (96 until step C7b's cry)
+const CP_BYTES = CP_RX + MAX_RX * RX_BYTES; // struct ChemP
 const NONE = 255;                           // no channel (Rx.ch)
 const SED_MASK = SUBSTANCES.reduce((m, s, c) => (s.kind === 'sediment' ? m | (1 << c) : m), 0);
 const ORDER_SLOTS = 256;
@@ -378,6 +379,7 @@ export class Matter {
     this.light = null;        // step C4: the light (its uniform is bound to the reactions; set by main.js)
     this.eat = null;          // step C5: the cells' eating (src/eat.js; set by main.js): their stock is in the atoms ledger
     this.charge = null;       // step C6b: the charge field (src/charge.js; set by main.js): solved in each tick's pass, drifts
+    this.catalysts = null;    // step C7b: the catalysts (src/catalysts.js; set by main.js): crystal seeding in the open
     this.snapTime = -1e9;     // step C5: the frame time of the last ledger read-back applied
     this.maskHist = [];       // step C5: [frame time, channels moving] of the frames since
     this.rxOn = [];           // the reactions sent to the GPU this frame
@@ -724,8 +726,11 @@ export class Matter {
     // sediment is dark: it catches warm light (as heat) while the chemistry is on, whatever the rules
     this.dark = p.on && lightOn && p.dark > 0;
     SUBSTANCES.forEach((s, c) => { f[8 + c] = s.kind === 'sediment' && this.dark ? p.dark : 0; });
+    // step C7b: crystal seeding (src/catalysts.js): words 24..27 (struct ChemP cry)
+    f[24] = 0; f[25] = 0; f[26] = 1; f[27] = 0;
+    if (this.catalysts) this.catalysts.writeChem(f, 24);
     list.forEach((r, k) => {
-      const o = (96 + k * RX_BYTES) / 4;
+      const o = (CP_RX + k * RX_BYTES) / 4;
       u[o] = r.ins[0]; u[o + 1] = r.ins.length > 1 ? r.ins[1] : NONE; u[o + 2] = r.outs[0]; u[o + 3] = r.outs.length > 1 ? r.outs[1] : NONE;
       u[o + 4] = r.by === 'light' ? 1 : 0; u[o + 5] = r.band ?? 0; u[o + 6] = FAMILIES.indexOf(r.fam === 'upswap' ? 'swap' : r.fam); u[o + 7] = 0;
       i32[o + 8] = r.heat16; i32[o + 9] = r.light16; f[o + 10] = Math.max(0, famK[r.fam]); f[o + 11] = r.spark;

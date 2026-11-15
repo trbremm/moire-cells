@@ -42,6 +42,7 @@ export const RULE_GROUPS = [
   ['membrane', 'Membrane chemistry (step C6c)'],
   ['dipole', 'Charge per side (step C6d)'],
   ['pumps', 'Pumps (step C7)'],
+  ['catalysts', 'Catalysts (step C7b)'],
 ];
 
 export const VIEWS = ['fate', 'lineage', 'strategy', 'charge'];   // key V: what the cells' bodies are coloured by (cells.look.view)
@@ -454,6 +455,23 @@ export function makeActions(app) {
     pknob('pumpMax', 'max rate', 'maxRate', 0.1, 6, 1.5, 2, 'the fastest a pump slot runs (per s), whatever its gene says'),
     pknob('pumpLeak', 'voltage leak', 'vLeak', 0.02, 10, 1.5, 2, 'how fast the membrane voltage leaks back (per s; leaky and damaged membranes faster)'),
     pknob('pumpV2BEff', 'voltage to battery', 'v2bEff', 0.05, 1, 1.25, 2, 'the share of the voltage’s energy that goes back into the battery as it leaks'),
+  );
+
+  // ---------- catalysts (step C7b; panel only: no keys are free) ----------
+  const CA = () => app.cells.eat.catalysts.params;
+  const cknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'catalysts', type: 'knob', get: () => CA()[key].toFixed(digits),
+    run: (k) => { const p = CA(); p[key] = Math.max(lo, Math.min(hi, +(p[key] * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    { id: 'crystal', keys: [], label: 'crystal seeding', group: 'catalysts', type: 'toggle', get: () => CA().crystal,
+      run: () => `crystal seeding ${flip(CA(), 'crystal') ? 'on: sediment makes its own chains form more easily where it already is, so crust grows on crust and at its edges' : 'off: linkers chain into sediment wherever they meet, by heat alone'}${app.matter.chem.on && app.matter.chem.sediment ? '' : ' (sediment is off: Shift+K, Shift+M)'}`,
+      help: 'sediment lowers the spark of its own formation (ll seeds ll, LL seeds LL): crust grows on crust (autocatalysis); in the open only' },
+    { id: 'cofactor', keys: [], label: 'trace as cofactor', group: 'catalysts', type: 'toggle', get: () => CA().cofactor,
+      run: () => `trace as cofactor ${flip(CA(), 'cofactor') ? 'on: a cell’s engines run faster the more trace it holds (without any, at a floor)' : 'off: the engines run at their genes’ rates whatever trace the cell holds'}${E().on && E().engines ? '' : ' (the engines are not running: Shift+A, Shift+O)'}`,
+      help: 'an engine’s rate scales with the trace inside the cell, saturating, down to a floor without trace: trace becomes a scarce vitamin' },
+    cknob('crystalS0', 'seeding scale', 's0', 0.005, 5, 1.5, 3, 'sediment per R² that halves the spark of its own formation (smaller = stronger seeding)'),
+    cknob('crystalFloor', 'spark floor', 'floor', 0.02, 1, 1.25, 2, 'the seeded spark never falls below this share of itself'),
+    cknob('cofF0', 'speed without trace', 'f0', 0.02, 1, 1.25, 2, 'how fast an engine runs with no trace inside the cell, as a share of its rate'),
+    cknob('cofHalf', 'trace half', 'tHalf', 1e-5, 1, 1.5, 5, 'trace per R² inside a cell that brings its engines half the way from the floor to full speed'),
   );
 
   // step C6n: the clean view (default) or the machinery: every diagnostic layer at once

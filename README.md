@@ -51,7 +51,7 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
     the landscape, which substance is shown, colour by fate, lineage, strategy (step C6) or charge (step C6b), and the
     other drawing switches;
   - *rules*: every rule that has a key, as a switch with a one-line explanation and its key, grouped as below
-    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge, membrane chemistry (step C6c, panel only)); settings with several values show the current one
+    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge, membrane chemistry (step C6c, panel only), charge per side (step C6d, panel only: the dipoles' switches and six knobs with - and +)); settings with several values show the current one
     and change on a tap; the lever and the stiffness have - and +. The switches follow the state, also when a key changes it;
   - *dish* (the dish with three cells): the speed as a row of buttons, new culture (N), new genomes (G), clear
     springs (C), wash the atoms out (Shift+C).
@@ -81,7 +81,7 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   step C6n: `?neon=0`, `?halo=off|low|medium|high`, `?trails=0`, `?hum=0`, `?machinery=1`, `?cheap=0|1`, and
   `?until=T` (run to simulation time T, then pause at exactly that tick); step C6b: `?charge=0`, `?qstock=0`, `?qfeel=0`,
   `?contours=1`, `?view=charge`; step C6c: `?honeycomb=0` (the ellipse cells), `?membrane=0` (no membrane chemistry),
-  `?bites=0`, `?burst=0`, `?elastic=0`, `?selectivity=0`.
+  `?bites=0`, `?burst=0`, `?elastic=0`, `?selectivity=0`; step C6d: `?dipoles=0`, `?dd=0`, `?dphi=0`, `?dfield=0`.
 
 ## Keyboard shortcuts
 
@@ -1606,12 +1606,13 @@ membrane's segment k (`membrane(c).mid[k]`, `.edge[k]`, its outward normal (edge
 (`cell_common.wgsl`, `CELL_FLOATS` in `src/cells.js` and `heat.wgsl`) grew from 104 to 240 bytes; the new words:
 26-31 `rad[6]`, 32-37 `radV[6]` (the corners' speeds), 38 `theta`, 39 `spin`, 40-41 `ea`, 42-47 `alpha[6]`, and
 **48-53 `integ[6]`** (each side's integrity, since the membrane chemistry below) and **54-59 `sideQ[6]`** (each side's
-charge, reserved for step C6d). The
+charge, since step C6d: see "Step C6d: charge per side"). The
 step pass reads each cell whole from its own slot and writes it back whole, so whatever another pass writes there (as the
 eat pass writes `smell` and `efield`) survives; a newborn starts with zeros (the membrane chemistry gives it a share of its parent's sides),
 and with the honeycomb off the sides are the ellipse's 6 segments. The step's neighbours come from the grid's sorted
 copy, now a lean `CellCore` (the first 104 bytes, `cell_core()`), so the neighbour loop reads no more memory than before;
-a rule that needs a NEIGHBOUR's per-side state (dipoles, C6d) has to add it to CellCore or read `cells` by index.
+a rule that needs a NEIGHBOUR's per-side state (dipoles, C6d) has to add it to CellCore or read `cells` by index (step C6d
+added the dipole, 2 floats: 112 bytes).
 
 **Numbers** (headless Chrome on this machine, 2000 cells, seed 3, default scene, MAX, at 30 s; `shapeStats()` over pairs
 of cells whose power-diagram tiles share a wall, the gap between their outlines along the line between the centres, in
@@ -1815,6 +1816,157 @@ grew to 288 bytes (`memb`), the eat uniform to 1376 (`mb0`..`mb4`), the draw uni
 `?membrane=0` ×11.56 and ×11.62 (the larger stock and the side loops cost about 3 % even when off). Firefox (headed,
 1600 × 1000): ×7.6 (the honeycomb's first half: ×7.2).
 
+## Step C6d: charge per side (dipoles)
+
+The idea (CLAUDE.md, C6d): each of the six sides of a cell holds its own charge, so a cell that takes charged atoms in
+through one side gets charged there; an outside field pulls the + end and the - end opposite ways, so cells turn, line
+up and stretch along the field, which strains their lattice and changes their field again (a form ↔ field loop, like
+step 8's curls). Expected: chains, head-to-tail threads, alternating stripes.
+
+**What it looks like.** In the clean view (default) a polarised cell's tube is tinted toward rose on its + side and
+toward ice blue on its - side (the colours of the charge contours), its white-hot centre line unchanged; at a zoom a
+thread reads as tubes going rose, blue, rose, blue along it. It is subtle on purpose and shows only where cells are
+polarised (below). **Colour by charge** (V, the fourth view; `?view=charge`) makes it plain: a polarised cell is drawn
+in two halves split across its dipole, rose toward its + end and blue toward its - end, with a crisp edge, so the
+polarised part of the culture becomes a mosaic of rose-and-blue cells whose halves meet head to tail along short
+curving lines; unpolarised cells stay grey. With **the machinery** (Shift+4) each polarised cell carries a small arrow
+from its - end to its + end (the shaft blue to rose, its length with the dipole's strength). Honestly, to the eye: the
+arrows form short runs of 3 to 6 cells head to tail, curved rather than straight, and the runs next to each other often
+point the other way (rose beside blue), which is what dipoles do when they cannot all point one way in a packed tissue.
+It reads as a fine, mixed mosaic of short strokes, not as long threads. With the interactions off, cells in one gradient
+all point the same way (in the spot: every cell rose on one side, blue on the other), which looks MORE ordered to the eye
+but is not head to tail; the numbers below tell the two apart.
+
+In the default scene the polarised cells are where the free charged atoms are: at first the spot and the springs' side
+of the culture (about a fifth of the cells at 2 minutes), then, as atoms pile up in the dish, more and more of it (three
+quarters at 10 minutes). The starving cells in the dark hold almost no charged atoms and stay unpolarised: a side cannot
+hold charge the cell does not have. Around an ion test spring (light givers + heavy takers, the C6b test) nearly every
+cell nearby is polarised; there the culture loosens into a lace with dark gaps (the side-by-side push), and in the
+charge view the rose-and-blue cells swirl round the spring.
+
+**Where the side charges come from** (`cell_eat.wgsl`, plan and eat). `Cell.sideQ[k]` is side k's share of the cell's net
+charge (atom-units; the Cell's reserved words 54..59). Its sum is the stock's net charge, always: every tick the eat pass
+puts the six shares back on the new net charge, keeping each side's difference from the even share (qNet / 6). So the side
+charges are a distribution of charge the stock already holds, never new charge, and a neutral cell can be polarised (+ on
+one side, - on the other).
+- **Through-flow:** for each charged atom (g, G +1; t, T -1) the plan works out the exchange as if each side traded with
+  the dish just outside it (the concentration there, bilinear, against the cell's), less the cell's mean exchange. That
+  part only says WHERE the charge came in or went out; z × it goes onto each side. The cell's real exchange (what moves
+  between the dish and the stock) is unchanged, so the books are untouched. A side facing more givers than the cell's
+  other sides takes + in there; the side facing fewer lets + out. So a cell sitting in a gradient of free charged atoms
+  is polarised along it, as far as its + and - flows do not cancel: they cancel exactly in a neutral cloud of atoms that
+  pass the membrane alike, and do not where the ion selectivity gene (step C6c) favours one sign, or where a light atom
+  (fast through the membrane) meets a heavy one of the other sign (slow), as at the ion test spring.
+- **Evening out:** the differences relax toward an even spread at `relax` (0.2 per s: a dipole lasts about 5 s);
+- **Cap:** a side's difference from the even share stays within `cap` (3) × the cell's mobile charge (its free givers
+  and takers) / 6.
+
+**The dipole.** p = Σ sideQ[k] × (side k's middle − centre) / r (atom-units; per radius, so size does not matter),
+saturating: d = p / |p| × tanh(|p| / pHalf), length 0 to 1 (pHalf 0.002). The grid's lean neighbour copy (`CellCore`)
+carries d (2 floats, 104 → 112 bytes), worked out once per tick when the grid is built; the six side charges stay in the
+cell's own record.
+
+**The field on a dipole** (`cell_step.wgsl`). Two sources: the **neighbours' dipoles**, each adding w (3 (d_j · n) n −
+d_j) (n from the neighbour to the cell, w = (contact distance / distance)³, tapered to 0 at `range`, 1.4 × the contact
+distance), and the **substrate's charge field** (step C6b), −grad phi across the membrane (the eat pass's six corners),
+saturating at `phiHalf` (0.02 phi per R), weight `phiW` (1). In the default scene phi is weak (rms about 0.001), so the
+neighbours' dipoles do almost all of it; at the ion test spring phi has a real gradient. What the field does:
+- **Turn:** the torque d × E (E saturated, length at most 1) turns the honeycomb (its sides carry the charges; `turn`
+  60 rad/s² at full dipole and field, against the contacts' own turning, 40) and turns the charges **within** the cell
+  (`inner`, 6 rad/s: the dipole pattern of the side charges rotates; in a packed tissue the hexagon is held by its
+  neighbours, so this is how a packed cell lines up). The lattice angle (the cell's key, its identity) is never turned.
+- **Polarise:** the field pulls the cell's mobile charge apart along it (a dipole of `polar` × pHalf in a full field
+  against the evening out, polar 0.2), so a polarised cell polarises the cells ahead of it and behind it a little.
+  Bounded by the cap: it only moves charge the cell holds, so it does nothing in empty cells.
+- **Push:** two dipoles attract head to tail and repel side by side (the force between two point dipoles, with the same
+  short-range kernel / distance; `push` 0.6 R/s per unit, saturating at `pushSat` 1 R/s). A force like the others: its
+  work is booked with theirs.
+- **Stretch (the loop):** the stretch target gets `stretch` (0.3) × the traceless part of E ⊗ d: a dipole along the field
+  pulls the cell out along it, one across it shears it. The stretched cell's lattice is strained (k = F⁻¹ k0), which
+  changes the moiré fields it emits and feels (field A, field B, the leak of step 6): form → field → form.
+- **Into phi at the sides:** with the charge field on, a cell puts its charge into rho at its six sides' middles (the
+  last side taking the remainder, so exactly its net charge) instead of at its centre, so a polarised cell's dipole is
+  in the substrate's field too (`deposit`).
+
+**Numbers.** Measured with `moire.dipole.stats()` (the cells read back): pairs of touching cells both polarised (|d|
+above 0.2); **aligned** = the mean cos of the angle between their dipoles; **head-to-tail index** = the mean of (d̂_i ·
+n)(d̂_j · n) − ½ d̂_i · d̂_j, which is 0 for random dipoles and also for any uniform alignment (all pointing one way), and
+positive when partners sit along their dipoles' axis (head to tail) or side by side pointing opposite ways; a **bond** =
+(d̂_i · n)(d̂_j · n) and d̂_i · d̂_j both above 0.5, **threads** = connected runs of 3 or more bonded cells. The control
+("chance") is the same cells with the polarised cells' dipoles shuffled among them. Default scene, 2000 cells, MAX,
+headless Chrome; "off" = dipole-dipole and the field's turning off (`?dd=0&dfield=0`: the dipoles still form from the
+through-flow, but nothing acts on them):
+
+| 10 minutes | polarised (2 / 5 / 10 min) | aligned | head-to-tail index | threads (chance) | cells in threads (chance) | longest (chance) |
+|---|---|---|---|---|---|---|
+| seed 3, on | 22 % / 45 % / 75 % | −0.03 to 0.00 | **+0.22 to +0.23** | 168 (128) | 1053 (555) | 41 (15) |
+| seed 3, off | 21 % / 45 % / 72 % | +0.16 to +0.26 | −0.01 to +0.01 | 144 (131) | 868 (563) | 31 (11) |
+| seed 7, on | 22 % / 43 % / 72 % | −0.03 to +0.03 | **+0.21 to +0.23** | 153 (130) | 995 (605) | 36 (21) |
+| seed 7, off | 23 % / 46 % / 73 % | +0.24 to +0.27 | +0.01 to +0.02 | 103 (119) | 878 (548) | 72 (20) |
+
+(Ranges over 2, 5, 7.5 and 10 minutes; threads etc. at 10 minutes.) So: without the interactions, neighbours' dipoles
+point roughly the same way (they sit in the same gradient: aligned +0.2) and the head-to-tail index is zero; with them
+the index is +0.22 all along, the plain alignment goes to zero (the alternating, side-by-side-opposite arrangement), and
+there are about twice as many cells in threads as by chance, the longest about 40 cells (off, the cells in threads come
+from the plain alignment along a gradient: more than chance too, but the bonds run along the gradient, not head to tail
+by choice). Shorter tests (2 minutes, seed
+3, the knobs before tuning): field's turning off with the push on, index +0.03; dipole-dipole off, +0.03 to +0.05.
+Ion test spring (`?springs=0&chem=0&light=off`, a g + T spring at the culture's middle, 2 minutes): polarised 38 to 40 %;
+dipole-dipole off: aligned +0.45 (all pointing out from the spring), index −0.01; on: aligned +0.21 to +0.28, index
++0.17 to +0.19. The loop alone (`?bio=0`, 4 minutes): polarised 39 %; index +0.23 to +0.25 (off: +0.01 to +0.02), threads
+90 (47 by chance; off 64, chance 79), cells in threads 471 (198).
+
+Tuning: the default scene's charges were not too weak where there are atoms (most fed cells are polarised), but the
+dark half of the culture never polarises, whatever the knobs. Knobs tried at 2 minutes (index): pHalf 0.004 → 0.002
+(+0.12 → +0.14; a few more polarised), relax 0.5 → 0.2 (+0.17), inner 2 → 6 with turn 30 → 60 (+0.19), all three
+(+0.23), plus push × 3 and stretch 0.45 (+0.21: no gain, and a looser culture), polar 0 to 0.4 (no measurable change:
+the cells that could be polarised by their neighbours are mostly polarised already by the flow). The defaults are the
+three together with polar 0.2: visible in the charge view and the machinery, subtle in the clean view.
+
+**Switches** (rules panel, group "Charge per side (step C6d)"; panel only, as no keys are left): **dipoles** (the
+master: off = every cell's charge spread evenly round it, as before) · **dipole-dipole** · **substrate field on the
+sides** · **field turns and stretches cells** (the turning, the polarising and the stretch). Knobs with - and +:
+**evening out** (relax), **dipole scale** (pHalf), **turning**, **dipole push**, **dipole range**, **stretch along the
+field**. URL: `?dipoles=0`, `?dd=0`, `?dphi=0`, `?dfield=0`. Console: `moire.dipole.params` (also flow, cap, inner,
+polar, pushSat, phiHalf, phiW, deposit), `moire.cells.look.dipTint` (0.6), `.dipArrow` (0.9), `.dipTwoTone` (0.85),
+`await moire.dipole.stats()`.
+
+**The census.** A DIPOLES line in the entropy panel:
+
+    DIPOLES  |d| 0.18 · polarised 445 (22%) · neighbours aligned 0.04 · head-to-tail +0.20 · in threads 186 (ends 180) · along the field 0.90
+
+(mean |d|; cells with |d| above 0.2; touching polarised pairs' alignment and head-to-tail index; cells with two or more
+head-to-tail bonds, and with one; the mean cos between a polarised cell's dipole and the field it feels). On a phone
+the short form. The F overlay adds the switches and knobs, the fields' mean sizes and the stretch, and the numbers every
+10 s. It is counted on the GPU by the step on the frame's last tick (Stats.dip, 16 words; the pairs are also counted
+while dipole-dipole is off, for comparison).
+
+**The books.** The side charges are a distribution of the stock's net charge, so the atoms' and the charge's books are
+unchanged. Checked in a 660 s run at MAX (seed 5) through N (120 s), a wash (Shift+C, 220 s), a resize to 1000 × 700
+(300 s), G (400 s), a resize back (480 s) and two new springs (520 s): atoms and charge rounding exactly 0 throughout,
+energy rounding between −0.031 and +0.075 while in grew to 8.7 M (as before). The push is a force like contact or field B: its work goes into the energy ledger with the other forces'.
+
+**Decisions.** The torque turns the honeycomb's orientation (theta) and the charges within the cell, never the lattice
+angle (the cell's key). With the honeycomb off (ellipse cells) the body cannot turn, only the charges within. The field on
+the side charges is the neighbours' dipoles plus phi; field B and the partner A' (moiré fields) do not act on them (they
+already move the cells, and through the stretch the dipoles change what B and A' see). Births: a newborn starts with an
+even spread (no dipole); a burst cell's side charges go with its stock.
+
+**How it is computed.** Plan (`cell_eat.wgsl`): per charged channel, the concentration just outside each side's middle
+(bilinear, 4 reads × 6 sides) and the through-flow; the evening out, the cap. Eat: the sides back on the new net charge;
+the deposit into rho at the sides. Grid scatter (`cell_grid.wgsl`): d into the lean copy. Step (`cell_step.wgsl`): own d
+from its sides, the neighbours' field and push in the neighbour loop (with the census), torque, polarisation, stretch.
+Draw (`cell_draw.wgsl`): d per cell in the vertex shader; the side's tint from `sideQ`. Fields grew to 320 bytes (dip0
+.. dip2), Draw to 512 (dip, dip2), Stats to 8576 bytes (dip), CellCore to 112.
+
+**Cost** (headless Chrome, 2000 cells, seed 3, MAX, mean speed from 40 to 150 s, alternating runs): the commit before
+(98d3955) ×11.94 and ×11.92, now ×11.70 and ×11.64 (about 2 % slower), now with `?dipoles=0` ×11.97. Firefox (headed,
+1600 × 1000): ×7.1 (step C6c: ×7.6).
+
+**Checked.** No WebGPU errors in Chrome (headless, also at phone size 390 × 844, where the panel shows the short line)
+and Firefox (headed, 1600 × 1000). The census counts with dipole-dipole off too (for the comparisons). Not bit-repeatable,
+so every comparison above is one run each.
+
 ## The look of the landscape
 
 Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the
@@ -1859,6 +2011,10 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   overlay), the tuning aids and the contour lines; the field's relaxation and the free atoms' drift are in `matter.wgsl`
   (relax, spread), the cells' charge and the field's gradient at their membrane in `cell_eat.wgsl`, their push in
   `cell_step.wgsl`; the charges themselves (`GROUP_CHARGE`, `CHARGE_CODES`) in `src/matter.js`
+- `src/dipole.js`: charge per side, the dipoles (step C6d): the switches and knobs, the census (from the cells' stats
+  read-back), `stats()` (threads, with a shuffled control), the DIPOLES panel line and the overlay; the side charges' flow
+  and evening out are in `cell_eat.wgsl` (plan, eat), the turning, polarising, push and stretch in `cell_step.wgsl`, the
+  lean copy's dipole in `cell_grid.wgsl` (scatter), the look in `cell_draw.wgsl`
 - `src/membrane.js`: the membrane chemistry (step C6c): its switches and knobs, the census read-back, `stats()`, the
   MEMBRANE panel line and the overlay; the rules themselves (bites, repair, leak, hold, bursting, selectivity) are in
   `cell_eat.wgsl`, the elasticity and the burst's slot in `cell_step.wgsl`, the look in `cell_draw.wgsl`

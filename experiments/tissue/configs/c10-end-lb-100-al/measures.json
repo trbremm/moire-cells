@@ -1,0 +1,167 @@
+{
+ "name": "c10-end-lb-100-al",
+ "series": "more",
+ "description": "two-ended: both ends sticky, the sides not; long beat; 100 cells; fronts aligned",
+ "setting": "cells.params.lever=0.2; walls.params.cost=False; gene adhesion=0.5; gene a1=0.0; gene a2=0.5; gene w=0",
+ "seed": 3,
+ "cells": 100,
+ "hold": 0.8814285714285715,
+ "persist": 0.8237419505,
+ "reform": 0.8811453268503512,
+ "score": 0.6397729148883334,
+ "iscore": 0.7853006594766667,
+ "linked": 0.9785714285714285,
+ "relinked": 0.9742092457420926,
+ "stable": 1,
+ "kind": "islands",
+ "contacts": 4.0685714285714285,
+ "clusters": 4.285714285714286,
+ "isolated": 2.142857142857143,
+ "compact": 0.7767061474285715,
+ "rg": 7.5461993157142855,
+ "internal": 0.23193793249999997,
+ "move": 0.2904129545,
+ "shape": 0.02130269971666667,
+ "ageMedian80": 15.0,
+ "end_inLargest": 0.7766666666666667,
+ "end_contacts": 3.293333333333333,
+ "end_clusters": 4.666666666666667,
+ "elong80": 1.583005214632821,
+ "hole80": 0.32611036481681044,
+ "chainy80": 0.19767441860465115,
+ "edge80": 0.38372093023255816,
+ "elong120": 1.7152309440189129,
+ "hole120": 1.1113628428997269,
+ "chainy120": 0.18518518518518517,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "100/0/0/0/0",
+ "entropyRate": 935.1860558571428,
+ "heatOut120": 133914.084,
+ "speed": 2.58,
+ "status": "ok",
+ "front80": 0.342,
+ "side80": 0.29,
+ "back80": 0.368,
+ "glue80": 0.572,
+ "matured80": 0.5,
+ "front120": 0.358,
+ "side120": 0.301,
+ "back120": 0.34,
+ "glue120": 0.533,
+ "matured120": 0.41,
+ "measures_t80": {
+  "t": 79.9999999999985,
+  "n": 100,
+  "R": 9,
+  "largest": 86,
+  "cx": 626.4224250261174,
+  "cy": 400.6316531868868,
+  "box": [
+   506.43161487579346,
+   279.07004261016846,
+   746.688817024231,
+   507.53268909454346
+  ],
+  "elong": 1.583005214632821,
+  "hole": 0.32611036481681044,
+  "edge": 0.38372093023255816,
+  "deg": [
+   4,
+   11,
+   15,
+   70
+  ],
+  "fates": [
+   100,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.19767441860465115,
+  "boxAll": [
+   450.9487352371216,
+   231.09472179412842,
+   756.027491569519,
+   535.3915758132935
+  ],
+  "walls": {
+   "contactAt": [
+    0.342,
+    0.29,
+    0.368
+   ],
+   "glue": 0.572,
+   "matured": 0.5,
+   "effMean": 0.706,
+   "matureMean": 0.381,
+   "classes": {
+    "uniform": 0,
+    "polar": 0,
+    "two-ended": 1,
+    "sticky sides": 0
+   }
+  }
+ },
+ "measures_t120": {
+  "t": 119.99999999999679,
+  "n": 100,
+  "R": 9,
+  "largest": 81,
+  "cx": 658.164471661603,
+  "cy": 406.43266918041087,
+  "box": [
+   535.3860120773315,
+   300.3713331222534,
+   765.7749280929565,
+   545.276463508606
+  ],
+  "elong": 1.7152309440189129,
+  "hole": 1.1113628428997269,
+  "edge": 0.3950617283950617,
+  "deg": [
+   5,
+   12,
+   14,
+   69
+  ],
+  "fates": [
+   100,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.18518518518518517,
+  "boxAll": [
+   458.9938097000122,
+   210.64040660858154,
+   790.4804334640503,
+   556.978123664856
+  ],
+  "walls": {
+   "contactAt": [
+    0.358,
+    0.301,
+    0.34
+   ],
+   "glue": 0.533,
+   "matured": 0.41,
+   "effMean": 0.667,
+   "matureMean": 0.32,
+   "classes": {
+    "uniform": 0,
+    "polar": 0,
+    "two-ended": 1,
+    "sticky sides": 0
+   }
+  }
+ },
+ "url": "index.html?snap=experiments/tissue/configs/c10-end-lb-100-al/snapshot.json",
+ "run": "experiments/runs/tissue-c10/c10-end-lb-100-al",
+ "commit": "cf40d8264bee0d23a7d90db226df9426eb002df9"
+}

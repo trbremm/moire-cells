@@ -177,6 +177,86 @@ Adhesion gene against motility gene (field A gain 10).
 - Exclusion lace with a long beat instead of field off; step 8 with strong glue (curling sheets?).
 - Reload a stored configuration and change one knob live (they are all saved with every knob).
 
+## C10: patterned walls in the tissue lab
+
+Step C10 (README, "Step C10: patterned walls") gives every side of a cell its own stickiness: a0 (the adhesion gene) + a1 cos psi
++ a2 cos 2 psi round the wall from the cell's FRONT, a contact holding by the less sticky of the two touching sides, junctions that
+mature, a cost in linkers and upkeep. Here the patterns were set by hand (no evolution), with the series' method (40 cells, one
+genome cloned, mutation and the life cycle off, no squeeze, dark dish, no springs, measures every 5 s, a stir through the largest
+cluster at 82 s, the end at 120 s; `experiments/tissue/c10.py`, runs `experiments/runs/tissue-c10/`, table
+`experiments/tissue/c10-sweep.csv`). Four patterns: **uniform** (a0 0.8), **polar** (a0 0.4, a1 0.5: front 0.9, flanks 0.4, back
+0), **two-ended** (a0 0.5, a2 0.5: both ends 1, flanks 0), **sticky sides** (a0 0.5, a2 −0.5: flanks 1, ends 0); each with field A
+not felt ("off") and with the long beat (lever 0.2, "lb", a glue of its own), maturation on and off, and the fronts at random
+(each cell its own) or all aligned (one way, as a lineage that inherited one direction). The dark dish holds no linkers, so the
+walls' **cost is off** in these runs (with it on, a cell without linkers holds no glue; tested separately below). New measures:
+where the contacts sit on each cell's wall, front / flank / back (within 60 degrees of the front, of the back, or between;
+random: a third each), and the glue held by the contacts (the smaller side).
+
+**In short:** with a fixed front and no way for a cell to turn its sticky side toward a neighbour, a patterned wall **cuts a sheet
+into small units of a characteristic shape**: polar cells make **front-to-front pairs and little rosettes** of 3 to 5 cells with
+their sticky fronts in the middle; two-ended cells make **dumbbells and short chains** (2 to 4 cells end to end, the joints
+bright in the walls view); sticky-sided cells make **side-by-side pairs and small rafts**. None of them makes a tissue on its own
+(scores 0.06 to 0.15 with field A off, against 1.0 for the uniform wall), and the contacts sit exactly where the pattern says. The
+long beat glues them back into one loose net (scores 0.16 to 0.55, islands up to 0.85), where the pattern shows only weakly. No
+sheet with a lumen, no cyst, no bilayer and no long chain or palisade formed in 120 s: those would need cells to turn their
+fronts toward their contacts (or divide along their front), which no rule here does. Maturation doubles the glue at lasting
+contacts (glue 0.5 to 0.7 → 0.9 to 1.2) but hardly changes the shapes; aligned or random fronts made no consistent difference.
+
+| pattern, field | score (one tissue) | islands | clusters | contacts per cell | chains (share of cells with ≤ 2 contacts, largest cluster) | contacts at front / flank / back | glue | matured |
+|---|---|---|---|---|---|---|---|---|
+| uniform, off | 1.00 | 1.00 | 1.0 | 4.6 | 0.10 | 0.34 / 0.33 / 0.33 | 0.80 (m0), 1.60 (m1) | 0 / 1.00 |
+| uniform, lb | 0.99 to 1.00 | 0.99 to 1.00 | 1.0 | 4.8 to 5.5 | 0.03 to 0.05 | 0.34 / 0.33 / 0.33 | 0.80, 1.60 | 0 / 1.00 |
+| polar, off | 0.10 to 0.15 | 0.58 to 0.68 | 9.4 to 11.1 | 1.1 to 1.5 | 0.33 to 0.83 | **0.56 to 0.70** / 0.23 to 0.35 / 0.06 to 0.12 | 0.53 to 1.00 | 0 / 0.79 to 0.83 |
+| polar, lb | 0.16 to 0.38 | 0.61 to 0.75 | 3.3 to 3.7 | 2.8 to 3.1 | 0.32 to 0.55 | 0.47 to 0.56 / 0.26 to 0.36 / 0.08 to 0.21 | 0.34 to 0.78 | 0 / 0.54 to 0.65 |
+| two-ended, off | 0.07 to 0.09 | 0.37 to 0.63 | 7.9 to 9.0 | 1.1 to 1.5 | 0.60 to 1.00 | 0.47 to 0.59 / **0.02 to 0.09** / 0.38 to 0.47 | 0.61 to 1.18 | 0 / 0.70 to 0.73 |
+| two-ended, lb | 0.27 to 0.48 | 0.67 to 0.77 | 1.3 to 4.1 | 3.2 to 3.7 | 0.15 to 0.31 | 0.32 to 0.37 / 0.28 to 0.32 / 0.34 to 0.36 | 0.30 to 0.61 | 0 / 0.56 to 0.65 |
+| sticky sides, off | 0.08 to 0.15 | 0.51 to 0.61 | 5.9 to 10.1 | 1.1 to 1.9 | 0.50 to 1.00 | 0.12 to 0.29 / **0.44 to 0.71** / 0.11 to 0.27 | 0.61 to 1.11 | 0 / 0.58 to 0.70 |
+| sticky sides, lb | 0.24 to 0.55 | 0.69 to 0.85 | 1.3 to 3.4 | 2.9 to 4.1 | 0.19 to 0.73 | 0.31 to 0.34 / 0.33 to 0.37 / 0.29 to 0.34 | 0.29 to 0.66 | 0 / 0.39 to 0.58 |
+
+(Ranges over maturation on / off and fronts random / aligned: four runs each, seed 3. "glue" and "matured" at 120 s: the mean
+of the smaller side over the touching pairs, and the share of pairs whose both sides have matured above half.)
+
+More runs (one each):
+- **100 cells, long beat**: uniform: one round honeycomb sheet whose inner walls have all matured (bright, whitish shared walls;
+  the middle cells pressed small; score 1.00). Two-ended: four to five loose islands (score 0.60 to 0.64, islands 0.78 to 0.79).
+  Sticky sides: one or three rafts (0.50 to 0.71, islands 0.79 to 0.80). Polar: a lace of rosettes and triads (0.26 to 0.34,
+  islands 0.70 to 0.78).
+- **Polar with every front pointing in or out** (40 cells, long beat): a1 +0.5 (fronts sticky) with fronts in, 0.22; out, 0.13;
+  a1 −0.5 (backs sticky) with fronts in (backs out), 0.47; out, 0.39. No hollow ball: the cells do not keep a radial order once
+  they move (contacts at the sticky end 0.52 to 0.63 nevertheless).
+- **Controls, the walls off** (the same genes, long beat): every pattern is one sheet again (0.99), as the old adhesion gene.
+- **The cost on, with a spring of linkers under the cells** (a lab-only spring kind): the cells weave their membranes and their
+  glue (linkers in adhesion 4.4 units for 40 cells, the junctions mature to 0.8), and the tissue holds while their batteries
+  last; in the dark nothing refills a battery, the upkeep and the weaving's sparks empty it by about 90 s, and from then on the
+  sides hold no glue (0.25 at 90 s, 0 at 120 s): the uniform sheet loosens and falls apart at the stir (score 0.46; two-ended
+  0.16, sticky sides 0.69 as islands). Stickiness is paid for, and a starving tissue lets go.
+- **The front from the dipole** (an ion spring of light givers and heavy takers under the cells, which polarises them; gene w 0
+  or 1): with w = 1 the fronts line up with the dipoles (the mean cos between front and dipole over the polarised cells 0.49 to
+  0.65, against −0.08 to 0.12 with w = 0), so the mechanism works; but the dipoles point out from the spring, so the polar
+  cells' sticky fronts all point outward, away from each other, and the cells scatter more (scores 0.05 against 0.10; contacts
+  per cell 0.96 against 1.31). The spring's chemistry splits the culture as in the earlier chemistry runs.
+
+Stored (`experiments/tissue/configs/c10-<name>/`: condition, cells-only snapshot, measures, one picture; reload with `?snap=`):
+
+| configuration | what it is | reload (after the local server's address) |
+|---|---|---|
+| [c10-uni-lb-100-al](experiments/tissue/configs/c10-uni-lb-100-al/) | uniform walls, 100 cells, long beat: a honeycomb sheet whose inner junctions have all matured (bright shared walls) | `?snap=experiments/tissue/configs/c10-uni-lb-100-al/snapshot.json` |
+| [c10-pol-off-m0-al](experiments/tissue/configs/c10-pol-off-m0-al/) | polar walls, field A off: front-to-front pairs and rosettes of 3 to 5 | `?snap=experiments/tissue/configs/c10-pol-off-m0-al/snapshot.json` |
+| [c10-end-off-m1-al](experiments/tissue/configs/c10-end-off-m1-al/) | two-ended walls, field A off, maturation: dumbbells and short chains joined end to end | `?snap=experiments/tissue/configs/c10-end-off-m1-al/snapshot.json` |
+| [c10-sid-off-m0-al](experiments/tissue/configs/c10-sid-off-m0-al/) | sticky sides, field A off: side-by-side pairs and small rafts | `?snap=experiments/tissue/configs/c10-sid-off-m0-al/snapshot.json` |
+| [c10-pol-lb-100-rnd](experiments/tissue/configs/c10-pol-lb-100-rnd/) | polar walls, 100 cells, long beat: a lace of rosettes (islands 0.78) | `?snap=experiments/tissue/configs/c10-pol-lb-100-rnd/snapshot.json` |
+| [c10-end-lb-100-al](experiments/tissue/configs/c10-end-lb-100-al/) | two-ended walls, 100 cells, long beat: loose islands (0.79) | `?snap=experiments/tissue/configs/c10-end-lb-100-al/snapshot.json` |
+| [c10-sid-lb-100-al](experiments/tissue/configs/c10-sid-lb-100-al/) | sticky sides, 100 cells, long beat: one raft and a few small ones (islands 0.80) | `?snap=experiments/tissue/configs/c10-sid-lb-100-al/snapshot.json` |
+| [c10-sid-lb-m1-al](experiments/tissue/configs/c10-sid-lb-m1-al/) | sticky sides, 40 cells, long beat, maturation: a raft (islands 0.85) | `?snap=experiments/tissue/configs/c10-sid-lb-m1-al/snapshot.json` |
+| [c10-uni-lb-cost](experiments/tissue/configs/c10-uni-lb-cost/) | uniform walls with the cost on and a linker spring: the sheet after its batteries ran out and it let go | `?snap=experiments/tissue/configs/c10-uni-lb-cost/snapshot.json` |
+
+The snapshots carry every knob (the walls' too), so they reload as they ran. The tissue series' own configurations (saved before
+C10) load with the walls off and run on as before (checked: core and shell B out/in 1.81 → 1.99 in 40 s, the lace 96 → 97 of 100
+cells in one piece, the ball whole; runs `experiments/runs/c10/c10-tr-*`).
+
+Next, if wanted: a rule that lets contacts set the front (the side away from all contacts becomes the "apical" back, as cells
+in an epithelium polarise), or division along the front: either would let a sticky-sided lineage grow into a palisade or a cyst.
+
 ## How the runs were made
 
 - **Few cells, no evolution.** 40 cells (also 20, 100, 300), one genome cloned to every cell (`?clone=1`), mutation and the

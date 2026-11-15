@@ -695,10 +695,7 @@ export class Matter {
       encoder.clearBuffer(H.buffer, H.chargeOffset * 4, H.n * 4);
       this.charge.phiLive = false;
     }
-    // the ledger / paint slot: the current copy after the ticks
-    const T = new Uint32Array(this.tickAB), L = MT_LEDGER * MT_SLOT / 4;
-    T[L] = this.copyBase(this.cur); T[L + 1] = 0; T[L + 2] = 1; T[L + 3] = this.seed0; T[L + 4] = H.n; T[L + 5] = LG_M.DISH;
-    this.device.queue.writeBuffer(this.tickBuf, MT_LEDGER * MT_SLOT, this.tickAB, MT_LEDGER * MT_SLOT, MT_SLOT);
+    this.writeLedgerSlot();
     if (this.tex && this.showName !== 'off') {
       const pass = encoder.beginComputePass({ label: 'matter paint' });
       pass.setPipeline(this.pipes.paint);
@@ -707,6 +704,13 @@ export class Matter {
       pass.dispatchWorkgroups(Math.ceil(H.hw / 8), Math.ceil(H.hh / 8));
       pass.end();
     }
+  }
+
+  /** The ledger / paint slot: the current copy (after a frame's ticks; src/snapshot.js also before a ledger pass of its own). */
+  writeLedgerSlot() {
+    const T = new Uint32Array(this.tickAB), L = MT_LEDGER * MT_SLOT / 4;
+    T[L] = this.copyBase(this.cur); T[L + 1] = 0; T[L + 2] = 1; T[L + 3] = this.seed0 >>> 0; T[L + 4] = this.heat.n; T[L + 5] = LG_M.DISH;
+    this.device.queue.writeBuffer(this.tickBuf, MT_LEDGER * MT_SLOT, this.tickAB, MT_LEDGER * MT_SLOT, MT_SLOT);
   }
 
   /**

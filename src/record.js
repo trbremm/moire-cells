@@ -80,6 +80,7 @@ export class Recorder {
     const ext = /mp4/.test(blob.type) ? 'mp4' : 'webm';
     const name = `moire-cells-${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.${ext}`;
     this.lastName = name;
+    if (this.noDownload) return;   // tools/experiment.py takes lastBlob itself
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = name;

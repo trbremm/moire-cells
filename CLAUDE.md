@@ -415,6 +415,25 @@ C12. OILS AND WATER, POLAR AND APOLAR MOLECULES (user: "try to build molecules t
       bilayers, vesicles: protocell-like compartments in the open dish). Matter conserved exactly.
     - Membranes are linker-built, so they are oily: droplets can fuse into membranes, bursts spill oil.
     - Look: oil as a glossy film; boundaries as thin bright (maybe iridescent) neon lines; not busy.
+    AS BUILT (C12): oil lL (mixed-row linker chain; one-row chains still pack into crust), soap glL (+1) / tlL (-1);
+    each substance has chi (bulk pull) and beta (boundary pull) from polarity(); exact Scharfetter-Gummel flux on the
+    grid (plain upwind made diamond droplets); oil tool (drop icon); fusion = a cell short of linkers takes oil in.
+    Seen: coated droplets (emulsion) stable 10 min; soap blobs hollow into vesicle-like rings, then refill into a foam
+    net; the default scene makes almost no oil (linkers go to crust faster); fusion is a trickle (8 units / 10 min).
+C12b. LIPID MEMBRANES, ELASTICITY FROM THE LIPIDS (user 2026-11-15: "Lipids should be connected with elasticity. In
+    the membrane"; NEXT after merging C11 + C12, ahead of C13). The membrane (C6c) becomes a LIPID layer and its
+    elasticity is DERIVED from which lipids it is made of, using the C12 polarity numbers (no per-molecule tuning):
+    - Membrane material = the chain-carrying molecules in the cell's stock: crust chains ll/LL, oil lL, soap glL/tlL.
+      Cells get them by fusing oil and soap from the dish (extend C12 fusion to soap) or by making them inside
+      (let the C12 oil/soap reactions run in cells too, paid from the battery like any reaction).
+    - Derived mechanics: the oily TAIL share packs the layer -> STIFF (holds its hexagon, resists bites, costly);
+      the charged HEAD share makes it FLUID -> soft, wobbly, reseals fast (soap self-assembles), but bends easily;
+      one-row crust chains -> rigid and brittle (cracks rather than bends). Thickness gene stays; the C6c light/heavy
+      mix gene becomes a LIPID MIX gene (what the cell builds its membrane from); the small stiffness gene stays.
+    - Heads carry charge: a membrane rich in glL (+) or tlL (-) charges its sides, feeding C6d dipoles and field B.
+    - Bursts spill the lipids, which go back into droplets / soap films in the dish (matter exact).
+    - Expected look: soft wobbly soap-skinned cells next to stiff oily ones holding crisp hexagons; tissue mechanics
+      (packing, linking) now follow the chemistry the lineage eats and makes. Own switch (off = C6c linker membrane).
 PROPOSED NEXT (user 2026-11-15, ideas under discussion, not agreed in detail):
 - OILS: a water-shy property derived from the atoms (uncharged linker-rich molecules are oily); oily substances
   gather with their own kind on the grid (phase separation: droplets, films), membranes are oil, droplets can fuse

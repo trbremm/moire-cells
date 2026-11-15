@@ -13,7 +13,8 @@ Usage:
     python tools/summarise.py experiments/runs/a --cols "engines.free.g+engines.free.t" --stack \
         "alive,engines.free.g+engines.free.t,cells.rate2.eSwap" --out experiments/summaries/x
                                    # a sum of columns (a+b) works anywhere a column does; --stack draws one picture per
-                                   # run: a small panel per column, stacked on one shared time axis (a phase sequence)
+                                   # run: a small panel per column, stacked on one shared time axis (a phase sequence);
+                                   # "col=words" gives a panel a plain title
 
 Columns are the names in samples.csv (moire.sample()). Useful ones:
     alive                 cells alive                  heat.out          ENTROPY (all heat that left the dish)
@@ -106,8 +107,9 @@ def derive(runs, col):
             x[col] = None if any(a is None for a in v) else sum(v)
 
 
-def svg_stack(run, cols, path):
+def svg_stack(run, cols, path, labels=None):
     """One run, one small panel per column, stacked on a shared time axis (each panel its own y scale)."""
+    labels = labels or {}
     cols = [c for c in cols if any(x.get(c) is not None for x in run["rows"])]
     if not cols:
         return False
@@ -147,11 +149,11 @@ def svg_stack(run, cols, path):
         out.append(f'<line class="grid" x1="{L}" x2="{W - R}" y1="{top}" y2="{top}"/>')
         out.append(f'<text x="{L - 6}" y="{top + PH + 4}" text-anchor="end">{fmt(y0)}</text>')
         out.append(f'<text x="{L - 6}" y="{top + 10}" text-anchor="end">{fmt(y1)}</text>')
-        out.append(f'<text class="ptitle" x="{L + 6}" y="{top + 13}">{html.escape(c)}</text>')
+        out.append(f'<text class="ptitle" x="{L + 6}" y="{top + 13}">{html.escape(labels.get(c, c))}</text>')
         d = " ".join(f"{'M' if i == 0 else 'L'}{px(x):.1f},{py(y):.1f}" for i, (x, y) in enumerate(s))
         out.append(f'<path class="line s{k % len(SERIES)}" d="{d}"/>')
         for x, y in s:
-            tip = html.escape(f"{c} {fmt(y)} at {x:g} s")
+            tip = html.escape(f"{labels.get(c, c)} {fmt(y)} at {x:g} s")
             out.append(f'<circle class="hit" cx="{px(x):.1f}" cy="{py(y):.1f}" r="5"><title>{tip}</title></circle>')
     out.append("</svg>")
     with open(path, "w", encoding="utf-8") as f:
@@ -259,7 +261,8 @@ def main():
     ap.add_argument("--cols", default=",".join(DEFAULT_COLS), help="columns for the table")
     ap.add_argument("--times", default="", help="run times (s) for the table (default: start, middle, end)")
     ap.add_argument("--plot", default=",".join(DEFAULT_PLOTS), help="columns to plot ('' = none)")
-    ap.add_argument("--stack", default="", help="columns for one stacked picture per run (shared time axis)")
+    ap.add_argument("--stack", default="", help="columns for one stacked picture per run (shared time axis); "
+                    "col=label names a panel")
     ap.add_argument("--out", default="", help="folder for summary.md and the plots (default: print the table only)")
     ap.add_argument("--list", action="store_true", help="list the columns and stop")
     args = ap.parse_args()
@@ -283,7 +286,12 @@ def main():
         print("\n".join(cols))
         return
     cols = [c for c in args.cols.split(",") if c]
-    stack = [c for c in args.stack.split(",") if c]
+    stack, labels = [], {}
+    for item in (c for c in args.stack.split(",") if c):
+        c, _, lab = item.partition("=")
+        stack.append(c)
+        if lab:
+            labels[c] = lab
     for c in cols + [c for c in args.plot.split(",") if c] + stack:
         derive(runs, c)
     if args.times:
@@ -304,7 +312,7 @@ def main():
         if stack:
             for r in runs:
                 fn = "stack_" + "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in r["name"]) + ".svg"
-                if svg_stack(r, stack, os.path.join(out, fn)):
+                if svg_stack(r, stack, os.path.join(out, fn), labels):
                     plots.append((f"{r['name']}: " + ", ".join(stack), fn))
         lines =["# Experiment summary", "", "Runs: " + ", ".join(f"`{os.path.relpath(r['dir'], REPO).replace(os.sep, '/')}`" for r in runs), "",
                  md, ""]

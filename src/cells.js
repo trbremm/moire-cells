@@ -64,9 +64,9 @@ const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder 
 const STATS_EVENTS = 64;
 const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_AW in cell_common.wgsl)
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
-const FIELDS_BYTES = 256;      // struct Fields in cell_common.wgsl
+const FIELDS_BYTES = 288;      // struct Fields in cell_common.wgsl (step C6c: + memb)
 const FIELD_FORMAT = 'rgba16float';
-const DRAW_BYTES = 448;        // struct Draw in cell_draw.wgsl (step C6b: + the charge view's inks; step C6c: + the honeycomb)
+const DRAW_BYTES = 480;        // struct Draw in cell_draw.wgsl (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane)
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
 export class Cells {
@@ -296,6 +296,14 @@ export class Cells {
       corner: 0.3,      // corner rounding radius, as a share of the cell's radius (0 = sharp hexagons; 0.6: nearly round)
       wallGap: 0.45,    // each tube sits this far inside the cell's wall (CSS px; at most 0.08 r), so two neighbours' tubes
                         // along a shared wall read as two thin lines with a dark gap
+      // step C6c, the membrane chemistry's look (while it is on): each side's tube shows its integrity
+      membLook: true,   // draw it
+      membDim: 0.35,    // an empty side's tube is this much dimmer (and a quarter thinner)
+      membBreak: 0.5,   // below this integrity a side of a membrane that has been whole breaks into dashes and flickers
+      membFlicker: 0.3, // ... the flicker's depth (at an empty side)
+      membInner: 0.45,  // a heavy membrane's second, inner tube: its brightness (0 = none)
+      membWide: 0.3,    // a thick membrane's tube is up to this much wider (at 2.5 x the founders' usual thickness)
+      membFlash: 1.5,   // a burst cell's flash (0 = none)
     };
   }
 
@@ -628,6 +636,7 @@ export class Cells {
     const SH = this.shape, om = 2 * Math.PI * SH.wobbleHz * Math.sqrt(Math.max(0.01, SH.stiffness));
     u[46] = SH.on ? 1 : 0;
     f[60] = om * om; f[61] = 2 * Math.max(0, SH.zeta) * om; f[62] = Math.max(0, SH.turn); f[63] = Math.max(0, SH.jelly);
+    this.eat.membrane.writeFields(u, f, 64);   // step C6c: genetic elasticity, damaged sides softer, bursting
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -1257,6 +1266,10 @@ export class Cells {
     for (let k = 0; k < 3; k++) { a[100 + k] = P.charge.pos[k] / 255; a[104 + k] = P.charge.neg[k] / 255; }
     // step C6c: the honeycomb outline's corner rounding and the tubes' gap from the wall
     a[108] = Math.max(0, L.corner); a[109] = Math.max(0, L.wallGap);
+    // step C6c: the membrane chemistry's look (src/membrane.js)
+    const MB = this.eat && this.eat.membrane;
+    a[112] = L.membLook && MB && MB.rule('on') ? 1 : 0; a[113] = L.membDim; a[114] = L.membBreak; a[115] = L.membInner;
+    a[116] = L.membFlicker; a[117] = L.membFlash; a[118] = L.membWide; a[119] = MB ? MB.params.tRef : 0.012;
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBGs[this.bioCur]);

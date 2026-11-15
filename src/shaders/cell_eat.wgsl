@@ -1,6 +1,7 @@
-// Cells eat (Part C, step C5): every cell's STOCK of the 13 substances and its BATTERY, in their own buffer (16 i32 per
+// Cells eat (Part C, step C5): every cell's STOCK of the 13 substances and its BATTERY, in their own buffer (32 i32 per
 // cell: channels 0..12 in substance counts, ATOM_SCALE per unit, as the grid; word 13 the battery in heat counts,
-// HEAT_SCALE per energy unit; 14, 15 spare). field_common.wgsl, heat_common.wgsl and cell_common.wgsl are prepended
+// HEAT_SCALE per energy unit; 14, 15 spare; step C6c: 16..21 the light linkers l woven into each side of the membrane,
+// 22..27 the heavy linkers L, in counts; 28..31 spare). field_common.wgsl, heat_common.wgsl and cell_common.wgsl are prepended
 // (src/eat.js). Every amount is a whole count and every move is an atomic add or a "take" (below), so matter stays
 // exact to the count and energy to the heat count.
 //
@@ -36,6 +37,29 @@
 // its heat tolerance, from the battery, as heat. The PERMEABILITY gene sets the membrane's rate per cell (plan).
 // The C5 burner is now the rule "everyone burns" (EF_BURN), off by default once the engines are on.
 //
+// Step C6c, MEMBRANE CHEMISTRY (src/membrane.js): the membrane is a material, LINKER chains woven from the stock, per side
+// (stock words 16..27). Genes (Bio.memb): MIX (the heavy linkers' share) and THICKNESS (linker per R of membrane); a side
+// wants thickness x its rest length of linker, in that mix. Its INTEGRITY (Cell.integ) is what it holds over what it
+// wants (0..1).
+//   plan   BITES: a free reactive atom (giver or taker) outside a side bites the chains of ITS OWN ROW: g and t bite the l
+//          part, G and T the L part, at kBite x their concentration at the side x the side's length x the share of that
+//          row in the side's weave (the other row shields it) x exp(-the chain's spark / (theta x temperature)) (the
+//          table's sparks: the heavy chain is twice as hard to bite). The biting atom stays free (it only breaks the weave,
+//          a catalyst of the membrane's breakdown); the bitten linkers go free into the dish (flux 13, 14 carry them to
+//          the eat dispatch). LEAK: the exchange is x (1 + leakK x (1 - mean integrity)) (each side's share of the
+//          perimeter at its own leakiness); HOLD: the stock's capacity x (hold + (1 - hold) x mean integrity), as a stock
+//          needs a closed membrane to hold it. ION SELECTIVITY: givers x (1 + s), takers x (1 - s) (passive exchange only).
+//   eat    the bitten linkers into the dish; REPAIR: each side short of what it wants weaves linkers from the stock
+//          (repK of the shortfall per s), each linker paying its chain's spark from the battery (as heat; weaving holds
+//          the linkers at the free linkers' energy, so nothing else changes in the books); a side holding more than shedAt
+//          x what it wants (the genes changed, the cell shrank) lets the extra back into the stock. A membrane that has
+//          been WHOLE (mean integrity >= wholeAt) and is bitten below burstAt BURSTS: the cell spills its whole stock, its
+//          membrane (as free linkers) and its battery (as heat) at its place, and its slot is given to a neighbour's
+//          daughter (cell_step.wgsl, after BURST_TICKS; only with turnover on)
+//   split  a newborn takes a share r / (r + r_parent) of every side of its parent's membrane (as both have about the same
+//          integrity after); dump and reset hand membranes back to the dish as free linkers
+//   ledger the membranes' linkers count in the cells' l and L (the atoms' books), and the membrane census (LG_MB)
+
 // A TAKE from a word other invocations may also change (a grid pixel, a parent's stock): subtract what is wanted, keep
 // what was there (at most the want), and add back the rest. Whatever the order, no word goes below zero for good and
 // the takers together get no more than was there.
@@ -57,8 +81,14 @@
 @group(0) @binding(2) var<storage, read_write> stockP: array<i32>;
 @group(0) @binding(7) var<storage, read_write> mg: array<i32>;
 
-const SW: u32 = 16u;       // stock words per cell
+const SW: u32 = 32u;       // stock words per cell (16 until step C6c)
 const BAT: u32 = 13u;      // the battery's word
+// step C6c: the membrane's words (per side: light linkers l, then heavy L) and the linker channels (SUBSTANCES order: g t l
+// G T L ...; src/eat.js checks)
+const MB_L0: u32 = 16u;
+const MB_H0: u32 = 22u;
+const MB_CH_L: u32 = 2u;
+const MB_CH_H: u32 = 5u;
 
 // step C6: one engine of ENGINES (src/matter.js), 32 bytes
 struct Eng {
@@ -110,7 +140,49 @@ struct EatP {
   photon16: vec4i,         // per light band: one photon's energy in heat counts per event (16 x its energy)
   ratio: array<vec4f, 4>,  // per channel: its spreading speed / the light atoms' (scales the permeability gene; sediment 0)
   eng: array<Eng, 24>,     // ENGINES (18)
+  // ---- step C6c, membrane chemistry (src/membrane.js) ----
+  mb0: vec4f,              // x: MBF_* bits (u32); y kBite (per unit per R^2, per R of side, per s); z repK (per s); w a side's
+                           // rest length per r (the hexagon of area pi r^2: 1.1)
+  mb1: vec4f,              // x leakK; y burstAt (mean integrity); z wholeAt; w theta (the sparks' temperature scale)
+  mb2: vec4f,              // x, y: heat counts per linker count woven, l and L (the chain's spark); z, w: the sparks themselves
+  mb3: vec4f,              // x shedAt (x what a side wants); y shedK (per s); z the leak's largest (the exchange x at most this);
+                           // w tRef (memb_stiff, for the census)
+  mb4: vec4f,              // x hold: the share of its capacity a cell with no membrane can hold (a closed membrane: all of it)
 };
+const MBF_ON: u32 = 1u;      // membrane chemistry (master): material, integrity, repair, leak
+const MBF_BITE: u32 = 2u;    // ... bites
+const MBF_BURST: u32 = 4u;   // ... bursting (only while turnover is on)
+const MBF_SEL: u32 = 8u;     // ion selectivity gene
+fn mb_flags() -> u32 { return bitcast<u32>(EP.mb0.x); }
+// what a side of cell c wants, in linker counts, for its genes' thickness (per R of membrane x its rest length)
+fn memb_want(r: f32, thick: f32) -> f32 { return max(thick, 0.0) * EP.mb0.w * r / EP.R * ATOM_SCALE; }
+
+// step C6c: the membrane counters and census (LG_MB + 16 q + slot), see heat_common.wgsl
+const MB_N: u32 = 0u;          // snapshot: cells
+const MB_MIX: u32 = 1u;        // ... sum of mix x 1000
+const MB_THICK: u32 = 2u;      // ... sum of thickness x 100000
+const MB_INTEG: u32 = 3u;      // ... sum of the mean integrity x 1000
+const MB_ASEL: u32 = 4u;       // ... sum of |selectivity| x 1000
+const MB_SEL: u32 = 5u;        // ... sum of selectivity x 1000
+const MB_ML: u32 = 6u;         // ... light linkers in membranes (counts)
+const MB_MH: u32 = 7u;         // ... heavy linkers in membranes (counts)
+const MB_WHOLE: u32 = 8u;      // ... cells whose membrane has been whole
+const MB_DAMAGED: u32 = 9u;    // ... of those, below half integrity now
+const MB_HEAVY: u32 = 10u;     // ... cells with a heavy membrane (mix above 0.5)
+const MB_HINTEG: u32 = 11u;    // ... their sum of the mean integrity x 1000
+const MB_STIFF: u32 = 12u;     // ... sum of the material's stiffness (memb_stiff) x 1000
+const MB_SELN: u32 = 13u;      // ... cells with |selectivity| above 0.3
+const MB_SELQ: u32 = 14u;      // ... of those, charged (|q| above 0.3)
+const MB_QSEL: u32 = 15u;      // ... sum of q x selectivity x 1000 (positive: givers-passing cells hold +)
+const MB_BITE_L: u32 = 16u;    // counters: light linkers bitten out (counts)
+const MB_BITE_H: u32 = 17u;    // ... heavy
+const MB_BUILT_L: u32 = 18u;   // ... light linkers woven in
+const MB_BUILT_H: u32 = 19u;   // ... heavy
+const MB_SPARK: u32 = 20u;     // ... heat counts the batteries paid for weaving
+const MB_BURSTS: u32 = 21u;    // ... cells that burst
+const MB_SHED: u32 = 22u;      // ... linker counts let back into the stocks (extra material)
+const MB_BITTEN: u32 = 23u;    // ... cell-ticks with a bite
+var<workgroup> wmb: array<atomic<i32>, 16>;
 const EF_EAT: u32 = 1u;      // the membrane trades (cells eat, Shift+A)
 const EF_BURN: u32 = 2u;     // everyone burns: the C5 built-in burner (Shift+U)
 const EF_INSIDE: u32 = 4u;   // the table's reactions inside cells (Shift+I)
@@ -223,6 +295,19 @@ fn give_back(i: u32, p: vec2f, cur: u32, slot: u32) {
       gone += m * na;
     }
   }
+  // step C6c: the membrane's linkers, as free linkers
+  for (var k = 0u; k < 12u; k++) {
+    let m = atomicExchange(&stock[i * SW + MB_L0 + k], 0);
+    if (m <= 0) { continue; }
+    let c = select(MB_CH_H, MB_CH_L, k < 6u);
+    if (cur != 0u && (EP.mask & (1u << c)) != 0u) {
+      spread9(cur + c * EP.n, idx, m);
+      back += m;
+    } else {
+      add64(LG_M_GONE + 128u * c + slot, m);
+      gone += m;
+    }
+  }
   let b = atomicExchange(&stock[i * SW + BAT], 0);
   if (b > 0) { spread9(LEDGER_WORDS, idx, b); }
   atomicAdd(&wev[EV_DUMP], back);
@@ -238,6 +323,10 @@ fn flush_counters(li: u32, slot: u32) {
   } else if (li < 32u) {
     let v = atomicLoad(&wev2[li - 16u]);
     if (v != 0) { add64(LG_K_EV2 + 128u * (li - 16u) + slot, v); }
+  } else if (li < 48u) {
+    // step C6c: the membrane's counters (16 slots, i32: cleared at each read-back)
+    let v = atomicLoad(&wmb[li - 32u]);
+    if (v != 0) { atomicAdd(&hb[LG_MB + 16u * (16u + li - 32u) + (slot & 15u)], v); }
   }
 }
 
@@ -266,6 +355,14 @@ fn split(@builtin(global_invocation_id) id: vec3u) {
       let got = take_stock(pi * SW + k, h / 2);
       if (got > 0) { atomicAdd(&stock[i * SW + k], got); }
     }
+    // step C6c: and a share r / (r + r_parent) of each side of the parent's membrane (side k to side k), so both start with
+    // about the parent's integrity (the newborn is smaller and wants less)
+    let sh = c.r / max(c.r + cells[pi].r, 1e-3);
+    for (var k = 0u; k < 12u; k++) {
+      let h = atomicLoad(&stock[pi * SW + MB_L0 + k]);
+      let got = take_stock(pi * SW + MB_L0 + k, i32(floor(f32(h) * sh)));
+      if (got > 0) { atomicAdd(&stock[i * SW + MB_L0 + k], got); }
+    }
   }
   cells[i].flags = c.flags & ~CELL_BORN;
 }
@@ -287,21 +384,44 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   for (var q = 0; q < 9; q++) { hsum += mg[S.heatCur - lw + idx[q]]; }
   flux[fo + 15u] = bitcast<i32>(f32(hsum) / 9.0 * HP.tempScale);
   let cur = S.matterCur;
-  let eatOn = (EP.flags & EF_EAT) != 0u && cur != 0u && (c.flags & CELL_ALIVE) != 0u;
+  let husk = cell_burst(c.flags) != 0u && (mb_flags() & MBF_BURST) != 0u;   // step C6c: a burst cell trades nothing
+  let eatOn = (EP.flags & EF_EAT) != 0u && cur != 0u && (c.flags & CELL_ALIVE) != 0u && !husk;
   let areaPx = 3.14159265 * c.r * c.r;
   let areaR2 = max(areaPx / (EP.R * EP.R), 1e-3);
   let cap = EP.capR2 * areaR2 * ATOM_SCALE;
   var atomsIn = 0.0;
   for (var k = 0u; k < NCH; k++) { atomsIn += f32(stockP[fo + k]) * ep_f(EP.natoms, k); }
-  let room = clamp(1.0 - atomsIn / max(cap, 1.0), 0.0, 1.0);
+  // step C6c: the membrane's material per side (it takes room in the cell too) and its integrity
+  let mbf = mb_flags();
+  let membOn = (mbf & MBF_ON) != 0u && (EP.flags & EF_EAT) != 0u;
+  let gm = bio[i].memb;
+  var ml: array<i32, 6>;
+  var mh: array<i32, 6>;
+  var integ = 0.0;
+  let want = max(memb_want(c.r, gm.y), 1.0);
+  for (var k = 0u; k < 6u; k++) {
+    ml[k] = stockP[fo + MB_L0 + k];
+    mh[k] = stockP[fo + MB_H0 + k];
+    atomsIn += f32(ml[k] + mh[k]);
+    integ += min(f32(ml[k] + mh[k]) / want, 1.0);
+  }
+  integ /= 6.0;
+  // a stock needs a closed membrane to hold it: the capacity x (hold + (1 - hold) x mean integrity)
+  let capM = select(cap, cap * (EP.mb4.x + (1.0 - EP.mb4.x) * integ), membOn);
+  let room = clamp(1.0 - atomsIn / max(capM, 1.0), 0.0, 1.0);
   let Ao = 9.0 * HP.px * HP.px;
   let rs = pcg(c.seed ^ pcg(S.tick * 0x9e3779b9u + 0x2c1b3c6du));
   // step C6: with the permeability gene on, the cell's own (Bio.rate.w, for the light atoms) x each channel's ratio
   let permG = (EP.flags & EF_PERMG) != 0u;
   let pgene = bio[i].rate.w;
+  // step C6c: a damaged membrane leaks (each side's share of the perimeter at 1 + leakK x its damage: the mean), and the
+  // ion selectivity gene lets givers (+) through x (1 + s) and takers (-) x (1 - s)
+  let leak = select(1.0, min(1.0 + EP.mb1.x * (1.0 - integ), EP.mb3.z), membOn);
+  let selOn = (mbf & MBF_SEL) != 0u;
   for (var k = 0u; k < NCH; k++) {
     var n = 0;
-    let pk = select(ep_f(EP.perm, k), pgene * ep_f(EP.ratio, k), permG);
+    var pk = select(ep_f(EP.perm, k), pgene * ep_f(EP.ratio, k), permG) * leak;
+    if (selOn) { pk *= max(1.0 + gm.w * f32(charge_of(EP.qCodes, k)), 0.0); }
     if (eatOn && pk > 0.0 && (EP.mask & (1u << k)) != 0u) {
       let base = cur - lw + k * EP.n;
       var Mo = 0;
@@ -317,6 +437,46 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     }
     flux[fo + k] = n;
   }
+  // step C6c, BITES: a free reactive atom outside a side bites the chains of its own row (g, t the l part; G, T the L part),
+  // at kBite x its concentration there (units per R^2, the pixel just outside the side's middle) x the side's length (R)
+  // x the share of that row in the side's weave x exp(-the chain's spark / (theta x temperature)); counts, rounded at
+  // random. The biting atom stays free; the bitten linkers go to the dish in the eat dispatch (flux 13, 14)
+  var bl = 0;
+  var bh = 0;
+  if (membOn && (mbf & MBF_BITE) != 0u && cur != 0u && (c.flags & CELL_ALIVE) != 0u && !husk) {
+    let mbn = membrane(c);
+    let tmp = max(f32(hsum) / 9.0 * HP.tempScale, 1e-4);
+    let fL = exp(-EP.mb2.z / (EP.mb1.w * tmp));
+    let fH = exp(-EP.mb2.w / (EP.mb1.w * tmp));
+    let conc = EP.R * EP.R / (ATOM_SCALE * HP.px * HP.px);   // counts in a pixel -> units per R^2
+    let mL = (EP.mask & 3u) != 0u;                           // g, t moving
+    let mH = (EP.mask & 24u) != 0u;                          // G, T moving
+    for (var k = 0u; k < 6u; k++) {
+      let mk = ml[k] + mh[k];
+      if (mk <= 0) { continue; }
+      let e = mbn.edge[k];
+      let len = length(e);
+      let nrm = vec2f(e.y, -e.x) / max(len, 1e-6);
+      let px = heat_xy(HP, c.pos + mbn.mid[k] + nrm * (0.5 * HP.px));
+      let pi = u32(px.y) * HP.hw + u32(px.x);
+      let base = cur - lw;
+      let x0 = EP.mb0.y * len / EP.R * ATOM_SCALE * EP.dt * conc;
+      if (mL && ml[k] > 0) {
+        let cl = f32(max(mg[base + pi], 0) + max(mg[base + EP.n + pi], 0));
+        let x = x0 * cl * fL * f32(ml[k]) / f32(mk);
+        let n = min(i32(floor(x + u01(pcg(rs + k * 0x1b873593u + 0x68e31da4u)))), ml[k]);
+        if (n > 0) { ml[k] -= n; bl += n; stockP[fo + MB_L0 + k] = ml[k]; }
+      }
+      if (mH && mh[k] > 0) {
+        let ch = f32(max(mg[base + 3u * EP.n + pi], 0) + max(mg[base + 4u * EP.n + pi], 0));
+        let x = x0 * ch * fH * f32(mh[k]) / f32(mk);
+        let n = min(i32(floor(x + u01(pcg(rs + k * 0xcc9e2d51u + 0x3c6ef372u)))), mh[k]);
+        if (n > 0) { mh[k] -= n; bh += n; stockP[fo + MB_H0 + k] = mh[k]; }
+      }
+    }
+  }
+  flux[fo + 13u] = bl;
+  flux[fo + 14u] = bh;
   // smell: the fuels (each weighted by its energy) at the membrane's 6 corners; for a field v = v0 + G . x sampled at a
   // regular hexagon, sum v x = G sum |x|^2 / 2, so G = 2 sum v x / sum |x|^2 (here in energy per R^2 per R)
   var g = vec2f(0.0);
@@ -378,7 +538,14 @@ fn phi_bilinear(p: vec2f) -> f32 {
 fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index) li: u32, @builtin(workgroup_id) wid: vec3u) {
   let i = id.x;
   let slot = wid.x & 63u;
-  if (i < S.count && (cells[i].flags & CELL_ALIVE) != 0u) {
+  // step C6c: a cell that burst (cell_burst) waits, empty, for a neighbour's daughter to take its slot (cell_step.wgsl);
+  // with bursting off (or turnover) it is an ordinary cell again
+  var husk = false;
+  if (i < S.count && cell_burst(cells[i].flags) != 0u) {
+    if ((mb_flags() & MBF_BURST) != 0u) { husk = true; }
+    else { cells[i].flags = cells[i].flags & ~CELL_BURST_MASK; }
+  }
+  if (i < S.count && (cells[i].flags & CELL_ALIVE) != 0u && !husk) {
     let c = cells[i];
     let o = i * SW;
     var m: array<i32, 13>;
@@ -434,6 +601,84 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       }
       atomicAdd(&wev[EV_UPTAKE], up);
       atomicAdd(&wev[EV_RELEASE], down);
+    }
+
+    // ---- step C6c, the membrane: the linkers the plan's bites broke out go free into the dish (into the stock while their
+    // channel is not moving); then REPAIR: each side short of what the genes ask weaves linkers in from the stock (repK of
+    // the shortfall per s, in the genes' mix), each paying its chain's spark from the battery, as heat (the weave holds them
+    // at the free linkers' energy); a side holding more than shedAt x it wants lets the extra back into the stock
+    let mbf = mb_flags();
+    let membOn = (mbf & MBF_ON) != 0u && (EP.flags & EF_EAT) != 0u;
+    let gm = bio[i].memb;
+    var sl: array<i32, 6>;
+    var sh: array<i32, 6>;
+    for (var k = 0u; k < 6u; k++) { sl[k] = atomicLoad(&stock[o + MB_L0 + k]); sh[k] = atomicLoad(&stock[o + MB_H0 + k]); }
+    let sl0 = sl;
+    let sh0 = sh;
+    let bitL = flux[fo + 13u];
+    let bitH = flux[fo + 14u];
+    if (bitL > 0) {
+      if (cur != 0u && (EP.mask & (1u << MB_CH_L)) != 0u) { spread9(cur + MB_CH_L * EP.n, idx, bitL); } else { m[MB_CH_L] += bitL; }
+      atomicAdd(&wmb[MB_BITE_L - 16u], bitL);
+    }
+    if (bitH > 0) {
+      if (cur != 0u && (EP.mask & (1u << MB_CH_H)) != 0u) { spread9(cur + MB_CH_H * EP.n, idx, bitH); } else { m[MB_CH_H] += bitH; }
+      atomicAdd(&wmb[MB_BITE_H - 16u], bitH);
+    }
+    if (bitL + bitH > 0) { atomicAdd(&wmb[MB_BITTEN - 16u], 1); }
+    let want = max(memb_want(c.r, gm.y), 1.0);
+    if (membOn) {
+      let mix = clamp(gm.x, 0.0, 1.0);
+      let wl = (1.0 - mix) * want;
+      let wh = mix * want;
+      var nl: array<i32, 6>;
+      var nh: array<i32, 6>;
+      var tl = 0;
+      var th = 0;
+      let kr = EP.mb0.z * EP.dt;
+      for (var k = 0u; k < 6u; k++) {
+        nl[k] = max(i32(floor(kr * max(wl - f32(sl[k]), 0.0) + u01(pcg(rs + k * 0x7feb352du + 0x1d8e4e27u)))), 0);
+        nh[k] = max(i32(floor(kr * max(wh - f32(sh[k]), 0.0) + u01(pcg(rs + k * 0x846ca68bu + 0x5a3b9b5du)))), 0);
+        tl += nl[k];
+        th += nh[k];
+      }
+      // what the stock holds, then what the battery can pay (the sparks), scale the plan down
+      var fl = select(1.0, f32(max(m[MB_CH_L], 0)) / f32(tl), tl > m[MB_CH_L]);
+      var fh = select(1.0, f32(max(m[MB_CH_H], 0)) / f32(th), th > m[MB_CH_H]);
+      let spl = i32(EP.mb2.x);
+      let sph = i32(EP.mb2.y);
+      let cost = f32(tl) * fl * f32(spl) + f32(th) * fh * f32(sph);
+      if (cost > f32(bat)) { let q = f32(max(bat, 0)) / max(cost, 1.0); fl *= q; fh *= q; }
+      var ul = 0;
+      var uh = 0;
+      for (var k = 0u; k < 6u; k++) {
+        let a = i32(floor(f32(nl[k]) * fl));
+        let b2 = i32(floor(f32(nh[k]) * fh));
+        sl[k] += a; ul += a;
+        sh[k] += b2; uh += b2;
+      }
+      let paid = ul * spl + uh * sph;
+      m[MB_CH_L] -= ul;
+      m[MB_CH_H] -= uh;
+      bat -= paid;
+      heat += paid;
+      atomicAdd(&wmb[MB_BUILT_L - 16u], ul);
+      atomicAdd(&wmb[MB_BUILT_H - 16u], uh);
+      atomicAdd(&wmb[MB_SPARK - 16u], paid);
+      // the extra back into the stock (free: the weave is at the free linkers' energy)
+      var shed = 0;
+      let ks = EP.mb3.y * EP.dt;
+      for (var k = 0u; k < 6u; k++) {
+        let xl = f32(sl[k]) - EP.mb3.x * wl - 1.0;
+        if (xl > 0.0) { let a = min(i32(ceil(ks * xl)), sl[k]); sl[k] -= a; m[MB_CH_L] += a; shed += a; }
+        let xh = f32(sh[k]) - EP.mb3.x * wh - 1.0;
+        if (xh > 0.0) { let a = min(i32(ceil(ks * xh)), sh[k]); sh[k] -= a; m[MB_CH_H] += a; shed += a; }
+      }
+      atomicAdd(&wmb[MB_SHED - 16u], shed);
+    }
+    for (var k = 0u; k < 6u; k++) {
+      if (sl[k] != sl0[k]) { atomicStore(&stock[o + MB_L0 + k], sl[k]); }
+      if (sh[k] != sh0[k]) { atomicStore(&stock[o + MB_H0 + k], sh[k]); }
     }
 
     // the temperature under the cell (its 3 x 3 pixels' mean, from the plan pass), for the sparks of the reactions inside
@@ -666,6 +911,35 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       if (w01 != 0) { atomicAdd(&hb[EP.qOff + u32(p11.y) * HP.hw + u32(p00.x)], w01); }
       if (w11 != 0) { atomicAdd(&hb[EP.qOff + u32(p11.y) * HP.hw + u32(p11.x)], w11); }
     }
+
+    // ---- step C6c: each side's integrity (what it holds over what it wants; 1 while the membrane chemistry is off), the
+    // WHOLE mark (a membrane that once reached wholeAt), and BURSTING: a whole membrane bitten below burstAt bursts; the
+    // cell spills everything at its place (its stock, its membrane as free linkers, its battery as heat: give_back) and
+    // waits as an empty husk for a neighbour's daughter (cell_step.wgsl)
+    var ig = array<f32, 6>(1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+    var im = 1.0;
+    if (membOn) {
+      im = 0.0;
+      for (var k = 0u; k < 6u; k++) { ig[k] = clamp(f32(sl[k] + sh[k]) / want, 0.0, 1.0); im += ig[k]; }
+      im /= 6.0;
+    }
+    var fl2 = c.flags;
+    if (membOn && im >= EP.mb1.z) { fl2 |= CELL_WHOLE; }
+    let burst = membOn && (mbf & MBF_BURST) != 0u && (fl2 & CELL_WHOLE) != 0u && im < EP.mb1.y && bitL + bitH > 0;
+    if (burst) {
+      give_back(i, c.pos, cur, slot);
+      fl2 = (fl2 & ~CELL_BURST_MASK) | (1u << CELL_BURST_SHIFT);
+      ig = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      cells[i].bat = 0.0;
+      cells[i].fill = 0.0;
+      cells[i].q = 0.0;
+      cells[i].qNet = 0.0;
+      atomicAdd(&wmb[MB_BURSTS - 16u], 1);
+    }
+    cells[i].integ = ig;
+    if (fl2 != c.flags) { cells[i].flags = fl2; }
+  } else if (husk) {
+    cells[i].integ = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
   }
   flush_counters(li, slot);
 }
@@ -686,13 +960,21 @@ const CEN_N: u32 = 76u;
 var<workgroup> wcen: array<atomic<i32>, 76>;
 // step C6b, the cells' charge (a snapshot, LG_Q_CEN + 16 v): cells with q above 0.1, below -0.1, sum |q| x 1000, sum |net| x 1000
 var<workgroup> wq: array<atomic<i32>, 4>;
+// step C6c, the membrane census (a snapshot, LG_MB + 16 v; MB_* above)
+var<workgroup> wmbs: array<atomic<i32>, 16>;
 
 @compute @workgroup_size(64)
 fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index) li: u32, @builtin(workgroup_id) wid: vec3u) {
   let i = id.x;
   if (i < S.count) {
+    // step C6c: the membrane's linkers count with the cells' l and L (the atoms' books)
+    var ml = 0;
+    var mh = 0;
+    for (var k = 0u; k < 6u; k++) { ml += max(atomicLoad(&stock[i * SW + MB_L0 + k]), 0); mh += max(atomicLoad(&stock[i * SW + MB_H0 + k]), 0); }
     for (var k = 0u; k <= BAT; k++) {
-      let v = max(atomicLoad(&stock[i * SW + k]), 0);
+      var v = max(atomicLoad(&stock[i * SW + k]), 0);
+      if (k == MB_CH_L) { v += ml; }
+      if (k == MB_CH_H) { v += mh; }
       if (v == 0) { continue; }
       atomicAdd(&wlo[k], u32(v) & 0xffffu);
       atomicAdd(&whi[k], u32(v) >> 16u);
@@ -745,8 +1027,36 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     if (c.q > 0.1) { atomicAdd(&wq[0], 1); } else if (c.q < -0.1) { atomicAdd(&wq[1], 1); }
     atomicAdd(&wq[2], i32(round(abs(c.q) * 1000.0)));
     atomicAdd(&wq[3], i32(round(min(abs(c.qNet), 1e5) * 1000.0)));
+    // step C6c: the membrane census
+    let gm = b.memb;
+    var im = 0.0;
+    for (var k = 0; k < 6; k++) { im += c.integ[k]; }
+    im /= 6.0;
+    atomicAdd(&wmbs[MB_N], 1);
+    atomicAdd(&wmbs[MB_MIX], i32(round(gm.x * 1000.0)));
+    atomicAdd(&wmbs[MB_THICK], i32(round(gm.y * 100000.0)));
+    atomicAdd(&wmbs[MB_INTEG], i32(round(im * 1000.0)));
+    atomicAdd(&wmbs[MB_ASEL], i32(round(abs(gm.w) * 1000.0)));
+    atomicAdd(&wmbs[MB_SEL], i32(round(gm.w * 1000.0)));
+    atomicAdd(&wmbs[MB_ML], ml);
+    atomicAdd(&wmbs[MB_MH], mh);
+    if ((c.flags & CELL_WHOLE) != 0u) {
+      atomicAdd(&wmbs[MB_WHOLE], 1);
+      if (im < 0.5) { atomicAdd(&wmbs[MB_DAMAGED], 1); }
+    }
+    if (gm.x > 0.5) { atomicAdd(&wmbs[MB_HEAVY], 1); atomicAdd(&wmbs[MB_HINTEG], i32(round(im * 1000.0))); }
+    atomicAdd(&wmbs[MB_STIFF], i32(round(memb_stiff(gm, EP.mb3.w) * 1000.0)));
+    if (abs(gm.w) > 0.3) {
+      atomicAdd(&wmbs[MB_SELN], 1);
+      if (abs(c.q) > 0.3) { atomicAdd(&wmbs[MB_SELQ], 1); }
+    }
+    atomicAdd(&wmbs[MB_QSEL], i32(round(c.q * gm.w * 1000.0)));
   }
   workgroupBarrier();
+  if (li < 16u) {
+    let v = atomicLoad(&wmbs[li]);
+    if (v != 0) { atomicAdd(&hb[LG_MB + 16u * li + (wid.x & 15u)], v); }
+  }
   if (li < 4u) {
     let v = atomicLoad(&wq[li]);
     if (v != 0) { atomicAdd(&hb[LG_Q_CEN + 16u * li + (wid.x & 15u)], v); }

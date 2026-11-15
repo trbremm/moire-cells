@@ -52,9 +52,11 @@ struct Cell {
                     // ellipse cells); e1, e2 themselves are then worked out from the corners (their second moment)
   alpha: array<f32, 6>, // each corner's slide round from its regular direction theta + k x 60 degrees (radians, at most
                     // HEX_SLIDE), toward the corner of its tile, so a cell with 5 or 7 neighbours still shares straight walls
-  // reserved per side, not used yet (zero): side k = the side from corner k to corner k + 1
-  integ: array<f32, 6>, // C6c, membrane chemistry (the next worker): each side's integrity
-  sideQ: array<f32, 6>, // C6d: each side's charge (dipoles)
+  // per side: side k = the side from corner k to corner k + 1
+  integ: array<f32, 6>, // C6c, membrane chemistry: each side's integrity, 0..1 (its linker material / what the genes ask
+                    // for; written by the eat pass every tick, 1 while the membrane chemistry is off), read by the step
+                    // (a damaged side is softer) and the drawing (a damaged side's tube dims and breaks)
+  sideQ: array<f32, 6>, // C6d: each side's charge (dipoles; reserved, zero)
 };
 
 // Step C6c: the part of a cell its neighbours read, the grid's sorted copy (cell_grid.wgsl scatter; 104 bytes, keep in step
@@ -77,6 +79,16 @@ const CELL_BORN: u32 = 4u;          // step C5: born this tick (the step sets it
                                     // back to the dish, gives the newborn half its parent's, and clears it)
 const CELL_HEX: u32 = 8u;           // step C6c: the cell's outline is its 6 corners (rad, theta); else the stretched hexagon
                                     // of the ellipse cells (set and cleared by the step pass, as the honeycomb rule is on)
+// step C6c, membrane chemistry (cell_eat.wgsl): bits 4..7 count the ticks since the cell BURST (0: it has not; the eat pass
+// sets 1 when it bursts and spills everything, the step counts up and lets a neighbour divide into the slot at
+// BURST_TICKS; the drawing shows the flash meanwhile); bit 18: its membrane has been WHOLE (mean integrity 0.5 or more)
+// since it was born, or its parent's had (it got real sides from it at the split): only such a membrane can burst (one never
+// built cannot)
+const CELL_BURST_SHIFT: u32 = 4u;
+const CELL_BURST_MASK: u32 = 0xf0u;
+const BURST_TICKS: u32 = 12u;
+const CELL_WHOLE: u32 = 0x40000u;
+fn cell_burst(flags: u32) -> u32 { return (flags & CELL_BURST_MASK) >> CELL_BURST_SHIFT; }
 fn cell_leak(c: Cell) -> f32 { return f32((c.flags >> CELL_LEAK_SHIFT) & 255u) / 255.0; }
 
 // Per-tick simulation uniforms (written by src/cells.js; keep the order in step with writeSim there).
@@ -201,7 +213,16 @@ struct Bio {
   eng: vec4f,       // x y z: the three engine slots, each the engine's index + 32 x its pigment's light band (a whole number);
                     // w: the heat tolerance (temperature, heat per R^2)
   rate: vec4f,      // x y z: each slot's rate (0 = empty); w: the permeability (per s, for the light atoms)
+  // ---- step C6c: the membrane's material and the ion selectivity (src/genome.js, cell_eat.wgsl) ----
+  memb: vec4f,      // x MIX: the heavy linkers' (L) share of the membrane, 0..1 (the rest light, l); y THICKNESS: linker per
+                    // R of membrane (atom-units); z the STIFFNESS gene (x the stiffness the material gives); w the ION
+                    // SELECTIVITY s, -1..1: givers (+) pass the membrane x (1 + s), takers (-) x (1 - s)
 };
+// step C6c: the honeycomb stiffness a membrane's material gives (genetic elasticity): heavy and thick = stiff, light and thin
+// = soft; 1 for the founders' usual light thin membrane (mix 0.1, thickness tRef)
+fn memb_stiff(m: vec4f, tRef: f32) -> f32 {
+  return clamp((0.7 + clamp(m.x, 0.0, 1.0)) / 0.8 * sqrt(max(m.y, 1e-4) / max(tRef, 1e-4)) * m.z, 0.25, 4.0);
+}
 const ENG_RATE_MAX: f32 = 6.0;     // largest rate of an engine slot
 const ENG_COUNT: u32 = 20u;        // engines in ENGINES (src/matter.js)
 fn eng_index(code: f32) -> u32 { return min(u32(round(max(code, 0.0))) & 31u, ENG_COUNT - 1u); }
@@ -319,6 +340,11 @@ fn mutate(p: Bio, seed: u32, size: f32, jump: f32, engJump: f32) -> Bio {
   }
   b.eng.w = clamp(b.eng.w * exp(size * 0.04 * gauss(seed, 114u)), 3.0, 60.0);
   b.rate.w = clamp(b.rate.w * exp(size * 0.08 * gauss(seed, 115u)), 0.2, 20.0);
+  // step C6c: the membrane's mix (additive), thickness and stiffness gene (multiplicative) and the ion selectivity (additive)
+  b.memb.x = nudge(b.memb.x, size * 0.03, 0.0, 1.0, seed, 116u);
+  b.memb.y = clamp(b.memb.y * exp(size * 0.08 * gauss(seed, 117u)), 0.002, 0.2);
+  b.memb.z = clamp(b.memb.z * exp(size * 0.05 * gauss(seed, 118u)), 0.3, 3.0);
+  b.memb.w = nudge(b.memb.w, size * 0.03, -1.0, 1.0, seed, 119u);
   // ... and now and then one slot jumps: to another engine (an empty slot starts up at a small rate), to another pigment
   // band (or none: an uphill engine then runs on the battery, a storer), or it empties
   if (rand01(seed, 120u) < engJump) {
@@ -500,7 +526,7 @@ fn sense_field(seg: ptr<function, array<f32, 6>>, mb: Membrane, rel: vec2f, q0: 
 // in its own band: every lattice involved (the cell's and the medium's) is `bBand` times longer, so A and B
 // make no slow beat with each other; it reaches further (power law from a larger r0) and has its own sign rule.
 // Each fate carries a charge per field: how strongly it emits into that field and listens to it.
-// Written once per frame by src/cells.js (writeFields; keep in step); 256 bytes.
+// Written once per frame by src/cells.js (writeFields; keep in step); 288 bytes (256 until step C6c).
 struct Fields {
   qA: vec4f,        // field A charge per fate: stem, epithelium, muscle, neuron (1 = as in step 4)
   qB: vec4f,        // field B charge per fate (signed: like charges repel, when bSign = 1)
@@ -570,7 +596,14 @@ struct Fields {
   qSat: f32,        // the grid's push saturates at this speed (R / s)
   hex: vec4f,       // step C6c: x the corners' spring (omega^2, 1/s^2), y their damping (1/s), z the contacts' turning pull on
                     // the hexagon (1/s^2), w jelly: how much the corners lag the centre's change of velocity (0 = rigid)
+  // ---- step C6c, membrane chemistry (src/membrane.js) ----
+  memb: vec4f,      // x bits: MB_ELASTIC genetic elasticity, MB_SOFT damaged sides are softer, MB_BURST bursting (with
+                    // turnover); y the thickness at which a light membrane has stiffness 1 (memb_stiff); z a fully damaged
+                    // side's stiffness, as a share of its intact one; w spare
 };
+const MB_ELASTIC: u32 = 1u;
+const MB_SOFT: u32 = 2u;
+const MB_BURST: u32 = 4u;
 const EAT_PAY: u32 = 1u;
 const EAT_HEAT: u32 = 2u;
 const EAT_BIAS: u32 = 4u;

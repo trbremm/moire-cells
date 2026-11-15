@@ -1,0 +1,119 @@
+{
+  "name": "g-img-heavy",
+  "description": "Picture rerun of g-spr-heavy (seed 3): strategy and clean views through the crash and the takeover.",
+  "condition": {
+    "name": "g-img-heavy",
+    "description": "Picture rerun of g-spr-heavy (seed 3): strategy and clean views through the crash and the takeover.",
+    "query": {
+      "seed": 3
+    },
+    "duration": 1000,
+    "sample_every": 20,
+    "shots": [
+      {
+        "t": 60,
+        "view": "strategy"
+      },
+      {
+        "t": 60,
+        "view": "clean"
+      },
+      {
+        "t": 170,
+        "view": "strategy"
+      },
+      {
+        "t": 170,
+        "view": "clean"
+      },
+      {
+        "t": 400,
+        "view": "strategy"
+      },
+      {
+        "t": 400,
+        "view": "clean"
+      },
+      {
+        "t": 700,
+        "view": "strategy"
+      },
+      {
+        "t": 700,
+        "view": "clean"
+      },
+      {
+        "t": 760,
+        "view": "strategy"
+      },
+      {
+        "t": 760,
+        "view": "clean"
+      },
+      {
+        "t": 820,
+        "view": "strategy"
+      },
+      {
+        "t": 820,
+        "view": "clean"
+      },
+      {
+        "t": 1000,
+        "view": "strategy"
+      },
+      {
+        "t": 1000,
+        "view": "clean"
+      }
+    ],
+    "evals": [
+      {
+        "t": 0,
+        "js": "moire.matter.clearSprings(); moire.matter.addSpring(875, 328, 'heavy', 1e9); moire.matter.addSpring(875, 472, 'heavy', 1e9); return moire.matter.springs.length"
+      }
+    ]
+  },
+  "url": "http://localhost:58130/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "adf3d6c97370802fd8324445e748ee1c000d4268",
+  "dirty": false,
+  "started": "2026-11-15T12:08:34",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1000.0,
+  "run_wall_s": 404.03,
+  "speed_reached": 2.48,
+  "samples": 51,
+  "shots": [
+    "shots/t60_strategy.png",
+    "shots/t60.png",
+    "shots/t170_strategy.png",
+    "shots/t170.png",
+    "shots/t400_strategy.png",
+    "shots/t400.png",
+    "shots/t700_strategy.png",
+    "shots/t700.png",
+    "shots/t760_strategy.png",
+    "shots/t760.png",
+    "shots/t820_strategy.png",
+    "shots/t820.png",
+    "shots/t1000_strategy.png",
+    "shots/t1000.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.matter.clearSprings(); moire.matter.addSpring(875, 328, 'heavy', 1e9); moire.matter.addSpring(875, 472, 'heavy', 1e9); return moire.matter.springs.length",
+      "result": 2
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T12:16:10",
+  "wall_s": 456.54
+}

@@ -45,6 +45,7 @@ export const RULE_GROUPS = [
   ['catalysts', 'Catalysts (step C7b)'],
   ['hardlight', 'Hard light (step C8)'],
   ['division', 'Division (step C9)'],
+  ['state', 'Save and load the state (experiments)'],
 ];
 
 export const VIEWS = ['fate', 'lineage', 'strategy', 'charge'];   // key V: what the cells' bodies are coloured by (cells.look.view)
@@ -508,6 +509,25 @@ export function makeActions(app) {
     dknob('starveTime', 'starvation time', 'starveTime', 2, 600, 1.5, 0, 'seconds a cell lives with an (almost) empty battery before it dies; it fades out meanwhile'),
     dknob('crowd', 'crowding limit', 'crowd', 0, 3, 1.3, 2, 'a cell divides only while its overlaps with its neighbours sum to at most this (packed tissue: no room)'),
     dknob('age', 'background deaths', 'age', 0, 0.2, 2, 4, 'deaths per cell per s from nothing in particular (age), on top of starving, heat and bursting'),
+  );
+
+  // experiments (src/lab.js, src/snapshot.js): the whole state to a file and back
+  const lab = () => window.moire;
+  A.push(
+    { id: 'saveState', keys: [], label: 'save state', group: 'state', type: 'do',
+      run: () => {
+        lab().snapshotDownload().then((r) => app.flash(`saved ${r.name} (${(r.size / 1e6).toFixed(1)} MB)`))
+          .catch((e) => app.flash(`could not save the state: ${e.message || e}`));
+        return 'saving the state (cells, genomes, the dish, every setting)…';
+      },
+      help: 'save everything (cells, genomes, the dish’s heat and substances, springs, every switch and knob) as a file' },
+    { id: 'loadState', keys: [], label: 'load state', group: 'state', type: 'do',
+      run: () => {
+        lab().snapshotUpload().then((r) => { if (r) app.flash(`state loaded: ${r.cells} cells at ${r.time.toFixed(0)} s${r.exact ? '' : ' (' + r.notes.join('; ') + ')'}`); })
+          .catch((e) => app.flash(`could not load the state: ${e.message || e}`));
+        return 'pick a saved state file';
+      },
+      help: 'load a saved state file (best in a window of the same size: then it continues exactly)' },
   );
 
   // step C6n: the clean view (default) or the machinery: every diagnostic layer at once

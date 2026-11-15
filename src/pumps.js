@@ -69,7 +69,7 @@ export class Pumps {
       maxRate: 4,        // the largest rate a pump slot runs at (per s; the gene may drift higher, up to 6)
       upkeep: 0.003,     // energy per s per unit of pump rate (as the engines')
       vLeak: 0.5,        // the voltage leaks back at this rate (per s, at the light atoms' permeability 3, a whole membrane)
-      vCap: 0.3,         // capacitance: charge (atom-units) per unit of voltage, per r / R (small = the voltage builds fast)
+      vCap: 0.1,         // capacitance: charge (atom-units) per unit of voltage, per r / R (small = the voltage builds fast)
       v2bEff: 0.5,       // the share of the voltage's energy that goes back into the battery as it leaks (with v2b)
       contactCap: 1 / 24, // the most a pump moves out of another cell's stock per side and slot per tick (keeps stocks >= 0)
     };

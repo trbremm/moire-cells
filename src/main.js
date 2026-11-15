@@ -45,6 +45,7 @@
 //   ?charge=0   step C6b: start with the charge field off (Shift+7); ?qstock=0 the cells' B charges by fate instead of
 //               from their stock (Shift+8); ?qfeel=0 the cells not feeling the grid's field (Shift+9); ?contours=1 the
 //               charge field's contour lines drawn (Shift+0)
+//   ?honeycomb=0  step C6c: start with the ellipse cells instead of the elastic honeycomb (rules panel, Cell shape)
 //
 // Part C keys are Shift + a letter (every plain letter is taken by Parts A and B): checked before the plain keys,
 // so Shift+H never also toggles H.
@@ -212,6 +213,7 @@ async function boot() {
     if (params.has('eat')) cells.eat.params.on = flag('eat');   // step C5: ?eat=0 starts with the cells not eating
     if (params.has('engines')) cells.eat.params.engines = flag('engines');   // step C6
     if (params.has('burners')) cells.eat.params.burner = flag('burners');
+    if (params.has('honeycomb')) cells.shape.on = flag('honeycomb');   // step C6c: ?honeycomb=0 starts with the ellipse cells
     background.heat = cells.heat;
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));

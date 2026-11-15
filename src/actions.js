@@ -28,6 +28,7 @@ export const TOOLS = [
 
 export const RULE_GROUPS = [
   ['loop', 'The loop (step 4)'],
+  ['shape', 'Cell shape (step C6c)'],
   ['fieldB', 'Field B (step 5)'],
   ['meet', 'Where the fields meet (step 6)'],
   ['excl', 'Exclusion (step 7)'],
@@ -105,6 +106,13 @@ export function makeActions(app) {
       set: (v) => { app.matter.params.style = v; return styleText(); },
       run: () => { const p = app.matter.params; p.style = p.style === 'dust' ? 'halftone' : 'dust'; return styleText(); },
       help: 'the substances as material (glowing specks, as many as the amount) or as the halftone dots on the medium lattice' },
+    { id: 'corner', keys: [], label: 'corner rounding', group: 'look', type: 'knob', get: () => C().look.corner.toFixed(2),
+      run: (k) => {
+        const L = C().look;
+        L.corner = Math.max(0, Math.min(0.8, Math.round((L.corner + (k === '-' ? -0.1 : 0.1)) * 100) / 100));
+        return `honeycomb corners rounded by ${L.corner.toFixed(2)} of the cell's radius${L.corner === 0 ? ' (sharp)' : L.corner >= 0.6 ? ' (nearly round)' : ''}`;
+      },
+      help: 'how round the honeycomb cells’ corners are drawn (0: sharp hexagons; the walls stay straight)' },
     { id: 'innerDots', keys: ['shift+6'], label: 'lattice inside cells', group: 'look', type: 'toggle', get: () => C().look.innerDots,
       run: () => `the cells' own lattice ${flip(C().look, 'innerDots') ? 'drawn as dots inside each cell' : 'not drawn'}`,
       help: 'each cell\'s own hex lattice as small dots inside it' },
@@ -171,6 +179,18 @@ export function makeActions(app) {
         return `lever ${p.lever.toFixed(2)}: the cells' lattices ${p.lever < 1 ? 'closer to' : 'further from'} the medium's (1 = as the genome has it)`;
       },
       help: 'how different the cells\' lattices are from the medium\'s: smaller = longer beats, bigger clusters' },
+
+    // ---------- cell shape (step C6c; panel only: no free keys left) ----------
+    { id: 'honeycomb', keys: [], label: 'honeycomb shapes', group: 'shape', type: 'toggle', get: () => C().shape.on,
+      run: () => `${flip(C().shape, 'on') ? 'honeycomb shapes: each outline is six springy corners; touching cells press their sides flat into shared walls, free sides stay round, a push makes them wobble' : 'ellipse cells (steps 4 to C6b): each outline a stretched ellipse'}`,
+      help: 'each outline is six springy corners: packed cells press flat into a honeycomb, free edges stay round, a push makes a cell wobble (off: the stretched ellipses of steps 4 to C6b)' },
+    { id: 'stiffness', keys: [], label: 'stiffness', group: 'shape', type: 'knob', get: () => C().shape.stiffness.toFixed(2),
+      run: (k) => {
+        const S = C().shape;
+        S.stiffness = Math.max(0.1, Math.min(10, Math.round(S.stiffness * (k === '-' ? 1 / 1.4 : 1.4) * 1000) / 1000));
+        return `honeycomb stiffness ${S.stiffness.toFixed(2)}: the corners wobble at ${(S.wobbleHz * Math.sqrt(S.stiffness)).toFixed(1)} Hz${S.stiffness < 1 ? ' (softer, slower wobble)' : S.stiffness > 1 ? ' (stiffer, quicker wobble)' : ''}${S.on ? '' : ' (honeycomb shapes are off)'}`;
+      },
+      help: 'how stiff the honeycomb cells are: softer cells wobble slower and further, stiffer ones quicker' },
 
     // ---------- field B (step 5) ----------
     { id: 'feelB', keys: ['q'], label: 'feel field B', group: 'fieldB', type: 'toggle', get: () => F().on,

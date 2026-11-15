@@ -1,0 +1,69 @@
+{
+  "name": "g-div-starvelong_s3",
+  "description": "Starvation long: 120 s.",
+  "condition": {
+    "name": "g-div-starvelong_s3",
+    "description": "Starvation long: 120 s.",
+    "query": {
+      "starve": 120,
+      "seed": 3
+    },
+    "duration": 1200,
+    "sample_every": 20,
+    "shots": [
+      {
+        "t": 120
+      },
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 900
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "view": "strategy"
+      },
+      {
+        "t": 1200,
+        "view": "lineage",
+        "panel": true
+      }
+    ]
+  },
+  "url": "http://localhost:62993/index.html?speed=max&until=0&overlay=ghost&ui=0&starve=120&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "39448ce9208fc14807fb452d32158d5169191baa",
+  "dirty": false,
+  "started": "2026-11-15T11:27:57",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 351.45,
+  "speed_reached": 3.41,
+  "samples": 61,
+  "shots": [
+    "shots/t120.png",
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t900.png",
+    "shots/t1200.png",
+    "shots/t1200_strategy.png",
+    "shots/t1200_lineage.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-15T11:34:22",
+  "wall_s": 385.17
+}

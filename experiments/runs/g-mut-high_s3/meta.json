@@ -1,0 +1,98 @@
+{
+  "name": "g-mut-high_s3",
+  "description": "Mutation high: mutSize 3, mutJump 0.1, engine and pump slot jumps 0.12 (defaults 1, 0.03, 0.04, 0.04).",
+  "condition": {
+    "name": "g-mut-high_s3",
+    "description": "Mutation high: mutSize 3, mutJump 0.1, engine and pump slot jumps 0.12 (defaults 1, 0.03, 0.04, 0.04).",
+    "query": {
+      "seed": 3
+    },
+    "duration": 1200,
+    "sample_every": 20,
+    "shots": [
+      {
+        "t": 120
+      },
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 900
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "view": "strategy"
+      },
+      {
+        "t": 1200,
+        "view": "lineage",
+        "panel": true
+      }
+    ],
+    "evals": [
+      {
+        "t": 0,
+        "js": "Object.assign(moire.genome.params, {mutSize: 3, mutJump: 0.1, engJump: 0.12, pumpJump: 0.12}); return moire.genome.params"
+      }
+    ]
+  },
+  "url": "http://localhost:64836/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "39448ce9208fc14807fb452d32158d5169191baa",
+  "dirty": false,
+  "started": "2026-11-15T11:14:35",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 318.69,
+  "speed_reached": 3.77,
+  "samples": 61,
+  "shots": [
+    "shots/t120.png",
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t900.png",
+    "shots/t1200.png",
+    "shots/t1200_strategy.png",
+    "shots/t1200_lineage.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "Object.assign(moire.genome.params, {mutSize: 3, mutJump: 0.1, engJump: 0.12, pumpJump: 0.12}); return moire.genome.params",
+      "result": {
+        "founders": 12,
+        "tau": 2,
+        "release": 0.3,
+        "reach": 1.15,
+        "adhesion": 0.6,
+        "adhSigma": 0.12,
+        "fateAdh": 0.5,
+        "adhBase": 0.25,
+        "crawl": 0.6,
+        "turnRate": 0.5,
+        "turnover": 0.02,
+        "unhappy": 2,
+        "mutSize": 3,
+        "mutJump": 0.1,
+        "engJump": 0.12,
+        "pumpJump": 0.12,
+        "ripple": 0.4
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T11:20:27",
+  "wall_s": 352.22
+}

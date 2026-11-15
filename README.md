@@ -47,10 +47,11 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   - *light* (the sun): spotlight / full field / off, sliders for the tilt and the direction the light comes from,
     day and night;
   - *view* (the eye): first the **look** (step C6n: neon, halo, trails, hum, show the machinery, substances as dust or
-    halftone, the lattice inside the cells), then the entropy panel, the stats overlay (F), the landscape, which
-    substance is shown, colour by fate, lineage or strategy (step C6), and the other drawing switches;
+    halftone, the lattice inside the cells; step C6b: the charge contours), then the entropy panel, the stats overlay (F),
+    the landscape, which substance is shown, colour by fate, lineage, strategy (step C6) or charge (step C6b), and the
+    other drawing switches;
   - *rules*: every rule that has a key, as a switch with a one-line explanation and its key, grouped as below
-    (the loop, field B, steps 6 to 8, biology, heat and light, chemistry); settings with several values show the current one
+    (the loop, field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge); settings with several values show the current one
     and change on a tap; the lever has - and +. The switches follow the state, also when a key changes it;
   - *dish* (the dish with three cells): the speed as a row of buttons, new culture (N), new genomes (G), clear
     springs (C), wash the atoms out (Shift+C).
@@ -78,7 +79,8 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   buttons are 42 px.
 - URL options: `?speed=32` or `?speed=max`, `?paused=1` (start paused), `?ui=0` (start with the toolbar folded);
   step C6n: `?neon=0`, `?halo=off|low|medium|high`, `?trails=0`, `?hum=0`, `?machinery=1`, `?cheap=0|1`, and
-  `?until=T` (run to simulation time T, then pause at exactly that tick).
+  `?until=T` (run to simulation time T, then pause at exactly that tick); step C6b: `?charge=0`, `?qstock=0`, `?qfeel=0`,
+  `?contours=1`, `?view=charge`.
 
 ## Keyboard shortcuts
 
@@ -106,8 +108,12 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   machinery (every diagnostic layer at once; default off: the clean view) · **Shift+5**: substances as dust / halftone ·
   **Shift+6**: the lattice inside the cells (step C6n, "The neon look and the clean view" below; Shift + the digit key,
   on any keyboard layout)
+- **Shift+7**: the charge field (and the free atoms' drift in it) · **Shift+8**: cells' charge in field B from their
+  stock (off: per fate) · **Shift+9**: cells feel the charge field · **Shift+0**: the charge field's contour lines (step
+  C6b, "Charge" below)
 - **I**: daughters inherit their parent's fate on/off (default off: they start as stem cells)
-- **V**: colour by fate, by lineage (the key's hue), or by strategy (step C6: how the cell's engines make a living)
+- **V**: colour by fate, by lineage (the key's hue), by strategy (step C6: how the cell's engines make a living), or by
+  charge (step C6b: rose net +, blue net -, grey neutral)
 - **[** / **]**: simulation speed 1× / 2× / 4× / 8× / 16× / 32× / MAX (step C3b: the last three are the timelapse)
 - Part C keys are **Shift + a letter** (step C1: Shift+H heat jitter, Shift+E entropy panel, Shift+R ripples simmer;
   see "Heat and the entropy counter" below; step C2: Shift+L light spot / full field / off, Shift+D day and night;
@@ -1378,6 +1384,141 @@ simulation is not bit-for-bit repeatable between runs on the GPU (the same seed 
 tick with `?until=40`: batteries 154 and 161, atoms in cells 80.3 and 83.5); neon on falls inside that spread
 (batteries 154, atoms in cells 81.4). `?until=T` (new) runs to simulation time T and pauses at exactly that tick.
 
+## Charge (Part C, step C6b)
+
+The atoms now carry **charge**, and charge makes a field of its own on the substrate. Everything follows from the
+periodic table's GROUP (`GROUP_CHARGE` in `src/matter.js`), nothing is set per substance: a **giver is +1**, a **taker
+-1**, a linker and the trace 0. A substance's charge is the sum of its atoms', so every fuel (a giver and a taker) and
+every sediment is neutral, and only the four free atoms g G (+) and t T (-) are charged. Every reaction moves atoms
+without changing their groups, so every reaction and every engine conserves charge; the page checks that at startup
+(and would stop with an error if a later table change broke it). The F overlay lists the charges.
+
+**The screened charge field** (Shift+7, on). The free charged atoms, and the cells' net charge (below), make a potential
+**phi** on the substrate grid, like charge in salty water: phi - lambda² ∇²phi = strength × rho, where rho is the charge
+per R². Its decay law is an exponential cut-off: a charge's field fades over the **screening length** lambda (3 R), so it
+reaches a few cells and no further. The free charged atoms **drift** in it, + down the potential and - up it, at their
+own spreading speed (Einstein's relation, phi in units of the thermal energy), on top of their spreading. So a fast light
+atom cannot run far ahead of its slow partner of the other sign: where they part, the charge they leave behind pulls
+them back together, and the cloud spreads as a pair.
+
+What it looks like, on a test spring of light givers g (fast, +) and heavy takers T (slow, -) only (not one of the
+page's springs; in the console: `import('./src/matter.js').then(m => { m.SPRING_KINDS.ion = { label: 'ion', mix: { g:
+0.5, T: 0.5 }, stroke: 1.5 }; moire.matter.addSpring(200, 200, 'ion'); })`, with `?springs=0&chem=0&light=off`). Without
+the field the light givers run out into a wide faint haze around a tight core of heavy takers; with it the cloud is one
+compact disc with a clear edge, and grows as one:
+
+| simulation time | 30 s | 60 s | 90 s | 120 s |
+|---|---|---|---|---|
+| rms radius of g / T, field off (R) | 8.1 / 2.9 | 11.6 / 4.2 | 16.0 / 5.8 | 19.1 / 7.1 |
+| rms radius of g / T, field on (R) | 5.0 / 3.9 | 6.8 / 5.6 | 9.6 / 7.8 | 11.7 / 9.5 |
+| largest charge density (per R²) off / on | 4.3 / 0.17 | 5.3 / 0.15 | 1.7 / 0.045 | 1.0 / 0.039 |
+
+(The heavy takers are pulled out a little and the light givers held back a lot: the "ambipolar" spreading of a plasma.
+At `strength` 300 the pair stays tighter still (10.8 / 10.0 R at 120 s) but the dripping spring's centre starts to flicker
+between + and -; 80 is the default.) With the contour lines on (Shift+0) the test cloud is a set of blue rings (its core
+holds the slow takers' excess) inside rose rings (the givers' fringe).
+
+In the **default scene** the field does almost nothing: the springs drip givers and takers in equal shares, a row's giver
+and taker spread at the same speed, and every reaction conserves charge, so the clouds are neutral to a few counts.
+There phi is tiny (rms 0.003, at most 0.1 to 0.3 near the most charged cells) and the dish looks the same with the field
+on and off.
+
+**Cells' charge from their stock** (Shift+8, on). A cell's charge in field B (step 5) is now the net charge of what it
+holds: q = tanh(net / qHalf), qHalf 0.01 atom-units, replacing the fixed charges per fate (Shift+8 off gives them back,
+with their own sign rule: exactly the page of step 5). With the charge field on, each cell also puts its net charge down
+where it is, so a charged cell gathers a small cloud of the other sign around it. And field B's sign rule for these
+charges is **like repels like** (`moire.charge.params.bSign`, U flips it), the way real charge and the substrate's field
+behave; the per-fate charges keep "like attracts like" with the biology, as before.
+
+What makes a cell charged: not much, honestly. A cell lets givers and takers of one row through at the same rate, and
+its reactions conserve charge, so most cells are neutral to a few counts (they hold about 0.3 atom-units of each light
+atom). The cells that do get charged are the ones running **swap engines**: a swap such as t + GT → Gt + T turns a light
+taker into a heavy one, which leaks out eight times slower than light takers come in, so the cell piles up takers (-);
+g + Gt → gt + G piles up givers (+). At 300 s (seed 3, MAX) 100 to 150 cells of 2000 are net + and as many net - (|q| above
+0.1), mean |q| 0.05; the most charged hold 0.03 to 0.07 atom-units more of one sign. The new **colour by charge** view
+(key V, the fourth press; `?view=charge`) shows them: grey neutral cells, rose for net +, blue for net -; they sit mostly
+in the spot by the springs, where the breathers work.
+
+What it does to the culture: since most cells are neutral, field B mostly falls silent. The culture is then held by
+adhesion and the pull to the centre alone, and at 300 s it is a little more compact, a finer mosaic of small tissue
+patches (with the per-fate charges, Shift+8 off, the opposite charges of stem and epithelium against muscle and
+cartilage push the patches apart into a looser culture with larger domains). The charged cells do not form anything of
+their own yet that the eye picks out. Charge separation that matters will need what the chemistry does not have yet:
+pumps that move one sign (C7) and charge per side (C6d).
+
+**Cells feel the substrate's field** (Shift+9, on). A charged cell is pushed down (+) or up (-) the gradient of phi
+across its membrane: the eat pass reads phi at the membrane's six corners (the same corners that smell), and the next
+step pushes the cell by `feelGain` (20 R/s per unit of phi per R) × q, at most `feelSat` (1 R/s). Around a charged cell
+phi changes by about 0.01 to 0.05 per R, so a charged cell drifts at 0.2 to 1 R/s toward cells and clouds of the other
+sign. Measured: no change in the culture's mean speed (4.3 to 4.5 px/s) or spread (28 to 29 R) at 60 to 240 s, with and
+without, and nothing runs away.
+
+**Do like charges keep apart?** Measured at 290 s (seed 3, MAX) with `moire.charge.cellStats()`: among the strongly
+charged cells (|q| above 0.3, about 45 of 2000 at the defaults) the pairs within 2.5 R of each other, and how many of
+those have the same sign, against random mixing of the signs: like repels like 50 % (random 49 %), like attracts like 61 %
+(random 62 %): no ordering the eye or the numbers can find, the charged cells are too few and too packed in. With a
+smaller `qHalf` (0.003: about 300 strongly charged cells) like repels like still gives 51 % (random 50 %), while like
+attracts like gives 58 % (random 50 %): the same signs gather a little. With the charge field off (Shift+7), cells are
+not neutralised by the cloud they gather, so there are more charged cells (143) and like charges sit together more
+(68 %, random 56 %), as the breathers of one lineage are next to each other.
+
+**Look.** The charge field is not drawn in the clean view. With the machinery (Shift+4), or on its own (Shift+0), phi is
+drawn as thin crisp contour lines over the cells (the cells hold most of the charge, and their dark insides hid the lines
+when they were drawn under them): **+ in a warm rose, - in an ice blue**, the colours of an electrostatic map (`charge` in
+`src/palette.js`). The levels double, 0.01, 0.02, 0.04 ... 1.28 (`step`, `levels` 8; the zero level is left out, as most
+of the dish sits there), so both the faint field of the default scene and a strongly separated cloud get a few lines.
+Under the neon look they get the tight halo like every line; lines closer than about two pixels fade out instead of
+filling the place. In the default scene there is little to see: a ragged rose line or two by the springs at the culture's
+rim and a few small blue rings round charged cells; the test spring above shows the field clearly.
+
+**The books.** A line in the entropy panel (on a phone a short one):
+
+    CHARGE  free +212 −212 (net +0.088) · in cells −0.083 · cells + 142 · − 147 · |q| 0.05
+
+(free charge in the dish, each sign and the net; the cells' net charge; cells net + and net - with |q| above 0.1; their
+mean |q|). The F overlay adds the switches and knobs, cells neutral, the mean |net| in atom-units, phi's rms and its
+largest size, and the charge's books: charge added by the springs = in the dish + in the cells + out (at the edge,
+washed, dropped on a resize). The springs drip givers and takers with random rounding, so the dish's net charge wanders
+a little (between -0.65 and +0.61 against 20 to 250 of each sign in a 660 s run); the books balance exactly (rounding 0),
+as the atoms do.
+
+**Switches** (group "Charge (step C6b)" in the rules panel; contours in the view panel's Look group): **Shift+7** charge
+field (and the drift of free atoms) · **Shift+8** cells' charge from their stock (off: per fate) · **Shift+9** cells feel
+the charge field · **Shift+0** charge contours. Shift + the digit keys, by their place on the keyboard, as in step C6n.
+URL: `?charge=0`, `?qstock=0`, `?qfeel=0`, `?contours=1`, `?view=charge`.
+
+**Knobs** (live in `moire.charge.params`): `lambda` (screening length, 3 R), `strength` (phi per unit of charge per R²,
+80), `drift` (the free atoms' drift, x their spreading, 1), `sweeps` (3 per tick), `omega` (1.5), `cellsIn` (the cells'
+charge counts in the field, true), `qHalf` (0.01), `qB` (1), `bSign` (1), `feelGain` (20), `feelSat` (1 R/s); drawing:
+`step` (0.01), `levels` (8), `lineW` (1.1 CSS px), `alpha` (0.85). Tuning aids: `await moire.charge.probe(x, y)` (phi's
+and rho's range; with a centre, each charged atom's amount and rms distance from it) and `await moire.charge.cellStats()`
+(the cells' net charges).
+
+**How it is computed.** Two more blocks of the heat buffer, behind the cells' pigments: phi (f32 bits, kept from tick to
+tick) and the cells' net charge put down this tick (cleared after each tick, like the pigments). Each tick, inside the
+heat's pass, after the substances spread and react, three red-black over-relaxation sweeps (`relax` in `matter.wgsl`; two
+dispatches each, the even and the odd pixels, so each half reads only the other) update phi in place from last tick's: the
+charges move little in one tick, so phi follows them closely. The drift is part of the spreading (`spread`): across each
+edge a charged substance moves k × (the difference + z × drift × the potential's difference × the amount on the upwind
+side), capped at 0.2 of the pixel it leaves and, as before, at a quarter of the giver, rounded at random and worked out
+the same way from both sides, so the counts stay exact. The eat pass (`cell_eat.wgsl`) sums each cell's stock into
+`Cell.qNet` and `Cell.q`, puts the net charge down over the 4 pixels around the cell (cloud in cell), and its plan reads
+phi at the membrane's corners into `Cell.efield`; the step adds the push. The Cell record grew from 88 to 104 bytes (q,
+qNet, efield). The ledger grew to 19 712 words (the cells' charge census, phi's spread, its largest size). One lesson: in
+the matter's count pass a loop that tested a boolean `let` (true) skipped its body on Direct3D in Chrome; the loop now
+tests the uniform itself.
+
+**Cost** (headless Chrome on this machine, seed 3, MAX, the commit before C6b alternating with this one in one session):
+2000 cells, ×12.4 and ×13.3 before, ×13.2 and ×13.4 now; with the charge field off (Shift+7) ×16.2, faster than before
+because field B now skips the many neutral cells, so the field itself costs about 18 % of the fastest speed. 10 000 cells:
+×3.8 before, ×3.7 now, ×4.8 with the field off.
+
+**Checked.** A 660 s run at MAX (seed 5) through N (120 s), Shift+C (220 s), a window resize (300 s), G (400 s), a resize
+back (480 s) and two new springs (520 s): energy rounding between -0.0016 and +0.12 while in grew to 9.2 M (as in C6),
+atoms rounding exactly 0 throughout; the charge's books balanced to exactly 0 in a 260 s run through N, a wash and a
+resize. No WebGPU errors in Chrome (headless), Firefox (headed, 1600 x 1000) and Chrome at phone size (390 x 844); the
+rules panel shows the new group, and Shift+7 to Shift+0 and U switch as described.
+
 ## The look of the landscape
 
 Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the
@@ -1418,6 +1559,10 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   and group, every substance's properties derived from it), the substance grid in the heat buffer, springs, spreading,
   the atoms ledger and ORDER, and the halftone drawing on the medium lattice; step C4: the energy table and the
   reaction list (derived from the same table), the chemistry's knobs and switches, and `react` in `matter.wgsl`
+- `src/charge.js` + `src/shaders/charge_draw.wgsl`: charge (step C6b): its switches and knobs, the books (CHARGE line,
+  overlay), the tuning aids and the contour lines; the field's relaxation and the free atoms' drift are in `matter.wgsl`
+  (relax, spread), the cells' charge and the field's gradient at their membrane in `cell_eat.wgsl`, their push in
+  `cell_step.wgsl`; the charges themselves (`GROUP_CHARGE`, `CHARGE_CODES`) in `src/matter.js`
 - `src/eat.js` + `src/shaders/cell_eat.wgsl`: cells eat (step C5): every cell's stock and battery (their own buffer),
   the membrane, the burner, the reactions inside, deaths and births handing stock back and splitting it, the starter
   charge, the cells' part of the books, the entropy panel's CELLS line; step C6: the engines (pigments, storers, upkeep,

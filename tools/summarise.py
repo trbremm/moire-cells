@@ -10,6 +10,10 @@ Usage:
     python tools/summarise.py experiments/runs/a experiments/runs/b --plot heat.rate.out,alive,matter.order \
         --out experiments/summaries/smoke
     python tools/summarise.py experiments/runs/x --list            # every column name in the runs' samples.csv
+    python tools/summarise.py experiments/runs/a --cols "engines.free.g+engines.free.t" --stack \
+        "alive,engines.free.g+engines.free.t,cells.rate2.eSwap" --out experiments/summaries/x
+                                   # a sum of columns (a+b) works anywhere a column does; --stack draws one picture per
+                                   # run: a small panel per column, stacked on one shared time axis (a phase sequence)
 
 Columns are the names in samples.csv (moire.sample()). Useful ones:
     alive                 cells alive                  heat.out          ENTROPY (all heat that left the dish)
@@ -87,6 +91,72 @@ def fmt(x):
     if a >= 1:
         return f"{x:.3g}"
     return f"{x:.2g}"
+
+
+def derive(runs, col):
+    """A column 'a+b+...' not in the CSV: the sum of its parts in each row (missing if any part is)."""
+    if "+" not in col:
+        return
+    parts = col.split("+")
+    for r in runs:
+        for x in r["rows"]:
+            if col in x:
+                continue
+            v = [x.get(p) for p in parts]
+            x[col] = None if any(a is None for a in v) else sum(v)
+
+
+def svg_stack(run, cols, path):
+    """One run, one small panel per column, stacked on a shared time axis (each panel its own y scale)."""
+    cols = [c for c in cols if any(x.get(c) is not None for x in run["rows"])]
+    if not cols:
+        return False
+    W, PH, GAP, L, R, T, B = 760, 92, 14, 64, 24, 40, 44
+    H = T + len(cols) * (PH + GAP) - GAP + B
+    xs = [x["trun"] for x in run["rows"] if x.get("trun") is not None]
+    xt = nice_ticks(min(xs), max(xs))
+    xa, xb = xt[0], xt[-1]
+    px = lambda x: L + (x - xa) / (xb - xa or 1) * (W - L - R)  # noqa: E731
+    css = [":root{--surface:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--grid:#e4e3df}"]
+    css += [f".s{k}{{stroke:{c[0]};fill:{c[0]}}}" for k, c in enumerate(SERIES)]
+    css.append("@media (prefers-color-scheme: dark){:root{--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--grid:#383835}"
+               + "".join(f".s{k}{{stroke:{c[1]};fill:{c[1]}}}" for k, c in enumerate(SERIES)) + "}")
+    css.append("text{font:12px system-ui,-apple-system,'Segoe UI',sans-serif;fill:var(--ink2)}"
+               ".title{font-size:14px;font-weight:600;fill:var(--ink)}.ptitle{font-weight:600;fill:var(--ink)}"
+               ".line{fill:none;stroke-width:1.8;stroke-linejoin:round}.grid{stroke:var(--grid);stroke-width:1}"
+               ".hit{fill:transparent;stroke:none}")
+    out = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" '
+           f'aria-label="{html.escape(run["name"])}: {len(cols)} measures on one time axis">',
+           f"<style>{''.join(css)}</style>", f'<rect width="{W}" height="{H}" fill="var(--surface)"/>',
+           f'<text class="title" x="{L}" y="22">{html.escape(run["name"])}</text>']
+    for x in xt:
+        out.append(f'<line class="grid" x1="{px(x):.1f}" x2="{px(x):.1f}" y1="{T}" y2="{H - B}"/>')
+        out.append(f'<text x="{px(x):.1f}" y="{H - B + 18}" text-anchor="middle">{fmt(x)}</text>')
+    out.append(f'<text x="{(L + W - R) / 2:.0f}" y="{H - 8}" text-anchor="middle">run time (s)</text>')
+    for k, c in enumerate(cols):
+        top = T + k * (PH + GAP)
+        s = [(x["trun"], x[c]) for x in run["rows"] if x.get(c) is not None and x.get("trun") is not None]
+        ys = [y for _, y in s]
+        y0, y1 = min(ys), max(ys)
+        if y0 > 0 and y0 < 0.25 * y1:
+            y0 = 0
+        if y1 <= y0:
+            y1 = y0 + 1
+        py = lambda y: top + PH - (y - y0) / (y1 - y0) * PH  # noqa: E731
+        out.append(f'<line class="grid" x1="{L}" x2="{W - R}" y1="{top + PH}" y2="{top + PH}"/>')
+        out.append(f'<line class="grid" x1="{L}" x2="{W - R}" y1="{top}" y2="{top}"/>')
+        out.append(f'<text x="{L - 6}" y="{top + PH + 4}" text-anchor="end">{fmt(y0)}</text>')
+        out.append(f'<text x="{L - 6}" y="{top + 10}" text-anchor="end">{fmt(y1)}</text>')
+        out.append(f'<text class="ptitle" x="{L + 6}" y="{top + 13}">{html.escape(c)}</text>')
+        d = " ".join(f"{'M' if i == 0 else 'L'}{px(x):.1f},{py(y):.1f}" for i, (x, y) in enumerate(s))
+        out.append(f'<path class="line s{k % len(SERIES)}" d="{d}"/>')
+        for x, y in s:
+            tip = html.escape(f"{c} {fmt(y)} at {x:g} s")
+            out.append(f'<circle class="hit" cx="{px(x):.1f}" cy="{py(y):.1f}" r="5"><title>{tip}</title></circle>')
+    out.append("</svg>")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(out))
+    return True
 
 
 def table(runs, cols, times):
@@ -189,6 +259,7 @@ def main():
     ap.add_argument("--cols", default=",".join(DEFAULT_COLS), help="columns for the table")
     ap.add_argument("--times", default="", help="run times (s) for the table (default: start, middle, end)")
     ap.add_argument("--plot", default=",".join(DEFAULT_PLOTS), help="columns to plot ('' = none)")
+    ap.add_argument("--stack", default="", help="columns for one stacked picture per run (shared time axis)")
     ap.add_argument("--out", default="", help="folder for summary.md and the plots (default: print the table only)")
     ap.add_argument("--list", action="store_true", help="list the columns and stop")
     args = ap.parse_args()
@@ -212,6 +283,9 @@ def main():
         print("\n".join(cols))
         return
     cols = [c for c in args.cols.split(",") if c]
+    stack = [c for c in args.stack.split(",") if c]
+    for c in cols + [c for c in args.plot.split(",") if c] + stack:
+        derive(runs, c)
     if args.times:
         times = [float(t) for t in args.times.split(",")]
     else:
@@ -227,7 +301,12 @@ def main():
             fn = "plot_" + "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in c) + ".svg"
             if svg_plot(runs, c, os.path.join(out, fn)):
                 plots.append((c, fn))
-        lines = ["# Experiment summary", "", "Runs: " + ", ".join(f"`{os.path.relpath(r['dir'], REPO).replace(os.sep, '/')}`" for r in runs), "",
+        if stack:
+            for r in runs:
+                fn = "stack_" + "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in r["name"]) + ".svg"
+                if svg_stack(r, stack, os.path.join(out, fn)):
+                    plots.append((f"{r['name']}: " + ", ".join(stack), fn))
+        lines =["# Experiment summary", "", "Runs: " + ", ".join(f"`{os.path.relpath(r['dir'], REPO).replace(os.sep, '/')}`" for r in runs), "",
                  md, ""]
         for r in runs:
             m = r["meta"]

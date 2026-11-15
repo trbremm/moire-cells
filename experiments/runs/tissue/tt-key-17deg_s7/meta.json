@@ -1,0 +1,334 @@
+{
+  "name": "tt-key-17deg_s7",
+  "description": "B's key turned 0.3 rad (17 deg); adhesion 0.8 both",
+  "condition": {
+    "name": "tt-key-17deg_s7",
+    "description": "B's key turned 0.3 rad (17 deg); adhesion 0.8 both",
+    "series": "types",
+    "tissue_setting": {
+      "knobs": {},
+      "genes": {
+        "adhesion": 0.8
+      },
+      "typeB": {
+        "keyAngle": 0.65,
+        "recAngle": 0.65
+      },
+      "query": {},
+      "extra_js": ""
+    },
+    "query": {
+      "seed": 7,
+      "cells": 40,
+      "mut": 0,
+      "life": 0,
+      "clone": 1,
+      "springs": 0,
+      "light": "off",
+      "day": 0
+    },
+    "duration": 120,
+    "sample_every": 5,
+    "tissue": true,
+    "evals": [
+      {
+        "t": 0,
+        "js": "const T = await import('/experiments/tissue/tissue-lab.js'); window.__T = T;\nconst knobs = T.apply({\"cells.params.squeeze\": 0, \"genome.rules.diff\": false, \"eat.params.pay\": false});\nconst g = {\"keyAngle\": 0.35, \"keyScale\": 0.05, \"recAngle\": 0.35, \"recScale\": 0.05, \"recWidth\": 0.15, \"adhesion\": 0.8, \"size\": 1, \"motility\": 1, \"mix\": 0, \"thickness\": 0.012, \"stiffness\": 1, \"pumpRate0\": 0, \"pumpRate1\": 0, \"rate0\": 2, \"rate1\": 0, \"rate2\": 0}; g.eng0 = moire.genome.engineCode('gt \u2192 g + t', 0);\nconst b = {\"keyAngle\": 0.65, \"recAngle\": 0.65}; b.eng0 = moire.genome.engineCode('g + t \u2192 gt', 1);\nawait T.genes(g, b);\n\nreturn { knobs, genes: g, typeB: b, m: await T.measure({ every: 2 }) };"
+      },
+      {
+        "t": 60,
+        "js": "return await __T.measure({ every: 2 });"
+      },
+      {
+        "t": 80,
+        "js": "return await __T.measure({ every: 2 });"
+      },
+      {
+        "t": 82,
+        "js": "return await __T.stirThrough();"
+      },
+      {
+        "t": 120,
+        "js": "return await __T.measure({ every: 2 });"
+      }
+    ],
+    "shots": [
+      {
+        "t": 60
+      },
+      {
+        "t": 80
+      },
+      {
+        "t": 120
+      },
+      {
+        "t": 120,
+        "view": "strategy"
+      }
+    ],
+    "snapshots": [
+      {
+        "t": 80,
+        "grid": false,
+        "name": "prestir"
+      },
+      {
+        "t": 120,
+        "grid": false,
+        "name": "end"
+      }
+    ]
+  },
+  "url": "http://localhost:49843/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=7&cells=40&mut=0&life=0&clone=1&springs=0&light=off&day=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "6dd356e5480d673125f7895e47bc14226abf28fb",
+  "dirty": true,
+  "started": "2026-11-15T10:38:05",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 120.0,
+  "run_wall_s": 16.8,
+  "speed_reached": 7.14,
+  "samples": 25,
+  "shots": [
+    "shots/t60.png",
+    "shots/t80.png",
+    "shots/t120.png",
+    "shots/t120_strategy.png"
+  ],
+  "snapshots": [
+    "snapshots/prestir.json",
+    "snapshots/end.json"
+  ],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "const T = await import('/experiments/tissue/tissue-lab.js'); window.__T = T;\nconst knobs = T.apply({\"cells.params.squeeze\": 0, \"genome.rules.diff\": false, \"eat.params.pay\": false});\nconst g = {\"keyAngle\": 0.35, \"keyScale\": 0.05, \"recAngle\": 0.35, \"recScale\": 0.05, \"recWidth\": 0.15, \"adhesion\": 0.8, \"size\": 1, \"motility\": 1, \"mix\": 0, \"thickness\": 0.012, \"stiffness\": 1, \"pumpRate0\": 0, \"pumpRate1\": 0, \"rate0\": 2, \"rate1\": 0, \"rate2\": 0}; g.eng0 = moire.genome.engineCode('gt \u2192 g + t', 0);\nconst b = {\"keyAngle\": 0.65, \"recAngle\": 0.65}; b.eng0 = moire.genome.engineCode('g + t \u2192 gt', 1);\nawait T.genes(g, b);\n\nreturn { knobs, genes: g, typeB: b, m: await T.measure({ every: 2 }) };",
+      "result": {
+        "knobs": {
+          "cells.params.squeeze": 0,
+          "genome.rules.diff": false,
+          "eat.params.pay": false
+        },
+        "genes": {
+          "keyAngle": 0.35,
+          "keyScale": 0.05,
+          "recAngle": 0.35,
+          "recScale": 0.05,
+          "recWidth": 0.15,
+          "adhesion": 0.8,
+          "size": 1,
+          "motility": 1,
+          "mix": 0,
+          "thickness": 0.012,
+          "stiffness": 1,
+          "pumpRate0": 0,
+          "pumpRate1": 0,
+          "rate0": 2,
+          "rate1": 0,
+          "rate2": 0,
+          "eng0": 10
+        },
+        "typeB": {
+          "keyAngle": 0.65,
+          "recAngle": 0.65,
+          "eng0": 32
+        },
+        "m": {
+          "t": 0,
+          "n": 40,
+          "R": 9,
+          "largest": 40,
+          "cx": 634.7214950561523,
+          "cy": 402.58674774169924,
+          "box": [
+            576.8961610794067,
+            339.21416187286377,
+            695.7762622833252,
+            461.7159938812256
+          ],
+          "elong": 1.0571743370008926,
+          "hole": 0.8269253019272023,
+          "edge": 0.35,
+          "deg": [
+            0,
+            1,
+            6,
+            33
+          ],
+          "fates": [
+            29,
+            4,
+            0,
+            5,
+            2
+          ],
+          "chainy": 0.175,
+          "boxAll": [
+            576.8961610794067,
+            339.21416187286377,
+            695.7762622833252,
+            461.7159938812256
+          ],
+          "sameType": 0.5121951219512195,
+          "sameRandom": 0.5,
+          "radialBA": 0.9375839431005047,
+          "nB": 20
+        }
+      }
+    },
+    {
+      "t": 60.00000000000017,
+      "js": "return await __T.measure({ every: 2 });",
+      "result": {
+        "t": 60.00000000000017,
+        "n": 40,
+        "R": 9,
+        "largest": 19,
+        "cx": 647.1971821032072,
+        "cy": 404.73191431949016,
+        "box": [
+          607.552638053894,
+          343.6020154953003,
+          692.683497428894,
+          452.8330945968628
+        ],
+        "elong": 1.6317424231475914,
+        "hole": 0.5850115893541192,
+        "edge": 0.6842105263157895,
+        "deg": [
+          1,
+          7,
+          10,
+          22
+        ],
+        "fates": [
+          40,
+          0,
+          0,
+          0,
+          0
+        ],
+        "chainy": 0.21052631578947367,
+        "boxAll": [
+          492.30170154571533,
+          226.33519458770752,
+          822.029932975769,
+          452.8330945968628
+        ],
+        "sameType": 0.9607843137254902,
+        "sameRandom": 0.5,
+        "radialBA": 0.9526810390846571,
+        "nB": 20
+      }
+    },
+    {
+      "t": 80.00000000000013,
+      "js": "return await __T.measure({ every: 2 });",
+      "result": {
+        "t": 80.00000000000013,
+        "n": 40,
+        "R": 9,
+        "largest": 14,
+        "cx": 630.6618347167969,
+        "cy": 412.5471867152623,
+        "box": [
+          582.4847764968872,
+          364.42490100860596,
+          686.840968132019,
+          456.9247999191284
+        ],
+        "elong": 4.1530777258042555,
+        "hole": 0.6342100133529173,
+        "edge": 0.6428571428571429,
+        "deg": [
+          1,
+          7,
+          10,
+          22
+        ],
+        "fates": [
+          40,
+          0,
+          0,
+          0,
+          0
+        ],
+        "chainy": 0.14285714285714285,
+        "boxAll": [
+          448.6555223464966,
+          217.3774824142456,
+          791.1264905929565,
+          490.2747755050659
+        ],
+        "sameType": 0.9803921568627451,
+        "sameRandom": 0.5,
+        "radialBA": 0.7904576722948145,
+        "nB": 20
+      }
+    },
+    {
+      "t": 82.00000000000011,
+      "js": "return await __T.stirThrough();",
+      "result": {
+        "x": 527.0206909179688,
+        "y": 391.0740394592285,
+        "cx": 611.0206909179688,
+        "cy": 391.0740394592285
+      }
+    },
+    {
+      "t": 119.99999999999923,
+      "js": "return await __T.measure({ every: 2 });",
+      "result": {
+        "t": 119.99999999999923,
+        "n": 40,
+        "R": 9,
+        "largest": 8,
+        "cx": 682.638542175293,
+        "cy": 387.78393936157227,
+        "box": [
+          658.994288444519,
+          359.23569202423096,
+          709.7341566085815,
+          421.95831775665283
+        ],
+        "elong": 1.7203598297883083,
+        "hole": 0.7799751453980774,
+        "edge": 0.625,
+        "deg": [
+          1,
+          6,
+          14,
+          19
+        ],
+        "fates": [
+          40,
+          0,
+          0,
+          0,
+          0
+        ],
+        "chainy": 0.25,
+        "boxAll": [
+          427.46393299102783,
+          156.28697681427002,
+          793.0915784835815,
+          506.2034559249878
+        ],
+        "sameType": 1,
+        "sameRandom": 0.5,
+        "radialBA": null,
+        "nB": 20
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T10:39:04",
+  "wall_s": 59.0
+}

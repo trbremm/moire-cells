@@ -1,0 +1,175 @@
+{
+  "name": "tr-tq-dah-Bfate",
+  "description": "reload check: load configs/tq-dah-Bfate/snapshot.json (?snap=) and run 40 s more; does the configuration stay as stored?",
+  "condition": {
+    "name": "tr-tq-dah-Bfate",
+    "description": "reload check: load configs/tq-dah-Bfate/snapshot.json (?snap=) and run 40 s more; does the configuration stay as stored?",
+    "series": "reload",
+    "query": {
+      "snap": "experiments/tissue/configs/tq-dah-Bfate/snapshot.json"
+    },
+    "duration": 40,
+    "sample_every": 10,
+    "tissue": true,
+    "evals": [
+      {
+        "t": 0,
+        "js": "const T = await import('/experiments/tissue/tissue-lab.js'); window.__T = T; return await T.measure({ every: 2 });"
+      },
+      {
+        "t": 40,
+        "js": "return await __T.measure({ every: 2 });"
+      }
+    ],
+    "shots": [
+      {
+        "t": 0
+      },
+      {
+        "t": 40
+      },
+      {
+        "t": 40,
+        "view": "strategy"
+      }
+    ]
+  },
+  "url": "http://localhost:50596/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/tissue/configs/tq-dah-Bfate/snapshot.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "6dd356e5480d673125f7895e47bc14226abf28fb",
+  "dirty": true,
+  "started": "2026-11-15T11:00:47",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": false,
+    "notes": [
+      "no grid in the snapshot (cells only): the page's grid kept"
+    ],
+    "rebased": {
+      "atoms": {},
+      "energy": 8694.794967651367
+    },
+    "rounding": {
+      "energy": 0,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": -0.002777099609375,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 40,
+    "time": 119.99999999999682
+  },
+  "t_start": 119.99999999999682,
+  "sim_s": 40.0,
+  "run_wall_s": 6.89,
+  "speed_reached": 5.81,
+  "samples": 5,
+  "shots": [
+    "shots/t0.png",
+    "shots/t40.png",
+    "shots/t40_strategy.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.0,
+      "js": "const T = await import('/experiments/tissue/tissue-lab.js'); window.__T = T; return await T.measure({ every: 2 });",
+      "result": {
+        "t": 119.99999999999682,
+        "n": 40,
+        "R": 9,
+        "largest": 39,
+        "cx": 657.0867231320112,
+        "cy": 424.9087829589844,
+        "box": [
+          609.598780632019,
+          365.6402235031128,
+          711.094578742981,
+          484.2471570968628
+        ],
+        "elong": 1.2695663228360705,
+        "hole": 0.20662080555221088,
+        "edge": 0.20512820512820512,
+        "deg": [
+          1,
+          1,
+          3,
+          35
+        ],
+        "fates": [
+          40,
+          0,
+          0,
+          0,
+          0
+        ],
+        "chainy": 0.10256410256410256,
+        "boxAll": [
+          609.598780632019,
+          365.6402235031128,
+          730.932469367981,
+          484.2471570968628
+        ],
+        "sameType": 0.6634615384615384,
+        "sameRandom": 0.5,
+        "radialBA": 1.8123104706045032,
+        "nB": 20
+      }
+    },
+    {
+      "t": 40.00000000000122,
+      "js": "return await __T.measure({ every: 2 });",
+      "result": {
+        "t": 159.99999999999804,
+        "n": 40,
+        "R": 9,
+        "largest": 40,
+        "cx": 646.8176620483398,
+        "cy": 424.8448112487793,
+        "box": [
+          590.8603773117065,
+          368.91000843048096,
+          705.3371229171753,
+          475.51455211639404
+        ],
+        "elong": 1.2026890449382215,
+        "hole": 0.6770470656448014,
+        "edge": 0.2,
+        "deg": [
+          0,
+          0,
+          3,
+          37
+        ],
+        "fates": [
+          40,
+          0,
+          0,
+          0,
+          0
+        ],
+        "chainy": 0.075,
+        "boxAll": [
+          590.8603773117065,
+          368.91000843048096,
+          705.3371229171753,
+          475.51455211639404
+        ],
+        "sameType": 0.7017543859649122,
+        "sameRandom": 0.5,
+        "radialBA": 1.8717286971053735,
+        "nB": 20
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T11:01:23",
+  "wall_s": 35.53
+}

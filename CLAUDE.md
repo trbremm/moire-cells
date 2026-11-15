@@ -439,6 +439,16 @@ C12b. LIPID MEMBRANES, ELASTICITY FROM THE LIPIDS (user 2026-11-15: "Lipids shou
       oilier, stiffer membranes (real bacteria do this: "homeoviscous adaptation"). Watch for it; never write it.
     - Expected look: soft wobbly soap-skinned cells next to stiff oily ones holding crisp hexagons; tissue mechanics
       (packing, linking) now follow the chemistry the lineage eats and makes. Own switch (off = C6c linker membrane).
+    AS BUILT (C12b): soap = bilayer, oil between its tails (<= 1 per soap), crust = wall outside (bricks, amber ll /
+    brown LL, cracks when jolted); stiffness k = packing (tail/head over pure soap) x heat 2/(1+T/3) x integrity x
+    sqrt(thickness) x gene, pulled toward 4 by the wall; memb.x = oil share; Bio.lip = wall, head, wall row; genome 56,
+    Cell 312 bytes; ?lipids=0 = C6c. Look: soap pearly drifting tube, oil deeper glossier, wall amber bricks. Lab: all
+    linked either way; make-up changes look and wobble, not linking. PROBLEM: in the default scene cells cannot build
+    it (every soap/oil needs one L and nearly all L is locked in LL crust within minutes): integrity ~0.
+    SUPPLY FIX (Claude's call, 2026-11-16): CELLS GRAZE CRUST. A cell over crust takes ll/LL in (like fusion) and its
+    builder CRACKS chains back into linkers by the table's reverse reaction (uphill: bond energy + spark from the
+    battery); walls may use grazed crust directly. Derived from the symmetry rule, no new chemistry; expected look:
+    colonies clearing paths through crust fields.
 OXYGEN RETRY AS RUN (2026-11-15, EXPERIMENTS.md "Oxygen retry"): the haze built (4.5 k free light atoms by 50 min)
     and poisoned hard (35-90 bursts/s, a crater of uneaten fuel at the light spring); colonies escaped by ARMOUR (heavy
     membranes, spotlight) or by DROPPING THE SKIN (whole dish); breathing never ran (<= 0.06 % of burning). Cause in the

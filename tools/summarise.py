@@ -261,6 +261,7 @@ def main():
     ap.add_argument("--cols", default=",".join(DEFAULT_COLS), help="columns for the table")
     ap.add_argument("--times", default="", help="run times (s) for the table (default: start, middle, end)")
     ap.add_argument("--plot", default=",".join(DEFAULT_PLOTS), help="columns to plot ('' = none)")
+    ap.add_argument("--every", type=float, default=0, help="plot at most one point per this many s (smaller SVGs)")
     ap.add_argument("--stack", default="", help="columns for one stacked picture per run (shared time axis); "
                     "col=label names a panel")
     ap.add_argument("--out", default="", help="folder for summary.md and the plots (default: print the table only)")
@@ -305,12 +306,24 @@ def main():
         out = args.out if os.path.isabs(args.out) else os.path.join(REPO, args.out)
         os.makedirs(out, exist_ok=True)
         plots = []
+        pruns = runs
+        if args.every > 0:
+            pruns = []
+            for r in runs:
+                rows, nxt = [], None
+                for x in r["rows"]:
+                    t = x.get("trun")
+                    if t is None or (nxt is not None and t < nxt - 1e-6 and x is not r["rows"][-1]):
+                        continue
+                    rows.append(x)
+                    nxt = t + args.every
+                pruns.append(dict(r, rows=rows))
         for c in (c for c in args.plot.split(",") if c):
             fn = "plot_" + "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in c) + ".svg"
-            if svg_plot(runs, c, os.path.join(out, fn)):
+            if svg_plot(pruns, c, os.path.join(out, fn)):
                 plots.append((c, fn))
         if stack:
-            for r in runs:
+            for r in pruns:
                 fn = "stack_" + "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in r["name"]) + ".svg"
                 if svg_stack(r, stack, os.path.join(out, fn), labels):
                     plots.append((f"{r['name']}: " + ", ".join(stack), fn))

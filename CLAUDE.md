@@ -388,6 +388,16 @@ build-up?), charge patterns. Play with cell division (rates, costs, capacity, fi
   vs on; dipoles on; 800 vs 10 000 cells; founders all burners vs all harvesters.
 - Record in EXPERIMENTS.md (conditions, exact URL/settings, what was seen in plain visual words, entropy plots
   or tables, best images), keep only what is interesting, and publish a summary page for the user.
+TISSUE EXPERIMENTS (user 2026-11-15): a separate series focused on CREATING TISSUES, i.e. LINKING: cells that hold
+together in stable multicellular configurations. Method: FEW cells (tens to a few hundred), NO natural evolution
+(mutation and turnover off, fixed genomes, chosen by hand or one genome cloned), and instead SWEEP THE TUNING
+(adhesion/contact, the moire fields and lever, charge and dipoles, membrane stiffness and elasticity, pumps,
+light, chemistry) to find which settings give stable linked configurations. STORE every stable configuration
+(the exact settings, genomes, cell positions/shapes/contacts as a snapshot that can be reloaded, a screenshot,
+and its measures) so we can learn WHAT DRIVES LINKING. Measures: clusters and their sizes, contacts per cell,
+contact persistence (how long the same neighbours stay touching), shape stability over time, whether the cluster
+survives a stir. Keep a table of what was swept, which settings link and which fall apart, and the best guesses
+about the cause. Needs a snapshot save/load (state -> JSON, reload by URL/console) if none exists.
 
 ## Ground rules
 - State plainly what was tested and how. "Runs without errors" is not "looks right".

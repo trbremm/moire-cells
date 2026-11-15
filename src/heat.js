@@ -289,6 +289,13 @@ export class Heat {
     if (this.qCellsOn) encoder.clearBuffer(this.buffer, (this.chargeOffset + this.n) * 4, this.n * 4);
   }
 
+  /** The ledger passes' slot: the current heat copy (src/snapshot.js, before a ledger pass outside a frame). */
+  writeLedgerSlot() {
+    const T = new Uint32Array(this.tickAB), L = HT_LEDGER * HT_SLOT / 4;
+    T[L] = this.offset(this.cur); T[L + 4] = this.count;
+    this.device.queue.writeBuffer(this.tickBuf, HT_LEDGER * HT_SLOT, this.tickAB, HT_LEDGER * HT_SLOT, HT_SLOT);
+  }
+
   /** After the frame's ticks: advance the current copy, and copy the ledger out if a read-back buffer is free. */
   endFrame(encoder, ticks, frame) {
     this.cur ^= (ticks * this.nSub) & 1;

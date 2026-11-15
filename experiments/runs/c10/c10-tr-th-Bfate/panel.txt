@@ -1,0 +1,84 @@
+--- t 120.00 s (run 0.00 s)
+ENTROPY  111 k  +0/s   paused
+moving 7.16 · heat in dish 10.5 k · stored 17.0 · in 122 k · rounding 0
+light off
+ORDER  – · atoms in dish 0 · added 0 (+0/s) · out 0 · rounding 0
+CELLS  batteries 17.0 (full 0%, empty 0%) · atoms inside 0 · fuel inside 0 · burner +0/s · crawl −0/s
+ENGINES  harvest 0% · burn 100% · both 0% · other 0%  (batteries 0 · 11 · 0 · 0 %) · in the light - · tolerance 11.8 · perm 1.79
+FREE LIGHT ATOMS  g 0 · t 0 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 0
+CHARGE  free +0 −0 (net +0) · in cells +0 · cells + 0 · − 0 · |q| 0.00
+MEMBRANE  mix 0.00 (heavy 0%) · thickness 0.012 · integrity 0.00 (whole 0%, damaged 0) · bursts 0/s · in membranes l 0 L 0 · bitten l 0 L 0/s · |selectivity| 0.01
+DIPOLES  |d| 0.00 · polarised 0 (0%) · neighbours aligned 0.00 · head-to-tail +0.00 · in threads 0 (ends 0) · along the field 0.00
+PUMPS  active 0% (top none) · |voltage| 0.00 (0 cells > 0.1) · paid 0/s · moved to dish 0/s, from dish 0/s, across contact 0/s
+CATALYSTS  crust ll 0 LL 0 · engines at 35% (in the light 100%, fed cells 100%) · trace in cells 0, in the dish 0 · cells with trace ≥ half 0 · IN-trace pumps 0 (battery 0.00 vs 0.11)
+HARD LIGHT  dose in the light 0.0, in the dark 0.00 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  life cycle off (T): nothing is born or dies · 40 cells
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 130.00 s (run 10.00 s)
+ENTROPY  128 k  +839/s   paused
+moving 7.84 · heat in dish 1648 · stored 13.7 · in 130 k · rounding −1.7e-4
+light off
+ORDER  – · atoms in dish 0 · added 0 (+0/s) · out 0 · rounding 0
+CELLS  batteries 13.7 (full 0%, empty 15%) · atoms inside 0 · fuel inside 0 · burner +0/s · crawl −0/s
+ENGINES  harvest 0% · burn 100% · both 0% · other 0%  (batteries 0 · 9 · 0 · 0 %) · in the light - · tolerance 11.8 · perm 1.79
+FREE LIGHT ATOMS  g 0 · t 0 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 0
+CHARGE  free +0 −0 (net +0) · in cells +0 · cells + 0 · − 0 · |q| 0.00
+MEMBRANE  mix 0.00 (heavy 0%) · thickness 0.012 · integrity 0.00 (whole 0%, damaged 0) · bursts 0/s · in membranes l 0 L 0 · bitten l 0 L 0/s · |selectivity| 0.01
+DIPOLES  |d| 0.00 · polarised 0 (0%) · neighbours aligned 0.00 · head-to-tail +0.00 · in threads 0 (ends 0) · along the field 0.00
+PUMPS  active 0% (top none) · |voltage| 0.00 (0 cells > 0.1) · paid 0/s · moved to dish 0/s, from dish 0/s, across contact 0/s
+CATALYSTS  crust ll 0 LL 0 · engines at 35% (in the light 100%, fed cells 100%) · trace in cells 0, in the dish 0 · cells with trace ≥ half 0 · IN-trace pumps 0 (battery 0.00 vs 0.09)
+HARD LIGHT  dose in the light 0.0, in the dark 0.00 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  life cycle off (T): nothing is born or dies · 40 cells
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 140.00 s (run 20.00 s)
+ENTROPY  137 k  +932/s   paused
+moving 27.3 · heat in dish 1906 · stored 10.3 · in 139 k · rounding −2.1e-4
+light off
+ORDER  – · atoms in dish 0 · added 0 (+0/s) · out 0 · rounding 0
+CELLS  batteries 10.3 (full 0%, empty 33%) · atoms inside 0 · fuel inside 0 · burner +0/s · crawl −0/s
+ENGINES  harvest 0% · burn 100% · both 0% · other 0%  (batteries 0 · 6 · 0 · 0 %) · in the light - · tolerance 11.8 · perm 1.79
+FREE LIGHT ATOMS  g 0 · t 0 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 0
+CHARGE  free +0 −0 (net +0) · in cells +0 · cells + 0 · − 0 · |q| 0.00
+MEMBRANE  mix 0.00 (heavy 0%) · thickness 0.012 · integrity 0.00 (whole 0%, damaged 0) · bursts 0/s · in membranes l 0 L 0 · bitten l 0 L 0/s · |selectivity| 0.01
+DIPOLES  |d| 0.00 · polarised 0 (0%) · neighbours aligned 0.00 · head-to-tail +0.00 · in threads 0 (ends 0) · along the field 0.00
+PUMPS  active 0% (top none) · |voltage| 0.00 (0 cells > 0.1) · paid 0/s · moved to dish 0/s, from dish 0/s, across contact 0/s
+CATALYSTS  crust ll 0 LL 0 · engines at 35% (in the light 100%, fed cells 100%) · trace in cells 0, in the dish 0 · cells with trace ≥ half 0 · IN-trace pumps 0 (battery 0.00 vs 0.06)
+HARD LIGHT  dose in the light 0.0, in the dark 0.00 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  life cycle off (T): nothing is born or dies · 40 cells
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 150.00 s (run 30.00 s)
+ENTROPY  146 k  +842/s   paused
+moving 7.79 · heat in dish 1686 · stored 7.00 · in 148 k · rounding −5.0e-4
+light off
+ORDER  – · atoms in dish 0 · added 0 (+0/s) · out 0 · rounding 0
+CELLS  batteries 7.00 (full 0%, empty 45%) · atoms inside 0 · fuel inside 0 · burner +0/s · crawl −0/s
+ENGINES  harvest 0% · burn 100% · both 0% · other 0%  (batteries 0 · 4 · 0 · 0 %) · in the light - · tolerance 11.8 · perm 1.79
+FREE LIGHT ATOMS  g 0 · t 0 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 0
+CHARGE  free +0 −0 (net +0) · in cells +0 · cells + 0 · − 0 · |q| 0.00
+MEMBRANE  mix 0.00 (heavy 0%) · thickness 0.012 · integrity 0.00 (whole 0%, damaged 0) · bursts 0/s · in membranes l 0 L 0 · bitten l 0 L 0/s · |selectivity| 0.01
+DIPOLES  |d| 0.00 · polarised 0 (0%) · neighbours aligned 0.00 · head-to-tail +0.00 · in threads 0 (ends 0) · along the field 0.00
+PUMPS  active 0% (top none) · |voltage| 0.00 (0 cells > 0.1) · paid 0/s · moved to dish 0/s, from dish 0/s, across contact 0/s
+CATALYSTS  crust ll 0 LL 0 · engines at 35% (in the light 100%, fed cells 100%) · trace in cells 0, in the dish 0 · cells with trace ≥ half 0 · IN-trace pumps 0 (battery 0.00 vs 0.04)
+HARD LIGHT  dose in the light 0.0, in the dark 0.00 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  life cycle off (T): nothing is born or dies · 40 cells
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 160.00 s (run 40.00 s)
+ENTROPY  154 k  +829/s   paused
+moving 12.8 · heat in dish 1702 · stored 4.14 · in 156 k · rounding −8.4e-4
+light off
+ORDER  – · atoms in dish 0 · added 0 (+0/s) · out 0 · rounding 0
+CELLS  batteries 4.14 (full 0%, empty 95%) · atoms inside 0 · fuel inside 0 · burner +0/s · crawl −0/s
+ENGINES  harvest 0% · burn 100% · both 0% · other 0%  (batteries 0 · 3 · 0 · 0 %) · in the light - · tolerance 11.8 · perm 1.79
+FREE LIGHT ATOMS  g 0 · t 0 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 0
+CHARGE  free +0 −0 (net +0) · in cells +0 · cells + 0 · − 0 · |q| 0.00
+MEMBRANE  mix 0.00 (heavy 0%) · thickness 0.012 · integrity 0.00 (whole 0%, damaged 0) · bursts 0/s · in membranes l 0 L 0 · bitten l 0 L 0/s · |selectivity| 0.01
+DIPOLES  |d| 0.00 · polarised 0 (0%) · neighbours aligned 0.00 · head-to-tail +0.00 · in threads 0 (ends 0) · along the field 0.00
+PUMPS  active 0% (top none) · |voltage| 0.00 (0 cells > 0.1) · paid 0/s · moved to dish 0/s, from dish 0/s, across contact 0/s
+CATALYSTS  crust ll 0 LL 0 · engines at 35% (in the light 100%, fed cells 100%) · trace in cells 0, in the dish 0 · cells with trace ≥ half 0 · IN-trace pumps 0 (battery 0.00 vs 0.03)
+HARD LIGHT  dose in the light 0.0, in the dark 0.00 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  life cycle off (T): nothing is born or dies · 40 cells
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)

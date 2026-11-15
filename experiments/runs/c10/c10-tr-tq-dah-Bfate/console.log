@@ -1,0 +1,2 @@
+log.warning: The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127
+console.log: snapshot loaded: 40 cells at t 120.0 s, best effort: no grid in the snapshot (cells only): the page's grid kept; saved before step C10: patterned walls off (as it ran)

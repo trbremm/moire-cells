@@ -17,15 +17,17 @@
 //   [LEDGER_WORDS + 3n, + 4n)      cover (step C2): how much of each pixel the cells cover this tick (COVER_SCALE per
 //                                  pixel area; each cell adds its area at its centre, the light's absorption reads the
 //                                  3 x 3 mean; cleared after every tick's spreading)
-//   [LEDGER_WORDS + 4n, + 30n)     step C3, the substances (src/matter.js, matter.wgsl): 13 channels (6 atoms, 4 fuels,
-//                                  2 sediments, trace), each a block of n words, in two copies (ping-pong, as the heat):
-//                                  copy k, channel c at LEDGER_WORDS + 4n + (13 k + c) n. Amounts in whole counts
-//                                  (ATOM_SCALE per atom-unit), so moving matter around is exact.
-//   [LEDGER_WORDS + 30n, + 33n)    step C6, the cells' pigments (src/eat.js, cell_eat.wgsl): per light band (visible 1,
+//   [LEDGER_WORDS + 4n, + 36n)     step C3, the substances (src/matter.js, matter.wgsl): 16 channels (6 atoms, 4 fuels,
+//                                  2 sediments, trace; step C12: oil, two amphiphiles), each a block of n words, in two
+//                                  copies (ping-pong, as the heat): copy k, channel c at LEDGER_WORDS + 4n + (16 k + c) n.
+//                                  Amounts in whole counts (ATOM_SCALE per atom-unit), so moving matter around is exact.
+//                                  Step C12: then 3 blocks of f32 the oil passes work out once per tick (matter.wgsl
+//                                  oil_field): the oil's volume share per pixel, its smoothed share, the amphiphile film
+//   [LEDGER_WORDS + 39n, + 42n)    step C6, the cells' pigments (src/eat.js, cell_eat.wgsl): per light band (visible 1,
 //                                  visible 2, hard) the optical depth the cells' pigments put down this tick (x their area
 //                                  in pixels, COVER_SCALE per unit; read as the 3 x 3 mean as the cover; cleared after
 //                                  every tick's spreading; HeatP.pig says where, 0 = none this frame)
-//   [LEDGER_WORDS + 33n, + 35n)    step C6b, charge (src/charge.js; matter.wgsl relax, cell_eat.wgsl): the screened
+//   [LEDGER_WORDS + 42n, + 44n)    step C6b, charge (src/charge.js; matter.wgsl relax, cell_eat.wgsl): the screened
 //                                  potential phi (f32 bits, kept from tick to tick: each tick's relaxation starts from the
 //                                  last), then the cells' net charge put down this tick (counts of charge, as the atoms;
 //                                  cleared after every tick's spreading)
@@ -33,8 +35,8 @@
 
 const HEAT_SCALE: f32 = 65536.0;   // counts per energy unit
 const HEAT_V0: f32 = 10.0;         // CSS px / s: the speed whose motion energy is 0.5 units
-const LEDGER_WORDS: u32 = 22528u;   // (19200 until step C6b, 19712 until step C6c, 20224 until step C7, 21760 until C7b,
-                                    // 22016 until C8, 22272 until C9)
+const LEDGER_WORDS: u32 = 25600u;   // (19200 until step C6b, 19712 until step C6c, 20224 until step C7, 21760 until C7b,
+                                    // 22016 until C8, 22272 until C9, 22528 until C12)
 const LG_WORK: u32 = 0u;     // 256 slots: work done on the cells by the forces (fields, contact, crawling, stirring)
 const LG_BASE: u32 = 256u;   // 64: the base warmth put into the dish
 const LG_OUT: u32 = 320u;    // 64, 64-bit: heat that leaked out of the dish (to the sky, at the edge, on a resize)
@@ -89,9 +91,29 @@ const LG_HL: u32 = 22016u;
 // step C9, division (src/division.js; cell_eat.wgsl split): 16 numbers x 16 slots (i32), counters since the last read-back:
 // [0] the heat counts the divisions' cost took from the mothers' batteries (the rest spare)
 const LG_DIV: u32 = 22272u;
+// step C12, oils and water (src/oil.js, matter.wgsl): LG_OIL (words 22528 .. 23040 left free for other steps)
+//   + 0     the matter ledger of channels 13..15 (oil, the amphiphiles): ADD, LOST, GONE, DISH, 3 channels x 128 words each
+//           (lg_mc maps a channel's word for every region)
+//   + 1536  4 families' events (oil formed, oil cracked, head put on, head taken off): 64-bit, 64 slots, 128 words each
+//   + 2048  a snapshot (the ledger pass, every frame): 16 numbers x 16 slots (i32; OS_* in matter.wgsl)
+const LG_OIL: u32 = 23040u;
+const LG_OIL_RX: u32 = 24576u;
+const LG_OIL_SNAP: u32 = 25088u;
+const LG_OIL_FUSE: u32 = 25344u;    // + 2304: oil taken into membranes (counts of lL), 16 slots, since the last read-back
+const OIL_CH: u32 = 13u;            // the oil's channel (lL; src/matter.js checks)
 
-const NCH: u32 = 13u;               // step C3: substance channels
+const NCH: u32 = 13u;               // step C3: substance channels the CELLS hold (their stock; channels 0..12)
+const NGRID: u32 = 16u;             // step C12: substance channels on the grid (+ oil lL and the amphiphiles glL, tlL)
 const ATOM_SCALE: f32 = 4096.0;     // counts per atom-unit (ATOM_SCALE in src/matter.js)
+
+// step C12: the ledger word of channel c in the matter ledger's region (LG_M_ADD, LG_M_LOST, LG_M_GONE or LG_M_DISH):
+// channels 0..12 where they always were, 13..15 in step C12's part (LG_OIL)
+fn lg_mc(region: u32, c: u32) -> u32 {
+  if (c < NCH) { return region + 128u * c; }
+  var k = 3u;
+  if (region == LG_M_ADD) { k = 0u; } else if (region == LG_M_LOST) { k = 1u; } else if (region == LG_M_GONE) { k = 2u; }
+  return LG_OIL + 384u * k + 128u * (c - NCH);
+}
 
 // step C6b: a channel's charge from the packed code (CHARGE_CODES in src/matter.js: 2 bits per channel, 1 = +1, 2 = -1)
 fn charge_of(codes: u32, c: u32) -> i32 {
@@ -104,8 +126,9 @@ struct Rx {
   ch: vec4u,                    // reactants x, y and products z, w (255: none); 2 l -> ll lists l twice
   by: u32,                      // 0: by heat (rate x exp(-spark / (theta x temperature))); 1: by light of `band`
   band: u32,
-  fam: u32,                     // family, for the counters (make, burn, photo, swap, form, crack)
-  _p0: u32,
+  fam: u32,                     // family, for the counters (make, burn, photo, swap, form, crack; step C12: oil formed,
+                                // oil cracked, head on, head off)
+  open: u32,                    // step C12: 1 = in the open dish only (its substances are not in the cells' stock)
   heat16: i32,                  // heat counts released per event
   light16: i32,                 // light counts used per event (by light)
   k: f32,                       // by heat: rate constant (per s for one reactant, R^2 per s for two); by light: the
@@ -126,7 +149,10 @@ struct ChemP {
                                 // spark's floor (a share of it); w spare. Sediment lowers the spark of its OWN formation:
                                 // spark x max(floor, 1 / (1 + s / s0)), s the chain already there (the pixel's own, or the
                                 // mean of its 4 neighbours' if more: crust grows on crust and at its edge)
-  rx: array<Rx, 24>,
+  fuse: vec4f,                  // step C12, membrane fusion (src/oil.js; cell_eat.wgsl): x 1 = on; y the share of a membrane's
+                                // shortfall taken in from the oil under the cell per s; z heat counts per unit of oil opened
+                                // (its chain's energy, uphill), w its spark (heat counts per unit, lost as heat)
+  rx: array<Rx, 32>,            // (24 until step C12)
 };
 const NONE: u32 = 255u;
 

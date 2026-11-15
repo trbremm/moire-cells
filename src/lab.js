@@ -82,6 +82,7 @@ function gather(M, ctl) {
   flatten(M.hardlight.census, 'hardlight', out);
   flatten(M.division.census, 'division', out);
   flatten(M.walls.census, 'walls', out);         // step C10: the patterned walls' census
+  if (M.oil) { flatten(M.oil.census, 'oil', out); if (M.oil.last) flatten({ ...M.oil.last, sizes: undefined }, 'oilstats', out); }   // step C12
   if (M.walls.near) flatten(M.walls.near, 'wallstats', out);
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;

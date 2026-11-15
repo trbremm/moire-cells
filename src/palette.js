@@ -23,6 +23,10 @@
 //   charge         step C6b: the screened charge field's contour lines (machinery): + (givers' excess) a warm rose, - (takers')
 //                  an ice blue, the usual colours of an electrostatic map
 //   levels         how bright some layers are drawn: substances (the dots' ink), field (A's dots), spot (outline), charge
+//   oil            step C12: oil (lL, apolar: water-shy) a cool pale steel blue; amphiphiles (glL, tlL: a charged head on an
+//                  oily tail) pearly white, as soap film. In the dish oil is drawn as a dark glossy film with a thin
+//                  iridescent rim (the hue drifts slowly along it: an oil slick), amphiphile films as thin pearly lines
+//   polarity       step C12, the polarity view (machinery): polar (water-loving) matter warm, apolar (water-shy) cool
 //   walls          step C10, the walls view (V): a cell's body by its wall pattern: uniform (grey, as "other"), polar (coral),
 //                  two-ended (mint), sticky sides (magenta). Only in that view; elsewhere stickiness shows as tube brightness
 
@@ -42,7 +46,11 @@ export const FLAT = {
     fuel: { light: [196, 242, 178], heavy: [124, 204, 128] },
     sediment: { light: [96, 86, 74], heavy: [74, 64, 56] },
     trace: { light: [222, 222, 232], heavy: [222, 222, 232] },
+    oil: { light: [150, 196, 214], heavy: [150, 196, 214] },             // step C12
+    amphiphile: { light: [236, 226, 246], heavy: [236, 226, 246] },
   },
+  oil: { film: [16, 22, 30], edge: [170, 210, 226], amph: [236, 226, 246] },   // step C12: the film, its rim, the soap lines
+  polarity: { polar: [236, 150, 96], apolar: [104, 170, 236] },
   spot: [242, 228, 200],
   field: { A: [241, 236, 223], B: [128, 158, 255], P: [236, 218, 124] },
   charge: { pos: [236, 132, 146], neg: [128, 184, 236] },
@@ -69,7 +77,11 @@ export const NEON = {
     fuel: { light: [140, 255, 150], heavy: [32, 226, 104] },
     sediment: { light: [74, 60, 48], heavy: [56, 46, 38] },
     trace: { light: [226, 232, 255], heavy: [226, 232, 255] },
+    oil: { light: [120, 200, 236], heavy: [120, 200, 236] },             // step C12
+    amphiphile: { light: [246, 232, 255], heavy: [246, 232, 255] },
   },
+  oil: { film: [8, 14, 28], edge: [140, 220, 255], amph: [255, 240, 255] },
+  polarity: { polar: [255, 128, 56], apolar: [56, 150, 255] },
   spot: [255, 232, 196],
   field: { A: [255, 222, 184], B: [64, 132, 255], P: [255, 226, 64] },
   charge: { pos: [255, 70, 110], neg: [70, 170, 255] },

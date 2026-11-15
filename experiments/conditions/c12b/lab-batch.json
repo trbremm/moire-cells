@@ -1,0 +1,10 @@
+{
+ "batch": "c12b-lab",
+ "runs": [
+  "lab-soap.json",
+  "lab-oily.json",
+  "lab-walled.json",
+  "lab-soap-warm.json",
+  "lab-oily-warm.json"
+ ]
+}

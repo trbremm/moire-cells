@@ -1,0 +1,11 @@
+{
+ "batch": "c12b-default",
+ "runs": [
+  "default-on.json",
+  "default-off.json"
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

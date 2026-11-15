@@ -1,0 +1,123 @@
+{
+ "name": "th-squeeze",
+ "series": "hold",
+ "description": "the page's default squeeze 0.25 (a pull to the dish centre)",
+ "setting": "cells.params.squeeze=0.25",
+ "seed": 3,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 0.9617068566666666,
+ "reform": 1.0,
+ "score": 0.9617068566666666,
+ "iscore": 0.9617068566666666,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 4.957142857142857,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 1.2523407085714287,
+ "rg": 3.9983353714285714,
+ "internal": 0.16077544333333335,
+ "move": 0.16451871516666666,
+ "shape": 0.015799719066666666,
+ "ageMedian80": 75.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 4.916666666666667,
+ "end_clusters": 1.0,
+ "elong80": 1.07272972302901,
+ "hole80": 0.533988229657478,
+ "chainy80": 0,
+ "edge80": 0.2,
+ "elong120": 1.089024727083658,
+ "hole120": 0.6140446624803899,
+ "chainy120": 0,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "40/0/0/0/0",
+ "entropyRate": 679.8433097142857,
+ "heatOut120": 95313.1732,
+ "speed": 3.56,
+ "status": "ok",
+ "measures_t80": {
+  "t": 79.99999999999943,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 639.518440246582,
+  "cy": 405.8516014099121,
+  "box": [
+   581.278223991394,
+   349.70627307891846,
+   697.612208366394,
+   464.5303907394409
+  ],
+  "elong": 1.07272972302901,
+  "hole": 0.533988229657478,
+  "edge": 0.2,
+  "deg": [
+   0,
+   0,
+   0,
+   40
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0,
+  "boxAll": [
+   581.278223991394,
+   349.70627307891846,
+   697.612208366394,
+   464.5303907394409
+  ]
+ },
+ "measures_t120": {
+  "t": 119.99999999999741,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 637.5543869018554,
+  "cy": 397.1393241882324,
+  "box": [
+   579.8140001296997,
+   341.6798143386841,
+   694.2293348312378,
+   454.6671495437622
+  ],
+  "elong": 1.089024727083658,
+  "hole": 0.6140446624803899,
+  "edge": 0.2,
+  "deg": [
+   0,
+   0,
+   0,
+   40
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0,
+  "boxAll": [
+   579.8140001296997,
+   341.6798143386841,
+   694.2293348312378,
+   454.6671495437622
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/th-squeeze/snapshot.json",
+ "run": "experiments/runs/tissue/th-squeeze",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

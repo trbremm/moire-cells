@@ -1,0 +1,123 @@
+{
+ "name": "th-fate-neuron",
+ "series": "hold",
+ "description": "differentiation on: the clone commits to neuron (+ same-fate glue 0.5, the fate's size and motility)",
+ "setting": "genome.rules.diff=True; gene resp0=-1; gene resp1=-1; gene resp2=1; gene resp3=-1; gene threshold=0.6; gene recWidth=0.25",
+ "seed": 3,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 0.9945254021666666,
+ "reform": 1.0,
+ "score": 0.9945254021666666,
+ "iscore": 0.9945254021666666,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 4.5928571428571425,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 0.9862144547142856,
+ "rg": 3.82826613,
+ "internal": 0.18531996255000002,
+ "move": 0.25334643733333334,
+ "shape": 0.008293060531666667,
+ "ageMedian80": 80.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 4.65,
+ "end_clusters": 1.0,
+ "elong80": 1.1513735828751819,
+ "hole80": 0.29017954300596427,
+ "chainy80": 0.1,
+ "edge80": 0.25,
+ "elong120": 1.1715989739795931,
+ "hole120": 0.3220384773982324,
+ "chainy120": 0.075,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "0/0/0/40/0",
+ "entropyRate": 663.7600051428572,
+ "heatOut120": 94557.4138,
+ "speed": 5.13,
+ "status": "ok",
+ "measures_t80": {
+  "t": 79.99999999999919,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 635.4664428710937,
+  "cy": 405.08995513916017,
+  "box": [
+   580.3746404647827,
+   357.21710872650146,
+   684.668023109436,
+   457.40841007232666
+  ],
+  "elong": 1.1513735828751819,
+  "hole": 0.29017954300596427,
+  "edge": 0.25,
+  "deg": [
+   0,
+   0,
+   4,
+   36
+  ],
+  "fates": [
+   0,
+   0,
+   0,
+   40,
+   0
+  ],
+  "chainy": 0.1,
+  "boxAll": [
+   580.3746404647827,
+   357.21710872650146,
+   684.668023109436,
+   457.40841007232666
+  ]
+ },
+ "measures_t120": {
+  "t": 119.99999999999864,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 675.1562316894531,
+  "cy": 415.92800827026366,
+  "box": [
+   620.935248374939,
+   361.4774236679077,
+   721.3964776992798,
+   469.8017511367798
+  ],
+  "elong": 1.1715989739795931,
+  "hole": 0.3220384773982324,
+  "edge": 0.25,
+  "deg": [
+   0,
+   0,
+   3,
+   37
+  ],
+  "fates": [
+   0,
+   0,
+   0,
+   40,
+   0
+  ],
+  "chainy": 0.075,
+  "boxAll": [
+   620.935248374939,
+   361.4774236679077,
+   721.3964776992798,
+   469.8017511367798
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/th-fate-neuron/snapshot.json",
+ "run": "experiments/runs/tissue/th-fate-neuron",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

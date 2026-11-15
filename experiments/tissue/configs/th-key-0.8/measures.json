@@ -1,0 +1,123 @@
+{
+ "name": "th-key-0.8",
+ "series": "hold",
+ "description": "key angle 0.8 rad (baseline 0.35): how far the clone's lattice is turned from the medium's",
+ "setting": "gene keyAngle=0.8; gene recAngle=0.8",
+ "seed": 3,
+ "cells": 40,
+ "hold": 0.9928571428571429,
+ "persist": 0.992926465,
+ "reform": 1.0,
+ "score": 0.985834133107143,
+ "iscore": 0.992926465,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 4.685714285714285,
+ "clusters": 1.1428571428571428,
+ "isolated": 0.0,
+ "compact": 1.040659215,
+ "rg": 4.369582448571429,
+ "internal": 0.3116813333333333,
+ "move": 0.3406013743333333,
+ "shape": 0.010620846140000001,
+ "ageMedian80": 80.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 4.8,
+ "end_clusters": 1.0,
+ "elong80": 1.3480369603387503,
+ "hole80": 0.8152032082744824,
+ "chainy80": 0.05,
+ "edge80": 0.25,
+ "elong120": 1.3370744957228107,
+ "hole120": 0.8755519179033677,
+ "chainy120": 0.025,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "40/0/0/0/0",
+ "entropyRate": 697.2169482857142,
+ "heatOut120": 96940.1162,
+ "speed": 3.78,
+ "status": "ok",
+ "measures_t80": {
+  "t": 79.9999999999985,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 650.0476119995117,
+  "cy": 386.4548400878906,
+  "box": [
+   587.7687730789185,
+   332.7740125656128,
+   711.2309923171997,
+   449.0478162765503
+  ],
+  "elong": 1.3480369603387503,
+  "hole": 0.8152032082744824,
+  "edge": 0.25,
+  "deg": [
+   0,
+   1,
+   1,
+   38
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.05,
+  "boxAll": [
+   587.7687730789185,
+   332.7740125656128,
+   711.2309923171997,
+   449.0478162765503
+  ]
+ },
+ "measures_t120": {
+  "t": 119.99999999999707,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 695.3170989990234,
+  "cy": 404.3197540283203,
+  "box": [
+   635.1589708328247,
+   345.93198108673096,
+   759.363429069519,
+   464.39255237579346
+  ],
+  "elong": 1.3370744957228107,
+  "hole": 0.8755519179033677,
+  "edge": 0.225,
+  "deg": [
+   0,
+   0,
+   1,
+   39
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.025,
+  "boxAll": [
+   635.1589708328247,
+   345.93198108673096,
+   759.363429069519,
+   464.39255237579346
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/th-key-0.8/snapshot.json",
+ "run": "experiments/runs/tissue/th-key-0.8",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

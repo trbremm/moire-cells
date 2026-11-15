@@ -1,0 +1,123 @@
+{
+ "name": "tq-adh08-ellipse",
+ "series": "pairs",
+ "description": "adhesion gene 0.8 + ellipse cells (honeycomb off)",
+ "setting": "cells.shape.on=False; gene adhesion=0.8",
+ "seed": 3,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 0.9692165868333333,
+ "reform": 1.0,
+ "score": 0.9692165868333333,
+ "iscore": 0.9692165868333333,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 4.335714285714286,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 0.83471385,
+ "rg": 4.89966518,
+ "internal": 0.1017507983,
+ "move": 0.19026638799999998,
+ "shape": 0.0,
+ "ageMedian80": 80.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 4.65,
+ "end_clusters": 1.0,
+ "elong80": 1.703022041808345,
+ "hole80": 0.7615888755815917,
+ "chainy80": 0.125,
+ "edge80": 0.35,
+ "elong120": 1.894177912249432,
+ "hole120": 0.6171517868976849,
+ "chainy120": 0.025,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "40/0/0/0/0",
+ "entropyRate": 699.9207349999999,
+ "heatOut120": 97282.3535,
+ "speed": 5.88,
+ "status": "ok",
+ "measures_t80": {
+  "t": 79.99999999999937,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 631.9306381225585,
+  "cy": 402.7052345275879,
+  "box": [
+   579.875147819519,
+   327.07952404022217,
+   684.4373426437378,
+   486.4416551589966
+  ],
+  "elong": 1.703022041808345,
+  "hole": 0.7615888755815917,
+  "edge": 0.35,
+  "deg": [
+   0,
+   1,
+   4,
+   35
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.125,
+  "boxAll": [
+   579.875147819519,
+   327.07952404022217,
+   684.4373426437378,
+   486.4416551589966
+  ]
+ },
+ "measures_t120": {
+  "t": 119.9999999999981,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 675.1484344482421,
+  "cy": 413.75707550048827,
+  "box": [
+   624.9976453781128,
+   330.1743116378784,
+   724.1083631515503,
+   489.0821886062622
+  ],
+  "elong": 1.894177912249432,
+  "hole": 0.6171517868976849,
+  "edge": 0.275,
+  "deg": [
+   0,
+   0,
+   1,
+   39
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.025,
+  "boxAll": [
+   624.9976453781128,
+   330.1743116378784,
+   724.1083631515503,
+   489.0821886062622
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/tq-adh08-ellipse/snapshot.json",
+ "run": "experiments/runs/tissue/tq-adh08-ellipse",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

@@ -1,0 +1,123 @@
+{
+ "name": "th-adh-2.4",
+ "series": "hold",
+ "description": "global adhesion strength 2.4 (genome.params.adhesion, baseline 0.6)",
+ "setting": "genome.params.adhesion=2.4",
+ "seed": 3,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 1.0,
+ "reform": 1.0,
+ "score": 1.0,
+ "iscore": 1.0,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 5.2,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 1.3021848057142855,
+ "rg": 3.919094782857143,
+ "internal": 0.3163203448333333,
+ "move": 0.36719267433333336,
+ "shape": 0.006626447941666666,
+ "ageMedian80": 80.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 5.2,
+ "end_clusters": 1.0,
+ "elong80": 1.0878644122602528,
+ "hole80": 0.36011308960335614,
+ "chainy80": 0.075,
+ "edge80": 0.225,
+ "elong120": 1.136770052360131,
+ "hole120": 0.33168418115523335,
+ "chainy120": 0.075,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "40/0/0/0/0",
+ "entropyRate": 684.5254061428572,
+ "heatOut120": 95659.648,
+ "speed": 6.29,
+ "status": "ok",
+ "measures_t80": {
+  "t": 79.99999999999996,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 625.2441101074219,
+  "cy": 409.34299240112307,
+  "box": [
+   569.9239149093628,
+   349.56426525115967,
+   682.2325086593628,
+   464.3909044265747
+  ],
+  "elong": 1.0878644122602528,
+  "hole": 0.36011308960335614,
+  "edge": 0.225,
+  "deg": [
+   0,
+   0,
+   3,
+   37
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.075,
+  "boxAll": [
+   569.9239149093628,
+   349.56426525115967,
+   682.2325086593628,
+   464.3909044265747
+  ]
+ },
+ "measures_t120": {
+  "t": 119.99999999999916,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 695.5299285888672,
+  "cy": 407.1729461669922,
+  "box": [
+   636.8066759109497,
+   349.92144298553467,
+   752.5763902664185,
+   463.34140491485596
+  ],
+  "elong": 1.136770052360131,
+  "hole": 0.33168418115523335,
+  "edge": 0.225,
+  "deg": [
+   0,
+   0,
+   3,
+   37
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.075,
+  "boxAll": [
+   636.8066759109497,
+   349.92144298553467,
+   752.5763902664185,
+   463.34140491485596
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/th-adh-2.4/snapshot.json",
+ "run": "experiments/runs/tissue/th-adh-2.4",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

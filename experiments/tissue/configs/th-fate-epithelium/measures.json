@@ -1,0 +1,123 @@
+{
+ "name": "th-fate-epithelium",
+ "series": "hold",
+ "description": "differentiation on: the clone commits to epithelium (+ same-fate glue 0.5, the fate's size and motility)",
+ "setting": "genome.rules.diff=True; gene resp0=1; gene resp1=-1; gene resp2=-1; gene resp3=-1; gene threshold=0.6; gene recWidth=0.25",
+ "seed": 3,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 0.9584950316666667,
+ "reform": 1.0,
+ "score": 0.9584950316666667,
+ "iscore": 0.9584950316666667,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 4.885714285714286,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 1.1088597985714286,
+ "rg": 4.039661488571428,
+ "internal": 0.14623470095,
+ "move": 0.30609775683333335,
+ "shape": 0.01941595715,
+ "ageMedian80": 80.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 4.75,
+ "end_clusters": 1.0,
+ "elong80": 1.3793913013198473,
+ "hole80": 0.8321297253372918,
+ "chainy80": 0.05,
+ "edge80": 0.25,
+ "elong120": 1.3762384256364406,
+ "hole120": 0.7709709833835703,
+ "chainy120": 0.025,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "0/40/0/0/0",
+ "entropyRate": 788.8488627142857,
+ "heatOut120": 108328.335,
+ "speed": 3.58,
+ "status": "ok",
+ "measures_t80": {
+  "t": 80.00000000000007,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 591.9269073486328,
+  "cy": 435.64261016845705,
+  "box": [
+   533.8996105194092,
+   372.1168441772461,
+   645.9239978790283,
+   494.9922351837158
+  ],
+  "elong": 1.3793913013198473,
+  "hole": 0.8321297253372918,
+  "edge": 0.25,
+  "deg": [
+   0,
+   0,
+   2,
+   38
+  ],
+  "fates": [
+   0,
+   40,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.05,
+  "boxAll": [
+   533.8996105194092,
+   372.1168441772461,
+   645.9239978790283,
+   494.9922351837158
+  ]
+ },
+ "measures_t120": {
+  "t": 119.9999999999984,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 671.6282806396484,
+  "cy": 474.83689041137694,
+  "box": [
+   617.4156723022461,
+   414.31629753112793,
+   727.0915393829346,
+   531.7666492462158
+  ],
+  "elong": 1.3762384256364406,
+  "hole": 0.7709709833835703,
+  "edge": 0.25,
+  "deg": [
+   0,
+   0,
+   1,
+   39
+  ],
+  "fates": [
+   0,
+   40,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.025,
+  "boxAll": [
+   617.4156723022461,
+   414.31629753112793,
+   727.0915393829346,
+   531.7666492462158
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/th-fate-epithelium/snapshot.json",
+ "run": "experiments/runs/tissue/th-fate-epithelium",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

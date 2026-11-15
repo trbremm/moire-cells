@@ -1,0 +1,123 @@
+{
+ "name": "tc-qstockoff",
+ "series": "chem",
+ "description": "field B charges per fate (not from the stock)",
+ "setting": "charge.params.stock=False; ?springs=1; ?light=spot",
+ "seed": 3,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 0.8408855526666666,
+ "reform": 1.0,
+ "score": 0.8408855526666666,
+ "iscore": 0.8408855526666666,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 5.507142857142857,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 1.3442070957142858,
+ "rg": 3.8584057114285715,
+ "internal": 0.24952735266666667,
+ "move": 0.2785482938333333,
+ "shape": 0.029297532,
+ "ageMedian80": 30.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 5.116666666666666,
+ "end_clusters": 1.0,
+ "elong80": 1.161504317954808,
+ "hole80": 0.5176268507359086,
+ "chainy80": 0.05,
+ "edge80": 0.175,
+ "elong120": 1.1840739620358511,
+ "hole120": 0.3102004134039097,
+ "chainy120": 0,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "40/0/0/0/0",
+ "entropyRate": 8156.309845714285,
+ "heatOut120": 1007228.33,
+ "speed": 2.58,
+ "status": "ok",
+ "measures_t80": {
+  "t": 79.99999999999888,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 696.8135864257813,
+  "cy": 481.4134178161621,
+  "box": [
+   645.8856554031372,
+   419.54021739959717,
+   747.1335191726685,
+   536.184718132019
+  ],
+  "elong": 1.161504317954808,
+  "hole": 0.5176268507359086,
+  "edge": 0.175,
+  "deg": [
+   0,
+   1,
+   1,
+   38
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.05,
+  "boxAll": [
+   645.8856554031372,
+   419.54021739959717,
+   747.1335191726685,
+   536.184718132019
+  ]
+ },
+ "measures_t120": {
+  "t": 119.99999999999736,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 688.8844284057617,
+  "cy": 467.14954605102537,
+  "box": [
+   638.4740343093872,
+   412.53375720977783,
+   739.4148302078247,
+   529.5243883132935
+  ],
+  "elong": 1.1840739620358511,
+  "hole": 0.3102004134039097,
+  "edge": 0.225,
+  "deg": [
+   0,
+   0,
+   0,
+   40
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0,
+  "boxAll": [
+   638.4740343093872,
+   412.53375720977783,
+   739.4148302078247,
+   529.5243883132935
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/tc-qstockoff/snapshot.json",
+ "run": "experiments/runs/tissue/tc-qstockoff",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

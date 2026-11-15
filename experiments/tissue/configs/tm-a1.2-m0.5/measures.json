@@ -1,0 +1,123 @@
+{
+ "name": "tm-a1.2-m0.5",
+ "series": "map",
+ "description": "adhesion gene 1.2, motility gene 0.5",
+ "setting": "gene adhesion=1.2; gene motility=0.5",
+ "seed": 3,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 1.0,
+ "reform": 1.0,
+ "score": 1.0,
+ "iscore": 1.0,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 4.95,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 1.16887817,
+ "rg": 4.136633531428571,
+ "internal": 0.253744757,
+ "move": 0.3357263145,
+ "shape": 0.005194312803333333,
+ "ageMedian80": 80.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 4.75,
+ "end_clusters": 1.0,
+ "elong80": 1.1280857148459738,
+ "hole80": 0.12708600683390256,
+ "chainy80": 0.075,
+ "edge80": 0.2,
+ "elong120": 1.1267866660078636,
+ "hole120": 0.2377451973307717,
+ "chainy120": 0.075,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "40/0/0/0/0",
+ "entropyRate": 672.1102267142858,
+ "heatOut120": 91800.9216,
+ "speed": 10.56,
+ "status": "ok",
+ "measures_t80": {
+  "t": 80.00000000000033,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 604.2147186279296,
+  "cy": 403.060848236084,
+  "box": [
+   541.3926649093628,
+   347.5786180496216,
+   656.7535047531128,
+   463.3563585281372
+  ],
+  "elong": 1.1280857148459738,
+  "hole": 0.12708600683390256,
+  "edge": 0.2,
+  "deg": [
+   0,
+   0,
+   3,
+   37
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.075,
+  "boxAll": [
+   541.3926649093628,
+   347.5786180496216,
+   656.7535047531128,
+   463.3563585281372
+  ]
+ },
+ "measures_t120": {
+  "t": 119.99999999999929,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 653.1799499511719,
+  "cy": 427.6751655578613,
+  "box": [
+   602.1199083328247,
+   365.7746229171753,
+   706.0787706375122,
+   488.5560655593872
+  ],
+  "elong": 1.1267866660078636,
+  "hole": 0.2377451973307717,
+  "edge": 0.225,
+  "deg": [
+   0,
+   0,
+   3,
+   37
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.075,
+  "boxAll": [
+   602.1199083328247,
+   365.7746229171753,
+   706.0787706375122,
+   488.5560655593872
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/tm-a1.2-m0.5/snapshot.json",
+ "run": "experiments/runs/tissue/tm-a1.2-m0.5",
+ "commit": "6dd356e5480d673125f7895e47bc14226abf28fb"
+}

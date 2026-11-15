@@ -1,0 +1,7 @@
+{
+ "batch": "tissue-reruns-2",
+ "runs": [
+  "../map/tm-a0.6-s10.json",
+  "../map/tm-a1.2-m2.json"
+ ]
+}

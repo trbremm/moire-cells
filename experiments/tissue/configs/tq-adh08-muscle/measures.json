@@ -1,0 +1,123 @@
+{
+ "name": "tq-adh08-muscle",
+ "series": "pairs",
+ "description": "adhesion gene 0.8 + the clone commits to muscle (built-in stretch)",
+ "setting": "genome.rules.diff=True; gene adhesion=0.8; gene resp0=-1; gene resp1=1; gene resp2=-1; gene resp3=-1; gene threshold=0.6; gene recWidth=0.25",
+ "seed": 3,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 0.989265548,
+ "reform": 1.0,
+ "score": 0.989265548,
+ "iscore": 0.989265548,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 4.642857142857143,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 1.062721012857143,
+ "rg": 4.77207427,
+ "internal": 0.23008402483333334,
+ "move": 0.27650662516666663,
+ "shape": 0.019246386533333333,
+ "ageMedian80": 80.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 4.733333333333333,
+ "end_clusters": 1.0,
+ "elong80": 1.1184081230931175,
+ "hole80": 1.0795123546702006,
+ "chainy80": 0.05,
+ "edge80": 0.175,
+ "elong120": 1.133501041294167,
+ "hole120": 0.863762971398396,
+ "chainy120": 0.025,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "0/0/40/0/0",
+ "entropyRate": 754.6000527142858,
+ "heatOut120": 103073.176,
+ "speed": 4.64,
+ "status": "ok",
+ "measures_t80": {
+  "t": 79.99999999999834,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 621.7262649536133,
+  "cy": 370.5201477050781,
+  "box": [
+   561.3153667449951,
+   301.41747856140137,
+   688.3278217315674,
+   431.20764350891113
+  ],
+  "elong": 1.1184081230931175,
+  "hole": 1.0795123546702006,
+  "edge": 0.175,
+  "deg": [
+   0,
+   0,
+   2,
+   38
+  ],
+  "fates": [
+   0,
+   0,
+   40,
+   0,
+   0
+  ],
+  "chainy": 0.05,
+  "boxAll": [
+   561.3153667449951,
+   301.41747856140137,
+   688.3278217315674,
+   431.20764350891113
+  ]
+ },
+ "measures_t120": {
+  "t": 119.99999999999669,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 670.2366928100586,
+  "cy": 351.2975898742676,
+  "box": [
+   609.5108623504639,
+   283.1367473602295,
+   735.5563373565674,
+   417.1345844268799
+  ],
+  "elong": 1.133501041294167,
+  "hole": 0.863762971398396,
+  "edge": 0.25,
+  "deg": [
+   0,
+   0,
+   1,
+   39
+  ],
+  "fates": [
+   0,
+   0,
+   40,
+   0,
+   0
+  ],
+  "chainy": 0.025,
+  "boxAll": [
+   609.5108623504639,
+   283.1367473602295,
+   735.5563373565674,
+   417.1345844268799
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/tq-adh08-muscle/snapshot.json",
+ "run": "experiments/runs/tissue/tq-adh08-muscle",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

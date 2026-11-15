@@ -1,0 +1,123 @@
+{
+ "name": "th-Bfate-gain2",
+ "series": "hold",
+ "description": "field B per fate, like attracts, gain 2 (baseline 0.6)",
+ "setting": "charge.params.stock=False; cells.fields.gain=2",
+ "seed": 3,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 0.839760162,
+ "reform": 1.0,
+ "score": 0.839760162,
+ "iscore": 0.839760162,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 5.707142857142857,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 1.42711632,
+ "rg": 3.7446523314285716,
+ "internal": 0.20021313766666668,
+ "move": 0.280513951,
+ "shape": 0.025854359650000002,
+ "ageMedian80": 20.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 5.1000000000000005,
+ "end_clusters": 1.0,
+ "elong80": 1.1178915622167576,
+ "hole80": 0.5425264070528043,
+ "chainy80": 0.05,
+ "edge80": 0.175,
+ "elong120": 1.1134718458302524,
+ "hole120": 0.3062798578743116,
+ "chainy120": 0.025,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "40/0/0/0/0",
+ "entropyRate": 851.9873815714285,
+ "heatOut120": 117191.558,
+ "speed": 4.25,
+ "status": "ok",
+ "measures_t80": {
+  "t": 79.99999999999878,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 622.3110504150391,
+  "cy": 413.1550437927246,
+  "box": [
+   573.226222038269,
+   356.21502208709717,
+   675.1826524734497,
+   468.5281934738159
+  ],
+  "elong": 1.1178915622167576,
+  "hole": 0.5425264070528043,
+  "edge": 0.175,
+  "deg": [
+   0,
+   0,
+   2,
+   38
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.05,
+  "boxAll": [
+   573.226222038269,
+   356.21502208709717,
+   675.1826524734497,
+   468.5281934738159
+  ]
+ },
+ "measures_t120": {
+  "t": 119.99999999999704,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 672.1287216186523,
+  "cy": 439.3259147644043,
+  "box": [
+   616.2644300460815,
+   385.76357555389404,
+   733.298924446106,
+   488.67327404022217
+  ],
+  "elong": 1.1134718458302524,
+  "hole": 0.3062798578743116,
+  "edge": 0.2,
+  "deg": [
+   0,
+   0,
+   1,
+   39
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.025,
+  "boxAll": [
+   616.2644300460815,
+   385.76357555389404,
+   733.298924446106,
+   488.67327404022217
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/th-Bfate-gain2/snapshot.json",
+ "run": "experiments/runs/tissue/th-Bfate-gain2",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

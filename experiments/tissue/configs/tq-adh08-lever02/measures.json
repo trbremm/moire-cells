@@ -1,0 +1,123 @@
+{
+ "name": "tq-adh08-lever02",
+ "series": "pairs",
+ "description": "adhesion gene 0.8 + lever 0.2 (long beats)",
+ "setting": "cells.params.lever=0.2; gene adhesion=0.8",
+ "seed": 3,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 1.0,
+ "reform": 1.0,
+ "score": 1.0,
+ "iscore": 1.0,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 4.9,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 1.2097084299999998,
+ "rg": 4.066165004285714,
+ "internal": 0.28597790516666666,
+ "move": 0.30741330566666664,
+ "shape": 0.007837812678333334,
+ "ageMedian80": 80.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 4.866666666666666,
+ "end_clusters": 1.0,
+ "elong80": 1.1317028452379345,
+ "hole80": 0.3307529848398975,
+ "chainy80": 0,
+ "edge80": 0.175,
+ "elong120": 1.121949941166201,
+ "hole120": 0.3919395605279001,
+ "chainy120": 0,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "40/0/0/0/0",
+ "entropyRate": 690.6352009999999,
+ "heatOut120": 97349.3646,
+ "speed": 3.46,
+ "status": "ok",
+ "measures_t80": {
+  "t": 79.99999999999926,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 611.0477249145508,
+  "cy": 423.98316650390626,
+  "box": [
+   554.8596544265747,
+   362.98248767852783,
+   665.4608507156372,
+   478.2576036453247
+  ],
+  "elong": 1.1317028452379345,
+  "hole": 0.3307529848398975,
+  "edge": 0.175,
+  "deg": [
+   0,
+   0,
+   0,
+   40
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0,
+  "boxAll": [
+   554.8596544265747,
+   362.98248767852783,
+   665.4608507156372,
+   478.2576036453247
+  ]
+ },
+ "measures_t120": {
+  "t": 119.99999999999794,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 656.8205535888671,
+  "cy": 430.1762405395508,
+  "box": [
+   606.4198350906372,
+   369.89458751678467,
+   706.287745475769,
+   490.7486619949341
+  ],
+  "elong": 1.121949941166201,
+  "hole": 0.3919395605279001,
+  "edge": 0.2,
+  "deg": [
+   0,
+   0,
+   0,
+   40
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0,
+  "boxAll": [
+   606.4198350906372,
+   369.89458751678467,
+   706.287745475769,
+   490.7486619949341
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/tq-adh08-lever02/snapshot.json",
+ "run": "experiments/runs/tissue/tq-adh08-lever02",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

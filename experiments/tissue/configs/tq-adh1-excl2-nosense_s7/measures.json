@@ -1,0 +1,123 @@
+{
+ "name": "tq-adh1-excl2-nosense_s7",
+ "series": "pairs",
+ "description": "adhesion gene 1 + exclusion (2 states), field A not felt",
+ "setting": "cells.excl.on=True; cells.excl.states=2; cells.params.senseOn=False; gene adhesion=1",
+ "seed": 7,
+ "cells": 40,
+ "hold": 0.9500000000000001,
+ "persist": 0.9970760233333333,
+ "reform": 1.0,
+ "score": 0.9472222221666667,
+ "iscore": 0.9970760233333333,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 2.8000000000000003,
+ "clusters": 1.2857142857142858,
+ "isolated": 0.0,
+ "compact": 0.5924787292857143,
+ "rg": 5.667335292857143,
+ "internal": 0.09649737738333335,
+ "move": 0.15749183733333333,
+ "shape": 0.0060624993650000005,
+ "ageMedian80": 75.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 2.7999999999999994,
+ "end_clusters": 1.0,
+ "elong80": 1.4781544998817064,
+ "hole80": 0.48548603741346125,
+ "chainy80": 0.35,
+ "edge80": 0.825,
+ "elong120": 1.5124173571987751,
+ "hole120": 0.3898751483512527,
+ "chainy120": 0.35,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "40/0/0/0/0",
+ "entropyRate": 651.3517428571429,
+ "heatOut120": 92406.1676,
+ "speed": 9.22,
+ "status": "ok",
+ "measures_t80": {
+  "t": 80.00000000000047,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 621.3606231689453,
+  "cy": 394.92816162109375,
+  "box": [
+   541.7759141921997,
+   316.73598766326904,
+   702.3074598312378,
+   476.03005504608154
+  ],
+  "elong": 1.4781544998817064,
+  "hole": 0.48548603741346125,
+  "edge": 0.825,
+  "deg": [
+   0,
+   1,
+   13,
+   26
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.35,
+  "boxAll": [
+   541.7759141921997,
+   316.73598766326904,
+   702.3074598312378,
+   476.03005504608154
+  ]
+ },
+ "measures_t120": {
+  "t": 120.00000000000047,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 669.3047332763672,
+  "cy": 397.3988861083984,
+  "box": [
+   589.8619737625122,
+   313.4182081222534,
+   735.2456312179565,
+   497.3338270187378
+  ],
+  "elong": 1.5124173571987751,
+  "hole": 0.3898751483512527,
+  "edge": 0.825,
+  "deg": [
+   0,
+   1,
+   13,
+   26
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.35,
+  "boxAll": [
+   589.8619737625122,
+   313.4182081222534,
+   735.2456312179565,
+   497.3338270187378
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/tq-adh1-excl2-nosense_s7/snapshot.json",
+ "run": "experiments/runs/tissue/tq-adh1-excl2-nosense_s7",
+ "commit": "6dd356e5480d673125f7895e47bc14226abf28fb"
+}

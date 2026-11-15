@@ -1,0 +1,123 @@
+{
+ "name": "th-senseoff",
+ "series": "hold",
+ "description": "field A not felt (key S)",
+ "setting": "cells.params.senseOn=False",
+ "seed": 3,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 0.9890096618333333,
+ "reform": 1.0,
+ "score": 0.9890096618333333,
+ "iscore": 0.9890096618333333,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 4.492857142857143,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 0.8980064107142857,
+ "rg": 4.720047788571429,
+ "internal": 0.07452930875000001,
+ "move": 0.1623931813,
+ "shape": 0.004939483548333333,
+ "ageMedian80": 80.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 4.5,
+ "end_clusters": 1.0,
+ "elong80": 1.406047941987494,
+ "hole80": 0.3470872934684278,
+ "chainy80": 0.075,
+ "edge80": 0.3,
+ "elong120": 1.468202250590111,
+ "hole120": 0.2001414575851783,
+ "chainy120": 0.05,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "40/0/0/0/0",
+ "entropyRate": 648.5545201428571,
+ "heatOut120": 89930.9886,
+ "speed": 5.88,
+ "status": "ok",
+ "measures_t80": {
+  "t": 79.99999999999955,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 621.9404922485352,
+  "cy": 406.54417114257814,
+  "box": [
+   567.9923963546753,
+   334.2214307785034,
+   683.7705945968628,
+   473.15863513946533
+  ],
+  "elong": 1.406047941987494,
+  "hole": 0.3470872934684278,
+  "edge": 0.3,
+  "deg": [
+   0,
+   0,
+   3,
+   37
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.075,
+  "boxAll": [
+   567.9923963546753,
+   334.2214307785034,
+   683.7705945968628,
+   473.15863513946533
+  ]
+ },
+ "measures_t120": {
+  "t": 119.99999999999783,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 673.3319366455078,
+  "cy": 414.3014312744141,
+  "box": [
+   616.7875623703003,
+   339.17755603790283,
+   728.2951917648315,
+   481.29245471954346
+  ],
+  "elong": 1.468202250590111,
+  "hole": 0.2001414575851783,
+  "edge": 0.25,
+  "deg": [
+   0,
+   0,
+   2,
+   38
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.05,
+  "boxAll": [
+   616.7875623703003,
+   339.17755603790283,
+   728.2951917648315,
+   481.29245471954346
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/th-senseoff/snapshot.json",
+ "run": "experiments/runs/tissue/th-senseoff",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

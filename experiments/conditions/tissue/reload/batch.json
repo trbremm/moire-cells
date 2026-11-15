@@ -1,0 +1,8 @@
+{
+ "batch": "tissue-reload",
+ "runs": [
+  "tr-tq-dah-Bfate.json",
+  "tr-tk-adh1-excl2-nosense-100.json",
+  "tr-th-Bfate.json"
+ ]
+}

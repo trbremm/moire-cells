@@ -70,6 +70,12 @@ struct Draw {
   qNeg: vec4f,      // ... net -: the - ink
   // ---- step C6c: the honeycomb outline ----
   hexDraw: vec4f,   // x: corner rounding radius (share of r); y: the tube's gap inside the wall (CSS px, at most 0.08 r)
+  // ---- step C6c: the membrane chemistry's look (src/membrane.js; cells.look.memb*) ----
+  memb: vec4f,      // x: 1 = draw the membrane's integrity; y: how much an empty side's tube dims (0..1); z: integrity below which
+                    // a damaged side's tube breaks into dashes and flickers (only a membrane that has been whole); w: a heavy
+                    // membrane's second, inner tube (brightness, 0 = none)
+  memb2: vec4f,     // x: the flicker's depth; y: a burst's flash brightness; z: how much wider a thick membrane's tube is (at
+                    // 2.5 x tRef); w: tRef (the founders' usual thickness)
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
@@ -113,6 +119,26 @@ fn hex_inside(p: vec2f, in: VSOut) -> f32 {
     e = min(e, max(rc, min(x, y)) - length(q));
   }
   return e;
+}
+
+// Step C6c: which side of the membrane a point p (relative to the centre) belongs to, and how far along it (CSS px): a
+// honeycomb cell, the side whose line is nearest; an ellipse cell, the side's 60 degrees in its unstretched frame (lp)
+fn memb_side(p: vec2f, lp: vec2f, r: f32, in: VSOut) -> vec2f {
+  if (in.hh1.w > 0.5) {
+    let n = array<vec2f, 6>(in.nn0.xy, in.nn0.zw, in.nn1.xy, in.nn1.zw, in.nn2.xy, in.nn2.zw);
+    let h = array<f32, 6>(in.hh0.x, in.hh0.y, in.hh0.z, in.hh0.w, in.hh1.x, in.hh1.y);
+    var best = 1e9;
+    var k0 = 0;
+    for (var k = 0; k < 6; k++) {
+      let a = h[k] - (n[k].x * p.x + n[k].y * p.y);
+      if (a < best) { best = a; k0 = k; }
+    }
+    let t = n[k0].x * p.y - n[k0].y * p.x;
+    return vec2f(f32(k0), t);
+  }
+  var ang = atan2(lp.y, lp.x);
+  if (ang < 0.0) { ang += TAU; }
+  return vec2f(f32(min(u32(ang / P3), 5u)), ang * r);
 }
 
 // the fate's ink (stem, epithelium, muscle, neuron, cartilage), from the palette in use (src/palette.js)
@@ -269,9 +295,46 @@ fn fs(in: VSOut) -> @location(0) vec4f {
 
   let neon = D.neon.x > 0.5;
   // thinner outline on small cells, so they do not turn solid (neon: the tube, a little wider)
-  let lw = select(min(D.lineW, 0.22 * c.r), min(D.neon.y, 0.3 * c.r), neon);
+  var lw = select(min(D.lineW, 0.22 * c.r), min(D.neon.y, 0.3 * c.r), neon);
+  // step C6c, the membrane as material: the side this pixel's tube belongs to and its integrity; an empty (never built) or
+  // bitten side's tube is dimmer and thinner, a thick membrane's a little wider, a heavy one's doubled by a fainter inner
+  // tube; a damaged side of a membrane that has been whole breaks into dashes and flickers; a burst cell flashes
+  var ig = 1.0;
+  var mGap = 1.0;          // the tube's coverage along the side (dashes)
+  var mDim = 1.0;          // its brightness
+  var inner = 0.0;         // the heavy membrane's inner tube
+  let bt = cell_burst(c.flags);
+  if (D.memb.x > 0.5) {
+    let sd = memb_side(in.local, lp, c.r, in);
+    let side = u32(sd.x);
+    ig = clamp(c.integ[side], 0.0, 1.0);
+    let gmb = g.memb;
+    lw *= (0.75 + 0.25 * ig) * (1.0 + D.memb2.z * clamp((gmb.y / max(D.memb2.w, 1e-4) - 1.0) / 1.5, 0.0, 1.0));
+    mDim = 1.0 - D.memb.y * (1.0 - ig);
+    let hsh = f32((c.seed >> (4u * side)) & 15u) / 16.0;
+    let whole = (c.flags & CELL_WHOLE) != 0u;
+    var dmg = select(0.0, clamp(1.0 - ig / max(D.memb.z, 1e-3), 0.0, 1.0), whole);
+    if (bt != 0u) { dmg = 0.75; }
+    if (dmg > 0.0) {
+      // dashes along the side, about 0.45 r long; the gaps grow as the side empties (up to 70 % of it)
+      let per = max(0.45 * c.r, 2.0);
+      let u = fract(sd.y / per + hsh);
+      let gap = 0.7 * dmg;
+      mGap = clamp(min(u - gap, 1.0 - u) * per / aa + 0.5, 0.0, 1.0);
+      if (gap <= 0.0) { mGap = 1.0; }
+      mDim *= 1.0 - D.memb2.x * dmg * (0.5 + 0.5 * sin(TAU * (D.hum.z * (2.3 + 1.7 * hsh)) + 6.0 * hsh));
+    }
+    inner = D.memb.w * smoothstep(0.35, 0.85, gmb.x) * (0.6 + 0.4 * ig);
+  }
   let dot = select(0.0, cover(D.dotR * s, dd, aad) * cover_in(ein - lw - 0.12 * D.R, aa), D.dots > 0.0);
-  let ring = 1.0 - cover_in(ein - lw, aa);        // clean outline at the rim
+  var ring = (1.0 - cover_in(ein - lw, aa)) * mGap;   // clean outline at the rim (step C6c: broken where the membrane is)
+  // step C6c: a heavy membrane's inner tube, a thin line just inside the outer one (a gap of about 0.8 px)
+  var ring2 = 0.0;
+  if (inner > 0.0) {
+    let g0 = lw + max(0.8, 0.6 * lw);
+    let w2 = max(0.45 * lw, 0.5 / D.dpr);
+    ring2 = clamp(min(ein - g0, g0 + w2 - ein) / aa + 0.5, 0.0, 1.0) * mGap;
+  }
   // committed cells get a flat fill in their colour, so tissues read as areas; stem cells stay dark inside
   // (neon: every inside dark, a faint tint; the fills come from src/cells.js by the look)
   let fill = select(select(D.fill, D.fillC, c.kind != KIND_STEM), D.inkOther.w, strategyView || chargeView);
@@ -374,6 +437,15 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       rgb = mix(rgb, select(D.pInk.rgb, col * D.line, clock) * abs(D.hand), hnd);
     }
   }
+  // step C6c: the membrane's dimming and flicker, the heavy membrane's inner tube, a burst's flash (white, fading over
+  // BURST_TICKS, the inside lit for a moment)
+  lineCol *= mDim;
+  if (ring2 > 0.0) { rgb = mix(rgb, lineCol * inner, ring2); }
+  if (bt != 0u && D.memb2.y > 0.0) {
+    let fa = 1.0 - f32(bt - 1u) / f32(BURST_TICKS);
+    lineCol = mix(lineCol, vec3f(1.0), fa) * (1.0 + D.memb2.y * fa);
+    rgb += col * 0.25 * D.memb2.y * fa * fa;
+  }
   rgb = mix(rgb, lineCol, ring);
   // step 6, rule 1: a cell leaking into field B gets a flat blue centre dot, its area growing with the leak
   var mark = 0.0;
@@ -388,7 +460,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   if (D.dim > 0.0) { rgb *= 1.0 - D.dim * (1.0 - smoothstep(0.0, max(D.starve, 1e-3), c.bat)); }
   // step C6n: the hum (1 when it is off or the look is flat)
   rgb *= hum_bright(c, in.id);
-  let a = disc * mix(D.fillA, 1.0, max(max(max(max(max(max(ring, dot * (1.0 - clearA)), mark), bar), hnd), coreA), partA));
+  let a = disc * mix(D.fillA, 1.0, max(max(max(max(max(max(max(ring, ring2), dot * (1.0 - clearA)), mark), bar), hnd), coreA), partA));
   // rgb is the colour as seen; blend premultiplied (one, one-minus-src-alpha)
   return vec4f(rgb * a, a);
 }

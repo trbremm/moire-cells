@@ -1,0 +1,77 @@
+{
+  "name": "g-oxy-control_s3",
+  "description": "Oxygen control: full field, kUpSwap default 0.02, 40 min.",
+  "condition": {
+    "name": "g-oxy-control_s3",
+    "description": "Oxygen control: full field, kUpSwap default 0.02, 40 min.",
+    "query": {
+      "light": "full",
+      "seed": 3
+    },
+    "duration": 2400,
+    "sample_every": 20,
+    "shots": [
+      {
+        "t": 120
+      },
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 900
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1800
+      },
+      {
+        "t": 2400
+      },
+      {
+        "t": 2400,
+        "view": "strategy"
+      },
+      {
+        "t": 2400,
+        "view": "lineage",
+        "panel": true
+      }
+    ]
+  },
+  "url": "http://localhost:52335/index.html?speed=max&until=0&overlay=ghost&ui=0&light=full&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "adf3d6c97370802fd8324445e748ee1c000d4268",
+  "dirty": false,
+  "started": "2026-11-15T12:55:25",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 2400.0,
+  "run_wall_s": 3208.93,
+  "speed_reached": 0.75,
+  "samples": 121,
+  "shots": [
+    "shots/t120.png",
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t900.png",
+    "shots/t1200.png",
+    "shots/t1800.png",
+    "shots/t2400.png",
+    "shots/t2400_strategy.png",
+    "shots/t2400_lineage.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-15T13:50:06",
+  "wall_s": 3281.47
+}

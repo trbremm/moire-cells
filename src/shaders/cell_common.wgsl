@@ -1,7 +1,7 @@
 // ===== cell_common.wgsl: the cells' state, the simulation uniforms and the neighbour grid =====
 // Not compiled on its own: src/cells.js prepends field_common.wgsl and then this file to every cell shader.
 //
-// Cells live in a fixed-capacity storage buffer (struct Cell, 288 bytes since step C10, 256 since C7; keep in step with CELL_* in
+// Cells live in a fixed-capacity storage buffer (struct Cell, 312 bytes since step C12b, 288 since C10, 256 since C7; keep in step with CELL_* in
 // src/cells.js, and CELL_FLOATS in heat.wgsl). Their order never changes, so drawing order is stable and a cell keeps its index.
 // Step C9: Sim.count is the CAPACITY; a slot is a live cell while its flags have CELL_ALIVE. The grid sorts the dead slots
 // into one more bucket after the last grid cell (cell_grid.wgsl), so sorted[0 .. starts[gw gh]) are the live cells and the
@@ -79,7 +79,15 @@ struct Cell {
                     // the neighbours read it)
   wlink: u32,       // linker counts the membrane holds for adhesion (beyond what the membrane itself wants; eat pass, census)
   wpay: u32,        // heat counts the battery paid this tick as the adhesion's upkeep (eat pass, census)
+  // ---- step C12b, lipid membranes (src/lipids.js; the record is 312 bytes since C12b) ----
+  lip: array<u32, 6>, // per side, pack4x8unorm: x the side's STIFFNESS / LIP_KMAX (derived from its lipids, its integrity, the heat,
+                    // the thickness and the stiffness gene: what the step's corner springs use), y the wall's heavy share (LL of
+                    // ll + LL), z the bilayer's oil share (oil / (soap + oil)), w the WALL's cover (crust / what a full wall
+                    // holds); written by the eat pass while the lipid membranes are on (else 0), read by the step and the drawing
 };
+// step C12b: a side's lipid words (x stiffness / LIP_KMAX, y the wall's heavy share, z the oil share, w the wall's cover)
+const LIP_KMAX: f32 = 4.0;   // the honeycomb's stiffest (as memb_stiff's cap): a full crust wall
+fn lip_side(c: Cell, k: u32) -> vec4f { return unpack4x8unorm(c.lip[k]); }
 const NBR_NONE: u32 = 0xffffu;
 fn nbr_at(w: array<u32, 3>, k: u32) -> u32 { return (w[k >> 1u] >> (16u * (k & 1u))) & 0xffffu; }
 fn cell_nbr(c: Cell, k: u32) -> u32 { return nbr_at(c.nbr, k); }
@@ -309,6 +317,11 @@ struct Bio {
                     // (+: the ends sticky, the sides not; -: the sides sticky), -1..1; z w: how much the front follows the
                     // dipole, 0..1; w step C11: the DIVISION AXIS, 0..1: a daughter is put along the front (0), across it (1) or
                     // at that share of a right angle between
+  // ---- step C12b: the lipid membrane's genes (src/genome.js, src/lipids.js, cell_eat.wgsl). With the lipid membranes on,
+  // memb.x (the C6c MIX) means the OIL share: oil molecules wanted per soap molecule of the bilayer, 0..1 ----
+  lip: vec4f,       // x WALL: the crust wall wanted, as a share of a full wall (a full wall holds as much crust as the bilayer
+                    // holds lipid), 0..1; y HEAD: which head the cell puts on the soap it makes, -1 (all t: tlL, -) .. 1 (all g:
+                    // glL, +); z the wall's ROW: its heavy share (LL of ll + LL), 0..1; w spare
 };
 // step C7: a pump slot's channel, direction (1 = OUT) and the substances it may pump: PUMP_NCH of them, channels 0..9 and
 // trace (12), not the sediments ll, LL (PUMP_CHANNELS in src/genome.js)
@@ -557,6 +570,9 @@ fn mutate(p: Bio, seed: u32, size: f32, jump: f32, engJump: f32, pumpJump: f32) 
   b.wall = vec4f(nudge(b.wall.x, size * 0.04, -1.0, 1.0, seed, 140u), nudge(b.wall.y, size * 0.04, -1.0, 1.0, seed, 141u),
                  nudge(b.wall.z, size * 0.04, 0.0, 1.0, seed, 142u), nudge(b.wall.w, size * 0.04, 0.0, 1.0, seed, 143u));
   // (step C11: w, the division axis, drifts the same way)
+  // step C12b: the lipid genes drift (wall, head and the wall's row: additive steps, as the mix's)
+  b.lip = vec4f(nudge(b.lip.x, size * 0.03, 0.0, 1.0, seed, 150u), nudge(b.lip.y, size * 0.04, -1.0, 1.0, seed, 151u),
+                nudge(b.lip.z, size * 0.03, 0.0, 1.0, seed, 152u), b.lip.w);
   return b;
 }
 
@@ -867,6 +883,7 @@ const DP_FIELD: u32 = 4u;    // the field turns and stretches cells: the torque 
 const MB_ELASTIC: u32 = 1u;
 const MB_SOFT: u32 = 2u;
 const MB_BURST: u32 = 4u;
+const MB_LIPID: u32 = 8u;     // step C12b: the lipid membranes: each corner's stiffness from its two sides' Cell.lip (eat pass)
 const EAT_PAY: u32 = 1u;
 const EAT_HEAT: u32 = 2u;
 const EAT_BIAS: u32 = 4u;

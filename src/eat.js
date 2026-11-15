@@ -47,11 +47,14 @@ import { Membrane, MB_SNAP_WORDS } from './membrane.js';
 import { Pumps, PU_SNAP_WORDS } from './pumps.js';
 import { Catalysts, CAT_SNAP_WORDS } from './catalysts.js';
 import { HardLight, HL_SNAP_WORDS } from './hardlight.js';
+import { Lipids, LIP_SNAP } from './lipids.js';
 
-const SW = 32;                      // stock words per cell (cell_eat.wgsl; 16 until step C6c's membranes, words 16..27; step C7:
-                                    // 14 the pumped charge across the membrane, 15 the voltage's energy)
-const EP_BYTES = 1504;              // struct EatP (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat; step C8: + hl;
-                                    // step C9: + dv; step C10: + wl0, wl1)
+export const SW = 64;               // stock words per cell (cell_eat.wgsl; 16 until step C6c's membranes, words 16..27; step C7:
+                                    // 14 the pumped charge across the membrane, 15 the voltage's energy; 32 until step C12b's
+                                    // lipid membrane, words 32..61)
+const EP_BYTES = 1648;              // struct EatP (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat; step C8: + hl;
+                                    // step C9: + dv; step C10: + wl0, wl1; step C12b: + lp[9])
+const EP_LP = 376;                  // ... its words lp (step C12b)
 const EP_DV = 364;                  // ... its word dv (step C9)
 const EP_WL = 368;                  // ... its word wl0 (step C10)
 const LG_DIV = 22272;               // heat_common.wgsl: step C9's counters (the divisions' cost)
@@ -129,6 +132,7 @@ export class Eat {
     this.pumps = new Pumps(this);         // step C7: pumps and the membrane voltage (src/pumps.js)
     this.catalysts = new Catalysts(this); // step C7b: the catalysts (src/catalysts.js)
     this.hardlight = new HardLight(this); // step C8: hard light mutates (src/hardlight.js)
+    this.lipids = new Lipids(this);       // step C12b: lipid membranes (src/lipids.js)
   }
 
   static async create(device, cells) {
@@ -259,6 +263,7 @@ export class Eat {
     // step C9: a reset fills the first `start` slots (they get the starter charge); a division's cost (heat counts)
     u[EP_DV] = this.cells.start; u[EP_DV + 1] = this.cells.division.costCounts; u[EP_DV + 2] = 0; u[EP_DV + 3] = 0;
     this.cells.walls.writeEat(u, f, EP_WL, dt);   // step C10: the walls' pattern, maturity, linker cost and upkeep
+    this.lipids.write(u, f, EP_LP);               // step C12b: the lipid membranes
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
   }
 
@@ -296,6 +301,7 @@ export class Eat {
     encoder.clearBuffer(this.heat.buffer, LG_PU * 4, PU_SNAP_WORDS * 4);   // step C7: the pumps' census (snapshot)
     encoder.clearBuffer(this.heat.buffer, LG_CAT * 4, CAT_SNAP_WORDS * 4); // step C7b: the catalysts' census (snapshot)
     encoder.clearBuffer(this.heat.buffer, LG_HL * 4, HL_SNAP_WORDS * 4);   // step C8: the hard light census (snapshot)
+    encoder.clearBuffer(this.heat.buffer, LIP_SNAP.E * 4, (LIP_SNAP.E_WORDS + LIP_SNAP.S_WORDS) * 4);   // step C12b: the lipids (snapshot)
     const pass = encoder.beginComputePass({ label: 'cell eat ledger' });
     pass.setPipeline(this.pipes.ledger);
     pass.setBindGroup(0, this.bg, [0]);
@@ -342,7 +348,13 @@ export class Eat {
     });
     const cnt = [0, 1, 2, 3, 4].map((k) => plain(LG_K.COUNT + 64 * k));
     const atoms = SUBSTANCES.reduce((x, s, c) => x + stock[c] * s.atoms.length, 0);
-    const chem = SUBSTANCES.reduce((x, s, c) => x + stock[c] * s.energy, 0);
+    // (step C12b: the lipid membranes' molecules are in `stock` as their atoms, at the free atoms' energy; their chemical energy,
+    // below that, is counted on its own)
+    this.lipids.apply(rec, w);
+    const chem = SUBSTANCES.reduce((x, s, c) => x + stock[c] * s.energy, 0) + this.lipids.energy;
+    // what the cells hold per channel (for the dish's active channels): the stock, and the membranes' molecules as themselves
+    const held = Float64Array.from(stock);
+    for (let c = 0; c < NCH; c++) held[c] += this.lipids.held[c];
     const H = this.hist;
     H.push([rec.time, ...EV.map((k) => T[k])]);
     while (H.length > 2 && rec.time - H[1][0] >= 1) H.shift();
@@ -361,7 +373,7 @@ export class Eat {
     this.census = this.readCensus(w, rec.time);
     this.membrane.apply(rec, w);   // step C6c
     this.pumps.apply(rec, w);      // step C7
-    this.ledger = { time: rec.time, stock, atoms, chem, bat, start: this.start, full: cnt[0], empty: cnt[1], stuffed: cnt[2], n: cnt[3], hot: cnt[4], rate, rate2 };
+    this.ledger = { time: rec.time, stock, held, atoms, chem, bat, start: this.start, full: cnt[0], empty: cnt[1], stuffed: cnt[2], n: cnt[3], hot: cnt[4], rate, rate2 };
     this.catalysts.apply(rec, w);  // step C7b (after the ledger: it reads the trace in the cells)
     this.hardlight.apply(rec, w);  // step C8
     // step C9: the energy the divisions' cost turned into heat

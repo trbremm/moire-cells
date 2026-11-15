@@ -50,6 +50,7 @@ export const RULE_GROUPS = [
   ['walls', 'Patterned walls (step C10)'],
   ['turn', 'Glue turns cells (step C11)'],
   ['oil', 'Oils and water (step C12)'],
+  ['lipids', 'Lipid membranes (step C12b)'],
   ['state', 'Save and load the state (experiments)'],
 ];
 
@@ -516,6 +517,29 @@ export function makeActions(app) {
     oknob('oilFull', 'oil per full pixel', 'full', 0.1, 20, 1.25, 2, 'oil atoms per R² that fill a pixel: a droplet packs to this, then grows in area'),
     oknob('oilSkin', 'soap skin', 'skin', 0, 50, 1.5, 2, 'a full soap film slows oil crossing it to 1 / (1 + this): coated droplets hold together and merge less'),
     oknob('oilFilm', 'soap per full film', 'filmFull', 0.05, 10, 1.25, 2, 'amphiphile atoms per R² that make a full film in a pixel'),
+  );
+
+  // ---------- lipid membranes (step C12b; panel only: no keys are free) ----------
+  const LI = () => app.cells.eat.lipids.params;
+  const liNote = () => (!E().on ? ' (cells eat is off: Shift+A)' : !MB().on ? ' (membrane chemistry is off)' : LI().on ? '' : ' (lipid membranes are off)');
+  const lknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'lipids', type: 'knob', get: () => LI()[key].toFixed(digits),
+    run: (k) => { const p = LI(); p[key] = Math.max(lo, Math.min(hi, +(p[key] * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    { id: 'lipids', keys: [], label: 'lipid membranes', group: 'lipids', type: 'toggle', get: () => LI().on,
+      run: () => `lipid membranes ${flip(LI(), 'on') ? 'on: each membrane is a soap bilayer (pearly, soft), stiffened by oil between its tails (glossy), with a crust wall outside if the genes ask (an amber rim: rigid, brittle); how stiff each side is follows from what it is made of' : 'off: the C6c membrane, a weave of linkers (the lipids are shed into the dish)'}${E().on && MB().on ? '' : ' (needs the cells eating and the membrane chemistry)'}`,
+      help: 'membranes made of lipids: soap (a charged head on an oily tail) is the bilayer, oil between its tails stiffens it, a crust wall outside makes it rigid; the stiffness is derived from the mix' },
+    { id: 'lipHeat', keys: [], label: 'heat fluidises', group: 'lipids', type: 'toggle', get: () => LI().heat,
+      run: () => `heat ${flip(LI(), 'heat') ? 'makes the bilayer fluid: hot cells are softer (stiffness × 2 / (1 + temperature / Tref))' : 'leaves the bilayer as it is'}${liNote()}`,
+      help: 'a hot bilayer is more fluid: its stiffness falls with the temperature under the cell (oilier membranes stay stiffer)' },
+    { id: 'lipCrack', keys: [], label: 'walls crack', group: 'lipids', type: 'toggle', get: () => LI().crack,
+      run: () => `walls ${flip(LI(), 'crack') ? 'crack: where a walled cell is squashed out of shape its crust breaks off into the dish' : 'never crack'}${liNote()}`,
+      help: 'a crust wall is a crystal, rigid and brittle: a corner squashed far out of shape breaks the crust of its two sides off' },
+    { id: 'lipHeads', keys: [], label: 'soap heads charge', group: 'lipids', type: 'toggle', get: () => LI().heads,
+      run: () => `soap heads ${flip(LI(), 'heads') ? 'charge the cell and its sides: glL (+), tlL (−) in the membrane count in its charge (field B, the substrate’s field, dipoles)' : 'carry no charge for the fields (the books still count them)'}${liNote()}`,
+      help: 'a membrane rich in glL (+) or tlL (−) charges its cell and, with dipoles on, its own sides' },
+    lknob('lipTref', 'soap stiff at', 'tRef', 0.25, 64, 1.25, 2, 'the temperature (heat per R²) at which a pure soap bilayer has stiffness 1; above it softer, below stiffer'),
+    lknob('lipCrackAt', 'wall cracks at', 'crackAt', 0.02, 2, 1.25, 2, 'a corner jolted into a swing this large (a share of the radius) cracks its two sides’ crust'),
+    lknob('lipFuse', 'lipid fusion', 'fuseK', 0.01, 20, 1.5, 2, 'share of a side’s missing soap or oil it takes from the dish under the cell per s'),
   );
 
   // ---------- hard light mutates (step C8; panel only: no keys are free) ----------

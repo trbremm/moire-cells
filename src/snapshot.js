@@ -154,6 +154,7 @@ export function settingObjects(M) {
     'landscape.params': M.landscape.params, 'medium.params': M.medium.params, 'neon.params': M.neon.params,
     'walls.params': M.walls.params, 'walls.look': M.walls.look,   // step C10
     ...(M.oil ? { 'oil.params': M.oil.params } : {}),            // step C12
+    ...(M.lipids ? { 'lipids.params': M.lipids.params, 'lipids.look': M.lipids.look } : {}),   // step C12b
   };
 }
 const SCALARS = [['neon.on', (M) => M.neon, 'on'], ['background.heatOn', (M) => M.background, 'heatOn'], ['background.ambient', (M) => M.background, 'ambient']];
@@ -194,6 +195,7 @@ function captureBooks(M) {
     eat: { tot: clone(E.tot), tot2: clone(E.tot2), start: E.start },
     membrane: clone(M.membrane.tot), pumps: clone(M.pumps.tot), hardlight: clone(M.hardlight.tot),
     oil: M.oil ? clone(M.oil.tot) : null,   // step C12
+    lipids: M.lipids ? clone(M.lipids.tot) : null,   // step C12b
     division: { costTot: M.division.costTot || 0 },
     rounding: {
       energy: H.ledger ? H.ledger.rounding : null, atoms: Mt.ledger ? Mt.ledger.rounding : null,
@@ -212,11 +214,12 @@ function restoreBooks(M, B) {
   E.tot = clone(B.eat.tot); E.tot2 = clone(B.eat.tot2); E.start = B.eat.start;
   M.membrane.tot = clone(B.membrane); M.pumps.tot = clone(B.pumps); M.hardlight.tot = clone(B.hardlight);
   M.division.costTot = B.division.costTot;
+  if (M.lipids) { for (const k of Object.keys(M.lipids.tot)) M.lipids.tot[k] = (B.lipids && B.lipids[k]) || 0; }   // (step C12b)
 }
 
 /** Every rate history and time series starts again (their windows would span the jump in time). */
 function clearHistories(M) {
-  const mods = [M.heat, M.matter, M.eat, M.membrane, M.pumps, M.catalysts, M.hardlight, M.dipole, M.division, M.cells, M.charge, M.oil].filter(Boolean);   // (step C12: + the oil)
+  const mods = [M.heat, M.matter, M.eat, M.membrane, M.pumps, M.catalysts, M.hardlight, M.dipole, M.division, M.cells, M.charge, M.oil, M.lipids].filter(Boolean);   // (step C12: + the oil; C12b: + the lipids)
   for (const m of mods) {
     for (const k of Object.keys(m)) if (/(^hist|Hist$|hist\d$|^series$)/.test(k) && Array.isArray(m[k])) m[k] = [];
   }
@@ -331,8 +334,12 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     // step C10: a snapshot from before the patterned walls (cells of 64 words, genomes of 48) loads with the new words empty (front
     // 0, no maturity, no adhesion until the eat pass's first tick; wall genes a1 = a2 = w = 0, a uniform wall) and with the walls
     // OFF, so it runs on as it was saved; other layouts are refused
+    // step C12b: one from before the lipid membranes (cells of 72 words, genomes of 52, stocks of 32) loads the same way, with the new
+    // words empty (no lipids in any membrane, lipid genes 0) and with the lipid membranes OFF, so it runs on as it was saved
     const oldC10 = S.layout.cellWords === 64 && S.layout.bioWords === 48;
-    if (!oldC10 && (S.layout.cellWords !== CELL_FLOATS || S.layout.bioWords !== BIO_FLOATS)) {
+    const oldC12 = S.layout.cellWords === 72 && S.layout.bioWords === 52;
+    const widen = oldC10 || oldC12;
+    if (!widen && (S.layout.cellWords !== CELL_FLOATS || S.layout.bioWords !== BIO_FLOATS)) {
       throw new Error(`snapshot layout (cell ${S.layout.cellWords}, bio ${S.layout.bioWords} words) does not match this page (${CELL_FLOATS}, ${BIO_FLOATS})`);
     }
     const m = S.alive;
@@ -355,6 +362,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     if (!S.grid) notes.push('no grid in the snapshot (cells only): the page\'s grid kept');
 
     if (opts.settings !== false) applySettings(M, S.settings);
+    if (opts.settings !== false && M.lipids && !(S.settings && S.settings['lipids.params'])) {
+      M.lipids.params.on = false;
+      notes.push('saved before step C12b: lipid membranes off (as it ran)');
+    }
     if (opts.settings !== false && !(S.settings && S.settings['walls.params'])) {
       M.walls.params.on = false;
       notes.push('saved before step C10: patterned walls off (as it ran)');
@@ -371,16 +382,21 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     const n = C.count, SW = C.eat.stockBuf.size / 4 / n;
     const idx = await unpack(S.cells.idx);
     let rec = await unpack(S.cells.rec), bio = await unpack(S.cells.bio);
-    const stock = await unpack(S.cells.stock);
-    if (oldC10) {   // widen the records to this page's layout (the new words zero)
+    let stock = await unpack(S.cells.stock);
+    if (widen) {   // widen the records to this page's layout (the new words zero)
+      const cw = S.layout.cellWords, bw = S.layout.bioWords;
       const r2 = new Uint32Array(m * CELL_FLOATS), b2 = new Uint32Array(m * BIO_FLOATS);
       for (let k = 0; k < m; k++) {
-        r2.set(rec.subarray(k * 64, (k + 1) * 64), k * CELL_FLOATS);
-        b2.set(bio.subarray(k * 48, (k + 1) * 48), k * BIO_FLOATS);
+        r2.set(rec.subarray(k * cw, (k + 1) * cw), k * CELL_FLOATS);
+        b2.set(bio.subarray(k * bw, (k + 1) * bw), k * BIO_FLOATS);
       }
       rec = r2; bio = b2;
     }
-    if (S.layout.stockWords !== SW) throw new Error(`snapshot stock records have ${S.layout.stockWords} words, this page ${SW}`);
+    if (S.layout.stockWords < SW && S.layout.stockWords === 32) {   // (step C12b: stocks of 32 words: the lipid words empty)
+      const s2 = new Uint32Array(m * SW), ow = S.layout.stockWords;
+      for (let k = 0; k < m; k++) s2.set(stock.subarray(k * ow, (k + 1) * ow), k * SW);
+      stock = s2;
+    } else if (S.layout.stockWords !== SW) throw new Error(`snapshot stock records have ${S.layout.stockWords} words, this page ${SW}`);
     const sameSlots = m === 0 || Math.max(...idx) < n;
     if (!sameSlots) notes.push('slots packed (the capacity is smaller than the snapshot\'s slot numbers)');
     const cu = new Uint32Array(n * CELL_FLOATS), cf = new Float32Array(cu.buffer);

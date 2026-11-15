@@ -43,7 +43,7 @@ const PC = ['inLight', 'inHeavy', 'inLink', 'inFuel', 'inTrace', 'outLight', 'ou
 const CLASSES = ['light atoms', 'heavy atoms', 'linkers', 'fuel', 'trace'];
 const CLS = ['Light', 'Heavy', 'Link', 'Fuel', 'Trace'];
 const ENERGY = /^(grad|vwork|vheat|vbat|upkeep)$/;
-const STOCK_WORDS = 32;            // cell_eat.wgsl SW
+const STOCK_WORDS = 64;            // cell_eat.wgsl SW (32 until step C12b)
 
 /** A pump gene's short name: "OUT g", "IN gT". */
 export function geneName(bin) {

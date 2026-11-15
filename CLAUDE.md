@@ -393,6 +393,29 @@ C10. PATTERNED WALLS: EVOLVABLE ADHESION PER SIDE (user 2026-11-15: "evolve wall
       cysts with a lumen, chains, palisades), then with evolution. Lessons from the tissue series: the default
       moire beat shakes small tissues apart (a long beat glues); long-range like-attracts-like gathers cells.
 
+    AS BUILT (C10): a0 = the old adhesion gene; genome 52 floats; Cell 288 bytes, CellCore 120. Hand-set patterns cut
+    tissue into small pieces shaped by the pattern (rosettes, dumbbells, rafts), because cells cannot turn their
+    sticky side to a neighbour; no visible selection in 20 min (patterns drift as fast with walls off).
+C11. GLUE TURNS THE CELL + DIVISION ALONG THE FRONT (user 2026-11-15: "yes absolutely"): a sticky side pulling on
+    a neighbour pulls off-centre, so the same contact force also gives a TORQUE that turns the cell (its honeycomb
+    and front) until sticky sides face neighbours (derived from the forces, no "face your neighbour" rule).
+    Division splits along (or across: a gene) the front, so daughters land where the pattern says. Wall cost:
+    Claude's call (user): retune so the default colony packs as a honeycomb again while glue still costs.
+OXYGEN RETRY (user yes): a never-drying light spring plus a slow heavy spring, 40-60 min, watching the swap rate
+    inside cells (cells.rate.inSwap), not the carrier count; whole dish lit and spotlight.
+PROPOSED NEXT (user 2026-11-15, ideas under discussion, not agreed in detail):
+- OILS: a water-shy property derived from the atoms (uncharged linker-rich molecules are oily); oily substances
+  gather with their own kind on the grid (phase separation: droplets, films), membranes are oil, droplets can fuse
+  with membranes; protocell-like compartments may form in the open.
+- PRIMORDIAL SOUP: randomly generated molecules (strings of atoms) dripped in at random; a fixed number of species
+  slots on the grid, recycled when a species dies out; every property derived from the sequence (energy, charge,
+  oiliness, and which reaction it catalyses, from a hash of the sequence), so autocatalytic sets can emerge.
+- FIELDS AS GENES, FIELDS AS GUIDES (user: "I envisioned the field just to guide the underlying interactions; maybe
+  we let them mutate their different fields more"): every field parameter becomes genetic and mutates (period /
+  lever, emission strength, sensing gain and sign, tuning width, per field), and the field's main effect becomes
+  GUIDING interactions (gating glue, pumps, engines, division direction by the local field, as genes decide)
+  rather than pushing cells directly.
+
 EXPERIMENTS (user 2026-11-15; after C6..C9 are all done): run experiments with interesting, different
 conditions and RECORD anything interesting: patterns, behaviours, and the statistics, MAINLY ENTROPY (entropy
 rate, heat out vs ORDER, rounding/"free entropy"), plus counts, strategies, free light atoms (oxygen-like

@@ -1131,7 +1131,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   if (c.seed != sorted[j].seed || died) { c.flags &= ~(255u << CELL_LEAK_SHIFT); }
   else { c.flags = (c.flags & ~(255u << CELL_LEAK_SHIFT)) | (u32(round(clamp(me.lk.w, 0.0, 1.0) * 255.0)) << CELL_LEAK_SHIFT); }
   // step C10: the walls' census (the frame's last tick): the genes, the pattern classes, the junctions, the glue, the cost
-  if (wallOn && S.xCount != 0u && !died) {
+  if (S.xCount != 0u && !died) {   // (the genes also while the walls are off: their drift, for comparison)
     let g = bio.wall;
     let a1 = g.x;
     let a2 = g.y;

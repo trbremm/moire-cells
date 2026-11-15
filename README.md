@@ -51,7 +51,7 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
     the landscape, which substance is shown, colour by fate, lineage, strategy (step C6) or charge (step C6b), and the
     other drawing switches;
   - *rules*: every rule that has a key, as a switch with a one-line explanation and its key, grouped as below
-    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge, membrane chemistry (step C6c, panel only), charge per side (step C6d, panel only: the dipoles' switches and six knobs with - and +)); settings with several values show the current one
+    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge, membrane chemistry (step C6c, panel only), charge per side (step C6d, panel only: the dipoles' switches and six knobs with - and +), pumps (step C7, panel only: four switches and five knobs with - and +)); settings with several values show the current one
     and change on a tap; the lever and the stiffness have - and +. The switches follow the state, also when a key changes it;
   - *dish* (the dish with three cells): the speed as a row of buttons, new culture (N), new genomes (G), clear
     springs (C), wash the atoms out (Shift+C).
@@ -81,7 +81,7 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   step C6n: `?neon=0`, `?halo=off|low|medium|high`, `?trails=0`, `?hum=0`, `?machinery=1`, `?cheap=0|1`, and
   `?until=T` (run to simulation time T, then pause at exactly that tick); step C6b: `?charge=0`, `?qstock=0`, `?qfeel=0`,
   `?contours=1`, `?view=charge`; step C6c: `?honeycomb=0` (the ellipse cells), `?membrane=0` (no membrane chemistry),
-  `?bites=0`, `?burst=0`, `?elastic=0`, `?selectivity=0`; step C6d: `?dipoles=0`, `?dd=0`, `?dphi=0`, `?dfield=0`.
+  `?bites=0`, `?burst=0`, `?elastic=0`, `?selectivity=0`; step C6d: `?dipoles=0`, `?dd=0`, `?dphi=0`, `?dfield=0`; step C7: `?pumps=0`, `?pumpcontact=0`, `?voltage=0`, `?v2b=0`.
 
 ## Keyboard shortcuts
 
@@ -2011,6 +2011,11 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   overlay), the tuning aids and the contour lines; the field's relaxation and the free atoms' drift are in `matter.wgsl`
   (relax, spread), the cells' charge and the field's gradient at their membrane in `cell_eat.wgsl`, their push in
   `cell_step.wgsl`; the charges themselves (`GROUP_CHARGE`, `CHARGE_CODES`) in `src/matter.js`
+- `src/pumps.js`: pumps and the membrane voltage (step C7): the switches and knobs, the census and counters (from the heat's
+  ledger read-back), `stats()` (per pump gene: carriers, battery, voltage, in the light), the PUMPS panel line and the overlay;
+  the pumps themselves are planned and applied in `cell_eat.wgsl` (plan, eat; the voltage in stock words 14 and 15), the
+  touching neighbour across each side is found in `cell_step.wgsl` (Cell.nbr), the genes and their mutation in `src/genome.js`
+  and `cell_common.wgsl` (Bio.pump, mutate), the notches and the voltage's rim in `cell_draw.wgsl`
 - `src/dipole.js`: charge per side, the dipoles (step C6d): the switches and knobs, the census (from the cells' stats
   read-back), `stats()` (threads, with a shuffled control), the DIPOLES panel line and the overlay; the side charges' flow
   and evening out are in `cell_eat.wgsl` (plan, eat), the turning, polarising, push and stretch in `cell_step.wgsl`, the

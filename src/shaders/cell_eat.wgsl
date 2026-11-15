@@ -593,6 +593,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     }
     var want: array<vec2f, 6>;                                  // contact (x) and grid (y) amounts per side, slot 0
     var want1: array<vec2f, 6>;                                 // ... slot 1
+    var lim: array<vec2i, 6>;                                   // the most each slot may move with the neighbour (whole counts)
     var vdq = 0.0;                                              // charge counts the pumps would move in
     for (var s = 0u; s < 2u; s++) {
       let rk = pr[s];
@@ -610,6 +611,8 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
         let j = jn[k];
         if (j != NBR_NONE) {
           let Mj = f32(max(stockP[j * SW + ch], 0));
+          // (whole counts: rounding at random must never take more than the cap from the source, or a stock could go below 0)
+          lim[k][s] = i32(floor(EP.pu2.w * select(Mj, Mi, out)));
           let rj = cells[j].r;
           let cj = Mj * EP.R * EP.R / (ATOM_SCALE * 3.14159265 * rj * rj);
           if (out) {
@@ -651,8 +654,8 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
       let r1 = u01(pcg(rs + k * 0x297a2d39u + 0x0b5ad4ecu));
       let a0 = want[k] * fpay;
       let a1 = want1[k] * fpay;
-      let c0 = i32(floor(a0.x + r0));
-      let c1 = i32(floor(a1.x + r1));
+      let c0 = clamp(i32(floor(a0.x + r0)), -lim[k].x, lim[k].x);
+      let c1 = clamp(i32(floor(a1.x + r1)), -lim[k].y, lim[k].y);
       let g0 = i32(floor(a0.y + r1));
       let g1 = i32(floor(a1.y + r0));
       pcq[k] = pack2(c0, c1);

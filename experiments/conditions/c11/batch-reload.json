@@ -14,7 +14,7 @@
    "evals": [
     {
      "t": 0,
-     "js": "const S = await (await fetch('/experiments/tissue/configs/c10-pol-off-m0-al/snapshot.json')).json(); const r = await moire.loadSnapshot(S); return {{ exact: r.exact, notes: r.notes, turn: moire.walls.params.turn, divFront: moire.walls.params.divFront, freeGlue: moire.walls.params.freeGlue, walls: moire.walls.params.on }}"
+     "js": "const S = await (await fetch('/experiments/tissue/configs/c10-pol-off-m0-al/snapshot.json')).json(); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, turn: moire.walls.params.turn, divFront: moire.walls.params.divFront, freeGlue: moire.walls.params.freeGlue, walls: moire.walls.params.on }"
     },
     {
      "t": 40,
@@ -43,7 +43,7 @@
    "evals": [
     {
      "t": 0,
-     "js": "const S = await (await fetch('/experiments/tissue/configs/c10-uni-lb-100-al/snapshot.json')).json(); const r = await moire.loadSnapshot(S); return {{ exact: r.exact, notes: r.notes, turn: moire.walls.params.turn, divFront: moire.walls.params.divFront, freeGlue: moire.walls.params.freeGlue, walls: moire.walls.params.on }}"
+     "js": "const S = await (await fetch('/experiments/tissue/configs/c10-uni-lb-100-al/snapshot.json')).json(); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, turn: moire.walls.params.turn, divFront: moire.walls.params.divFront, freeGlue: moire.walls.params.freeGlue, walls: moire.walls.params.on }"
     },
     {
      "t": 40,
@@ -72,7 +72,7 @@
    "evals": [
     {
      "t": 0,
-     "js": "const S = await (await fetch('/experiments/tissue/configs/th-Bfate/snapshot.json')).json(); const r = await moire.loadSnapshot(S); return {{ exact: r.exact, notes: r.notes, turn: moire.walls.params.turn, divFront: moire.walls.params.divFront, freeGlue: moire.walls.params.freeGlue, walls: moire.walls.params.on }}"
+     "js": "const S = await (await fetch('/experiments/tissue/configs/th-Bfate/snapshot.json')).json(); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, turn: moire.walls.params.turn, divFront: moire.walls.params.divFront, freeGlue: moire.walls.params.freeGlue, walls: moire.walls.params.on }"
     },
     {
      "t": 40,

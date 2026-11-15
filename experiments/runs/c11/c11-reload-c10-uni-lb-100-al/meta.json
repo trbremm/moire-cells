@@ -1,0 +1,139 @@
+{
+  "name": "c11-reload-c10-uni-lb-100-al",
+  "description": "a stored configuration from before C11 (c10-uni-lb-100-al) loads with C11 off and runs on",
+  "condition": {
+    "name": "c11-reload-c10-uni-lb-100-al",
+    "description": "a stored configuration from before C11 (c10-uni-lb-100-al) loads with C11 off and runs on",
+    "query": {
+      "cells": 100,
+      "seed": 3
+    },
+    "duration": 40,
+    "sample_every": 10,
+    "tissue": true,
+    "evals": [
+      {
+        "t": 0,
+        "js": "const S = await (await fetch('/experiments/tissue/configs/c10-uni-lb-100-al/snapshot.json')).json(); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, turn: moire.walls.params.turn, divFront: moire.walls.params.divFront, freeGlue: moire.walls.params.freeGlue, walls: moire.walls.params.on }"
+      },
+      {
+        "t": 40,
+        "js": "const T = await import('/experiments/tissue/tissue-lab.js'); return await T.measure({ every: 1 })"
+      }
+    ],
+    "shots": [
+      {
+        "t": 0
+      },
+      {
+        "t": 40
+      }
+    ]
+  },
+  "url": "http://localhost:58803/index.html?speed=max&until=0&overlay=ghost&ui=0&cells=100&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "9f9cc11fbbf0ea45c12573499cba23daa8704bbf",
+  "dirty": true,
+  "started": "2026-11-15T22:05:49",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 40.0,
+  "run_wall_s": 28.12,
+  "speed_reached": 1.42,
+  "samples": 5,
+  "shots": [
+    "shots/t0.png",
+    "shots/t40.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "const S = await (await fetch('/experiments/tissue/configs/c10-uni-lb-100-al/snapshot.json')).json(); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, turn: moire.walls.params.turn, divFront: moire.walls.params.divFront, freeGlue: moire.walls.params.freeGlue, walls: moire.walls.params.on }",
+      "result": {
+        "exact": false,
+        "notes": [
+          "no grid in the snapshot (cells only): the page's grid kept",
+          "saved before step C11: glue turning and division by the front off, no free base glue (as it ran)"
+        ],
+        "turn": false,
+        "divFront": false,
+        "freeGlue": 0,
+        "walls": true
+      }
+    },
+    {
+      "t": 40.00000000001597,
+      "js": "const T = await import('/experiments/tissue/tissue-lab.js'); return await T.measure({ every: 1 })",
+      "result": {
+        "t": 160.0000000000138,
+        "n": 100,
+        "R": 9,
+        "largest": 100,
+        "cx": 638.0711651611329,
+        "cy": 396.08994659423826,
+        "box": [
+          561.0355577468872,
+          330.96307849884033,
+          723.922215461731,
+          479.7099657058716
+        ],
+        "elong": 1.1725624157039318,
+        "hole": 0.7445316677444945,
+        "edge": 0.07,
+        "deg": [
+          0,
+          0,
+          2,
+          98
+        ],
+        "fates": [
+          100,
+          0,
+          0,
+          0,
+          0
+        ],
+        "chainy": 0.02,
+        "boxAll": [
+          561.0355577468872,
+          330.96307849884033,
+          723.922215461731,
+          479.7099657058716
+        ],
+        "walls": {
+          "contactAt": [
+            0.312,
+            0.353,
+            0.336
+          ],
+          "glue": 1.6,
+          "matured": 1,
+          "effMean": 1.512,
+          "matureMean": 0.888,
+          "classes": {
+            "uniform": 1,
+            "polar": 0,
+            "two-ended": 0,
+            "sticky sides": 0
+          },
+          "onSticky": null,
+          "stickyChance": null,
+          "bondsPerCell": 7.12,
+          "chains": 0,
+          "inChains": 0,
+          "longestChain": 0,
+          "rings": 0,
+          "inRings": 0
+        }
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T22:06:58",
+  "wall_s": 68.44
+}

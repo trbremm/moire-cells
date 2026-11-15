@@ -1,0 +1,231 @@
+{
+  "name": "c11-check",
+  "description": "Step C11 books check: 700 s at MAX (seed 5) through N, a wash, a resize, G, a resize back, new springs, the walls' and C11's switches and knobs at runtime, a snapshot saved and loaded; the atoms' and charge's rounding must stay 0",
+  "condition": {
+    "name": "c11-check",
+    "description": "Step C11 books check: 700 s at MAX (seed 5) through N, a wash, a resize, G, a resize back, new springs, the walls' and C11's switches and knobs at runtime, a snapshot saved and loaded; the atoms' and charge's rounding must stay 0",
+    "query": {
+      "seed": 5
+    },
+    "duration": 700,
+    "sample_every": 10,
+    "resizes": [
+      {
+        "t": 300,
+        "size": "1000x700"
+      },
+      {
+        "t": 480,
+        "size": "1280x800"
+      }
+    ],
+    "evals": [
+      {
+        "t": 120,
+        "js": "return moire.control.action('culture')"
+      },
+      {
+        "t": 220,
+        "js": "return moire.control.action('wash')"
+      },
+      {
+        "t": 400,
+        "js": "return moire.control.action('genomes')"
+      },
+      {
+        "t": 520,
+        "js": "{ const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.5, 'light'); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.5, 'heavy'); } return moire.matter.springs.length"
+      },
+      {
+        "t": 560,
+        "js": "moire.walls.params.on = false; return 'walls off'"
+      },
+      {
+        "t": 570,
+        "js": "moire.walls.params.on = true; moire.walls.params.cost = false; return 'walls on, cost off'"
+      },
+      {
+        "t": 580,
+        "js": "moire.walls.params.cost = true; moire.walls.params.mature = false; return 'cost on, mature off'"
+      },
+      {
+        "t": 590,
+        "js": "moire.walls.params.mature = true; moire.walls.params.front = false; return 'mature on, front off'"
+      },
+      {
+        "t": 600,
+        "js": "moire.walls.params.front = true; moire.cells.shape.on = false; return 'front on, honeycomb off'"
+      },
+      {
+        "t": 610,
+        "js": "moire.cells.shape.on = true; return 'honeycomb on'"
+      },
+      {
+        "t": 620,
+        "js": "moire.walls.params.turn = false; moire.walls.params.divFront = false; return 'turn off, divfront off'"
+      },
+      {
+        "t": 625,
+        "js": "moire.walls.params.turn = true; moire.walls.params.divFront = true; moire.walls.params.turnGain = 5; moire.walls.params.freeGlue = 0; return 'turn on gain 5, no free glue'"
+      },
+      {
+        "t": 632,
+        "js": "moire.walls.params.turnGain = 1; moire.walls.params.freeGlue = 0.5; return 'defaults'"
+      },
+      {
+        "t": 640,
+        "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }"
+      },
+      {
+        "t": 660,
+        "js": "return await moire.walls.stats()"
+      }
+    ],
+    "shots": [
+      {
+        "t": 700
+      }
+    ],
+    "stall": 120
+  },
+  "url": "http://localhost:52635/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=5",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "9f9cc11fbbf0ea45c12573499cba23daa8704bbf",
+  "dirty": true,
+  "started": "2026-11-15T21:42:24",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 700.0,
+  "run_wall_s": 969.27,
+  "speed_reached": 0.72,
+  "samples": 71,
+  "shots": [
+    "shots/t700.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 119.99999999999447,
+      "js": "return moire.control.action('culture')",
+      "result": true
+    },
+    {
+      "t": 220.00000000006722,
+      "js": "return moire.control.action('wash')",
+      "result": true
+    },
+    {
+      "t": 399.99999999996487,
+      "js": "return moire.control.action('genomes')",
+      "result": true
+    },
+    {
+      "t": 519.9999999998581,
+      "js": "{ const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.5, 'light'); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.5, 'heavy'); } return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 559.9999999998217,
+      "js": "moire.walls.params.on = false; return 'walls off'",
+      "result": "walls off"
+    },
+    {
+      "t": 569.9999999998126,
+      "js": "moire.walls.params.on = true; moire.walls.params.cost = false; return 'walls on, cost off'",
+      "result": "walls on, cost off"
+    },
+    {
+      "t": 579.9999999998035,
+      "js": "moire.walls.params.cost = true; moire.walls.params.mature = false; return 'cost on, mature off'",
+      "result": "cost on, mature off"
+    },
+    {
+      "t": 589.9999999997945,
+      "js": "moire.walls.params.mature = true; moire.walls.params.front = false; return 'mature on, front off'",
+      "result": "mature on, front off"
+    },
+    {
+      "t": 599.9999999997854,
+      "js": "moire.walls.params.front = true; moire.cells.shape.on = false; return 'front on, honeycomb off'",
+      "result": "front on, honeycomb off"
+    },
+    {
+      "t": 609.9999999997763,
+      "js": "moire.cells.shape.on = true; return 'honeycomb on'",
+      "result": "honeycomb on"
+    },
+    {
+      "t": 619.9999999997672,
+      "js": "moire.walls.params.turn = false; moire.walls.params.divFront = false; return 'turn off, divfront off'",
+      "result": "turn off, divfront off"
+    },
+    {
+      "t": 624.9999999997626,
+      "js": "moire.walls.params.turn = true; moire.walls.params.divFront = true; moire.walls.params.turnGain = 5; moire.walls.params.freeGlue = 0; return 'turn on gain 5, no free glue'",
+      "result": "turn on gain 5, no free glue"
+    },
+    {
+      "t": 631.9999999997563,
+      "js": "moire.walls.params.turnGain = 1; moire.walls.params.freeGlue = 0.5; return 'defaults'",
+      "result": "defaults"
+    },
+    {
+      "t": 639.999999999749,
+      "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }",
+      "result": {
+        "exact": true,
+        "notes": [],
+        "rounding": {
+          "energy": 0.087982177734375,
+          "atoms": 0,
+          "charge": 0,
+          "snapshot": {
+            "energy": 0.087982177734375,
+            "atoms": 0,
+            "charge": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 659.9999999997308,
+      "js": "return await moire.walls.stats()",
+      "result": {
+        "time": 659.9999999997308,
+        "n": 65,
+        "classes": {
+          "uniform": 0.631,
+          "polar": 0.185,
+          "two-ended": 0,
+          "sticky sides": 0.185
+        },
+        "effMean": 0.422,
+        "matureMean": 0.204,
+        "pairs": 77,
+        "glue": 0.36,
+        "matured": 0.247,
+        "contactAt": [
+          0.357,
+          0.318,
+          0.325
+        ],
+        "onSticky": 0.516,
+        "stickyChance": 0.522,
+        "stickyContacts": 128,
+        "bondsPerCell": 1.692,
+        "chains": 1,
+        "inChains": 4,
+        "longestChain": 4,
+        "rings": 0,
+        "inRings": 0
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T21:59:36",
+  "wall_s": 1031.76
+}

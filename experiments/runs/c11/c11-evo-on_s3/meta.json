@@ -1,0 +1,299 @@
+{
+  "name": "c11-evo-on_s3",
+  "description": "Step C11 evolution: the default scene (2000 cells, spotlight, two springs, division on), C11 on (glue turns cells, division by the front, the free base glue: the defaults), 20 minutes",
+  "condition": {
+    "name": "c11-evo-on_s3",
+    "description": "Step C11 evolution: the default scene (2000 cells, spotlight, two springs, division on), C11 on (glue turns cells, division by the front, the free base glue: the defaults), 20 minutes",
+    "query": {
+      "seed": 3
+    },
+    "duration": 1200,
+    "sample_every": 30,
+    "evals": [
+      {
+        "t": 120,
+        "js": "return await moire.walls.stats()"
+      },
+      {
+        "t": 300,
+        "js": "return await moire.walls.stats()"
+      },
+      {
+        "t": 600,
+        "js": "return await moire.walls.stats()"
+      },
+      {
+        "t": 900,
+        "js": "return await moire.walls.stats()"
+      },
+      {
+        "t": 1200,
+        "js": "return await moire.walls.stats()"
+      },
+      {
+        "t": 1200,
+        "js": "return await moire.division.stats()"
+      }
+    ],
+    "shots": [
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 600,
+        "view": "walls"
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "view": "walls"
+      },
+      {
+        "t": 1200,
+        "view": "machinery"
+      },
+      {
+        "t": 1200,
+        "view": "lineage",
+        "panel": true
+      }
+    ],
+    "snapshots": [
+      {
+        "t": 1200,
+        "grid": false,
+        "name": "end"
+      }
+    ]
+  },
+  "url": "http://localhost:56600/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "85ed820eaa146d76d8a15e20b50084151e1f7d55",
+  "dirty": true,
+  "started": "2026-11-15T20:04:24",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 2217.36,
+  "speed_reached": 0.54,
+  "samples": 41,
+  "shots": [
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t600_walls.png",
+    "shots/t1200.png",
+    "shots/t1200_walls.png",
+    "shots/t1200_machinery.png",
+    "shots/t1200_lineage.png"
+  ],
+  "snapshots": [
+    "snapshots/end.json"
+  ],
+  "clips": [],
+  "evals": [
+    {
+      "t": 119.99999999999449,
+      "js": "return await moire.walls.stats()",
+      "result": {
+        "time": 119.99999999999449,
+        "n": 822,
+        "classes": {
+          "uniform": 0.725,
+          "polar": 0.131,
+          "two-ended": 0.09,
+          "sticky sides": 0.054
+        },
+        "effMean": 0.501,
+        "matureMean": 0.406,
+        "pairs": 1591,
+        "glue": 0.506,
+        "matured": 0.567,
+        "contactAt": [
+          0.331,
+          0.341,
+          0.328
+        ],
+        "onSticky": 0.486,
+        "stickyChance": 0.474,
+        "stickyContacts": 2394,
+        "bondsPerCell": 3.294,
+        "chains": 3,
+        "inChains": 10,
+        "longestChain": 4,
+        "rings": 0,
+        "inRings": 0
+      }
+    },
+    {
+      "t": 300.00000000003917,
+      "js": "return await moire.walls.stats()",
+      "result": {
+        "time": 300.00000000003917,
+        "n": 1249,
+        "classes": {
+          "uniform": 0.11,
+          "polar": 0.359,
+          "two-ended": 0.42,
+          "sticky sides": 0.11
+        },
+        "effMean": 0.527,
+        "matureMean": 0.461,
+        "pairs": 3227,
+        "glue": 0.419,
+        "matured": 0.382,
+        "contactAt": [
+          0.338,
+          0.331,
+          0.331
+        ],
+        "onSticky": 0.546,
+        "stickyChance": 0.547,
+        "stickyContacts": 6326,
+        "bondsPerCell": 4.178,
+        "chains": 4,
+        "inChains": 19,
+        "longestChain": 7,
+        "rings": 0,
+        "inRings": 0
+      }
+    },
+    {
+      "t": 599.9999999998041,
+      "js": "return await moire.walls.stats()",
+      "result": {
+        "time": 599.9999999998041,
+        "n": 1177,
+        "classes": {
+          "uniform": 0.038,
+          "polar": 0.393,
+          "two-ended": 0.427,
+          "sticky sides": 0.142
+        },
+        "effMean": 0.459,
+        "matureMean": 0.371,
+        "pairs": 3113,
+        "glue": 0.327,
+        "matured": 0.241,
+        "contactAt": [
+          0.34,
+          0.325,
+          0.335
+        ],
+        "onSticky": 0.514,
+        "stickyChance": 0.516,
+        "stickyContacts": 6176,
+        "bondsPerCell": 3.37,
+        "chains": 2,
+        "inChains": 7,
+        "longestChain": 4,
+        "rings": 0,
+        "inRings": 0
+      }
+    },
+    {
+      "t": 899.9999999995313,
+      "js": "return await moire.walls.stats()",
+      "result": {
+        "time": 899.9999999995313,
+        "n": 920,
+        "classes": {
+          "uniform": 0.033,
+          "polar": 0.35,
+          "two-ended": 0.503,
+          "sticky sides": 0.114
+        },
+        "effMean": 0.436,
+        "matureMean": 0.288,
+        "pairs": 2175,
+        "glue": 0.31,
+        "matured": 0.17,
+        "contactAt": [
+          0.334,
+          0.327,
+          0.339
+        ],
+        "onSticky": 0.489,
+        "stickyChance": 0.486,
+        "stickyContacts": 4344,
+        "bondsPerCell": 2.759,
+        "chains": 7,
+        "inChains": 24,
+        "longestChain": 5,
+        "rings": 0,
+        "inRings": 0
+      }
+    },
+    {
+      "t": 1199.9999999992585,
+      "js": "return await moire.walls.stats()",
+      "result": {
+        "time": 1199.9999999992585,
+        "n": 550,
+        "classes": {
+          "uniform": 0.027,
+          "polar": 0.476,
+          "two-ended": 0.476,
+          "sticky sides": 0.02
+        },
+        "effMean": 0.45,
+        "matureMean": 0.268,
+        "pairs": 1132,
+        "glue": 0.309,
+        "matured": 0.163,
+        "contactAt": [
+          0.348,
+          0.318,
+          0.334
+        ],
+        "onSticky": 0.469,
+        "stickyChance": 0.466,
+        "stickyContacts": 2264,
+        "bondsPerCell": 2.389,
+        "chains": 4,
+        "inChains": 12,
+        "longestChain": 3,
+        "rings": 0,
+        "inRings": 0
+      }
+    },
+    {
+      "t": 1199.9999999992585,
+      "js": "return await moire.division.stats()",
+      "result": {
+        "time": 1199.9999999992585,
+        "n": 550,
+        "litShare": 0.6636363636363637,
+        "bat": 0.3025763008811257,
+        "centre": [
+          751,
+          410
+        ],
+        "spreadR": 20.9,
+        "patches": 3,
+        "largest": 530,
+        "inBig": 0.964,
+        "sizes": [
+          530,
+          3,
+          3,
+          2,
+          2,
+          2,
+          2,
+          2
+        ]
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T20:42:28",
+  "wall_s": 2284.71
+}

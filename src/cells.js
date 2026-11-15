@@ -36,7 +36,7 @@ import { loadFieldShader, KIND } from './field.js';
 import { Genome, BIO_BYTES } from './genome.js';
 import { Heat, HEAT_COMMON_URL } from './heat.js';
 import { Eat } from './eat.js';
-import { ENGINES } from './matter.js';
+import { ENGINES, SUBSTANCES } from './matter.js';
 import { pal } from './palette.js';
 import { Dipole, STATS_DIP, DIP_WORDS } from './dipole.js';
 
@@ -45,8 +45,9 @@ export const CELL_URL = 'src/shaders/cell_common.wgsl';
 // struct Cell in cell_common.wgsl: pos.xy, vel.xy, r, la, e1, e2, kind (u32), flags (u32), seed (u32), aux, z.xy;
 // step C5: dead.xy, bat, pay (i32), mom (u32), fill, smell.xy; step C6b: q, qNet, efield.xy (CELL_FLOATS in heat.wgsl too);
 // step C6c, the honeycomb outline (words 26..59): rad[6] (26), radV[6] (32), theta (38), spin (39), ea.xy (40), alpha[6] (42),
-// and per side: integ[6] (48, membrane chemistry), sideQ[6] (54, step C6d: each side's charge)
-export const CELL_FLOATS = 60;
+// and per side: integ[6] (48, membrane chemistry), sideQ[6] (54, step C6d: each side's charge); step C7: nbr[3] (60: the touching
+// neighbour across each side, 16 bits each), volt (63: the membrane voltage)
+export const CELL_FLOATS = 64;
 export const CELL_BYTES = CELL_FLOATS * 4;
 const CELL_CORE_BYTES = 112;   // step C6c: struct CellCore (the grid's sorted copy: Cell without the outline and per-side slots;
                                // step C6d: + the dipole, 104 until then)
@@ -68,7 +69,7 @@ const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
 const FIELDS_BYTES = 320;      // struct Fields in cell_common.wgsl (step C6c: + memb; step C6d: + dip0..dip2)
 const FIELD_FORMAT = 'rgba16float';
-const DRAW_BYTES = 512;        // struct Draw in cell_draw.wgsl (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
+const DRAW_BYTES = 752;        // struct Draw in cell_draw.wgsl (step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
                                // step C6d: + the dipoles)
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
@@ -311,6 +312,13 @@ export class Cells {
       dipTint: 0.6,     // each side's tube tinted toward the + ink (rose) or the - ink (blue) by its charge, at most this much
       dipArrow: 0.9,    // with the machinery (the marks): an arrow from - to + across each polarised cell, its brightness
       dipTwoTone: 0.85, // colour by charge (V): a polarised cell's body in two halves, + rose and - blue, this strong at a full dipole
+      // step C7, the pumps' look (while they run)
+      pumpParts: true,  // each pump slot as small notches on the membrane (slot 1 on sides 0, 2, 4; slot 2 on 1, 3, 5)
+      pumpSize: 0.2,    // a notch's half-width at full size, as a share of the radius
+      pumpRate: 1.5,    // the rate at which a notch reaches its full size
+      pumpTint: 0.7,    // how much the tube's segment at a notch takes the substance's ink
+      voltRim: 0.7,     // with the machinery: the membrane voltage as a faint rim inside the tube (rose +, blue -), its brightness
+      voltFull: 0.5,    // ... full at this voltage
     };
     this.dipole = new Dipole(this);   // step C6d: charge per side (src/dipole.js)
   }
@@ -560,6 +568,7 @@ export class Cells {
       f[o + 11] = keys[2 * i + 1];                     // key scale
       f[o + 12] = 1; f[o + 13] = 0;                    // step 8: the phasor of field A and its partner
       f[o + 16] = this.eat.starterShare;               // step C5: the battery share (the starter charge, below)
+      u[o + 60] = u[o + 61] = u[o + 62] = 0xffffffff;  // step C7: no neighbours across the sides yet (the step finds them)
     }
     this.heat.depositAll();     // step C1: the old cells' motion becomes heat (queued before they are overwritten)
     this.eat.reset();           // step C5: the old cells' stock back to the dish, the starter charge into every battery
@@ -574,6 +583,9 @@ export class Cells {
     const p = this.params;
     return 6.6 * p.squeeze * p.stiffness / this.count;
   }
+
+  /** Step C7: the pumps (src/pumps.js, held by the eating). */
+  get pumps() { return this.eat ? this.eat.pumps : null; }
 
   /** Write the Sim uniform for one tick (at simulation time `time`) into slot k. */
   writeSim(k, dt, time, count = false) {
@@ -591,6 +603,7 @@ export class Cells {
     u[o + 24] = this.genome.ruleBits();
     f[o + 25] = this.excl.flip ? Math.max(0, this.excl.flipRate) : 0;
     u[o + 26] = this.heat.offsetAt(k);
+    u[o + 27] = this.pumps && this.pumps.contactOn && this.count <= 65535 ? 1 : 0;   // step C7: each side's touching neighbour
     const G = this.genome.params;
     f[o + 28] = G.tau; f[o + 29] = G.release; f[o + 30] = G.reach; f[o + 31] = G.adhesion;
     f[o + 32] = G.adhSigma; f[o + 33] = G.fateAdh; f[o + 34] = this.genome.rules.body ? 1 : 0; f[o + 35] = G.adhBase;
@@ -646,6 +659,7 @@ export class Cells {
     f[60] = om * om; f[61] = 2 * Math.max(0, SH.zeta) * om; f[62] = Math.max(0, SH.turn); f[63] = Math.max(0, SH.jelly);
     this.eat.membrane.writeFields(u, f, 64);   // step C6c: genetic elasticity, damaged sides softer, bursting
     this.dipole.writeFields(u, f, 68);         // step C6d: the dipoles
+    f[67] = Math.max(0, this.genome.params.pumpJump ?? 0);   // step C7: pump slot jumps per birth (Fields.memb.w)
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -1282,6 +1296,14 @@ export class Cells {
     a[112] = L.membLook && MB && MB.rule('on') ? 1 : 0; a[113] = L.membDim; a[114] = L.membBreak; a[115] = L.membInner;
     a[116] = L.membFlicker; a[117] = L.membFlash; a[118] = L.membWide; a[119] = MB ? MB.params.tRef : 0.012;
     this.dipole.writeDraw(a, 120, L, L.view === 3);   // step C6d: the dipoles' look
+    // step C7: the pumps' notches (while the pumps run) and the voltage's rim (the machinery), each substance's ink
+    const PU = this.pumps;
+    a[128] = L.pumpParts && PU && PU.rule('on') ? 1 : 0; a[129] = L.pumpSize; a[130] = PU && PU.rule('voltage') && L.marks ? L.voltRim : 0;
+    a[131] = Math.max(1e-3, L.voltFull); a[132] = Math.max(1e-3, L.pumpRate); a[133] = L.pumpTint;
+    SUBSTANCES.forEach((sb, c) => {
+      const I = P.substances[sb.func] || P.substances.linker;
+      for (let k = 0; k < 3; k++) a[136 + 4 * c + k] = (I.light[k] + (I.heavy[k] - I.light[k]) * sb.heavy) / 255;
+    });
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBGs[this.bioCur]);

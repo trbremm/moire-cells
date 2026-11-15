@@ -1,7 +1,7 @@
 // ===== cell_common.wgsl: the cells' state, the simulation uniforms and the neighbour grid =====
 // Not compiled on its own: src/cells.js prepends field_common.wgsl and then this file to every cell shader.
 //
-// Cells live in a fixed-capacity storage buffer (struct Cell, 240 bytes; keep in step with CELL_* in
+// Cells live in a fixed-capacity storage buffer (struct Cell, 256 bytes since step C7; keep in step with CELL_* in
 // src/cells.js, and CELL_FLOATS in heat.wgsl). Their order never changes, so drawing order is stable and a cell keeps its index.
 //
 // Neighbour grid (rebuilt every tick, see cell_grid.wgsl):
@@ -59,7 +59,22 @@ struct Cell {
   sideQ: array<f32, 6>, // step C6d, charge per side: each side's share of the cell's charge (atom-units; written by the eat pass,
                     // which keeps their sum equal to the stock's net charge qNet, and turned within the cell by the step: see
                     // "dipoles" below). A neutral cell can still be polarised: + on one side, - on the other
+  // ---- step C7, pumps (src/pumps.js) ----
+  nbr: array<u32, 3>, // the touching neighbour across each side (its index in `cells`, 16 bits each, side 2k in the low half and
+                    // side 2k + 1 in the high half of word k; 0xffff = none): written by the step from its neighbour loop (the
+                    // nearest touching cell whose direction is closest to the side's middle). Two cells that list each other
+                    // are in CONTACT, and their pumps may move matter between their stocks (cell_eat.wgsl)
+  volt: f32,        // the membrane VOLTAGE (the charge the cell's pumps have moved across its membrane / its capacitance;
+                    // energy per unit of charge; written by the eat pass), for the drawing and the census
 };
+const NBR_NONE: u32 = 0xffffu;
+fn nbr_at(w: array<u32, 3>, k: u32) -> u32 { return (w[k >> 1u] >> (16u * (k & 1u))) & 0xffffu; }
+fn cell_nbr(c: Cell, k: u32) -> u32 { return nbr_at(c.nbr, k); }
+// whether a neighbour's list (its Cell.nbr) holds cell i, and across which of its sides (6: none)
+fn nbr_side(w: array<u32, 3>, i: u32) -> u32 {
+  for (var q = 0u; q < 6u; q++) { if (nbr_at(w, q) == i) { return q; } }
+  return 6u;
+}
 
 // Step C6c: the part of a cell its neighbours read, the grid's sorted copy (cell_grid.wgsl scatter; 112 bytes, keep in step
 // with CELL_CORE_BYTES in src/cells.js): Cell without the honeycomb outline and the per-side slots, so the step's neighbour
@@ -121,7 +136,7 @@ struct Sim {
   rules: u32,       // RULE_* bits: which genome rules are on
   flip: f32,        // step 7, rule 2: chance per s that a cell crowded by its own state flips (0 = off)
   heatCur: u32,     // step C1: word offset of the current heat copy in the heat buffer this tick (heat_common.wgsl)
-  pad2: u32,
+  nbrOn: u32,       // step C7: 1 = the step records each side's touching neighbour (Cell.nbr) for the pumps across contact
   tau: f32,         // accumulator time constant (s): brief bumps fade, only sustained input counts
   release: f32,     // a committed cell goes back to stem below release x threshold
   reach: f32,       // neighbours within reach x (r_i + r_j) count as touching (signals, adhesion)
@@ -194,7 +209,7 @@ fn fate_motility(kind: u32) -> f32 {
 }
 
 // ---------- the genome ----------
-// Every cell carries a Bio record (128 bytes; keep in step with BIO_* in src/genome.js): its genome plus its
+// Every cell carries a Bio record (192 bytes since step C7; keep in step with BIO_* in src/genome.js): its genome plus its
 // small mutable state. Bio is double-buffered: each tick reads last tick's copy of every cell (bioPrev) and
 // writes the new one (bioNext), so a newborn copies its parent's genome race-free.
 //
@@ -221,7 +236,17 @@ struct Bio {
   memb: vec4f,      // x MIX: the heavy linkers' (L) share of the membrane, 0..1 (the rest light, l); y THICKNESS: linker per
                     // R of membrane (atom-units); z the STIFFNESS gene (x the stiffness the material gives); w the ION
                     // SELECTIVITY s, -1..1: givers (+) pass the membrane x (1 + s), takers (-) x (1 - s)
+  // ---- step C7: the two PUMP SLOTS (src/genome.js, src/pumps.js, cell_eat.wgsl) ----
+  pump: vec4f,      // x y: each slot's code, a whole number: the substance's channel (0..12; never sediment) + 16 x its direction
+                    // (0 IN, 1 OUT); z w: each slot's rate (per s; 0 = an empty slot)
 };
+// step C7: a pump slot's channel, direction (1 = OUT) and the substances it may pump: PUMP_NCH of them, channels 0..9 and
+// trace (12), not the sediments ll, LL (PUMP_CHANNELS in src/genome.js)
+const PUMP_OUT: u32 = 16u;
+const PUMP_RATE_MAX: f32 = 6.0;
+const PUMP_NCH: u32 = 11u;
+fn pump_ch(code: f32) -> u32 { return min(u32(round(max(code, 0.0))) & 15u, 12u); }
+fn pump_out(code: f32) -> bool { return (u32(round(max(code, 0.0))) & PUMP_OUT) != 0u; }
 // step C6c: the honeycomb stiffness a membrane's material gives (genetic elasticity): heavy and thick = stiff, light and thin
 // = soft; 1 for the founders' usual light thin membrane (mix 0.1, thickness tRef)
 fn memb_stiff(m: vec4f, tRef: f32) -> f32 {
@@ -318,7 +343,7 @@ fn nudge(v: f32, step: f32, lo: f32, hi: f32, seed: u32, k: u32) -> f32 {
 
 // a daughter's genome: every gene nudged a little (size x the steps below), and with chance `jump` one gene
 // drawn afresh over its whole range. The accumulators and heading are state, not genes: the caller sets them.
-fn mutate(p: Bio, seed: u32, size: f32, jump: f32, engJump: f32) -> Bio {
+fn mutate(p: Bio, seed: u32, size: f32, jump: f32, engJump: f32, pumpJump: f32) -> Bio {
   var b = p;
   let ka = size * 0.03;     // key angles: about 2 degrees
   let ks = size * 0.012;    // key scales
@@ -384,6 +409,30 @@ fn mutate(p: Bio, seed: u32, size: f32, jump: f32, engJump: f32) -> Bio {
     } else {
       b.rate[k] = 0.0;
     }
+  }
+  // step C7: the pumps' rates nudged (an empty slot stays empty), and now and then one slot jumps: to another substance
+  // (an empty slot starts up at a small rate), to the other direction, or it empties. No rule says what to pump or which way.
+  // (in whole vectors and selects: indexing the slots by a number made the step a quarter slower on Direct3D)
+  let pr = b.pump.zw;
+  let nr = clamp(pr * exp(size * 0.1 * vec2f(gauss(seed, 126u), gauss(seed, 127u))), vec2f(0.02), vec2f(PUMP_RATE_MAX));
+  b.pump = vec4f(b.pump.xy, select(pr, nr, pr > vec2f(0.0)));
+  if (rand01(seed, 130u) < pumpJump) {
+    let s1 = rand01(seed, 131u) >= 0.5;
+    let code = u32(round(max(select(b.pump.x, b.pump.y, s1), 0.0)));
+    var rate = select(b.pump.z, b.pump.w, s1);
+    let dir = code & PUMP_OUT;
+    var nc = code;
+    let u = rand01(seed, 132u);
+    if (u < 0.4) {
+      let q = min(u32(rand01(seed, 133u) * f32(PUMP_NCH)), PUMP_NCH - 1u);
+      nc = select(q, 12u, q == 10u) + dir;                     // PUMP_CH: channels 0..9, then trace (12)
+      if (rate <= 0.0) { rate = 0.1 + 0.4 * rand01(seed, 134u); }
+    } else if (u < 0.7) {
+      nc = (code & 15u) + (dir ^ PUMP_OUT);
+    } else {
+      rate = 0.0;
+    }
+    b.pump = select(vec4f(f32(nc), b.pump.y, rate, b.pump.w), vec4f(b.pump.x, f32(nc), b.pump.z, rate), s1);
   }
   return b;
 }
@@ -637,7 +686,7 @@ struct Fields {
   // ---- step C6c, membrane chemistry (src/membrane.js) ----
   memb: vec4f,      // x bits: MB_ELASTIC genetic elasticity, MB_SOFT damaged sides are softer, MB_BURST bursting (with
                     // turnover); y the thickness at which a light membrane has stiffness 1 (memb_stiff); z a fully damaged
-                    // side's stiffness, as a share of its intact one; w spare
+                    // side's stiffness, as a share of its intact one; w step C7: the chance per birth that a pump slot jumps
   // ---- step C6d, charge per side: dipoles (src/dipole.js) ----
   dip0: vec4f,      // x bits DP_*; y 1 / pHalf (a dipole of pHalf atom-units x r is tanh(1) of full); z the dipole-dipole
                     // range (x the contact distance); w the torque's gain (rad / s^2 at full dipole and field)

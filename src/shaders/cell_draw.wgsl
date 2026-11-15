@@ -80,6 +80,12 @@ struct Draw {
   dip: vec4f,       // x: each side's tube tinted toward the + / - ink by its charge, at most this much (0 = none); y: the
                     // machinery's arrow from - to + (brightness, 0 = none); z: 1 / pHalf; w: colour by charge, the two-tone body
   dip2: vec4f,      // x: 1 = dipoles on; y z w spare
+  // ---- step C7: the pumps as parts on the membrane, and the membrane voltage (src/pumps.js; cells.look.pump*) ----
+  pump: vec4f,      // x: 1 = draw the pumps' notches; y: a notch's half-width at the largest rate (share of r); z: the voltage's
+                    // inner rim (brightness, 0 = none: the machinery only); w: the voltage at which the rim is full
+  pump2: vec4f,     // x: the rate at which a notch reaches its full size; y: how much the tube's segment at a notch takes the
+                    // substance's ink (0..1); z w spare
+  pumpInk: array<vec4f, 13>,   // each substance's ink (its palette colour, by chemical function and row)
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
@@ -102,6 +108,10 @@ struct VSOut {
   @location(7) lp: vec2f,                        // the position in the cell's unstretched frame (= local for an ellipse cell;
                                                  // a honeycomb cell: F^-1 local, for the inside: dots, core, parts, marks)
   @location(8) @interpolate(flat) dipv: vec2f,   // step C6d: the cell's saturated dipole (on screen, length 0..1)
+  // step C7: a honeycomb cell's sides' middles, as the coordinate along each side's line that memb_side returns (sides 0..3,
+  // then 4, 5), for the pumps' notches
+  @location(9) @interpolate(flat) tm0: vec4f,
+  @location(10) @interpolate(flat) tm1: vec4f,
 };
 
 // Step C6c: how far inside a honeycomb outline a point p is (relative to the centre). Inside each side's line by
@@ -180,6 +190,8 @@ fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VSOut
                                vec2f(-1.0, 1.0), vec2f(1.0, -1.0), vec2f(1.0, 1.0));
   o.id = ii;
   o.hh1 = vec4f(0.0);
+  o.tm0 = vec4f(0.0);
+  o.tm1 = vec4f(0.0);
   if ((c.flags & CELL_HEX) != 0u) {
     // step C6c: a honeycomb cell, on a square around its farthest corner; its sides' lines for the fragment shader
     let P = hex_corners(c);
@@ -198,6 +210,15 @@ fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VSOut
     o.nn1 = vec4f(n[2], n[3]);
     o.nn2 = vec4f(n[4], n[5]);
     o.hh0 = vec4f(h[0], h[1], h[2], h[3]);
+    // step C7: each side's middle along its line (t = n.x p.y - n.y p.x, as memb_side)
+    var tm: array<f32, 6>;
+    for (var k = 0; k < 6; k++) {
+      let a = P[k];
+      let b = P[(k + 1) % 6];
+      tm[k] = 0.5 * ((n[k].x * a.y - n[k].y * a.x) + (n[k].x * b.y - n[k].y * b.x));
+    }
+    o.tm0 = vec4f(tm[0], tm[1], tm[2], tm[3]);
+    o.tm1 = vec4f(tm[4], tm[5], 0.0, 0.0);
     o.hh1 = vec4f(h[4], h[5], min(D.hexDraw.x * c.r, 0.8 * max(hmin, 0.0)), 1.0);
     let l = corner[vi] * (rmax + 1.5 / D.dpr);
     let w = c.pos + l;
@@ -324,7 +345,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   var inner = 0.0;         // the heavy membrane's inner tube
   let bt = cell_burst(c.flags);
   var sd = vec2f(0.0);
-  if (D.memb.x > 0.5 || D.dip.x > 0.0) { sd = memb_side(in.local, lp, c.r, in); }
+  if (D.memb.x > 0.5 || D.dip.x > 0.0 || D.pump.x > 0.5) { sd = memb_side(in.local, lp, c.r, in); }
   let side = u32(sd.x);
   if (D.memb.x > 0.5) {
     ig = clamp(c.integ[side], 0.0, 1.0);
@@ -483,6 +504,47 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       hnd = max(hnd, ar);
     }
   }
+  // step C7: the pumps as parts on the membrane. Slot 1 sits on sides 0, 2, 4, slot 2 on sides 1, 3, 5 (a pump works on every
+  // side; the marks only say what it is): at each side's middle a small notch in the substance's ink, a triangle just inside
+  // the tube pointing IN (its tip toward the centre) or OUT (its tip on the tube), its size with the rate, and the tube there
+  // tinted toward the ink. The machinery adds the membrane voltage as a faint rim just inside the tube, rose for + and blue
+  // for - (the charge's inks)
+  var notch = 0.0;
+  if (D.pump.x > 0.5) {
+    let slot = side & 1u;
+    let code = select(g.pump.x, g.pump.y, slot == 1u);
+    let rate = select(g.pump.z, g.pump.w, slot == 1u);
+    if (rate >= 0.05) {
+      var mid = (f32(side) + 0.5) * P3 * c.r;                       // an ellipse cell: the side's middle along the arc
+      if (in.hh1.w > 0.5) {
+        let tmv = array<f32, 6>(in.tm0.x, in.tm0.y, in.tm0.z, in.tm0.w, in.tm1.x, in.tm1.y);
+        mid = tmv[min(side, 5u)];
+      }
+      let u = abs(sd.y - mid);
+      let h = D.pump.y * c.r * sqrt(clamp(rate / max(D.pump2.x, 1e-3), 0.15, 1.0));
+      if (h * D.dpr > 0.5) {
+        let dep = 1.6 * h;
+        let y = ein - lw;                                            // depth inside the tube's inner edge
+        let out = pump_out(code);
+        let hw = select(h * (1.0 - y / dep), h * (y / dep), out);    // IN: tip inward; OUT: tip on the tube
+        let sdf = max(u - hw, max(-y - 0.5 * lw, y - dep));
+        let ink = D.pumpInk[pump_ch(code)].rgb;
+        notch = cover(0.0, sdf, aa);
+        var nk = ink;
+        if (neon) { nk = mix(ink, vec3f(1.0), 0.5 * D.neon2.z * clamp(1.0 - u / max(h, 1e-3), 0.0, 1.0)); }
+        rgb = mix(rgb, nk, notch);
+        // the tube's segment at the notch takes the ink
+        lineCol = mix(lineCol, ink * max(D.line, 0.8), D.pump2.y * cover(h, u, aa));
+      }
+    }
+  }
+  if (D.pump.z > 0.0 && abs(c.volt) > 0.02) {
+    let vr = clamp(abs(c.volt) / max(D.pump.w, 1e-4), 0.0, 1.0);
+    let g0 = lw + max(0.6, 0.4 * lw);
+    let w2 = max(0.6 * lw, 0.6 / D.dpr);
+    let rim = clamp(min(ein - g0, g0 + w2 - ein) / aa + 0.5, 0.0, 1.0) * (1.0 - notch);
+    rgb = mix(rgb, select(D.qNeg.rgb, D.qPos.rgb, c.volt > 0.0), rim * D.pump.z * vr);
+  }
   // step C6c: the membrane's dimming and flicker, the heavy membrane's inner tube, a burst's flash (white, fading over
   // BURST_TICKS, the inside lit for a moment)
   lineCol *= mDim;
@@ -506,7 +568,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   if (D.dim > 0.0) { rgb *= 1.0 - D.dim * (1.0 - smoothstep(0.0, max(D.starve, 1e-3), c.bat)); }
   // step C6n: the hum (1 when it is off or the look is flat)
   rgb *= hum_bright(c, in.id);
-  let a = disc * mix(D.fillA, 1.0, max(max(max(max(max(max(max(ring, ring2), dot * (1.0 - clearA)), mark), bar), hnd), coreA), partA));
+  let a = disc * mix(D.fillA, 1.0, max(max(max(max(max(max(max(max(ring, ring2), dot * (1.0 - clearA)), mark), bar), hnd), coreA), partA), notch));
   // rgb is the colour as seen; blend premultiplied (one, one-minus-src-alpha)
   return vec4f(rgb * a, a);
 }

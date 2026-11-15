@@ -33,7 +33,7 @@
 
 const HEAT_SCALE: f32 = 65536.0;   // counts per energy unit
 const HEAT_V0: f32 = 10.0;         // CSS px / s: the speed whose motion energy is 0.5 units
-const LEDGER_WORDS: u32 = 20224u;   // (19200 until step C6b, 19712 until step C6c)
+const LEDGER_WORDS: u32 = 21760u;   // (19200 until step C6b, 19712 until step C6c, 20224 until step C7)
 const LG_WORK: u32 = 0u;     // 256 slots: work done on the cells by the forces (fields, contact, crawling, stirring)
 const LG_BASE: u32 = 256u;   // 64: the base warmth put into the dish
 const LG_OUT: u32 = 320u;    // 64, 64-bit: heat that leaked out of the dish (to the sky, at the edge, on a resize)
@@ -76,6 +76,9 @@ const LG_Q_PMAX: u32 = 19456u;     // largest |phi| in the dish (f32 bits; atomi
 // step C6c, membrane chemistry (src/membrane.js, cell_eat.wgsl): 32 numbers x 16 slots (i32): 0..15 a snapshot (the ledger
 // pass, every frame), 16..31 counters since the last read-back (the eat pass); MB_* in cell_eat.wgsl
 const LG_MB: u32 = 19712u;
+// step C7, pumps (src/pumps.js, cell_eat.wgsl): 96 numbers x 16 slots (i32): 0..63 a snapshot (the ledger pass, every frame),
+// 64..95 counters since the last read-back (the eat pass); PC_* in cell_eat.wgsl
+const LG_PU: u32 = 20224u;
 
 const NCH: u32 = 13u;               // step C3: substance channels
 const ATOM_SCALE: f32 = 4096.0;     // counts per atom-unit (ATOM_SCALE in src/matter.js)

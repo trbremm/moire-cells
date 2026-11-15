@@ -84,6 +84,24 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var segQ = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
   var segP = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
   let mb = membrane(c);
+  // step C7: each side's middle direction (unit vectors, sides 0..3 in the A vectors, 4 and 5 in the B ones), to find the
+  // touching neighbour across each side (Cell.nbr: the nearest touching cell whose direction is closest to that side's middle)
+  let nbrOn = S.nbrOn != 0u && S.count <= NBR_NONE;
+  // (worked out in vectors: a loop over arrays here slowed the whole step by a third)
+  let mxA = vec4f(mb.mid[0].x, mb.mid[1].x, mb.mid[2].x, mb.mid[3].x);
+  let myA = vec4f(mb.mid[0].y, mb.mid[1].y, mb.mid[2].y, mb.mid[3].y);
+  let mxB = vec2f(mb.mid[4].x, mb.mid[5].x);
+  let myB = vec2f(mb.mid[4].y, mb.mid[5].y);
+  let ilA = inverseSqrt(max(mxA * mxA + myA * myA, vec4f(1e-12)));
+  let ilB = inverseSqrt(max(mxB * mxB + myB * myB, vec2f(1e-12)));
+  let nmxA = mxA * ilA;
+  let nmyA = myA * ilA;
+  let nmxB = mxB * ilB;
+  let nmyB = myB * ilB;
+  var nbDA = vec4f(1e9);
+  var nbDB = vec2f(1e9);
+  var nbIA = vec4u(NBR_NONE);
+  var nbIB = vec2u(NBR_NONE);
   let me = beats[j];                         // this cell's own (strained) lattice, for the receptor tuning
   let mk0 = me.k01.xy;
   let mk1 = me.k01.zw;
@@ -283,6 +301,22 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         let reach = S.reach * R0;
         if (d2 >= max(reach * reach, Rt * Rt)) { continue; }
         let dist = sqrt(d2);
+        // step C7: the touching neighbour across each side (nearest per side), for the pumps across contact
+        if (nbrOn && dist < reach) {
+          let ux = d.x / max(dist, 1e-6);
+          let uy = d.y / max(dist, 1e-6);
+          let ca = ux * nmxA + uy * nmyA;
+          let cb = ux * nmxB + uy * nmyB;
+          let cm = max(max(max(ca.x, ca.y), max(ca.z, ca.w)), max(cb.x, cb.y));
+          let dn = dist / R0;
+          let oi = beats[k].idx;
+          let sa = (ca >= vec4f(cm)) & (vec4f(dn) < nbDA);
+          let sb = (cb >= vec2f(cm)) & (vec2f(dn) < nbDB);
+          nbDA = select(nbDA, vec4f(dn), sa);
+          nbIA = select(nbIA, vec4u(oi), sa);
+          nbDB = select(nbDB, vec2f(dn), sb);
+          nbIB = select(nbIB, vec2u(oi), sb);
+        }
 
         // contact: 1 when touching, fading to 0 at the reach (cells a hair apart still talk)
         let touch = clamp((reach - dist) / (reach - R0 + 1e-3), 0.0, 1.0);
@@ -847,7 +881,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       let pc = sorted[parent];
       let pi = beats[parent].idx;
       var nb = bioPrev[pi];
-      if ((S.rules & RULE_MUT) != 0u) { nb = mutate(nb, bs, S.mutSize, S.mutJump, S.engJump); }
+      if ((S.rules & RULE_MUT) != 0u) { nb = mutate(nb, bs, S.mutSize, S.mutJump, S.engJump, FL.memb.w); }
       let inherit = (S.rules & RULE_INHERIT) != 0u;
       if (!inherit) { nb.acc = vec4f(0.0); }
       nb.env = vec4f(0.0);                      // a newborn has felt nothing yet and is not converted
@@ -917,6 +951,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // the leak level, for the drawing and the census (a newborn starts at 0)
   if (c.seed != sorted[j].seed) { c.flags &= ~(255u << CELL_LEAK_SHIFT); }
   else { c.flags = (c.flags & ~(255u << CELL_LEAK_SHIFT)) | (u32(round(clamp(me.lk.w, 0.0, 1.0) * 255.0)) << CELL_LEAK_SHIFT); }
+  // step C7: the neighbours across the sides, 16 bits each (none while the pumps across contact are off)
+  c.nbr = array<u32, 3>(nbIA.x | (nbIA.y << 16u), nbIA.z | (nbIA.w << 16u), nbIB.x | (nbIB.y << 16u));
   cells[i] = c;
   bioNext[i] = bio;
 }

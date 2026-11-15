@@ -112,7 +112,7 @@ struct Eng {
   _p: u32,
 };
 
-// what src/eat.js writes once per frame (1296 bytes)
+// what src/eat.js writes once per frame (1424 bytes since step C7)
 struct EatP {
   flags: u32,              // EF_* below
   mask: u32,               // bit c: the dish moves channel c this frame (the cells may put matter into it)
@@ -165,7 +165,58 @@ struct EatP {
   mb3: vec4f,              // x shedAt (x what a side wants); y shedK (per s); z the leak's largest (the exchange x at most this);
                            // w tRef (memb_stiff, for the census)
   mb4: vec4f,              // x hold: the share of its capacity a cell with no membrane can hold (a closed membrane: all of it)
+  // ---- step C7, pumps (src/pumps.js) ----
+  pu0: vec4f,              // x: PUF_* bits (u32); y the base cost (heat counts per count moved UP its gradient, once the ratio is
+                           // past pu2.z e-folds); z the gradient cost (heat counts per count per e-fold up); w the largest rate (per s)
+  pu1: vec4f,              // x upkeep (heat counts per tick per unit of pump rate); y the voltage's leak (per s, at the light atoms'
+                           // permeability 3 and a whole membrane); z the capacitance (charge atom-units per unit of voltage, per r / R);
+                           // w the share of the voltage's energy that flows into the battery as it leaks back (PUF_V2B)
+  pu2: vec4f,              // x eps (units per R^2, so an empty side costs finitely); y the gradient term's cap (e-folds); z the base
+                           // cost's ramp (e-folds: the cost grows smoothly from 0 at equal concentrations); w the most a pump moves from
+                           // one cell's stock to another per side and slot per tick (share of the source; 1 / 24 keeps every stock >= 0)
 };
+// step C7: pumps
+const PUF_ON: u32 = 1u;        // pumps (master): the genome's pump slots move substances across the membrane
+const PUF_CONTACT: u32 = 2u;   // ... across contact: a side touching a neighbour pumps from / into the neighbour's stock
+const PUF_VOLT: u32 = 4u;      // ... membrane voltage: pumped charge builds a voltage that costs further pumping of that sign
+const PUF_V2B: u32 = 8u;       // ... the voltage pays the battery as it leaks back (else its energy becomes heat)
+const VQ: u32 = 14u;           // stock word: the charge the pumps moved across the membrane (counts of charge; + = into the cell)
+const EVW: u32 = 15u;          // stock word: the energy stored in the voltage (heat counts; part of the books' "stored")
+fn pu_flags() -> u32 { return bitcast<u32>(EP.pu0.x); }
+// the energy of a voltage holding q charge counts (heat counts), for a capacitance cm (atom-units per unit voltage)
+fn volt_energy(q: i32, cm: f32) -> f32 { let x = f32(q) / ATOM_SCALE; return 0.5 * x * x / max(cm, 1e-4) * HEAT_SCALE; }
+// a channel's class for the pump counters: light atoms (g t), heavy atoms (G T), linkers (l L), fuels, trace
+fn pump_class(ch: u32) -> u32 {
+  if (ch == 0u || ch == 1u) { return 0u; }
+  if (ch == 3u || ch == 4u) { return 1u; }
+  if (ch == 2u || ch == 5u) { return 2u; }
+  if (ch >= 6u && ch <= 9u) { return 3u; }
+  return 4u;
+}
+// a pump's cost per count moved from concentration `src` to `dst` (units per R^2), heat counts: free down the gradient, base x a
+// smooth ramp + the gradient cost x the e-folds up it (both bounded)
+fn pump_cost(src: f32, dst: f32) -> f32 {
+  let x = log((max(dst, 0.0) + EP.pu2.x) / (max(src, 0.0) + EP.pu2.x));
+  if (x <= 0.0) { return 0.0; }
+  return EP.pu0.y * clamp(x / max(EP.pu2.z, 1e-3), 0.0, 1.0) + EP.pu0.z * min(x, EP.pu2.y);
+}
+// two signed 16-bit counts in one word (a pump's two slots), and back
+fn pack2(a: i32, b: i32) -> i32 { return (clamp(a, -32767, 32767) & 0xffff) | (clamp(b, -32767, 32767) << 16u); }
+fn unpack2(w: i32) -> vec2i { return vec2i((w << 16u) >> 16u, w >> 16u); }
+// step C7: the pump counters and census (LG_PU + 16 q + slot), see heat_common.wgsl
+const PU_SNAP: u32 = 64u;      // snapshot numbers (the ledger pass), then 32 counters (the eat pass)
+const PC_IN: u32 = 0u;         // counters 0..4: counts pumped in from the dish, per class; 5..9 out into the dish; 10..14 pulled
+const PC_OUT: u32 = 5u;        // in from touching neighbours; 15..19 pushed out into them
+const PC_CIN: u32 = 10u;
+const PC_COUT: u32 = 15u;
+const PC_GRAD: u32 = 20u;      // heat counts the batteries paid for pumping up gradients
+const PC_VWORK: u32 = 21u;     // ... paid as work against the voltage (into its store)
+const PC_VHEAT: u32 = 22u;     // ... the voltage's energy released as heat
+const PC_VBAT: u32 = 23u;      // ... released into batteries
+const PC_UPKEEP: u32 = 24u;    // ... pump upkeep
+const PC_BUSY: u32 = 25u;      // cell-ticks with a pump moving something
+const PC_CHARGE: u32 = 26u;    // |charge| counts the pumps moved
+var<workgroup> wpu: array<atomic<i32>, 32>;
 const MBF_ON: u32 = 1u;      // membrane chemistry (master): material, integrity, repair, leak
 const MBF_BITE: u32 = 2u;    // ... bites
 const MBF_BURST: u32 = 4u;   // ... bursting (only while turnover is on)
@@ -328,7 +379,9 @@ fn give_back(i: u32, p: vec2f, cur: u32, slot: u32) {
       gone += m;
     }
   }
-  let b = atomicExchange(&stock[i * SW + BAT], 0);
+  // (step C7: and the energy stored in its membrane voltage, as heat with the battery; the voltage itself is gone)
+  atomicStore(&stock[i * SW + VQ], 0);
+  let b = atomicExchange(&stock[i * SW + BAT], 0) + max(atomicExchange(&stock[i * SW + EVW], 0), 0);
   if (b > 0) { spread9(LEDGER_WORDS, idx, b); }
   atomicAdd(&wev[EV_DUMP], back);
   atomicAdd(&wev[EV_GONE], gone);
@@ -347,6 +400,11 @@ fn flush_counters(li: u32, slot: u32) {
     // step C6c: the membrane's counters (16 slots, i32: cleared at each read-back)
     let v = atomicLoad(&wmb[li - 32u]);
     if (v != 0) { atomicAdd(&hb[LG_MB + 16u * (16u + li - 32u) + (slot & 15u)], v); }
+  }
+  if (li < 32u) {
+    // step C7: the pumps' counters (16 slots, i32: cleared at each read-back)
+    let v = atomicLoad(&wpu[li]);
+    if (v != 0) { atomicAdd(&hb[LG_PU + 16u * (PU_SNAP + li) + (slot & 15u)], v); }
   }
 }
 
@@ -375,6 +433,11 @@ fn split(@builtin(global_invocation_id) id: vec3u) {
       let got = take_stock(pi * SW + k, h / 2);
       if (got > 0) { atomicAdd(&stock[i * SW + k], got); }
     }
+    // step C7: and half of its membrane voltage (the pumped charge, either sign) and of the energy stored in it
+    let vh = atomicLoad(&stock[pi * SW + VQ]) / 2;
+    if (vh != 0) { atomicSub(&stock[pi * SW + VQ], vh); atomicAdd(&stock[i * SW + VQ], vh); }
+    let eh = take_stock(pi * SW + EVW, atomicLoad(&stock[pi * SW + EVW]) / 2);
+    if (eh > 0) { atomicAdd(&stock[i * SW + EVW], eh); }
     // step C6c: and a share r / (r + r_parent) of each side of the parent's membrane (side k to side k), so both start with
     // about the parent's integrity (the newborn is smaller and wants less)
     let sh = c.r / max(c.r + cells[pi].r, 1e-3);
@@ -487,6 +550,122 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     }
     flux[fo + k] = n;
   }
+  // ---- step C7, PUMPS: each slot of the genome (Bio.pump: a substance, IN or OUT, a rate) works on all six sides, a sixth of
+  // its rate each. A side touching a neighbour that touches it back (both list each other in Cell.nbr) trades with that
+  // neighbour's stock; a free side with the dish just outside it (the pixel beyond its middle). Per s a slot moves rate x the
+  // source's amount per cell volume (IN from a free side: the concentration outside x the cell's area; from a neighbour or
+  // OUT: the stock), an inflow scaled by the room left. Moving a substance DOWN its gradient is free; UP it costs
+  // pump_cost per count; moving charge across builds the membrane voltage, whose energy the battery pays too (volt_energy).
+  // What the battery (after the crawl) cannot pay is not pumped: everything is scaled down. Only this cell's plan writes its
+  // requests (flux 16..29); its eat applies them to itself and its neighbours' eat apply the reverse to theirs (race-free,
+  // and both sides read the same numbers, so matter stays exact). From another cell's stock at most pu2.w of it per side
+  // and slot per tick, so that 6 sides x 2 slots x (pulled + pushed) never take a stock below zero.
+  var pcq = array<i32, 6>(0, 0, 0, 0, 0, 0);      // contact requests per side, both slots packed (+ = into this cell)
+  var pgq = array<i32, 6>(0, 0, 0, 0, 0, 0);      // grid requests per side, both slots packed (+ = into this cell)
+  var pCostC = 0.0;
+  var pCostG = 0.0;
+  let puf = pu_flags();
+  let gpu = bio[i].pump;
+  let pmax = EP.pu0.w;
+  let pr = vec2f(min(max(gpu.z, 0.0), pmax), min(max(gpu.w, 0.0), pmax));
+  if ((puf & PUF_ON) != 0u && eatOn && (pr.x > 0.0 || pr.y > 0.0)) {
+    let contact = (puf & PUF_CONTACT) != 0u && S.count <= NBR_NONE;
+    let concIn = EP.R * EP.R / (ATOM_SCALE * areaPx);          // stock counts -> units per R^2 inside
+    let concPx = EP.R * EP.R / (ATOM_SCALE * HP.px * HP.px);   // pixel counts -> units per R^2
+    let batS = stockP[fo + BAT];
+    let bat0 = f32(batS - clamp(c.pay, 0, max(batS, 0)));
+    // the neighbour across each side, if it is in contact (it lists this cell too) and eats this tick
+    var jn = array<u32, 6>(NBR_NONE, NBR_NONE, NBR_NONE, NBR_NONE, NBR_NONE, NBR_NONE);
+    if (contact) {
+      for (var k = 0u; k < 6u; k++) {
+        let j = cell_nbr(c, k);
+        if (j >= S.count || j == i) { continue; }
+        let fj = cells[j].flags;
+        if ((fj & CELL_ALIVE) == 0u || (cell_burst(fj) != 0u && (mbf & MBF_BURST) != 0u)) { continue; }
+        if (nbr_side(cells[j].nbr, i) < 6u) { jn[k] = j; }
+      }
+    }
+    var mouth: array<u32, 6>;                                   // the pixel just outside each side's middle
+    for (var k = 0u; k < 6u; k++) {
+      let e = mbd.edge[k];
+      let px = heat_xy(HP, c.pos + mbd.mid[k] + vec2f(e.y, -e.x) / max(length(e), 1e-6) * (0.5 * HP.px));
+      mouth[k] = u32(px.y) * HP.hw + u32(px.x);
+    }
+    var want: array<vec2f, 6>;                                  // contact (x) and grid (y) amounts per side, slot 0
+    var want1: array<vec2f, 6>;                                 // ... slot 1
+    var vdq = 0.0;                                              // charge counts the pumps would move in
+    for (var s = 0u; s < 2u; s++) {
+      let rk = pr[s];
+      let code = gpu[s];
+      let ch = pump_ch(code);
+      let out = pump_out(code);
+      if (rk <= 0.0 || (EP.sedMask & (1u << ch)) != 0u) { continue; }
+      let z = f32(charge_of(EP.qCodes, ch));
+      let ks = rk / 6.0 * EP.dt;
+      let Mi = f32(max(stockP[fo + ch], 0));
+      let ci = Mi * concIn;
+      let gridOk = cur != 0u && (EP.mask & (1u << ch)) != 0u;
+      for (var k = 0u; k < 6u; k++) {
+        var a = vec2f(0.0);
+        let j = jn[k];
+        if (j != NBR_NONE) {
+          let Mj = f32(max(stockP[j * SW + ch], 0));
+          let rj = cells[j].r;
+          let cj = Mj * EP.R * EP.R / (ATOM_SCALE * 3.14159265 * rj * rj);
+          if (out) {
+            a.x = -min(ks * Mi, EP.pu2.w * Mi) * clamp(1.0 - cells[j].fill, 0.0, 1.0);
+            pCostC += -a.x * pump_cost(ci, cj);
+          } else {
+            a.x = min(ks * Mj, EP.pu2.w * Mj) * room;
+            pCostC += a.x * pump_cost(cj, ci);
+          }
+          vdq += z * a.x;
+        } else if (gridOk) {
+          let Mp = f32(max(mg[cur - lw + ch * EP.n + mouth[k]], 0));
+          let co = Mp * concPx;
+          if (out) {
+            a.y = -ks * Mi;
+            pCostG += -a.y * pump_cost(ci, co);
+          } else {
+            a.y = min(ks * Mp * areaPx / (HP.px * HP.px), 0.25 * Mp) * room;
+            pCostG += a.y * pump_cost(co, ci);
+          }
+          vdq += z * a.y;
+        }
+        if (s == 0u) { want[k] = a; } else { want1[k] = a; }
+      }
+    }
+    // what the battery can pay: the gradients' cost and the voltage's work (the energy the moved charge adds to the voltage)
+    let cm = EP.pu1.z * c.r / EP.R;
+    var vw = 0.0;
+    if ((puf & PUF_VOLT) != 0u) {
+      let q0 = stockP[fo + VQ];
+      vw = max(volt_energy(q0 + i32(round(vdq)), cm) - volt_energy(q0, cm), 0.0);
+    }
+    let tot = pCostC + pCostG + vw;
+    let fpay = select(1.0, clamp(bat0 / max(tot, 1e-6), 0.0, 1.0), tot > bat0);
+    pCostC *= fpay;
+    pCostG *= fpay;
+    for (var k = 0u; k < 6u; k++) {
+      let r0 = u01(pcg(rs + k * 0x2c1b3c6du + 0x7a3f1e5bu));
+      let r1 = u01(pcg(rs + k * 0x297a2d39u + 0x0b5ad4ecu));
+      let a0 = want[k] * fpay;
+      let a1 = want1[k] * fpay;
+      let c0 = i32(floor(a0.x + r0));
+      let c1 = i32(floor(a1.x + r1));
+      let g0 = i32(floor(a0.y + r1));
+      let g1 = i32(floor(a1.y + r0));
+      pcq[k] = pack2(c0, c1);
+      pgq[k] = pack2(g0, g1);
+      // step C6d: the charge a pump moves through a side comes in (or leaves) there
+      if (dpOn) {
+        dq[k] += f32(charge_of(EP.qCodes, pump_ch(gpu.x))) * f32(c0 + g0) + f32(charge_of(EP.qCodes, pump_ch(gpu.y))) * f32(c1 + g1);
+      }
+    }
+  }
+  for (var k = 0u; k < 6u; k++) { flux[fo + 16u + k] = pcq[k]; flux[fo + 22u + k] = pgq[k]; }
+  flux[fo + 28u] = i32(ceil(pCostC));
+  flux[fo + 29u] = i32(ceil(pCostG));
   // step C6d: the side charges: each side's difference from the even share D (sum 0) gets the through-flow and relaxes
   // (dpRelax per s) toward 0; kept within dpCap x mobile / 6. The even share stays the last net charge / 6 (the eat dispatch
   // puts it on the new one)
@@ -661,11 +840,124 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     let areaR2 = max(areaPx / (EP.R * EP.R), 1e-3);          // ... in R^2
     let cap = EP.capR2 * areaR2 * ATOM_SCALE;                // stock capacity, atom counts
     let rs = pcg(c.seed ^ pcg(S.tick * 0x9e3779b9u + 0x51ed27u));
+    let fo = i * SW;
+
+    // ---- step C7, PUMPS (planned in the plan dispatch, flux 16..29): first what this cell's pumps move with its touching
+    // neighbours (its own requests), then what theirs move with it (their requests, reversed: the same numbers, so every
+    // count leaves one stock and arrives in the other), then its trade with the dish at its free sides (takes and adds, as
+    // the membrane's). It pays the gradients' cost from the battery (as heat), then the work the moved charge does against
+    // its membrane VOLTAGE (into the voltage's store, stock word EVW); the voltage leaks back through the membrane (faster
+    // when leaky or damaged), and the energy it frees becomes heat or, with PUF_V2B, partly battery charge
+    let puf = pu_flags();
+    let gpu = bio[i].pump;
+    let pch = vec2u(pump_ch(gpu.x), pump_ch(gpu.y));
+    let pz = vec2i(charge_of(EP.qCodes, pch.x), charge_of(EP.qCodes, pch.y));
+    var vdq = 0;                                                // charge counts this cell's pumps moved in
+    var pmoved = false;
+    for (var k = 0u; k < 6u; k++) {
+      let w = flux[fo + 16u + k];
+      if (w == 0) { continue; }
+      let a = unpack2(w);
+      for (var s = 0u; s < 2u; s++) {
+        if (a[s] == 0) { continue; }
+        m[pch[s]] += a[s];
+        vdq += pz[s] * a[s];
+        atomicAdd(&wpu[select(PC_COUT, PC_CIN, a[s] > 0) + pump_class(pch[s])], abs(a[s]));
+      }
+      pmoved = true;
+    }
+    if ((puf & PUF_CONTACT) != 0u && S.count <= NBR_NONE) {
+      for (var k = 0u; k < 6u; k++) {
+        let j = cell_nbr(c, k);
+        if (j >= S.count || j == i) { continue; }
+        let q = nbr_side(cells[j].nbr, i);
+        if (q >= 6u) { continue; }
+        let w = flux[j * SW + 16u + q];
+        if (w == 0) { continue; }
+        let a = unpack2(w);
+        let gj = bio[j].pump;
+        if (a.x != 0) { m[pump_ch(gj.x)] -= a.x; }
+        if (a.y != 0) { m[pump_ch(gj.y)] -= a.y; }
+      }
+    }
+    if (cur != 0u) {
+      let mbp = membrane(c);
+      for (var k = 0u; k < 6u; k++) {
+        let w = flux[fo + 22u + k];
+        if (w == 0) { continue; }
+        let a = unpack2(w);
+        let e = mbp.edge[k];
+        let px = heat_xy(HP, c.pos + mbp.mid[k] + vec2f(e.y, -e.x) / max(length(e), 1e-6) * (0.5 * HP.px));
+        let pi = u32(px.y) * HP.hw + u32(px.x);
+        for (var s = 0u; s < 2u; s++) {
+          let ch = pch[s];
+          if (a[s] == 0 || (EP.mask & (1u << ch)) == 0u) { continue; }
+          if (a[s] > 0) {
+            let got = take_hb(cur + ch * EP.n + pi, a[s]);
+            m[ch] += got;
+            vdq += pz[s] * got;
+            atomicAdd(&wpu[PC_IN + pump_class(ch)], got);
+          } else {
+            let give = min(-a[s], max(m[ch], 0));
+            if (give > 0) {
+              atomicAdd(&hb[cur + ch * EP.n + pi], give);
+              m[ch] -= give;
+              vdq -= pz[s] * give;
+              atomicAdd(&wpu[PC_OUT + pump_class(ch)], give);
+            }
+          }
+        }
+        pmoved = true;
+      }
+    }
+    if (pmoved) { atomicAdd(&wpu[PC_BUSY], 1); atomicAdd(&wpu[PC_CHARGE], abs(vdq)); }
+    let pcost = clamp(flux[fo + 28u] + flux[fo + 29u], 0, max(bat, 0));
+    if (pcost > 0) {
+      bat -= pcost;
+      heat += pcost;
+      atomicAdd(&wpu[PC_GRAD], pcost);
+    }
+    // the membrane voltage: the moved charge's work against it (paid as far as the battery can), the leak back (rate x the
+    // permeability gene / 3 x the membrane's leakiness), and the energy the leak frees (heat, or partly the battery)
+    {
+      var vq = atomicLoad(&stock[o + VQ]);
+      var ev = atomicLoad(&stock[o + EVW]);
+      let vq0 = vq;
+      let ev0 = ev;
+      let cm = EP.pu1.z * c.r / EP.R;
+      if ((puf & (PUF_ON | PUF_VOLT)) == (PUF_ON | PUF_VOLT)) {
+        let e0 = volt_energy(vq, cm);
+        vq = clamp(vq + vdq, -i32(64.0 * ATOM_SCALE), i32(64.0 * ATOM_SCALE));
+        let wv = clamp(i32(round(volt_energy(vq, cm) - e0)), 0, max(bat, 0));
+        if (wv > 0) { bat -= wv; ev += wv; atomicAdd(&wpu[PC_VWORK], wv); }
+        var ig = 0.0;
+        for (var k = 0u; k < 6u; k++) { ig += clamp(c.integ[k], 0.0, 1.0) / 6.0; }
+        let lk = select(1.0, min(1.0 + EP.mb1.x * (1.0 - ig), EP.mb3.z), (mb_flags() & MBF_ON) != 0u);
+        let pg = select(3.0, bio[i].rate.w, (EP.flags & EF_PERMG) != 0u);
+        let kv = min(1.0, EP.pu1.y * pg / 3.0 * lk * EP.dt);
+        vq -= i32(floor(f32(vq) * kv + u01(pcg(rs + 0x5bd1e995u))));
+      } else {
+        vq = 0;
+      }
+      // what the voltage holds above the energy of its charge is freed
+      let rel = select(ev - i32(ceil(volt_energy(vq, cm))), ev, vq == 0);
+      if (rel > 0) {
+        ev -= rel;
+        var gb = 0;
+        if ((puf & PUF_V2B) != 0u && (puf & PUF_VOLT) != 0u) { gb = clamp(i32(floor(f32(rel) * EP.pu1.w)), 0, max(EP.batMax - bat, 0)); }
+        bat += gb;
+        heat += rel - gb;
+        atomicAdd(&wpu[PC_VBAT], gb);
+        atomicAdd(&wpu[PC_VHEAT], rel - gb);
+      }
+      if (vq != vq0) { atomicStore(&stock[o + VQ], vq); }
+      if (ev != ev0) { atomicStore(&stock[o + EVW], ev); }
+      cells[i].volt = f32(vq) / ATOM_SCALE / max(cm, 1e-4);
+    }
 
     // ---- the membrane: the exchange the plan pass worked out (flux), with the 3 x 3 pixels under the cell. An uptake
     // takes an even share from each pixel (a take: a pixel that has less gives what it has); a release is spread evenly.
     // Only channels that move touch the grid, so a cell in an empty place costs no atomics here.
-    let fo = i * SW;
     if ((EP.flags & EF_EAT) != 0u && cur != 0u) {
       var up = 0;
       var down = 0;
@@ -949,11 +1241,16 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       var cost = 0.0;
       if ((EP.flags & EF_ENG) != 0u) { cost += EP.upEng * (max(b.rate.x, 0.0) + max(b.rate.y, 0.0) + max(b.rate.z, 0.0)); }
       if ((EP.flags & EF_TOLG) != 0u) { cost += EP.upTol * b.eng.w / max(EP.tolRef, 1e-3); }
+      // step C7: the pumps' upkeep (per unit of rate, as the engines')
+      var pcu = 0.0;
+      if ((puf & PUF_ON) != 0u) { pcu = EP.pu1.x * (min(max(gpu.z, 0.0), EP.pu0.w) + min(max(gpu.w, 0.0), EP.pu0.w)); }
+      cost += pcu;
       let pay = clamp(i32(floor(cost + u01(pcg(rs + 0x0b4e0ef3u)))), 0, bat);
       if (pay > 0) {
         bat -= pay;
         heat += pay;
         atomicAdd(&wev2[E2_UPKEEP], pay);
+        if (pcu > 0.0) { atomicAdd(&wpu[PC_UPKEEP], i32(round(f32(pay) * pcu / max(cost, 1e-9)))); }
       }
     }
 
@@ -1044,6 +1341,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       cells[i].q = 0.0;
       cells[i].qNet = 0.0;
       cells[i].sideQ = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      cells[i].volt = 0.0;
       atomicAdd(&wmb[MB_BURSTS - 16u], 1);
     }
     cells[i].integ = ig;
@@ -1090,6 +1388,26 @@ var<workgroup> wcen: array<atomic<i32>, 76>;
 var<workgroup> wq: array<atomic<i32>, 4>;
 // step C6c, the membrane census (a snapshot, LG_MB + 16 v; MB_* above)
 var<workgroup> wmbs: array<atomic<i32>, 16>;
+// step C7, the pumps' census (a snapshot, LG_PU + 16 v): cells, cells with an active pump (a slot's rate at least PUMP_ACTIVE),
+// their battery share x 1000 and the others', fed cells (battery at least 0.3) and those with an active pump, sum of the active
+// slots' rates x 1000, sum |voltage| x 1000, sum voltage x 1000, cells with |voltage| above 0.1, the voltages' energy (heat
+// counts / 256), then cells carrying each pump gene (22: IN of the 11 pumpable substances in PUMP_CH order, then OUT), and
+// the same among the fed cells
+const PUMP_ACTIVE: f32 = 0.05;
+const PS_N: u32 = 0u;
+const PS_ACT: u32 = 1u;
+const PS_BAT_ACT: u32 = 2u;
+const PS_BAT_NONE: u32 = 3u;
+const PS_FED: u32 = 4u;
+const PS_FED_ACT: u32 = 5u;
+const PS_RATE: u32 = 6u;
+const PS_AVOLT: u32 = 7u;
+const PS_VOLT: u32 = 8u;
+const PS_VCELLS: u32 = 9u;
+const PS_EV: u32 = 10u;
+const PS_GENE: u32 = 16u;
+const PS_GENE_FED: u32 = 38u;
+var<workgroup> wpus: array<atomic<i32>, 64>;
 
 @compute @workgroup_size(64)
 fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index) li: u32, @builtin(workgroup_id) wid: vec3u) {
@@ -1099,10 +1417,12 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     var ml = 0;
     var mh = 0;
     for (var k = 0u; k < 6u; k++) { ml += max(atomicLoad(&stock[i * SW + MB_L0 + k]), 0); mh += max(atomicLoad(&stock[i * SW + MB_H0 + k]), 0); }
+    let evc = max(atomicLoad(&stock[i * SW + EVW]), 0);   // step C7: the voltage's energy counts as stored, with the battery
     for (var k = 0u; k <= BAT; k++) {
       var v = max(atomicLoad(&stock[i * SW + k]), 0);
       if (k == MB_CH_L) { v += ml; }
       if (k == MB_CH_H) { v += mh; }
+      if (k == BAT) { v += evc; }
       if (v == 0) { continue; }
       atomicAdd(&wlo[k], u32(v) & 0xffffu);
       atomicAdd(&whi[k], u32(v) >> 16u);
@@ -1179,8 +1499,34 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       if (abs(c.q) > 0.3) { atomicAdd(&wmbs[MB_SELQ], 1); }
     }
     atomicAdd(&wmbs[MB_QSEL], i32(round(c.q * gm.w * 1000.0)));
+    // step C7: the pumps' census (PS_* above)
+    let gp = b.pump;
+    var act = false;
+    let fed = c.bat >= 0.3;
+    for (var s = 0u; s < 2u; s++) {
+      if (gp[2u + s] < PUMP_ACTIVE) { continue; }
+      act = true;
+      let pc = pump_ch(gp[s]);
+      let bin = min(select(pc, 10u, pc == 12u), 10u) + select(0u, PUMP_NCH, pump_out(gp[s]));   // (PUMP_CH order)
+      atomicAdd(&wpus[PS_GENE + bin], 1);
+      if (fed) { atomicAdd(&wpus[PS_GENE_FED + bin], 1); }
+      atomicAdd(&wpus[PS_RATE], i32(round(gp[2u + s] * 1000.0)));
+    }
+    atomicAdd(&wpus[PS_N], 1);
+    if (act) { atomicAdd(&wpus[PS_ACT], 1); atomicAdd(&wpus[PS_BAT_ACT], i32(round(c.bat * 1000.0))); }
+    else { atomicAdd(&wpus[PS_BAT_NONE], i32(round(c.bat * 1000.0))); }
+    if (fed) { atomicAdd(&wpus[PS_FED], 1); if (act) { atomicAdd(&wpus[PS_FED_ACT], 1); } }
+    let vc = clamp(c.volt, -1e4, 1e4);
+    atomicAdd(&wpus[PS_AVOLT], i32(round(abs(vc) * 1000.0)));
+    atomicAdd(&wpus[PS_VOLT], i32(round(vc * 1000.0)));
+    if (abs(vc) > 0.1) { atomicAdd(&wpus[PS_VCELLS], 1); }
+    atomicAdd(&wpus[PS_EV], evc >> 8u);
   }
   workgroupBarrier();
+  for (var q = li; q < PU_SNAP; q += 64u) {
+    let v = atomicLoad(&wpus[q]);
+    if (v != 0) { atomicAdd(&hb[LG_PU + 16u * q + (wid.x & 15u)], v); }
+  }
   if (li < 16u) {
     let v = atomicLoad(&wmbs[li]);
     if (v != 0) { atomicAdd(&hb[LG_MB + 16u * li + (wid.x & 15u)], v); }

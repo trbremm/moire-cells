@@ -45,14 +45,17 @@ import { SUBSTANCES, NCH, CH, ATOM_SCALE, ENGINES, ENGINE_KINDS, CHARGE_CODES } 
 import { BANDS, LIGHT_COMMON_URL } from './light.js';
 import { Membrane, MB_SNAP_WORDS } from './membrane.js';
 import { Pumps, PU_SNAP_WORDS } from './pumps.js';
+import { Catalysts, CAT_SNAP_WORDS } from './catalysts.js';
 
 const SW = 32;                      // stock words per cell (cell_eat.wgsl; 16 until step C6c's membranes, words 16..27; step C7:
                                     // 14 the pumped charge across the membrane, 15 the voltage's energy)
-const EP_BYTES = 1424;              // struct EatP (step C6c: + mb0..mb4; step C7: + pu0..pu2)
+const EP_BYTES = 1440;              // struct EatP (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat)
+const EP_CAT = 356;                 // ... its word cat (step C7b)
 const EP_PU = 344;                  // ... its word pu0
 const EP_MB = 324;                  // ... its word mb0 (after eng: 132 + 8 x 24)
 const LG_MB = 19712;                // heat_common.wgsl: the membrane census (its first 16 numbers are a snapshot)
 const LG_PU = 20224;                // heat_common.wgsl: the pumps' census (its first 64 numbers are a snapshot)
+const LG_CAT = 21760;               // heat_common.wgsl: the catalysts' census (a snapshot; step C7b)
 // heat_common.wgsl (COUNT: 5 x 64; step C6: EV2 16 counters, 64-bit; CEN the census, 72 numbers x 16 slots)
 const LG_K = { STOCK: 11520, BAT: 13184, START: 13312, EV: 13440, COUNT: 15488, EV2: 15872, CEN: 17920 };
 const EV2 = ['pig0', 'pig1', 'pig2', 'pig3', 'made', 'deficit', 'eBurn', 'eSwap', 'eForm', 'eGain', 'eHeat', 'upkeep', 'idle', 'stored'];
@@ -117,6 +120,7 @@ export class Eat {
     this.charge = null;        // step C6b: the charge (src/charge.js; set by main.js)
     this.membrane = new Membrane(this);   // step C6c: the membrane chemistry (src/membrane.js)
     this.pumps = new Pumps(this);         // step C7: pumps and the membrane voltage (src/pumps.js)
+    this.catalysts = new Catalysts(this); // step C7b: the catalysts (src/catalysts.js)
   }
 
   static async create(device, cells) {
@@ -242,6 +246,7 @@ export class Eat {
     });
     this.membrane.write(u, f, EP_MB);   // step C6c
     this.pumps.write(u, f, EP_PU, dt);  // step C7
+    this.catalysts.writeEat(f, EP_CAT); // step C7b
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
   }
 
@@ -277,6 +282,7 @@ export class Eat {
     encoder.clearBuffer(this.heat.buffer, LG_Q_CEN * 4, 4 * 16 * 4);       // step C6b: the cells' charge
     encoder.clearBuffer(this.heat.buffer, LG_MB * 4, MB_SNAP_WORDS * 4);   // step C6c: the membrane census (snapshot)
     encoder.clearBuffer(this.heat.buffer, LG_PU * 4, PU_SNAP_WORDS * 4);   // step C7: the pumps' census (snapshot)
+    encoder.clearBuffer(this.heat.buffer, LG_CAT * 4, CAT_SNAP_WORDS * 4); // step C7b: the catalysts' census (snapshot)
     const pass = encoder.beginComputePass({ label: 'cell eat ledger' });
     pass.setPipeline(this.pipes.ledger);
     pass.setBindGroup(0, this.bg, [0]);
@@ -343,6 +349,7 @@ export class Eat {
     this.membrane.apply(rec, w);   // step C6c
     this.pumps.apply(rec, w);      // step C7
     this.ledger = { time: rec.time, stock, atoms, chem, bat, start: this.start, full: cnt[0], empty: cnt[1], stuffed: cnt[2], n: cnt[3], hot: cnt[4], rate, rate2 };
+    this.catalysts.apply(rec, w);  // step C7b (after the ledger: it reads the trace in the cells)
   }
 
   /**

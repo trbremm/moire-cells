@@ -428,7 +428,21 @@ fn react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
         let R = CP.rx[r];
         var x = 0.0;
         if (R.by == 0u) {
-          x = R.k * f32(m[R.ch.x]) * exp(-R.spark * sparkScale / (CP.theta * temp)) * CP.dt;
+          var sc = sparkScale;
+          // step C7b, crystal seeding: a chain forms more easily where its own sediment already is (the pixel's, or the
+          // mean of its 4 neighbours' if more: their last tick's, from the copy this tick's spreading read, so no pixel
+          // reads what another writes now), spark x max(floor, 1 / (1 + s / s0))
+          if (R.fam == 4u && CP.cry.x > 0.0 && m[R.ch.x] > 1) {
+            let o = T.src + R.ch.z * MP.n + i;
+            var nb = 0;
+            if (id.x > 0u) { nb += mg[o - 1u]; }
+            if (id.x + 1u < MP.hw) { nb += mg[o + 1u]; }
+            if (id.y > 0u) { nb += mg[o - MP.hw]; }
+            if (id.y + 1u < MP.hh) { nb += mg[o + MP.hw]; }
+            let s = max(f32(m[R.ch.z]), 0.25 * f32(nb)) * conc;
+            sc *= max(CP.cry.z, 1.0 / (1.0 + s * CP.cry.y));
+          }
+          x = R.k * f32(m[R.ch.x]) * exp(-R.spark * sc / (CP.theta * temp)) * CP.dt;
           if (R.ch.y != NONE) { x *= f32(m[R.ch.y]) * conc; }
         } else if (tau[r] > 0.0) {
           x = caught[R.band] * tau[r] / tsum[R.band] / f32(R.light16);

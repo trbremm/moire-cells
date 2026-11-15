@@ -439,6 +439,23 @@ C12b. LIPID MEMBRANES, ELASTICITY FROM THE LIPIDS (user 2026-11-15: "Lipids shou
       oilier, stiffer membranes (real bacteria do this: "homeoviscous adaptation"). Watch for it; never write it.
     - Expected look: soft wobbly soap-skinned cells next to stiff oily ones holding crisp hexagons; tissue mechanics
       (packing, linking) now follow the chemistry the lineage eats and makes. Own switch (off = C6c linker membrane).
+OXYGEN RETRY AS RUN (2026-11-15, EXPERIMENTS.md "Oxygen retry"): the haze built (4.5 k free light atoms by 50 min)
+    and poisoned hard (35-90 bursts/s, a crater of uneaten fuel at the light spring); colonies escaped by ARMOUR (heavy
+    membranes, spotlight) or by DROPPING THE SKIN (whole dish); breathing never ran (<= 0.06 % of burning). Cause in the
+    table: free atoms carry zero energy, so breathing a fuel releases LESS than burning it. Yardstick: breathing that
+    runs = cells.rate2.eSwap; cells.rate.inSwap = heat-driven vandal swaps inside cells.
+C12c. EXCITED WASTE, THE OXYGEN FIX (user 2026-11-15 chose "charged waste"; NEXT after C12b): real oxygen holds part
+    of the sunlight that made it, which is why breathing beats fermenting. So:
+    - When LIGHT drives a reaction that frees an atom (the harvesters' uphill swaps, e.g. gT + G + light -> GT + g*),
+      the freed atom leaves EXCITED, keeping part of the photon's surplus (derived from the band energy minus the
+      uphill difference; the rest is heat as now). New channels for the excited light atoms (g*, t*): grid and stock.
+    - Excited atoms fade to ground + heat on their own (a lifetime, faster when hot), so the haze is rich but temporary.
+    - They react like ground ones, but every reaction they take part in also releases their stored energy: through a
+      cell's ENGINE (breathing) it goes to the battery, so breathing a fuel now pays MORE than burning it; uncontrolled
+      (vandal swaps in the open or loose inside a cell, membrane bites) it is dumped as HEAT on the spot, so the excited
+      haze is a worse poison than before (like reactive oxygen). No rule names breathers or poison.
+    - Books exact (excited energy counted as stored), own switch, the excited haze drawn as a faint glowing sparkle that
+      fades. Then rerun the oxygen conditions and watch: breathers rising, the haze being eaten, armour vs breathing.
 LATER, PURIST VERSION (user 2026-11-15: hoped for "a more game of life situation", surprised how many abstractions
     were needed; chose to KEEP GOING with lipids (C12b) and the oxygen story, "I can go back to the purist version
     later"). Idea on file: a separate small page "moire life": cells of a few colours, pairwise push/pull through

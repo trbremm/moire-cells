@@ -1,0 +1,20 @@
+{
+ "batch": "tissue-pairs-2",
+ "runs": [
+  "tq-Bfate-mot2.json",
+  "tq-Bfate-excl3.json",
+  "tq-Bfate-clockside.json",
+  "tq-Bfate-adh0.json",
+  "tq-agg-base.json",
+  "tq-agg-adh08.json",
+  "tq-agg-adh1-nosense.json",
+  "tq-agg-Bfate.json",
+  "tq-agg-Bfate-adh08.json",
+  "tq-dah-Bfate.json",
+  "tq-dah-nosense-100.json",
+  "tq-dah55-nosense-100.json",
+  "tq-key7-adh1.json",
+  "tq-key7-adh1-nosense-100.json",
+  "tq-key17-Bfate.json"
+ ]
+}

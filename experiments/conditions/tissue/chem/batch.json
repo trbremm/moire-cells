@@ -1,0 +1,19 @@
+{
+ "batch": "tissue-chem",
+ "runs": [
+  "tc-base.json",
+  "tc-lightoff.json",
+  "tc-full.json",
+  "tc-chargeoff.json",
+  "tc-lambda-1.json",
+  "tc-lambda-9.json",
+  "tc-qfeeloff.json",
+  "tc-qstockoff.json",
+  "tc-dipoff.json",
+  "tc-dip-polar.json",
+  "tc-memoff.json",
+  "tc-memheavy.json",
+  "tc-pump-steal.json",
+  "tc-pump-share.json"
+ ]
+}

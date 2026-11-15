@@ -1,0 +1,17 @@
+{
+ "batch": "tissue-types",
+ "runs": [
+  "tt-same.json",
+  "tt-dah.json",
+  "tt-dah-mild.json",
+  "tt-key-7deg.json",
+  "tt-key-17deg.json",
+  "tt-mot.json",
+  "tt-size.json",
+  "tt-dah-senseoff.json",
+  "tt-key-excl.json",
+  "tt-dah-agg.json",
+  "tt-key-agg.json",
+  "tt-dah-100.json"
+ ]
+}

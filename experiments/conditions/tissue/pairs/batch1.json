@@ -1,0 +1,19 @@
+{
+ "batch": "tissue-pairs-1",
+ "runs": [
+  "tq-adh08-clockside.json",
+  "tq-adh08-excl3.json",
+  "tq-adh08-excl2.json",
+  "tq-adh1-excl2-nosense.json",
+  "tq-adh08-Brepel-100.json",
+  "tq-adh1-Brepel-100.json",
+  "tq-adh08-sense40.json",
+  "tq-adh08-lever02.json",
+  "tq-adh08-mot2.json",
+  "tq-adh1-mot2.json",
+  "tq-adh08-muscle.json",
+  "tq-adh08-ellipse.json",
+  "tq-adh08-n300.json",
+  "tq-Bfate-senseoff.json"
+ ]
+}

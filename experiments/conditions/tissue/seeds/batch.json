@@ -1,0 +1,23 @@
+{
+ "batch": "tissue-seeds",
+ "seeds": [
+  7,
+  11
+ ],
+ "runs": [
+  "../hold/th-base.json",
+  "../hold/th-adhgene-0.8.json",
+  "../hold/th-adhgene-0.4.json",
+  "../hold/th-senseoff.json",
+  "../hold/th-Bfate.json",
+  "../hold/th-motgene-2.json",
+  "../hold/th-clock.json",
+  "../hold/th-excl3.json",
+  "../types/tt-dah.json",
+  "../types/tt-key-7deg.json",
+  "../types/tt-key-17deg.json",
+  "../types/tt-dah-senseoff.json",
+  "../types/tt-same.json",
+  "../types/tt-dah-mild.json"
+ ]
+}

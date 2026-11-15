@@ -1,0 +1,78 @@
+{
+ "name": "tt-dah-agg",
+ "description": "differential adhesion A 1 / B 0.3, started SCATTERED (aggregation assay)",
+ "series": "types",
+ "tissue_setting": {
+  "knobs": {},
+  "genes": {
+   "adhesion": 1
+  },
+  "typeB": {
+   "adhesion": 0.3
+  },
+  "query": {},
+  "extra_js": "await T.scatter({ radius: 14 });"
+ },
+ "query": {
+  "seed": 3,
+  "cells": 40,
+  "mut": 0,
+  "life": 0,
+  "clone": 1,
+  "springs": 0,
+  "light": "off",
+  "day": 0
+ },
+ "duration": 120,
+ "sample_every": 5,
+ "tissue": true,
+ "evals": [
+  {
+   "t": 0,
+   "js": "const T = await import('/experiments/tissue/tissue-lab.js'); window.__T = T;\nconst knobs = T.apply({\"cells.params.squeeze\": 0, \"genome.rules.diff\": false, \"eat.params.pay\": false});\nconst g = {\"keyAngle\": 0.35, \"keyScale\": 0.05, \"recAngle\": 0.35, \"recScale\": 0.05, \"recWidth\": 0.15, \"adhesion\": 1, \"size\": 1, \"motility\": 1, \"mix\": 0, \"thickness\": 0.012, \"stiffness\": 1, \"pumpRate0\": 0, \"pumpRate1\": 0, \"rate0\": 2, \"rate1\": 0, \"rate2\": 0}; g.eng0 = moire.genome.engineCode('gt → g + t', 0);\nconst b = {\"adhesion\": 0.3}; b.eng0 = moire.genome.engineCode('g + t → gt', 1);\nawait T.genes(g, b);\nawait T.scatter({ radius: 14 });\nreturn { knobs, genes: g, typeB: b, m: await T.measure({ every: 2 }) };"
+  },
+  {
+   "t": 60,
+   "js": "return await __T.measure({ every: 2 });"
+  },
+  {
+   "t": 80,
+   "js": "return await __T.measure({ every: 2 });"
+  },
+  {
+   "t": 82,
+   "js": "return await __T.stirThrough();"
+  },
+  {
+   "t": 120,
+   "js": "return await __T.measure({ every: 2 });"
+  }
+ ],
+ "shots": [
+  {
+   "t": 60
+  },
+  {
+   "t": 80
+  },
+  {
+   "t": 120
+  },
+  {
+   "t": 120,
+   "view": "strategy"
+  }
+ ],
+ "snapshots": [
+  {
+   "t": 80,
+   "grid": false,
+   "name": "prestir"
+  },
+  {
+   "t": 120,
+   "grid": false,
+   "name": "end"
+  }
+ ]
+}

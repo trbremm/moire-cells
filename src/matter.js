@@ -272,6 +272,10 @@ export function describe(s) {
 export const SPRING_KINDS = {
   light: { label: 'light spring', mix: { g: 1 / 3, t: 1 / 3, l: 1 / 3 }, stroke: 1.25 },
   heavy: { label: 'heavy spring', mix: { G: 0.32, T: 0.32, L: 0.32, trace: 0.04 }, stroke: 2.25 },
+  // step C10, the tissue lab only (no tool drops them; experiments/tissue/c10.py): linkers for the walls' cost, and the C6d ion
+  // test spring (light givers + heavy takers) that polarises the cells near it
+  linker: { label: 'linker spring (lab)', mix: { l: 0.5, L: 0.5 }, stroke: 1.5 },
+  ions: { label: 'ion spring (lab)', mix: { g: 0.5, T: 0.5 }, stroke: 1.5 },
 };
 
 export const ATOM_SCALE = 4096;          // counts per atom-unit (ATOM_SCALE in matter.wgsl)

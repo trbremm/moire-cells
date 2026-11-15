@@ -112,6 +112,11 @@ export async function measure({ every = 2, offset = 1, reach = null } = {}) {
     out.radialBA = nA && nB && rA > 0 ? (rB / nB) / (rA / nA) : null;
     out.nB = nb;
   }
+  // step C10: where the contacts sit on the cells' walls (front, side, back), the glue, the junctions' maturity
+  if (M().walls && M().walls.params.on) {
+    const w = await M().walls.stats();
+    out.walls = { contactAt: w.contactAt, glue: w.glue, matured: w.matured, effMean: w.effMean, matureMean: w.matureMean, classes: w.classes };
+  }
   window.__tissueLast = out;
   return out;
 }
@@ -149,6 +154,34 @@ export async function scatter({ radius = 14, gap = 1.25, seed = 1 } = {}) {
   await d.queue.onSubmittedWorkDone();
   if (M().tissue.reset) M().tissue.reset();
   return { cells: placed.length, radius, tries };
+}
+
+/**
+ * Step C10, patterned walls: set every live cell's FRONT (Cell.front, the direction its wall pattern hangs on; word 64) while
+ * paused, an assay like scatter: 'aligned' (every cell `angle` rad: as one lineage that inherited one direction), 'random' (each
+ * its own, from `seed`), 'in' / 'out' (toward / away from the live cells' centre). The front then turns with the cell's body
+ * (and, with the gene w, toward its dipole) as usual.
+ */
+export async function fronts({ mode = 'aligned', angle = 0, seed = 1 } = {}) {
+  await M().lab.settle(false);
+  const C = M().cells, n = C.count, F = CELL_FLOATS, d = M().gpu.device;
+  const ab = await readBuffer(d, C.cellBuf, 0, n * F * 4);
+  const f = new Float32Array(ab), u = new Uint32Array(ab);
+  const live = [];
+  for (let i = 0; i < n; i++) if (u[i * F + 9] & 1) live.push(i);
+  let cx = 0, cy = 0;
+  for (const i of live) { cx += f[i * F]; cy += f[i * F + 1]; }
+  cx /= Math.max(1, live.length); cy /= Math.max(1, live.length);
+  let s = seed >>> 0 || 1;
+  const rnd = () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+  for (const i of live) {
+    const o = i * F, out = Math.atan2(f[o + 1] - cy, f[o] - cx);
+    const a = mode === 'random' ? 2 * Math.PI * rnd() : mode === 'in' ? out + Math.PI : mode === 'out' ? out : angle;
+    f[o + 64] = ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  }
+  d.queue.writeBuffer(C.cellBuf, 0, f);
+  await d.queue.onSubmittedWorkDone();
+  return { cells: live.length, mode, angle };
 }
 
 /** Stir across the largest cluster's centre (a mouse drag from its left, `frames` frames of `step` CSS px). */

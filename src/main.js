@@ -46,6 +46,8 @@
 //               from their stock (Shift+8); ?qfeel=0 the cells not feeling the grid's field (Shift+9); ?contours=1 the
 //               charge field's contour lines drawn (Shift+0)
 //   ?honeycomb=0  step C6c: start with the ellipse cells instead of the elastic honeycomb (rules panel, Cell shape)
+//   ?membrane=0   step C6c: start with the membrane chemistry off; ?bites=0, ?burst=0, ?elastic=0, ?selectivity=0 its rules
+//               (rules panel, Membrane chemistry)
 //
 // Part C keys are Shift + a letter (every plain letter is taken by Parts A and B): checked before the plain keys,
 // so Shift+H never also toggles H.
@@ -214,6 +216,12 @@ async function boot() {
     if (params.has('engines')) cells.eat.params.engines = flag('engines');   // step C6
     if (params.has('burners')) cells.eat.params.burner = flag('burners');
     if (params.has('honeycomb')) cells.shape.on = flag('honeycomb');   // step C6c: ?honeycomb=0 starts with the ellipse cells
+    {   // step C6c: the membrane chemistry's switches
+      const MP = cells.eat.membrane.params;
+      for (const [q, k] of [['membrane', 'on'], ['bites', 'bites'], ['burst', 'burst'], ['elastic', 'elastic'], ['selectivity', 'select']]) {
+        if (params.has(q)) MP[k] = flag(q);
+      }
+    }
     background.heat = cells.heat;
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));
@@ -223,7 +231,8 @@ async function boot() {
   // read by the heat passes the cells run), and its tint is drawn under them (its outline over them: renderTop)
   layers = [medium, background, landscape, matter, charge, light, cells];   // (step C6b: the charge's contours over the substances)
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
-  window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter, eat: cells.eat, neon, charge };
+  window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter, eat: cells.eat, neon, charge,
+    membrane: cells.eat.membrane };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
   window.moire.budgets = budgets;      // the fast speeds' tick budgets
@@ -400,7 +409,7 @@ function frame(now) {
 
   if (!entropyEl.hidden) {
     const compact = view.cssW < 560 || view.cssH < 500;   // a phone (either way up): shorter lines
-    let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}\n${charge.panelLine(compact)}`;
+    let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}\n${charge.panelLine(compact)}\n${cells.eat.membrane.panelLine(compact)}`;
     if (paused || speed !== 1) {
       const r = reachedText();
       const sp = paused ? 'paused' : r ? (compact ? r : `${speedName(speed)} · reached ${r}`) : speedName(speed);
@@ -466,6 +475,7 @@ function drawOverlay() {
     ...matter.overlayLines(),
     ...cells.eat.overlayLines(),
     ...charge.overlayLines(),
+    ...cells.eat.membrane.overlayLines(),
     neon.overlayLine(),
     `simmer (Shift+R) ${background.heatOn ? 'on' : 'off'}: ripple drops ${background.params.heatDrops} per cell per step x temperature², height ${background.params.heatAmp}`,
     `sim t ${simTime.toFixed(1)} s · speed ${paused ? 'paused' : speedName(speed)}, reached ×${stats.reached.toFixed(2)} (${stats.ticks} ticks this frame` +

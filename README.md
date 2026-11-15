@@ -51,7 +51,7 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
     the landscape, which substance is shown, colour by fate, lineage, strategy (step C6) or charge (step C6b), and the
     other drawing switches;
   - *rules*: every rule that has a key, as a switch with a one-line explanation and its key, grouped as below
-    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge); settings with several values show the current one
+    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge, membrane chemistry (step C6c, panel only)); settings with several values show the current one
     and change on a tap; the lever and the stiffness have - and +. The switches follow the state, also when a key changes it;
   - *dish* (the dish with three cells): the speed as a row of buttons, new culture (N), new genomes (G), clear
     springs (C), wash the atoms out (Shift+C).
@@ -80,7 +80,8 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
 - URL options: `?speed=32` or `?speed=max`, `?paused=1` (start paused), `?ui=0` (start with the toolbar folded);
   step C6n: `?neon=0`, `?halo=off|low|medium|high`, `?trails=0`, `?hum=0`, `?machinery=1`, `?cheap=0|1`, and
   `?until=T` (run to simulation time T, then pause at exactly that tick); step C6b: `?charge=0`, `?qstock=0`, `?qfeel=0`,
-  `?contours=1`, `?view=charge`; step C6c: `?honeycomb=0` (the ellipse cells).
+  `?contours=1`, `?view=charge`; step C6c: `?honeycomb=0` (the ellipse cells), `?membrane=0` (no membrane chemistry),
+  `?bites=0`, `?burst=0`, `?elastic=0`, `?selectivity=0`.
 
 ## Keyboard shortcuts
 
@@ -1525,7 +1526,7 @@ rules panel shows the new group, and Shift+7 to Shift+0 and U switch as describe
 
 The user, 2026-11-15: "I want them to cluster in honeycomb shape and deform elastically." This is the first half of
 C6c, the shape and its drawing; the membrane's chemistry (integrity, bites, repair, bursting, material genes) is the
-next step and has its slots reserved (below).
+second half, in its own section, "Step C6c: membrane chemistry", below.
 
 **What it looks like.** A lone cell is a soft hexagon with rounded corners, nearly round. Where cells touch, the sides
 facing each other press flat into one **shared straight wall**, so a packed tissue reads as a neon **honeycomb**, or
@@ -1604,9 +1605,10 @@ drawn with a second ring inside).
 membrane's segment k (`membrane(c).mid[k]`, `.edge[k]`, its outward normal (edge.y, -edge.x)). The Cell record
 (`cell_common.wgsl`, `CELL_FLOATS` in `src/cells.js` and `heat.wgsl`) grew from 104 to 240 bytes; the new words:
 26-31 `rad[6]`, 32-37 `radV[6]` (the corners' speeds), 38 `theta`, 39 `spin`, 40-41 `ea`, 42-47 `alpha[6]`, and
-reserved, zero for now: **48-53 `integ[6]`** (each side's integrity) and **54-59 `sideQ[6]`** (each side's charge). The
+**48-53 `integ[6]`** (each side's integrity, since the membrane chemistry below) and **54-59 `sideQ[6]`** (each side's
+charge, reserved for step C6d). The
 step pass reads each cell whole from its own slot and writes it back whole, so whatever another pass writes there (as the
-eat pass writes `smell` and `efield`) survives; a newborn starts with zeros (the next worker must give it whole sides),
+eat pass writes `smell` and `efield`) survives; a newborn starts with zeros (the membrane chemistry gives it a share of its parent's sides),
 and with the honeycomb off the sides are the ellipse's 6 segments. The step's neighbours come from the grid's sorted
 copy, now a lean `CellCore` (the first 104 bytes, `cell_core()`), so the neighbour loop reads no more memory than before;
 a rule that needs a NEIGHBOUR's per-side state (dipoles, C6d) has to add it to CellCore or read `cells` by index.
@@ -1637,6 +1639,181 @@ neighbour loop (1.59 ms) until the six corners were worked on at once in vectors
 honeycomb off and on at runtime (every outline rebuilt, overlaps 66 % with the ellipses, 0.1 % again with the
 honeycomb), the stiffness knob, no WebGPU errors in Chrome (headless, also at phone size 390 x 844) and Firefox
 (headed). Not bit-repeatable (the GPU's neighbour order varies), so the comparisons above are statistics of one run each.
+
+## Step C6c: membrane chemistry
+
+The user, 2026-11-15: "Are they able to excrete? Can that be harmful to some? Maybe we need their membrane reacting with
+chemicals, not only through heat. Also the level of elasticity could be genetic." This is the second half of C6c: the
+membrane becomes a **material** that the chemistry can attack, and its stiffness becomes a gene. No rule names a toxin:
+what harms a membrane follows from the periodic table (rows, groups, sparks).
+
+**What it looks like** (clean view, default scene). The tubes now show the membranes' state. A cell that has woven a
+full membrane has the bright tube of before; a side with little or no material is dimmer and a quarter thinner, so the
+starving cells in the dark part of the culture, which never get linkers, have fainter, thinner outlines (they were
+already dimmed for their empty batteries; the culture as a whole looks much as before). Where a membrane that had been
+whole is being eaten, that side's tube **breaks into short dashes**, the gaps growing as it empties, and flickers
+gently: in the default scene this shows on a few dozen to a hundred cells at a time, at the culture's rim by the springs
+and in the spot, where the free light atoms are. A cell with a **heavy** membrane (mostly L) has a second, fainter tube
+just inside the first (a double wall); a thick membrane's tube is a little wider. A cell that **bursts** flashes white
+for a fifth of a second with its tube broken all round and its battery core gone; a small puff of dust (its fuel and
+atoms) marks the place, and a neighbour's daughter appears in its slot. Soft cells (light, thin membranes, or damaged
+sides) wobble slower and squash further when stirred; stiff ones (heavy, thick) hardly do.
+
+**The material.** Each side of a cell's membrane (the six sides of the honeycomb outline) holds light linkers **l** and
+heavy linkers **L**, woven from the cell's own stock. Two genes say what the cell wants (`Bio.memb`):
+- **MIX**: the heavy linkers' share of the weave (0 = all light, 1 = all heavy);
+- **THICKNESS**: linker per R of membrane (atom-units). A side wants thickness × its rest length (1.1 r, the side of
+  the hexagon of area pi r²) of linker, in the mix.
+
+A side's **integrity** is what it holds over what it wants (0 to 1). The weave holds its linkers at the free linkers'
+energy (0 on the energy table), so weaving and biting change no stored energy; only the sparks move energy (below).
+Linkers, until now mostly waste and crust, are a real need: the cells take l and L in through the membrane like any
+atom and weave them in.
+
+**Bites** (the derived rule). A free **reactive** atom (a giver or a taker) just outside a side bites the chains of **its
+own row**: g and t bite the l part of the weave, G and T the L part. Per s, in linker units: kBite × (its concentration
+in the pixel just outside the side's middle, per R²) × the side's length (R) × that row's share of the side's weave (the
+other row's chains shield it) × exp(−the chain's spark / (theta × the temperature)). The sparks are the table's: the
+light chain's 0.25, the heavy chain's 0.5, so a heavy weave is much harder to bite (exp(−8/T) against exp(−16/T): at a
+temperature of 8 per R², 0.37 against 0.14), and everything bites faster where it is hot. **The biting atom stays
+free**: it only breaks the weave (a catalyst of the membrane's breakdown), and the bitten linkers go free into the dish
+under the cell (where the cell can take them back in). Chosen because it conserves cleanly: the table has no
+giver-linker or taker-linker substance to bind into, and an atom held by the membrane would make it charged (that is
+step C6d). Bites are counted per side, rounded at random, never more than the side holds.
+
+**Repair.** Every tick each side short of what it wants weaves linkers in from the stock, `repK` (1.5) of its shortfall
+per s, in the genes' mix, as far as the stock holds l and L; each linker woven pays **its chain's spark** from the
+battery (0.25 energy per unit of l, 0.5 per unit of L), which becomes heat at the cell. A cell with an empty battery
+cannot repair. A side holding more than `shedAt` (1.25) × what it wants (the genes changed, or a newborn got a large
+share) lets the extra back into the stock. Repair runs right after the membrane's exchange, before the engines and the
+reactions inside, so the cell's own sediment making does not take the linkers first.
+
+**Consequences.**
+- **Leaky:** the membrane's exchange runs × (1 + leakK × (1 − mean integrity)), leakK 2 (each side's share of the
+  perimeter at its own leakiness: the mean), at most × 4.
+- **Holds less:** a stock needs a closed membrane to hold it: the stock's capacity × (hold + (1 − hold) × mean
+  integrity), hold 0.3. (Added after the first runs: without it an unbuilt membrane only leaked, and leaking also
+  feeds a cell faster, so never building a membrane was the cheapest strategy.)
+- **Softer:** each honeycomb corner's spring × (soft + (1 − soft) × the mean integrity of its two sides), soft 0.35.
+- **Bursting:** a membrane that has been **whole** (mean integrity 0.5 or more since the cell was born, or its parent's
+  had been) and is bitten while its mean integrity is below `burstAt` (0.15) **bursts**: in that tick the cell spills its
+  whole stock (into the dish under it, as at a death), its membrane (as free linkers) and its battery (as heat), and
+  becomes an empty **husk** for BURST_TICKS (12 ticks, 0.2 s: the flash); then a touching neighbour divides into its slot
+  as at any death. Bursting needs turnover (T), as heat damage does; with turnover off a husk is an ordinary empty cell
+  again. A membrane that was never built cannot burst (there is nothing to burst): it leaks and holds little instead.
+  The "whole" mark is inherited because a daughter gets real sides from its parent; without that, every daughter of a
+  damaged parent was safe until it had rebuilt.
+- **Birth:** a newborn takes a share r / (r + r_parent) of each side of its parent's membrane (0.375 at its starting
+  size, 0.6 of the parent's radius), so both have about the parent's integrity afterwards; deaths and a new culture (N,
+  G) hand the membranes back to the dish as free linkers.
+
+**Genetic elasticity.** The honeycomb's stiffness (the corner springs of the first half) is each cell's own:
+(0.7 + mix) / 0.8 × sqrt(thickness / 0.012) × the **stiffness gene**, between 0.25 and 4 (1 for the founders' usual
+light thin membrane). The corners' omega² is multiplied by it and their damping by its square root, so every cell keeps
+the damping ratio and a soft cell wobbles slower and further. With the rule off every cell has the shape panel's
+stiffness (damaged sides are still softer while the membrane chemistry is on).
+
+**Ion selectivity** (Claude's addition, so that charge separation can emerge for C6b and C6d). A gene s, −1 to 1:
+givers (+) pass the membrane × (1 + s), takers (−) × (1 − s) (the passive exchange only; the reactions are unchanged).
+A cell with s > 0 trades its givers faster than its takers, so where they arrive or leave unevenly its stock's net
+charge shifts.
+
+**Founders and mutation.** Founders (`MEMB_THIN` = 0.012 in `src/genome.js`): mostly light and thin (mix 0 to 0.15,
+thickness 0.7 to 1.4 × 0.012); three of the default twelve (founders 3, 7, 11: one pigment-heavy, one burner, one
+"other") heavy and thicker (mix 0.55 to 0.9, thickness 1.5 to 3 × 0.012); the stiffness gene 0.8 to 1.25; the
+selectivity −0.08 to 0.08. The membrane genes come from their own random stream, so a seed's founders keep all their
+other genes. At each birth: mix + 0.03 g, thickness × e^(0.08 g), stiffness × e^(0.05 g), selectivity + 0.03 g (g a
+standard normal draw; kept within 0..1, 0.002..0.2, 0.3..3, −1..1).
+
+**What happened in the default scene** (2000 cells, MAX, Chrome headless on this machine, seeds 3 and 7, 20 minutes
+each; seed 7 also with `?membrane=0` as a control; `moire.membrane.stats()` sampled every minute; "fed" = battery at
+least 0.3). Plainly:
+- **Linkers are scarce, and the heavy ones are locked in crusts.** The springs drip l and L at 2 per s each for 240 s;
+  by 4 minutes about 430 units of each lie in sediment (ll 210, LL 225) and only 25 to 40 units of free l and 6 to 10
+  of free L are left. The founders' thin membrane wants about 0.1 units per cell, 200 for the culture, so most cells
+  (the starving ones in the dark) never build one: the mean integrity over all cells is 0.04 at 1 minute and 0.16 to
+  0.20 at 20 minutes. The fed cells do: their mean integrity is 0.6 (seed 3) and 0.5 (seed 7), 60 to 75 % of them have
+  had a whole membrane. Heavy membranes almost never fill: there was never more than 6.5 units of L in all membranes
+  together (against 22 to 55 of l), because free L chains into crust as fast as it comes (it spreads slowly, so it sits
+  dense around its spring and forms LL there). The cells' demand barely touches the crusts: at 20 minutes ll 184 to
+  198 with membranes, 213 in the control at 12.5 minutes (the membranes hold 20 to 55 units of l).
+- **Bites happen where the free light atoms are**: at the rim by the springs and in the spot. 0.2 to 3 units of l
+  bitten out per s (the membranes hold 15 to 55), repaired about as fast; the sparks cost the batteries 0.3 to 1 energy
+  per s in all (the burners put 20 to 30 per s into them). Damaged membranes (whole once, below half now): 60 to 120
+  cells at a time. **Bursts**: 1474 (seed 3) and 1758 (seed 7) in 20 minutes, 0 to 5 per s, about 1.2 to 1.5 per s on
+  average, against about 50 deaths per s from turnover: a few % of the deaths (only a membrane that has been whole can burst, and those are mostly the fed cells', on the
+  springs' side; the screenshot of a burst caught one there).
+- **Do heavy-membrane lineages rise near the vandals? Not that the numbers show.** The heavy share drifts with the
+  lineages it rides on: seed 3 heavy 26 % → 34 % (5 min) → 28 % (20 min), among the fed cells 12 % → 7 %; seed 7 heavy
+  25 % → 61 %, among the fed 21 % → 58 %; and the seed 7 control without any membrane chemistry went the same way
+  (heavy 25 % → 54 %, fed 43 % at 12.5 minutes, against 51 % and 52 % with it). The founders' heavy membranes ride on
+  their other genes (founders 3, 7 and 11), and since heavy membranes cannot be filled, a heavy gene mostly means an
+  unbuilt membrane. Thickness drifted a little up (0.016 → 0.023 seed 3; 0.014 → 0.017 seed 7), selectivity spreads by
+  mutation (mean |s| 0.03 → 0.12 to 0.13, about what drift alone gives over 15 generations).
+- **Ion selectivity does show in the charges, mildly.** Among the cells with |s| above 0.2 that are charged (|q| above
+  0.1), 65 to 68 % carry the sign their membrane favours at 20 minutes (seed 3: 107 of 158; seed 7: 100 of 155; the
+  control without selectivity: 23 of 66, i.e. chance); the mean |q| of all cells was 0.13 to 0.18 with the membrane
+  chemistry against 0.09 to 0.11 in the control, and 300 to 340 cells of each sign were charged (the control: 216 to
+  265). No pattern of charged cells the eye picks out yet; that is for C6d.
+- **Strategies** were as in step C6 (harvest + burn takes the light: seed 3 64 %, seed 7 80 % of all cells at 20
+  minutes).
+- **Linkers as a need, crusts and crackers**: no lineage took up the crack engines (ll → l + l) to free linkers in these
+  runs; that would be the obvious answer to the scarcity and is left to watch for in longer runs.
+
+**Checked** (the books): a 660 s run at MAX (seed 5) through N (120 s), a wash (Shift+C, 220 s), a window resize (300 s),
+G (400 s), a resize back (480 s) and two new springs (520 s): atoms and charge rounding exactly 0 throughout, energy
+rounding between −0.031 and +0.137 while in grew to 9.1 M (657 bursts in the run); the two 20-minute runs: atoms and
+charge exactly 0, energy +0.20 at most (in 15 to 18 M; the control +0.06 to −0.09 in 11.5 M, the same size as in steps
+C6 and C6b). Switching the master, bites, elasticity, selectivity and turnover off and on at runtime: the integrity reads
+1 while the chemistry is off and rebuilds after, no bites with bites off, no bursts without turnover, books exact. No
+WebGPU errors in Chrome (headless, also at phone size 390 × 844, where the panel shows the short line) and Firefox
+(headed, 1600 × 1000). Not bit-repeatable, so every comparison above is one run each.
+
+**Switches** (rules panel, group "Membrane chemistry (step C6c)"; panel only, as no keys are left): **membrane
+chemistry** (the master: material, integrity, repair, leak, hold, softness; off: the membranes stay as they are and
+every side is drawn and treated as whole) · **bites** · **bursting** (needs turnover) · **gene: elasticity** · **gene:
+ion selectivity**. URL: `?membrane=0`, `?bites=0`, `?burst=0`, `?elastic=0`, `?selectivity=0`.
+
+**Knobs** (live in `moire.membrane.params`): `kBite` (0.05), `repK` (1.5 per s), `sideLen` (1.1), `leakK` (2),
+`leakMax` (4), `hold` (0.3), `burstAt` (0.15), `wholeAt` (0.5), `shedAt` (1.25), `shedK` (1 per s), `tRef` (0.012: the
+thickness of stiffness 1), `soft` (0.35); the look in `moire.cells.look`: `membLook`, `membDim` (0.35), `membBreak`
+(0.5: below this a damaged side breaks into dashes), `membFlicker` (0.3), `membInner` (0.45: the heavy membrane's inner
+tube), `membWide` (0.3), `membFlash` (1.5); `BURST_TICKS` (12) in `cell_common.wgsl`. `await moire.membrane.stats()`
+compares the fed cells (battery at least 0.3) with the rest and lists how the charge goes with the selectivity.
+
+**The census.** A MEMBRANE line in the entropy panel:
+
+    MEMBRANE  mix 0.34 (heavy 28%) · thickness 0.023 · integrity 0.19 (whole 26%, damaged 121) · bursts 0.50/s · in membranes l 51.6 L 5.04 · bitten l 0.15 L 0.01/s · |selectivity| 0.12
+
+(mean mix and the share of heavy membranes, mean thickness, mean integrity, cells whose membrane has been whole and how
+many of those are below half now, bursts per s, linkers in membranes, linkers bitten out per s, mean |selectivity|; on a
+phone `MEMBRANE mix 0.34 · intact 0.19 · bursts 0.50/s · |sel| 0.12`). The F overlay adds the switches and knobs, the
+heavy and light membranes' mean integrity, the material stiffness, the linkers woven and shed per s and the sparks paid,
+the cells with a clear selectivity and how many of them are charged, and the census every 10 s. It is counted on the GPU
+in the ledger pass (a snapshot) and the eat pass (counters), 32 numbers × 16 slots behind the charge's part of the ledger
+(LEDGER_WORDS grew to 20 224).
+
+**The books.** The membranes' linkers count with the cells' l and L in the atoms' ledger ("in cells"), so the atoms stay
+exact: bites move linkers from a membrane into the dish, repair from the stock into a membrane, bursts and deaths from
+membranes into the dish (or "gone", as a dead cell's stock, if their channel is not moving that frame), all in whole
+counts. Charge: linkers carry none. Energy: the weave is at the free linkers' energy (0), the repair sparks go from the
+batteries to heat, a burst's battery becomes heat as at a death.
+
+**How it is computed.** All in the eat pass (`cell_eat.wgsl`), which owns the stock (the cell step is at the
+storage-buffer limit): the stock grew from 16 to 32 words per cell (16..21 the l per side, 22..27 the L per side).
+*plan* (plain reads) works out each side's integrity, the leak, the hold and the selectivity for the exchange, and the
+bites (it reads the dish just outside each side and writes the bitten counts into the membrane's words and into flux
+words 13 and 14); *eat* puts the bitten linkers into the dish, repairs, writes `Cell.integ`, the WHOLE mark (Cell.flags
+bit 18) and bursts (flags bits 4..7 count the husk's ticks); *split* gives the newborn its share; *dump* and *reset* hand
+membranes back; *ledger* counts them. The step (`cell_step.wgsl`) reads the stiffness gene and `integ` for the corners,
+counts a husk's ticks and gives its slot away. The drawing reads `integ`, the flags and the genes (`memb_side` finds the
+side a pixel's tube belongs to: the nearest side's line, or the side's 60 degrees on an ellipse cell). Struct Fields
+grew to 288 bytes (`memb`), the eat uniform to 1376 (`mb0`..`mb4`), the draw uniform to 480, the genome to 44 floats.
+
+**Cost** (Chrome headless, 2000 cells, seed 3, MAX, alternating runs in one session, mean speed reached from 40 to
+150 s): the commit before (c8e8a95) ×11.97 and ×11.96, now ×11.33 and ×11.52 (about 4 % slower), now with
+`?membrane=0` ×11.56 and ×11.62 (the larger stock and the side loops cost about 3 % even when off). Firefox (headed,
+1600 × 1000): ×7.6 (the honeycomb's first half: ×7.2).
 
 ## The look of the landscape
 
@@ -1682,6 +1859,9 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   overlay), the tuning aids and the contour lines; the field's relaxation and the free atoms' drift are in `matter.wgsl`
   (relax, spread), the cells' charge and the field's gradient at their membrane in `cell_eat.wgsl`, their push in
   `cell_step.wgsl`; the charges themselves (`GROUP_CHARGE`, `CHARGE_CODES`) in `src/matter.js`
+- `src/membrane.js`: the membrane chemistry (step C6c): its switches and knobs, the census read-back, `stats()`, the
+  MEMBRANE panel line and the overlay; the rules themselves (bites, repair, leak, hold, bursting, selectivity) are in
+  `cell_eat.wgsl`, the elasticity and the burst's slot in `cell_step.wgsl`, the look in `cell_draw.wgsl`
 - `src/eat.js` + `src/shaders/cell_eat.wgsl`: cells eat (step C5): every cell's stock and battery (their own buffer),
   the membrane, the burner, the reactions inside, deaths and births handing stock back and splitting it, the starter
   charge, the cells' part of the books, the entropy panel's CELLS line; step C6: the engines (pigments, storers, upkeep,

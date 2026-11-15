@@ -51,7 +51,7 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
     the landscape, which substance is shown, colour by fate, lineage, strategy (step C6) or charge (step C6b), and the
     other drawing switches;
   - *rules*: every rule that has a key, as a switch with a one-line explanation and its key, grouped as below
-    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge, membrane chemistry (step C6c, panel only), charge per side (step C6d, panel only: the dipoles' switches and six knobs with - and +), pumps (step C7, panel only: four switches and five knobs with - and +), catalysts (step C7b, panel only: two switches and four knobs)); settings with several values show the current one
+    (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge, membrane chemistry (step C6c, panel only), charge per side (step C6d, panel only: the dipoles' switches and six knobs with - and +), pumps (step C7, panel only: four switches and five knobs with - and +), catalysts (step C7b, panel only: two switches and four knobs), hard light (step C8, panel only: one switch and three knobs)); settings with several values show the current one
     and change on a tap; the lever and the stiffness have - and +. The switches follow the state, also when a key changes it;
   - *dish* (the dish with three cells): the speed as a row of buttons, new culture (N), new genomes (G), clear
     springs (C), wash the atoms out (Shift+C).
@@ -81,7 +81,7 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   step C6n: `?neon=0`, `?halo=off|low|medium|high`, `?trails=0`, `?hum=0`, `?machinery=1`, `?cheap=0|1`, and
   `?until=T` (run to simulation time T, then pause at exactly that tick); step C6b: `?charge=0`, `?qstock=0`, `?qfeel=0`,
   `?contours=1`, `?view=charge`; step C6c: `?honeycomb=0` (the ellipse cells), `?membrane=0` (no membrane chemistry),
-  `?bites=0`, `?burst=0`, `?elastic=0`, `?selectivity=0`; step C6d: `?dipoles=0`, `?dd=0`, `?dphi=0`, `?dfield=0`; step C7: `?pumps=0`, `?pumpcontact=0`, `?voltage=0`, `?v2b=0`; step C7b: `?crystal=0`, `?cofactor=0`.
+  `?bites=0`, `?burst=0`, `?elastic=0`, `?selectivity=0`; step C6d: `?dipoles=0`, `?dd=0`, `?dphi=0`, `?dfield=0`; step C7: `?pumps=0`, `?pumpcontact=0`, `?voltage=0`, `?v2b=0`; step C7b: `?crystal=0`, `?cofactor=0`; step C8: `?hardmut=0`.
 
 ## Keyboard shortcuts
 
@@ -2269,6 +2269,91 @@ dispatch.
 before (cf967bc) ×11.29 and ×11.33, with C7b ×11.07 and ×11.15 (about 1.5 % slower). Firefox (headed) and Chrome at phone
 size (390 × 844) ran without errors; the phone's panel line fits, the rules panel shows the new group with its buttons.
 
+## Step C8: hard light mutates
+
+Where a cell's body catches **hard** light (the top band of the light, `src/light.js`), it keeps a **dose**: the hard
+light energy it caught, fading as the cell repairs it. When the cell divides into a freed slot (turnover), its daughter's
+genome is copied with more mutation, in proportion to the parent's dose. Nothing says "mutate in the spot": the rate
+follows the hard light absorbed, so it is high under the spotlight at noon, low at night, and nothing in the dark.
+
+**What it looks like** (colour by lineage, key V, `?view=1`; the default scene, 2000 cells, MAX). With colour by
+lineage, a cell's hue is its key angle, which drifts a little at every copy, so a lineage is a patch of one hue.
+- **Mutation on (the default) and hard light mutating**: outside the spot the culture is a quilt of flat patches of one
+  colour each, as before; inside the spot the patches break up into **confetti**: neighbouring cells in all hues, pink
+  next to green next to sky blue, a fine mosaic with no patch more than a few cells across. Without the rule
+  (`?hardmut=0`) the spot is held by a few large patches (in seed 3 a broad green and a pink one) like the rest of the
+  culture. Pictures: `shots/c8/s3_hardmut_on_t1200.png` and `shots/c8/s3_hardmut_off_t1200.png` (not in the repository).
+- **Mutation itself off (key M) and hard light mutating**: then only the hard light mutates, and the difference is stark.
+  After 15 minutes the dark part of the culture has coarsened into a few large flat patches (mostly one deep rose, with
+  smaller teal, blue and green ones: lineages stay pure and the winners spread), while the spot is a bright confetti of
+  every hue. With mutation off and the rule off too, the spot is taken by **one** cyan clone, a single flat patch.
+  Pictures: `shots/c8/m0_on_t900.png` and `shots/c8/m0_off_t900.png`.
+
+**How much** (the census line, below): in the spot at noon a cell's dose is 45 to 60 energy units, so its daughters
+mutate 3 to 4.7 times as much (gain 0.05: x (1 + 0.05 x dose)); at night 12 to 15 (x 1.6 to 1.8); in the dark 0.1 to 1.7.
+About 29 to 44 % of all births come from "lit" parents (a dose of at least 1). Engine and pump slot jumps per birth:
+0.08 (night) to 0.30 (noon) from lit parents against 0.04 to 0.09 from the others.
+
+**Diversity, measured** (`moire.hardlight.stats()`: for every pair of touching cells, both in the light or both in the
+dark, the difference of their key angles in degrees, on the key's 60-degree circle, and how often their engine sets
+differ; seeds 3 and 7, 20 minutes, sampled every 60 s; the numbers at about 1140 s and, in brackets, their range from
+120 s on):
+
+| | seed 3 on | seed 3 off | seed 7 on | seed 7 off |
+|---|---|---|---|---|
+| neighbours' key difference, light / dark | 10.8° / 6.1° (9.0 to 12.0 / 5.9 to 7.4) | 6.3° / 5.5° (5.7 to 7.2 / 5.5 to 7.1) | 10.4° / 6.4° (9.3 to 12.0 / 6.4 to 8.2) | 5.6° / 7.0° (5.6 to 8.4 / 6.2 to 7.7) |
+| neighbours with different engine sets, light / dark | 61 % / 53 % (58 to 72 / 44 to 53) | 27 % / 46 % (27 to 45 / 39 to 47) | 68 % / 55 % (61 to 74 / 47 to 57) | 32 % / 55 % (27 to 46 / 45 to 55) |
+| dose, light / dark (energy units; day and night) | 12 to 69 / 0.1 to 1.7 | - | 13 to 68 / 0.2 to 1.6 | - |
+| slot jumps per birth, lit parents / others | 0.08 to 0.30 / 0.04 to 0.08 | - / 0.04 to 0.08 | 0.08 to 0.30 / 0.05 to 0.09 | - / 0.05 to 0.09 |
+| cells above half a battery | 298 | 366 | 248 | 310 |
+| strategies h / b / h+b / o (%) | 5 / 29 / 63 / 4 | 6 / 22 / 71 / 2 | 6 / 22 / 69 / 3 | 12 / 12 / 73 / 3 |
+| entropy (heat out) | 16.3 M | 14.9 M | 17.0 M | 17.5 M |
+
+And with mutation (key M) off, seed 3, 15 minutes: key difference light / dark 9.5° / 2.8° with the rule against 2.7° / 2.0°
+without; engine sets differ 53 % / 21 % against 17 % / 11 %; the dark's key difference fell steadily from 6.9° to 2.8° (the
+lineages purifying) while the spot's stayed at 7.5 to 9.5°.
+
+So: the rule does what it should, plainly. It also has a price: the extra mutation keeps breaking the best engine sets in
+the light (harvest + burn 63 to 69 % of the cells against 71 to 73 % without, fewer cells above half a battery: 298 and
+248 against 366 and 310). No lineage evolved a shield: hard pigments, which would shade the body (below), did not rise.
+
+**How it works.**
+- **The dose** lives in Cell.flags (bits 19..31, 16 counts per energy unit, at most 512 units). Every tick the eat pass
+  (`cell_eat.wgsl`) works out the hard light falling on the cell (the band's power x `light_factor` at its centre x its
+  area), shares it by optical depth between the medium, the cell's body and any hard-band pigment the cell carries (as the
+  pigments share their catch), and adds the **body's** share; then a share 1 - e^(-dt / `repair`) of the dose is repaired.
+  A hard pigment takes its share first, so it would shade the body a little: a sunscreen, if one evolves (no rule asks
+  for it). The dose is only a record: the light was already caught and became heat (C2), the books do not change.
+- **At a birth** the step (`cell_step.wgsl`) reads the parent's dose from the neighbour grid's copy of its flags and
+  mutates the copy with every mutation size and chance (the small steps, the gene jumps, the engine and pump slot jumps)
+  x (1 + `gain` x dose), at most x `maxFactor`. With mutation off (key M) only the extra part (`gain` x dose) mutates, so
+  in the dark a lineage then stays exactly pure. A newborn starts with no dose.
+- Defaults: `gain` 0.05 per energy unit, `maxFactor` 10, `repair` 20 s (a cell lives about 40 s between turnovers).
+
+**Switch and knobs** (rules panel, group "Hard light (step C8)"; panel only): **hard light mutates**; knobs with - and +:
+**mutation per dose** (`gain`), **largest factor** (`maxFactor`), **repair time** (`repair`). URL: `?hardmut=0`. Console:
+`moire.hardlight.params`, `await moire.hardlight.stats()` (touching neighbours' key difference and engine sets, light and
+dark, and the mean dose).
+
+**The census.** A HARD LIGHT line in the entropy panel:
+
+    HARD LIGHT  dose in the light 54.9, in the dark 0.74 · births from lit parents 33% mutating ×3.8 (all ×1.93) · slot jumps per birth: lit 0.186, others 0.059 (5.64/s)
+
+(the cells' mean dose in the light and in the dark; the share of births from parents with a dose of 1 or more and their
+mutation factor, and all births'; engine and pump slot jumps per birth and per s; after a `stats()` also the neighbours'
+key difference; on a phone `HARD LIGHT dose 37 / 1.3 · lit births ×2.7 · jumps 1.99/s`). With mutation off the factor
+shown is only the extra part (so it can be below 1 at night). The F overlay adds the knobs, the cells whose daughters would
+mutate at least 1.5 times as much, the births per s, the last `stats()` and the numbers every 10 s. Counted on the GPU: the
+dose snapshot in the eat pass's ledger dispatch, the births in the step (LG_HL, 16 numbers x 16 slots; LEDGER_WORDS
+22 272), read back with the energy ledger.
+
+**Checked.** 660 s at MAX (seed 5) through N (120 s), a wash (220 s), a resize (300 s), G (400 s), a resize back (480 s)
+and new springs (520 s): atoms and charge rounding exactly 0, energy rounding between -0.006 and +0.10 while in grew to
+8.7 M; the four 20-minute runs: atoms and charge 0, energy -0.056 to +0.103. **Cost** (headless Chrome, 2000 cells, seed 3,
+MAX, from 40 to 150 s, alternating): before (C7b) ×11.01 and ×11.04, with C8 ×11.19 and ×11.24 (no cost beyond the noise).
+Firefox (headed) and Chrome at phone size (390 × 844) ran without errors; the phone's line fits, the rules panel shows the
+new group with its buttons. Nothing new is drawn.
+
 ## The look of the landscape
 
 Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the
@@ -2321,6 +2406,10 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
 - `src/catalysts.js`: the catalysts (step C7b): the switches and knobs, the census (from the heat's ledger read-back), the
   CATALYSTS panel line, the overlay and `stats()` (the crusts as patches); crystal seeding itself is in `react` in
   `matter.wgsl` (struct ChemP `cry`), the cofactor in the engine loop of `cell_eat.wgsl` (`cofactor()`, struct EatP `cat`)
+- `src/hardlight.js`: hard light mutates (step C8): the switch and knobs, the census (from the heat's ledger read-back),
+  the HARD LIGHT panel line, the overlay and `stats()` (touching neighbours' likeness, light and dark); the dose is kept
+  in `cell_eat.wgsl` (Cell.flags bits 19..31, struct EatP `hl`), the mutation at a birth in `cell_step.wgsl` (struct
+  Fields `hm`)
 - `src/dipole.js`: charge per side, the dipoles (step C6d): the switches and knobs, the census (from the cells' stats
   read-back), `stats()` (threads, with a shuffled control), the DIPOLES panel line and the overlay; the side charges' flow
   and evening out are in `cell_eat.wgsl` (plan, eat), the turning, polarising, push and stretch in `cell_step.wgsl`, the

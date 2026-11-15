@@ -1,7 +1,7 @@
 // ===== cell_common.wgsl: the cells' state, the simulation uniforms and the neighbour grid =====
 // Not compiled on its own: src/cells.js prepends field_common.wgsl and then this file to every cell shader.
 //
-// Cells live in a fixed-capacity storage buffer (struct Cell, 88 bytes; keep in step with CELL_* in
+// Cells live in a fixed-capacity storage buffer (struct Cell, 104 bytes; keep in step with CELL_* in
 // src/cells.js, and CELL_FLOATS in heat.wgsl). Their order never changes, so drawing order is stable and a cell keeps its index.
 //
 // Neighbour grid (rebuilt every tick, see cell_grid.wgsl):
@@ -36,6 +36,11 @@ struct Cell {
   fill: f32,        // how full the cell's stock is, as a share of its capacity (eat pass; for the overlay)
   smell: vec2f,     // the fuel gradient its membrane's corners smelled (eat pass, plan; energy per R^2 per R), which
                     // the next tick's step steers by
+  // ---- step C6b, charge (written by the eat pass) ----
+  q: f32,           // the cell's charge as field B uses it: tanh(its stock's net charge / qHalf), -1..1
+  qNet: f32,        // its stock's net charge (atom-units: givers minus takers)
+  efield: vec2f,    // the gradient of the substrate's screened potential across its membrane (plan; phi per R), which the
+                    // next tick's step pushes it by (x -q)
 };
 
 const CELL_ALIVE: u32 = 1u;
@@ -475,10 +480,11 @@ struct Fields {
   bias: f32,        // energy-biased turnover: a neighbour's weight as parent = bias + its battery share
   smell: f32,       // smell: crawl speed up the fuel gradient at a strong gradient (R / s, x motility, x the battery's gate)
   smellHalf: f32,   // ... the fuel gradient (energy per R^2 per R) at which the steering is tanh(1) of full
-  _p14: f32,        // spare
-  _p15: u32,
-  _p16: f32,
-  _p17: f32,
+  // ---- step C6b, charge (src/charge.js) ----
+  qFeel: f32,       // cells feel the substrate's charge field: speed = qFeel x q x (-grad phi) (R / s per phi per R; 0 = off)
+  qStock: u32,      // 1: a cell's charge in field B is qB x its Cell.q (from its stock); 0: the fixed charge of its fate
+  qStockB: f32,     // ... x this (the fixed per-fate charges are about 1)
+  qSat: f32,        // the grid's push saturates at this speed (R / s)
   _p18: vec4f,
 };
 const EAT_PAY: u32 = 1u;
@@ -511,7 +517,8 @@ fn charge_b(F: Fields, kind: u32) -> f32 {
 // a cell's B charge, after conversion (step 6, rule 2): a converted cell emits B more strongly (mode 0:
 // x (1 + conv)) or of the other sign (mode 1: x -conv), and listens to B with the same charge
 fn cell_charge_b(F: Fields, c: Cell) -> f32 {
-  let q = charge_b(F, c.kind);
+  // step C6b: from the cell's stock (its net charge, saturating; Cell.q, eat pass), or the fixed charge of its fate
+  let q = select(charge_b(F, c.kind), F.qStockB * c.q, F.qStock != 0u);
   if (F.conv > 0.0 && (c.flags & CELL_CONV) != 0u) {
     return select(q * (1.0 + F.conv), -q * F.conv, F.convMode == 1u);
   }

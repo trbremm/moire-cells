@@ -233,7 +233,7 @@ fn count(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_in
   var p2 = 0.0;
   var pm = 0.0;
   for (var p = gid.x; p < T.count; p += 65536u) {
-    if (phiOn) {
+    if (MP.chg.x != 0u) {   // (not `if (phiOn)`: that read false inside this loop on Direct3D, though phiOn was true)
       let ph = phi_at(MP.chg.x + p);
       p2 += ph * ph;
       pm = max(pm, abs(ph));

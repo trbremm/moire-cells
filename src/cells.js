@@ -1,6 +1,6 @@
 // The cells: a fixed number of them, all state on the GPU.
 //
-// State: one storage buffer of struct Cell (cell_common.wgsl, 88 bytes each), in a fixed order: index i is
+// State: one storage buffer of struct Cell (cell_common.wgsl, 104 bytes each), in a fixed order: index i is
 // always the same cell, which keeps the drawing order stable.
 // Drawing: instanced quads (cell_draw.wgsl), crisp discs with an outline and the cell's lattice as dots; step C6n: under
 // the neon look, bright tubes with a dark inside, and the hum (cell_glow.wgsl: each cell's activity, drawing only).
@@ -42,8 +42,8 @@ import { pal } from './palette.js';
 export const CELL_URL = 'src/shaders/cell_common.wgsl';
 
 // struct Cell in cell_common.wgsl: pos.xy, vel.xy, r, la, e1, e2, kind (u32), flags (u32), seed (u32), aux, z.xy;
-// step C5: dead.xy, bat, pay (i32), mom (u32), fill, smell.xy (CELL_FLOATS in heat.wgsl too)
-export const CELL_FLOATS = 22;
+// step C5: dead.xy, bat, pay (i32), mom (u32), fill, smell.xy; step C6b: q, qNet, efield.xy (CELL_FLOATS in heat.wgsl too)
+export const CELL_FLOATS = 26;
 export const CELL_BYTES = CELL_FLOATS * 4;
 const ALIVE = 1;
 
@@ -363,6 +363,7 @@ export class Cells {
     this.onEvents = null;       // callback(events) for births and deaths (main.js drops ripples)
     this.landscape = null;      // set by main.js (its inks colour the cells' step 6 and 8 marks)
     this.matter = null;         // step C3: the substance grid (src/matter.js; set by main.js), run inside the heat's frame
+    this.charge = null;         // step C6b: the charge (src/charge.js; set by main.js)
     this.simBuf = d.createBuffer({ label: 'cell sim params', size: SLOTS * SLOT, usage: U.UNIFORM | U.COPY_DST });
     this.simAB = new ArrayBuffer(SLOTS * SLOT);
     this.simF = new Float32Array(this.simAB);
@@ -592,6 +593,10 @@ export class Cells {
       (rule('tolGene') ? 16 : 0);   // step C6: heat damage by each cell's tolerance gene
     f[48] = Math.max(1e-3, E.crawlFull); f[49] = Math.max(0, E.crawlCost); f[50] = Math.max(1e-3, E.tol); f[51] = Math.max(0, E.heatKill);
     f[52] = Math.max(0, E.biasFloor); f[53] = Math.max(0, E.smellGain); f[54] = Math.max(1e-6, E.smellHalf);
+    // step C6b, charge (src/charge.js): the cells feel the substrate's field; their B charge from their stock
+    const Q = this.charge;
+    f[55] = Q && Q.feelOn ? Q.params.feelGain : 0; u[56] = Q && Q.stockOn ? 1 : 0;
+    f[57] = Q ? Q.params.qB : 1; f[58] = Q ? Math.max(0.01, Q.params.feelSat) : 1;
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -954,7 +959,7 @@ export class Cells {
     }
     const F = this.fields, L = this.landscape;
     lines.push(`field B: Q felt ${on(F.on)} · J drawn ${on(L && L.params.fieldB)} · U like ${F.sign > 0 ? 'repels' : 'attracts'} like · like = ${F.like ? 'similar key (lineage)' : 'charge'}` +
-      ` · band ${F.band} · r0 ${F.r0} R · cut ${F.cut} R · gain ${F.gain} · charges ${F.chargeB.join(' ')}`);
+      ` · band ${F.band} · r0 ${F.r0} R · cut ${F.cut} R · gain ${F.gain} · charges ${this.charge && this.charge.stockOn ? `from the stock (Shift+8; by fate ${F.chargeB.join(' ')})` : F.chargeB.join(' ')}`);
     const s6 = st && st.step6;
     if (s6) {
       // a histogram's value below which a share p of the cells lie (bins of width w)

@@ -100,7 +100,13 @@ struct EatP {
   upTol: f32,              // upkeep: heat counts per tick for a tolerance of tolRef (in proportion to the tolerance)
   tolRef: f32,
   pigOff: u32,             // word offset in hb of the pigment cover's first block (visible 1; then visible 2, hard); 0: none
-  _c0: u32, _c1: u32, _c2: u32, _c3: u32, _c4: u32, _c5: u32, _c6: u32, _c7: u32, _c8: u32, _c9: u32,
+  // ---- step C6b, charge (src/charge.js) ----
+  qOff: u32,               // word offset in hb of the block the cells put their net charge down in (0: they do not)
+  qInv: f32,               // a cell's q = tanh(net charge / qHalf): 1 / qHalf (per atom-unit)
+  qFeel: u32,              // plan: 1 = work out the gradient of phi across the membrane (Cell.efield)
+  phiOff: u32,             // word offset of phi in mg (the plain view behind the ledger)
+  qCodes: u32,             // the channels' charges (CHARGE_CODES)
+  _c5: u32, _c6: u32, _c7: u32, _c8: u32, _c9: u32,
   photon16: vec4i,         // per light band: one photon's energy in heat counts per event (16 x its energy)
   ratio: array<vec4f, 4>,  // per channel: its spreading speed / the light atoms' (scales the permeability gene; sediment 0)
   eng: array<Eng, 24>,     // ENGINES (18)
@@ -605,6 +611,31 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     for (var k = 0u; k < NCH; k++) { fill += f32(m[k]) * ep_f(EP.natoms, k); }
     cells[i].bat = clamp(f32(bat) / f32(batMax), 0.0, 1.0);
     cells[i].fill = clamp(fill / max(cap, 1.0), 0.0, 1.0);
+
+    // ---- step C6b: the cell's charge, the net charge of its stock (givers minus takers; fuel and sediment are neutral);
+    // q saturates (tanh) for field B. With the charge field on it puts its net charge down where it is (cloud in cell:
+    // over the 4 pixels around its centre, by their nearness), so the substrate's field sees the charge the cell took in
+    var qn = 0;
+    for (var k = 0u; k < NCH; k++) { qn += charge_of(EP.qCodes, k) * m[k]; }
+    let qu = f32(qn) / ATOM_SCALE;
+    cells[i].qNet = qu;
+    cells[i].q = tanh(qu * EP.qInv);
+    if (EP.qOff != 0u && qn != 0) {
+      let gp = c.pos / HP.px - 0.5;
+      let b0 = floor(gp);
+      let fr = gp - b0;
+      let hi = vec2i(i32(HP.hw) - 1, i32(HP.hh) - 1);
+      let p00 = clamp(vec2i(b0), vec2i(0), hi);
+      let p11 = clamp(vec2i(b0) + 1, vec2i(0), hi);
+      let w00 = i32(round(f32(qn) * (1.0 - fr.x) * (1.0 - fr.y)));
+      let w10 = i32(round(f32(qn) * fr.x * (1.0 - fr.y)));
+      let w01 = i32(round(f32(qn) * (1.0 - fr.x) * fr.y));
+      let w11 = qn - w00 - w10 - w01;
+      if (w00 != 0) { atomicAdd(&hb[EP.qOff + u32(p00.y) * HP.hw + u32(p00.x)], w00); }
+      if (w10 != 0) { atomicAdd(&hb[EP.qOff + u32(p00.y) * HP.hw + u32(p11.x)], w10); }
+      if (w01 != 0) { atomicAdd(&hb[EP.qOff + u32(p11.y) * HP.hw + u32(p00.x)], w01); }
+      if (w11 != 0) { atomicAdd(&hb[EP.qOff + u32(p11.y) * HP.hw + u32(p11.x)], w11); }
+    }
   }
   flush_counters(li, slot);
 }
@@ -623,6 +654,8 @@ var<workgroup> wcnt: array<atomic<i32>, 5>;
 // (A "harvester" in the strategies is a cell with an uphill engine that has a pigment.)
 const CEN_N: u32 = 76u;
 var<workgroup> wcen: array<atomic<i32>, 76>;
+// step C6b, the cells' charge (a snapshot, LG_Q_CEN + 16 v): cells with q above 0.1, below -0.1, sum |q| x 1000, sum |net| x 1000
+var<workgroup> wq: array<atomic<i32>, 4>;
 
 @compute @workgroup_size(64)
 fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index) li: u32, @builtin(workgroup_id) wid: vec3u) {
@@ -678,8 +711,16 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     atomicAdd(&wcen[row + 5u], i32(round(b.eng.w * 100.0)));
     atomicAdd(&wcen[row + 6u], i32(round(b.rate.w * 1000.0)));
     if (c.bat > 0.5) { atomicAdd(&wcen[row + 7u], 1); }
+    // step C6b: the cells' charge
+    if (c.q > 0.1) { atomicAdd(&wq[0], 1); } else if (c.q < -0.1) { atomicAdd(&wq[1], 1); }
+    atomicAdd(&wq[2], i32(round(abs(c.q) * 1000.0)));
+    atomicAdd(&wq[3], i32(round(min(abs(c.qNet), 1e5) * 1000.0)));
   }
   workgroupBarrier();
+  if (li < 4u) {
+    let v = atomicLoad(&wq[li]);
+    if (v != 0) { atomicAdd(&hb[LG_Q_CEN + 16u * li + (wid.x & 15u)], v); }
+  }
   for (var q = li; q < CEN_N; q += 64u) {
     let v = atomicLoad(&wcen[q]);
     if (v != 0) { atomicAdd(&hb[LG_K_CEN + 16u * q + (wid.x & 15u)], v); }

@@ -41,7 +41,7 @@
 
 import { loadFieldShader } from './field.js';
 import { HEAT_COMMON_URL, HEAT_SCALE, LEDGER_WORDS, fmt } from './heat.js';
-import { SUBSTANCES, NCH, CH, ATOM_SCALE, ENGINES, ENGINE_KINDS } from './matter.js';
+import { SUBSTANCES, NCH, CH, ATOM_SCALE, ENGINES, ENGINE_KINDS, CHARGE_CODES } from './matter.js';
 import { BANDS, LIGHT_COMMON_URL } from './light.js';
 
 const SW = 16;                      // stock words per cell (cell_eat.wgsl)
@@ -52,6 +52,7 @@ const EV2 = ['pig0', 'pig1', 'pig2', 'pig3', 'made', 'deficit', 'eBurn', 'eSwap'
 const EV2_ENERGY = /^(pig\d|deficit|eGain|eHeat|upkeep|idle)$/;
 export const STRATS = ['harvest', 'burn', 'both', 'other'];
 const CEN_N = 76;
+const LG_Q_CEN = 19136;             // step C6b (heat_common.wgsl): the cells' charge, 4 numbers x 16 slots
 const EV = ['burned', 'gain', 'bheat', 'inBurn', 'inSwap', 'inForm', 'uptake', 'release', 'expel', 'paid', 'dump', 'batBack', 'gone', 'inHeat'];
 const SED_MASK = SUBSTANCES.reduce((m, s, c) => (s.kind === 'sediment' ? m | (1 << c) : m), 0);
 const ROW1 = SUBSTANCES[CH.g].spread;   // the light atoms' spreading speed: permeability's reference
@@ -106,6 +107,7 @@ export class Eat {
     this.start = 0;            // starter charges in (energy units, cumulative)
     this.hist = [];
     this.heatVersion = -1;
+    this.charge = null;        // step C6b: the charge (src/charge.js; set by main.js)
   }
 
   static async create(device, cells) {
@@ -215,6 +217,13 @@ export class Eat {
     f[96] = Math.max(0, p.engMax) * dt * ATOM_SCALE; f[97] = Math.max(0, p.pigK);
     f[98] = Math.max(0, p.upEng) * HEAT_SCALE * dt; f[99] = Math.max(0, p.upTol) * HEAT_SCALE * dt; f[100] = Math.max(1e-3, p.tolRef);
     u[101] = H.pigOn ? H.pigOffset : 0;
+    // step C6b, charge (src/charge.js): where the cells put their net charge down, q's scale, the field's gradient
+    const Q = this.charge;
+    u[102] = Q && Q.cellsDeposit && H.buffer ? H.chargeOffset + H.n : 0;
+    f[103] = 1 / Math.max(1e-3, Q ? Q.params.qHalf : 0.5);
+    u[104] = Q && Q.feelOn ? 1 : 0;
+    u[105] = Q && H.buffer ? H.chargeOffset - LEDGER_WORDS : 0;
+    u[106] = CHARGE_CODES;
     BANDS.forEach((b, k) => { i[112 + k] = Math.round(16 * b.photon); });
     ENGINES.forEach((e, k) => {
       const o = 132 + 8 * k;
@@ -253,6 +262,7 @@ export class Eat {
     encoder.clearBuffer(this.heat.buffer, LG_K.STOCK * 4, (LG_K.START - LG_K.STOCK) * 4);
     encoder.clearBuffer(this.heat.buffer, LG_K.COUNT * 4, 320 * 4);
     encoder.clearBuffer(this.heat.buffer, LG_K.CEN * 4, CEN_N * 16 * 4);   // step C6: the census
+    encoder.clearBuffer(this.heat.buffer, LG_Q_CEN * 4, 4 * 16 * 4);       // step C6b: the cells' charge
     const pass = encoder.beginComputePass({ label: 'cell eat ledger' });
     pass.setPipeline(this.pipes.ledger);
     pass.setBindGroup(0, this.bg, [0]);

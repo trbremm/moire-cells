@@ -53,7 +53,9 @@ export class Charge {
       omega: 1.5,         // the sweeps' over-relaxation weight (1 = plain Gauss-Seidel; below 2)
       cellsIn: true,      // the cells' net charge counts in rho (so a charged cell gathers a cloud of the other sign)
       // the cells
-      qHalf: 0.5,         // a cell's charge in field B is qB x tanh(net charge / qHalf) (net charge in atom-units)
+      qHalf: 0.01,        // a cell's charge in field B is qB x tanh(net charge / qHalf) (net charge in atom-units: a cell holds about
+                          // 0.3 units of each free atom; most cells are neutral to a few counts, cells running swap engines hold
+                          // about 0.01 to 0.04 more of one sign, see the README)
       qB: 1,              // ... (the fixed per-fate charges of step 5 are about 1)
       feelGain: 2,        // cells feel the grid: speed = feelGain x q x (-grad phi) (R / s per unit of phi per R)
       feelSat: 1,         // ... saturating at this speed (R / s)
@@ -137,6 +139,29 @@ export class Charge {
 
   /** For tools and the console: the numbers of the last read-back. */
   summary() { return this.ledger; }
+
+  /** Tuning aid: the cells' net charges (atom-units) and q, read back: percentiles of |net|, and q's share above 0.5. */
+  async cellStats() {
+    const C = this.cells, d = this.device, n = C.count, F = 26;   // CELL_FLOATS (src/cells.js)
+    const buf = d.createBuffer({ size: n * F * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+    const e = d.createCommandEncoder();
+    e.copyBufferToBuffer(C.cellBuf, 0, buf, 0, n * F * 4);
+    d.queue.submit([e.finish()]);
+    await buf.mapAsync(GPUMapMode.READ);
+    const f = new Float32Array(buf.getMappedRange().slice(0));
+    buf.unmap(); buf.destroy();
+    const net = [], q = [];
+    let pos = 0, neg = 0, ef = 0;
+    for (let i = 0; i < n; i++) {
+      net.push(Math.abs(f[i * F + 23])); q.push(f[i * F + 22]);
+      if (f[i * F + 23] > 0) pos += f[i * F + 23]; else neg -= f[i * F + 23];
+      ef += Math.hypot(f[i * F + 24], f[i * F + 25]);
+    }
+    net.sort((a, b) => a - b);
+    const p = (x) => +net[Math.min(n - 1, Math.floor(x * n))].toPrecision(3);
+    return { net: { p50: p(0.5), p90: p(0.9), p99: p(0.99), max: p(1 - 1e-9) }, sumPos: pos, sumNeg: neg,
+      qAbove: q.filter((x) => Math.abs(x) > 0.5).length, qMeanAbs: q.reduce((a, b) => a + Math.abs(b), 0) / n, efMean: ef / n };
+  }
 
   /**
    * Tuning aid (console or tools): read phi and the charge density back. Resolves to { phi: [min, max, rms], rho: [min,

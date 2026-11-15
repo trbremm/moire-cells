@@ -1,0 +1,90 @@
+{
+  "name": "g-oxy-lightsprings_s7",
+  "description": "Oxygen story, second try: two light springs that never dry (as g-spr-light), 40 min: does breathing follow the armour?",
+  "condition": {
+    "name": "g-oxy-lightsprings_s7",
+    "description": "Oxygen story, second try: two light springs that never dry (as g-spr-light), 40 min: does breathing follow the armour?",
+    "query": {
+      "seed": 7
+    },
+    "duration": 2400,
+    "sample_every": 20,
+    "shots": [
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1800
+      },
+      {
+        "t": 2400
+      },
+      {
+        "t": 1200,
+        "view": "strategy"
+      },
+      {
+        "t": 1800,
+        "view": "strategy"
+      },
+      {
+        "t": 2400,
+        "view": "strategy"
+      },
+      {
+        "t": 2400,
+        "view": "lineage",
+        "panel": true
+      }
+    ],
+    "evals": [
+      {
+        "t": 0,
+        "js": "moire.matter.clearSprings(); moire.matter.addSpring(875, 328, 'light', 1e9); moire.matter.addSpring(875, 472, 'light', 1e9); return moire.matter.springs.length"
+      }
+    ]
+  },
+  "url": "http://localhost:54630/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "2ae8789886203690dd4af8d6527ad911be9e1d3d",
+  "dirty": false,
+  "started": "2026-11-15T13:51:14",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 2400.0,
+  "run_wall_s": 1144.23,
+  "speed_reached": 2.1,
+  "samples": 121,
+  "shots": [
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t1200.png",
+    "shots/t1200_strategy.png",
+    "shots/t1800.png",
+    "shots/t1800_strategy.png",
+    "shots/t2400.png",
+    "shots/t2400_strategy.png",
+    "shots/t2400_lineage.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.matter.clearSprings(); moire.matter.addSpring(875, 328, 'light', 1e9); moire.matter.addSpring(875, 472, 'light', 1e9); return moire.matter.springs.length",
+      "result": 2
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T14:11:17",
+  "wall_s": 1202.51
+}

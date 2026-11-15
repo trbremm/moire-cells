@@ -155,6 +155,7 @@ export function settingObjects(M) {
     'walls.params': M.walls.params, 'walls.look': M.walls.look,   // step C10
     ...(M.oil ? { 'oil.params': M.oil.params } : {}),            // step C12
     ...(M.lipids ? { 'lipids.params': M.lipids.params, 'lipids.look': M.lipids.look } : {}),   // step C12b
+    ...(M.excited ? { 'excited.params': M.excited.params, 'excited.look': M.excited.look } : {}),   // step C12c
   };
 }
 const SCALARS = [['neon.on', (M) => M.neon, 'on'], ['background.heatOn', (M) => M.background, 'heatOn'], ['background.ambient', (M) => M.background, 'ambient']];
@@ -196,6 +197,8 @@ function captureBooks(M) {
     membrane: clone(M.membrane.tot), pumps: clone(M.pumps.tot), hardlight: clone(M.hardlight.tot),
     oil: M.oil ? clone(M.oil.tot) : null,   // step C12
     lipids: M.lipids ? clone(M.lipids.tot) : null,   // step C12b
+    excited: M.excited ? clone(M.excited.tot) : null,   // step C12c
+    excitedE16: M.excited ? M.excited.table.e16 : null,   // (the energy one excited count holds: ?exshare=)
     division: { costTot: M.division.costTot || 0 },
     rounding: {
       energy: H.ledger ? H.ledger.rounding : null, atoms: Mt.ledger ? Mt.ledger.rounding : null,
@@ -215,11 +218,12 @@ function restoreBooks(M, B) {
   M.membrane.tot = clone(B.membrane); M.pumps.tot = clone(B.pumps); M.hardlight.tot = clone(B.hardlight);
   M.division.costTot = B.division.costTot;
   if (M.lipids) { for (const k of Object.keys(M.lipids.tot)) M.lipids.tot[k] = (B.lipids && B.lipids[k]) || 0; }   // (step C12b)
+  if (M.excited) { for (const k of Object.keys(M.excited.tot)) M.excited.tot[k] = (B.excited && B.excited[k]) || 0; }   // (step C12c)
 }
 
 /** Every rate history and time series starts again (their windows would span the jump in time). */
 function clearHistories(M) {
-  const mods = [M.heat, M.matter, M.eat, M.membrane, M.pumps, M.catalysts, M.hardlight, M.dipole, M.division, M.cells, M.charge, M.oil, M.lipids].filter(Boolean);   // (step C12: + the oil; C12b: + the lipids)
+  const mods = [M.heat, M.matter, M.eat, M.membrane, M.pumps, M.catalysts, M.hardlight, M.dipole, M.division, M.cells, M.charge, M.oil, M.lipids, M.excited].filter(Boolean);   // (step C12: + the oil; C12b: + the lipids)
   for (const m of mods) {
     for (const k of Object.keys(m)) if (/(^hist|Hist$|hist\d$|^series$)/.test(k) && Array.isArray(m[k])) m[k] = [];
   }
@@ -368,6 +372,12 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     } else if (opts.settings !== false && M.lipids && !('graze' in S.settings['lipids.params'])) {
       M.lipids.params.graze = false;   // (the C12b supply fix, 2026-11-16)
       notes.push('saved before the cells grazed crust: grazing off (as it ran)');
+    }
+    if (opts.settings !== false && M.excited && !(S.settings && S.settings['excited.params'])) {
+      M.excited.params.on = false;   // step C12c
+      notes.push('saved before step C12c: excited waste off (as it ran)');
+    } else if (M.excited && S.books && S.books.excitedE16 != null && S.books.excitedE16 !== M.excited.table.e16) {
+      notes.push(`saved with excited atoms holding ${S.books.excitedE16 / 16}, this page ${M.excited.table.energy} (?exshare=): the energy books will not match`);
     }
     if (opts.settings !== false && !(S.settings && S.settings['walls.params'])) {
       M.walls.params.on = false;

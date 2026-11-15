@@ -51,6 +51,7 @@ export const RULE_GROUPS = [
   ['turn', 'Glue turns cells (step C11)'],
   ['oil', 'Oils and water (step C12)'],
   ['lipids', 'Lipid membranes (step C12b)'],
+  ['excited', 'Excited waste (step C12c)'],
   ['state', 'Save and load the state (experiments)'],
 ];
 
@@ -393,6 +394,9 @@ export function makeActions(app) {
     { id: 'oilLook', keys: [], label: 'oil films drawn', group: 'look', type: 'toggle', get: () => app.matter.oil.params.look,
       run: () => `oil films ${flip(app.matter.oil.params, 'look') ? 'drawn: dark glossy droplets with an iridescent rim, soap films as thin pearly lines' : 'not drawn'}`,
       help: 'step C12: the oil as dark glossy droplets with a thin iridescent rim, the soap films as thin pearly lines' },
+    { id: 'exLook', keys: [], label: 'excited haze drawn', group: 'look', type: 'toggle', get: () => app.matter.excited.look.on,
+      run: () => `the excited haze ${flip(app.matter.excited.look, 'on') ? 'drawn: a faint glitter of hot red-orange sparks that flicker and thin out as the atoms fade' : 'not drawn'}`,
+      help: 'the excited light atoms (step C12c) as a faint flickering glitter of hot red-orange sparks' },
     { id: 'polarity', keys: [], label: 'polarity wash', group: 'look', type: 'toggle', get: () => app.matter.oil.params.polarity,
       run: () => `polarity ${flip(app.matter.oil.params, 'polarity') ? 'shown: water-loving (polar) matter washed warm, water-shy (apolar) cool' : 'not shown'}`,
       help: 'step C12 (machinery): water-loving (polar) matter washed warm, water-shy (apolar) matter cool' },
@@ -543,6 +547,21 @@ export function makeActions(app) {
     lknob('lipTref', 'soap stiff at', 'tRef', 0.25, 64, 1.25, 2, 'the temperature (heat per R²) at which a pure soap bilayer has stiffness 1; above it softer, below stiffer'),
     lknob('lipCrackAt', 'wall cracks at', 'crackAt', 0.02, 2, 1.25, 2, 'a corner jolted into a swing this large (a share of the radius) cracks its two sides’ crust'),
     lknob('lipFuse', 'lipid fusion', 'fuseK', 0.01, 20, 1.5, 2, 'share of a side’s missing soap or oil it takes from the dish under the cell per s'),
+  );
+
+  // ---------- excited waste (step C12c; panel only: no keys are free) ----------
+  const XP = () => app.matter.excited.params;
+  const xknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'excited', type: 'knob', get: () => XP()[key].toFixed(digits),
+    run: (k) => { const p = XP(); p[key] = Math.max(lo, Math.min(hi, +(p[key] * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    { id: 'excited', keys: [], label: 'excited waste', group: 'excited', type: 'toggle', get: () => XP().on,
+      run: () => `excited waste ${flip(XP(), 'on') ? `on: a light atom freed by light leaves excited, holding ${app.matter.excited.table.energy} of the photon; it fades by itself (heat), and whatever reaction takes it releases that energy: an engine into the battery, anything else as heat` : 'off: freed light atoms carry no energy (the excited ones still there fade away)'}`,
+      help: 'a light atom freed by light (an uphill swap) leaves excited, holding part of the photon: breathing it in an engine pays the battery more, loose reactions and bites dump it as heat' },
+    xknob('exLife', 'excited lifetime', 'life', 0.5, 600, 1.5, 1, 'seconds an excited atom lasts in a cold dish before it fades back (faster where it is hot)'),
+    xknob('exHot', 'fades twice as fast at', 'hot', 0.25, 64, 1.5, 2, 'the temperature (heat per R²) at which excited atoms fade twice as fast as in the cold'),
+    { id: 'exShare', keys: [], label: 'share of the photon kept', group: 'excited', type: 'knob', get: () => app.matter.excited.table.share.toFixed(2),
+      run: () => `the share is set when the page loads (?exshare=${app.matter.excited.table.share}): E* = ${app.matter.excited.table.energy} (the excited atoms already made hold it)`,
+      help: 'the share of the photon’s surplus an excited atom keeps; fixed for the page (URL ?exshare=), as the atoms already made hold that much' },
   );
 
   // ---------- hard light mutates (step C8; panel only: no keys are free) ----------

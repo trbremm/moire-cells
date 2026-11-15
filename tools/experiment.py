@@ -33,7 +33,8 @@ Condition file (JSON; every key but "name" optional):
       "tissue": false,                             # also sample moire.tissue.stats() (tissue.*)
       "evals": [{"t": 0, "js": "moire.cells.params.stiffness = 9"},
                 {"t": 60, "js": "await moire.tissue.stir(640, 400, 12, 0, 20)"}],   # statements; await allowed
-      "shots": [{"t": 60}, {"t": 120, "view": "lineage", "panel": true, "name": "end"}],
+      "shots": [{"t": 60}, {"t": 120, "view": "lineage", "panel": true, "name": "end"},
+                {"t": 120, "crop": [600, 300, 200, 150], "scale": 3}],   # crop: a close-up (CSS px; Chrome)
                                                    # view: clean (default) fate lineage strategy charge walls machinery;
                                                    # panel: keep the entropy panel in the picture
       "clips": [{"t": 30, "until": 50, "speed": 8}],   # a .webm of t 30..50 s recorded at 8x (events inside it happen at
@@ -262,8 +263,13 @@ def run_condition(cond, out_dir, port, args):
               let s = document.getElementById('lab-shot-css'); if (!s) {{ s = document.createElement('style');
               s.id = 'lab-shot-css'; document.head.append(s); }} s.textContent = {json.dumps(css)}; }})()""")
             time.sleep(float(spec.get("settle", 0.6)))   # the neon trails of the old view fade (real time)
+            # "crop": [x, y, w, h] in CSS px (Chrome: a close-up at "scale", default 2 device px per CSS px)
+            cr = spec.get("crop")
+            shot_clip = None
+            if cr and hasattr(driver, "rpc") and browser != "firefox":
+                shot_clip = (cr[0], cr[1], cr[2], cr[3], float(spec.get("scale", 2)))
             with open(path, "wb") as f:
-                f.write(driver.screenshot())
+                f.write(driver.screenshot(shot_clip) if shot_clip else driver.screenshot())
             page.js("(() => { moire.lab.restoreView(window.__labPrev); const s = document.getElementById('lab-shot-css');"
                     " if (s) s.remove(); })()")
             return os.path.relpath(path, rd).replace(os.sep, "/")

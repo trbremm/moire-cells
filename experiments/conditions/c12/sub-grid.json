@@ -1,0 +1,126 @@
+{
+ "runs": [
+  {
+   "query": {
+    "seed": 3,
+    "cells": 1,
+    "springs": 0,
+    "light": "off"
+   },
+   "size": "1280x800",
+   "sample_every": 20,
+   "name": "c12-sub-grid-oil",
+   "description": "Step C12, substrate alone: 16 oil springs in a 4 x 4 grid 70 px apart, 60 s each, dark. Do the droplets merge (oil) or stay apart (soap skin)?",
+   "duration": 900,
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.matter.params.maxSprings = 16; moire.matter.addSpring(535, 295, 'oil', 60); moire.matter.addSpring(605, 295, 'oil', 60); moire.matter.addSpring(675, 295, 'oil', 60); moire.matter.addSpring(745, 295, 'oil', 60); moire.matter.addSpring(535, 365, 'oil', 60); moire.matter.addSpring(605, 365, 'oil', 60); moire.matter.addSpring(675, 365, 'oil', 60); moire.matter.addSpring(745, 365, 'oil', 60); moire.matter.addSpring(535, 435, 'oil', 60); moire.matter.addSpring(605, 435, 'oil', 60); moire.matter.addSpring(675, 435, 'oil', 60); moire.matter.addSpring(745, 435, 'oil', 60); moire.matter.addSpring(535, 505, 'oil', 60); moire.matter.addSpring(605, 505, 'oil', 60); moire.matter.addSpring(675, 505, 'oil', 60); moire.matter.addSpring(745, 505, 'oil', 60); "
+    },
+    {
+     "t": 60,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 120,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 240,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 480,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 900,
+     "js": "await moire.oil.stats()"
+    }
+   ],
+   "shots": [
+    {
+     "t": 30
+    },
+    {
+     "t": 60
+    },
+    {
+     "t": 120
+    },
+    {
+     "t": 240
+    },
+    {
+     "t": 480
+    },
+    {
+     "t": 900,
+     "panel": true,
+     "name": "end"
+    }
+   ]
+  },
+  {
+   "query": {
+    "seed": 3,
+    "cells": 1,
+    "springs": 0,
+    "light": "off"
+   },
+   "size": "1280x800",
+   "sample_every": 20,
+   "name": "c12-sub-grid-emulsion",
+   "description": "Step C12, substrate alone: 16 emulsion springs in a 4 x 4 grid 70 px apart, 60 s each, dark. Do the droplets merge (oil) or stay apart (soap skin)?",
+   "duration": 900,
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.matter.params.maxSprings = 16; moire.matter.addSpring(535, 295, 'emulsion', 60); moire.matter.addSpring(605, 295, 'emulsion', 60); moire.matter.addSpring(675, 295, 'emulsion', 60); moire.matter.addSpring(745, 295, 'emulsion', 60); moire.matter.addSpring(535, 365, 'emulsion', 60); moire.matter.addSpring(605, 365, 'emulsion', 60); moire.matter.addSpring(675, 365, 'emulsion', 60); moire.matter.addSpring(745, 365, 'emulsion', 60); moire.matter.addSpring(535, 435, 'emulsion', 60); moire.matter.addSpring(605, 435, 'emulsion', 60); moire.matter.addSpring(675, 435, 'emulsion', 60); moire.matter.addSpring(745, 435, 'emulsion', 60); moire.matter.addSpring(535, 505, 'emulsion', 60); moire.matter.addSpring(605, 505, 'emulsion', 60); moire.matter.addSpring(675, 505, 'emulsion', 60); moire.matter.addSpring(745, 505, 'emulsion', 60); "
+    },
+    {
+     "t": 60,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 120,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 240,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 480,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 900,
+     "js": "await moire.oil.stats()"
+    }
+   ],
+   "shots": [
+    {
+     "t": 30
+    },
+    {
+     "t": 60
+    },
+    {
+     "t": 120
+    },
+    {
+     "t": 240
+    },
+    {
+     "t": 480
+    },
+    {
+     "t": 900,
+     "panel": true,
+     "name": "end"
+    }
+   ]
+  }
+ ]
+}

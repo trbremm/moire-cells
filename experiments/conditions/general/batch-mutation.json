@@ -2,8 +2,7 @@
   "batch": "mutation",
   "description": "Series 4: mutation.",
   "seeds": [
-    3,
-    7
+    3
   ],
   "runs": [
     "g-mut-off.json",

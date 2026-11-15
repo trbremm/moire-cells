@@ -3,7 +3,7 @@
   "description": "Mutation high: mutSize 3, mutJump 0.1, engine and pump slot jumps 0.12 (defaults 1, 0.03, 0.04, 0.04).",
   "query": {},
   "duration": 1200,
-  "sample_every": 10,
+  "sample_every": 20,
   "shots": [
     {
       "t": 120

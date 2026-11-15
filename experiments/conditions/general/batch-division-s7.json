@@ -7,7 +7,6 @@
   "runs": [
     "g-div-turnover.json",
     "g-div-cheap.json",
-    "g-div-costly.json",
-    "g-div-crowdloose.json"
+    "g-div-costly.json"
   ]
 }

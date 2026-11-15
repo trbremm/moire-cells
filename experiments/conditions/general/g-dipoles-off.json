@@ -5,7 +5,7 @@
     "dipoles": 0
   },
   "duration": 1200,
-  "sample_every": 10,
+  "sample_every": 20,
   "shots": [
     {
       "t": 120

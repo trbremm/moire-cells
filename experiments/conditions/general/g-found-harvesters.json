@@ -3,7 +3,7 @@
   "description": "All founders harvesters (two pigments: gt by visible 1, gT by visible 2, small gt burner).",
   "query": {},
   "duration": 1200,
-  "sample_every": 10,
+  "sample_every": 20,
   "shots": [
     {
       "t": 120

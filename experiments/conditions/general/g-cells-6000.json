@@ -5,7 +5,7 @@
     "cells": 6000
   },
   "duration": 1200,
-  "sample_every": 10,
+  "sample_every": 20,
   "shots": [
     {
       "t": 120

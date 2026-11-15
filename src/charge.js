@@ -57,7 +57,11 @@ export class Charge {
                           // 0.3 units of each free atom; most cells are neutral to a few counts, cells running swap engines hold
                           // about 0.01 to 0.04 more of one sign, see the README)
       qB: 1,              // ... (the fixed per-fate charges of step 5 are about 1)
-      feelGain: 2,        // cells feel the grid: speed = feelGain x q x (-grad phi) (R / s per unit of phi per R)
+      bSign: 1,           // field B's sign rule while the charges come from the stocks: +1 like repels like (as real charge,
+                          // and as the substrate's field); -1 like attracts like. Key U flips it then (and fields.sign, the
+                          // per-fate charges' rule, while Shift+8 is off), so Shift+8 off gives back step 5's page exactly
+      feelGain: 20,       // cells feel the grid: speed = feelGain x q x (-grad phi) (R / s per unit of phi per R; around a
+                          // charged cell phi changes by about 0.01 to 0.05 per R, so a charged cell drifts at 0.2 to 1 R / s)
       feelSat: 1,         // ... saturating at this speed (R / s)
       // drawing (Shift+0): contour lines of phi
       step: 0.25,         // phi between two lines
@@ -103,6 +107,14 @@ export class Charge {
   get feelOn() { return this.fieldOn && !!this.params.feel && !!(this.eat && this.eat.params.on) && this.params.feelGain > 0; }
   /** Whether a cell's B charge comes from its stock (needs the cells eating: otherwise there is no stock to speak of). */
   get stockOn() { return !!this.params.stock && !!(this.eat && this.eat.params.on); }
+  /** Field B's sign rule in use: the stock charges' (params.bSign) or the per-fate charges' (cells.fields.sign). */
+  get signB() { return this.stockOn ? this.params.bSign : this.cells.fields.sign; }
+  /** Key U: flip the sign rule in use; returns the new sign. */
+  flipSignB() {
+    if (this.stockOn) return (this.params.bSign = -this.params.bSign);
+    return (this.cells.fields.sign = -this.cells.fields.sign);
+  }
+
   /** Whether the contours are drawn (their switch, or the machinery). */
   get contoursOn() { return this.fieldOn && !!this.params.contours; }
 

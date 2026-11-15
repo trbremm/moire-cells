@@ -341,6 +341,36 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     g = 2.0 * gr / max(rr, 1e-6) * conc / 16.0 * EP.R;
   }
   cells[i].smell = g;
+  // step C6b: the substrate's screened potential phi at the same 6 corners (bilinear), its gradient across the cell (phi
+  // per R), for the next tick's step: a charged cell is pushed down (+) or up (-) it
+  var ef = vec2f(0.0);
+  if (EP.qFeel != 0u && EP.phiOff != 0u && (c.flags & CELL_ALIVE) != 0u) {
+    let mb = membrane(c);
+    var gr = vec2f(0.0);
+    var rr = 0.0;
+    for (var a = 0; a < 6; a++) {
+      let cp = mb.mid[a] - 0.5 * mb.edge[a];
+      gr += phi_bilinear(c.pos + cp) * cp;
+      rr += dot(cp, cp);
+    }
+    ef = 2.0 * gr / max(rr, 1e-6) * EP.R;
+  }
+  cells[i].efield = ef;
+}
+
+// step C6b: phi (plain view) at a position (CSS px), bilinear between the pixel centres, clamped into the grid
+fn phi_bilinear(p: vec2f) -> f32 {
+  let gp = p / HP.px - 0.5;
+  let b = floor(gp);
+  let f = gp - b;
+  let hi = vec2i(i32(HP.hw) - 1, i32(HP.hh) - 1);
+  let a0 = clamp(vec2i(b), vec2i(0), hi);
+  let a1 = clamp(vec2i(b) + 1, vec2i(0), hi);
+  let v00 = bitcast<f32>(mg[EP.phiOff + u32(a0.y) * HP.hw + u32(a0.x)]);
+  let v10 = bitcast<f32>(mg[EP.phiOff + u32(a0.y) * HP.hw + u32(a1.x)]);
+  let v01 = bitcast<f32>(mg[EP.phiOff + u32(a1.y) * HP.hw + u32(a0.x)]);
+  let v11 = bitcast<f32>(mg[EP.phiOff + u32(a1.y) * HP.hw + u32(a1.x)]);
+  return mix(mix(v00, v10, f.x), mix(v01, v11, f.x), f.y);
 }
 
 // ---------- eat ----------

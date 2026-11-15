@@ -65,6 +65,9 @@ struct Draw {
   hum: vec4f,       // x: the wobble's depth; y: its rate (Hz, each cell 0.6 to 1.4 x); z: real time (s); w: 1 = activity read
   hum2: vec4f,      // x: an idle cell's brightness; y: the activity (battery change per s) at which a cell is 63 % of the way
                     // to the busiest; z, w: the lineage colours' base and amplitude
+  // ---- step C6b: the charge view (mode 3) ----
+  qPos: vec4f,      // a cell with net + charge (its stock holds more givers): the charge contours' + ink
+  qNeg: vec4f,      // ... net -: the - ink
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
@@ -180,7 +183,11 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     if (kind == 0u && harvestBand == 0u) { harvestBand = eng_band(g.eng[k]); }   // (0: a storer, not a harvester)
     if (kind == 1u) { burns = true; }
   }
-  let strategyView = D.mode > 1.5;
+  let strategyView = D.mode > 1.5 && D.mode < 2.5;
+  // step C6b, colour by charge: the dim grey of "other" toward the + or - ink by the cell's charge q (its stock's net
+  // charge, saturating: the one field B and the substrate's field see)
+  let chargeView = D.mode > 2.5;
+  if (chargeView) { col = mix(D.inkOther.rgb, select(D.qNeg.rgb, D.qPos.rgb, c.q > 0.0), clamp(abs(c.q), 0.0, 1.0)); }
   if (strategyView) {
     // harvest: the pigment's band colour; burn: the fuel's green; both: split down the middle, band left, green right
     // (a crisp edge); neither: dim grey
@@ -197,7 +204,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   let ring = 1.0 - cover(c.r - lw, d, aa);        // clean outline at the rim
   // committed cells get a flat fill in their colour, so tissues read as areas; stem cells stay dark inside
   // (neon: every inside dark, a faint tint; the fills come from src/cells.js by the look)
-  let fill = select(select(D.fill, D.fillC, c.kind != KIND_STEM), D.inkOther.w, strategyView);
+  let fill = select(select(D.fill, D.fillC, c.kind != KIND_STEM), D.inkOther.w, strategyView || chargeView);
   var fillRgb = col * fill;   // (step 8 may tint it below)
   // step C6n: neon, the tube lights the inside near it (a soft glow falling off inward)
   if (neon) { fillRgb += col * D.neon2.x * exp(-max(c.r - lw - d, 0.0) / max(D.neon.w * c.r, 1e-3)); }

@@ -31,7 +31,7 @@
 
 import { fmt, HEAT_SCALE } from './heat.js';
 import { SUBSTANCES } from './matter.js';
-import { PUMP_CHANNELS, pumpOf, BIO_FLOATS } from './genome.js';
+import { PUMP_CHANNELS, pumpOf, BIO_FLOATS, strategyOf } from './genome.js';
 import { CELL_FLOATS } from './cells.js';
 
 const LG_PU = 20224;               // heat_common.wgsl: 96 numbers x 16 slots (0..63 a snapshot, 64..95 counters)
@@ -163,7 +163,8 @@ export class Pumps {
   /**
    * For tuning and the experiments (console, tools): reads the cells, genomes and stocks back. Per pump gene (substance and
    * direction, rate at least 0.05): carriers, their mean battery, mean |voltage|, how many sit in the light, and the free
-   * light atoms (g + t, units per R^2) in the dish under them; and the same for the cells without a pump.
+   * light atoms (g + t) inside, and their engines' strategies (harvest, burn, both, other); and the same for the cells without
+   * a pump.
    */
   async stats() {
     const C = this.eat.cells, d = C.device, n = C.count, F = CELL_FLOATS, B = BIO_FLOATS;
@@ -184,9 +185,10 @@ export class Pumps {
     const lit = (x, y) => (L ? (L.modeIndex === 2 || (sp && Math.hypot(x - sp.x, y - sp.y) < sp.r)) : false);
     const groups = {};
     const add = (key, i) => {
-      const G = groups[key] || (groups[key] = { n: 0, bat: 0, volt: 0, lit: 0, fuel: 0, freeLight: 0 });
+      const G = groups[key] || (groups[key] = { n: 0, bat: 0, volt: 0, lit: 0, fuel: 0, freeLight: 0, harvest: 0, burn: 0, both: 0, other: 0 });
       const o = i * F;
       G.n++; G.bat += fc[o + 16]; G.volt += Math.abs(fc[o + 63]);
+      G[strategyOf(g, i * B)]++;
       if (lit(fc[o], fc[o + 1])) G.lit++;
       let fu = 0, fl = 0;
       for (let c = 6; c < 10; c++) fu += st[i * STOCK_WORDS + c] / 4096;

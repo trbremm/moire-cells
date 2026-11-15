@@ -310,8 +310,16 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           let cm = max(max(max(ca.x, ca.y), max(ca.z, ca.w)), max(cb.x, cb.y));
           let dn = dist / R0;
           let oi = beats[k].idx;
-          let sa = (ca >= vec4f(cm)) & (vec4f(dn) < nbDA);
-          let sb = (cb >= vec2f(cm)) & (vec2f(dn) < nbDB);
+          // (only the first side at the largest cos: a tie must not list a neighbour twice)
+          var ia = ca >= vec4f(cm);
+          ia.y = ia.y && !ia.x;
+          ia.z = ia.z && !ia.x && !ia.y;
+          ia.w = ia.w && !ia.x && !ia.y && !ia.z;
+          let anyA = any(ia);
+          var ib = (cb >= vec2f(cm)) & vec2<bool>(!anyA);
+          ib.y = ib.y && !ib.x;
+          let sa = ia & (vec4f(dn) < nbDA);
+          let sb = ib & (vec2f(dn) < nbDB);
           nbDA = select(nbDA, vec4f(dn), sa);
           nbIA = select(nbIA, vec4u(oi), sa);
           nbDB = select(nbDB, vec2f(dn), sb);

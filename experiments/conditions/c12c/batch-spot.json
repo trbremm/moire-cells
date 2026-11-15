@@ -1,0 +1,11 @@
+{
+ "batch": "c12c-spot",
+ "runs": [
+  "spot-on.json",
+  "spot-off.json"
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

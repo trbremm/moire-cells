@@ -1,0 +1,31 @@
+{
+ "name": "c12b-same-on",
+ "description": "the C12b supply fix, the co-location test: both default springs at one place, 8 min, grazing on",
+ "query": {
+  "seed": 3
+ },
+ "duration": 480,
+ "sample_every": 20,
+ "evals": [
+  {
+   "t": 0,
+   "js": "const s = moire.matter.springs.map(x => [x.x, x.y]); moire.matter.clearSprings(); const x = (s[0][0] + s[1][0]) / 2, y = (s[0][1] + s[1][1]) / 2; moire.matter.addSpring(x, y, 'light', 240); moire.matter.addSpring(x, y, 'heavy', 240); return [x, y]"
+  },
+  {
+   "t": 240,
+   "js": "const E = moire.eat, C = moire.cells, d = C.device, n = C.count; const read = async (src, bytes) => { const buf = d.createBuffer({ size: bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }); const e = d.createCommandEncoder(); e.copyBufferToBuffer(src, 0, buf, 0, bytes); d.queue.submit([e.finish()]); await buf.mapAsync(GPUMapMode.READ); const out = buf.getMappedRange().slice(0); buf.destroy(); return out; }; const SW = E.stockBuf.size / 4 / n, CF = C.cellBuf.size / n / 4; const st = new Int32Array(await read(E.stockBuf, n * SW * 4)), cu = new Uint32Array(await read(C.cellBuf, C.cellBuf.size)); const r = { n: 0, withL: 0, withl: 0, withHeads: 0, withAll: 0, Lcells: [] }; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; const o = i * SW; r.n++; const gt = st[o] + st[o + 1], l = st[o + 2], L = st[o + 5]; let soap = 0, wall = 0; for (let k = 0; k < 6; k++) { soap += st[o + 32 + k] + st[o + 38 + k]; wall += st[o + 50 + k] + st[o + 56 + k]; } if (L > 6) { r.withL++; if (r.Lcells.length < 8) r.Lcells.push([L, l, gt, Math.round(st[o + 13] / 655.36) / 100, soap, wall]); } if (l > 6) r.withl++; if (gt > 6) r.withHeads++; if (L > 6 && l > 6 && gt > 6) r.withAll++; } return JSON.stringify(r)"
+  },
+  {
+   "t": 480,
+   "js": "const E = moire.eat, C = moire.cells, d = C.device, n = C.count; const read = async (src, bytes) => { const buf = d.createBuffer({ size: bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }); const e = d.createCommandEncoder(); e.copyBufferToBuffer(src, 0, buf, 0, bytes); d.queue.submit([e.finish()]); await buf.mapAsync(GPUMapMode.READ); const out = buf.getMappedRange().slice(0); buf.destroy(); return out; }; const SW = E.stockBuf.size / 4 / n, CF = C.cellBuf.size / n / 4; const st = new Int32Array(await read(E.stockBuf, n * SW * 4)), cu = new Uint32Array(await read(C.cellBuf, C.cellBuf.size)); const r = { n: 0, withL: 0, withl: 0, withHeads: 0, withAll: 0, Lcells: [] }; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; const o = i * SW; r.n++; const gt = st[o] + st[o + 1], l = st[o + 2], L = st[o + 5]; let soap = 0, wall = 0; for (let k = 0; k < 6; k++) { soap += st[o + 32 + k] + st[o + 38 + k]; wall += st[o + 50 + k] + st[o + 56 + k]; } if (L > 6) { r.withL++; if (r.Lcells.length < 8) r.Lcells.push([L, l, gt, Math.round(st[o + 13] / 655.36) / 100, soap, wall]); } if (l > 6) r.withl++; if (gt > 6) r.withHeads++; if (L > 6 && l > 6 && gt > 6) r.withAll++; } return JSON.stringify(r)"
+  }
+ ],
+ "shots": [
+  {
+   "t": 240
+  },
+  {
+   "t": 480
+  }
+ ]
+}

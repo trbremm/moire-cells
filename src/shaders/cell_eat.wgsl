@@ -269,6 +269,7 @@ const LPF_ON: u32 = 1u;      // the lipid membranes (master; off: the C6c linker
 const LPF_HEAT: u32 = 2u;    // ... heat makes the bilayer fluid (stiffness x 2 / (1 + T / Tref))
 const LPF_CRACK: u32 = 4u;   // ... a strained wall cracks
 const LPF_HEADS: u32 = 8u;   // ... the soap's heads charge the cell and its sides
+const LPF_GRAZE: u32 = 16u;  // ... the supply fix (2026-11-16): cells graze the crust under them (walls whole, chains cracked)
 fn lp_flags() -> u32 { return bitcast<u32>(EP.lp[0].x); }
 fn lpw(kind: u32, side: u32) -> u32 { return LP0 + 6u * kind + side; }
 // a lipid kind's channel in the dish (SUBSTANCES order; src/lipids.js checks)
@@ -296,7 +297,14 @@ const LC_WALL: u32 = 4u;     // ... crust made
 const LC_FUSED: u32 = 5u;    // ... lipid molecules taken in from the dish (fusion)
 const LC_SHED: u32 = 6u;     // ... lipid molecules shed into the dish
 const LC_CRACK: u32 = 7u;    // ... crust broken off by cracks
-var<workgroup> wlp: array<atomic<i32>, 8>;
+// the supply fix (2026-11-16), cells graze crust: counters 8..13 at LG_LIP_G + 16 (q - 8) + slot
+const LC_GRAZE_L: u32 = 8u;   // ... light crust (ll) taken in from the dish under cells (counts)
+const LC_GRAZE_H: u32 = 9u;   // ... heavy crust (LL)
+const LC_GRAZE_W: u32 = 10u;  // ... of it, put into walls whole
+const LC_GRAZE_CL: u32 = 11u; // ... ll cracked into two l
+const LC_GRAZE_CH: u32 = 12u; // ... LL cracked into two L
+const LC_GRAZE_PAID: u32 = 13u; // ... heat counts the batteries paid for cracking (the bonds' energy + the sparks)
+var<workgroup> wlp: array<atomic<i32>, 16>;
 // step C6d: charge per side
 const DPE_ON: u32 = 1u;      // the side charges move (else they are kept even: the net charge / 6)
 const DPE_DEPOSIT: u32 = 2u; // the cells put their charge into the substrate's field at their sides (else at the centre)
@@ -495,6 +503,10 @@ fn flush_counters(li: u32, slot: u32) {
     // step C12b: the lipid counters (16 slots, i32: cleared at each read-back)
     let v = atomicLoad(&wlp[li - 48u]);
     if (v != 0) { atomicAdd(&hb[LG_LIP_C + 16u * (li - 48u) + (slot & 15u)], v); }
+  } else {
+    // the supply fix: the grazing counters (16 slots, i32: cleared at each read-back)
+    let v = atomicLoad(&wlp[li - 48u]);
+    if (v != 0) { atomicAdd(&hb[LG_LIP_G + 16u * (li - 56u) + (slot & 15u)], v); }
   }
   if (li < 32u) {
     // step C7: the pumps' counters (16 slots, i32: cleared at each read-back)
@@ -1431,6 +1443,67 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           if (j == 5u) { needO = gotO; }
           let c2 = min(needO, gotO);
           lpm[LK_OIL][k] += c2; gotO -= c2;
+        }
+      }
+      // ---- the supply fix (2026-11-16), CELLS GRAZE CRUST (LPF_GRAZE): the crust (ll, LL) lying in the dish under the cell is
+      // taken in, as fusion takes soap and oil (lp[5].x of the shortfall per s): (a) a wall short of crust takes it whole
+      // (self-assembly: no bond changes, nothing paid); (b) for a bilayer short of linkers (each soap and oil molecule needs one l
+      // and one L) the rest is CRACKED back into linkers in the stock by the table's reverse reaction, uphill: the battery pays the
+      // chain's bond energy (into the linkers' chemical energy) and its spark (as heat). Grazed crust the battery cannot crack
+      // waits in the stock as crust and is expelled with the sediment below (crust never stays in a stock)
+      if ((lp_flags() & LPF_GRAZE) != 0u) {
+        let cl = i32(EP.lp[3].z + EP.lp[4].z);                // cracking one ll: its spark + its bond energy (0.25 + 0.5)
+        let ch2 = i32(EP.lp[3].w + EP.lp[4].w);               // ... one LL (0.5 + 1)
+        var shB = 0.0;                                        // bilayer molecules short (soap and oil)
+        var shW = vec2f(0.0);                                 // wall crust short (ll, LL)
+        for (var k = 0u; k < 6u; k++) {
+          let S = f32(lpm[LK_GP][k] + lpm[LK_TM][k]);
+          shB += max(wS - S, 0.0) + max(min(wO, EP.lp[5].y * max(S, wS)) - f32(lpm[LK_OIL][k]), 0.0);
+          shW.x += max(wWl - f32(lpm[LK_CL][k]), 0.0);
+          shW.y += max(wWh - f32(lpm[LK_CH][k]), 0.0);
+        }
+        let kg = EP.lp[5].x * EP.dt;
+        let needl = max(shB - f32(max(m[MB_CH_L], 0)), 0.0);  // linkers the stock lacks for that bilayer
+        let needL = max(shB - f32(max(m[MB_CH_H], 0)), 0.0);
+        var got = vec2i(0);
+        var forW = vec2i(0);                                  // of it, asked for the wall (the rest for cracking)
+        for (var w = 0u; w < 2u; w++) {
+          let ch = 10u + w;                                   // ll, LL (SUBSTANCES order; src/lipids.js checks)
+          let hw = pcg(rs + w * 0x2c1b3c6du + 0x297a2d39u);
+          let aw = i32(floor(kg * shW[w] + u01(hw)));
+          let want = aw + i32(floor(kg * 0.5 * select(needl, needL, w == 1u) + u01(pcg(hw))));
+          if (want <= 0 || (EP.mask & (1u << ch)) == 0u) { continue; }
+          let part = want / 9;
+          for (var z = 0; z < 9; z++) { got[w] += take_hb(cur + ch * EP.n + idx[z], select(part, want - 8 * part, z == 4)); }
+          forW[w] = i32(floor(f32(got[w]) * f32(aw) / f32(want)));   // a short take is shared in proportion
+        }
+        if (got.x + got.y > 0) {
+          atomicAdd(&wlp[LC_GRAZE_L], got.x);
+          atomicAdd(&wlp[LC_GRAZE_H], got.y);
+          // (a) the wall, whole, each side as it is short (from a random first side round)
+          var dw = vec2i(0);
+          let k0 = pcg(rs + 0x3b9aca07u) % 6u;
+          for (var j = 0u; j < 6u; j++) {
+            let k = (k0 + j) % 6u;
+            let a = min(i32(ceil(max(wWl - f32(lpm[LK_CL][k]), 0.0))), forW.x - dw.x);
+            lpm[LK_CL][k] += a; dw.x += a;
+            let b2 = min(i32(ceil(max(wWh - f32(lpm[LK_CH][k]), 0.0))), forW.y - dw.y);
+            lpm[LK_CH][k] += b2; dw.y += b2;
+          }
+          atomicAdd(&wlp[LC_GRAZE_W], dw.x + dw.y);
+          // (b) the rest cracked into linkers in the stock (uphill, from the battery: the heavy chains first, L is the scarcer)
+          let nh = clamp(max(bat, 0) / max(ch2, 1), 0, got.y - dw.y);
+          let nl = clamp((max(bat, 0) - nh * ch2) / max(cl, 1), 0, got.x - dw.x);
+          m[MB_CH_L] += 2 * nl;
+          m[MB_CH_H] += 2 * nh;
+          let cost = nl * cl + nh * ch2;
+          bat -= cost;
+          heat += nl * i32(EP.lp[3].z) + nh * i32(EP.lp[3].w);   // the sparks; the bond energy is now the linkers'
+          atomicAdd(&wlp[LC_GRAZE_CL], nl);
+          atomicAdd(&wlp[LC_GRAZE_CH], nh);
+          atomicAdd(&wlp[LC_GRAZE_PAID], cost);
+          m[10] += got.x - dw.x - nl;                         // (expelled below)
+          m[11] += got.y - dw.y - nh;
         }
       }
       // the builder: what is still short, made from the stock's atoms

@@ -47,11 +47,16 @@ import { CELL_FLOATS } from './cells.js';
 import { BIO_FLOATS } from './genome.js';
 
 const LG_LIP_E = 22528, LG_LIP_S = 22656, LG_LIP_C = 22912;   // heat_common.wgsl
+const LG_LIP_G = 25360;                                        // the supply fix (2026-11-16): the grazing counters
 export const LIP_SNAP = { E: LG_LIP_E, S: LG_LIP_S, E_WORDS: 128, S_WORDS: 256 };
 const KINDS = ['glL', 'tlL', 'lL', 'll', 'LL'];               // LK_* in cell_eat.wgsl, stock words 32 + 6 x kind + side
 const KIND_CH = [14, 15, 13, 10, 11];
 KINDS.forEach((k, j) => { if (CH[k] !== KIND_CH[j]) throw new Error(`cell_eat.wgsl lk_ch expects ${k} in channel ${KIND_CH[j]}`); });
 const CNT = ['biteB', 'biteW', 'soap', 'oil', 'wall', 'fused', 'shed', 'crack'];   // LC_* in cell_eat.wgsl
+// the supply fix (LC_GRAZE_* in cell_eat.wgsl, at LG_LIP_G): crust grazed (ll, LL), into walls whole, cracked (ll, LL), and the heat
+// counts the batteries paid for cracking (booked here in energy units)
+const GCNT = ['grazeL', 'grazeH', 'grazeWall', 'crackL', 'crackH', 'crackPaid'];
+if (CH.ll !== 10 || CH.LL !== 11) throw new Error('cell_eat.wgsl (grazing) expects the crusts ll, LL in channels 10, 11');
 export const LIP_STOCK0 = 32;
 
 // the derived numbers per lipid kind (soap, oil, ll, LL), from the atoms (no per-molecule constants)
@@ -79,6 +84,8 @@ export class Lipids {
       heat: true,       // heat makes the bilayer fluid (stiffness x 2 / (1 + T / Tref); ?lipheat=0)
       crack: true,      // a strained wall cracks (?crack=0)
       heads: true,      // the soap's heads charge the cell and its sides (?lipheads=0)
+      graze: true,      // the supply fix (2026-11-16): cells GRAZE the crust under them: a wall takes crust whole, a bilayer short of
+                        // linkers cracks crust back into them (the table's reverse reaction, paid from the battery) (?graze=0)
       // knobs
       tRef: 3,          // the temperature (heat per R^2) at which pure soap has stiffness 1 (the default scene: about 1 to 2 in the
                         // dark, 8 to 10 in the spot)
@@ -96,7 +103,7 @@ export class Lipids {
       rimBright: 0.8,   // ... its brightness (flat, crisp: crust is dark matter, not a lamp)
       brick: 0.42,      // ... the bricks' length, as a share of the radius
     };
-    this.tot = Object.fromEntries(CNT.map((k) => [k, 0]));
+    this.tot = Object.fromEntries([...CNT, ...GCNT].map((k) => [k, 0]));
     this.hist = [];
     this.census = null;
     this.energy = 0;      // the lipids' chemical energy in all membranes (energy units; negative)
@@ -112,7 +119,8 @@ export class Lipids {
   /** The eat uniform's lipid words (struct EatP lp[8], from word o). */
   write(u, f, o) {
     const p = this.params, T = LIPID_TABLE;
-    u[o] = (this.rule('on') ? 1 : 0) | (this.rule('heat') ? 2 : 0) | (this.rule('crack') ? 4 : 0) | (this.rule('heads') ? 8 : 0);
+    u[o] = (this.rule('on') ? 1 : 0) | (this.rule('heat') ? 2 : 0) | (this.rule('crack') ? 4 : 0) | (this.rule('heads') ? 8 : 0) |
+      (this.rule('graze') ? 16 : 0);
     f[o + 1] = Math.max(1e-3, p.tRef); f[o + 2] = Math.max(0, p.crackAt); f[o + 3] = Math.max(0, Math.min(1, p.crackLoss));
     // the polarity's atoms: soap's head and tail atoms, oil's head and tail atoms
     f[o + 4] = T[0].head; f[o + 5] = T[0].tail; f[o + 6] = T[1].head; f[o + 7] = T[1].tail;
@@ -147,13 +155,15 @@ export class Lipids {
     const v = (q) => { let s = 0; for (let k = 0; k < 16; k++) s += w[LG_LIP_S + 16 * q + k]; return s; };
     const c = (q) => { let s = 0; for (let k = 0; k < 16; k++) s += w[LG_LIP_C + 16 * q + k]; return s; };
     this.energy = -wide(LG_LIP_E) / HEAT_SCALE;
-    const A = 4096, T = this.tot;
+    const g = (q) => { let s = 0; for (let k = 0; k < 16; k++) s += w[LG_LIP_G + 16 * q + k]; return s; };
+    const A = 4096, T = this.tot, ALL = [...CNT, ...GCNT];
     CNT.forEach((k, j) => { T[k] += c(j) / A; });
+    GCNT.forEach((k, j) => { T[k] += g(j) / (k === 'crackPaid' ? HEAT_SCALE : A); });
     const H = this.hist;
-    H.push([rec.time, ...CNT.map((k) => T[k])]);
+    H.push([rec.time, ...ALL.map((k) => T[k])]);
     while (H.length > 2 && rec.time - H[1][0] >= 2) H.shift();
     const dt = rec.time - H[0][0];
-    const rate = Object.fromEntries(CNT.map((k, j) => [k, dt > 0.05 ? (H[H.length - 1][1 + j] - H[0][1 + j]) / dt : 0]));
+    const rate = Object.fromEntries(ALL.map((k, j) => [k, dt > 0.05 ? (H[H.length - 1][1 + j] - H[0][1 + j]) / dt : 0]));
     const held = KINDS.map((k, j) => v(j) / A);
     this.held.fill(0);
     KIND_CH.forEach((ch, j) => { this.held[ch] = held[j]; });
@@ -239,13 +249,14 @@ export class Lipids {
     if (compact) return `LIPIDS soap ${fmt(C.soap)} · oil ${fmt(C.oil)} · wall ${fmt(C.wall)} · stiff ${C.stiff.toFixed(2)}`;
     const lt = C.lit.n ? ` · lit: oil ${C.lit.oil.toFixed(2)} k ${C.lit.stiff.toFixed(2)} T ${C.lit.temp.toFixed(1)} | dark: oil ${C.dark.oil.toFixed(2)} k ${C.dark.stiff.toFixed(2)} T ${C.dark.temp.toFixed(1)}` : '';
     return `LIPIDS  soap ${fmt(C.soap)} (+${fmt(C.soapP)} −${fmt(C.soapM)}) · oil ${fmt(C.oil)} · wall ${fmt(C.wall)} · genes: oil ${C.oilGene.toFixed(2)} wall ${C.wallGene.toFixed(2)}` +
-      ` · walled ${Math.round(100 * C.walled / Math.max(1, C.n))}% · stiffness ${C.stiff.toFixed(2)} · per s: made ${fmt(r.soap + r.oil + r.wall)} fused ${fmt(r.fused)} bitten ${fmt(r.biteB)}+${fmt(r.biteW)} cracked ${fmt(r.crack)}${lt}`;
+      ` · walled ${Math.round(100 * C.walled / Math.max(1, C.n))}% · stiffness ${C.stiff.toFixed(2)} · per s: made ${fmt(r.soap + r.oil + r.wall)} fused ${fmt(r.fused)} bitten ${fmt(r.biteB)}+${fmt(r.biteW)} cracked ${fmt(r.crack)}` +
+      `${this.params.graze ? ` grazed ${fmt(r.grazeL + r.grazeH)}` : ''}${lt}`;
   }
 
   /** Lines for the F overlay. */
   overlayLines() {
     const p = this.params, on = (x) => (x ? 'on' : 'off'), C = this.census, T = LIPID_TABLE;
-    const lines = [`lipid membranes (step C12b) ${on(p.on)}: heat fluidises ${on(p.heat)} · walls crack ${on(p.crack)} · heads charge ${on(p.heads)} · Tref ${p.tRef}` +
+    const lines = [`lipid membranes (step C12b) ${on(p.on)}: heat fluidises ${on(p.heat)} · walls crack ${on(p.crack)} · heads charge ${on(p.heads)} · cells graze crust ${on(p.graze)} · Tref ${p.tRef}` +
       ` · crack at ${p.crackAt} (${p.crackLoss}/tick) · fusion ${p.fuseK}/s · oil per soap ≤ ${p.oilCap} · softest ${p.kMin}` +
       ` · table: ${T.map((t) => `${t.name} head ${t.head} tail ${t.tail} chain spark ${t.chainSpark} build ${t.buildSpark}+${t.release}`).join(', ')}`];
     if (C && C.n) {
@@ -253,6 +264,7 @@ export class Lipids {
       lines.push(`lipids: ${C.n} cells · in membranes soap +${fmt(C.soapP)} −${fmt(C.soapM)}, oil ${fmt(C.oil)}, crust ll ${fmt(C.ll)} LL ${fmt(C.LL)} (energy ${fmt(C.energy)})` +
         ` · genes oil ${C.oilGene.toFixed(3)} wall ${C.wallGene.toFixed(3)} · stiffness ${C.stiff.toFixed(3)} · walled ${C.walled} · T ${C.temp.toFixed(2)}` +
         ` · per s: made soap ${fmt(r.soap)} oil ${fmt(r.oil)} wall ${fmt(r.wall)}, fused ${fmt(r.fused)}, shed ${fmt(r.shed)}, bitten bilayer ${fmt(r.biteB)} wall ${fmt(r.biteW)}, cracked ${fmt(r.crack)}` +
+        ` · grazed crust ll ${fmt(r.grazeL)} LL ${fmt(r.grazeH)} (into walls ${fmt(r.grazeWall)}, cracked into linkers ll ${fmt(r.crackL)} LL ${fmt(r.crackH)}, paid ${fmt(r.crackPaid)})` +
         ` · lit ${C.lit.n}: oil ${C.lit.oil.toFixed(3)} wall ${C.lit.wall.toFixed(3)} k ${C.lit.stiff.toFixed(3)} T ${C.lit.temp.toFixed(2)} · dark ${C.dark.n}: oil ${C.dark.oil.toFixed(3)} wall ${C.dark.wall.toFixed(3)} k ${C.dark.stiff.toFixed(3)} T ${C.dark.temp.toFixed(2)}`);
       lines.push(`lipids every 10 s (soap/oil/wall, oil gene lit|dark, k lit|dark): ${this.series.slice(-6).map((s) => `${s[0].toFixed(0)}s ${fmt(s[1])}/${fmt(s[2])}/${fmt(s[3])} ${s[7].toFixed(2)}|${s[8].toFixed(2)} ${s[9].toFixed(2)}|${s[10].toFixed(2)}`).join(' ')}`);
     }

@@ -365,6 +365,9 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     if (opts.settings !== false && M.lipids && !(S.settings && S.settings['lipids.params'])) {
       M.lipids.params.on = false;
       notes.push('saved before step C12b: lipid membranes off (as it ran)');
+    } else if (opts.settings !== false && M.lipids && !('graze' in S.settings['lipids.params'])) {
+      M.lipids.params.graze = false;   // (the C12b supply fix, 2026-11-16)
+      notes.push('saved before the cells grazed crust: grazing off (as it ran)');
     }
     if (opts.settings !== false && !(S.settings && S.settings['walls.params'])) {
       M.walls.params.on = false;

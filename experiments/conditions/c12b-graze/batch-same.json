@@ -1,0 +1,7 @@
+{
+ "batch": "c12b-same",
+ "runs": [
+  "same-on.json",
+  "same-off.json"
+ ]
+}

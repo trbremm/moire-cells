@@ -1,0 +1,11 @@
+{
+ "batch": "c12b-graze",
+ "runs": [
+  "graze-on.json",
+  "graze-off.json"
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

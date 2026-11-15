@@ -70,8 +70,8 @@
 //               oil into their membranes); ?oilspring=oil|emulsion|soap what the oil tool
 //               drops; ?polarity=1 the polarity wash shown (rules panel, Oils and water; view panel)
 //   ?lipids=0     step C12b: start with the lipid membranes off (the C6c linker membrane, as before); ?lipheat=0 heat not
-//               fluidising the bilayer, ?crack=0 walls not cracking, ?lipheads=0 the soap heads not charging the cells (rules
-//               panel, Lipid membranes)
+//               fluidising the bilayer, ?crack=0 walls not cracking, ?lipheads=0 the soap heads not charging the cells, ?graze=0
+//               cells not grazing the crust under them (the supply fix) (rules panel, Lipid membranes)
 //   ?mut=0      start with mutation off (key M); ?life=0 with the life cycle off (key T: no births, no deaths)
 //   Experiments (src/lab.js, src/snapshot.js; README "Experiments: tools"): ?snap=<file> loads a snapshot at the start (its
 //               starting number and capacity, its settings); ?clone=1 copies the first live cell's genes to every cell
@@ -309,7 +309,7 @@ async function boot() {
     }
     {   // step C12b: lipid membranes
       const LP = cells.eat.lipids.params;
-      for (const [q, k] of [['lipids', 'on'], ['lipheat', 'heat'], ['crack', 'crack'], ['lipheads', 'heads']]) {
+      for (const [q, k] of [['lipids', 'on'], ['lipheat', 'heat'], ['crack', 'crack'], ['lipheads', 'heads'], ['graze', 'graze']]) {
         if (params.has(q)) LP[k] = flag(q);
       }
     }

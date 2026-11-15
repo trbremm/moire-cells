@@ -22,6 +22,8 @@ export const TOOLS = [
   { id: 'ripple', name: 'ripple', label: 'drop a ripple', key: '1' },
   { id: 'light', name: 'light spring', label: 'drop a light spring', spring: 'light', key: '2' },
   { id: 'heavy', name: 'heavy spring', label: 'drop a heavy spring', spring: 'heavy', key: '3' },
+  // step C12: oil, soap or both (the rules panel, Oils and water: "oil tool drops"); no key is free
+  { id: 'oil', name: 'oil spring', label: 'drop an oil spring (oil, soap or both: the rules panel, Oils and water)', spring: 'oil', oilSpring: true },
   { id: 'stir', name: 'stir', label: 'stir', stir: true },
   { id: 'spot', name: 'move light', label: 'move the light', spot: true },
 ];
@@ -46,6 +48,7 @@ export const RULE_GROUPS = [
   ['hardlight', 'Hard light (step C8)'],
   ['division', 'Division (step C9)'],
   ['walls', 'Patterned walls (step C10)'],
+  ['oil', 'Oils and water (step C12)'],
   ['state', 'Save and load the state (experiments)'],
 ];
 
@@ -385,6 +388,12 @@ export function makeActions(app) {
     { id: 'chargeFeel', keys: ['shift+9'], label: 'cells feel the charge field', group: 'charge', type: 'toggle', get: () => Q().feel,
       run: () => `cells ${flip(Q(), 'feel') ? 'feel the charge field: a charged cell drifts down (+) or up (−) the substrate\'s potential' : 'do not feel the charge field (field B still carries their charge)'}${qNote()}`,
       help: 'a charged cell is pushed through the substrate\'s field: + toward − clouds and back (needs the charge field)' },
+    { id: 'oilLook', keys: [], label: 'oil films drawn', group: 'look', type: 'toggle', get: () => app.matter.oil.params.look,
+      run: () => `oil films ${flip(app.matter.oil.params, 'look') ? 'drawn: dark glossy droplets with an iridescent rim, soap films as thin pearly lines' : 'not drawn'}`,
+      help: 'step C12: the oil as dark glossy droplets with a thin iridescent rim, the soap films as thin pearly lines' },
+    { id: 'polarity', keys: [], label: 'polarity wash', group: 'look', type: 'toggle', get: () => app.matter.oil.params.polarity,
+      run: () => `polarity ${flip(app.matter.oil.params, 'polarity') ? 'shown: water-loving (polar) matter washed warm, water-shy (apolar) cool' : 'not shown'}`,
+      help: 'step C12 (machinery): water-loving (polar) matter washed warm, water-shy (apolar) matter cool' },
     { id: 'chargeContours', keys: ['shift+0'], label: 'charge contours', group: 'look', type: 'toggle', get: () => Q().contours,
       run: () => `charge field ${flip(Q(), 'contours') ? 'drawn as contour lines: rose where it is +, blue where it is −' : 'not drawn'}${qNote()}`,
       help: 'the substrate\'s charge field as thin contour lines, + rose and − blue (also part of the machinery)' },
@@ -479,6 +488,35 @@ export function makeActions(app) {
     cknob('cofHalf', 'trace half', 'tHalf', 1e-5, 1, 1.5, 5, 'trace per R² inside a cell that brings its engines half the way from the floor to full speed'),
   );
 
+  // ---------- oils and water (step C12; panel only: no keys are free) ----------
+  const OL = () => app.matter.oil.params;
+  const oknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'oil', type: 'knob', get: () => OL()[key].toFixed(digits),
+    run: (k) => { const p = OL(); p[key] = Math.max(lo, Math.min(hi, +(p[key] * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  const SPRING_WORDS = { oil: 'oil (lL)', emulsion: 'oil with a little soap', soap: 'soap (the amphiphiles glL and tlL)' };
+  A.push(
+    { id: 'oil', keys: [], label: 'oils and water', group: 'oil', type: 'toggle', get: () => OL().on,
+      run: () => `oils and water ${flip(OL(), 'on') ? 'on: light and heavy linkers chain into oil where they meet, oil gathers into droplets, soap coats them' : 'off: no oil forms or separates (what is in the dish only spreads)'}`,
+      help: 'the master: l + L chain into oil (lL), light puts charged heads on oil (soap), and water-shy matter separates from water-loving' },
+    { id: 'phase', keys: [], label: 'phase separation', group: 'oil', type: 'toggle', get: () => OL().phase,
+      run: () => `phase separation ${flip(OL(), 'phase') ? 'on: oil gathers with oil into droplets, polar matter is pushed out of them, soap goes to their rims' : 'off: oil, soap and the rest only spread'}`,
+      help: 'water-shy matter drifts toward oil, water-loving matter away from it, amphiphiles to the oil-water boundary (polarity from the atoms)' },
+    { id: 'amphi', keys: [], label: 'amphiphiles (soap)', group: 'oil', type: 'toggle', get: () => OL().amphi,
+      run: () => `amphiphiles ${flip(OL(), 'amphi') ? 'on: light puts a charged head on oil (g + lL → glL, t + lL → tlL), heat takes it off; soap gathers on the rims and slows oil crossing them' : 'off: no heads put on or taken off, soap only spreads'}`,
+      help: 'a charged head on an oil tail: made by visible light, broken by heat; collects on oil-water boundaries and makes a skin oil hardly crosses' },
+    { id: 'fusion', keys: [], label: 'membrane fusion', group: 'oil', type: 'toggle', get: () => OL().fusion,
+      run: () => `membrane fusion ${flip(OL(), 'fusion') ? 'on: a cell whose membrane is short of linkers takes in the oil under it (each unit opens into l + L, the battery pays the chain’s energy)' : 'off: membranes are woven from free linkers only'}${app.matter.oil.fusionOn || !OL().fusion ? '' : ' (needs the cells eating and the membrane chemistry)'}`,
+      help: 'membranes are linker chains, so oily: a cell short of membrane takes the oil under it in, paying the chain’s energy from its battery' },
+    { id: 'oilSpring', keys: [], label: 'oil tool drops', group: 'oil', type: 'cycle', get: () => OL().spring,
+      options: () => ['oil', 'emulsion', 'soap'],
+      set: (v) => { OL().spring = v; return `the oil tool drops ${SPRING_WORDS[v]}`; },
+      run: () => { const p = OL(), o = ['oil', 'emulsion', 'soap']; p.spring = o[(o.indexOf(p.spring) + 1) % 3]; return `the oil tool drops ${SPRING_WORDS[p.spring]}`; },
+      help: 'what a tap with the oil tool drops: oil, oil with a little soap, or soap' },
+    oknob('oilGain', 'oil’s pull', 'gain', 1, 30, 1.25, 2, 'how strongly water-shy matter gathers (and polar matter is pushed out): higher = sharper, smaller droplets; below about 4 oil stays dissolved'),
+    oknob('oilFull', 'oil per full pixel', 'full', 0.1, 20, 1.25, 2, 'oil atoms per R² that fill a pixel: a droplet packs to this, then grows in area'),
+    oknob('oilSkin', 'soap skin', 'skin', 0, 50, 1.5, 2, 'a full soap film slows oil crossing it to 1 / (1 + this): coated droplets hold together and merge less'),
+    oknob('oilFilm', 'soap per full film', 'filmFull', 0.05, 10, 1.25, 2, 'amphiphile atoms per R² that make a full film in a pixel'),
+  );
+
   // ---------- hard light mutates (step C8; panel only: no keys are free) ----------
   const HL = () => app.cells.eat.hardlight.params;
   const hknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'hardlight', type: 'knob', get: () => HL()[key].toFixed(digits),
@@ -566,7 +604,7 @@ export function makeActions(app) {
   // step C6n: the clean view (default) or the machinery: every diagnostic layer at once
   function machinery() {
     const L = LP(), K = C().look;
-    return L.cellField && L.fieldB && K.innerDots && K.marks && app.matter.params.style === 'halftone' && Q().contours;
+    return L.cellField && L.fieldB && K.innerDots && K.marks && app.matter.params.style === 'halftone' && Q().contours && app.matter.oil.params.polarity;
   }
   function setMachinery(on) {
     const L = LP(), K = C().look;
@@ -574,6 +612,7 @@ export function makeActions(app) {
     K.innerDots = K.marks = on;
     app.matter.params.style = on ? 'halftone' : 'dust';
     Q().contours = on;   // step C6b: the charge field's contour lines
+    app.matter.oil.params.polarity = on;   // step C12: the polarity wash
     return on ? 'the machinery: the fields\' dots, the lattice inside the cells, the substances as halftone, the marks of steps 6 to 8, the charge contours'
       : 'clean: the cells, the materials and the light (Shift+4: the machinery)';
   }

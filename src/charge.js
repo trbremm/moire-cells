@@ -25,6 +25,7 @@ import { loadShader } from './gpu.js';
 import { LEDGER_WORDS, fmt } from './heat.js';
 import { SUBSTANCES, NCH } from './matter.js';
 import { pal } from './palette.js';
+import { CELL_FLOATS } from './cells.js';   // step C6c: the Cell record grew
 
 const LG_Q = { CEN: 19136, PHI: 19200, PMAX: 19456 };   // heat_common.wgsl
 const DRAW_BYTES = 64;                                  // struct ContourP in charge_draw.wgsl
@@ -167,7 +168,7 @@ export class Charge {
 
   /** Tuning aid: the cells' net charges (atom-units) and q, read back: percentiles of |net|, and q's share above 0.5. */
   async cellStats() {
-    const C = this.cells, d = this.device, n = C.count, F = 26;   // CELL_FLOATS (src/cells.js)
+    const C = this.cells, d = this.device, n = C.count, F = CELL_FLOATS;
     const buf = d.createBuffer({ size: n * F * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
     const e = d.createCommandEncoder();
     e.copyBufferToBuffer(C.cellBuf, 0, buf, 0, n * F * 4);

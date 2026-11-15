@@ -17,7 +17,7 @@ struct CheckParams {
 @group(0) @binding(1) var<storage, read> cells: array<Cell>;
 @group(0) @binding(2) var<storage, read> counts: array<u32>;
 @group(0) @binding(3) var<storage, read> starts: array<u32>;
-@group(0) @binding(4) var<storage, read> sorted: array<Cell>;
+@group(0) @binding(4) var<storage, read> sorted: array<CellCore>;
 @group(0) @binding(5) var<storage, read> sortIdx: array<u32>;
 @group(0) @binding(6) var<storage, read_write> result: array<vec4u>;   // brute, grid, max overlap (f32 bits), sort ok
 @group(0) @binding(7) var<uniform> C: CheckParams;

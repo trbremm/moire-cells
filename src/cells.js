@@ -1,6 +1,6 @@
 // The cells: a fixed number of them, all state on the GPU.
 //
-// State: one storage buffer of struct Cell (cell_common.wgsl, 104 bytes each), in a fixed order: index i is
+// State: one storage buffer of struct Cell (cell_common.wgsl, 240 bytes each), in a fixed order: index i is
 // always the same cell, which keeps the drawing order stable.
 // Drawing: instanced quads (cell_draw.wgsl), crisp discs with an outline and the cell's lattice as dots; step C6n: under
 // the neon look, bright tubes with a dark inside, and the hum (cell_glow.wgsl: each cell's activity, drawing only).
@@ -42,9 +42,12 @@ import { pal } from './palette.js';
 export const CELL_URL = 'src/shaders/cell_common.wgsl';
 
 // struct Cell in cell_common.wgsl: pos.xy, vel.xy, r, la, e1, e2, kind (u32), flags (u32), seed (u32), aux, z.xy;
-// step C5: dead.xy, bat, pay (i32), mom (u32), fill, smell.xy; step C6b: q, qNet, efield.xy (CELL_FLOATS in heat.wgsl too)
-export const CELL_FLOATS = 26;
+// step C5: dead.xy, bat, pay (i32), mom (u32), fill, smell.xy; step C6b: q, qNet, efield.xy (CELL_FLOATS in heat.wgsl too);
+// step C6c, the honeycomb outline (words 26..59): rad[6] (26), radV[6] (32), theta (38), spin (39), ea.xy (40), alpha[6] (42),
+// and reserved per side, zero for now: integ[6] (48, membrane chemistry), sideQ[6] (54, step C6d)
+export const CELL_FLOATS = 60;
 export const CELL_BYTES = CELL_FLOATS * 4;
+const CELL_CORE_BYTES = 104;   // step C6c: struct CellCore (the grid's sorted copy: Cell without the outline and per-side slots)
 const ALIVE = 1;
 
 export const DEFAULT_CELLS = 2000;
@@ -63,7 +66,7 @@ const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
 const FIELDS_BYTES = 256;      // struct Fields in cell_common.wgsl
 const FIELD_FORMAT = 'rgba16float';
-const DRAW_BYTES = 432;        // struct Draw in cell_draw.wgsl (step C6b: + the charge view's inks)
+const DRAW_BYTES = 448;        // struct Draw in cell_draw.wgsl (step C6b: + the charge view's inks; step C6c: + the honeycomb)
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
 export class Cells {
@@ -116,6 +119,24 @@ export class Cells {
       anchor: 1,      // where a cell's beat is anchored (key X): 0 = its lattice at the cell, the moire sliding as
                       // it moves (reference); 1 = the beat pinned to the cell, bright at its centre; 2 = its
                       // lattice anchored at the dish centre, the moire standing still in the world
+    };
+    // step C6c, elastic honeycomb cells (live-tunable: moire.cells.shape). The outline is 6 corners, each an underdamped
+    // spring toward its rest place (the hexagon at the rest area on the active stretch's ellipse); a touching neighbour's
+    // wall (the power-diagram line between the two centres) stops the corners facing it, so packed cells share straight
+    // walls, and the hexagon turns so a side faces each neighbour. Kinematic: the shape never pushes a cell (the contact
+    // push still keeps the centres apart), so it is outside the energy books
+    this.shape = {
+      on: true,       // honeycomb shapes (rules panel; ?honeycomb=0): off = the ellipse cells of steps 4 to C6b
+      stiffness: 1,   // the corners' spring, x the default (panel - and +): 1 = a wobble of wobbleHz
+      wobbleHz: 1.6,  // the corners' own wobble at stiffness 1 (Hz)
+      zeta: 0.35,     // their damping ratio (1 = no overshoot; 0.35: a pushed cell wobbles about twice, settled in ~0.8 s)
+      size: 1,        // the rest area, x pi r^2 (the ellipse cell's area)
+      bulge: 1.5,     // how far free corners may grow (x their rest distance) to keep the area when sides are pressed flat
+      snap: 1.5,      // a neighbour's wall up to this x a corner's rest distance draws the corner out to it, so touching
+                      // cells close the gap between them and share the wall (1 = never: the corners only stop at walls)
+      turn: 40,       // the contacts' turning pull on the hexagon (1/s^2, at full contact)
+      turnDamp: 8,    // ... and its damping (1/s)
+      jelly: 0.3,     // how much the corners lag the centre's change of velocity (0 = rigid outline; 0.3: a stirred cell wobbles)
     };
     // the fields' charges and field B (step 5; live-tunable: moire.cells.fields)
     this.fields = {
@@ -271,6 +292,10 @@ export class Cells {
       // step C6n, the clean view (default) or the machinery (View panel, Shift+4 flips every diagnostic layer at once):
       innerDots: false, // the cell's own lattice as dots inside it (Shift+6)
       marks: false,     // the diagnostic marks: step 6's leak dot and converted outline, step 7's state bar, step 8's hand
+      // step C6c: the honeycomb outline
+      corner: 0.3,      // corner rounding radius, as a share of the cell's radius (0 = sharp hexagons; 0.6: nearly round)
+      wallGap: 0.45,    // each tube sits this far inside the cell's wall (CSS px; at most 0.08 r), so two neighbours' tubes
+                        // along a shared wall read as two thin lines with a dark gap
     };
   }
 
@@ -342,7 +367,7 @@ export class Cells {
     const n = this.count;
     this.cellBuf = d.createBuffer({ label: 'cells', size: n * CELL_BYTES, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
     this.heat.setCells(this.cellBuf, n);
-    this.sortedBuf = d.createBuffer({ label: 'cells sorted', size: n * CELL_BYTES, usage: U.STORAGE });
+    this.sortedBuf = d.createBuffer({ label: 'cells sorted', size: n * CELL_CORE_BYTES, usage: U.STORAGE });
     this.sortIdxBuf = d.createBuffer({ label: 'cell sort index', size: n * 4, usage: U.STORAGE });
     this.beatBuf = d.createBuffer({ label: 'cell beats (sorted)', size: n * CELL_BEAT_BYTES, usage: U.STORAGE });
     this.fieldsBuf = d.createBuffer({ label: 'fields (charges, field B)', size: FIELDS_BYTES, usage: U.UNIFORM | U.COPY_DST });
@@ -556,12 +581,13 @@ export class Cells {
     f[o + 36] = this.genome.rules.body ? G.crawl : 0; f[o + 37] = G.turnRate;
     f[o + 38] = G.turnover; f[o + 39] = G.unhappy; f[o + 40] = G.mutSize; f[o + 41] = G.mutJump;
     f[o + 42] = Math.max(0, G.engJump ?? 0);       // step C6: engine slot jumps per birth
-    f[o + 43] = 0; f[o + 45] = 0;                  // spare (the nutrient and threat numbers until step C3)
+    const SH = this.shape;                         // step C6c (words 43 and 45 held the nutrient and threat numbers until C3)
+    f[o + 43] = Math.max(0.2, SH.size); f[o + 45] = Math.max(0, SH.turnDamp);
     u[o + 44] = this.matter ? this.matter.copyAt(k) : 0;   // step C5: the substances' current copy at this tick
     f[o + 46] = p.lever; f[o + 47] = p.emit ? 1 : 0; f[o + 48] = p.r0; f[o + 49] = p.cut;
-    f[o + 50] = p.senseOn ? p.sense : 0; f[o + 51] = p.tuneW; f[o + 57] = 0;
+    f[o + 50] = p.senseOn ? p.sense : 0; f[o + 51] = p.tuneW; f[o + 57] = Math.max(1.001, SH.snap);
     u[o + 58] = p.receptor ? 1 : 0;
-    f[o + 52] = 0; f[o + 53] = p.senseMax;
+    f[o + 52] = Math.max(1, SH.bulge); f[o + 53] = p.senseMax;
     f[o + 54] = p.active ? 1 : 0; f[o + 55] = p.shapeRate; u[o + 56] = p.anchor;
     const X = this.excl;
     f[o + 59] = X.on ? Math.max(0, X.hard) : 0; f[o + 60] = Math.max(0, X.reach); f[o + 61] = Math.max(0, X.pack);
@@ -598,6 +624,10 @@ export class Cells {
     const Q = this.charge;
     f[55] = Q && Q.feelOn ? Q.params.feelGain : 0; u[56] = Q && Q.stockOn ? 1 : 0;
     f[57] = Q ? Q.params.qB : 1; f[58] = Q ? Math.max(0.01, Q.params.feelSat) : 1;
+    // step C6c: the honeycomb (omega^2 and the damping 2 zeta omega of the corners' springs, the turning, jelly)
+    const SH = this.shape, om = 2 * Math.PI * SH.wobbleHz * Math.sqrt(Math.max(0.01, SH.stiffness));
+    u[46] = SH.on ? 1 : 0;
+    f[60] = om * om; f[61] = 2 * Math.max(0, SH.zeta) * om; f[62] = Math.max(0, SH.turn); f[63] = Math.max(0, SH.jelly);
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -899,7 +929,7 @@ export class Cells {
     const d = this.device, q = d.queue;
     try {
       if (!this.scratchBuf) {
-        this.scratchBuf = d.createBuffer({ label: 'cells probe scratch', size: this.count * CELL_BYTES, usage: GPUBufferUsage.STORAGE });
+        this.scratchBuf = d.createBuffer({ label: 'cells probe scratch', size: this.count * CELL_BYTES, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
       }
       if (!this.scratchStats) {
         this.scratchStats = d.createBuffer({ label: 'cells probe stats', size: STATS_BYTES, usage: GPUBufferUsage.STORAGE });
@@ -911,6 +941,8 @@ export class Cells {
       }
       // the probe writes only to scratch buffers, so it changes nothing the simulation sees
       const scratchBG = this.makeStepBG(this.scratchBuf, this.bioBuf[this.bioCur], this.scratchBio, this.scratchStats, this.scratchHeat);
+      // (step C6c: the step reads each cell itself from its slot, so the scratch copy starts as the cells are now)
+      { const e = d.createCommandEncoder({ label: 'cells probe copy' }); e.copyBufferToBuffer(this.cellBuf, 0, this.scratchBuf, 0, this.count * CELL_BYTES); q.submit([e.finish()]); }
       const record = (fn) => { const e = d.createCommandEncoder({ label: 'cells probe' }); for (let k = 0; k < K; k++) fn(e); return e.finish(); };
       const gridCB = record((e) => this.encodeGrid(e, 0));
       const stepCB = record((e) => {
@@ -1077,6 +1109,101 @@ export class Cells {
     pass.end();
   }
 
+  /**
+   * Step C6c, for tuning and checking the honeycomb (console, tools): reads the cells back and measures, over neighbouring
+   * pairs (centres closer than 1.3 x the sum of their radii, and neighbours in the power diagram: their tiles share a wall), the gap between the two outlines along the line joining the
+   * centres, in units of R (negative = overlap; ellipse cells: their drawn ellipses): its percentiles, the share of pairs
+   * whose outlines meet within 0.05 R (shared walls) and overlap by more than 0.05 R; the centres' distance over the sum of
+   * the radii; the corners' distance from the centre over r; how many neighbours each cell's outline meets; the stretch.
+   */
+  async shapeStats() {
+    const d = this.device, n = this.count, F = CELL_FLOATS, R = this.R;
+    const buf = d.createBuffer({ size: n * CELL_BYTES, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+    const e = d.createCommandEncoder();
+    e.copyBufferToBuffer(this.cellBuf, 0, buf, 0, n * CELL_BYTES);
+    d.queue.submit([e.finish()]);
+    await buf.mapAsync(GPUMapMode.READ);
+    const f = new Float32Array(buf.getMappedRange().slice(0));
+    const u = new Uint32Array(f.buffer);
+    buf.unmap(); buf.destroy();
+    // the outline's distance from the centre along the direction (ux, uy)
+    const radial = (o, ux, uy) => {
+      const hex = (u[o + 9] & 8) !== 0, r = f[o + 4];
+      if (!hex) {   // ellipse: x = F (r v), |v| = 1, along u: r / |F^-1 u|
+        const e1 = f[o + 6], e2 = f[o + 7], eps = Math.hypot(e1, e2);
+        let fa = 1, fb = 0, fd = 1;
+        if (eps > 1e-4) { const ch = Math.cosh(eps), sh = Math.sinh(eps) / eps; fa = ch + sh * e1; fb = sh * e2; fd = ch - sh * e1; }
+        return r / Math.hypot(fd * ux - fb * uy, fa * uy - fb * ux);
+      }
+      // the corners' angles from corner 0's (theta + k x 60 degrees + alpha[k]), and the side the direction falls on
+      const T = 2 * Math.PI, ang = [];
+      for (let k = 0; k < 6; k++) ang.push(k * Math.PI / 3 + f[o + 42 + k] - f[o + 42]);
+      let a = Math.atan2(uy, ux) - f[o + 38] - f[o + 42];
+      a -= T * Math.floor(a / T);
+      let k = 5;
+      while (k > 0 && a < ang[k]) k--;
+      const a1 = k < 5 ? ang[k + 1] : T, t = a - ang[k], D = a1 - ang[k];
+      const r0 = f[o + 26 + k], r1 = f[o + 26 + (k + 1) % 6];
+      // the ray at angle t from corner k meets the side from (r0 at 0) to (r1 at D): 1 / lambda = (sin(D - t) / r0 +
+      // sin t / r1) / sin D
+      return r0 * r1 * Math.sin(D) / (r1 * Math.sin(D - t) + r0 * Math.sin(t) + 1e-9);
+    };
+    const cs = 3 * R, gw = Math.ceil(this.view.cssW / cs) + 1, gh = Math.ceil(this.view.cssH / cs) + 1;
+    const grid = new Map();
+    const alive = [];
+    for (let i = 0; i < n; i++) {
+      const o = i * F;
+      if (!(u[o + 9] & 1)) continue;
+      alive.push(i);
+      const g = Math.floor(f[o + 1] / cs) * gw + Math.floor(f[o] / cs);
+      if (!grid.has(g)) grid.set(g, []);
+      grid.get(g).push(i);
+    }
+    const gaps = [], dist = [], corners = [], meets = new Uint16Array(n), stretch = [];
+    let hexCells = 0;
+    for (const i of alive) {
+      const o = i * F, x = f[o], y = f[o + 1], gx = Math.floor(x / cs), gy = Math.floor(y / cs);
+      if (u[o + 9] & 8) { hexCells++; for (let k = 0; k < 6; k++) corners.push(f[o + 26 + k] / f[o + 4]); }
+      stretch.push(Math.hypot(f[o + 6], f[o + 7]));
+      for (let yy = gy - 1; yy <= gy + 1; yy++) for (let xx = gx - 1; xx <= gx + 1; xx++) {
+        for (const j of grid.get(yy * gw + xx) || []) {
+          if (j <= i) continue;
+          const p = j * F, dx = f[p] - x, dy = f[p + 1] - y, dd = Math.hypot(dx, dy), R0 = f[o + 4] + f[p + 4];
+          if (dd > 1.3 * R0 || dd < 1e-6) continue;
+          const ux = dx / dd, uy = dy / dd;
+          // tile neighbours only: the point on the centre line where the two power distances |x - p|^2 - r^2 are equal
+          // must not be nearer (in that sense) to a third cell, else the two only meet at a corner of their tiles
+          const w = 0.5 * dd + (f[o + 4] ** 2 - f[p + 4] ** 2) / (2 * dd), mx = x + ux * w, my = y + uy * w;
+          const pw = (mx - x) ** 2 + (my - y) ** 2 - f[o + 4] ** 2;
+          let tile = true;
+          for (let y2 = gy - 1; y2 <= gy + 1 && tile; y2++) for (let x2 = gx - 1; x2 <= gx + 1 && tile; x2++) {
+            for (const k of grid.get(y2 * gw + x2) || []) {
+              if (k === i || k === j) continue;
+              const q = k * F;
+              if ((mx - f[q]) ** 2 + (my - f[q + 1]) ** 2 - f[q + 4] ** 2 < pw - 1e-6) { tile = false; break; }
+            }
+          }
+          if (!tile) continue;
+          const gap = (dd - radial(o, ux, uy) - radial(p, -ux, -uy)) / R;
+          gaps.push(gap); dist.push(dd / R0);
+          if (Math.abs(gap) < 0.05) { meets[i]++; meets[j]++; }
+        }
+      }
+    }
+    const pct = (a, q) => { const s = Float64Array.from(a).sort(); return s.length ? +s[Math.min(s.length - 1, Math.floor(q * s.length))].toFixed(3) : null; };
+    const share = (a, fn) => a.length ? +(a.filter(fn).length / a.length).toFixed(3) : null;
+    const mh = alive.map((i) => meets[i]);
+    return {
+      cells: alive.length, honeycomb: hexCells, pairs: gaps.length,
+      gapR: { p10: pct(gaps, 0.1), p50: pct(gaps, 0.5), p90: pct(gaps, 0.9) },
+      wallsShared: share(gaps, (g) => Math.abs(g) < 0.05), overlap: share(gaps, (g) => g < -0.05),
+      distOverR0: { p10: pct(dist, 0.1), p50: pct(dist, 0.5), p90: pct(dist, 0.9) },
+      cornerOverR: corners.length ? { p10: pct(corners, 0.1), p50: pct(corners, 0.5), p90: pct(corners, 0.9) } : null,
+      wallsPerCell: { mean: +(mh.reduce((a, b) => a + b, 0) / Math.max(1, mh.length)).toFixed(2), six: share(mh, (m) => m === 6), zero: share(mh, (m) => m === 0) },
+      stretch: { p50: pct(stretch, 0.5), p90: pct(stretch, 0.9) },
+    };
+  }
+
   /** Step C6n, for tuning the hum (console): percentiles of the cells' activity (battery share changed per s). */
   async glowStats() {
     const d = this.device, n = this.count;
@@ -1128,6 +1255,8 @@ export class Cells {
     a[96] = hum ? L.humIdle : 1; a[97] = L.humAct; a[98] = P.lineage.base; a[99] = P.lineage.amp;
     // step C6b: colour by charge (view 3): the charge contours' inks
     for (let k = 0; k < 3; k++) { a[100 + k] = P.charge.pos[k] / 255; a[104 + k] = P.charge.neg[k] / 255; }
+    // step C6c: the honeycomb outline's corner rounding and the tubes' gap from the wall
+    a[108] = Math.max(0, L.corner); a[109] = Math.max(0, L.wallGap);
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBGs[this.bioCur]);

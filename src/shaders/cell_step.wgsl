@@ -10,7 +10,7 @@
 // jitter +-0.025 R per tick, walls 3 R from the edge.
 
 @group(0) @binding(0) var<uniform> S: Sim;
-@group(0) @binding(1) var<storage, read> sorted: array<Cell>;
+@group(0) @binding(1) var<storage, read> sorted: array<CellCore>;   // step C6c: the lean copy
 @group(0) @binding(3) var<storage, read> starts: array<u32>;
 // (no `counts`: a grid cell's cells end where the next one's start, which keeps the step within 8 storage buffers)
 @group(0) @binding(4) var<storage, read_write> hb: array<atomic<i32>>;   // step C1: the heat buffer (heat_common.wgsl)
@@ -27,10 +27,37 @@
 fn step(@builtin(global_invocation_id) id: vec3u) {
   let j = id.x;
   if (j >= S.count) { return; }
-  var c = sorted[j];
   let i = beats[j].idx;              // the cell's own slot in `cells` (sortIdx, carried in its beat)
+  var c = cells[i];                  // (step C6c: from its own slot, whole; the same as its sorted copy, which has no outline)
   var bio = bioPrev[i];
   if ((c.flags & CELL_ALIVE) == 0u) { cells[i] = c; bioNext[i] = bio; return; }
+
+  // step C6c, elastic honeycomb cells: a cell without a honeycomb outline yet (the rule just switched on, or a newborn)
+  // starts from its ellipse: each corner on the ellipse of its stretch, the whole at the rest area, the hexagon turned at
+  // random; with the rule off the cell goes back to its ellipse (its stretch as the corners last left it)
+  let hexOn = FL.hexOn != 0u;
+  if (hexOn && (c.flags & CELL_HEX) == 0u) {
+    c.theta = P3 * rand01(c.seed ^ 0x7f4a7c15u, S.tick);
+    c.spin = 0.0;
+    c.ea = vec2f(c.e1, c.e2);
+    c.alpha = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    c.rad = hex_rest(c.ea, hex_dirs(c), S.hexSize * 3.14159265 * c.r * c.r);
+    c.radV = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    c.flags |= CELL_HEX;
+  } else if (!hexOn) {
+    c.flags &= ~CELL_HEX;
+  }
+  let hexShape = (c.flags & CELL_HEX) != 0u;
+  // ... the contacts: each neighbour's wall caps how far out each corner may sit (bound), pulls the hexagon round so a
+  // side faces it (torque, weighted by closeness tw), and slides each corner round toward the corner of its tile (slide:
+  // the slope of the soft-nearest wall's distance along the corner's direction, sw its weight)
+  var bound = array<f32, 6>(1e9, 1e9, 1e9, 1e9, 1e9, 1e9);
+  var slide = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  var sw = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  let hu = hex_dirs(c);
+  let rot6 = vec2f(cos(6.0 * c.theta), -sin(6.0 * c.theta));
+  var torque = 0.0;
+  var tw = 0.0;
 
   var f = vec2f(0.0);
   let diff = (S.rules & RULE_DIFF) != 0u;
@@ -84,7 +111,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // step 7, exclusion: this cell's state (its lattice angle's bin); neighbours of its type in the same state are kept
   // out to exclReach x the contact distance, harder (x excl); neighbours of its type in another state pack closer
   let exclOn = S.excl > 0.0;
-  let myState = cell_state(c, S.states);
+  let myState = cell_state(c.la, c.flags, S.states);
   var xAll = 0u;                             // census: same-type neighbours within 1.6 x contact distance
   var xSame = 0u;                            // ... of which in the same state
   var tAll = 0u;                             // census: same-type neighbours touching (within reach x contact distance)
@@ -106,6 +133,40 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         let d = o.pos - c.pos;
         let R0 = c.r + o.r;
         let d2 = dot(d, d);
+        // step C6c: contact flattens. The wall between the two cells is the line where their power distances |x - p|^2 - r^2
+        // are equal (the midline, shifted toward the smaller cell; both cells find the same line, so they share a straight
+        // wall): every corner of this cell must stay on its side of it
+        if (hexShape && d2 < 1.96 * R0 * R0 && d2 > 1e-6) {
+          let dh = sqrt(d2);
+          let uh = d / dh;
+          let wall = 0.5 * dh + (c.r * c.r - o.r * o.r) / (2.0 * dh);
+          for (var k = 0; k < 6; k++) {
+            let cu = dot(uh, hu[k]);
+            if (cu > 0.05) {
+              let b = wall / cu;
+              bound[k] = min(bound[k], b);
+              // the tile's corners are where its boundary is farthest from the centre: along the corner's direction the
+              // wall's distance b grows as the corner turns away from the wall's normal, d(log b)/d(angle) = -(uh . u_perp)
+              // / (uh . u); summed over the walls weighted by (b / r)^-12 (a soft minimum: at a tile corner the two walls'
+              // slopes cancel smoothly, so the corner settles there instead of chattering)
+              if (b < 2.5 * c.r) {
+                let wb = pow(max(b / c.r, 0.2), -12.0);
+                slide[k] -= wb * (uh.y * hu[k].x - uh.x * hu[k].y) / cu;
+                sw[k] += wb;
+              }
+            }
+          }
+          // ... and turns the hexagon so a side (its middle at theta + 30 + k x 60 degrees) faces the neighbour: a pull of
+          // sin(6 delta), delta the neighbour's angle from the nearest side's middle (= -Im(u^6 e^{-6 i theta}))
+          let wt = clamp((1.2 * R0 - dh) / (0.3 * R0), 0.0, 1.0);
+          if (wt > 0.0) {
+            let u2 = vec2f(uh.x * uh.x - uh.y * uh.y, 2.0 * uh.x * uh.y);
+            let u3 = vec2f(u2.x * uh.x - u2.y * uh.y, u2.x * uh.y + u2.y * uh.x);
+            let u6 = vec2f(u3.x * u3.x - u3.y * u3.y, 2.0 * u3.x * u3.y);
+            torque -= wt * (u6.x * rot6.y + u6.y * rot6.x);
+            tw += wt;
+          }
+        }
         if (relayOn && d2 < cutB * cutB) {
           let rw = cut_taper(d2, cutB) / (1.0 + d2 / beats[k].b2a.w);
           relayAll += rw;
@@ -146,7 +207,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         var Rt = R0;
         var kx = 1.0;
         if (o.kind == c.kind) {
-          let os = cell_state(o, S.states);
+          let os = cell_state(o.la, o.flags, S.states);
           let same = os == myState;
           if (d2 < shell * shell * R0 * R0) { nState[min(os, 3u)]++; }
           if (S.xCount != 0u && d2 < 2.56 * R0 * R0) {
@@ -217,6 +278,9 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
 
   // step 8: the field A and partner A' this cell feels from its neighbours: the mean over the membrane, and the gradient
   // (sum of segment mean x outward normal x length = area x gradient; the outline's area is 2.6 r^2)
+  // (step C6c: a honeycomb cell's outline encloses its rest area, hexSize x pi r^2; the gradient divides by that, and the
+  // force is scaled back to the ellipse cell's 2.6 r^2, so a lone cell feels the same push in both shapes)
+  let sArea = select(2.598 * c.r * c.r, S.hexSize * 3.14159265 * c.r * c.r, hexShape);
   var pA = vec3f(0.0);                       // A: gradient xy, value z
   var pP = vec3f(0.0);                       // A': gradient xy, value z
   if (partner) {
@@ -226,9 +290,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       pP += vec3f(segP[a] * nrm, segP[a]);
       if (sensing) { seg[a] += S.sense * segQ[a]; }
     }
-    let area = 2.598 * c.r * c.r;
-    pA = vec3f(pA.xy / area, pA.z / 6.0);
-    pP = vec3f(pP.xy / area, pP.z / 6.0);
+    pA = vec3f(pA.xy / sArea, pA.z / 6.0);
+    pP = vec3f(pP.xy / sArea, pP.z / 6.0);
   }
 
   var Q = vec2f(0.0);                        // the field's pull on the outline (quadrupole of the membrane signal)
@@ -241,7 +304,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       // the outward normal's direction, doubled: (cos 2 phi, sin 2 phi)
       Q += seg[a] * vec2f(ed.y * ed.y - ed.x * ed.x, -2.0 * ed.x * ed.y) / max(dot(ed, ed), 1e-6);
     }
-    cf *= 1.3 * S.R / max(c.r, 0.1);
+    cf *= 1.3 * S.R / max(c.r, 0.1) * (2.598 * c.r * c.r / sArea);
     let cm = length(cf);
     let sat = S.senseMax * S.R;
     if (cm > 1e-6) { f += cf * (sat * tanh(cm / sat) / cm); }
@@ -368,7 +431,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       if (nState[s] < nState[best]) { best = s; }
     }
     if (nState[myState] > nState[best]) {
-      let off = (best + 4u * n - key_bin(c, n)) % n;
+      let off = (best + 4u * n - key_bin(c.la, n)) % n;
       c.flags = (c.flags & ~(3u << CELL_FLIP_SHIFT)) | (off << CELL_FLIP_SHIFT);
     }
   }
@@ -482,7 +545,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // shape: an area-preserving stretch e = (e1, e2), relaxing toward a target made of the passive contact
   // squeeze and (active, key W) a stretch along the cell's own motion and toward where the field pulls on its
   // outline; muscle stretches along its crawling heading. As the reference's step(); length capped at 0.5.
-  var t = 0.5 * C;
+  // (step C6c: a honeycomb cell has no passive squeeze in its target: contact presses its sides flat instead, below)
+  var t = select(0.5 * C, vec2f(0.0), hexShape);
   if (S.activeGain > 0.0) {
     let spd = length(c.vel);
     if (spd > 0.01) {
@@ -493,12 +557,100 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     if (qm > 1e-6) { t += S.activeGain * (0.35 * tanh(qm / 1.5) / qm) * Q; }
     if (c.kind == KIND_MUS) { t += S.activeGain * 0.3 * vec2f(cos(2.0 * bio.body.w), sin(2.0 * bio.body.w)); }
   }
-  var e = vec2f(c.e1, c.e2);
-  e += (t - e) * min(1.0, S.dt * S.shapeRate);
-  let em = length(e);
-  if (em > 0.5) { e *= 0.5 / em; }
-  c.e1 = e.x;
-  c.e2 = e.y;
+  if (!hexShape) {
+    var e = vec2f(c.e1, c.e2);
+    e += (t - e) * min(1.0, S.dt * S.shapeRate);
+    let em = length(e);
+    if (em > 0.5) { e *= 0.5 / em; }
+    c.e1 = e.x;
+    c.e2 = e.y;
+  } else {
+    // step C6c, elastic honeycomb cells. The active stretch follows its target as the ellipse's did; the rest shape is the
+    // hexagon on that stretch's ellipse at the rest area A0
+    var ea = c.ea + (t - c.ea) * min(1.0, S.dt * S.shapeRate);
+    let eam = length(ea);
+    if (eam > 0.5) { ea *= 0.5 / eam; }
+    c.ea = ea;
+    let A0 = S.hexSize * 3.14159265 * c.r * c.r;
+    let rest = hex_rest(ea, hu, A0);
+    // each corner's target: the nearest neighbour's wall along its direction (bound: the edge of the cell's power-diagram
+    // tile there) when that wall is near: nearer than the rest place, the wall stops the corner there (contact presses the
+    // side flat); a little further (up to hexSnap x the rest place), the wall still draws the corner out, less the further
+    // it is (touching cells close the gap and share the wall, as cells in a tissue do); beyond, the corner is free, at its
+    // rest place. The free corners all scale by one factor s (hexBulge at most) until the area is A0 again, so a cell
+    // pressed flat on some sides bulges on the others
+    var tgt: array<f32, 6>;
+    var s = 1.0;
+    for (var it = 0; it < 5; it++) {
+      for (var k = 0; k < 6; k++) { tgt[k] = hex_target(s * rest[k], bound[k], S.hexSnap); }
+      if (it < 4) { s = clamp(s * sqrt(A0 / max(hex_area(tgt, hu), 1e-9)), 0.75, S.hexBulge); }
+    }
+    // the corners are underdamped springs toward their targets (hex.x = omega^2, hex.y = the damping), and lag the centre's
+    // change of velocity (jelly, hex.w: drag and forces, not the heat kick), so a pushed cell wobbles and settles. A wall
+    // stops a corner (it can only move back in); purely the shape's motion: nothing here pushes the cell or is booked
+    let dv = v2 - v0;
+    var rad = c.rad;
+    var rv = c.radV;
+    for (var k = 0; k < 6; k++) {
+      let acc = -FL.hex.x * (rad[k] - tgt[k]) - FL.hex.y * rv[k];
+      rv[k] += acc * S.dt - FL.hex.w * dot(dv, hu[k]);
+      rad[k] += rv[k] * S.dt;
+      if (rad[k] > bound[k]) { rad[k] = bound[k]; rv[k] = min(rv[k], 0.0); }
+    }
+    // kept convex (a corner never sinks inside the line between its two neighbours) and within the drawn quad
+    for (var k = 0; k < 6; k++) {
+      let ka = (k + 5) % 6;
+      let kb = (k + 1) % 6;
+      let sa = hu[ka].x * hu[k].y - hu[ka].y * hu[k].x;       // sin of the angle from the corner before
+      let sb = hu[k].x * hu[kb].y - hu[k].y * hu[kb].x;       // ... to the corner after
+      let sab = hu[ka].x * hu[kb].y - hu[ka].y * hu[kb].x;    // ... across both
+      let lo = max(0.3 * c.r, 1.05 * rad[ka] * rad[kb] * sab / max(rad[ka] * sa + rad[kb] * sb, 1e-6));
+      if (rad[k] < lo) { rad[k] = lo; rv[k] = max(rv[k], 0.0); }
+      if (rad[k] > 2.2 * c.r) { rad[k] = 2.2 * c.r; rv[k] = min(rv[k], 0.0); }
+    }
+    c.rad = rad;
+    c.radV = rv;
+    // each corner slides round toward the corner of its tile while a wall is near (the soft-nearest walls' slope, above), and
+    // back toward its regular place when free; neighbouring corners also keep apart (toward even spacing, HEX_SPACE), so two
+    // corners do not crowd into one tile corner while a long wall keeps a corner in its middle (a 5-sided tile then reads
+    // as a pentagon, not a triangle). The mean slide goes into theta, so theta stays the hexagon's mean direction
+    let al0 = c.alpha;
+    var al = al0;
+    var mean = 0.0;
+    for (var k = 0; k < 6; k++) {
+      let near = 1.0 - smoothstep(s * rest[k], S.hexSnap * s * rest[k], bound[k]);
+      let sl = select(0.0, slide[k] / sw[k], sw[k] > 0.0);
+      let even = 0.5 * (al0[(k + 5) % 6] + al0[(k + 1) % 6]) - al0[k];
+      al[k] += (HEX_SLIDE_RATE * near * clamp(sl, -1.0, 1.0) - HEX_SLIDE_BACK * (1.0 - near) * al0[k] + HEX_SPACE * even) * S.dt;
+      mean += al[k];
+    }
+    mean /= 6.0;
+    for (var k = 0; k < 6; k++) { al[k] = clamp(al[k] - mean, -HEX_SLIDE, HEX_SLIDE); }
+    c.alpha = al;
+    // the hexagon turns toward its neighbours (mean pull over the touching ones), damped
+    let tq = torque / max(tw, 1.0);
+    c.spin += (FL.hex.z * tq - S.hexTurnDamp * c.spin) * S.dt;
+    c.theta += c.spin * S.dt + mean;
+    c.theta -= TAU * floor(c.theta / TAU);
+    // the stretch e1, e2 (the strained lattice k = F^-1 k0, the census) from the outline's second moment of area about the
+    // centre, M (a multiple of I for a regular hexagon), normalised to determinant 1: M = exp(2 e). Each triangle (centre, a,
+    // b) adds its area / 12 x (2 a a + 2 b b + a b + b a)
+    var M = vec3f(0.0);
+    for (var k = 0; k < 6; k++) {
+      let a = rad[k] * hu[k];
+      let b = rad[(k + 1) % 6] * hu[(k + 1) % 6];
+      let ar = max(a.x * b.y - a.y * b.x, 0.0);
+      M += ar * vec3f(2.0 * (a.x * a.x + b.x * b.x) + 2.0 * a.x * b.x, 2.0 * (a.x * a.y + b.x * b.y) + a.x * b.y + a.y * b.x,
+                      2.0 * (a.y * a.y + b.y * b.y) + 2.0 * a.y * b.y);
+    }
+    let nrm = sqrt(max(M.x * M.z - M.y * M.y, 1e-12));
+    let eps = 0.5 * acosh(max(0.5 * (M.x + M.z) / nrm, 1.0));
+    let tl = vec2f(0.5 * (M.x - M.z), M.y);
+    let tlm = length(tl);
+    let e = select(vec2f(0.0), tl * (min(eps, 0.5) / max(tlm, 1e-12)), tlm > 1e-9 * (M.x + M.z));
+    c.e1 = e.x;
+    c.e2 = e.y;
+  }
 
   // turnover: now and then a cell dies and a touching neighbour divides into its place, the daughter a copy
   // of the parent's genome (from last tick's buffer, so it does not matter whether the parent changes or dies
@@ -599,4 +751,16 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   else { c.flags = (c.flags & ~(255u << CELL_LEAK_SHIFT)) | (u32(round(clamp(me.lk.w, 0.0, 1.0) * 255.0)) << CELL_LEAK_SHIFT); }
   cells[i] = c;
   bioNext[i] = bio;
+}
+
+// step C6c: how fast a honeycomb corner slides round toward its tile's corner while a wall is near (rad/s at a slope of 1),
+// and back toward its regular place when free (1/s)
+const HEX_SLIDE_RATE: f32 = 8.0;
+const HEX_SLIDE_BACK: f32 = 1.5;
+const HEX_SPACE: f32 = 3.0;       // ... and how fast neighbouring corners even out their spacing (1/s)
+
+// step C6c: a honeycomb corner's target from its rest place r0 and the nearest wall along its direction b (see the step)
+fn hex_target(r0: f32, b: f32, snap: f32) -> f32 {
+  let w = 1.0 - smoothstep(r0, snap * r0, b);
+  return min(mix(r0, b, w), b);
 }

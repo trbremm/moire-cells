@@ -18,7 +18,7 @@
 @group(0) @binding(3) var<storage, read_write> starts: array<u32>;
 @group(0) @binding(4) var<storage, read_write> blockSums: array<u32>;
 @group(0) @binding(5) var<storage, read_write> cellGrid: array<vec2u>;   // per cell: grid cell, rank in it
-@group(0) @binding(6) var<storage, read_write> sorted: array<Cell>;
+@group(0) @binding(6) var<storage, read_write> sorted: array<CellCore>;
 @group(0) @binding(7) var<storage, read_write> sortIdx: array<u32>;
 @group(0) @binding(8) var<uniform> med: Medium;
 @group(0) @binding(9) var<storage, read_write> beats: array<CellBeat>;
@@ -110,7 +110,7 @@ fn scatter(@builtin(global_invocation_id) id: vec3u) {
   let gr = cellGrid[i];
   let dst = starts[gr.x] + gr.y;
   let c = cells[i];
-  sorted[dst] = c;
+  sorted[dst] = cell_core(c);
   sortIdx[dst] = i;
   var b = cell_beat(c, S, med, FL);
   b.idx = i;

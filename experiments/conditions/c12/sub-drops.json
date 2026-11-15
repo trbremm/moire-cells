@@ -1,0 +1,251 @@
+{
+ "runs": [
+  {
+   "query": {
+    "seed": 3,
+    "cells": 1,
+    "springs": 0,
+    "light": "off"
+   },
+   "size": "1280x800",
+   "sample_every": 20,
+   "name": "c12-sub-drops-oil",
+   "description": "Step C12, substrate alone: 16 oil springs in a 4 x 4 grid 120 px apart, 20 s each, dark: separate droplets. Do they ripen or merge?",
+   "duration": 1200,
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.matter.params.maxSprings = 16; moire.matter.addSpring(460, 220, 'oil', 20); moire.matter.addSpring(580, 220, 'oil', 20); moire.matter.addSpring(700, 220, 'oil', 20); moire.matter.addSpring(820, 220, 'oil', 20); moire.matter.addSpring(460, 340, 'oil', 20); moire.matter.addSpring(580, 340, 'oil', 20); moire.matter.addSpring(700, 340, 'oil', 20); moire.matter.addSpring(820, 340, 'oil', 20); moire.matter.addSpring(460, 460, 'oil', 20); moire.matter.addSpring(580, 460, 'oil', 20); moire.matter.addSpring(700, 460, 'oil', 20); moire.matter.addSpring(820, 460, 'oil', 20); moire.matter.addSpring(460, 580, 'oil', 20); moire.matter.addSpring(580, 580, 'oil', 20); moire.matter.addSpring(700, 580, 'oil', 20); moire.matter.addSpring(820, 580, 'oil', 20); "
+    },
+    {
+     "t": 30,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 60,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 120,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 300,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 600,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 1200,
+     "js": "await moire.oil.stats()"
+    }
+   ],
+   "shots": [
+    {
+     "t": 10
+    },
+    {
+     "t": 30
+    },
+    {
+     "t": 120
+    },
+    {
+     "t": 300
+    },
+    {
+     "t": 600
+    },
+    {
+     "t": 1200,
+     "panel": true,
+     "name": "end"
+    }
+   ]
+  },
+  {
+   "query": {
+    "seed": 3,
+    "cells": 1,
+    "springs": 0,
+    "light": "off"
+   },
+   "size": "1280x800",
+   "sample_every": 20,
+   "name": "c12-sub-drops-emulsion",
+   "description": "Step C12, substrate alone: 16 emulsion springs in a 4 x 4 grid 120 px apart, 20 s each, dark: separate droplets. Do they ripen or merge?",
+   "duration": 600,
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.matter.params.maxSprings = 16; moire.matter.addSpring(460, 220, 'emulsion', 20); moire.matter.addSpring(580, 220, 'emulsion', 20); moire.matter.addSpring(700, 220, 'emulsion', 20); moire.matter.addSpring(820, 220, 'emulsion', 20); moire.matter.addSpring(460, 340, 'emulsion', 20); moire.matter.addSpring(580, 340, 'emulsion', 20); moire.matter.addSpring(700, 340, 'emulsion', 20); moire.matter.addSpring(820, 340, 'emulsion', 20); moire.matter.addSpring(460, 460, 'emulsion', 20); moire.matter.addSpring(580, 460, 'emulsion', 20); moire.matter.addSpring(700, 460, 'emulsion', 20); moire.matter.addSpring(820, 460, 'emulsion', 20); moire.matter.addSpring(460, 580, 'emulsion', 20); moire.matter.addSpring(580, 580, 'emulsion', 20); moire.matter.addSpring(700, 580, 'emulsion', 20); moire.matter.addSpring(820, 580, 'emulsion', 20); "
+    },
+    {
+     "t": 30,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 60,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 120,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 300,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 600,
+     "js": "await moire.oil.stats()"
+    }
+   ],
+   "shots": [
+    {
+     "t": 10
+    },
+    {
+     "t": 30
+    },
+    {
+     "t": 120
+    },
+    {
+     "t": 300
+    },
+    {
+     "t": 600,
+     "panel": true,
+     "name": "end"
+    }
+   ]
+  },
+  {
+   "query": {
+    "seed": 3,
+    "cells": 1,
+    "springs": 0,
+    "light": "off"
+   },
+   "size": "1280x800",
+   "sample_every": 20,
+   "name": "c12-sub-drops-soap",
+   "description": "Step C12, substrate alone: 16 soap springs in a 4 x 4 grid 120 px apart, 20 s each, dark: separate droplets. Do they ripen or merge?",
+   "duration": 600,
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.matter.params.maxSprings = 16; moire.matter.addSpring(460, 220, 'soap', 20); moire.matter.addSpring(580, 220, 'soap', 20); moire.matter.addSpring(700, 220, 'soap', 20); moire.matter.addSpring(820, 220, 'soap', 20); moire.matter.addSpring(460, 340, 'soap', 20); moire.matter.addSpring(580, 340, 'soap', 20); moire.matter.addSpring(700, 340, 'soap', 20); moire.matter.addSpring(820, 340, 'soap', 20); moire.matter.addSpring(460, 460, 'soap', 20); moire.matter.addSpring(580, 460, 'soap', 20); moire.matter.addSpring(700, 460, 'soap', 20); moire.matter.addSpring(820, 460, 'soap', 20); moire.matter.addSpring(460, 580, 'soap', 20); moire.matter.addSpring(580, 580, 'soap', 20); moire.matter.addSpring(700, 580, 'soap', 20); moire.matter.addSpring(820, 580, 'soap', 20); "
+    },
+    {
+     "t": 30,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 60,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 120,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 300,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 600,
+     "js": "await moire.oil.stats()"
+    }
+   ],
+   "shots": [
+    {
+     "t": 10
+    },
+    {
+     "t": 30
+    },
+    {
+     "t": 120
+    },
+    {
+     "t": 300
+    },
+    {
+     "t": 600,
+     "panel": true,
+     "name": "end"
+    }
+   ]
+  },
+  {
+   "query": {
+    "seed": 3,
+    "cells": 1,
+    "springs": 0,
+    "light": "full",
+    "day": 0
+   },
+   "size": "1280x800",
+   "sample_every": 20,
+   "name": "c12-sub-chem",
+   "description": "Step C12, substrate alone, oil from the chemistry: whole dish lit (no day cycle), a light spring and a heavy spring 120 px apart dripping for 600 s; l and L chain into oil where they meet, light puts heads on it.",
+   "duration": 1200,
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.matter.addSpring(580, 400, 'light', 600); moire.matter.addSpring(700, 400, 'heavy', 600)"
+    },
+    {
+     "t": 60,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 180,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 300,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 600,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 900,
+     "js": "await moire.oil.stats()"
+    },
+    {
+     "t": 1200,
+     "js": "await moire.oil.stats()"
+    }
+   ],
+   "shots": [
+    {
+     "t": 60
+    },
+    {
+     "t": 180
+    },
+    {
+     "t": 300
+    },
+    {
+     "t": 600
+    },
+    {
+     "t": 900
+    },
+    {
+     "t": 1200,
+     "panel": true,
+     "name": "end"
+    }
+   ]
+  }
+ ]
+}

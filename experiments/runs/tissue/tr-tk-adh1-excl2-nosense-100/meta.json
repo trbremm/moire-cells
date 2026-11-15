@@ -1,0 +1,175 @@
+{
+  "name": "tr-tk-adh1-excl2-nosense-100",
+  "description": "reload check: load configs/tk-adh1-excl2-nosense-100/snapshot.json (?snap=) and run 40 s more; does the configuration stay as stored?",
+  "condition": {
+    "name": "tr-tk-adh1-excl2-nosense-100",
+    "description": "reload check: load configs/tk-adh1-excl2-nosense-100/snapshot.json (?snap=) and run 40 s more; does the configuration stay as stored?",
+    "series": "reload",
+    "query": {
+      "snap": "experiments/tissue/configs/tk-adh1-excl2-nosense-100/snapshot.json"
+    },
+    "duration": 40,
+    "sample_every": 10,
+    "tissue": true,
+    "evals": [
+      {
+        "t": 0,
+        "js": "const T = await import('/experiments/tissue/tissue-lab.js'); window.__T = T; return await T.measure({ every: 2 });"
+      },
+      {
+        "t": 40,
+        "js": "return await __T.measure({ every: 2 });"
+      }
+    ],
+    "shots": [
+      {
+        "t": 0
+      },
+      {
+        "t": 40
+      },
+      {
+        "t": 40,
+        "view": "strategy"
+      }
+    ]
+  },
+  "url": "http://localhost:50596/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/tissue/configs/tk-adh1-excl2-nosense-100/snapshot.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "6dd356e5480d673125f7895e47bc14226abf28fb",
+  "dirty": true,
+  "started": "2026-11-15T11:01:23",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": false,
+    "notes": [
+      "no grid in the snapshot (cells only): the page's grid kept"
+    ],
+    "rebased": {
+      "atoms": {},
+      "energy": 12013.123062133789
+    },
+    "rounding": {
+      "energy": 0,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": 0.00311279296875,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 100,
+    "time": 120.00000000000045
+  },
+  "t_start": 120.00000000000045,
+  "sim_s": 40.0,
+  "run_wall_s": 6.27,
+  "speed_reached": 6.38,
+  "samples": 5,
+  "shots": [
+    "shots/t0.png",
+    "shots/t40.png",
+    "shots/t40_strategy.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.0,
+      "js": "const T = await import('/experiments/tissue/tissue-lab.js'); window.__T = T; return await T.measure({ every: 2 });",
+      "result": {
+        "t": 120.00000000000045,
+        "n": 100,
+        "R": 9,
+        "largest": 96,
+        "cx": 655.5428574879965,
+        "cy": 397.1865385373433,
+        "box": [
+          553.8521375656128,
+          242.2197675704956,
+          769.219334602356,
+          522.4037828445435
+        ],
+        "elong": 1.3496516958944527,
+        "hole": 0.8523722882653173,
+        "edge": 0.75,
+        "deg": [
+          4,
+          4,
+          26,
+          66
+        ],
+        "fates": [
+          100,
+          0,
+          0,
+          0,
+          0
+        ],
+        "chainy": 0.3125,
+        "boxAll": [
+          373.9510850906372,
+          242.2197675704956,
+          890.0652112960815,
+          538.8828382492065
+        ],
+        "sameType": 0.4316546762589928,
+        "sameRandom": 0.5,
+        "radialBA": 1.0042092940510117,
+        "nB": 50
+      }
+    },
+    {
+      "t": 40.00000000000054,
+      "js": "return await __T.measure({ every: 2 });",
+      "result": {
+        "t": 160.000000000001,
+        "n": 100,
+        "R": 9,
+        "largest": 97,
+        "cx": 642.8019339964562,
+        "cy": 405.54553411424774,
+        "box": [
+          520.529881477356,
+          288.4804735183716,
+          751.462010383606,
+          515.3153028488159
+        ],
+        "elong": 1.31365489533351,
+        "hole": 0.8831162316280724,
+        "edge": 0.8350515463917526,
+        "deg": [
+          3,
+          3,
+          33,
+          61
+        ],
+        "fates": [
+          100,
+          0,
+          0,
+          0,
+          0
+        ],
+        "chainy": 0.3711340206185567,
+        "boxAll": [
+          403.09518909454346,
+          288.4804735183716,
+          873.6313734054565,
+          580.505763053894
+        ],
+        "sameType": 0.47761194029850745,
+        "sameRandom": 0.5,
+        "radialBA": 0.9716685714535664,
+        "nB": 50
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T11:01:58",
+  "wall_s": 34.97
+}

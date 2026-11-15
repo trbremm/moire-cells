@@ -59,6 +59,9 @@
 //               capacity (slots; default 3 x the starting number, with ?divide=0 the starting number); ?divat=x the division threshold (battery share),
 //               ?divcost=x its cost (energy units), ?starve=s the starvation time, ?crowd=x the crowding limit, ?age=x the
 //               background death rate per s (rules panel, Division)
+//   ?walls=0      step C10: start with the patterned walls off (every side as sticky as the adhesion gene, as before);
+//               ?wallfront=0 the front not following the dipole, ?wallcost=0 adhesion free (no linkers, no upkeep), ?mature=0
+//               junctions not maturing (rules panel, Patterned walls); ?view=walls colour by wall pattern
 //   ?mut=0      start with mutation off (key M); ?life=0 with the life cycle off (key T: no births, no deaths)
 //   Experiments (src/lab.js, src/snapshot.js; README "Experiments: tools"): ?snap=<file> loads a snapshot at the start (its
 //               starting number and capacity, its settings); ?clone=1 copies the first live cell's genes to every cell
@@ -218,8 +221,8 @@ async function boot() {
     landscape.cells = cells;
     if (params.has('founders')) cells.genome.params.founders = Number(params.get('founders')) || 0;
     if (params.has('view')) {   // ?view=1 lineage, ?view=2 or ?view=strategy (step C6), ?view=3 or ?view=charge (step C6b)
-      const v = params.get('view'), k = ['fate', 'lineage', 'strategy', 'charge'].indexOf(v);
-      cells.look.view = k >= 0 ? k : Math.max(0, Math.min(3, Math.round(Number(v)) || 0));
+      const v = params.get('view'), k = ['fate', 'lineage', 'strategy', 'charge', 'walls'].indexOf(v);   // (step C10: ?view=walls)
+      cells.look.view = k >= 0 ? k : Math.max(0, Math.min(4, Math.round(Number(v)) || 0));
     }
     if (flag('check')) cells.enableCheck();
     if (params.get('bio') === '0') {
@@ -279,6 +282,12 @@ async function boot() {
         if (params.has(q) && Number.isFinite(v)) DV[k] = v;
       }
     }
+    {   // step C10: patterned walls
+      const WP = cells.walls.params;
+      for (const [q, k] of [['walls', 'on'], ['wallfront', 'front'], ['wallcost', 'cost'], ['mature', 'mature']]) {
+        if (params.has(q)) WP[k] = flag(q);
+      }
+    }
     background.heat = cells.heat;
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));
@@ -290,7 +299,7 @@ async function boot() {
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
   window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter, eat: cells.eat, neon, charge,
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
-    division: cells.division };
+    division: cells.division, walls: cells.walls };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
   window.moire.budgets = budgets;      // the fast speeds' tick budgets
@@ -502,7 +511,7 @@ function frame(now) {
 
   if (!entropyEl.hidden) {
     const compact = view.cssW < 560 || view.cssH < 500;   // a phone (either way up): shorter lines
-    let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}\n${charge.panelLine(compact)}\n${cells.eat.membrane.panelLine(compact)}\n${cells.dipole.panelLine(compact)}\n${cells.eat.pumps.panelLine(compact)}\n${cells.eat.catalysts.panelLine(compact)}\n${cells.eat.hardlight.panelLine(compact)}\n${cells.division.panelLine(compact)}`;
+    let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}\n${charge.panelLine(compact)}\n${cells.eat.membrane.panelLine(compact)}\n${cells.dipole.panelLine(compact)}\n${cells.eat.pumps.panelLine(compact)}\n${cells.eat.catalysts.panelLine(compact)}\n${cells.eat.hardlight.panelLine(compact)}\n${cells.division.panelLine(compact)}\n${cells.walls.panelLine(compact)}`;
     if (paused || speed !== 1) {
       const r = reachedText();
       const sp = paused ? 'paused' : r ? (compact ? r : `${speedName(speed)} · reached ${r}`) : speedName(speed);
@@ -574,6 +583,7 @@ function drawOverlay() {
     ...cells.eat.catalysts.overlayLines(),
     ...cells.eat.hardlight.overlayLines(),
     ...cells.division.overlayLines(),
+    ...cells.walls.overlayLines(),
     neon.overlayLine(),
     `simmer (Shift+R) ${background.heatOn ? 'on' : 'off'}: ripple drops ${background.params.heatDrops} per cell per step x temperature², height ${background.params.heatAmp}`,
     `sim t ${simTime.toFixed(1)} s · speed ${paused ? 'paused' : speedName(speed)}, reached ×${stats.reached.toFixed(2)} (${stats.ticks} ticks this frame` +

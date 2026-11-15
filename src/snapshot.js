@@ -151,6 +151,7 @@ export function settingObjects(M) {
     'pumps.params': M.pumps.params, 'catalysts.params': M.catalysts.params, 'hardlight.params': M.hardlight.params,
     'division.params': M.division.params, 'division.look': M.division.look, 'background.params': M.background.params,
     'landscape.params': M.landscape.params, 'medium.params': M.medium.params, 'neon.params': M.neon.params,
+    'walls.params': M.walls.params, 'walls.look': M.walls.look,   // step C10
   };
 }
 const SCALARS = [['neon.on', (M) => M.neon, 'on'], ['background.heatOn', (M) => M.background, 'heatOn'], ['background.ambient', (M) => M.background, 'ambient']];
@@ -318,7 +319,11 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
   const C = M.cells, H = M.heat, d = M.gpu.device;
   try {
     await settle(M, ctl, false);
-    if (S.layout.cellWords !== CELL_FLOATS || S.layout.bioWords !== BIO_FLOATS) {
+    // step C10: a snapshot from before the patterned walls (cells of 64 words, genomes of 48) loads with the new words empty (front
+    // 0, no maturity, no adhesion until the eat pass's first tick; wall genes a1 = a2 = w = 0, a uniform wall) and with the walls
+    // OFF, so it runs on as it was saved; other layouts are refused
+    const oldC10 = S.layout.cellWords === 64 && S.layout.bioWords === 48;
+    if (!oldC10 && (S.layout.cellWords !== CELL_FLOATS || S.layout.bioWords !== BIO_FLOATS)) {
       throw new Error(`snapshot layout (cell ${S.layout.cellWords}, bio ${S.layout.bioWords} words) does not match this page (${CELL_FLOATS}, ${BIO_FLOATS})`);
     }
     const m = S.alive;
@@ -341,11 +346,25 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     if (!S.grid) notes.push('no grid in the snapshot (cells only): the page\'s grid kept');
 
     if (opts.settings !== false) applySettings(M, S.settings);
+    if (opts.settings !== false && !(S.settings && S.settings['walls.params'])) {
+      M.walls.params.on = false;
+      notes.push('saved before step C10: patterned walls off (as it ran)');
+    }
     if (S.founders) M.genome.founders = clone(S.founders);
 
     // the cells: at their own slots when they fit, else packed from slot 0 (their neighbour words then cleared)
     const n = C.count, SW = C.eat.stockBuf.size / 4 / n;
-    const idx = await unpack(S.cells.idx), rec = await unpack(S.cells.rec), bio = await unpack(S.cells.bio), stock = await unpack(S.cells.stock);
+    const idx = await unpack(S.cells.idx);
+    let rec = await unpack(S.cells.rec), bio = await unpack(S.cells.bio);
+    const stock = await unpack(S.cells.stock);
+    if (oldC10) {   // widen the records to this page's layout (the new words zero)
+      const r2 = new Uint32Array(m * CELL_FLOATS), b2 = new Uint32Array(m * BIO_FLOATS);
+      for (let k = 0; k < m; k++) {
+        r2.set(rec.subarray(k * 64, (k + 1) * 64), k * CELL_FLOATS);
+        b2.set(bio.subarray(k * 48, (k + 1) * 48), k * BIO_FLOATS);
+      }
+      rec = r2; bio = b2;
+    }
     if (S.layout.stockWords !== SW) throw new Error(`snapshot stock records have ${S.layout.stockWords} words, this page ${SW}`);
     const sameSlots = m === 0 || Math.max(...idx) < n;
     if (!sameSlots) notes.push('slots packed (the capacity is smaller than the snapshot\'s slot numbers)');
@@ -366,6 +385,7 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     q.writeBuffer(C.eat.stockBuf, 0, su);
     const stats = await unpack(S.stats);
     if (stats.byteLength === C.statsBuf.size) q.writeBuffer(C.statsBuf, 0, stats);
+    else if (oldC10 && stats.byteLength === C.statsBuf.size - 96) q.writeBuffer(C.statsBuf, 0, stats);   // (step C10 appended Stats.wall)
     else notes.push('stats buffer size differs: counters start from the page\'s');
     if (gridOK) writeGrid(M, await unpack(S.grid.data));
 

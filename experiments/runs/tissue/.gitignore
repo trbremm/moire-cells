@@ -1,0 +1,4 @@
+# tissue runs: like experiments/runs/*/ one level up, keep only samples.csv, meta.json, console.log
+*/snapshots/
+*/panel.txt
+*/clips/

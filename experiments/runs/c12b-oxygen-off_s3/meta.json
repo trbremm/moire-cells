@@ -1,0 +1,644 @@
+{
+  "name": "c12b-oxygen-off_s3",
+  "description": "step C12b, experiment 4: the oxygen retry's springs (a never-drying light spring, a heavy one 2 s of every 20 s), spotlight, 20 min, lipid membranes off",
+  "condition": {
+    "name": "c12b-oxygen-off_s3",
+    "description": "step C12b, experiment 4: the oxygen retry's springs (a never-drying light spring, a heavy one 2 s of every 20 s), spotlight, 20 min, lipid membranes off",
+    "query": {
+      "lipids": 0,
+      "seed": 3
+    },
+    "duration": 1200,
+    "sample_every": 20,
+    "evals": [
+      {
+        "t": 0,
+        "js": "moire.matter.clearSprings(); moire.matter.addSpring(875, 328, 'light', 1e9); moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life)"
+      },
+      {
+        "t": 20,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 40,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 60,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 80,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 100,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 120,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 140,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 160,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 180,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 200,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 220,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 240,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 260,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 280,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 300,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 300,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+      },
+      {
+        "t": 320,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 340,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 360,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 380,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 400,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 420,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 440,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 460,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 480,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 500,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 520,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 540,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 560,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 580,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 600,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 600,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+      },
+      {
+        "t": 620,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 640,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 660,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 680,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 700,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 720,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 740,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 760,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 780,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 800,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 820,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 840,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 860,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 880,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 900,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 900,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+      },
+      {
+        "t": 920,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 940,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 960,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 980,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1000,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1020,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1040,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1060,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1080,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1100,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1120,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1140,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1160,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1180,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1200,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+      }
+    ],
+    "shots": [
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "panel": true,
+        "name": "panel"
+      },
+      {
+        "t": 1200,
+        "view": "lineage",
+        "name": "lineage"
+      }
+    ]
+  },
+  "url": "http://localhost:49445/index.html?speed=max&until=0&overlay=ghost&ui=0&lipids=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "95d38ae7728f5f0856c773ceeed66e4c56cc3fe5",
+  "dirty": true,
+  "started": "2026-11-15T23:50:36",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 518.47,
+  "speed_reached": 2.31,
+  "samples": 61,
+  "shots": [
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t1200.png",
+    "shots/panel.png",
+    "shots/lineage.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.matter.clearSprings(); moire.matter.addSpring(875, 328, 'light', 1e9); moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life)",
+      "result": [
+        "light 1000000000",
+        "heavy 2"
+      ]
+    },
+    {
+      "t": 20.0000000000002,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 40.000000000000156,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 59.99999999999953,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 79.9999999999985,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 99.9999999999974,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 119.99999999999648,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 139.99999999999827,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 159.99999999999986,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 180.00000000000244,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 200.00000000000608,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 220.00000000000787,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 240.00000000001143,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 260.000000000014,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 280.0000000000127,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 300.00000000001285,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 300.00000000001285,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })",
+      "result": "{\"all\":{\"n\":1297,\"oilGene\":0.28551976921761363,\"wallGene\":0.4753149701684495,\"head\":0.5052875464734727,\"row\":0.5023471219466932,\"thick\":0.009737381785203263,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.40959742185052944},\"lit\":{\"n\":810,\"oilGene\":0.31262672018621945,\"wallGene\":0.4835610981835167,\"head\":0.6687736323600589,\"row\":0.5416920452562655,\"thick\":0.00768826461661561,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.5359013969515577},\"dark\":{\"n\":487,\"oilGene\":0.24043428608707823,\"wallGene\":0.46159964431176687,\"head\":0.23337023729865786,\"row\":0.4369069004256385,\"thick\":0.013145564344866504,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.19952304847920946},\"founders\":[{\"founder\":5,\"n\":900,\"oilGene\":0.32946872780875613,\"wallGene\":0.5109543521660898,\"head\":0.7785899173302783,\"row\":0.5825550502569725,\"thick\":0.007621494778690653,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.4478863610161675},{\"founder\":9,\"n\":378,\"oilGene\":0.18091503489902983,\"wallGene\":0.39991474879669053,\"head\":-0.12860154908608704,\"row\":0.3049937168723859,\"thick\":0.014349700937850806,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.3295481242830791},{\"founder\":2,\"n\":7,\"oilGene\":0.17296206512089288,\"wallGene\":0.2850200528545039,\"head\":0.3241033596651895,\"row\":0.9316401396478925,\"thick\":0.017657792594816004,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.3079959324428013},{\"founder\":1,\"n\":5,\"oilGene\":0.10451271981000901,\"wallGene\":0.611335951089859,\"head\":-0.11298309713602066,\"row\":0.9021779537200928,\"thick\":0.011837934609502554,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.04693145751953125},{\"founder\":3,\"n\":4,\"oilGene\":0.9000253975391388,\"wallGene\":0.06740303803235292,\"head\":0.4746834337711334,\"row\":0.06780985370278358,\"thick\":0.03368784859776497,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.15174484252929688},{\"founder\":10,\"n\":2,\"oilGene\":0.020915914326906204,\"wallGene\":0.04772733896970749,\"head\":0.0015989441890269518,\"row\":0.25014549493789673,\"thick\":0.00855890940874815,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.10400199890136719},{\"founder\":4,\"n\":1,\"oilGene\":0.03617098182439804,\"wallGene\":0.03993735834956169,\"head\":-0.36733192205429077,\"row\":0.15314580500125885,\"thick\":0.011188485659658909,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.37532806396484375}]}"
+    },
+    {
+      "t": 320.0000000000129,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 340.0000000000136,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 360.00000000001273,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 380.0000000000126,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 400.00000000001353,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 420.00000000001074,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 440.00000000000887,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 460.00000000000693,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 480.00000000000296,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 500.00000000000165,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 519.9999999999974,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 539.9999999999932,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 559.9999999999807,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 579.9999999999706,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 599.9999999999618,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 599.9999999999618,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })",
+      "result": "{\"all\":{\"n\":1236,\"oilGene\":0.3750524899987736,\"wallGene\":0.4125630601337873,\"head\":0.6364590983738382,\"row\":0.31279423115168425,\"thick\":0.0031266625140624837,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.3414180101314409},\"lit\":{\"n\":750,\"oilGene\":0.35770401187824125,\"wallGene\":0.40385467796276014,\"head\":0.6916690196668108,\"row\":0.3086470830958957,\"thick\":0.0032098145897810656,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.47209834798177086},\"dark\":{\"n\":486,\"oilGene\":0.4018248327773729,\"wallGene\":0.42600192150882915,\"head\":0.5512586025513494,\"row\":0.319194150990864,\"thick\":0.0029983414095584994,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.13975082209080825},\"founders\":[{\"founder\":5,\"n\":1236,\"oilGene\":0.3750524899987736,\"wallGene\":0.4125630601337873,\"head\":0.6364590983738382,\"row\":0.31279423115168425,\"thick\":0.0031266625140624837,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.3414180101314409}]}"
+    },
+    {
+      "t": 619.9999999999517,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 639.9999999999449,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 659.9999999999369,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 679.9999999999279,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 699.9999999999209,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 719.999999999914,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 739.9999999999071,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 759.9999999998998,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 779.9999999998934,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 799.999999999882,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 819.9999999998739,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 839.9999999998661,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 859.9999999998607,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 879.9999999998527,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 899.9999999998413,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 899.9999999998413,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })",
+      "result": "{\"all\":{\"n\":1426,\"oilGene\":0.3669926222163722,\"wallGene\":0.5573823203605065,\"head\":0.7614717412071216,\"row\":0.27975160793959214,\"thick\":0.002674902257343642,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.3968067088936355},\"lit\":{\"n\":939,\"oilGene\":0.362347041678065,\"wallGene\":0.551888403753503,\"head\":0.7713464728067604,\"row\":0.2741324748189057,\"thick\":0.002655290138607208,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.4981682465607112},\"dark\":{\"n\":487,\"oilGene\":0.3759499120017326,\"wallGene\":0.5679753135719567,\"head\":0.7424319609770172,\"row\":0.29058603504498143,\"thick\":0.002712716999630113,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.20136834365876058},\"founders\":[{\"founder\":5,\"n\":1426,\"oilGene\":0.3669926222163722,\"wallGene\":0.5573823203605065,\"head\":0.7614717412071216,\"row\":0.27975160793959214,\"thick\":0.002674902257343642,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.3968067088936355}]}"
+    },
+    {
+      "t": 919.9999999998333,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 939.9999999998278,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 959.9999999998199,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 979.999999999815,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 999.9999999998075,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1019.999999999803,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1039.999999999788,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1059.9999999997708,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1079.9999999997526,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1099.9999999997344,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1119.9999999997199,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1139.9999999997074,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1159.9999999996892,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1179.9999999996762,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1199.999999999662,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })",
+      "result": "{\"all\":{\"n\":2008,\"oilGene\":0.40964085021762614,\"wallGene\":0.7533513424116599,\"head\":0.710531912663343,\"row\":0.24687264421228894,\"thick\":0.0025765248874630928,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.5325245686261303},\"lit\":{\"n\":1251,\"oilGene\":0.40555727026435723,\"wallGene\":0.7564053899652475,\"head\":0.7397976248122329,\"row\":0.25475050620031175,\"thick\":0.0025700433066205607,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.7198163740735927},\"dark\":{\"n\":757,\"oilGene\":0.4163892762698578,\"wallGene\":0.7483042968508432,\"head\":0.662168100380303,\"row\":0.23385387889258416,\"thick\":0.0025872361921315304,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.2230106338642075},\"founders\":[{\"founder\":5,\"n\":2008,\"oilGene\":0.40964085021762614,\"wallGene\":0.7533513424116599,\"head\":0.710531912663343,\"row\":0.24687264421228894,\"thick\":0.0025765248874630928,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0,\"cover\":0,\"oilShare\":0,\"bat\":0.5325245686261303}]}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T23:59:54",
+  "wall_s": 557.71
+}

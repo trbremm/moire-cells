@@ -1,0 +1,225 @@
+{
+  "name": "c12b-check",
+  "description": "Step C12b books check: 420 s at MAX (seed 5) through soap, oil, emulsion and linker springs, a quarter of the cells given a wall and oil (30 s), N (60 s), a wash (100 s), a resize (150 s), G (200 s), a resize back (220 s), new springs of every kind (240 s), every new switch and the membrane's off and on at runtime (255 to 340 s), a snapshot saved and loaded at once (380 s); atoms and charge rounding must stay 0",
+  "condition": {
+    "name": "c12b-check",
+    "description": "Step C12b books check: 420 s at MAX (seed 5) through soap, oil, emulsion and linker springs, a quarter of the cells given a wall and oil (30 s), N (60 s), a wash (100 s), a resize (150 s), G (200 s), a resize back (220 s), new springs of every kind (240 s), every new switch and the membrane's off and on at runtime (255 to 340 s), a snapshot saved and loaded at once (380 s); atoms and charge rounding must stay 0",
+    "query": {
+      "seed": 5
+    },
+    "duration": 420,
+    "sample_every": 10,
+    "resizes": [
+      {
+        "t": 150,
+        "size": "1000x700"
+      },
+      {
+        "t": 220,
+        "size": "1280x800"
+      }
+    ],
+    "evals": [
+      {
+        "t": 5,
+        "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.35, 'soap', 120); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.65, 'oil', 120); moire.matter.addSpring(v.cssW * 0.7, v.cssH * 0.65, 'emulsion', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.5, 'linker', 120); return moire.matter.springs.length"
+      },
+      {
+        "t": 30,
+        "js": "await moire.genome.setAll({ wall: 0.8, wallRow: 0.5, oilShare: 0.5 }, { cells: Array.from({ length: 2000 }, (_, k) => 4 * k) }); return 'a quarter of the slots walled and oily'"
+      },
+      {
+        "t": 60,
+        "js": "return moire.control.action('culture')"
+      },
+      {
+        "t": 100,
+        "js": "return moire.control.action('wash')"
+      },
+      {
+        "t": 105,
+        "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.4, 'soap', 200); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'linker', 200); return 1"
+      },
+      {
+        "t": 200,
+        "js": "return moire.control.action('genomes')"
+      },
+      {
+        "t": 240,
+        "js": "{ const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.5, 'light'); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.5, 'heavy'); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.3, 'emulsion'); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.7, 'soap'); } return moire.matter.springs.length"
+      },
+      {
+        "t": 255,
+        "js": "moire.lipids.params.on = false; return 'lipids off'"
+      },
+      {
+        "t": 270,
+        "js": "moire.lipids.params.on = true; return 'lipids on'"
+      },
+      {
+        "t": 280,
+        "js": "moire.lipids.params.heat = false; moire.lipids.params.crack = false; return 'heat, crack off'"
+      },
+      {
+        "t": 290,
+        "js": "moire.lipids.params.heat = true; moire.lipids.params.crack = true; moire.lipids.params.heads = false; return 'heads off'"
+      },
+      {
+        "t": 300,
+        "js": "moire.lipids.params.heads = true; moire.dipole.params.on = false; return 'dipoles off'"
+      },
+      {
+        "t": 310,
+        "js": "moire.dipole.params.on = true; moire.membrane.params.on = false; return 'membrane chemistry off'"
+      },
+      {
+        "t": 320,
+        "js": "moire.membrane.params.on = true; moire.oil.params.fusion = false; return 'fusion off'"
+      },
+      {
+        "t": 330,
+        "js": "moire.oil.params.fusion = true; moire.membrane.params.bites = false; moire.membrane.params.elastic = false; return 'bites, elastic off'"
+      },
+      {
+        "t": 340,
+        "js": "moire.membrane.params.bites = true; moire.membrane.params.elastic = true; return 'all on'"
+      },
+      {
+        "t": 380,
+        "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }"
+      }
+    ],
+    "shots": [
+      {
+        "t": 50
+      },
+      {
+        "t": 420
+      }
+    ],
+    "stall": 120
+  },
+  "url": "http://localhost:59793/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=5",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "be96783301e31f451b31ec31927ad1c53a69b6b8",
+  "dirty": true,
+  "started": "2026-11-15T23:28:02",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 420.0,
+  "run_wall_s": 163.0,
+  "speed_reached": 2.58,
+  "samples": 43,
+  "shots": [
+    "shots/t50.png",
+    "shots/t420.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 4.9999999999999964,
+      "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.35, 'soap', 120); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.65, 'oil', 120); moire.matter.addSpring(v.cssW * 0.7, v.cssH * 0.65, 'emulsion', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.5, 'linker', 120); return moire.matter.springs.length",
+      "result": 6
+    },
+    {
+      "t": 30.000000000000146,
+      "js": "await moire.genome.setAll({ wall: 0.8, wallRow: 0.5, oilShare: 0.5 }, { cells: Array.from({ length: 2000 }, (_, k) => 4 * k) }); return 'a quarter of the slots walled and oily'",
+      "result": "a quarter of the slots walled and oily"
+    },
+    {
+      "t": 59.99999999999942,
+      "js": "return moire.control.action('culture')",
+      "result": true
+    },
+    {
+      "t": 99.99999999999747,
+      "js": "return moire.control.action('wash')",
+      "result": true
+    },
+    {
+      "t": 104.99999999999719,
+      "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.4, 'soap', 200); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'linker', 200); return 1",
+      "result": 1
+    },
+    {
+      "t": 200.00000000000668,
+      "js": "return moire.control.action('genomes')",
+      "result": true
+    },
+    {
+      "t": 240.0000000000147,
+      "js": "{ const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.5, 'light'); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.5, 'heavy'); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.3, 'emulsion'); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.7, 'soap'); } return moire.matter.springs.length",
+      "result": 6
+    },
+    {
+      "t": 255.00000000001728,
+      "js": "moire.lipids.params.on = false; return 'lipids off'",
+      "result": "lipids off"
+    },
+    {
+      "t": 270.0000000000166,
+      "js": "moire.lipids.params.on = true; return 'lipids on'",
+      "result": "lipids on"
+    },
+    {
+      "t": 280.0000000000164,
+      "js": "moire.lipids.params.heat = false; moire.lipids.params.crack = false; return 'heat, crack off'",
+      "result": "heat, crack off"
+    },
+    {
+      "t": 290.00000000001677,
+      "js": "moire.lipids.params.heat = true; moire.lipids.params.crack = true; moire.lipids.params.heads = false; return 'heads off'",
+      "result": "heads off"
+    },
+    {
+      "t": 300.0000000000179,
+      "js": "moire.lipids.params.heads = true; moire.dipole.params.on = false; return 'dipoles off'",
+      "result": "dipoles off"
+    },
+    {
+      "t": 310.00000000001853,
+      "js": "moire.dipole.params.on = true; moire.membrane.params.on = false; return 'membrane chemistry off'",
+      "result": "membrane chemistry off"
+    },
+    {
+      "t": 320.0000000000203,
+      "js": "moire.membrane.params.on = true; moire.oil.params.fusion = false; return 'fusion off'",
+      "result": "fusion off"
+    },
+    {
+      "t": 330.0000000000232,
+      "js": "moire.oil.params.fusion = true; moire.membrane.params.bites = false; moire.membrane.params.elastic = false; return 'bites, elastic off'",
+      "result": "bites, elastic off"
+    },
+    {
+      "t": 340.000000000024,
+      "js": "moire.membrane.params.bites = true; moire.membrane.params.elastic = true; return 'all on'",
+      "result": "all on"
+    },
+    {
+      "t": 380.00000000002814,
+      "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }",
+      "result": {
+        "exact": true,
+        "notes": [],
+        "rounding": {
+          "energy": -0.0104522705078125,
+          "atoms": 0,
+          "charge": 0,
+          "snapshot": {
+            "energy": -0.0104522705078125,
+            "atoms": 0,
+            "charge": 0
+          }
+        }
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T23:31:24",
+  "wall_s": 201.98
+}

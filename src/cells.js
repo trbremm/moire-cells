@@ -52,8 +52,9 @@ export const CELL_URL = 'src/shaders/cell_common.wgsl';
 // step C6c, the honeycomb outline (words 26..59): rad[6] (26), radV[6] (32), theta (38), spin (39), ea.xy (40), alpha[6] (42),
 // and per side: integ[6] (48, membrane chemistry), sideQ[6] (54, step C6d: each side's charge); step C7: nbr[3] (60: the touching
 // neighbour across each side, 16 bits each), volt (63: the membrane voltage); step C10, patterned walls (src/walls.js): front (64),
-// mature[3] (65: each side's junction maturity, 16 bits), wadh[2] (68: each side's effective adhesion, 8 bits), wlink (70), wpay (71)
-export const CELL_FLOATS = 72;
+// mature[3] (65: each side's junction maturity, 16 bits), wadh[2] (68: each side's effective adhesion, 8 bits), wlink (70), wpay (71);
+// step C12b, lipid membranes (src/lipids.js): lip[6] (72: per side, 4 x 8 bits: stiffness, the wall's heavy share, oil share, wall cover)
+export const CELL_FLOATS = 78;
 export const CELL_BYTES = CELL_FLOATS * 4;
 const CELL_CORE_BYTES = 120;   // step C6c: struct CellCore (the grid's sorted copy: Cell without the outline and per-side slots;
                                // step C6d: + the dipole, 104 until then; step C10: + the walls, 112 until then)
@@ -77,7 +78,7 @@ const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
 const FIELDS_BYTES = 416;      // struct Fields in cell_common.wgsl (step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
                                // step C9: + dv0..dv2; step C10: + wl0, wl1)
 const FIELD_FORMAT = 'rgba16float';
-const DRAW_BYTES = 864;        // struct Draw in cell_draw.wgsl (step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
+const DRAW_BYTES = 944;        // struct Draw in cell_draw.wgsl (step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
                                // step C6d: + the dipoles)
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
@@ -1340,6 +1341,8 @@ export class Cells {
     });
     this.division.writeDraw(a, 188);   // step C9: a division's flash, a starving cell's fading
     this.walls.writeDraw(a, 192, L, P);   // step C10: the walls' look (sticky sides, matured junctions, the front, the walls view)
+    const u3 = (rgb) => rgb.map((x) => x / 255);
+    this.eat.lipids.writeDraw(a, 216, { crustLight: u3(P.lipid.crustLight), crustHeavy: u3(P.lipid.crustHeavy), pearl: u3(P.lipid.pearl) });   // step C12b
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBGs[this.bioCur]);

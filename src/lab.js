@@ -38,6 +38,9 @@ export const GENES = {
   // step C10, the patterned walls: a0 is the adhesion gene itself; a1 the polar part, a2 the two-fold part, w how much the front
   // follows the dipole
   a0: 16, a1: 48, a2: 49, w: 50, wallFront: 50, divAxis: 51,   // (step C11: divAxis, 0 along the front .. 1 across)
+  // step C12b, the lipid membrane: oilShare is the C6c mix gene (oil per soap); wall (a share of a full wall), head (-1 tlL .. 1 glL),
+  // wallRow (the wall's heavy share)
+  oilShare: 40, wall: 52, head: 53, wallRow: 54,
 };
 // words 19..31 are the cell's state, not genes (heading, accumulators, felt fields, conversion)
 const STATE = new Set([19, ...Array.from({ length: 12 }, (_, k) => 20 + k)]);
@@ -69,7 +72,7 @@ function gather(M, ctl) {
   }
   if (E.ledger) {
     const L = E.ledger;
-    flatten({ ...L, stock: undefined }, 'cells', out);  // batteries, atoms inside, fuel inside, burner, crawl, ...
+    flatten({ ...L, stock: undefined, held: undefined }, 'cells', out);  // batteries, atoms inside, fuel inside, burner, crawl, ...
     SUBSTANCES.forEach((s, c) => { out[`inside.${s.name}`] = L.stock[c]; });
   }
   flatten(E.census, 'engines', out);              // the strategies: engines.all.0.n (harvest), .1 burn, .2 both, .3 other; free g t
@@ -84,6 +87,7 @@ function gather(M, ctl) {
   flatten(M.walls.census, 'walls', out);         // step C10: the patterned walls' census
   if (M.oil) { flatten(M.oil.census, 'oil', out); if (M.oil.last) flatten({ ...M.oil.last, sizes: undefined }, 'oilstats', out); }   // step C12
   if (M.walls.near) flatten(M.walls.near, 'wallstats', out);
+  if (M.lipids) { flatten({ ...(M.lipids.census || {}), tot: undefined }, 'lipids', out); if (M.lipids.last) flatten(M.lipids.last, 'lipstats', out); }   // step C12b
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;
   if (C.stats) flatten({ fate: C.stats.fate, births: C.stats.births, deaths: C.stats.deaths, heatDeaths: C.stats.heatDeaths,

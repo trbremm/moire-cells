@@ -1,0 +1,643 @@
+{
+  "name": "c12b-oxygen-on_s3",
+  "description": "step C12b, experiment 4: the oxygen retry's springs (a never-drying light spring, a heavy one 2 s of every 20 s), spotlight, 20 min, lipid membranes on",
+  "condition": {
+    "name": "c12b-oxygen-on_s3",
+    "description": "step C12b, experiment 4: the oxygen retry's springs (a never-drying light spring, a heavy one 2 s of every 20 s), spotlight, 20 min, lipid membranes on",
+    "query": {
+      "seed": 3
+    },
+    "duration": 1200,
+    "sample_every": 20,
+    "evals": [
+      {
+        "t": 0,
+        "js": "moire.matter.clearSprings(); moire.matter.addSpring(875, 328, 'light', 1e9); moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life)"
+      },
+      {
+        "t": 20,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 40,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 60,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 80,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 100,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 120,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 140,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 160,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 180,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 200,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 220,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 240,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 260,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 280,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 300,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 300,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+      },
+      {
+        "t": 320,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 340,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 360,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 380,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 400,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 420,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 440,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 460,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 480,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 500,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 520,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 540,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 560,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 580,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 600,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 600,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+      },
+      {
+        "t": 620,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 640,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 660,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 680,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 700,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 720,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 740,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 760,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 780,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 800,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 820,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 840,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 860,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 880,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 900,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 900,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+      },
+      {
+        "t": 920,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 940,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 960,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 980,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1000,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1020,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1040,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1060,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1080,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1100,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1120,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1140,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1160,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1180,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 1200,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+      }
+    ],
+    "shots": [
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "panel": true,
+        "name": "panel"
+      },
+      {
+        "t": 1200,
+        "view": "lineage",
+        "name": "lineage"
+      }
+    ]
+  },
+  "url": "http://localhost:54881/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "95d38ae7728f5f0856c773ceeed66e4c56cc3fe5",
+  "dirty": true,
+  "started": "2026-11-15T23:50:16",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 520.92,
+  "speed_reached": 2.3,
+  "samples": 61,
+  "shots": [
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t1200.png",
+    "shots/panel.png",
+    "shots/lineage.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.matter.clearSprings(); moire.matter.addSpring(875, 328, 'light', 1e9); moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life)",
+      "result": [
+        "light 1000000000",
+        "heavy 2"
+      ]
+    },
+    {
+      "t": 19.999999999999968,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 39.99999999999998,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 60.00000000000011,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 80.00000000000026,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 99.99999999999986,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 120.00000000000003,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 140.00000000000026,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 160.00000000000117,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 180.0000000000055,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 200.0000000000091,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 220.00000000001165,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 240.00000000001498,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 260.00000000001984,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 280.00000000002257,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 300.00000000002746,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 300.00000000002746,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })",
+      "result": "{\"all\":{\"n\":1526,\"oilGene\":0.2742339915813827,\"wallGene\":0.4177242294491344,\"head\":-0.15701380911158694,\"row\":0.4033604898449732,\"thick\":0.014935310228775362,\"soapP\":0.000012159035058977719,\"soapM\":0.000017118641464613368,\"oil\":0.000009439250901048494,\"ll\":0.000009919212811271297,\"LL\":0.0000012798984272608126,\"stiff\":0.25262508673193973,\"cover\":0.00013877110477218408,\"oilShare\":0.0013543031891655743,\"bat\":0.5126181536233284},\"lit\":{\"n\":929,\"oilGene\":0.30467375922487977,\"wallGene\":0.41772256875206415,\"head\":-0.13246719054707334,\"row\":0.39431560183679776,\"thick\":0.014607614313529962,\"soapP\":0.000017870357911733047,\"soapM\":0.000025228740581270184,\"oil\":0.000014191166576964477,\"ll\":0.00001629356162540366,\"LL\":0.0000021023950484391817,\"stiff\":0.25266608975847166,\"cover\":0.0002279490913695941,\"oilShare\":0.002134560318565891,\"bat\":0.6916485592418132},\"dark\":{\"n\":597,\"oilGene\":0.22686624595188729,\"wallGene\":0.41772681368293374,\"head\":-0.19521114352772284,\"row\":0.4174353658241942,\"thick\":0.015445242398395086,\"soapP\":0.000003271566164154104,\"soapM\":0.000004498403475711893,\"oil\":0.0000020447288525963147,\"ll\":0,\"LL\":0,\"stiff\":0.2525612813522944,\"cover\":0,\"oilShare\":0.0001401342223098061,\"bat\":0.2340264504079643},\"founders\":[{\"founder\":1,\"n\":768,\"oilGene\":0.25017889693390316,\"wallGene\":0.5034091409324901,\"head\":-0.16423952750847093,\"row\":0.580618979545155,\"thick\":0.010042978610727005,\"soapP\":0.0000152587890625,\"soapM\":0.000018755594889322918,\"oil\":0.000008900960286458334,\"ll\":0.000004132588704427083,\"LL\":0.0000022252400716145835,\"stiff\":0.2525020424836593,\"cover\":0.00012850626361655772,\"oilShare\":0.0008884803921568626,\"bat\":0.5103645324707031},{\"founder\":9,\"n\":650,\"oilGene\":0.3153387814065298,\"wallGene\":0.3563093415419392,\"head\":-0.16783920866150695,\"row\":0.1854363622631018,\"thick\":0.021020227347214062,\"soapP\":0.000006009615384615385,\"soapM\":0.00001201923076923077,\"oil\":0.000011643629807692308,\"ll\":0.000018404447115384615,\"LL\":3.7560096153846154e-7,\"stiff\":0.2528587229763692,\"cover\":0.0001739567621920563,\"oilShare\":0.0021297134238310706,\"bat\":0.5317094538762019},{\"founder\":4,\"n\":33,\"oilGene\":0.08152825046669353,\"wallGene\":0.0951016851785508,\"head\":-0.28934629385670024,\"row\":0.08692645659726678,\"thick\":0.006532852432097901,\"soapP\":0.000051787405303030304,\"soapM\":0.00008138020833333333,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0.25098039215686274,\"cover\":0,\"oilShare\":0,\"bat\":0.5447645476370147},{\"founder\":2,\"n\":19,\"oilGene\":0.01925890936859344,\"wallGene\":0.08738912191045911,\"head\":0.29773068898602534,\"row\":0.8869262965101945,\"thick\":0.009782548748741024,\"soapP\":0.000025699013157894735,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0.25098039215686274,\"cover\":0,\"oilShare\":0,\"bat\":0.44888847752621297},{\"founder\":10,\"n\":17,\"oilGene\":0.07891181155162699,\"wallGene\":0.19121171446407542,\"head\":-0.02779245256062816,\"row\":0.2758258475976832,\"thick\":0.008610916050041424,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0.25098039215686274,\"cover\":0,\"oilShare\":0,\"bat\":0.4123077392578125},{\"founder\":7,\"n\":17,\"oilGene\":0.6939572569201974,\"wallGene\":0.04805139013949562,\"head\":-0.25076521341415015,\"row\":0.932740916224087,\"thick\":0.02929460399729364,\"soapP\":0,\"soapM\":0.000028722426470588235,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0.25221068819684733,\"cover\":0,\"oilShare\":0,\"bat\":0.37333813835592833},{\"founder\":5,\"n\":13,\"oilGene\":0.07456639786967291,\"wallGene\":0.7718196350794572,\"head\":0.17812799375790817,\"row\":0.5250603510783269,\"thick\":0.011152348731859373,\"soapP\":0.000037560096153846156,\"soapM\":0.000018780048076923078,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0.2572146807440925,\"cover\":0,\"oilShare\":0,\"bat\":0.3011360168457031},{\"founder\":3,\"n\":4,\"oilGene\":0.9182963669300079,\"wallGene\":0.05010702274739742,\"head\":0.668237179517746,\"row\":0.08110746741294861,\"thick\":0.04009469971060753,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0.25098039215686274,\"cover\":0,\"oilShare\":0,\"bat\":0.2017660140991211}]}"
+    },
+    {
+      "t": 320.0000000000262,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 340.00000000002603,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 360.0000000000252,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 380.00000000002456,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 400.00000000002575,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 420.0000000000262,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 440.00000000003314,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 460.00000000003297,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 480.0000000000317,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 500.0000000000291,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 520.0000000000246,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 540.0000000000089,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 560.0000000000001,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 579.9999999999889,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 599.9999999999777,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 599.9999999999777,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })",
+      "result": "{\"all\":{\"n\":2003,\"oilGene\":0.33645714650409686,\"wallGene\":0.3860293625507209,\"head\":-0.18557315550049877,\"row\":0.42106669812079456,\"thick\":0.011719795662297854,\"soapP\":0.00002193974663005492,\"soapM\":0.00003156885765102346,\"oil\":0.000011701198202695955,\"ll\":0.0000059724865826260605,\"LL\":0.0000024377496255616577,\"stiff\":0.26431333392068684,\"cover\":0.0001572804192404204,\"oilShare\":0.0013639671212136045,\"bat\":0.4825473105496784},\"lit\":{\"n\":1064,\"oilGene\":0.3569991460910962,\"wallGene\":0.3699968764769601,\"head\":-0.21788300206373565,\"row\":0.4406567801743769,\"thick\":0.011016701433467994,\"soapP\":0.00001743861607142857,\"soapM\":0.000027534656954887217,\"oil\":0.000009407674459586466,\"ll\":0.000009407674459586466,\"LL\":0.000004359654017857143,\"stiff\":0.2548823037987118,\"cover\":0.0002702835520172981,\"oilShare\":0.0009668779792618801,\"bat\":0.7230586001747533},\"dark\":{\"n\":939,\"oilGene\":0.3131805889316077,\"wallGene\":0.4041960986343007,\"head\":-0.1489622111519535,\"row\":0.398868777668173,\"thick\":0.01251648603447567,\"soapP\":0.00002704006922257721,\"soapM\":0.000036140092518636845,\"oil\":0.000014300036608093717,\"ll\":0.0000020800053248136317,\"LL\":2.6000066560170396e-7,\"stiff\":0.27499982598648187,\"cover\":0.00002923427091816492,\"oilShare\":0.0018139169050651854,\"bat\":0.21001907608633477},\"founders\":[{\"founder\":1,\"n\":1579,\"oilGene\":0.3416098942852438,\"wallGene\":0.3792095861019168,\"head\":-0.22664521189885448,\"row\":0.4737480554312109,\"thick\":0.008532818012379529,\"soapP\":0.000019017920756808107,\"soapM\":0.000026594165611146294,\"oil\":0.00000927703451551615,\"ll\":0.0000034015793223559215,\"LL\":0.0000023192586288790375,\"stiff\":0.2608964886355634,\"cover\":0.00014860071113097974,\"oilShare\":0.0009110589559868702,\"bat\":0.4976107794850442},{\"founder\":9,\"n\":419,\"oilGene\":0.31583215766930883,\"wallGene\":0.41550130487768633,\"head\":-0.027631684577621538,\"row\":0.2212757817661942,\"thick\":0.023635431925759502,\"soapP\":0.00003146442422434368,\"soapM\":0.000043700589200477326,\"oil\":0.00001631488663484487,\"ll\":0.00001573221211217184,\"LL\":0.000002913372613365155,\"stiff\":0.27465331399067106,\"cover\":0.00019186672282278067,\"oilShare\":0.002689253903629869,\"bat\":0.4315390029215301},{\"founder\":7,\"n\":3,\"oilGene\":0.7009108463923136,\"wallGene\":0.09731789181629817,\"head\":-0.6226941645145416,\"row\":0.8362252712249756,\"thick\":0.029826001574595768,\"soapP\":0,\"soapM\":0.0003255208333333333,\"oil\":0.00016276041666666666,\"ll\":0,\"LL\":0,\"stiff\":0.5106753812636166,\"cover\":0,\"oilShare\":0.018518518518518517,\"bat\":0},{\"founder\":4,\"n\":2,\"oilGene\":0.04261738434433937,\"wallGene\":0.028938157483935356,\"head\":-0.19224127382040024,\"row\":0.06259421817958355,\"thick\":0.00435354420915246,\"soapP\":0.0003662109375,\"soapM\":0.0009765625,\"oil\":0.000732421875,\"ll\":0,\"LL\":0,\"stiff\":0.42614379084967313,\"cover\":0,\"oilShare\":0.05555555555555555,\"bat\":0}]}"
+    },
+    {
+      "t": 619.9999999999724,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 639.999999999963,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 659.9999999999575,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 679.9999999999487,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 699.9999999999394,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 719.9999999999384,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 739.9999999999294,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 759.9999999999159,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 779.9999999999052,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 799.9999999999,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 819.9999999998911,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 839.9999999998847,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 859.9999999998809,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 879.9999999998724,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 899.9999999998671,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 899.9999999998671,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })",
+      "result": "{\"all\":{\"n\":2161,\"oilGene\":0.342124511019077,\"wallGene\":0.2434351149582453,\"head\":-0.40404123392590474,\"row\":0.49922919134820143,\"thick\":0.00825052927437806,\"soapP\":0.00003705605043961129,\"soapM\":0.00004993528748264692,\"oil\":0.000009151036846367423,\"ll\":0.000005648788176770014,\"LL\":0.000003728200196668209,\"stiff\":0.26307960790362683,\"cover\":0.0004391576158459681,\"oilShare\":0.001097289139317612,\"bat\":0.4513959024085981},\"lit\":{\"n\":1173,\"oilGene\":0.34114523138587927,\"wallGene\":0.23465737261691857,\"head\":-0.4411702932740696,\"row\":0.5311731892651406,\"thick\":0.007144486342452765,\"soapP\":0.00004537310848252344,\"soapM\":0.000059109921142369994,\"oil\":0.000008533474531116795,\"ll\":0.000010198542732310316,\"LL\":0.000006868406329923273,\"stiff\":0.2577960539146032,\"cover\":0.0008073817762399076,\"oilShare\":0.001303846346722832,\"bat\":0.6848743305385163},\"dark\":{\"n\":988,\"oilGene\":0.34328715779006985,\"wallGene\":0.25385646289992164,\"head\":-0.3599598709548548,\"row\":0.46130377681726054,\"thick\":0.00956367538687641,\"soapP\":0.000027181648532388663,\"soapM\":0.000039042731528340083,\"oil\":0.000009884235829959514,\"ll\":2.4710589574898786e-7,\"LL\":0,\"stiff\":0.26935249133391487,\"cover\":0.000001984599507819322,\"oilShare\":0.0008520547220237623,\"bat\":0.17419934755394817},\"founders\":[{\"founder\":1,\"n\":2120,\"oilGene\":0.34544151339453166,\"wallGene\":0.23883452629448104,\"head\":-0.415859806414184,\"row\":0.5050645248549287,\"thick\":0.007950533772401406,\"soapP\":0.00003489368366745283,\"soapM\":0.000047331036261792456,\"oil\":0.000007946086379716981,\"ll\":0.0000057580336084905665,\"LL\":0.0000033396594929245284,\"stiff\":0.26167221605623336,\"cover\":0.00044641756073498574,\"oilShare\":0.0009757676655567886,\"bat\":0.4555242934316959},{\"founder\":9,\"n\":41,\"oilGene\":0.1706112174589823,\"wallGene\":0.4813192117187388,\"head\":0.20706544107780223,\"row\":0.1974997514881557,\"thick\":0.023762491815609903,\"soapP\":0.00014886623475609756,\"soapM\":0.00018459413109756098,\"oil\":0.00007145579268292682,\"ll\":0,\"LL\":0.00002381859756097561,\"stiff\":0.3358520644029968,\"cover\":0.0000637653435357883,\"oilShare\":0.007380838514267495,\"bat\":0.2379278787752477}]}"
+    },
+    {
+      "t": 919.9999999998615,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 939.9999999998536,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 959.9999999998487,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 979.9999999998439,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 999.9999999998373,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1019.9999999998292,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1039.999999999814,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1059.9999999997963,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1079.9999999997788,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1099.999999999761,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1119.9999999997437,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1139.999999999726,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1159.9999999997094,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1179.999999999692,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 1199.9999999996749,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })",
+      "result": "{\"all\":{\"n\":2305,\"oilGene\":0.37864095808750264,\"wallGene\":0.29610420856982167,\"head\":-0.624064243463658,\"row\":0.6201369497068469,\"thick\":0.006560724229024574,\"soapP\":0.000029445159978308026,\"soapM\":0.00004257897234273319,\"oil\":0.000004236713665943601,\"ll\":0.000005295892082429501,\"LL\":0.0000018006033080260303,\"stiff\":0.26075851020089824,\"cover\":0.0002603036876355748,\"oilShare\":0.0006496249982277797,\"bat\":0.5350673534864976},\"lit\":{\"n\":1241,\"oilGene\":0.39896001086508787,\"wallGene\":0.35516643478249893,\"head\":-0.6959505076651475,\"row\":0.6487737931341149,\"thick\":0.006125867334520932,\"soapP\":0.000028525697522159548,\"soapM\":0.000043477097602739724,\"oil\":0.000002557476329572925,\"ll\":0.000009836447421434328,\"LL\":0.000003344392123287671,\"stiff\":0.2519852743676029,\"cover\":0.00048348106365834,\"oilShare\":0.0003555007821017206,\"bat\":0.8105254592096296},\"dark\":{\"n\":1064,\"oilGene\":0.3549417621316913,\"wallGene\":0.22721678119206562,\"head\":-0.5402194559880483,\"row\":0.5867362704838773,\"thick\":0.0070679210392492154,\"soapP\":0.000030517578125,\"soapM\":0.000041531440906954887,\"oil\":0.000006195297814849624,\"ll\":0,\"LL\":0,\"stiff\":0.27099120349894273,\"cover\":0,\"oilShare\":0.0009926777728635314,\"bat\":0.21378585987521292},\"founders\":[{\"founder\":1,\"n\":2304,\"oilGene\":0.3785053134157958,\"wallGene\":0.2962327260214579,\"head\":-0.6242822247085213,\"row\":0.6201876702729755,\"thick\":0.0065570486302830334,\"soapP\":0.000029457939995659723,\"soapM\":0.000042597452799479164,\"oil\":0.000004132588704427083,\"ll\":0.000005298190646701389,\"LL\":0.0000018013848198784722,\"stiff\":0.26076275417574374,\"cover\":0.00026041666666666666,\"oilShare\":0.0006499069535221494,\"bat\":0.5352702587842941},{\"founder\":9,\"n\":1,\"oilGene\":0.6911662817001343,\"wallGene\":0,\"head\":-0.12183545529842377,\"row\":0.5032767653465271,\"thick\":0.01502930372953415,\"soapP\":0,\"soapM\":0,\"oil\":0.000244140625,\"ll\":0,\"LL\":0,\"stiff\":0.25098039215686274,\"cover\":0,\"oilShare\":0,\"bat\":0.06757354736328125}]}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T23:59:38",
+  "wall_s": 561.53
+}

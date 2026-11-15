@@ -1,0 +1,46 @@
+{
+ "name": "c12b-default-on",
+ "description": "step C12b, experiment 2: the default scene, 20 min, lipid membranes on",
+ "query": {},
+ "duration": 1200,
+ "sample_every": 30,
+ "evals": [
+  {
+   "t": 300,
+   "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+  },
+  {
+   "t": 600,
+   "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+  },
+  {
+   "t": 900,
+   "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+  },
+  {
+   "t": 1200,
+   "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 8) })"
+  }
+ ],
+ "shots": [
+  {
+   "t": 300
+  },
+  {
+   "t": 600
+  },
+  {
+   "t": 1200
+  },
+  {
+   "t": 1200,
+   "panel": true,
+   "name": "panel"
+  },
+  {
+   "t": 1200,
+   "view": "lineage",
+   "name": "lineage"
+  }
+ ]
+}

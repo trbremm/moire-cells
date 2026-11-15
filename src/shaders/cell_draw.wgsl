@@ -95,6 +95,11 @@ struct Draw {
   wall2: vec4f,     // x: the walls view (mode 4): the tubes' shading by adhesion; y: ... the body's fill; z: the pattern threshold
                     // (|a1|, |a2| below it: uniform); w: a matured junction's tube brighter by this much
   wallInk: array<vec4f, 4>,   // the walls view's inks: uniform, polar, two-ended, sticky sides
+  // ---- step C12b: the lipid membranes' look (src/lipids.js writeDraw; lipids.look) ----
+  lip: vec4f,       // x: 1 = draw the membranes' make-up (Cell.lip); y: a soap bilayer's pearly, iridescent sheen on the tube (0..1);
+                    // z: an oily bilayer's deeper, glossier tube (0..1); w: a full wall's rim width (share of r)
+  lip2: vec4f,      // x: the rim's brightness; y: a brick's length (share of r); z w spare
+  lipInk: array<vec4f, 3>,    // a light (ll) crust, a heavy (LL) crust, soap's pearl
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
@@ -366,7 +371,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   var inner = 0.0;         // the heavy membrane's inner tube
   let bt = cell_burst(c.flags);
   var sd = vec2f(0.0);
-  if (D.memb.x > 0.5 || D.dip.x > 0.0 || D.pump.x > 0.5 || D.wall.x > 0.5) { sd = memb_side(in.local, lp, c.r, in); }
+  if (D.memb.x > 0.5 || D.dip.x > 0.0 || D.pump.x > 0.5 || D.wall.x > 0.5 || D.lip.x > 0.5) { sd = memb_side(in.local, lp, c.r, in); }
   let side = u32(sd.x);
   if (D.memb.x > 0.5) {
     ig = clamp(c.integ[side], 0.0, 1.0);
@@ -388,21 +393,41 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     }
     inner = D.memb.w * smoothstep(0.35, 0.85, gmb.x) * (0.6 + 0.4 * ig);
   }
-  let dot = select(0.0, cover(D.dotR * s, dd, aad) * cover_in(ein - lw - 0.12 * D.R, aa), D.dots > 0.0);
-  var ring = (1.0 - cover_in(ein - lw, aa)) * mGap;   // clean outline at the rim (step C6c: broken where the membrane is)
+  // step C12b, the lipid membrane's make-up (this side's Cell.lip: x stiffness / 4, y the wall's heavy share, z the bilayer's oil
+  // share, w the wall's cover). A soap bilayer is a thin pearly tube whose colour drifts along it (as C12's soap films); oil makes
+  // it deeper, more saturated and glossier (a little wider, a hotter core); a WALL of crust is a flat, crisp amber-to-brown rim
+  // OUTSIDE the tube (the tube moves in by the rim's width, the same all round: the cell's fullest wall), laid as bricks where this
+  // side's wall is (a partial wall shows as scattered bricks)
+  var lq = vec4f(0.0);
+  var wOff = 0.0;
+  var soapy = 0.0;
+  var oily = 0.0;
+  if (D.lip.x > 0.5) {
+    inner = 0.0;   // (the C6c heavy weave's second tube: the weave now holds only the walls' glue)
+    lq = unpack4x8unorm(c.lip[min(side, 5u)]);
+    var cmax = 0.0;
+    for (var k = 0u; k < 6u; k++) { cmax = max(cmax, unpack4x8unorm(c.lip[k]).w); }
+    wOff = D.lip.w * c.r * cmax;
+    oily = min(2.0 * lq.z, 1.0) * ig;   // (a bilayer holds at most one oil per soap: an oil share of 1/2 is fully oily)
+    soapy = ig - oily;
+    lw *= (1.0 - 0.2 * soapy) * (1.0 + 0.6 * D.lip.z * oily);
+  }
+  let ein2 = ein - wOff;     // how far inside the tube's outer edge (the outline less the wall's rim)
+  let dot = select(0.0, cover(D.dotR * s, dd, aad) * cover_in(ein2 - lw - 0.12 * D.R, aa), D.dots > 0.0);
+  var ring = (1.0 - cover_in(ein2 - lw, aa)) * mGap * cover_in(ein2, aa);   // clean outline at the rim (step C6c: broken where the membrane is)
   // step C6c: a heavy membrane's inner tube, a thin line just inside the outer one (a gap of about 0.8 px)
   var ring2 = 0.0;
   if (inner > 0.0) {
     let g0 = lw + max(0.8, 0.6 * lw);
     let w2 = max(0.45 * lw, 0.5 / D.dpr);
-    ring2 = clamp(min(ein - g0, g0 + w2 - ein) / aa + 0.5, 0.0, 1.0) * mGap;
+    ring2 = clamp(min(ein2 - g0, g0 + w2 - ein2) / aa + 0.5, 0.0, 1.0) * mGap;
   }
   // committed cells get a flat fill in their colour, so tissues read as areas; stem cells stay dark inside
   // (neon: every inside dark, a faint tint; the fills come from src/cells.js by the look)
   let fill = select(select(select(D.fill, D.fillC, c.kind != KIND_STEM), D.inkOther.w, strategyView || chargeView), D.wall2.y, wallsView);
   var fillRgb = col * fill;   // (step 8 may tint it below)
   // step C6n: neon, the tube lights the inside near it (a soft glow falling off inward)
-  if (neon) { fillRgb += col * D.neon2.x * exp(-max(ein - lw, 0.0) / max(D.neon.w * c.r, 1e-3)); }
+  if (neon) { fillRgb += col * D.neon2.x * exp(-max(ein2 - lw, 0.0) / max(D.neon.w * c.r, 1e-3)); }
   // step 6, rule 2: a converted cell's outline is drawn in field B's ink, and a converted stem cell is filled with
   // it (flat, at the committed cells' level), so converted areas read as areas
   let conv = D.blue.a > 0.0 && (c.flags & CELL_CONV) != 0u;
@@ -473,9 +498,20 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     lineCol *= (1.0 - gain) + 2.0 * gain * aE;
     lineCol = mix(lineCol, vec3f(max(max(lineCol.r, lineCol.g), lineCol.b)), D.wall.z * mtr) * (1.0 + D.wall2.w * mtr);
   }
+  // step C12b: soap's pearl (a pale sheen whose hue drifts along the tube and slowly in time) and oil's depth (more saturated)
+  if (D.lip.x > 0.5) {
+    let hsh = f32((c.seed >> 8u) & 255u) / 255.0;
+    let hue = sd.y / max(2.2 * c.r, 1.0) + 0.04 * D.hum.z + hsh + 0.17 * f32(side);
+    let irid = 0.62 + 0.38 * cos(TAU * (hue + vec3f(0.0, 0.33, 0.67)));
+    let pearl = D.lipInk[2].rgb * irid * max(max(max(lineCol.r, lineCol.g), lineCol.b), 0.6);
+    lineCol = mix(lineCol, pearl, D.lip.y * soapy);
+    let gr = vec3f((lineCol.r + lineCol.g + lineCol.b) / 3.0);   // (the builtin dot() is shadowed above)
+    lineCol = max(mix(gr, lineCol, 1.0 + 1.2 * D.lip.z * oily), vec3f(0.0)) * (1.0 - 0.2 * D.lip.z * oily);
+  }
   if (neon) {
     // step C6n: the tube's cross-section: white-hot along its centre line, its colour toward its edges
-    let prof = clamp(1.0 - abs(ein - 0.5 * lw) / max(0.5 * lw, 1e-3), 0.0, 1.0);
+    var prof = clamp(1.0 - abs(ein2 - 0.5 * lw) / max(0.5 * lw, 1e-3), 0.0, 1.0);
+    if (D.lip.x > 0.5) { prof = pow(prof, 1.0 + 3.0 * D.lip.z * oily); }   // step C12b: oil, a sharper, glossier core
     lineCol = mix(lineCol, vec3f(max(max(lineCol.r, lineCol.g), lineCol.b)), D.neon.z * prof * prof);
     lineCol = mix(lineCol, vec3f(1.0), 0.6 * D.neon.z * prof * prof * prof);
   }
@@ -566,7 +602,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       let h = D.pump.y * c.r * sqrt(clamp(rate / max(D.pump2.x, 1e-3), 0.15, 1.0));
       if (h * D.dpr > 0.5) {
         let dep = 1.6 * h;
-        let y = ein - lw;                                            // depth inside the tube's inner edge
+        let y = ein2 - lw;                                           // depth inside the tube's inner edge
         let out = pump_out(code);
         let hw = select(h * (1.0 - y / dep), h * (y / dep), out);    // IN: tip inward; OUT: tip on the tube
         let sdf = max(u - hw, max(-y - 0.5 * lw, y - dep));
@@ -584,7 +620,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     let vr = clamp(abs(c.volt) / max(D.pump.w, 1e-4), 0.0, 1.0);
     let g0 = lw + max(0.6, 0.4 * lw);
     let w2 = max(0.6 * lw, 0.6 / D.dpr);
-    let rim = clamp(min(ein - g0, g0 + w2 - ein) / aa + 0.5, 0.0, 1.0) * (1.0 - notch);
+    let rim = clamp(min(ein2 - g0, g0 + w2 - ein2) / aa + 0.5, 0.0, 1.0) * (1.0 - notch);
     rgb = mix(rgb, select(D.qNeg.rgb, D.qPos.rgb, c.volt > 0.0), rim * D.pump.z * vr);
   }
   // step C6c: the membrane's dimming and flicker, the heavy membrane's inner tube, a burst's flash (white, fading over
@@ -604,6 +640,20 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     rgb += col * 0.1 * D.div.x * f2;
   }
   rgb = mix(rgb, lineCol, ring);
+  // step C12b: the wall's rim of crust, outside the tube: flat bricks (about lip2.y r long with thin joints), present where this
+  // side's wall is (a brick shows when its hash is below the side's cover), amber for a light crust, brown for a heavy one
+  var rimA = 0.0;
+  if (wOff > 0.0 && lq.w > 0.02) {
+    let bl = max(D.lip2.y * c.r, 2.0);
+    let u = sd.y / bl + f32(c.seed & 15u) / 16.0;
+    let bi = floor(u);
+    let bh = fract(sin(bi * 12.9898 + f32(side) * 78.233 + f32(c.seed & 1023u)) * 43758.547);
+    let fu = fract(u);
+    let joint = clamp(min(fu, 1.0 - fu) * bl / aa - 0.4, 0.0, 1.0);
+    rimA = (1.0 - cover_in(ein2, aa)) * cover_in(ein - 0.15 * wOff, aa) * joint * select(0.0, 1.0, bh < lq.w);
+    let ck = mix(D.lipInk[0].rgb, D.lipInk[1].rgb, lq.y) * D.lip2.x;
+    rgb = mix(rgb, ck, rimA);
+  }
   // step 6, rule 1: a cell leaking into field B gets a flat blue centre dot, its area growing with the leak
   var mark = 0.0;
   if (D.leakDot > 0.0) {
@@ -620,7 +670,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   rgb *= 1.0 - fade;
   // step C6n: the hum (1 when it is off or the look is flat)
   rgb *= hum_bright(c, in.id);
-  let a = (1.0 - 0.6 * fade) * disc * mix(D.fillA, 1.0, max(max(max(max(max(max(max(max(ring, ring2), dot * (1.0 - clearA)), mark), bar), hnd), coreA), partA), notch));
+  let a = (1.0 - 0.6 * fade) * disc * mix(D.fillA, 1.0, max(max(max(max(max(max(max(max(max(ring, ring2), dot * (1.0 - clearA)), mark), bar), hnd), coreA), partA), notch), rimA));
   // rgb is the colour as seen; blend premultiplied (one, one-minus-src-alpha)
   return vec4f(rgb * a, a);
 }

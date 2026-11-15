@@ -827,9 +827,13 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     let kc = select(1.0, memb_stiff(bio.memb, FL.memb.y), (mbF & MB_ELASTIC) != 0u);
     let softOn = (mbF & MB_SOFT) != 0u;
     let ig = c.integ;
+    // step C12b: with the lipid membranes, each side's stiffness is derived from its lipids (the eat pass: Cell.lip, which holds the
+    // integrity, the heat, the thickness and the stiffness gene already): corner k takes the mean of its two sides'
+    let lipK = (mbF & MB_LIPID) != 0u && (mbF & MB_ELASTIC) != 0u;
     for (var k = 0; k < 6; k++) {
       var kk = kc;
       if (softOn) { kk *= FL.memb.z + (1.0 - FL.memb.z) * 0.5 * (ig[(k + 5) % 6] + ig[k]); }
+      if (lipK) { kk = max(0.5 * LIP_KMAX * (unpack4x8unorm(c.lip[(k + 5) % 6]).x + unpack4x8unorm(c.lip[k]).x), 0.25); }
       let acc = -FL.hex.x * kk * (rad[k] - tgt[k]) - FL.hex.y * sqrt(kk) * rv[k];
       rv[k] += acc * S.dt - FL.hex.w * dot(dv, hu[k]);
       rad[k] += rv[k] * S.dt;
@@ -1129,6 +1133,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           d.bat = c.bat;
           d.fill = c.fill;
           d.integ = c.integ;                      // (until the eat pass works out its own)
+          d.lip = c.lip;                          // step C12b (the same)
           d.nbr = array<u32, 3>(0xffffffffu, 0xffffffffu, 0xffffffffu);
           // step C10: she inherits her mother's front and her honeycomb orientation and outline (explicitly: before C10 a
           // daughter's hexagon started turned at random), so a dividing lineage keeps a shared direction

@@ -1,0 +1,20 @@
+{
+ "name": "c12b-reload-old",
+ "description": "Step C12b: a snapshot saved before C12b (cells of 72 words, genomes of 52, stocks of 32; c11-end-lb-t1) loads with the lipid membranes off and runs 60 s; books exact",
+ "query": {
+  "snap": "experiments/tissue/configs/c11-end-lb-t1/snapshot.json"
+ },
+ "duration": 60,
+ "sample_every": 10,
+ "evals": [
+  {
+   "t": 1,
+   "js": "return { lipids: moire.lipids.params.on, cells: moire.cells.alive }"
+  }
+ ],
+ "shots": [
+  {
+   "t": 60
+  }
+ ]
+}

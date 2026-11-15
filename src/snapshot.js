@@ -353,7 +353,8 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       // step C11: a snapshot from before the glue turned cells runs on as it was saved: no turning, divisions by the long axis
       M.walls.params.turn = false;
       M.walls.params.divFront = false;
-      notes.push('saved before step C11: glue turning and division by the front off (as it ran)');
+      M.walls.params.freeGlue = 0;
+      notes.push('saved before step C11: glue turning and division by the front off, no free base glue (as it ran)');
     }
     if (S.founders) M.genome.founders = clone(S.founders);
 

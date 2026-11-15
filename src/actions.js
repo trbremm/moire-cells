@@ -543,6 +543,7 @@ export function makeActions(app) {
     wknob('wallMatureRate', 'maturation rate', 'matureRate', 0, 10, 1.5, 3, 'how fast a touching side matures (per s); it fades at its own rate once the contact is lost'),
     wknob('wallMatureCap', 'maturity cap', 'matureCap', 1, 3, 0.25, 2, 'a fully mature junction holds this many times its pattern’s adhesion', true),
     wknob('wallUpkeep', 'cost per adhesion', 'upkeep', 0, 0.1, 1.5, 4, 'battery upkeep per s per R of side at adhesion 1 (the linkers come on top)'),
+    wknob('wallFreeGlue', 'free base glue', 'freeGlue', 0, 3, 0.1, 2, 'step C11: each side holds this much adhesion at no cost; only what it asks above it costs linkers and upkeep', true),
   );
   // ---------- step C11: glue turns the cell, division by the front (panel only) ----------
   const tknob = (id, label, key, lo, hi, step, digits, help) => ({ ...wknob(id, label, key, lo, hi, step, digits, help), group: 'turn' });

@@ -63,7 +63,8 @@
 //               ?wallfront=0 the front not following the dipole, ?wallcost=0 adhesion free (no linkers, no upkeep), ?mature=0
 //               junctions not maturing (rules panel, Patterned walls); ?view=walls colour by wall pattern
 //   ?turn=0       step C11: start with the glue not turning the cells; ?divfront=0 divisions along the long axis, not by the front
-//               (rules panel, Glue turns cells)
+//               (rules panel, Glue turns cells); ?freeglue=x the free base glue (each side holds this much adhesion at no
+//               cost; 0 = every bit of glue costs, as in step C10)
 //   ?mut=0      start with mutation off (key M); ?life=0 with the life cycle off (key T: no births, no deaths)
 //   Experiments (src/lab.js, src/snapshot.js; README "Experiments: tools"): ?snap=<file> loads a snapshot at the start (its
 //               starting number and capacity, its settings); ?clone=1 copies the first live cell's genes to every cell
@@ -289,6 +290,8 @@ async function boot() {
       for (const [q, k] of [['walls', 'on'], ['wallfront', 'front'], ['wallcost', 'cost'], ['mature', 'mature'], ['turn', 'turn'], ['divfront', 'divFront']]) {
         if (params.has(q)) WP[k] = flag(q);
       }
+      const fg = Number(params.get('freeglue'));   // step C11: the free base glue
+      if (params.has('freeglue') && Number.isFinite(fg)) WP.freeGlue = fg;
     }
     background.heat = cells.heat;
   } catch (e) {

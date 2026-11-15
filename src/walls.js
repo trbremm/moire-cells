@@ -50,6 +50,9 @@
 //               everything is as in step C10). No rule says "face your neighbour".
 //   division    DIVISION BY THE FRONT: the daughter is put along the mother's front, across it, or at a share of a right angle
 //               between (the gene divAxis, Bio.wall.w, 0..1, mutating like a1, a2), either end; off: the long axis (step C9)
+//   free glue   the walls' cost is charged only above a FREE base glue (freeGlue 0.5 per side): every side holds that much at no
+//               cost, as every side did before C10, so a colony short of linkers packs as a honeycomb again; what a side asks above
+//               it (a sticky side's extra, a matured junction's) is built from linkers and pays upkeep, as in C10
 //
 // This module holds the switches and knobs (moire.walls.params, .look), writes the step's, the eat pass's and the drawing's words,
 // reads the census back (with the cells' stats), and gives the WALLS panel line, the overlay and stats() for the experiments.
@@ -89,6 +92,8 @@ export class Walls {
       matureCap: 2,      // a fully mature junction holds x this
       linkPer: 0.012,    // linker (atom-units) per R of side at adhesion 1 (as much again as the founders' thin membrane)
       upkeep: 0.001,     // energy per s per R of side at adhesion 1 (a fully sticky cell, about 6.6 R of wall: 0.0066 / s)
+      freeGlue: 0.5,     // step C11: the FREE base glue: each side holds up to this much adhesion at no cost (as every side did before
+                         // step C10); only what it asks above it (a sticky side's extra, a matured junction's) costs linkers and upkeep
       patternMin: 0.15,  // the census: |a1| and |a2| both below this counts as a uniform wall
       // step C11, glue turns the cell (rules panel, group "Glue turns cells (step C11)"; ?turn=0, ?divfront=0)
       turn: true,        // a contact's adhesion pulls harder where the wall is stickier, off the line between the centres: a torque
@@ -139,7 +144,7 @@ export class Walls {
     this.dt = dt;
     u[o] = this.flags(); f[o + 1] = Math.max(0, p.strength);
     f[o + 2] = this.rule('mature') ? Math.max(0, Math.min(AMAX, p.matureCap) - 1) : 0; f[o + 3] = Math.max(0, p.linkPer);
-    f[o + 4] = Math.max(0, p.upkeep) * HEAT_SCALE * dt; f[o + 5] = 0; f[o + 6] = 0; f[o + 7] = 0;
+    f[o + 4] = Math.max(0, p.upkeep) * HEAT_SCALE * dt; f[o + 5] = Math.max(0, p.freeGlue); f[o + 6] = 0; f[o + 7] = 0;
   }
 
   /** The drawing's words (struct Draw wall, wall2, wallInk[4], from word o). */

@@ -43,9 +43,12 @@ import { loadFieldShader } from './field.js';
 import { HEAT_COMMON_URL, HEAT_SCALE, LEDGER_WORDS, fmt } from './heat.js';
 import { SUBSTANCES, NCH, CH, ATOM_SCALE, ENGINES, ENGINE_KINDS, CHARGE_CODES } from './matter.js';
 import { BANDS, LIGHT_COMMON_URL } from './light.js';
+import { Membrane, MB_SNAP_WORDS } from './membrane.js';
 
-const SW = 16;                      // stock words per cell (cell_eat.wgsl)
-const EP_BYTES = 1296;              // struct EatP
+const SW = 32;                      // stock words per cell (cell_eat.wgsl; 16 until step C6c's membranes, words 16..27)
+const EP_BYTES = 1376;              // struct EatP (step C6c: + mb0..mb4)
+const EP_MB = 324;                  // ... its word mb0 (after eng: 132 + 8 x 24)
+const LG_MB = 19712;                // heat_common.wgsl: the membrane census (its first 16 numbers are a snapshot)
 // heat_common.wgsl (COUNT: 5 x 64; step C6: EV2 16 counters, 64-bit; CEN the census, 72 numbers x 16 slots)
 const LG_K = { STOCK: 11520, BAT: 13184, START: 13312, EV: 13440, COUNT: 15488, EV2: 15872, CEN: 17920 };
 const EV2 = ['pig0', 'pig1', 'pig2', 'pig3', 'made', 'deficit', 'eBurn', 'eSwap', 'eForm', 'eGain', 'eHeat', 'upkeep', 'idle', 'stored'];
@@ -108,6 +111,7 @@ export class Eat {
     this.hist = [];
     this.heatVersion = -1;
     this.charge = null;        // step C6b: the charge (src/charge.js; set by main.js)
+    this.membrane = new Membrane(this);   // step C6c: the membrane chemistry (src/membrane.js)
   }
 
   static async create(device, cells) {
@@ -230,6 +234,7 @@ export class Eat {
       u[o] = e.ins[0]; u[o + 1] = e.ins.length > 1 ? e.ins[1] : 255; u[o + 2] = e.outs[0]; u[o + 3] = e.outs.length > 1 ? e.outs[1] : 255;
       u[o + 4] = e.kind; i[o + 5] = e.g16; f[o + 6] = e.spark; u[o + 7] = 0;
     });
+    this.membrane.write(u, f, EP_MB);   // step C6c
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
   }
 
@@ -263,6 +268,7 @@ export class Eat {
     encoder.clearBuffer(this.heat.buffer, LG_K.COUNT * 4, 320 * 4);
     encoder.clearBuffer(this.heat.buffer, LG_K.CEN * 4, CEN_N * 16 * 4);   // step C6: the census
     encoder.clearBuffer(this.heat.buffer, LG_Q_CEN * 4, 4 * 16 * 4);       // step C6b: the cells' charge
+    encoder.clearBuffer(this.heat.buffer, LG_MB * 4, MB_SNAP_WORDS * 4);   // step C6c: the membrane census (snapshot)
     const pass = encoder.beginComputePass({ label: 'cell eat ledger' });
     pass.setPipeline(this.pipes.ledger);
     pass.setBindGroup(0, this.bg, [0]);
@@ -326,6 +332,7 @@ export class Eat {
     const pr = [0, 1, 2, 3].map((b) => rate2[`pig${b}`]);
     this.pig = { tot: T2.pig0 + T2.pig1 + T2.pig2 + T2.pig3, rate: pr, sum: pr.reduce((a, b) => a + b, 0) };
     this.census = this.readCensus(w, rec.time);
+    this.membrane.apply(rec, w);   // step C6c
     this.ledger = { time: rec.time, stock, atoms, chem, bat, start: this.start, full: cnt[0], empty: cnt[1], stuffed: cnt[2], n: cnt[3], hot: cnt[4], rate, rate2 };
   }
 

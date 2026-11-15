@@ -16,6 +16,9 @@
 //          w the HEAT TOLERANCE (temperature, heat per R^2)
 //   rate   step C6, genes: x y z each slot's rate (0 = an empty slot; burn, swap, form: the share of what it works on per s;
 //          harvest: the amount of pigment, its optical depth is pigK x rate); w the PERMEABILITY (per s, for the light atoms)
+//   memb   step C6c, genes of the membrane (src/membrane.js): x MIX, the heavy linkers' (L) share of the membrane (0..1, the
+//          rest light l); y THICKNESS, linker per R of membrane (atom-units); z the STIFFNESS gene (x what the material
+//          gives: heavy and thick = stiff); w the ION SELECTIVITY s (-1..1: givers pass x (1 + s), takers x (1 - s))
 // The key is the cell's own lattice (Cell.la and Cell.aux carry copies), so it shows in the dot pattern.
 //
 // Seeding: `founders` random genomes (0 = every cell its own), each cell a copy of one of them, scattered at
@@ -23,7 +26,7 @@
 
 import { ENGINES, engineIndex } from './matter.js';
 
-export const BIO_FLOATS = 40;
+export const BIO_FLOATS = 44;   // (40 until step C6c's membrane genes)
 export const BIO_BYTES = BIO_FLOATS * 4;
 
 export const KEY_SPAN = Math.PI / 3;
@@ -49,7 +52,7 @@ const U = (rng, a, b) => a + (b - a) * rng();
 const logU = (rng, a, b) => a * Math.pow(b / a, rng());
 
 /** One random genome, as a plain array of BIO_FLOATS numbers. */
-export function randomGenome(rng, founder) {
+export function randomGenome(rng, founder, mrng = rng) {
   const g = new Array(BIO_FLOATS).fill(0);
   g[0] = U(rng, 0, KEY_SPAN); g[1] = U(rng, -KEY_SMAX, KEY_SMAX);
   g[2] = U(rng, 0, KEY_SPAN); g[3] = U(rng, -KEY_SMAX, KEY_SMAX);
@@ -64,6 +67,7 @@ export function randomGenome(rng, founder) {
   g[18] = logU(rng, 0.5, 2);             // motility
   g[19] = U(rng, 0, 2 * Math.PI);        // crawling heading (state, not a gene)
   engines(g, rng, STRATEGIES[Math.floor(rng() * STRATEGIES.length)]);
+  membrane(g, mrng, mrng() < 0.25);   // step C6c (its own random stream, so a seed's founders keep their other genes)
   return g;
 }
 
@@ -103,6 +107,17 @@ function engines(g, rng, strategy) {
   g[39] = logU(rng, 1.5, 6);             // permeability (C5's global: 3)
 }
 
+// Step C6c: the founders' membranes: mostly light and thin (cheap: few linkers, the light ones), a few heavy and thicker
+// (founder k with k mod 4 = 3, i.e. 3 of the default 12, one of each of three strategies; with founders = 0, a quarter of
+// the cells at random). The stiffness gene near 1, the ion selectivity near neutral (charge separation is left to mutation).
+export const MEMB_THIN = 0.012;          // the founders' usual thickness (linker atom-units per R of membrane)
+function membrane(g, rng, heavy) {
+  g[40] = heavy ? U(rng, 0.55, 0.9) : U(rng, 0, 0.15);                         // mix
+  g[41] = heavy ? logU(rng, 1.5 * MEMB_THIN, 3 * MEMB_THIN) : logU(rng, 0.7 * MEMB_THIN, 1.4 * MEMB_THIN);   // thickness
+  g[42] = logU(rng, 0.8, 1.25);                                                // stiffness gene
+  g[43] = U(rng, -0.08, 0.08);                                                 // ion selectivity
+}
+
 /** The strategy a genome's engines amount to: 'harvest', 'burn', 'both' or 'other' (as the census and the view). */
 export function strategyOf(g, o = 0) {
   let h = false, b = false;
@@ -118,6 +133,7 @@ export class Genome {
   constructor(seed) {
     this.seed = seed >>> 0;
     this.rng = makeRng(this.seed);
+    this.mrng = makeRng(this.seed ^ 0x6c6c6c6c);   // step C6c: the membrane genes' own stream
     this.founders = [];
     // live-tunable (moire.genome.params); the rule switches are keys
     this.params = {
@@ -154,8 +170,9 @@ export class Genome {
     const n = Math.max(0, Math.round(this.params.founders));
     this.founders = [];
     for (let k = 0; k < n; k++) {
-      const g = randomGenome(this.rng, k);
+      const g = randomGenome(this.rng, k, this.mrng);
       engines(g, this.rng, STRATEGIES[k % STRATEGIES.length]);   // step C6: a spread of engine sets over the founders
+      membrane(g, this.mrng, k % 4 === 3);                         // step C6c: mostly light thin membranes, a few heavy
       this.founders.push(g);
     }
   }
@@ -168,10 +185,10 @@ export class Genome {
     if (!this.founders.length && this.params.founders > 0) this.newFounders();
     const keys = new Float32Array(n * 2);
     for (let i = 0; i < n; i++) {
-      const g = this.founders.length ? this.founders[Math.floor(this.rng() * this.founders.length)] : randomGenome(this.rng, i);
+      const g = this.founders.length ? this.founders[Math.floor(this.rng() * this.founders.length)] : randomGenome(this.rng, i, this.mrng);
       const o = i * BIO_FLOATS;
       for (let k = 0; k < BIO_FLOATS; k++) f[o + k] = g[k];
-      for (let k = 20; k < 32; k++) f[o + k] = 0;   // accumulators and step 6 state start empty (32..39: step C6's genes)
+      for (let k = 20; k < 32; k++) f[o + k] = 0;   // accumulators and step 6 state start empty (32..43: step C6's and C6c's genes)
       keys[2 * i] = g[0]; keys[2 * i + 1] = g[1];
     }
     return keys;

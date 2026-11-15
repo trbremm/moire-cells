@@ -609,8 +609,17 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     let dv = v2 - v0;
     var rad = c.rad;
     var rv = c.radV;
+    // step C6c, membrane chemistry: the stiffness is the cell's own (genetic elasticity: from its membrane's material and
+    // its stiffness gene; omega^2 x kc, the damping x sqrt(kc), so every cell keeps the damping ratio), and a damaged side
+    // is softer: corner k (between sides k - 1 and k) x (soft + (1 - soft) x their mean integrity)
+    let mbF = bitcast<u32>(FL.memb.x);
+    let kc = select(1.0, memb_stiff(bio.memb, FL.memb.y), (mbF & MB_ELASTIC) != 0u);
+    let softOn = (mbF & MB_SOFT) != 0u;
+    let ig = c.integ;
     for (var k = 0; k < 6; k++) {
-      let acc = -FL.hex.x * (rad[k] - tgt[k]) - FL.hex.y * rv[k];
+      var kk = kc;
+      if (softOn) { kk *= FL.memb.z + (1.0 - FL.memb.z) * 0.5 * (ig[(k + 5) % 6] + ig[k]); }
+      let acc = -FL.hex.x * kk * (rad[k] - tgt[k]) - FL.hex.y * sqrt(kk) * rv[k];
       rv[k] += acc * S.dt - FL.hex.w * dot(dv, hu[k]);
       rad[k] += rv[k] * S.dt;
       if (rad[k] > bound[k]) { rad[k] = bound[k]; rv[k] = min(rv[k], 0.0); }
@@ -689,11 +698,23 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     let tol = select(FL.tol, bio.eng.w, (FL.eat & EAT_TOLG) != 0u);
     hot = FL.heatKill * clamp(temp / max(tol, 1e-3) - 1.0, 0.0, 1.0);
   }
+  // step C6c, membrane chemistry: a cell that BURST (the eat pass spilled everything and marked it) counts its ticks; after
+  // BURST_TICKS (the drawing's flash) a touching neighbour divides into its slot as at any death
+  let bt = cell_burst(c.flags);
+  var burstDie = false;
+  if (bt != 0u) {
+    if ((bitcast<u32>(FL.memb.x) & MB_BURST) != 0u) {
+      burstDie = bt >= BURST_TICKS;
+      c.flags = (c.flags & ~CELL_BURST_MASK) | (min(bt + 1u, 15u) << CELL_BURST_SHIFT);
+    } else {
+      c.flags &= ~CELL_BURST_MASK;
+    }
+  }
   if (turnOn && parent != 0xffffffffu) {
     let rate = S.turnover * (1.0 + S.unhappy * (1.0 - min(M, 1.0)));
-    let ud = rand01(c.seed ^ 0x165667b1u, S.tick);
+    let ud = select(rand01(c.seed ^ 0x165667b1u, S.tick), -1.0, burstDie);
     if (ud < (rate + hot) * S.dt) {
-      if (ud < hot * S.dt) { atomicAdd(&stats.heatDeaths, 1u); }
+      if (ud < hot * S.dt && !burstDie) { atomicAdd(&stats.heatDeaths, 1u); }
       let bs = pcg(c.seed ^ pcg(S.tick * 0x9e3779b9u + i));    // this birth's random stream
       let pc = sorted[parent];
       let pi = beats[parent].idx;
@@ -729,6 +750,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       // step C5: the eat pass hands the dead cell's stock back to the dish where it died, and gives the newborn half of
       // its parent's stock and battery (the newborn's battery share until then: half the parent's)
       d.flags = CELL_ALIVE | CELL_BORN;
+      d.flags |= pc.flags & CELL_WHOLE;         // step C6c: a daughter of a whole membrane gets real sides from it (split)
       d.dead = c.pos;
       d.mom = pi;
       d.bat = 0.5 * pc.bat;

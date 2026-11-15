@@ -35,9 +35,10 @@ const LIGHT_COMMON_URL = 'src/shaders/light_common.wgsl';
 
 export const HEAT_COMMON_URL = 'src/shaders/heat_common.wgsl';
 export const HEAT_SCALE = 65536;          // counts per energy unit (HEAT_SCALE in heat_common.wgsl)
-export const LEDGER_WORDS = 19712;              // LEDGER_WORDS in heat_common.wgsl (words 3072 on: step C3's matter ledger;
+export const LEDGER_WORDS = 20224;              // LEDGER_WORDS in heat_common.wgsl (words 3072 on: step C3's matter ledger;
                                                 // 10240 on: step C4's chemistry; 11520 on: step C5, cells eat; 15872 on:
-                                                // step C6, engines; 19136 on: step C6b, charge. 19200 until C6b)
+                                                // step C6, engines; 19136 on: step C6b, charge; 19712 on: step C6c, the
+                                                // membrane chemistry. 19200 until C6b, 19712 until C6c)
 // ledger regions [first word, slots]; OUT, HEAT and MOVE are 64-bit (the carry words follow 64 words later)
 const LG = { WORK: [0, 256], BASE: [256, 64], OUT: [320, 64], HEAT: [448, 64], MOVE: [576, 64], DRAG: [704, 160], KICK: [864, 160] };
 const LG_WIDE = new Set(['OUT', 'HEAT', 'MOVE']);

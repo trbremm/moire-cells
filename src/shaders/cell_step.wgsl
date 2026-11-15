@@ -124,6 +124,24 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var tSame = 0u;                            // ... of which in the same state
   var nState = array<u32, 4>(0u, 0u, 0u, 0u); // rule 2: same-type neighbours per state within the shell (below)
   let shell = max(1.05 * S.exclReach, 1.2);   // ... x contact distance: the first ring of neighbours, not the second
+  // step C6d, charge per side (src/dipole.js): this cell's dipole d (saturated, from its side charges); the neighbours' dipoles
+  // (their lean copies) make a field at it, eDD (sum of w (3 (d_j . n) n - d_j), n from the neighbour to this cell, w (R0 /
+  // dist)^3 tapered to 0 at the range), and push it, fDD (the force between two dipoles: head-to-tail attract, side by side
+  // repel, the same kernel / x)
+  let dpF = bitcast<u32>(FL.dip0.x);
+  let dipOn = (dpF & DP_ON) != 0u;
+  let ddOn = dipOn && (dpF & DP_DD) != 0u;
+  var myD = vec2f(0.0);
+  if (dipOn) { myD = dip_sat(cell_dipole_raw(c, mb), FL.dip0.y); }
+  let myDm = length(myD);
+  let ddR = max(FL.dip0.z, 1.0);
+  var eDD = vec2f(0.0);
+  var fDD = vec2f(0.0);
+  let dCount = S.xCount != 0u && dipOn;
+  var dPairs = 0u;
+  var dCos = 0;
+  var dHtt = 0;
+  var dBonds = 0u;
 
   // every neighbour within reach: contact push, and (differentiation on) recognition and signals
   let rg = grid_range_n(S, grid_xy(S, c.pos), select(1, i32(FL.bReach), feelB || relayOn));
@@ -179,6 +197,34 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
             let u6 = vec2f(u3.x * u3.x - u3.y * u3.y, 2.0 * u3.x * u3.y);
             torque -= wt * (u6.x * rot6.y + u6.y * rot6.x);
             tw += wt;
+          }
+        }
+        // step C6d: the neighbour's dipole (only it: a cell's own side charges sit inside its own outline)
+        // (the census counts the pairs also while dipole-dipole is off, for comparison)
+        if ((ddOn || dCount) && d2 < ddR * ddR * R0 * R0 && d2 > 1e-6) {
+          let od = o.dip;
+          let odm = length(od);
+          if (odm > 1e-4) {
+            let dd = sqrt(d2);
+            let nn = -d / dd;
+            if (ddOn) {
+              let xr = max(dd / R0, 0.5);
+              let wd = (1.0 - smoothstep(0.7 * ddR, ddR, xr)) / (xr * xr * xr);
+              let dn = od.x * nn.x + od.y * nn.y;
+              eDD += wd * (3.0 * dn * nn - od);
+              let mn = myD.x * nn.x + myD.y * nn.y;
+              fDD += (wd / xr) * (dn * myD + mn * od + (myD.x * od.x + myD.y * od.y) * nn - 5.0 * mn * dn * nn);
+            }
+            if (dCount && myDm > DIP_MIN && odm > DIP_MIN && dd < S.reach * R0) {
+              let ua = myD / myDm;
+              let ub = od / odm;
+              let ca = ua.x * ub.x + ua.y * ub.y;
+              let ht = (ua.x * nn.x + ua.y * nn.y) * (ub.x * nn.x + ub.y * nn.y);
+              dPairs++;
+              dCos += i32(round(1000.0 * ca));
+              dHtt += i32(round(1000.0 * ht));
+              if (ht > DIP_BOND && ca > DIP_BOND) { dBonds++; }
+            }
           }
         }
         if (relayOn && d2 < cutB * cutB) {
@@ -336,6 +382,37 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     let qm = length(fq);
     let qs = FL.qSat * S.R;
     if (qm > 1e-6) { f += fq * (qs * tanh(qm / qs) / qm); }
+  }
+
+  // step C6d: the field on the side charges: the neighbours' dipoles (eDD) and the substrate's charge field (-grad phi across
+  // the membrane, Cell.efield, saturating: tanh(|grad| / dip1.z), weighted by dip2.y). It turns the dipole toward it (torque
+  // d x E: the hexagon turns, below, and the charges turn within the cell) and stretches the cell along it (the stretch target
+  // gets the traceless part of E (x) d: a dipole along the field pulls the cell out along it, one across it shears it). The
+  // dipoles' push (fDD) moves the cell, saturating; its work is booked with the other forces'
+  var eTot = vec2f(0.0);
+  var ePhi = vec2f(0.0);
+  var es = vec2f(0.0);
+  var dTorque = 0.0;
+  var dStretch = vec2f(0.0);
+  if (dipOn) {
+    if (ddOn) {
+      eTot = eDD;
+      let fd = FL.dip1.x * S.R * fDD;
+      let fdm = length(fd);
+      let fds = FL.dip1.y * S.R;
+      if (fdm > 1e-6) { f += fd * (fds * tanh(fdm / fds) / fdm); }
+    }
+    let efm = length(c.efield);
+    if (FL.dip2.y > 0.0 && efm > 1e-9) {
+      ePhi = -c.efield / efm * tanh(efm / max(FL.dip1.z, 1e-6));
+      eTot += FL.dip2.y * ePhi;
+    }
+    if ((dpF & DP_FIELD) != 0u) {
+      let em = length(eTot);
+      es = select(vec2f(0.0), eTot * (tanh(em) / em), em > 1e-6);
+      dTorque = myD.x * es.y - myD.y * es.x;
+      dStretch = FL.dip1.w * vec2f(es.x * myD.x - es.y * myD.y, es.x * myD.y + es.y * myD.x);
+    }
   }
 
   // field B's force: area x gradient (the membrane integral, for a field this smooth over the cell), scaled as
@@ -565,6 +642,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // outline; muscle stretches along its crawling heading. As the reference's step(); length capped at 0.5.
   // (step C6c: a honeycomb cell has no passive squeeze in its target: contact presses its sides flat instead, below)
   var t = select(0.5 * C, vec2f(0.0), hexShape);
+  t += dStretch;                             // step C6d: a polarised cell in a field stretches along it
   if (S.activeGain > 0.0) {
     let spd = length(c.vel);
     if (spd > 0.01) {
@@ -656,7 +734,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     c.alpha = al;
     // the hexagon turns toward its neighbours (mean pull over the touching ones), damped
     let tq = torque / max(tw, 1.0);
-    c.spin += (FL.hex.z * tq - S.hexTurnDamp * c.spin) * S.dt;
+    c.spin += (FL.hex.z * tq + FL.dip0.w * dTorque - S.hexTurnDamp * c.spin) * S.dt;   // (step C6d: + the field's torque)
     c.theta += c.spin * S.dt + mean;
     c.theta -= TAU * floor(c.theta / TAU);
     // the stretch e1, e2 (the strained lattice k = F^-1 k0, the census) from the outline's second moment of area about the
@@ -677,6 +755,56 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     let e = select(vec2f(0.0), tl * (min(eps, 0.5) / max(tlm, 1e-12)), tlm > 1e-9 * (M.x + M.z));
     c.e1 = e.x;
     c.e2 = e.y;
+  }
+
+  // step C6d: the charges also move WITHIN the cell (they are free to move inside, and a packed cell's hexagon is held by its
+  // neighbours): the dipole part of the side charges' pattern turns toward the field by dip2.x x torque x dt (at most 0.2 rad
+  // a tick), and the field POLARISES the cell: it pulls the mobile charge toward a dipole along it, a source of dip2.z x dt x
+  // (E . u_k) on side k (u_k its direction), which the eat pass's evening out (dpRelax) balances at a dipole of `polar` x
+  // pHalf in a full field (and its cap, by the charge the cell really holds, bounds). Their sum (the cell's net charge, which
+  // the eat pass keeps) is unchanged
+  let polOn = (dpF & DP_FIELD) != 0u && FL.dip2.z > 0.0 && dot(es, es) > 1e-8;
+  if (dipOn && ((dTorque != 0.0 && FL.dip2.x > 0.0) || polOn)) {
+    let da = clamp(FL.dip2.x * dTorque * S.dt, -0.2, 0.2);
+    var sq = c.sideQ;
+    var mean = 0.0;
+    for (var k = 0; k < 6; k++) { mean += sq[k]; }
+    mean /= 6.0;
+    var u: array<vec2f, 6>;
+    var p1 = vec2f(0.0);
+    for (var k = 0; k < 6; k++) {
+      u[k] = mb.mid[k] / max(length(mb.mid[k]), 1e-6);
+      p1 += (sq[k] - mean) * u[k];
+    }
+    var pp = vec2f(-p1.y, p1.x) * (da / 3.0);
+    if (polOn) { pp += es * (FL.dip2.z * S.dt); }
+    var inc: array<f32, 6>;
+    var im = 0.0;
+    for (var k = 0; k < 6; k++) { inc[k] = pp.x * u[k].x + pp.y * u[k].y; im += inc[k]; }
+    im /= 6.0;
+    for (var k = 0; k < 6; k++) { sq[k] += inc[k] - im; }
+    c.sideQ = sq;
+  }
+  if (dCount && (c.flags & CELL_ALIVE) != 0u) {
+    atomicAdd(&stats.dip[STATS_D_ALL], 1u);
+    atomicAdd(&stats.dip[STATS_D_SUM], u32(round(myDm * 1000.0)));
+    if (myDm > DIP_MIN) {
+      atomicAdd(&stats.dip[STATS_D_POL], 1u);
+      atomicAdd(&stats.dip[STATS_D_EDD], u32(round(min(length(eDD), 100.0) * 1000.0)));
+      atomicAdd(&stats.dip[STATS_D_EPHI], u32(round(length(ePhi) * 1000.0)));
+      atomicAdd(&stats.dip[STATS_D_STR], u32(round(length(dStretch) * 1000.0)));
+      let em = length(eTot);
+      if (em > 0.05) {
+        atomicAdd(&stats.dip[STATS_D_NALIGN], 1u);
+        atomicAdd(&stats.dip[STATS_D_ALIGN], bitcast<u32>(i32(round(1000.0 * (myD.x * eTot.x + myD.y * eTot.y) / (myDm * em)))));
+      }
+    }
+    if (dPairs > 0u) {
+      atomicAdd(&stats.dip[STATS_D_PAIRS], dPairs);
+      atomicAdd(&stats.dip[STATS_D_COS], bitcast<u32>(dCos));
+      atomicAdd(&stats.dip[STATS_D_HTT], bitcast<u32>(dHtt));
+    }
+    if (dBonds >= 2u) { atomicAdd(&stats.dip[STATS_D_MID], 1u); } else if (dBonds == 1u) { atomicAdd(&stats.dip[STATS_D_END], 1u); }
   }
 
   // turnover: now and then a cell dies and a touching neighbour divides into its place, the daughter a copy

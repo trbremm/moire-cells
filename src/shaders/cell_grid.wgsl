@@ -6,9 +6,9 @@
 //   scan_local  exclusive prefix sum of counts within blocks of 512 grid cells; block totals to blockSums
 //   scan_top    one workgroup: exclusive prefix sum of blockSums, in chunks of 512 with a running carry
 //   scan_add    adds each block's offset: starts[g] = first slot of grid cell g in the sorted list
-//   scatter     one invocation per cell: copies it to sorted[starts[g] + rank], and its index to sortIdx;
-//               also works out the cell's beats against the medium (cell_beat: field A and field B) into
-//               beats[the same slot]
+//   scatter     one invocation per cell: copies it to sorted[starts[g] + rank] (step C6d: with its dipole, from its side
+//               charges), and its index to sortIdx; also works out the cell's beats against the medium (cell_beat: field
+//               A and field B) into beats[the same slot]
 // After this, the cells of grid cell g are sorted[starts[g] .. starts[g] + counts[g]), with their beats.
 // Only core WebGPU: storage-buffer atomics and workgroup memory (256 invocations, 1 KiB of workgroup memory).
 
@@ -110,7 +110,10 @@ fn scatter(@builtin(global_invocation_id) id: vec3u) {
   let gr = cellGrid[i];
   let dst = starts[gr.x] + gr.y;
   let c = cells[i];
-  sorted[dst] = cell_core(c);
+  // step C6d: the cell's saturated dipole from its side charges, for its neighbours (the lean copy has no side slots)
+  var dip = vec2f(0.0);
+  if ((bitcast<u32>(FL.dip0.x) & DP_ON) != 0u && (c.flags & CELL_ALIVE) != 0u) { dip = dip_sat(cell_dipole_raw(c, membrane(c)), FL.dip0.y); }
+  sorted[dst] = cell_core(c, dip);
   sortIdx[dst] = i;
   var b = cell_beat(c, S, med, FL);
   b.idx = i;

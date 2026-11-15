@@ -56,19 +56,23 @@ struct Cell {
   integ: array<f32, 6>, // C6c, membrane chemistry: each side's integrity, 0..1 (its linker material / what the genes ask
                     // for; written by the eat pass every tick, 1 while the membrane chemistry is off), read by the step
                     // (a damaged side is softer) and the drawing (a damaged side's tube dims and breaks)
-  sideQ: array<f32, 6>, // C6d: each side's charge (dipoles; reserved, zero)
+  sideQ: array<f32, 6>, // step C6d, charge per side: each side's share of the cell's charge (atom-units; written by the eat pass,
+                    // which keeps their sum equal to the stock's net charge qNet, and turned within the cell by the step: see
+                    // "dipoles" below). A neutral cell can still be polarised: + on one side, - on the other
 };
 
-// Step C6c: the part of a cell its neighbours read, the grid's sorted copy (cell_grid.wgsl scatter; 104 bytes, keep in step
+// Step C6c: the part of a cell its neighbours read, the grid's sorted copy (cell_grid.wgsl scatter; 112 bytes, keep in step
 // with CELL_CORE_BYTES in src/cells.js): Cell without the honeycomb outline and the per-side slots, so the step's neighbour
-// loop reads no more memory than before the Cell grew (a cell reads its own outline from its own slot in `cells`)
+// loop reads little more memory than before the Cell grew (a cell reads its own outline from its own slot in `cells`).
+// Step C6d: plus the cell's DIPOLE (dip: its saturated dipole vector, from its side charges, worked out once per tick by the
+// scatter), which is all a neighbour needs of the six side charges
 struct CellCore {
   pos: vec2f, vel: vec2f, r: f32, la: f32, e1: f32, e2: f32, kind: u32, flags: u32, seed: u32, aux: f32, z: vec2f,
-  dead: vec2f, bat: f32, pay: i32, mom: u32, fill: f32, smell: vec2f, q: f32, qNet: f32, efield: vec2f,
+  dead: vec2f, bat: f32, pay: i32, mom: u32, fill: f32, smell: vec2f, q: f32, qNet: f32, efield: vec2f, dip: vec2f,
 };
-fn cell_core(c: Cell) -> CellCore {
+fn cell_core(c: Cell, dip: vec2f) -> CellCore {
   return CellCore(c.pos, c.vel, c.r, c.la, c.e1, c.e2, c.kind, c.flags, c.seed, c.aux, c.z,
-                  c.dead, c.bat, c.pay, c.mom, c.fill, c.smell, c.q, c.qNet, c.efield);
+                  c.dead, c.bat, c.pay, c.mom, c.fill, c.smell, c.q, c.qNet, c.efield, dip);
 }
 
 const CELL_ALIVE: u32 = 1u;
@@ -270,7 +274,26 @@ struct Stats {
   bins: array<atomic<u32>, 144>,      // census: cells per key bin
   founders: array<atomic<u32>, 1632>, // census: bit set = that founder line still has cells
   extra: array<atomic<u32>, 80>,      // census (step 6): see STATS_X_* below
+  dip: array<atomic<u32>, 16>,        // step C6d (cleared every frame, counted on its last tick): STATS_D_* below; signed sums
+                                      // are added as i32 bits (two's complement) and read back as Int32
 };
+// step C6d census counters in Stats.dip (pairs of touching neighbours both polarised, |d| above DIP_MIN, counted from both sides)
+const STATS_D_PAIRS: u32 = 0u;      // such pairs
+const STATS_D_COS: u32 = 1u;        // ... sum of cos(angle between their dipoles) x 1000 (polar order; random: 0)
+const STATS_D_HTT: u32 = 2u;        // ... sum of (d_i . n)(d_j . n) / (|d_i| |d_j|) x 1000, n the line between them (head-to-tail
+                                    // along the line: +1, side by side: 0, head-to-head: -1; random: 0)
+const STATS_D_POL: u32 = 3u;        // cells polarised (|d| above DIP_MIN)
+const STATS_D_SUM: u32 = 4u;        // sum of |d| x 1000 over all cells
+const STATS_D_MID: u32 = 5u;        // cells with two or more head-to-tail bonds (inside a thread)
+const STATS_D_END: u32 = 6u;        // cells with exactly one (a thread's end, or a pair)
+const STATS_D_EDD: u32 = 7u;        // sum of |the neighbours' dipole field| x 1000 (polarised cells)
+const STATS_D_EPHI: u32 = 8u;       // sum of |the substrate's field, saturated| x 1000 (polarised cells)
+const STATS_D_ALIGN: u32 = 9u;      // sum of cos(dipole, total field) x 1000 (polarised cells feeling a field above 0.05)
+const STATS_D_NALIGN: u32 = 10u;    // ... those cells
+const STATS_D_STR: u32 = 11u;       // sum of |the stretch target the field adds| x 1000
+const STATS_D_ALL: u32 = 12u;       // cells counted
+const DIP_MIN: f32 = 0.2;
+const DIP_BOND: f32 = 0.5;          // a head-to-tail bond: (d_i . n)(d_j . n) and d_i . d_j (unit vectors) both above this
 // step 6 census counters in Stats.extra
 const STATS_X_LEAK: u32 = 0u;       // cells leaking (leak level above 0.25)
 const STATS_X_CONV: u32 = 1u;       // converted cells
@@ -499,6 +522,21 @@ fn membrane(c: Cell) -> Membrane {
   return mb;
 }
 
+// Step C6d: a cell's dipole from its side charges: p = sum_k sideQ[k] x (side k's middle - centre) / r (atom-units; the
+// sides' middles relative to the centre, in units of the radius, so a big and a small cell holding the same charges have
+// the same dipole), and its saturated form d = p / |p| x tanh(|p| / pHalf) (length 0..1), as the rules use it
+fn cell_dipole_raw(c: Cell, mb: Membrane) -> vec2f {
+  var p = vec2f(0.0);
+  let sq = c.sideQ;
+  for (var k = 0; k < 6; k++) { p += sq[k] * mb.mid[k]; }
+  return p / max(c.r, 1e-3);
+}
+fn dip_sat(p: vec2f, pInv: f32) -> vec2f {
+  let m = length(p);
+  if (m < 1e-9) { return vec2f(0.0); }
+  return p * (tanh(m * pInv) / m);
+}
+
 // Adds an emitter's field, averaged exactly along each membrane segment, to seg[0..6) (sense() in the reference).
 // The field is w * (1/3) sum_m cos(q_m . (x - epos) + ph_m) / (1 + |x - epos|^2 / r0sq); rel = cell centre - epos.
 // Along a straight segment, the mean of cos(q . x + p) is cos at the midpoint times sinc(q . edge / 2); the
@@ -526,7 +564,7 @@ fn sense_field(seg: ptr<function, array<f32, 6>>, mb: Membrane, rel: vec2f, q0: 
 // in its own band: every lattice involved (the cell's and the medium's) is `bBand` times longer, so A and B
 // make no slow beat with each other; it reaches further (power law from a larger r0) and has its own sign rule.
 // Each fate carries a charge per field: how strongly it emits into that field and listens to it.
-// Written once per frame by src/cells.js (writeFields; keep in step); 288 bytes (256 until step C6c).
+// Written once per frame by src/cells.js (writeFields; keep in step); a 320-byte buffer (256 until step C6c, 288 until C6d).
 struct Fields {
   qA: vec4f,        // field A charge per fate: stem, epithelium, muscle, neuron (1 = as in step 4)
   qB: vec4f,        // field B charge per fate (signed: like charges repel, when bSign = 1)
@@ -600,7 +638,19 @@ struct Fields {
   memb: vec4f,      // x bits: MB_ELASTIC genetic elasticity, MB_SOFT damaged sides are softer, MB_BURST bursting (with
                     // turnover); y the thickness at which a light membrane has stiffness 1 (memb_stiff); z a fully damaged
                     // side's stiffness, as a share of its intact one; w spare
+  // ---- step C6d, charge per side: dipoles (src/dipole.js) ----
+  dip0: vec4f,      // x bits DP_*; y 1 / pHalf (a dipole of pHalf atom-units x r is tanh(1) of full); z the dipole-dipole
+                    // range (x the contact distance); w the torque's gain (rad / s^2 at full dipole and field)
+  dip1: vec4f,      // x the dipole-dipole push (R / s at full dipoles touching); y ... saturating at (R / s); z the substrate's
+                    // field: phi per R that gives tanh(1) of a full field; w the stretch along the field (x activeGain)
+  dip2: vec4f,      // x the charges turn within the cell toward the field (rad / s at full torque); y the substrate field's
+                    // weight in the field, against the neighbours' dipoles (1); z the field polarises the cell: the source of side
+                    // charge along it (atom-units per s at a full field: dpRelax x polar x pHalf / 2.6); w spare
 };
+const DP_ON: u32 = 1u;       // dipoles (master): the side charges make a dipole (lean copy, drawing)
+const DP_DD: u32 = 2u;       // dipole-dipole between near cells: torque (head-to-tail lines up), push (head-to-tail attract,
+                             // side-by-side repel)
+const DP_FIELD: u32 = 4u;    // the field turns and stretches cells: the torque (body and charges within) and the stretch
 const MB_ELASTIC: u32 = 1u;
 const MB_SOFT: u32 = 2u;
 const MB_BURST: u32 = 4u;

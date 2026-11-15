@@ -1,0 +1,83 @@
+{
+ "name": "c10-pol-off-m0-rnd",
+ "series": "pat",
+ "description": "polar: front sticky, back not; field A not felt; maturation off; fronts random",
+ "tissue_setting": {
+  "knobs": {
+   "cells.params.senseOn": false,
+   "walls.params.cost": false,
+   "walls.params.mature": false
+  },
+  "genes": {
+   "adhesion": 0.4,
+   "a1": 0.5,
+   "a2": 0.0,
+   "w": 0
+  },
+  "typeB": null,
+  "query": {},
+  "extra_js": "",
+  "fronts": "random"
+ },
+ "query": {
+  "seed": 3,
+  "cells": 40,
+  "mut": 0,
+  "life": 0,
+  "clone": 1,
+  "springs": 0,
+  "light": "off",
+  "day": 0
+ },
+ "duration": 120,
+ "sample_every": 5,
+ "tissue": true,
+ "evals": [
+  {
+   "t": 0,
+   "js": "const T = await import('/experiments/tissue/tissue-lab.js'); window.__T = T;\nconst knobs = T.apply({\"cells.params.squeeze\": 0, \"genome.rules.diff\": false, \"eat.params.pay\": false, \"cells.params.senseOn\": false, \"walls.params.cost\": false, \"walls.params.mature\": false});\nconst g = {\"keyAngle\": 0.35, \"keyScale\": 0.05, \"recAngle\": 0.35, \"recScale\": 0.05, \"recWidth\": 0.15, \"size\": 1, \"motility\": 1, \"mix\": 0, \"thickness\": 0.012, \"stiffness\": 1, \"pumpRate0\": 0, \"pumpRate1\": 0, \"rate0\": 2, \"rate1\": 0, \"rate2\": 0, \"adhesion\": 0.4, \"a1\": 0.5, \"a2\": 0.0, \"w\": 0}; g.eng0 = moire.genome.engineCode('gt → g + t', 0);\nawait T.genes(g, null);\nconst fr = await T.fronts({\"mode\": \"random\"});\n\nreturn { knobs, genes: g, fronts: fr, m: await T.measure({ every: 1 }) };"
+  },
+  {
+   "t": 60,
+   "js": "return await __T.measure({ every: 1 });"
+  },
+  {
+   "t": 80,
+   "js": "return await __T.measure({ every: 1 });"
+  },
+  {
+   "t": 82,
+   "js": "return await __T.stirThrough();"
+  },
+  {
+   "t": 120,
+   "js": "return await __T.measure({ every: 1 });"
+  }
+ ],
+ "shots": [
+  {
+   "t": 60
+  },
+  {
+   "t": 80
+  },
+  {
+   "t": 120
+  },
+  {
+   "t": 120,
+   "view": "walls"
+  },
+  {
+   "t": 120,
+   "view": "machinery"
+  }
+ ],
+ "snapshots": [
+  {
+   "t": 120,
+   "grid": false,
+   "name": "end"
+  }
+ ]
+}

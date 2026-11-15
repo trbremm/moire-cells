@@ -1,0 +1,23 @@
+{
+ "batch": "c10-more",
+ "runs": [
+  "c10-uni-lb-100-al.json",
+  "c10-uni-lb-100-rnd.json",
+  "c10-pol-lb-100-al.json",
+  "c10-pol-lb-100-rnd.json",
+  "c10-end-lb-100-al.json",
+  "c10-end-lb-100-rnd.json",
+  "c10-sid-lb-100-al.json",
+  "c10-sid-lb-100-rnd.json",
+  "c10-pol+-lb-in.json",
+  "c10-pol--lb-in.json",
+  "c10-pol+-lb-out.json",
+  "c10-pol--lb-out.json",
+  "c10-uni-lb-wallsoff.json",
+  "c10-uni-lb-cost.json",
+  "c10-end-lb-wallsoff.json",
+  "c10-end-lb-cost.json",
+  "c10-sid-lb-wallsoff.json",
+  "c10-sid-lb-cost.json"
+ ]
+}

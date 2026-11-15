@@ -15,7 +15,7 @@
 //   moire.genome.cloneAll(i)    copy cell i's genes (default: the first live cell's) to every live cell; moire.genome.setAll(
 //                               field, value) or setAll({ field: value, ... }) one gene for all; moire.genome.get(i); the gene
 //                               names: moire.genome.GENES; engineCode(name, band), pumpCode(substance, 'in' | 'out')
-//   moire.lab.view(name)        for screenshots: 'clean' | 'fate' | 'lineage' | 'strategy' | 'charge' | 'machinery'; returns the
+//   moire.lab.view(name)        for screenshots: 'clean' | 'fate' | 'lineage' | 'strategy' | 'charge' | 'walls' | 'machinery'; returns the
 //                               previous view for moire.lab.restoreView(prev)
 // URL options handled here, once the page runs: ?snap=<file> (load a snapshot; its settings replace the page's), then
 // ?clone=1 (cloneAll of the first live cell; ?clone=@N: of slot N) and ?genes=adhesion:0.8,motility:0.5 (setAll each).
@@ -35,6 +35,9 @@ export const GENES = {
   adhesion: 16, size: 17, motility: 18,
   eng0: 32, eng1: 33, eng2: 34, tolerance: 35, rate0: 36, rate1: 37, rate2: 38, permeability: 39,
   mix: 40, thickness: 41, stiffness: 42, selectivity: 43, pump0: 44, pump1: 45, pumpRate0: 46, pumpRate1: 47,
+  // step C10, the patterned walls: a0 is the adhesion gene itself; a1 the polar part, a2 the two-fold part, w how much the front
+  // follows the dipole
+  a0: 16, a1: 48, a2: 49, w: 50, wallFront: 50,
 };
 // words 19..31 are the cell's state, not genes (heading, accumulators, felt fields, conversion)
 const STATE = new Set([19, ...Array.from({ length: 12 }, (_, k) => 20 + k)]);
@@ -78,6 +81,8 @@ function gather(M, ctl) {
   flatten(M.catalysts.census, 'catalysts', out);
   flatten(M.hardlight.census, 'hardlight', out);
   flatten(M.division.census, 'division', out);
+  flatten(M.walls.census, 'walls', out);         // step C10: the patterned walls' census
+  if (M.walls.near) flatten(M.walls.near, 'wallstats', out);
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;
   if (C.stats) flatten({ fate: C.stats.fate, births: C.stats.births, deaths: C.stats.deaths, heatDeaths: C.stats.heatDeaths,

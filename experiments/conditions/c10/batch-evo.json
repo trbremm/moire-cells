@@ -1,0 +1,1 @@
+{"batch": "c10-evo", "description": "Step C10: patterned walls on vs off in the default scene, seeds 3 and 7, 20 minutes", "seeds": [3, 7], "runs": ["evo-on.json", "evo-off.json"]}

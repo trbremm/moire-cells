@@ -50,6 +50,23 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     c.flags &= ~CELL_HEX;
   }
   let hexShape = (c.flags & CELL_HEX) != 0u;
+  // step C10, patterned walls (src/walls.js): this cell's effective adhesion per side (the eat pass's, last tick) and the
+  // orientation its sides are found by, both as its lean copy has them (what its neighbours see, so the two cells of a contact
+  // find the same pair of sides), and per side the touching that matures its junctions
+  let wlF = bitcast<u32>(FL.wl0.x);
+  let wallOn = (wlF & WL_ON) != 0u;
+  let mine0 = sorted[j].wadh;
+  let myTh = wall_theta(sorted[j].flags, (mine0.y >> 16u) & 255u);
+  let wA = unpack4x8unorm(mine0.x) * WALL_AMAX;
+  let wB = unpack4x8unorm(mine0.y & 0xffffu).xy * WALL_AMAX;
+  let wFront = vec2f(cos(c.front), sin(c.front));
+  var tchA = vec4f(0.0);
+  var tchB = vec2f(0.0);
+  var wPairs = 0u;
+  var wGlue = 0u;
+  var wMatP = 0u;
+  var wFrontP = 0u;
+  let myMat = c.mature;
   // ... the contacts: each neighbour's wall caps how far out each corner may sit (bound), pulls the hexagon round so a
   // side faces it (torque, weighted by closeness tw), and slides each corner round toward the corner of its tile (slide:
   // the slope of the soft-nearest wall's distance along the corner's direction, sw its weight)
@@ -347,8 +364,28 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           if (adh && dist > 1e-3) {
             // like sticks to like: both cells' stickiness, times how alike their keys are, plus same-fate glue
             let sa = S.adhSigma;
-            var stick = sqrt(max(bio.body.x * ob.body.x, 0.0)) * exp(-key_dist2(c.la, c.aux, o.la, o.aux) / (2.0 * sa * sa));
-            if (o.kind == c.kind && c.kind != KIND_STEM) { stick += S.fateAdh; }
+            let like = exp(-key_dist2(c.la, c.aux, o.la, o.aux) / (2.0 * sa * sa));
+            let fateGlue = select(0.0, S.fateAdh, o.kind == c.kind && c.kind != KIND_STEM);
+            var stick = sqrt(max(bio.body.x * ob.body.x, 0.0)) * like + fateGlue;
+            if (wallOn) {
+              // step C10: the contact holds by the smaller of the two touching sides' effective adhesion (both must be sticky),
+              // times the match (the keys' likeness plus the same-fate glue): adhesion = molecules x how well they match
+              let ks = wall_side(myTh, d);
+              let mine = select(wB[ks & 1u], wA[ks & 3u], ks < 4u);
+              let ko = wall_side(wall_theta(o.flags, (o.wadh.y >> 16u) & 255u), -d);
+              let gl = min(mine, wall_get(o.wadh.x, o.wadh.y, ko));
+              stick = gl * (like + fateGlue);
+              // ... and the side's junction matures while it touches a sticky neighbour
+              let wt = touch * clamp(gl / 0.1, 0.0, 1.0);
+              tchA += select(vec4f(0.0), vec4f(wt), vec4u(ks) == vec4u(0u, 1u, 2u, 3u));
+              tchB += select(vec2f(0.0), vec2f(wt), vec2u(ks) == vec2u(4u, 5u));
+              if (S.xCount != 0u) {
+                wPairs++;
+                wGlue += u32(round(gl * 1000.0));
+                if (wall_mature(myMat, ks) > 0.5) { wMatP++; }
+                if (dot(d, wFront) > 0.866 * dist) { wFrontP++; }
+              }
+            }
             // (minus a baseline: unlike neighbours push off a little, which lets the tissue sort itself out)
             // The pull fades out below 0.85 x contact distance, so sticky cells touch without piling up.
             let near = clamp((dist / R0 - 0.85) / 0.15, 0.0, 1.0);
@@ -380,6 +417,19 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     atomicAdd(&stats.xPairs[1], xSame);
     atomicAdd(&stats.xPairs[2], tAll);
     atomicAdd(&stats.xPairs[3], tSame);
+  }
+  // step C10: junctions mature. Each side's maturity rises toward 1 while it touches a sticky neighbour (at wl0.z per s, by how
+  // fully it touches) and fades toward 0 once the contact is lost (wl0.w per s); off: 0 (the eat pass then asks no extra glue)
+  if (wallOn && (wlF & WL_MATURE) != 0u) {
+    let tA = min(tchA, vec4f(1.0));
+    let tB = min(tchB, vec2f(1.0));
+    var mA = vec4f(unpack2x16unorm(myMat[0]), unpack2x16unorm(myMat[1]));
+    var mB = unpack2x16unorm(myMat[2]);
+    mA = clamp(mA + S.dt * (FL.wl0.z * tA * (1.0 - mA) - FL.wl0.w * (1.0 - tA) * mA), vec4f(0.0), vec4f(1.0));
+    mB = clamp(mB + S.dt * (FL.wl0.z * tB * (1.0 - mB) - FL.wl0.w * (1.0 - tB) * mB), vec2f(0.0), vec2f(1.0));
+    c.mature = array<u32, 3>(pack2x16unorm(mA.xy), pack2x16unorm(mA.zw), pack2x16unorm(mB));
+  } else {
+    c.mature = array<u32, 3>(0u, 0u, 0u);
   }
 
   // step 8: the field A and partner A' this cell feels from its neighbours: the mean over the membrane, and the gradient
@@ -687,6 +737,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // squeeze and (active, key W) a stretch along the cell's own motion and toward where the field pulls on its
   // outline; muscle stretches along its crawling heading. As the reference's step(); length capped at 0.5.
   // (step C6c: a honeycomb cell has no passive squeeze in its target: contact presses its sides flat instead, below)
+  var dTh = 0.0;                             // step C10: how far the hexagon turned this tick (the front turns with it)
   var t = select(0.5 * C, vec2f(0.0), hexShape);
   t += dStretch;                             // step C6d: a polarised cell in a field stretches along it
   if (S.activeGain > 0.0) {
@@ -781,7 +832,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     // the hexagon turns toward its neighbours (mean pull over the touching ones), damped
     let tq = torque / max(tw, 1.0);
     c.spin += (FL.hex.z * tq + FL.dip0.w * dTorque - S.hexTurnDamp * c.spin) * S.dt;   // (step C6d: + the field's torque)
-    c.theta += c.spin * S.dt + mean;
+    dTh = c.spin * S.dt + mean;
+    c.theta += dTh;
     c.theta -= TAU * floor(c.theta / TAU);
     // the stretch e1, e2 (the strained lattice k = F^-1 k0, the census) from the outline's second moment of area about the
     // centre, M (a multiple of I for a regular hexagon), normalised to determinant 1: M = exp(2 e). Each triangle (centre, a,
@@ -801,6 +853,18 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     let e = select(vec2f(0.0), tl * (min(eps, 0.5) / max(tlm, 1e-12)), tlm > 1e-9 * (M.x + M.z));
     c.e1 = e.x;
     c.e2 = e.y;
+  }
+
+  // step C10: the FRONT. It is a direction fixed in the body (it turns as the hexagon turns, and a daughter inherits it), and the
+  // gene w lets the charge dipole (step C6d) pull it round: toward the dipole's + end at wl0.y x w x |d| rad/s x sin of the angle
+  // between them. So w = 0: the inherited orientation alone; w = 1 and a strong dipole: the front follows the dipole within a few
+  // seconds; a weak or passing dipole barely moves it (the front is a persistent property of the cell)
+  if (wallOn) {
+    var fr = c.front + dTh;
+    if ((wlF & WL_FRONT) != 0u && dipOn && myDm > 1e-3) {
+      fr += FL.wl0.y * clamp(bio.wall.z, 0.0, 1.0) * min(myDm, 1.0) * sin(atan2(myD.y, myD.x) - fr) * S.dt;
+    }
+    c.front = fr - TAU * floor(fr / TAU);
   }
 
   // step C6d: the charges also move WITHIN the cell (they are free to move inside, and a packed cell's hexagon is held by its
@@ -927,6 +991,15 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       d.bat = 0.5 * pc.bat;
       d.pay = 0;
       d.fill = 0.5 * pc.fill;
+      // step C10: the daughter inherits her parent's front and (honeycomb) orientation, so a lineage keeps a shared direction
+      if (wallOn) {
+        d.front = wall_dq8(pc.wadh.y >> 24u);
+        if (hexOn) {
+          d.theta = wall_dq8((pc.wadh.y >> 16u) & 255u);
+          d.rad = hex_rest(vec2f(0.0), hex_dirs(d), S.hexSize * 3.14159265 * d.r * d.r);
+          d.flags |= CELL_HEX;
+        }
+      }
       eDeath = heat_ke(c.vel);
       c = d;
       bio = nb;
@@ -1006,6 +1079,12 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           d.fill = c.fill;
           d.integ = c.integ;                      // (until the eat pass works out its own)
           d.nbr = array<u32, 3>(0xffffffffu, 0xffffffffu, 0xffffffffu);
+          // step C10: she inherits her mother's front and her honeycomb orientation and outline (explicitly: before C10 a
+          // daughter's hexagon started turned at random), so a dividing lineage keeps a shared direction
+          if (wallOn) {
+            d.front = c.front;
+            if (hexShape) { d.theta = c.theta; d.rad = c.rad; d.ea = c.ea; d.alpha = c.alpha; d.flags |= CELL_HEX; }
+          }
           nb.env.y = FL.dv1.w;                    // both flash
           bio.env.y = FL.dv1.w;
           cells[k] = d;
@@ -1051,6 +1130,46 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // the leak level, for the drawing and the census (a newborn starts at 0)
   if (c.seed != sorted[j].seed || died) { c.flags &= ~(255u << CELL_LEAK_SHIFT); }
   else { c.flags = (c.flags & ~(255u << CELL_LEAK_SHIFT)) | (u32(round(clamp(me.lk.w, 0.0, 1.0) * 255.0)) << CELL_LEAK_SHIFT); }
+  // step C10: the walls' census (the frame's last tick): the genes, the pattern classes, the junctions, the glue, the cost
+  if (S.xCount != 0u && !died) {   // (the genes also while the walls are off: their drift, for comparison)
+    let g = bio.wall;
+    let a1 = g.x;
+    let a2 = g.y;
+    atomicAdd(&stats.wall[WS_N], 1u);
+    atomicAdd(&stats.wall[WS_A0], u32(round(clamp(bio.body.x, 0.0, 1.0) * 1000.0)));
+    atomicAdd(&stats.wall[WS_A1], u32(round(abs(a1) * 1000.0)));
+    atomicAdd(&stats.wall[WS_A2], u32(round(abs(a2) * 1000.0)));
+    atomicAdd(&stats.wall[WS_A1S], bitcast<u32>(i32(round(a1 * 1000.0))));
+    atomicAdd(&stats.wall[WS_A2S], bitcast<u32>(i32(round(a2 * 1000.0))));
+    atomicAdd(&stats.wall[WS_W], u32(round(clamp(g.z, 0.0, 1.0) * 1000.0)));
+    var cls = WS_UNI;
+    if (max(abs(a1), abs(a2)) >= FL.wl1.x) { cls = select(select(WS_SID, WS_END, a2 > 0.0), WS_POL, abs(a1) >= abs(a2)); }
+    atomicAdd(&stats.wall[cls], 1u);
+    let mm = c.mature;
+    let mv = (unpack2x16unorm(mm[0]) + unpack2x16unorm(mm[1]) + unpack2x16unorm(mm[2])) / 6.0;
+    atomicAdd(&stats.wall[WS_MAT], u32(round((mv.x + mv.y) * 1000.0)));
+    atomicAdd(&stats.wall[WS_EFF], u32(round((wA.x + wA.y + wA.z + wA.w + wB.x + wB.y) / 6.0 * 1000.0)));
+    // what the pattern asks for (before the cost): a0 + s (a1 cos psi + a2 cos 2 psi), x the maturity factor
+    var ask = 0.0;
+    for (var k = 0; k < 6; k++) {
+      let cs = cos(myTh + (f32(k) + 0.5) * P3 - c.front);
+      let p = clamp(bio.body.x + FL.wl1.y * (a1 * cs + a2 * (2.0 * cs * cs - 1.0)), 0.0, 1.0);
+      ask += p * (1.0 + FL.wl1.z * wall_mature(mm, u32(k)));
+    }
+    atomicAdd(&stats.wall[WS_ASK], u32(round(ask / 6.0 * 1000.0)));
+    atomicAdd(&stats.wall[WS_LINK], c.wlink);
+    atomicAdd(&stats.wall[WS_PAY], c.wpay);
+    if (wPairs > 0u) {
+      atomicAdd(&stats.wall[WS_PAIRS], wPairs);
+      atomicAdd(&stats.wall[WS_GLUE], wGlue);
+      atomicAdd(&stats.wall[WS_MATP], wMatP);
+      atomicAdd(&stats.wall[WS_FRONTP], wFrontP);
+    }
+    if (dipOn && myDm > DIP_MIN) {
+      atomicAdd(&stats.wall[WS_FDN], 1u);
+      atomicAdd(&stats.wall[WS_FD], bitcast<u32>(i32(round(1000.0 * cos(atan2(myD.y, myD.x) - c.front)))));
+    }
+  }
   // step C7: the neighbours across the sides, 16 bits each (none while the pumps across contact are off)
   c.nbr = array<u32, 3>(nbIA.x | (nbIA.y << 16u), nbIA.z | (nbIA.w << 16u), nbIB.x | (nbIB.y << 16u));
   cells[i] = c;

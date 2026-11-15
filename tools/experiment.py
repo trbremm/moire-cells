@@ -33,11 +33,12 @@ Condition file (JSON; every key but "name" optional):
       "evals": [{"t": 0, "js": "moire.cells.params.stiffness = 9"},
                 {"t": 60, "js": "await moire.tissue.stir(640, 400, 12, 0, 20)"}],   # statements; await allowed
       "shots": [{"t": 60}, {"t": 120, "view": "lineage", "panel": true, "name": "end"}],
-                                                   # view: clean (default) fate lineage strategy charge machinery;
+                                                   # view: clean (default) fate lineage strategy charge walls machinery;
                                                    # panel: keep the entropy panel in the picture
       "clips": [{"t": 30, "until": 50, "speed": 8}],   # a .webm of t 30..50 s recorded at 8x (events inside it happen at
                                                        # its end)
       "snapshots": [{"t": 120, "grid": true}],     # moire.snapshot() saved as snapshots/snap_t120.json
+      "resizes": [{"t": 300, "size": "1000x700"}],  # the window resized (Chrome only), before the evals at that time
       "stall": 60, "timeout": 0                    # wall s without progress = hang; overall wall limit (0 = auto)
     }
 """
@@ -142,6 +143,8 @@ def build_events(cond, duration):
         ev.append((float(s.get("t", duration)), 3, "snapshot", s))
     for c in cond.get("clips", []):
         ev.append((float(c.get("t", 0)), 4, "clip", c))
+    for r in cond.get("resizes", []):   # step C10's checks: the window resized to r["size"] (Chrome; before the evals)
+        ev.append((float(r.get("t", 0)), -1, "resize", r))
     return sorted((e for e in ev if e[0] <= duration + 1e-9), key=lambda e: (e[0], e[1]))
 
 
@@ -308,7 +311,12 @@ def run_condition(cond, out_dir, port, args):
             now = run_to(t_start + t)
             trun = now - t_start
             for _, _, kind, spec in group:
-                if kind == "eval":
+                if kind == "resize" and browser != "firefox":
+                    rw, rh = (int(v) for v in spec["size"].lower().split("x"))
+                    driver.rpc.call("Emulation.setDeviceMetricsOverride", {"width": rw, "height": rh, "deviceScaleFactor": 1, "mobile": False})
+                    time.sleep(1.0)   # the page sees the resize on its next frames (it is paused: it redraws)
+                    print(f"[{name}] resized to {rw}x{rh}")
+                elif kind == "eval":
                     r = page.run_code(spec["js"])
                     after = page.js("moire.time()")
                     eval_results.append({"t": trun, "js": spec["js"], "result": r})

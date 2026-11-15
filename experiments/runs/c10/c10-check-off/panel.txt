@@ -1,0 +1,1271 @@
+--- t 0.00 s (run 0.00 s)
+ENTROPY  46.5 k  +0/s   paused
+moving 403 · heat in dish 35.0 k · stored 2992 · in 84.9 k · rounding +5.8e-4
+light in 0/s → heat 0/s · chemistry 0/s · passed 0/s · spot · day 82%
+ORDER  – · atoms in dish 0 · added 0 (+0/s) · out 0 · rounding 0
+CELLS  batteries 2992 (full 0%, empty 0%) · atoms inside 0 · fuel inside 0 · burner +0/s · crawl −0/s
+ENGINES  harvest 0% · burn 41% · both 43% · other 17%  (batteries 0 · 38 · 38 · 38 %) · in the light 0 · 42 · 40 · 18 % · tolerance 14.8 · perm 3.32
+FREE LIGHT ATOMS  g 0 · t 0 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 331
+CHARGE  free +0 −0 (net +0) · in cells +0 · cells + 0 · − 0 · |q| 0.00
+MEMBRANE  mix 0.22 (heavy 25%) · thickness 0.015 · integrity 0.00 (whole 0%, damaged 0) · bursts 0/s · in membranes l 0 L 0 · bitten l 0 L 0/s · |selectivity| 0.02
+DIPOLES  |d| 0.00 · polarised 0 (0%) · neighbours aligned 0.00 · head-to-tail +0.00 · in threads 0 (ends 0) · along the field 0.00
+PUMPS  active 40% (top IN g 9%, IN Gt 8%, OUT gT 8%) · |voltage| 0.00 (0 cells > 0.1) · paid 0/s · moved to dish 0/s, from dish 0/s, across contact 0/s
+CATALYSTS  crust ll 0 LL 0 · engines at 35% (in the light 35%, fed cells 35%) · trace in cells 0, in the dish 0 · cells with trace ≥ half 0 · IN-trace pumps 168 (battery 0.38 vs 0.38)
+HARD LIGHT  dose in the light 10.7, in the dark 0.04 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 1974 of 6000 · births 0.0/s · deaths 0.0/s: starved 0.0, heat 0.0, burst 0.0, age 0.0 · ready 0 (crowded 0) · starving 0
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 10.00 s (run 10.00 s)
+ENTROPY  219 k  +16.9 k/s   paused
+moving 291 · heat in dish 34.0 k · stored 2395 · in 256 k · rounding +0.0045
+light in 37.4 k/s → heat 11.0 k/s · chemistry 26.2/s · pigments 368/s · passed 26.0 k/s · spot · day 91%
+ORDER  0.501 · atoms in dish 89.2 · in cells 30.8 · added 120 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 2383 (full 0%, empty 0%) · atoms inside 30.8 · fuel inside 5.54 · burner +0/s · crawl −19.7/s
+ENGINES  harvest 0% · burn 41% · both 43% · other 17%  (batteries 0 · 31 · 32 · 31 %) · in the light 0 · 42 · 40 · 18 % · tolerance 14.8 · perm 3.33
+FREE LIGHT ATOMS  g 5.30 · t 5.33 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 315
+CHARGE  free +17.8 −17.8 (net +0.00098) · in cells +0.0022 · cells + 12 · − 23 · |q| 0.01
+MEMBRANE  mix 0.22 (heavy 25%) · thickness 0.015 · integrity 0.01 (whole 1%, damaged 1) · bursts 0/s · in membranes l 2.08 L 0.17 · bitten l 0.38 L 0.098/s · |selectivity| 0.02
+DIPOLES  |d| 0.03 · polarised 68 (4%) · neighbours aligned -0.14 · head-to-tail +0.32 · in threads 10 (ends 40) · along the field 0.84
+PUMPS  active 40% (top IN g 9%, OUT gT 9%, IN Gt 8%) · |voltage| 0.00 (4 cells > 0.1) · paid 0.63/s · moved to dish 0.021/s, from dish 0.023/s, across contact 0.10/s
+CATALYSTS  crust ll 5.69 LL 7.75 · engines at 35% (in the light 35%, fed cells 35%) · trace in cells 0.074, in the dish 2.32 · cells with trace ≥ half 4 · IN-trace pumps 0 (battery 0.00 vs 0.31)
+HARD LIGHT  dose in the light 38.7, in the dark 0.43 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 1905 of 6000 · births 0.0/s · deaths 6.9/s: starved 0.0, heat 0.0, burst 0.0, age 6.9 · ready 0 (crowded 0) · starving 0
+COUNT  ██  last 0.1 min, 1939 to 1974
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 20.00 s (run 20.00 s)
+ENTROPY  388 k  +16.8 k/s   paused
+moving 278 · heat in dish 33.7 k · stored 1909 · in 424 k · rounding +0.020
+light in 39.8 k/s → heat 11.5 k/s · chemistry 53.7/s · pigments 379/s · passed 27.9 k/s · spot · day 96%
+ORDER  0.475 · atoms in dish 181 · in cells 59.0 · added 240 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 1880 (full 0%, empty 0%) · atoms inside 59.0 · fuel inside 13.4 · burner +0/s · crawl −11.5/s
+ENGINES  harvest 0% · burn 41% · both 42% · other 16%  (batteries 0 · 25 · 27 · 25 %) · in the light 0 · 43 · 40 · 18 % · tolerance 14.8 · perm 3.32
+FREE LIGHT ATOMS  g 9.14 · t 9.19 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 297
+CHARGE  free +32.6 −32.6 (net +0.013) · in cells −0.021 · cells + 28 · − 43 · |q| 0.02
+MEMBRANE  mix 0.21 (heavy 25%) · thickness 0.015 · integrity 0.02 (whole 2%, damaged 3) · bursts 0/s · in membranes l 3.53 L 0.27 · bitten l 0.72 L 0.14/s · |selectivity| 0.02
+DIPOLES  |d| 0.05 · polarised 122 (7%) · neighbours aligned -0.06 · head-to-tail +0.28 · in threads 20 (ends 59) · along the field 0.83
+PUMPS  active 41% (top IN Gt 9%, OUT gT 9%, IN g 8%) · |voltage| 0.00 (5 cells > 0.1) · paid 0.93/s · moved to dish 0.029/s, from dish 0.033/s, across contact 0.31/s
+CATALYSTS  crust ll 14.1 LL 17.2 · engines at 35% (in the light 36%, fed cells 35%) · trace in cells 0.14, in the dish 4.66 · cells with trace ≥ half 7 · IN-trace pumps 0 (battery 0.00 vs 0.26)
+HARD LIGHT  dose in the light 57.8, in the dark 0.86 · births from lit parents 100% mutating ×4.1 (all ×4.14) · slot jumps per birth: lit 0.250, others 0.000 (0.10/s)
+DIVISION  cells 1829 of 6000 · births 0.4/s · deaths 8.0/s: starved 0.0, heat 0.0, burst 0.0, age 8.0 · ready 1 (crowded 0) · starving 0
+COUNT  ████  last 0.3 min, 1869 to 1974
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 30.00 s (run 30.00 s)
+ENTROPY  556 k  +16.7 k/s   paused
+moving 268 · heat in dish 33.7 k · stored 1544 · in 592 k · rounding +0.023
+light in 41.2 k/s → heat 11.7 k/s · chemistry 90.8/s · pigments 381/s · passed 29.0 k/s · spot · day 99%
+ORDER  0.455 · atoms in dish 276 · in cells 84.2 · added 360 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 1495 (full 1%, empty 0%) · atoms inside 84.2 · fuel inside 20.6 · burner +0/s · crawl −6.98/s
+ENGINES  harvest 0% · burn 42% · both 43% · other 16%  (batteries 0 · 20 · 22 · 20 %) · in the light 0 · 42 · 41 · 18 % · tolerance 14.9 · perm 3.32
+FREE LIGHT ATOMS  g 13.2 · t 13.3 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 282
+CHARGE  free +46.7 −46.8 (net −0.089) · in cells +0.099 · cells + 48 · − 55 · |q| 0.03
+MEMBRANE  mix 0.21 (heavy 24%) · thickness 0.015 · integrity 0.03 (whole 3%, damaged 2) · bursts 0/s · in membranes l 4.53 L 0.27 · bitten l 1.01 L 0.19/s · |selectivity| 0.03
+DIPOLES  |d| 0.07 · polarised 156 (9%) · neighbours aligned 0.00 · head-to-tail +0.26 · in threads 26 (ends 84) · along the field 0.85
+PUMPS  active 41% (top IN Gt 9%, IN g 8%, OUT gT 8%) · |voltage| 0.00 (5 cells > 0.1) · paid 0.78/s · moved to dish 0.031/s, from dish 0.048/s, across contact 0.19/s
+CATALYSTS  crust ll 22.8 LL 26.7 · engines at 35% (in the light 36%, fed cells 36%) · trace in cells 0.17, in the dish 7.05 · cells with trace ≥ half 8 · IN-trace pumps 0 (battery 0.00 vs 0.21)
+HARD LIGHT  dose in the light 71.2, in the dark 1.10 · births from lit parents 100% mutating ×4.5 (all ×4.49) · slot jumps per birth: lit 0.125, others 0.000 (0.10/s)
+DIVISION  cells 1771 of 6000 · births 0.8/s · deaths 6.6/s: starved 0.0, heat 0.1, burst 0.1, age 6.4 · ready 5 (crowded 1) · starving 0
+COUNT  ████▇▇  last 0.4 min, 1806 to 1974
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 40.00 s (run 40.00 s)
+ENTROPY  723 k  +16.6 k/s   paused
+moving 232 · heat in dish 33.3 k · stored 1244 · in 758 k · rounding +0.016
+light in 41.4 k/s → heat 11.7 k/s · chemistry 103/s · pigments 387/s · passed 29.2 k/s · spot · day 100%
+ORDER  0.443 · atoms in dish 366 · in cells 115 · added 480 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 1181 (full 1%, empty 0%) · atoms inside 115 · fuel inside 27.7 · burner +0/s · crawl −3.74/s
+ENGINES  harvest 0% · burn 41% · both 43% · other 16%  (batteries 0 · 16 · 19 · 16 %) · in the light 0 · 42 · 41 · 17 % · tolerance 14.9 · perm 3.32
+FREE LIGHT ATOMS  g 17.1 · t 17.4 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 273
+CHARGE  free +61.2 −61.4 (net −0.18) · in cells +0.18 · cells + 50 · − 77 · |q| 0.03
+MEMBRANE  mix 0.21 (heavy 24%) · thickness 0.015 · integrity 0.04 (whole 4%, damaged 5) · bursts 0/s · in membranes l 5.81 L 0.36 · bitten l 1.35 L 0.16/s · |selectivity| 0.03
+DIPOLES  |d| 0.09 · polarised 202 (12%) · neighbours aligned 0.00 · head-to-tail +0.28 · in threads 59 (ends 102) · along the field 0.90
+PUMPS  active 41% (top IN Gt 9%, IN g 8%, OUT gT 8%) · |voltage| 0.00 (6 cells > 0.1) · paid 0.80/s · moved to dish 0.022/s, from dish 0.067/s, across contact 0.20/s
+CATALYSTS  crust ll 31.8 LL 36.2 · engines at 35% (in the light 36%, fed cells 35%) · trace in cells 0.18, in the dish 9.43 · cells with trace ≥ half 11 · IN-trace pumps 0 (battery 0.00 vs 0.17)
+HARD LIGHT  dose in the light 79.1, in the dark 1.17 · births from lit parents 100% mutating ×5.0 (all ×5.04) · slot jumps per birth: lit 0.154, others 0.000 (0.20/s)
+DIVISION  cells 1708 of 6000 · births 1.3/s · deaths 7.6/s: starved 0.0, heat 0.2, burst 0.1, age 7.3 · ready 8 (crowded 7) · starving 1
+COUNT  ████▇▇▇▇  last 0.6 min, 1732 to 1974
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 50.00 s (run 50.00 s)
+ENTROPY  887 k  +16.1 k/s   paused
+moving 208 · heat in dish 32.2 k · stored 1003 · in 920 k · rounding +0.018
+light in 40.4 k/s → heat 11.4 k/s · chemistry 116/s · pigments 388/s · passed 28.4 k/s · spot · day 97%
+ORDER  0.433 · atoms in dish 461 · in cells 139 · added 600 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 918 (full 2%, empty 7%) · atoms inside 139 · fuel inside 36.4 · burner +0/s · crawl −2.32/s
+ENGINES  harvest 0% · burn 41% · both 43% · other 16%  (batteries 0 · 13 · 16 · 12 %) · in the light 0 · 42 · 41 · 17 % · tolerance 14.9 · perm 3.33
+FREE LIGHT ATOMS  g 20.8 · t 21.0 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 267
+CHARGE  free +76.1 −76.3 (net −0.22) · in cells +0.22 · cells + 62 · − 78 · |q| 0.04
+MEMBRANE  mix 0.21 (heavy 24%) · thickness 0.015 · integrity 0.04 (whole 5%, damaged 8) · bursts 0/s · in membranes l 7.14 L 0.33 · bitten l 1.67 L 0.19/s · |selectivity| 0.03
+DIPOLES  |d| 0.11 · polarised 228 (14%) · neighbours aligned 0.02 · head-to-tail +0.26 · in threads 71 (ends 100) · along the field 0.90
+PUMPS  active 41% (top IN Gt 10%, IN g 8%, OUT l 8%) · |voltage| 0.00 (8 cells > 0.1) · paid 0.75/s · moved to dish 0.019/s, from dish 0.079/s, across contact 0.21/s
+CATALYSTS  crust ll 40.9 LL 45.8 · engines at 35% (in the light 36%, fed cells 35%) · trace in cells 0.17, in the dish 11.8 · cells with trace ≥ half 13 · IN-trace pumps 0 (battery 0.00 vs 0.14)
+HARD LIGHT  dose in the light 82.9, in the dark 0.86 · births from lit parents 100% mutating ×5.0 (all ×4.96) · slot jumps per birth: lit 0.333, others 0.000 (0.50/s)
+DIVISION  cells 1649 of 6000 · births 1.5/s · deaths 7.4/s: starved 0.0, heat 0.0, burst 0.1, age 7.3 · ready 19 (crowded 13) · starving 30
+COUNT  ████▇▇▇▇▇▇  last 0.8 min, 1675 to 1974
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 60.00 s (run 60.00 s)
+ENTROPY  1.04 M  +15.4 k/s   paused
+moving 200 · heat in dish 30.9 k · stored 813 · in 1.08 M · rounding +0.0065
+light in 38.2 k/s → heat 10.8 k/s · chemistry 123/s · pigments 372/s · passed 27.0 k/s · spot · day 92%
+ORDER  0.425 · atoms in dish 553 · in cells 167 · added 720 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 705 (full 2%, empty 25%) · atoms inside 167 · fuel inside 43.6 · burner +0/s · crawl −1.79/s
+ENGINES  harvest 0% · burn 41% · both 44% · other 15%  (batteries 0 · 10 · 13 · 9 %) · in the light 0 · 41 · 43 · 16 % · tolerance 14.9 · perm 3.36
+FREE LIGHT ATOMS  g 25.3 · t 25.6 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 252
+CHARGE  free +89.6 −89.9 (net −0.26) · in cells +0.27 · cells + 66 · − 94 · |q| 0.05
+MEMBRANE  mix 0.21 (heavy 24%) · thickness 0.015 · integrity 0.05 (whole 7%, damaged 14) · bursts 0/s · in membranes l 8.75 L 0.30 · bitten l 2.08 L 0.15/s · |selectivity| 0.03
+DIPOLES  |d| 0.13 · polarised 256 (16%) · neighbours aligned -0.04 · head-to-tail +0.26 · in threads 63 (ends 130) · along the field 0.88
+PUMPS  active 41% (top IN Gt 10%, OUT l 8%, OUT gT 8%) · |voltage| 0.00 (9 cells > 0.1) · paid 0.73/s · moved to dish 0.013/s, from dish 0.056/s, across contact 0.23/s
+CATALYSTS  crust ll 49.6 LL 55.3 · engines at 35% (in the light 37%, fed cells 36%) · trace in cells 0.18, in the dish 14.2 · cells with trace ≥ half 13 · IN-trace pumps 0 (battery 0.00 vs 0.11)
+HARD LIGHT  dose in the light 83.2, in the dark 1.53 · births from lit parents 100% mutating ×5.2 (all ×5.23) · slot jumps per birth: lit 0.227, others 0.000 (0.50/s)
+DIVISION  cells 1601 of 6000 · births 2.2/s · deaths 7.0/s: starved 0.0, heat 0.0, burst 0.3, age 6.7 · ready 20 (crowded 19) · starving 272
+COUNT  ████▇▇▇▇▇▇▇▇  last 0.9 min, 1627 to 1974
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 70.00 s (run 70.00 s)
+ENTROPY  1.19 M  +14.6 k/s   paused
+moving 189 · heat in dish 29.1 k · stored 682 · in 1.22 M · rounding +0.011
+light in 35.1 k/s → heat 9810/s · chemistry 136/s · pigments 346/s · passed 24.8 k/s · spot · day 84%
+ORDER  0.418 · atoms in dish 649 · in cells 191 · added 840 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 558 (full 4%, empty 52%) · atoms inside 191 · fuel inside 50.0 · burner +0/s · crawl −1.22/s
+ENGINES  harvest 0% · burn 41% · both 44% · other 15%  (batteries 0 · 8 · 11 · 5 %) · in the light 0 · 42 · 43 · 15 % · tolerance 15.0 · perm 3.39
+FREE LIGHT ATOMS  g 31.0 · t 31.4 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 241
+CHARGE  free +106 −106 (net −0.40) · in cells +0.39 · cells + 82 · − 108 · |q| 0.06
+MEMBRANE  mix 0.21 (heavy 24%) · thickness 0.015 · integrity 0.06 (whole 8%, damaged 12) · bursts 0.49/s · in membranes l 9.77 L 0.13 · bitten l 2.39 L 0.13/s · |selectivity| 0.03
+DIPOLES  |d| 0.15 · polarised 281 (18%) · neighbours aligned 0.03 · head-to-tail +0.24 · in threads 84 (ends 136) · along the field 0.87
+PUMPS  active 41% (top IN Gt 11%, OUT l 8%, OUT gT 8%) · |voltage| 0.00 (9 cells > 0.1) · paid 0.85/s · moved to dish 0.013/s, from dish 0.065/s, across contact 0.30/s
+CATALYSTS  crust ll 58.6 LL 64.8 · engines at 36% (in the light 37%, fed cells 35%) · trace in cells 0.19, in the dish 16.6 · cells with trace ≥ half 11 · IN-trace pumps 0 (battery 0.00 vs 0.09)
+HARD LIGHT  dose in the light 80.7, in the dark 1.72 · births from lit parents 100% mutating ×4.9 (all ×4.91) · slot jumps per birth: lit 0.217, others 0.000 (0.50/s)
+DIVISION  cells 1552 of 6000 · births 2.3/s · deaths 7.2/s: starved 0.1, heat 0.1, burst 0.8, age 6.2 · ready 35 (crowded 25) · starving 468
+COUNT  ████▇▇▇▇▇▇▇▇▇▇  last 1.1 min, 1572 to 1974
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 80.00 s (run 80.00 s)
+ENTROPY  1.33 M  +13.5 k/s   paused
+moving 200 · heat in dish 27.0 k · stored 631 · in 1.36 M · rounding +0.013
+light in 31.2 k/s → heat 8720/s · chemistry 155/s · pigments 301/s · passed 22.0 k/s · spot · day 75%
+ORDER  0.409 · atoms in dish 755 · in cells 205 · added 960 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 470 (full 4%, empty 71%) · atoms inside 205 · fuel inside 52.8 · burner +0/s · crawl −1.21/s
+ENGINES  harvest 0% · burn 42% · both 44% · other 14%  (batteries 0 · 7 · 10 · 3 %) · in the light 0 · 44 · 42 · 13 % · tolerance 15.0 · perm 3.40
+FREE LIGHT ATOMS  g 36.0 · t 36.5 in the dish · cells with an uphill swap 1 · breathers (downhill swap) 232
+CHARGE  free +119 −120 (net −0.38) · in cells +0.38 · cells + 97 · − 125 · |q| 0.07
+MEMBRANE  mix 0.22 (heavy 24%) · thickness 0.015 · integrity 0.07 (whole 10%, damaged 20) · bursts 0/s · in membranes l 11.3 L 0.14 · bitten l 2.56 L 0.065/s · |selectivity| 0.03
+DIPOLES  |d| 0.18 · polarised 318 (21%) · neighbours aligned 0.02 · head-to-tail +0.23 · in threads 103 (ends 170) · along the field 0.88
+PUMPS  active 42% (top IN Gt 11%, OUT l 9%, OUT gT 8%) · |voltage| 0.00 (10 cells > 0.1) · paid 0.68/s · moved to dish 0.014/s, from dish 0.079/s, across contact 0.27/s
+CATALYSTS  crust ll 67.4 LL 74.3 · engines at 36% (in the light 37%, fed cells 35%) · trace in cells 0.16, in the dish 19.0 · cells with trace ≥ half 12 · IN-trace pumps 1 (battery 0.41 vs 0.08)
+HARD LIGHT  dose in the light 75.9, in the dark 2.22 · births from lit parents 100% mutating ×4.4 (all ×4.37) · slot jumps per birth: lit 0.357, others 0.000 (1.0/s)
+DIVISION  cells 1482 of 6000 · births 2.8/s · deaths 9.8/s: starved 2.5, heat 0.0, burst 0.0, age 7.4 · ready 34 (crowded 27) · starving 843
+COUNT  ████▇▇▇▇▇▇▇▇▇▇▇▆  last 1.3 min, 1524 to 1974
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 90.00 s (run 90.00 s)
+ENTROPY  1.46 M  +12.1 k/s   paused
+moving 185 · heat in dish 24.1 k · stored 667 · in 1.49 M · rounding −0.0027
+light in 26.8 k/s → heat 7334/s · chemistry 152/s · pigments 248/s · passed 19.1 k/s · spot · day 64%
+ORDER  0.405 · atoms in dish 856 · in cells 225 · added 1080 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 459 (full 6%, empty 70%) · atoms inside 225 · fuel inside 57.2 · burner +0/s · crawl −1.49/s
+ENGINES  harvest 0% · burn 38% · both 47% · other 15%  (batteries 0 · 10 · 11 · 2 %) · in the light 0 · 45 · 43 · 12 % · tolerance 14.8 · perm 3.51
+FREE LIGHT ATOMS  g 41.7 · t 42.0 in the dish · cells with an uphill swap 1 · breathers (downhill swap) 221
+CHARGE  free +129 −130 (net −0.31) · in cells +0.28 · cells + 98 · − 124 · |q| 0.09
+MEMBRANE  mix 0.20 (heavy 19%) · thickness 0.015 · integrity 0.10 (whole 14%, damaged 22) · bursts 0.49/s · in membranes l 13.8 L 0.15 · bitten l 2.89 L 0.056/s · |selectivity| 0.03
+DIPOLES  |d| 0.23 · polarised 348 (28%) · neighbours aligned -0.03 · head-to-tail +0.25 · in threads 119 (ends 157) · along the field 0.91
+PUMPS  active 42% (top IN Gt 14%, OUT l 10%, IN g 9%) · |voltage| 0.01 (10 cells > 0.1) · paid 0.70/s · moved to dish 0.021/s, from dish 0.078/s, across contact 0.33/s
+CATALYSTS  crust ll 76.0 LL 83.8 · engines at 36% (in the light 36%, fed cells 35%) · trace in cells 0.12, in the dish 21.5 · cells with trace ≥ half 6 · IN-trace pumps 2 (battery 0.63 vs 0.09)
+HARD LIGHT  dose in the light 69.0, in the dark 1.66 · births from lit parents 100% mutating ×4.5 (all ×4.51) · slot jumps per birth: lit 0.333, others 0.000 (1.20/s)
+DIVISION  cells 1250 of 6000 · births 3.6/s · deaths 26.8/s: starved 20.8, heat 0.0, burst 0.4, age 5.6 · ready 44 (crowded 35) · starving 827
+COUNT  ████▇▇▇▇▇▇▇▇▇▇▇▆▆▆  last 1.4 min, 1297 to 1974
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 100.00 s (run 100.00 s)
+ENTROPY  1.57 M  +10.5 k/s   paused
+moving 185 · heat in dish 21.1 k · stored 723 · in 1.60 M · rounding +0.0044
+light in 22.2 k/s → heat 5943/s · chemistry 137/s · pigments 224/s · passed 15.9 k/s · spot · day 53%
+ORDER  0.401 · atoms in dish 949 · in cells 251 · added 1200 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 482 (full 9%, empty 66%) · atoms inside 251 · fuel inside 64.4 · burner +0/s · crawl −1.47/s
+ENGINES  harvest 0% · burn 37% · both 53% · other 10%  (batteries 0 · 13 · 12 · 1 %) · in the light 0 · 44 · 49 · 7 % · tolerance 15.0 · perm 3.66
+FREE LIGHT ATOMS  g 48.8 · t 49.1 in the dish · cells with an uphill swap 1 · breathers (downhill swap) 143
+CHARGE  free +141 −141 (net −0.25) · in cells +0.22 · cells + 109 · − 133 · |q| 0.12
+MEMBRANE  mix 0.21 (heavy 23%) · thickness 0.016 · integrity 0.14 (whole 19%, damaged 36) · bursts 0/s · in membranes l 15.2 L 0.18 · bitten l 2.91 L 0.049/s · |selectivity| 0.04
+DIPOLES  |d| 0.29 · polarised 354 (33%) · neighbours aligned -0.02 · head-to-tail +0.25 · in threads 99 (ends 167) · along the field 0.91
+PUMPS  active 45% (top IN Gt 17%, OUT l 11%, IN g 10%) · |voltage| 0.01 (12 cells > 0.1) · paid 0.94/s · moved to dish 0.029/s, from dish 0.12/s, across contact 0.44/s
+CATALYSTS  crust ll 84.8 LL 93.3 · engines at 36% (in the light 37%, fed cells 36%) · trace in cells 0.13, in the dish 23.8 · cells with trace ≥ half 5 · IN-trace pumps 4 (battery 0.52 vs 0.11)
+HARD LIGHT  dose in the light 61.1, in the dark 1.34 · births from lit parents 100% mutating ×3.5 (all ×3.53) · slot jumps per birth: lit 0.286, others 0.000 (1.0/s)
+DIVISION  cells 1057 of 6000 · births 3.5/s · deaths 22.8/s: starved 18.6, heat 0.0, burst 0.1, age 4.1 · ready 53 (crowded 40) · starving 683
+COUNT  ████▇▇▇▇▇▇▇▇▇▇▇▆▆▆▅▅  last 1.6 min, 1106 to 1974
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 110.00 s (run 110.00 s)
+ENTROPY  1.67 M  +8725/s   paused
+moving 180 · heat in dish 17.4 k · stored 780 · in 1.69 M · rounding +7.8e-4
+light in 17.7 k/s → heat 4468/s · chemistry 119/s · pigments 138/s · passed 13.0 k/s · spot · day 42%
+ORDER  0.397 · atoms in dish 1044 · in cells 276 · added 1320 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 522 (full 13%, empty 57%) · atoms inside 276 · fuel inside 67.5 · burner +0/s · crawl −1.81/s
+ENGINES  harvest 0% · burn 23% · both 64% · other 13%  (batteries 0 · 35 · 17 · 0 %) · in the light 0 · 39 · 54 · 7 % · tolerance 15.1 · perm 4.31
+FREE LIGHT ATOMS  g 56.9 · t 57.3 in the dish · cells with an uphill swap 3 · breathers (downhill swap) 136
+CHARGE  free +159 −159 (net −0.32) · in cells +0.29 · cells + 115 · − 136 · |q| 0.19
+MEMBRANE  mix 0.28 (heavy 33%) · thickness 0.018 · integrity 0.24 (whole 33%, damaged 43) · bursts 0/s · in membranes l 17.9 L 0.26 · bitten l 3.02 L 0.030/s · |selectivity| 0.05
+DIPOLES  |d| 0.45 · polarised 352 (51%) · neighbours aligned -0.01 · head-to-tail +0.26 · in threads 118 (ends 166) · along the field 0.92
+PUMPS  active 50% (top IN Gt 22%, OUT l 17%, OUT Gt 4%) · |voltage| 0.01 (13 cells > 0.1) · paid 1.09/s · moved to dish 0.068/s, from dish 0.11/s, across contact 0.52/s
+CATALYSTS  crust ll 93.4 LL 103 · engines at 36% (in the light 37%, fed cells 37%) · trace in cells 0.15, in the dish 26.2 · cells with trace ≥ half 6 · IN-trace pumps 7 (battery 0.51 vs 0.19)
+HARD LIGHT  dose in the light 49.1, in the dark 1.69 · births from lit parents 100% mutating ×3.7 (all ×3.67) · slot jumps per birth: lit 0.264, others 0.000 (1.40/s)
+DIVISION  cells 697 of 6000 · births 5.4/s · deaths 41.2/s: starved 37.7, heat 0.0, burst 0.0, age 3.5 · ready 49 (crowded 39) · starving 295
+COUNT  ████▇▇▇▇▇▇▇▇▇▇▇▆▆▆▅▅▅▄  last 1.8 min, 772 to 1974
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 120.00 s (run 120.00 s)
+ENTROPY  1.79 M  +54.0 k/s   paused
+moving 424 · heat in dish 28.3 k · stored 3240 · in 1.83 M · rounding −0.0092
+light in 53.5 k/s → heat 15.0 k/s · chemistry 89.1/s · pigments 489/s · passed 37.9 k/s · spot · day 33%
+ORDER  0.398 · atoms in dish 1156 · in cells 284 · added 1440 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 3027 (full 0%, empty 0%) · atoms inside 284 · fuel inside 72.6 · burner +0/s · crawl −82.4/s
+ENGINES  harvest 0% · burn 42% · both 41% · other 17%  (batteries 0 · 38 · 38 · 38 %) · in the light 0 · 39 · 44 · 17 % · tolerance 14.9 · perm 3.33
+FREE LIGHT ATOMS  g 87.6 · t 88.1 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 330
+CHARGE  free +204 −205 (net −0.35) · in cells +0.34 · cells + 127 · − 186 · |q| 0.09
+MEMBRANE  mix 0.21 (heavy 23%) · thickness 0.015 · integrity 0.07 (whole 6%, damaged 6) · bursts 0/s · in membranes l 11.3 L 0.32 · bitten l 9.75 L 0.40/s · |selectivity| 0.03
+DIPOLES  |d| 0.21 · polarised 488 (25%) · neighbours aligned 0.01 · head-to-tail +0.27 · in threads 128 (ends 232) · along the field 0.89
+PUMPS  active 41% (top IN Gt 9%, OUT Gt 9%, IN g 8%) · |voltage| 0.01 (21 cells > 0.1) · paid 3.04/s · moved to dish 0.22/s, from dish 0.65/s, across contact 1.78/s
+CATALYSTS  crust ll 103 LL 112 · engines at 36% (in the light 37%, fed cells 36%) · trace in cells 0.51, in the dish 28.3 · cells with trace ≥ half 18 · IN-trace pumps 0 (battery 0.00 vs 0.38)
+HARD LIGHT  dose in the light 4.2, in the dark 0.02 · births from lit parents 100% mutating ×3.2 (all ×3.25) · slot jumps per birth: lit 0.180, others 0.000 (0.90/s)
+DIVISION  cells 1982 of 6000 · births 0.0/s · deaths 0.0/s: starved 0.0, heat 0.0, burst 0.0, age 0.0 · ready 0 (crowded 0) · starving 0
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 130.00 s (run 130.00 s)
+ENTROPY  1.91 M  +9548/s   paused
+moving 301 · heat in dish 18.9 k · stored 2691 · in 1.93 M · rounding −0.018
+light in 10.3 k/s → heat 3006/s · chemistry 72.9/s · pigments 105/s · passed 7109/s · spot · day 24%
+ORDER  0.391 · atoms in dish 1184 · in cells 376 · added 1560 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 2520 (full 3%, empty 0%) · atoms inside 376 · fuel inside 97.0 · burner +0/s · crawl −19.9/s
+ENGINES  harvest 0% · burn 42% · both 42% · other 16%  (batteries 0 · 33 · 34 · 31 %) · in the light 0 · 41 · 44 · 16 % · tolerance 14.9 · perm 3.34
+FREE LIGHT ATOMS  g 79.1 · t 79.7 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 312
+CHARGE  free +210 −211 (net −0.59) · in cells +0.59 · cells + 111 · − 180 · |q| 0.08
+MEMBRANE  mix 0.20 (heavy 22%) · thickness 0.015 · integrity 0.10 (whole 10%, damaged 6) · bursts 0/s · in membranes l 16.7 L 0.57 · bitten l 2.38 L 0.095/s · |selectivity| 0.03
+DIPOLES  |d| 0.23 · polarised 525 (27%) · neighbours aligned 0.00 · head-to-tail +0.27 · in threads 179 (ends 235) · along the field 0.88
+PUMPS  active 42% (top IN Gt 10%, OUT Gt 9%, IN g 8%) · |voltage| 0.01 (20 cells > 0.1) · paid 2.05/s · moved to dish 0.093/s, from dish 0.32/s, across contact 0.84/s
+CATALYSTS  crust ll 113 LL 122 · engines at 36% (in the light 39%, fed cells 36%) · trace in cells 0.84, in the dish 30.3 · cells with trace ≥ half 33 · IN-trace pumps 0 (battery 0.00 vs 0.33)
+HARD LIGHT  dose in the light 12.4, in the dark 0.10 · births from lit parents 100% mutating ×1.6 (all ×1.58) · slot jumps per birth: lit 0.067, others 0.000 (0.10/s)
+DIVISION  cells 1915 of 6000 · births 1.5/s · deaths 8.2/s: starved 0.0, heat 0.0, burst 0.0, age 8.2 · ready 9 (crowded 4) · starving 0
+COUNT  ▃██  last 0.2 min, 515 to 1941
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 140.00 s (run 140.00 s)
+ENTROPY  1.99 M  +7992/s   paused
+moving 268 · heat in dish 16.0 k · stored 2263 · in 2.01 M · rounding −0.011
+light in 7839/s → heat 2308/s · chemistry 59.4/s · pigments 82.0/s · passed 5389/s · spot · day 19%
+ORDER  0.389 · atoms in dish 1257 · in cells 423 · added 1680 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 2117 (full 4%, empty 0%) · atoms inside 423 · fuel inside 94.1 · burner +0/s · crawl −13.3/s
+ENGINES  harvest 0% · burn 42% · both 42% · other 16%  (batteries 0 · 28 · 30 · 25 %) · in the light 0 · 39 · 46 · 15 % · tolerance 14.9 · perm 3.35
+FREE LIGHT ATOMS  g 85.9 · t 86.7 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 299
+CHARGE  free +230 −231 (net −0.56) · in cells +0.56 · cells + 129 · − 183 · |q| 0.09
+MEMBRANE  mix 0.20 (heavy 22%) · thickness 0.015 · integrity 0.12 (whole 12%, damaged 5) · bursts 0/s · in membranes l 19.4 L 0.73 · bitten l 1.93 L 0.050/s · |selectivity| 0.03
+DIPOLES  |d| 0.25 · polarised 582 (31%) · neighbours aligned -0.01 · head-to-tail +0.25 · in threads 162 (ends 283) · along the field 0.91
+PUMPS  active 42% (top IN Gt 10%, OUT Gt 9%, IN g 8%) · |voltage| 0.01 (22 cells > 0.1) · paid 2.06/s · moved to dish 0.076/s, from dish 0.28/s, across contact 0.84/s
+CATALYSTS  crust ll 122 LL 131 · engines at 36% (in the light 40%, fed cells 39%) · trace in cells 1.01, in the dish 32.5 · cells with trace ≥ half 45 · IN-trace pumps 0 (battery 0.00 vs 0.28)
+HARD LIGHT  dose in the light 14.4, in the dark 0.25 · births from lit parents 100% mutating ×1.7 (all ×1.74) · slot jumps per birth: lit 0.077, others 0.000 (0.30/s)
+DIVISION  cells 1882 of 6000 · births 3.9/s · deaths 7.2/s: starved 0.0, heat 0.0, burst 0.0, age 7.2 · ready 17 (crowded 15) · starving 1
+COUNT  ▃████  last 0.3 min, 515 to 1941
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 150.00 s (run 150.00 s)
+ENTROPY  2.07 M  +7235/s   paused
+moving 265 · heat in dish 14.5 k · stored 1932 · in 2.09 M · rounding −0.016
+light in 6475/s → heat 1913/s · chemistry 52.3/s · pigments 72.3/s · passed 4438/s · spot · day 16%
+ORDER  0.386 · atoms in dish 1347 · in cells 453 · added 1800 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 1792 (full 4%, empty 0%) · atoms inside 453 · fuel inside 94.7 · burner +0/s · crawl −8.81/s
+ENGINES  harvest 0% · burn 42% · both 43% · other 15%  (batteries 0 · 23 · 27 · 20 %) · in the light 0 · 38 · 48 · 14 % · tolerance 15.0 · perm 3.37
+FREE LIGHT ATOMS  g 93.6 · t 94.6 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 281
+CHARGE  free +252 −253 (net −0.59) · in cells +0.58 · cells + 123 · − 225 · |q| 0.10
+MEMBRANE  mix 0.20 (heavy 22%) · thickness 0.015 · integrity 0.13 (whole 13%, damaged 12) · bursts 0/s · in membranes l 21.3 L 0.87 · bitten l 1.51 L 0.058/s · |selectivity| 0.03
+DIPOLES  |d| 0.27 · polarised 621 (34%) · neighbours aligned -0.02 · head-to-tail +0.25 · in threads 214 (ends 278) · along the field 0.91
+PUMPS  active 42% (top IN Gt 11%, OUT Gt 9%, IN g 8%) · |voltage| 0.01 (22 cells > 0.1) · paid 1.70/s · moved to dish 0.071/s, from dish 0.21/s, across contact 0.78/s
+CATALYSTS  crust ll 130 LL 141 · engines at 37% (in the light 40%, fed cells 42%) · trace in cells 1.05, in the dish 34.9 · cells with trace ≥ half 49 · IN-trace pumps 0 (battery 0.00 vs 0.24)
+HARD LIGHT  dose in the light 14.0, in the dark 0.33 · births from lit parents 100% mutating ×1.8 (all ×1.79) · slot jumps per birth: lit 0.138, others 0.000 (0.40/s)
+DIVISION  cells 1847 of 6000 · births 2.9/s · deaths 6.4/s: starved 0.0, heat 0.0, burst 0.0, age 6.4 · ready 27 (crowded 22) · starving 4
+COUNT  ▃██████  last 0.5 min, 515 to 1941
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 160.00 s (run 160.00 s)
+ENTROPY  2.14 M  +6936/s   paused
+moving 256 · heat in dish 14.0 k · stored 1649 · in 2.16 M · rounding −0.0028
+light in 6294/s → heat 1879/s · chemistry 55.8/s · pigments 70.4/s · passed 4289/s · spot · day 15%
+ORDER  0.383 · atoms in dish 1437 · in cells 483 · added 1920 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 1508 (full 4%, empty 1%) · atoms inside 483 · fuel inside 99.0 · burner +0/s · crawl −6.32/s
+ENGINES  harvest 0% · burn 41% · both 44% · other 15%  (batteries 0 · 20 · 24 · 16 %) · in the light 0 · 39 · 48 · 13 % · tolerance 15.0 · perm 3.38
+FREE LIGHT ATOMS  g 102 · t 104 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 271
+CHARGE  free +273 −273 (net −0.65) · in cells +0.60 · cells + 126 · − 221 · |q| 0.10
+MEMBRANE  mix 0.20 (heavy 22%) · thickness 0.015 · integrity 0.14 (whole 14%, damaged 14) · bursts 0/s · in membranes l 22.6 L 0.95 · bitten l 1.34 L 0.055/s · |selectivity| 0.03
+DIPOLES  |d| 0.30 · polarised 659 (37%) · neighbours aligned 0.00 · head-to-tail +0.24 · in threads 224 (ends 294) · along the field 0.91
+PUMPS  active 42% (top IN Gt 11%, OUT Gt 9%, OUT gT 8%) · |voltage| 0.01 (22 cells > 0.1) · paid 1.34/s · moved to dish 0.084/s, from dish 0.21/s, across contact 0.73/s
+CATALYSTS  crust ll 139 LL 150 · engines at 37% (in the light 41%, fed cells 40%) · trace in cells 1.06, in the dish 37.3 · cells with trace ≥ half 47 · IN-trace pumps 0 (battery 0.00 vs 0.21)
+HARD LIGHT  dose in the light 13.5, in the dark 0.27 · births from lit parents 100% mutating ×1.7 (all ×1.67) · slot jumps per birth: lit 0.120, others 0.000 (0.30/s)
+DIVISION  cells 1799 of 6000 · births 2.5/s · deaths 7.3/s: starved 0.0, heat 0.0, burst 0.0, age 7.3 · ready 29 (crowded 22) · starving 7
+COUNT  ▃███████  last 0.6 min, 515 to 1941
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 170.00 s (run 170.00 s)
+ENTROPY  2.21 M  +7024/s   paused
+moving 219 · heat in dish 14.2 k · stored 1439 · in 2.23 M · rounding +0.0036
+light in 7308/s → heat 2200/s · chemistry 65.9/s · pigments 87.6/s · passed 4954/s · spot · day 18%
+ORDER  0.380 · atoms in dish 1537 · in cells 503 · added 2040 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 1272 (full 5%, empty 7%) · atoms inside 503 · fuel inside 108 · burner +0/s · crawl −4.51/s
+ENGINES  harvest 0% · burn 41% · both 44% · other 15%  (batteries 0 · 16 · 22 · 12 %) · in the light 0 · 38 · 50 · 13 % · tolerance 15.0 · perm 3.38
+FREE LIGHT ATOMS  g 105 · t 106 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 259
+CHARGE  free +291 −291 (net −0.38) · in cells +0.35 · cells + 141 · − 242 · |q| 0.11
+MEMBRANE  mix 0.20 (heavy 22%) · thickness 0.015 · integrity 0.15 (whole 15%, damaged 12) · bursts 0/s · in membranes l 23.5 L 1.01 · bitten l 1.78 L 0.051/s · |selectivity| 0.03
+DIPOLES  |d| 0.32 · polarised 683 (39%) · neighbours aligned -0.02 · head-to-tail +0.24 · in threads 238 (ends 316) · along the field 0.90
+PUMPS  active 43% (top IN Gt 12%, OUT Gt 9%, OUT gT 8%) · |voltage| 0.01 (21 cells > 0.1) · paid 1.26/s · moved to dish 0.085/s, from dish 0.26/s, across contact 0.71/s
+CATALYSTS  crust ll 148 LL 160 · engines at 37% (in the light 40%, fed cells 40%) · trace in cells 0.88, in the dish 39.9 · cells with trace ≥ half 40 · IN-trace pumps 0 (battery 0.00 vs 0.18)
+HARD LIGHT  dose in the light 13.8, in the dark 0.19 · births from lit parents 100% mutating ×1.8 (all ×1.76) · slot jumps per birth: lit 0.111, others 0.000 (0.30/s)
+DIVISION  cells 1752 of 6000 · births 2.7/s · deaths 7.4/s: starved 0.1, heat 0.0, burst 0.3, age 7.0 · ready 39 (crowded 32) · starving 35
+COUNT  ▃███████▇▇  last 0.8 min, 515 to 1941
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 180.00 s (run 180.00 s)
+ENTROPY  2.28 M  +7597/s   paused
+moving 223 · heat in dish 15.3 k · stored 1312 · in 2.30 M · rounding −0.0065
+light in 9453/s → heat 2825/s · chemistry 89.9/s · pigments 110/s · passed 6429/s · spot · day 23%
+ORDER  0.377 · atoms in dish 1639 · in cells 521 · added 2160 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 1102 (full 7%, empty 20%) · atoms inside 521 · fuel inside 119 · burner +0/s · crawl −3.84/s
+ENGINES  harvest 0% · burn 40% · both 45% · other 14%  (batteries 25 · 14 · 21 · 8 %) · in the light 0 · 37 · 51 · 12 % · tolerance 15.0 · perm 3.39
+FREE LIGHT ATOMS  g 105 · t 106 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 244
+CHARGE  free +298 −298 (net −0.43) · in cells +0.41 · cells + 165 · − 235 · |q| 0.12
+MEMBRANE  mix 0.20 (heavy 22%) · thickness 0.015 · integrity 0.15 (whole 17%, damaged 14) · bursts 0.49/s · in membranes l 23.8 L 0.92 · bitten l 2.53 L 0.082/s · |selectivity| 0.03
+DIPOLES  |d| 0.33 · polarised 695 (41%) · neighbours aligned 0.02 · head-to-tail +0.24 · in threads 268 (ends 288) · along the field 0.91
+PUMPS  active 43% (top IN Gt 12%, OUT Gt 9%, OUT l 8%) · |voltage| 0.01 (17 cells > 0.1) · paid 1.07/s · moved to dish 0.10/s, from dish 0.23/s, across contact 0.66/s
+CATALYSTS  crust ll 157 LL 169 · engines at 37% (in the light 41%, fed cells 40%) · trace in cells 0.91, in the dish 42.2 · cells with trace ≥ half 44 · IN-trace pumps 0 (battery 0.00 vs 0.16)
+HARD LIGHT  dose in the light 15.6, in the dark 0.27 · births from lit parents 100% mutating ×1.7 (all ×1.75) · slot jumps per birth: lit 0.167, others 0.000 (0.40/s)
+DIVISION  cells 1690 of 6000 · births 2.4/s · deaths 8.6/s: starved 0.3, heat 0.0, burst 0.1, age 8.2 · ready 50 (crowded 47) · starving 220
+COUNT  ▃███████▇▇▇▇  last 0.9 min, 515 to 1941
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 190.00 s (run 190.00 s)
+ENTROPY  2.36 M  +8474/s   paused
+moving 227 · heat in dish 17.2 k · stored 1275 · in 2.38 M · rounding +0.0068
+light in 12.6 k/s → heat 3772/s · chemistry 113/s · pigments 150/s · passed 8536/s · spot · day 31%
+ORDER  0.374 · atoms in dish 1731 · in cells 549 · added 2280 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 1012 (full 8%, empty 42%) · atoms inside 549 · fuel inside 128 · burner +0/s · crawl −3.61/s
+ENGINES  harvest 0% · burn 40% · both 46% · other 14%  (batteries 19 · 13 · 21 · 5 %) · in the light 0 · 37 · 52 · 11 % · tolerance 15.0 · perm 3.42
+FREE LIGHT ATOMS  g 102 · t 103 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 224
+CHARGE  free +297 −297 (net −0.58) · in cells +0.55 · cells + 175 · − 240 · |q| 0.13
+MEMBRANE  mix 0.20 (heavy 21%) · thickness 0.015 · integrity 0.16 (whole 19%, damaged 29) · bursts 1.0/s · in membranes l 24.6 L 0.84 · bitten l 3.89 L 0.087/s · |selectivity| 0.03
+DIPOLES  |d| 0.36 · polarised 739 (45%) · neighbours aligned 0.01 · head-to-tail +0.23 · in threads 285 (ends 327) · along the field 0.92
+PUMPS  active 44% (top IN Gt 13%, OUT Gt 9%, OUT l 7%) · |voltage| 0.00 (15 cells > 0.1) · paid 1.04/s · moved to dish 0.10/s, from dish 0.25/s, across contact 0.68/s
+CATALYSTS  crust ll 167 LL 179 · engines at 37% (in the light 41%, fed cells 40%) · trace in cells 0.99, in the dish 44.6 · cells with trace ≥ half 52 · IN-trace pumps 0 (battery 0.00 vs 0.15)
+HARD LIGHT  dose in the light 18.6, in the dark 0.43 · births from lit parents 100% mutating ×1.8 (all ×1.82) · slot jumps per birth: lit 0.100, others 0.000 (0.40/s)
+DIVISION  cells 1656 of 6000 · births 4.0/s · deaths 7.4/s: starved 0.2, heat 0.0, burst 0.4, age 6.8 · ready 74 (crowded 67) · starving 426
+COUNT  ▃███████▇▇▇▇▇▇  last 1.1 min, 515 to 1941
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 200.00 s (run 200.00 s)
+ENTROPY  2.45 M  +9734/s   paused
+moving 236 · heat in dish 19.7 k · stored 1285 · in 2.47 M · rounding −0.0079
+light in 16.5 k/s → heat 4873/s · chemistry 153/s · pigments 189/s · passed 11.2 k/s · spot · day 40%
+ORDER  0.372 · atoms in dish 1829 · in cells 571 · added 2400 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 974 (full 9%, empty 57%) · atoms inside 571 · fuel inside 136 · burner +0/s · crawl −3.97/s
+ENGINES  harvest 0% · burn 41% · both 46% · other 13%  (batteries 14 · 12 · 21 · 3 %) · in the light 0 · 38 · 53 · 9 % · tolerance 15.1 · perm 3.42
+FREE LIGHT ATOMS  g 100 · t 101 in the dish · cells with an uphill swap 1 · breathers (downhill swap) 209
+CHARGE  free +298 −298 (net −0.57) · in cells +0.54 · cells + 172 · − 222 · |q| 0.13
+MEMBRANE  mix 0.20 (heavy 21%) · thickness 0.015 · integrity 0.17 (whole 20%, damaged 48) · bursts 1.48/s · in membranes l 25.2 L 0.80 · bitten l 4.75 L 0.12/s · |selectivity| 0.03
+DIPOLES  |d| 0.38 · polarised 746 (47%) · neighbours aligned -0.02 · head-to-tail +0.23 · in threads 268 (ends 323) · along the field 0.90
+PUMPS  active 45% (top IN Gt 14%, OUT Gt 9%, OUT l 7%) · |voltage| 0.00 (12 cells > 0.1) · paid 0.83/s · moved to dish 0.12/s, from dish 0.19/s, across contact 0.65/s
+CATALYSTS  crust ll 176 LL 189 · engines at 37% (in the light 41%, fed cells 41%) · trace in cells 1.16, in the dish 46.8 · cells with trace ≥ half 57 · IN-trace pumps 0 (battery 0.00 vs 0.15)
+HARD LIGHT  dose in the light 23.8, in the dark 0.78 · births from lit parents 100% mutating ×2.1 (all ×2.06) · slot jumps per birth: lit 0.150, others 0.000 (0.60/s)
+DIVISION  cells 1595 of 6000 · births 4.0/s · deaths 10.1/s: starved 2.8, heat 0.0, burst 0.8, age 6.5 · ready 94 (crowded 86) · starving 692
+COUNT  ▃███████▇▇▇▇▇▇▇▇  last 1.3 min, 515 to 1941
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 210.00 s (run 210.00 s)
+ENTROPY  2.55 M  +11.2 k/s   paused
+moving 224 · heat in dish 22.5 k · stored 1343 · in 2.58 M · rounding −0.0020
+light in 20.9 k/s → heat 6192/s · chemistry 178/s · pigments 245/s · passed 14.2 k/s · spot · day 51%
+ORDER  0.372 · atoms in dish 1904 · in cells 616 · added 2520 (+12.0/s) · out 0 · rounding 0
+CELLS  batteries 1015 (full 14%, empty 55%) · atoms inside 616 · fuel inside 147 · burner +0/s · crawl −4.13/s
+ENGINES  harvest 0% · burn 38% · both 49% · other 13%  (batteries 7 · 17 · 23 · 2 %) · in the light 0 · 38 · 55 · 6 % · tolerance 15.0 · perm 3.48
+FREE LIGHT ATOMS  g 96.5 · t 97.1 in the dish · cells with an uphill swap 1 · breathers (downhill swap) 190
+CHARGE  free +301 −302 (net −0.54) · in cells +0.46 · cells + 180 · − 237 · |q| 0.15
+MEMBRANE  mix 0.19 (heavy 18%) · thickness 0.015 · integrity 0.20 (whole 25%, damaged 44) · bursts 1.49/s · in membranes l 26.5 L 0.70 · bitten l 5.46 L 0.19/s · |selectivity| 0.03
+DIPOLES  |d| 0.42 · polarised 739 (52%) · neighbours aligned -0.04 · head-to-tail +0.25 · in threads 274 (ends 343) · along the field 0.92
+PUMPS  active 46% (top IN Gt 17%, OUT Gt 10%, OUT l 8%) · |voltage| 0.00 (11 cells > 0.1) · paid 0.76/s · moved to dish 0.11/s, from dish 0.19/s, across contact 0.76/s
+CATALYSTS  crust ll 186 LL 198 · engines at 38% (in the light 42%, fed cells 42%) · trace in cells 1.50, in the dish 48.9 · cells with trace ≥ half 63 · IN-trace pumps 0 (battery 0.00 vs 0.18)
+HARD LIGHT  dose in the light 29.6, in the dark 0.89 · births from lit parents 100% mutating ×2.3 (all ×2.33) · slot jumps per birth: lit 0.105, others 0.000 (0.60/s)
+DIVISION  cells 1419 of 6000 · births 5.7/s · deaths 23.3/s: starved 16.1, heat 0.0, burst 1.4, age 5.8 · ready 121 (crowded 111) · starving 735
+COUNT  ▃███████▇▇▇▇▇▇▇▇▇▇  last 1.4 min, 515 to 1941
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 220.00 s (run 220.00 s)
+ENTROPY  2.67 M  +12.3 k/s   paused
+moving 214 · heat in dish 24.7 k · stored 1238 · in 2.70 M · rounding +0.0078
+light in 25.4 k/s → heat 7496/s · chemistry 231/s · pigments 294/s · passed 17.4 k/s · spot · day 62%
+ORDER  – · atoms in dish 0 · in cells 640 · added 2640 (+12.0/s) · out 2000 · rounding 0
+CELLS  batteries 1078 (full 17%, empty 49%) · atoms inside 640 · fuel inside 159 · burner +0/s · crawl −4.63/s
+ENGINES  harvest 0% · burn 36% · both 55% · other 8%  (batteries 0 · 21 · 26 · 1 %) · in the light 0 · 38 · 58 · 4 % · tolerance 15.1 · perm 3.58
+FREE LIGHT ATOMS  g 95.9 · t 96.3 in the dish · cells with an uphill swap 1 · breathers (downhill swap) 105
+CHARGE  free +0 −0 (net +0) · in cells +0.69 · cells + 198 · − 240 · |q| 0.19
+MEMBRANE  mix 0.20 (heavy 20%) · thickness 0.015 · integrity 0.24 (whole 31%, damaged 51) · bursts 2.00/s · in membranes l 27.4 L 0.58 · bitten l 6.09 L 0.20/s · |selectivity| 0.03
+DIPOLES  |d| 0.49 · polarised 732 (60%) · neighbours aligned -0.03 · head-to-tail +0.24 · in threads 284 (ends 310) · along the field 0.90
+PUMPS  active 48% (top IN Gt 20%, OUT l 9%, OUT Gt 8%) · |voltage| 0.00 (8 cells > 0.1) · paid 0.68/s · moved to dish 0.11/s, from dish 0.20/s, across contact 0.78/s
+CATALYSTS  crust ll 196 LL 208 · engines at 39% (in the light 43%, fed cells 42%) · trace in cells 1.65, in the dish 51.1 · cells with trace ≥ half 64 · IN-trace pumps 0 (battery 0.00 vs 0.22)
+HARD LIGHT  dose in the light 36.8, in the dark 1.41 · births from lit parents 100% mutating ×2.6 (all ×2.61) · slot jumps per birth: lit 0.060, others 0.000 (0.40/s)
+DIVISION  cells 1225 of 6000 · births 6.7/s · deaths 26.1/s: starved 17.8, heat 0.0, burst 2.1, age 6.2 · ready 144 (crowded 136) · starving 584
+COUNT  ▃███████▇▇▇▇▇▇▇▇▇▇▆▆  last 1.6 min, 515 to 1941
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 230.00 s (run 230.00 s)
+ENTROPY  2.80 M  +12.9 k/s   paused
+moving 196 · heat in dish 26.1 k · stored 1337 · in 2.83 M · rounding +0.015
+light in 29.9 k/s → heat 8694/s · chemistry 76.7/s · pigments 350/s · passed 20.8 k/s · spot · day 73%
+ORDER  0.286 · atoms in dish 394 · in cells 367 · added 2760 (+12.0/s) · out 2000 · rounding 0
+CELLS  batteries 1093 (full 24%, empty 42%) · atoms inside 367 · fuel inside 102 · burner +0/s · crawl −3.76/s
+ENGINES  harvest 0% · burn 26% · both 65% · other 9%  (batteries 0 · 37 · 30 · 0 %) · in the light 0 · 35 · 60 · 4 % · tolerance 15.2 · perm 3.90
+FREE LIGHT ATOMS  g 41.0 · t 40.9 in the dish · cells with an uphill swap 2 · breathers (downhill swap) 89
+CHARGE  free +96.5 −96.2 (net +0.31) · in cells +0.40 · cells + 194 · − 179 · |q| 0.18
+MEMBRANE  mix 0.22 (heavy 25%) · thickness 0.016 · integrity 0.33 (whole 42%, damaged 76) · bursts 0/s · in membranes l 28.8 L 0.47 · bitten l 3.32 L 0.15/s · |selectivity| 0.04
+DIPOLES  |d| 0.57 · polarised 669 (71%) · neighbours aligned -0.05 · head-to-tail +0.24 · in threads 218 (ends 300) · along the field 0.90
+PUMPS  active 52% (top IN Gt 25%, OUT l 12%, OUT Gt 8%) · |voltage| 0.00 (3 cells > 0.1) · paid 0.60/s · moved to dish 0.069/s, from dish 0.12/s, across contact 0.43/s
+CATALYSTS  crust ll 6.12 LL 7.91 · engines at 39% (in the light 42%, fed cells 41%) · trace in cells 1.18, in the dish 2.88 · cells with trace ≥ half 56 · IN-trace pumps 0 (battery 0.00 vs 0.29)
+HARD LIGHT  dose in the light 45.6, in the dark 2.25 · births from lit parents 100% mutating ×3.1 (all ×3.08) · slot jumps per birth: lit 0.182, others 0.000 (0.80/s)
+DIVISION  cells 937 of 6000 · births 4.4/s · deaths 33.2/s: starved 28.5, heat 0.0, burst 0.5, age 4.2 · ready 145 (crowded 141) · starving 301
+COUNT  ▃███████▇▇▇▇▇▇▇▇▇▇▆▆▅▅  last 1.8 min, 515 to 1941
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 240.00 s (run 240.00 s)
+ENTROPY  2.93 M  +13.5 k/s   paused
+moving 164 · heat in dish 27.2 k · stored 1427 · in 2.96 M · rounding +0.019
+light in 34.0 k/s → heat 9787/s · chemistry 105/s · pigments 400/s · passed 23.7 k/s · spot · day 82%
+ORDER  0.304 · atoms in dish 502 · in cells 378 · added 2880 (+11.6/s) · out 2000 · rounding 0
+CELLS  batteries 1129 (full 33%, empty 25%) · atoms inside 378 · fuel inside 120 · burner +0/s · crawl −3.88/s
+ENGINES  harvest 0% · burn 29% · both 64% · other 7%  (batteries 0 · 41 · 42 · 0 %) · in the light 0 · 35 · 62 · 2 % · tolerance 15.1 · perm 4.05
+FREE LIGHT ATOMS  g 41.6 · t 41.6 in the dish · cells with an uphill swap 2 · breathers (downhill swap) 52
+CHARGE  free +109 −108 (net +0.52) · in cells +0.19 · cells + 201 · − 199 · |q| 0.25
+MEMBRANE  mix 0.23 (heavy 27%) · thickness 0.017 · integrity 0.43 (whole 56%, damaged 85) · bursts 0.50/s · in membranes l 29.7 L 0.45 · bitten l 3.60 L 0.19/s · |selectivity| 0.05
+DIPOLES  |d| 0.70 · polarised 628 (86%) · neighbours aligned -0.03 · head-to-tail +0.23 · in threads 228 (ends 295) · along the field 0.90
+PUMPS  active 57% (top IN Gt 24%, OUT l 15%, OUT Gt 10%) · |voltage| 0.00 (3 cells > 0.1) · paid 0.63/s · moved to dish 0.081/s, from dish 0.16/s, across contact 0.45/s
+CATALYSTS  crust ll 14.8 LL 17.2 · engines at 40% (in the light 41%, fed cells 40%) · trace in cells 1.01, in the dish 5.43 · cells with trace ≥ half 45 · IN-trace pumps 0 (battery 0.00 vs 0.39)
+HARD LIGHT  dose in the light 54.5, in the dark 3.67 · births from lit parents 100% mutating ×3.5 (all ×3.51) · slot jumps per birth: lit 0.158, others 0.000 (0.60/s)
+DIVISION  cells 729 of 6000 · births 3.8/s · deaths 24.6/s: starved 21.2, heat 0.0, burst 0.1, age 3.3 · ready 165 (crowded 155) · starving 175
+COUNT  ▃███████▇▇▇▇▇▇▇▇▇▇▆▆▅▅▄▄  last 1.9 min, 515 to 1941
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 250.00 s (run 250.00 s)
+ENTROPY  3.07 M  +14.6 k/s   paused
+moving 167 · heat in dish 29.4 k · stored 1515 · in 3.10 M · rounding +0.017
+light in 37.4 k/s → heat 10.8 k/s · chemistry 115/s · pigments 440/s · passed 26.1 k/s · spot · day 91%
+ORDER  0.289 · atoms in dish 501 · in cells 379 · added 2880 (+0/s) · out 2000 · rounding 0
+CELLS  batteries 1182 (full 36%, empty 19%) · atoms inside 379 · fuel inside 124 · burner +0/s · crawl −3.86/s
+ENGINES  harvest 0% · burn 30% · both 69% · other 1%  (batteries 39 · 44 · 43 · 0 %) · in the light 0 · 33 · 65 · 1 % · tolerance 15.3 · perm 4.07
+FREE LIGHT ATOMS  g 39.5 · t 39.3 in the dish · cells with an uphill swap 3 · breathers (downhill swap) 13
+CHARGE  free +95.5 −95.3 (net +0.23) · in cells +0.47 · cells + 215 · − 195 · |q| 0.27
+MEMBRANE  mix 0.20 (heavy 22%) · thickness 0.017 · integrity 0.46 (whole 63%, damaged 104) · bursts 1.0/s · in membranes l 31.0 L 0.36 · bitten l 3.59 L 0.16/s · |selectivity| 0.05
+DIPOLES  |d| 0.72 · polarised 620 (90%) · neighbours aligned 0.01 · head-to-tail +0.22 · in threads 224 (ends 271) · along the field 0.90
+PUMPS  active 61% (top IN Gt 28%, OUT l 15%, OUT Gt 10%) · |voltage| 0.00 (4 cells > 0.1) · paid 0.58/s · moved to dish 0.085/s, from dish 0.17/s, across contact 0.53/s
+CATALYSTS  crust ll 16.7 LL 18.1 · engines at 40% (in the light 41%, fed cells 40%) · trace in cells 1.03, in the dish 5.40 · cells with trace ≥ half 40 · IN-trace pumps 0 (battery 0.00 vs 0.43)
+HARD LIGHT  dose in the light 61.6, in the dark 9.88 · births from lit parents 100% mutating ×4.2 (all ×4.24) · slot jumps per birth: lit 0.293, others 0.000 (1.70/s)
+DIVISION  cells 692 of 6000 · births 5.8/s · deaths 9.5/s: starved 5.5, heat 0.3, burst 0.9, age 2.8 · ready 179 (crowded 168) · starving 123
+COUNT  ▃███████▇▇▇▇▇▇▇▇▇▇▆▆▅▅▄▄▄▄  last 2.1 min, 515 to 1941
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 260.00 s (run 260.00 s)
+ENTROPY  3.22 M  +15.2 k/s   paused
+moving 162 · heat in dish 30.6 k · stored 1599 · in 3.25 M · rounding +0.016
+light in 39.8 k/s → heat 11.3 k/s · chemistry 132/s · pigments 455/s · passed 27.9 k/s · spot · day 96%
+ORDER  0.280 · atoms in dish 512 · in cells 368 · added 2880 (+0/s) · out 2000 · rounding 0
+CELLS  batteries 1238 (full 37%, empty 16%) · atoms inside 368 · fuel inside 129 · burner +0/s · crawl −4.03/s
+ENGINES  harvest 0% · burn 29% · both 70% · other 0%  (batteries 22 · 46 · 45 · 0 %) · in the light 1 · 33 · 66 · 1 % · tolerance 15.4 · perm 4.06
+FREE LIGHT ATOMS  g 37.9 · t 37.6 in the dish · cells with an uphill swap 4 · breathers (downhill swap) 8
+CHARGE  free +90.4 −89.8 (net +0.56) · in cells +0.14 · cells + 202 · − 194 · |q| 0.27
+MEMBRANE  mix 0.19 (heavy 19%) · thickness 0.017 · integrity 0.48 (whole 67%, damaged 114) · bursts 1.97/s · in membranes l 31.9 L 0.34 · bitten l 3.25 L 0.14/s · |selectivity| 0.06
+DIPOLES  |d| 0.73 · polarised 621 (90%) · neighbours aligned -0.04 · head-to-tail +0.23 · in threads 219 (ends 272) · along the field 0.88
+PUMPS  active 61% (top IN Gt 29%, OUT l 14%, OUT Gt 10%) · |voltage| 0.00 (4 cells > 0.1) · paid 0.58/s · moved to dish 0.083/s, from dish 0.19/s, across contact 0.55/s
+CATALYSTS  crust ll 17.1 LL 18.2 · engines at 40% (in the light 41%, fed cells 40%) · trace in cells 1.09, in the dish 5.35 · cells with trace ≥ half 43 · IN-trace pumps 1 (battery 0.23 vs 0.45)
+HARD LIGHT  dose in the light 68.2, in the dark 14.54 · births from lit parents 100% mutating ×4.4 (all ×4.44) · slot jumps per birth: lit 0.267, others 0.000 (1.60/s)
+DIVISION  cells 690 of 6000 · births 6.0/s · deaths 6.2/s: starved 2.3, heat 0.5, burst 1.2, age 2.2 · ready 186 (crowded 175) · starving 108
+COUNT  ▃███████▇▇▇▇▇▇▇▇▇▇▆▆▅▅▄▄▄▄▃▃  last 2.3 min, 515 to 1941
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 270.00 s (run 270.00 s)
+ENTROPY  3.38 M  +15.5 k/s   paused
+moving 156 · heat in dish 31.1 k · stored 1659 · in 3.41 M · rounding +0.014
+light in 41.2 k/s → heat 11.7 k/s · chemistry 132/s · pigments 464/s · passed 28.9 k/s · spot · day 99%
+ORDER  0.273 · atoms in dish 515 · in cells 365 · added 2880 (+0/s) · out 2000 · rounding 0
+CELLS  batteries 1292 (full 44%, empty 5%) · atoms inside 365 · fuel inside 133 · burner +0/s · crawl −4.62/s
+ENGINES  harvest 0% · burn 31% · both 68% · other 0%  (batteries 13 · 46 · 53 · 0 %) · in the light 1 · 31 · 68 · 0 % · tolerance 15.8 · perm 3.84
+FREE LIGHT ATOMS  g 37.1 · t 36.9 in the dish · cells with an uphill swap 5 · breathers (downhill swap) 6
+CHARGE  free +89.3 −88.8 (net +0.46) · in cells +0.24 · cells + 217 · − 202 · |q| 0.32
+MEMBRANE  mix 0.14 (heavy 8%) · thickness 0.015 · integrity 0.54 (whole 77%, damaged 143) · bursts 1.48/s · in membranes l 32.6 L 0.39 · bitten l 2.97 L 0.16/s · |selectivity| 0.07
+DIPOLES  |d| 0.78 · polarised 611 (96%) · neighbours aligned -0.06 · head-to-tail +0.24 · in threads 220 (ends 278) · along the field 0.90
+PUMPS  active 57% (top IN Gt 34%, OUT Gt 11%, OUT gT 5%) · |voltage| 0.00 (3 cells > 0.1) · paid 0.65/s · moved to dish 0.10/s, from dish 0.24/s, across contact 0.64/s
+CATALYSTS  crust ll 17.1 LL 18.2 · engines at 40% (in the light 41%, fed cells 40%) · trace in cells 1.01, in the dish 5.43 · cells with trace ≥ half 46 · IN-trace pumps 1 (battery 0.12 vs 0.51)
+HARD LIGHT  dose in the light 72.2, in the dark 34.91 · births from lit parents 100% mutating ×4.8 (all ×4.79) · slot jumps per birth: lit 0.333, others 0.000 (2.39/s)
+DIVISION  cells 634 of 6000 · births 7.2/s · deaths 12.6/s: starved 8.7, heat 0.6, burst 1.9, age 1.5 · ready 186 (crowded 169) · starving 26
+COUNT  ▃███████▇▇▇▇▇▇▇▇▇▇▆▆▅▅▄▄▄▄▃▃▃▃  last 2.4 min, 515 to 1941
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 280.00 s (run 280.00 s)
+ENTROPY  3.53 M  +15.8 k/s   paused
+moving 154 · heat in dish 31.6 k · stored 1698 · in 3.57 M · rounding +0.014
+light in 41.4 k/s → heat 11.9 k/s · chemistry 122/s · pigments 485/s · passed 28.9 k/s · spot · day 100%
+ORDER  0.266 · atoms in dish 506 · in cells 374 · added 2880 (+0/s) · out 2000 · rounding 0
+CELLS  batteries 1339 (full 40%, empty 4%) · atoms inside 374 · fuel inside 135 · burner +0/s · crawl −4.98/s
+ENGINES  harvest 1% · burn 30% · both 69% · other 0%  (batteries 16 · 46 · 52 · 0 %) · in the light 1 · 30 · 70 · 0 % · tolerance 15.9 · perm 3.83
+FREE LIGHT ATOMS  g 37.2 · t 36.9 in the dish · cells with an uphill swap 7 · breathers (downhill swap) 7
+CHARGE  free +87.7 −87.1 (net +0.52) · in cells +0.19 · cells + 227 · − 205 · |q| 0.33
+MEMBRANE  mix 0.14 (heavy 7%) · thickness 0.015 · integrity 0.53 (whole 80%, damaged 175) · bursts 0/s · in membranes l 33.3 L 0.49 · bitten l 2.84 L 0.19/s · |selectivity| 0.08
+DIPOLES  |d| 0.79 · polarised 650 (97%) · neighbours aligned -0.01 · head-to-tail +0.23 · in threads 233 (ends 294) · along the field 0.87
+PUMPS  active 55% (top IN Gt 33%, OUT Gt 11%, OUT gT 5%) · |voltage| 0.00 (4 cells > 0.1) · paid 0.69/s · moved to dish 0.099/s, from dish 0.25/s, across contact 0.78/s
+CATALYSTS  crust ll 17.1 LL 18.2 · engines at 41% (in the light 42%, fed cells 41%) · trace in cells 1.33, in the dish 5.11 · cells with trace ≥ half 55 · IN-trace pumps 1 (battery 0.01 vs 0.50)
+HARD LIGHT  dose in the light 73.9, in the dark 29.09 · births from lit parents 100% mutating ×4.8 (all ×4.82) · slot jumps per birth: lit 0.253, others 0.000 (2.09/s)
+DIVISION  cells 668 of 6000 · births 8.2/s · deaths 4.9/s: starved 1.0, heat 1.0, burst 1.2, age 1.7 · ready 186 (crowded 166) · starving 20
+COUNT  ▃███████▇▇▇▇▇▇▇▇▇▇▆▆▅▅▄▄▄▄▃▃▃▃▃▃  last 2.6 min, 515 to 1941
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 290.00 s (run 290.00 s)
+ENTROPY  3.69 M  +15.7 k/s   paused
+moving 174 · heat in dish 31.7 k · stored 1755 · in 3.72 M · rounding +0.017
+light in 40.4 k/s → heat 11.9 k/s · chemistry 118/s · pigments 494/s · passed 27.9 k/s · spot · day 97%
+ORDER  0.261 · atoms in dish 498 · in cells 382 · added 2880 (+0/s) · out 2000 · rounding 0
+CELLS  batteries 1403 (full 41%, empty 4%) · atoms inside 382 · fuel inside 139 · burner +0/s · crawl −4.82/s
+ENGINES  harvest 1% · burn 29% · both 70% · other 0%  (batteries 18 · 46 · 52 · 0 %) · in the light 1 · 29 · 70 · 0 % · tolerance 16.1 · perm 3.87
+FREE LIGHT ATOMS  g 37.7 · t 37.4 in the dish · cells with an uphill swap 5 · breathers (downhill swap) 8
+CHARGE  free +87.4 −87.0 (net +0.40) · in cells +0.31 · cells + 267 · − 211 · |q| 0.34
+MEMBRANE  mix 0.14 (heavy 6%) · thickness 0.015 · integrity 0.52 (whole 82%, damaged 218) · bursts 0.98/s · in membranes l 33.8 L 0.55 · bitten l 2.72 L 0.24/s · |selectivity| 0.09
+DIPOLES  |d| 0.79 · polarised 674 (96%) · neighbours aligned -0.01 · head-to-tail +0.23 · in threads 255 (ends 307) · along the field 0.89
+PUMPS  active 55% (top IN Gt 34%, OUT Gt 10%, OUT gT 5%) · |voltage| 0.00 (4 cells > 0.1) · paid 0.73/s · moved to dish 0.11/s, from dish 0.27/s, across contact 0.81/s
+CATALYSTS  crust ll 17.1 LL 18.1 · engines at 41% (in the light 42%, fed cells 42%) · trace in cells 1.84, in the dish 4.60 · cells with trace ≥ half 68 · IN-trace pumps 0 (battery 0.00 vs 0.50)
+HARD LIGHT  dose in the light 74.8, in the dark 22.85 · births from lit parents 100% mutating ×4.7 (all ×4.70) · slot jumps per birth: lit 0.337, others 0.000 (2.80/s)
+DIVISION  cells 700 of 6000 · births 8.3/s · deaths 5.2/s: starved 0.7, heat 0.8, burst 1.6, age 2.1 · ready 196 (crowded 184) · starving 19
+COUNT  ▃███████▇▇▇▇▇▇▇▇▇▇▆▆▅▅▄▄▄▄▃▃▃▃▃▃▃▃  last 2.8 min, 515 to 1941
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 300.00 s (run 300.00 s)
+ENTROPY  3.85 M  +15.5 k/s   paused
+moving 178 · heat in dish 0 · stored 0 · in 3.88 M · rounding +3.3e+4
+light in 38.2 k/s → heat 11.4 k/s · chemistry 108/s · pigments 488/s · passed 26.2 k/s · spot · day 92%
+ORDER  – · atoms in dish 0 · added 2880 (+0/s) · out 2000 · rounding 8.8e+2
+CELLS  batteries 0 (full 0%, empty 0%) · atoms inside 0 · fuel inside 0 · burner +0/s · crawl −4.83/s
+ENGINES  …
+CHARGE  free +0 −0 (net +0) · in cells +0 · cells + 0 · − 0 · |q| 0.00
+MEMBRANE  …
+DIPOLES  |d| 0.80 · polarised 701 (98%) · neighbours aligned -0.02 · head-to-tail +0.22 · in threads 282 (ends 308) · along the field 0.88
+PUMPS  …
+CATALYSTS  crust ll 17.1 LL 18.1 · engines at 100% (in the light 100%, fed cells 100%) · trace in cells 0, in the dish 4.13 · cells with trace ≥ half 0 · IN-trace pumps 0 (battery 0.00 vs 0.00)
+HARD LIGHT  dose in the light 0.0, in the dark 0.00 · births from lit parents 100% mutating ×5.2 (all ×5.16) · slot jumps per birth: lit 0.257, others 0.000 (1.90/s)
+DIVISION  cells 712 of 6000 · births 7.4/s · deaths 6.2/s: starved 0.6, heat 1.1, burst 2.5, age 2.0 · ready 228 (crowded 206) · starving 20
+COUNT  ▃███████▇▇▇▇▇▇▇▇▇▇▆▆▅▅▄▄▄▄▃▃▃▃▃▃▃▃▄▄  last 2.9 min, 515 to 1941
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 310.00 s (run 310.00 s)
+ENTROPY  3.96 M  +10.3 k/s   paused
+moving 86.8 · heat in dish 20.6 k · stored 1483 · in 3.99 M · rounding +0.021
+light in 26.9 k/s → heat 7402/s · chemistry 14.8/s · pigments 301/s · passed 19.2 k/s · spot · day 84%
+ORDER  0.218 · atoms in dish 184 · in cells 198 · added 2880 (+0/s) · out 2498 · rounding 0
+CELLS  batteries 1362 (full 32%, empty 4%) · atoms inside 198 · fuel inside 53.7 · burner +0/s · crawl −3.17/s
+ENGINES  harvest 1% · burn 26% · both 73% · other 0%  (batteries 22 · 43 · 47 · 0 %) · in the light 1 · 29 · 70 · 0 % · tolerance 16.1 · perm 3.98
+FREE LIGHT ATOMS  g 25.5 · t 25.6 in the dish · cells with an uphill swap 6 · breathers (downhill swap) 10
+CHARGE  free +54.7 −54.6 (net +0.088) · in cells +0.23 · cells + 227 · − 208 · |q| 0.24
+MEMBRANE  mix 0.14 (heavy 6%) · thickness 0.015 · integrity 0.49 (whole 84%, damaged 313) · bursts 1.97/s · in membranes l 33.1 L 0.76 · bitten l 0.76 L 0.014/s · |selectivity| 0.11
+DIPOLES  |d| 0.73 · polarised 704 (94%) · neighbours aligned -0.03 · head-to-tail +0.23 · in threads 250 (ends 315) · along the field 0.90
+PUMPS  active 55% (top IN Gt 35%, OUT Gt 9%, OUT gT 5%) · |voltage| 0.00 (0 cells > 0.1) · paid 0.77/s · moved to dish 0.035/s, from dish 0.12/s, across contact 0.38/s
+CATALYSTS  crust ll 0.011 LL 0.00049 · engines at 40% (in the light 38%, fed cells 40%) · trace in cells 1.31, in the dish 1.0 · cells with trace ≥ half 51 · IN-trace pumps 1 (battery 0.24 vs 0.46)
+HARD LIGHT  dose in the light 62.2, in the dark 39.42 · births from lit parents 100% mutating ×5.0 (all ×5.04) · slot jumps per birth: lit 0.312, others 0.000 (2.40/s)
+DIVISION  cells 745 of 6000 · births 7.7/s · deaths 4.4/s: starved 0.3, heat 0.0, burst 1.6, age 2.5 · ready 173 (crowded 172) · starving 21
+COUNT  ███████▇▇▇▇▇▇▇▇▇▆▆▅▅▄▄▄▄▄▄▄▃▃▃▃▃▄▄▄▄  last 2.9 min, 628 to 1915
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 320.00 s (run 320.00 s)
+ENTROPY  4.06 M  +9639/s   paused
+moving 92.3 · heat in dish 19.3 k · stored 1432 · in 4.08 M · rounding +0.013
+light in 23.9 k/s → heat 6859/s · chemistry 14.2/s · pigments 310/s · passed 16.7 k/s · spot · day 75%
+ORDER  0.212 · atoms in dish 193 · in cells 189 · added 2880 (+0/s) · out 2498 · rounding 0
+CELLS  batteries 1298 (full 34%, empty 4%) · atoms inside 189 · fuel inside 58.8 · burner +0/s · crawl −2.78/s
+ENGINES  harvest 1% · burn 26% · both 73% · other 0%  (batteries 18 · 41 · 47 · 0 %) · in the light 1 · 27 · 72 · 0 % · tolerance 16.1 · perm 4.01
+FREE LIGHT ATOMS  g 25.9 · t 25.8 in the dish · cells with an uphill swap 5 · breathers (downhill swap) 9
+CHARGE  free +56.2 −56.0 (net +0.21) · in cells +0.11 · cells + 209 · − 224 · |q| 0.24
+MEMBRANE  mix 0.14 (heavy 6%) · thickness 0.014 · integrity 0.50 (whole 85%, damaged 283) · bursts 1.94/s · in membranes l 32.7 L 0.76 · bitten l 0.71 L 0.021/s · |selectivity| 0.11
+DIPOLES  |d| 0.72 · polarised 675 (94%) · neighbours aligned -0.03 · head-to-tail +0.22 · in threads 257 (ends 281) · along the field 0.91
+PUMPS  active 54% (top IN Gt 35%, OUT Gt 9%, OUT gT 4%) · |voltage| 0.00 (0 cells > 0.1) · paid 0.72/s · moved to dish 0.037/s, from dish 0.13/s, across contact 0.44/s
+CATALYSTS  crust ll 0.035 LL 0.00073 · engines at 40% (in the light 39%, fed cells 39%) · trace in cells 1.02, in the dish 1.29 · cells with trace ≥ half 48 · IN-trace pumps 1 (battery 0.19 vs 0.45)
+HARD LIGHT  dose in the light 57.3, in the dark 23.95 · births from lit parents 100% mutating ×3.9 (all ×3.89) · slot jumps per birth: lit 0.150, others 0.000 (0.30/s)
+DIVISION  cells 721 of 6000 · births 2.0/s · deaths 4.6/s: starved 0.7, heat 0.0, burst 1.3, age 2.6 · ready 164 (crowded 161) · starving 22
+COUNT  ███████▇▇▇▇▇▇▇▆▆▆▅▄▄▄▄▄▄▄▃▃▃▃▄▄▄▄▄▄▄  last 2.9 min, 628 to 1882
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 330.00 s (run 330.00 s)
+ENTROPY  4.16 M  +9070/s   paused
+moving 86.3 · heat in dish 18.1 k · stored 1390 · in 4.18 M · rounding +0.021
+light in 20.5 k/s → heat 6131/s · chemistry 13.5/s · pigments 287/s · passed 14.1 k/s · spot · day 64%
+ORDER  0.207 · atoms in dish 203 · in cells 179 · added 2880 (+0/s) · out 2498 · rounding 0
+CELLS  batteries 1248 (full 34%, empty 4%) · atoms inside 179 · fuel inside 61.3 · burner +0/s · crawl −2.40/s
+ENGINES  harvest 1% · burn 25% · both 74% · other 0%  (batteries 16 · 39 · 47 · 0 %) · in the light 1 · 25 · 74 · 0 % · tolerance 16.1 · perm 4.03
+FREE LIGHT ATOMS  g 26.6 · t 26.3 in the dish · cells with an uphill swap 5 · breathers (downhill swap) 9
+CHARGE  free +57.6 −57.4 (net +0.29) · in cells +0.021 · cells + 191 · − 216 · |q| 0.23
+MEMBRANE  mix 0.14 (heavy 5%) · thickness 0.014 · integrity 0.52 (whole 86%, damaged 281) · bursts 2.46/s · in membranes l 32.3 L 0.75 · bitten l 0.65 L 0.020/s · |selectivity| 0.11
+DIPOLES  |d| 0.70 · polarised 653 (94%) · neighbours aligned -0.05 · head-to-tail +0.22 · in threads 251 (ends 287) · along the field 0.88
+PUMPS  active 55% (top IN Gt 35%, OUT Gt 9%, OUT gT 4%) · |voltage| 0.00 (1 cells > 0.1) · paid 0.71/s · moved to dish 0.036/s, from dish 0.15/s, across contact 0.52/s
+CATALYSTS  crust ll 0.060 LL 0.00073 · engines at 40% (in the light 39%, fed cells 40%) · trace in cells 0.92, in the dish 1.39 · cells with trace ≥ half 42 · IN-trace pumps 1 (battery 0.14 vs 0.45)
+HARD LIGHT  dose in the light 51.7, in the dark 14.60 · births from lit parents 100% mutating ×3.9 (all ×3.93) · slot jumps per birth: lit 0.217, others 0.000 (0.50/s)
+DIVISION  cells 693 of 6000 · births 2.3/s · deaths 5.1/s: starved 0.9, heat 0.0, burst 0.9, age 3.3 · ready 170 (crowded 166) · starving 25
+COUNT  ██████▇▇▇▇▇▇▆▆▆▅▅▄▄▄▄▄▄▃▃▃▄▄▄▄▄▄▄▄▄▄  last 2.9 min, 628 to 1847
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 340.00 s (run 340.00 s)
+ENTROPY  4.24 M  +7718/s   paused
+moving 79.8 · heat in dish 15.4 k · stored 1389 · in 4.26 M · rounding +0.024
+light in 17.0 k/s → heat 5146/s · chemistry 11.6/s · pigments 247/s · passed 11.6 k/s · spot · day 53%
+ORDER  0.201 · atoms in dish 205 · in cells 176 · added 2880 (+0/s) · out 2498 · rounding 0
+CELLS  batteries 1242 (full 34%, empty 4%) · atoms inside 176 · fuel inside 64.0 · burner +0/s · crawl −2.30/s
+ENGINES  harvest 1% · burn 25% · both 74% · other 0%  (batteries 14 · 38 · 48 · 0 %) · in the light 1 · 25 · 74 · 0 % · tolerance 16.2 · perm 4.06
+FREE LIGHT ATOMS  g 26.7 · t 26.3 in the dish · cells with an uphill swap 5 · breathers (downhill swap) 9
+CHARGE  free +57.4 −57.2 (net +0.19) · in cells +0.11 · cells + 194 · − 212 · |q| 0.23
+MEMBRANE  mix 0.14 (heavy 5%) · thickness 0.014 · integrity 0.52 (whole 87%, damaged 274) · bursts 0.50/s · in membranes l 32.5 L 0.76 · bitten l 0.53 L 0.012/s · |selectivity| 0.11
+DIPOLES  |d| 0.68 · polarised 642 (93%) · neighbours aligned -0.07 · head-to-tail +0.23 · in threads 239 (ends 268) · along the field 0.89
+PUMPS  active 54% (top IN Gt 36%, OUT Gt 9%, OUT gT 4%) · |voltage| 0.00 (1 cells > 0.1) · paid 0.73/s · moved to dish 0.034/s, from dish 0.16/s, across contact 0.66/s
+CATALYSTS  crust ll 0.079 LL 0.00073 · engines at 40% (in the light 39%, fed cells 39%) · trace in cells 0.84, in the dish 1.47 · cells with trace ≥ half 35 · IN-trace pumps 1 (battery 0.09 vs 0.45)
+HARD LIGHT  dose in the light 45.9, in the dark 10.52 · births from lit parents 100% mutating ×3.7 (all ×3.69) · slot jumps per birth: lit 0.192, others 0.000 (0.50/s)
+DIVISION  cells 694 of 6000 · births 2.6/s · deaths 2.7/s: starved 0.4, heat 0.0, burst 0.4, age 1.9 · ready 175 (crowded 174) · starving 26
+COUNT  █████▇▇▇▇▇▇▆▆▅▅▄▄▄▄▄▄▃▃▄▄▄▄▄▄▄▄▄▄▄▄▄  last 2.9 min, 628 to 1799
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 350.00 s (run 350.00 s)
+ENTROPY  4.31 M  +6472/s   paused
+moving 65.5 · heat in dish 12.9 k · stored 1358 · in 4.32 M · rounding +0.033
+light in 13.6 k/s → heat 4076/s · chemistry 9.56/s · pigments 197/s · passed 9301/s · spot · day 42%
+ORDER  0.198 · atoms in dish 210 · in cells 171 · added 2880 (+0/s) · out 2498 · rounding 0
+CELLS  batteries 1206 (full 36%, empty 5%) · atoms inside 171 · fuel inside 64.2 · burner +0/s · crawl −2.13/s
+ENGINES  harvest 1% · burn 24% · both 75% · other 0%  (batteries 12 · 36 · 49 · 0 %) · in the light 1 · 24 · 75 · 0 % · tolerance 16.2 · perm 4.07
+FREE LIGHT ATOMS  g 27.1 · t 26.6 in the dish · cells with an uphill swap 5 · breathers (downhill swap) 7
+CHARGE  free +57.8 −57.6 (net +0.22) · in cells +0.078 · cells + 190 · − 195 · |q| 0.23
+MEMBRANE  mix 0.14 (heavy 5%) · thickness 0.014 · integrity 0.54 (whole 87%, damaged 251) · bursts 0.97/s · in membranes l 31.9 L 0.80 · bitten l 0.38 L 0.0052/s · |selectivity| 0.11
+DIPOLES  |d| 0.68 · polarised 613 (92%) · neighbours aligned -0.04 · head-to-tail +0.22 · in threads 258 (ends 237) · along the field 0.87
+PUMPS  active 56% (top IN Gt 37%, OUT Gt 8%, OUT gT 4%) · |voltage| 0.00 (1 cells > 0.1) · paid 0.73/s · moved to dish 0.036/s, from dish 0.17/s, across contact 0.83/s
+CATALYSTS  crust ll 0.10 LL 0.00073 · engines at 40% (in the light 39%, fed cells 39%) · trace in cells 0.79, in the dish 1.52 · cells with trace ≥ half 34 · IN-trace pumps 1 (battery 0.07 vs 0.45)
+HARD LIGHT  dose in the light 41.2, in the dark 7.86 · births from lit parents 100% mutating ×3.3 (all ×3.27) · slot jumps per birth: lit 0.286, others 0.000 (0.40/s)
+DIVISION  cells 667 of 6000 · births 1.4/s · deaths 4.1/s: starved 0.8, heat 0.0, burst 0.7, age 2.6 · ready 170 (crowded 164) · starving 25
+COUNT  █████▇▇▇▇▆▆▅▅▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄  last 2.9 min, 628 to 1753
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 360.00 s (run 360.00 s)
+ENTROPY  4.37 M  +5536/s   paused
+moving 62.0 · heat in dish 11.0 k · stored 1328 · in 4.38 M · rounding +0.032
+light in 10.5 k/s → heat 3161/s · chemistry 7.97/s · pigments 154/s · passed 7146/s · spot · day 33%
+ORDER  0.194 · atoms in dish 215 · in cells 166 · added 2880 (+0/s) · out 2499 · rounding 0
+CELLS  batteries 1175 (full 34%, empty 6%) · atoms inside 166 · fuel inside 62.7 · burner +0/s · crawl −2.06/s
+ENGINES  harvest 1% · burn 24% · both 75% · other 0%  (batteries 10 · 35 · 48 · 0 %) · in the light 1 · 23 · 76 · 0 % · tolerance 16.2 · perm 4.09
+FREE LIGHT ATOMS  g 28.0 · t 27.3 in the dish · cells with an uphill swap 5 · breathers (downhill swap) 9
+CHARGE  free +59.4 −59.1 (net +0.24) · in cells +0.055 · cells + 182 · − 170 · |q| 0.22
+MEMBRANE  mix 0.14 (heavy 5%) · thickness 0.014 · integrity 0.54 (whole 89%, damaged 242) · bursts 1.49/s · in membranes l 31.8 L 0.76 · bitten l 0.30 L 0.0024/s · |selectivity| 0.11
+DIPOLES  |d| 0.67 · polarised 598 (91%) · neighbours aligned -0.01 · head-to-tail +0.22 · in threads 233 (ends 247) · along the field 0.89
+PUMPS  active 56% (top IN Gt 37%, OUT Gt 9%, OUT gT 4%) · |voltage| 0.00 (1 cells > 0.1) · paid 0.73/s · moved to dish 0.032/s, from dish 0.20/s, across contact 0.92/s
+CATALYSTS  crust ll 0.11 LL 0.00073 · engines at 40% (in the light 39%, fed cells 40%) · trace in cells 0.75, in the dish 1.56 · cells with trace ≥ half 39 · IN-trace pumps 1 (battery 0.04 vs 0.45)
+HARD LIGHT  dose in the light 34.6, in the dark 5.97 · births from lit parents 100% mutating ×2.9 (all ×2.94) · slot jumps per birth: lit 0.111, others 0.000 (0.30/s)
+DIVISION  cells 658 of 6000 · births 2.7/s · deaths 3.6/s: starved 0.9, heat 0.0, burst 0.8, age 1.9 · ready 162 (crowded 155) · starving 28
+COUNT  █████▇▇▆▆▅▅▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄  last 2.9 min, 628 to 1690
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 370.00 s (run 370.00 s)
+ENTROPY  4.42 M  +4567/s   paused
+moving 58.8 · heat in dish 9128 · stored 1276 · in 4.43 M · rounding +0.038
+light in 7883/s → heat 2389/s · chemistry 6.83/s · pigments 119/s · passed 5368/s · spot · day 24%
+ORDER  0.191 · atoms in dish 224 · in cells 156 · added 2880 (+0/s) · out 2499 · rounding 0
+CELLS  batteries 1121 (full 33%, empty 6%) · atoms inside 156 · fuel inside 60.6 · burner +0/s · crawl −1.96/s
+ENGINES  harvest 1% · burn 22% · both 77% · other 0%  (batteries 10 · 33 · 48 · 0 %) · in the light 1 · 22 · 77 · 0 % · tolerance 16.1 · perm 4.09
+FREE LIGHT ATOMS  g 29.0 · t 28.0 in the dish · cells with an uphill swap 5 · breathers (downhill swap) 10
+CHARGE  free +61.9 −61.6 (net +0.29) · in cells +0.0098 · cells + 170 · − 170 · |q| 0.22
+MEMBRANE  mix 0.14 (heavy 4%) · thickness 0.014 · integrity 0.55 (whole 90%, damaged 237) · bursts 0.49/s · in membranes l 31.4 L 0.73 · bitten l 0.18 L 0.0015/s · |selectivity| 0.11
+DIPOLES  |d| 0.69 · polarised 600 (94%) · neighbours aligned -0.03 · head-to-tail +0.22 · in threads 227 (ends 278) · along the field 0.90
+PUMPS  active 56% (top IN Gt 38%, OUT Gt 8%, OUT gT 3%) · |voltage| 0.00 (1 cells > 0.1) · paid 0.71/s · moved to dish 0.026/s, from dish 0.21/s, across contact 1.01/s
+CATALYSTS  crust ll 0.12 LL 0.00073 · engines at 39% (in the light 39%, fed cells 39%) · trace in cells 0.62, in the dish 1.68 · cells with trace ≥ half 32 · IN-trace pumps 2 (battery 0.16 vs 0.44)
+HARD LIGHT  dose in the light 28.3, in the dark 3.57 · births from lit parents 100% mutating ×2.8 (all ×2.78) · slot jumps per birth: lit 0.280, others 0.000 (0.70/s)
+DIVISION  cells 636 of 6000 · births 2.5/s · deaths 4.7/s: starved 0.8, heat 0.0, burst 1.2, age 2.7 · ready 146 (crowded 143) · starving 29
+COUNT  ███▇▇▇▆▅▅▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄  last 2.9 min, 628 to 1656
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 380.00 s (run 380.00 s)
+ENTROPY  4.46 M  +4018/s   paused
+moving 49.8 · heat in dish 7971 · stored 1244 · in 4.47 M · rounding +0.034
+light in 6003/s → heat 1825/s · chemistry 6.03/s · pigments 92.6/s · passed 4079/s · spot · day 19%
+ORDER  0.187 · atoms in dish 231 · in cells 149 · added 2880 (+0/s) · out 2500 · rounding 0
+CELLS  batteries 1087 (full 30%, empty 7%) · atoms inside 149 · fuel inside 56.3 · burner +0/s · crawl −1.91/s
+ENGINES  harvest 1% · burn 21% · both 78% · other 0%  (batteries 8 · 32 · 46 · 0 %) · in the light 1 · 21 · 78 · 0 % · tolerance 16.1 · perm 4.06
+FREE LIGHT ATOMS  g 30.6 · t 29.3 in the dish · cells with an uphill swap 6 · breathers (downhill swap) 6
+CHARGE  free +63.8 −63.5 (net +0.38) · in cells −0.093 · cells + 160 · − 152 · |q| 0.21
+MEMBRANE  mix 0.14 (heavy 4%) · thickness 0.014 · integrity 0.56 (whole 90%, damaged 225) · bursts 0/s · in membranes l 31.6 L 0.74 · bitten l 0.14 L 0.00012/s · |selectivity| 0.11
+DIPOLES  |d| 0.68 · polarised 591 (94%) · neighbours aligned 0.01 · head-to-tail +0.21 · in threads 241 (ends 239) · along the field 0.89
+PUMPS  active 57% (top IN Gt 39%, OUT Gt 8%, OUT gT 3%) · |voltage| 0.00 (0 cells > 0.1) · paid 0.71/s · moved to dish 0.021/s, from dish 0.27/s, across contact 1.06/s
+CATALYSTS  crust ll 0.13 LL 0.00073 · engines at 39% (in the light 39%, fed cells 39%) · trace in cells 0.53, in the dish 1.78 · cells with trace ≥ half 27 · IN-trace pumps 2 (battery 0.20 vs 0.43)
+HARD LIGHT  dose in the light 22.8, in the dark 8.44 · births from lit parents 100% mutating ×2.6 (all ×2.58) · slot jumps per birth: lit 0.150, others 0.000 (0.30/s)
+DIVISION  cells 632 of 6000 · births 2.0/s · deaths 2.4/s: starved 0.6, heat 0.0, burst 0.5, age 1.3 · ready 138 (crowded 134) · starving 30
+COUNT  ██▇▇▆▅▅▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄  last 2.9 min, 628 to 1593
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 390.00 s (run 390.00 s)
+ENTROPY  4.50 M  +3601/s   paused
+moving 65.8 · heat in dish 7223 · stored 1198 · in 4.51 M · rounding +0.032
+light in 4957/s → heat 1478/s · chemistry 5.43/s · pigments 76.4/s · passed 3397/s · spot · day 16%
+ORDER  0.183 · atoms in dish 241 · in cells 138 · added 2880 (+0/s) · out 2500 · rounding 0
+CELLS  batteries 1037 (full 29%, empty 6%) · atoms inside 138 · fuel inside 50.6 · burner +0/s · crawl −1.73/s
+ENGINES  harvest 1% · burn 20% · both 79% · other 0%  (batteries 4 · 31 · 46 · 0 %) · in the light 1 · 20 · 79 · 0 % · tolerance 16.2 · perm 4.06
+FREE LIGHT ATOMS  g 31.9 · t 30.3 in the dish · cells with an uphill swap 6 · breathers (downhill swap) 7
+CHARGE  free +64.7 −64.3 (net +0.42) · in cells −0.14 · cells + 151 · − 144 · |q| 0.22
+MEMBRANE  mix 0.14 (heavy 4%) · thickness 0.014 · integrity 0.58 (whole 91%, damaged 211) · bursts 0/s · in membranes l 31.4 L 0.69 · bitten l 0.087 L 0.00024/s · |selectivity| 0.12
+DIPOLES  |d| 0.70 · polarised 564 (93%) · neighbours aligned 0.02 · head-to-tail +0.22 · in threads 232 (ends 233) · along the field 0.91
+PUMPS  active 59% (top IN Gt 41%, OUT Gt 8%, OUT gT 3%) · |voltage| 0.00 (1 cells > 0.1) · paid 0.72/s · moved to dish 0.026/s, from dish 0.27/s, across contact 1.09/s
+CATALYSTS  crust ll 0.13 LL 0.00073 · engines at 38% (in the light 38%, fed cells 39%) · trace in cells 0.41, in the dish 1.90 · cells with trace ≥ half 17 · IN-trace pumps 2 (battery 0.22 vs 0.43)
+HARD LIGHT  dose in the light 18.6, in the dark 6.88 · births from lit parents 100% mutating ×2.2 (all ×2.23) · slot jumps per birth: lit 0.167, others 0.000 (0.30/s)
+DIVISION  cells 608 of 6000 · births 1.8/s · deaths 4.2/s: starved 1.2, heat 0.0, burst 0.2, age 2.8 · ready 129 (crowded 126) · starving 30
+COUNT  █▇▇▆▆▅▅▄▄▄▄▄▄▄▄▄▄▄▅▅▅▅▅▄▄▄▄▄▄▄▄▄▄▄▄▄  last 2.9 min, 616 to 1418
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 400.00 s (run 400.00 s)
+ENTROPY  4.57 M  +35.4 k/s   paused
+moving 316 · heat in dish 18.5 k · stored 3112 · in 4.59 M · rounding +0.026
+light in 19.1 k/s → heat 6008/s · chemistry 5.35/s · pigments 264/s · passed 12.8 k/s · spot · day 15%
+ORDER  0.198 · atoms in dish 297 · in cells 81.5 · added 2880 (+0/s) · out 2501 · rounding 0
+CELLS  batteries 2949 (full 0%, empty 0%) · atoms inside 81.5 · fuel inside 26.3 · burner +0/s · crawl −133/s
+ENGINES  harvest 0% · burn 41% · both 43% · other 16%  (batteries 0 · 38 · 37 · 38 %) · in the light 0 · 42 · 43 · 15 % · tolerance 15.2 · perm 3.50
+FREE LIGHT ATOMS  g 37.6 · t 36.1 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 308
+CHARGE  free +72.9 −73.3 (net −0.40) · in cells +0.68 · cells + 168 · − 139 · |q| 0.07
+MEMBRANE  mix 0.26 (heavy 26%) · thickness 0.014 · integrity 0.10 (whole 9%, damaged 2) · bursts 0/s · in membranes l 15.6 L 0.10 · bitten l 0.64 L 0.0033/s · |selectivity| 0.04
+DIPOLES  |d| 0.20 · polarised 473 (24%) · neighbours aligned 0.04 · head-to-tail +0.23 · in threads 132 (ends 224) · along the field 0.82
+PUMPS  active 27% (top IN g 18%, IN l 9%) · |voltage| 0.00 (17 cells > 0.1) · paid 1.70/s · moved to dish 0.026/s, from dish 0.98/s, across contact 1.67/s
+CATALYSTS  crust ll 0.34 LL 0.00073 · engines at 35% (in the light 36%, fed cells 35%) · trace in cells 0.049, in the dish 2.26 · cells with trace ≥ half 0 · IN-trace pumps 0 (battery 0.00 vs 0.37)
+HARD LIGHT  dose in the light 1.6, in the dark 0.00 · births from lit parents 100% mutating ×2.2 (all ×2.16) · slot jumps per birth: lit 0.200, others 0.000 (0.20/s)
+DIVISION  cells 1977 of 6000 · births 0.0/s · deaths 0.0/s: starved 0.0, heat 0.0, burst 0.0, age 0.0 · ready 0 (crowded 0) · starving 0
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 410.00 s (run 410.00 s)
+ENTROPY  4.63 M  +5643/s   paused
+moving 186 · heat in dish 11.3 k · stored 2429 · in 4.65 M · rounding +0.033
+light in 5594/s → heat 1816/s · chemistry 6.78/s · pigments 80.2/s · passed 3691/s · spot · day 18%
+ORDER  0.181 · atoms in dish 269 · in cells 109 · added 2880 (+0/s) · out 2501 · rounding 0
+CELLS  batteries 2248 (full 0%, empty 0%) · atoms inside 109 · fuel inside 43.2 · burner +0/s · crawl −28.5/s
+ENGINES  harvest 0% · burn 41% · both 44% · other 15%  (batteries 0 · 32 · 27 · 31 %) · in the light 0 · 42 · 43 · 15 % · tolerance 15.2 · perm 3.51
+FREE LIGHT ATOMS  g 30.1 · t 29.2 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 295
+CHARGE  free +61.2 −61.2 (net +0.0071) · in cells +0.27 · cells + 147 · − 165 · |q| 0.09
+MEMBRANE  mix 0.27 (heavy 26%) · thickness 0.014 · integrity 0.14 (whole 14%, damaged 2) · bursts 0/s · in membranes l 22.5 L 0.33 · bitten l 0.058 L 0.00024/s · |selectivity| 0.04
+DIPOLES  |d| 0.19 · polarised 471 (25%) · neighbours aligned 0.04 · head-to-tail +0.24 · in threads 128 (ends 219) · along the field 0.88
+PUMPS  active 27% (top IN g 18%, IN l 9%) · |voltage| 0.00 (27 cells > 0.1) · paid 0.78/s · moved to dish 0/s, from dish 0.28/s, across contact 0.54/s
+CATALYSTS  crust ll 0.99 LL 0.00073 · engines at 35% (in the light 36%, fed cells 36%) · trace in cells 0.14, in the dish 2.17 · cells with trace ≥ half 1 · IN-trace pumps 0 (battery 0.00 vs 0.29)
+HARD LIGHT  dose in the light 6.2, in the dark 0.06 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 1906 of 6000 · births 0.0/s · deaths 7.1/s: starved 0.0, heat 0.0, burst 0.0, age 7.1 · ready 0 (crowded 0) · starving 0
+COUNT  ██  last 0.1 min, 1947 to 1977
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 420.00 s (run 420.00 s)
+ENTROPY  4.69 M  +5576/s   paused
+moving 165 · heat in dish 11.2 k · stored 1925 · in 4.70 M · rounding +0.039
+light in 7236/s → heat 2329/s · chemistry 8.05/s · pigments 105/s · passed 4794/s · spot · day 23%
+ORDER  0.180 · atoms in dish 267 · in cells 111 · added 2880 (+0/s) · out 2502 · rounding 0
+CELLS  batteries 1730 (full 0%, empty 0%) · atoms inside 111 · fuel inside 50.0 · burner +0/s · crawl −15.7/s
+ENGINES  harvest 0% · burn 41% · both 44% · other 15%  (batteries 0 · 27 · 20 · 26 %) · in the light 0 · 42 · 44 · 15 % · tolerance 15.2 · perm 3.52
+FREE LIGHT ATOMS  g 26.1 · t 25.6 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 282
+CHARGE  free +55.5 −55.5 (net +0.018) · in cells +0.24 · cells + 151 · − 166 · |q| 0.09
+MEMBRANE  mix 0.27 (heavy 26%) · thickness 0.014 · integrity 0.15 (whole 15%, damaged 3) · bursts 0/s · in membranes l 22.6 L 0.43 · bitten l 0.074 L 0.00012/s · |selectivity| 0.04
+DIPOLES  |d| 0.19 · polarised 478 (26%) · neighbours aligned 0.03 · head-to-tail +0.23 · in threads 130 (ends 226) · along the field 0.86
+PUMPS  active 27% (top IN g 18%, IN l 9%) · |voltage| 0.00 (24 cells > 0.1) · paid 0.72/s · moved to dish 0/s, from dish 0.24/s, across contact 0.46/s
+CATALYSTS  crust ll 1.39 LL 0.00098 · engines at 36% (in the light 37%, fed cells 37%) · trace in cells 0.21, in the dish 2.10 · cells with trace ≥ half 5 · IN-trace pumps 0 (battery 0.00 vs 0.24)
+HARD LIGHT  dose in the light 10.3, in the dark 0.08 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 1821 of 6000 · births 0.0/s · deaths 8.4/s: starved 0.0, heat 0.0, burst 0.0, age 8.4 · ready 0 (crowded 0) · starving 0
+COUNT  ████  last 0.3 min, 1866 to 1977
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 430.00 s (run 430.00 s)
+ENTROPY  4.75 M  +5901/s   paused
+moving 140 · heat in dish 11.9 k · stored 1559 · in 4.76 M · rounding +0.053
+light in 9626/s → heat 3071/s · chemistry 9.82/s · pigments 138/s · passed 6408/s · spot · day 31%
+ORDER  0.181 · atoms in dish 270 · in cells 108 · added 2880 (+0/s) · out 2502 · rounding 0
+CELLS  batteries 1351 (full 0%, empty 3%) · atoms inside 108 · fuel inside 51.3 · burner +0/s · crawl −9.39/s
+ENGINES  harvest 0% · burn 41% · both 44% · other 15%  (batteries 0 · 22 · 16 · 21 %) · in the light 0 · 42 · 43 · 15 % · tolerance 15.2 · perm 3.52
+FREE LIGHT ATOMS  g 23.2 · t 22.7 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 271
+CHARGE  free +51.4 −51.2 (net +0.11) · in cells +0.14 · cells + 146 · − 165 · |q| 0.09
+MEMBRANE  mix 0.27 (heavy 27%) · thickness 0.014 · integrity 0.16 (whole 15%, damaged 2) · bursts 0/s · in membranes l 22.6 L 0.46 · bitten l 0.10 L 0.00036/s · |selectivity| 0.04
+DIPOLES  |d| 0.20 · polarised 473 (27%) · neighbours aligned 0.01 · head-to-tail +0.25 · in threads 129 (ends 229) · along the field 0.87
+PUMPS  active 27% (top IN g 18%, IN l 9%) · |voltage| 0.00 (21 cells > 0.1) · paid 0.68/s · moved to dish 0/s, from dish 0.20/s, across contact 0.41/s
+CATALYSTS  crust ll 1.69 LL 0.00098 · engines at 36% (in the light 37%, fed cells 39%) · trace in cells 0.23, in the dish 2.08 · cells with trace ≥ half 6 · IN-trace pumps 0 (battery 0.00 vs 0.19)
+HARD LIGHT  dose in the light 15.0, in the dark 0.15 · births from lit parents 100% mutating ×2.1 (all ×2.14) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 1757 of 6000 · births 0.1/s · deaths 6.5/s: starved 0.0, heat 0.0, burst 0.0, age 6.5 · ready 0 (crowded 0) · starving 0
+COUNT  ████▇▇  last 0.4 min, 1788 to 1977
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 440.00 s (run 440.00 s)
+ENTROPY  4.81 M  +6633/s   paused
+moving 130 · heat in dish 13.3 k · stored 1256 · in 4.82 M · rounding +0.041
+light in 12.6 k/s → heat 3913/s · chemistry 12.6/s · pigments 172/s · passed 8507/s · spot · day 40%
+ORDER  0.180 · atoms in dish 275 · in cells 102 · added 2880 (+0/s) · out 2502 · rounding 0
+CELLS  batteries 1037 (full 0%, empty 11%) · atoms inside 102 · fuel inside 49.7 · burner +0/s · crawl −5.56/s
+ENGINES  harvest 0% · burn 41% · both 44% · other 15%  (batteries 0 · 18 · 12 · 17 %) · in the light 0 · 41 · 43 · 15 % · tolerance 15.2 · perm 3.53
+FREE LIGHT ATOMS  g 21.3 · t 21.0 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 258
+CHARGE  free +47.9 −47.8 (net +0.085) · in cells +0.16 · cells + 142 · − 179 · |q| 0.09
+MEMBRANE  mix 0.27 (heavy 27%) · thickness 0.014 · integrity 0.16 (whole 16%, damaged 6) · bursts 0/s · in membranes l 22.1 L 0.49 · bitten l 0.14 L 0.00085/s · |selectivity| 0.04
+DIPOLES  |d| 0.20 · polarised 458 (27%) · neighbours aligned 0.01 · head-to-tail +0.25 · in threads 137 (ends 203) · along the field 0.88
+PUMPS  active 27% (top IN g 18%, IN l 9%) · |voltage| 0.00 (16 cells > 0.1) · paid 0.63/s · moved to dish 0/s, from dish 0.18/s, across contact 0.37/s
+CATALYSTS  crust ll 2.03 LL 0.0012 · engines at 36% (in the light 37%, fed cells 39%) · trace in cells 0.24, in the dish 2.07 · cells with trace ≥ half 6 · IN-trace pumps 0 (battery 0.00 vs 0.15)
+HARD LIGHT  dose in the light 20.9, in the dark 0.21 · births from lit parents 100% mutating ×2.3 (all ×2.34) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 1679 of 6000 · births 0.2/s · deaths 8.0/s: starved 0.0, heat 0.0, burst 0.0, age 8.0 · ready 0 (crowded 0) · starving 90
+COUNT  ████▇▇▇▇  last 0.6 min, 1713 to 1977
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 450.00 s (run 450.00 s)
+ENTROPY  4.88 M  +7343/s   paused
+moving 134 · heat in dish 14.8 k · stored 1011 · in 4.89 M · rounding +0.042
+light in 16.0 k/s → heat 4781/s · chemistry 15.8/s · pigments 206/s · passed 11.0 k/s · spot · day 51%
+ORDER  0.179 · atoms in dish 282 · in cells 94.8 · added 2880 (+0/s) · out 2503 · rounding 0
+CELLS  batteries 782 (full 1%, empty 26%) · atoms inside 94.8 · fuel inside 46.4 · burner +0/s · crawl −3.68/s
+ENGINES  harvest 0% · burn 41% · both 44% · other 15%  (batteries 0 · 15 · 9 · 14 %) · in the light 0 · 41 · 44 · 15 % · tolerance 15.2 · perm 3.52
+FREE LIGHT ATOMS  g 20.0 · t 19.8 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 245
+CHARGE  free +45.1 −45.0 (net +0.097) · in cells +0.13 · cells + 136 · − 154 · |q| 0.09
+MEMBRANE  mix 0.28 (heavy 28%) · thickness 0.014 · integrity 0.16 (whole 16%, damaged 4) · bursts 0/s · in membranes l 21.1 L 0.51 · bitten l 0.18 L 0.0017/s · |selectivity| 0.04
+DIPOLES  |d| 0.20 · polarised 436 (27%) · neighbours aligned 0.05 · head-to-tail +0.23 · in threads 112 (ends 232) · along the field 0.85
+PUMPS  active 27% (top IN g 19%, IN l 9%) · |voltage| 0.00 (11 cells > 0.1) · paid 0.58/s · moved to dish 0/s, from dish 0.15/s, across contact 0.27/s
+CATALYSTS  crust ll 2.37 LL 0.0015 · engines at 36% (in the light 37%, fed cells 39%) · trace in cells 0.23, in the dish 2.08 · cells with trace ≥ half 7 · IN-trace pumps 0 (battery 0.00 vs 0.12)
+HARD LIGHT  dose in the light 27.5, in the dark 0.55 · births from lit parents 100% mutating ×2.7 (all ×2.71) · slot jumps per birth: lit 0.250, others 0.000 (0.10/s)
+DIVISION  cells 1616 of 6000 · births 0.4/s · deaths 6.8/s: starved 0.0, heat 0.0, burst 0.0, age 6.8 · ready 2 (crowded 0) · starving 260
+COUNT  ████▇▇▇▇▇▇  last 0.8 min, 1644 to 1977
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 460.00 s (run 460.00 s)
+ENTROPY  4.96 M  +8295/s   paused
+moving 131 · heat in dish 16.7 k · stored 820 · in 4.97 M · rounding +0.052
+light in 19.5 k/s → heat 5769/s · chemistry 20.0/s · pigments 249/s · passed 13.4 k/s · spot · day 62%
+ORDER  0.178 · atoms in dish 284 · in cells 92.1 · added 2880 (+0/s) · out 2503 · rounding 0
+CELLS  batteries 586 (full 1%, empty 39%) · atoms inside 92.1 · fuel inside 44.7 · burner +0/s · crawl −2.64/s
+ENGINES  harvest 0% · burn 41% · both 45% · other 15%  (batteries 0 · 12 · 7 · 10 %) · in the light 0 · 41 · 45 · 14 % · tolerance 15.3 · perm 3.53
+FREE LIGHT ATOMS  g 19.3 · t 19.1 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 232
+CHARGE  free +43.3 −43.3 (net +0.075) · in cells +0.15 · cells + 135 · − 152 · |q| 0.09
+MEMBRANE  mix 0.28 (heavy 28%) · thickness 0.014 · integrity 0.16 (whole 16%, damaged 4) · bursts 0/s · in membranes l 20.8 L 0.52 · bitten l 0.24 L 0.0019/s · |selectivity| 0.04
+DIPOLES  |d| 0.20 · polarised 433 (28%) · neighbours aligned -0.02 · head-to-tail +0.25 · in threads 99 (ends 212) · along the field 0.86
+PUMPS  active 27% (top IN g 19%, IN l 8%, IN G 0%) · |voltage| 0.00 (8 cells > 0.1) · paid 0.57/s · moved to dish 0/s, from dish 0.13/s, across contact 0.28/s
+CATALYSTS  crust ll 2.69 LL 0.0017 · engines at 36% (in the light 37%, fed cells 38%) · trace in cells 0.22, in the dish 2.09 · cells with trace ≥ half 5 · IN-trace pumps 0 (battery 0.00 vs 0.09)
+HARD LIGHT  dose in the light 35.3, in the dark 0.64 · births from lit parents 100% mutating ×2.7 (all ×2.67) · slot jumps per birth: lit 0.333, others 0.000 (0.10/s)
+DIVISION  cells 1564 of 6000 · births 0.3/s · deaths 5.5/s: starved 0.0, heat 0.0, burst 0.0, age 5.5 · ready 1 (crowded 1) · starving 451
+COUNT  ████▇▇▇▇▇▇▇▇  last 0.9 min, 1587 to 1977
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 470.00 s (run 470.00 s)
+ENTROPY  5.05 M  +9310/s   paused
+moving 129 · heat in dish 18.7 k · stored 665 · in 5.07 M · rounding +0.052
+light in 22.9 k/s → heat 6666/s · chemistry 23.7/s · pigments 287/s · passed 15.9 k/s · spot · day 73%
+ORDER  0.176 · atoms in dish 286 · in cells 90.0 · added 2880 (+0/s) · out 2503 · rounding 0
+CELLS  batteries 431 (full 1%, empty 60%) · atoms inside 90.0 · fuel inside 42.2 · burner +0/s · crawl −2.22/s
+ENGINES  harvest 0% · burn 43% · both 41% · other 16%  (batteries 0 · 9 · 6 · 7 %) · in the light 0 · 42 · 44 · 14 % · tolerance 15.3 · perm 3.41
+FREE LIGHT ATOMS  g 19.0 · t 18.9 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 225
+CHARGE  free +42.4 −42.3 (net +0.083) · in cells +0.13 · cells + 138 · − 162 · |q| 0.10
+MEMBRANE  mix 0.29 (heavy 29%) · thickness 0.014 · integrity 0.17 (whole 17%, damaged 3) · bursts 0/s · in membranes l 20.4 L 0.52 · bitten l 0.30 L 0.0023/s · |selectivity| 0.04
+DIPOLES  |d| 0.22 · polarised 426 (30%) · neighbours aligned -0.03 · head-to-tail +0.25 · in threads 111 (ends 196) · along the field 0.83
+PUMPS  active 29% (top IN g 20%, IN l 8%, IN G 0%) · |voltage| 0.00 (10 cells > 0.1) · paid 0.55/s · moved to dish 0/s, from dish 0.13/s, across contact 0.30/s
+CATALYSTS  crust ll 2.95 LL 0.0020 · engines at 36% (in the light 37%, fed cells 39%) · trace in cells 0.21, in the dish 2.10 · cells with trace ≥ half 3 · IN-trace pumps 0 (battery 0.00 vs 0.07)
+HARD LIGHT  dose in the light 43.5, in the dark 0.75 · births from lit parents 100% mutating ×3.3 (all ×3.32) · slot jumps per birth: lit 0.400, others 0.000 (0.20/s)
+DIVISION  cells 1437 of 6000 · births 0.5/s · deaths 13.1/s: starved 8.3, heat 0.0, burst 0.0, age 4.9 · ready 1 (crowded 0) · starving 762
+COUNT  ████▇▇▇▇▇▇▇▇▇▆  last 1.1 min, 1489 to 1977
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 480.00 s (run 480.00 s)
+ENTROPY  5.14 M  +9570/s   paused
+moving 153 · heat in dish 0 · stored 0 · in 5.16 M · rounding +2.1e+4
+light in 24.8 k/s → heat 7009/s · chemistry 28.0/s · pigments 291/s · passed 17.4 k/s · spot · day 82%
+ORDER  – · atoms in dish 0 · added 2880 (+0/s) · out 2504 · rounding 3.8e+2
+CELLS  batteries 0 (full 0%, empty 0%) · atoms inside 0 · fuel inside 0 · burner +0/s · crawl −1.75/s
+ENGINES  …
+CHARGE  free +0 −0 (net +0) · in cells +0 · cells + 0 · − 0 · |q| 0.00
+MEMBRANE  …
+DIPOLES  |d| 0.26 · polarised 436 (35%) · neighbours aligned 0.02 · head-to-tail +0.24 · in threads 132 (ends 203) · along the field 0.86
+PUMPS  …
+CATALYSTS  crust ll 3.16 LL 0.0022 · engines at 100% (in the light 100%, fed cells 100%) · trace in cells 0, in the dish 2.11 · cells with trace ≥ half 0 · IN-trace pumps 0 (battery 0.00 vs 0.00)
+HARD LIGHT  dose in the light 0.0, in the dark 0.00 · births from lit parents 100% mutating ×3.6 (all ×3.57) · slot jumps per birth: lit 0.500, others 0.000 (0.10/s)
+DIVISION  cells 1230 of 6000 · births 0.2/s · deaths 20.9/s: starved 16.0, heat 0.0, burst 0.0, age 4.9 · ready 2 (crowded 0) · starving 735
+COUNT  ████▇▇▇▇▇▇▇▇▇▆▆▆  last 1.3 min, 1322 to 1977
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 490.00 s (run 490.00 s)
+ENTROPY  5.24 M  +9668/s   paused
+moving 130 · heat in dish 19.5 k · stored 277 · in 5.26 M · rounding +0.079
+light in 37.4 k/s → heat 6673/s · chemistry 4.25/s · pigments 94.1/s · passed 30.6 k/s · spot · day 91%
+ORDER  0.260 · atoms in dish 37.8 · in cells 50.2 · added 2880 (+0/s) · out 2792 · rounding 0
+CELLS  batteries 243 (full 1%, empty 69%) · atoms inside 50.2 · fuel inside 13.4 · burner +0/s · crawl −1.73/s
+ENGINES  harvest 0% · burn 46% · both 34% · other 20%  (batteries 0 · 6 · 7 · 4 %) · in the light 0 · 48 · 43 · 9 % · tolerance 15.6 · perm 3.58
+FREE LIGHT ATOMS  g 5.56 · t 5.62 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 205
+CHARGE  free +7.63 −7.62 (net +0.0066) · in cells +0.17 · cells + 109 · − 92 · |q| 0.08
+MEMBRANE  mix 0.21 (heavy 17%) · thickness 0.013 · integrity 0.23 (whole 24%, damaged 16) · bursts 0/s · in membranes l 18.4 L 0.46 · bitten l 0.10 L 0.0019/s · |selectivity| 0.04
+DIPOLES  |d| 0.27 · polarised 381 (38%) · neighbours aligned -0.02 · head-to-tail +0.25 · in threads 126 (ends 172) · along the field 0.90
+PUMPS  active 37% (top IN g 26%, IN l 11%, IN gT 0%) · |voltage| 0.00 (8 cells > 0.1) · paid 0.24/s · moved to dish 0/s, from dish 0.074/s, across contact 0.23/s
+CATALYSTS  crust ll 0.029 LL 0 · engines at 36% (in the light 40%, fed cells 37%) · trace in cells 0.14, in the dish 0.057 · cells with trace ≥ half 2 · IN-trace pumps 0 (battery 0.00 vs 0.06)
+HARD LIGHT  dose in the light 64.1, in the dark 11.13 · births from lit parents 100% mutating ×3.9 (all ×3.88) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 1002 of 6000 · births 0.1/s · deaths 22.8/s: starved 18.7, heat 0.0, burst 0.0, age 4.1 · ready 0 (crowded 0) · starving 598
+COUNT  ████▇▇▇▇▇▇▇▇▇▆▆▆▅▅  last 1.4 min, 1063 to 1977
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 500.00 s (run 500.00 s)
+ENTROPY  5.34 M  +9841/s   paused
+moving 100 · heat in dish 19.7 k · stored 210 · in 5.36 M · rounding +0.082
+light in 39.8 k/s → heat 6895/s · chemistry 4.82/s · pigments 81.8/s · passed 32.9 k/s · spot · day 96%
+ORDER  0.253 · atoms in dish 43.4 · in cells 44.7 · added 2880 (+0/s) · out 2792 · rounding 0
+CELLS  batteries 176 (full 0%, empty 60%) · atoms inside 44.7 · fuel inside 10.3 · burner +0/s · crawl −1.28/s
+ENGINES  harvest 0% · burn 46% · both 36% · other 18%  (batteries 0 · 8 · 7 · 5 %) · in the light 0 · 52 · 44 · 4 % · tolerance 16.0 · perm 3.78
+FREE LIGHT ATOMS  g 6.33 · t 6.39 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 111
+CHARGE  free +8.62 −8.60 (net +0.018) · in cells +0.16 · cells + 91 · − 76 · |q| 0.11
+MEMBRANE  mix 0.24 (heavy 22%) · thickness 0.014 · integrity 0.34 (whole 34%, damaged 5) · bursts 0/s · in membranes l 16.8 L 0.43 · bitten l 0.084 L 0.00061/s · |selectivity| 0.03
+DIPOLES  |d| 0.35 · polarised 315 (51%) · neighbours aligned 0.03 · head-to-tail +0.27 · in threads 79 (ends 149) · along the field 0.85
+PUMPS  active 32% (top IN g 24%, IN l 8%, IN gT 0%) · |voltage| 0.01 (6 cells > 0.1) · paid 0.20/s · moved to dish 0/s, from dish 0.086/s, across contact 0.21/s
+CATALYSTS  crust ll 0.098 LL 0.00024 · engines at 36% (in the light 40%, fed cells 37%) · trace in cells 0.11, in the dish 0.091 · cells with trace ≥ half 0 · IN-trace pumps 0 (battery 0.00 vs 0.07)
+HARD LIGHT  dose in the light 78.5, in the dark 9.73 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 623 of 6000 · births 0.0/s · deaths 37.8/s: starved 34.9, heat 0.0, burst 0.0, age 2.9 · ready 0 (crowded 0) · starving 345
+COUNT  ████▇▇▇▇▇▇▇▇▇▆▆▆▅▅▄▄  last 1.6 min, 803 to 1977
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 510.00 s (run 510.00 s)
+ENTROPY  5.43 M  +9244/s   paused
+moving 66.6 · heat in dish 18.5 k · stored 161 · in 5.45 M · rounding +0.083
+light in 41.2 k/s → heat 6981/s · chemistry 5.14/s · pigments 73.2/s · passed 34.1 k/s · spot · day 99%
+ORDER  0.249 · atoms in dish 46.1 · in cells 42.0 · added 2880 (+0/s) · out 2792 · rounding 0
+CELLS  batteries 127 (full 0%, empty 69%) · atoms inside 42.0 · fuel inside 9.04 · burner +0/s · crawl −0.98/s
+ENGINES  harvest 0% · burn 51% · both 27% · other 23%  (batteries 0 · 7 · 11 · 2 %) · in the light 0 · 53 · 44 · 3 % · tolerance 15.3 · perm 3.75
+FREE LIGHT ATOMS  g 6.78 · t 6.85 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 102
+CHARGE  free +9.10 −9.08 (net +0.019) · in cells +0.16 · cells + 80 · − 56 · |q| 0.13
+MEMBRANE  mix 0.28 (heavy 28%) · thickness 0.014 · integrity 0.44 (whole 44%, damaged 4) · bursts 0/s · in membranes l 15.9 L 0.40 · bitten l 0.082 L 0.0011/s · |selectivity| 0.04
+DIPOLES  |d| 0.40 · polarised 276 (61%) · neighbours aligned 0.03 · head-to-tail +0.26 · in threads 70 (ends 137) · along the field 0.87
+PUMPS  active 21% (top IN g 14%, IN l 7%, IN gT 0%) · |voltage| 0.01 (6 cells > 0.1) · paid 0.16/s · moved to dish 0/s, from dish 0.083/s, across contact 0.16/s
+CATALYSTS  crust ll 0.21 LL 0.00024 · engines at 36% (in the light 39%, fed cells 37%) · trace in cells 0.086, in the dish 0.11 · cells with trace ≥ half 0 · IN-trace pumps 0 (battery 0.00 vs 0.07)
+HARD LIGHT  dose in the light 88.1, in the dark 8.63 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 451 of 6000 · births 0.0/s · deaths 17.1/s: starved 15.1, heat 0.0, burst 0.0, age 2.0 · ready 0 (crowded 0) · starving 249
+COUNT  ████▇▇▇▇▇▇▇▇▇▆▆▆▅▅▄▄▃▃  last 1.8 min, 516 to 1977
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 520.00 s (run 520.00 s)
+ENTROPY  5.53 M  +8910/s   paused
+moving 51.4 · heat in dish 17.9 k · stored 126 · in 5.54 M · rounding +0.083
+light in 41.4 k/s → heat 6860/s · chemistry 4.99/s · pigments 65.2/s · passed 34.5 k/s · spot · day 100%
+ORDER  0.245 · atoms in dish 50.2 · in cells 37.8 · added 2880 (+0/s) · out 2792 · rounding 0
+CELLS  batteries 92.2 (full 0%, empty 70%) · atoms inside 37.8 · fuel inside 7.86 · burner +0/s · crawl −0.75/s
+ENGINES  harvest 0% · burn 50% · both 26% · other 24%  (batteries 0 · 7 · 10 · 0 %) · in the light 0 · 51 · 47 · 3 % · tolerance 15.1 · perm 3.73
+FREE LIGHT ATOMS  g 7.34 · t 7.42 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 87
+CHARGE  free +9.76 −9.75 (net +0.011) · in cells +0.17 · cells + 67 · − 51 · |q| 0.14
+MEMBRANE  mix 0.30 (heavy 30%) · thickness 0.015 · integrity 0.49 (whole 49%, damaged 3) · bursts 0/s · in membranes l 14.3 L 0.34 · bitten l 0.062 L 0.00036/s · |selectivity| 0.04
+DIPOLES  |d| 0.46 · polarised 248 (69%) · neighbours aligned 0.03 · head-to-tail +0.28 · in threads 40 (ends 118) · along the field 0.87
+PUMPS  active 20% (top IN g 16%, IN l 4%, IN gT 0%) · |voltage| 0.01 (6 cells > 0.1) · paid 0.13/s · moved to dish 0/s, from dish 0.069/s, across contact 0.12/s
+CATALYSTS  crust ll 0.32 LL 0.00024 · engines at 36% (in the light 39%, fed cells 37%) · trace in cells 0.066, in the dish 0.13 · cells with trace ≥ half 0 · IN-trace pumps 0 (battery 0.00 vs 0.06)
+HARD LIGHT  dose in the light 95.2, in the dark 8.27 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 360 of 6000 · births 0.0/s · deaths 9.1/s: starved 6.9, heat 0.0, burst 0.0, age 2.2 · ready 0 (crowded 0) · starving 232
+COUNT  ████▇▇▇▇▇▇▇▇▇▆▆▆▅▅▄▄▃▃▃▂  last 1.9 min, 386 to 1977
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 530.00 s (run 530.00 s)
+ENTROPY  5.61 M  +8531/s   paused
+moving 37.6 · heat in dish 17.1 k · stored 120 · in 5.63 M · rounding +0.087
+light in 40.4 k/s → heat 6599/s · chemistry 33.5/s · pigments 59.0/s · passed 33.7 k/s · spot · day 97%
+ORDER  0.354 · atoms in dish 173 · in cells 35.3 · added 3000 (+12.0/s) · out 2792 · rounding 0
+CELLS  batteries 68.7 (full 0%, empty 66%) · atoms inside 35.3 · fuel inside 6.81 · burner +0/s · crawl −0.71/s
+ENGINES  harvest 0% · burn 38% · both 30% · other 31%  (batteries 0 · 10 · 10 · 0 %) · in the light 0 · 49 · 49 · 3 % · tolerance 15.1 · perm 3.64
+FREE LIGHT ATOMS  g 27.2 · t 27.2 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 77
+CHARGE  free +40.7 −40.6 (net +0.090) · in cells +0.11 · cells + 50 · − 49 · |q| 0.16
+MEMBRANE  mix 0.33 (heavy 36%) · thickness 0.015 · integrity 0.60 (whole 61%, damaged 0) · bursts 0/s · in membranes l 11.9 L 0.28 · bitten l 0.052 L 0.00060/s · |selectivity| 0.03
+DIPOLES  |d| 0.52 · polarised 189 (77%) · neighbours aligned -0.03 · head-to-tail +0.30 · in threads 37 (ends 75) · along the field 0.89
+PUMPS  active 24% (top IN g 19%, IN l 4%, IN gT 0%) · |voltage| 0.01 (3 cells > 0.1) · paid 0.088/s · moved to dish 0/s, from dish 0.049/s, across contact 0.094/s
+CATALYSTS  crust ll 0.39 LL 7.91 · engines at 36% (in the light 38%, fed cells 38%) · trace in cells 0.047, in the dish 2.54 · cells with trace ≥ half 0 · IN-trace pumps 0 (battery 0.00 vs 0.07)
+HARD LIGHT  dose in the light 98.3, in the dark 7.57 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 247 of 6000 · births 0.0/s · deaths 11.3/s: starved 10.0, heat 0.0, burst 0.0, age 1.4 · ready 0 (crowded 0) · starving 145
+COUNT  ████▇▇▇▇▇▇▇▇▇▆▆▆▅▅▄▄▃▃▃▂▂▂  last 2.1 min, 273 to 1977
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 540.00 s (run 540.00 s)
+ENTROPY  5.70 M  +8056/s   paused
+moving 27.5 · heat in dish 16.1 k · stored 118 · in 5.71 M · rounding +0.087
+light in 38.2 k/s → heat 6176/s · chemistry 36.7/s · pigments 46.5/s · passed 32.0 k/s · spot · day 92%
+ORDER  0.352 · atoms in dish 278 · in cells 49.9 · added 3120 (+12.0/s) · out 2792 · rounding 0
+CELLS  batteries 48.5 (full 0%, empty 63%) · atoms inside 49.9 · fuel inside 9.09 · burner +0/s · crawl −0.46/s
+ENGINES  harvest 0% · burn 42% · both 36% · other 22%  (batteries 0 · 9 · 9 · 0 %) · in the light 0 · 49 · 48 · 3 % · tolerance 15.6 · perm 3.61
+FREE LIGHT ATOMS  g 44.4 · t 44.5 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 40
+CHARGE  free +65.0 −64.9 (net +0.056) · in cells +0.16 · cells + 45 · − 34 · |q| 0.20
+MEMBRANE  mix 0.28 (heavy 29%) · thickness 0.014 · integrity 0.69 (whole 71%, damaged 1) · bursts 0/s · in membranes l 9.98 L 0.27 · bitten l 0.039 L 0.0058/s · |selectivity| 0.04
+DIPOLES  |d| 0.59 · polarised 155 (86%) · neighbours aligned 0.15 · head-to-tail +0.30 · in threads 21 (ends 72) · along the field 0.81
+PUMPS  active 25% (top IN g 20%, IN l 4%, IN gT 1%) · |voltage| 0.01 (5 cells > 0.1) · paid 0.071/s · moved to dish 0/s, from dish 0.051/s, across contact 0.069/s
+CATALYSTS  crust ll 0.43 LL 16.9 · engines at 37% (in the light 40%, fed cells 38%) · trace in cells 0.21, in the dish 4.78 · cells with trace ≥ half 2 · IN-trace pumps 0 (battery 0.00 vs 0.07)
+HARD LIGHT  dose in the light 95.1, in the dark 6.79 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 179 of 6000 · births 0.0/s · deaths 6.8/s: starved 5.9, heat 0.0, burst 0.0, age 0.9 · ready 0 (crowded 0) · starving 105
+COUNT  ████▇▇▇▇▇▇▇▇▇▆▆▆▅▅▄▄▃▃▃▂▂▂▂▂  last 2.3 min, 215 to 1977
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 550.00 s (run 550.00 s)
+ENTROPY  5.77 M  +7235/s   paused
+moving 18.5 · heat in dish 14.5 k · stored 125 · in 5.79 M · rounding +0.089
+light in 35.1 k/s → heat 5599/s · chemistry 34.8/s · pigments 24.8/s · passed 29.5 k/s · spot · day 84%
+ORDER  0.344 · atoms in dish 403 · in cells 44.7 · added 3240 (+12.0/s) · out 2792 · rounding 0
+CELLS  batteries 38.5 (full 0%, empty 48%) · atoms inside 44.7 · fuel inside 12.6 · burner +0/s · crawl −0.35/s
+ENGINES  harvest 0% · burn 61% · both 38% · other 2%  (batteries 0 · 8 · 10 · 0 %) · in the light 0 · 61 · 37 · 2 % · tolerance 16.9 · perm 3.76
+FREE LIGHT ATOMS  g 68.0 · t 68.0 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 2
+CHARGE  free +96.2 −96.2 (net +0.00049) · in cells +0.20 · cells + 33 · − 23 · |q| 0.27
+MEMBRANE  mix 0.15 (heavy 11%) · thickness 0.012 · integrity 0.88 (whole 90%, damaged 1) · bursts 0/s · in membranes l 7.77 L 0.32 · bitten l 0.022 L 0.029/s · |selectivity| 0.04
+DIPOLES  |d| 0.64 · polarised 103 (92%) · neighbours aligned 0.05 · head-to-tail +0.36 · in threads 21 (ends 41) · along the field 0.81
+PUMPS  active 28% (top IN g 27%, IN gT 1%) · |voltage| 0.01 (4 cells > 0.1) · paid 0.061/s · moved to dish 0/s, from dish 0.054/s, across contact 0.048/s
+CATALYSTS  crust ll 0.50 LL 26.3 · engines at 39% (in the light 42%, fed cells 39%) · trace in cells 0.32, in the dish 7.07 · cells with trace ≥ half 4 · IN-trace pumps 0 (battery 0.00 vs 0.09)
+HARD LIGHT  dose in the light 90.2, in the dark 7.05 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 112 of 6000 · births 0.0/s · deaths 6.8/s: starved 6.3, heat 0.0, burst 0.0, age 0.5 · ready 0 (crowded 0) · starving 50
+COUNT  ████▇▇▇▇▇▇▇▇▇▆▆▆▅▅▄▄▃▃▃▂▂▂▂▂▂▁  last 2.4 min, 120 to 1977
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 560.00 s (run 560.00 s)
+ENTROPY  5.84 M  +6496/s   paused
+moving 12.3 · heat in dish 13.0 k · stored 135 · in 5.85 M · rounding +0.088
+light in 31.2 k/s → heat 4914/s · chemistry 43.9/s · pigments 18.4/s · passed 26.2 k/s · spot · day 75%
+ORDER  0.336 · atoms in dish 514 · in cells 54.0 · added 3360 (+12.0/s) · out 2792 · rounding 0
+CELLS  batteries 32.0 (full 0%, empty 45%) · atoms inside 54.0 · fuel inside 17.0 · burner +0/s · crawl −0.29/s
+ENGINES  harvest 0% · burn 58% · both 40% · other 1%  (batteries 0 · 9 · 9 · 0 %) · in the light 0 · 63 · 35 · 2 % · tolerance 16.9 · perm 3.75
+FREE LIGHT ATOMS  g 87.6 · t 87.6 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 1
+CHARGE  free +123 −123 (net +0.057) · in cells +0.16 · cells + 32 · − 19 · |q| 0.31
+MEMBRANE  mix 0.14 (heavy 9%) · thickness 0.012 · integrity 0.90 (whole 92%, damaged 2) · bursts 0/s · in membranes l 6.17 L 0.28 · bitten l 0.013 L 0.0077/s · |selectivity| 0.04
+DIPOLES  |d| 0.70 · polarised 84 (94%) · neighbours aligned 0.25 · head-to-tail +0.34 · in threads 11 (ends 46) · along the field 0.88
+PUMPS  active 28% (top IN g 28%) · |voltage| 0.02 (4 cells > 0.1) · paid 0.053/s · moved to dish 0/s, from dish 0.065/s, across contact 0.029/s
+CATALYSTS  crust ll 0.55 LL 35.6 · engines at 41% (in the light 45%, fed cells 39%) · trace in cells 0.49, in the dish 9.29 · cells with trace ≥ half 5 · IN-trace pumps 0 (battery 0.00 vs 0.09)
+HARD LIGHT  dose in the light 88.9, in the dark 14.43 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 89 of 6000 · births 0.0/s · deaths 2.3/s: starved 2.0, heat 0.0, burst 0.0, age 0.3 · ready 0 (crowded 0) · starving 38
+COUNT  ████▇▇▇▇▇▇▇▇▇▆▆▆▅▅▄▄▃▃▃▂▂▂▂▂▂▁▁▁  last 2.6 min, 91 to 1977
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 570.00 s (run 570.00 s)
+ENTROPY  5.90 M  +5679/s   paused
+moving 8.30 · heat in dish 11.3 k · stored 158 · in 5.91 M · rounding +0.089
+light in 26.8 k/s → heat 4108/s · chemistry 48.3/s · pigments 7.80/s · passed 22.7 k/s · spot · day 64%
+ORDER  0.330 · atoms in dish 635 · in cells 53.2 · added 3480 (+12.0/s) · out 2792 · rounding 0
+CELLS  batteries 27.2 (full 0%, empty 33%) · atoms inside 53.2 · fuel inside 18.2 · burner +0/s · crawl −0.23/s
+ENGINES  harvest 0% · burn 58% · both 42% · other 0%  (batteries 0 · 11 · 9 · 0 %) · in the light 0 · 77 · 23 · 0 % · tolerance 17.0 · perm 3.82
+FREE LIGHT ATOMS  g 107 · t 107 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 0
+CHARGE  free +150 −149 (net +0.25) · in cells −0.016 · cells + 27 · − 14 · |q| 0.36
+MEMBRANE  mix 0.12 (heavy 6%) · thickness 0.012 · integrity 0.92 (whole 97%, damaged 2) · bursts 0/s · in membranes l 4.84 L 0.24 · bitten l 0.0055 L 0.0055/s · |selectivity| 0.04
+DIPOLES  |d| 0.77 · polarised 69 (100%) · neighbours aligned 0.20 · head-to-tail +0.31 · in threads 6 (ends 39) · along the field 0.80
+PUMPS  active 29% (top IN g 29%) · |voltage| 0.02 (7 cells > 0.1) · paid 0.053/s · moved to dish 0/s, from dish 0.073/s, across contact 0.038/s
+CATALYSTS  crust ll 0.59 LL 45.0 · engines at 44% (in the light 50%, fed cells 43%) · trace in cells 0.57, in the dish 11.6 · cells with trace ≥ half 7 · IN-trace pumps 0 (battery 0.00 vs 0.10)
+HARD LIGHT  dose in the light 82.2, in the dark 29.47 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 69 of 6000 · births 0.0/s · deaths 2.0/s: starved 1.8, heat 0.0, burst 0.0, age 0.2 · ready 0 (crowded 0) · starving 21
+COUNT  ████▇▇▇▇▇▇▇▇▇▆▆▆▅▅▄▄▃▃▃▂▂▂▂▂▂▁▁▁▁▁  last 2.8 min, 70 to 1977
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 580.00 s (run 580.00 s)
+ENTROPY  5.95 M  +4902/s   paused
+moving 8.84 · heat in dish 9758 · stored 199 · in 5.96 M · rounding +0.087
+light in 22.2 k/s → heat 3349/s · chemistry 49.8/s · pigments 5.39/s · passed 18.8 k/s · spot · day 53%
+ORDER  0.325 · atoms in dish 767 · in cells 40.9 · added 3599 (+11.6/s) · out 2792 · rounding 0
+CELLS  batteries 22.2 (full 0%, empty 37%) · atoms inside 40.9 · fuel inside 14.4 · burner +0/s · crawl −0.20/s
+ENGINES  harvest 0% · burn 58% · both 42% · other 0%  (batteries 0 · 11 · 8 · 0 %) · in the light 0 · 74 · 26 · 0 % · tolerance 17.1 · perm 3.81
+FREE LIGHT ATOMS  g 126 · t 126 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 0
+CHARGE  free +175 −175 (net +0.089) · in cells +0.14 · cells + 26 · − 12 · |q| 0.36
+MEMBRANE  mix 0.11 (heavy 5%) · thickness 0.012 · integrity 0.94 (whole 98%, damaged 1) · bursts 0/s · in membranes l 4.21 L 0.23 · bitten l 0.0028 L 0.00072/s · |selectivity| 0.04
+DIPOLES  |d| 0.80 · polarised 57 (97%) · neighbours aligned 0.11 · head-to-tail +0.31 · in threads 3 (ends 28) · along the field 0.80
+PUMPS  active 27% (top IN g 27%) · |voltage| 0.02 (8 cells > 0.1) · paid 0.041/s · moved to dish 0/s, from dish 0.047/s, across contact 0.046/s
+CATALYSTS  crust ll 0.62 LL 54.4 · engines at 43% (in the light 49%, fed cells 49%) · trace in cells 0.34, in the dish 14.2 · cells with trace ≥ half 5 · IN-trace pumps 0 (battery 0.00 vs 0.09)
+HARD LIGHT  dose in the light 73.7, in the dark 23.06 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 59 of 6000 · births 0.0/s · deaths 1.0/s: starved 0.9, heat 0.0, burst 0.0, age 0.1 · ready 0 (crowded 0) · starving 18
+COUNT  ████▇▇▇▇▇▇▇▇▇▆▆▆▅▅▄▄▃▃▃▂▂▂▂▂▂▁▁▁▁▁▁▁  last 2.9 min, 65 to 1977
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 590.00 s (run 590.00 s)
+ENTROPY  6.00 M  +4139/s   paused
+moving 9.46 · heat in dish 8249 · stored 232 · in 6.01 M · rounding +0.083
+light in 17.7 k/s → heat 2664/s · chemistry 36.6/s · pigments 5.08/s · passed 15.0 k/s · spot · day 42%
+ORDER  0.307 · atoms in dish 769 · in cells 38.5 · added 3599 (+0/s) · out 2792 · rounding 0
+CELLS  batteries 20.4 (full 0%, empty 35%) · atoms inside 38.5 · fuel inside 17.3 · burner +0/s · crawl −0.15/s
+ENGINES  harvest 0% · burn 52% · both 48% · other 0%  (batteries 0 · 14 · 7 · 0 %) · in the light 0 · 62 · 38 · 0 % · tolerance 17.2 · perm 3.83
+FREE LIGHT ATOMS  g 128 · t 128 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 0
+CHARGE  free +163 −163 (net +0.12) · in cells +0.11 · cells + 24 · − 11 · |q| 0.37
+MEMBRANE  mix 0.12 (heavy 6%) · thickness 0.012 · integrity 0.94 (whole 98%, damaged 1) · bursts 0/s · in membranes l 3.35 L 0.23 · bitten l 0.0012 L 0.00084/s · |selectivity| 0.04
+DIPOLES  |d| 0.79 · polarised 48 (100%) · neighbours aligned 0.19 · head-to-tail +0.35 · in threads 8 (ends 26) · along the field 0.96
+PUMPS  active 25% (top IN g 25%) · |voltage| 0.02 (4 cells > 0.1) · paid 0.023/s · moved to dish 0/s, from dish 0.026/s, across contact 0.024/s
+CATALYSTS  crust ll 0.64 LL 55.0 · engines at 46% (in the light 57%, fed cells 72%) · trace in cells 0.37, in the dish 14.2 · cells with trace ≥ half 8 · IN-trace pumps 0 (battery 0.00 vs 0.11)
+HARD LIGHT  dose in the light 58.9, in the dark 21.85 · births from lit parents 100% mutating ×3.5 (all ×3.50) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 48 of 6000 · births 0.1/s · deaths 1.2/s: starved 0.8, heat 0.0, burst 0.0, age 0.4 · ready 0 (crowded 0) · starving 13
+COUNT  ████▇▇▇▇▇▇▇▆▆▆▅▅▅▄▃▃▃▂▂▂▂▂▂▁▁▁▁▁▁▁▁▁  last 2.9 min, 50 to 1904
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 600.00 s (run 600.00 s)
+ENTROPY  6.04 M  +3561/s   paused
+moving 5.23 · heat in dish 7062 · stored 242 · in 6.04 M · rounding +0.082
+light in 13.7 k/s → heat 2071/s · chemistry 21.7/s · pigments 3.37/s · passed 11.6 k/s · spot · day 33%
+ORDER  0.294 · atoms in dish 760 · in cells 47.9 · added 3599 (+0/s) · out 2792 · rounding 0
+CELLS  batteries 24.4 (full 6%, empty 40%) · atoms inside 47.9 · fuel inside 22.7 · burner +0/s · crawl −0.22/s
+ENGINES  harvest 0% · burn 53% · both 47% · other 0%  (batteries 0 · 18 · 7 · 0 %) · in the light 0 · 73 · 27 · 0 % · tolerance 17.0 · perm 3.90
+FREE LIGHT ATOMS  g 127 · t 127 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 0
+CHARGE  free +158 −158 (net +0.36) · in cells −0.14 · cells + 20 · − 12 · |q| 0.47
+MEMBRANE  mix 0.13 (heavy 6%) · thickness 0.012 · integrity 0.93 (whole 98%, damaged 0) · bursts 0/s · in membranes l 3.20 L 0.26 · bitten l 0.00068 L 0.0010/s · |selectivity| 0.04
+DIPOLES  |d| 0.82 · polarised 46 (98%) · neighbours aligned 0.09 · head-to-tail +0.36 · in threads 6 (ends 24) · along the field 0.86
+PUMPS  active 23% (top IN g 21%, OUT G 2%) · |voltage| 0.05 (7 cells > 0.1) · paid 0.28/s · moved to dish 0.10/s, from dish 0.044/s, across contact 0.10/s
+CATALYSTS  crust ll 0.64 LL 55.1 · engines at 51% (in the light 63%, fed cells 79%) · trace in cells 0.65, in the dish 13.9 · cells with trace ≥ half 12 · IN-trace pumps 0 (battery 0.00 vs 0.13)
+HARD LIGHT  dose in the light 41.6, in the dark 15.46 · births from lit parents 100% mutating ×2.8 (all ×2.79) · slot jumps per birth: lit 0.667, others 0.000 (0.20/s)
+DIVISION  cells 47 of 6000 · births 0.3/s · deaths 0.4/s: starved 0.3, heat 0.0, burst 0.0, age 0.1 · ready 2 (crowded 0) · starving 15
+COUNT  ████▇▇▇▇▇▇▆▆▆▅▅▄▃▃▃▂▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁  last 2.9 min, 47 to 1820
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 610.00 s (run 610.00 s)
+ENTROPY  6.07 M  +3034/s   paused
+moving 7.69 · heat in dish 6032 · stored 238 · in 6.08 M · rounding +0.082
+light in 10.3 k/s → heat 1563/s · chemistry 15.7/s · pigments 3.51/s · passed 8718/s · spot · day 24%
+ORDER  0.283 · atoms in dish 748 · in cells 59.6 · added 3599 (+0/s) · out 2792 · rounding 0
+CELLS  batteries 32.0 (full 15%, empty 39%) · atoms inside 59.6 · fuel inside 27.8 · burner +0/s · crawl −0.68/s
+ENGINES  harvest 0% · burn 61% · both 39% · other 0%  (batteries 0 · 22 · 14 · 0 %) · in the light 0 · 68 · 32 · 0 % · tolerance 16.7 · perm 4.13
+FREE LIGHT ATOMS  g 127 · t 127 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 0
+CHARGE  free +157 −157 (net +0.23) · in cells −0.0088 · cells + 23 · − 8 · |q| 0.52
+MEMBRANE  mix 0.14 (heavy 7%) · thickness 0.012 · integrity 0.92 (whole 100%, damaged 0) · bursts 0/s · in membranes l 2.72 L 0.29 · bitten l 0.00048 L 0.0011/s · |selectivity| 0.05
+DIPOLES  |d| 0.82 · polarised 40 (98%) · neighbours aligned 0.01 · head-to-tail +0.37 · in threads 3 (ends 20) · along the field 0.74
+PUMPS  active 20% (top IN g 17%, OUT G 2%) · |voltage| 0.07 (4 cells > 0.1) · paid 0.57/s · moved to dish 0.11/s, from dish 0.040/s, across contact 0.12/s
+CATALYSTS  crust ll 0.65 LL 55.1 · engines at 59% (in the light 69%, fed cells 86%) · trace in cells 1.27, in the dish 13.3 · cells with trace ≥ half 17 · IN-trace pumps 0 (battery 0.00 vs 0.19)
+HARD LIGHT  dose in the light 32.1, in the dark 14.03 · births from lit parents 100% mutating ×2.5 (all ×2.51) · slot jumps per birth: lit 0.333, others 0.000 (0.10/s)
+DIVISION  cells 41 of 6000 · births 0.3/s · deaths 0.9/s: starved 0.6, heat 0.0, burst 0.0, age 0.3 · ready 4 (crowded 1) · starving 11
+COUNT  ████▇▇▇▇▇▆▆▅▅▄▃▃▃▃▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁  last 2.9 min, 43 to 1756
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 620.00 s (run 620.00 s)
+ENTROPY  6.10 M  +2671/s   paused
+moving 10.9 · heat in dish 5323 · stored 225 · in 6.10 M · rounding +0.081
+light in 7839/s → heat 1210/s · chemistry 10.0/s · pigments 3.11/s · passed 6615/s · spot · day 19%
+ORDER  0.273 · atoms in dish 735 · in cells 72.8 · added 3599 (+0/s) · out 2792 · rounding 0
+CELLS  batteries 44.7 (full 14%, empty 31%) · atoms inside 72.8 · fuel inside 29.5 · burner +0/s · crawl −0.57/s
+ENGINES  harvest 0% · burn 63% · both 37% · other 0%  (batteries 0 · 23 · 22 · 0 %) · in the light 0 · 68 · 32 · 0 % · tolerance 16.8 · perm 4.61
+FREE LIGHT ATOMS  g 126 · t 126 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 0
+CHARGE  free +160 −160 (net +0.27) · in cells −0.041 · cells + 23 · − 13 · |q| 0.58
+MEMBRANE  mix 0.13 (heavy 4%) · thickness 0.012 · integrity 0.82 (whole 100%, damaged 5) · bursts 0/s · in membranes l 2.82 L 0.38 · bitten l 0.00060 L 0.0016/s · |selectivity| 0.06
+DIPOLES  |d| 0.88 · polarised 49 (100%) · neighbours aligned -0.01 · head-to-tail +0.37 · in threads 6 (ends 22) · along the field 0.80
+PUMPS  active 16% (top IN g 14%, OUT G 2%) · |voltage| 0.04 (3 cells > 0.1) · paid 0.39/s · moved to dish 0.078/s, from dish 0.0085/s, across contact 0.10/s
+CATALYSTS  crust ll 0.65 LL 55.1 · engines at 66% (in the light 76%, fed cells 86%) · trace in cells 2.25, in the dish 12.3 · cells with trace ≥ half 26 · IN-trace pumps 0 (battery 0.00 vs 0.23)
+HARD LIGHT  dose in the light 20.4, in the dark 11.06 · births from lit parents 100% mutating ×1.9 (all ×1.86) · slot jumps per birth: lit 0.091, others 0.000 (0.10/s)
+DIVISION  cells 49 of 6000 · births 1.1/s · deaths 0.3/s: starved 0.2, heat 0.0, burst 0.0, age 0.1 · ready 2 (crowded 0) · starving 13
+COUNT  █████▇▇▇▆▅▅▄▄▃▃▃▂▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁  last 2.9 min, 43 to 1675
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 630.00 s (run 630.00 s)
+ENTROPY  6.12 M  +2451/s   paused
+moving 12.2 · heat in dish 4902 · stored 219 · in 6.13 M · rounding +0.081
+light in 6476/s → heat 1003/s · chemistry 11.5/s · pigments 3.37/s · passed 5458/s · spot · day 16%
+ORDER  0.267 · atoms in dish 739 · in cells 68.7 · added 3599 (+0/s) · out 2792 · rounding 0
+CELLS  batteries 52.9 (full 23%, empty 23%) · atoms inside 68.7 · fuel inside 25.6 · burner +0/s · crawl −0.94/s
+ENGINES  harvest 0% · burn 60% · both 40% · other 0%  (batteries 0 · 28 · 27 · 0 %) · in the light 0 · 59 · 41 · 0 % · tolerance 16.3 · perm 4.92
+FREE LIGHT ATOMS  g 125 · t 125 in the dish · cells with an uphill swap 0 · breathers (downhill swap) 0
+CHARGE  free +165 −165 (net +0) · in cells +0.23 · cells + 27 · − 13 · |q| 0.62
+MEMBRANE  mix 0.13 (heavy 4%) · thickness 0.013 · integrity 0.81 (whole 100%, damaged 6) · bursts 0/s · in membranes l 2.83 L 0.43 · bitten l 0.00036 L 0.00036/s · |selectivity| 0.08
+DIPOLES  |d| 0.83 · polarised 44 (92%) · neighbours aligned 0.01 · head-to-tail +0.30 · in threads 4 (ends 22) · along the field 0.64
+PUMPS  active 10% (top IN g 8%, OUT G 2%) · |voltage| 0.02 (2 cells > 0.1) · paid 0.065/s · moved to dish 0.030/s, from dish 0.013/s, across contact 0.038/s
+CATALYSTS  crust ll 0.65 LL 55.0 · engines at 71% (in the light 78%, fed cells 84%) · trace in cells 2.61, in the dish 12.0 · cells with trace ≥ half 29 · IN-trace pumps 0 (battery 0.00 vs 0.28)
+HARD LIGHT  dose in the light 15.4, in the dark 11.45 · births from lit parents 100% mutating ×1.5 (all ×1.46) · slot jumps per birth: lit 0.143, others 0.000 (0.10/s)
+DIVISION  cells 48 of 6000 · births 0.7/s · deaths 0.8/s: starved 0.6, heat 0.0, burst 0.0, age 0.2 · ready 6 (crowded 2) · starving 10
+COUNT  ███▇▇▇▆▆▅▄▄▃▃▃▃▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁  last 2.9 min, 43 to 1613
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 640.00 s (run 640.00 s)
+ENTROPY  6.15 M  +0/s   paused
+moving 14.8 · heat in dish 4910 · stored 212 · in 6.15 M · rounding +0.080
+light in 0/s → heat 0/s · chemistry 11.7/s · passed -11.7/s · spot · day 15%
+ORDER  0.260 · atoms in dish 734 · in cells 73.6 · added 3599 (+0/s) · out 2792 · rounding 0
+CELLS  batteries 58.6 (full 20%, empty 16%) · atoms inside 73.6 · fuel inside 24.2 · burner +0/s · crawl −0/s
+ENGINES  harvest 0% · burn 63% · both 37% · other 0%  (batteries 0 · 28 · 34 · 0 %) · in the light 0 · 60 · 40 · 0 % · tolerance 15.8 · perm 5.12
+FREE LIGHT ATOMS  g 124 · t 124 in the dish · cells with an uphill swap 1 · breathers (downhill swap) 0
+CHARGE  free +166 −167 (net −0.23) · in cells +0.45 · cells + 30 · − 12 · |q| 0.64
+MEMBRANE  mix 0.14 (heavy 4%) · thickness 0.013 · integrity 0.85 (whole 100%, damaged 7) · bursts 0/s · in membranes l 3.02 L 0.50 · bitten l 0 L 0/s · |selectivity| 0.09
+DIPOLES  |d| 0.86 · polarised 49 (100%) · neighbours aligned -0.07 · head-to-tail +0.30 · in threads 5 (ends 18) · along the field 0.80
+PUMPS  active 8% (top IN g 4%, IN GT 2%, OUT G 2%) · |voltage| 0.01 (1 cells > 0.1) · paid 0/s · moved to dish 0/s, from dish 0/s, across contact 0/s
+CATALYSTS  crust ll 0.65 LL 55.0 · engines at 76% (in the light 82%, fed cells 87%) · trace in cells 3.43, in the dish 11.2 · cells with trace ≥ half 34 · IN-trace pumps 0 (battery 0.00 vs 0.30)
+HARD LIGHT  dose in the light 13.0, in the dark 9.88 · births from lit parents 0% mutating ×1.0 (all ×1.00) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 49 of 6000 · births 0.0/s · deaths 0.0/s: starved 0.0, heat 0.0, burst 0.0, age 0.0 · ready 2 (crowded 0) · starving 8
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 650.00 s (run 650.00 s)
+ENTROPY  6.17 M  +2585/s   paused
+moving 19.5 · heat in dish 5216 · stored 209 · in 6.18 M · rounding +0.079
+light in 7306/s → heat 1150/s · chemistry 13.8/s · pigments 4.63/s · passed 6138/s · spot · day 18%
+ORDER  0.254 · atoms in dish 740 · in cells 67.5 · added 3599 (+0/s) · out 2792 · rounding 0
+CELLS  batteries 63.6 (full 16%, empty 6%) · atoms inside 67.5 · fuel inside 18.5 · burner +0/s · crawl −1.43/s
+ENGINES  harvest 0% · burn 57% · both 43% · other 0%  (batteries 0 · 30 · 32 · 0 %) · in the light 0 · 55 · 45 · 0 % · tolerance 15.4 · perm 5.54
+FREE LIGHT ATOMS  g 123 · t 123 in the dish · cells with an uphill swap 1 · breathers (downhill swap) 0
+CHARGE  free +169 −169 (net −0.14) · in cells +0.36 · cells + 28 · − 17 · |q| 0.60
+MEMBRANE  mix 0.14 (heavy 4%) · thickness 0.014 · integrity 0.81 (whole 100%, damaged 8) · bursts 0/s · in membranes l 2.99 L 0.54 · bitten l 0.0013 L 0.00072/s · |selectivity| 0.11
+DIPOLES  |d| 0.92 · polarised 50 (98%) · neighbours aligned 0.07 · head-to-tail +0.36 · in threads 4 (ends 34) · along the field 0.81
+PUMPS  active 2% (top IN GT 2%) · |voltage| 0.00 (0 cells > 0.1) · paid 0.0018/s · moved to dish 0/s, from dish 0.012/s, across contact 0.014/s
+CATALYSTS  crust ll 0.66 LL 54.9 · engines at 79% (in the light 82%, fed cells 85%) · trace in cells 2.80, in the dish 11.8 · cells with trace ≥ half 37 · IN-trace pumps 0 (battery 0.00 vs 0.31)
+HARD LIGHT  dose in the light 11.0, in the dark 8.77 · births from lit parents 100% mutating ×1.5 (all ×1.52) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 51 of 6000 · births 1.0/s · deaths 0.8/s: starved 0.4, heat 0.0, burst 0.0, age 0.4 · ready 0 (crowded 0) · starving 3
+COUNT  ██  last 0.1 min, 47 to 49
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 660.00 s (run 660.00 s)
+ENTROPY  6.20 M  +2858/s   paused
+moving 22.6 · heat in dish 5817 · stored 214 · in 6.21 M · rounding +0.078
+light in 9449/s → heat 1483/s · chemistry 16.5/s · pigments 6.46/s · passed 7943/s · spot · day 23%
+ORDER  0.249 · atoms in dish 736 · in cells 71.4 · added 3599 (+0/s) · out 2792 · rounding 0
+CELLS  batteries 68.4 (full 16%, empty 4%) · atoms inside 71.4 · fuel inside 17.2 · burner +0/s · crawl −1.70/s
+ENGINES  harvest 0% · burn 56% · both 44% · other 0%  (batteries 0 · 34 · 34 · 0 %) · in the light 0 · 55 · 45 · 0 % · tolerance 15.5 · perm 5.55
+FREE LIGHT ATOMS  g 121 · t 121 in the dish · cells with an uphill swap 2 · breathers (downhill swap) 0
+CHARGE  free +167 −167 (net −0.44) · in cells +0.67 · cells + 26 · − 17 · |q| 0.68
+MEMBRANE  mix 0.14 (heavy 2%) · thickness 0.013 · integrity 0.89 (whole 100%, damaged 4) · bursts 0/s · in membranes l 3.26 L 0.52 · bitten l 0.0020 L 0.0011/s · |selectivity| 0.12
+DIPOLES  |d| 0.89 · polarised 50 (100%) · neighbours aligned 0.01 · head-to-tail +0.32 · in threads 6 (ends 20) · along the field 0.69
+PUMPS  active 4% (top IN GT 4%) · |voltage| 0.00 (0 cells > 0.1) · paid 0.0027/s · moved to dish 0/s, from dish 0.019/s, across contact 0.011/s
+CATALYSTS  crust ll 0.68 LL 54.8 · engines at 81% (in the light 84%, fed cells 88%) · trace in cells 3.29, in the dish 11.3 · cells with trace ≥ half 38 · IN-trace pumps 0 (battery 0.00 vs 0.34)
+HARD LIGHT  dose in the light 13.4, in the dark 5.38 · births from lit parents 100% mutating ×1.6 (all ×1.60) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 50 of 6000 · births 0.3/s · deaths 0.4/s: starved 0.1, heat 0.0, burst 0.0, age 0.3 · ready 2 (crowded 1) · starving 2
+COUNT  █▇██  last 0.3 min, 47 to 51
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 670.00 s (run 670.00 s)
+ENTROPY  6.23 M  +3374/s   paused
+moving 22.7 · heat in dish 6881 · stored 230 · in 6.24 M · rounding +0.076
+light in 12.6 k/s → heat 1984/s · chemistry 18.1/s · pigments 8.66/s · passed 10.6 k/s · spot · day 31%
+ORDER  0.246 · atoms in dish 734 · in cells 73.6 · added 3599 (+0/s) · out 2792 · rounding 0
+CELLS  batteries 74.6 (full 25%, empty 6%) · atoms inside 73.6 · fuel inside 16.3 · burner +0/s · crawl −1.34/s
+ENGINES  harvest 0% · burn 56% · both 44% · other 0%  (batteries 0 · 37 · 34 · 0 %) · in the light 0 · 56 · 44 · 0 % · tolerance 15.3 · perm 5.59
+FREE LIGHT ATOMS  g 119 · t 119 in the dish · cells with an uphill swap 2 · breathers (downhill swap) 0
+CHARGE  free +161 −162 (net −0.35) · in cells +0.58 · cells + 27 · − 18 · |q| 0.67
+MEMBRANE  mix 0.13 (heavy 2%) · thickness 0.013 · integrity 0.89 (whole 100%, damaged 7) · bursts 0/s · in membranes l 3.43 L 0.55 · bitten l 0.0035 L 0.0063/s · |selectivity| 0.12
+DIPOLES  |d| 0.86 · polarised 52 (100%) · neighbours aligned 0.11 · head-to-tail +0.25 · in threads 8 (ends 28) · along the field 0.81
+PUMPS  active 4% (top IN GT 4%) · |voltage| 0.00 (0 cells > 0.1) · paid 0.0027/s · moved to dish 0/s, from dish 0.020/s, across contact 0.0087/s
+CATALYSTS  crust ll 0.71 LL 54.7 · engines at 85% (in the light 86%, fed cells 89%) · trace in cells 4.19, in the dish 10.4 · cells with trace ≥ half 43 · IN-trace pumps 0 (battery 0.00 vs 0.36)
+HARD LIGHT  dose in the light 16.7, in the dark 4.53 · births from lit parents 100% mutating ×2.0 (all ×1.96) · slot jumps per birth: lit 0.000, others 0.000 (0/s)
+DIVISION  cells 52 of 6000 · births 0.4/s · deaths 0.2/s: starved 0.1, heat 0.0, burst 0.0, age 0.1 · ready 2 (crowded 0) · starving 1
+COUNT  █▇████  last 0.4 min, 47 to 51
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 680.00 s (run 680.00 s)
+ENTROPY  6.27 M  +4073/s   paused
+moving 28.4 · heat in dish 8280 · stored 244 · in 6.28 M · rounding +0.074
+light in 16.5 k/s → heat 2628/s · chemistry 24.0/s · pigments 13.7/s · passed 13.8 k/s · spot · day 40%
+ORDER  0.242 · atoms in dish 731 · in cells 76.8 · added 3599 (+0/s) · out 2792 · rounding 0
+CELLS  batteries 78.9 (full 16%, empty 5%) · atoms inside 76.8 · fuel inside 17.7 · burner +0/s · crawl −1.47/s
+ENGINES  harvest 0% · burn 53% · both 47% · other 0%  (batteries 0 · 37 · 31 · 0 %) · in the light 0 · 54 · 46 · 0 % · tolerance 15.4 · perm 5.67
+FREE LIGHT ATOMS  g 118 · t 118 in the dish · cells with an uphill swap 4 · breathers (downhill swap) 0
+CHARGE  free +157 −157 (net −0.39) · in cells +0.62 · cells + 36 · − 20 · |q| 0.67
+MEMBRANE  mix 0.12 (heavy 0%) · thickness 0.014 · integrity 0.89 (whole 100%, damaged 6) · bursts 0/s · in membranes l 3.83 L 0.57 · bitten l 0.0075 L 0.015/s · |selectivity| 0.11
+DIPOLES  |d| 0.88 · polarised 58 (100%) · neighbours aligned 0.08 · head-to-tail +0.22 · in threads 6 (ends 20) · along the field 0.62
+PUMPS  active 7% (top IN GT 7%) · |voltage| 0.00 (0 cells > 0.1) · paid 0.0050/s · moved to dish 0/s, from dish 0.035/s, across contact 0.014/s
+CATALYSTS  crust ll 0.79 LL 54.6 · engines at 86% (in the light 87%, fed cells 89%) · trace in cells 4.72, in the dish 9.86 · cells with trace ≥ half 51 · IN-trace pumps 0 (battery 0.00 vs 0.34)
+HARD LIGHT  dose in the light 20.1, in the dark 1.94 · births from lit parents 100% mutating ×1.9 (all ×1.93) · slot jumps per birth: lit 0.222, others 0.000 (0.20/s)
+DIVISION  cells 58 of 6000 · births 0.9/s · deaths 0.3/s: starved 0.1, heat 0.0, burst 0.0, age 0.2 · ready 3 (crowded 0) · starving 2
+COUNT  ▇▇▇▇▇▇▇█  last 0.6 min, 47 to 58
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 690.00 s (run 690.00 s)
+ENTROPY  6.31 M  +4781/s   paused
+moving 22.4 · heat in dish 9668 · stored 261 · in 6.32 M · rounding +0.075
+light in 20.9 k/s → heat 3357/s · chemistry 34.8/s · pigments 17.0/s · passed 17.4 k/s · spot · day 51%
+ORDER  0.239 · atoms in dish 731 · in cells 76.3 · added 3599 (+0/s) · out 2792 · rounding 0
+CELLS  batteries 84.4 (full 13%, empty 5%) · atoms inside 76.3 · fuel inside 17.9 · burner +0/s · crawl −1.56/s
+ENGINES  harvest 0% · burn 57% · both 43% · other 0%  (batteries 0 · 34 · 33 · 0 %) · in the light 0 · 58 · 42 · 0 % · tolerance 15.4 · perm 5.69
+FREE LIGHT ATOMS  g 116 · t 116 in the dish · cells with an uphill swap 3 · breathers (downhill swap) 0
+CHARGE  free +153 −153 (net −0.41) · in cells +0.64 · cells + 34 · − 23 · |q| 0.68
+MEMBRANE  mix 0.13 (heavy 0%) · thickness 0.013 · integrity 0.88 (whole 100%, damaged 9) · bursts 0/s · in membranes l 4.05 L 0.64 · bitten l 0.011 L 0.020/s · |selectivity| 0.12
+DIPOLES  |d| 0.89 · polarised 63 (100%) · neighbours aligned 0.04 · head-to-tail +0.27 · in threads 12 (ends 25) · along the field 0.68
+PUMPS  active 6% (top IN GT 5%, OUT l 2%) · |voltage| 0.00 (0 cells > 0.1) · paid 0.0080/s · moved to dish 0.010/s, from dish 0.034/s, across contact 0.0071/s
+CATALYSTS  crust ll 0.92 LL 54.4 · engines at 87% (in the light 88%, fed cells 90%) · trace in cells 4.70, in the dish 9.87 · cells with trace ≥ half 57 · IN-trace pumps 0 (battery 0.00 vs 0.34)
+HARD LIGHT  dose in the light 25.8, in the dark 1.06 · births from lit parents 100% mutating ×2.2 (all ×2.24) · slot jumps per birth: lit 0.125, others 0.000 (0.10/s)
+DIVISION  cells 63 of 6000 · births 0.8/s · deaths 0.3/s: starved 0.0, heat 0.0, burst 0.0, age 0.3 · ready 1 (crowded 0) · starving 3
+COUNT  ▇▆▇▇▇▇▇███  last 0.8 min, 47 to 60
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)
+
+--- t 700.00 s (run 700.00 s)
+ENTROPY  6.36 M  +5599/s   paused
+moving 23.5 · heat in dish 11.3 k · stored 284 · in 6.38 M · rounding +0.074
+light in 25.4 k/s → heat 4126/s · chemistry 46.7/s · pigments 23.4/s · passed 21.3 k/s · spot · day 62%
+ORDER  0.236 · atoms in dish 731 · in cells 76.4 · added 3599 (+0/s) · out 2792 · rounding 0
+CELLS  batteries 96.5 (full 19%, empty 4%) · atoms inside 76.4 · fuel inside 18.8 · burner +0/s · crawl −1.91/s
+ENGINES  harvest 0% · burn 55% · both 45% · other 0%  (batteries 0 · 39 · 32 · 0 %) · in the light 0 · 56 · 44 · 0 % · tolerance 15.5 · perm 5.61
+FREE LIGHT ATOMS  g 115 · t 115 in the dish · cells with an uphill swap 4 · breathers (downhill swap) 0
+CHARGE  free +150 −150 (net −0.44) · in cells +0.67 · cells + 38 · − 25 · |q| 0.73
+MEMBRANE  mix 0.13 (heavy 0%) · thickness 0.013 · integrity 0.90 (whole 100%, damaged 6) · bursts 0/s · in membranes l 4.39 L 0.64 · bitten l 0.021 L 0.030/s · |selectivity| 0.12
+DIPOLES  |d| 0.91 · polarised 66 (100%) · neighbours aligned 0.01 · head-to-tail +0.27 · in threads 6 (ends 34) · along the field 0.68
+PUMPS  active 7% (top IN GT 6%, OUT l 1%) · |voltage| 0.00 (0 cells > 0.1) · paid 0.0090/s · moved to dish 0.0074/s, from dish 0.031/s, across contact 0.0099/s
+CATALYSTS  crust ll 1.14 LL 54.3 · engines at 87% (in the light 88%, fed cells 89%) · trace in cells 4.70, in the dish 9.88 · cells with trace ≥ half 60 · IN-trace pumps 0 (battery 0.00 vs 0.36)
+HARD LIGHT  dose in the light 34.2, in the dark 0.56 · births from lit parents 100% mutating ×2.9 (all ×2.85) · slot jumps per birth: lit 0.250, others 0.000 (0.10/s)
+DIVISION  cells 67 of 6000 · births 0.4/s · deaths 0.0/s: starved 0.0, heat 0.0, burst 0.0, age 0.0 · ready 3 (crowded 0) · starving 3
+COUNT  ▆▆▆▆▆▆▇▇▇▇██  last 0.9 min, 47 to 65
+WALLS  off: every side as sticky as the adhesion gene, as before step C10 (rules panel)

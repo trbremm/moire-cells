@@ -1,0 +1,11 @@
+{
+ "batch": "c10-front",
+ "runs": [
+  "c10-pol-ion-w0.json",
+  "c10-pol-ion-w1.json",
+  "c10-end-ion-w0.json",
+  "c10-end-ion-w1.json",
+  "c10-sid-ion-w0.json",
+  "c10-sid-ion-w1.json"
+ ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "c10-check-off",
+  "description": "Step C10 books check: 700 s at MAX (seed 5) through N, a wash, a resize, G, a resize back, new springs, the walls' switches at runtime, a snapshot saved and loaded; the atoms' and charge's rounding must stay 0",
+  "query": {"seed": 5, "walls": 0},
+  "duration": 700,
+  "sample_every": 10,
+  "resizes": [{"t": 300, "size": "1000x700"}, {"t": 480, "size": "1280x800"}],
+  "evals": [
+    {"t": 120, "js": "return moire.control.action('culture')"},
+    {"t": 220, "js": "return moire.control.action('wash')"},
+    {"t": 400, "js": "return moire.control.action('genomes')"},
+    {"t": 520, "js": "{ const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.5, 'light'); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.5, 'heavy'); } return moire.matter.springs.length"},
+    {"t": 560, "js": "return 'walls stay off'"},
+    {"t": 570, "js": "return 'walls stay off'"},
+    {"t": 580, "js": "moire.walls.params.cost = true; moire.walls.params.mature = false; return 'cost on, mature off'"},
+    {"t": 590, "js": "moire.walls.params.mature = true; moire.walls.params.front = false; return 'mature on, front off'"},
+    {"t": 600, "js": "moire.walls.params.front = true; moire.cells.shape.on = false; return 'front on, honeycomb off'"},
+    {"t": 610, "js": "moire.cells.shape.on = true; return 'honeycomb on'"},
+    {"t": 640, "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }"}
+  ],
+  "shots": [{"t": 700}],
+  "stall": 120
+}

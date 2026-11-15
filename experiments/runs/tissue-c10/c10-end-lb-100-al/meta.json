@@ -1,0 +1,394 @@
+{
+  "name": "c10-end-lb-100-al",
+  "description": "two-ended: both ends sticky, the sides not; long beat; 100 cells; fronts aligned",
+  "condition": {
+    "name": "c10-end-lb-100-al",
+    "series": "more",
+    "description": "two-ended: both ends sticky, the sides not; long beat; 100 cells; fronts aligned",
+    "tissue_setting": {
+      "knobs": {
+        "cells.params.lever": 0.2,
+        "walls.params.cost": false
+      },
+      "genes": {
+        "adhesion": 0.5,
+        "a1": 0.0,
+        "a2": 0.5,
+        "w": 0
+      },
+      "typeB": null,
+      "query": {},
+      "extra_js": "",
+      "fronts": "aligned"
+    },
+    "query": {
+      "seed": 3,
+      "cells": 100,
+      "mut": 0,
+      "life": 0,
+      "clone": 1,
+      "springs": 0,
+      "light": "off",
+      "day": 0
+    },
+    "duration": 120,
+    "sample_every": 5,
+    "tissue": true,
+    "evals": [
+      {
+        "t": 0,
+        "js": "const T = await import('/experiments/tissue/tissue-lab.js'); window.__T = T;\nconst knobs = T.apply({\"cells.params.squeeze\": 0, \"genome.rules.diff\": false, \"eat.params.pay\": false, \"cells.params.lever\": 0.2, \"walls.params.cost\": false});\nconst g = {\"keyAngle\": 0.35, \"keyScale\": 0.05, \"recAngle\": 0.35, \"recScale\": 0.05, \"recWidth\": 0.15, \"size\": 1, \"motility\": 1, \"mix\": 0, \"thickness\": 0.012, \"stiffness\": 1, \"pumpRate0\": 0, \"pumpRate1\": 0, \"rate0\": 2, \"rate1\": 0, \"rate2\": 0, \"adhesion\": 0.5, \"a1\": 0.0, \"a2\": 0.5, \"w\": 0}; g.eng0 = moire.genome.engineCode('gt \u2192 g + t', 0);\nawait T.genes(g, null);\nconst fr = await T.fronts({\"mode\": \"aligned\"});\n\nreturn { knobs, genes: g, fronts: fr, m: await T.measure({ every: 1 }) };"
+      },
+      {
+        "t": 60,
+        "js": "return await __T.measure({ every: 1 });"
+      },
+      {
+        "t": 80,
+        "js": "return await __T.measure({ every: 1 });"
+      },
+      {
+        "t": 82,
+        "js": "return await __T.stirThrough();"
+      },
+      {
+        "t": 120,
+        "js": "return await __T.measure({ every: 1 });"
+      }
+    ],
+    "shots": [
+      {
+        "t": 60
+      },
+      {
+        "t": 80
+      },
+      {
+        "t": 120
+      },
+      {
+        "t": 120,
+        "view": "walls"
+      },
+      {
+        "t": 120,
+        "view": "machinery"
+      }
+    ],
+    "snapshots": [
+      {
+        "t": 120,
+        "grid": false,
+        "name": "end"
+      }
+    ]
+  },
+  "url": "http://localhost:49827/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&cells=100&mut=0&life=0&clone=1&springs=0&light=off&day=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "cf40d8264bee0d23a7d90db226df9426eb002df9",
+  "dirty": true,
+  "started": "2026-11-15T12:38:19",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 120.0,
+  "run_wall_s": 46.54,
+  "speed_reached": 2.58,
+  "samples": 25,
+  "shots": [
+    "shots/t60.png",
+    "shots/t80.png",
+    "shots/t120.png",
+    "shots/t120_walls.png",
+    "shots/t120_machinery.png"
+  ],
+  "snapshots": [
+    "snapshots/end.json"
+  ],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "const T = await import('/experiments/tissue/tissue-lab.js'); window.__T = T;\nconst knobs = T.apply({\"cells.params.squeeze\": 0, \"genome.rules.diff\": false, \"eat.params.pay\": false, \"cells.params.lever\": 0.2, \"walls.params.cost\": false});\nconst g = {\"keyAngle\": 0.35, \"keyScale\": 0.05, \"recAngle\": 0.35, \"recScale\": 0.05, \"recWidth\": 0.15, \"size\": 1, \"motility\": 1, \"mix\": 0, \"thickness\": 0.012, \"stiffness\": 1, \"pumpRate0\": 0, \"pumpRate1\": 0, \"rate0\": 2, \"rate1\": 0, \"rate2\": 0, \"adhesion\": 0.5, \"a1\": 0.0, \"a2\": 0.5, \"w\": 0}; g.eng0 = moire.genome.engineCode('gt \u2192 g + t', 0);\nawait T.genes(g, null);\nconst fr = await T.fronts({\"mode\": \"aligned\"});\n\nreturn { knobs, genes: g, fronts: fr, m: await T.measure({ every: 1 }) };",
+      "result": {
+        "knobs": {
+          "cells.params.squeeze": 0,
+          "genome.rules.diff": false,
+          "eat.params.pay": false,
+          "cells.params.lever": 0.2,
+          "walls.params.cost": false
+        },
+        "genes": {
+          "keyAngle": 0.35,
+          "keyScale": 0.05,
+          "recAngle": 0.35,
+          "recScale": 0.05,
+          "recWidth": 0.15,
+          "size": 1,
+          "motility": 1,
+          "mix": 0,
+          "thickness": 0.012,
+          "stiffness": 1,
+          "pumpRate0": 0,
+          "pumpRate1": 0,
+          "rate0": 2,
+          "rate1": 0,
+          "rate2": 0,
+          "adhesion": 0.5,
+          "a1": 0,
+          "a2": 0.5,
+          "w": 0,
+          "eng0": 10
+        },
+        "fronts": {
+          "cells": 100,
+          "mode": "aligned",
+          "angle": 0
+        },
+        "m": {
+          "t": 0,
+          "n": 100,
+          "R": 9,
+          "largest": 99,
+          "cx": 634.960736515546,
+          "cy": 401.81935998165244,
+          "box": [
+            536.5939569473267,
+            294.2985792160034,
+            741.2851428985596,
+            499.68861198425293
+          ],
+          "elong": 1.069443301628607,
+          "hole": 1.0163692468892238,
+          "edge": 0.30303030303030304,
+          "deg": [
+            1,
+            3,
+            12,
+            84
+          ],
+          "fates": [
+            88,
+            2,
+            6,
+            4,
+            0
+          ],
+          "chainy": 0.15151515151515152,
+          "boxAll": [
+            536.5939569473267,
+            294.2985792160034,
+            741.2851428985596,
+            499.68861198425293
+          ],
+          "walls": {
+            "contactAt": [
+              0.319,
+              0.362,
+              0.319
+            ],
+            "glue": 0,
+            "matured": 0,
+            "effMean": 0,
+            "matureMean": 0,
+            "classes": {
+              "uniform": 0,
+              "polar": 0,
+              "two-ended": 1,
+              "sticky sides": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "t": 59.99999999999938,
+      "js": "return await __T.measure({ every: 1 });",
+      "result": {
+        "t": 59.99999999999938,
+        "n": 100,
+        "R": 9,
+        "largest": 90,
+        "cx": 648.2215610080295,
+        "cy": 380.4785193549262,
+        "box": [
+          544.8459215164185,
+          284.2684679031372,
+          728.1711168289185,
+          503.03655529022217
+        ],
+        "elong": 1.530147076515374,
+        "hole": 0.2586631108461209,
+        "edge": 0.24444444444444444,
+        "deg": [
+          1,
+          3,
+          17,
+          79
+        ],
+        "fates": [
+          100,
+          0,
+          0,
+          0,
+          0
+        ],
+        "chainy": 0.12222222222222222,
+        "boxAll": [
+          521.3689832687378,
+          187.66309642791748,
+          728.1711168289185,
+          512.7279615402222
+        ],
+        "walls": {
+          "contactAt": [
+            0.318,
+            0.333,
+            0.349
+          ],
+          "glue": 0.568,
+          "matured": 0.612,
+          "effMean": 0.764,
+          "matureMean": 0.47,
+          "classes": {
+            "uniform": 0,
+            "polar": 0,
+            "two-ended": 1,
+            "sticky sides": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 79.9999999999985,
+      "js": "return await __T.measure({ every: 1 });",
+      "result": {
+        "t": 79.9999999999985,
+        "n": 100,
+        "R": 9,
+        "largest": 86,
+        "cx": 626.4224250261174,
+        "cy": 400.6316531868868,
+        "box": [
+          506.43161487579346,
+          279.07004261016846,
+          746.688817024231,
+          507.53268909454346
+        ],
+        "elong": 1.583005214632821,
+        "hole": 0.32611036481681044,
+        "edge": 0.38372093023255816,
+        "deg": [
+          4,
+          11,
+          15,
+          70
+        ],
+        "fates": [
+          100,
+          0,
+          0,
+          0,
+          0
+        ],
+        "chainy": 0.19767441860465115,
+        "boxAll": [
+          450.9487352371216,
+          231.09472179412842,
+          756.027491569519,
+          535.3915758132935
+        ],
+        "walls": {
+          "contactAt": [
+            0.342,
+            0.29,
+            0.368
+          ],
+          "glue": 0.572,
+          "matured": 0.5,
+          "effMean": 0.706,
+          "matureMean": 0.381,
+          "classes": {
+            "uniform": 0,
+            "polar": 0,
+            "two-ended": 1,
+            "sticky sides": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 81.99999999999838,
+      "js": "return await __T.stirThrough();",
+      "result": {
+        "x": 543.563360668364,
+        "y": 405.7118087041946,
+        "cx": 627.563360668364,
+        "cy": 405.7118087041946
+      }
+    },
+    {
+      "t": 119.99999999999679,
+      "js": "return await __T.measure({ every: 1 });",
+      "result": {
+        "t": 119.99999999999679,
+        "n": 100,
+        "R": 9,
+        "largest": 81,
+        "cx": 658.164471661603,
+        "cy": 406.43266918041087,
+        "box": [
+          535.3860120773315,
+          300.3713331222534,
+          765.7749280929565,
+          545.276463508606
+        ],
+        "elong": 1.7152309440189129,
+        "hole": 1.1113628428997269,
+        "edge": 0.3950617283950617,
+        "deg": [
+          5,
+          12,
+          14,
+          69
+        ],
+        "fates": [
+          100,
+          0,
+          0,
+          0,
+          0
+        ],
+        "chainy": 0.18518518518518517,
+        "boxAll": [
+          458.9938097000122,
+          210.64040660858154,
+          790.4804334640503,
+          556.978123664856
+        ],
+        "walls": {
+          "contactAt": [
+            0.358,
+            0.301,
+            0.34
+          ],
+          "glue": 0.533,
+          "matured": 0.41,
+          "effMean": 0.667,
+          "matureMean": 0.32,
+          "classes": {
+            "uniform": 0,
+            "polar": 0,
+            "two-ended": 1,
+            "sticky sides": 0
+          }
+        }
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-15T12:39:54",
+  "wall_s": 95.05
+}

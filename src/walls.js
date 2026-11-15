@@ -83,7 +83,7 @@ export class Walls {
       junctionGlow: 0.12, // ... and brighter by this much
       frontTick: 0.8,    // the machinery: a small tick from the centre toward the front (brightness, 0 = none)
       viewTube: 0.7,     // the walls view: the tubes' shading by adhesion (0..1: dark where not sticky)
-      viewFill: 0.45,    // ... the body's fill in its pattern's ink
+      viewFill: 0.3,     // ... the body's fill in its pattern's ink
     };
     this.census = null;
     this.series = [];    // [time, uniform, polar, two-ended, sides, mean maturity] every 30 s of simulation time

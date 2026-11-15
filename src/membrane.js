@@ -30,7 +30,8 @@
 
 import { fmt } from './heat.js';
 import { SUBSTANCES, CH } from './matter.js';
-import { MEMB_THIN } from './genome.js';
+import { MEMB_THIN, BIO_FLOATS } from './genome.js';
+import { CELL_FLOATS } from './cells.js';
 
 const LG_MB = 19712;        // heat_common.wgsl: 32 numbers x 16 slots
 const MB = ['n', 'mix', 'thick', 'integ', 'asel', 'sel', 'ml', 'mh', 'whole', 'damaged', 'heavy', 'hinteg', 'stiff', 'seln', 'selq', 'qsel',
@@ -130,7 +131,7 @@ export class Membrane {
    * husks; and over the cells with a clear ion selectivity (|s| above 0.2) how their charge q goes with s.
    */
   async stats(fed = 0.3) {
-    const C = this.eat.cells, d = C.device, n = C.count, F = 60, B = 44;
+    const C = this.eat.cells, d = C.device, n = C.count, F = CELL_FLOATS, B = BIO_FLOATS;
     const read = async (src, bytes) => {
       const buf = d.createBuffer({ size: bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
       const e = d.createCommandEncoder();

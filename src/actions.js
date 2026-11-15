@@ -41,6 +41,7 @@ export const RULE_GROUPS = [
   ['charge', 'Charge (step C6b)'],
   ['membrane', 'Membrane chemistry (step C6c)'],
   ['dipole', 'Charge per side (step C6d)'],
+  ['pumps', 'Pumps (step C7)'],
 ];
 
 export const VIEWS = ['fate', 'lineage', 'strategy', 'charge'];   // key V: what the cells' bodies are coloured by (cells.look.view)
@@ -428,6 +429,31 @@ export function makeActions(app) {
     knob('dipPush', 'dipole push', 'push', 0.05, 10, 1.5, 2, 'how hard dipoles attract head to tail and push apart side by side'),
     knob('dipRange', 'dipole range', 'range', 1, 1.5, 1.1, 2, 'how far dipoles feel each other, × the contact distance'),
     knob('dipStretch', 'stretch along the field', 'stretch', 0.02, 0.5, 1.4, 2, 'how far a polarised cell stretches along the field'),
+  );
+
+  // ---------- pumps and the membrane voltage (step C7; panel only: no keys are free) ----------
+  const PU = () => app.cells.eat.pumps.params;
+  const puNote = () => (!E().on ? ' (cells eat is off: Shift+A)' : PU().on ? '' : ' (pumps are off)');
+  const pknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'pumps', type: 'knob', get: () => PU()[key].toFixed(digits),
+    run: (k) => { const p = PU(); p[key] = Math.max(lo, Math.min(hi, +(p[key] * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}${puNote()}`; }, help });
+  A.push(
+    { id: 'pumps', keys: [], label: 'pumps', group: 'pumps', type: 'toggle', get: () => PU().on,
+      run: () => `pumps ${flip(PU(), 'on') ? 'on: each genome’s two pump slots move one substance in or out through the membrane; down its gradient for free, up it at a cost to the battery' : 'off: substances pass the membrane only by leaking'}${E().on ? '' : ' (cells eat is off: Shift+A)'}`,
+      help: 'each genome has two pump slots: a substance, in or out, a rate; pumping down a gradient is free, up it costs battery (more the steeper); what the battery cannot pay is not pumped' },
+    { id: 'pumpContact', keys: [], label: 'pumps across contact', group: 'pumps', type: 'toggle', get: () => PU().contact,
+      run: () => `pumps across contact ${flip(PU(), 'contact') ? 'on: a side touching a neighbour pumps from its stock or into it' : 'off: pumps trade only with the dish just outside the cell'}${puNote()}`,
+      help: 'a side touching a neighbour pumps from that neighbour’s stock (in) or into it (out) instead of the dish' },
+    { id: 'pumpVolt', keys: [], label: 'membrane voltage', group: 'pumps', type: 'toggle', get: () => PU().voltage,
+      run: () => `membrane voltage ${flip(PU(), 'voltage') ? 'on: pumped charge (givers +, takers −) builds a voltage that makes pumping more of the same sign dearer; it leaks back slowly' : 'off: pumping charge costs no more than pumping anything else'}${puNote()}`,
+      help: 'pumping charged atoms builds a voltage across the membrane: more of the same sign the same way costs more; it leaks back through the membrane' },
+    { id: 'pumpV2B', keys: [], label: 'voltage pays the battery', group: 'pumps', type: 'toggle', get: () => PU().v2b,
+      run: () => `the voltage ${flip(PU(), 'v2b') ? 'pays part of its energy back into the battery as it leaks: a second battery' : 'leaks back as heat only'}${puNote()}${PU().voltage ? '' : ' (membrane voltage is off)'}`,
+      help: 'as the voltage leaks back through the membrane, part of its energy flows into the battery (a second battery); off: all of it becomes heat' },
+    pknob('pumpBase', 'base cost', 'base', 0.005, 2, 1.5, 3, 'energy per unit a pump pays to move a substance up its gradient at all (down it is free)'),
+    pknob('pumpGrad', 'gradient cost', 'grad', 0.005, 2, 1.5, 3, 'energy per unit for each e-fold up the gradient (steeper = dearer)'),
+    pknob('pumpMax', 'max rate', 'maxRate', 0.1, 6, 1.5, 2, 'the fastest a pump slot runs (per s), whatever its gene says'),
+    pknob('pumpLeak', 'voltage leak', 'vLeak', 0.02, 10, 1.5, 2, 'how fast the membrane voltage leaks back (per s; leaky and damaged membranes faster)'),
+    pknob('pumpV2BEff', 'voltage to battery', 'v2bEff', 0.05, 1, 1.25, 2, 'the share of the voltage’s energy that goes back into the battery as it leaks'),
   );
 
   // step C6n: the clean view (default) or the machinery: every diagnostic layer at once

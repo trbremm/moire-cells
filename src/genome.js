@@ -19,6 +19,9 @@
 //   memb   step C6c, genes of the membrane (src/membrane.js): x MIX, the heavy linkers' (L) share of the membrane (0..1, the
 //          rest light l); y THICKNESS, linker per R of membrane (atom-units); z the STIFFNESS gene (x what the material
 //          gives: heavy and thick = stiff); w the ION SELECTIVITY s (-1..1: givers pass x (1 + s), takers x (1 - s))
+//   pump   step C7, genes of the two PUMP SLOTS (src/pumps.js): x y each slot's code, a whole number: the substance's channel
+//          (0..12, SUBSTANCES order; sediment is never pumped) + 16 x its direction (0 IN, 1 OUT); z w each slot's rate (per s:
+//          the share of the source side's amount, per cell volume, it moves; 0 = an empty slot)
 // The key is the cell's own lattice (Cell.la and Cell.aux carry copies), so it shows in the dot pattern.
 //
 // Seeding: `founders` random genomes (0 = every cell its own), each cell a copy of one of them, scattered at
@@ -26,7 +29,7 @@
 
 import { ENGINES, engineIndex } from './matter.js';
 
-export const BIO_FLOATS = 44;   // (40 until step C6c's membrane genes)
+export const BIO_FLOATS = 48;   // (40 until step C6c's membrane genes, 44 until step C7's pumps)
 export const BIO_BYTES = BIO_FLOATS * 4;
 
 export const KEY_SPAN = Math.PI / 3;
@@ -52,7 +55,7 @@ const U = (rng, a, b) => a + (b - a) * rng();
 const logU = (rng, a, b) => a * Math.pow(b / a, rng());
 
 /** One random genome, as a plain array of BIO_FLOATS numbers. */
-export function randomGenome(rng, founder, mrng = rng) {
+export function randomGenome(rng, founder, mrng = rng, prng = mrng) {
   const g = new Array(BIO_FLOATS).fill(0);
   g[0] = U(rng, 0, KEY_SPAN); g[1] = U(rng, -KEY_SMAX, KEY_SMAX);
   g[2] = U(rng, 0, KEY_SPAN); g[3] = U(rng, -KEY_SMAX, KEY_SMAX);
@@ -68,6 +71,7 @@ export function randomGenome(rng, founder, mrng = rng) {
   g[19] = U(rng, 0, 2 * Math.PI);        // crawling heading (state, not a gene)
   engines(g, rng, STRATEGIES[Math.floor(rng() * STRATEGIES.length)]);
   membrane(g, mrng, mrng() < 0.25);   // step C6c (its own random stream, so a seed's founders keep their other genes)
+  pumps(g, prng);                      // step C7 (its own stream too)
   return g;
 }
 
@@ -118,6 +122,23 @@ function membrane(g, rng, heavy) {
   g[43] = U(rng, -0.08, 0.08);                                                 // ion selectivity
 }
 
+// Step C7: the founders' pumps: most have none (pumps must earn their place by selection); about a third get ONE weak pump
+// of a random substance (never sediment) and direction. Mutation does the rest (cell_common.wgsl mutate).
+export const PUMP_CHANNELS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12];   // g t l G T L gt gT Gt GT trace (PUMP_CH in cell_common.wgsl)
+export const PUMP_OUT = 16;            // a slot's code: channel + 16 x direction (1 = OUT)
+function pumps(g, rng, share = 0.33) {
+  g[44] = 0; g[45] = PUMP_OUT; g[46] = 0; g[47] = 0;
+  if (rng() < share) {
+    g[44] = PUMP_CHANNELS[Math.floor(rng() * PUMP_CHANNELS.length)] + (rng() < 0.5 ? PUMP_OUT : 0);
+    g[46] = U(rng, 0.1, 0.5);
+  }
+}
+/** A pump slot's gene as words: { ch, out, rate }. */
+export function pumpOf(g, o, k) {
+  const code = Math.round(g[o + 44 + k]);
+  return { ch: code & 15, out: (code >> 4) & 1, rate: Math.max(0, g[o + 46 + k]) };
+}
+
 /** The strategy a genome's engines amount to: 'harvest', 'burn', 'both' or 'other' (as the census and the view). */
 export function strategyOf(g, o = 0) {
   let h = false, b = false;
@@ -134,6 +155,7 @@ export class Genome {
     this.seed = seed >>> 0;
     this.rng = makeRng(this.seed);
     this.mrng = makeRng(this.seed ^ 0x6c6c6c6c);   // step C6c: the membrane genes' own stream
+    this.prng = makeRng(this.seed ^ 0x70756d70);   // step C7: the pump genes' own stream
     this.founders = [];
     // live-tunable (moire.genome.params); the rule switches are keys
     this.params = {
@@ -153,6 +175,8 @@ export class Genome {
       mutJump: 0.03,    // chance per birth that one gene is drawn afresh
       engJump: 0.04,    // step C6: chance per birth that one engine slot jumps (to another reaction, another pigment band,
                         // or empty; an empty one may start up again)
+      pumpJump: 0.04,   // step C7: chance per birth that one pump slot jumps (another substance, the other direction, or
+                        // empty; an empty one starts up at a small rate)
       ripple: 0.4,      // ripple strength of a birth (a death dips by 0.7 of it); 0 = none
     };
     this.rules = { diff: true, adh: true, body: true, turn: true, mut: true, inherit: false };
@@ -170,7 +194,7 @@ export class Genome {
     const n = Math.max(0, Math.round(this.params.founders));
     this.founders = [];
     for (let k = 0; k < n; k++) {
-      const g = randomGenome(this.rng, k, this.mrng);
+      const g = randomGenome(this.rng, k, this.mrng, this.prng);
       engines(g, this.rng, STRATEGIES[k % STRATEGIES.length]);   // step C6: a spread of engine sets over the founders
       membrane(g, this.mrng, k % 4 === 3);                         // step C6c: mostly light thin membranes, a few heavy
       this.founders.push(g);
@@ -185,10 +209,10 @@ export class Genome {
     if (!this.founders.length && this.params.founders > 0) this.newFounders();
     const keys = new Float32Array(n * 2);
     for (let i = 0; i < n; i++) {
-      const g = this.founders.length ? this.founders[Math.floor(this.rng() * this.founders.length)] : randomGenome(this.rng, i, this.mrng);
+      const g = this.founders.length ? this.founders[Math.floor(this.rng() * this.founders.length)] : randomGenome(this.rng, i, this.mrng, this.prng);
       const o = i * BIO_FLOATS;
       for (let k = 0; k < BIO_FLOATS; k++) f[o + k] = g[k];
-      for (let k = 20; k < 32; k++) f[o + k] = 0;   // accumulators and step 6 state start empty (32..43: step C6's and C6c's genes)
+      for (let k = 20; k < 32; k++) f[o + k] = 0;   // accumulators and step 6 state start empty (32..47: step C6's, C6c's and C7's genes)
       keys[2 * i] = g[0]; keys[2 * i + 1] = g[1];
     }
     return keys;

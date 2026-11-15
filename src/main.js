@@ -50,6 +50,8 @@
 //               (rules panel, Membrane chemistry)
 //   ?dipoles=0    step C6d: start with the dipoles (charge per side) off; ?dd=0 no dipole-dipole, ?dphi=0 the substrate's
 //               field not acting on the side charges, ?dfield=0 no turning and stretching (rules panel, Charge per side)
+//   ?pumps=0      step C7: start with the pumps off; ?pumpcontact=0 no pumping across contact, ?voltage=0 no membrane
+//               voltage, ?v2b=0 the voltage's energy all heat (not back into the battery) (rules panel, Pumps)
 //
 // Part C keys are Shift + a letter (every plain letter is taken by Parts A and B): checked before the plain keys,
 // so Shift+H never also toggles H.
@@ -230,6 +232,12 @@ async function boot() {
         if (params.has(q)) DP[k] = flag(q);
       }
     }
+    {   // step C7: the pumps' switches
+      const PP = cells.eat.pumps.params;
+      for (const [q, k] of [['pumps', 'on'], ['pumpcontact', 'contact'], ['voltage', 'voltage'], ['v2b', 'v2b']]) {
+        if (params.has(q)) PP[k] = flag(q);
+      }
+    }
     background.heat = cells.heat;
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));
@@ -240,7 +248,7 @@ async function boot() {
   layers = [medium, background, landscape, matter, charge, light, cells];   // (step C6b: the charge's contours over the substances)
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
   window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter, eat: cells.eat, neon, charge,
-    membrane: cells.eat.membrane, dipole: cells.dipole };
+    membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
   window.moire.budgets = budgets;      // the fast speeds' tick budgets
@@ -417,7 +425,7 @@ function frame(now) {
 
   if (!entropyEl.hidden) {
     const compact = view.cssW < 560 || view.cssH < 500;   // a phone (either way up): shorter lines
-    let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}\n${charge.panelLine(compact)}\n${cells.eat.membrane.panelLine(compact)}\n${cells.dipole.panelLine(compact)}`;
+    let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}\n${charge.panelLine(compact)}\n${cells.eat.membrane.panelLine(compact)}\n${cells.dipole.panelLine(compact)}\n${cells.eat.pumps.panelLine(compact)}`;
     if (paused || speed !== 1) {
       const r = reachedText();
       const sp = paused ? 'paused' : r ? (compact ? r : `${speedName(speed)} · reached ${r}`) : speedName(speed);
@@ -485,6 +493,7 @@ function drawOverlay() {
     ...charge.overlayLines(),
     ...cells.eat.membrane.overlayLines(),
     ...cells.dipole.overlayLines(),
+    ...cells.eat.pumps.overlayLines(),
     neon.overlayLine(),
     `simmer (Shift+R) ${background.heatOn ? 'on' : 'off'}: ripple drops ${background.params.heatDrops} per cell per step x temperature², height ${background.params.heatAmp}`,
     `sim t ${simTime.toFixed(1)} s · speed ${paused ? 'paused' : speedName(speed)}, reached ×${stats.reached.toFixed(2)} (${stats.ticks} ticks this frame` +

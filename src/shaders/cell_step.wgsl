@@ -62,11 +62,16 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let wFront = vec2f(cos(c.front), sin(c.front));
   var tchA = vec4f(0.0);
   var tchB = vec2f(0.0);
+  var rtA = vec4f(0.0);       // step C11's census: each side's touching, sticky or not
+  var rtB = vec2f(0.0);
   var wPairs = 0u;
   var wGlue = 0u;
   var wMatP = 0u;
   var wFrontP = 0u;
   let myMat = c.mature;
+  // step C11, glue turns the cell: the torque of the contacts' adhesion about this cell's centre (below, in the neighbour loop)
+  let glueTurn = wallOn && (wlF & WL_TURN) != 0u && FL.wl1.w > 0.0;
+  var glueTq = 0.0;
   // ... the contacts: each neighbour's wall caps how far out each corner may sit (bound), pulls the hexagon round so a
   // side faces it (torque, weighted by closeness tw), and slides each corner round toward the corner of its tile (slide:
   // the slope of the soft-nearest wall's distance along the corner's direction, sw its weight)
@@ -367,6 +372,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
             let like = exp(-key_dist2(c.la, c.aux, o.la, o.aux) / (2.0 * sa * sa));
             let fateGlue = select(0.0, S.fateAdh, o.kind == c.kind && c.kind != KIND_STEM);
             var stick = sqrt(max(bio.body.x * ob.body.x, 0.0)) * like + fateGlue;
+            // The pull fades out below 0.85 x contact distance, so sticky cells touch without piling up.
+            let near = clamp((dist / R0 - 0.85) / 0.15, 0.0, 1.0);
             if (wallOn) {
               // step C10: the contact holds by the smaller of the two touching sides' effective adhesion (both must be sticky),
               // times the match (the keys' likeness plus the same-fate glue): adhesion = molecules x how well they match
@@ -379,7 +386,33 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
               let wt = touch * clamp(gl / 0.1, 0.0, 1.0);
               tchA += select(vec4f(0.0), vec4f(wt), vec4u(ks) == vec4u(0u, 1u, 2u, 3u));
               tchB += select(vec2f(0.0), vec2f(wt), vec2u(ks) == vec2u(4u, 5u));
+              // step C11: the glue turns the cell. The adhesion acts along the whole shared wall, held by bonds anchored in both
+              // membranes; where this cell's wall is stickier (and it is the less sticky of the two there, so its own glue is what
+              // limits the bonds) the bonds pull harder, off the line between the centres, and the pull turns the cell (r x F, summed
+              // along the wall) until its sticky part faces the neighbour. Worked out as the pull's virtual work: the torque is the
+              // change of the wall's mean glue (min of the two cells' adhesion, at the wall's two ends 30 degrees either side of the
+              // centre line and its middle) as this cell turns, x K h beta / 3 (K the pull per unit of glue, h the wall's half-length,
+              // beta 30 degrees), which is the r x F of a glue changing evenly along the wall. Where the neighbour's glue limits, a
+              // turn of this cell changes nothing and gives no torque (no endless spinning); the neighbour works out its own torque
+              // from the same wall the same way (each cell its own: no race)
+              if (glueTurn) {
+                let a0 = atan2(d.y, d.x);
+                let thO = wall_theta(o.flags, (o.wadh.y >> 16u) & 255u);
+                let jp = wall_at_a(o.wadh.x, o.wadh.y, thO, a0 + 3.14159265 - 0.5235988);   // the neighbour's glue at the wall's + end
+                let jm = wall_at_a(o.wadh.x, o.wadh.y, thO, a0 + 3.14159265 + 0.5235988);   // ... - end
+                let jc = wall_at_a(o.wadh.x, o.wadh.y, thO, a0 + 3.14159265);               // ... middle
+                let tp = myTh + TURN_DA;
+                let tn = myTh - TURN_DA;
+                let gUp = min(wall_at_a(mine0.x, mine0.y, tp, a0 + 0.5235988), jp) + 2.0 * min(wall_at_a(mine0.x, mine0.y, tp, a0), jc)
+                        + min(wall_at_a(mine0.x, mine0.y, tp, a0 - 0.5235988), jm);
+                let gDn = min(wall_at_a(mine0.x, mine0.y, tn, a0 + 0.5235988), jp) + 2.0 * min(wall_at_a(mine0.x, mine0.y, tn, a0), jc)
+                        + min(wall_at_a(mine0.x, mine0.y, tn, a0 - 0.5235988), jm);
+                let h = 0.2886751 * dist;               // half the shared wall: a hexagon's side, at the contact's distance
+                glueTq += touch * near * (like + fateGlue) * S.adhesion * S.R * S.stiffness * h * 0.1745329 * (gUp - gDn) / (8.0 * TURN_DA);
+              }
               if (S.xCount != 0u) {
+                rtA += select(vec4f(0.0), vec4f(touch), vec4u(ks) == vec4u(0u, 1u, 2u, 3u));
+                rtB += select(vec2f(0.0), vec2f(touch), vec2u(ks) == vec2u(4u, 5u));
                 wPairs++;
                 wGlue += u32(round(gl * 1000.0));
                 if (wall_mature(myMat, ks) > 0.5) { wMatP++; }
@@ -387,8 +420,6 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
               }
             }
             // (minus a baseline: unlike neighbours push off a little, which lets the tissue sort itself out)
-            // The pull fades out below 0.85 x contact distance, so sticky cells touch without piling up.
-            let near = clamp((dist / R0 - 0.85) / 0.15, 0.0, 1.0);
             f += d / dist * (touch * near * (stick - S.adhBase) * S.adhesion * S.R * S.stiffness);
           }
         }
@@ -738,6 +769,11 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // outline; muscle stretches along its crawling heading. As the reference's step(); length capped at 0.5.
   // (step C6c: a honeycomb cell has no passive squeeze in its target: contact presses its sides flat instead, below)
   var dTh = 0.0;                             // step C10: how far the hexagon turned this tick (the front turns with it)
+  // step C11: the glue's torque turns the BODY, overdamped: at turning strength / rotational drag (wl1.w) x torque / (r^2 / 2)
+  // (a disc's rotational drag on its substrate, against the drag 1 the motion has: velocity = force), at most TURN_MAX
+  var wTurn = 0.0;
+  if (glueTurn) { wTurn = clamp(FL.wl1.w * glueTq / max(0.5 * c.r * c.r, 1e-6), -TURN_MAX, TURN_MAX); }
+  var dFront = 0.0;                          // ... and how far the body (and so the front) turned
   var t = select(0.5 * C, vec2f(0.0), hexShape);
   t += dStretch;                             // step C6d: a polarised cell in a field stretches along it
   if (S.activeGain > 0.0) {
@@ -831,8 +867,18 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     c.alpha = al;
     // the hexagon turns toward its neighbours (mean pull over the touching ones), damped
     let tq = torque / max(tw, 1.0);
-    c.spin += (FL.hex.z * tq + FL.dip0.w * dTorque - S.hexTurnDamp * c.spin) * S.dt;   // (step C6d: + the field's torque)
-    dTh = c.spin * S.dt + mean;
+    if (glueTurn) {
+      // step C11: the BODY turns by the glue's torque and the dipole field's (C6d's, at the turning rate its pull reached against
+      // the damping), and the hexagon with it; the hexagon's own pull toward its neighbours (above) and its corners' slides only
+      // fit the outline to its tile, so they turn the outline, not the body (and not the front)
+      c.spin += (FL.hex.z * tq - S.hexTurnDamp * c.spin) * S.dt;
+      dFront = (wTurn + FL.dip0.w * dTorque / max(S.hexTurnDamp, 1e-3)) * S.dt;
+      dTh = c.spin * S.dt + mean + dFront;
+    } else {
+      c.spin += (FL.hex.z * tq + FL.dip0.w * dTorque - S.hexTurnDamp * c.spin) * S.dt;   // (step C6d: + the field's torque)
+      dTh = c.spin * S.dt + mean;
+      dFront = dTh;
+    }
     c.theta += dTh;
     c.theta -= TAU * floor(c.theta / TAU);
     // the stretch e1, e2 (the strained lattice k = F^-1 k0, the census) from the outline's second moment of area about the
@@ -860,7 +906,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // between them. So w = 0: the inherited orientation alone; w = 1 and a strong dipole: the front follows the dipole within a few
   // seconds; a weak or passing dipole barely moves it (the front is a persistent property of the cell)
   if (wallOn) {
-    var fr = c.front + dTh;
+    var fr = c.front + select(dFront, wTurn * S.dt, glueTurn && !hexShape);   // (an ellipse cell: the glue turns the front alone)
     if ((wlF & WL_FRONT) != 0u && dipOn && myDm > 1e-3) {
       fr += FL.wl0.y * clamp(bio.wall.z, 0.0, 1.0) * min(myDm, 1.0) * sin(atan2(myD.y, myD.x) - fr) * S.dt;
     }
@@ -1056,6 +1102,11 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           let es = vec2f(c.e1, c.e2);
           var ang = TAU * rand01(bs, 201u);
           if (length(es) > 0.05) { ang = 0.5 * atan2(es.y, es.x) + select(0.0, 3.14159265, rand01(bs, 202u) < 0.5); }
+          // step C11: ... or by the FRONT: along it (gene Bio.wall.w = 0), across it (1) or at that share of a right angle between,
+          // either end, so the daughter lands where the wall pattern says (two-ended cells end to end, sticky sides side by side)
+          if (wallOn && (wlF & WL_DIVFRONT) != 0u) {
+            ang = c.front + 1.5707963 * clamp(bio.wall.w, 0.0, 1.0) + select(0.0, 3.14159265, rand01(bs, 202u) < 0.5);
+          }
           let u = vec2f(cos(ang), sin(ang));
           let r0 = c.r;
           let np = clamp(c.pos + u * (FL.dv2.z * r0), vec2f(0.0), vec2f(S.W, S.H));
@@ -1151,12 +1202,40 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     atomicAdd(&stats.wall[WS_EFF], u32(round((wA.x + wA.y + wA.z + wA.w + wB.x + wB.y) / 6.0 * 1000.0)));
     // what the pattern asks for (before the cost): a0 + s (a1 cos psi + a2 cos 2 psi), x the maturity factor
     var ask = 0.0;
+    var pk: array<f32, 6>;
+    var pLo = 1.0;
+    var pHi = 0.0;
     for (var k = 0; k < 6; k++) {
       let cs = cos(myTh + (f32(k) + 0.5) * P3 - c.front);
       let p = clamp(bio.body.x + FL.wl1.y * (a1 * cs + a2 * (2.0 * cs * cs - 1.0)), 0.0, 1.0);
       ask += p * (1.0 + FL.wl1.z * wall_mature(mm, u32(k)));
+      pk[k] = p;
+      pLo = min(pLo, p);
+      pHi = max(pHi, p);
     }
     atomicAdd(&stats.wall[WS_ASK], u32(round(ask / 6.0 * 1000.0)));
+    // step C11: do the contacts sit on the sticky sides (the pattern's upper half, without the maturity, which would favour the
+    // touched sides anyway), against chance (the share of the cell's sides that are sticky)? And how fast the glue turns it
+    let tch = array<f32, 6>(rtA.x, rtA.y, rtA.z, rtA.w, rtB.x, rtB.y);
+    var nT = 0u;
+    if (pHi - pLo > 0.1) {
+      let mid = 0.5 * (pLo + pHi);
+      var nS = 0u;
+      for (var k = 0; k < 6; k++) { if (pk[k] >= mid) { nS++; } }
+      var onS = 0u;
+      for (var k = 0; k < 6; k++) {
+        if (tch[k] > 0.5) { nT++; if (pk[k] >= mid) { onS++; } }
+      }
+      if (nT > 0u) {
+        atomicAdd(&stats.wall[WS_STK], onS);
+        atomicAdd(&stats.wall[WS_STKC], u32(round(f32(nT) * f32(nS) / 6.0 * 1000.0)));
+        atomicAdd(&stats.wall[WS_STKN], nT);
+      }
+    }
+    if (glueTurn && wPairs > 0u) {
+      atomicAdd(&stats.wall[WS_TQ], u32(round(abs(wTurn) * 1000.0)));
+      atomicAdd(&stats.wall[WS_TQN], 1u);
+    }
     atomicAdd(&stats.wall[WS_LINK], c.wlink);
     atomicAdd(&stats.wall[WS_PAY], c.wpay);
     if (wPairs > 0u) {
@@ -1175,6 +1254,10 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   cells[i] = c;
   bioNext[i] = bio;
 }
+
+// step C11: the fastest the glue turns a cell (rad / s)
+const TURN_MAX: f32 = 3.0;
+const TURN_DA: f32 = 0.1;          // ... the small turn (rad) the glue's change is measured over
 
 // step C6c: how fast a honeycomb corner slides round toward its tile's corner while a wall is near (rad/s at a slope of 1),
 // and back toward its regular place when free (1/s)

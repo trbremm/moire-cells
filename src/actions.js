@@ -46,6 +46,7 @@ export const RULE_GROUPS = [
   ['hardlight', 'Hard light (step C8)'],
   ['division', 'Division (step C9)'],
   ['walls', 'Patterned walls (step C10)'],
+  ['turn', 'Glue turns cells (step C11)'],
   ['state', 'Save and load the state (experiments)'],
 ];
 
@@ -542,6 +543,18 @@ export function makeActions(app) {
     wknob('wallMatureRate', 'maturation rate', 'matureRate', 0, 10, 1.5, 3, 'how fast a touching side matures (per s); it fades at its own rate once the contact is lost'),
     wknob('wallMatureCap', 'maturity cap', 'matureCap', 1, 3, 0.25, 2, 'a fully mature junction holds this many times its pattern’s adhesion', true),
     wknob('wallUpkeep', 'cost per adhesion', 'upkeep', 0, 0.1, 1.5, 4, 'battery upkeep per s per R of side at adhesion 1 (the linkers come on top)'),
+  );
+  // ---------- step C11: glue turns the cell, division by the front (panel only) ----------
+  const tknob = (id, label, key, lo, hi, step, digits, help) => ({ ...wknob(id, label, key, lo, hi, step, digits, help), group: 'turn' });
+  A.push(
+    { id: 'wallTurn', keys: [], label: 'glue turns cells', group: 'turn', type: 'toggle', get: () => WL().turn,
+      run: () => `the glue ${flip(WL(), 'turn') ? 'turns the cells: a contact pulls harder where the wall is stickier, off the centre line, so each cell turns until its sticky sides face its neighbours' : 'does not turn the cells (their fronts stay where they are inherited)'}${wlNote()}`,
+      help: 'a sticky side pulling on a neighbour pulls off-centre: the same pull also turns the cell (front and outline) until its sticky sides face its neighbours' },
+    { id: 'wallDivFront', keys: [], label: 'division by the front', group: 'turn', type: 'toggle', get: () => WL().divFront,
+      run: () => `a dividing cell puts its daughter ${flip(WL(), 'divFront') ? 'by its front: along it, across it or between, as its gene says (two-ended lineages grow end to end, sticky-sided ones side by side)' : 'along its long axis (as in step C9)'}${wlNote()}`,
+      help: 'the daughter goes along the mother’s front (gene divAxis 0), across it (1) or between; off: along the long axis' },
+    tknob('wallTurnGain', 'turning strength', 'turnGain', 0, 50, 1.5, 2, 'how strongly the glue’s torque turns a cell (1: as derived from the pull)'),
+    tknob('wallRotDrag', 'rotational drag', 'rotDrag', 0.01, 100, 1.5, 2, 'how hard it is to turn a cell, x a disc’s r² / 2 (larger: slower turning)'),
   );
 
   // experiments (src/lab.js, src/snapshot.js): the whole state to a file and back

@@ -403,6 +403,18 @@ C11. GLUE TURNS THE CELL + DIVISION ALONG THE FRONT (user 2026-11-15: "yes absol
     Claude's call (user): retune so the default colony packs as a honeycomb again while glue still costs.
 OXYGEN RETRY (user yes): a never-drying light spring plus a slow heavy spring, 40-60 min, watching the swap rate
     inside cells (cells.rate.inSwap), not the carrier count; whole dish lit and spotlight.
+ORDER AGREED (user 2026-11-15 "Do it"): C12 oils and water -> C13 fields as genes and guides -> C14 primordial soup.
+C12. OILS AND WATER, POLAR AND APOLAR MOLECULES (user: "try to build molecules that are polar and apolar; we can
+    simplify their charges combining without actual physics"):
+    - POLARITY is derived from the atoms by simple combination, no physics: charged atoms (givers +, takers -) are
+      water-loving; linkers (0) are water-shy. A molecule's polarity = how much charge it carries AND where:
+      all-linker = APOLAR (oil); charged parts on both ends or spread = POLAR; a charged HEAD on one end with a
+      linker TAIL = AMPHIPHILE (soap/lipid-like). A neutral molecule made of + and - parts still counts as polar.
+    - Water-shy substances gather with their own kind on the grid (phase separation: droplets, films that grow and
+      merge); polar ones avoid oil; amphiphiles collect at oil-water boundaries (films, and hopefully micelles,
+      bilayers, vesicles: protocell-like compartments in the open dish). Matter conserved exactly.
+    - Membranes are linker-built, so they are oily: droplets can fuse into membranes, bursts spill oil.
+    - Look: oil as a glossy film; boundaries as thin bright (maybe iridescent) neon lines; not busy.
 PROPOSED NEXT (user 2026-11-15, ideas under discussion, not agreed in detail):
 - OILS: a water-shy property derived from the atoms (uncharged linker-rich molecules are oily); oily substances
   gather with their own kind on the grid (phase separation: droplets, films), membranes are oil, droplets can fuse

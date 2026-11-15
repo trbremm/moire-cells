@@ -375,7 +375,7 @@ most cells after the first 150 s. Rounding: the largest |value| over the run (en
 
 ## What to run next
 
-- **The oxygen story with something to breathe.** Breathing swaps need heavy fuel, and the light-spring dishes had none.
+- **The oxygen story with something to breathe** (done: see "Oxygen retry" below). Breathing swaps need heavy fuel, and the light-spring dishes had none.
   A dish with a light spring that never dries AND a slow heavy spring (heavy fuel to break), 40 to 60 minutes, under
   the spot: the haze builds up, and a breathing engine would then really run (watch `cells.rate.inSwap`, not only the
   count of carriers). Making a missing membrane costlier (a lower `hold`) would close the "no skin" escape.
@@ -391,3 +391,152 @@ most cells after the first 150 s. Rounding: the largest |value| over the run (en
 - **Repeats.** Most conditions ran once; the run-to-run noise (about ±150 cells at 20 minutes) is as big as several of
   the differences above. Hard light mutation off (twice the cells) and cofactor off (twice the cells) deserve a second
   seed first.
+
+# Oxygen retry
+
+The "what to run next" above, run (CLAUDE.md, OXYGEN RETRY): does the oxygen-like story happen when the dish has both a
+haze of free light atoms AND heavy atoms to breathe on? The hoped-for sequence (never written as a rule): the light
+atoms thrown away by the harvesters build up, first caught by free takers (an "iron" sink), then everywhere; they poison
+cells (membrane bites, bursts); then BREATHERS (cells whose downhill swap engine, t + gT -> gt + T and the like, really
+runs) rise and live on them.
+
+**How.** Ten runs, headless Chrome on the GTX 1650 at MAX speed, timed by simulated time (`tools/experiment.py`), on a
+GPU shared with another worker and up to four runs side by side (×0.34 to ×1.9). Commit 8e51206 (step C10, patterned
+walls, is in; the general series above ran before it). Every condition is a file in `experiments/conditions/oxygen/`;
+the numbers every 20 s in `experiments/runs/o-*/samples.csv`; screenshots every 10 minutes (clean view and strategy
+view) and grid snapshots stayed local (ignored by git), the best are in `experiments/keep/oxygen/`.
+
+- **The springs.** At t = 0 the default scene's springs are removed and put back at the same places (1280 x 800
+  window): a LIGHT spring at (875, 328) that never dries (`moire.matter.addSpring(875, 328, 'light', 1e9)`), and a
+  SLOW HEAVY spring at (875, 472). The drip rate is one knob for all springs (`moire.matter.params.rate`, 6 atoms per
+  s), so "slow" is a duty cycle: an eval re-drops a heavy spring that lives 2 s every 20 s, a tenth of a spring
+  (0.6 heavy atoms per s against 6 light ones). A spring dries up when its age passes its life (`params.life`, 60 s;
+  the default scene uses 240 s); a life of 1e9 s never runs out.
+- **Core runs** (50 min, seeds 3 and 7): `o-spot.json` (the default spotlight, batch `batch-spot.json`) and `o-full.json`
+  (`?light=full`, the whole dish lit, batch `batch-full.json`).
+- **Variants** (40 min, seed 3): `o-spot-hold.json` and `o-full-hold.json` (`moire.membrane.params.hold = 0.05`: a cell
+  without a whole membrane keeps only 5 % of its stock instead of 30 %, to close the "no skin" escape of the general
+  series), `o-spot-upswap.json` (`moire.matter.chem.kUpSwap = 0.3`: uphill swaps in the open ×15, more light-atom
+  waste), `o-spot-heavyfast.json` (the heavy spring dripping for ever at the full rate: plenty to breathe on). Batches
+  `batch-var-a.json`, `batch-var-b.json`. A slower heavy spring and high mutation were planned and dropped for time.
+- **The clip:** `o-full-clip.json` loads the whole-dish seed-3 run's snapshot at 30 min and records sim minutes
+  33 to 40 (the skin drop and the boom) as a .webm at MAX (×4.6, 87 s of video, 89 MB, kept locally only:
+  `experiments/runs/o-full-clip/clips/full_s3_skin-drop_2000-2400.webm`). From the snapshot the story repeated (4752
+  cells at 40 min against 5317 in the original run).
+- **What "breathing" means in the numbers.** `engines.breath.*` counts cells CARRYING a downhill swap engine;
+  `cells.rate2.eSwap` is how many swaps those engines really make per second (breathing that runs). Not to be mixed up
+  with `cells.rate.inSwap`: the same swaps happening inside cells by themselves, driven by heat (the vandals at work:
+  the energy goes to heat, not to the battery).
+
+Plots: `experiments/summaries/oxygen/` (core) and `experiments/summaries/oxygen-variants/`, one line per run for
+cells, free light atoms, bursts, whole membranes, breathing carriers, breathing rate, entropy, entropy rate and ORDER,
+and one STACKED picture per run (`stack_<run>.svg`): eleven measures on one shared time axis, so a phase sequence would
+show as steps lining up from panel to panel.
+
+## What we found
+
+1. **The haze builds up, everywhere, all the time.** Free light atoms climb steadily through the whole run and never
+   level off: 1.1 thousand at 10 min, 2 thousand at 20, 4.4 to 4.6 thousand at 50 min under the spot; under the whole
+   dish half as many (2.1 to 2.3 thousand), as the bigger colony takes more up. On the screen it is a fine red dust
+   over the whole black dish, thickest around the light spring.
+2. **No iron sink.** The free takers that could catch the light givers do not: free light takers (t) and givers (g)
+   rise together, one for one (charge keeps them paired), and the free HEAVY atoms (G, T) pile up too (400 to 800 at
+   50 min, 7 thousand with the heavy spring at full rate) instead of binding the light atoms. Making heavy fuel from
+   them in the open needs the second visible band and is slow, so heavy fuel stays scarce (100 to 200 in the dish).
+3. **The poisoning is real, and much stronger than in any earlier run.** Bursting cells (light atoms bite light
+   membranes until they fail) rise from the 5th minute to 35 to 90 per second and stay there, in both seeds, both
+   lights (the general series peaked at 37 per second, mostly 1 to 7). A colony of 1000 to 2000 cells loses and
+   rebuilds itself every half minute to a minute: births and bursts both about 45 per second. The clearest sight is
+   the **crater**: at the light spring, where the haze is thickest, the colony leaves a dark hole full of glowing green
+   fuel dust (fuel made by light that no cell lives long enough to eat), ringed by a crust of survivors.
+
+   ![the crater](experiments/keep/oxygen/crater-closeup.png)
+
+4. **Two ways out, and neither is breathing.**
+   - **Under the spotlight: armour.** The membrane gene swings toward heavy linkers (heavy membranes in 19 to 25 % of
+     the cells at 10 min, 48 to 70 % at 50 min; the slow heavy spring now gives the material, unlike the light-spring
+     runs of the general series). Heavy membranes are not bitten by light atoms, and from about 40 minutes the
+     colony regrows (1000 to 1200 cells between 20 and 35 min, then 2266 and 2022 at 50 min) while the bursts ease (to 33
+     and 45 per second).
+
+     ![spotlight](experiments/keep/oxygen/spot-haze-and-bursts.png)
+
+   - **Under the whole dish: no skin.** The colony grows to 3000 to 3300 cells, the burst storm holds it there and then
+     shrinks it (3339 to 2406 between 16 and 32 min in seed 3), and then the cells stop keeping whole membranes (whole
+     membranes from 3170 to 614, mean integrity 0.5 to 0.06): a cell with no whole membrane cannot burst. The bursts
+     stop (65 per second to 2), and the colony explodes to the 6000-cell capacity in about 10 minutes and fills the
+     dish wall to wall, a packed honeycomb of green-cored cells. Seed 7 took the same exit early (at 13 min, before the
+     haze was thick) and went straight to 6000. This is finding 5 of the general series again, now with heavy atoms
+     around: in seed 7 the membrane gene even went heavy (78 % of the cells) and the membranes still vanished. The clip
+     shows this turn.
+
+     ![skin drop](experiments/keep/oxygen/full-skin-drop.png)
+
+5. **Breathing never runs.** In every run the swap engines make 0.01 to 0.5 swaps per second, against 100 to 800
+   burned fuel per second by the burn engines: breathing is 0.006 to 0.06 % of the cells' engine work. Meanwhile the
+   same swaps happen 15 to 60 times more often inside the cells by themselves (heat-driven vandalism, 1 to 9 per
+   second), their energy wasted as heat. The CARRIERS of a breathing engine do rise and fall in waves (seed 3 spot: 15
+   to 620 cells, 31 % of the colony at 42 min, then back to 85; skinless-hold variant: 1140 cells, 44 %, at 40 min),
+   and the breathing rate wiggles up with them (to 0.43 per second), but these are passengers riding with a lineage,
+   as in the general series.
+6. **Why, probably: in this chemistry breathing can never beat burning.** Free atoms carry no energy (they are the
+   zero of the table), so "breathing" a rich fuel with a light atom, t + gT -> gt + T, releases only the difference
+   between the two fuels (0.75), while burning the same gT outright releases 2.25; breathing and then burning the gt
+   gives the same 2.25 in two steps. A light atom is never food, only a key that unlocks a third of a fuel. On Earth
+   it is the other way round: oxygen makes respiration richer than fermentation. The only thing a breather gains is
+   catching the energy of a swap that would happen inside it anyway (as heat), and that is too little to select for.
+7. **The variants.**
+   - *Skinless cells hold 5 %* (`hold 0.05`): did not close the escape under the whole dish (skin dropped at 22 min,
+     5800 cells by 30 min, as without it). Under the spot it slowed the bursts (16 per second on average against 35)
+     and gave the biggest wave of breathing carriers (44 %), still with no breathing running (0.17 per second).
+   - *Uphill swaps ×15*: more swap harvesters early (285 carriers at 16 min), then the membranes went at 12 minutes,
+     bursts fell to nothing and the spot colony grew to 2900 to 3300 cells: a pale, packed disc.
+   - *Heavy spring at full rate*: the only run that never recovered. Heavy atoms bite heavy membranes as light atoms
+     bite light ones, so with both rows around no membrane is safe: the colony shrank from 1814 cells (10 min) to 732
+     (40 min), bursting 45 per second to the end, with a crater spanning both springs. Seven thousand free heavy atoms
+     and a thousand heavy fuel units in the dish, and still breathing at 0.2 per second.
+
+     ![variants](experiments/keep/oxygen/variants-40min.png)
+
+8. **Entropy.** The spotlit dishes made 55 to 61 M of entropy in 50 minutes (23 to 24 k per second on the last day),
+   the whole dish 191 and 253 M (91 and 109 k per second, the colony at capacity). The burst storm does not show as
+   its own signal in the entropy rate; the colony's size and the light set it. ORDER fell from 0.44 to 0.24 to 0.25
+   in the spot dishes and to 0.27 to 0.28 under the whole dish in the first 20 minutes and then stayed flat: the haze
+   is smeared evenly, not patterned. The books stayed exact: atoms and charge rounding 0 in every run, energy within
+   ±0.27.
+
+| run | cells 10 / 20 / 30 / 40 / 50 min | free g + t 10 / 30 / 50 min | bursts per s 10 / 30 / 50 min | whole membranes at 50 min | breathing carriers (peak after 5 min) | breathing runs, swaps per s (peak) | entropy at 50 min |
+|---|---|---|---|---|---|---|---|
+| spot s3 | 1278 / 1108 / 1176 / 1787 / 2266 | 1.1 k / 3.2 k / 4.6 k | 21 / 43 / 33 | 2266 (heavy 48 %) | 620 at 42 min | 0.43 | 60.7 M |
+| spot s7 | 1196 / 1041 / 970 / 1266 / 2022 | 1.1 k / 3.0 k / 4.4 k | 20 / 35 / 45 | 2022 (heavy 70 %) | 248 at 44 min | 0.22 | 55.4 M |
+| whole dish s3 | 2947 / 3184 / 2674 / 5317 / 6000 | 0.7 k / 1.9 k / 2.3 k | 58 / 55 / 2 | 614 (skin dropped at 37 min) | 198 | 0.07 | 191 M |
+| whole dish s7 | 3019 / 4809 / 5513 / 6000 / 6000 | 0.4 k / 1.4 k / 2.1 k | 13 / 2.5 / 0.5 | 64 (skin dropped at 13 min) | 308 | 0.15 | 253 M |
+
+| variant (seed 3) | cells 10 / 20 / 30 / 40 min | free g + t 10 / 30 / 40 min | bursts per s 10 / 20 / 30 / 40 min | whole membranes 10 / 40 min | breathing carriers (peak) | breathing runs (peak) | entropy at 40 min |
+|---|---|---|---|---|---|---|---|
+| spot, hold 5 % | 1082 / 2150 / 2785 / 2578 | 1.1 k / 3.3 k / 3.6 k | 21 / 15 / 16 / 16 | 1065 / 1232 | 1140 at 40 min (44 %) | 0.17 | 51.6 M |
+| whole dish, hold 5 % | 1829 / 2922 / 5805 / 5999 | 0.7 k / 2.0 k / 2.3 k | 37 / 25 / 3.4 / 1.5 | 1822 / 369 | 269 | 0.16 | 165 M |
+| spot, uphill swaps ×15 | 2033 / 2682 / 3050 / 2918 | 1.1 k / 3.1 k / 3.3 k | 4.5 / 1.5 / 1.0 / 1.5 | 1594 / 56 | 91 | 0.08 | 53.1 M |
+| spot, heavy spring full | 1813 / 1273 / 1015 / 732 | 1.0 k / 2.8 k / 2.6 k | 25 / 32 / 32 / 47 | 1813 / 732 | 231 | 0.54 | 42.7 M |
+| (spot s3 at 40 min, for comparison) | 1278 / 1108 / 1176 / 1787 | 1.1 k / 3.2 k / 3.6 k | 21 / 47 / 43 / 54 | 1278 / 1787 | 620 | 0.43 | 45.7 M |
+
+**Verdict.** Half of the story happens, more strongly than before: the haze builds up dish-wide and steadily, and it
+poisons the leaky cells (a burst storm of 35 to 90 cells per second, a crater at the light spring). The other half does
+not: no iron sink (free takers do not catch the light atoms), and no breathers living on the haze. Breathing engines
+are carried by up to 44 % of the cells at times, but they run at well under a thousandth of the burners' pace. The
+colonies escape the poison by armour (heavy membranes, under the spot) or by giving up the skin (under the whole dish),
+not by breathing. The reason is probably built into the energy table (finding 6), not a matter of run length or seed.
+
+## What to try next (oxygen)
+
+- **Give the haze energy.** For breathing to pay, a free light atom must carry energy, as oxygen does. For example,
+  let the uphill swap store part of the photon in the freed light atom (a "charged" or excited light giver, row 1 but
+  energy above zero) that relaxes by itself slowly (heat) or quickly inside a breathing engine (battery). Then
+  breathing beats burning and the story has a reason to happen. This is a change to the table (a design decision for
+  the user), not a knob.
+- **Make the skinless escape costly in a way that matters.** `hold 0.05` did not. Losing the membrane could cost what
+  the membrane protects: no smell, no pumps, a crawl cost, or bites reaching the stock directly.
+- **A slower heavy spring and high mutation** (planned, not run), and seeds beyond 3 and 7.
+- **The crater** is the most striking sight of the series and worth a look of its own: a poison spring makes a hole
+  ringed by survivors; with two spring kinds it spans both. A clip in the strategy view at the crater's rim would show
+  who survives there.

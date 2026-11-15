@@ -408,9 +408,36 @@ fn take_stock(a: u32, want: i32) -> i32 {
   return got;
 }
 
-fn ep_f(a: array<vec4f, 4>, c: u32) -> f32 { return a[c / 4u][c % 4u]; }
-fn ep_i(a: array<vec4i, 4>, c: u32) -> i32 { return a[c / 4u][c % 4u]; }
-fn ep_u(a: array<vec4u, 4>, c: u32) -> u32 { return a[c / 4u][c % 4u]; }
+fn ep_f(a: array<vec4f, 4>, c: u32) -> f32 { let g = gc(c); return a[g / 4u][g % 4u]; }   // (step C12c: an excited channel
+fn ep_i(a: array<vec4i, 4>, c: u32) -> i32 { let g = gc(c); return a[g / 4u][g % 4u]; }   //  reads its ground twin's numbers;
+fn ep_u(a: array<vec4u, 4>, c: u32) -> u32 { let g = gc(c); return a[g / 4u][g % 4u]; }   //  its energy is CP.ex.y)
+
+// step C12c, EXCITED WASTE (src/excited.js): the cells hold the excited light atoms too, as channels 16, 17 (g*, t*) at stock
+// words 28, 29 and exchange words 40, 41 (flux; 42, 43: the excited atoms that bit the membrane this tick, g*, t*). The cell
+// channels in order: 0..12, then 16, 17
+const NCELL: u32 = 15u;
+fn cell_ch(j: u32) -> u32 { return select(j, j + 3u, j >= 13u); }
+fn stock_w(c: u32) -> u32 { return select(c, c + 12u, c >= EXC0); }
+fn flux_w(c: u32) -> u32 { return select(c, c + 24u, c >= EXC0); }
+// a reactant channel as a POOL: a light giver or taker with its excited twin (they react alike)
+fn xp(m: ptr<function, array<i32, 18>>, c: u32) -> i32 {
+  if (c < 2u) { return (*m)[c] + (*m)[c + EXC0]; }
+  return (*m)[c];
+}
+// n counts taken from the pool of c, the excited ones in proportion (rounded at random with r); returns how many were excited
+fn xtk(m: ptr<function, array<i32, 18>>, c: u32, n: i32, r: f32) -> i32 {
+  if (c >= 2u || (*m)[c + EXC0] <= 0) { (*m)[c] -= n; return 0; }
+  let x = (*m)[c + EXC0];
+  let tot = (*m)[c] + x;
+  var nx = i32(floor(f32(n) * f32(x) / f32(max(tot, 1)) + r));
+  nx = clamp(nx, max(n - (*m)[c], 0), min(n, x));
+  (*m)[c + EXC0] -= nx;
+  (*m)[c] -= n - nx;
+  return nx;
+}
+// step C12c counters: excited atoms (XN_*, i32, 16 slots) and their energy (XE_*, 64-bit) (heat_common.wgsl)
+var<workgroup> wxn: array<atomic<i32>, 8>;
+var<workgroup> wxe: array<atomic<i32>, 6>;
 
 // the 3 x 3 heat / substance pixels around a position (clamped into the grid)
 fn footprint(p: vec2f) -> array<u32, 9> {
@@ -438,15 +465,16 @@ fn give_back(i: u32, p: vec2f, cur: u32, slot: u32) {
   let idx = footprint(p);
   var back = 0;
   var gone = 0;
-  for (var c = 0u; c < NCH; c++) {
-    let m = atomicExchange(&stock[i * SW + c], 0);
+  for (var j = 0u; j < NCELL; j++) {
+    let c = cell_ch(j);   // (step C12c: and the excited atoms)
+    let m = atomicExchange(&stock[i * SW + stock_w(c)], 0);
     if (m <= 0) { continue; }
     let na = i32(ep_f(EP.natoms, c));
     if (cur != 0u && (EP.mask & (1u << c)) != 0u) {
       spread9(cur + c * EP.n, idx, m);
       back += m * na;
     } else {
-      add64(LG_M_GONE + 128u * c + slot, m);
+      add64(lg_mc(LG_M_GONE, c) + slot, m);
       gone += m * na;
     }
   }
@@ -513,6 +541,13 @@ fn flush_counters(li: u32, slot: u32) {
     let v = atomicLoad(&wpu[li]);
     if (v != 0) { atomicAdd(&hb[LG_PU + 16u * (PU_SNAP + li) + (slot & 15u)], v); }
   }
+  // step C12c: the excited atoms' counters
+  if (li < 8u) {
+    let v = atomicLoad(&wxn[li]);
+    if (v != 0) { atomicAdd(&hb[LG_EXC_N + 16u * li + (slot & 15u)], v); }
+  } else if (li < 14u) {
+    add64(LG_EXC_E + 128u * (li - 8u) + slot, atomicLoad(&wxe[li - 8u]));
+  }
 }
 
 // ---------- dump ----------
@@ -542,10 +577,11 @@ fn split(@builtin(global_invocation_id) id: vec3u) {
       let cost = take_stock(pi * SW + BAT, i32(EP.dv.y));
       if (cost > 0) { spread9(LEDGER_WORDS, footprint(cells[pi].pos), cost); atomicAdd(&hb[LG_DIV + (i & 15u)], cost); }
     }
-    for (var k = 0u; k <= BAT; k++) {
-      let h = atomicLoad(&stock[pi * SW + k]);
-      let got = take_stock(pi * SW + k, h / 2);
-      if (got > 0) { atomicAdd(&stock[i * SW + k], got); }
+    for (var k = 0u; k <= BAT + 2u; k++) {
+      let w = select(k, k + 14u, k > BAT);   // (step C12c: and the excited atoms, words 28, 29)
+      let h = atomicLoad(&stock[pi * SW + w]);
+      let got = take_stock(pi * SW + w, h / 2);
+      if (got > 0) { atomicAdd(&stock[i * SW + w], got); }
     }
     // step C7: and half of its membrane voltage (the pumped charge, either sign) and of the energy stored in it
     let vh = atomicLoad(&stock[pi * SW + VQ]) / 2;
@@ -582,7 +618,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   if ((c.flags & CELL_ALIVE) == 0u) {
     // step C9: a free slot (or a cell that died this tick) asks nothing of its neighbours: its pump requests, which their
     // eat applies in reverse, are cleared (stale ones would make or lose matter)
-    for (var k = 16u; k < 40u; k++) { flux[i * SW + k] = 0; }   // (step C12b: and the lipid bites, 32..38)
+    for (var k = 16u; k < 44u; k++) { flux[i * SW + k] = 0; }   // (step C12b: and the lipid bites, 32..38; C12c: 40..43)
     return;
   }
   let fo = i * SW;
@@ -599,7 +635,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   let areaR2 = max(areaPx / (EP.R * EP.R), 1e-3);
   let cap = EP.capR2 * areaR2 * ATOM_SCALE;
   var atomsIn = 0.0;
-  for (var k = 0u; k < NCH; k++) { atomsIn += f32(stockP[fo + k]) * ep_f(EP.natoms, k); }
+  for (var j = 0u; j < NCELL; j++) { let k = cell_ch(j); atomsIn += f32(stockP[fo + stock_w(k)]) * ep_f(EP.natoms, k); }
   // step C6c: the membrane's material per side (it takes room in the cell too) and its integrity
   let mbf = mb_flags();
   let membOn = (mbf & MBF_ON) != 0u && (EP.flags & EF_EAT) != 0u;
@@ -657,7 +693,8 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     }
     for (var k = 0u; k < 6u; k++) { sw[k] /= max(L, 1e-6); }
   }
-  for (var k = 0u; k < NCH; k++) {
+  for (var j = 0u; j < NCELL; j++) {
+    let k = cell_ch(j);   // (step C12c: the excited atoms pass as their ground atoms do)
     var n = 0;
     var pk = select(ep_f(EP.perm, k), pgene * ep_f(EP.ratio, k), permG) * leak;
     if (selOn) { pk *= max(1.0 + gm.w * f32(charge_of(EP.qCodes, k)), 0.0); }
@@ -665,7 +702,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
       let base = cur - lw + k * EP.n;
       var Mo = 0;
       for (var q = 0; q < 9; q++) { Mo += max(mg[base + idx[q]], 0); }
-      let Mi = stockP[fo + k];
+      let Mi = stockP[fo + stock_w(k)];
       if (Mo != 0 || Mi != 0) {
         let jeq = (f32(Mo) * areaPx - f32(Mi) * Ao) / (Ao + areaPx);
         var j = jeq * min(1.0, pk * EP.dt);
@@ -685,7 +722,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
         for (var a = 0u; a < 6u; a++) { dq[a] += kf * sw[a] * (cs[a] - cm); }
       }
     }
-    flux[fo + k] = n;
+    flux[fo + flux_w(k)] = n;
   }
   // ---- step C7, PUMPS: each slot of the genome (Bio.pump: a substance, IN or OUT, a rate) works on all six sides, a sixth of
   // its rate each. A side touching a neighbour that touches it back (both list each other in Cell.nbr) trades with that
@@ -838,13 +875,14 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   // random. The biting atom stays free; the bitten linkers go to the dish in the eat dispatch (flux 13, 14)
   var bl = 0;
   var bh = 0;
+  var bx = vec2f(0.0);   // step C12c: bites by excited atoms (g*, t*), rounded below
   if (membOn && (mbf & MBF_BITE) != 0u && cur != 0u && (c.flags & CELL_ALIVE) != 0u && !husk) {
     let mbn = membrane(c);
     let tmp = max(f32(hsum) / 9.0 * HP.tempScale, 1e-4);
     let fL = exp(-EP.mb2.z / (EP.mb1.w * tmp));
     let fH = exp(-EP.mb2.w / (EP.mb1.w * tmp));
     let conc = EP.R * EP.R / (ATOM_SCALE * HP.px * HP.px);   // counts in a pixel -> units per R^2
-    let mL = (EP.mask & 3u) != 0u;                           // g, t moving
+    let mL = (EP.mask & 0x30003u) != 0u;                     // g, t moving (step C12c: or g*, t*)
     let mH = (EP.mask & 24u) != 0u;                          // G, T moving
     for (var k = 0u; k < 6u; k++) {
       let mk = ml[k] + mh[k];
@@ -857,10 +895,12 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
       let base = cur - lw;
       let x0 = EP.mb0.y * len / EP.R * ATOM_SCALE * EP.dt * conc;
       if (mL && ml[k] > 0) {
-        let cl = f32(max(mg[base + pi], 0) + max(mg[base + EP.n + pi], 0));
+        let gx = f32(max(mg[base + EXC0 * EP.n + pi], 0));
+        let tx = f32(max(mg[base + (EXC0 + 1u) * EP.n + pi], 0));
+        let cl = f32(max(mg[base + pi], 0) + max(mg[base + EP.n + pi], 0)) + gx + tx;
         let x = x0 * cl * fL * f32(ml[k]) / f32(mk);
         let n = min(i32(floor(x + u01(pcg(rs + k * 0x1b873593u + 0x68e31da4u)))), ml[k]);
-        if (n > 0) { ml[k] -= n; bl += n; stockP[fo + MB_L0 + k] = ml[k]; }
+        if (n > 0) { ml[k] -= n; bl += n; stockP[fo + MB_L0 + k] = ml[k]; bx += f32(n) * vec2f(gx, tx) / max(cl, 1.0); }
       }
       if (mH && mh[k] > 0) {
         let ch = f32(max(mg[base + 3u * EP.n + pi], 0) + max(mg[base + 4u * EP.n + pi], 0));
@@ -886,7 +926,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     let mbn = membrane(c);
     let tmp = max(f32(hsum) / 9.0 * HP.tempScale, 1e-4);
     let conc = EP.R * EP.R / (ATOM_SCALE * HP.px * HP.px);
-    let mL = (EP.mask & 3u) != 0u;
+    let mL = (EP.mask & 0x30003u) != 0u;
     let mH = (EP.mask & 24u) != 0u;
     for (var k = 0u; k < 6u; k++) {
       var lam = 0.0;
@@ -900,7 +940,13 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
       let base = cur - lw;
       var cl = 0.0;
       var ch = 0.0;
-      if (mL) { cl = f32(max(mg[base + pi], 0) + max(mg[base + EP.n + pi], 0)); }
+      var gx = 0.0;   // step C12c: the excited light atoms there (part of cl)
+      var tx = 0.0;
+      if (mL) {
+        gx = f32(max(mg[base + EXC0 * EP.n + pi], 0));
+        tx = f32(max(mg[base + (EXC0 + 1u) * EP.n + pi], 0));
+        cl = f32(max(mg[base + pi], 0) + max(mg[base + EP.n + pi], 0)) + gx + tx;
+      }
       if (mH) { ch = f32(max(mg[base + 3u * EP.n + pi], 0) + max(mg[base + 4u * EP.n + pi], 0)); }
       if (cl + ch <= 0.0) { continue; }
       let S = f32(lpm[LK_GP][k] + lpm[LK_TM][k]);
@@ -918,6 +964,9 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
           stockP[fo + lpw(q, k)] = n0 - n;
           lb[q] += n;
           if (q >= LK_CL) { lbW += n; } else { lbB += n; }
+          // step C12c: the share of these bites made by excited light atoms
+          let lwt = cl * lk_of(EP.lp[6], q);
+          bx += f32(n) * lwt / max(lwt + ch * lk_of(EP.lp[7], q), 1e-6) * vec2f(gx, tx) / max(cl, 1.0);
         }
       }
     }
@@ -925,6 +974,9 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   for (var q = 0u; q < 5u; q++) { flux[fo + 32u + q] = lb[q]; }
   flux[fo + 37u] = lbB;
   flux[fo + 38u] = lbW;
+  // step C12c: the excited atoms that bit (they spend their energy on the bite: the eat pass relaxes them, as heat at the cell)
+  flux[fo + 42u] = i32(floor(bx.x + u01(pcg(rs + 0x4b1d3a7fu))));
+  flux[fo + 43u] = i32(floor(bx.y + u01(pcg(rs + 0x29a8c7e3u))));
   // ... and the side charges get the soap heads back (those still there after the bites; with the dipoles off they stay even)
   if (headsOn && dpOn) {
     for (var k = 0u; k < 6u; k++) { sq[k] += f32(lpm[LK_GP][k] - lpm[LK_TM][k]) / ATOM_SCALE; }
@@ -1017,9 +1069,10 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
   if (i < S.count && (cells[i].flags & CELL_ALIVE) != 0u && !husk) {
     let c = cells[i];
     let o = i * SW;
-    var m: array<i32, 13>;
-    var m0: array<i32, 13>;
-    for (var k = 0u; k < NCH; k++) { m[k] = atomicLoad(&stock[o + k]); m0[k] = m[k]; }
+    var m: array<i32, 18>;    // by channel (step C12c: 0..12 and the excited 16, 17; 13..15 unused)
+    var m0: array<i32, 18>;
+    for (var j = 0u; j < NCELL; j++) { let k = cell_ch(j); m[k] = atomicLoad(&stock[o + stock_w(k)]); m0[k] = m[k]; }
+    let ex16 = i32(CP.ex.y);  // step C12c: the heat counts one excited count holds
     var bat = atomicLoad(&stock[o + BAT]);
     let bat0 = bat;
     let batMax = max(EP.batMax, 1);
@@ -1161,8 +1214,9 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     if ((EP.flags & EF_EAT) != 0u && cur != 0u) {
       var up = 0;
       var down = 0;
-      for (var k = 0u; k < NCH; k++) {
-        let n = flux[fo + k];
+      for (var j = 0u; j < NCELL; j++) {
+        let k = cell_ch(j);
+        let n = flux[fo + flux_w(k)];
         if (n == 0 || (EP.mask & (1u << k)) == 0u) { continue; }
         let base = cur + k * EP.n;
         let na = i32(ep_f(EP.natoms, k));
@@ -1240,6 +1294,24 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       atomicAdd(&wmb[MB_BITE_H - 16u], bitH);
     }
     if (bitL + bitH > 0) { atomicAdd(&wmb[MB_BITTEN - 16u], 1); }
+    // step C12c: the excited atoms that bit a membrane (the weave's or the lipids', planned: flux 42, 43) spend their energy on
+    // it: taken from the dish under the cell, put back as their ground atoms, their energy as heat at the cell (uncontrolled)
+    if (cur != 0u) {
+      for (var j = 0u; j < 2u; j++) {
+        let nb = flux[fo + 42u + j];
+        let cx = EXC0 + j;
+        if (nb <= 0 || (EP.mask & (1u << cx)) == 0u || (EP.mask & (1u << j)) == 0u) { continue; }
+        let part = nb / 9;
+        var got = 0;
+        for (var q = 0; q < 9; q++) { got += take_hb(cur + cx * EP.n + idx[q], select(part, nb - 8 * part, q == 4)); }
+        if (got > 0) {
+          spread9(cur + j * EP.n, idx, got);
+          heat += got * ex16;
+          atomicAdd(&wxn[XN_BITE], got);
+          atomicAdd(&wxe[XE_LOOSE], got * ex16);
+        }
+      }
+    }
     let want = max(memb_want(c.r, gm.y), 1.0);
     // step C12b: with the lipid membranes on, the old weave holds only the walls' glue (wantW 0: no membrane of its own), woven in
     // the wall's row (Bio.lip.z, the heavy share); the membrane itself is the lipid layer below
@@ -1714,8 +1786,11 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         let E = EP.eng[eng_index(b.eng[k])];
         let sp16 = max(i32(ceil(E.spark * sparkScale * 16.0)), 1);
         // what it works on: one reactant, two different ones (the scarcer), or a pair of the same (half of it)
-        var a = m[E.ch.x];
-        if (E.ch.y != NONE) { a = select(min(m[E.ch.x], m[E.ch.y]), m[E.ch.x] / 2, E.ch.y == E.ch.x); }
+        // (step C12c: a light giver or taker is taken from the pool of ground and excited ones)
+        var a = xp(&m, E.ch.x);
+        if (E.ch.y != NONE) { a = select(min(xp(&m, E.ch.x), xp(&m, E.ch.y)), m[E.ch.x] / 2, E.ch.y == E.ch.x); }
+        let rx1 = u01(pcg(rs + k * 0x7a3c5b1du + 0x3f84d5b5u));
+        let rx2 = u01(pcg(rs + k * 0x7a3c5b1du + 0x1b56c4e9u));
         if (E.kind == 0u) {
           // UPHILL (make fuel, an uphill swap freeing a light atom, crack sediment). Light never charges the battery.
           // With a pigment (band 1..3): one photon per event pays the energy that goes into the bonds (a photon below it
@@ -1739,12 +1814,28 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           var n = min(nu, min(a, cap));
           n = max(min(n, bat / c16), 0);
           if (band == 0u) { np = n; }                           // (a storer has no photons to waste)
-          m[E.ch.x] -= n;
-          if (E.ch.y != NONE) { m[E.ch.y] -= n; }
+          var nx = 0;
+          if (n > 0) {
+            if (E.ch.y == E.ch.x) { m[E.ch.x] -= 2 * n; }
+            else { nx += xtk(&m, E.ch.x, n, rx1); if (E.ch.y != NONE) { nx += xtk(&m, E.ch.y, n, rx2); } }
+          }
+          // step C12c: an uphill swap driven by a pigment's photon frees its light atom EXCITED, keeping E* of the photon's rest
+          // (a storer's, paid by the battery, frees a ground one)
+          let exm = band != 0u && CP.ex.x > 0.5 && E.ch.w < 2u;
           m[E.ch.z] += n;
-          if (E.ch.w != NONE) { m[E.ch.w] += n; }
+          if (E.ch.w != NONE) { m[select(E.ch.w, E.ch.w + EXC0, exm)] += n; }
           bat -= n * c16;
-          let hh = n * (ph16 + c16 - E.g16) + (np - n) * ph16;
+          var hh = n * (ph16 + c16 - E.g16) + (np - n) * ph16;
+          if (exm && n > 0) { hh -= n * ex16; atomicAdd(&wxn[XN_MADE_CELL], n); }
+          // ... and the excited reactants it used give their energy to the battery (an engine), less the ineff share
+          if (nx > 0) {
+            let ex = nx * ex16;
+            let eb = clamp(ex - (ex * i32(EP.ineff)) / 256, 0, max(batMax - bat, 0));
+            bat += eb;
+            hh += ex - eb;
+            atomicAdd(&wxn[XN_ENGINE], nx);
+            atomicAdd(&wxe[XE_ENGINE], eb);
+          }
           heat += hh;
           atomicAdd(&wev2[select(E2_MADE, E2_STORE, band == 0u)], n);
           atomicAdd(&wev2[E2_DEFICIT], n * c16);
@@ -1762,14 +1853,29 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           n = min(n, bat / sp16);
           n = min(n, max(batMax - bat, 0) / max(g1, 1));
           if (n <= 0) { continue; }
-          m[E.ch.x] -= n;
-          if (E.ch.y != NONE) { m[E.ch.y] -= n; }
+          var nx = 0;
+          if (E.ch.y == E.ch.x) { m[E.ch.x] -= 2 * n; }
+          else { nx += xtk(&m, E.ch.x, n, rx1); if (E.ch.y != NONE) { nx += xtk(&m, E.ch.y, n, rx2); } }
           m[E.ch.z] += n;
           if (E.ch.w != NONE) { m[E.ch.w] += n; }
           bat += n * g1;
           heat += n * h1;
+          // step C12c: an excited reactant's energy goes into the battery too (an engine: controlled), less the ineff share; what
+          // a full battery has no room for is heat
+          var eb = 0;
+          if (nx > 0) {
+            let ex = nx * ex16;
+            eb = clamp(ex - (ex * i32(EP.ineff)) / 256, 0, max(batMax - bat, 0));
+            bat += eb;
+            heat += ex - eb;
+            atomicAdd(&wxn[XN_ENGINE], nx);
+            atomicAdd(&wxe[XE_ENGINE], eb);
+            atomicAdd(&wev2[E2_HEAT], ex - eb);
+          }
+          if (E.kind == 2u) { atomicAdd(&wxe[XE_BREATH], n * g1 + eb); }
+          if (E.kind == 1u) { atomicAdd(&wxe[XE_BURN], n * g1 + eb); }
           atomicAdd(&wev2[E2_BURN + E.kind - 1u], n);
-          atomicAdd(&wev2[E2_GAIN], n * g1);
+          atomicAdd(&wev2[E2_GAIN], n * g1 + eb);
           atomicAdd(&wev2[E2_HEAT], n * h1);
         }
       }
@@ -1813,28 +1919,49 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       for (var r = 0u; r < CP.nrx; r++) {
         let R = CP.rx[r];
         if (R.by != 0u || R.open != 0u) { continue; }   // (step C12: oil and amphiphiles are the open dish's only)
-        if (m[R.ch.x] <= 0) { continue; }
-        var x = R.k * f32(m[R.ch.x]) * exp(-R.spark * sparkScale / (CP.theta * temp)) * EP.dt;
-        if (R.ch.y != NONE) { x *= f32(m[R.ch.y]) * concIn; }
+        if (xp(&m, R.ch.x) <= 0) { continue; }
+        var x = R.k * f32(xp(&m, R.ch.x)) * exp(-R.spark * sparkScale / (CP.theta * temp)) * EP.dt;
+        if (R.ch.y != NONE) { x *= f32(xp(&m, R.ch.y)) * concIn; }
         var n = i32(floor(x + u01(pcg(rs + r * 0x9e3779b9u + 0x7f4a7c15u))));
         if (R.ch.y == R.ch.x) {
           n = min(n, m[R.ch.x] / 2);
         } else {
-          n = min(n, m[R.ch.x]);
-          if (R.ch.y != NONE) { n = min(n, m[R.ch.y]); }
+          n = min(n, xp(&m, R.ch.x));
+          if (R.ch.y != NONE) { n = min(n, xp(&m, R.ch.y)); }
         }
         if (n <= 0) { continue; }
-        m[R.ch.x] -= n;
-        if (R.ch.y != NONE) { m[R.ch.y] -= n; }
+        // (step C12c: an excited atom loose in the cell reacts as its ground atom; its energy is dumped as heat, uncontrolled)
+        var nx = 0;
+        if (R.ch.y == R.ch.x) { m[R.ch.x] -= 2 * n; }
+        else {
+          nx += xtk(&m, R.ch.x, n, u01(pcg(rs + r * 0x51ed27u + 0x1b873593u)));
+          if (R.ch.y != NONE) { nx += xtk(&m, R.ch.y, n, u01(pcg(rs + r * 0x51ed27u + 0x68e31da4u))); }
+        }
         m[R.ch.z] += n;
         if (R.ch.w != NONE) { m[R.ch.w] += n; }
-        rh += n * R.heat16;
+        rh += n * R.heat16 + nx * ex16;
+        if (nx > 0) { atomicAdd(&wxn[XN_RX_IN], nx); atomicAdd(&wxe[XE_LOOSE], nx * ex16); }
         if (R.fam == 1u) { atomicAdd(&wev[EV_IN_BURN], n); }
         else if (R.fam == 3u) { atomicAdd(&wev[EV_IN_SWAP], n); }
         else if (R.fam == 4u) { atomicAdd(&wev[EV_IN_FORM], n); }
       }
       heat += rh;
       atomicAdd(&wev[EV_IN_HEAT], rh);
+    }
+    // ---- step C12c: the excited atoms inside fade to their ground atoms by themselves (their energy: heat at the cell), as in the
+    // open: 1 / lifetime x (1 + temperature / hot) per s
+    if (m[EXC0] + m[EXC0 + 1u] > 0) {
+      let pf = clamp(CP.ex.z * (1.0 + temp / max(CP.ex.w, 1e-3)) * EP.dt, 0.0, 1.0);
+      var nf = 0;
+      for (var j = 0u; j < 2u; j++) {
+        let xj = m[EXC0 + j];
+        if (xj <= 0) { continue; }
+        let f = min(i32(floor(f32(xj) * pf + u01(pcg(rs + j * 0x2c1b3c6du + 0x5851f42du)))), xj);
+        m[EXC0 + j] -= f;
+        m[j] += f;
+        nf += f;
+      }
+      if (nf > 0) { heat += nf * ex16; atomicAdd(&wxn[XN_FADE_CELL], nf); atomicAdd(&wxe[XE_FADE], nf * ex16); }
     }
 
     // ---- step C6, upkeep: per s, upEng x the engines' rates (while they run) and upTol x tolerance / tolRef (while it is
@@ -1868,11 +1995,11 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     }
 
     // write back what changed (only this invocation touches this cell's stock in this dispatch)
-    for (var k = 0u; k < NCH; k++) { if (m[k] != m0[k]) { atomicStore(&stock[o + k], m[k]); } }
+    for (var j = 0u; j < NCELL; j++) { let k = cell_ch(j); if (m[k] != m0[k]) { atomicStore(&stock[o + stock_w(k)], m[k]); } }
     if (bat != bat0) { atomicStore(&stock[o + BAT], bat); }
     if (heat != 0) { atomicAdd(&hb[LEDGER_WORDS + idx[4]], heat); }
     var fill = 0.0;
-    for (var k = 0u; k < NCH; k++) { fill += f32(m[k]) * ep_f(EP.natoms, k); }
+    for (var j = 0u; j < NCELL; j++) { let k = cell_ch(j); fill += f32(m[k]) * ep_f(EP.natoms, k); }
     cells[i].bat = clamp(f32(bat) / f32(batMax), 0.0, 1.0);
     cells[i].fill = clamp(fill / max(cap, 1.0), 0.0, 1.0);
 
@@ -1880,7 +2007,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     // q saturates (tanh) for field B. With the charge field on it puts its net charge down where it is (cloud in cell:
     // over the 4 pixels around its centre, by their nearness), so the substrate's field sees the charge the cell took in
     var qn = 0;
-    for (var k = 0u; k < NCH; k++) { qn += charge_of(EP.qCodes, k) * m[k]; }
+    for (var j = 0u; j < NCELL; j++) { let k = cell_ch(j); qn += charge_of(EP.qCodes, k) * m[k]; }
     qn += heads1;   // step C12b: the soap heads in its membrane (glL +, tlL -; 0 while LPF_HEADS is off)
     let qu = f32(qn) / ATOM_SCALE;
     cells[i].qNet = qu;
@@ -2012,8 +2139,8 @@ fn deposit_q(p: vec2f, n: i32) {
 }
 
 // ---------- ledger (once per frame) ----------
-var<workgroup> wlo: array<atomic<u32>, 14>;
-var<workgroup> whi: array<atomic<u32>, 14>;
+var<workgroup> wlo: array<atomic<u32>, 16>;   // (step C12c: 14, 15 the excited atoms)
+var<workgroup> whi: array<atomic<u32>, 16>;
 var<workgroup> wcnt: array<atomic<i32>, 5>;
 // step C6, the strategies' census (a snapshot, LG_K_CEN + 16 v): 8 classes (harvest, burn, both, other; in the light, then
 // in the dark) x 8 numbers (cells, battery share x 1000, harvest rates x 1000, burn rates x 1000, other rates x 1000,
@@ -2099,6 +2226,13 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       if (v == 0) { continue; }
       atomicAdd(&wlo[k], u32(v) & 0xffffu);
       atomicAdd(&whi[k], u32(v) >> 16u);
+    }
+    // step C12c: the excited atoms in the stock
+    for (var j = 0u; j < 2u; j++) {
+      let v = max(atomicLoad(&stock[i * SW + stock_w(EXC0 + j)]), 0);
+      if (v == 0) { continue; }
+      atomicAdd(&wlo[14u + j], u32(v) & 0xffffu);
+      atomicAdd(&whi[14u + j], u32(v) >> 16u);
     }
   }
   // step C9: the census counts the live cells only (the books above count every slot: a free one holds nothing)
@@ -2278,6 +2412,13 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     let k = li - BAT - 1u;
     let v = atomicLoad(&wcnt[k]);
     if (v != 0) { atomicAdd(&hb[LG_K_COUNT + 64u * k + slot], v); }
+  } else if (li == 30u || li == 31u) {
+    // step C12c: the excited atoms in the stocks (64-bit)
+    let L = atomicLoad(&wlo[li - 16u]);
+    let H = atomicLoad(&whi[li - 16u]);
+    let at = LG_EXC_K + 128u * (li - 30u) + slot;
+    add64v(at, i32(H >> 16u), H << 16u);
+    add64v(at, 0, L);
   }
 }
 

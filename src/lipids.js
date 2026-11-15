@@ -107,7 +107,7 @@ export class Lipids {
     this.hist = [];
     this.census = null;
     this.energy = 0;      // the lipids' chemical energy in all membranes (energy units; negative)
-    this.held = new Float64Array(16);   // per channel: the molecules held in membranes (units; for the dish's active channels)
+    this.held = new Float64Array(SUBSTANCES.length);   // per channel: the molecules held in membranes (units; for the dish's active channels)
     this.series = [];     // every 10 s: [time, soap, oil, wall, oil gene, wall gene, stiffness, lit oil, dark oil, lit k, dark k, walled]
   }
 

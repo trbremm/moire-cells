@@ -96,6 +96,7 @@ export class Oil {
     f[106] = conc / Math.max(1e-4, p.filmFull);
     f[107] = amphi ? Math.max(0, p.skin) : 0;
     SUB.forEach((s, c) => {
+      if (c >= 16) return;   // (step C12c: the excited atoms read their ground twin's numbers)
       const mobile = s.spread > 0;
       f[108 + c] = mobile ? s.chi : 0;
       f[124 + c] = mobile && amphi ? s.beta : 0;

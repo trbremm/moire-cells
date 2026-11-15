@@ -41,7 +41,7 @@
 
 import { loadFieldShader } from './field.js';
 import { HEAT_COMMON_URL, HEAT_SCALE, LEDGER_WORDS, fmt } from './heat.js';
-import { SUBSTANCES, NCH, NCH_CELL, CH, ATOM_SCALE, ENGINES, ENGINE_KINDS, CHARGE_CODES } from './matter.js';
+import { SUBSTANCES, NCH, NCH_CELL, CH, ATOM_SCALE, ENGINES, ENGINE_KINDS, CHARGE_CODES, EXC0 } from './matter.js';
 import { BANDS, LIGHT_COMMON_URL } from './light.js';
 import { Membrane, MB_SNAP_WORDS } from './membrane.js';
 import { Pumps, PU_SNAP_WORDS } from './pumps.js';
@@ -72,7 +72,8 @@ const EV2 = ['pig0', 'pig1', 'pig2', 'pig3', 'made', 'deficit', 'eBurn', 'eSwap'
 const EV2_ENERGY = /^(pig\d|deficit|eGain|eHeat|upkeep|idle)$/;
 export const STRATS = ['harvest', 'burn', 'both', 'other'];
 const CEN_N = 76;
-const LG_Q_CEN = 19136;             // step C6b (heat_common.wgsl): the cells' charge, 4 numbers x 16 slots
+const LG_Q_CEN = 19136;
+const LG_EXC_K = 26624;             // step C12c (heat_common.wgsl): the excited atoms in the cells' stocks, 2 channels, 64-bit             // step C6b (heat_common.wgsl): the cells' charge, 4 numbers x 16 slots
 const EV = ['burned', 'gain', 'bheat', 'inBurn', 'inSwap', 'inForm', 'uptake', 'release', 'expel', 'paid', 'dump', 'batBack', 'gone', 'inHeat'];
 const SED_MASK = SUBSTANCES.reduce((m, s, c) => (s.kind === 'sediment' ? m | (1 << c) : m), 0);
 const ROW1 = SUBSTANCES[CH.g].spread;   // the light atoms' spreading speed: permeability's reference
@@ -231,6 +232,8 @@ export class Eat {
     f[12] = Math.max(0, p.burnMax) * dt * ATOM_SCALE; f[13] = Math.max(0, p.tol); u[14] = heatEnd;
     u[15] = this.rule('smell') ? 1 : 0;
     SUBSTANCES.forEach((s, c) => {
+      if (c >= 16) return;                                        // (step C12c: the excited atoms read their ground twin's; their
+                                                                  // energy is ChemP.ex.y)
       f[16 + c] = Math.max(0, p.perm) * s.spread / ROW1;          // perm: sediment 0 (it does not spread)
       i[32 + c] = s.e16;
       u[48 + c] = s.kind === 'fuel' ? (CH[s.atoms[0]] | (CH[s.atoms[1]] << 8)) : 0xffff;
@@ -339,6 +342,7 @@ export class Eat {
     const plain = (a) => { let s = 0; for (let k = a; k < a + 64; k++) s += w[k]; return s; };
     const stock = new Float64Array(NCH);
     for (let c = 0; c < NCH_CELL; c++) stock[c] = wide(LG_K.STOCK + 128 * c) / ATOM_SCALE;   // (step C12: the cells hold 0..12; the rest 0)
+    for (let j = 0; j < 2; j++) stock[EXC0 + j] = wide(LG_EXC_K + 128 * j) / ATOM_SCALE;     // (step C12c: and the excited atoms)
     const bat = wide(LG_K.BAT) / HEAT_SCALE;
     this.start += wide(LG_K.START) / HEAT_SCALE;
     const T = this.tot;

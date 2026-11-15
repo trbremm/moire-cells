@@ -35,7 +35,7 @@
 
 const HEAT_SCALE: f32 = 65536.0;   // counts per energy unit
 const HEAT_V0: f32 = 10.0;         // CSS px / s: the speed whose motion energy is 0.5 units
-const LEDGER_WORDS: u32 = 25600u;   // (19200 until step C6b, 19712 until step C6c, 20224 until step C7, 21760 until C7b,
+const LEDGER_WORDS: u32 = 27776u;   // (25600 until step C12c; 19200 until step C6b, 19712 until step C6c, 20224 until step C7, 21760 until C7b,
                                     // 22016 until C8, 22272 until C9, 22528 until C12)
 const LG_WORK: u32 = 0u;     // 256 slots: work done on the cells by the forces (fields, contact, crawling, stirring)
 const LG_BASE: u32 = 256u;   // 64: the base warmth put into the dish
@@ -111,10 +111,38 @@ const LG_OIL_FUSE: u32 = 25344u;    // + 2304: oil taken into membranes (counts 
 // the C12b supply fix (2026-11-16), cells graze crust (src/lipids.js, cell_eat.wgsl): 8 counters x 16 slots (i32) since the last
 // read-back (LC_GRAZE_* in cell_eat.wgsl): crust taken in (ll, LL), put into walls whole, cracked (ll, LL), heat counts paid
 const LG_LIP_G: u32 = 25360u;
+// step C12c, excited waste (src/excited.js; matter.wgsl, cell_eat.wgsl), words 25600 .. 27775:
+//   LG_EXC    the matter ledger of channels 16, 17 (g*, t*): ADD, LOST, GONE, DISH, 2 channels x 128 words each (lg_mc)
+//   LG_EXC_K  a snapshot: the excited atoms in the cells' stocks, 2 channels, 64-bit, 64 slots (128 words each)
+//   LG_EXC_N  8 counters x 16 slots (i32) since the last read-back, counts of excited atoms (XN_* below)
+//   LG_EXC_E  6 counters, 64-bit, 64 slots (128 words each) since the last read-back, heat counts (XE_* below)
+const LG_EXC: u32 = 25600u;
+const LG_EXC_K: u32 = 26624u;
+const LG_EXC_N: u32 = 26880u;
+const LG_EXC_E: u32 = 27008u;
+const XN_MADE_OPEN: u32 = 0u;    // excited atoms made by light in the open (the uphill swaps)
+const XN_MADE_CELL: u32 = 1u;    // ... made by the cells' harvesting uphill swaps (a pigment's photon)
+const XN_FADE_OPEN: u32 = 2u;    // ... faded to ground by themselves in the open
+const XN_FADE_CELL: u32 = 3u;    // ... inside cells
+const XN_RX_OPEN: u32 = 4u;      // ... used by a reaction in the open (their energy: heat)
+const XN_RX_IN: u32 = 5u;        // ... used by a reaction loose inside a cell (heat)
+const XN_ENGINE: u32 = 6u;       // ... used by a cell's engine (their energy: the battery)
+const XN_BITE: u32 = 7u;         // ... spent biting a membrane (heat at the cell)
+const XE_ENGINE: u32 = 0u;       // heat counts: excitation an engine put into a battery (after its ineff share)
+const XE_FADE: u32 = 1u;         // ... excitation that faded into heat (open and cells)
+const XE_LOOSE: u32 = 2u;        // ... excitation dumped as heat by uncontrolled reactions (open, loose in cells, bites)
+const XE_BREATH: u32 = 3u;       // ... all the swap engines ("breathing") put into batteries (bond + excitation)
+const XE_BURN: u32 = 4u;         // ... all the burn engines put into batteries
+const XE_UPHEAT: u32 = 5u;       // ... (spare)
+const EXC0: u32 = 16u;           // the first excited channel (g*; t* next): the twin of channel c < 2 is c + 16
+// the ground twin of channel c (for the per-channel uniforms, which hold 16 channels: an excited atom moves, passes membranes
+// and drifts in the fields exactly as its ground atom does)
+fn gc(c: u32) -> u32 { return select(c, c - EXC0, c >= EXC0); }
 const OIL_CH: u32 = 13u;            // the oil's channel (lL; src/matter.js checks)
 
 const NCH: u32 = 13u;               // step C3: substance channels the CELLS hold (their stock; channels 0..12)
-const NGRID: u32 = 16u;             // step C12: substance channels on the grid (+ oil lL and the amphiphiles glL, tlL)
+const NGRID: u32 = 18u;             // step C12: substance channels on the grid (+ oil lL and the amphiphiles glL, tlL; step C12c:
+                                    // + the excited light atoms g*, t*)
 const ATOM_SCALE: f32 = 4096.0;     // counts per atom-unit (ATOM_SCALE in src/matter.js)
 
 // step C12: the ledger word of channel c in the matter ledger's region (LG_M_ADD, LG_M_LOST, LG_M_GONE or LG_M_DISH):
@@ -123,12 +151,13 @@ fn lg_mc(region: u32, c: u32) -> u32 {
   if (c < NCH) { return region + 128u * c; }
   var k = 3u;
   if (region == LG_M_ADD) { k = 0u; } else if (region == LG_M_LOST) { k = 1u; } else if (region == LG_M_GONE) { k = 2u; }
+  if (c >= EXC0) { return LG_EXC + 256u * k + 128u * (c - EXC0); }   // step C12c
   return LG_OIL + 384u * k + 128u * (c - NCH);
 }
 
 // step C6b: a channel's charge from the packed code (CHARGE_CODES in src/matter.js: 2 bits per channel, 1 = +1, 2 = -1)
 fn charge_of(codes: u32, c: u32) -> i32 {
-  let v = (codes >> (2u * c)) & 3u;
+  let v = (codes >> (2u * gc(c))) & 3u;   // (step C12c: an excited atom carries its ground twin's charge)
   return select(select(0, -1, v == 2u), 1, v == 1u);
 }
 
@@ -163,6 +192,8 @@ struct ChemP {
   fuse: vec4f,                  // step C12, membrane fusion (src/oil.js; cell_eat.wgsl): x 1 = on; y the share of a membrane's
                                 // shortfall taken in from the oil under the cell per s; z heat counts per unit of oil opened
                                 // (its chain's energy, uphill), w its spark (heat counts per unit, lost as heat)
+  ex: vec4f,                    // step C12c, excited waste (src/excited.js): x 1 = on; y the heat counts one excited count holds
+                                // (16 E*); z its fading rate (1 / lifetime, per s); w the temperature at which it fades twice as fast
   rx: array<Rx, 32>,            // (24 until step C12)
 };
 const NONE: u32 = 255u;

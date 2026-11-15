@@ -88,6 +88,7 @@ function gather(M, ctl) {
   if (M.oil) { flatten(M.oil.census, 'oil', out); if (M.oil.last) flatten({ ...M.oil.last, sizes: undefined }, 'oilstats', out); }   // step C12
   if (M.walls.near) flatten(M.walls.near, 'wallstats', out);
   if (M.lipids) { flatten({ ...(M.lipids.census || {}), tot: undefined }, 'lipids', out); if (M.lipids.last) flatten(M.lipids.last, 'lipstats', out); }   // step C12b
+  if (M.excited && M.excited.census) flatten({ ...M.excited.census, tot: undefined }, 'excited', out);   // step C12c
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;
   if (C.stats) flatten({ fate: C.stats.fate, births: C.stats.births, deaths: C.stats.deaths, heatDeaths: C.stats.heatDeaths,

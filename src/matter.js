@@ -34,6 +34,7 @@ import { HEAT_COMMON_URL, HEAT_SCALE, LEDGER_WORDS, fmt } from './heat.js';
 import { BANDS, LIGHT_COMMON_URL } from './light.js';
 import { FLAT, pal } from './palette.js';
 import { Oil } from './oil.js';
+import { Excited } from './excited.js';
 
 // ---------- the periodic table (CLAUDE.md, Part C): every property derived from ROW and GROUP, nowhere else ----------
 // ROW is size: heavier = slower spreading (later: richer bonds, harder light needed). GROUP is role: a GIVER wants one
@@ -46,6 +47,11 @@ export const ATOMS = {
   T: { row: 2, group: 'taker' },
   L: { row: 2, group: 'linker' },
   trace: { row: 3, group: 'inert' },   // rare; never reacts, barely moves (C4: lowers the spark where it sits)
+  // step C12c, EXCITED WASTE: a light giver or taker freed by LIGHT (an uphill swap) leaves excited, holding part of the photon's
+  // surplus. The same atom (row, group, charge, speed); only its energy differs (EXCITED below) and it fades back to its ground
+  // atom by itself
+  'g*': { row: 1, group: 'giver', ground: 'g' },
+  't*': { row: 1, group: 'taker', ground: 't' },
 };
 
 // Step C6b, CHARGE, from the GROUP alone (the same rule for every row): a giver is +1, a taker -1, a linker and the inert
@@ -89,6 +95,38 @@ export const CHEM = { fuelPerRow: 0.75, sedPerRow: -0.25, sparkPerRow: 0.125 };
 const TEND = { giver: CHEM.fuelPerRow / 2, taker: CHEM.fuelPerRow / 2, linker: CHEM.sedPerRow / 2, inert: 0 };
 const bondE = (a, b) => (TEND[a.group] + TEND[b.group]) * (a.row + b.row);
 const bondSpark = (a, b) => CHEM.sparkPerRow * (a.row + b.row);
+
+// ---------- step C12c, EXCITED WASTE: how much energy an excited atom keeps (the user chose "charged waste") ----------
+// Light drives the uphill swaps (gt + T -> gT + t, gt + G -> Gt + g, gT + G -> GT + g, Gt + T -> GT + t): a photon of the
+// lowest band that covers the bond's step up and its spark pays the step up (0.75 for each of them), and until now the rest
+// of the photon (its SURPLUS, band energy - the step up: 2 - 0.75 = 1.25 for all four, visible 1) became heat. Now the freed
+// light atom leaves EXCITED and keeps a SHARE of that surplus: E* = share x the smallest surplus of the reactions that make
+// it (so no reaction has to give more than its photon holds; the other light-driven reaction that frees light atoms, hard
+// light breaking a fuel, gt + hard -> g* + t*, has far more to spare: 5 + 1.5), rounded down to 1/16 (one count of g* then carries a whole
+// number of heat counts: the books stay exact). share = 1/2 (URL ?exshare=; fixed for the page: changing it while excited
+// atoms exist would change the energy they hold): E* = 0.625. The rest of the surplus is heat, as before.
+// Then breathing pays: t* + gT -> gt + T releases 0.75 + 0.625 = 1.375 (and the gt can still be burned for 1.5), against
+// 2.25 for burning the gT outright: breathing + burning 2.875.
+export const EXCITED = (() => {
+  const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
+  const sh = q && q.has('exshare') && Number.isFinite(Number(q.get('exshare'))) ? Number(q.get('exshare')) : 0.5;
+  const share = Math.max(0, Math.min(1, sh));
+  let surplus = Infinity;
+  for (const giver of ['g', 'G']) {
+    for (const taker of ['t', 'T']) {
+      // the poorer fuel (giver, taker) and its two upgrades: a heavier giver, a heavier taker
+      for (const [g2, t2] of [[giver === 'g' ? 'G' : null, taker], [giver, taker === 't' ? 'T' : null]]) {
+        if (!g2 || !t2) continue;
+        const up = bondE(ATOMS[g2], ATOMS[t2]) - bondE(ATOMS[giver], ATOMS[taker]);
+        const sp = bondSpark(ATOMS[g2], ATOMS[t2]);
+        const band = BANDS.findIndex((b) => b.photon >= up + sp);
+        if (up > 0 && band >= 0) surplus = Math.min(surplus, BANDS[band].photon - up);
+      }
+    }
+  }
+  const e = Math.floor(16 * share * surplus) / 16;
+  return { share, surplus, energy: e, e16: Math.round(16 * e) };
+})();
 
 // ---------- step C12: POLARITY, from the atoms' charges and where they sit (no physics; the user: "we can simplify their
 // charges combining") ----------
@@ -134,12 +172,17 @@ export const SUBSTANCES = [
   ['l', 'l'], ['L', 'L'],
   ['trace'],
   ['l', 'L'], ['g', 'l', 'L'], ['t', 'l', 'L'],   // step C12
+  ['g*'], ['t*'],                                   // step C12c: the excited light atoms (channels 16, 17)
 ].map((atoms) => derive(atoms));
-export const NCH = SUBSTANCES.length;   // 16 (13 until step C12)
+export const NCH = SUBSTANCES.length;   // 18 (13 until step C12, 16 until step C12c)
 export const NCH_CELL = 13;             // step C12: the cells' stock holds channels 0..12 (oil and amphiphiles stay in the open)
+export const EXC0 = 16;                 // step C12c: the excited atoms' first channel (g*, then t*); EXC0 + j is the twin of channel j
+// step C12c: the channels the cells hold: 0..12 and the excited light atoms (stock words 28, 29; cell_eat.wgsl cell_ch, stock_w)
+export const CELL_CH = [...Array.from({ length: NCH_CELL }, (_, c) => c), 16, 17];
 export const CH = Object.fromEntries(SUBSTANCES.map((s, c) => [s.name, c]));
 if (CH.lL !== 13) throw new Error('heat_common.wgsl expects the oil (lL) in channel 13 (OIL_CH)');
-if (NCH > 16) throw new Error('the shaders hold 16 channels at most (array<vec4f, 4>; 2 bits of charge each in a u32)');
+if (CH['g*'] !== EXC0 || CH['t*'] !== EXC0 + 1 || CH.g !== 0 || CH.t !== 1) throw new Error('the shaders expect g*, t* in channels 16, 17 (twins of g, t)');
+if (NCH > 18) throw new Error("the shaders hold 18 channels at most (16 in the per-channel uniforms: the excited ones read their ground twin's)");
 
 function derive(atoms) {
   const A = atoms.map((a) => ATOMS[a]);
@@ -155,18 +198,20 @@ function derive(atoms) {
   const reactive = kind === 'atom' && (A[0].group === 'giver' || A[0].group === 'taker');
   const spread = kind === 'sediment' ? 0 : SPREAD.row1 * SPREAD.perRow ** (row - 1) * SPREAD.bond ** (atoms.length - 1);
   const func = kind === 'atom' ? (reactive ? 'reactive' : 'linker') : kind === 'other' ? 'linker' : kind;
-  const layer = { atom: 0, fuel: 1, sediment: 2, trace: 3, oil: 4, amphiphile: 5 }[kind] ?? 0;   // which drawing layer
+  const excited = atoms.length === 1 && !!ATOMS[atoms[0]].ground;   // step C12c
+  const layer = excited ? 6 : ({ atom: 0, fuel: 1, sediment: 2, trace: 3, oil: 4, amphiphile: 5 }[kind] ?? 0);   // drawing layer (C12c: 6)
   const name = atoms.length === 1 ? atoms[0] : atoms.join('');
   // step C4, the energy table (CHEM above): energy per unit, the bond's spark, and the light band that makes a fuel.
   // Step C12: the sum of its bonds' energies (bondE: the same numbers for the fuels and the sediments as before), and the
   // spark of its first bond (the one its reactions make and break: a fuel's or a chain's only bond, an amphiphile's head)
-  let energy = 0;
+  let energy = excited ? EXCITED.energy : 0;   // (step C12c: an excited atom holds E*)
   for (let k = 1; k < A.length; k++) energy += bondE(A[k - 1], A[k]);
   const spark = atoms.length > 1 ? bondSpark(A[0], A[1]) : 0;
   const e16 = Math.round(16 * energy);   // heat counts per count of the substance (exact: see CHEM)
   if (e16 !== 16 * energy) throw new Error(`energy of ${name} (${energy}) is not a multiple of 1/16`);
   const charge = A.reduce((x, a) => x + a.charge, 0);   // step C6b: the sum of its atoms' charges (GROUP_CHARGE)
-  return { name, atoms, kind, row, heavy, reactive, spread, func, layer, ink: inkOf(func, heavy), energy, spark, e16, charge,
+  return { name, atoms, kind, row, heavy, reactive, spread, func, layer, ink: inkOf(func, heavy), energy, spark, e16, charge, excited,
+    ground: excited ? ATOMS[atoms[0]].ground : null,
     polarity: pol.cls, head: pol.head, tail: pol.tail, chi: pol.chi, beta: pol.beta, chained: pol.chained };
 }
 
@@ -211,14 +256,22 @@ function deriveReactions() {
   const out = [];
   const ch = (name) => SUBSTANCES.findIndex((s) => s.name === name);
   const L16 = (b) => Math.round(16 * BANDS[b].photon);
-  const free = SUBSTANCES.map((s, c) => [s, c]).filter(([s]) => s.kind === 'atom');
+  const free = SUBSTANCES.map((s, c) => [s, c]).filter(([s]) => s.kind === 'atom' && !s.excited);   // (step C12c: not the excited)
+  // step C12c: a reaction driven by LIGHT that frees light givers or takers frees them EXCITED (with the excited waste on):
+  // exOuts, each product's excited twin (or null), and the heat that is then left (every freed light atom keeps E* of it)
+  const excite = (outs, heat16) => {
+    const ex = outs.map((c) => { const t = ch(`${SUBSTANCES[c].name}*`); return t >= 0 ? t : null; });
+    if (ex.every((t) => t == null)) return {};
+    return { exOuts: ex, exHeat16: heat16 - ex.reduce((x, t) => x + (t == null ? 0 : SUBSTANCES[t].e16), 0) };
+  };
   SUBSTANCES.forEach((f, c) => {
     if (f.kind === 'fuel') {
       const [x, y] = f.atoms.map(ch);
       const b = makingBand(f);
       if (b >= 0) out.push({ fam: 'make', by: 'light', band: b, ins: [x, y], outs: [c], heat16: L16(b) - f.e16, light16: L16(b), spark: f.spark, name: `${f.atoms[0]} + ${f.atoms[1]} → ${f.name}` });
       out.push({ fam: 'burn', by: 'heat', ins: [c], outs: [x, y], heat16: f.e16, light16: 0, spark: f.spark, name: `${f.name} → ${f.atoms[0]} + ${f.atoms[1]}` });
-      out.push({ fam: 'photo', by: 'light', band: HARD, ins: [c], outs: [x, y], heat16: L16(HARD) + f.e16, light16: L16(HARD), spark: f.spark, name: `${f.name} → ${f.atoms[0]} + ${f.atoms[1]} (hard light)` });
+      out.push({ fam: 'photo', by: 'light', band: HARD, ins: [c], outs: [x, y], heat16: L16(HARD) + f.e16, light16: L16(HARD), spark: f.spark, name: `${f.name} → ${f.atoms[0]} + ${f.atoms[1]} (hard light)`,
+        ...excite([x, y], L16(HARD) + f.e16) });   // (step C12c: its light atoms leave excited)
       // swaps: a free atom of the same group as one of the pair, from the other row, takes that one's place, if that
       // makes a poorer fuel (downhill)
       for (const [z, cz] of free) {
@@ -232,7 +285,9 @@ function deriveReactions() {
           // step C6: and its inverse, uphill, by light of the lowest band that covers the difference and the spark
           // (poorer fuel + the heavy atom -> richer fuel + a free light atom); slow in the open (kUpSwap)
           const dE = f.e16 - SUBSTANCES[cn].e16, ub = BANDS.findIndex((b) => b.photon >= dE / 16 + f.spark);
-          out.push({ fam: 'upswap', by: 'light', band: ub, ins: [cn, ch(old)], outs: [c, cz], heat16: L16(ub) - dE, light16: L16(ub), spark: f.spark, name: `${SUBSTANCES[cn].name} + ${old} → ${f.name} + ${z.name}` });
+          // (step C12c: with the excited waste on, the freed light atom leaves excited, keeping E* of the heat)
+          out.push({ fam: 'upswap', by: 'light', band: ub, ins: [cn, ch(old)], outs: [c, cz], heat16: L16(ub) - dE, light16: L16(ub), spark: f.spark, name: `${SUBSTANCES[cn].name} + ${old} → ${f.name} + ${z.name}`,
+            ...excite([c, cz], L16(ub) - dE) });
         }
       }
     }
@@ -259,6 +314,12 @@ function deriveReactions() {
   for (const r of out) {
     const dE = r.outs.reduce((x, c) => x + SUBSTANCES[c].e16, 0) - r.ins.reduce((x, c) => x + SUBSTANCES[c].e16, 0);
     if (r.light16 !== r.heat16 + dE || r.heat16 < 0) throw new Error(`reaction ${r.name} does not balance`);
+    if (r.exOuts) {   // step C12c: and with the excited atoms out
+      const outs = r.outs.map((c, k) => r.exOuts[k] ?? c);
+      const dX = outs.reduce((x, c) => x + SUBSTANCES[c].e16, 0) - r.ins.reduce((x, c) => x + SUBSTANCES[c].e16, 0);
+      if (r.light16 !== r.exHeat16 + dX || r.exHeat16 < 0 || r.by !== 'light') throw new Error(`reaction ${r.name} (excited) does not balance`);
+      r.exOuts.forEach((t, k) => { if (t != null && SUBSTANCES[t].ground !== SUBSTANCES[r.outs[k]].name) throw new Error(`reaction ${r.name}: not a twin`); });
+    }
   }
   checkCharge(out, 'reaction');
   return out;
@@ -271,10 +332,12 @@ function checkCharge(list, what) {
 }
 
 /** Step C6b: the charges as one word for the shaders, 2 bits per channel (0: none, 1: +1, 2: -1; heat_common.wgsl). */
-export const CHARGE_CODES = SUBSTANCES.reduce((m, s, c) => {
+export const CHARGE_CODES = SUBSTANCES.slice(0, 16).reduce((m, s, c) => {
   if (Math.abs(s.charge) > 1) throw new Error(`charge of ${s.name} (${s.charge}) does not fit the shaders' code`);
   return (m | ((s.charge > 0 ? 1 : s.charge < 0 ? 2 : 0) << (2 * c))) >>> 0;
 }, 0);
+// (step C12c: the excited atoms' charge is their ground twin's: charge_of reads channel c - 16 for c >= 16)
+SUBSTANCES.forEach((s, c) => { if (c >= EXC0 && s.charge !== SUBSTANCES[c - EXC0].charge) throw new Error(`${s.name} must carry ${SUBSTANCES[c - EXC0].name}'s charge`); });
 
 // ---------- step C6: the ENGINES a genome can carry, also derived from the table ----------
 // An engine slot names one of these by its index (Bio.eng in cell_common.wgsl). Every engine is one reaction of REACTIONS,
@@ -337,6 +400,7 @@ export function insideProducts(active) {
 /** A substance's name in words, for the flash and the overlay. */
 export function describe(s) {
   const role = (a) => `${ATOMS[a].row === 1 ? 'light' : 'heavy'} ${ATOMS[a].group}`;
+  if (s.excited) return `excited atom ${s.name} (a ${role(s.ground)} freed by light, holding ${s.energy} of the photon; it fades back to ${s.ground})`;
   if (s.kind === 'atom') return `free atom ${s.name} (${role(s.atoms[0])}${s.reactive ? ', reactive' : ''})`;
   if (s.kind === 'fuel') return `fuel ${s.name} (${role(s.atoms[0])} + ${role(s.atoms[1])})`;
   if (s.kind === 'sediment') return `sediment ${s.name} (${s.atoms[0] === 'l' ? 'light' : 'heavy'} linker chain)`;
@@ -371,23 +435,27 @@ const MT_DRAIN = MT_LEDGER + 1;           // slot: the old grid on a resize
 const MT_WASH = MT_LEDGER + 2;            // slot: Shift+C
 const MT_SLOTS = MT_LEDGER + 3;
 export const MAX_SPRINGS = 16;            // the springs uniform's capacity
-const SPRING_FLOATS = 28;                 // struct Spring: pos (4), amt (20: 16 channels, [16] its disc's pixels), ink (4)
-const DRAW_BYTES = 336;                   // struct DrawP in matter_draw.wgsl (224 until step C12)
+const SPRING_FLOATS = 28;                 // struct Spring: pos (4), amt (20: 18 channels, [19] its disc's pixels), ink (4)
+const DRAW_BYTES = 368;                   // struct DrawP in matter_draw.wgsl (224 until step C12, 336 until step C12c)
 const K_MAX = 0.2;
 const LG_M = { ADD: 3072, LOST: 4736, GONE: 6400, DISH: 8064, ORDER: 9728 };   // heat_common.wgsl
 const LG_C = { LIGHT: 10240, RX: 10752 };
 // step C12 (heat_common.wgsl): the ledger of channels 13..15, the oil's 4 families, the oil's snapshot
 const LG_OIL = 23040, LG_OIL_RX = 24576, LG_OIL_SNAP = 25088;
+const LG_EXC = 25600;                     // step C12c (heat_common.wgsl): the ledger of channels 16, 17 (the excited atoms)
 const REGION = { ADD: 0, LOST: 1, GONE: 2, DISH: 3 };
 /** The ledger word of channel c in a matter region ('ADD', 'LOST', 'GONE', 'DISH'), as lg_mc in heat_common.wgsl. */
-export function lgM(region, c) { return c < NCH_CELL ? LG_M[region] + 128 * c : LG_OIL + 384 * REGION[region] + 128 * (c - NCH_CELL); }
+export function lgM(region, c) {
+  if (c >= EXC0) return LG_EXC + 256 * REGION[region] + 128 * (c - EXC0);
+  return c < NCH_CELL ? LG_M[region] + 128 * c : LG_OIL + 384 * REGION[region] + 128 * (c - NCH_CELL);
+}
 /** The ledger word of a reaction family's events. */
 function lgRx(k) { return k < 6 ? LG_C.RX + 128 * k : LG_OIL_RX + 128 * (k - 6); }
 const LG_Q_PHI = 19200;                     // step C6b (heat_common.wgsl): phi's spread (256 f32), then its largest size   // step C4 (heat_common.wgsl): light caught per band, events per family
 const MAX_RX = 32;                          // struct ChemP's reactions (REACTIONS has 24 since step C6's uphill swaps, 30 since C12)
 const RX_BYTES = 48;                        // struct Rx
-const CP_RX = 128;                          // struct ChemP: its first reaction's byte offset (96 until step C7b's cry, 112 until
-                                            // step C12's fuse)
+const CP_RX = 144;                          // struct ChemP: its first reaction's byte offset (96 until step C7b's cry, 112 until
+                                            // step C12's fuse, 128 until step C12c's ex)
 const CP_BYTES = CP_RX + MAX_RX * RX_BYTES; // struct ChemP
 const NONE = 255;                           // no channel (Rx.ch)
 const SED_MASK = SUBSTANCES.reduce((m, s, c) => (s.kind === 'sediment' ? m | (1 << c) : m), 0);
@@ -405,6 +473,7 @@ export class Matter {
     this.landscape = null;    // key L hides the whole landscape, this included (set by main.js)
     this.blocks = 2 * NCH + 4;   // blocks of n words in the heat buffer (step C12: + the oil's rho, film, obar, a scratch)
     this.oil = new Oil(this);    // step C12: oils and water (src/oil.js)
+    this.excited = new Excited(this, EXCITED);   // step C12c: excited waste (src/excited.js)
     this.CH = CH; this.SUBSTANCES = SUBSTANCES;
     // live-tunable: moire.matter.params
     this.params = {
@@ -522,6 +591,7 @@ export class Matter {
         { binding: 0, visibility: C, storageTexture: { access: 'write-only', format: 'rgba16float' } },
         { binding: 1, visibility: C, storageTexture: { access: 'write-only', format: 'rgba16float' } },
         { binding: 2, visibility: C, storageTexture: { access: 'write-only', format: 'rgba16float' } },   // step C12: oil
+        { binding: 3, visibility: C, storageTexture: { access: 'write-only', format: 'rgba16float' } },   // step C12c: excited
       ],
     });
     const layout = d.createPipelineLayout({ label: 'matter', bindGroupLayouts: [this.bgl] });
@@ -705,6 +775,9 @@ export class Matter {
     // may have put matter into them, which the next read-back will show (a channel left out must be all zero in both
     // copies, see the top of this file)
     if (this.eat && this.eat.params.on) active = insideProducts(active);
+    // step C12c: with the excited waste on, wherever light givers or takers are, light can excite them (in the open or in a
+    // cell's pigment): their excited twins move too
+    if (this.excited.on && (active & 3)) active |= (1 << EXC0) | (1 << (EXC0 + 1));
     this.maskHist = (this.maskHist || []).filter(([t]) => t > this.snapTime);
     for (const [, m] of this.maskHist) active |= m;
     this.maskHist.push([frame.time, active]);
@@ -721,6 +794,7 @@ export class Matter {
     f[8] = H.px; f[9] = 1 / (ATOM_SCALE * a * a); f[10] = 1 - Math.exp(-Math.max(0, p.edge) * dt);
     u[11] = H.pigOn ? H.pigOffset - LEDGER_WORDS : 0;   // step C6: the cells' pigments (their depth takes its share of the light)
     SUBSTANCES.forEach((s, c) => {
+      if (c >= 16) return;                                // (step C12c: the excited atoms read their ground twin's numbers)
       f[12 + c] = Math.min(K_MAX, kTot[c] / this.nSub);   // k
       u[28 + c] = s.layer;                                // layer
       f[44 + c] = s.reactive ? 1 : 0;                     // react
@@ -851,11 +925,16 @@ export class Matter {
     if (this.catalysts) this.catalysts.writeChem(f, 24);
     // step C12: membrane fusion (words 28..31, struct ChemP fuse)
     this.oil.writeFuse(f, 28, -SUBSTANCES[CH.lL].e16, Math.round(16 * SUBSTANCES[CH.lL].spark));
+    // step C12c: the excited waste (words 32..35, struct ChemP ex)
+    this.excited.write(f, 32);
+    const exOn = this.excited.on;
     list.forEach((r, k) => {
       const o = (CP_RX + k * RX_BYTES) / 4;
-      u[o] = r.ins[0]; u[o + 1] = r.ins.length > 1 ? r.ins[1] : NONE; u[o + 2] = r.outs[0]; u[o + 3] = r.outs.length > 1 ? r.outs[1] : NONE;
+      const ex = exOn && !!r.exOuts;   // step C12c: the freed light atoms leave excited, keeping E* each of the heat
+      const outs = ex ? r.outs.map((c, j) => r.exOuts[j] ?? c) : r.outs;
+      u[o] = r.ins[0]; u[o + 1] = r.ins.length > 1 ? r.ins[1] : NONE; u[o + 2] = outs[0]; u[o + 3] = outs.length > 1 ? outs[1] : NONE;
       u[o + 4] = r.by === 'light' ? 1 : 0; u[o + 5] = r.band ?? 0; u[o + 6] = FAMILIES.indexOf(r.fam === 'upswap' ? 'swap' : r.fam); u[o + 7] = r.open ? 1 : 0;
-      i32[o + 8] = r.heat16; i32[o + 9] = r.light16; f[o + 10] = Math.max(0, famK[r.fam]); f[o + 11] = r.spark;
+      i32[o + 8] = ex ? r.exHeat16 : r.heat16; i32[o + 9] = r.light16; f[o + 10] = Math.max(0, famK[r.fam]); f[o + 11] = r.spark;
     });
     this.device.queue.writeBuffer(this.chemBuf, 0, this.chemAB);
     return list;
@@ -870,7 +949,7 @@ export class Matter {
     for (let k = 0; k < n; k++) {
       const s = list[k], K = SPRING_KINDS[s.kind], o = k * SPRING_FLOATS;
       F[o] = s.x; F[o + 1] = s.y; F[o + 2] = rad; F[o + 3] = Math.max(0, 1 - (s.age + aged) / this.lifeOf(s));
-      F[o + 4 + 16] = discPixels(s.x / H.px, s.y / H.px, Math.max(rad / H.px, 0.75), H.hw, H.hh);   // amt[16]: its disc's pixels
+      F[o + 4 + 19] = discPixels(s.x / H.px, s.y / H.px, Math.max(rad / H.px, 0.75), H.hw, H.hh);   // amt[19]: its disc's pixels
       // (step C12: a mix's shares are of the atoms, so a molecule of n atoms drips 1 / n as many units)
       for (const [atom, share] of Object.entries(K.mix)) F[o + 4 + CH[atom]] = p.rate * share / SUBSTANCES[CH[atom]].atoms.length * dt * ATOM_SCALE;
       const ink = springInk(s.kind, pal().substances);
@@ -884,14 +963,14 @@ export class Matter {
   makeTextures() {
     const H = this.heat;
     if (this.tex) for (const t of this.tex) t.destroy();
-    this.tex = [0, 1, 2].map((k) => this.device.createTexture({
+    this.tex = [0, 1, 2, 3].map((k) => this.device.createTexture({
       label: `matter shown ${k}`, size: [H.hw, H.hh], format: 'rgba16float',
       usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
     }));
     this.texBG = this.device.createBindGroup({
       label: 'matter paint', layout: this.texBgl,
       entries: [{ binding: 0, resource: this.tex[0].createView() }, { binding: 1, resource: this.tex[1].createView() },
-        { binding: 2, resource: this.tex[2].createView() }],
+        { binding: 2, resource: this.tex[2].createView() }, { binding: 3, resource: this.tex[3].createView() }],   // (C12c: excited)
     });
     this.drawBG = null;
   }
@@ -903,6 +982,7 @@ export class Matter {
     encoder.clearBuffer(this.heat.buffer, LG_Q_PHI * 4, (256 + 4) * 4);   // step C6b: phi's spread and largest size
     // step C12: the oil channels' DISH snapshot and the oil's census
     encoder.clearBuffer(this.heat.buffer, lgM('DISH', NCH_CELL) * 4, 3 * 128 * 4);
+    encoder.clearBuffer(this.heat.buffer, lgM('DISH', EXC0) * 4, 2 * 128 * 4);   // step C12c: the excited atoms' DISH snapshot
     encoder.clearBuffer(this.heat.buffer, LG_OIL_SNAP * 4, 256 * 4);
     const pass = encoder.beginComputePass({ label: 'matter ledger' });
     pass.setPipeline(this.pipes.count);
@@ -975,6 +1055,7 @@ export class Matter {
     chem.cells = EL ? EL.chem : 0; chem.bat = EL ? EL.bat : 0; chem.start = this.eat ? this.eat.start : 0;
     this.ledger = { time: rec.time, add, lost, gone, dish, cells, rounding: add - (dish + cells + lost + gone), rateAdd: rate(1), rateLost: rate(2), order, entropy: Hn, chem };
     this.oil.apply(rec, w, (this.heat.px / this.heat.R) ** 2);   // step C12: the oil's census
+    this.excited.apply(rec, w);                                   // step C12c: the excited haze's census
   }
 
   /**
@@ -1023,6 +1104,7 @@ export class Matter {
           { binding: 4, resource: this.sampler },
           { binding: 5, resource: { buffer: this.springBuf } },
           { binding: 6, resource: this.tex[2].createView() },   // step C12: the oil's
+          { binding: 7, resource: this.tex[3].createView() },   // step C12c: the excited atoms
         ],
       });
     }
@@ -1043,6 +1125,7 @@ export class Matter {
     f[56] = OP.on && OP.look ? 1 : 0; f[57] = Math.max(0.75, OP.lineW * this.view.dpr); f[58] = (performance.now() / 1000) % 3600; f[59] = OP.irid;
     f[60] = OP.filmAlpha; f[61] = OP.gloss; f[62] = OP.amphLine * P.levels.substances / 0.62; f[63] = OP.polarity ? OP.polAlpha : 0;
     put(64, IO.film); put(68, IO.edge); put(72, IO.amph); put(76, IP.polar); put(80, IP.apolar);
+    this.excited.writeDraw(f, 84);   // step C12c: the excited haze's sparkle
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG);

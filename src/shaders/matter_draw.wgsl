@@ -35,6 +35,10 @@
 //   polarity     (machinery, src/oil.js params.polarity) polar matter washed warm, apolar cool, flat and faint
 // The lines' widths come from the share's slope per screen pixel (dpdx, dpdy: sampled at the top of fs, where the control
 // flow is uniform), so they stay one or two device pixels wide at any zoom.
+// Step C12c, the EXCITED HAZE (both styles, over the dust): from a fourth texture (the excited atoms per R^2), a sparse
+// glitter of tiny hot red-orange sparks, hotter and whiter than the old threat red of the free atoms; each spark flickers
+// on its own phase, and as the haze fades (the atoms relax) the sparks thin out and dim. Not busy: a spark per grid square at
+// most, and fewer where there is less.
 
 struct DrawP {
   dpr: f32,
@@ -72,6 +76,9 @@ struct DrawP {
   amph: vec4f,
   polP: vec4f,
   polA: vec4f,
+  // step C12c, the excited haze (src/excited.js look)
+  exc: vec4f,         // x 1 = drawn; y how many sparks per amount (x the coverage); z the flicker's speed (1/s); w brightness
+  excInk: vec4f,      // rgb: the sparks' hot red-orange; w: a spark's radius (CSS px)
 };
 
 struct Spring {
@@ -88,6 +95,7 @@ struct Springs { s: array<Spring, 16>, };
 @group(0) @binding(4) var samp: sampler;
 @group(0) @binding(5) var<uniform> SP: Springs;
 @group(0) @binding(6) var texC: texture_2d<f32>;   // step C12: oil share, film share, polar, apolar
+@group(0) @binding(7) var texD: texture_2d<f32>;   // step C12c: the excited atoms (x)
 
 struct VSOut { @builtin(position) pos: vec4f, };
 
@@ -179,6 +187,33 @@ fn dust(x: vec2f, under: vec4f) -> vec4f {
   return res;
 }
 
+// step C12c: the excited haze (see the top of this file): one spark per grid square at most, at a hashed place, present while
+// another hash lies below the coverage, flickering on its own phase (time in D.oil.z), dimmer where there is less
+fn sparkle(x: vec2f, under: vec4f) -> vec4f {
+  var res = under;
+  let cs = D.dust.x * 1.6;
+  let base = floor(x / cs - 0.5);
+  for (var k = 0; k < 4; k++) {
+    let g = base + vec2f(f32(k & 1), f32(k >> 1));
+    let v = textureSampleLevel(texD, samp, uv_of((g + 0.5) * cs), 0.0).x;
+    let cv = cover(v * D.exc.y);
+    if (cv <= 0.0) { continue; }
+    let h = hash3(g, 5.0);
+    if (h.z >= cv) { continue; }
+    let ph = hash3(g, 6.0);
+    let fl = 0.35 + 0.65 * max(sin(D.exc.z * D.oil.z * (0.7 + 0.6 * ph.x) + 6.2831853 * ph.y), 0.0);
+    let c = (g + h.xy) * cs;
+    let d = length(x - c);
+    let r = D.excInk.w * (0.6 + 0.6 * cv);
+    let a = disc(d, r);
+    if (a <= 0.0) { continue; }
+    let hot = 1.0 + 0.8 * clamp(1.0 - d / max(r, 1e-3), 0.0, 1.0) * D.neon;
+    let ink = mix(D.excInk.rgb, vec3f(1.0, 0.95, 0.85), 0.25 * D.neon * clamp(1.0 - d / max(r, 1e-3), 0.0, 1.0));
+    res = over(vec4f(ink * hot * D.exc.w * D.level * (0.4 + 0.6 * cv) * fl, 1.0) * a * fl, res);
+  }
+  return res;
+}
+
 // step C12: an anti-aliased line of width w (device px) where the share s crosses `at`, from its slope g per device px
 fn iso_line(s: f32, g: vec2f, at: f32, w: f32) -> f32 {
   let d = (s - at) / max(length(g), 1e-5);
@@ -266,7 +301,9 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       let a = max(disc(abs(d - rr), 0.5 * s.ink.w), disc(d, rc));
       mk = over(vec4f(s.ink.rgb, 1.0) * a, mk);
     }
-    return over(mk, dust(x, res));
+    var dres = dust(x, res);
+    if (D.exc.x > 0.5) { dres = sparkle(x, dres); }   // step C12c
+    return over(mk, dres);
   }
 
   // the medium's lattice: spacing 2 / sqrt 3 x its period, rows along la0 + 30 degrees
@@ -335,5 +372,6 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       res = over(vec4f(D.trace.rgb * D.level, 1.0) * disc((q.x + q.y) * 0.7071, r * 0.7071), res);
     }
   }
+  if (D.exc.x > 0.5) { res = sparkle(x, res); }   // step C12c
   return over(mark, res);
 }

@@ -69,7 +69,8 @@ struct MatterTick {
 
 struct Spring {
   pos: vec4f,                   // x, y (CSS px), radius of its disc (CSS px), share of its life left
-  amt: array<vec4f, 5>,         // counts per tick, per channel (fractional; random rounding); [16] = pixels in its disc
+  amt: array<vec4f, 5>,         // counts per tick, per channel (fractional; random rounding); [19] = pixels in its disc (step C12c:
+                                // [16] until then; springs never drip the excited atoms, 16 and 17)
   ink: vec4f,                   // drawing only
 };
 struct Springs { s: array<Spring, 16>, };
@@ -91,6 +92,7 @@ struct Springs { s: array<Spring, 16>, };
 @group(1) @binding(0) var texA: texture_storage_2d<rgba16float, write>;
 @group(1) @binding(1) var texB: texture_storage_2d<rgba16float, write>;
 @group(1) @binding(2) var texC: texture_storage_2d<rgba16float, write>;   // step C12: oil, amphiphiles, polar, apolar
+@group(1) @binding(3) var texD: texture_storage_2d<rgba16float, write>;   // step C12c: the excited atoms (x), spare
 
 fn mpcg(v: u32) -> u32 {
   let s = v * 747796405u + 2891336453u;
@@ -118,8 +120,8 @@ fn add64v(lo: u32, carry: i32, low: u32) {
 }
 
 // ---------- spread ----------
-var<workgroup> wlost: array<atomic<i32>, 16>;
-var<workgroup> wadd: array<atomic<i32>, 16>;
+var<workgroup> wlost: array<atomic<i32>, 18>;
+var<workgroup> wadd: array<atomic<i32>, 18>;
 
 // what flows across the edge from its second pixel (holding ms) to its first (holding mf): random rounding with r, capped
 // at a quarter of the giver's amount (a pixel has at most 4 edges). Antisymmetric by construction: both pixels call it
@@ -168,7 +170,8 @@ fn oil_pull(G: f32, chi: f32, bet: f32, ob: f32) -> f32 { return G * (chi * ob +
 fn oil_rho_at(i: u32) -> f32 { return bitcast<f32>(mg[MP.oil.x + i]); }
 fn oil_film_at(i: u32) -> f32 { return bitcast<f32>(mg[MP.oil.x + MP.n + i]); }
 fn oil_obar_at(i: u32) -> f32 { return bitcast<f32>(mg[MP.oil.x + 2u * MP.n + i]); }
-fn mp4(a: array<vec4f, 4>, c: u32) -> f32 { return a[c / 4u][c % 4u]; }
+fn mp4(a: array<vec4f, 4>, c: u32) -> f32 { let g = gc(c); return a[g / 4u][g % 4u]; }   // (step C12c: an excited channel reads its
+fn mpu(a: array<vec4u, 4>, c: u32) -> u32 { let g = gc(c); return a[g / 4u][g % 4u]; }    //  ground twin's numbers)
 // the room a pixel has for a channel that fills it (1: all, ROOM_MIN: full or more). Never 0: a pixel packed fuller than
 // full (a spring dripping into a droplet) still lets its matter out, and the droplet swells until it is full, not more
 const ROOM_MIN: f32 = 0.05;
@@ -229,7 +232,7 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       if ((MP.moving & (1u << c)) == 0u) { continue; }
       let s0 = T.src + c * MP.n;
       let m = mg[s0 + i];
-      let k = MP.k[c / 4u][c % 4u];
+      let k = mp4(MP.k, c);
       var acc = m;
       if (k > 0.0) {
         let cs = c * 0x9e3779b9u;
@@ -244,7 +247,7 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
           // order from both sides, so the two pixels of an edge get the same flow to the bit: L = (i - 1, i), R = (i, i + 1),
           // U = (i - hw, i), D = (i, i + hw))
           let G = MP.ok.x;
-          let fl = MP.fill[c / 4u][c % 4u];
+          let fl = mpu(MP.fill, c);
           let skin = select(0.0, MP.ok.w, fl == 1u);
           let uC = oil_pull(G, chi, bet, cB);
           let rC = room(fl, cR, cF);
@@ -282,11 +285,11 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
           if (out != 0) { atomicAdd(&wlost[c], out); }
         }
       }
-      if (drip != 0u) {
+      if (drip != 0u && c < EXC0) {   // (step C12c: springs drip no excited atoms)
         var add = 0;
         for (var k = 0u; k < 16u; k++) {
           if ((drip & (1u << k)) == 0u) { continue; }
-          let a = SP.s[k].amt[c / 4u][c % 4u] / max(SP.s[k].amt[4].x, 1.0);   // amt[16]: the disc's pixels
+          let a = SP.s[k].amt[c / 4u][c % 4u] / max(SP.s[k].amt[4].w, 1.0);   // amt[19]: the disc's pixels
           if (a > 0.0) { add += i32(floor(a + u01(mpcg(eI + c * 0x85ebca6bu + k * 0x27d4eb2fu)))); }
         }
         acc += add;
@@ -318,7 +321,7 @@ fn oil_rho(@builtin(global_invocation_id) id: vec3u) {
   for (var c = 0u; c < NGRID; c++) {
     if ((MP.moving & (1u << c)) == 0u) { continue; }
     let vo = mp4(MP.vol, c);
-    let fl = MP.fill[c / 4u][c % 4u];
+    let fl = mpu(MP.fill, c);
     if (vo == 0.0 && fl != 2u) { continue; }
     let m = f32(max(mg[T.src + c * MP.n + i], 0));
     v += vo * m;
@@ -354,8 +357,8 @@ fn oil_blur_y(@builtin(global_invocation_id) id: vec3u) {
 }
 
 // ---------- count ----------
-var<workgroup> wlo: array<atomic<u32>, 16>;
-var<workgroup> whi: array<atomic<u32>, 16>;
+var<workgroup> wlo: array<atomic<u32>, 18>;
+var<workgroup> whi: array<atomic<u32>, 18>;
 var<workgroup> wml: array<vec2f, 256>;   // x: m ln m (ORDER); y: phi^2 (step C6b)
 var<workgroup> wpm: atomic<i32>;          // step C6b: the largest |phi| (f32 bits)
 var<workgroup> wos: array<atomic<i32>, 10>;   // step C12: the oil's census (OS_* below)
@@ -394,8 +397,8 @@ fn quad(os: ptr<function, array<i32, 10>>, x: i32, y: i32) {
 @compute @workgroup_size(256)
 fn count(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_index) li: u32,
          @builtin(workgroup_id) wid: vec3u) {
-  var lo: array<u32, 16>;
-  var hi: array<u32, 16>;
+  var lo: array<u32, 18>;
+  var hi: array<u32, 18>;
   var os: array<i32, 10>;   // step C12: the oil's census, this invocation's part
   var ml = 0.0;
   let order = T.first != 0u;
@@ -418,10 +421,10 @@ fn count(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_in
       lo[c] += u32(m) & 0xffffu;
       hi[c] += u32(m) >> 16u;
       if (order) {
-        let a = f32(m) * MP.natoms[c / 4u][c % 4u];   // atoms, in counts
+        let a = f32(m) * mp4(MP.natoms, c);   // atoms, in counts
         ml += a * log(a);
       }
-      let fl = MP.fill[c / 4u][c % 4u];
+      let fl = mpu(MP.fill, c);
       if (fl == 2u) { amp += (m * i32(mp4(MP.natoms, c))) >> 4u; }
       if (fl == 1u) { oilc += m >> 4u; }
       if (mp4(MP.chi, c) < 0.0) { pol += (m * i32(mp4(MP.natoms, c))) >> 4u; }
@@ -516,15 +519,17 @@ fn paint(@builtin(global_invocation_id) id: vec3u) {
   var a = vec4f(0.0);
   var b = vec4f(0.0);
   var o = vec4f(0.0);   // step C12: the oil's share (as rho), the film's share, polar atoms, apolar atoms (per R^2)
+  var ex = 0.0;         // step C12c: the excited atoms (per R^2)
   for (var c = 0u; c < NGRID; c++) {
     if (MP.show == 2u && c != MP.solo) { continue; }
     let mc = f32(max(mg[T.src + c * MP.n + i], 0));
     let v = min(mc * MP.conc, 60000.0);
     if (v <= 0.0) { continue; }
-    let h = MP.heavy[c / 4u][c % 4u];
+    let h = mp4(MP.heavy, c);
     let chi = mp4(MP.chi, c);
     let na = mp4(MP.natoms, c);
     if (chi < 0.0) { o.z += v * na; } else if (chi > 0.0 || mp4(MP.beta, c) > 0.0) { o.w += v * na; }
+    if (c >= EXC0) { ex += v; continue; }   // step C12c: drawn as their own sparkle (matter_draw.wgsl), not as dust
     switch MP.layer[c / 4u][c % 4u] {
       case 0u: { a += vec4f(v, v * MP.react[c / 4u][c % 4u], v * h, 0.0); }
       case 1u: { b += vec4f(v, v * h, 0.0, 0.0); }
@@ -537,6 +542,7 @@ fn paint(@builtin(global_invocation_id) id: vec3u) {
   textureStore(texA, vec2i(id.xy), a);
   textureStore(texB, vec2i(id.xy), b);
   textureStore(texC, vec2i(id.xy), min(o, vec4f(60000.0)));
+  textureStore(texD, vec2i(id.xy), vec4f(min(ex, 60000.0), 0.0, 0.0, 0.0));
 }
 
 // ---------- react (step C4) ----------
@@ -555,6 +561,25 @@ fn paint(@builtin(global_invocation_id) id: vec3u) {
 // events are counted per workgroup into the ledger (LG_C_LIGHT, LG_C_RX).
 var<workgroup> wfam: array<atomic<i32>, 10>;
 var<workgroup> wlit: array<atomic<i32>, 4>;
+var<workgroup> wxn: array<atomic<i32>, 4>;   // step C12c: excited atoms made, faded, used (XN_MADE_OPEN, XN_FADE_OPEN, XN_RX_OPEN), and
+var<workgroup> wxe: array<atomic<i32>, 2>;   // ... their energy as heat: faded (XE_FADE), used by reactions (XE_LOOSE)
+
+// step C12c: a reaction's reactant channel c as a POOL: a light giver or taker with its excited twin (they react alike)
+fn xpool(m: ptr<function, array<i32, 18>>, c: u32) -> i32 {
+  if (c < 2u) { return (*m)[c] + (*m)[c + EXC0]; }
+  return (*m)[c];
+}
+// ... n counts taken out of the pool of c: the excited ones in proportion (rounded at random with r); returns how many were excited
+fn xtake(m: ptr<function, array<i32, 18>>, c: u32, n: i32, r: f32) -> i32 {
+  if (c >= 2u || (*m)[c + EXC0] <= 0) { (*m)[c] -= n; return 0; }
+  let x = (*m)[c + EXC0];
+  let tot = (*m)[c] + x;
+  var nx = i32(floor(f32(n) * f32(x) / f32(max(tot, 1)) + r));
+  nx = clamp(nx, max(n - (*m)[c], 0), min(n, x));
+  (*m)[c + EXC0] -= nx;
+  (*m)[c] -= n - nx;
+  return nx;
+}
 
 @compute @workgroup_size(8, 8)
 fn react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index) li: u32,
@@ -562,8 +587,8 @@ fn react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
   if (id.x < MP.hw && id.y < MP.hh) {
     let i = id.y * MP.hw + id.x;
     let base = T.dst;
-    var m: array<i32, 16>;
-    var m0: array<i32, 16>;
+    var m: array<i32, 18>;
+    var m0: array<i32, 18>;
     var stuff = 0;
     for (var c = 0u; c < NGRID; c++) {
       if ((MP.moving & (1u << c)) != 0u) { m[c] = mg[base + c * MP.n + i]; }
@@ -610,16 +635,16 @@ fn react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
         for (var r = 0u; r < CP.nrx; r++) {
           let R = CP.rx[r];
           if (R.by != 1u) { continue; }
-          let a = f32(m[R.ch.x]) * conc;
+          let a = f32(xpool(&m, R.ch.x)) * conc;
           var amt = a;
           if (R.ch.y != NONE) {
-            let b = f32(m[R.ch.y]) * conc;
+            let b = f32(xpool(&m, R.ch.y)) * conc;
             amt = a * b / max(a + b, 1e-12);
           }
           tau[r] = R.k * amt;
           tsum[R.band] += tau[r];
         }
-        for (var c = 0u; c < NGRID; c++) { tdark += CP.dark[c / 4u][c % 4u] * f32(m[c]) * conc; }
+        for (var c = 0u; c < NCH; c++) { tdark += CP.dark[c / 4u][c % 4u] * f32(m[c]) * conc; }   // (sediment only: 0..12)
         tsum.x += tdark;
       }
       let caught = et * (1.0 - exp(-tsum));
@@ -648,8 +673,8 @@ fn react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
             let s = max(f32(m[R.ch.z]), 0.25 * f32(nb)) * conc;
             sc *= max(CP.cry.z, 1.0 / (1.0 + s * CP.cry.y));
           }
-          x = R.k * f32(m[R.ch.x]) * exp(-R.spark * sc / (CP.theta * temp)) * CP.dt;
-          if (R.ch.y != NONE) { x *= f32(m[R.ch.y]) * conc; }
+          x = R.k * f32(xpool(&m, R.ch.x)) * exp(-R.spark * sc / (CP.theta * temp)) * CP.dt;
+          if (R.ch.y != NONE) { x *= f32(xpool(&m, R.ch.y)) * conc; }
         } else if (tau[r] > 0.0) {
           x = caught[R.band] * tau[r] / tsum[R.band] / f32(R.light16);
         }
@@ -657,19 +682,50 @@ fn react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
         if (R.ch.y == R.ch.x) {
           n = min(n, m[R.ch.x] / 2);
         } else {
-          n = min(n, m[R.ch.x]);
-          if (R.ch.y != NONE) { n = min(n, m[R.ch.y]); }
+          n = min(n, xpool(&m, R.ch.x));
+          if (R.ch.y != NONE) { n = min(n, xpool(&m, R.ch.y)); }
         }
         if (n <= 0) { continue; }
-        m[R.ch.x] -= n;
-        if (R.ch.y != NONE) { m[R.ch.y] -= n; }
+        // (step C12c: an excited reactant reacts as its ground atom and lets its stored energy go as heat, on the spot)
+        var nx = 0;
+        if (R.ch.y == R.ch.x) { m[R.ch.x] -= 2 * n; }
+        else {
+          nx += xtake(&m, R.ch.x, n, u01(mpcg(rs + r * 0x51ed27u + 0x1b873593u)));
+          if (R.ch.y != NONE) { nx += xtake(&m, R.ch.y, n, u01(mpcg(rs + r * 0x51ed27u + 0x68e31da4u))); }
+        }
         m[R.ch.z] += n;
         if (R.ch.w != NONE) { m[R.ch.w] += n; }
+        if (nx > 0) {
+          heat += nx * i32(CP.ex.y);
+          atomicAdd(&wxn[2], nx);
+          atomicAdd(&wxe[1], nx * i32(CP.ex.y));
+        }
+        if (R.ch.z >= EXC0 && R.ch.z != NONE) { atomicAdd(&wxn[0], n); }   // (light freed them excited)
+        if (R.ch.w >= EXC0 && R.ch.w != NONE) { atomicAdd(&wxn[0], n); }
         heat += n * R.heat16;
         if (R.by == 1u) { lit[R.band] += n * R.light16; }
         atomicAdd(&wfam[R.fam], n);
       }
 
+      // step C12c: the excited atoms FADE to their ground atom by themselves, the energy they held as heat on the spot, at the
+      // rate 1 / lifetime x (1 + temperature / hot): the haze is rich but temporary, and fades faster where it is hot
+      if (m[EXC0] + m[EXC0 + 1u] > 0) {
+        let pf = clamp(CP.ex.z * (1.0 + temp / max(CP.ex.w, 1e-3)) * CP.dt, 0.0, 1.0);
+        var nf = 0;
+        for (var j = 0u; j < 2u; j++) {
+          let x = m[EXC0 + j];
+          if (x <= 0) { continue; }
+          let f = min(i32(floor(f32(x) * pf + u01(mpcg(rs + j * 0x2c1b3c6du + 0x7f4a7c15u)))), x);
+          m[EXC0 + j] -= f;
+          m[j] += f;
+          nf += f;
+        }
+        if (nf > 0) {
+          heat += nf * i32(CP.ex.y);
+          atomicAdd(&wxn[1], nf);
+          atomicAdd(&wxe[0], nf * i32(CP.ex.y));
+        }
+      }
       for (var c = 0u; c < NGRID; c++) {
         if (m[c] != m0[c]) { mg[base + c * MP.n + i] = m[c]; }
       }
@@ -687,5 +743,13 @@ fn react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
     add64(LG_C_LIGHT + 128u * (li - 6u) + slot, atomicLoad(&wlit[li - 6u]));
   } else if (li < 14u) {
     add64(LG_OIL_RX + 128u * (li - 10u) + slot, atomicLoad(&wfam[li - 4u]));   // step C12: families 6..9
+  } else if (li < 17u) {
+    // step C12c: excited atoms made by light, faded, used by reactions (16 slots, i32: cleared at each read-back)
+    let v = atomicLoad(&wxn[li - 14u]);
+    let q = select(select(XN_RX_OPEN, XN_FADE_OPEN, li == 15u), XN_MADE_OPEN, li == 14u);
+    if (v != 0) { atomicAdd(&hb[LG_EXC_N + 16u * q + (slot & 15u)], v); }
+  } else if (li < 19u) {
+    let q = select(XE_LOOSE, XE_FADE, li == 17u);
+    add64(LG_EXC_E + 128u * q + slot, atomicLoad(&wxe[li - 17u]));
   }
 }

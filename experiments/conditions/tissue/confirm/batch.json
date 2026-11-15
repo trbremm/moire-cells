@@ -1,0 +1,10 @@
+{
+ "batch": "tissue-confirm",
+ "runs": [
+  "tk-dah-Bfate-100.json",
+  "tk-key17-Bfate-100.json",
+  "tk-adh1-excl2-nosense-100.json",
+  "tk-dah-Bfate-agg.json",
+  "tk-key17-Bfate-agg.json"
+ ]
+}

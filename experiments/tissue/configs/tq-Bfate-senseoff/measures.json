@@ -1,0 +1,123 @@
+{
+ "name": "tq-Bfate-senseoff",
+ "series": "pairs",
+ "description": "field B per fate (like attracts) + field A not felt",
+ "setting": "charge.params.stock=False; cells.params.senseOn=False",
+ "seed": 3,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 0.9629152471666668,
+ "reform": 1.0,
+ "score": 0.9629152471666668,
+ "iscore": 0.9629152471666668,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 5.071428571428571,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 1.2476041071428572,
+ "rg": 4.01132617,
+ "internal": 0.11479565308333334,
+ "move": 0.33419385016666664,
+ "shape": 0.010043300730000001,
+ "ageMedian80": 80.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 4.8,
+ "end_clusters": 1.0,
+ "elong80": 1.050733013716276,
+ "hole80": 0.30481585934694083,
+ "chainy80": 0.075,
+ "edge80": 0.175,
+ "elong120": 1.078356979963702,
+ "hole120": 0.03760168709777015,
+ "chainy120": 0.075,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "40/0/0/0/0",
+ "entropyRate": 695.1507304285715,
+ "heatOut120": 99548.5804,
+ "speed": 3.31,
+ "status": "ok",
+ "measures_t80": {
+  "t": 79.99999999999893,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 622.229832458496,
+  "cy": 346.2463348388672,
+  "box": [
+   568.7029676437378,
+   285.1890001296997,
+   678.0758924484253,
+   407.1092882156372
+  ],
+  "elong": 1.050733013716276,
+  "hole": 0.30481585934694083,
+  "edge": 0.175,
+  "deg": [
+   0,
+   0,
+   3,
+   37
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.075,
+  "boxAll": [
+   568.7029676437378,
+   285.1890001296997,
+   678.0758924484253,
+   407.1092882156372
+  ]
+ },
+ "measures_t120": {
+  "t": 119.99999999999774,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 642.0678039550781,
+  "cy": 339.9729804992676,
+  "box": [
+   581.1559705734253,
+   285.5988721847534,
+   702.3049058914185,
+   395.9024610519409
+  ],
+  "elong": 1.078356979963702,
+  "hole": 0.03760168709777015,
+  "edge": 0.2,
+  "deg": [
+   0,
+   0,
+   3,
+   37
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.075,
+  "boxAll": [
+   581.1559705734253,
+   285.5988721847534,
+   702.3049058914185,
+   395.9024610519409
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/tq-Bfate-senseoff/snapshot.json",
+ "run": "experiments/runs/tissue/tq-Bfate-senseoff",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

@@ -1,0 +1,123 @@
+{
+ "name": "th-Bfate_s7",
+ "series": "hold",
+ "description": "field B charges per fate, not from the stock (charge.params.stock off): every stem cell charge +1, like attracts like",
+ "setting": "charge.params.stock=False",
+ "seed": 7,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 0.8505759569999999,
+ "reform": 0.975,
+ "score": 0.8293115580749999,
+ "iscore": 0.8293115580749999,
+ "linked": 1.0,
+ "relinked": 0.975,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 5.507142857142857,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 1.3856610885714284,
+ "rg": 3.806582315714286,
+ "internal": 0.24614557666666667,
+ "move": 0.2929896218333333,
+ "shape": 0.02516864585,
+ "ageMedian80": 30.0,
+ "end_inLargest": 0.975,
+ "end_contacts": 5.1000000000000005,
+ "end_clusters": 1.0,
+ "elong80": 1.4452117174444785,
+ "hole80": 0.24194288910146503,
+ "chainy80": 0.05,
+ "edge80": 0.175,
+ "elong120": 1.1044383701801699,
+ "hole120": 0.307551393836726,
+ "chainy120": 0.07692307692307693,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "40/0/0/0/0",
+ "entropyRate": 818.3684068571429,
+ "heatOut120": 112928.301,
+ "speed": 10.36,
+ "status": "ok",
+ "measures_t80": {
+  "t": 80.00000000000007,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 645.7024444580078,
+  "cy": 410.9653289794922,
+  "box": [
+   591.6826524734497,
+   348.2233018875122,
+   697.3301134109497,
+   470.70318126678467
+  ],
+  "elong": 1.4452117174444785,
+  "hole": 0.24194288910146503,
+  "edge": 0.175,
+  "deg": [
+   0,
+   0,
+   2,
+   38
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.05,
+  "boxAll": [
+   591.6826524734497,
+   348.2233018875122,
+   697.3301134109497,
+   470.70318126678467
+  ]
+ },
+ "measures_t120": {
+  "t": 120.00000000000102,
+  "n": 40,
+  "R": 9,
+  "largest": 39,
+  "cx": 672.2237282777444,
+  "cy": 440.73237570738183,
+  "box": [
+   619.5394639968872,
+   390.16067028045654,
+   732.6047010421753,
+   493.64885997772217
+  ],
+  "elong": 1.1044383701801699,
+  "hole": 0.307551393836726,
+  "edge": 0.15384615384615385,
+  "deg": [
+   1,
+   0,
+   3,
+   36
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.07692307692307693,
+  "boxAll": [
+   619.5394639968872,
+   390.16067028045654,
+   854.579737663269,
+   493.64885997772217
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/th-Bfate_s7/snapshot.json",
+ "run": "experiments/runs/tissue/th-Bfate_s7",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

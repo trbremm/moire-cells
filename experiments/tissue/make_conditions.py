@@ -290,7 +290,26 @@ def series_map():
     return out
 
 
-SERIES = {"pilot": series_pilot, "hold": series_hold, "chem": series_chem, "types": series_types, "pairs": series_pairs, "map": series_map}
+def series_confirm():
+    """The best structures at 100 cells (their 40-cell versions are repeated with seeds 7 and 11 in seeds/confirm.json)."""
+    S, out = "confirm", []
+    BF = {"charge.params.stock": False}
+    out.append(condition("tk-dah-Bfate-100", S, "differential adhesion A 1 / B 0.3 + field B per fate (like attracts), 100 cells",
+                         genes={"adhesion": 1}, typeB={"adhesion": 0.3}, knobs=BF, query={"cells": 100}))
+    out.append(condition("tk-key17-Bfate-100", S, "B's key turned 17 deg + field B per fate (like attracts), 100 cells",
+                         genes={"adhesion": 0.8}, typeB={"keyAngle": 0.65, "recAngle": 0.65}, knobs=BF, query={"cells": 100}))
+    out.append(condition("tk-adh1-excl2-nosense-100", S, "adhesion gene 1 + exclusion (2 states), field A not felt, 100 cells",
+                         genes={"adhesion": 1}, knobs={"cells.excl.on": True, "cells.excl.states": 2, "cells.params.senseOn": False},
+                         query={"cells": 100}))
+    out.append(condition("tk-dah-Bfate-agg", S, "differential adhesion A 1 / B 0.3 + field B per fate, started SCATTERED",
+                         genes={"adhesion": 1}, typeB={"adhesion": 0.3}, knobs=BF, extra_js="await T.scatter({ radius: 14 });"))
+    out.append(condition("tk-key17-Bfate-agg", S, "B's key turned 17 deg + field B per fate, started SCATTERED",
+                         genes={"adhesion": 0.8}, typeB={"keyAngle": 0.65, "recAngle": 0.65}, knobs=BF,
+                         extra_js="await T.scatter({ radius: 14 });"))
+    return out
+
+
+SERIES = {"pilot": series_pilot, "hold": series_hold, "chem": series_chem, "types": series_types, "pairs": series_pairs, "map": series_map, "confirm": series_confirm}
 
 
 def write(series_name, conds):

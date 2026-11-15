@@ -1,0 +1,123 @@
+{
+ "name": "th-fate-cartilage",
+ "series": "hold",
+ "description": "differentiation on: the clone commits to cartilage (+ same-fate glue 0.5, the fate's size and motility)",
+ "setting": "genome.rules.diff=True; gene resp0=-1; gene resp1=-1; gene resp2=-1; gene resp3=1; gene threshold=0.6; gene recWidth=0.25",
+ "seed": 3,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 0.9878472221666666,
+ "reform": 1.0,
+ "score": 0.9878472221666666,
+ "iscore": 0.9878472221666666,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 4.75,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 0.9624862782857143,
+ "rg": 5.244220791428572,
+ "internal": 0.034641543116666666,
+ "move": 0.15367369883333334,
+ "shape": 0.010502286798333335,
+ "ageMedian80": 80.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 4.316666666666667,
+ "end_clusters": 1.0,
+ "elong80": 1.3686734398176719,
+ "hole80": 0.5843535134436871,
+ "chainy80": 0.025,
+ "edge80": 0.25,
+ "elong120": 1.3885759013772536,
+ "hole120": 0.8003253674932719,
+ "chainy120": 0.075,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "0/0/0/0/40",
+ "entropyRate": 851.3240455714285,
+ "heatOut120": 112982.319,
+ "speed": 3.35,
+ "status": "ok",
+ "measures_t80": {
+  "t": 79.99999999999866,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 616.2586608886719,
+  "cy": 408.5512748718262,
+  "box": [
+   553.572582244873,
+   332.63032150268555,
+   680.7180671691895,
+   479.1873664855957
+  ],
+  "elong": 1.3686734398176719,
+  "hole": 0.5843535134436871,
+  "edge": 0.25,
+  "deg": [
+   0,
+   0,
+   1,
+   39
+  ],
+  "fates": [
+   0,
+   0,
+   0,
+   0,
+   40
+  ],
+  "chainy": 0.025,
+  "boxAll": [
+   553.572582244873,
+   332.63032150268555,
+   680.7180671691895,
+   479.1873664855957
+  ]
+ },
+ "measures_t120": {
+  "t": 119.99999999999694,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 686.0371139526367,
+  "cy": 411.5400650024414,
+  "box": [
+   603.7775993347168,
+   340.9996147155762,
+   752.325611114502,
+   489.15507888793945
+  ],
+  "elong": 1.3885759013772536,
+  "hole": 0.8003253674932719,
+  "edge": 0.3,
+  "deg": [
+   0,
+   0,
+   3,
+   37
+  ],
+  "fates": [
+   0,
+   0,
+   0,
+   0,
+   40
+  ],
+  "chainy": 0.075,
+  "boxAll": [
+   603.7775993347168,
+   340.9996147155762,
+   752.325611114502,
+   489.15507888793945
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/th-fate-cartilage/snapshot.json",
+ "run": "experiments/runs/tissue/th-fate-cartilage",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

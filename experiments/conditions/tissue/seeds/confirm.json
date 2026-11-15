@@ -1,0 +1,14 @@
+{
+ "batch": "tissue-confirm-seeds",
+ "seeds": [
+  7,
+  11
+ ],
+ "runs": [
+  "../pairs/tq-dah-Bfate.json",
+  "../pairs/tq-key17-Bfate.json",
+  "../pairs/tq-adh1-Brepel-100.json",
+  "../pairs/tq-adh1-excl2-nosense.json",
+  "../pairs/tq-adh08-excl3.json"
+ ]
+}

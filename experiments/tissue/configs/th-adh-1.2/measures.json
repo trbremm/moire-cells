@@ -1,0 +1,123 @@
+{
+ "name": "th-adh-1.2",
+ "series": "hold",
+ "description": "global adhesion strength 1.2 (genome.params.adhesion, baseline 0.6)",
+ "setting": "genome.params.adhesion=1.2",
+ "seed": 3,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 0.9895102339999999,
+ "reform": 1.0,
+ "score": 0.9895102339999999,
+ "iscore": 0.9895102339999999,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 4.75,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 1.0784498185714286,
+ "rg": 4.307190768571429,
+ "internal": 0.15831788333333333,
+ "move": 0.19042926983333333,
+ "shape": 0.0088671163,
+ "ageMedian80": 80.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 4.75,
+ "end_clusters": 1.0,
+ "elong80": 1.2832871155685253,
+ "hole80": 0.832582456788462,
+ "chainy80": 0.05,
+ "edge80": 0.275,
+ "elong120": 1.2836055581189043,
+ "hole120": 0.7752673574930558,
+ "chainy120": 0.075,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "40/0/0/0/0",
+ "entropyRate": 658.8703571428571,
+ "heatOut120": 93419.0659,
+ "speed": 6.85,
+ "status": "ok",
+ "measures_t80": {
+  "t": 80.00000000000021,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 631.9688323974609,
+  "cy": 420.64025421142577,
+  "box": [
+   572.3774671554565,
+   358.0288438796997,
+   685.218409538269,
+   491.30609607696533
+  ],
+  "elong": 1.2832871155685253,
+  "hole": 0.832582456788462,
+  "edge": 0.275,
+  "deg": [
+   0,
+   1,
+   1,
+   38
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.05,
+  "boxAll": [
+   572.3774671554565,
+   358.0288438796997,
+   685.218409538269,
+   491.30609607696533
+  ]
+ },
+ "measures_t120": {
+  "t": 119.99999999999864,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 689.5774826049804,
+  "cy": 422.5130271911621,
+  "box": [
+   627.9596910476685,
+   367.5581102371216,
+   762.0752305984497,
+   473.8338975906372
+  ],
+  "elong": 1.2836055581189043,
+  "hole": 0.7752673574930558,
+  "edge": 0.225,
+  "deg": [
+   0,
+   0,
+   3,
+   37
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.075,
+  "boxAll": [
+   627.9596910476685,
+   367.5581102371216,
+   762.0752305984497,
+   473.8338975906372
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/th-adh-1.2/snapshot.json",
+ "run": "experiments/runs/tissue/th-adh-1.2",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

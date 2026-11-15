@@ -1,0 +1,123 @@
+{
+ "name": "th-stiff-14",
+ "series": "hold",
+ "description": "hard contact push (cells.params.stiffness 14)",
+ "setting": "cells.params.stiffness=14",
+ "seed": 3,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 0.9945647893333334,
+ "reform": 1.0,
+ "score": 0.9945647893333334,
+ "iscore": 0.9945647893333334,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 4.5928571428571425,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 0.9834334381428571,
+ "rg": 4.5099079614285715,
+ "internal": 0.07502586915,
+ "move": 0.18862434113333335,
+ "shape": 0.006793062273333333,
+ "ageMedian80": 80.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 4.75,
+ "end_clusters": 1.0,
+ "elong80": 1.195830444849729,
+ "hole80": 0.3289354302685649,
+ "chainy80": 0.075,
+ "edge80": 0.2,
+ "elong120": 1.260199940159895,
+ "hole120": 0.41642355512933016,
+ "chainy120": 0.075,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "40/0/0/0/0",
+ "entropyRate": 652.2404394285714,
+ "heatOut120": 91129.9355,
+ "speed": 3.41,
+ "status": "ok",
+ "measures_t80": {
+  "t": 79.99999999999902,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 583.5928359985352,
+  "cy": 425.8812614440918,
+  "box": [
+   523.9333143234253,
+   361.50531482696533,
+   641.925929069519,
+   495.5024366378784
+  ],
+  "elong": 1.195830444849729,
+  "hole": 0.3289354302685649,
+  "edge": 0.2,
+  "deg": [
+   0,
+   1,
+   2,
+   37
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.075,
+  "boxAll": [
+   523.9333143234253,
+   361.50531482696533,
+   641.925929069519,
+   495.5024366378784
+  ]
+ },
+ "measures_t120": {
+  "t": 119.99999999999766,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 646.2537048339843,
+  "cy": 427.6180702209473,
+  "box": [
+   594.780369758606,
+   359.1921339035034,
+   699.8913316726685,
+   492.7121534347534
+  ],
+  "elong": 1.260199940159895,
+  "hole": 0.41642355512933016,
+  "edge": 0.225,
+  "deg": [
+   0,
+   0,
+   3,
+   37
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.075,
+  "boxAll": [
+   594.780369758606,
+   359.1921339035034,
+   699.8913316726685,
+   492.7121534347534
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/th-stiff-14/snapshot.json",
+ "run": "experiments/runs/tissue/th-stiff-14",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

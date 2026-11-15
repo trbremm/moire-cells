@@ -1,0 +1,33 @@
+{
+ "name": "tr-tk-adh1-excl2-nosense-100",
+ "description": "reload check: load configs/tk-adh1-excl2-nosense-100/snapshot.json (?snap=) and run 40 s more; does the configuration stay as stored?",
+ "series": "reload",
+ "query": {
+  "snap": "experiments/tissue/configs/tk-adh1-excl2-nosense-100/snapshot.json"
+ },
+ "duration": 40,
+ "sample_every": 10,
+ "tissue": true,
+ "evals": [
+  {
+   "t": 0,
+   "js": "const T = await import('/experiments/tissue/tissue-lab.js'); window.__T = T; return await T.measure({ every: 2 });"
+  },
+  {
+   "t": 40,
+   "js": "return await __T.measure({ every: 2 });"
+  }
+ ],
+ "shots": [
+  {
+   "t": 0
+  },
+  {
+   "t": 40
+  },
+  {
+   "t": 40,
+   "view": "strategy"
+  }
+ ]
+}

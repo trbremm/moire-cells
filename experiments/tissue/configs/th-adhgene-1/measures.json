@@ -1,0 +1,123 @@
+{
+ "name": "th-adhgene-1",
+ "series": "hold",
+ "description": "adhesion gene 1 (baseline 0.6)",
+ "setting": "gene adhesion=1.0",
+ "seed": 3,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 0.991246345,
+ "reform": 1.0,
+ "score": 0.991246345,
+ "iscore": 0.991246345,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 4.742857142857143,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 1.0863316685714286,
+ "rg": 4.291762477142857,
+ "internal": 0.14542682875,
+ "move": 0.201672885,
+ "shape": 0.008756179065,
+ "ageMedian80": 80.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 4.75,
+ "end_clusters": 1.0,
+ "elong80": 1.3238105454925675,
+ "hole80": 0.8052126526244076,
+ "chainy80": 0.025,
+ "edge80": 0.25,
+ "elong120": 1.3224031271897638,
+ "hole120": 0.7880735906181431,
+ "chainy120": 0.05,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "40/0/0/0/0",
+ "entropyRate": 659.8933778571428,
+ "heatOut120": 91033.1918,
+ "speed": 5.02,
+ "status": "ok",
+ "measures_t80": {
+  "t": 80.00000000000014,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 621.4188690185547,
+  "cy": 428.1180755615234,
+  "box": [
+   572.1947889328003,
+   364.2459764480591,
+   675.675196647644,
+   497.3313341140747
+  ],
+  "elong": 1.3238105454925675,
+  "hole": 0.8052126526244076,
+  "edge": 0.25,
+  "deg": [
+   0,
+   1,
+   0,
+   39
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.025,
+  "boxAll": [
+   572.1947889328003,
+   364.2459764480591,
+   675.675196647644,
+   497.3313341140747
+  ]
+ },
+ "measures_t120": {
+  "t": 119.99999999999876,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 671.5458847045899,
+  "cy": 420.5171501159668,
+  "box": [
+   605.3830823898315,
+   364.54802989959717,
+   735.2829942703247,
+   471.5413770675659
+  ],
+  "elong": 1.3224031271897638,
+  "hole": 0.7880735906181431,
+  "edge": 0.25,
+  "deg": [
+   0,
+   0,
+   2,
+   38
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.05,
+  "boxAll": [
+   605.3830823898315,
+   364.54802989959717,
+   735.2829942703247,
+   471.5413770675659
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/th-adhgene-1/snapshot.json",
+ "run": "experiments/runs/tissue/th-adhgene-1",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

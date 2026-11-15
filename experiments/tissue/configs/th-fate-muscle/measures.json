@@ -1,0 +1,123 @@
+{
+ "name": "th-fate-muscle",
+ "series": "hold",
+ "description": "differentiation on: the clone commits to muscle (+ same-fate glue 0.5, the fate's size and motility)",
+ "setting": "genome.rules.diff=True; gene resp0=-1; gene resp1=1; gene resp2=-1; gene resp3=-1; gene threshold=0.6; gene recWidth=0.25",
+ "seed": 3,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 0.9641186493333334,
+ "reform": 1.0,
+ "score": 0.9641186493333334,
+ "iscore": 0.9641186493333334,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 4.421428571428572,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 0.8339086201428572,
+ "rg": 5.399622317142857,
+ "internal": 0.20321505033333334,
+ "move": 0.25699610283333335,
+ "shape": 0.0241254816,
+ "ageMedian80": 80.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 4.766666666666667,
+ "end_clusters": 1.0,
+ "elong80": 1.35424943781995,
+ "hole80": 0.678982645112462,
+ "chainy80": 0.075,
+ "edge80": 0.225,
+ "elong120": 1.1622570761431776,
+ "hole120": 0.9763163672955188,
+ "chainy120": 0.025,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "0/0/40/0/0",
+ "entropyRate": 798.0470991428572,
+ "heatOut120": 109847.702,
+ "speed": 5.17,
+ "status": "ok",
+ "measures_t80": {
+  "t": 80.00000000000026,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 610.3389312744141,
+  "cy": 350.6319183349609,
+  "box": [
+   537.7507915496826,
+   274.6596965789795,
+   676.3617572784424,
+   423.78616523742676
+  ],
+  "elong": 1.35424943781995,
+  "hole": 0.678982645112462,
+  "edge": 0.225,
+  "deg": [
+   0,
+   0,
+   3,
+   37
+  ],
+  "fates": [
+   0,
+   0,
+   40,
+   0,
+   0
+  ],
+  "chainy": 0.075,
+  "boxAll": [
+   537.7507915496826,
+   274.6596965789795,
+   676.3617572784424,
+   423.78616523742676
+  ]
+ },
+ "measures_t120": {
+  "t": 119.99999999999811,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 693.1223602294922,
+  "cy": 357.2833450317383,
+  "box": [
+   629.9213848114014,
+   294.9739360809326,
+   759.6053485870361,
+   422.59118843078613
+  ],
+  "elong": 1.1622570761431776,
+  "hole": 0.9763163672955188,
+  "edge": 0.2,
+  "deg": [
+   0,
+   0,
+   1,
+   39
+  ],
+  "fates": [
+   0,
+   0,
+   40,
+   0,
+   0
+  ],
+  "chainy": 0.025,
+  "boxAll": [
+   629.9213848114014,
+   294.9739360809326,
+   759.6053485870361,
+   422.59118843078613
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/th-fate-muscle/snapshot.json",
+ "run": "experiments/runs/tissue/th-fate-muscle",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

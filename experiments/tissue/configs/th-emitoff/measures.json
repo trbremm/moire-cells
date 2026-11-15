@@ -1,0 +1,123 @@
+{
+ "name": "th-emitoff",
+ "series": "hold",
+ "description": "cells do not emit (key O): no field at all",
+ "setting": "cells.params.emit=False",
+ "seed": 3,
+ "cells": 40,
+ "hold": 1.0,
+ "persist": 0.9890096618333333,
+ "reform": 1.0,
+ "score": 0.9890096618333333,
+ "iscore": 0.9890096618333333,
+ "linked": 1.0,
+ "relinked": 1.0,
+ "stable": 1,
+ "kind": "tissue",
+ "contacts": 4.492857142857143,
+ "clusters": 1.0,
+ "isolated": 0.0,
+ "compact": 0.8980078931428571,
+ "rg": 4.720043772857143,
+ "internal": 0.07452802241666666,
+ "move": 0.16239207208333334,
+ "shape": 0.004940011866666667,
+ "ageMedian80": 80.0,
+ "end_inLargest": 1.0,
+ "end_contacts": 4.45,
+ "end_clusters": 1.0,
+ "elong80": 1.406032149215842,
+ "hole80": 0.34703454475485224,
+ "chainy80": 0.075,
+ "edge80": 0.3,
+ "elong120": 1.5002756048075783,
+ "hole120": 0.20196589352725436,
+ "chainy120": 0.05,
+ "sameType80": null,
+ "sameType120": null,
+ "sameRandom": null,
+ "radialBA80": null,
+ "radialBA120": null,
+ "fates120": "40/0/0/0/0",
+ "entropyRate": 648.5989267142858,
+ "heatOut120": 90633.6046,
+ "speed": 7.49,
+ "status": "ok",
+ "measures_t80": {
+  "t": 80.00000000000058,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 621.9402633666992,
+  "cy": 406.5443992614746,
+  "box": [
+   567.9922132492065,
+   334.22198009490967,
+   683.7702283859253,
+   473.1590929031372
+  ],
+  "elong": 1.406032149215842,
+  "hole": 0.34703454475485224,
+  "edge": 0.3,
+  "deg": [
+   0,
+   0,
+   3,
+   37
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.075,
+  "boxAll": [
+   567.9922132492065,
+   334.22198009490967,
+   683.7702283859253,
+   473.1590929031372
+  ]
+ },
+ "measures_t120": {
+  "t": 120.00000000000139,
+  "n": 40,
+  "R": 9,
+  "largest": 40,
+  "cx": 674.2268417358398,
+  "cy": 414.75820083618163,
+  "box": [
+   616.3550672531128,
+   338.92709827423096,
+   730.8897352218628,
+   481.5107469558716
+  ],
+  "elong": 1.5002756048075783,
+  "hole": 0.20196589352725436,
+  "edge": 0.25,
+  "deg": [
+   0,
+   0,
+   2,
+   38
+  ],
+  "fates": [
+   40,
+   0,
+   0,
+   0,
+   0
+  ],
+  "chainy": 0.05,
+  "boxAll": [
+   616.3550672531128,
+   338.92709827423096,
+   730.8897352218628,
+   481.5107469558716
+  ]
+ },
+ "url": "index.html?snap=experiments/tissue/configs/th-emitoff/snapshot.json",
+ "run": "experiments/runs/tissue/th-emitoff",
+ "commit": "f4fff5a5c9ae413e4c0ff7a13ec64c9e3ed4a05c"
+}

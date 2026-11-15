@@ -10,13 +10,14 @@ STABILITY SCORE (one number per run, 0..1), from the tissue measures sampled eve
     score   = hold x persist x reform;   STABLE (one tissue) = score >= 0.75
 ISLANDS SCORE (many small tissues that hold, e.g. two types sorted into separate islands):
     linked  = 1 - mean share of isolated cells, t 50..80 s;  relinked = the same at t 110..120 s / linked, at most 1
-    iscore  = linked x persist x relinked;   STABLE (islands) = iscore >= 0.75 and contacts >= 2.5 (not just pairs)
+    iscore  = linked x persist x relinked;   STABLE (islands) = iscore >= 0.75 and contacts >= 2 (groups of three and more, not just pairs)
 """
 import argparse
 import csv
 import glob
 import json
 import os
+import re
 import shutil
 import subprocess
 
@@ -72,7 +73,7 @@ def analyse_run(rd):
     relinked = min(1.0, (1 - (window(rows, "tissue.isolated", 110, 120) or 0) / n) / linked) if linked > 0 else 0.0
     iscore = linked * (persist or 0) * relinked
     contacts = window(rows, "tissue.contacts", 50, 80) or 0
-    kind = "tissue" if score >= STABLE_AT else ("islands" if iscore >= STABLE_AT and contacts >= 2.5 else "")
+    kind = "tissue" if score >= STABLE_AT else ("islands" if iscore >= STABLE_AT and contacts >= 2 else "")
     last80 = next((r for r in rows if abs(num(r["trun"]) - 80) < 0.5), rows[-1])
     st = cond.get("tissue_setting", {})
     setting = []
@@ -119,17 +120,23 @@ def store(r):
     series = r["series"]
     with open(os.path.join(d, "condition.json"), "w", encoding="utf-8") as f:
         json.dump(r["_cond"], f, indent=1, ensure_ascii=False)   # as run (with its seed)
-    shutil.copy(os.path.join(rd, "snapshots", "end.json"), os.path.join(d, "snapshot.json"))
+    # the end state, without its copy of the measures (they are in measures.json; the loader does not use them), compact
+    snap = json.load(open(os.path.join(rd, "snapshots", "end.json"), encoding="utf-8"))
+    snap["measures"] = None
+    with open(os.path.join(d, "snapshot.json"), "w", encoding="utf-8") as f:
+        json.dump(snap, f, separators=(",", ":"))
     m80, m120 = r["_m80"], r["_m120"]
     two = r["_cond"].get("tissue_setting", {}).get("typeB") is not None
     shots = os.path.join(rd, "shots")
-    if m120.get("box"):
+    replicate = bool(re.search(r"_s\d+$", name))   # seed replicates: snapshot and measures only (the folder stays small)
+    if m120.get("box") and not replicate:
         crop(os.path.join(shots, "t120.png"), os.path.join(d, "clean.jpg"), m120.get("boxAll") or m120["box"], scale=1.25)
         if two:   # the strategy view tells the two types apart (gold B, green A); one genome: every cell looks alike there
             crop(os.path.join(shots, "t120_strategy.png"), os.path.join(d, "types.jpg"), m120.get("boxAll") or m120["box"],
                  scale=1.25)
-    if m80.get("box"):
-        crop(os.path.join(shots, "t80.png"), os.path.join(d, "prestir.jpg"), m80.get("boxAll") or m80["box"], scale=1.0)
+    if m80.get("box") and not replicate:
+        crop(os.path.join(shots, "t80.png"), os.path.join(d, "prestir.jpg"), m80.get("boxAll") or m80["box"], scale=0.8,
+             minimum=160)
     keep = {k: v for k, v in r.items() if not k.startswith("_")}
     keep["measures_t80"] = m80
     keep["measures_t120"] = m120
@@ -154,12 +161,12 @@ def main():
     a = ap.parse_args()
     res = []
     for rd in sorted(glob.glob(os.path.join(RUNS, "*"))):
-        if not os.path.exists(os.path.join(rd, "meta.json")):
-            continue
+        if not os.path.exists(os.path.join(rd, "meta.json")) or os.path.basename(rd).startswith("tr-"):
+            continue   # (tr-: the reload checks, not sweep runs)
         if a.only and not any(os.path.basename(rd).startswith(p) for p in a.only.split(",")):
             continue
         res.append(analyse_run(rd))
-    order = {"pilot": 0, "hold": 1, "chem": 2, "types": 3, "pairs": 4, "map": 5}
+    order = {"pilot": 0, "hold": 1, "chem": 2, "types": 3, "pairs": 4, "map": 5, "confirm": 6}
     res.sort(key=lambda r: (order.get(r.get("series", ""), 9), r["name"]))
     with open(os.path.join(HERE, "sweep.csv"), "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=COLS, extrasaction="ignore")
@@ -181,7 +188,7 @@ def main():
                 p = os.path.join(r["_rd"], "shots", t + ".png")
                 if box and os.path.exists(p):
                     crop(p, os.path.join(a.crops, f"{r['name']}_{t}.png"), box, scale=1.0)
-        if r["stable"] and not a.no_store:
+        if r["stable"] and not a.no_store and r["series"] != "pilot":
             store(r)
 
 

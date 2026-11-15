@@ -1,0 +1,25 @@
+{
+ "batch": "c11-grow",
+ "runs": [
+  "c11-grow-uni-d0-t1.json",
+  "c11-grow-uni-d0-t0.json",
+  "c11-grow-uni-d1-t1.json",
+  "c11-grow-uni-d1-t0.json",
+  "c11-grow-pol-d0-t1.json",
+  "c11-grow-pol-d0-t0.json",
+  "c11-grow-pol-d1-t1.json",
+  "c11-grow-pol-d1-t0.json",
+  "c11-grow-end-d0-t1.json",
+  "c11-grow-end-d0-t0.json",
+  "c11-grow-end-d1-t1.json",
+  "c11-grow-end-d1-t0.json",
+  "c11-grow-sid-d0-t1.json",
+  "c11-grow-sid-d0-t0.json",
+  "c11-grow-sid-d1-t1.json",
+  "c11-grow-sid-d1-t0.json",
+  "c11-grow-epi-d0-t1.json",
+  "c11-grow-epi-d0-t0.json",
+  "c11-grow-epi-d1-t1.json",
+  "c11-grow-epi-d1-t0.json"
+ ]
+}

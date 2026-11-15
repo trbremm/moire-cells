@@ -1,0 +1,25 @@
+{
+ "batch": "c11-big",
+ "runs": [
+  "c11-uni-off-t1-100.json",
+  "c11-uni-off-t0-100.json",
+  "c11-uni-lb-t1-100.json",
+  "c11-uni-lb-t0-100.json",
+  "c11-pol-off-t1-100.json",
+  "c11-pol-off-t0-100.json",
+  "c11-pol-lb-t1-100.json",
+  "c11-pol-lb-t0-100.json",
+  "c11-end-off-t1-100.json",
+  "c11-end-off-t0-100.json",
+  "c11-end-lb-t1-100.json",
+  "c11-end-lb-t0-100.json",
+  "c11-sid-off-t1-100.json",
+  "c11-sid-off-t0-100.json",
+  "c11-sid-lb-t1-100.json",
+  "c11-sid-lb-t0-100.json",
+  "c11-epi-off-t1-100.json",
+  "c11-epi-off-t0-100.json",
+  "c11-epi-lb-t1-100.json",
+  "c11-epi-lb-t0-100.json"
+ ]
+}

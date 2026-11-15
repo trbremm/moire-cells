@@ -25,11 +25,15 @@
 //                                  visible 2, hard) the optical depth the cells' pigments put down this tick (x their area
 //                                  in pixels, COVER_SCALE per unit; read as the 3 x 3 mean as the cover; cleared after
 //                                  every tick's spreading; HeatP.pig says where, 0 = none this frame)
+//   [LEDGER_WORDS + 33n, + 35n)    step C6b, charge (src/charge.js; matter.wgsl relax, cell_eat.wgsl): the screened
+//                                  potential phi (f32 bits, kept from tick to tick: each tick's relaxation starts from the
+//                                  last), then the cells' net charge put down this tick (counts of charge, as the atoms;
+//                                  cleared after every tick's spreading)
 // Channel-major, so later steps can add channels as further blocks of n words.
 
 const HEAT_SCALE: f32 = 65536.0;   // counts per energy unit
 const HEAT_V0: f32 = 10.0;         // CSS px / s: the speed whose motion energy is 0.5 units
-const LEDGER_WORDS: u32 = 19200u;
+const LEDGER_WORDS: u32 = 19712u;   // (19200 until step C6b)
 const LG_WORK: u32 = 0u;     // 256 slots: work done on the cells by the forces (fields, contact, crawling, stirring)
 const LG_BASE: u32 = 256u;   // 64: the base warmth put into the dish
 const LG_OUT: u32 = 320u;    // 64, 64-bit: heat that leaked out of the dish (to the sky, at the edge, on a resize)
@@ -64,9 +68,20 @@ const LG_K_COUNT: u32 = 15488u;    // snapshot, 5 classes x 64 slots (i32): cell
 // step C6, engines in the genome (src/eat.js, cell_eat.wgsl)
 const LG_K_EV2: u32 = 15872u;      // 16 counters (E2_* in cell_eat.wgsl), 64-bit, 64 slots (128 words each)
 const LG_K_CEN: u32 = 17920u;      // snapshot: the strategies' census, 76 numbers x 16 slots (i32; CEN_N in cell_eat.wgsl)
+// step C6b, charge (src/charge.js), snapshots
+const LG_Q_CEN: u32 = 19136u;      // the cells' charge, 4 numbers x 16 slots (i32): cells net +, net -, sum |q| x 1000 (q the
+                                   //   saturated charge field B uses), sum |net charge| x 1000 (atom-units)
+const LG_Q_PHI: u32 = 19200u;      // 256 f32 partial sums (one per workgroup of matter.wgsl's count): sum of phi^2 over pixels
+const LG_Q_PMAX: u32 = 19456u;     // largest |phi| in the dish (f32 bits; atomicMax, as positive floats sort as integers)
 
 const NCH: u32 = 13u;               // step C3: substance channels
 const ATOM_SCALE: f32 = 4096.0;     // counts per atom-unit (ATOM_SCALE in src/matter.js)
+
+// step C6b: a channel's charge from the packed code (CHARGE_CODES in src/matter.js: 2 bits per channel, 1 = +1, 2 = -1)
+fn charge_of(codes: u32, c: u32) -> i32 {
+  let v = (codes >> (2u * c)) & 3u;
+  return select(select(0, -1, v == 2u), 1, v == 1u);
+}
 
 // step C4: one reaction of the table (src/matter.js, REACTIONS); one event moves one count of each channel listed
 struct Rx {

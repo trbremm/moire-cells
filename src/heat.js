@@ -35,9 +35,9 @@ const LIGHT_COMMON_URL = 'src/shaders/light_common.wgsl';
 
 export const HEAT_COMMON_URL = 'src/shaders/heat_common.wgsl';
 export const HEAT_SCALE = 65536;          // counts per energy unit (HEAT_SCALE in heat_common.wgsl)
-export const LEDGER_WORDS = 19200;              // LEDGER_WORDS in heat_common.wgsl (words 3072 on: step C3's matter ledger;
+export const LEDGER_WORDS = 19712;              // LEDGER_WORDS in heat_common.wgsl (words 3072 on: step C3's matter ledger;
                                                 // 10240 on: step C4's chemistry; 11520 on: step C5, cells eat; 15872 on:
-                                                // step C6, engines)
+                                                // step C6, engines; 19136 on: step C6b, charge. 19200 until C6b)
 // ledger regions [first word, slots]; OUT, HEAT and MOVE are 64-bit (the carry words follow 64 words later)
 const LG = { WORK: [0, 256], BASE: [256, 64], OUT: [320, 64], HEAT: [448, 64], MOVE: [576, 64], DRAG: [704, 160], KICK: [864, 160] };
 const LG_WIDE = new Set(['OUT', 'HEAT', 'MOVE']);
@@ -82,6 +82,7 @@ export class Heat {
     this.light = null;      // step C2: the light (src/light.js; its uniform is bound to the heat passes)
     this.matter = null;     // step C3: the substance grid (src/matter.js), whose channels live in this buffer too
     this.eat = null;        // step C5: the cells' eating (src/eat.js), which books into this ledger too
+    this.charge = null;     // step C6b: the charge field (src/charge.js): its blocks live in this buffer too
     // ledger (cumulative since the page started; energy units)
     this.tot = { work: 0, base: 0, out: 0, drag: 0, kick: 0, lin: [0, 0, 0, 0], labs: [0, 0, 0, 0] };
     this.ledger = null;     // last snapshot: { time, moving, heat, in, out, rounding, rate }
@@ -170,9 +171,13 @@ export class Heat {
    * Blocks of n words that other bands keep in this buffer (step C3: the substances, 2 copies of 13 channels; step C6:
    * then the cells' pigments, 3 bands).
    */
-  get extraBlocks() { return (this.matter ? this.matter.blocks : 0) + (this.eat ? this.eat.blocks : 0); }
+  get extraBlocks() { return (this.matter ? this.matter.blocks : 0) + (this.eat ? this.eat.blocks : 0) + (this.charge ? this.charge.blocks : 0); }
   /** Step C6: word offset of the cells' pigment blocks (behind the substances'). */
   get pigOffset() { return this.extraBase() + (this.matter ? this.matter.blocks : 0) * this.n; }
+  /** Step C6b: word offset of the charge's blocks (behind the pigments'): phi, then the cells' charge put down this tick. */
+  get chargeOffset() { return this.pigOffset + (this.eat ? this.eat.blocks : 0) * this.n; }
+  /** Step C6b: whether the cells put their net charge down this frame (the charge field on, the cells eating). */
+  get qCellsOn() { return !!(this.charge && this.charge.cellsDeposit); }
   /** Step C6: whether the cells put their pigments down this frame (the light on and a pigment rule acting). */
   get pigOn() { return this.lightOn && !!(this.eat && this.eat.pigmentsOn); }
   /** Word offset of the first block after the heat's own (step C3: the substances' copy 0, channel 0), for n pixels. */
@@ -276,6 +281,8 @@ export class Heat {
     if (this.lightOn) encoder.clearBuffer(this.buffer, this.coverOffset * 4, this.n * 4);
     // step C6: and the cells' pigments
     if (this.pigOn) encoder.clearBuffer(this.buffer, this.pigOffset * 4, 3 * this.n * 4);
+    // step C6b: and the cells' net charge (put down by the eat pass, read by the matter's relaxation)
+    if (this.qCellsOn) encoder.clearBuffer(this.buffer, (this.chargeOffset + this.n) * 4, this.n * 4);
   }
 
   /** After the frame's ticks: advance the current copy, and copy the ledger out if a read-back buffer is free. */
@@ -319,7 +326,8 @@ export class Heat {
       this.pending.delete(this.nextSeq++);
       // (the matter first: step C4's chemical energy is part of the energy books)
       // (step C5: the cells' stock first, which both books include)
-      if (w) { if (this.eat) this.eat.apply(r, w); if (this.matter) this.matter.apply(r, w); this.apply(r, w); }
+      // (step C6b: the charge after both, as it reads the dish's and the cells' substances)
+      if (w) { if (this.eat) this.eat.apply(r, w); if (this.matter) this.matter.apply(r, w); if (this.charge) this.charge.apply(r, w); this.apply(r, w); }
     }
   }
 

@@ -37,6 +37,11 @@ struct MatterP {
   react: array<vec4f, 4>,       // per channel: 1 for a reactive free atom (a giver or a taker)
   heavy: array<vec4f, 4>,       // per channel: share of its atoms in row 2 or below
   natoms: array<vec4f, 4>,      // per channel: atoms per unit (1 for a free atom, 2 for a fuel or a sediment)
+  // ---- step C6b, charge (src/charge.js) ----
+  chg: vec4u,                   // x: word offset in `mg` of phi (0 = no charge field this frame); y: of the cells' net
+                                // charge put down this tick (0 = none); z: the channels' charges (CHARGE_CODES); w: spare
+  cq: vec4f,                    // x: L = (screening length / pixel)^2; y: strength x the atom-units per R^2 of one count;
+                                // z: the relaxation's over-relaxation weight; w: the drift (x the spreading; 1 = Einstein)
 };
 
 struct MatterTick {
@@ -111,6 +116,20 @@ fn edge_flow(mf: i32, ms: i32, k: f32, r: f32) -> i32 {
   return clamp(f, -(max(mf, 0) >> 2u), max(ms, 0) >> 2u);
 }
 
+// Step C6b: the same with the DRIFT of a charged substance in the screened potential phi (pf, ps at the two pixels):
+// a charge z moves down z x phi, at its own spreading speed (Einstein's relation: drift velocity = D z grad phi, phi in
+// units of the thermal energy; zq = z x the drift knob). Upwind: what drifts across the edge is a share w of the pixel
+// it leaves. w is capped at DRIFT_MAX (a CFL-like limit), and the whole flow at a quarter of the giver as before, so no
+// pixel goes below zero; both pixels compute it from the same numbers, so the counts stay exact.
+const DRIFT_MAX: f32 = 0.2;
+fn edge_flow_q(mf: i32, ms: i32, pf: f32, ps: f32, k: f32, zq: f32, r: f32) -> i32 {
+  let w = clamp(k * zq * (ps - pf), -DRIFT_MAX, DRIFT_MAX);
+  let up = select(f32(max(mf, 0)), f32(max(ms, 0)), w > 0.0);
+  let f = i32(floor(k * f32(ms - mf) + w * up + r));
+  return clamp(f, -(max(mf, 0) >> 2u), max(ms, 0) >> 2u);
+}
+fn phi_at(o: u32) -> f32 { return bitcast<f32>(mg[o]); }
+
 @compute @workgroup_size(16, 4)
 fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index) li: u32,
           @builtin(workgroup_id) wid: vec3u, @builtin(num_workgroups) nw: vec3u) {
@@ -137,6 +156,16 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
         if (length(vec2f(id.xy) + 0.5 - sp.xy / MP.px) <= max(sp.z / MP.px, 0.75)) { drip |= 1u << k; }
       }
     }
+    // step C6b: the screened potential here and at the 4 neighbours (for the charged substances' drift)
+    let po = MP.chg.x;
+    var pC = 0.0; var pL = 0.0; var pR = 0.0; var pU = 0.0; var pD = 0.0;
+    if (po != 0u) {
+      pC = phi_at(po + i);
+      if (hasL) { pL = phi_at(po + i - 1u); }
+      if (hasR) { pR = phi_at(po + i + 1u); }
+      if (hasU) { pU = phi_at(po + i - MP.hw); }
+      if (hasD) { pD = phi_at(po + i + MP.hw); }
+    }
     for (var c = 0u; c < NCH; c++) {
       if ((MP.moving & (1u << c)) == 0u) { continue; }
       let s0 = T.src + c * MP.n;
@@ -145,10 +174,18 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       var acc = m;
       if (k > 0.0) {
         let cs = c * 0x9e3779b9u;
-        if (hasL) { acc -= edge_flow(mg[s0 + i - 1u], m, k, u01(mpcg(eL + cs))); }
-        if (hasR) { acc += edge_flow(m, mg[s0 + i + 1u], k, u01(mpcg(eR + cs))); }
-        if (hasU) { acc -= edge_flow(mg[s0 + i - MP.hw], m, k, u01(mpcg(eU + cs))); }
-        if (hasD) { acc += edge_flow(m, mg[s0 + i + MP.hw], k, u01(mpcg(eD + cs))); }
+        let zq = select(0.0, f32(charge_of(MP.chg.z, c)) * MP.cq.w, po != 0u);
+        if (zq != 0.0) {
+          if (hasL) { acc -= edge_flow_q(mg[s0 + i - 1u], m, pL, pC, k, zq, u01(mpcg(eL + cs))); }
+          if (hasR) { acc += edge_flow_q(m, mg[s0 + i + 1u], pC, pR, k, zq, u01(mpcg(eR + cs))); }
+          if (hasU) { acc -= edge_flow_q(mg[s0 + i - MP.hw], m, pU, pC, k, zq, u01(mpcg(eU + cs))); }
+          if (hasD) { acc += edge_flow_q(m, mg[s0 + i + MP.hw], pC, pD, k, zq, u01(mpcg(eD + cs))); }
+        } else {
+          if (hasL) { acc -= edge_flow(mg[s0 + i - 1u], m, k, u01(mpcg(eL + cs))); }
+          if (hasR) { acc += edge_flow(m, mg[s0 + i + 1u], k, u01(mpcg(eR + cs))); }
+          if (hasU) { acc -= edge_flow(mg[s0 + i - MP.hw], m, k, u01(mpcg(eU + cs))); }
+          if (hasD) { acc += edge_flow(m, mg[s0 + i + MP.hw], k, u01(mpcg(eD + cs))); }
+        }
         if (first && rim && m > 0 && MP.edge > 0.0) {
           // the sink at the dish's rim: never more than the edges leave it (so it cannot go below zero)
           let out = clamp(i32(floor(f32(m) * MP.edge + u01(mpcg(eI + cs)))), 0, m - nEdges * (m >> 2u));
@@ -180,7 +217,8 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
 // ---------- count ----------
 var<workgroup> wlo: array<atomic<u32>, 13>;
 var<workgroup> whi: array<atomic<u32>, 13>;
-var<workgroup> wml: array<f32, 256>;
+var<workgroup> wml: array<vec2f, 256>;   // x: m ln m (ORDER); y: phi^2 (step C6b)
+var<workgroup> wpm: atomic<i32>;          // step C6b: the largest |phi| (f32 bits)
 
 // dispatched as 256 workgroups of 256 (a grid-stride loop over the pixels)
 @compute @workgroup_size(256)
@@ -190,7 +228,16 @@ fn count(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_in
   var hi: array<u32, 13>;
   var ml = 0.0;
   let order = T.first != 0u;
+  // step C6b: with the snapshot, the potential's spread (sum of phi^2) and its largest size
+  let phiOn = order && MP.chg.x != 0u;
+  var p2 = 0.0;
+  var pm = 0.0;
   for (var p = gid.x; p < T.count; p += 65536u) {
+    if (phiOn) {
+      let ph = phi_at(MP.chg.x + p);
+      p2 += ph * ph;
+      pm = max(pm, abs(ph));
+    }
     for (var c = 0u; c < NCH; c++) {
       let m = max(mg[T.src + c * T.count + p], 0);
       if (m == 0) { continue; }
@@ -206,11 +253,17 @@ fn count(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_in
     if (lo[c] != 0u) { atomicAdd(&wlo[c], lo[c]); }
     if (hi[c] != 0u) { atomicAdd(&whi[c], hi[c]); }
   }
-  wml[li] = ml;
+  wml[li] = vec2f(ml, p2);
+  if (phiOn && pm > 0.0) { atomicMax(&wpm, bitcast<i32>(pm)); }
   workgroupBarrier();
   for (var s = 128u; s > 0u; s >>= 1u) {
     if (li < s) { wml[li] += wml[li + s]; }
     workgroupBarrier();
+  }
+  if (phiOn && li == 1u) {
+    atomicStore(&hb[LG_Q_PHI + wid.x], bitcast<i32>(wml[0].y));
+    let mx = atomicLoad(&wpm);
+    if (mx > 0) { atomicMax(&hb[LG_Q_PMAX], mx); }
   }
   if (li < NCH) {
     // the workgroup's total of channel li: H x 2^16 + L, added as a 64-bit number
@@ -220,8 +273,41 @@ fn count(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_in
     add64v(at, i32(H >> 16u), H << 16u);
     add64v(at, 0, L);
   }
-  if (order && li == 0u) { atomicStore(&hb[LG_M_ORDER + wid.x], bitcast<i32>(wml[0])); }
+  if (order && li == 0u) { atomicStore(&hb[LG_M_ORDER + wid.x], bitcast<i32>(wml[0].x)); }
 }
+
+// ---------- relax (step C6b) ----------
+// The SCREENED charge field: phi - lambda^2 laplacian(phi) = strength x rho, with rho the charge density (the free atoms'
+// charges, CHARGE_CODES, plus the cells' net charge they put down this tick), in atom-units per R^2. Its decay law is an
+// exponential cut-off at the screening length lambda (like charge in salty water), with no flux through the dish's edge.
+// Solved by red-black over-relaxation, a few sweeps per tick (src/charge.js), each sweep two dispatches (the pixels with
+// x + y even, then odd: each colour reads only the other), in place, starting from last tick's phi: the charges move
+// little in one tick, so the field follows them closely. Runs inside the heat's pass of the tick, after the reactions,
+// on the copy they leave (T.dst of the tick's last substep slot).
+fn relax(id: vec2u, parity: u32) {
+  if (id.x >= MP.hw || id.y >= MP.hh || ((id.x + id.y) & 1u) != parity) { return; }
+  let i = id.y * MP.hw + id.x;
+  var q = 0;
+  for (var c = 0u; c < NCH; c++) {
+    let z = charge_of(MP.chg.z, c);
+    if (z != 0 && (MP.moving & (1u << c)) != 0u) { q += z * mg[T.dst + c * MP.n + i]; }
+  }
+  if (MP.chg.y != 0u) { q += mg[MP.chg.y + i]; }
+  let po = MP.chg.x;
+  var s = 0.0;
+  var nn = 0.0;
+  if (id.x > 0u) { s += phi_at(po + i - 1u); nn += 1.0; }
+  if (id.x + 1u < MP.hw) { s += phi_at(po + i + 1u); nn += 1.0; }
+  if (id.y > 0u) { s += phi_at(po + i - MP.hw); nn += 1.0; }
+  if (id.y + 1u < MP.hh) { s += phi_at(po + i + MP.hw); nn += 1.0; }
+  let gs = (MP.cq.y * f32(q) + MP.cq.x * s) / (1.0 + MP.cq.x * nn);
+  let old = phi_at(po + i);
+  mg[po + i] = bitcast<i32>(old + MP.cq.z * (gs - old));
+}
+@compute @workgroup_size(8, 8)
+fn relax_red(@builtin(global_invocation_id) id: vec3u) { relax(id.xy, 0u); }
+@compute @workgroup_size(8, 8)
+fn relax_black(@builtin(global_invocation_id) id: vec3u) { relax(id.xy, 1u); }
 
 // ---------- paint ----------
 // texA: free atoms (all), of which reactive, of which heavy; trace.  texB: fuels, of which heavy; sediment, of which heavy.

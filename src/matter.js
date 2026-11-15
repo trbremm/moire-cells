@@ -275,7 +275,7 @@ export const SPRING_KINDS = {
 };
 
 export const ATOM_SCALE = 4096;          // counts per atom-unit (ATOM_SCALE in matter.wgsl)
-const MP_BYTES = 368;                     // struct MatterP
+const MP_BYTES = 400;                     // struct MatterP (step C6b: + chg, cq)
 const MT_SLOT = 256;                      // struct MatterTick slots, bound with a dynamic offset
 const MAX_TICKS = 320;                    // as SLOTS in cells.js
 const MAX_SUB = 4;                        // spreading substeps per tick at most
@@ -288,7 +288,8 @@ const SPRING_FLOATS = 24;                 // struct Spring: pos (4), amt (16), i
 const DRAW_BYTES = 224;                   // struct DrawP in matter_draw.wgsl
 const K_MAX = 0.2;
 const LG_M = { ADD: 3072, LOST: 4736, GONE: 6400, DISH: 8064, ORDER: 9728 };   // heat_common.wgsl
-const LG_C = { LIGHT: 10240, RX: 10752 };   // step C4 (heat_common.wgsl): light caught per band, events per family
+const LG_C = { LIGHT: 10240, RX: 10752 };
+const LG_Q_PHI = 19200;                     // step C6b (heat_common.wgsl): phi's spread (256 f32), then its largest size   // step C4 (heat_common.wgsl): light caught per band, events per family
 const MAX_RX = 24;                          // struct ChemP's reactions (REACTIONS has 24 since step C6's uphill swaps)
 const RX_BYTES = 48;                        // struct Rx
 const CP_BYTES = 96 + MAX_RX * RX_BYTES;    // struct ChemP
@@ -376,6 +377,7 @@ export class Matter {
     this.chist = [];          // [time, ...events per family, light caught] for the rates
     this.light = null;        // step C4: the light (its uniform is bound to the reactions; set by main.js)
     this.eat = null;          // step C5: the cells' eating (src/eat.js; set by main.js): their stock is in the atoms ledger
+    this.charge = null;       // step C6b: the charge field (src/charge.js; set by main.js): solved in each tick's pass, drifts
     this.snapTime = -1e9;     // step C5: the frame time of the last ledger read-back applied
     this.maskHist = [];       // step C5: [frame time, channels moving] of the frames since
     this.rxOn = [];           // the reactions sent to the GPU this frame
@@ -425,7 +427,7 @@ export class Matter {
     const layout = d.createPipelineLayout({ label: 'matter', bindGroupLayouts: [this.bgl] });
     const paintLayout = d.createPipelineLayout({ label: 'matter paint', bindGroupLayouts: [this.bgl, this.texBgl] });
     this.pipes = {};
-    for (const e of ['spread', 'count', 'react']) {
+    for (const e of ['spread', 'count', 'react', 'relax_red', 'relax_black']) {   // (relax: step C6b's charge field)
       this.pipes[e] = d.createComputePipeline({ label: `matter ${e}`, layout, compute: { module: mod, entryPoint: e } });
     }
     this.pipes.paint = d.createComputePipeline({ label: 'matter paint', layout: paintLayout, compute: { module: mod, entryPoint: 'paint' } });
@@ -561,6 +563,7 @@ export class Matter {
     if (this.bufVersion !== H.version) {
       this.bufVersion = H.version;
       this.cur = 0;
+      if (this.charge) this.charge.phiLive = false;   // step C6b: a new grid starts with phi = 0
       this.bg = this.makeBG(H.buffer);
       this.makeTextures();
     }
@@ -622,6 +625,13 @@ export class Matter {
       f[60 + c] = s.heavy;                                // heavy
       f[76 + c] = s.atoms.length;                         // atoms per unit (the ORDER weights by atoms)
     });
+    // step C6b: the charge field (src/charge.js): where phi and the cells' charge are, the charges, the relaxation's numbers
+    const Q = this.charge, qOn = !!(Q && Q.fieldOn);
+    this.solve = qOn;
+    u[92] = qOn ? H.chargeOffset - LEDGER_WORDS : 0;
+    u[93] = qOn && Q.cellsDeposit ? H.chargeOffset + H.n - LEDGER_WORDS : 0;
+    u[94] = CHARGE_CODES; u[95] = 0;
+    if (qOn) { const r = Q.relaxNumbers(1 / (ATOM_SCALE * a * a)); for (let k = 0; k < 4; k++) f[96 + k] = r[k]; }
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
 
     const T = new Uint32Array(this.tickAB), w = MT_SLOT / 4;
@@ -661,6 +671,16 @@ export class Matter {
       pass.setBindGroup(0, this.bg, [(t * MAX_SUB + this.nSub - 1) * MT_SLOT]);
       pass.dispatchWorkgroups(Math.ceil(H.hw / 8), Math.ceil(H.hh / 8));
     }
+    // step C6b: the screened charge field, a few red-black sweeps on the copy the reactions left (src/charge.js)
+    if (this.solve) {
+      pass.setBindGroup(0, this.bg, [(t * MAX_SUB + this.nSub - 1) * MT_SLOT]);
+      const n = Math.max(1, Math.min(16, Math.round(this.charge.params.sweeps)));
+      for (let k = 0; k < n; k++) {
+        pass.setPipeline(this.pipes.relax_red); pass.dispatchWorkgroups(Math.ceil(H.hw / 8), Math.ceil(H.hh / 8));
+        pass.setPipeline(this.pipes.relax_black); pass.dispatchWorkgroups(Math.ceil(H.hw / 8), Math.ceil(H.hh / 8));
+      }
+      this.charge.phiLive = true;
+    }
   }
 
   /** After the frame's ticks (before the heat's endFrame, which counts the dish): the current copy, the drawing's textures. */
@@ -668,6 +688,11 @@ export class Matter {
     const H = this.heat;
     if (!this.ticks) return;
     if (this.active) this.cur ^= (this.ticks * this.nSub) & 1;
+    // step C6b: with no matter anywhere there is nothing to solve: phi is cleared once (else it would stay as it was)
+    if (!this.active && this.charge && this.charge.phiLive) {
+      encoder.clearBuffer(H.buffer, H.chargeOffset * 4, H.n * 4);
+      this.charge.phiLive = false;
+    }
     // the ledger / paint slot: the current copy after the ticks
     const T = new Uint32Array(this.tickAB), L = MT_LEDGER * MT_SLOT / 4;
     T[L] = this.copyBase(this.cur); T[L + 1] = 0; T[L + 2] = 1; T[L + 3] = this.seed0; T[L + 4] = H.n; T[L + 5] = LG_M.DISH;
@@ -746,6 +771,7 @@ export class Matter {
   encodeLedger(encoder) {
     if (!this.bg || this.bufVersion !== this.heat.version) return;
     encoder.clearBuffer(this.heat.buffer, LG_M.DISH * 4, (LG_M.ORDER + ORDER_SLOTS - LG_M.DISH) * 4);
+    encoder.clearBuffer(this.heat.buffer, LG_Q_PHI * 4, (256 + 4) * 4);   // step C6b: phi's spread and largest size
     const pass = encoder.beginComputePass({ label: 'matter ledger' });
     pass.setPipeline(this.pipes.count);
     pass.setBindGroup(0, this.bg, [MT_LEDGER * MT_SLOT]);

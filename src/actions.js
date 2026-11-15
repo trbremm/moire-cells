@@ -40,7 +40,7 @@ export const RULE_GROUPS = [
   ['charge', 'Charge (step C6b)'],
 ];
 
-export const VIEWS = ['fate', 'lineage', 'strategy'];   // key V: what the cells' bodies are coloured by (cells.look.view)
+export const VIEWS = ['fate', 'lineage', 'strategy', 'charge'];   // key V: what the cells' bodies are coloured by (cells.look.view)
 
 export const SQUEEZE_SOFT = 0.25, SQUEEZE_HARD = 1.2;   // key \ : cells.params.squeeze, normal or pressed together
 
@@ -125,7 +125,7 @@ export function makeActions(app) {
       get: () => VIEWS[C().look.view] || 'fate', options: () => VIEWS,
       set: (v) => { C().look.view = Math.max(0, VIEWS.indexOf(v)); return viewText(); },
       run: () => { C().look.view = (C().look.view + 1) % VIEWS.length; return viewText(); },
-      help: 'cells coloured by their fate (function), their lineage (the genome key\'s hue), or their strategy (how their engines make a living)' },
+      help: 'cells coloured by their fate (function), their lineage (the genome key\'s hue), their strategy (how their engines make a living), or their charge' },
     { id: 'cellField', keys: ['k'], label: 'cells\' field drawn', group: 'view', type: 'toggle', get: () => LP().cellField,
       run: () => `cells' field ${flip(LP(), 'cellField') ? 'drawn (pale dots)' : 'not drawn'}`,
       help: 'field A in pale dots (drawing only)' },
@@ -176,9 +176,9 @@ export function makeActions(app) {
     { id: 'feelB', keys: ['q'], label: 'feel field B', group: 'fieldB', type: 'toggle', get: () => F().on,
       run: () => `field B ${flip(F(), 'on') ? 'felt: cells move along it by the sign rule' : 'not felt (still emitted and drawn)'}`,
       help: 'cells move along field B by its sign rule (off: still emitted and drawn)' },
-    { id: 'signB', keys: ['u'], label: 'like … like', group: 'fieldB', type: 'cycle', get: () => (F().sign > 0 ? 'repels' : 'attracts'),
-      run: () => { F().sign = -F().sign; return `field B: like ${F().sign > 0 ? 'repels' : 'attracts'} like`; },
-      help: 'B\'s sign rule: like attracts like, or like repels like' },
+    { id: 'signB', keys: ['u'], label: 'like … like', group: 'fieldB', type: 'cycle', get: () => (app.charge.signB > 0 ? 'repels' : 'attracts'),
+      run: () => `field B: like ${app.charge.flipSignB() > 0 ? 'repels' : 'attracts'} like${app.charge.stockOn ? ' (for the charges from the stock; the per-fate charges keep their own rule)' : ''}`,
+      help: 'B\'s sign rule: like attracts like, or like repels like (step C6b: one rule for the charges from the stock, one for the per-fate charges)' },
     { id: 'likeB', keys: ['y'], label: '"like" means', group: 'fieldB', type: 'cycle', get: () => (F().like ? 'lineage' : 'charge'),
       run: () => { F().like = F().like ? 0 : 1; return `field B: "like" means ${F().like ? 'a similar key (the same lineage)' : 'the same sign of charge (charges by fate)'}`; },
       help: 'for B, "like" means the same sign of charge (by fate) or a similar key (lineage)' },
@@ -350,7 +350,8 @@ export function makeActions(app) {
         : 'charge field off: the free atoms only spread (as before step C6b)'),
       help: 'givers (+1) and takers (−1) make a screened field (it fades over a few cell radii); free charged atoms drift in it, so fast and slow partners stay together' },
     { id: 'chargeStock', keys: ['shift+8'], label: 'cells\' charge from stock', group: 'charge', type: 'toggle', get: () => Q().stock,
-      run: () => `a cell's charge in field B ${flip(Q(), 'stock') ? 'comes from what it holds: the net charge of its stock (givers minus takers)' : 'is the fixed charge of its fate (step 5)'}${app.cells.eat.params.on ? '' : ' (cells eat is off: Shift+A, so the fixed charges apply)'}`,
+      run: () => `a cell's charge in field B ${flip(Q(), 'stock') ? 'comes from what it holds: the net charge of its stock (givers minus takers)' : 'is the fixed charge of its fate (step 5)'}` +
+        `, like ${app.charge.signB > 0 ? 'repels' : 'attracts'} like (U)${app.cells.eat.params.on ? '' : ' (cells eat is off: Shift+A, so the fixed charges apply)'}`,
       help: 'a cell\'s charge in field B is the net charge of its stock (off: the fixed charge per fate of step 5)' },
     { id: 'chargeFeel', keys: ['shift+9'], label: 'cells feel the charge field', group: 'charge', type: 'toggle', get: () => Q().feel,
       run: () => `cells ${flip(Q(), 'feel') ? 'feel the charge field: a charged cell drifts down (+) or up (−) the substrate\'s potential' : 'do not feel the charge field (field B still carries their charge)'}${qNote()}`,
@@ -382,7 +383,8 @@ export function makeActions(app) {
   function viewText() {
     const v = VIEWS[C().look.view] || 'fate';
     return v === 'lineage' ? 'colour by lineage (key)' : v === 'strategy'
-      ? 'colour by strategy: gold harvesters (light), green burners, half and half both, grey the others' : 'colour by fate';
+      ? 'colour by strategy: gold harvesters (light), green burners, half and half both, grey the others'
+      : v === 'charge' ? 'colour by charge: rose cells hold more givers (+), blue more takers (−), grey neutral' : 'colour by fate';
   }
 
   function CH() { return app.matter.chem; }

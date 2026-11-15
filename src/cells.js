@@ -63,7 +63,7 @@ const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
 const FIELDS_BYTES = 256;      // struct Fields in cell_common.wgsl
 const FIELD_FORMAT = 'rgba16float';
-const DRAW_BYTES = 400;        // struct Draw in cell_draw.wgsl
+const DRAW_BYTES = 432;        // struct Draw in cell_draw.wgsl (step C6b: + the charge view's inks)
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
 export class Cells {
@@ -216,7 +216,8 @@ export class Cells {
     this.fieldScale = 0.5;     // texels per CSS px of the cells' field texture
     this.fieldTex = null;
     this.look = {
-      view: 0,        // 0 = colour by fate, 1 = colour by lineage (the key's hue), 2 = by strategy (step C6; key V cycles)
+      view: 0,        // 0 = colour by fate, 1 = colour by lineage (the key's hue), 2 = by strategy (step C6), 3 = by charge
+                      // (step C6b; key V cycles)
       fill: 0.09,     // disc fill of stem cells, as a fraction of the cell colour over black
       fillC: 0.34,    // disc fill of committed cells (flat colour, so tissues read as areas)
       fillA: 0.88,    // disc opacity (1 = background fully hidden under a cell)
@@ -574,7 +575,7 @@ export class Cells {
     f[8] = F.chargeA[4]; f[9] = F.chargeB[4];
     f[10] = Math.max(0.1, F.band); f[11] = F.lever; f[12] = Math.max(0.1, F.r0); f[13] = Math.max(0.1, F.cut);
     const feel = F.on && F.emit && F.gain > 0;
-    f[14] = feel ? F.gain : 0; f[15] = Math.max(0.01, F.sat); f[16] = F.sign; u[17] = F.like ? 1 : 0;
+    f[14] = feel ? F.gain : 0; f[15] = Math.max(0.01, F.sat); f[16] = this.charge ? this.charge.signB : F.sign; u[17] = F.like ? 1 : 0;
     f[18] = Math.max(0.005, F.likeW);
     u[19] = Math.max(1, Math.min(4, Math.ceil(F.cut * this.R / this.grid.cs - 1e-6)));   // grid block radius for B's reach
     f[20] = F.emit ? 1 : 0; f[21] = F.strain;
@@ -958,7 +959,7 @@ export class Cells {
         ` · eddies kept from the last second ${ro.keep == null ? '-' : ro.keep.toFixed(2)}`);
     }
     const F = this.fields, L = this.landscape;
-    lines.push(`field B: Q felt ${on(F.on)} · J drawn ${on(L && L.params.fieldB)} · U like ${F.sign > 0 ? 'repels' : 'attracts'} like · like = ${F.like ? 'similar key (lineage)' : 'charge'}` +
+    lines.push(`field B: Q felt ${on(F.on)} · J drawn ${on(L && L.params.fieldB)} · U like ${(this.charge ? this.charge.signB : F.sign) > 0 ? 'repels' : 'attracts'} like · like = ${F.like ? 'similar key (lineage)' : 'charge'}` +
       ` · band ${F.band} · r0 ${F.r0} R · cut ${F.cut} R · gain ${F.gain} · charges ${this.charge && this.charge.stockOn ? `from the stock (Shift+8; by fate ${F.chargeB.join(' ')})` : F.chargeB.join(' ')}`);
     const s6 = st && st.step6;
     if (s6) {
@@ -1125,6 +1126,8 @@ export class Cells {
     a[88] = L.innerGlow; a[89] = L.coreRim; a[90] = L.partWhite; a[91] = L.coreDim;
     a[92] = hum ? L.humDepth : 0; a[93] = L.humRate; a[94] = (frame.now || 0) % 3600; a[95] = hum ? 1 : 0;
     a[96] = hum ? L.humIdle : 1; a[97] = L.humAct; a[98] = P.lineage.base; a[99] = P.lineage.amp;
+    // step C6b: colour by charge (view 3): the charge contours' inks
+    for (let k = 0; k < 3; k++) { a[100 + k] = P.charge.pos[k] / 255; a[104 + k] = P.charge.neg[k] / 255; }
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBGs[this.bioCur]);

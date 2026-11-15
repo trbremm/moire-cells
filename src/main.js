@@ -186,9 +186,9 @@ async function boot() {
     cells.landscape = landscape;
     landscape.cells = cells;
     if (params.has('founders')) cells.genome.params.founders = Number(params.get('founders')) || 0;
-    if (params.has('view')) {   // ?view=1 lineage, ?view=2 or ?view=strategy (step C6)
-      const v = params.get('view'), k = ['fate', 'lineage', 'strategy'].indexOf(v);
-      cells.look.view = k >= 0 ? k : Math.max(0, Math.min(2, Math.round(Number(v)) || 0));
+    if (params.has('view')) {   // ?view=1 lineage, ?view=2 or ?view=strategy (step C6), ?view=3 or ?view=charge (step C6b)
+      const v = params.get('view'), k = ['fate', 'lineage', 'strategy', 'charge'].indexOf(v);
+      cells.look.view = k >= 0 ? k : Math.max(0, Math.min(3, Math.round(Number(v)) || 0));
     }
     if (flag('check')) cells.enableCheck();
     if (params.get('bio') === '0') {

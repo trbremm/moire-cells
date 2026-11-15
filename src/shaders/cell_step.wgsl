@@ -247,6 +247,16 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     if (cm > 1e-6) { f += cf * (sat * tanh(cm / sat) / cm); }
   }
 
+  // step C6b: the substrate's screened charge field (src/charge.js): a charged cell (Cell.q, from its stock) is pushed
+  // down (+) or up (-) the potential's gradient across its membrane (Cell.efield, from the eat pass's plan last tick),
+  // qFeel R / s per unit of phi per R, saturating at qSat R / s. Its work is booked with the other forces'
+  if (FL.qFeel > 0.0) {
+    let fq = -FL.qFeel * c.q * c.efield * S.R;
+    let qm = length(fq);
+    let qs = FL.qSat * S.R;
+    if (qm > 1e-6) { f += fq * (qs * tanh(qm / qs) / qm); }
+  }
+
   // field B's force: area x gradient (the membrane integral, for a field this smooth over the cell), scaled as
   // field A's (x 1.3 R / r), saturating at its own speed
   if (feelB) {

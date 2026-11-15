@@ -1,0 +1,11 @@
+{
+  "name": "tissue-40",
+  "description": "Tissue setup smoke test: 40 cells, one genome cloned to all, mutation and life cycle off; tissue measures every 5 s; a stir at 40 s; snapshot (cells only) at the end.",
+  "query": {"seed": 3, "cells": 40, "mut": 0, "life": 0, "clone": 1, "genes": "adhesion:0.9,motility:0.6"},
+  "duration": 60,
+  "sample_every": 5,
+  "tissue": true,
+  "evals": [{"t": 40, "js": "await moire.tissue.stir(560, 400, 14, 0, 12)"}],
+  "shots": [{"t": 0}, {"t": 35}, {"t": 60, "view": "lineage", "panel": true}],
+  "snapshots": [{"t": 60, "grid": false, "name": "tissue-end"}]
+}

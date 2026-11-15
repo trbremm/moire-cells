@@ -1,0 +1,8 @@
+{
+  "name": "quick",
+  "description": "Tooling check: 20 simulated seconds, samples every 5 s, one shot.",
+  "query": {"seed": 3},
+  "duration": 20,
+  "sample_every": 5,
+  "shots": [{"t": 20}]
+}

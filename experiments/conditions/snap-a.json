@@ -1,0 +1,8 @@
+{
+  "name": "snap-a",
+  "description": "Snapshot check, part 1: run 30 s from seed 3, save a snapshot with the grid.",
+  "query": {"seed": 3},
+  "duration": 30,
+  "sample_every": 10,
+  "snapshots": [{"t": 30, "grid": true}]
+}

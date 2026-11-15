@@ -1,0 +1,9 @@
+{
+  "name": "default-2min",
+  "description": "Smoke test: the default page (2000 cells, spotlight, two springs, division on) for 2 simulated minutes.",
+  "query": {"seed": 3},
+  "duration": 120,
+  "sample_every": 5,
+  "shots": [{"t": 0}, {"t": 60}, {"t": 120}, {"t": 120, "view": "lineage", "panel": true}],
+  "snapshots": [{"t": 120, "grid": true}]
+}

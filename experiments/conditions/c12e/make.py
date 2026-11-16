@@ -6,9 +6,10 @@
                              with saturation and osmosis on                                 (batch-oxygen.json: seeds 3 and 7)
   oxy-spot-np / oxy-full-np  the same with ?photolysis=0: light cannot free atoms in the open, any free t is made by life
                                                                                              (batch-nophoto.json: seeds 3 and 7)
-  sat-only                   the whole dish, seed 3, saturation on, osmosis OFF (the stretch genes drift unused: the NEUTRAL
+  sat-only                   the whole dish, seed 3, 20 min (the GPU was shared: shortened), saturation on, osmosis OFF (the stretch genes drift unused: the NEUTRAL
                              control for them)
-  osm-only                   the whole dish, seed 3, osmosis on, saturation OFF            (batch-single.json)
+  osm-only                   the whole dish, seed 3, 20 min, osmosis on, saturation OFF            (batch-single.json)
+  np-control                 the spotlight, ?photolysis=0 with saturation and osmosis off, 10 min (batch-control.json: seeds 3, 7)
   pilot                      oxy-full seed 3 for 10 min (a first look)
   check                      the books: 420 s at MAX, N, wash, resizes, G, every new switch at runtime, a snapshot saved and loaded
   reload-c12d                a C12d snapshot (oxy-spot_s7 at 40 min) loaded on this page (saturation and osmosis then off)
@@ -55,10 +56,13 @@ def main():
         oxy(f"oxy-{tag}-np", f"step C12e: {base}, {lit}, 40 min, saturation and osmosis on, ?photolysis=0", {**q, "photolysis": 0})
     write("batch-oxygen", {"batch": "c12e-oxygen", "runs": ["oxy-spot.json", "oxy-full.json"], "seeds": [3, 7]})
     write("batch-nophoto", {"batch": "c12e-nophoto", "runs": ["oxy-spot-np.json", "oxy-full-np.json"], "seeds": [3, 7]})
-    oxy("sat-only", f"step C12e: {base}, the whole dish lit, 40 min, saturation only (?osmosis=0: the stretch genes drift unused, the neutral control)",
-        {"light": "full", "osmosis": 0, "seed": 3})
-    oxy("osm-only", f"step C12e: {base}, the whole dish lit, 40 min, osmosis only (?saturation=0)", {"light": "full", "saturation": 0, "seed": 3})
+    oxy("sat-only", f"step C12e: {base}, the whole dish lit, 20 min, saturation only (?osmosis=0: the stretch genes drift unused, the neutral control)",
+        {"light": "full", "osmosis": 0, "seed": 3}, D=1200)
+    oxy("osm-only", f"step C12e: {base}, the whole dish lit, 20 min, osmosis only (?saturation=0)", {"light": "full", "saturation": 0, "seed": 3}, D=1200)
+    oxy("np-control", f"step C12e control: {base}, the spotlight, 10 min, ?photolysis=0 with saturation and osmosis OFF (does the spot colony starve without abiotic oxygen alone?)",
+        {"photolysis": 0, "saturation": 0, "osmosis": 0}, D=600)
     write("batch-single", {"batch": "c12e-single", "runs": ["sat-only.json", "osm-only.json"]})
+    write("batch-control", {"batch": "c12e-control", "runs": ["np-control.json"], "seeds": [3, 7]})
     oxy("pilot", f"step C12e pilot: {base}, the whole dish lit, 10 min, seed 3", {"light": "full", "seed": 3}, D=600)
     # the books
     W = "moire.waste.params"

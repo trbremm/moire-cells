@@ -1184,6 +1184,10 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
             if (hexShape) { d.theta = c.theta; d.rad = c.rad; d.ea = c.ea; d.alpha = c.alpha; d.flags |= CELL_HEX; }
           }
           d.fg = fg_words(nb, fgOn);              // step C13: her field genes for her beat at once
+          if (gStr > 0.05) {                      // step C13's census: the axis against the felt gradient (cumulative)
+            atomicAdd(&stats.fg[FGS_DIVN], 1u);
+            atomicAdd(&stats.fg[FGS_DIVC], u32(round(abs(cos(ang - atan2(gDir.y, gDir.x))) * 1000.0)));
+          }
           nb.env.y = FL.dv1.w;                    // both flash
           bio.env.y = FL.dv1.w;
           cells[k] = d;
@@ -1306,6 +1310,21 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   c.fg = fg_words(bio, fgOn && !died);
   if (S.xCount != 0u && !died) {
     fg_census(bio, sk, gStr, fgF, me);
+    // where the front points against the felt gradient (the turn gate's mark), and where the contacts sit against what the sides feel
+    // (the glue gate's mark)
+    if (gStr > 0.05 && wallOn) {
+      atomicAdd(&stats.fg[FGS_FRONT], bitcast<u32>(i32(round(1000.0 * (gDir.x * cos(c.front) + gDir.y * sin(c.front))))));
+      atomicAdd(&stats.fg[FGS_FRONTN], 1u);
+    }
+    let tch6 = array<f32, 6>(rtA.x, rtA.y, rtA.z, rtA.w, rtB.x, rtB.y);
+    var tS = 0.0;
+    var tN = 0.0;
+    var aS = 0.0;
+    for (var a = 0; a < 6; a++) { aS += sk[a]; if (tch6[a] > 0.5) { tS += sk[a]; tN += 1.0; } }
+    if (tN > 0.0 && tN < 6.0 && sensing) {
+      atomicAdd(&stats.fg[FGS_CONT], bitcast<u32>(i32(round(1000.0 * (tS / tN - aS / 6.0)))));
+      atomicAdd(&stats.fg[FGS_CONTN], 1u);
+    }
   }
   // step C7: the neighbours across the sides, 16 bits each (none while the pumps across contact are off)
   c.nbr = array<u32, 3>(nbIA.x | (nbIA.y << 16u), nbIA.z | (nbIA.w << 16u), nbIB.x | (nbIB.y << 16u));

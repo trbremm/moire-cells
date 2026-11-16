@@ -1,0 +1,11 @@
+{
+ "batch": "c13-evo-fgenes",
+ "seeds": [
+  3,
+  7
+ ],
+ "runs": [
+  "evo-fgenes.json",
+  "evo-fgenes-off.json"
+ ]
+}

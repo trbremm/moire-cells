@@ -1,0 +1,92 @@
+{
+ "name": "c13-glue-lb-m",
+ "series": "glue",
+ "description": "uniform walls a0 0.6; the long beat (lever 0.2); the glue gate gene -1; 40 cells",
+ "tissue_setting": {
+  "knobs": {
+   "cells.params.lever": 0.2,
+   "guides.params.glue": true
+  },
+  "genes": {
+   "adhesion": 0.6,
+   "gateGlue": -1
+  },
+  "typeB": null,
+  "query": {},
+  "extra_js": ""
+ },
+ "query": {
+  "seed": 3,
+  "cells": 40,
+  "mut": 0,
+  "life": 0,
+  "clone": 1,
+  "springs": 0,
+  "light": "off",
+  "day": 0
+ },
+ "duration": 120,
+ "sample_every": 5,
+ "tissue": true,
+ "evals": [
+  {
+   "t": 0,
+   "js": "const T = await import('/experiments/tissue/tissue-lab.js'); window.__T = T;\nconst knobs = T.apply({\"cells.params.squeeze\": 0, \"genome.rules.diff\": false, \"eat.params.pay\": false, \"walls.params.cost\": false, \"guides.params.glue\": true, \"guides.params.pump\": false, \"guides.params.engine\": false, \"guides.params.div\": false, \"guides.params.turn\": false, \"cells.params.lever\": 0.2});\nconst g = {\"keyAngle\": 0.35, \"keyScale\": 0.05, \"recAngle\": 0.35, \"recScale\": 0.05, \"recWidth\": 0.15, \"size\": 1, \"motility\": 1, \"mix\": 0, \"thickness\": 0.012, \"stiffness\": 1, \"pumpRate0\": 0, \"pumpRate1\": 0, \"rate0\": 2, \"rate1\": 0, \"rate2\": 0, \"w\": 0, \"divAxis\": 0, \"a1\": 0, \"a2\": 0, \"gateGlue\": -1, \"gatePump\": 0, \"gateEngine\": 0, \"gateDiv\": 0, \"gateTurn\": 0, \"push\": 1, \"adhesion\": 0.6}; g.eng0 = moire.genome.engineCode('gt → g + t', 0);\n\nawait T.genes(g, null);\nconst fr = await T.fronts({ mode: 'random' });\nreturn { knobs, genes: g, fronts: fr, m: await T.measure({ every: 1 }) };"
+  },
+  {
+   "t": 60,
+   "js": "return await __T.measure({ every: 1 });"
+  },
+  {
+   "t": 80,
+   "js": "return await __T.measure({ every: 1 });"
+  },
+  {
+   "t": 82,
+   "js": "return await __T.stirThrough();"
+  },
+  {
+   "t": 120,
+   "js": "return await __T.measure({ every: 1 });"
+  }
+ ],
+ "dpr": 2,
+ "shots": [
+  {
+   "t": 30
+  },
+  {
+   "t": 60
+  },
+  {
+   "t": 80
+  },
+  {
+   "t": 120
+  },
+  {
+   "t": 80,
+   "view": "guides"
+  },
+  {
+   "t": 120,
+   "view": "guides"
+  },
+  {
+   "t": 80,
+   "view": "machinery"
+  }
+ ],
+ "snapshots": [
+  {
+   "t": 80,
+   "grid": false,
+   "name": "prestir"
+  },
+  {
+   "t": 120,
+   "grid": false,
+   "name": "end"
+  }
+ ]
+}

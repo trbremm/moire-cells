@@ -1,0 +1,11 @@
+{
+ "batch": "c13-rate",
+ "runs": [
+  "c13-rate-db-p.json",
+  "c13-rate-db-m.json",
+  "c13-rate-db-off.json",
+  "c13-rate-lb-p.json",
+  "c13-rate-lb-m.json",
+  "c13-rate-lb-off.json"
+ ]
+}

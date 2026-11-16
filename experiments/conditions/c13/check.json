@@ -1,0 +1,91 @@
+{
+ "name": "c13-check",
+ "description": "Step C13 books check: 700 s at MAX (seed 5) through N, a wash, a resize, G, a resize back, new springs, every C13 switch toggled at runtime (field genes, each gate, the push gene, the neutral control) and hand-set genes, then a snapshot saved and loaded; the atoms' and charge's rounding must stay 0",
+ "query": {
+  "seed": 5
+ },
+ "duration": 700,
+ "sample_every": 10,
+ "resizes": [
+  {
+   "t": 300,
+   "size": "1000x700"
+  },
+  {
+   "t": 480,
+   "size": "1280x800"
+  }
+ ],
+ "evals": [
+  {
+   "t": 120,
+   "js": "return moire.control.action('culture')"
+  },
+  {
+   "t": 220,
+   "js": "return moire.control.action('wash')"
+  },
+  {
+   "t": 400,
+   "js": "return moire.control.action('genomes')"
+  },
+  {
+   "t": 520,
+   "js": "{ const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.5, 'light'); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.5, 'heavy'); } return moire.matter.springs.length"
+  },
+  {
+   "t": 560,
+   "js": "moire.guides.params.genes = false; return 'field genes off'"
+  },
+  {
+   "t": 566,
+   "js": "moire.guides.params.genes = true; moire.guides.params.glue = false; return 'genes on, glue gate off'"
+  },
+  {
+   "t": 572,
+   "js": "moire.guides.params.glue = true; moire.guides.params.pump = false; moire.guides.params.engine = false; return 'pump and engine gates off'"
+  },
+  {
+   "t": 578,
+   "js": "moire.guides.params.pump = true; moire.guides.params.engine = true; moire.guides.params.div = false; moire.guides.params.turn = false; return 'div and turn gates off'"
+  },
+  {
+   "t": 584,
+   "js": "moire.guides.params.div = true; moire.guides.params.turn = true; moire.guides.params.push = false; return 'push gene off'"
+  },
+  {
+   "t": 590,
+   "js": "moire.guides.params.push = true; moire.guides.params.null = true; return 'neutral control on'"
+  },
+  {
+   "t": 596,
+   "js": "moire.guides.params.null = false; await moire.genome.setAll({ gateGlue: 1, gatePump: 1, gateEngine: -1, gateDiv: 1, gateTurn: -1, push: 0.3, leverA: 2, emitA: 1.5, senseA: -1, tuneA: 2, leverB: 0.5, emitB: 2, senseB: -1, pickB: 2, angleA: 0.3, angleB: -0.3, shareP: 0.5, senseP: -1 }); return 'every C13 gene set by hand'"
+  },
+  {
+   "t": 615,
+   "js": "moire.cells.partner.on = true; moire.cells.partner.change = true; moire.cells.partner.side = true; return 'step 8 rules on (the partner genes act)'"
+  },
+  {
+   "t": 630,
+   "js": "moire.cells.partner.on = false; moire.cells.partner.change = false; moire.cells.partner.side = false; moire.cells.look.view = 5; return 'step 8 off; guides view'"
+  },
+  {
+   "t": 640,
+   "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }"
+  },
+  {
+   "t": 660,
+   "js": "return await moire.walls.stats()"
+  }
+ ],
+ "shots": [
+  {
+   "t": 600,
+   "view": "guides"
+  },
+  {
+   "t": 700
+  }
+ ],
+ "stall": 120
+}

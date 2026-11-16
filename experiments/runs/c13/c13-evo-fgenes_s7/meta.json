@@ -1,0 +1,588 @@
+{
+  "name": "c13-evo-fgenes_s7",
+  "description": "Step C13, field genes only: the default scene (2000 cells, spotlight, two springs, division on, mutation), every gate and the push gene off; the field genes act and drift; 20 minutes",
+  "condition": {
+    "name": "c13-evo-fgenes_s7",
+    "description": "Step C13, field genes only: the default scene (2000 cells, spotlight, two springs, division on, mutation), every gate and the push gene off; the field genes act and drift; 20 minutes",
+    "query": {
+      "gates": 0,
+      "pushgene": 0,
+      "seed": 7
+    },
+    "duration": 1200,
+    "sample_every": 30,
+    "evals": [
+      {
+        "t": 120,
+        "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()"
+      },
+      {
+        "t": 300,
+        "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()"
+      },
+      {
+        "t": 600,
+        "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()"
+      },
+      {
+        "t": 900,
+        "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()"
+      },
+      {
+        "t": 1200,
+        "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()"
+      },
+      {
+        "t": 1200,
+        "js": "return await moire.walls.stats()"
+      }
+    ],
+    "shots": [
+      {
+        "t": 300,
+        "view": "machinery"
+      },
+      {
+        "t": 600,
+        "view": "machinery"
+      },
+      {
+        "t": 1200,
+        "view": "machinery"
+      },
+      {
+        "t": 600,
+        "view": "lineage"
+      },
+      {
+        "t": 1200,
+        "view": "lineage"
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "view": "lineage",
+        "panel": true
+      }
+    ],
+    "snapshots": [
+      {
+        "t": 1200,
+        "grid": false,
+        "name": "end"
+      }
+    ]
+  },
+  "url": "http://localhost:50396/index.html?speed=max&until=0&overlay=ghost&ui=0&gates=0&pushgene=0&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "7844ec1eedf470595d3771a50f955247f429b4f8",
+  "dirty": true,
+  "started": "2026-11-16T08:40:06",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 194.91,
+  "speed_reached": 6.16,
+  "samples": 41,
+  "shots": [
+    "shots/t300_machinery.png",
+    "shots/t600_machinery.png",
+    "shots/t600_lineage.png",
+    "shots/t1200_machinery.png",
+    "shots/t1200_lineage.png",
+    "shots/t1200.png",
+    "shots/t1200_lineage.png"
+  ],
+  "snapshots": [
+    "snapshots/end.json"
+  ],
+  "clips": [],
+  "evals": [
+    {
+      "t": 119.99999999999841,
+      "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()",
+      "result": {
+        "t": 119.99999999999841,
+        "n": 586,
+        "pairs": 966,
+        "leverA": {
+          "mean": 0.9743,
+          "sd": 0.1625,
+          "corr": 0.196
+        },
+        "emitA": {
+          "mean": 1.0626,
+          "sd": 0.2219,
+          "corr": 0.365
+        },
+        "senseA": {
+          "mean": 1.0154,
+          "sd": 0.1885,
+          "corr": 0.268
+        },
+        "tuneA": {
+          "mean": 0.972,
+          "sd": 0.1834,
+          "corr": 0.32
+        },
+        "leverB": {
+          "mean": 1.0286,
+          "sd": 0.1682,
+          "corr": 0.041
+        },
+        "senseB": {
+          "mean": 0.9765,
+          "sd": 0.1346,
+          "corr": 0.271
+        },
+        "pickB": {
+          "mean": 0.0434,
+          "sd": 0.0999,
+          "corr": 0.344
+        },
+        "angleA": {
+          "mean": -0.0091,
+          "sd": 0.07,
+          "corr": 0.247
+        },
+        "shareP": {
+          "mean": -0.0257,
+          "sd": 0.137,
+          "corr": 0.432
+        },
+        "glue": {
+          "mean": -0.0036,
+          "sd": 0.1491,
+          "corr": 0.234
+        },
+        "pump": {
+          "mean": 0.0321,
+          "sd": 0.1776,
+          "corr": 0.379
+        },
+        "engine": {
+          "mean": 0.0345,
+          "sd": 0.1814,
+          "corr": 0.342
+        },
+        "div": {
+          "mean": -0.0091,
+          "sd": 0.1371,
+          "corr": 0.301
+        },
+        "turn": {
+          "mean": -0.0024,
+          "sd": 0.2132,
+          "corr": 0.226
+        },
+        "push": {
+          "mean": 0.9864,
+          "sd": 0.1477,
+          "corr": 0.228
+        },
+        "keyAngle": {
+          "mean": 0.3471,
+          "sd": 0.2549,
+          "corr": 0.55
+        }
+      }
+    },
+    {
+      "t": 300.0000000000006,
+      "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()",
+      "result": {
+        "t": 300.0000000000006,
+        "n": 1321,
+        "pairs": 3473,
+        "leverA": {
+          "mean": 0.8044,
+          "sd": 0.3752,
+          "corr": 0.336
+        },
+        "emitA": {
+          "mean": 1.197,
+          "sd": 0.5314,
+          "corr": 0.162
+        },
+        "senseA": {
+          "mean": 1.0679,
+          "sd": 0.3476,
+          "corr": 0.172
+        },
+        "tuneA": {
+          "mean": 1.0346,
+          "sd": 0.415,
+          "corr": 0.138
+        },
+        "leverB": {
+          "mean": 1.3414,
+          "sd": 0.504,
+          "corr": 0.247
+        },
+        "senseB": {
+          "mean": 1.0007,
+          "sd": 0.3488,
+          "corr": 0.166
+        },
+        "pickB": {
+          "mean": 0.2026,
+          "sd": 0.226,
+          "corr": 0.153
+        },
+        "angleA": {
+          "mean": -0.0395,
+          "sd": 0.1825,
+          "corr": 0.192
+        },
+        "shareP": {
+          "mean": -0.2439,
+          "sd": 0.2971,
+          "corr": 0.317
+        },
+        "glue": {
+          "mean": -0.2164,
+          "sd": 0.3671,
+          "corr": 0.172
+        },
+        "pump": {
+          "mean": 0.3664,
+          "sd": 0.3673,
+          "corr": 0.257
+        },
+        "engine": {
+          "mean": 0.1854,
+          "sd": 0.4332,
+          "corr": 0.302
+        },
+        "div": {
+          "mean": -0.0155,
+          "sd": 0.3143,
+          "corr": 0.133
+        },
+        "turn": {
+          "mean": 0.2811,
+          "sd": 0.4313,
+          "corr": 0.214
+        },
+        "push": {
+          "mean": 0.9848,
+          "sd": 0.3332,
+          "corr": 0.223
+        },
+        "keyAngle": {
+          "mean": 0.5707,
+          "sd": 0.2939,
+          "corr": 0.236
+        }
+      }
+    },
+    {
+      "t": 600.0000000000198,
+      "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()",
+      "result": {
+        "t": 600.0000000000198,
+        "n": 1685,
+        "pairs": 4277,
+        "leverA": {
+          "mean": 0.9906,
+          "sd": 0.6717,
+          "corr": 0.236
+        },
+        "emitA": {
+          "mean": 1.6484,
+          "sd": 0.8716,
+          "corr": 0.356
+        },
+        "senseA": {
+          "mean": 0.8941,
+          "sd": 0.5005,
+          "corr": 0.214
+        },
+        "tuneA": {
+          "mean": 0.9989,
+          "sd": 0.5813,
+          "corr": 0.137
+        },
+        "leverB": {
+          "mean": 1.6004,
+          "sd": 0.6242,
+          "corr": 0.178
+        },
+        "senseB": {
+          "mean": 1.115,
+          "sd": 0.3862,
+          "corr": 0.167
+        },
+        "pickB": {
+          "mean": 0.2512,
+          "sd": 0.3027,
+          "corr": 0.186
+        },
+        "angleA": {
+          "mean": -0.021,
+          "sd": 0.223,
+          "corr": 0.163
+        },
+        "shareP": {
+          "mean": -0.3821,
+          "sd": 0.3036,
+          "corr": 0.182
+        },
+        "glue": {
+          "mean": -0.5927,
+          "sd": 0.4007,
+          "corr": 0.185
+        },
+        "pump": {
+          "mean": 0.1225,
+          "sd": 0.5428,
+          "corr": 0.311
+        },
+        "engine": {
+          "mean": 0.2166,
+          "sd": 0.4844,
+          "corr": 0.279
+        },
+        "div": {
+          "mean": 0.1378,
+          "sd": 0.4787,
+          "corr": 0.228
+        },
+        "turn": {
+          "mean": 0.5795,
+          "sd": 0.3929,
+          "corr": 0.223
+        },
+        "push": {
+          "mean": 0.919,
+          "sd": 0.4367,
+          "corr": 0.22
+        },
+        "keyAngle": {
+          "mean": 0.551,
+          "sd": 0.308,
+          "corr": 0.22
+        }
+      }
+    },
+    {
+      "t": 900.0000000001046,
+      "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()",
+      "result": {
+        "t": 900.0000000001046,
+        "n": 733,
+        "pairs": 1198,
+        "leverA": {
+          "mean": 0.9415,
+          "sd": 0.5174,
+          "corr": 0.165
+        },
+        "emitA": {
+          "mean": 1.672,
+          "sd": 0.9338,
+          "corr": 0.37
+        },
+        "senseA": {
+          "mean": 0.9258,
+          "sd": 0.5088,
+          "corr": 0.226
+        },
+        "tuneA": {
+          "mean": 0.8872,
+          "sd": 0.5638,
+          "corr": 0.115
+        },
+        "leverB": {
+          "mean": 1.7051,
+          "sd": 0.7889,
+          "corr": 0.106
+        },
+        "senseB": {
+          "mean": 1.0055,
+          "sd": 0.4794,
+          "corr": 0.19
+        },
+        "pickB": {
+          "mean": 0.2226,
+          "sd": 0.2229,
+          "corr": 0.051
+        },
+        "angleA": {
+          "mean": -0.0349,
+          "sd": 0.2189,
+          "corr": 0.081
+        },
+        "shareP": {
+          "mean": -0.3578,
+          "sd": 0.3039,
+          "corr": 0.096
+        },
+        "glue": {
+          "mean": -0.6656,
+          "sd": 0.3822,
+          "corr": 0.255
+        },
+        "pump": {
+          "mean": -0.0797,
+          "sd": 0.5712,
+          "corr": 0.269
+        },
+        "engine": {
+          "mean": 0.4098,
+          "sd": 0.4147,
+          "corr": 0.165
+        },
+        "div": {
+          "mean": 0.2569,
+          "sd": 0.5214,
+          "corr": 0.144
+        },
+        "turn": {
+          "mean": 0.5656,
+          "sd": 0.4572,
+          "corr": 0.147
+        },
+        "push": {
+          "mean": 0.9027,
+          "sd": 0.5076,
+          "corr": 0.142
+        },
+        "keyAngle": {
+          "mean": 0.5047,
+          "sd": 0.3326,
+          "corr": 0.268
+        }
+      }
+    },
+    {
+      "t": 1200.0000000000489,
+      "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()",
+      "result": {
+        "t": 1200.0000000000489,
+        "n": 510,
+        "pairs": 923,
+        "leverA": {
+          "mean": 1.0269,
+          "sd": 0.4175,
+          "corr": 0.136
+        },
+        "emitA": {
+          "mean": 1.7946,
+          "sd": 0.9283,
+          "corr": 0.284
+        },
+        "senseA": {
+          "mean": 0.9089,
+          "sd": 0.7474,
+          "corr": 0.199
+        },
+        "tuneA": {
+          "mean": 0.8409,
+          "sd": 0.7358,
+          "corr": 0.178
+        },
+        "leverB": {
+          "mean": 1.8195,
+          "sd": 0.8079,
+          "corr": 0.139
+        },
+        "senseB": {
+          "mean": 0.6117,
+          "sd": 0.4844,
+          "corr": 0.293
+        },
+        "pickB": {
+          "mean": 0.3666,
+          "sd": 0.2951,
+          "corr": 0.186
+        },
+        "angleA": {
+          "mean": -0.042,
+          "sd": 0.2018,
+          "corr": 0.109
+        },
+        "shareP": {
+          "mean": -0.3315,
+          "sd": 0.3755,
+          "corr": 0.161
+        },
+        "glue": {
+          "mean": -0.5964,
+          "sd": 0.3366,
+          "corr": 0.063
+        },
+        "pump": {
+          "mean": -0.1797,
+          "sd": 0.5191,
+          "corr": 0.235
+        },
+        "engine": {
+          "mean": 0.3019,
+          "sd": 0.407,
+          "corr": 0.131
+        },
+        "div": {
+          "mean": 0.1839,
+          "sd": 0.5233,
+          "corr": 0.227
+        },
+        "turn": {
+          "mean": 0.3333,
+          "sd": 0.533,
+          "corr": 0.196
+        },
+        "push": {
+          "mean": 0.6303,
+          "sd": 0.4034,
+          "corr": 0.106
+        },
+        "keyAngle": {
+          "mean": 0.4827,
+          "sd": 0.2881,
+          "corr": 0.265
+        }
+      }
+    },
+    {
+      "t": 1200.0000000000489,
+      "js": "return await moire.walls.stats()",
+      "result": {
+        "time": 1200.0000000000489,
+        "n": 510,
+        "classes": {
+          "uniform": 0.014,
+          "polar": 0.408,
+          "two-ended": 0.169,
+          "sticky sides": 0.41
+        },
+        "effMean": 0.428,
+        "matureMean": 0.173,
+        "pairs": 921,
+        "glue": 0.284,
+        "matured": 0.067,
+        "contactAt": [
+          0.328,
+          0.332,
+          0.339
+        ],
+        "onSticky": 0.53,
+        "stickyChance": 0.521,
+        "stickyContacts": 1842,
+        "bondsPerCell": 1.816,
+        "chains": 7,
+        "inChains": 22,
+        "longestChain": 4,
+        "rings": 0,
+        "inRings": 0
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-16T08:43:59",
+  "wall_s": 233.54
+}

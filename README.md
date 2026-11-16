@@ -97,7 +97,10 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   (cells do not graze the crust under them: the C12b supply fix off); step C12c: `?excited=0` (freed light atoms carry no energy:
   the chemistry as before), `?exshare=x` (the share of the photon's surplus an excited atom keeps, 0..1, default 0.5, fixed for
   the page), `?exlife=s` (its lifetime in a cold dish, default 30 s), `?exhot=T` (the temperature at which it fades twice as fast,
-  default 4), `?exlook=0` (the excited haze not drawn).
+  default 4), `?exlook=0` (the excited haze not drawn); step C13: `?fgenes=0` (every cell today's field numbers; the field genes
+  still drift), `?gateglue=0`, `?gatepump=0`, `?gateengine=0`, `?gatediv=0`, `?gateturn=0` (one gate off; `?gates=0` all five),
+  `?pushgene=0` (field A pushes every cell as before), `?gatenull=1` (the neutral control: the gate genes and the push gene drift but
+  act on nothing), `?gateref=x`, `?gateturnrate=x`, `?view=guides` (colour by the strongest guide).
   Experiments (see "Experiments: tools"): `?mut=0` (mutation off), `?life=0` (life cycle off), `?snap=<file>` (load a
   saved state), `?clone=1` (every cell gets the first cell's genes; `?clone=@N`: slot N's), `?genes=adhesion:0.8,motility:0.5`.
 
@@ -3441,6 +3444,163 @@ poison. Entropy, ORDER and the count were the same within the runs' swing. The b
 - The excited channels spread wherever light givers or takers are, even when they are empty (2 of 18 channels: a little speed).
 
 
+## Step C13: fields as genes and guides
+
+The user (CLAUDE.md, C13): "I envisioned the field just to guide the underlying interactions. Maybe we let them mutate their different
+fields more." So every field number a cell uses is now its own gene and mutates, and what a cell feels of field A on each side of its
+membrane GATES what it does (its glue per side, its pumps and engines, which way it divides, which way its front turns), each through
+its own gene that starts near 0, so guidance has to evolve. The direct push is one more gene, so a lineage can come to push less and
+guide more. Back to the moire as the heart of the look.
+
+**What it looks like.** In the clean view nothing new is drawn: the change is in how cells sit, divide and shine. **Colour by guide**
+(V, the sixth view; `?view=guides`) fills each body in its STRONGEST gate's ink, as strongly as that gene is: ivory glue (as a matured
+junction's whitish wall), teal pumps, the burn green for engines, lilac division, the partner's yellow for turning, grey for a cell
+whose gate genes are all small (every founder starts grey); and it shades each side's tube by what that side FEELS of field A, bright
+where the field is high and dark where it is low, so the landscape each cell is guided by shows round its rim. With **the machinery**
+(Shift+4) the halftone dots of the fields are now drawn from each cell's own beat: a lineage whose lever gene has drifted draws its own
+ring spacing, and the lattice dots inside each cell follow its own lever and angle genes. The panel has a **GUIDES** line (each gate
+gene's mean and spread, the push gene, which gate is strongest where, how much the cells feel) and a **FIELD GENES** line (each field
+gene's mean, and the median beat period).
+
+In the tissue lab each gate shows by itself (TISSUE.md, "C13: fields as guides, each gate alone"; pictures in `experiments/keep/c13/`):
+- **division** (`lab-division-defaultbeat.jpg`): a clone growing from one cell grows ROUND when its daughters go along the felt gradient
+  (it points to the clump's middle), a long column when they go by the inherited front alone, and sprawls when they go across;
+- **turn** (`lab-turn-longbeat.jpg`): polar cells (front sticky) whose fronts turn up the gradient pack into one sheet; turned away, they
+  fall into a loose ring of little trefoils;
+- **glue** (`lab-glue-longbeat.jpg`): sides stickier where the field is high make a tighter sheet whose middle is a flower of narrow
+  wedge-shaped cells (the moire's rosette pressed into the honeycomb); the other way, a looser sheet of straight rows;
+- **engines and pumps** (`lab-engines-longbeat.jpg`): run slower where the field is high and the middle cells' battery cores shrink to
+  dark centres while the rim stays full.
+None of them makes stripes along the beat rings in a cloned lab culture: every cell is alike and feels the same rings, so a gate only
+scales what the cells do (by where they sit in the clump). And every gate is weak with the default beat: a packed cell feels little of
+field A there (its neighbours' bright cores and dark rings cancel along its sides), about a quarter of what it feels with the long beat.
+
+**The rules as built** (`src/guides.js`, `cell_common.wgsl` Bio, `cell_step.wgsl`, `cell_eat.wgsl`):
+
+- **Field genes.** Every number a cell uses for its fields is now its own gene (Bio words 56..67), and mutates at every birth:
+  - field A: **lever** (x the global lever 0.4: how far the cell's lattice is from the medium's, so its BEAT PERIOD; x 0.25..4, drifting by
+    about 4 % a birth), **emission** (x, 0.1..3), **sensing gain and sign** (x, -2..2: it drifts through 0, so a lineage can come to run
+    from what its ancestors sought), **tuning width** (x tuneW, 0.2..4: how picky its receptor is), **lattice angle** (an offset from the
+    key, +-0.5 rad, about 1 degree a birth: the field's lattice turns, the key itself, the cell's identity and adhesion match, does not);
+  - field B: **lever**, **emission**, **sensing gain and sign** (as A's), and a **pickiness** (0..4; 0 = it feels every cell's B, as
+    before; above 0 only cells whose B lattice is like its own, a Gaussian in the difference of the two B beats), **lattice angle**;
+  - the partner A' (step 8; it is A's sine twin, so its lattice, lever and tuning are A's): a **share** (-1..1: how far the cell turns its
+    beat from A into A', by share x 90 degrees of phase; at 1 its bright core becomes the partner's ring) and a **sensing gain and sign**
+    (x step 8's push along the phase current and its sideways push).
+  The founders carry today's values (x 1, offset 0, pickiness 0, share 0), so with mutation off nothing changes. The grid's scatter and
+  the drawing have no genome, so the step copies what the beat needs into the Cell every tick (words 78..81, half floats, as deltas from
+  today's values); the landscape (the machinery's halftone dots) and the lattice drawn inside the cells are made from each cell's own beat,
+  so a lineage with its own beat period draws its own rings.
+- **Guides.** What a cell feels on each of its six membrane sides is the exact segment integral sensing always computed (field A, with
+  the sensing gene's gain and sign); `s_k = tanh(felt_k / ref)` (-1..1; ref 2.3, about the felt value at which the push saturates) is
+  written into the Cell every tick (8 bits a side) and GATES, each through its own gene (-1..1; the founders' within +-0.05, so
+  guidance must evolve; drifting 0.04 a birth, as the walls' genes):
+  - **glue**: each side's adhesion (step C10's pattern) x (1 + g s_k), before the maturity and the cost: a side that feels the field
+    high is stickier (g > 0) or less sticky (g < 0), and pays for it as any glue does (linkers, upkeep);
+  - **pump**: both pump slots' rates x (1 + g s), s the mean of the six sides (the field at the cell);
+  - **engine**: the three engine slots' rates x (1 + g s) (with them their upkeep and the pigments' depth);
+  - **division**: the division axis (step C11's front-based axis) is pulled toward the felt GRADIENT (the direction the push would go;
+    g > 0: the daughter lands up or down the gradient) or across it (g < 0), by |g| x the gradient's strength (tanh of the push it would
+    give over the push's saturation), the two axes blended as doubled angles;
+  - **turn**: the front turns toward the gradient (g > 0) or away from it (g < 0), at turnRate (1 rad/s) x g x the gradient's strength x
+    the sine of the angle between them; with step C11's glue turning on (the default) the body turns (front and outline), else the front
+    alone. Needs the patterned walls (the front is theirs).
+  Every factor is bounded (0..2; the turning at most 1 rad/s). Nothing is placed by hand; no rule says where to stick or which way to
+  divide.
+- **Push.** Field A's direct push x the **push gene** (0..2; 1 = as before), so a lineage can come to push less and guide more.
+- **Neutral control** (`?gatenull=1`): the gate genes and the push gene still mutate and drift but act on nothing (the field genes still
+  act), to tell selection from drift.
+- **Not gated:** field B's and the substrate's forces, the dipoles, and step 6's conversion (it still reads the A felt without the sensing
+  gene). Turnover births (the fixed-count life cycle) are placed as before; only divisions (step C9) take the division gate.
+
+**Switches** (rules panel, group **Fields as guides (step C13)**; panel only, no keys are free): **field genes**, **glue gate**, **pump
+gate**, **engine gate**, **division gate**, **turn gate**, **push gene**, **neutral control**; knobs **felt reference** (`ref`) and
+**turn gate rate**. URL: `?fgenes=0`, `?gateglue=0`, `?gatepump=0`, `?gateengine=0`, `?gatediv=0`, `?gateturn=0` (`?gates=0`: all five),
+`?pushgene=0`, `?gatenull=1`, `?gateref=x`, `?gateturnrate=x`, `?view=guides`. Console: `moire.guides.params`, `.look`, `.census`; the genes
+by name for the lab: `moire.genome.setAll({ gateGlue: 1, leverA: 1.5, ... })` (names in "Tissues" below).
+
+**The census.** The panel's GUIDES line: each gate gene's mean ± spread (`·off` where the gate is switched off), the push gene, the share of
+cells whose strongest gate is each one and of unguided ones, how much the cells feel (`felt`: mean |s| at the cell; `sides`: how
+differently the six sides feel; `gradient`: the guidance strength), and the gates' marks: **contacts on felt** (the mean s of a cell's
+touching sides minus that of all six; + = the contacts sit where the field is high), **front·gradient** (mean cos between the front and the
+felt gradient; 0 by chance), **divisions |cos|** (between each division's axis and the felt gradient; 0.64 by chance). The FIELD GENES line:
+every field gene's mean (and spread) and the median beat period (in bins: below 2, 2-3, 3-4.5, 4.5-7, 7-10, 10-15, 15-25, above 25 R). On a
+phone one short line. Counted on the GPU on the frame's last tick (Stats.fg, 64 words; two of them, the divisions, run on); in `moire.sample()`
+as `guides.*`. `experiments/tissue/c13-evo.js` measures how PATCHY each gene is in space (its correlation between touching neighbours).
+
+**Layout and snapshots.** Bio 56 → 76 floats (304 bytes), Cell 78 → 84 words (336 bytes: the beat's gene words and the felt sides),
+Fields 416 → 432, Stats 8768 → 9024, Draw 944 → 1056 bytes. A snapshot from before C13 loads with the new Cell words empty (today's values),
+its genomes' field genes at today's values and the field genes, gates and push gene **off** (the note says so), so it runs on as saved
+(checked: `c11-pol-lb-t1-100`, 100 cells, still one tissue after 40 s; run `experiments/conditions/c13/reload.json`).
+
+**Experiments** (headless Chrome, GTX 1650; one run each, not bit-repeatable; tables `experiments/summaries/c13-evo-table.md`, plots
+`experiments/summaries/c13-guides/` and `c13-fgenes/`, runs `experiments/runs/c13/`):
+
+1. *Each gate alone in the tissue lab*: TISSUE.md, "C13: fields as guides, each gate alone" (above in plain words; 28 runs).
+
+2. *Field genes only* (the default scene, 2000 cells, division, mutation; every gate and the push gene off; 20 minutes; seeds 3 and 7;
+   against the same with the field genes off too, where they drift without effect): **no visible tiling by beat period.** The field genes
+   spread fast (by 10 minutes the lever factor's spread is 0.4 to 0.8, the emission's 0.5 to 0.9: in the spotlight the hard light
+   multiplies every mutation by about 4), but the median beat period stays in the 4.5 to 7 R bin in every run, and the neighbour
+   correlation of the lever gene (how patchy it is) is 0.14 to 0.38 with the genes acting and 0.11 to 0.62 without: lineages sit
+   together (every gene, acting or not, has 0.03 to 0.6: that is just relatedness), not sorted by their beat. In a packed colony the
+   fields' halftone dots are hidden (they show only round loose cells), and the lattice drawn inside each cell, which does follow its
+   own lever, is too fine to read at that scale (`evo-fgenes-s7-machinery-close.jpg`: a close-up with the machinery, busy rather than
+   tiled). One faint hint: where the field genes act the sensing gain stayed near 1 (0.91 to 1.56 at the end of the six runs where it
+   acts) while in the two runs where it does not it drifted to 0.13 and 0.92; two controls are too few to call it selection.
+
+| at 20 min (cells; entropy; ORDER) | lever A | sense A | emit A | lever A patchiness |
+|---|---|---|---|---|
+| field genes, seed 3 (401; 15.9 M; 0.21) | 0.91 ± 0.72 | 1.09 ± 0.55 | 0.71 ± 0.59 | 0.21 |
+| field genes, seed 7 (510; 18.0 M; 0.22) | 1.03 ± 0.42 | 0.91 ± 0.75 | 1.79 ± 0.93 | 0.14 |
+| genes off, seed 3 (445; 16.1 M; 0.22) | 0.89 ± 0.43 | 0.13 ± 0.42 | 2.18 ± 0.70 | 0.12 |
+| genes off, seed 7 (1519; 16.6 M; 0.23) | 1.01 ± 0.31 | 0.92 ± 0.39 | 1.33 ± 0.63 | 0.22 |
+
+3. *Full C13 against the neutral control* (the defaults against `?gatenull=1`; 25 minutes; seeds 3 and 7): **no gate moved beyond
+   neutral drift.** Every gate gene wanders far from 0 within 5 to 10 minutes in all four runs (means up to ±0.6, spreads 0.4 to 0.6),
+   but the same genes wander as far in the control, and in no consistent direction:
+
+| at 25 min | cells | entropy (rate) | ORDER | glue | pump | engine | division | turn | push | front·gradient |
+|---|---|---|---|---|---|---|---|---|---|---|
+| full, seed 3 | 591 | 26.2 M (17.4 k/s) | 0.21 | −0.40 ± 0.44 | +0.12 ± 0.50 | −0.34 ± 0.37 | +0.33 ± 0.41 | +0.45 ± 0.42 | 1.15 ± 0.63 | 0.04 |
+| full, seed 7 | 362 | 20.6 M (12.0 k/s) | 0.21 | −0.14 ± 0.46 | −0.09 ± 0.47 | +0.40 ± 0.45 | −0.02 ± 0.59 | +0.62 ± 0.40 | 0.36 ± 0.36 | 0.07 |
+| neutral, seed 3 | 320 | 19.4 M (13.3 k/s) | 0.20 | −0.17 ± 0.55 | +0.42 ± 0.54 | +0.58 ± 0.42 | +0.03 ± 0.59 | +0.54 ± 0.47 | 0.33 ± 0.27 | 0.00 |
+| neutral, seed 7 | 436 | 22.9 M (15.0 k/s) | 0.20 | +0.12 ± 0.55 | +0.56 ± 0.40 | −0.19 ± 0.52 | +0.39 ± 0.47 | −0.62 ± 0.39 | 1.45 ± 0.47 | 0.00 |
+
+   Plainly: the turn gene ended positive in both full runs (+0.45, +0.62; the colony's fronts then lean slightly up the gradient, 0.04 and
+   0.07 against 0.00 in the control), but one control run went as far (+0.54) and the other as far the other way (−0.62); the push gene
+   fell in one full run and in one control run. So the gates' genes drift by hitchhiking on the winning lineages (as the walls' genes did
+   in C10 and C11), and selection, if any, is weaker than that drift in 25 minutes. Both full runs ended with more heat out than their
+   controls (26.2 and 20.6 M against 19.4 and 22.9 M: one each way), the colony at 25 minutes 591 / 362 against 320 / 436: no difference
+   beyond the runs' spread. ORDER 0.20 to 0.21 in all. Atoms and charge rounding exactly 0 in every sample of the eight evolution runs.
+
+   **What it looks like** (`evo-full-s3-guides-t600.jpg`, `evo-full-s3-guides-close.jpg`): in the guides view the colony is a stained-glass
+   patchwork of LINEAGES by their strongest gate: a yellow (turn) lineage filling the spot, green (engine) and teal (pump) ones round it,
+   ivory (glue) and lilac (division) islands, every tube shaded bright on the sides that feel the field high, and in the middle a whorl of
+   small dark cells round a point. The neutral control looks alike (`evo-null-s3-guides-close.jpg`: the same patchwork of lineage colours, a looser rim at that
+   moment and no whorl): the patchwork is the lineages, not the guidance.
+
+**Checked.** The books: a 700 s run at MAX (seed 5; `experiments/runs/c13/c13-check`) through N, a wash, a resize to 1000 × 700, G, a
+resize back, two new springs, every C13 switch off and on at runtime (field genes, each gate, the push gene, the neutral control), every
+C13 gene set by hand (gates ±1, push 0.3, lever 2, sensing −1, pickiness 2, share 0.5, ...), step 8's rules on and off with them, the guides
+view, and a snapshot saved and loaded at once (exact): atoms and charge rounding exactly 0 and the energy's between −0.0007 and +0.044, except
+in the two samples taken in the paused instant of each resize (atoms 781 and 316, the known artefact of steps C10 and C11; 10 s later 0
+again). (After G only a handful of cells were left in that run, so the switches were toggled at full load in the smoke run too:
+`experiments/conditions/c13/smoke.json`, 1700 cells, every switch, the neutral control, the genes by hand, a snapshot: exact, rounding 0.)
+The 28 lab runs and the 8 evolution runs: atoms and charge 0 in every sample. No WebGPU errors in headless Chrome (also at phone size
+390 × 844: the short GUIDES line, the rules panel's new group) or headed Firefox (1280 × 800, the guides view with the neutral control).
+
+**Cost (speed).** Measured on a quiet GPU (no other runs; the user's Firefox open in the background), headless Chrome, the default scene,
+seed 3, MAX, one run each: 2000 cells ×6.48 before C13 and ×5.93 with it (mean speed reached 40 to 150 s; −8 %), 10 000 cells ×1.47 and
+×1.36 (20 to 60 s; −7 %). Where it goes, in principle: the Cell and the genome records are larger (every cell's step reads its genome and
+each touching neighbour's, the scatter and the drawing read the Cell), the step writes the felt sides and the beat's gene words every tick,
+and the census adds a few dozen atomic adds per cell on the frame's last tick.
+
+**Known issues.** The default beat gives the gates little to read in a packed colony (felt 0.1 to 0.2); the long beat four times as much. The
+lattice inside each cell follows its genes, but a packed colony hides the fields' dots, so lineages with different beat periods are hard to
+see even with the machinery. The turn gate needs the patterned walls (the front is theirs). Field B's tuning gene (pickiness) only matters
+where cells feel B; the partner's genes only with step 8's rules on.
+
 ## The look of the landscape
 
 Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the
@@ -3513,6 +3673,10 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   their reactions are in `src/matter.js` (`polarity`, `SUBSTANCES`, `REACTIONS`), the phase separation in `matter.wgsl`
   (`oil_rho`, `oil_blur`, `oil_blur_y`, `oil_edge` in `spread`, the census in `count`), the fusion in `cell_eat.wgsl`, the
   look in `matter_draw.wgsl` (`oil_layer`)
+- `src/guides.js`: fields as genes and guides (step C13): the switches and knobs (`moire.guides.params`, `.look`), the genes'
+  table (FG_GENES, today's values), the census (GUIDES and FIELD GENES lines, the overlay), the guides view's words; the genes in
+  `cell_common.wgsl` (Bio fa, fb, fx, gate, gate2; mutate), the beat from them (cell_beat), the gates in `cell_step.wgsl` (push, division,
+  turn, the census) and `cell_eat.wgsl` (glue, pumps, engines)
 - `src/lipids.js`: lipid membranes (step C12b): the switches and knobs (`moire.lipids.params`, `.look`), the lipid table derived
   from the atoms (`LIPID_TABLE`: head and tail atoms, chain and bond sparks, the bonds' energy, linkers by row), the eat pass's
   words (struct EatP `lp`), the census (from the heat's ledger read-back: LG_LIP_E, LG_LIP_S, LG_LIP_C), the LIPIDS panel line,
@@ -3698,7 +3862,8 @@ tooltip on every point, a dark version for a dark screen). matplotlib is not use
   `await moire.genome.cloneAll(i)`, `await moire.genome.setAll('stiffness', 1.5)` or `setAll({ mix: 0.8, thickness: 0.03 })`,
   `await moire.genome.get(i)`. Gene names (`moire.genome.GENES`): `keyAngle keyScale recAngle recScale recWidth threshold
   output founder resp0..3 relay0..3 adhesion size motility eng0..2 tolerance rate0..2 permeability mix thickness
-  stiffness selectivity pump0 pump1 pumpRate0 pumpRate1`, and since step C10 `a0` (= adhesion) `a1 a2 w` (the walls); engine and pump slot codes from
+  stiffness selectivity pump0 pump1 pumpRate0 pumpRate1`, and since step C10 `a0` (= adhesion) `a1 a2 w` (the walls), since step C13 `leverA emitA senseA tuneA leverB emitB senseB pickB
+  angleA angleB shareP senseP gateGlue gatePump gateEngine gateDiv gateTurn push` (the field genes and the guides); engine and pump slot codes from
   `moire.genome.engineCode('gt → g + t', band)` and `moire.genome.pumpCode('g', 'out')`. `?founders=1` (one founder
   genome) also gives a single genome, from birth.
 - `await moire.tissue.stats()`: touching pairs (closer than the genome's contact reach, 1.15 x the sum of the radii),

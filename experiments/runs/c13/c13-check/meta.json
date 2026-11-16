@@ -1,0 +1,236 @@
+{
+  "name": "c13-check",
+  "description": "Step C13 books check: 700 s at MAX (seed 5) through N, a wash, a resize, G, a resize back, new springs, every C13 switch toggled at runtime (field genes, each gate, the push gene, the neutral control) and hand-set genes, then a snapshot saved and loaded; the atoms' and charge's rounding must stay 0",
+  "condition": {
+    "name": "c13-check",
+    "description": "Step C13 books check: 700 s at MAX (seed 5) through N, a wash, a resize, G, a resize back, new springs, every C13 switch toggled at runtime (field genes, each gate, the push gene, the neutral control) and hand-set genes, then a snapshot saved and loaded; the atoms' and charge's rounding must stay 0",
+    "query": {
+      "seed": 5
+    },
+    "duration": 700,
+    "sample_every": 10,
+    "resizes": [
+      {
+        "t": 300,
+        "size": "1000x700"
+      },
+      {
+        "t": 480,
+        "size": "1280x800"
+      }
+    ],
+    "evals": [
+      {
+        "t": 120,
+        "js": "return moire.control.action('culture')"
+      },
+      {
+        "t": 220,
+        "js": "return moire.control.action('wash')"
+      },
+      {
+        "t": 400,
+        "js": "return moire.control.action('genomes')"
+      },
+      {
+        "t": 520,
+        "js": "{ const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.5, 'light'); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.5, 'heavy'); } return moire.matter.springs.length"
+      },
+      {
+        "t": 560,
+        "js": "moire.guides.params.genes = false; return 'field genes off'"
+      },
+      {
+        "t": 566,
+        "js": "moire.guides.params.genes = true; moire.guides.params.glue = false; return 'genes on, glue gate off'"
+      },
+      {
+        "t": 572,
+        "js": "moire.guides.params.glue = true; moire.guides.params.pump = false; moire.guides.params.engine = false; return 'pump and engine gates off'"
+      },
+      {
+        "t": 578,
+        "js": "moire.guides.params.pump = true; moire.guides.params.engine = true; moire.guides.params.div = false; moire.guides.params.turn = false; return 'div and turn gates off'"
+      },
+      {
+        "t": 584,
+        "js": "moire.guides.params.div = true; moire.guides.params.turn = true; moire.guides.params.push = false; return 'push gene off'"
+      },
+      {
+        "t": 590,
+        "js": "moire.guides.params.push = true; moire.guides.params.null = true; return 'neutral control on'"
+      },
+      {
+        "t": 596,
+        "js": "moire.guides.params.null = false; await moire.genome.setAll({ gateGlue: 1, gatePump: 1, gateEngine: -1, gateDiv: 1, gateTurn: -1, push: 0.3, leverA: 2, emitA: 1.5, senseA: -1, tuneA: 2, leverB: 0.5, emitB: 2, senseB: -1, pickB: 2, angleA: 0.3, angleB: -0.3, shareP: 0.5, senseP: -1 }); return 'every C13 gene set by hand'"
+      },
+      {
+        "t": 615,
+        "js": "moire.cells.partner.on = true; moire.cells.partner.change = true; moire.cells.partner.side = true; return 'step 8 rules on (the partner genes act)'"
+      },
+      {
+        "t": 630,
+        "js": "moire.cells.partner.on = false; moire.cells.partner.change = false; moire.cells.partner.side = false; moire.cells.look.view = 5; return 'step 8 off; guides view'"
+      },
+      {
+        "t": 640,
+        "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }"
+      },
+      {
+        "t": 660,
+        "js": "return await moire.walls.stats()"
+      }
+    ],
+    "shots": [
+      {
+        "t": 600,
+        "view": "guides"
+      },
+      {
+        "t": 700
+      }
+    ],
+    "stall": 120
+  },
+  "url": "http://localhost:57754/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=5",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "59afcd2c16dff19371f986029e2858dc5fe0e0d4",
+  "dirty": true,
+  "started": "2026-11-16T09:10:32",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 700.0,
+  "run_wall_s": 95.58,
+  "speed_reached": 7.32,
+  "samples": 71,
+  "shots": [
+    "shots/t600_guides.png",
+    "shots/t700.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 119.99999999999777,
+      "js": "return moire.control.action('culture')",
+      "result": true
+    },
+    {
+      "t": 219.99999999999935,
+      "js": "return moire.control.action('wash')",
+      "result": true
+    },
+    {
+      "t": 399.9999999999974,
+      "js": "return moire.control.action('genomes')",
+      "result": true
+    },
+    {
+      "t": 520.0000000000015,
+      "js": "{ const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.5, 'light'); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.5, 'heavy'); } return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 560.0000000000019,
+      "js": "moire.guides.params.genes = false; return 'field genes off'",
+      "result": "field genes off"
+    },
+    {
+      "t": 566.0000000000003,
+      "js": "moire.guides.params.genes = true; moire.guides.params.glue = false; return 'genes on, glue gate off'",
+      "result": "genes on, glue gate off"
+    },
+    {
+      "t": 571.9999999999986,
+      "js": "moire.guides.params.glue = true; moire.guides.params.pump = false; moire.guides.params.engine = false; return 'pump and engine gates off'",
+      "result": "pump and engine gates off"
+    },
+    {
+      "t": 577.9999999999981,
+      "js": "moire.guides.params.pump = true; moire.guides.params.engine = true; moire.guides.params.div = false; moire.guides.params.turn = false; return 'div and turn gates off'",
+      "result": "div and turn gates off"
+    },
+    {
+      "t": 583.9999999999966,
+      "js": "moire.guides.params.div = true; moire.guides.params.turn = true; moire.guides.params.push = false; return 'push gene off'",
+      "result": "push gene off"
+    },
+    {
+      "t": 589.9999999999957,
+      "js": "moire.guides.params.push = true; moire.guides.params.null = true; return 'neutral control on'",
+      "result": "neutral control on"
+    },
+    {
+      "t": 595.9999999999943,
+      "js": "moire.guides.params.null = false; await moire.genome.setAll({ gateGlue: 1, gatePump: 1, gateEngine: -1, gateDiv: 1, gateTurn: -1, push: 0.3, leverA: 2, emitA: 1.5, senseA: -1, tuneA: 2, leverB: 0.5, emitB: 2, senseB: -1, pickB: 2, angleA: 0.3, angleB: -0.3, shareP: 0.5, senseP: -1 }); return 'every C13 gene set by hand'",
+      "result": "every C13 gene set by hand"
+    },
+    {
+      "t": 614.999999999989,
+      "js": "moire.cells.partner.on = true; moire.cells.partner.change = true; moire.cells.partner.side = true; return 'step 8 rules on (the partner genes act)'",
+      "result": "step 8 rules on (the partner genes act)"
+    },
+    {
+      "t": 629.9999999999869,
+      "js": "moire.cells.partner.on = false; moire.cells.partner.change = false; moire.cells.partner.side = false; moire.cells.look.view = 5; return 'step 8 off; guides view'",
+      "result": "step 8 off; guides view"
+    },
+    {
+      "t": 639.9999999999847,
+      "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }",
+      "result": {
+        "exact": true,
+        "notes": [],
+        "rounding": {
+          "energy": 0.0435638427734375,
+          "atoms": 0,
+          "charge": 0,
+          "snapshot": {
+            "energy": 0.0435638427734375,
+            "atoms": 0,
+            "charge": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 659.9999999999811,
+      "js": "return await moire.walls.stats()",
+      "result": {
+        "time": 659.9999999999811,
+        "n": 6,
+        "classes": {
+          "uniform": 0.833,
+          "polar": 0,
+          "two-ended": 0.167,
+          "sticky sides": 0
+        },
+        "effMean": 0.539,
+        "matureMean": 0.103,
+        "pairs": 1,
+        "glue": 0.659,
+        "matured": 0,
+        "contactAt": [
+          0.5,
+          0,
+          0.5
+        ],
+        "onSticky": 1,
+        "stickyChance": 0.5,
+        "stickyContacts": 1,
+        "bondsPerCell": 0.333,
+        "chains": 0,
+        "inChains": 0,
+        "longestChain": 0,
+        "rings": 0,
+        "inRings": 0
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-16T09:12:47",
+  "wall_s": 134.85
+}

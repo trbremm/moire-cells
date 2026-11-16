@@ -560,6 +560,14 @@ C13. FIELDS AS GENES, FIELDS AS GUIDES (user 2026-11-16 chose it next, over more
     round / column / sprawl; turn: one sheet vs ring of rosettes; glue: tight sheet with a wedge flower vs loose rows;
     engines: dark-cored middle), ~4x stronger with the long beat. EVOLUTION: NULL, gate genes drift like the neutral
     control (+-0.6); beat periods do not tile the dish (median 4.5-7 R). Speed -7..8 %.
+C12f. VENTS THAT FEED LIFE IN THE DARK (user 2026-11-16 "maybe we should adapt the chemistry then", after the app
+    worker found a fully dark vent dish starves in 100 s: fermenting vent fuel earns the culture ~0.001 energy/s). Start
+    after C12e is merged (same files). First DIAGNOSE (vent rate, engine rates, sparks, C12e saturation clogging small
+    releases, upkeep). Then CHEMOSYNTHESIS from a redox gradient, derived from the electron table: the vent becomes a
+    HOT source of free givers (g, G: hydrogen/iron-like, reduced), the "sea" a faint dish-wide background of free heavy
+    takers T (sulfate/CO2-like, booked as input like springs); G+T -> GT 2.375, g+T -> gT 1.5. Sparks keep it slow in
+    the cold open, vent heat burns it abiotically close in, cells' engines (enzymes) run it anywhere. Hoped for (never
+    written): rings of life around vents in total darkness.
 VIEW AND APP (user 2026-11-16, alongside C12e; two parallel branches):
 H1. HARMONIC VIEW (user: "one of my original inspirations are these higher harmonic microscopy images"; they showed a
     multiphoton tissue image: green thin rims around dark interiors (muscle-fibre honeycomb, threads, hollow rings),

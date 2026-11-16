@@ -1,0 +1,52 @@
+{
+  "name": "n1-diag-default_s3",
+  "description": "Step N1 diagnosis: the default scene with the old light (pigments free, no saturation), 2000 cells, 15 min: battery income from light, unused photons by reason",
+  "condition": {
+    "name": "n1-diag-default_s3",
+    "description": "Step N1 diagnosis: the default scene with the old light (pigments free, no saturation), 2000 cells, 15 min: battery income from light, unused photons by reason",
+    "query": {
+      "pigmatter": 0,
+      "pigsat": 0,
+      "inhib": 0,
+      "seed": 3
+    },
+    "duration": 900,
+    "sample_every": 30,
+    "snapshots": [
+      {
+        "t": 900
+      }
+    ],
+    "shots": [
+      {
+        "t": 900,
+        "view": "strategy"
+      }
+    ]
+  },
+  "url": "http://localhost:59253/index.html?speed=max&until=0&overlay=ghost&ui=0&pigmatter=0&pigsat=0&inhib=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-16T17:07:18",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 900.0,
+  "run_wall_s": 241.66,
+  "speed_reached": 3.72,
+  "samples": 31,
+  "shots": [
+    "shots/t900_strategy.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t900.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T17:11:59",
+  "wall_s": 280.27
+}

@@ -1,0 +1,35 @@
+{
+  "name": "n1-speed-2k-harmonic",
+  "description": "Speed after step N1: as above, harmonic look",
+  "condition": {
+    "name": "n1-speed-2k-harmonic",
+    "description": "Speed after step N1: as above, harmonic look",
+    "query": {
+      "seed": 3,
+      "look": "harmonic"
+    },
+    "duration": 150,
+    "sample_every": 25
+  },
+  "url": "http://localhost:57799/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&look=harmonic",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "7f4557c04ebacb18f1b3122a318c12159882902a",
+  "dirty": true,
+  "started": "2026-11-16T19:34:13",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 150.0,
+  "run_wall_s": 65.06,
+  "speed_reached": 2.31,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T19:35:57",
+  "wall_s": 103.49
+}

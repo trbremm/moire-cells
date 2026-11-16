@@ -34,6 +34,7 @@ export class Background {
     };
     this.heatOn = true;   // step C1: heat drives the ripples (Shift+R)
     this.heat = null;     // the heat band (set by main.js)
+    this.water = null;    // step N1: the water (src/water.js; set by main.js): its swell is drawn with the ripples
     this.heatVersion = -1;
     this.steps = 0;
     this.ambient = true;  // occasional random drops, standing in for the divisions and deaths of the reference
@@ -73,10 +74,10 @@ export class Background {
     this.stepU = d.createBuffer({ label: 'ripple step params', size: 64, usage: U.UNIFORM | U.COPY_DST });
     this.noHeat = d.createBuffer({ label: 'ripple no heat', size: 16, usage: U.STORAGE });
     this.injectU = d.createBuffer({ label: 'ripple inject params', size: 16, usage: U.UNIFORM | U.COPY_DST });
-    this.drawU = d.createBuffer({ label: 'background draw params', size: 48, usage: U.UNIFORM | U.COPY_DST });
+    this.drawU = d.createBuffer({ label: 'background draw params', size: 144, usage: U.UNIFORM | U.COPY_DST });   // (48 until step N1's swell)
     this.impBuf = d.createBuffer({ label: 'ripple impulses', size: MAX_IMPULSES * 16, usage: U.STORAGE | U.COPY_DST });
     this.impData = new Float32Array(MAX_IMPULSES * 4);
-    this.drawData = new Float32Array(12);
+    this.drawData = new Float32Array(36);
   }
 
   resize(view) {
@@ -201,6 +202,10 @@ export class Background {
     a[4] = this.gw; a[5] = this.gh; a[6] = frame.time; a[7] = this.params.ripple;
     a[8] = this.params.sheen;
     a[2] = v.dpr * camera.z; a[9] = camera.x; a[10] = camera.y;   // app: the view camera
+    // step N1: the swell (the water's surface whose curvature focuses the light: src/water.js)
+    const Wt = this.water;
+    a[11] = 0; a.fill(0, 12, 36);
+    if (Wt && Wt.params.caustics && Wt.params.swellShade > 0) { a[11] = Wt.params.swellShade; a.set(Wt.swellAt(frame.time), 12); }
     this.device.queue.writeBuffer(this.drawU, 0, a);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG[this.cur]);

@@ -1,0 +1,3 @@
+{"name": "n1-reload-old", "description": "Step N1: a snapshot saved by the code before step N1 (5c7b944, default scene seed 3 at 60 s) loads with the N1 parts off and runs 60 s more; atoms and charge rounding must stay 0",
+ "query": {"snap": "experiments/runs/n1-oldsnap-make/snapshots/old.json"}, "duration": 60, "sample_every": 10,
+ "evals": [{"t": 1, "js": "return { pig: moire.pigments.params, water: [moire.water.params.caustics, moire.water.params.currents], oases: [moire.oases.params.scarce, moire.oases.params.roam, moire.oases.params.count, moire.oases.list.length] }"}]}

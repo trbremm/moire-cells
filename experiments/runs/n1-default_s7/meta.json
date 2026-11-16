@@ -1,0 +1,80 @@
+{
+  "name": "n1-default_s7",
+  "description": "Step N1: the default scene with every N1 part on (light needs matter, saturation, bleaching, scarce trace from 3 roaming oases, caustic light, currents), 2000 cells, 20 min",
+  "condition": {
+    "name": "n1-default_s7",
+    "description": "Step N1: the default scene with every N1 part on (light needs matter, saturation, bleaching, scarce trace from 3 roaming oases, caustic light, currents), 2000 cells, 20 min",
+    "query": {
+      "seed": 7
+    },
+    "duration": 1200,
+    "sample_every": 30,
+    "evals": [
+      {
+        "t": 600,
+        "js": "return JSON.stringify(await moire.water.stats())"
+      }
+    ],
+    "snapshots": [
+      {
+        "t": 1200
+      }
+    ],
+    "shots": [
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "view": "strategy",
+        "name": "strategy"
+      },
+      {
+        "t": 1201,
+        "name": "mach",
+        "view": "machinery"
+      }
+    ],
+    "clips": []
+  },
+  "url": "http://localhost:63539/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-16T18:11:17",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 847.11,
+  "speed_reached": 1.42,
+  "samples": 41,
+  "shots": [
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t1200.png",
+    "shots/strategy.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t1200.json"
+  ],
+  "clips": [],
+  "evals": [
+    {
+      "t": 599.9999999997393,
+      "js": "return JSON.stringify(await moire.water.stats())",
+      "result": "{\"caustic\":{\"mean\":0.9884376638991009,\"p10\":0.11942444741725922,\"p50\":0.5277215838432312,\"p90\":2.68867826461792,\"p99\":4.010659217834473,\"max\":4.26873254776001,\"bright\":0.24878338036232772},\"current\":{\"mean\":0.3932313664976178,\"max\":1.1670020365637601,\"eddy\":19.430091978474785}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-16T18:26:14",
+  "wall_s": 897.28
+}

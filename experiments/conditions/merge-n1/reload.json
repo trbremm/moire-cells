@@ -1,0 +1,10 @@
+{"runs": [
+ {"name": "merge-n1-reload-c12f", "description": "a C12f snapshot (dark_s3 at 2 min) on the merged page: ions and N1 parts off as it ran",
+  "query": {"snap": "experiments/runs/c12f-dark_s3/snapshots/snap_t120.json"}, "duration": 60, "sample_every": 10,
+  "evals": [{"t": 5, "js": "return { ions: [moire.ions.params.block, moire.ions.params.genes], pig: moire.pigments.params.matter, water: [moire.water.params.caustics, moire.water.params.currents], oases: [moire.oases.params.scarce, moire.oases.params.count] }"}],
+  "shots": [{"t": 60}]},
+ {"name": "merge-n1-reload-n1", "description": "an N1-branch snapshot (Oases preset s3 at 20 min) on the merged page: N1 parts as saved, C12g ion flow off as it ran",
+  "query": {"snap": "experiments/runs/merge-n1-snaps/snapshots/n1-oases_s3_t1200.json"}, "duration": 60, "sample_every": 10,
+  "evals": [{"t": 5, "js": "return { ions: [moire.ions.params.block, moire.ions.params.genes], pig: moire.pigments.params.matter, water: [moire.water.params.caustics, moire.water.params.currents], oases: [moire.oases.params.scarce, moire.oases.params.count, moire.oases.list.length] }"}],
+  "shots": [{"t": 60}]}
+]}

@@ -1,0 +1,25 @@
+{
+ "batch": "n1-main",
+ "seeds": [3, 7],
+ "runs": [
+  {
+   "name": "n1-default",
+   "description": "Step N1: the default scene with every N1 part on (light needs matter, saturation, bleaching, scarce trace from 3 roaming oases, caustic light, currents), 2000 cells, 20 min",
+   "query": {},
+   "duration": 1200, "sample_every": 30,
+   "evals": [{"t": 600, "js": "return JSON.stringify(await moire.water.stats())"}],
+   "snapshots": [{"t": 1200}],
+   "shots": [{"t": 300}, {"t": 600}, {"t": 1200}, {"t": 1200, "view": "strategy", "name": "strategy"}, {"t": 1201, "name": "mach", "view": "machinery"}],
+   "clips": []
+  },
+  {
+   "name": "n1-oases",
+   "description": "Step N1: the Oases preset (whole dish lit with a caustic net, 4 roaming oases, scattered cells, 3 mineral springs and a slow vent), 20 min",
+   "query": {"preset": "oases"},
+   "duration": 1200, "sample_every": 30,
+   "evals": [{"t": 600, "js": "return JSON.stringify(await moire.water.stats())"}, {"t": 1202, "js": "moire.control.action('harmonic'); return 'harmonic'"}],
+   "snapshots": [{"t": 1200}],
+   "shots": [{"t": 300}, {"t": 600}, {"t": 1200}, {"t": 1200, "view": "strategy", "name": "strategy"}, {"t": 1201, "name": "mach", "view": "machinery"}, {"t": 1203, "name": "harmonic"}]
+  }
+ ]
+}

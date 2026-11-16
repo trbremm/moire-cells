@@ -58,6 +58,7 @@ export const RULE_GROUPS = [
   ['lipids', 'Lipid membranes (step C12b)'],
   ['excited', 'Excited waste (step C12c)'],
   ['electrons', 'Electrons (step C12d)'],
+  ['waste', 'Waste must leave (step C12e)'],
   ['guides', 'Fields as guides (step C13)'],
   ['state', 'Save and load the state (experiments)'],
 ];
@@ -596,6 +597,35 @@ export function makeActions(app) {
     eknob('elKabs', 'absorption depth', 'kAbs', 0.01, 50, 1.5, 2, 'optical depth of a substance for a band its gap matches, per unit per R²'),
     eknob('elYrx', 'share that reacts', 'yRx', 0, 1, 1.25, 2, 'share of the excitations that react, where a reaction is open to them'),
     eknob('elYfl', 'share that glows', 'yFl', 0, 1, 1.25, 2, 'share of the rest that fluoresces (the others turn into heat)'),
+  );
+
+  // ---------- waste must leave (step C12e; panel only: no keys are free) ----------
+  const WP = () => app.cells.eat.waste.params;
+  const wsknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'waste', type: 'knob', get: () => WP()[key].toFixed(digits),
+    run: (k) => { const p = WP(); p[key] = Math.max(lo, Math.min(hi, +(p[key] * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    { id: 'saturation', keys: [], label: 'saturation', group: 'waste', type: 'toggle', get: () => WP().saturation,
+      run: () => `saturation ${flip(WP(), 'saturation') ? 'on: a reaction inside a cell slows as its own products pile up (a big release clogs late, a small one early)' : 'off: products never slow a reaction'}`,
+      help: 'mass action: every reaction inside a cell runs × (1 − Q/K), Q its products over its reactants, K = exp(the energy it gives off / theta T): waste left inside clogs the engines that made it' },
+    { id: 'osmosis', keys: [], label: 'osmosis', group: 'waste', type: 'toggle', get: () => WP().osmosis,
+      run: () => `osmosis ${flip(WP(), 'osmosis') ? 'on: free ions inside swell a cell (outside ones shrink it), resisted by its membrane' : 'off: no swelling (the stretch genes still drift: the neutral control)'}`,
+      help: 'free ions (free givers and takers) inside minus outside swell the cell against its membrane’s stiffness (a crust wall holds hardest); binding them into molecules lowers the load' },
+    { id: 'stretch', keys: [], label: 'stretch opens channels', group: 'waste', type: 'toggle', get: () => WP().stretch,
+      run: () => `stretch channels ${flip(WP(), 'stretch') ? 'open: a swollen membrane leaks more (the gene sets how much)' : 'closed: swelling does not change the leak'}`,
+      help: 'a stretched membrane’s channels open (a gene, like bacteria’s mechanosensitive channels): the passive exchange × (1 + kStretch × e^gene × swelling)' },
+    { id: 'tear', keys: [], label: 'overstretch tears', group: 'waste', type: 'toggle', get: () => WP().tear,
+      run: () => `overstretch ${flip(WP(), 'tear') ? 'tears: past its stretch tolerance (a gene) a whole membrane bursts' : 'never tears'}${rules().turn ? '' : ' (bursting needs the life cycle, key T)'}`,
+      help: 'past its stretch tolerance (a gene, paid as upkeep) a whole membrane tears and the cell bursts, spilling its contents' },
+    { id: 'tolcost', keys: [], label: 'tolerance costs', group: 'waste', type: 'toggle', get: () => WP().cost,
+      run: () => `the stretch tolerance ${flip(WP(), 'cost') ? 'costs upkeep (in proportion to it)' : 'is free'}`,
+      help: 'a membrane that bears more stretch costs upkeep from the battery, in proportion to the tolerance' },
+    { id: 'photolysis', keys: [], label: 'light frees atoms (open)', group: 'waste', type: 'toggle', get: () => ELECTRONS && ELP().photolysis,
+      run: () => (ELECTRONS ? `photolysis ${flip(ELP(), 'photolysis') ? 'on: light can split minerals and free atoms in the open dish' : 'off: light only excites, glows and warms in the open: any free t in the dish is made by life'}` : 'needs electrons'),
+      help: 'whether light can free atoms in the open dish (split water-like minerals, swap uphill); off: only cells (their pigments) make free t' },
+    wsknob('satScale', 'saturation scale', 'satScale', 0.05, 20, 1.5, 2, 'K = exp(drive / (scale × theta × T)): above 1 reactions clog sooner'),
+    wsknob('kOsm', 'swelling per pressure', 'kOsm', 0.01, 20, 1.5, 2, 'how much a cell swells (area share) per unit of osmotic pressure, at stiffness 1'),
+    wsknob('kStretch', 'stretch channels', 'kStretch', 0.01, 50, 1.5, 2, 'the passive exchange × (1 + this × e^gene × swelling)'),
+    wsknob('wTol', 'stretch tolerance', 'wTol', 0.02, 5, 1.25, 2, 'the swelling a whole membrane bears at gene 0 (× e^gene) before it tears'),
   );
 
   // ---------- hard light mutates (step C8; panel only: no keys are free) ----------

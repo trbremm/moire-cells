@@ -81,6 +81,10 @@
 //               ?fluor=0 no fluorescence, ?photo=0 excited states do not react (no photochemistry in the open), ?glow=0 the glow
 //               not drawn; ?kabs=x a matching gap's optical depth, ?yrx=x the share that reacts, ?yfl=x the share of the rest that
 //               fluoresces (rules panel, Electrons; view panel)
+//   ?saturation=0 step C12e: no saturation (reactions inside cells do not slow as their products pile up); ?osmosis=0 no osmosis (no
+//               swelling: the stretch genes still drift, the NEUTRAL control), ?stretch=0 stretch opens no channels, ?tear=0 overstretch
+//               does not burst, ?tolcost=0 the stretch tolerance is free; ?satscale=x, ?kosm=x, ?kstretch=x, ?wtol=x knobs;
+//               ?photolysis=0 light cannot free atoms in the open dish (any free t is made by life) (rules panel, Waste must leave)
 //   ?fgenes=0     step C13: start with the field genes off (every cell today's lever, emission, sensing, tuning, angle; the genes
 //               still drift); ?gateglue=0, ?gatepump=0, ?gateengine=0, ?gatediv=0, ?gateturn=0 one gate off (?gates=0 all five),
 //               ?pushgene=0 the push gene off (field A pushes every cell as before), ?gatenull=1 the NEUTRAL control (the gate
@@ -366,6 +370,17 @@ async function boot() {
         const v = Number(params.get(q));
         if (params.has(q) && Number.isFinite(v) && v >= 0) EP[k] = v;
       }
+      if (params.has('photolysis')) EP.photolysis = flag('photolysis');   // step C12e
+    }
+    {   // step C12e: waste must leave
+      const WP = cells.eat.waste.params;
+      for (const [q, k] of [['saturation', 'saturation'], ['osmosis', 'osmosis'], ['stretch', 'stretch'], ['tear', 'tear'], ['tolcost', 'cost']]) {
+        if (params.has(q)) WP[k] = flag(q);
+      }
+      for (const [q, k] of [['satscale', 'satScale'], ['kosm', 'kOsm'], ['kstretch', 'kStretch'], ['wtol', 'wTol']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) WP[k] = v;
+      }
     }
     background.heat = cells.heat;
   } catch (e) {
@@ -379,7 +394,7 @@ async function boot() {
   window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter, eat: cells.eat, neon, charge,
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
-    electrons: matter.electrons };
+    electrons: matter.electrons, waste: cells.eat.waste };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
   window.moire.budgets = budgets;      // the fast speeds' tick budgets
@@ -591,7 +606,8 @@ function frame(now) {
 
   if (!entropyEl.hidden) {
     const compact = view.cssW < 560 || view.cssH < 500;   // a phone (either way up): shorter lines
-    let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}\n${charge.panelLine(compact)}\n${cells.eat.membrane.panelLine(compact)}\n${cells.eat.lipids.panelLine(compact)}\n${cells.dipole.panelLine(compact)}\n${cells.eat.pumps.panelLine(compact)}\n${cells.eat.catalysts.panelLine(compact)}\n${cells.eat.hardlight.panelLine(compact)}\n${cells.division.panelLine(compact)}\n${cells.walls.panelLine(compact)}\n${cells.guides.panelLine(compact)}\n${matter.oil.panelLine(compact)}\n${ELECTRONS ? matter.electrons.panelLine(compact) : matter.excited.panelLine(compact)}`;
+    let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}\n${charge.panelLine(compact)}\n${cells.eat.membrane.panelLine(compact)}\n${cells.eat.lipids.panelLine(compact)}\n${cells.dipole.panelLine(compact)}\n${cells.eat.pumps.panelLine(compact)}\n${cells.eat.catalysts.panelLine(compact)}\n${cells.eat.hardlight.panelLine(compact)}\n${cells.division.panelLine(compact)}\n${cells.walls.panelLine(compact)}\n${cells.guides.panelLine(compact)}\n${matter.oil.panelLine(compact)}\n${ELECTRONS ? matter.electrons.panelLine(compact) : matter.excited.panelLine(compact)}
+${cells.eat.waste.panelLine(compact)}`;
     if (paused || speed !== 1) {
       const r = reachedText();
       const sp = paused ? 'paused' : r ? (compact ? r : `${speedName(speed)} · reached ${r}`) : speedName(speed);
@@ -660,6 +676,7 @@ function drawOverlay() {
     ...cells.eat.membrane.overlayLines(),
     ...cells.eat.lipids.overlayLines(),
     ...(ELECTRONS ? matter.electrons.overlayLines() : matter.excited.overlayLines()),
+    ...cells.eat.waste.overlayLines(),
     ...cells.dipole.overlayLines(),
     ...cells.eat.pumps.overlayLines(),
     ...cells.eat.catalysts.overlayLines(),

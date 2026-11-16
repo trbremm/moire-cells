@@ -56,7 +56,8 @@ export const CELL_URL = 'src/shaders/cell_common.wgsl';
 // mature[3] (65: each side's junction maturity, 16 bits), wadh[2] (68: each side's effective adhesion, 8 bits), wlink (70), wpay (71);
 // step C12b, lipid membranes (src/lipids.js): lip[6] (72: per side, 4 x 8 bits: stiffness, the wall's heavy share, oil share, wall cover);
 // step C13, fields as genes and guides (src/guides.js): fg[4] (78: the field genes the beat needs, f16 deltas), felt[2] (82: what each side felt)
-export const CELL_FLOATS = 84;
+// step C12e, osmosis on the ions (src/waste.js): osm (84: the swelling), osmP (85: the osmotic pressure), 86, 87 spare
+export const CELL_FLOATS = 88;
 export const CELL_BYTES = CELL_FLOATS * 4;
 const CELL_CORE_BYTES = 120;   // step C6c: struct CellCore (the grid's sorted copy: Cell without the outline and per-side slots;
                                // step C6d: + the dipole, 104 until then; step C10: + the walls, 112 until then)

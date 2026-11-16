@@ -209,7 +209,78 @@ struct EatP {
   // ---- step C12d, electrons ----
   smellW: array<vec4f, 4>, // per channel: what smell weighs it by (heat counts per count): the old table a fuel's energy; electrons the
                            // energy the strongest taker would release taking its electron (fuel 3, 2.5; minerals 0)
+  // ---- step C12e, waste must leave (src/waste.js) ----
+  ws: array<vec4f, 2>,     // [0] x WSF_* bits (u32); y the saturation's temperature factor (x theta x T: 1 = the sparks' own scale); z kOsm
+                           //     (swelling per unit of osmotic pressure at stiffness 1); w the swelling's relaxation rate (per s)
+                           // [1] x the largest swelling (area share); y the smallest (< 0: shrunk); z kStretch (a stretched membrane's
+                           //     passive exchange x (1 + kStretch x e^gene x swelling)); w wTol (the stretch a membrane tolerates at gene 0)
+  ws2: vec4f,              // x the tear rate past the tolerance (bursts per s per unit of relative excess); y the stretch tolerance's
+                           // upkeep (heat counts per tick at gene 0, x e^gene); z w spare
 };
+// ---- step C12e, WASTE MUST LEAVE (src/waste.js). Two pressures, both derived, no "expel" rule:
+//   SATURATION (mass action): every reaction a cell runs slows as its own products pile up against its reactants: its rate x
+//     (1 - Q / K), Q = the products' over the reactants' concentrations (each a share of the stock's capacity), K = exp(drive /
+//     (theta x T)), drive = the energy the event gives off (a downhill reaction's release; an uphill one's photon surplus + its spark:
+//     what the light and the battery put in beyond the rise). A big release is hard to clog, a small one clogs easily. The balance
+//     point cannot be a gene: an engine is a catalyst, and a catalyst speeds both directions alike
+//   OSMOSIS ON THE IONS: free ions (free givers and takers, by number) inside per unit of capacity - outside = the PRESSURE; the cell
+//     SWELLS toward kOsm x pressure x its membrane's closure (its mean integrity: a leaky membrane holds no pressure) / its stiffness
+//     (the bilayer's and wall's, C12b; the material's, C6c); a swollen membrane is thinner (the same material on a longer outline:
+//     integrity falls), its STRETCH CHANNELS (a gene) open (the passive exchange x (1 + kStretch e^gene x swelling)), and past its
+//     STRETCH TOLERANCE (a gene, paid as upkeep) it tears: it bursts at a rate rising with the excess
+const WSF_SAT: u32 = 1u;       // saturation
+const WSF_OSM: u32 = 2u;       // osmosis (master: swelling)
+const WSF_STRETCH: u32 = 4u;   // ... stretch opens the membrane (the stretch channels gene)
+const WSF_TEAR: u32 = 8u;      // ... overstretch tears (the stretch tolerance gene; bursting needs turnover, as bites')
+const WSF_COST: u32 = 16u;     // ... the stretch tolerance costs upkeep
+fn ws_flags() -> u32 { return bitcast<u32>(EP.ws[0].x); }
+const W_TMADE: u32 = 62u;      // stock words: the free light takers t this cell has MADE (counts, since its birth), and
+const W_TIMP: u32 = 63u;       // ... taken in from outside, net (exchange and pumps; < 0: it put out more than it took)
+// counters (LG_WS + 256 + 16 q + slot, i32, the eat pass) and the snapshot census (LG_WS + 16 q + slot, the ledger pass)
+const WC_WANT: u32 = 0u;       // reaction events (counts) the cells' reactions would run without saturation, / 16
+const WC_LOST: u32 = 1u;       // ... of them lost to saturation, / 16
+const WC_TMADE: u32 = 2u;      // free t made inside (counts)
+const WC_TIN: u32 = 3u;        // free t taken in (exchange + pumps)
+const WC_TOUT: u32 = 4u;       // free t put out
+const WC_TEAR: u32 = 5u;       // cells that burst by overstretch
+const WC_UPKEEP: u32 = 6u;     // heat counts the stretch tolerance's upkeep took
+const WZ_N: u32 = 0u;          // snapshot: live cells
+const WZ_P: u32 = 1u;          // ... sum of the osmotic pressure x 1000
+const WZ_W: u32 = 2u;          // ... sum of the swelling x 1000
+const WZ_UP: u32 = 3u;         // ... cells swollen by more than 10 %
+const WZ_DOWN: u32 = 4u;       // ... cells shrunk by more than 10 %
+const WZ_IMP: u32 = 5u;        // ... cells that took in more than one unit of t, net
+const WZ_EXP: u32 = 6u;        // ... cells that put out more than one unit of t, net
+const WZ_BR: u32 = 7u;         // ... cells with a breathing engine (one that uses a free t)
+const WZ_OUTB: u32 = 8u;       // ... of them, breathing OUTSIDE t: took in more than one unit, more than they made
+const WZ_SELFB: u32 = 9u;      // ... of them, burning their OWN t: made more than one unit, at least what they took in
+const WZ_GCH: u32 = 10u;       // ... sum of the stretch channels gene x 1000
+const WZ_GCH2: u32 = 11u;      // ... sum of its square x 1000
+const WZ_GTOL: u32 = 12u;      // ... sum of the stretch tolerance gene x 1000
+const WZ_GTOL2: u32 = 13u;     // ... sum of its square x 1000
+const WZ_IONS: u32 = 14u;      // ... sum of the free ions inside (units per R^2) x 1000
+const WZ_K: u32 = 15u;         // ... sum of the stiffness osmosis works against x 1000
+var<workgroup> wws: array<atomic<i32>, 16>;
+// the saturation factor 1 - Q / K: lq = ln(products' counts) - ln(reactants' counts), dn = (products - reactants), lnCap = ln(the
+// stock's capacity in counts), drive in energy units, temp the temperature under the cell
+fn sat_f(lq: f32, dn: f32, lnCap: f32, drive: f32, temp: f32) -> f32 {
+  if ((ws_flags() & WSF_SAT) == 0u) { return 1.0; }
+  let a = lq - dn * lnCap - max(drive, 0.0) / max(EP.ws[0].y * CP.theta * temp, 1e-6);
+  return clamp(1.0 - exp(min(a, 0.0)), 0.0, 1.0);
+}
+fn lnc(n: i32) -> f32 { return log(max(f32(n), 0.5)); }
+// a reaction's (or engine's) lq and dn from the stock (ch: reactants x, y, products z, w; 255 none; a light atom with its excited twin)
+fn rx_lq(m: ptr<function, array<i32, 18>>, ch: vec4u) -> vec2f {
+  var l = -lnc(xp(m, ch.x)) + lnc(xp(m, ch.z));
+  var dn = 0.0;
+  if (ch.y != NONE) { l -= lnc(xp(m, ch.y)); dn -= 1.0; }
+  if (ch.w != NONE) { l += lnc(xp(m, ch.w)); dn += 1.0; }
+  return vec2f(l, dn);
+}
+// how many free t (channel 1) one event makes (> 0) or uses (< 0)
+fn t_net(ch: vec4u) -> i32 {
+  return select(0, 1, ch.z == 1u) + select(0, 1, ch.w == 1u) - select(0, 1, ch.x == 1u) - select(0, 1, ch.y == 1u);
+}
 // step C13: the gates' bits (FG_* in cell_common.wgsl; src/guides.js writes them into EatP.wl1.z)
 fn fg_bits() -> u32 { return bitcast<u32>(EP.wl1.z); }
 // step C7b: the cofactor's factor for a cell holding `tr` trace per R^2 (1 while the rule is off)
@@ -516,6 +587,8 @@ fn give_back(i: u32, p: vec2f, cur: u32, slot: u32) {
   }
   // (step C7: and the energy stored in its membrane voltage, as heat with the battery; the voltage itself is gone)
   atomicStore(&stock[i * SW + VQ], 0);
+  atomicStore(&stock[i * SW + W_TMADE], 0);   // (step C12e: its t counters start again with the next cell in the slot)
+  atomicStore(&stock[i * SW + W_TIMP], 0);
   let b = atomicExchange(&stock[i * SW + BAT], 0) + max(atomicExchange(&stock[i * SW + EVW], 0), 0);
   if (b > 0) { spread9(LEDGER_WORDS, idx, b); }
   atomicAdd(&wev[EV_DUMP], back);
@@ -548,6 +621,11 @@ fn flush_counters(li: u32, slot: u32) {
     // step C7: the pumps' counters (16 slots, i32: cleared at each read-back)
     let v = atomicLoad(&wpu[li]);
     if (v != 0) { atomicAdd(&hb[LG_PU + 16u * (PU_SNAP + li) + (slot & 15u)], v); }
+  }
+  // step C12e: the waste counters (16 slots, i32: cleared at each read-back)
+  if (li < 16u) {
+    let v = atomicLoad(&wws[li]);
+    if (v != 0) { atomicAdd(&hb[LG_WS + 256u + 16u * li + (slot & 15u)], v); }
   }
   // step C12c: the excited atoms' counters
   if (li < 8u) {
@@ -680,7 +758,11 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   let pgene = bio[i].rate.w;
   // step C6c: a damaged membrane leaks (each side's share of the perimeter at 1 + leakK x its damage: the mean), and the
   // ion selectivity gene lets givers (+) through x (1 + s) and takers (-) x (1 - s)
-  let leak = select(1.0, min(1.0 + EP.mb1.x * (1.0 - integ), EP.mb3.z), membOn);
+  var leak = select(1.0, min(1.0 + EP.mb1.x * (1.0 - integ), EP.mb3.z), membOn);
+  // step C12e: a SWOLLEN membrane's stretch channels open (the gene lip.w, a log factor on kStretch): x (1 + kStretch e^gene x swelling)
+  let wsf = ws_flags();
+  if ((wsf & (WSF_OSM | WSF_STRETCH)) == (WSF_OSM | WSF_STRETCH) && c.osm > 0.0) { leak *= 1.0 + EP.ws[1].z * exp(bio[i].lip.w) * c.osm; }
+  var ionsOut = 0;   // step C12e: the free ions (free givers and takers, by number) in the 9 pixels under the cell
   let selOn = (mbf & MBF_SEL) != 0u;
   // step C6d: the through-flow onto each side (charge, counts per tick), the points just outside the sides' middles, each
   // side's share of the perimeter, and the mobile charge in the stock (atom-units)
@@ -711,6 +793,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
       var Mo = 0;
       for (var q = 0; q < 9; q++) { Mo += max(mg[base + idx[q]], 0); }
       let Mi = stockP[fo + stock_w(k)];
+      if (charge_of(EP.qCodes, k) != 0) { ionsOut += Mo; }
       if (Mo != 0 || Mi != 0) {
         let jeq = (f32(Mo) * areaPx - f32(Mi) * Ao) / (Ao + areaPx);
         var j = jeq * min(1.0, pk * EP.dt);
@@ -731,6 +814,16 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
       }
     }
     flux[fo + flux_w(k)] = n;
+  }
+  // ---- step C12e, the OSMOTIC PRESSURE: the free ions inside (units per R^2 of the cell's area: a swollen cell's are diluted) - outside
+  // (the 9 pixels'), per unit of the stock's capacity (capR2); for the eat pass (flux 30)
+  {
+    var ionsIn = 0;
+    for (var j = 0u; j < NCELL; j++) { let k = cell_ch(j); if (charge_of(EP.qCodes, k) != 0) { ionsIn += max(stockP[fo + stock_w(k)], 0); } }
+    let cin = f32(ionsIn) / (ATOM_SCALE * areaR2);
+    let cout = f32(ionsOut) / (ATOM_SCALE * Ao / (EP.R * EP.R));
+    flux[fo + 30u] = bitcast<i32>(select(0.0, (cin - cout) / max(EP.capR2, 1e-3), eatOn));
+    flux[fo + 31u] = bitcast<i32>(cin);
   }
   // ---- step C7, PUMPS: each slot of the genome (Bio.pump: a substance, IN or OUT, a rate) works on all six sides, a sixth of
   // its rate each. A side touching a neighbour that touches it back (both list each other in Cell.nbr) trades with that
@@ -1087,6 +1180,12 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     let bat0 = bat;
     let batMax = max(EP.batMax, 1);
     var heat = 0;
+    // step C12e: the free t this cell takes in, puts out and makes this tick (counts), and the reaction events saturation costs
+    var tIn = 0;
+    var tOut = 0;
+    var tMade = 0;
+    var satW = 0.0;
+    var satL = 0.0;
 
     // crawling: the step worked out what its crawl costs; the battery pays what it can (the battery's energy became
     // part of the crawl's work, which the step booked as work coming in: so that much less comes in from outside)
@@ -1125,6 +1224,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       for (var s = 0u; s < 2u; s++) {
         if (a[s] == 0) { continue; }
         m[pch[s]] += a[s];
+        if (pch[s] == 1u) { if (a[s] > 0) { tIn += a[s]; } else { tOut -= a[s]; } }   // (step C12e)
         vdq += pz[s] * a[s];
         atomicAdd(&wpu[select(PC_COUT, PC_CIN, a[s] > 0) + pump_class(pch[s])], abs(a[s]));
       }
@@ -1140,8 +1240,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         if (w == 0) { continue; }
         let a = unpack2(w);
         let gj = bio[j].pump;
-        if (a.x != 0) { m[pump_ch(gj.x)] -= a.x; }
-        if (a.y != 0) { m[pump_ch(gj.y)] -= a.y; }
+        if (a.x != 0) { m[pump_ch(gj.x)] -= a.x; if (pump_ch(gj.x) == 1u) { tIn += max(-a.x, 0); tOut += max(a.x, 0); } }
+        if (a.y != 0) { m[pump_ch(gj.y)] -= a.y; if (pump_ch(gj.y) == 1u) { tIn += max(-a.y, 0); tOut += max(a.y, 0); } }
       }
     }
     if (cur != 0u) {
@@ -1159,6 +1259,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           if (a[s] > 0) {
             let got = take_hb(cur + ch * EP.n + pi, a[s]);
             m[ch] += got;
+            if (ch == 1u) { tIn += got; }
             vdq += pz[s] * got;
             atomicAdd(&wpu[PC_IN + pump_class(ch)], got);
           } else {
@@ -1166,6 +1267,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
             if (give > 0) {
               atomicAdd(&hb[cur + ch * EP.n + pi], give);
               m[ch] -= give;
+              if (ch == 1u) { tOut += give; }
               vdq -= pz[s] * give;
               atomicAdd(&wpu[PC_OUT + pump_class(ch)], give);
             }
@@ -1237,12 +1339,14 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           for (var q = 0; q < 9; q++) { got += take_hb(base + idx[q], select(part, n - 8 * part, q == 4)); }
           m[k] += got;
           up += got * na;
+          if (k == 1u || k == EXC0 + 1u) { tIn += got; }
         } else {
           let give = min(-n, m[k]);
           if (give > 0) {
             spread9(base, idx, give);
             m[k] -= give;
             down += give * na;
+            if (k == 1u || k == EXC0 + 1u) { tOut += give; }
           }
         }
       }
@@ -1578,8 +1682,20 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           }
           atomicAdd(&wlp[LC_GRAZE_W], dw.x + dw.y);
           // (b) the rest cracked into linkers in the stock (uphill, from the battery: the heavy chains first, L is the scarcer)
-          let nh = clamp(max(bat, 0) / max(ch2, 1), 0, got.y - dw.y);
-          let nl = clamp((max(bat, 0) - nh * ch2) / max(cl, 1), 0, got.x - dw.x);
+          var nh = clamp(max(bat, 0) / max(ch2, 1), 0, got.y - dw.y);
+          var nl = clamp((max(bat, 0) - nh * ch2) / max(cl, 1), 0, got.x - dw.x);
+          // step C12e, SATURATION of the cracking (uphill, paid by the battery: the drive is its spark): Q = linkers^2 / crust
+          if ((ws_flags() & WSF_SAT) != 0u) {
+            let lc = log(max(cap, 1.0));
+            let fh = sat_f(2.0 * lnc(m[MB_CH_H]) - lnc(got.y - dw.y), 1.0, lc, EP.lp[3].w / 16.0, tmpL);
+            let fl = sat_f(2.0 * lnc(m[MB_CH_L]) - lnc(got.x - dw.x), 1.0, lc, EP.lp[3].z / 16.0, tmpL);
+            let nh1 = i32(floor(f32(nh) * fh));
+            let nl1 = i32(floor(f32(nl) * fl));
+            satW += f32(nh + nl);
+            satL += f32(nh - nh1 + nl - nl1);
+            nh = nh1;
+            nl = nl1;
+          }
           m[MB_CH_L] += 2 * nl;
           m[MB_CH_H] += 2 * nh;
           let cost = nl * cl + nh * ch2;
@@ -1724,6 +1840,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       }
     }
     var heads1 = 0;
+    var kMean = 0.0;   // step C12e: the sides' mean stiffness (what osmosis swells against)
     var lipI = array<f32, 6>(1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
     var lipL = array<u32, 6>(0u, 0u, 0u, 0u, 0u, 0u);
     var bitB = 0;
@@ -1739,6 +1856,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       let cover = clamp(W / want, 0.0, 1.0);
       var kk = lip_kb(S, Oe, tmpL) * (EP.lp[5].w + (1.0 - EP.lp[5].w) * ib) * thickF;
       kk = clamp(mix(kk, LIP_KMAX, cover), EP.lp[5].z, LIP_KMAX);
+      kMean += kk / 6.0;
       lipI[k] = ib;
       lipL[k] = pack4x8unorm(vec4f(kk / LIP_KMAX, select(0.0, f32(lpm[LK_CH][k]) / max(W, 1.0), W > 0.0),
                                    select(0.0, Oe / max(S + Oe, 1.0), S + Oe > 0.0), cover));
@@ -1751,6 +1869,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     let concIn = 1.0 / (ATOM_SCALE * areaR2);                  // stock counts x concIn = units per R^2 inside
     var sparkScale = 1.0;
     if (CP.traceOn != 0u) { sparkScale = 1.0 / (1.0 + CP.traceK * f32(m[CP.trace]) * concIn); }
+    let lnCap = log(max(cap, 1.0));                            // step C12e: saturation's concentrations are shares of the capacity
+    let satOn = (ws_flags() & WSF_SAT) != 0u;
 
     // ---- step C6: the engines from the genome ----
     var b = bio[i];
@@ -1829,6 +1949,16 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           if (band != 0u && cof < 1.0) { nu = i32(floor(f32(np) * cof + u01(pcg(rs + k * 0x1b873593u + 0x0badf00du)))); }
           var n = min(nu, min(a, cap));
           n = max(min(n, bat / c16), 0);
+          // step C12e, SATURATION: x (1 - Q / K), the drive what the photon and the battery put in beyond the rise (its surplus + the spark)
+          if (n > 0 && satOn) {
+            let q = rx_lq(&m, E.ch);
+            let fs = sat_f(q.x, q.y, lnCap, f32(max(ph16, E.g16) - E.g16 + sp16) / 16.0, temp);
+            let n1 = clamp(i32(floor(f32(n) * fs + u01(pcg(rs + k * 0x2d358dccu + 0x31b2f3c1u)))), 0, n);
+            satW += f32(n);
+            satL += f32(n - n1);
+            n = n1;
+          }
+          tMade += n * max(t_net(E.ch), 0);
           if (band == 0u) { np = n; }                           // (a storer has no photons to waste)
           var nx = 0;
           if (n > 0) {
@@ -1864,7 +1994,17 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           if (a <= 0) { continue; }
           let h1 = (E.g16 * i32(EP.ineff)) / 256;
           let g1 = E.g16 - h1;
-          var n = i32(floor(rk * f32(a) * EP.dt + u01(pcg(rs + k * 0x6c8e9cf5u + 0x2545f491u))));
+          var xs = rk * f32(a) * EP.dt;
+          // step C12e, SATURATION: x (1 - Q / K), the drive the reaction's release
+          if (satOn) {
+            let q = rx_lq(&m, E.ch);
+            let fs = sat_f(q.x, q.y, lnCap, f32(E.g16) / 16.0, temp);
+            let xw = min(xs, f32(min(a, cap)));
+            satW += xw;
+            satL += xw * (1.0 - fs);
+            xs *= fs;
+          }
+          var n = i32(floor(xs + u01(pcg(rs + k * 0x6c8e9cf5u + 0x2545f491u))));
           n = min(n, min(a, cap));
           n = min(n, bat / sp16);
           n = min(n, max(batMax - bat, 0) / max(g1, 1));
@@ -1874,6 +2014,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           else { nx += xtk(&m, E.ch.x, n, rx1); if (E.ch.y != NONE) { nx += xtk(&m, E.ch.y, n, rx2); } }
           m[E.ch.z] += n;
           if (E.ch.w != NONE) { m[E.ch.w] += n; }
+          tMade += n * max(t_net(E.ch), 0);
           bat += n * g1;
           heat += n * h1;
           // step C12c: an excited reactant's energy goes into the battery too (an engine: controlled), less the ineff share; what
@@ -1938,6 +2079,15 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         if (xp(&m, R.ch.x) <= 0) { continue; }
         var x = R.k * f32(xp(&m, R.ch.x)) * exp(-R.spark * sparkScale / (CP.theta * temp)) * EP.dt;
         if (R.ch.y != NONE) { x *= f32(xp(&m, R.ch.y)) * concIn; }
+        // step C12e, SATURATION (the drive: the reaction's release)
+        if (satOn) {
+          let q = rx_lq(&m, R.ch);
+          let fs = sat_f(q.x, q.y, lnCap, f32(R.heat16) / 16.0, temp);
+          let xw = min(x, f32(xp(&m, R.ch.x)));
+          satW += xw;
+          satL += xw * (1.0 - fs);
+          x *= fs;
+        }
         var n = i32(floor(x + u01(pcg(rs + r * 0x9e3779b9u + 0x7f4a7c15u))));
         if (R.ch.y == R.ch.x) {
           n = min(n, m[R.ch.x] / 2);
@@ -1955,6 +2105,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         }
         m[R.ch.z] += n;
         if (R.ch.w != NONE) { m[R.ch.w] += n; }
+        tMade += n * max(t_net(R.ch), 0);
         rh += n * R.heat16 + nx * ex16;
         if (nx > 0) { atomicAdd(&wxn[XN_RX_IN], nx); atomicAdd(&wxe[XE_LOOSE], nx * ex16); }
         if (R.fam == 1u) { atomicAdd(&wev[EV_IN_BURN], n); }
@@ -2008,6 +2159,45 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         atomicAdd(&wev[EV_EXPEL], m[k]);
         m[k] = 0;
       }
+    }
+
+    // ---- step C12e, OSMOSIS ON THE IONS: the swelling relaxes (ws[0].w per s) toward kOsm x the pressure (the plan's, flux 30) x the
+    // membrane's closure (its mean integrity: a leaky membrane holds no pressure) / its stiffness (the bilayer and wall's, C12b; the
+    // material's, C6c; 1 without the membrane chemistry), within the knobs' bounds. Past its STRETCH TOLERANCE (the gene gate2.z, a log
+    // factor on wTol) a whole membrane TEARS: it bursts at ws2.x x (swelling / tolerance - 1) per s (below). The tolerance costs
+    // upkeep, ws2.y x e^gene per tick, from the battery as heat (only while osmosis is on: with it off the genes drift, unpaid)
+    let wsf = ws_flags();
+    let osmOn = (wsf & WSF_OSM) != 0u && (EP.flags & EF_EAT) != 0u && cur != 0u;
+    let posm = bitcast<f32>(flux[fo + 30u]);
+    var wsw = 0.0;
+    var tear = false;
+    var kOsm = 1.0;
+    if (lipOn) { kOsm = kMean; } else if (membOn) { kOsm = memb_stiff(gm, EP.mb3.w); }
+    if (osmOn) {
+      var close = 1.0;
+      if (membOn) {
+        close = 0.0;
+        for (var k = 0u; k < 6u; k++) { close += select(clamp(f32(sl[k] + sh[k]) / want, 0.0, 1.0), lipI[k], lipOn) / 6.0; }
+      }
+      let weq = clamp(EP.ws[0].z * posm * close / max(kOsm, 0.05), EP.ws[1].y, EP.ws[1].x);
+      wsw = c.osm + (weq - c.osm) * min(1.0, EP.ws[0].w * EP.dt);
+      let tolG = exp(clamp(bio[i].gate2.z, -2.0, 1.5));
+      if ((wsf & WSF_TEAR) != 0u && membOn && wsw > EP.ws[1].w * tolG) {
+        tear = u01(pcg(rs + 0x6a09e667u)) < EP.ws2.x * (wsw / (EP.ws[1].w * tolG) - 1.0) * EP.dt;
+      }
+      if ((wsf & WSF_COST) != 0u) {
+        let pay = clamp(i32(floor(EP.ws2.y * tolG + u01(pcg(rs + 0x3c6ef372u)))), 0, max(bat, 0));
+        if (pay > 0) { bat -= pay; heat += pay; atomicAdd(&wws[WC_UPKEEP], pay); }
+      }
+    }
+    // ... and the t made and taken in (the census: who lives on outside t), the saturation's counters
+    if (tMade != 0) { atomicAdd(&stock[o + W_TMADE], tMade); atomicAdd(&wws[WC_TMADE], tMade); }
+    if (tIn != tOut) { atomicAdd(&stock[o + W_TIMP], tIn - tOut); }
+    if (tIn != 0) { atomicAdd(&wws[WC_TIN], tIn); }
+    if (tOut != 0) { atomicAdd(&wws[WC_TOUT], tOut); }
+    if (satW > 0.0) {
+      atomicAdd(&wws[WC_WANT], i32(floor(satW / 16.0 + u01(pcg(rs + 0x510e527fu)))));
+      atomicAdd(&wws[WC_LOST], i32(floor(satL / 16.0 + u01(pcg(rs + 0x9b05688cu)))));
     }
 
     // write back what changed (only this invocation touches this cell's stock in this dispatch)
@@ -2109,7 +2299,13 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       fl2 &= (1u << CELL_DOSE_SHIFT) - 1u;
     }
     if (membOn && im >= EP.mb1.z) { fl2 |= CELL_WHOLE; }
-    let burst = membOn && (mbf & MBF_BURST) != 0u && (fl2 & CELL_WHOLE) != 0u && im < EP.mb1.y && bitL + bitH + bitB > 0;
+    let burst0 = membOn && (mbf & MBF_BURST) != 0u && (fl2 & CELL_WHOLE) != 0u && im < EP.mb1.y && bitL + bitH + bitB > 0;
+    // step C12e: or torn by overstretch (a whole membrane past its stretch tolerance)
+    let torn = tear && (mbf & MBF_BURST) != 0u && (fl2 & CELL_WHOLE) != 0u;
+    let burst = burst0 || torn;
+    if (torn && !burst0) { atomicAdd(&wws[WC_TEAR], 1); }
+    cells[i].osm = select(wsw, 0.0, burst);
+    cells[i].osmP = posm;
     if (burst) {
       give_back(i, c.pos, cur, slot);
       fl2 = (fl2 & ~CELL_BURST_MASK) | (1u << CELL_BURST_SHIFT);
@@ -2130,6 +2326,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     cells[i].wadh = array<u32, 2>(0u, 0u);   // step C10: a burst cell holds nothing
     cells[i].wpay = 0u;
     cells[i].wlink = 0u;
+    cells[i].osm = 0.0;   // step C12e
   }
   flush_counters(li, slot);
 }
@@ -2343,6 +2540,33 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       atomicAdd(&wlps[13], i32(round(min(tc, 1e5) * 100.0)));
       atomicAdd(&wlps[15], i32(round(b.lip.x * 1000.0)));
     }
+    // step C12e: the waste census (osmosis, who makes and who takes in the free t, the two stretch genes)
+    atomicAdd(&wws[WZ_N], 1);
+    atomicAdd(&wws[WZ_P], i32(round(clamp(c.osmP, -100.0, 100.0) * 1000.0)));
+    atomicAdd(&wws[WZ_W], i32(round(clamp(c.osm, -10.0, 10.0) * 1000.0)));
+    if (c.osm > 0.1) { atomicAdd(&wws[WZ_UP], 1); }
+    if (c.osm < -0.1) { atomicAdd(&wws[WZ_DOWN], 1); }
+    let tmd = atomicLoad(&stock[i * SW + W_TMADE]);
+    let tim = atomicLoad(&stock[i * SW + W_TIMP]);
+    let one = i32(ATOM_SCALE);
+    if (tim > one) { atomicAdd(&wws[WZ_IMP], 1); }
+    if (tim < -one) { atomicAdd(&wws[WZ_EXP], 1); }
+    var brt = false;
+    for (var k = 0u; k < 3u; k++) {
+      let E = EP.eng[eng_index(b.eng[k])];
+      brt = brt || (b.rate[k] > 0.0 && E.kind != 0u && (E.ch.x == 1u || E.ch.y == 1u));
+    }
+    if (brt) {
+      atomicAdd(&wws[WZ_BR], 1);
+      if (tim > one && tim > tmd) { atomicAdd(&wws[WZ_OUTB], 1); }
+      else if (tmd > one && tmd >= max(tim, 0)) { atomicAdd(&wws[WZ_SELFB], 1); }
+    }
+    atomicAdd(&wws[WZ_GCH], i32(round(b.lip.w * 1000.0)));
+    atomicAdd(&wws[WZ_GCH2], i32(round(b.lip.w * b.lip.w * 1000.0)));
+    atomicAdd(&wws[WZ_GTOL], i32(round(b.gate2.z * 1000.0)));
+    atomicAdd(&wws[WZ_GTOL2], i32(round(b.gate2.z * b.gate2.z * 1000.0)));
+    atomicAdd(&wws[WZ_IONS], i32(round(clamp(bitcast<f32>(flux[i * SW + 31u]), 0.0, 1e4) * 1000.0)));
+    atomicAdd(&wws[WZ_K], i32(round(select(memb_stiff(gm, EP.mb3.w), ks, (lp_flags() & LPF_ON) != 0u) * 1000.0)));
     // step C7: the pumps' census (PS_* above)
     let gp = b.pump;
     var act = false;
@@ -2409,6 +2633,10 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     if (w != 0) { atomicAdd(&hb[LG_LIP_S + 16u * li + (wid.x & 15u)], w); }
   }
   if (li == 63u) { add64(LG_LIP_E + (wid.x & 63u), atomicLoad(&wle)); }   // step C12b: the lipids' energy
+  if (li >= 32u && li < 48u) {   // step C12e: the waste census
+    let v = atomicLoad(&wws[li - 32u]);
+    if (v != 0) { atomicAdd(&hb[LG_WS + 16u * (li - 32u) + (wid.x & 15u)], v); }
+  }
   if (li < 4u) {
     let v = atomicLoad(&wq[li]);
     if (v != 0) { atomicAdd(&hb[LG_Q_CEN + 16u * li + (wid.x & 15u)], v); }

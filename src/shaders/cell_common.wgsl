@@ -1,7 +1,7 @@
 // ===== cell_common.wgsl: the cells' state, the simulation uniforms and the neighbour grid =====
 // Not compiled on its own: src/cells.js prepends field_common.wgsl and then this file to every cell shader.
 //
-// Cells live in a fixed-capacity storage buffer (struct Cell, 336 bytes since step C13, 312 since step C12b, 288 since C10, 256 since C7; keep in step with CELL_* in
+// Cells live in a fixed-capacity storage buffer (struct Cell, 352 bytes since step C12e, 336 since step C13, 312 since step C12b, 288 since C10, 256 since C7; keep in step with CELL_* in
 // src/cells.js, and CELL_FLOATS in heat.wgsl). Their order never changes, so drawing order is stable and a cell keeps its index.
 // Step C9: Sim.count is the CAPACITY; a slot is a live cell while its flags have CELL_ALIVE. The grid sorts the dead slots
 // into one more bucket after the last grid cell (cell_grid.wgsl), so sorted[0 .. starts[gw gh]) are the live cells and the
@@ -93,6 +93,13 @@ struct Cell {
   felt: array<u32, 2>, // what each side FELT of field A this tick (the step's segment integrals, with the sensing gene's gain and sign),
                     // s_k = tanh(felt_k / ref), pack4x8snorm: sides 0..3 in word 0, sides 4, 5 in the low half of word 1; the eat pass
                     // gates the glue, the pumps and the engines by it, the guides view shades the tubes by it
+  // ---- step C12e, osmosis on the ions (src/waste.js; the record is 352 bytes since C12e) ----
+  osm: f32,         // the SWELLING: the cell's area over its rest area - 1 (> 0 puffed up, < 0 shrunk), written by the eat pass (it
+                    // relaxes toward the osmotic pressure over the membrane's stiffness); the step grows the radius toward
+                    // S.R x size x sqrt(1 + osm); 0 while osmosis is off
+  osmP: f32,        // the osmotic PRESSURE (free ions inside - outside, per unit of the stock's capacity; the plan pass), for the census
+  osm2: f32,        // spare
+  osm3: f32,        // spare
 };
 // step C13: a cell's field-gene words (Cell.fg) as numbers
 fn fg_a(c: Cell) -> vec2f { return unpack2x16float(c.fg[0]); }   // A: lever factor - 1, emission - 1
@@ -355,7 +362,9 @@ struct Bio {
   // memb.x (the C6c MIX) means the OIL share: oil molecules wanted per soap molecule of the bilayer, 0..1 ----
   lip: vec4f,       // x WALL: the crust wall wanted, as a share of a full wall (a full wall holds as much crust as the bilayer
                     // holds lipid), 0..1; y HEAD: which head the cell puts on the soap it makes, -1 (all t: tlL, -) .. 1 (all g:
-                    // glL, +); z the wall's ROW: its heavy share (LL of ll + LL), 0..1; w spare
+                    // glL, +); z the wall's ROW: its heavy share (LL of ll + LL), 0..1; w step C12e: the STRETCH CHANNELS gene (as
+                    // bacteria's mechanosensitive channels): how much a stretched membrane opens, a log factor on the knob kStretch
+                    // (0 = the knob's value: founders and old genomes; -4: almost none; +2: 7 x), -4..2
   // ---- step C13: FIELDS AS GENES (src/guides.js FG_GENES; the founders carry today's values: x 1, offset 0) ----
   fa: vec4f,        // field A: x LEVER factor (x the global lever: the beat period), y EMISSION factor, z SENSING gain and sign (x),
                     // w TUNING width factor (x tuneW: how picky the receptor is)
@@ -365,7 +374,9 @@ struct Bio {
   // ---- step C13: FIELDS AS GUIDES, the gates (-1..1; the founders' within +-0.05) and the push ----
   gate: vec4f,      // x GLUE (each side's adhesion x (1 + g s_k)), y PUMP (rates x (1 + g s)), z ENGINE (rates x (1 + g s)), w DIVISION
                     // (the axis along (+) or across (-) the felt gradient)
-  gate2: vec4f,     // x TURN (the front toward (+) or away from (-) the felt gradient), y PUSH (field A's push x this, 0..2), z w spare
+  gate2: vec4f,     // x TURN (the front toward (+) or away from (-) the felt gradient), y PUSH (field A's push x this, 0..2); z step C12e:
+                    // the STRETCH TOLERANCE gene, how far the membrane stretches before it tears, a log factor on the knob wTol (0 = the
+                    // knob's value; -2..1.5; it costs upkeep in proportion to the tolerance); w spare
 };
 // step C7: a pump slot's channel, direction (1 = OUT) and the substances it may pump: PUMP_NCH of them, channels 0..9 and
 // trace (12), not the sediments ll, LL (PUMP_CHANNELS in src/genome.js)
@@ -639,7 +650,8 @@ fn mutate(p: Bio, seed: u32, size: f32, jump: f32, engJump: f32, pumpJump: f32) 
   // (step C11: w, the division axis, drifts the same way)
   // step C12b: the lipid genes drift (wall, head and the wall's row: additive steps, as the mix's)
   b.lip = vec4f(nudge(b.lip.x, size * 0.03, 0.0, 1.0, seed, 150u), nudge(b.lip.y, size * 0.04, -1.0, 1.0, seed, 151u),
-                nudge(b.lip.z, size * 0.03, 0.0, 1.0, seed, 152u), b.lip.w);
+                nudge(b.lip.z, size * 0.03, 0.0, 1.0, seed, 152u), nudge(b.lip.w, size * 0.06, -4.0, 2.0, seed, 153u));
+  // (step C12e: lip.w, the STRETCH CHANNELS gene, drifts by small steps of its log factor, as gate2.z, the STRETCH TOLERANCE, below)
   // step C13: the field genes drift: the levers, emissions and A's tuning by small factors, the sensing gains (through 0: the sign can
   // flip), B's pickiness, the angles and the partner's share by small steps; the gates and the push by 0.04 a birth (as the walls')
   let lv = clamp(vec2f(b.fa.x, b.fb.x) * exp(size * 0.04 * vec2f(gauss(seed, 160u), gauss(seed, 161u))), vec2f(0.25), vec2f(4.0));
@@ -652,7 +664,7 @@ fn mutate(p: Bio, seed: u32, size: f32, jump: f32, engJump: f32, pumpJump: f32) 
   b.gate = vec4f(nudge(b.gate.x, size * 0.04, -1.0, 1.0, seed, 172u), nudge(b.gate.y, size * 0.04, -1.0, 1.0, seed, 173u),
                  nudge(b.gate.z, size * 0.04, -1.0, 1.0, seed, 174u), nudge(b.gate.w, size * 0.04, -1.0, 1.0, seed, 175u));
   b.gate2 = vec4f(nudge(b.gate2.x, size * 0.04, -1.0, 1.0, seed, 176u), nudge(b.gate2.y, size * 0.04, 0.0, 2.0, seed, 177u),
-                  b.gate2.z, b.gate2.w);
+                  nudge(b.gate2.z, size * 0.06, -2.0, 1.5, seed, 178u), b.gate2.w);
   return b;
 }
 

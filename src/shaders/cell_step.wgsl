@@ -786,7 +786,10 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   }
   c.pos = clamp(c.pos, vec2f(0.0), vec2f(S.W, S.H));
   var eDeath = 0.0;          // the motion of a cell that dies this tick (its daughter starts at rest) becomes heat too
-  c.r += (S.R * size - c.r) * min(1.0, S.dt * 0.8);
+  // (step C12e: osmosis, the eat pass's Cell.osm: a cell swollen by its ions grows toward its rest size x sqrt(1 + swelling), a shrunk
+  // one shrinks; smoothly, at the same rate. 0 while osmosis is off)
+  let swell = sqrt(max(1.0 + c.osm, 0.25));
+  c.r += (S.R * size * swell - c.r) * min(1.0, S.dt * 0.8);
 
   // shape: an area-preserving stretch e = (e1, e2), relaxing toward a target made of the passive contact
   // squeeze and (active, key W) a stretch along the cell's own motion and toward where the field pulls on its
@@ -1124,7 +1127,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       c.fill = 0.0;
       c.pay = 0;
       died = true;
-    } else if (c.bat >= FL.dv0.y && c.r >= FL.dv2.x * S.R * size && bt == 0u) {
+    } else if (c.bat >= FL.dv0.y && c.r >= FL.dv2.x * S.R * size * swell && bt == 0u) {   // (step C12e: at its own swelling)
       if (S.xCount != 0u) {
         atomicAdd(&stats.div[DV_READY], 1u);
         if (comp > FL.dv0.z) { atomicAdd(&stats.div[DV_CROWDED], 1u); }

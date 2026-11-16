@@ -25,6 +25,7 @@
 //   ?paused=1   start paused (Space)
 //   ?ui=0|1     step C3b: start with the toolbar folded / unfolded (default: as the page last had it)
 //   ?founders=N founder genomes at the start (0 = every cell its own)
+//   ?bsign=plus  the founders' field-B sensing sign all + (as until the C12g + N1 merge; default mixed: + or - at random, both present)
 //   ?pigshed=0   a worn or bleached pigment's trace back into the stock (default: into the dish under the cell; step N1 follow-up)
 //   ?view=1     colour by lineage from the start (key V); ?view=2 (or strategy): by strategy (step C6)
 //   ?bio=0      start with the biology rules off (D H B T M): the loop alone
@@ -286,6 +287,7 @@ async function boot() {
     cells.landscape = landscape;
     landscape.cells = cells;
     if (params.has('founders')) cells.genome.params.founders = Number(params.get('founders')) || 0;
+    if (params.get('bsign') === 'plus' || params.get('bsign') === 'mixed') cells.genome.params.bSign = params.get('bsign');   // the founders' B sign
     if (params.has('view')) {   // ?view=1 lineage, ?view=2 or ?view=strategy (step C6), ?view=3 or ?view=charge (step C6b)
       const v = params.get('view'), k = ['fate', 'lineage', 'strategy', 'charge', 'walls', 'guides'].indexOf(v);   // (step C10: ?view=walls; C13: guides)
       cells.look.view = k >= 0 ? k : Math.max(0, Math.min(5, Math.round(Number(v)) || 0));

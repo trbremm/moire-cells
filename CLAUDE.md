@@ -473,20 +473,29 @@ C12c. EXCITED WASTE, THE OXYGEN FIX (user 2026-11-15 chose "charged waste"; NEXT
     excited: most free light atoms come from springs and burners' exhaust (ground), light makes only 1-7 excited/s.
     Breathing still did not rise. One seed only: under the whole dish, light-driven uphill swap carriers rose to 52 %
     (2.5 % off), maybe eating their own excited waste. Haze drawn as sparse hot red-orange sparks.
-C12d. THE HUNGRY ATOM, OXYGEN DONE RIGHT (user 2026-11-16: "the main thing about oxygen is how it binds to things so
-    easily; we might need to craft something in our chemistry that approximates that"; NEXT after C13). Oxygen's value
-    is not stored energy but HUNGER: it binds almost anything, with almost no spark, into the strongest bonds.
-    - A new, smallest row (row 0) with one TAKER, its properties DERIVED from its place like real electronegativity
-      (small takers hungriest): binds givers, linkers and the giver inside a fuel; its bonds release the most energy
-      of the table; its spark is the lowest (reacts cold and dark); spreads fast. Derive it in the table's formulas;
-      no per-atom hand-tuning.
-    - It starts LOCKED in a very stable pair with a giver (water-like). Only pigment-caught light splits that pair
-      (harvesters: giver for fuel, free hungry atom as waste = photosynthesis-like). Uphill difference paid by light.
-    - Breathing emerges: an engine letting the hungry atom take a fuel's giver banks the big release, so breathing
-      beats burning by a wide margin. Harm emerges: loose, it grabs membrane chains, crust, stock (heat on the spot).
-      Sinks emerge: free givers / heavy atoms in the dish catch it first (rust-like crust), then the haze builds.
-    - Replaces C12c's excited waste (kept as a switch for comparison). Never write rules naming breathers, poison or
-      oxygen. Then rerun the oxygen conditions (no light spring needed: the haze must come from harvesters).
+C12d. ELECTRONS: BONDING REBUILT AROUND GRIP (user 2026-11-16; NEXT after C13). The user's insight: "the main thing
+    about oxygen is how it binds to things so easily", then: "on the linking we make the givers give spare electrons
+    and the takers take (basically electron orbitals)"; chose the full rebuild over a single "hungry atom" (dropped).
+    The old C4 table ("a bond is a battery light charges": giver+taker bonds UPHILL, free atoms the calm state) had no
+    room for a grabber. New table, still derived from ROW and GROUP only:
+    - Each atom gets ONE derived number, GRIP: givers hold a spare electron (heavier = looser, gives easily, metal-like);
+      takers have an empty slot and pull (lighter = harder, oxygen-like); linkers share electrons with each other.
+    - Forming a bond RELEASES energy: the electron falls from the giver's hold into the taker's pull; the bigger the gap
+      the more released. Free atoms are now the HIGH, restless state; light is the only thing that pushes electrons
+      back up (splits bonds). Linker chains share (release a little, as now); oil/soap follow from the same numbers.
+    - What should follow (never written as rules): heavy giver + light taker = the most settled compound (water / rust
+      / dead mineral); light giver + heavy taker = FUEL (electron still sits high); free light taker = OXYGEN (grabs
+      anything, steals electrons from fuel: burning, breathing and damage are one reaction, through an engine to the
+      battery, loose as heat); harvesters using pigment light to split settled compounds = PHOTOSYNTHESIS (fuel made,
+      free light takers thrown out as waste). Swaps survive (t + gT -> gt + T still runs downhill).
+    - SPRINGS drip settled minerals (and maybe some fuel, like a vent), not free atoms, so light (plus what springs
+      carry, counted in the ledger) is the energy in; any oxygen in the dish must be made by life.
+    - Keep: exact books (energies multiples of 1/16), sparks, symmetry (every reaction both ways), HARVESTERS MUST BURN
+      (light never charges the battery directly), charges exact (keep the current charge rule unless electrons give a
+      cleaner one; say which). Old table kept behind a switch for comparison; C12c excited waste off by default.
+    - Past experiment numbers stop being comparable (user accepted). Then rerun the oxygen conditions WITHOUT a light
+      spring: watch for the sink (free givers / heavy atoms catching takers first, rust-like crust), the haze building,
+      breathers rising.
 C13. FIELDS AS GENES, FIELDS AS GUIDES (user 2026-11-16 chose it next, over more oxygen, the purist page or pruning;
     their words earlier: "I envisioned the field just to guide the underlying interactions. Maybe we let them mutate
     their different fields more"). Back to the moire as the heart of the look:

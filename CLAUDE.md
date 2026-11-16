@@ -620,8 +620,11 @@ PREDATORS (user 2026-11-16 "should we start planning for macrophages? and other 
     (nibble walls at tissue edges), poisoners (burst neighbours, eat the spill), pack hunters (gliders?), MACROPHAGES
     (in-body cell type eating strangers/debris, sparing kin via the identity key; needs the T1 gene network). Suggested
     order: free engulfers with T1 (the reason to link), macrophages after the gene network. Watch: boom-bust, predator
-    spirals and waves; risk of wipe-out (refuges, costs). Open: one evolvable gene vs a seeded predator lineage; kin
-    recognition from the start or cannibalism allowed.
+    spirals and waves; risk of wipe-out (refuges, costs).
+    DECIDED (user 2026-11-16: "I think it's fair to add those genes, right? It is a gigantic level of abstraction
+    anyways"): ENGULF is an evolvable gene (founders 0; no rule names a predator); the add-cell tool can also place a
+    hand-made predator; KIN SPARING is a gene too (reads the existing identity key/receptors), founders 0, so early
+    predators are cannibals and sparing kin must pay to spread. Built with T1; macrophages after the gene network.
 C12f. VENTS THAT FEED LIFE IN THE DARK (user 2026-11-16 "maybe we should adapt the chemistry then", after the app
     worker found a fully dark vent dish starves in 100 s: fermenting vent fuel earns the culture ~0.001 energy/s). Start
     after C12e is merged (same files). First DIAGNOSE (vent rate, engine rates, sparks, C12e saturation clogging small

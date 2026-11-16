@@ -721,6 +721,10 @@ APP. Zoom and pan (pinch on touch; the wheel keeps tilting the spotlight in spot
     (portraits stay neon), add-cell tool (starter charge booked), pipette; New culture dialog; ?preset= vent, shallows,
     oxygen, slick, desert, lab; ?spread ?colonies ?diversity ?zoom. Finding: vents in total darkness starve in 100 s
     (preset vent has a dim light; &light=off = dark) -> C12f.
+LATER, SPEED (user 2026-11-16 asked whether a desktop Python/C++ app would be faster; answer: little, the work is GPU
+    shaders, native gains ~10-30 % overhead, Python wgpu ~ Firefox; real gains from PROFILING in the browser (GPU
+    timestamps per pass; suspects: the grown cell_eat shader, grid passes that could run less often, panel read-backs),
+    likely 1.5-3x. User: "Let's wait": not scheduled.
 LATER, WATER-DROP UNIVERSE (user 2026-11-16 brainstorm, "keep it as a plan for us to go to later"; not scheduled).
     User's idea: "a 2.5D representation in which the 2D rendered cells can stack, but the rules under it go 3D" (chosen
     over a full 3D beaker, which would be close to a second engine; a 2D side-view "column mode" was also discussed).

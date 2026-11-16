@@ -1,0 +1,58 @@
+{
+  "name": "merge-n1-oases-noshed_s7",
+  "description": "Control: as merge-n1-oases with the trace shed off (?pigshed=0: a worn pigment's trace back into the stock, as in N1)",
+  "condition": {
+    "name": "merge-n1-oases-noshed_s7",
+    "description": "Control: as merge-n1-oases with the trace shed off (?pigshed=0: a worn pigment's trace back into the stock, as in N1)",
+    "query": {
+      "preset": "oases",
+      "pigshed": 0,
+      "seed": 7
+    },
+    "duration": 1200,
+    "sample_every": 30,
+    "snapshots": [
+      {
+        "t": 600
+      },
+      {
+        "t": 1200
+      }
+    ],
+    "shots": [
+      {
+        "t": 600
+      },
+      {
+        "t": 1200
+      }
+    ]
+  },
+  "url": "http://localhost:50639/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=oases&pigshed=0&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "3a34fc241636cbcec7f468a5e3d45151a34d8493",
+  "dirty": true,
+  "started": "2026-11-16T22:07:12",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 345.42,
+  "speed_reached": 3.47,
+  "samples": 41,
+  "shots": [
+    "shots/t600.png",
+    "shots/t1200.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t600.json",
+    "snapshots/snap_t1200.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T22:13:37",
+  "wall_s": 384.89
+}

@@ -1,0 +1,58 @@
+{
+  "name": "merge-n1-oases-bury30_s3",
+  "description": "Knob probe: the Oases preset with the shed on and trace settling 5 x faster (?bury=0.0333: plumes about 20 R instead of 50), seed 3, 20 min",
+  "condition": {
+    "name": "merge-n1-oases-bury30_s3",
+    "description": "Knob probe: the Oases preset with the shed on and trace settling 5 x faster (?bury=0.0333: plumes about 20 R instead of 50), seed 3, 20 min",
+    "query": {
+      "preset": "oases",
+      "seed": 3,
+      "bury": 0.0333
+    },
+    "duration": 1200,
+    "sample_every": 30,
+    "snapshots": [
+      {
+        "t": 600
+      },
+      {
+        "t": 1200
+      }
+    ],
+    "shots": [
+      {
+        "t": 600
+      },
+      {
+        "t": 1200
+      }
+    ]
+  },
+  "url": "http://localhost:53554/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=oases&seed=3&bury=0.0333",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "3a34fc241636cbcec7f468a5e3d45151a34d8493",
+  "dirty": true,
+  "started": "2026-11-16T22:26:33",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 199.5,
+  "speed_reached": 6.01,
+  "samples": 41,
+  "shots": [
+    "shots/t600.png",
+    "shots/t1200.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t600.json",
+    "snapshots/snap_t1200.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T22:30:36",
+  "wall_s": 243.08
+}

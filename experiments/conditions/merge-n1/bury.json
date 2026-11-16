@@ -1,0 +1,5 @@
+{"runs": [
+ {"name": "merge-n1-oases-bury30_s3", "description": "Knob probe: the Oases preset with the shed on and trace settling 5 x faster (?bury=0.0333: plumes about 20 R instead of 50), seed 3, 20 min",
+  "query": {"preset": "oases", "seed": 3, "bury": 0.0333}, "duration": 1200, "sample_every": 30,
+  "snapshots": [{"t": 600}, {"t": 1200}], "shots": [{"t": 600}, {"t": 1200}]}
+]}

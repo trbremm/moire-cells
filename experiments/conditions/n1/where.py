@@ -1,8 +1,8 @@
 """Step N1: where life is, from a run's last snapshot (with grid): the share of the cells within D R of an oasis against the share of the
 dish's area there, the trace per R^2 under the cells against the dish's mean, the caustic light is not in a snapshot (per frame), the
 pigment held per cell, the batteries near and far.
-python experiments/conditions/n1/where.py <run> [<run> ...] [--d 15]"""
-import base64, glob, gzip, json, math, struct, sys
+python experiments/conditions/n1/where.py <run> [<run> ...] [--d 15] [--t 600]"""
+import base64, glob, gzip, json, math, os, re, struct, sys
 
 sys.stdout.reconfigure(encoding='utf-8')
 opt, runs, it = {}, [], iter(sys.argv[1:])
@@ -20,7 +20,10 @@ def unpack(p):
 
 
 for run in runs:
-    p = sorted(glob.glob(f'experiments/runs/{run}/snapshots/*.json'))[-1]
+    # (the last snapshot by its time, or the one at --t s; 'snap_t1200' sorts before 'snap_t600' as text)
+    snaps = sorted(glob.glob(f'experiments/runs/{run}/snapshots/*.json'), key=lambda q: float((re.findall(r't(\d+)', os.path.basename(q)) or ['0'])[-1]))
+    if '--t' in opt: snaps = [q for q in snaps if os.path.basename(q) == f"snap_t{opt['--t']}.json"]
+    p = snaps[-1]
     S = json.load(open(p, encoding='utf-8'))
     CW, SW = S['layout']['cellWords'], S['layout']['stockWords']
     R, n = S['R'], S['alive']

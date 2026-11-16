@@ -4268,7 +4268,8 @@ Conditions `experiments/conditions/c12g/`, summaries `experiments/summaries/c12g
 - The voltage push (`?ionvolt=1`) was only checked in the books run (kV 20), not run as an experiment.
 - With the charge field off the dark vent dish dies faster than before (the field was what spread the vents' givers wide). The vent
   preset may need retuning (vent rate, sea level, founders) for the new physics.
-- Field B's charge from the genes uses the sign of the B sensing gene; all founders are +, so like repels like among all founders until
+- (Fixed after the merge with N1, README "Merge: C12g + N1": founders now get a mixed B sign.) Field B's charge from the genes uses the
+  sign of the B sensing gene; all founders were +, so like repels like among all founders until
   a sign flips by mutation; qGene 0.15 was chosen by eye (crumbs at 1).
 - `charge.params.feel` stays true but acts only with the field on (the overlay says "Shift+9 cells feel the grid on" while the field is off).
 
@@ -4426,7 +4427,8 @@ Pictures: `experiments/keep/n1/`.
 
 - The default scene is thin and seed-dependent (100 to 900 cells); the knobs `isat`, `bury`, `pigcost`, `pigwant` move it between "as
   before" and "thin". Light still makes nearly all of the income wherever there is light: it is dearer and patchier, not replaced.
-- Trace is recycled within lineages, so in a lit dish the oases set the start, not the end (above).
+- Trace is recycled within lineages, so in a lit dish the oases set the start, not the end (above). (After the merge with C12g a worn
+  pigment's trace goes to the dish, README "Merge: C12g + N1": the cells then hold less of it, but where they live did not change.)
 - The caustic block is updated once per frame (all the frame's ticks see the same net); at MAX that is a few tenths of a second of
   simulated time, much less than the net needs to change.
 - The cells drift with the current at 0.3 of its speed as a force (its work is booked as every force's); the heat grid and the charge
@@ -4435,6 +4437,133 @@ Pictures: `experiments/keep/n1/`.
 - EatP (`nl`), the ledger (LG_N1), HeatP (`caus`, `cur`, `curDrift`, its spare words) and MatterP (`n1`, 720 bytes) all grew at their
   ends. Merged after C12g (README "Merge: C12g + N1"): EatP `nl` at words 448..455 (after C12g's `io` at 440..447; EP_BYTES 1824), LG_N1
   at words 28928..30975 (after C12g's LG_IO 28416..28927; LEDGER_WORDS 30976); HeatP and MatterP unchanged (C12g did not grow them).
+
+## Merge: C12g + N1
+
+Step C12g (ion flow, the charge field off) was built on main while step N1 (nutrient landscape) was built on the branch `landscape`;
+merged on 2026-11-16 (commit a118d09), then two small follow-ups, each with its own switch.
+
+### How the merge was resolved
+
+Both steps appended to the same GPU structures from the same starting point; N1's blocks now sit after C12g's:
+
+| structure | C12g (main) | N1 (alone, on `landscape`) | merged |
+|---|---|---|---|
+| struct EatP (eat uniform) | `io[2]` at words 440..447 | `nl[2]` at words 440..447 | `io` 440..447, `nl` 448..455; EP_BYTES 1760 -> 1824 (`EP_NL` 448) |
+| the heat buffer's ledger | `LG_IO` 28416..28927 (512 words) | `LG_N1` 28416..30463 (2048) | `LG_IO` 28416..28927, `LG_N1` 28928..30975; LEDGER_WORDS 30976 (heat_common.wgsl, heat.js, pigments.js) |
+| HeatP spare words, MatterP, cell_step | untouched (C12g removed the cells feeling the charge field) | `caus`, `cur`, `curDrift`; MatterP `n1` (720 bytes); the water drift | N1's, unchanged; both cell_step changes kept |
+
+Everything else merged as text: the panel lines (IONS, then PIGMENTS, WATER, OASES), the overlay, `moire.*`, the lab's census, the rules
+panel groups, URL options, the presets (Oases, Plumes; the Deep vents keep `scarce=0`). Snapshots: each step adds its "saved before
+step X" rule, so a snapshot loads with each newer step's parts off (a C12f snapshot: ion flow and every N1 part off; an N1-branch
+snapshot: ion flow off, N1 as saved; a C12g snapshot: N1 off).
+
+### Follow-up a: trace leaves life (`?pigshed=0` turns it off)
+
+N1 found that the oases decide where life STARTS, not where it stays, because trace was only recycled inside lineages. What happened
+to a cell's trace before this change, checked in the code: a dying or bursting cell already spills its whole stock and its pigment's
+atoms into the dish (`give_back`); free trace in the stock already crosses the membrane with the passive exchange at its own spreading
+speed (about 1/70 of a light atom's, so a cell with the mean permeability gene equalises its free trace with the floor in about 20 s);
+a dividing cell gives half its pigment and stock to the daughter. What kept trace INSIDE life was the pigment: about half of the cells'
+trace sits in pigment, which the exchange does not touch, and a worn or bleached pigment gave its trace back to the stock.
+
+The one change (minimal, derived): **a worn or bleached pigment's trace atom goes to the DISH under the cell; its two l go back into the
+stock.** The broken antenna loses its metal, as a cell loses the nutrients of the proteins it breaks down. So every pigment's trace
+passes through the dish once per pigment lifetime (wear 1/120 per s: about 2 minutes), where N1's settling (1/150 per s) can bury it
+or a cell can catch it again. Code: `n1_shed` in `cell_eat.wgsl` (flag NLF_SHED, counter N1_SHED = LG_N1 slot 14), `pigments.params.shed`,
+the PIGMENTS line ("trace to the dish x/s"), rules panel "trace leaves life", `?pigshed=0`. Snapshots saved before it load with it off.
+
+### Follow-up b: the founders' field-B sign mixed (`?bsign=plus` turns it off)
+
+C12g made field B's charge come from the cells' own genes (qGene x the sign of the B sensing gene), and every founder carried sign +,
+so all founders repelled each other until a sign mutated. Now each founder's B sensing sign is drawn + or - from its OWN random stream
+(`Genome.brng`, so every other gene of a seed is as it was), and if all came out alike (2 or more founders) one flips: both signs are
+always present, like repels like and unlike attracts. With founders = 0 each cell draws its own; the add-cell tool's and the zoo's
+founders draw it too; the New culture "few" diversity keeps its draw order. Switch `genome.params.bSign` ('mixed' | 'plus'), rules panel
+"founders mixed B sign" (group Fields as guides; acts on the next founders drawn, G or N), `?bsign=plus`. Snapshots saved before it
+load with 'plus' (their founders are saved anyway; it matters only for a new G).
+
+### The combined dish (EXPERIMENTS.md "Merge: C12g + N1")
+
+The default scene and the Oases preset, seeds 3 and 7, 20 minutes, a and b on; the Oases preset also with `?pigshed=0` as a control.
+Conditions `experiments/conditions/merge-n1/main.json`; numbers by `experiments/conditions/n1/analyse.py --from 600` and `where.py`
+(it now picks the last snapshot by time; `--t` for another); pictures `experiments/keep/merge-n1/`.
+
+| run | cells 2 / 5 / 10 / 15 / 20 min | light made (10..20 min) | within 15 R of an oasis (20 min) | trace in dish / cells (20 min) | ORDER 20 min |
+|---|---|---|---|---|---|
+| default s3 | 358 / 1037 / 909 / 555 / 623 | 94 % | 22 % of the cells on 8 % of the dish (x2.7) | 308 / 94 | 0.141 |
+| default s7 | 306 / 1054 / 897 / 524 / 498 | 92 % | 27 % on 9 % (x3.1) | 321 / 64 | 0.147 |
+| Oases s3 | 135 / 79 / 644 / 1990 / 4581 | 92 % | 10 % on 12 % (x0.9) | 396 / 266 | 0.147 |
+| Oases s7 | 82 / 124 / 2599 / 5811 / 6000 | 100 % | 12 % on 11 % (x1.0) | 353 / 484 | 0.164 |
+| Oases s3, shed off | 104 / 105 / 1384 / 3485 / 6000 | 97 % | 11 % on 12 % (x1.0) | 371 / 425 | 0.161 |
+| Oases s7, shed off | 80 / 191 / 3837 / 5999 / 5999 | 105 % | 9 % on 9 % (x1.0) | 391 / 505 | 0.158 |
+
+Plainly:
+- **The default scene is healthier than N1 alone**: both seeds keep a colony of 500 to 900 cells in the spot (N1 alone: seed 3 dwindled
+  to 99, seed 7 held 712). It crowds into the spot round the lasting oasis (22 to 27 % of the cells within 15 R of an oasis, on 8 to 9 %
+  of the dish, as in N1: the lasting oasis sits at the spot's edge), with 1.2 to 1.3 x the battery and 1.4 to 1.5 x the pigment of the
+  cells further away. The two roaming oases wander the dark half with their silver specks and nobody follows them. Light makes 92 to 97 %
+  of the income, as in N1.
+- **Trace leaves life**: with the shed on the cells hold far less trace than the dish in the default scene (64 to 94 units against 308
+  to 321; in N1 alone the cells of the Oases preset held MORE than the dish). In the Oases preset the shed cut the cells' trace (seed 3:
+  266 against 425 with it off; seed 7: 484 against 505 in a full dish) and slowed the filling (mean 2600 cells over 10..20 min against
+  4000 for seed 3; 5150 against 5530 for seed 7).
+- **But the oases still do not decide where life stays in the Oases preset**: with or without the shed the cells sit no closer to an
+  oasis than chance (x0.9 to x1.0), and the trace under the cells equals the dish's mean. The reason, from the numbers: the currents
+  spread the oases' trace over the whole dish faster than it settles (the plumes are about 50 R long, the dish about 100 x 60 R), so
+  there is about the same thin trace everywhere and the light plus the mineral springs decide where colonies grow; then the dish fills
+  (6000, the capacity) and every pixel is under a cell. So the shed was needed (it takes away the lineages' private store) but is not
+  enough on its own. A knob probe (`merge-n1-oases-bury30_s3`, `?bury=0.0333`: trace settles 5 x faster, plumes about 20 R) shows the
+  trade-off: at 10 minutes the cells DID gather at the oases (36 % of them within 15 R, on 11 % of the dish: x3.1; the trace under them
+  2.6 x the dish's mean), but trace became so scarce that light-catching stopped paying (light made 12 % of the income over 10..20 min,
+  two thirds of the cells turned to eating the mineral springs), and by 20 minutes the eaters spread and the share fell back to x1.1. So
+  the geography the user wants sits between the two settings; not tuned here.
+- **Founders' B sign**: the founders start mixed (the B sensing gene's mean +-0.3, spread 0.95). In the default scene one sign takes
+  over the colony within 5 minutes (seed 3 mostly -, mean -0.77; seed 7 mostly +, +0.71); in the Oases preset both signs persist (mean
+  -0.7 to 0.0, spread 0.9 to 1.05). No visible change in the colony's shape against C12g's all-+ start (qGene 0.15 is weak).
+- **Entropy and ORDER**: heat out at 15 min 11.0 and 10.4 M (default; N1 alone 10.0 and 16.6 M), 18.6 and 25.7 M (Oases; 21.0 and 30.0
+  M with the shed off: less life, less heat); ORDER 0.14 to 0.16, as in N1 (the currents mix the springs' matter).
+
+### Checked
+
+- **Books** (`merge-n1-check`, then `merge-n1-check-ab` with a and b): seed 5, the whole dish lit, 480 s at MAX: soap, linker, ion,
+  mineral springs and the oases; N, 40 cells placed with the add-cell tool, a wash, two resizes, every N1 switch off and on (pigments
+  free, no saturation, no bleaching, caustics, currents, currents x 6, trace everywhere, oases fixed x 6, roaming x 2 with 20 s lives),
+  every C12g switch and knob (block, channel genes, voltage push at kV 20, ions shut and wide open, membrane chemistry off, lipids off,
+  the charge field on and off), the shed off and on, G, a snapshot saved and loaded at once (exact), G with bSign plus (all +) and mixed
+  (3 +, 9 -). Atoms and charge rounding exactly 0 in every sample but the paused instant of each resize (as before); energy within -0.033
+  and +0.026 while 16.3 M came in. Every experiment run: atoms and charge 0, energy within -0.11 and +0.30.
+- **Old snapshots**: a C12f snapshot (`c12f-dark_s3` at 2 min) loads with the ion flow and every N1 part off; an N1-branch snapshot (the
+  Oases preset at 20 min, 6000 cells) loads with N1 as saved, the ion flow off, the shed off and bSign plus; both run on with atoms and
+  charge 0 (`merge-n1-reload-*`).
+- **Consoles clean**: headless Chrome (every run, and `tools/shot.py` on the presets oases, plumes, vent, shallows, lab, the default
+  scene neon and harmonic, the Oases preset harmonic), phone size (`tools/shot.py --mobile`, the Oases preset: the short
+  IONS, PIGMENTS, WATER and OASES lines fit), headed Firefox (the Oases preset with the F overlay and the default scene: no console
+  messages, 49 fps). A moment after a `?snap=` load in the live page (not paused, as `tools/shot.py` opens it) the panel showed an
+  energy rounding of +50 for a few frames; 20 s later +0.07, and the experiment runner's reloads stay at +0.08 (a frame-old read-back
+  meeting the loaded books, cosmetic).
+
+### Speed after the merge (GPU free)
+
+Measured as README "Speed after the C12e/H1/APP merge" (headless Chrome, GTX 1650, 1280 x 800, the default scene, seed 3, MAX; 2000
+cells for 150 s, 10 000 for 60 s; three runs each, alternating the looks; `experiments/conditions/merge-n1/speed.json`, table by
+`experiments/conditions/c12f/speed.py merge-n1-speed`; one harmonic 2000 run failed in the runner before the page loaded and was rerun):
+
+| cells | neon look | harmonic look | before (C12e/H1/APP merge) |
+|---|---|---|---|
+| 2000 | x7.63, x7.35, x7.38 (mean x7.45) | x8.23, x8.12, x8.04 (mean x8.13) | x7.39 / x7.75 |
+| 10 000 | x1.90, x1.88, x1.75 (mean x1.84) | x2.04, x2.06, x2.07 (mean x2.06) | x1.75 / x1.92 |
+
+A little faster than before both steps (1 to 7 %): C12g's charge field off saves its relaxation sweeps, which pays for N1's water pass,
+the caustic light and the currents' reads. The follow-ups cost nothing measurable (one more counter, a spread9 when a pigment wears).
+
+### Known issues
+
+- The oases mark where life STARTS and, in the default scene, the lasting oasis at the spot's edge; in a fully lit dish they do not keep
+  life near them (above). Next knob: plumes shorter than the dish (`?bury=`, `?curspeed=`), or a smell for trace.
+- The shed sends a worn pigment's trace to the 3 x 3 pixels under the cell only while trace moves in the dish (as every excretion);
+  otherwise it stays in the stock.
+- One run per seed; the shed-off control only in the Oases preset.
 
 ## App: zoom, zoos, tools, new culture, presets
 

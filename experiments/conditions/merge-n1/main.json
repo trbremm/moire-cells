@@ -1,0 +1,32 @@
+{
+ "batch": "merge-n1-main",
+ "seeds": [3, 7],
+ "runs": [
+  {
+   "name": "merge-n1-default",
+   "description": "After merging C12g + N1, with the follow-ups on (trace leaves life, founders mixed B sign): the default scene, 2000 cells, 20 min",
+   "query": {},
+   "duration": 1200, "sample_every": 30,
+   "snapshots": [{"t": 600}, {"t": 1200}],
+   "evals": [{"t": 1202, "js": "moire.control.action('harmonic'); return 'harmonic'"}],
+   "shots": [{"t": 300}, {"t": 600}, {"t": 1200}, {"t": 1203, "name": "harmonic"}]
+  },
+  {
+   "name": "merge-n1-oases",
+   "description": "After merging C12g + N1, with the follow-ups on: the Oases preset (half light with a caustic net, 4 roaming oases, scattered cells, mineral springs, a slow vent), 20 min",
+   "query": {"preset": "oases"},
+   "duration": 1200, "sample_every": 30,
+   "snapshots": [{"t": 600}, {"t": 1200}],
+   "evals": [{"t": 1202, "js": "moire.control.action('harmonic'); return 'harmonic'"}],
+   "shots": [{"t": 300}, {"t": 600}, {"t": 1200}, {"t": 1203, "name": "harmonic"}]
+  },
+  {
+   "name": "merge-n1-oases-noshed",
+   "description": "Control: as merge-n1-oases with the trace shed off (?pigshed=0: a worn pigment's trace back into the stock, as in N1)",
+   "query": {"preset": "oases", "pigshed": 0},
+   "duration": 1200, "sample_every": 30,
+   "snapshots": [{"t": 600}, {"t": 1200}],
+   "shots": [{"t": 600}, {"t": 1200}]
+  }
+ ]
+}

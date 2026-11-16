@@ -1,0 +1,35 @@
+{
+  "name": "merge-n1-speed-2k-harmonic-r1",
+  "description": "Speed after the C12g + N1 merge and follow-ups: default scene, 2000 cells, seed 3, MAX, 150 s, harmonic look, repeat 1",
+  "condition": {
+    "name": "merge-n1-speed-2k-harmonic-r1",
+    "description": "Speed after the C12g + N1 merge and follow-ups: default scene, 2000 cells, seed 3, MAX, 150 s, harmonic look, repeat 1",
+    "query": {
+      "seed": 3,
+      "look": "harmonic"
+    },
+    "duration": 150,
+    "sample_every": 25
+  },
+  "url": "http://localhost:52671/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&look=harmonic",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "3a34fc241636cbcec7f468a5e3d45151a34d8493",
+  "dirty": true,
+  "started": "2026-11-16T22:15:20",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 150.0,
+  "run_wall_s": 18.24,
+  "speed_reached": 8.23,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T22:16:10",
+  "wall_s": 50.53
+}

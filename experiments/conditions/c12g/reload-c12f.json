@@ -1,0 +1,20 @@
+{
+ "name": "c12g-reload-c12f",
+ "description": "a C12f snapshot (dark_s3 at 2 min) loaded by ?snap= on the C12g page: the bilayer then passes ions as before, channel genes off",
+ "query": {
+  "snap": "experiments/runs/c12f-dark_s3/snapshots/snap_t120.json"
+ },
+ "duration": 60,
+ "sample_every": 10,
+ "evals": [
+  {
+   "t": 120,
+   "js": "return { block: moire.ions.params.block, genes: moire.ions.params.genes }"
+  }
+ ],
+ "shots": [
+  {
+   "t": 180
+  }
+ ]
+}

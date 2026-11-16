@@ -1,0 +1,11 @@
+{
+ "batch": "c12g-nophoto",
+ "runs": [
+  "oxy-spot-np.json",
+  "oxy-full-np.json"
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

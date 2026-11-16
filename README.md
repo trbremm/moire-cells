@@ -86,9 +86,9 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   step H1: `?look=harmonic` (the harmonic look; also `?look=neon`, `?look=flat`), `?blur=0`, `?grain=0`, `?scalebar=0` (the scale
   bar hidden, in every look);
   step C6n: `?neon=0`, `?halo=off|low|medium|high`, `?trails=0`, `?hum=0`, `?machinery=1`, `?cheap=0|1`, and
-  `?until=T` (run to simulation time T, then pause at exactly that tick); step C6b: `?charge=0`, `?qstock=0`, `?qfeel=0`,
+  `?until=T` (run to simulation time T, then pause at exactly that tick); step C6b: `?charge=0`, `?qstock=0`, `?qfeel=0` (since step C12g the field, its drift, the feeling and the stock charges are OFF by default: `?chargefield=1` turns them back on, `?qgene=x`, `?qgenes=0`),
   `?contours=1`, `?view=charge`; step C6c: `?honeycomb=0` (the ellipse cells), `?membrane=0` (no membrane chemistry),
-  `?bites=0`, `?burst=0`, `?elastic=0`, `?selectivity=0`; step C6d: `?dipoles=0`, `?dd=0`, `?dphi=0`, `?dfield=0`; step C7: `?pumps=0`, `?pumpcontact=0`, `?voltage=0`, `?v2b=0`; step C7b: `?crystal=0`, `?cofactor=0`; step C8: `?hardmut=0`; step C9: `?divide=0` (the old turnover, a fixed count), `?cap=N` (the capacity), `?divat=`,
+  `?bites=0`, `?burst=0`, `?elastic=0`, `?selectivity=0`; step C6d: `?dipoles=0` (off by default since step C12g: `?dipoles=1`), `?dd=0`, `?dphi=0`, `?dfield=0`; step C7: `?pumps=0`, `?pumpcontact=0`, `?voltage=0`, `?v2b=0`; step C7b: `?crystal=0`, `?cofactor=0`; step C8: `?hardmut=0`; step C9: `?divide=0` (the old turnover, a fixed count), `?cap=N` (the capacity), `?divat=`,
   `?divcost=`, `?starve=`, `?crowd=`, `?age=` (the division's knobs); step C10: `?walls=0` (every side as sticky as the
   adhesion gene, as before), `?wallfront=0`, `?wallcost=0`, `?mature=0`, `?view=walls`; step C11: `?turn=0` (the glue does not
   turn the cells), `?divfront=0` (divisions along the long axis, as in step C9), `?freeglue=x` (the free base glue; 0 = all glue costs,
@@ -107,7 +107,9 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   default 0.4); step C12e: `?saturation=0` (products never slow a reaction), `?osmosis=0` (no swelling; the stretch genes still
   drift: the neutral control), `?stretch=0` (stretch opens no channels), `?tear=0` (overstretch never bursts), `?tolcost=0` (the
   stretch tolerance is free), `?satscale=x`, `?kosm=x`, `?kstretch=x`, `?wtol=x` (knobs), `?photolysis=0` (light frees no atoms in
-  the open dish: any free t is made by life); step C13: `?fgenes=0` (every cell today's field numbers; the field genes
+  the open dish: any free t is made by life); step C12g: `?ionblock=0` (the bilayer passes free ions like any molecule, as
+  before), `?channels=0` (every cell's ion channels at the base level: the channel genes drift without effect, the neutral control),
+  `?ionvolt=1` (ions through the intact membrane feel the membrane voltage), `?ionpass=x`, `?chanbase=x`, `?kv=x` (knobs); step C13: `?fgenes=0` (every cell today's field numbers; the field genes
   still drift), `?gateglue=0`, `?gatepump=0`, `?gateengine=0`, `?gatediv=0`, `?gateturn=0` (one gate off; `?gates=0` all five),
   `?pushgene=0` (field A pushes every cell as before), `?gatenull=1` (the neutral control: the gate genes and the push gene drift but
   act on nothing), `?gateref=x`, `?gateturnrate=x`, `?view=guides` (colour by the strongest guide).
@@ -1526,7 +1528,7 @@ as the atoms do.
 **Switches** (group "Charge (step C6b)" in the rules panel; contours in the view panel's Look group): **Shift+7** charge
 field (and the drift of free atoms) · **Shift+8** cells' charge from their stock (off: per fate) · **Shift+9** cells feel
 the charge field · **Shift+0** charge contours. Shift + the digit keys, by their place on the keyboard, as in step C6n.
-URL: `?charge=0`, `?qstock=0`, `?qfeel=0`, `?contours=1`, `?view=charge`.
+URL: `?charge=0`, `?qstock=0`, `?qfeel=0`, `?contours=1`, `?view=charge`. (Since step C12g the field and the stock charges are OFF by default: "Step C12g: ion flow", "The charge field off by default".)
 
 **Knobs** (live in `moire.charge.params`): `lambda` (screening length, 3 R), `strength` (phi per unit of charge per R²,
 80), `drift` (the free atoms' drift, x their spreading, 1), `sweeps` (3 per tick), `omega` (1.5), `cellsIn` (the cells'
@@ -1966,7 +1968,7 @@ three together with polar 0.2: visible in the charge view and the machinery, sub
 master: off = every cell's charge spread evenly round it, as before) · **dipole-dipole** · **substrate field on the
 sides** · **field turns and stretches cells** (the turning, the polarising and the stretch). Knobs with - and +:
 **evening out** (relax), **dipole scale** (pHalf), **turning**, **dipole push**, **dipole range**, **stretch along the
-field**. URL: `?dipoles=0`, `?dd=0`, `?dphi=0`, `?dfield=0`. Console: `moire.dipole.params` (also flow, cap, inner,
+field**. URL: `?dipoles=0`, `?dd=0`, `?dphi=0`, `?dfield=0`. (Off by default since step C12g: `?dipoles=1`.) Console: `moire.dipole.params` (also flow, cap, inner,
 polar, pushSat, phiHalf, phiW, deposit), `moire.cells.look.dipTint` (0.6), `.dipArrow` (0.9), `.dipTwoTone` (0.85),
 `await moire.dipole.stats()`.
 
@@ -4120,6 +4122,156 @@ and `c12f-controls/`, pictures `experiments/keep/c12f/`. Plainly:
 - The founders of the Deep vents preset are random genomes (`diversity=random`); the dialog keeps that unless another diversity is picked.
 - Runs are not bit-repeatable; two seeds per condition at most.
 
+## Step C12g: ion flow
+
+The user, 2026-11-16: "Yes, membranes modulate ion flow". Two earlier findings pointed here. Step C12e: free ions (the free givers
+and takers g t G T) crossed the membrane as easily as anything, so osmosis barely bit and cells kept their own oxygen. Step C12f: in
+the dark vent dish the cells flooded with the vent's fast free givers g, turned positive and were pushed out of the food ring by the
+vent's + charge field, and their stocks clogged so the sea's T could not get in. Real cells decide which ions pass: a lipid bilayer
+is nearly tight for ions, and ions cross through channel proteins. So the membrane now does the same, derived from what it is made of.
+
+### The rules
+
+**The bilayer blocks ions.** For every cell, the INTACT share of its membrane is its mean integrity (with the lipid membranes of step
+C12b: the soap bilayer plus the oil between its tails, over what the thickness gene asks; with `?lipids=0`: the C6c linker weave's).
+The crust WALL never counts in the integrity, so it is porous, as a bacterial wall. Per free ion (charged atom: g t G T, and g* t*)
+the membrane passes, as a share of a neutral molecule's rate:
+
+    pass(z) = (1 - integrity)                                 the holes: as a neutral molecule
+            + integrity x min(1, ionPass + channel(z))        the intact bilayer: its own small leak (ionPass = 1/20) and its channel
+            + stretch                                         the C12e stretch channels: kStretch x e^gene x swelling (non-selective)
+
+and a neutral molecule passes x (1 + stretch), as in step C12e. Everything else in the passive exchange is unchanged (the
+permeability gene, the C6c leak of a damaged membrane, the room left, the 3 x 3 pixels).
+
+**Channels are genes.** A CATION channel (free givers, +) and an ANION channel (free takers, -):
+
+    cation = chanBase x e^level x (1 + balance)       anion = chanBase x e^level x (1 - balance)
+
+- `level` is a new gene (Bio `gate2.w`, the last spare word of the genome; -4..2, a log factor like the C12e stretch genes; it drifts
+  by 0.06 of a normal draw per birth). Founders draw it within ±0.5 (their own random stream, so a seed keeps every other gene).
+- `balance` is the old C6c ION SELECTIVITY gene (`memb.w`, -1..1, drifting 0.03 per birth), folded in instead of adding a duplicate:
+  two genes, two channels, and any pair of channel levels has exactly one (level, balance). Balance +1 is a cell with only a cation
+  channel, -1 only an anion channel. Founders now draw it within ±0.25 (it was ±0.08), so their two channels differ a little from
+  the start. With the block off, the gene keeps its C6c meaning (all ion exchange x (1 ± s)).
+- `chanBase` = 0.2: a founder's channels let ions through at about a fifth of a neutral molecule's rate (0.25 with the bilayer's own
+  leak), so today's cells still get ions in, four times slower through a whole membrane. A level of +1.6 opens a channel fully.
+
+**Pumps are the active route** (C7), unchanged: they move what their genes say whatever the block (checked: pumped counts are the same
+words as before, untouched by the exchange's rates).
+
+**A tight membrane holds its voltage.** The C7 membrane voltage leaks back as ions cross, so its leak rate is multiplied by the mean
+of pass(+) and pass(-). A cell with a whole bilayer and narrow channels keeps the voltage its pumps build (and pumping one sign the
+same way gets dearer). Derived, not new: a voltage cannot leak through a membrane that ions cannot cross.
+
+**Voltage push** (optional, `?ionvolt=1`, OFF by default): the ions that cross through the intact membrane (channels, the bilayer's
+leak, the stretch path; not the holes) settle at inside / outside = exp(-z x kV x V) instead of equal concentrations (kV = 4): a
+positive cell lets its cations out and pulls anions in. A toy of electrophysiology (Nernst-like); it biases where ions sit and does
+not discharge the voltage (the C7 leak does that), so the energy books do not change.
+
+**Osmosis** (C12e) is unchanged in its rule; what changes is that a whole membrane now holds its ions, so the pressure can last.
+
+### As built
+
+- **Code** (README "Files": `src/ions.js`): `cell_eat.wgsl` `ion_chan` (the two levels) and `ion_open` (the intact share's pass), the
+  block and the voltage push in `plan`'s exchange (the ions held back per sign go to flux words 44, 45), the voltage's slower leak and
+  the counters in `eat`, the census in `ledger`. The eat uniform grew by `io[2]` (EP_BYTES 1792), the ledger by 512 words (LG_IO 28416:
+  16 snapshot numbers and 16 counters, 16 slots each; LEDGER_WORDS 28928). No new Cell words: the genome had a spare word.
+- **Panel line** (and `moire.sample()` `ions.*`):
+
+      IONS  blocked 21% (held back + 0.58 − 0.51/s) · passed in + 1.37 − 1.31, out + 0.70 − 0.66/s · membranes pass + 99% − 99% of a neutral's rate (tight 18) · channels + 0.20 − 0.22 (level +0.01, balance −0.04; + only 0, − only 0) · swelling −0% (puffed 0, shrunk 11)
+
+  (the share of the ion flow the block held back, against what the same cells would pass with no block, and its counts per s by sign;
+  the free ions passed in and out per s by sign; the mean share of a neutral's rate the membranes pass now, and the cells whose membrane
+  passes both signs at less than half (tight); the mean cation and anion channels, the two genes' means and the cells with balance above
+  0.3 (+ only) and below -0.3 (- only); the C12e swelling). On a phone `IONS blocked 21% · in + 1.37 − 1.31/s · channels + 0.20 − 0.22`.
+  The F overlay adds the genes' spread, the cells with the level gene above +1 and below -1, and the numbers every 10 s.
+- **Switches** (rules panel, group "Ion flow (step C12g)"): bilayer blocks ions · channel genes (off: every cell's channels at chanBase,
+  balanced, the genes drifting without effect: the NEUTRAL control, with the physics otherwise the same) · voltage pushes ions; knobs
+  bilayer ion leak, channel base level, voltage push. URL: `?ionblock=0`, `?channels=0`, `?ionvolt=1`, `?ionpass=x`, `?chanbase=x`,
+  `?kv=x`. Console: `moire.ions.params`.
+- **Old snapshots** (no `ions.params`) load with the block, the channel genes and the push OFF and run as they ran (their genomes have
+  level 0 and their old selectivity).
+- **Look**: nothing new is drawn. What shows is the C12e swelling (cells that hold their ions puff up or shrink).
+
+### The charge field off by default
+
+Decided with the user during this step ("maybe the way we are handling charge is too exaggerated. Maybe the chemicals should be
+enough ... except the polarity case, membranes, oils etc"). Real salty water screens charge within about a nanometre and stays
+electroneutral, so no cell should feel a charge cloud across the dish; charge matters at membranes (voltage, gradients, channels,
+pumps) and inside molecules (polarity). The C12f finding (cells pushed out of the vent's food ring by the vent's + field at the
+field's saturating 1 R per s) was this exaggeration at work. So, from this step:
+
+- **OFF by default**, each kept as a switch: the C6b dish-wide screened charge field (`charge.params.on`, Shift+7), with it the free
+  charged atoms' DRIFT in it and the cells FEELING it (Shift+9, needs the field), and the C6d DIPOLES (`dipole.params.on`: side charges,
+  their turning, pushing and stretching; the C10/C11 front-follows-dipole gene stays and simply has no dipole to follow).
+  `?chargefield=1` turns the field, the drift, the feeling and the B charge from the stock back on (the C6b behaviour); `?dipoles=1`
+  the dipoles; `?charge=1` the field alone.
+- **KEPT**: the atoms' charges as bookkeeping (the charge's books, rounding exactly 0), the CHARGE panel line (free + and − in the dish,
+  in the cells, cells by sign; it says "no dish-wide field" while off), the C12 polarity (oil, soap, droplets, bilayers: it never used
+  the field), the C7 membrane voltage, the C12g channels and pumps. The charge contours draw only while the field is on.
+- **SWAPPED**: field B's charge (what a cell emits into the moire field B and listens with) came from the stock's net charge (C6b). It
+  now comes from the cell's own C13 field genes: qGene x the sign of its B sensing gene (the B emission gene scales the beat as
+  before; the listener's sign is carried by its sensing gene, so like repels like by the genes' signs, with the U key's rule). The
+  magnitude `qGene` = 0.15 (`?qgene=`): every founder carries the same sign, and at 1 the default colony's like-repels-like broke it
+  into crumbs of 2 to 6 cells within 30 s; at 0.15 it holds together as before (about the size of the stock charges, mean |q| 0.07 to
+  0.2). Shift+8 (`?qstock=1`) gives the stock charges back; `?qgenes=0` with the stock off the per-fate charges of step 5.
+- **Old snapshots** carry their charge and dipole settings and so load with the field, the drift, the dipoles and the stock charges on,
+  as they ran (no extra code: the saved settings are applied; checked: a C12f snapshot reloads with phi rms about 9, the field running).
+
+### What happened (EXPERIMENTS.md "Ion flow, charge field off")
+
+Conditions `experiments/conditions/c12g/`, summaries `experiments/summaries/c12g-oxygen/` and `c12g-dark-default/`, pictures
+`experiments/keep/c12g/`. Plainly:
+- **The block bites only where a membrane is whole, and few are.** Mean integrity stays at 0.08 to 0.25 in the oxygen dishes and 0.05
+  to 0.15 in the dark: most of every membrane is holes. The bilayer held back 12 to 25 % of the ion flow; cells passing ions at less
+  than half a neutral's rate were 0 to 10 %.
+- **Oxygen**: no more swelling than in C12e, the haze the same (105 to 117 under the spot, 474 to 521 in the whole dish), more free t
+  exchanged in the whole dish (put out 61 to 118 per s against 55; t-IN pumps common), breathing into batteries up a little (793 to
+  828 per s against 467 to 677), but breathers on OUTSIDE t still 4 to 10 % and falling: the self-burn loop holds.
+- **Channel genes** wander 2 to 5 times further than in the neutral control (`?channels=0`), each colony a different way (cation-only,
+  anion-only, nearly shut, wide open): selection on whichever lineage wins, no common answer.
+- **The dark vents**: the ion flow alone changed nothing (cells still flooded with g, positive, pushed out, dead by 7 to 15 min). With
+  the charge field OFF the cells are no longer pushed and sit in the vent zone and the cold ring (0 to 25 R), but the vents' givers now
+  pile up close to the vents instead of being spread wide by their own repulsion, the zone where giver and taker meet is a thin shell,
+  and the culture dies FASTER (by 4 min against 7 to 19). Soap springs in the rings gave whole membranes (integrity up to 1, 30 to 77 % of
+  the ions held back) and did not save it (dead by 5.5 min).
+- **The default scene** runs as before; with the charge field off the colony looked smaller and looser at 20 minutes (664 against
+  1136 cells, one run each). With the field-B charge at qGene 1 the colony broke into crumbs; at 0.15 it holds.
+
+### Checked
+
+- **Books** (`check.json`, seed 5, the whole dish lit, 420 s at MAX: soap, linker, ion, mineral and vent springs, N, 40 cells placed with
+  the add-cell tool, a wash, two resizes, G, the block off and on, the channel genes off and on, the voltage push on at kV 20, ions nearly
+  shut with a small capacitance, ions wide open, the knobs back, the membrane chemistry off, the lipids off (the C6c weave then blocks),
+  the selectivity gene off and on, a snapshot saved and loaded at once): run once with the charge field on (before it went off) and once
+  with the new defaults. Atoms and charge rounding exactly 0 in every sample except the paused instant of each resize (the old grid not
+  yet drained, as before); energy within −0.023 and +0.025 while 14.9 M came in; the snapshot loaded exact. Every experiment run: atoms
+  and charge 0 in every sample, energy within −0.19 and +0.33.
+- **Old snapshots**: a C12f snapshot (`c12f-dark_s3` at 2 min) by `?snap=` loads with the note "saved before step C12g: the bilayer
+  passes ions as before, channel genes off (as it ran)", its charge field on, atoms and charge 0 (`reload-c12f.json`).
+- **Consoles clean**: headless Chrome (every run), phone size (`tools/shot.py --mobile`: the short IONS line, the rules panel's new
+  group with its toggles and knobs), headed Firefox (the default scene with the F overlay: the IONS line, the overlay's ion lines, the
+  CHARGE line saying "no dish-wide field"; no console messages).
+- **Speed** at MAX (the default scene, seed 3, headless Chrome on the GTX 1650; the N1 worker's runs may still have shared the GPU, so
+  noisy): 2000 cells ×8.55 and ×8.71 (C12g defaults), ×8.55 and ×8.72 (`?ionblock=0`), ×7.38 and ×7.49 (`?chargefield=1&dipoles=1`,
+  closest to C12f's ×7.40); 10 000 cells ×2.03, ×2.17, ×1.98 (C12f ×1.76). The ion block costs nothing measurable; switching the charge
+  field off saves its relaxation sweeps (about 15 % at 2000 cells).
+
+### Known issues
+
+- The block acts through the membranes' integrity, and in every scene so far most membranes are thin (mean 0.05 to 0.25), so most ion
+  flow still passes through "holes". Whether channels matter depends on cells building whole bilayers, which the default chemistry
+  rarely lets them (the C12b supply problem).
+- Channel genes: no consistent direction across seeds; one run per condition, the neutral controls ran 40 min (spot) and 20 min
+  (whole dish) only.
+- The voltage push (`?ionvolt=1`) was only checked in the books run (kV 20), not run as an experiment.
+- With the charge field off the dark vent dish dies faster than before (the field was what spread the vents' givers wide). The vent
+  preset may need retuning (vent rate, sea level, founders) for the new physics.
+- Field B's charge from the genes uses the sign of the B sensing gene; all founders are +, so like repels like among all founders until
+  a sign flips by mutation; qGene 0.15 was chosen by eye (crumbs at 1).
+- `charge.params.feel` stays true but acts only with the field on (the overlay says "Shift+9 cells feel the grid on" while the field is off).
+
 ## App: zoom, zoos, tools, new culture, presets
 
 The user, 2026-11-16: "on the app side of things, if we could zoom, and have panels with zoos of cells and molecules and tools to
@@ -4497,6 +4649,11 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   delta, the sea's top-up), `cell_eat.wgsl` (the gradient engines' counters), `src/heat.js` (the vent heat as energy in);
   `experiments/conditions/c12f/`: `make.py` (the conditions), `analyse.py` (radial profiles from the nearest vent and the engine census,
   from snapshots), `percell.py` (each cell's inside against the dish outside it), `speed.py` (the speed table)
+- `src/ions.js`: ion flow (step C12g): the switches and knobs (`moire.ions.params`), the eat uniform's words (struct EatP `io`), the
+  census (LG_IO: a snapshot from the ledger pass, counters from the eat pass), the IONS panel line and the overlay. The rules
+  themselves are in `cell_eat.wgsl` (`ion_chan`, `ion_open`; the block, the channels and the voltage push in `plan`'s exchange, the
+  voltage's slower leak in `eat`, the counters in `eat`, the census in `ledger`), the channel level gene's drift in `cell_common.wgsl`
+  `mutate` (gate2.w); `experiments/conditions/c12g/`: `make.py` (the conditions), `analyse.py` (the tables)
 - `src/excited.js`: excited waste (step C12c): the switch and knobs (`moire.excited.params`, `.look`), the chemistry uniform's
   words (struct ChemP `ex`), the census (from the heat's ledger read-back: LG_EXC_N, LG_EXC_E, the dish's and the cells' g*, t*),
   the EXCITED panel line and the overlay. The excited atoms themselves are substances of `src/matter.js` (`ATOMS` g*, t*,

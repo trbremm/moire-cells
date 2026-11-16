@@ -1,0 +1,96 @@
+{
+ "name": "c12g-default",
+ "description": "step C12g: the default scene (C12d vent), seed 3, 20 min, the bilayer blocks ions: did anything break? (against c12f-default-oldvent)",
+ "query": {
+  "seed": 3
+ },
+ "duration": 1200,
+ "sample_every": 10,
+ "snapshots": [
+  {
+   "t": 60,
+   "grid": true
+  },
+  {
+   "t": 120,
+   "grid": true
+  },
+  {
+   "t": 300,
+   "grid": true
+  },
+  {
+   "t": 600,
+   "grid": true
+  },
+  {
+   "t": 1200,
+   "grid": true
+  }
+ ],
+ "shots": [
+  {
+   "t": 120
+  },
+  {
+   "t": 600
+  },
+  {
+   "t": 1200
+  },
+  {
+   "t": 1200,
+   "panel": true,
+   "name": "panel"
+  },
+  {
+   "t": 1200,
+   "view": "strategy",
+   "name": "strategy"
+  },
+  {
+   "t": 600,
+   "crop": [
+    540,
+    110,
+    200,
+    150
+   ],
+   "scale": 3,
+   "name": "close0_t600"
+  },
+  {
+   "t": 600,
+   "crop": [
+    1020,
+    40,
+    200,
+    150
+   ],
+   "scale": 3,
+   "name": "close1_t600"
+  },
+  {
+   "t": 1200,
+   "crop": [
+    540,
+    110,
+    200,
+    150
+   ],
+   "scale": 3,
+   "name": "close0_t1200"
+  },
+  {
+   "t": 1200,
+   "crop": [
+    1020,
+    40,
+    200,
+    150
+   ],
+   "scale": 3,
+   "name": "close1_t1200"
+  }
+ ]
+}

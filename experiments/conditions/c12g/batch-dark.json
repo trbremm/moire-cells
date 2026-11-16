@@ -1,0 +1,10 @@
+{
+ "batch": "c12g-dark",
+ "runs": [
+  "dark.json"
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

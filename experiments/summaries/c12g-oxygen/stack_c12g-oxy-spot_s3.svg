@@ -1,0 +1,441 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 1024" width="760" height="1024" role="img" aria-label="c12g-oxy-spot_s3: 9 measures on one time axis">
+<style>:root{--surface:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--grid:#e4e3df}.s0{stroke:#2a78d6;fill:#2a78d6}.s1{stroke:#eb6834;fill:#eb6834}.s2{stroke:#1baf7a;fill:#1baf7a}.s3{stroke:#eda100;fill:#eda100}.s4{stroke:#e87ba4;fill:#e87ba4}.s5{stroke:#008300;fill:#008300}.s6{stroke:#6250d6;fill:#6250d6}.s7{stroke:#e34948;fill:#e34948}@media (prefers-color-scheme: dark){:root{--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--grid:#383835}.s0{stroke:#3987e5;fill:#3987e5}.s1{stroke:#d95926;fill:#d95926}.s2{stroke:#199e70;fill:#199e70}.s3{stroke:#c98500;fill:#c98500}.s4{stroke:#d55181;fill:#d55181}.s5{stroke:#008300;fill:#008300}.s6{stroke:#9085e9;fill:#9085e9}.s7{stroke:#e66767;fill:#e66767}}text{font:12px system-ui,-apple-system,'Segoe UI',sans-serif;fill:var(--ink2)}.title{font-size:14px;font-weight:600;fill:var(--ink)}.ptitle{font-weight:600;fill:var(--ink)}.line{fill:none;stroke-width:1.8;stroke-linejoin:round}.grid{stroke:var(--grid);stroke-width:1}.hit{fill:transparent;stroke:none}</style>
+<rect width="760" height="1024" fill="var(--surface)"/>
+<text class="title" x="64" y="22">c12g-oxy-spot_s3</text>
+<line class="grid" x1="64.0" x2="64.0" y1="40" y2="980"/>
+<text x="64.0" y="998" text-anchor="middle">0</text>
+<line class="grid" x1="198.4" x2="198.4" y1="40" y2="980"/>
+<text x="198.4" y="998" text-anchor="middle">500</text>
+<line class="grid" x1="332.8" x2="332.8" y1="40" y2="980"/>
+<text x="332.8" y="998" text-anchor="middle">1000</text>
+<line class="grid" x1="467.2" x2="467.2" y1="40" y2="980"/>
+<text x="467.2" y="998" text-anchor="middle">1500</text>
+<line class="grid" x1="601.6" x2="601.6" y1="40" y2="980"/>
+<text x="601.6" y="998" text-anchor="middle">2000</text>
+<line class="grid" x1="736.0" x2="736.0" y1="40" y2="980"/>
+<text x="736.0" y="998" text-anchor="middle">2500</text>
+<text x="400" y="1016" text-anchor="middle">run time (s)</text>
+<line class="grid" x1="64" x2="736" y1="132" y2="132"/>
+<line class="grid" x1="64" x2="736" y1="40" y2="40"/>
+<text x="58" y="136" text-anchor="end">0</text>
+<text x="58" y="50" text-anchor="end">2725</text>
+<text class="ptitle" x="70" y="53">cells</text>
+<path class="line s0" d="M64.0,65.2 L80.1,78.5 L96.3,115.3 L112.4,101.6 L128.5,87.2 L144.6,78.8 L160.8,68.9 L176.9,73.9 L193.0,61.3 L209.2,52.2 L225.3,47.8 L241.4,66.0 L257.5,58.1 L273.7,45.0 L289.8,40.0 L305.9,56.7 L322.0,47.8 L338.2,43.4 L354.3,48.2 L370.4,65.8 L386.6,58.3 L402.7,53.7 L418.8,58.0 L434.9,65.2 L451.1,60.3 L467.2,55.8 L483.3,54.7 L499.5,62.2 L515.6,58.9 L531.7,53.1 L547.8,52.9 L564.0,62.3 L580.1,59.3 L596.2,56.0 L612.4,52.9 L628.5,63.2 L644.6,57.6 L660.7,53.5 L676.9,49.9 L693.0,62.9 L709.1,57.5"/>
+<circle class="hit" cx="64.0" cy="65.2" r="5"><title>cells 1978 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="78.5" r="5"><title>cells 1585 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="115.3" r="5"><title>cells 495 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="101.6" r="5"><title>cells 899 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="87.2" r="5"><title>cells 1327 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="78.8" r="5"><title>cells 1575 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="68.9" r="5"><title>cells 1870 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="73.9" r="5"><title>cells 1721 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="61.3" r="5"><title>cells 2094 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="52.2" r="5"><title>cells 2364 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="47.8" r="5"><title>cells 2493 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="66.0" r="5"><title>cells 1956 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="58.1" r="5"><title>cells 2189 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="45.0" r="5"><title>cells 2577 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="40.0" r="5"><title>cells 2725 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="56.7" r="5"><title>cells 2231 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="47.8" r="5"><title>cells 2493 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="43.4" r="5"><title>cells 2624 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="48.2" r="5"><title>cells 2482 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="65.8" r="5"><title>cells 1961 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="58.3" r="5"><title>cells 2183 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="53.7" r="5"><title>cells 2318 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="58.0" r="5"><title>cells 2193 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="65.2" r="5"><title>cells 1980 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="60.3" r="5"><title>cells 2125 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="55.8" r="5"><title>cells 2257 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="54.7" r="5"><title>cells 2290 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="62.2" r="5"><title>cells 2068 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="58.9" r="5"><title>cells 2164 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="53.1" r="5"><title>cells 2337 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="52.9" r="5"><title>cells 2344 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="62.3" r="5"><title>cells 2064 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="59.3" r="5"><title>cells 2153 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="56.0" r="5"><title>cells 2250 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="52.9" r="5"><title>cells 2343 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="63.2" r="5"><title>cells 2039 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="57.6" r="5"><title>cells 2205 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="53.5" r="5"><title>cells 2324 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="49.9" r="5"><title>cells 2433 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="62.9" r="5"><title>cells 2046 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="57.5" r="5"><title>cells 2208 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="238" y2="238"/>
+<line class="grid" x1="64" x2="736" y1="146" y2="146"/>
+<text x="58" y="242" text-anchor="end">0</text>
+<text x="58" y="156" text-anchor="end">112</text>
+<text class="ptitle" x="70" y="159">free t (oxygen) in the dish</text>
+<path class="line s1" d="M64.0,238.0 L80.1,218.4 L96.3,209.1 L112.4,205.2 L128.5,162.4 L144.6,166.7 L160.8,185.7 L176.9,205.4 L193.0,164.1 L209.2,168.1 L225.3,201.1 L241.4,216.2 L257.5,168.9 L273.7,172.6 L289.8,205.1 L305.9,219.4 L322.0,176.3 L338.2,169.1 L354.3,186.6 L370.4,207.0 L386.6,159.7 L402.7,154.6 L418.8,166.9 L434.9,190.7 L451.1,150.9 L467.2,146.0 L483.3,168.1 L499.5,196.0 L515.6,153.5 L531.7,152.8 L547.8,177.3 L564.0,198.8 L580.1,149.5 L596.2,152.5 L612.4,174.4 L628.5,203.1 L644.6,152.0 L660.7,154.0 L676.9,177.7 L693.0,201.2 L709.1,151.2"/>
+<circle class="hit" cx="64.0" cy="238.0" r="5"><title>free t (oxygen) in the dish 0 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="218.4" r="5"><title>free t (oxygen) in the dish 23.8 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="209.1" r="5"><title>free t (oxygen) in the dish 35.1 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="205.2" r="5"><title>free t (oxygen) in the dish 39.8 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="162.4" r="5"><title>free t (oxygen) in the dish 91.7 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="166.7" r="5"><title>free t (oxygen) in the dish 86.5 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="185.7" r="5"><title>free t (oxygen) in the dish 63.4 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="205.4" r="5"><title>free t (oxygen) in the dish 39.5 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="164.1" r="5"><title>free t (oxygen) in the dish 89.7 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="168.1" r="5"><title>free t (oxygen) in the dish 84.8 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="201.1" r="5"><title>free t (oxygen) in the dish 44.8 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="216.2" r="5"><title>free t (oxygen) in the dish 26.4 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="168.9" r="5"><title>free t (oxygen) in the dish 83.8 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="172.6" r="5"><title>free t (oxygen) in the dish 79.3 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="205.1" r="5"><title>free t (oxygen) in the dish 39.9 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="219.4" r="5"><title>free t (oxygen) in the dish 22.6 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="176.3" r="5"><title>free t (oxygen) in the dish 74.9 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="169.1" r="5"><title>free t (oxygen) in the dish 83.6 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="186.6" r="5"><title>free t (oxygen) in the dish 62.4 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="207.0" r="5"><title>free t (oxygen) in the dish 37.6 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="159.7" r="5"><title>free t (oxygen) in the dish 95 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="154.6" r="5"><title>free t (oxygen) in the dish 101 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="166.9" r="5"><title>free t (oxygen) in the dish 86.3 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="190.7" r="5"><title>free t (oxygen) in the dish 57.4 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="150.9" r="5"><title>free t (oxygen) in the dish 106 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="146.0" r="5"><title>free t (oxygen) in the dish 112 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="168.1" r="5"><title>free t (oxygen) in the dish 84.8 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="196.0" r="5"><title>free t (oxygen) in the dish 51 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="153.5" r="5"><title>free t (oxygen) in the dish 103 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="152.8" r="5"><title>free t (oxygen) in the dish 103 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="177.3" r="5"><title>free t (oxygen) in the dish 73.6 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="198.8" r="5"><title>free t (oxygen) in the dish 47.6 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="149.5" r="5"><title>free t (oxygen) in the dish 107 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="152.5" r="5"><title>free t (oxygen) in the dish 104 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="174.4" r="5"><title>free t (oxygen) in the dish 77.2 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="203.1" r="5"><title>free t (oxygen) in the dish 42.4 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="152.0" r="5"><title>free t (oxygen) in the dish 104 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="154.0" r="5"><title>free t (oxygen) in the dish 102 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="177.7" r="5"><title>free t (oxygen) in the dish 73.1 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="201.2" r="5"><title>free t (oxygen) in the dish 44.6 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="151.2" r="5"><title>free t (oxygen) in the dish 105 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="344" y2="344"/>
+<line class="grid" x1="64" x2="736" y1="252" y2="252"/>
+<text x="58" y="348" text-anchor="end">0</text>
+<text x="58" y="262" text-anchor="end">0.29</text>
+<text class="ptitle" x="70" y="265">share of the ion flow the bilayer held back</text>
+<path class="line s2" d="M64.0,344.0 L80.1,284.9 L96.3,289.1 L112.4,297.3 L128.5,286.2 L144.6,293.7 L160.8,286.1 L176.9,288.6 L193.0,296.3 L209.2,295.8 L225.3,289.8 L241.4,277.9 L257.5,290.5 L273.7,289.7 L289.8,272.8 L305.9,269.4 L322.0,280.7 L338.2,281.4 L354.3,276.1 L370.4,269.6 L386.6,275.9 L402.7,282.7 L418.8,275.6 L434.9,252.0 L451.1,282.2 L467.2,286.9 L483.3,275.6 L499.5,263.7 L515.6,286.5 L531.7,294.2 L547.8,285.9 L564.0,273.9 L580.1,298.3 L596.2,295.9 L612.4,288.6 L628.5,279.5 L644.6,294.4 L660.7,304.4 L676.9,301.0 L693.0,292.9 L709.1,300.9"/>
+<circle class="hit" cx="64.0" cy="344.0" r="5"><title>share of the ion flow the bilayer held back 0 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="284.9" r="5"><title>share of the ion flow the bilayer held back 0.19 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="289.1" r="5"><title>share of the ion flow the bilayer held back 0.17 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="297.3" r="5"><title>share of the ion flow the bilayer held back 0.15 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="286.2" r="5"><title>share of the ion flow the bilayer held back 0.18 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="293.7" r="5"><title>share of the ion flow the bilayer held back 0.16 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="286.1" r="5"><title>share of the ion flow the bilayer held back 0.18 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="288.6" r="5"><title>share of the ion flow the bilayer held back 0.17 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="296.3" r="5"><title>share of the ion flow the bilayer held back 0.15 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="295.8" r="5"><title>share of the ion flow the bilayer held back 0.15 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="289.8" r="5"><title>share of the ion flow the bilayer held back 0.17 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="277.9" r="5"><title>share of the ion flow the bilayer held back 0.21 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="290.5" r="5"><title>share of the ion flow the bilayer held back 0.17 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="289.7" r="5"><title>share of the ion flow the bilayer held back 0.17 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="272.8" r="5"><title>share of the ion flow the bilayer held back 0.22 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="269.4" r="5"><title>share of the ion flow the bilayer held back 0.23 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="280.7" r="5"><title>share of the ion flow the bilayer held back 0.2 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="281.4" r="5"><title>share of the ion flow the bilayer held back 0.2 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="276.1" r="5"><title>share of the ion flow the bilayer held back 0.21 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="269.6" r="5"><title>share of the ion flow the bilayer held back 0.23 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="275.9" r="5"><title>share of the ion flow the bilayer held back 0.21 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="282.7" r="5"><title>share of the ion flow the bilayer held back 0.19 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="275.6" r="5"><title>share of the ion flow the bilayer held back 0.22 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="252.0" r="5"><title>share of the ion flow the bilayer held back 0.29 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="282.2" r="5"><title>share of the ion flow the bilayer held back 0.19 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="286.9" r="5"><title>share of the ion flow the bilayer held back 0.18 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="275.6" r="5"><title>share of the ion flow the bilayer held back 0.22 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="263.7" r="5"><title>share of the ion flow the bilayer held back 0.25 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="286.5" r="5"><title>share of the ion flow the bilayer held back 0.18 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="294.2" r="5"><title>share of the ion flow the bilayer held back 0.16 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="285.9" r="5"><title>share of the ion flow the bilayer held back 0.18 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="273.9" r="5"><title>share of the ion flow the bilayer held back 0.22 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="298.3" r="5"><title>share of the ion flow the bilayer held back 0.14 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="295.9" r="5"><title>share of the ion flow the bilayer held back 0.15 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="288.6" r="5"><title>share of the ion flow the bilayer held back 0.17 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="279.5" r="5"><title>share of the ion flow the bilayer held back 0.2 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="294.4" r="5"><title>share of the ion flow the bilayer held back 0.16 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="304.4" r="5"><title>share of the ion flow the bilayer held back 0.12 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="301.0" r="5"><title>share of the ion flow the bilayer held back 0.14 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="292.9" r="5"><title>share of the ion flow the bilayer held back 0.16 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="300.9" r="5"><title>share of the ion flow the bilayer held back 0.14 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="450" y2="450"/>
+<line class="grid" x1="64" x2="736" y1="358" y2="358"/>
+<text x="58" y="454" text-anchor="end">0</text>
+<text x="58" y="368" text-anchor="end">1.1</text>
+<text class="ptitle" x="70" y="371">channel level gene (mean)</text>
+<path class="line s3" d="M64.0,448.8 L80.1,448.6 L96.3,433.5 L112.4,427.3 L128.5,423.8 L144.6,417.0 L160.8,412.5 L176.9,411.9 L193.0,411.7 L209.2,415.8 L225.3,418.7 L241.4,416.5 L257.5,425.1 L273.7,429.2 L289.8,421.7 L305.9,404.6 L322.0,398.3 L338.2,399.8 L354.3,406.4 L370.4,406.4 L386.6,404.7 L402.7,403.6 L418.8,402.3 L434.9,401.0 L451.1,391.7 L467.2,384.0 L483.3,378.5 L499.5,377.7 L515.6,374.5 L531.7,379.0 L547.8,380.0 L564.0,379.4 L580.1,380.1 L596.2,380.7 L612.4,380.3 L628.5,372.2 L644.6,366.0 L660.7,359.7 L676.9,358.5 L693.0,358.0 L709.1,363.2"/>
+<circle class="hit" cx="64.0" cy="448.8" r="5"><title>channel level gene (mean) 0.014 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="448.6" r="5"><title>channel level gene (mean) 0.017 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="433.5" r="5"><title>channel level gene (mean) 0.2 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="427.3" r="5"><title>channel level gene (mean) 0.27 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="423.8" r="5"><title>channel level gene (mean) 0.31 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="417.0" r="5"><title>channel level gene (mean) 0.39 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="412.5" r="5"><title>channel level gene (mean) 0.45 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="411.9" r="5"><title>channel level gene (mean) 0.45 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="411.7" r="5"><title>channel level gene (mean) 0.46 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="415.8" r="5"><title>channel level gene (mean) 0.41 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="418.7" r="5"><title>channel level gene (mean) 0.37 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="416.5" r="5"><title>channel level gene (mean) 0.4 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="425.1" r="5"><title>channel level gene (mean) 0.3 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="429.2" r="5"><title>channel level gene (mean) 0.25 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="421.7" r="5"><title>channel level gene (mean) 0.34 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="404.6" r="5"><title>channel level gene (mean) 0.54 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="398.3" r="5"><title>channel level gene (mean) 0.62 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="399.8" r="5"><title>channel level gene (mean) 0.6 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="406.4" r="5"><title>channel level gene (mean) 0.52 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="406.4" r="5"><title>channel level gene (mean) 0.52 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="404.7" r="5"><title>channel level gene (mean) 0.54 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="403.6" r="5"><title>channel level gene (mean) 0.55 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="402.3" r="5"><title>channel level gene (mean) 0.57 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="401.0" r="5"><title>channel level gene (mean) 0.58 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="391.7" r="5"><title>channel level gene (mean) 0.7 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="384.0" r="5"><title>channel level gene (mean) 0.79 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="378.5" r="5"><title>channel level gene (mean) 0.85 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="377.7" r="5"><title>channel level gene (mean) 0.86 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="374.5" r="5"><title>channel level gene (mean) 0.9 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="379.0" r="5"><title>channel level gene (mean) 0.85 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="380.0" r="5"><title>channel level gene (mean) 0.83 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="379.4" r="5"><title>channel level gene (mean) 0.84 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="380.1" r="5"><title>channel level gene (mean) 0.83 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="380.7" r="5"><title>channel level gene (mean) 0.83 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="380.3" r="5"><title>channel level gene (mean) 0.83 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="372.2" r="5"><title>channel level gene (mean) 0.93 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="366.0" r="5"><title>channel level gene (mean) 1 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="359.7" r="5"><title>channel level gene (mean) 1.08 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="358.5" r="5"><title>channel level gene (mean) 1.09 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="358.0" r="5"><title>channel level gene (mean) 1.1 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="363.2" r="5"><title>channel level gene (mean) 1.04 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="556" y2="556"/>
+<line class="grid" x1="64" x2="736" y1="464" y2="464"/>
+<text x="58" y="560" text-anchor="end">-0.043</text>
+<text x="58" y="474" text-anchor="end">0.77</text>
+<text class="ptitle" x="70" y="477">channel balance gene (mean; + cation)</text>
+<path class="line s4" d="M64.0,555.3 L80.1,555.5 L96.3,552.8 L112.4,554.2 L128.5,551.8 L144.6,546.5 L160.8,539.2 L176.9,537.7 L193.0,542.8 L209.2,544.7 L225.3,546.0 L241.4,548.0 L257.5,552.5 L273.7,556.0 L289.8,549.6 L305.9,533.5 L322.0,505.4 L338.2,490.5 L354.3,482.6 L370.4,476.3 L386.6,470.0 L402.7,468.0 L418.8,466.2 L434.9,464.0 L451.1,464.9 L467.2,465.0 L483.3,465.3 L499.5,467.3 L515.6,471.3 L531.7,473.9 L547.8,477.6 L564.0,478.9 L580.1,482.6 L596.2,485.6 L612.4,487.8 L628.5,490.5 L644.6,491.8 L660.7,490.4 L676.9,490.7 L693.0,492.1 L709.1,496.9"/>
+<circle class="hit" cx="64.0" cy="555.3" r="5"><title>channel balance gene (mean; + cation) -0.037 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="555.5" r="5"><title>channel balance gene (mean; + cation) -0.039 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="552.8" r="5"><title>channel balance gene (mean; + cation) -0.015 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="554.2" r="5"><title>channel balance gene (mean; + cation) -0.028 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="551.8" r="5"><title>channel balance gene (mean; + cation) -0.0061 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="546.5" r="5"><title>channel balance gene (mean; + cation) 0.04 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="539.2" r="5"><title>channel balance gene (mean; + cation) 0.11 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="537.7" r="5"><title>channel balance gene (mean; + cation) 0.12 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="542.8" r="5"><title>channel balance gene (mean; + cation) 0.073 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="544.7" r="5"><title>channel balance gene (mean; + cation) 0.057 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="546.0" r="5"><title>channel balance gene (mean; + cation) 0.045 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="548.0" r="5"><title>channel balance gene (mean; + cation) 0.028 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="552.5" r="5"><title>channel balance gene (mean; + cation) -0.012 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="556.0" r="5"><title>channel balance gene (mean; + cation) -0.043 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="549.6" r="5"><title>channel balance gene (mean; + cation) 0.013 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="533.5" r="5"><title>channel balance gene (mean; + cation) 0.16 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="505.4" r="5"><title>channel balance gene (mean; + cation) 0.4 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="490.5" r="5"><title>channel balance gene (mean; + cation) 0.54 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="482.6" r="5"><title>channel balance gene (mean; + cation) 0.61 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="476.3" r="5"><title>channel balance gene (mean; + cation) 0.66 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="470.0" r="5"><title>channel balance gene (mean; + cation) 0.72 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="468.0" r="5"><title>channel balance gene (mean; + cation) 0.73 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="466.2" r="5"><title>channel balance gene (mean; + cation) 0.75 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="464.0" r="5"><title>channel balance gene (mean; + cation) 0.77 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="464.9" r="5"><title>channel balance gene (mean; + cation) 0.76 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="465.0" r="5"><title>channel balance gene (mean; + cation) 0.76 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="465.3" r="5"><title>channel balance gene (mean; + cation) 0.76 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="467.3" r="5"><title>channel balance gene (mean; + cation) 0.74 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="471.3" r="5"><title>channel balance gene (mean; + cation) 0.7 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="473.9" r="5"><title>channel balance gene (mean; + cation) 0.68 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="477.6" r="5"><title>channel balance gene (mean; + cation) 0.65 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="478.9" r="5"><title>channel balance gene (mean; + cation) 0.64 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="482.6" r="5"><title>channel balance gene (mean; + cation) 0.6 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="485.6" r="5"><title>channel balance gene (mean; + cation) 0.58 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="487.8" r="5"><title>channel balance gene (mean; + cation) 0.56 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="490.5" r="5"><title>channel balance gene (mean; + cation) 0.54 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="491.8" r="5"><title>channel balance gene (mean; + cation) 0.52 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="490.4" r="5"><title>channel balance gene (mean; + cation) 0.54 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="490.7" r="5"><title>channel balance gene (mean; + cation) 0.53 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="492.1" r="5"><title>channel balance gene (mean; + cation) 0.52 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="496.9" r="5"><title>channel balance gene (mean; + cation) 0.48 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="662" y2="662"/>
+<line class="grid" x1="64" x2="736" y1="570" y2="570"/>
+<text x="58" y="666" text-anchor="end">0</text>
+<text x="58" y="580" text-anchor="end">54</text>
+<text class="ptitle" x="70" y="583">swollen cells</text>
+<path class="line s5" d="M64.0,662.0 L80.1,662.0 L96.3,660.3 L112.4,660.3 L128.5,612.6 L144.6,570.0 L160.8,580.2 L176.9,636.4 L193.0,571.7 L209.2,607.5 L225.3,639.9 L241.4,651.8 L257.5,587.0 L273.7,588.7 L289.8,641.6 L305.9,655.2 L322.0,609.2 L338.2,614.3 L354.3,651.8 L370.4,656.9 L386.6,626.2 L402.7,621.1 L418.8,651.8 L434.9,660.3 L451.1,636.4 L467.2,627.9 L483.3,650.1 L499.5,656.9 L515.6,633.0 L531.7,627.9 L547.8,646.7 L564.0,653.5 L580.1,629.6 L596.2,626.2 L612.4,655.2 L628.5,660.3 L644.6,610.9 L660.7,621.1 L676.9,650.1 L693.0,656.9 L709.1,629.6"/>
+<circle class="hit" cx="64.0" cy="662.0" r="5"><title>swollen cells 0 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="662.0" r="5"><title>swollen cells 0 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="660.3" r="5"><title>swollen cells 1 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="660.3" r="5"><title>swollen cells 1 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="612.6" r="5"><title>swollen cells 29 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="570.0" r="5"><title>swollen cells 54 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="580.2" r="5"><title>swollen cells 48 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="636.4" r="5"><title>swollen cells 15 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="571.7" r="5"><title>swollen cells 53 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="607.5" r="5"><title>swollen cells 32 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="639.9" r="5"><title>swollen cells 13 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="651.8" r="5"><title>swollen cells 6 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="587.0" r="5"><title>swollen cells 44 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="588.7" r="5"><title>swollen cells 43 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="641.6" r="5"><title>swollen cells 12 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="655.2" r="5"><title>swollen cells 4 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="609.2" r="5"><title>swollen cells 31 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="614.3" r="5"><title>swollen cells 28 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="651.8" r="5"><title>swollen cells 6 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="656.9" r="5"><title>swollen cells 3 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="626.2" r="5"><title>swollen cells 21 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="621.1" r="5"><title>swollen cells 24 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="651.8" r="5"><title>swollen cells 6 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="660.3" r="5"><title>swollen cells 1 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="636.4" r="5"><title>swollen cells 15 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="627.9" r="5"><title>swollen cells 20 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="650.1" r="5"><title>swollen cells 7 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="656.9" r="5"><title>swollen cells 3 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="633.0" r="5"><title>swollen cells 17 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="627.9" r="5"><title>swollen cells 20 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="646.7" r="5"><title>swollen cells 9 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="653.5" r="5"><title>swollen cells 5 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="629.6" r="5"><title>swollen cells 19 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="626.2" r="5"><title>swollen cells 21 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="655.2" r="5"><title>swollen cells 4 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="660.3" r="5"><title>swollen cells 1 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="610.9" r="5"><title>swollen cells 30 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="621.1" r="5"><title>swollen cells 24 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="650.1" r="5"><title>swollen cells 7 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="656.9" r="5"><title>swollen cells 3 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="629.6" r="5"><title>swollen cells 19 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="768" y2="768"/>
+<line class="grid" x1="64" x2="736" y1="676" y2="676"/>
+<text x="58" y="772" text-anchor="end">0</text>
+<text x="58" y="686" text-anchor="end">70</text>
+<text class="ptitle" x="70" y="689">shrunk cells</text>
+<path class="line s6" d="M64.0,768.0 L80.1,753.5 L96.3,758.8 L112.4,764.1 L128.5,745.7 L144.6,708.9 L160.8,702.3 L176.9,729.9 L193.0,699.7 L209.2,716.7 L225.3,745.7 L241.4,744.3 L257.5,716.7 L273.7,732.5 L289.8,737.8 L305.9,756.2 L322.0,740.4 L338.2,747.0 L354.3,748.3 L370.4,758.8 L386.6,736.5 L402.7,745.7 L418.8,735.1 L434.9,744.3 L451.1,744.3 L467.2,752.2 L483.3,732.5 L499.5,737.8 L515.6,743.0 L531.7,740.4 L547.8,725.9 L564.0,736.5 L580.1,714.1 L596.2,731.2 L612.4,712.8 L628.5,725.9 L644.6,676.0 L660.7,682.6 L676.9,694.4 L693.0,722.0 L709.1,729.9"/>
+<circle class="hit" cx="64.0" cy="768.0" r="5"><title>shrunk cells 0 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="753.5" r="5"><title>shrunk cells 11 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="758.8" r="5"><title>shrunk cells 7 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="764.1" r="5"><title>shrunk cells 3 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="745.7" r="5"><title>shrunk cells 17 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="708.9" r="5"><title>shrunk cells 45 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="702.3" r="5"><title>shrunk cells 50 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="729.9" r="5"><title>shrunk cells 29 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="699.7" r="5"><title>shrunk cells 52 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="716.7" r="5"><title>shrunk cells 39 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="745.7" r="5"><title>shrunk cells 17 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="744.3" r="5"><title>shrunk cells 18 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="716.7" r="5"><title>shrunk cells 39 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="732.5" r="5"><title>shrunk cells 27 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="737.8" r="5"><title>shrunk cells 23 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="756.2" r="5"><title>shrunk cells 9 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="740.4" r="5"><title>shrunk cells 21 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="747.0" r="5"><title>shrunk cells 16 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="748.3" r="5"><title>shrunk cells 15 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="758.8" r="5"><title>shrunk cells 7 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="736.5" r="5"><title>shrunk cells 24 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="745.7" r="5"><title>shrunk cells 17 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="735.1" r="5"><title>shrunk cells 25 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="744.3" r="5"><title>shrunk cells 18 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="744.3" r="5"><title>shrunk cells 18 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="752.2" r="5"><title>shrunk cells 12 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="732.5" r="5"><title>shrunk cells 27 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="737.8" r="5"><title>shrunk cells 23 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="743.0" r="5"><title>shrunk cells 19 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="740.4" r="5"><title>shrunk cells 21 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="725.9" r="5"><title>shrunk cells 32 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="736.5" r="5"><title>shrunk cells 24 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="714.1" r="5"><title>shrunk cells 41 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="731.2" r="5"><title>shrunk cells 28 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="712.8" r="5"><title>shrunk cells 42 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="725.9" r="5"><title>shrunk cells 32 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="676.0" r="5"><title>shrunk cells 70 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="682.6" r="5"><title>shrunk cells 65 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="694.4" r="5"><title>shrunk cells 56 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="722.0" r="5"><title>shrunk cells 35 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="729.9" r="5"><title>shrunk cells 29 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="874" y2="874"/>
+<line class="grid" x1="64" x2="736" y1="782" y2="782"/>
+<text x="58" y="878" text-anchor="end">0</text>
+<text x="58" y="792" text-anchor="end">28.7</text>
+<text class="ptitle" x="70" y="795">free t put out per s</text>
+<path class="line s7" d="M64.0,874.0 L80.1,870.6 L96.3,864.9 L112.4,858.6 L128.5,827.1 L144.6,821.4 L160.8,838.8 L176.9,854.0 L193.0,808.8 L209.2,799.4 L225.3,836.2 L241.4,855.5 L257.5,795.0 L273.7,795.1 L289.8,839.9 L305.9,861.2 L322.0,817.5 L338.2,812.1 L354.3,845.5 L370.4,857.5 L386.6,804.5 L402.7,799.2 L418.8,832.1 L434.9,850.4 L451.1,795.6 L467.2,782.0 L483.3,828.1 L499.5,846.5 L515.6,794.0 L531.7,786.7 L547.8,826.9 L564.0,847.9 L580.1,793.9 L596.2,786.7 L612.4,829.5 L628.5,847.8 L644.6,792.4 L660.7,788.4 L676.9,829.1 L693.0,847.2 L709.1,785.6"/>
+<circle class="hit" cx="64.0" cy="874.0" r="5"><title>free t put out per s 0 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="870.6" r="5"><title>free t put out per s 1.06 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="864.9" r="5"><title>free t put out per s 2.84 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="858.6" r="5"><title>free t put out per s 4.8 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="827.1" r="5"><title>free t put out per s 14.6 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="821.4" r="5"><title>free t put out per s 16.4 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="838.8" r="5"><title>free t put out per s 11 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="854.0" r="5"><title>free t put out per s 6.23 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="808.8" r="5"><title>free t put out per s 20.3 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="799.4" r="5"><title>free t put out per s 23.2 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="836.2" r="5"><title>free t put out per s 11.8 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="855.5" r="5"><title>free t put out per s 5.77 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="795.0" r="5"><title>free t put out per s 24.6 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="795.1" r="5"><title>free t put out per s 24.6 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="839.9" r="5"><title>free t put out per s 10.6 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="861.2" r="5"><title>free t put out per s 3.97 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="817.5" r="5"><title>free t put out per s 17.6 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="812.1" r="5"><title>free t put out per s 19.3 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="845.5" r="5"><title>free t put out per s 8.88 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="857.5" r="5"><title>free t put out per s 5.13 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="804.5" r="5"><title>free t put out per s 21.7 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="799.2" r="5"><title>free t put out per s 23.3 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="832.1" r="5"><title>free t put out per s 13 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="850.4" r="5"><title>free t put out per s 7.34 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="795.6" r="5"><title>free t put out per s 24.4 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="782.0" r="5"><title>free t put out per s 28.7 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="828.1" r="5"><title>free t put out per s 14.3 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="846.5" r="5"><title>free t put out per s 8.55 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="794.0" r="5"><title>free t put out per s 24.9 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="786.7" r="5"><title>free t put out per s 27.2 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="826.9" r="5"><title>free t put out per s 14.7 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="847.9" r="5"><title>free t put out per s 8.12 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="793.9" r="5"><title>free t put out per s 25 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="786.7" r="5"><title>free t put out per s 27.2 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="829.5" r="5"><title>free t put out per s 13.9 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="847.8" r="5"><title>free t put out per s 8.16 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="792.4" r="5"><title>free t put out per s 25.4 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="788.4" r="5"><title>free t put out per s 26.7 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="829.1" r="5"><title>free t put out per s 14 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="847.2" r="5"><title>free t put out per s 8.34 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="785.6" r="5"><title>free t put out per s 27.5 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="980" y2="980"/>
+<line class="grid" x1="64" x2="736" y1="888" y2="888"/>
+<text x="58" y="984" text-anchor="end">0</text>
+<text x="58" y="898" text-anchor="end">44.1 k</text>
+<text class="ptitle" x="70" y="901">entropy rate</text>
+<path class="line s0" d="M64.0,980.0 L80.1,948.6 L96.3,965.8 L112.4,965.7 L128.5,936.5 L144.6,927.2 L160.8,947.5 L176.9,954.5 L193.0,920.2 L209.2,904.5 L225.3,925.5 L241.4,937.4 L257.5,900.6 L273.7,888.0 L289.8,918.0 L305.9,936.4 L322.0,917.5 L338.2,919.1 L354.3,949.2 L370.4,959.1 L386.6,931.2 L402.7,924.9 L418.8,950.6 L434.9,958.5 L451.1,932.0 L467.2,923.4 L483.3,947.0 L499.5,955.4 L515.6,928.8 L531.7,921.9 L547.8,947.2 L564.0,958.1 L580.1,933.3 L596.2,926.9 L612.4,948.8 L628.5,957.4 L644.6,930.7 L660.7,923.8 L676.9,947.7 L693.0,956.7 L709.1,929.2"/>
+<circle class="hit" cx="64.0" cy="980.0" r="5"><title>entropy rate 0 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="948.6" r="5"><title>entropy rate 15 k at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="965.8" r="5"><title>entropy rate 6813 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="965.7" r="5"><title>entropy rate 6840 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="936.5" r="5"><title>entropy rate 20.8 k at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="927.2" r="5"><title>entropy rate 25.3 k at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="947.5" r="5"><title>entropy rate 15.5 k at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="954.5" r="5"><title>entropy rate 12.2 k at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="920.2" r="5"><title>entropy rate 28.6 k at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="904.5" r="5"><title>entropy rate 36.2 k at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="925.5" r="5"><title>entropy rate 26.1 k at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="937.4" r="5"><title>entropy rate 20.4 k at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="900.6" r="5"><title>entropy rate 38 k at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="888.0" r="5"><title>entropy rate 44.1 k at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="918.0" r="5"><title>entropy rate 29.7 k at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="936.4" r="5"><title>entropy rate 20.9 k at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="917.5" r="5"><title>entropy rate 29.9 k at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="919.1" r="5"><title>entropy rate 29.2 k at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="949.2" r="5"><title>entropy rate 14.7 k at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="959.1" r="5"><title>entropy rate 9998 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="931.2" r="5"><title>entropy rate 23.4 k at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="924.9" r="5"><title>entropy rate 26.4 k at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="950.6" r="5"><title>entropy rate 14.1 k at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="958.5" r="5"><title>entropy rate 10.3 k at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="932.0" r="5"><title>entropy rate 23 k at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="923.4" r="5"><title>entropy rate 27.1 k at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="947.0" r="5"><title>entropy rate 15.8 k at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="955.4" r="5"><title>entropy rate 11.8 k at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="928.8" r="5"><title>entropy rate 24.5 k at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="921.9" r="5"><title>entropy rate 27.8 k at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="947.2" r="5"><title>entropy rate 15.7 k at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="958.1" r="5"><title>entropy rate 10.5 k at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="933.3" r="5"><title>entropy rate 22.3 k at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="926.9" r="5"><title>entropy rate 25.4 k at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="948.8" r="5"><title>entropy rate 14.9 k at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="957.4" r="5"><title>entropy rate 10.8 k at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="930.7" r="5"><title>entropy rate 23.6 k at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="923.8" r="5"><title>entropy rate 26.9 k at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="947.7" r="5"><title>entropy rate 15.5 k at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="956.7" r="5"><title>entropy rate 11.2 k at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="929.2" r="5"><title>entropy rate 24.3 k at 2400 s</title></circle>
+</svg>

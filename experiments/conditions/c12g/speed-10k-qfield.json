@@ -1,0 +1,12 @@
+{
+ "name": "c12g-speed-10k-qfield",
+ "description": "Speed: the default scene, 10k cells, seed 3, MAX, the charge field and dipoles back on (?chargefield=1&dipoles=1: closest to C12f)",
+ "query": {
+  "seed": 3,
+  "cells": 10000,
+  "chargefield": 1,
+  "dipoles": 1
+ },
+ "duration": 60,
+ "sample_every": 5
+}

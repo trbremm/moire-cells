@@ -20,12 +20,20 @@ const VALUE = (v) => String(v);
 /** The presets: a one-line description, URL options, and the scene (springs, light) once the dish's size is known. */
 export const PRESETS = {
   vent: {
-    label: 'Dark vents',
-    desc: 'No light at all. Three vents pour out fuel and metal-like givers; three colonies start beside them. Only cells that can live on what the vents bring (fermenters) keep going.',
-    query: { light: 'off', spread: 'colonies', colonies: 3, cells: 1000 },
-    centres: (W, H) => ring3(W, H, 0.27, -90).map(([x, y]) => [x + (W / 2 - x) * 0.18, y + (H / 2 - y) * 0.18]),
-    scene({ matter, W, H }) {
-      for (const [x, y] of ring3(W, H, 0.27, -90)) matter.addSpring(x, y, 'heavy', 1e9);
+    label: 'Deep vents',
+    desc: 'Deep water: only a faint, steady glow from above (a third of the usual light, no days). Three vents pour out fuel and metal-like givers, each with a mineral seep beside it; three colonies start on them. (With ?light=off it is truly dark: then nothing lives for long.)',
+    query: { light: 'full', day: 0, clouds: 0, spread: 'colonies', colonies: 3, cells: 600 },
+    centres: (W, H) => ring3(W, H, 0.27, -90).map(([x, y]) => [x + (W / 2 - x) * 0.06, y + (H / 2 - y) * 0.06]),
+    scene({ matter, light, W, H }) {
+      light.params.power *= 0.3;   // the faint glow
+      // each vent with a mineral spring beside it (the vent's fuel and metal alone feed nobody: in this chemistry fermenting earns a
+      // cell about 0.001 per s; the cells live on minerals split by light and on what they then burn)
+      const m = Math.min(W, H);
+      for (const [x, y] of ring3(W, H, 0.27, -90)) {
+        matter.addSpring(x, y, 'heavy', 1e9, { rate: 18 });
+        const dx = x - W / 2, dy = y - H / 2, d = Math.hypot(dx, dy) || 1;
+        matter.addSpring(x + dx / d * 0.07 * m, y + dy / d * 0.07 * m, 'light', 1e9, { rate: 12 });
+      }
     },
   },
   shallows: {
@@ -63,12 +71,17 @@ export const PRESETS = {
   },
   desert: {
     label: 'Crust desert',
-    desc: 'Springs of single linkers (light l and heavy L) chain into fields of crust that grow on themselves; one vent at the edge. Cells must graze the crust to build their skins and walls.',
+    desc: 'Springs of single linkers (light l and heavy L) chain into fields of crust that grow on themselves; a vent at the edge and three mineral springs feed a ring of cells, which graze the crust to build their skins and walls.',
     query: { light: 'full', spread: 'ring', cells: 1200 },
     scene({ matter, W, H }) {
       const pts = [[0.2, 0.25, 'l'], [0.4, 0.2, 'L'], [0.62, 0.3, 'l'], [0.8, 0.22, 'L'], [0.28, 0.7, 'L'], [0.5, 0.82, 'l'], [0.72, 0.72, 'L'], [0.85, 0.55, 'l']];
       for (const [x, y, a] of pts) matter.addSpring(x * W, y * H, `drop:${a}`, 1e9, { rate: 14 });
+      // food: a vent at the edge and three mineral springs on the ring (without them the ring starves within 3 min)
       matter.addSpring(0.06 * W, 0.5 * H, 'heavy', 1e9);
+      for (const a of [-30, 90, 210]) {
+        const r = 0.36 * Math.min(W, H), t = a * Math.PI / 180;
+        matter.addSpring(W / 2 + Math.cos(t) * r, H / 2 + Math.sin(t) * r, 'light', 1e9);
+      }
     },
   },
   lab: {

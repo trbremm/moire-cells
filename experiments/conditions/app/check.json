@@ -1,0 +1,17 @@
+{
+ "name": "app-check",
+ "description": "app books check (seed 5, the whole dish lit, 240 s): add-cell placements (50, then 200 cells), pipette drops of every substance, zoom and pan, the new culture dialog started in place (colonies, a few types), N, G, a snapshot saved and loaded; atoms and charge rounding must stay 0",
+ "query": {"seed": 5, "light": "full"},
+ "duration": 240, "sample_every": 5,
+ "evals": [
+  {"t": 10, "js": "return await moire.app.place(Array.from({length: 50}, (_, k) => [150 + 13 * k, 120]), moire.genome.founders[1])"},
+  {"t": 20, "js": "const r = []; moire.matter.SUBSTANCES.forEach((s, c) => { if (!s.excited) r.push(moire.matter.addSpring(120 + 60 * (r.length % 8), 650 + 50 * Math.floor(r.length / 8), 'drop:' + s.name, 1.5, {drop: true, rate: 40})); }); return r"},
+  {"t": 40, "js": "moire.camera.set(4, 400, 300); moire.camera.panBy(-200, 100); return [moire.camera.z, moire.camera.x, moire.camera.y]"},
+  {"t": 60, "js": "moire.camera.fit(); moire.app.openCulture(); document.querySelector('#culture [data-spread=colonies]').click(); document.querySelector('#culture [data-div=few]').click(); const t = document.querySelector('#culture .go').textContent; document.querySelector('#culture .go').click(); return t"},
+  {"t": 90, "js": "return moire.control.action('culture')"},
+  {"t": 120, "js": "return await moire.app.place(Array.from({length: 200}, () => [100 + Math.random() * 1080, 100 + Math.random() * 600]), moire.genome.founders[2])"},
+  {"t": 150, "js": "return moire.control.action('genomes')"},
+  {"t": 200, "js": "const s = await moire.snapshot(); const r = await moire.loadSnapshot(s); return {exact: r.exact, cells: r.cells}"}
+ ],
+ "shots": [{"t": 75}, {"t": 240}]
+}

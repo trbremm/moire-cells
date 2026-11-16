@@ -32,6 +32,7 @@
 
 import { loadShader } from './gpu.js';
 import { LOOK, HARMONIC } from './palette.js';
+import { camera } from './camera.js';   // app: the view camera (the rim's width under the zoom)
 
 export class Harmonic {
   constructor(device, canvasFormat) {
@@ -124,10 +125,13 @@ export class Harmonic {
     pass.end();
   }
 
-  /** The cells' words of struct Draw (cell_draw.wgsl: harm, harm2, harm3, hInk[4]) from float o. */
+  /**
+   * The cells' words of struct Draw (cell_draw.wgsl: harm, harm2, harm3, harm4, hInk[5]) from float o. Zoomed in, the rim widens
+   * on screen only with the square root of the zoom (rimW is its width at zoom 1), so it stays a thin line: x 2 at zoom 4.
+   */
   writeCells(a, o) {
     const P = this.params, I = HARMONIC.harm;
-    a[o] = P.rim; a[o + 1] = P.rimBase; a[o + 2] = Math.max(0.3, P.rimW); a[o + 3] = P.oilRim;
+    a[o] = P.rim; a[o + 1] = P.rimBase; a[o + 2] = Math.max(0.3, P.rimW) / Math.sqrt(camera.z); a[o + 3] = P.oilRim;
     a[o + 4] = P.inside; a[o + 5] = P.insideTint; a[o + 6] = P.bat; a[o + 7] = P.busy;
     a[o + 8] = P.parts; a[o + 9] = P.stretchFib; a[o + 10] = P.muscle; a[o + 11] = P.cartilage;
     a[o + 12] = P.wall; a[o + 13] = Math.max(0, P.gap); a[o + 14] = 0; a[o + 15] = 0;

@@ -42,7 +42,7 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   move light (the ellipse): a tap or drag puts the spotlight there (and switches the light to spotlight) ·
   oil spring (the drop; step C12, no key): a tap drops a spring of oil, of oil with a little soap (the default), or of
   soap, as the rules panel's "oil tool drops" says.
-  With a mouse, as before: right-drag moves the spotlight, the wheel tilts it, Shift+wheel turns it.
+  With a mouse: right-drag moves the spotlight, Alt+wheel tilts it, Shift+wheel turns it (the plain wheel zooms since the app step).
 - **Pause / play** (Space) · **speed** (keys [ ]; a tap goes to the next speed, after MAX back to 1×) ·
   **record** (Shift+V, see below).
 - **Panels** (one open at a time; tap the button again, the ×, or Escape to close):
@@ -160,7 +160,7 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   Shift+T trace lowers the spark; step C5, "Cells eat" below: Shift+A cells eat, Shift+U everyone burns, Shift+I reactions
   inside, Shift+W battery pays crawl, Shift+X heat damage, Shift+G rich cells divide, Shift+N smell; step C6, "Engines in the genome" below: Shift+O engines, Shift+Y
   pigments, Shift+Q upkeep, Shift+Z gene: heat tolerance, Shift+J gene: permeability)
-- right-drag: move the spotlight · wheel: tilt it · Shift+wheel: turn where the light comes from (step C2, "Light" below)
+- right-drag: move the spotlight · Alt+wheel: tilt it · Shift+wheel: turn where the light comes from (step C2, "Light" below) · wheel: zoom toward the pointer (app)
 
 The loop (step 4):
 - **S**: field sensing on/off (the force from the field felt on the membrane)
@@ -759,7 +759,7 @@ Keys and mouse:
 - **Shift+L**: light: spotlight / full field / off
 - **Shift+D**: day and night cycle on/off
 - **right-drag**: move the spot (its centre follows the pointer; the context menu is off on the canvas)
-- **wheel**: tilt the beam (5 degrees a notch, 0 to 70)
+- **Alt+wheel**: tilt the beam (5 degrees a notch, 0 to 70; the plain wheel tilted it until the app step, it now zooms)
 - **Shift+wheel**: turn the direction the light comes from (15 degrees a notch; browsers report Shift+wheel as a sideways
   scroll, so either wheel axis counts)
 
@@ -770,7 +770,7 @@ URL options: `?light=spot|full|off`, `?spot=x,y,r` (shares of the dish's width, 
 the right, 90 from below, 180 from the left, 270 from above; default 225, the upper left), `?day=0` (no cycle: noon),
 `?hour=h` (the hour at the start, 12 = noon), `?clouds=0`. `tools/shot.py --rdrag x1,y1,x2,y2` right-drags and
 `--wheel x,y,dy[,shift]` turns the wheel (dy 100 = one notch down), e.g.
-`python tools/shot.py --wheel 640,400,1000 --wheel 640,400,-300,shift` tilts by 50 degrees and turns by -45.
+`python tools/shot.py --wheel 640,400,1000,alt --wheel 640,400,-300,shift` tilts by 50 degrees and turns by -45.
 
 Live-tunable in `moire.light.params`: `mode`, `power` (33 per 100 CSS px² per s at noon: per dish area, not per cell, so
 the kicks it gives scale with the cells' radius; about 14 per R² at 2000 cells), `x`, `y`, `radius`, `tilt`, `maxTilt`,
@@ -3995,9 +3995,9 @@ of the simulation; it is the page around it. Code: `src/camera.js`, `src/app.js`
 
 ### Zoom and pan
 
-- **Mouse:** Ctrl+wheel zooms toward the pointer, always (a trackpad's pinch arrives as Ctrl+wheel, so it zooms too). The plain
-  wheel zooms while the spotlight is NOT on; with the spotlight on it keeps tilting the light, and Shift+wheel turns it, as
-  before. Pan: drag with the middle button, or hold Space and drag with the left. Space pressed and let go without a drag still
+- **Mouse:** the wheel zooms toward the pointer, always (user 2026-11-16: "the zoom should be by mouse wheel targeted on the
+  mouse location"; Ctrl+wheel and a trackpad's pinch too). With the spotlight on, Alt+wheel tilts the light and Shift+wheel
+  turns it. Pan: drag with the middle button, or hold Space and drag with the left. Space pressed and let go without a drag still
   pauses (it now acts on the key's release). Left-drag still stirs, right-drag still moves the light.
 - **Touch:** two fingers pinch-zoom and pan the view (the page itself no longer pinch-zooms on the dish). The second finger
   cancels whatever the first one was doing; the remaining finger does nothing until both are lifted, so a pinch never drops a

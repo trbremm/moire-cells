@@ -1,0 +1,42 @@
+{
+  "name": "app-preset-shallows",
+  "description": "app: the shallows preset, 3 min (screenshot for experiments/keep/app/)",
+  "condition": {
+    "name": "app-preset-shallows",
+    "description": "app: the shallows preset, 3 min (screenshot for experiments/keep/app/)",
+    "query": {
+      "preset": "shallows",
+      "seed": 3
+    },
+    "duration": 180,
+    "sample_every": 20,
+    "shots": [
+      {
+        "t": 180
+      }
+    ]
+  },
+  "url": "http://localhost:62803/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=shallows&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "f915037188d3b521003dd7c2d1929de165d6830c",
+  "dirty": false,
+  "started": "2026-11-16T12:45:41",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 180.0,
+  "run_wall_s": 215.05,
+  "speed_reached": 0.84,
+  "samples": 10,
+  "shots": [
+    "shots/t180.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T12:49:57",
+  "wall_s": 255.5
+}

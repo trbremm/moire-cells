@@ -718,7 +718,8 @@ function hintLine() {
   if (allKeys) return fullHint();
   if (TOUCH || hintQuiet) return '';   // touch only: the toolbar says it all; the line shows only the flashes
   const t = TOOLS[tool];
-  const what = t.spot ? 'click or drag: move the light' : t.stir ? 'click or drag: stir' : `click: ${t.label} · drag: stir`;
+  const what = t.spot ? 'click or drag: move the light' : t.stir ? 'click or drag: stir' : t.addCell ? 'click: place a cell · drag: a line of cells'
+    : t.pipette ? 'click or drag: drop the substance' : `click: ${t.label} · drag: stir`;
   return `${what} · right-drag: move the light · wheel: tilt it · ?: all keys`;
 }
 /** Every key, from the action table, plus the mouse. */
@@ -789,7 +790,8 @@ function setTool(i) {
   else if (t.spot) {
     text = 'tap or drag: move the spotlight there';
     if (light.params.mode !== 'spot') { light.params.mode = 'spot'; text += ' (the light is now a spotlight)'; }
-  } else text = `click drops: ${t.label.replace(/^drop /, '')}`;
+  } else if (t.addCell || t.pipette) text = appUI ? appUI.toolText(t) : t.label;   // app: the add tools
+  else text = `click drops: ${t.label.replace(/^drop /, '')}`;
   return text;
 }
 
@@ -1008,11 +1010,11 @@ function setupInput() {
   });
   window.addEventListener('blur', () => { spaceHeld = spaceUsed = false; });
   window.addEventListener('keydown', onKey);
-  appUI = createApp({ app, params, flag, flash, cells, matter, light, background, control, get view() { return view; }, touch: TOUCH });
+  appUI = createApp({ app, params, flag, flash, cells, matter, light, background, control, get view() { return view; }, touch: TOUCH, tools: TOOLS });
   ui = setupUI(Object.assign(app, {
     actions, runAction, touch: TOUCH,
     startFolded: params.has('ui') ? !flag('ui') : null,
-    extraPanels: appUI.panels, dishExtra: appUI.dishExtra,
+    extraPanels: appUI.panels, dishExtra: appUI.dishExtra, toolIcons: appUI.toolIcons,
   }));
   appUI.attach(ui);
   window.moire.app = appUI;

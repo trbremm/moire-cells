@@ -293,3 +293,14 @@ export class Genome {
     return keys;
   }
 }
+
+/**
+ * App (the add-cell tool, the new culture's diversity): one founder genome of a habit, as a fresh culture's founders get them:
+ * 'burn' (eaters), 'both' (light + burn), 'pigments' (photosynthesisers / harvesters), 'other'. `rng` a random function.
+ */
+export function founderGenome(strategy, rng = Math.random, founder = 0) {
+  const g = randomGenome(rng, founder);
+  engines(g, rng, STRATEGIES.includes(strategy) ? strategy : 'burn');
+  return g;
+}
+export const HABITS = ['burn', 'both', 'pigments', 'other'];

@@ -630,6 +630,11 @@ export const SPRING_KINDS = {
   soap: { label: 'soap spring', mix: { glL: 0.5, tlL: 0.5 }, stroke: 1.75 },
 };
 export const OIL_SPRINGS = ['oil', 'emulsion', 'soap'];   // step C12: what the oil tool drops (src/oil.js params.spring)
+// App: the PIPETTE (src/app.js): a short spring of one substance ('drop:<name>'), booked as added like every spring. Drops never
+// push a real spring out (see addSpring). The excited atoms (C12c) are left out (with electrons they stay empty).
+for (const s of SUBSTANCES) {
+  if (!s.excited) SPRING_KINDS[`drop:${s.name}`] = { label: `${s.name} (pipette)`, mix: { [s.name]: 1 }, stroke: 1, drop: true };
+}
 
 export const ATOM_SCALE = 4096;          // counts per atom-unit (ATOM_SCALE in matter.wgsl)
 const MP_BYTES = 688;                     // struct MatterP (step C6b: + chg, cq; step C12: + the oil's, 400 until then)
@@ -890,11 +895,31 @@ export class Matter {
   }
 
   // ---------- springs ----------
-  /** Drop a spring at CSS px (x, y): kind 'light' or 'heavy'; life: s it drips (default params.life; step C5). */
-  addSpring(x, y, kind, life = null) {
+  /**
+   * Drop a spring at CSS px (x, y): kind 'light' or 'heavy'; life: s it drips (default params.life; step C5). App: opts.rate
+   * (atoms per s, default params.rate) and opts.drop (a pipette's drop: it never pushes a spring out, only an older drop, and
+   * is refused (false) when the uniform is full of springs).
+   */
+  addSpring(x, y, kind, life = null, opts = {}) {
+    if (!SPRING_KINDS[kind]) throw new Error(`unknown spring kind ${kind}`);
+    const s = { x, y, kind, age: 0, life };
+    if (opts.rate != null) s.rate = Math.max(0, Number(opts.rate) || 0);
+    if (opts.drop) {
+      s.drop = true;
+      while (this.springs.length >= MAX_SPRINGS) {
+        const i = this.springs.findIndex((o) => o.drop);
+        if (i < 0) return false;
+        this.springs.splice(i, 1);
+      }
+      this.springs.push(s);
+      return true;
+    }
     const cap = Math.max(1, Math.min(MAX_SPRINGS, Math.round(this.params.maxSprings)));
-    while (this.springs.length >= cap) this.springs.shift();
-    this.springs.push({ x, y, kind, age: 0, life });
+    const real = () => this.springs.filter((o) => !o.drop).length;
+    while (real() >= cap) this.springs.splice(this.springs.findIndex((o) => !o.drop), 1);
+    while (this.springs.length >= MAX_SPRINGS) this.springs.splice(this.springs.findIndex((o) => o.drop), 1);
+    this.springs.push(s);
+    return true;
   }
 
   /** A spring's life (s): its own, or params.life. */
@@ -1178,7 +1203,8 @@ export class Matter {
       F[o] = s.x; F[o + 1] = s.y; F[o + 2] = rad; F[o + 3] = Math.max(0, 1 - (s.age + aged) / this.lifeOf(s));
       F[o + 4 + 19] = discPixels(s.x / H.px, s.y / H.px, Math.max(rad / H.px, 0.75), H.hw, H.hh);   // amt[19]: its disc's pixels
       // (step C12: a mix's shares are of the atoms, so a molecule of n atoms drips 1 / n as many units)
-      for (const [atom, share] of Object.entries(K.mix)) F[o + 4 + CH[atom]] = p.rate * share / SUBSTANCES[CH[atom]].atoms.length * dt * ATOM_SCALE;
+      const rate = s.rate ?? p.rate;   // (app: a spring's own rate, e.g. a pipette's drop or a preset's slow vent)
+      for (const [atom, share] of Object.entries(K.mix)) F[o + 4 + CH[atom]] = rate * share / SUBSTANCES[CH[atom]].atoms.length * dt * ATOM_SCALE;
       const ink = springInk(s.kind, pal().substances);
       F[o + 24] = ink[0] / 255; F[o + 25] = ink[1] / 255; F[o + 26] = ink[2] / 255; F[o + 27] = K.stroke;
     }
@@ -1454,5 +1480,6 @@ export function springInk(kind, inks = INKS) {
     for (let j = 0; j < 3; j++) ink[j] += si[j] * share;
     tot += share;
   }
+  if (!(tot > 0)) return inks.trace.light.slice();   // (app: a pipette's drop of trace)
   return ink.map((v) => v / tot);
 }

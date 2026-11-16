@@ -31,6 +31,9 @@ export const TOOLS = [
   { id: 'oil', name: 'oil spring', label: 'drop an oil spring (oil, soap or both: the rules panel, Oils and water)', spring: 'oil', oilSpring: true },
   { id: 'stir', name: 'stir', label: 'stir', stir: true },
   { id: 'spot', name: 'move light', label: 'move the light', spot: true },
+  // app (src/app.js): place cells (a genome picked in the cells zoo) and drop a substance (picked in the molecules zoo)
+  { id: 'cell', name: 'add cells', label: 'place cells (pick a lineage in the cells zoo)', addCell: true },
+  { id: 'pipette', name: 'pipette', label: 'drop a substance (pick one in the molecules zoo)', pipette: true },
 ];
 
 export const RULE_GROUPS = [
@@ -85,7 +88,9 @@ export function makeActions(app) {
       run: () => app.setTool(i),
       help: t.id === 'stir' ? 'tap and drag: stir the dish (ripples, and the cells near your finger are pushed along)'
         : t.id === 'spot' ? 'tap or drag: move the spotlight there (switches the light to spotlight)'
-          : `tap: ${t.label}; drag: stir`,
+          : t.addCell ? 'tap: place a cell, drag: a line of cells (copies of the genome picked in the cells zoo; empty stock, the starter charge)'
+            : t.pipette ? 'tap: drop the substance picked in the molecules zoo, drag: drop more (booked as added, like a spring)'
+              : `tap: ${t.label}; drag: stir`,
     })),
 
     // ---------- playback ----------

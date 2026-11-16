@@ -1,0 +1,80 @@
+{
+  "name": "c12f-thr-nomembrane-nocof",
+  "description": "C12f: throttle test (nomembrane-nocof), 10 min",
+  "condition": {
+    "name": "c12f-thr-nomembrane-nocof",
+    "description": "C12f: throttle test (nomembrane-nocof), 10 min",
+    "query": {
+      "preset": "vent",
+      "seed": 3,
+      "starter": 1,
+      "searate": 0.02,
+      "sealevel": 0.5,
+      "ventheat": 10,
+      "membrane": 0,
+      "cofactor": 0
+    },
+    "evals": [
+      {
+        "t": 0,
+        "js": "moire.matter.springs.filter(s => s.kind === 'heavy').forEach(s => s.rate = 40); return moire.matter.springs.map(s => s.kind + ' ' + s.rate)"
+      }
+    ],
+    "duration": 600,
+    "sample_every": 10,
+    "snapshots": [
+      {
+        "t": 150,
+        "grid": true
+      },
+      {
+        "t": 600,
+        "grid": true
+      }
+    ],
+    "shots": [
+      {
+        "t": 600
+      }
+    ]
+  },
+  "url": "http://localhost:52564/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=vent&seed=3&starter=1&searate=0.02&sealevel=0.5&ventheat=10&membrane=0&cofactor=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "2a380116e674a36bff00b66ecedc6c25ba758489",
+  "dirty": true,
+  "started": "2026-11-16T15:48:21",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 600.0,
+  "run_wall_s": 40.37,
+  "speed_reached": 14.86,
+  "samples": 61,
+  "shots": [
+    "shots/t600.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t150.json",
+    "snapshots/snap_t600.json"
+  ],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.matter.springs.filter(s => s.kind === 'heavy').forEach(s => s.rate = 40); return moire.matter.springs.map(s => s.kind + ' ' + s.rate)",
+      "result": [
+        "heavy 40",
+        "light 12",
+        "heavy 40",
+        "light 12",
+        "heavy 40",
+        "light 12"
+      ]
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-16T15:49:37",
+  "wall_s": 76.38
+}

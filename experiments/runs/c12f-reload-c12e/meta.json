@@ -1,0 +1,64 @@
+{
+  "name": "c12f-reload-c12e",
+  "description": "a C12e snapshot (oxy-spot_s7 at 40 min) loaded by ?snap= on the C12f page: it runs with the C12d vent and no sea",
+  "condition": {
+    "name": "c12f-reload-c12e",
+    "description": "a C12e snapshot (oxy-spot_s7 at 40 min) loaded by ?snap= on the C12f page: it runs with the C12d vent and no sea",
+    "query": {
+      "snap": "experiments/runs/c12e-oxy-spot_s7/snapshots/snap_t2400.json"
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "evals": [
+      {
+        "t": 2400,
+        "js": "return { hot: moire.vents.params.hot, sea: moire.vents.params.sea }"
+      }
+    ],
+    "shots": [
+      {
+        "t": 2460
+      }
+    ]
+  },
+  "url": "http://localhost:53889/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/runs/c12e-oxy-spot_s7/snapshots/snap_t2400.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "c585dc2d604e28a0b190afb257dc743f34c416f9",
+  "dirty": true,
+  "started": "2026-11-16T16:40:04",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": true,
+    "notes": [
+      "saved before step C12f: the vent as in step C12d (no heat), no sea (as it ran)"
+    ],
+    "rebased": null,
+    "rounding": {
+      "energy": 0.1406097412109375,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": 0.1406097412109375,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 1924,
+    "time": 2399.999999999902
+  },
+  "t_start": 2399.999999999902,
+  "sim_s": 60.0,
+  "run_wall_s": 12.76,
+  "speed_reached": 4.7,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T16:40:47",
+  "wall_s": 43.16
+}

@@ -1,0 +1,34 @@
+{
+  "name": "c12f-speedafter-2k-neon-r3",
+  "description": "Speed after C12f: default scene, 2000 cells, seed 3, MAX, 150 s, neon, repeat 3",
+  "condition": {
+    "name": "c12f-speedafter-2k-neon-r3",
+    "description": "Speed after C12f: default scene, 2000 cells, seed 3, MAX, 150 s, neon, repeat 3",
+    "query": {
+      "seed": 3
+    },
+    "duration": 150,
+    "sample_every": 25
+  },
+  "url": "http://localhost:53462/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "c585dc2d604e28a0b190afb257dc743f34c416f9",
+  "dirty": true,
+  "started": "2026-11-16T16:44:40",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 150.0,
+  "run_wall_s": 20.41,
+  "speed_reached": 7.35,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T16:45:30",
+  "wall_s": 49.81
+}

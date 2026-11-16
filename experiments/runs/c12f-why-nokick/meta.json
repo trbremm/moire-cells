@@ -1,0 +1,48 @@
+{
+  "name": "c12f-why-nokick",
+  "description": "C12f: why cells leave the vents (nokick), 60 s",
+  "condition": {
+    "name": "c12f-why-nokick",
+    "description": "C12f: why cells leave the vents (nokick), 60 s",
+    "query": {
+      "preset": "vent",
+      "seed": 3,
+      "ventheat": 20,
+      "heat": 0
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "snapshots": [
+      {
+        "t": 20
+      },
+      {
+        "t": 60
+      }
+    ]
+  },
+  "url": "http://localhost:50647/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=vent&seed=3&ventheat=20&heat=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "f4e3c9e2ccd1ddc7d690411d669afc7f3b16129e",
+  "dirty": true,
+  "started": "2026-11-16T15:20:01",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 4.05,
+  "speed_reached": 14.82,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [
+    "snapshots/snap_t20.json",
+    "snapshots/snap_t60.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T15:20:36",
+  "wall_s": 34.84
+}

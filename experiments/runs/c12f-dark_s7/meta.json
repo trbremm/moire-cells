@@ -1,0 +1,152 @@
+{
+  "name": "c12f-dark_s7",
+  "description": "step C12f: the Deep vents preset in total darkness, 40 min",
+  "condition": {
+    "name": "c12f-dark_s7",
+    "description": "step C12f: the Deep vents preset in total darkness, 40 min",
+    "query": {
+      "preset": "vent",
+      "seed": 7
+    },
+    "duration": 2400,
+    "sample_every": 10,
+    "snapshots": [
+      {
+        "t": 60,
+        "grid": true
+      },
+      {
+        "t": 120,
+        "grid": true
+      },
+      {
+        "t": 300,
+        "grid": true
+      },
+      {
+        "t": 600,
+        "grid": true
+      },
+      {
+        "t": 1200,
+        "grid": true
+      },
+      {
+        "t": 1800,
+        "grid": true
+      },
+      {
+        "t": 2400,
+        "grid": true
+      }
+    ],
+    "shots": [
+      {
+        "t": 120
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 2400
+      },
+      {
+        "t": 2400,
+        "panel": true,
+        "name": "panel"
+      },
+      {
+        "t": 2400,
+        "view": "strategy",
+        "name": "strategy"
+      },
+      {
+        "t": 600,
+        "crop": [
+          540,
+          110,
+          200,
+          150
+        ],
+        "scale": 3,
+        "name": "close0_t600"
+      },
+      {
+        "t": 600,
+        "crop": [
+          1020,
+          40,
+          200,
+          150
+        ],
+        "scale": 3,
+        "name": "close1_t600"
+      },
+      {
+        "t": 2400,
+        "crop": [
+          540,
+          110,
+          200,
+          150
+        ],
+        "scale": 3,
+        "name": "close0_t2400"
+      },
+      {
+        "t": 2400,
+        "crop": [
+          1020,
+          40,
+          200,
+          150
+        ],
+        "scale": 3,
+        "name": "close1_t2400"
+      }
+    ]
+  },
+  "url": "http://localhost:52300/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=vent&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "425e4bf87c8233114c2841fcfcbe0ab407ee631e",
+  "dirty": false,
+  "started": "2026-11-16T15:59:00",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 2400.0,
+  "run_wall_s": 117.51,
+  "speed_reached": 20.42,
+  "samples": 241,
+  "shots": [
+    "shots/t120.png",
+    "shots/t600.png",
+    "shots/close0_t600.png",
+    "shots/close1_t600.png",
+    "shots/t1200.png",
+    "shots/t2400.png",
+    "shots/panel.png",
+    "shots/strategy.png",
+    "shots/close0_t2400.png",
+    "shots/close1_t2400.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t60.json",
+    "snapshots/snap_t120.json",
+    "snapshots/snap_t300.json",
+    "snapshots/snap_t600.json",
+    "snapshots/snap_t1200.json",
+    "snapshots/snap_t1800.json",
+    "snapshots/snap_t2400.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T16:02:08",
+  "wall_s": 188.59
+}

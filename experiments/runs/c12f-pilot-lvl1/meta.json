@@ -1,0 +1,74 @@
+{
+  "name": "c12f-pilot-lvl1",
+  "description": "C12f pilot (lvl1): vent preset, 10 min",
+  "condition": {
+    "name": "c12f-pilot-lvl1",
+    "description": "C12f pilot (lvl1): vent preset, 10 min",
+    "query": {
+      "preset": "vent",
+      "seed": 3,
+      "starter": 1,
+      "searate": 0.02,
+      "sealevel": 1,
+      "ventheat": 20
+    },
+    "duration": 600,
+    "sample_every": 10,
+    "snapshots": [
+      {
+        "t": 60,
+        "grid": true
+      },
+      {
+        "t": 180,
+        "grid": true
+      },
+      {
+        "t": 600,
+        "grid": true
+      }
+    ],
+    "shots": [
+      {
+        "t": 180
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 600,
+        "panel": true,
+        "name": "panel"
+      }
+    ]
+  },
+  "url": "http://localhost:52636/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=vent&seed=3&starter=1&searate=0.02&sealevel=1&ventheat=20",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "2a380116e674a36bff00b66ecedc6c25ba758489",
+  "dirty": true,
+  "started": "2026-11-16T15:27:50",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 600.0,
+  "run_wall_s": 32.18,
+  "speed_reached": 18.64,
+  "samples": 61,
+  "shots": [
+    "shots/t180.png",
+    "shots/t600.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t60.json",
+    "snapshots/snap_t180.json",
+    "snapshots/snap_t600.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T15:29:02",
+  "wall_s": 72.52
+}

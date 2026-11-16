@@ -1,0 +1,1 @@
+{"name": "c12f-smoke", "description": "C12f smoke: the Deep vents preset (dark), 60 s", "query": {"preset": "vent", "seed": 3}, "duration": 60, "sample_every": 10, "shots": [{"t": 60, "panel": true}]}

@@ -160,6 +160,7 @@ export function settingObjects(M) {
     ...(M.electrons ? { 'electrons.params': M.electrons.params, 'electrons.look': M.electrons.look } : {}),   // step C12d
     ...(M.guides ? { 'guides.params': M.guides.params, 'guides.look': M.guides.look } : {}),   // step C13
     ...(M.waste ? { 'waste.params': M.waste.params } : {}),   // step C12e
+    ...(M.vents ? { 'vents.params': M.vents.params } : {}),   // step C12f
   };
 }
 const SCALARS = [['neon.on', (M) => M.neon, 'on'], ['background.heatOn', (M) => M.background, 'heatOn'], ['background.ambient', (M) => M.background, 'ambient']];
@@ -203,6 +204,7 @@ function captureBooks(M) {
     lipids: M.lipids ? clone(M.lipids.tot) : null,   // step C12b
     excited: M.excited ? clone(M.excited.tot) : null,   // step C12c
     electrons: M.electrons ? clone(M.electrons.tot) : null,   // step C12d
+    vents: M.vents ? clone(M.vents.tot) : null,   // step C12f
     excitedE16: M.excited ? M.excited.table.e16 : null,   // (the energy one excited count holds: ?exshare=)
     division: { costTot: M.division.costTot || 0 },
     rounding: {
@@ -225,11 +227,13 @@ function restoreBooks(M, B) {
   if (M.lipids) { for (const k of Object.keys(M.lipids.tot)) M.lipids.tot[k] = (B.lipids && B.lipids[k]) || 0; }   // (step C12b)
   if (M.excited) { for (const k of Object.keys(M.excited.tot)) M.excited.tot[k] = (B.excited && B.excited[k]) || 0; }   // (step C12c)
   if (M.electrons) { for (const k of Object.keys(M.electrons.tot)) M.electrons.tot[k] = (B.electrons && B.electrons[k]) || 0; }   // (step C12d)
+  if (M.vents) { for (const k of Object.keys(M.vents.tot)) M.vents.tot[k] = (B.vents && B.vents[k]) || 0; }   // (step C12f)
+  if (!(H.tot.vent >= 0)) H.tot.vent = 0;
 }
 
 /** Every rate history and time series starts again (their windows would span the jump in time). */
 function clearHistories(M) {
-  const mods = [M.heat, M.matter, M.eat, M.membrane, M.pumps, M.catalysts, M.hardlight, M.dipole, M.division, M.cells, M.charge, M.oil, M.lipids, M.excited, M.electrons].filter(Boolean);   // (step C12: + the oil; C12b: + the lipids; C12d: + electrons)
+  const mods = [M.heat, M.matter, M.eat, M.membrane, M.pumps, M.catalysts, M.hardlight, M.dipole, M.division, M.cells, M.charge, M.oil, M.lipids, M.excited, M.electrons, M.vents].filter(Boolean);   // (step C12: + the oil; C12b: + the lipids; C12d: + electrons; C12f: + vents)
   for (const m of mods) {
     for (const k of Object.keys(m)) if (/(^hist|Hist$|hist\d$|^series$)/.test(k) && Array.isArray(m[k])) m[k] = [];
   }
@@ -427,6 +431,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
         if (bw < 76) fieldDefaults(new Float32Array(b2.buffer), k * BIO_FLOATS);   // (step C13: the field genes at today's values)
       }
       rec = r2; bio = b2;
+    }
+    if (opts.settings !== false && M.vents && !(S.settings && S.settings['vents.params'])) {
+      Object.assign(M.vents.params, { hot: false, sea: false });   // step C12f
+      notes.push('saved before step C12f: the vent as in step C12d (no heat), no sea (as it ran)');
     }
     if (opts.settings !== false && M.waste && !(S.settings && S.settings['waste.params'])) {
       Object.assign(M.waste.params, { saturation: false, osmosis: false });   // step C12e

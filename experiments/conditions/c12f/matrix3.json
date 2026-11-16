@@ -1,0 +1,127 @@
+{
+ "batch": "c12f-mx3",
+ "runs": [
+  {
+   "name": "c12f-mx-I",
+   "description": "C12f pilot matrix I: {'spread': 'scatter', 'cells': 600}, vent rate 40",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "starter": 1,
+    "searate": 0.02,
+    "sealevel": 0.5,
+    "ventheat": 10,
+    "spread": "scatter",
+    "cells": 600
+   },
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.matter.springs.filter(s => s.kind === 'heavy').forEach(s => s.rate = 40); return moire.matter.springs.map(s => s.kind + ' ' + s.rate)"
+    }
+   ],
+   "duration": 600,
+   "sample_every": 10,
+   "snapshots": [
+    {
+     "t": 150,
+     "grid": true
+    },
+    {
+     "t": 600,
+     "grid": true
+    }
+   ],
+   "shots": [
+    {
+     "t": 150
+    },
+    {
+     "t": 600
+    }
+   ]
+  },
+  {
+   "name": "c12f-mx-J",
+   "description": "C12f pilot matrix J: {'spread': 'scatter', 'cells': 600, 'qfeel': 0}, vent rate 40",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "starter": 1,
+    "searate": 0.02,
+    "sealevel": 0.5,
+    "ventheat": 10,
+    "spread": "scatter",
+    "cells": 600,
+    "qfeel": 0
+   },
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.matter.springs.filter(s => s.kind === 'heavy').forEach(s => s.rate = 40); return moire.matter.springs.map(s => s.kind + ' ' + s.rate)"
+    }
+   ],
+   "duration": 600,
+   "sample_every": 10,
+   "snapshots": [
+    {
+     "t": 150,
+     "grid": true
+    },
+    {
+     "t": 600,
+     "grid": true
+    }
+   ],
+   "shots": [
+    {
+     "t": 150
+    },
+    {
+     "t": 600
+    }
+   ]
+  },
+  {
+   "name": "c12f-mx-K",
+   "description": "C12f pilot matrix K: {'spread': 'scatter', 'cells': 600, 'membrane': 0}, vent rate 40",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "starter": 1,
+    "searate": 0.02,
+    "sealevel": 0.5,
+    "ventheat": 10,
+    "spread": "scatter",
+    "cells": 600,
+    "membrane": 0
+   },
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.matter.springs.filter(s => s.kind === 'heavy').forEach(s => s.rate = 40); return moire.matter.springs.map(s => s.kind + ' ' + s.rate)"
+    }
+   ],
+   "duration": 600,
+   "sample_every": 10,
+   "snapshots": [
+    {
+     "t": 150,
+     "grid": true
+    },
+    {
+     "t": 600,
+     "grid": true
+    }
+   ],
+   "shots": [
+    {
+     "t": 150
+    },
+    {
+     "t": 600
+    }
+   ]
+  }
+ ]
+}

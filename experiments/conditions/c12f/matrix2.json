@@ -1,0 +1,158 @@
+{
+ "batch": "c12f-mx2",
+ "runs": [
+  {
+   "name": "c12f-mx-E",
+   "description": "C12f pilot matrix E: {'ventheat': 10}, vent rate 40",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "starter": 1,
+    "searate": 0.02,
+    "sealevel": 0.5,
+    "ventheat": 10
+   },
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.matter.springs.filter(s => s.kind === 'heavy').forEach(s => s.rate = 40); return moire.matter.springs.map(s => s.kind + ' ' + s.rate)"
+    }
+   ],
+   "duration": 600,
+   "sample_every": 10,
+   "snapshots": [
+    {
+     "t": 180,
+     "grid": true
+    },
+    {
+     "t": 600,
+     "grid": true
+    }
+   ],
+   "shots": [
+    {
+     "t": 180
+    },
+    {
+     "t": 600
+    }
+   ]
+  },
+  {
+   "name": "c12f-mx-F",
+   "description": "C12f pilot matrix F: {'ventheat': 20}, vent rate 40",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "starter": 1,
+    "searate": 0.02,
+    "sealevel": 0.5,
+    "ventheat": 20
+   },
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.matter.springs.filter(s => s.kind === 'heavy').forEach(s => s.rate = 40); return moire.matter.springs.map(s => s.kind + ' ' + s.rate)"
+    }
+   ],
+   "duration": 600,
+   "sample_every": 10,
+   "snapshots": [
+    {
+     "t": 180,
+     "grid": true
+    },
+    {
+     "t": 600,
+     "grid": true
+    }
+   ],
+   "shots": [
+    {
+     "t": 180
+    },
+    {
+     "t": 600
+    }
+   ]
+  },
+  {
+   "name": "c12f-mx-G",
+   "description": "C12f pilot matrix G: {'ventheat': 10, 'cells': 600}, vent rate 40",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "starter": 1,
+    "searate": 0.02,
+    "sealevel": 0.5,
+    "ventheat": 10,
+    "cells": 600
+   },
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.matter.springs.filter(s => s.kind === 'heavy').forEach(s => s.rate = 40); return moire.matter.springs.map(s => s.kind + ' ' + s.rate)"
+    }
+   ],
+   "duration": 600,
+   "sample_every": 10,
+   "snapshots": [
+    {
+     "t": 180,
+     "grid": true
+    },
+    {
+     "t": 600,
+     "grid": true
+    }
+   ],
+   "shots": [
+    {
+     "t": 180
+    },
+    {
+     "t": 600
+    }
+   ]
+  },
+  {
+   "name": "c12f-mx-H",
+   "description": "C12f pilot matrix H: {'ventheat': 5}, vent rate 40",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "starter": 1,
+    "searate": 0.02,
+    "sealevel": 0.5,
+    "ventheat": 5
+   },
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.matter.springs.filter(s => s.kind === 'heavy').forEach(s => s.rate = 40); return moire.matter.springs.map(s => s.kind + ' ' + s.rate)"
+    }
+   ],
+   "duration": 600,
+   "sample_every": 10,
+   "snapshots": [
+    {
+     "t": 180,
+     "grid": true
+    },
+    {
+     "t": 600,
+     "grid": true
+    }
+   ],
+   "shots": [
+    {
+     "t": 180
+    },
+    {
+     "t": 600
+    }
+   ]
+  }
+ ]
+}

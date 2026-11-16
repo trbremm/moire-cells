@@ -1,0 +1,83 @@
+{
+ "batch": "c12f-why",
+ "runs": [
+  {
+   "name": "c12f-why-base",
+   "description": "C12f: why cells leave the vents (base), 60 s",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "ventheat": 20
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [
+    {
+     "t": 20
+    },
+    {
+     "t": 60
+    }
+   ]
+  },
+  {
+   "name": "c12f-why-nocharge",
+   "description": "C12f: why cells leave the vents (nocharge), 60 s",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "ventheat": 20,
+    "charge": 0
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [
+    {
+     "t": 20
+    },
+    {
+     "t": 60
+    }
+   ]
+  },
+  {
+   "name": "c12f-why-noheat",
+   "description": "C12f: why cells leave the vents (noheat), 60 s",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "ventheat": 0
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [
+    {
+     "t": 20
+    },
+    {
+     "t": 60
+    }
+   ]
+  },
+  {
+   "name": "c12f-why-nokick",
+   "description": "C12f: why cells leave the vents (nokick), 60 s",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "ventheat": 20,
+    "heat": 0
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [
+    {
+     "t": 20
+    },
+    {
+     "t": 60
+    }
+   ]
+  }
+ ]
+}

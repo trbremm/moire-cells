@@ -36,6 +36,7 @@ import { FLAT, pal } from './palette.js';
 import { Oil } from './oil.js';
 import { Excited } from './excited.js';
 import { Electrons } from './electrons.js';
+import { Vents } from './vents.js';
 import { setShaderConst } from './gpu.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 
@@ -637,7 +638,7 @@ for (const s of SUBSTANCES) {
 }
 
 export const ATOM_SCALE = 4096;          // counts per atom-unit (ATOM_SCALE in matter.wgsl)
-const MP_BYTES = 688;                     // struct MatterP (step C6b: + chg, cq; step C12: + the oil's, 400 until then)
+const MP_BYTES = 704;                     // struct MatterP (step C6b: + chg, cq; step C12: + the oil's, 400 until then; step C12f: + sea, 688 until then)
 const MT_SLOT = 256;                      // struct MatterTick slots, bound with a dynamic offset
 const MAX_TICKS = 320;                    // as SLOTS in cells.js
 const MAX_SUB = 4;                        // spreading substeps per tick at most
@@ -687,6 +688,7 @@ export class Matter {
     this.oil = new Oil(this);    // step C12: oils and water (src/oil.js)
     this.excited = new Excited(this, EXCITED);   // step C12c: excited waste (src/excited.js)
     this.electrons = new Electrons(this);         // step C12d: electrons (src/electrons.js): absorption by gap, excited states
+    this.vents = new Vents(this, ELECTRONS);      // step C12f: hot vents and the sea (src/vents.js)
     if (ELECTRONS) { this.excited.params.on = false; this.excited.look.on = false; }   // (C12c's lasting excited atoms are folded in)
     this.CH = CH; this.SUBSTANCES = SUBSTANCES;
     // live-tunable: moire.matter.params
@@ -993,6 +995,7 @@ export class Matter {
     // springs: each drips on every tick of this frame on which it is still younger than its life (counted per tick, so
     // a spring gives the same amount at any speed, also with hundreds of ticks per frame), then ages and dries up.
     // Written longest-lived first (most life left), so the springs still dripping on tick t are the first nsAt(t).
+    this.vents.sync(SPRING_KINDS);   // step C12f: the vent's mix (hot or as in step C12d)
     const order = this.springs.slice().sort((x, y) => (this.lifeOf(y) - y.age) - (this.lifeOf(x) - x.age));
     const ns = this.writeSprings(dt, order, ticks * dt);
     const nsAt = (t) => { let k = 0; while (k < ns && order[k].age + (t + 1) * dt < this.lifeOf(order[k])) k++; return k; };
@@ -1003,6 +1006,7 @@ export class Matter {
     const held = this.eat && this.eat.ledger ? (this.eat.ledger.held || this.eat.ledger.stock) : null;   // (step C12b: + the lipids)
     for (let c = 0; c < NCH; c++) if (this.dish[c] > 0 || (held && held[c] > 0)) this.seen[c] = frame.time;
     for (const sp of order) for (const a of Object.keys(SPRING_KINDS[sp.kind].mix)) this.seen[CH[a]] = frame.time;
+    if (this.vents.seaOn) this.seen[CH.T] = frame.time;   // step C12f: the sea tops T up everywhere
     for (const s of this.springs) s.age += ticks * dt;
     this.springs = this.springs.filter((s) => s.age < this.lifeOf(s));
     let active = 0;
@@ -1057,6 +1061,7 @@ export class Matter {
     // step C12: the oil's words (src/oil.js); its passes run while oil or amphiphiles are in the dish
     const oilMask = (1 << CH.lL) | (1 << CH.glL) | (1 << CH.tlL);
     this.oilRun = this.oil.writeMatter(u, f, SUBSTANCES, this.oilBase(), 1 / (ATOM_SCALE * a * a), (active & oilMask) !== 0);
+    this.vents.writeMatter(f, 172, a * a, dt, CH.T);   // step C12f: the sea (struct MatterP sea)
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
 
     const T = new Uint32Array(this.tickAB), w = MT_SLOT / 4;
@@ -1214,6 +1219,7 @@ export class Matter {
       // (step C12: a mix's shares are of the atoms, so a molecule of n atoms drips 1 / n as many units)
       const rate = s.rate ?? p.rate;   // (app: a spring's own rate, e.g. a pipette's drop or a preset's slow vent)
       for (const [atom, share] of Object.entries(K.mix)) F[o + 4 + CH[atom]] = rate * share / SUBSTANCES[CH[atom]].atoms.length * dt * ATOM_SCALE;
+      F[o + 4 + 18] = this.vents.heatPerTick(s.kind, rate, dt);   // step C12f: a hot vent's heat per tick over its disc (amt[18])
       const ink = springInk(s.kind, pal().substances);
       F[o + 24] = ink[0] / 255; F[o + 25] = ink[1] / 255; F[o + 26] = ink[2] / 255; F[o + 27] = K.stroke;
     }
@@ -1319,6 +1325,7 @@ export class Matter {
     this.oil.apply(rec, w, (this.heat.px / this.heat.R) ** 2);   // step C12: the oil's census
     if (!ELECTRONS) this.excited.apply(rec, w);                   // step C12c: the excited haze's census (folded into C12d's)
     this.electrons.apply(rec, w);                                 // step C12d: the excited states, fluorescence
+    this.vents.apply(rec, w);                                     // step C12f: the vents' heat, the sea
   }
 
   /**

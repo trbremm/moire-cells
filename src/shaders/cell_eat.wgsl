@@ -454,6 +454,8 @@ const E2_HEAT: u32 = 10u;       // heat counts the engines released (their ineff
 const E2_UPKEEP: u32 = 11u;     // heat counts paid as upkeep
 const E2_IDLE: u32 = 12u;       // heat counts of photons caught with nothing to make (part of E2_HEAT)
 const E2_STORE: u32 = 13u;      // counts the storers (uphill engines without a pigment) made, paid by the battery
+const E2_GRAD: u32 = 14u;       // step C12f: counts the GRADIENT engines made (a bond from two free atoms with no free t: g + T, G + T)
+const E2_GRADE: u32 = 15u;      // ... and the heat counts they put into batteries
 var<workgroup> wev2: array<atomic<i32>, 16>;
 
 fn add64(lo: u32, x: i32) {
@@ -2031,6 +2033,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           }
           if (E.kind == 2u) { atomicAdd(&wxe[XE_BREATH], n * g1 + eb); }
           if (E.kind == 1u) { atomicAdd(&wxe[XE_BURN], n * g1 + eb); }
+          if (E.kind == 1u && E.ch.w == NONE && E.ch.x < 6u && E.ch.y < 6u) { atomicAdd(&wev2[E2_GRAD], n); atomicAdd(&wev2[E2_GRADE], n * g1 + eb); }
           atomicAdd(&wev2[E2_BURN + E.kind - 1u], n);
           atomicAdd(&wev2[E2_GAIN], n * g1 + eb);
           atomicAdd(&wev2[E2_HEAT], n * h1);

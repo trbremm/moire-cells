@@ -1,0 +1,137 @@
+{
+ "batch": "c12f-mx",
+ "runs": [
+  {
+   "name": "c12f-mx-A",
+   "description": "C12f pilot matrix A: {'sealevel': 0.5, 'qfeel': 0}",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "starter": 1,
+    "ventheat": 20,
+    "searate": 0.02,
+    "sealevel": 0.5,
+    "qfeel": 0
+   },
+   "duration": 600,
+   "sample_every": 10,
+   "snapshots": [
+    {
+     "t": 180,
+     "grid": true
+    },
+    {
+     "t": 600,
+     "grid": true
+    }
+   ],
+   "shots": [
+    {
+     "t": 180
+    },
+    {
+     "t": 600
+    }
+   ]
+  },
+  {
+   "name": "c12f-mx-B",
+   "description": "C12f pilot matrix B: {'sealevel': 1, 'qfeel': 0}",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "starter": 1,
+    "ventheat": 20,
+    "searate": 0.02,
+    "sealevel": 1,
+    "qfeel": 0
+   },
+   "duration": 600,
+   "sample_every": 10,
+   "snapshots": [
+    {
+     "t": 180,
+     "grid": true
+    },
+    {
+     "t": 600,
+     "grid": true
+    }
+   ],
+   "shots": [
+    {
+     "t": 180
+    },
+    {
+     "t": 600
+    }
+   ]
+  },
+  {
+   "name": "c12f-mx-C",
+   "description": "C12f pilot matrix C: {'sealevel': 0.5}",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "starter": 1,
+    "ventheat": 20,
+    "searate": 0.02,
+    "sealevel": 0.5
+   },
+   "duration": 600,
+   "sample_every": 10,
+   "snapshots": [
+    {
+     "t": 180,
+     "grid": true
+    },
+    {
+     "t": 600,
+     "grid": true
+    }
+   ],
+   "shots": [
+    {
+     "t": 180
+    },
+    {
+     "t": 600
+    }
+   ]
+  },
+  {
+   "name": "c12f-mx-D",
+   "description": "C12f pilot matrix D: {'sealevel': 0.5, 'qfeel': 0, 'diversity': 'mixed'}",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "starter": 1,
+    "ventheat": 20,
+    "searate": 0.02,
+    "sealevel": 0.5,
+    "qfeel": 0,
+    "diversity": "mixed"
+   },
+   "duration": 600,
+   "sample_every": 10,
+   "snapshots": [
+    {
+     "t": 180,
+     "grid": true
+    },
+    {
+     "t": 600,
+     "grid": true
+    }
+   ],
+   "shots": [
+    {
+     "t": 180
+    },
+    {
+     "t": 600
+    }
+   ]
+  }
+ ]
+}

@@ -54,6 +54,9 @@ struct MatterP {
   beta: array<vec4f, 4>,        // per channel: the boundary pull (amphiphiles)
   vol: array<vec4f, 4>,         // per channel: atoms per count that count in the oil's share (rho)
   fill: array<vec4u, 4>,        // per channel: what fills a pixel against its drift: 0 nothing, 1 the oil (rho), 2 the film
+  // ---- step C12f, vents in the dark (src/vents.js) ----
+  sea: vec4f,                   // the SEA: x counts of its channel per pixel per tick at an empty pixel (0 = no sea), y the sea's
+                                // level (counts per pixel: the top-up falls to 0 there), z its channel (the free heavy taker T), w spare
 };
 
 struct MatterTick {
@@ -70,7 +73,8 @@ struct MatterTick {
 struct Spring {
   pos: vec4f,                   // x, y (CSS px), radius of its disc (CSS px), share of its life left
   amt: array<vec4f, 5>,         // counts per tick, per channel (fractional; random rounding); [19] = pixels in its disc (step C12c:
-                                // [16] until then; springs never drip the excited atoms, 16 and 17)
+                                // [16] until then; springs never drip the excited atoms, 16 and 17); step C12f: [18] the heat a HOT
+                                // VENT puts into its disc per tick (heat counts; 0 for every other spring)
   ink: vec4f,                   // drawing only
 };
 struct Springs { s: array<Spring, 16>, };
@@ -122,6 +126,8 @@ fn add64v(lo: u32, carry: i32, low: u32) {
 // ---------- spread ----------
 var<workgroup> wlost: array<atomic<i32>, 18>;
 var<workgroup> wadd: array<atomic<i32>, 18>;
+var<workgroup> wvent: atomic<i32>;   // step C12f: the hot vents' heat put in (heat counts)
+var<workgroup> wsea: atomic<i32>;    // ... and the sea's atoms (counts)
 
 // what flows across the edge from its second pixel (holding ms) to its first (holding mf): random rounding with r, capped
 // at a quarter of the giver's amount (a pixel has at most 4 edges). Antisymmetric by construction: both pixels call it
@@ -206,6 +212,18 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
         let sp = SP.s[k].pos;
         if (length(vec2f(id.xy) + 0.5 - sp.xy / MP.px) <= max(sp.z / MP.px, 0.75)) { drip |= 1u << k; }
       }
+      // step C12f: a HOT VENT's heat, shared evenly over its disc's pixels (random rounding), into the delta the heat's spreading
+      // takes in this tick (heat_common.wgsl: the first block behind the ledger; only this invocation writes this pixel's word in
+      // this dispatch), booked as energy in (LG_VENT)
+      if (drip != 0u) {
+        var hv = 0;
+        for (var k = 0u; k < 16u; k++) {
+          if ((drip & (1u << k)) == 0u) { continue; }
+          let a = SP.s[k].amt[4].z / max(SP.s[k].amt[4].w, 1.0);
+          if (a > 0.0) { hv += i32(floor(a + u01(mpcg(eI + k * 0x3c6ef372u + 0x0b5ad4ecu)))); }
+        }
+        if (hv != 0) { mg[i] += hv; atomicAdd(&wvent, hv); }
+      }
     }
     // step C6b: the screened potential here and at the 4 neighbours (for the charged substances' drift)
     let po = MP.chg.x;
@@ -285,6 +303,13 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
           if (out != 0) { atomicAdd(&wlost[c], out); }
         }
       }
+      // step C12f: the SEA tops its channel up toward its level, on a tick's first substep, everywhere (random rounding; never takes
+      // anything out), booked as added (as a spring's)
+      if (first && MP.sea.x > 0.0 && c == u32(MP.sea.z)) {
+        let want = MP.sea.x * max(0.0, 1.0 - f32(max(m, 0)) / max(MP.sea.y, 1.0));
+        let add = i32(floor(want + u01(mpcg(eI + c * 0x85ebca6bu + 0x6a09e667u))));
+        if (add > 0) { acc += add; atomicAdd(&wadd[c], add); atomicAdd(&wsea, add); }
+      }
       if (drip != 0u && c < EXC0) {   // (step C12c: springs drip no excited atoms)
         var add = 0;
         for (var k = 0u; k < 16u; k++) {
@@ -299,10 +324,17 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     }
   }
   workgroupBarrier();
+  let slot = (wid.y * nw.x + wid.x) & 63u;
   if (first && li < NGRID) {
-    let slot = (wid.y * nw.x + wid.x) & 63u;
     add64(lg_mc(LG_M_LOST, li) + slot, atomicLoad(&wlost[li]));
     add64(lg_mc(LG_M_ADD, li) + slot, atomicLoad(&wadd[li]));
+  }
+  if (first && li == NGRID) {   // step C12f
+    let v = atomicLoad(&wvent);
+    if (v != 0) { atomicAdd(&hb[LG_VENT + slot], v); }
+  } else if (first && li == NGRID + 1u) {
+    let v = atomicLoad(&wsea);
+    if (v != 0) { atomicAdd(&hb[LG_SEA + slot], v); }
   }
 }
 

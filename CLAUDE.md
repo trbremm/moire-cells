@@ -585,6 +585,11 @@ C12g. MEMBRANES MODULATE ION FLOW (user 2026-11-16 "Yes, membranes modulate ion 
       level that mutates; the C12e stretch channel opens a non-selective path when swollen; C7 pumps stay the active route.
     - Optional, own switch: ion flow through channels also feels the C7 membrane VOLTAGE (charged atoms pushed by it), a
       toy of real electrophysiology.
+    - CHARGE FIELD OFF BY DEFAULT (user 2026-11-16: "maybe the way we are handling charge is too exaggerated. Maybe the
+      chemicals should be enough ... except the polarity case, membranes, oils etc"; agreed "yes"): salty water screens
+      charge within ~1 nm and stays neutral, so the C6b dish-wide charge field (atom drift, pushing cells), C6d dipoles
+      and the front following them go behind switches (off). KEEP atom charges (bookkeeping, polarity: oil, soap,
+      bilayers) and membrane voltage, channels, pumps. Field B's strength comes from the C13 field genes, not stock charge.
     - Hoped for, never written: oxygen trapped -> cells swell -> stretch channels or anion-channel mutants let t out ->
       haze builds; breathers evolve inward anion channels or pumps. Census of channel genes vs a neutral control.
 GLIDERS (user 2026-11-16: "did you notice our short lived gliders? When two cells combine and become fast little

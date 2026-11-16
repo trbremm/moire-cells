@@ -201,8 +201,9 @@ export class Light {
   }
 
   /** The flat tint (under the cells). */
-  render(pass) {
+  render(pass, frame = {}) {
     if (!this.on || !this.view) return;
+    if (frame.look && frame.look.harmonic) return;   // step H1: no flat tint under the harmonic look (a microscope image)
     const p = this.params;
     if (!((this.modeIndex === 2 ? p.fullTint : p.tintAlpha) > 0)) return;
     pass.setPipeline(this.tintPipe);

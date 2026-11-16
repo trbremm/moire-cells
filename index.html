@@ -189,6 +189,22 @@ body.entropy-on #overlay { top: 116px; }
   .ui input[type="range"]::-moz-range-thumb { width: 14px; height: 26px; }
 }
 
+/* step H1: the harmonic look's scale bar (src/harmonic.js): small text over a thin bar, bottom left above the toolbar on wide
+   screens (the hint line is bottom right there); on narrow ones bottom right, above the hint line (the entropy panel takes the
+   top) */
+#scalebar {
+  position: absolute; left: max(16px, env(safe-area-inset-left, 0px));
+  bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + var(--ui-h, 0px) + 12px);
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+  color: #e8e8e8; font-size: 11px; letter-spacing: 0.02em; pointer-events: none;
+}
+#scalebar i { display: block; height: 2px; background: #e8e8e8; }
+#scalebar[hidden] { display: none; }
+@media (max-width: 899px) {
+  #scalebar { left: auto; right: max(10px, env(safe-area-inset-right, 0px)); align-items: flex-end;
+    bottom: calc(max(10px, env(safe-area-inset-bottom, 0px)) + var(--ui-h, 0px) + 34px); }
+}
+
 /* step C3b: recording, top left (outside the recorded dish: only the canvas is recorded) */
 #rec {
   position: absolute; top: 14px; left: max(16px, env(safe-area-inset-left, 0px));

@@ -441,3 +441,168 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   if (D.el.x > 0.5 && D.el.z > 0.0) { res = glow(x, res); }   // step C12d
   return over(mark, res);
 }
+
+// ======================================================================================================================
+// Step H1: the HARMONIC look (src/harmonic.js): the dish as a multiphoton microscope shows it, three channels that ADD (every
+// output has alpha 0: light on black).
+//   ORANGE (second harmonic: ordered fibres) the CRUST as a dense fibrous texture: a dim orange fill as thick as the crust, with
+//          brighter strands over it, yellow where it is dense, deeper red where its chains are heavy. The strands follow the
+//          crust's own outlines (along its edges, so a patch is wrapped in fibres) and, where the crust is even, the slow beat of
+//          the medium's lattice against a copy turned by hm2.y (its iso-lines: swirls round a wide hex array of centres, the
+//          hidden moire made visible as collagen-like swirls), plus a little noise. The texture is laid in tiles of about a
+//          strand's length, each with the direction at its pixel and its own offset, blended bilinearly, so a curving direction
+//          does not shear the strands. The MINERALS (C12d, crystals) as faint orange to red dust
+//   GREEN  (third harmonic: interfaces) oil droplets' rims as one thin line with a faint inside, soap films as thin lines
+//   VIOLET (autofluorescence: metabolism) FUEL as a soft wispy haze, bluer for the light fuels, more violet for the heavy
+// The fluorescence glow (C12d) keeps its band colours; springs are quiet grey rings. Free atoms, trace and the excited haze are
+// not drawn. Fixed in the dish: nothing here moves except with the substances (and the medium's slow breathing).
+// ======================================================================================================================
+
+struct HarmP {
+  hm: vec4f,          // x crust brightness; y crust per R^2 at half brightness; z a strand's length (CSS px); w its width
+  hm2: vec4f,         // x the moire swirl's weight; y the second lattice's turn (rad); z fuel brightness; w fuel per R^2 at half
+  hm3: vec4f,         // x oil rims' brightness; y a droplet's inside; z minerals' brightness; w springs' brightness
+  ink: array<vec4f, 6>,   // green, orange, yellow, red, violet, blue
+};
+@group(0) @binding(8) var<uniform> H: HarmP;
+
+fn hm_hash(p: vec2f) -> f32 {
+  var h = (bitcast<u32>(i32(p.x)) * 1597334677u) ^ (bitcast<u32>(i32(p.y)) * 3812015801u);
+  h = (h ^ (h >> 15u)) * 2246822519u;
+  h = h ^ (h >> 13u);
+  return f32(h >> 8u) / 16777216.0;
+}
+fn hm_noise(p: vec2f) -> f32 {
+  let i = floor(p);
+  let f = fract(p);
+  let u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hm_hash(i), hm_hash(i + vec2f(1.0, 0.0)), u.x), mix(hm_hash(i + vec2f(0.0, 1.0)), hm_hash(i + vec2f(1.0, 1.0)), u.x), u.y);
+}
+fn hm_fibres(x: vec2f, t: vec2f, len: f32, w: f32) -> f32 {
+  let q = vec2f(x.x * t.x + x.y * t.y, t.x * x.y - t.y * x.x);
+  let n = 0.62 * hm_noise(vec2f(q.x / len, q.y / w)) + 0.38 * hm_noise(vec2f(q.x / (0.45 * len), q.y / (0.5 * w)) + vec2f(7.3, 2.9));
+  return smoothstep(0.4, 0.85, n);
+}
+fn hm_sed(x: vec2f) -> f32 { return textureSampleLevel(texB, samp, uv_of(x), 0.0).z; }
+
+// the strands' direction at x (a unit vector; fibres have no head, so directions are added in doubled-angle form)
+fn hm_dir(x: vec2f, sed: f32) -> vec2f {
+  let e = D.gridPx;
+  let gr = vec2f(hm_sed(x + vec2f(e, 0.0)) - hm_sed(x - vec2f(e, 0.0)), hm_sed(x + vec2f(0.0, e)) - hm_sed(x - vec2f(0.0, e))) / (2.0 * e);
+  let gl = length(gr);
+  var acc = vec2f(0.0);
+  if (gl > 1e-7) {
+    let tt = vec2f(-gr.y, gr.x) / gl;                                  // along the crust's iso-lines
+    let w = smoothstep(0.0, 0.25, gl * D.gridPx / max(sed, 1e-4));      // where the crust changes over a grid pixel or so
+    acc += w * vec2f(tt.x * tt.x - tt.y * tt.y, 2.0 * tt.x * tt.y);
+  }
+  if (H.hm2.x > 0.0) {
+    // the beat of the medium's lattice against a copy turned by hm2.y: B = sum_m cos(q_m . (x - centre)); along its iso-lines
+    var bg = vec2f(0.0);
+    for (var m = 0; m < 3; m++) {
+      let a = medium.la0 + f32(m) * P3;
+      let q = medium.k0 * (vec2f(cos(a + H.hm2.y), sin(a + H.hm2.y)) - vec2f(cos(a), sin(a)));
+      bg -= q * sin(dot(q, x - medium.centre));
+    }
+    let bl = length(bg);
+    if (bl > 1e-7) {
+      let tb = vec2f(-bg.y, bg.x) / bl;
+      acc += H.hm2.x * vec2f(tb.x * tb.x - tb.y * tb.y, 2.0 * tb.x * tb.y);
+    }
+  }
+  let na = 6.2831853 * hm_noise(x / 70.0 + vec2f(3.7, 9.1));             // a little wander, so nothing is ruled
+  acc += 0.25 * vec2f(cos(na), sin(na));
+  let th = 0.5 * atan2(acc.y, acc.x);
+  return vec2f(cos(th), sin(th));
+}
+
+fn hm_crust(x: vec2f, sed: f32) -> f32 {
+  let t = hm_dir(x, sed);
+  let cs = 1.4 * H.hm.z;                                               // tiles of about a strand and a half
+  let b = floor(x / cs - 0.5);
+  let f = x / cs - 0.5 - b;
+  var acc = 0.0;
+  for (var k = 0; k < 4; k++) {
+    let o = vec2f(f32(k & 1), f32(k >> 1));
+    let wt = select(1.0 - f.x, f.x, o.x > 0.5) * select(1.0 - f.y, f.y, o.y > 0.5);
+    let gc = b + o;
+    let off = 97.0 * vec2f(hm_hash(gc), hm_hash(gc + vec2f(13.0, 7.0)));
+    acc += wt * hm_fibres(x - (gc + 0.5) * cs + off, t, H.hm.z, H.hm.w);
+  }
+  return acc;
+}
+
+// the minerals as faint dust: one speck per square at most, at a hashed place, present while a hash lies below the coverage
+fn hm_minerals(x: vec2f) -> vec3f {
+  var res = vec3f(0.0);
+  let cs = D.dust.x * 1.2;
+  let base = floor(x / cs - 0.5);
+  for (var k = 0; k < 4; k++) {
+    let g = base + vec2f(f32(k & 1), f32(k >> 1));
+    let vd = textureSampleLevel(texD, samp, uv_of((g + 0.5) * cs), 0.0);
+    let cm = cover(vd.y);
+    if (cm <= 0.0) { continue; }
+    let h = hash3(g, 7.0);
+    if (h.z >= cm) { continue; }
+    let a = disc(length(x - (g + h.xy) * cs), mix(D.dust.y, D.dust.z, cm) * 0.8);
+    res += mix(mix(H.ink[1].rgb, H.ink[2].rgb, 0.3), H.ink[3].rgb, clamp(vd.z / max(vd.y, 1e-6), 0.0, 1.0)) * a * (0.5 + 0.5 * cm);
+  }
+  return res;
+}
+
+@fragment
+fn fs_harm(in: VSOut) -> @location(0) vec4f {
+  let x = in.pos.xy / D.dpr;
+  // the oil's texture and its slopes, here, while the control flow is uniform (derivatives need it)
+  let oc = textureSampleLevel(texC, samp, uv_of(x), 0.0);
+  let gO = vec2f(dpdx(min(oc.x, 1.0)), dpdy(min(oc.x, 1.0)));
+  let gF = vec2f(dpdx(oc.y), dpdy(oc.y));
+  let G = H.ink[0].rgb;
+  var rgb = vec3f(0.0);
+  let sb = textureSampleLevel(texB, samp, uv_of(x), 0.0);
+  // ORANGE: the crust
+  if (sb.z > 0.02 * H.hm.y && H.hm.x > 0.0) {
+    let dens = sb.z / (sb.z + H.hm.y);
+    let fib = hm_crust(x, sb.z);
+    let hs = clamp(sb.w / max(sb.z, 1e-6), 0.0, 1.0);
+    let col = mix(mix(H.ink[1].rgb, H.ink[2].rgb, clamp(dens * fib * 1.2, 0.0, 1.0)), H.ink[3].rgb, 0.55 * hs);
+    rgb += col * H.hm.x * dens * (0.22 + 0.9 * fib);
+  }
+  // VIOLET: the fuel haze, wispy
+  if (sb.x > 1e-4 && H.hm2.z > 0.0) {
+    let fd = sb.x / (sb.x + H.hm2.w);
+    let wp = x / 26.0 + 1.6 * vec2f(hm_noise(x / 60.0), hm_noise(x / 60.0 + vec2f(5.2, 1.3)));
+    let wisp = 0.35 + 0.65 * smoothstep(0.25, 0.9, hm_noise(wp));
+    let hf = clamp(sb.y / sb.x, 0.0, 1.0);
+    rgb += mix(H.ink[5].rgb, H.ink[4].rgb, 0.4 + 0.6 * hf) * H.hm2.z * fd * wisp;
+  }
+  // GREEN: oil droplets' rims and insides, soap films
+  if (D.oil.x > 0.5 && H.hm3.x > 0.0) {
+    let so = oc.x;
+    if (so > 0.02) {
+      let gl = max(length(gO), 1e-5);
+      let d = (min(so, 1.0) - 0.5) / gl;                               // device px to the rim (positive inside)
+      let rim = clamp(0.5 * D.oil.y + 0.5 - abs(d), 0.0, 1.0);
+      rgb += G * (H.hm3.x * rim + H.hm3.y * clamp(d + 0.5, 0.0, 1.0));
+    }
+    let inOil = 1.0 - smoothstep(0.75, 1.0, so);
+    if (oc.y > 0.05 && inOil > 0.0) { rgb += G * 0.7 * H.hm3.x * iso_line(oc.y, gF, 0.5, 0.8 * D.oil.y) * inOil; }
+  }
+  // ORANGE: the minerals (C12d)
+  if (D.el.x > 0.5 && H.hm3.z > 0.0) { rgb += H.hm3.z * hm_minerals(x); }
+  var res = vec4f(rgb, 0.0);
+  // the fluorescence glow (C12d), in its bands' colours
+  if (D.el.x > 0.5 && D.el.z > 0.0) { res = glow(x, res); }
+  // the springs: quiet grey rings
+  if (H.hm3.w > 0.0) {
+    for (var k = 0u; k < D.nSprings; k++) {
+      let s = SP.s[k];
+      let rr = D.ringR;
+      let rc = 0.32 * rr * sqrt(clamp(s.pos.w, 0.0, 1.0)) + 0.6;
+      let dd = length(x - s.pos.xy);
+      let a = max(disc(abs(dd - rr), 0.4 * s.ink.w), disc(dd, rc));
+      res += vec4f(vec3f(0.85, 0.85, 0.9) * H.hm3.w * a, 0.0);
+    }
+  }
+  return res;
+}

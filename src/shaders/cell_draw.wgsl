@@ -104,6 +104,13 @@ struct Draw {
   gd: vec4f,        // x: 1 = the guides view; y: the tubes' shading by what each side feels (0..1); z: the body's fill at |gene| = 1;
                     // w: a gate gene below this counts as none (the body then grey)
   gdInk: array<vec4f, 6>,     // the guides view's inks: unguided, glue, pump, engine, division, turn
+  // ---- step H1: the harmonic look (fs_harm; src/harmonic.js writeCells) ----
+  harm: vec4f,      // green rim: x brightness at a whole membrane; y a side with none (share of x); z width (CSS px); w brighter by
+                    // up to this share with oil in the bilayer
+  harm2: vec4f,     // x the inside's opacity; y its faint green; z violet: a full battery's glow; w violet: the busiest cell's inside
+  harm3: vec4f,     // x violet: the engines' granules; y orange: streaks along a strong stretch; z muscle's striations; w cartilage
+  harm4: vec4f,     // x orange: a crust wall; y the rim's gap from the wall, share of the neon tubes' (0 = shared walls); z w spare
+  hInk: array<vec4f, 5>,      // green, orange, yellow, red (heavy chains), violet
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
@@ -693,4 +700,141 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   let a = (1.0 - 0.6 * fade) * disc * mix(D.fillA, 1.0, max(max(max(max(max(max(max(max(max(ring, ring2), dot * (1.0 - clearA)), mark), bar), hnd), coreA), partA), notch), rimA));
   // rgb is the colour as seen; blend premultiplied (one, one-minus-src-alpha)
   return vec4f(rgb * a, a);
+}
+
+// ======================================================================================================================
+// Step H1: the HARMONIC look (src/harmonic.js): a cell as a multiphoton microscope shows it, three channels that ADD.
+// GREEN (third harmonic: interfaces) a thin rim at the membrane, brighter the more lipid each side holds (its integrity), a little
+// more with oil; a neuron's doubled (myelin). The inside DARK and nearly opaque (what lies under a cell is hidden), so a packed
+// tissue reads as a green honeycomb with dark insides. VIOLET (autofluorescence: metabolism) a soft glow at the centre as large
+// as the battery is full, faint granules where the engines sit, and the whole inside a little brighter the busier the cell (its
+// battery changing fast either way: cell_glow.wgsl, as the neon hum). ORANGE (second harmonic: ordered fibres) streaks along a
+// strongly stretched cell's long axis, muscle's striations across it (myosin), cartilage's fibrous matrix (collagen), and a crust
+// WALL as a fibrous orange band outside the rim (yellower for light chains, redder for heavy). The rim and every light inside are
+// added (alpha 0 at the rim), so a green rim over orange crust reads yellow. No hum, flashes, marks or views here.
+// ======================================================================================================================
+
+fn hm_hash(p: vec2f) -> f32 {
+  var h = (bitcast<u32>(i32(p.x)) * 1597334677u) ^ (bitcast<u32>(i32(p.y)) * 3812015801u);
+  h = (h ^ (h >> 15u)) * 2246822519u;
+  h = h ^ (h >> 13u);
+  return f32(h >> 8u) / 16777216.0;
+}
+fn hm_noise(p: vec2f) -> f32 {
+  let i = floor(p);
+  let f = fract(p);
+  let u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hm_hash(i), hm_hash(i + vec2f(1.0, 0.0)), u.x), mix(hm_hash(i + vec2f(0.0, 1.0)), hm_hash(i + vec2f(1.0, 1.0)), u.x), u.y);
+}
+// fibres along the unit direction t: value noise stretched along it (len, w in CSS px), two octaves, sharpened into strands
+fn hm_fibres(x: vec2f, t: vec2f, len: f32, w: f32) -> f32 {
+  let q = vec2f(x.x * t.x + x.y * t.y, t.x * x.y - t.y * x.x);
+  let n = 0.62 * hm_noise(vec2f(q.x / len, q.y / w)) + 0.38 * hm_noise(vec2f(q.x / (0.45 * len), q.y / (0.5 * w)) + vec2f(7.3, 2.9));
+  return smoothstep(0.4, 0.85, n);
+}
+
+@fragment
+fn fs_harm(in: VSOut) -> @location(0) vec4f {
+  let c = cells[in.id];
+  let lp = in.lp;
+  var ein = c.r - length(in.local);
+  // (the neon tubes' gap from the wall, times harm4.y: 0 = two neighbours' rims touch, one shared green wall)
+  if (in.hh1.w > 0.5) { ein = hex_inside(in.local, in) - D.harm4.y * min(D.hexDraw.y, 0.08 * c.r); }
+  let aa = max(fwidth(ein), 0.35 / D.dpr);
+  let disc = cover_in(ein, aa);
+  if (disc <= 0.0) { discard; }
+  let g = bio[in.id];
+  let G = D.hInk[0].rgb;
+  let O = D.hInk[1].rgb;
+  let Y = D.hInk[2].rgb;
+  let Rd = D.hInk[3].rgb;
+  let V = D.hInk[4].rgb;
+  // the membrane: this pixel's side, its integrity and its lipid make-up (as fs)
+  var sd = vec2f(0.0);
+  if (D.memb.x > 0.5 || D.lip.x > 0.5) { sd = memb_side(in.local, lp, c.r, in); }
+  let side = min(u32(sd.x), 5u);
+  var ig = 1.0;
+  if (D.memb.x > 0.5) { ig = clamp(c.integ[side], 0.0, 1.0); }
+  var lq = vec4f(0.0);
+  var wOff = 0.0;
+  var oily = 0.0;
+  if (D.lip.x > 0.5) {
+    lq = unpack4x8unorm(c.lip[side]);
+    var cmax = 0.0;
+    for (var k = 0u; k < 6u; k++) { cmax = max(cmax, unpack4x8unorm(c.lip[k]).w); }
+    wOff = D.lip.w * c.r * cmax;
+    oily = min(2.0 * lq.z, 1.0) * ig;
+  }
+  let ein2 = ein - wOff;                                     // inside the rim's outer edge (the outline less the wall)
+  let lw = clamp(D.harm.z, 0.5 / D.dpr, 0.3 * c.r);
+  let inner = cover_in(ein2 - lw, aa);                       // 1 inside the rim
+  // GREEN: the rim (and a neuron's second, inner line)
+  // (a thicker membrane gives more signal: the thickness gene against the founders' usual, 0.75 at half of it to 1.15 at twice)
+  let thick = select(1.0, mix(0.75, 1.15, clamp(g.memb.y / max(D.memb2.w, 1e-4) - 0.5, 0.0, 1.5) / 1.5), D.memb.x > 0.5);
+  let lipid = (D.harm.y + (1.0 - D.harm.y) * ig) * (1.0 + D.harm.w * oily) * thick;
+  let ring = (1.0 - inner) * cover_in(ein2, aa);
+  var rgb = G * D.harm.x * lipid * ring;
+  if (c.kind == KIND_NEU) {
+    let g0 = lw + max(0.6, 0.5 * lw);
+    let w2 = max(0.6 * lw, 0.5 / D.dpr);
+    rgb += G * 0.55 * D.harm.x * lipid * clamp(min(ein2 - g0, g0 + w2 - ein2) / aa + 0.5, 0.0, 1.0);
+  }
+  rgb += G * D.harm2.y * inner;
+  // the pixel's offset from the centre on screen (a honeycomb cell: local; an ellipse cell: F lp), and the stretch's axis
+  let Fd = cell_F(c);
+  let pw = select(vec2f(Fd.x * lp.x + Fd.y * lp.y, Fd.y * lp.x + Fd.z * lp.y), in.local, in.hh1.w > 0.5);
+  let em = length(vec2f(c.e1, c.e2));
+  let th = 0.5 * atan2(c.e2, c.e1);
+  let t = vec2f(cos(th), sin(th));
+  let sh = vec2f(f32(c.seed & 1023u), f32((c.seed >> 10u) & 1023u));   // each cell its own fibres
+  // VIOLET: the battery's soft glow, the busy inside, the engines' granules
+  let d = length(lp);
+  var vio = 0.0;
+  if (D.core > 0.0 && c.bat > 0.0) {
+    let rc = max(0.5 * D.core * c.r * sqrt(clamp(c.bat, 0.0, 1.0)), 0.6);
+    vio += D.harm2.z * sqrt(clamp(c.bat, 0.0, 1.0)) * exp(-d * d / (rc * rc));
+  }
+  let act = 1.0 - exp(-glow[in.id].y / max(D.hum2.y, 1e-6));
+  vio += D.harm2.w * act * (0.5 + 0.5 * hm_noise(pw / max(0.3 * c.r, 0.8) + sh));
+  if (D.ink1.w > 0.0) {
+    let hmax = D.ink2.w * c.r;
+    for (var k = 0u; k < 3u; k++) {
+      let rk = g.rate[k];
+      if (rk <= 0.0) { continue; }
+      let h = hmax * sqrt(clamp(rk / max(D.inkSed.w, 1e-3), 0.12, 1.0));
+      let a3 = -1.5707963 + f32(k) * 2.0943951;
+      let p = lp - vec2f(cos(a3), sin(a3)) * (D.ink3.w * c.r);
+      vio += D.harm3.x * exp(-(p.x * p.x + p.y * p.y) / max(0.45 * h * h, 0.2));
+    }
+  }
+  rgb += V * vio * inner;
+  // ORANGE: streaks along a strong stretch, muscle's striations, cartilage's matrix
+  var org = 0.0;
+  let fl = max(0.9 * c.r, 3.0);
+  let fw = max(0.13 * c.r, 0.7);
+  let fst = D.harm3.y * smoothstep(0.08, 0.35, em);
+  if (fst > 0.0) { org += fst * hm_fibres(pw + sh, t, fl, fw); }
+  if (c.kind == KIND_MUS && D.harm3.z > 0.0) {
+    let st = 0.5 + 0.5 * cos(TAU * (pw.x * t.x + pw.y * t.y) / max(0.3 * c.r, 1.4));
+    org += D.harm3.z * st * st * st * (0.55 + 0.45 * hm_noise(vec2f(t.x * pw.y - t.y * pw.x, 0.0) / fw + sh));
+  }
+  if (c.kind == KIND_CHO && D.harm3.w > 0.0) {
+    let ca = f32(c.seed & 255u) / 255.0 * 3.14159265;
+    org += D.harm3.w * hm_fibres(pw + sh, vec2f(cos(ca), sin(ca)), 0.7 * fl, fw);
+  }
+  rgb += mix(O, Y, 0.3) * org * inner;
+  // ORANGE: a crust wall, a fibrous band outside the rim along the wall, where this side's wall is (patchy where partial)
+  if (wOff > 0.0 && lq.w > 0.02 && D.harm4.x > 0.0) {
+    let band = (1.0 - cover_in(ein2, aa)) * cover_in(ein - 0.1 * wOff, aa);
+    let along = sd.y + sh.x;
+    let pch = smoothstep(0.0, 0.25, lq.w - hm_noise(vec2f(along / max(0.5 * c.r, 2.0), f32(side) * 3.1)));
+    let fib = 0.35 + 0.65 * smoothstep(0.3, 0.8, hm_noise(vec2f(along / max(0.7 * c.r, 2.5), ein / max(0.35 * wOff, 0.5)) + sh));
+    rgb += mix(mix(O, Y, 0.45), Rd, lq.y) * D.harm4.x * band * pch * fib;
+  }
+  // a starving cell (division mode) fades out as its starvation time runs down
+  let fade = D.div.z * smoothstep(0.0, 1.0, g.env.x * D.div.w);
+  rgb *= 1.0 - fade;
+  // premultiplied: the inside dark and nearly opaque, every light ADDED (alpha 0 at the rim and the wall)
+  let a = disc * inner * D.harm2.x * (1.0 - 0.6 * fade);
+  return vec4f(rgb * disc, a);
 }

@@ -101,11 +101,37 @@ export const NEON = {
   levels: { substances: 0.62, field: 0.2, spot: 0.4, charge: 0.55 },
 };
 
-/** The look in use: neon (true) or the flat palette (key E; src/neon.js keeps it). */
-export const LOOK = { neon: true };
+// Step H1: the HARMONIC look (user, 2026-11-16: "one of my original inspirations are these higher harmonic microscopy
+// images"): the dish drawn as a multiphoton microscope would show it, three detector channels added on black. Each
+// channel keeps a MEANING, by the physics of the signal it borrows (src/harmonic.js; a guide, "just the general look"):
+//   green   third-harmonic-like: INTERFACES. Cell membranes (brighter with lipid, a bit more with oil), oil and soap
+//           boundaries, so a packed tissue reads as a green honeycomb with dark insides
+//   orange  second-harmonic-like: ORDERED FIBRES. Crust (sediment chains) as a dense fibrous texture, crust walls round
+//           cells, stretched cells as streaks along their stretch, muscle's striations, cartilage's matrix; deeper and
+//           redder for heavy chains, yellow where dense
+//   violet  autofluorescence-like: METABOLISM. Fuel in the dish as a soft wispy haze, batteries, running engines, busy cells
+// Every other meaning (fates, bands, ...) is the neon palette's (the views V, the fluorescence's band colours); the quiet
+// layers are quieter still.
+export const HARMONIC = {
+  ...NEON,
+  name: 'harmonic',
+  spot: [170, 170, 184],
+  levels: { substances: 0.62, field: 0.2, spot: 0.22, charge: 0.55 },
+  harm: {
+    green: [70, 255, 60],         // THG: interfaces
+    orange: [255, 128, 22],       // SHG: ordered fibres
+    yellow: [255, 214, 70],       // ... where they are dense (light chains, the brightest)
+    red: [214, 44, 30],           // ... heavy chains, deeper
+    violet: [104, 70, 255],       // autofluorescence: metabolism
+    blue: [70, 120, 255],         // ... the light fuel's, bluer
+  },
+};
+
+/** The look in use: neon (true) or the flat palette (key E; src/neon.js keeps it); step H1: harmonic over either. */
+export const LOOK = { neon: true, harmonic: false };
 
 /** The palette in use. */
-export function pal() { return LOOK.neon ? NEON : FLAT; }
+export function pal() { return LOOK.harmonic ? HARMONIC : LOOK.neon ? NEON : FLAT; }
 
 /** An sRGB 0..255 triple as 0..1. */
 export function unit(rgb) { return [rgb[0] / 255, rgb[1] / 255, rgb[2] / 255]; }

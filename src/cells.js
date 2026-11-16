@@ -81,7 +81,7 @@ const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
 const FIELDS_BYTES = 432;      // struct Fields in cell_common.wgsl (step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
                                // step C9: + dv0..dv2; step C10: + wl0, wl1)
 const FIELD_FORMAT = 'rgba16float';
-const DRAW_BYTES = 1056;       // struct Draw in cell_draw.wgsl (step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
+const DRAW_BYTES = 1200;       // struct Draw in cell_draw.wgsl (step H1: + harm, harm2, harm3, harm4, hInk[5]; step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
                                // step C6d: + the dipoles)
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
@@ -377,6 +377,13 @@ export class Cells {
       fragment: { module: drawMod, entryPoint: 'fs', targets: [{ format: this.format, blend: { color: over, alpha: over } }] },
       primitive: { topology: 'triangle-list' },
     });
+    // step H1: the harmonic look's cells (the same quads, fs_harm; src/harmonic.js)
+    this.harmPipe = d.createRenderPipeline({
+      label: 'cell draw (harmonic)', layout: 'auto',
+      vertex: { module: drawMod, entryPoint: 'vs' },
+      fragment: { module: drawMod, entryPoint: 'fs_harm', targets: [{ format: this.format, blend: { color: over, alpha: over } }] },
+      primitive: { topology: 'triangle-list' },
+    });
 
     // compute pipelines with explicit layouts (the Sim uniform is bound with a dynamic offset)
     const C = GPUShaderStage.COMPUTE;
@@ -455,15 +462,15 @@ export class Cells {
         { binding: 2, resource: { buffer: this.glowBuf } }],
     });
     // one per genome copy (step C6: the parts read the engines; bioBuf[bioCur] is the current one)
-    this.drawBGs = this.bioBuf.map((bio) => d.createBindGroup({
-      layout: this.drawPipe.getBindGroupLayout(0),
-      entries: [
-        { binding: 0, resource: { buffer: this.drawU } },
-        { binding: 1, resource: { buffer: this.cellBuf } },
-        { binding: 2, resource: { buffer: bio } },
-        { binding: 3, resource: { buffer: this.glowBuf } },
-      ],
-    }));
+    const drawEntries = (bio) => [
+      { binding: 0, resource: { buffer: this.drawU } },
+      { binding: 1, resource: { buffer: this.cellBuf } },
+      { binding: 2, resource: { buffer: bio } },
+      { binding: 3, resource: { buffer: this.glowBuf } },
+    ];
+    this.drawBGs = this.bioBuf.map((bio) => d.createBindGroup({ layout: this.drawPipe.getBindGroupLayout(0), entries: drawEntries(bio) }));
+    // step H1: the harmonic pipeline's own (an automatic layout belongs to its pipeline)
+    this.harmBGs = this.bioBuf.map((bio) => d.createBindGroup({ layout: this.harmPipe.getBindGroupLayout(0), entries: drawEntries(bio) }));
   }
 
   /** The cells' radius: the reference's R, or smaller if `count` cells would not fit in the dish. */
@@ -1352,9 +1359,11 @@ export class Cells {
     const u3 = (rgb) => rgb.map((x) => x / 255);
     this.eat.lipids.writeDraw(a, 216, { crustLight: u3(P.lipid.crustLight), crustHeavy: u3(P.lipid.crustHeavy), pearl: u3(P.lipid.pearl) });   // step C12b
     this.guides.writeDraw(a, 236, L);   // step C13: the guides view
+    const HM = look.harmonic;            // step H1: the harmonic look (src/harmonic.js)
+    if (HM) HM.writeCells(a, 264);
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
-    pass.setPipeline(this.drawPipe);
-    pass.setBindGroup(0, this.drawBGs[this.bioCur]);
+    pass.setPipeline(HM ? this.harmPipe : this.drawPipe);
+    pass.setBindGroup(0, (HM ? this.harmBGs : this.drawBGs)[this.bioCur]);
     pass.draw(6, this.count);
   }
 }

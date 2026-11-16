@@ -41,6 +41,8 @@
 //   ?neon=0     step C6n: start with the flat look (key E); ?halo=off|low|medium|high (Shift+1); ?trails=0 (Shift+2);
 //               ?hum=0 (Shift+3); ?cheap=0|1 the phone's cheaper neon path off / on (default: on touch screens and small
 //               windows); ?machinery=1 start with every diagnostic layer shown (Shift+4; default: the clean view)
+//   ?look=harmonic  step H1: start with the harmonic look (key `, src/harmonic.js; ?look=neon, ?look=flat too); ?blur=0,
+//               ?grain=0, ?scalebar=0 (its slight blur, photon grain and scale bar off)
 //   ?until=T    run until simulation time T (s), then pause, exactly at that tick (for comparing runs; tools/shot.py)
 //   ?charge=0   step C6b: start with the charge field off (Shift+7); ?qstock=0 the cells' B charges by fate instead of
 //               from their stock (Shift+8); ?qfeel=0 the cells not feeling the grid's field (Shift+9); ?contours=1 the
@@ -491,6 +493,14 @@ function neonOptions(N) {
   }
   if (params.has('trails')) N.params.trails = flag('trails');
   if (params.has('hum')) N.params.hum = flag('hum');
+  // step H1: ?look=harmonic (also neon, flat), ?blur=0, ?grain=0, ?scalebar=0
+  const look = params.get('look');
+  if (look === 'harmonic') N.harmonic.on = true;
+  else if (look === 'neon' || look === 'flat') { N.harmonic.on = false; N.on = look === 'neon'; }
+  const HP = N.harmonic.params;
+  if (params.has('blur')) HP.blur = flag('blur');
+  if (params.has('grain')) HP.grain = flag('grain');
+  if (params.has('scalebar')) HP.scalebar = flag('scalebar');
 }
 
 /** Step C6b: the charge's URL options (see the top of this file). */
@@ -810,7 +820,10 @@ function onKey(e) {
     if (a) runAction(a, `shift+${e.key.toLowerCase()}`);
     return;
   }
-  const k = e.key.toLowerCase();
+  let k = e.key.toLowerCase();
+  // step H1: the key left of 1 (backquote) by its place on the keyboard, unless what it types is a key of its own (on a
+  // German keyboard it is a dead key, ^)
+  if (e.code === 'Backquote' && !e.shiftKey && !keys.plain.has(k)) k = '`';
   // step C6n: Shift + a digit key (by its place on the keyboard, e.code, as the symbol it types differs between
   // layouts), unless that symbol is already a key of its own (e.g. Shift+7 is / on a German keyboard, Shift+1 is 1 on a
   // French one: those keep their meaning)

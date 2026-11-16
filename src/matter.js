@@ -831,6 +831,15 @@ export class Matter {
     });
     this.drawU = d.createBuffer({ label: 'matter draw params', size: DRAW_BYTES, usage: U.UNIFORM | U.COPY_DST });
     this.drawAB = new ArrayBuffer(DRAW_BYTES);
+    // step H1: the harmonic look's substances (fs_harm, its own uniform HarmP at binding 8; src/harmonic.js)
+    this.harmPipe = d.createRenderPipeline({
+      label: 'matter draw (harmonic)', layout: 'auto',
+      vertex: { module: drawMod, entryPoint: 'vs' },
+      fragment: { module: drawMod, entryPoint: 'fs_harm', targets: [{ format: this.format, blend: { color: over, alpha: over } }] },
+      primitive: { topology: 'triangle-list' },
+    });
+    this.harmU = d.createBuffer({ label: 'matter draw (harmonic)', size: 144, usage: U.UNIFORM | U.COPY_DST });
+    this.harmF = new Float32Array(36);
     this.sampler = d.createSampler({ label: 'matter', magFilter: 'linear', minFilter: 'linear' });
     this.tex = null;          // [A, B] at the grid's size
   }
@@ -1316,7 +1325,7 @@ export class Matter {
   // ---------- drawing ----------
   compute() {}
 
-  render(pass) {
+  render(pass, frame = {}) {
     if (!this.tex || !this.view || this.showName === 'off') return;
     if (this.landscape && !this.landscape.params.on) return;
     const p = this.params, H = this.heat;
@@ -1332,6 +1341,20 @@ export class Matter {
           { binding: 5, resource: { buffer: this.springBuf } },
           { binding: 6, resource: this.tex[2].createView() },   // step C12: the oil's
           { binding: 7, resource: this.tex[3].createView() },   // step C12c: the excited atoms
+        ],
+      });
+      // step H1: the harmonic pipeline's own (its automatic layout holds only what fs_harm reads: no free atoms' texture)
+      this.harmBG = this.device.createBindGroup({
+        layout: this.harmPipe.getBindGroupLayout(0),
+        entries: [
+          { binding: 0, resource: { buffer: this.medium.buffer } },
+          { binding: 1, resource: { buffer: this.drawU } },
+          { binding: 3, resource: this.tex[1].createView() },
+          { binding: 4, resource: this.sampler },
+          { binding: 5, resource: { buffer: this.springBuf } },
+          { binding: 6, resource: this.tex[2].createView() },
+          { binding: 7, resource: this.tex[3].createView() },
+          { binding: 8, resource: { buffer: this.harmU } },
         ],
       });
     }
@@ -1355,6 +1378,15 @@ export class Matter {
     this.excited.writeDraw(f, 84);   // step C12c: the excited haze's sparkle
     this.electrons.writeDraw(f, 92, P, H);   // step C12d: the minerals and the fluorescence glow
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
+    const HM = frame.look && frame.look.harmonic;   // step H1: the harmonic look
+    if (HM) {
+      HM.writeMatter(this.harmF, 0, Math.max(1e-4, p.sedStep), Math.max(1e-4, p.half));
+      this.device.queue.writeBuffer(this.harmU, 0, this.harmF);
+      pass.setPipeline(this.harmPipe);
+      pass.setBindGroup(0, this.harmBG);
+      pass.draw(3);
+      return;
+    }
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG);
     pass.draw(3);

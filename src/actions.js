@@ -108,9 +108,22 @@ export function makeActions(app) {
       help: 'every atom out of the dish (booked as gone in the atoms ledger)' },
 
     // ---------- step C6n: the look (drawing only) ----------
-    { id: 'neon', keys: ['e'], label: 'neon look', group: 'look', type: 'toggle', get: () => app.neon.on,
+    { id: 'neon', keys: ['e'], label: 'neon look', group: 'look', type: 'toggle', get: () => app.neon.on && !app.neon.harmonic.on,
       run: () => app.neon.toggle(),
       help: 'cells as bright neon tubes with a tight halo, trails and hum (off: the flat look of steps 1 to C6)' },
+    // ---------- step H1: the harmonic look (src/harmonic.js) ----------
+    { id: 'harmonic', keys: ['`'], label: 'harmonic look', group: 'look', type: 'toggle', get: () => app.neon.harmonic.on,
+      run: () => app.neon.harmonic.toggle(),
+      help: 'the dish as a multiphoton (higher harmonic) microscope image, channels added on black: green = interfaces (membranes, brighter with lipid; oil rims), orange = ordered fibres (crust, stretched cells, muscle), violet = metabolism (fuel, batteries, busy cells)' },
+    { id: 'hblur', keys: [], label: 'slight blur', group: 'look', type: 'toggle', get: () => app.neon.harmonic.params.blur,
+      run: () => `slight blur ${flip(app.neon.harmonic.params, 'blur') ? 'on: soft at the pixel scale, as a scanned image' : 'off: sharp'}${app.neon.harmonic.on ? '' : ' (the harmonic look is off: `)'}`,
+      help: 'a scanned image’s slight softness (harmonic look)' },
+    { id: 'hgrain', keys: [], label: 'photon grain', group: 'look', type: 'toggle', get: () => app.neon.harmonic.params.grain,
+      run: () => `photon grain ${flip(app.neon.harmonic.params, 'grain') ? 'on: each channel counts its own photons' : 'off'}${app.neon.harmonic.on ? '' : ' (the harmonic look is off: `)'}`,
+      help: 'photon noise per channel, more where it is brighter (harmonic look)' },
+    { id: 'hscale', keys: [], label: 'scale bar', group: 'look', type: 'toggle', get: () => app.neon.harmonic.params.scalebar,
+      run: () => { const H = app.neon.harmonic; flip(H.params, 'scalebar'); H.showBar(); return `scale bar ${H.params.scalebar ? 'shown (a cell is 12 µm across, as in the CPU version)' : 'hidden'}${H.on ? '' : ' (the harmonic look is off: `)'}`; },
+      help: 'a scale bar in the corner, a cell 12 µm across (harmonic look)' },
     { id: 'halo', keys: ['shift+1'], label: 'halo', group: 'look', type: 'cycle', get: () => app.neon.halo.name,
       options: () => ['off', 'low', 'medium', 'high'],
       set: (v) => { app.neon.params.halo = Math.max(0, ['off', 'low', 'medium', 'high'].indexOf(v)); return `halo ${v}`; },

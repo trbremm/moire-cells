@@ -25,9 +25,13 @@
 // at most 2 x 3 small passes at 1/2 and 1/4 (or 1/4 and 1/8) resolution. The cheap path (phones and small screens): the
 // tight halo at 1/4 resolution, no wide level, shorter trails; and if frames run slow at 1x to 8x, the halo steps down
 // by itself (watch).
+// Step H1: the HARMONIC look (src/harmonic.js) replaces steps 1, 4 and 5 while it is on: no ripples (the canvas is cleared
+// to black by the last pass), no trails, no hum, no halo; the layers draw their harmonic versions into the same buffers
+// (frame.look.harmonic), and the last pass (blur, grain, shoulder) puts the light buffer onto the canvas.
 
 import { loadShader } from './gpu.js';
 import { LOOK } from './palette.js';
+import { Harmonic } from './harmonic.js';
 
 export const LIGHT_FORMAT = 'rgba16float';
 
@@ -71,6 +75,7 @@ export class Neon {
     this.reduced = 0;       // watch: steps taken
     this.view = null;
     this.timing = null;     // probe: GPU ms of the drawing
+    this.harmonic = null;   // step H1: the harmonic look (src/harmonic.js)
   }
 
   get on() { return LOOK.neon; }
@@ -104,6 +109,7 @@ export class Neon {
     this.downU = [0, 1].map((k) => d.createBuffer({ label: `neon down ${k}`, size: 32, usage: U.UNIFORM | U.COPY_DST }));
     this.blurU = [0, 1, 2, 3].map((k) => d.createBuffer({ label: `neon blur ${k}`, size: 112, usage: U.UNIFORM | U.COPY_DST }));
     this.compU = d.createBuffer({ label: 'neon composite', size: 16, usage: U.UNIFORM | U.COPY_DST });
+    this.harmonic = await Harmonic.create(d, this.canvasFormat);   // step H1
   }
 
   // ---------- targets ----------
@@ -166,17 +172,22 @@ export class Neon {
   encode(encoder, f, canvasView, L) {
     if (!this.view) return;
     this.makeTargets();   // (cheap when nothing changed; moire.neon.params.res may have)
-    const on = this.on, P = this.params, d = this.device;
+    const HM = this.harmonic, harm = !!(HM && HM.on);   // step H1: the harmonic look over either
+    const on = this.on && !harm, P = this.params, d = this.device;
     f.now = this.time;                          // real time, for the hum
-    f.look = { neon: on, hum: on && P.hum };    // what the layers draw (src/cells.js, src/matter.js, ...)
-    // 1. background
-    let pass = encoder.beginRenderPass({
-      label: 'background', colorAttachments: [{ view: canvasView, clearValue: BG, loadOp: 'clear', storeOp: 'store' }],
-    });
-    L.background.render(pass, f);
-    pass.end();
-    // the cells' activity for the hum (a small compute pass of the drawing's own; reads the cells only)
-    if (on && P.hum && L.cells.encodeGlow) L.cells.encodeGlow(encoder, f, this.time);
+    f.look = { neon: on, hum: on && P.hum, harmonic: harm ? HM : null };   // what the layers draw (src/cells.js, src/matter.js, ...)
+    // 1. background (step H1, harmonic: none; its last pass clears the canvas to black)
+    let pass;
+    if (!harm) {
+      pass = encoder.beginRenderPass({
+        label: 'background', colorAttachments: [{ view: canvasView, clearValue: BG, loadOp: 'clear', storeOp: 'store' }],
+      });
+      L.background.render(pass, f);
+      pass.end();
+    }
+    // the cells' activity for the hum (a small compute pass of the drawing's own; reads the cells only); step H1: the
+    // harmonic look's violet (busy cells) reads it too
+    if (((on && P.hum) || harm) && L.cells.encodeGlow) L.cells.encodeGlow(encoder, f, this.time);
     // 2. the cells into the trail buffer
     const trails = on && P.trails;
     pass = encoder.beginRenderPass({
@@ -201,6 +212,12 @@ export class Neon {
     pass.draw(3);
     for (const l of L.top) if (l.renderTop) l.renderTop(pass, f);
     pass.end();
+    // step H1, harmonic: the last pass (blur, grain, shoulder) instead of the halo and the composite
+    if (harm) {
+      HM.encode(encoder, canvasView, this.views.light, this.view.pxW, this.view.pxH, this.time);
+      HM.scaleBar(L.cells.R);
+      return;
+    }
     // 4. the halo
     const H = this.halo, v = this.view;
     const halo = on && H.k1 > 0, wide = halo && P.level2 && H.k2 > 0;
@@ -294,7 +311,10 @@ export class Neon {
   }
 
   // ---------- switches ----------
-  toggle() { this.on = !this.on; return this.on ? 'neon look: bright tubes with a tight halo, trails and hum (E: flat look)' : 'flat look (as before step C6n): crisp shapes, faded colours, no glow (E: neon)'; }
+  toggle() {
+    if (this.harmonic && this.harmonic.on) { this.harmonic.on = false; this.on = true; return 'neon look: bright tubes with a tight halo, trails and hum (the harmonic look is off)'; }
+    this.on = !this.on;
+    return this.on ? 'neon look: bright tubes with a tight halo, trails and hum (E: flat look)' : 'flat look (as before step C6n): crisp shapes, faded colours, no glow (E: neon)'; }
 
   cycleHalo() {
     const P = this.params;
@@ -303,6 +323,7 @@ export class Neon {
   }
 
   label() {
+    if (this.harmonic && this.harmonic.on) return this.harmonic.label();
     if (!this.on) return 'flat';
     return `neon · halo ${this.halo.name} · trails ${this.params.trails ? 'on' : 'off'} · hum ${this.params.hum ? 'on' : 'off'}`;
   }
@@ -314,7 +335,7 @@ export class Neon {
    */
   watch(frameMs, realDt, steady) {
     const P = this.params;
-    if (!this.on || !steady || this.halo.k1 <= 0 || frameMs < P.autoMs) { this.slow = 0; return null; }
+    if (!this.on || (this.harmonic && this.harmonic.on) || !steady || this.halo.k1 <= 0 || frameMs < P.autoMs) { this.slow = 0; return null; }
     this.slow += realDt;
     if (this.slow < 3) return null;
     this.slow = 0;
@@ -327,6 +348,7 @@ export class Neon {
   /** The F overlay's line. */
   overlayLine() {
     const P = this.params, v = this.view, T = this.timing;
+    if (this.harmonic && this.harmonic.on) return `look (\`): ${this.harmonic.label()}${T ? ` · drawing per frame (gpu, probe) ${T.toFixed(2)} ms` : ''}`;
     if (!this.on) return `look (E): flat${T ? ` · drawing per frame (gpu, probe) ${T.toFixed(2)} ms` : ''}`;
     return `look (E): neon · halo (Shift+1) ${this.halo.name}: 1/${P.res} res, sigma ${P.sigma1} px${P.level2 && this.halo.k2 > 0 ? ` + 1/${2 * P.res} res, ${P.sigma2} px` : ''}` +
       ` · trails (Shift+2) ${P.trails ? `${P.trail} s` : 'off'} · hum (Shift+3) ${P.hum ? 'on' : 'off'}${this.cheap ? ' · cheap path' : ''}${this.reduced ? ` · stepped down ${this.reduced}x` : ''}` +

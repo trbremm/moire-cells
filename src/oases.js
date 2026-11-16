@@ -52,6 +52,8 @@ export class Oases {
       gush: 4,            // a new oasis gushes: x this rate at first, settling over `gushTime` s
       gushTime: 30,
       margin: 0.08,       // shares of the dish's shorter side kept free at the edges
+      bury: 1 / 90,       // with the nutrient scarce: the share of the free trace in the dish that settles into the floor per s (buried,
+                          // booked as lost), so plumes fade with distance and old oases do not leave trace everywhere (?bury=)
     };
     this.list = [];       // { s (the spring), vx, vy, period, phase, rate0 }
     this.pending = [];    // times a new oasis is due
@@ -68,6 +70,9 @@ export class Oases {
     for (const [a, v] of Object.entries(mix)) if (a !== 'trace') out[a] = v / rest;
     return out;
   }
+
+  /** The share of the free trace that settles per tick (struct MatterP n1.w; 0 while trace is not scarce). */
+  buryPerTick(dt) { const b = this.params.bury; return this.params.scarce && b > 0 ? 1 - Math.exp(-b * dt) : 0; }
 
   resize(view) {
     if (this.view && (this.view.cssW !== view.cssW || this.view.cssH !== view.cssH)) {

@@ -592,9 +592,18 @@ T1. TISSUES THAT PAY: PRESSURE TO LINK (user 2026-11-16: "we have no evolutive p
     plants)"). After C12f, C12g. Pieces, each its own switch, in this order:
     - AN INSIDE: a membrane side pressed against a neighbour exchanges with that neighbour (or not at all), not with the
       dish; outer cells meet the haze, vandal atoms and heat, inner cells are sheltered.
-    - SAME DNA, DIFFERENT JOBS: each fate (existing contact-made fates; today they only change glue and colour) carries a
-      small inherited table of MODIFIERS to the shared genes (e.g. "bark": wall up, thick membrane, pigment off; "leaf":
-      pigment on, soft membrane); position decides fate, fate decides which genes are used (gene expression).
+    - SAME DNA, DIFFERENT JOBS, BY A GENE NETWORK (user 2026-11-16: "our genetics must be stronger, tissue differentiation
+      by contact is too rigid. We need to approximate that with phenotype and genes"; REPLACES the per-fate modifier
+      table): each cell runs a small GENE REGULATORY NETWORK. A handful of regulator genes (~6-8) with EXPRESSION levels
+      (cell state, inherited by daughters = cell memory), wired by genome weights (sparse: a few inputs each), updated
+      slowly: x_i <- sigmoid(sum W_ij x_j + sum V_ik sense_k + b_i). SENSES: contacts and free sides, what the membrane
+      feels of each field, light, oxygen/t inside, battery, swelling, stock, neighbours' signals (cells can emit a
+      regulator as a contact signal). OUTPUTS modulate the existing genes as base levels (pigment, engine rates, wall,
+      thickness, stiffness, glue per side, pumps, channels, division readiness, motility, field emission). PHENOTYPE =
+      genes x state x surroundings. Cell types are then stable ATTRACTORS of the network (Waddington landscape), not
+      rules; the contact fates become one input among many (or readouts). Mutation tweaks weights, rewires, sometimes
+      DUPLICATES a regulator. Founders with zero weights behave as today. Look: a REPORTER view, like GFP reporters
+      (pick a regulator, cells glow by its expression). Neutral control as always.
     - KIN CHANNELS: passive sharing through contacts with similar cells (plasmodesmata / gap junctions) as a gene.
     - Hand-designed tissues in the lab, each from ONE genome: PLANT (leaf core, bark ring), CYANOBACTERIAL FILAMENT
       (light-eaters with a thick-walled breather every few cells eating the chain's oxygen, like heterocysts), BIOFILM

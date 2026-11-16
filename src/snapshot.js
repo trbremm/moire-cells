@@ -449,6 +449,9 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     if (opts.settings !== false && M.pigments && !(S.settings && S.settings['pigments.params'])) {
       Object.assign(M.pigments.params, { matter: false, sat: false, inhib: false });   // step N1
       notes.push('saved before step N1: pigments free, no saturation (as it ran)');
+    } else if (opts.settings !== false && M.pigments && !('shed' in S.settings['pigments.params'])) {
+      M.pigments.params.shed = false;   // (the C12g + N1 merge's follow-up)
+      notes.push("saved before the trace shed: a worn pigment's trace goes back into the stock (as it ran)");
     }
     if (opts.settings !== false && M.water && !(S.settings && S.settings['water.params'])) {
       Object.assign(M.water.params, { caustics: false, currents: false });   // step N1

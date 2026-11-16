@@ -1,0 +1,380 @@
+{
+  "name": "merge-n1-check-ab",
+  "description": "After the follow-ups (trace leaves life, founders mixed B sign) books check: 480 s at MAX (seed 5), the whole dish lit, every N1 part on, C12g on; soap, linker, ion, mineral springs; N (60 s), 40 cells placed (80 s), a wash (100 s), resizes (150 s, 220 s), N1 switches off and on (120..200, 230..290), C12g switches and knobs off and on (300..380), G (390 s), a snapshot saved and loaded at once (420 s); atoms and charge rounding must stay 0; plus the trace shed off (205 s) and on (215 s) at runtime; snapshot round trip and a G with bSign plus then mixed",
+  "condition": {
+    "name": "merge-n1-check-ab",
+    "description": "After the follow-ups (trace leaves life, founders mixed B sign) books check: 480 s at MAX (seed 5), the whole dish lit, every N1 part on, C12g on; soap, linker, ion, mineral springs; N (60 s), 40 cells placed (80 s), a wash (100 s), resizes (150 s, 220 s), N1 switches off and on (120..200, 230..290), C12g switches and knobs off and on (300..380), G (390 s), a snapshot saved and loaded at once (420 s); atoms and charge rounding must stay 0; plus the trace shed off (205 s) and on (215 s) at runtime; snapshot round trip and a G with bSign plus then mixed",
+    "query": {
+      "seed": 5,
+      "light": "full"
+    },
+    "duration": 480,
+    "sample_every": 10,
+    "resizes": [
+      {
+        "t": 150,
+        "size": "1000x700"
+      },
+      {
+        "t": 220,
+        "size": "1280x800"
+      }
+    ],
+    "evals": [
+      {
+        "t": 5,
+        "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.35, 'soap', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.5, 'linker', 120); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.3, 'ions', 120); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 1e9); if (!moire.oases.started) moire.oases.start(); return moire.matter.springs.map(s => s.kind)"
+      },
+      {
+        "t": 60,
+        "js": "return moire.control.action('culture')"
+      },
+      {
+        "t": 80,
+        "js": "return await moire.app.place(Array.from({length: 40}, (_, k) => [150 + 13 * k, 120]), moire.genome.founders[0])"
+      },
+      {
+        "t": 100,
+        "js": "return moire.control.action('wash')"
+      },
+      {
+        "t": 105,
+        "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.4, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 400); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.4, 'ions', 200); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'soap', 200); return 'springs again'"
+      },
+      {
+        "t": 120,
+        "js": "moire.pigments.params.matter = false; return 'pigments free'"
+      },
+      {
+        "t": 135,
+        "js": "moire.pigments.params.matter = true; moire.pigments.params.sat = false; return 'pigments built, no saturation'"
+      },
+      {
+        "t": 160,
+        "js": "moire.pigments.params.sat = true; moire.pigments.params.inhib = false; return 'saturation, no bleaching'"
+      },
+      {
+        "t": 180,
+        "js": "moire.pigments.params.inhib = true; moire.water.params.caustics = false; return 'caustics off'"
+      },
+      {
+        "t": 195,
+        "js": "moire.water.params.caustics = true; moire.water.params.currents = false; return 'currents off'"
+      },
+      {
+        "t": 205,
+        "js": "moire.pigments.params.shed = false; return 'shed off'"
+      },
+      {
+        "t": 215,
+        "js": "moire.pigments.params.shed = true; return 'shed on'"
+      },
+      {
+        "t": 230,
+        "js": "moire.water.params.currents = true; moire.water.params.speed = 2; moire.water.params.gyre = 2; return 'currents strong'"
+      },
+      {
+        "t": 245,
+        "js": "moire.water.params.speed = 0.35; moire.water.params.gyre = 0.25; moire.oases.params.scarce = false; return 'trace everywhere'"
+      },
+      {
+        "t": 260,
+        "js": "moire.oases.params.scarce = true; moire.oases.params.roam = false; moire.oases.params.count = 6; return 'oases fixed, 6'"
+      },
+      {
+        "t": 275,
+        "js": "moire.oases.params.roam = true; moire.oases.params.count = 2; moire.oases.params.life = 20; return 'oases roam, 2, short lives'"
+      },
+      {
+        "t": 290,
+        "js": "moire.oases.params.life = 300; moire.oases.params.count = 3; return 'oases back'"
+      },
+      {
+        "t": 300,
+        "js": "moire.ions.params.block = false; return 'block off'"
+      },
+      {
+        "t": 310,
+        "js": "moire.ions.params.block = true; moire.ions.params.genes = false; return 'block on, channel genes off'"
+      },
+      {
+        "t": 320,
+        "js": "moire.ions.params.genes = true; moire.ions.params.volt = true; moire.ions.params.kV = 20; return 'voltage push on, strong'"
+      },
+      {
+        "t": 330,
+        "js": "moire.ions.params.ionPass = 0; moire.ions.params.chanBase = 0.01; moire.pumps.params.vCap = 0.01; return 'ions nearly shut, small capacitance'"
+      },
+      {
+        "t": 345,
+        "js": "moire.ions.params.ionPass = 1; moire.ions.params.chanBase = 1; return 'ions wide open'"
+      },
+      {
+        "t": 355,
+        "js": "moire.ions.params.ionPass = 0.05; moire.ions.params.chanBase = 0.2; moire.ions.params.kV = 4; moire.ions.params.volt = false; moire.pumps.params.vCap = 0.1; moire.membrane.params.on = false; return 'knobs back, membrane chemistry off'"
+      },
+      {
+        "t": 365,
+        "js": "moire.membrane.params.on = true; moire.lipids.params.on = false; return 'lipids off'"
+      },
+      {
+        "t": 375,
+        "js": "moire.lipids.params.on = true; moire.charge.params.on = true; return 'lipids on, charge field on'"
+      },
+      {
+        "t": 385,
+        "js": "moire.charge.params.on = false; return 'charge field off'"
+      },
+      {
+        "t": 390,
+        "js": "return moire.control.action('genomes')"
+      },
+      {
+        "t": 420,
+        "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }"
+      },
+      {
+        "t": 440,
+        "js": "moire.genome.params.bSign = 'plus'; moire.control.action('genomes'); const a = moire.genome.founders.map(g => Math.sign(g[62])); moire.genome.params.bSign = 'mixed'; moire.control.action('genomes'); return { plus: a, mixed: moire.genome.founders.map(g => Math.sign(g[62])) }"
+      }
+    ],
+    "shots": [
+      {
+        "t": 200
+      },
+      {
+        "t": 340
+      },
+      {
+        "t": 480,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "stall": 120
+  },
+  "url": "http://localhost:65192/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=5&light=full",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "a118d09c8e2ffaedbc6549515ab821de2abf204a",
+  "dirty": true,
+  "started": "2026-11-16T21:39:48",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 480.0,
+  "run_wall_s": 73.58,
+  "speed_reached": 6.52,
+  "samples": 49,
+  "shots": [
+    "shots/t200.png",
+    "shots/t340.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 5.000000000000003,
+      "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.35, 'soap', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.5, 'linker', 120); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.3, 'ions', 120); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 1e9); if (!moire.oases.started) moire.oases.start(); return moire.matter.springs.map(s => s.kind)",
+      "result": [
+        "light",
+        "heavy",
+        "oasis",
+        "oasis",
+        "oasis",
+        "soap",
+        "linker",
+        "ions",
+        "light",
+        "heavy"
+      ]
+    },
+    {
+      "t": 60.00000000000044,
+      "js": "return moire.control.action('culture')",
+      "result": true
+    },
+    {
+      "t": 79.99999999999991,
+      "js": "return await moire.app.place(Array.from({length: 40}, (_, k) => [150 + 13 * k, 120]), moire.genome.founders[0])",
+      "result": 40
+    },
+    {
+      "t": 99.99999999999885,
+      "js": "return moire.control.action('wash')",
+      "result": true
+    },
+    {
+      "t": 104.9999999999989,
+      "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.4, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 400); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.4, 'ions', 200); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'soap', 200); return 'springs again'",
+      "result": "springs again"
+    },
+    {
+      "t": 119.99999999999817,
+      "js": "moire.pigments.params.matter = false; return 'pigments free'",
+      "result": "pigments free"
+    },
+    {
+      "t": 134.99999999999793,
+      "js": "moire.pigments.params.matter = true; moire.pigments.params.sat = false; return 'pigments built, no saturation'",
+      "result": "pigments built, no saturation"
+    },
+    {
+      "t": 159.99999999999804,
+      "js": "moire.pigments.params.sat = true; moire.pigments.params.inhib = false; return 'saturation, no bleaching'",
+      "result": "saturation, no bleaching"
+    },
+    {
+      "t": 179.99999999999736,
+      "js": "moire.pigments.params.inhib = true; moire.water.params.caustics = false; return 'caustics off'",
+      "result": "caustics off"
+    },
+    {
+      "t": 194.9999999999976,
+      "js": "moire.water.params.caustics = true; moire.water.params.currents = false; return 'currents off'",
+      "result": "currents off"
+    },
+    {
+      "t": 204.9999999999982,
+      "js": "moire.pigments.params.shed = false; return 'shed off'",
+      "result": "shed off"
+    },
+    {
+      "t": 214.99999999999872,
+      "js": "moire.pigments.params.shed = true; return 'shed on'",
+      "result": "shed on"
+    },
+    {
+      "t": 229.99999999999898,
+      "js": "moire.water.params.currents = true; moire.water.params.speed = 2; moire.water.params.gyre = 2; return 'currents strong'",
+      "result": "currents strong"
+    },
+    {
+      "t": 244.9999999999994,
+      "js": "moire.water.params.speed = 0.35; moire.water.params.gyre = 0.25; moire.oases.params.scarce = false; return 'trace everywhere'",
+      "result": "trace everywhere"
+    },
+    {
+      "t": 259.9999999999993,
+      "js": "moire.oases.params.scarce = true; moire.oases.params.roam = false; moire.oases.params.count = 6; return 'oases fixed, 6'",
+      "result": "oases fixed, 6"
+    },
+    {
+      "t": 274.9999999999998,
+      "js": "moire.oases.params.roam = true; moire.oases.params.count = 2; moire.oases.params.life = 20; return 'oases roam, 2, short lives'",
+      "result": "oases roam, 2, short lives"
+    },
+    {
+      "t": 289.99999999999994,
+      "js": "moire.oases.params.life = 300; moire.oases.params.count = 3; return 'oases back'",
+      "result": "oases back"
+    },
+    {
+      "t": 299.99999999999983,
+      "js": "moire.ions.params.block = false; return 'block off'",
+      "result": "block off"
+    },
+    {
+      "t": 309.99999999999847,
+      "js": "moire.ions.params.block = true; moire.ions.params.genes = false; return 'block on, channel genes off'",
+      "result": "block on, channel genes off"
+    },
+    {
+      "t": 319.99999999999824,
+      "js": "moire.ions.params.genes = true; moire.ions.params.volt = true; moire.ions.params.kV = 20; return 'voltage push on, strong'",
+      "result": "voltage push on, strong"
+    },
+    {
+      "t": 329.9999999999975,
+      "js": "moire.ions.params.ionPass = 0; moire.ions.params.chanBase = 0.01; moire.pumps.params.vCap = 0.01; return 'ions nearly shut, small capacitance'",
+      "result": "ions nearly shut, small capacitance"
+    },
+    {
+      "t": 344.9999999999989,
+      "js": "moire.ions.params.ionPass = 1; moire.ions.params.chanBase = 1; return 'ions wide open'",
+      "result": "ions wide open"
+    },
+    {
+      "t": 354.9999999999993,
+      "js": "moire.ions.params.ionPass = 0.05; moire.ions.params.chanBase = 0.2; moire.ions.params.kV = 4; moire.ions.params.volt = false; moire.pumps.params.vCap = 0.1; moire.membrane.params.on = false; return 'knobs back, membrane chemistry off'",
+      "result": "knobs back, membrane chemistry off"
+    },
+    {
+      "t": 364.9999999999994,
+      "js": "moire.membrane.params.on = true; moire.lipids.params.on = false; return 'lipids off'",
+      "result": "lipids off"
+    },
+    {
+      "t": 374.9999999999996,
+      "js": "moire.lipids.params.on = true; moire.charge.params.on = true; return 'lipids on, charge field on'",
+      "result": "lipids on, charge field on"
+    },
+    {
+      "t": 385.0000000000001,
+      "js": "moire.charge.params.on = false; return 'charge field off'",
+      "result": "charge field off"
+    },
+    {
+      "t": 390.00000000000006,
+      "js": "return moire.control.action('genomes')",
+      "result": true
+    },
+    {
+      "t": 419.99999999999864,
+      "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }",
+      "result": {
+        "exact": true,
+        "notes": [],
+        "rounding": {
+          "energy": -0.027191162109375,
+          "atoms": 0,
+          "charge": 0,
+          "snapshot": {
+            "energy": -0.027191162109375,
+            "atoms": 0,
+            "charge": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 439.99999999999665,
+      "js": "moire.genome.params.bSign = 'plus'; moire.control.action('genomes'); const a = moire.genome.founders.map(g => Math.sign(g[62])); moire.genome.params.bSign = 'mixed'; moire.control.action('genomes'); return { plus: a, mixed: moire.genome.founders.map(g => Math.sign(g[62])) }",
+      "result": {
+        "plus": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "mixed": [
+          1,
+          -1,
+          -1,
+          -1,
+          -1,
+          1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          1
+        ]
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-16T21:41:45",
+  "wall_s": 117.43
+}

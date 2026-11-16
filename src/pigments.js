@@ -8,6 +8,13 @@
 //                            assembly costs `cost` energy per unit from the battery, as heat (its own energy is the free atoms', 0)
 //   WEAR                     the pigment falls apart into its atoms at `wear` per s (back into the stock), so a harvester keeps
 //                            paying matter and battery to keep it: harvesting is no longer free
+//   TRACE LEAVES LIFE        (`shed`, after the C12g + N1 merge) a worn or bleached pigment's TRACE atom goes to the DISH under the
+//                            cell, not back into the stock (its two l do): the broken antenna loses its metal, as a cell loses the
+//                            nutrients of the proteins it breaks down. So a lineage cannot carry its trace along for ever: every
+//                            pigment's trace passes through the dish once per lifetime (about 2 min), where it settles into the floor
+//                            (the oases' bury) or is caught again, mostly by cells near an oasis's plume. (Dying and bursting cells
+//                            already spilled their trace into the dish; free trace in the stock already leaks with the passive exchange
+//                            at its own slow spreading speed.)
 //   ITS DEPTH                a slot's optical depth is pigK x rate x the share of the wanted pigment the cell holds (the want: `want`
 //                            per R^2 of the cell's area per unit of harvest rate)
 //   SATURATION               of the photons caught at a light s (a share of the full noon light, power 33, straight down), only
@@ -25,7 +32,7 @@ import { fmt, HEAT_SCALE } from './heat.js';
 import { ATOM_SCALE } from './matter.js';
 
 export const LG_N1 = 28928;          // heat_common.wgsl: 16 counters, 64-bit, 64 slots (128 words each) (28416 before the merge with C12g)
-const N1 = ['rise', 'caught', 'iSat', 'iCof', 'iMat', 'iCap', 'iBat', 'iWaste', 'built', 'buildE', 'wear', 'inhib', 'held', 'cells'];
+const N1 = ['rise', 'caught', 'iSat', 'iCof', 'iMat', 'iCap', 'iBat', 'iWaste', 'built', 'buildE', 'wear', 'inhib', 'held', 'cells', 'shed'];
 const N1_ENERGY = /^(rise|buildE)$/;
 const N1_SNAP = /^(held|cells)$/;
 export const REF_POWER = 33;         // the light's default power (src/light.js): "the full noon light" saturation is measured against
@@ -39,6 +46,7 @@ export class Pigments {
       matter: true,      // pigments are built from the stock (a trace and two l per count) and wear out (?pigmatter=0: free, as before)
       sat: true,         // photosynthesis saturates (?pigsat=0)
       inhib: true,       // photons past saturation bleach the pigment (?inhib=0)
+      shed: true,        // a worn or bleached pigment's trace goes to the dish, not the stock (?pigshed=0: back into the stock, as in N1)
       // knobs
       want: 0.01,        // the pigment a cell wants, units per R^2 of its area per unit of harvest rate (?pigwant=)
       build: 0.5,        // share of the shortfall built per s
@@ -55,7 +63,7 @@ export class Pigments {
   get on() { const E = this.eat.params; return !!(E.on && E.engines); }
   flags() {
     const p = this.params;
-    return (p.matter ? 1 : 0) | (p.sat ? 2 : 0) | (p.inhib && p.sat ? 4 : 0);
+    return (p.matter ? 1 : 0) | (p.sat ? 2 : 0) | (p.inhib && p.sat ? 4 : 0) | (p.shed ? 8 : 0);
   }
 
   /** The eat pass's words (struct EatP nl[0], nl[1], from word o). */
@@ -108,16 +116,16 @@ export class Pigments {
     const pc = (x) => `${Math.round(100 * x)}%`, u = C.unused;
     if (compact) return `PIGMENTS light makes ${pc(C.lightShare)} of income · held ${fmt(C.held)} · photons used ${pc(C.used)}`;
     return `PIGMENTS  batteries +${fmt(C.gain)}/s, light made ${pc(C.lightShare)} (${fmt(C.fromLight)}/s) · pigment held ${fmt(C.held)} in ${fmt(C.cells)} cells` +
-      ` (built ${fmt(C.rate.built)}/s, worn ${fmt(C.rate.wear)}/s, bleached ${fmt(C.rate.inhib)}/s) · photons caught ${fmt(C.rate.caught)}/s, used ${pc(C.used)};` +
+      ` (built ${fmt(C.rate.built)}/s, worn ${fmt(C.rate.wear)}/s, bleached ${fmt(C.rate.inhib)}/s; trace to the dish ${fmt(C.rate.shed)}/s) · photons caught ${fmt(C.rate.caught)}/s, used ${pc(C.used)};` +
       ` idle: saturated ${pc(u.sat)} · no trace ${pc(u.cof)} · no material ${pc(u.mat)} · top speed ${pc(u.cap)} · battery ${pc(u.bat)} · clogged ${pc(u.waste)}` +
-      ` · rules: matter ${on(p.matter)}, saturation ${on(p.sat)}, bleaching ${on(p.inhib && p.sat)}`;
+      ` · rules: matter ${on(p.matter)}, saturation ${on(p.sat)}, bleaching ${on(p.inhib && p.sat)}, trace shed ${on(p.shed)}`;
   }
 
   overlayLines() {
     const p = this.params, on = (x) => (x ? 'on' : 'off'), C = this.census;
     const lines = [`light needs matter (step N1): pigment from the stock ${on(p.matter)} (2 l + 1 trace per count, want ${p.want}/R² per rate, built ${p.build}/s,` +
-      ` cost ${p.cost} per unit, wears ${fmt(p.wear)}/s) · saturation ${on(p.sat)} (Isat ${p.isat} of the full noon light) · bleaching ${on(p.inhib)} (${p.bleach} per photon past it)`];
-    if (C) lines.push(`pigments: totals built ${fmt(C.tot.built)}, worn ${fmt(C.tot.wear)}, bleached ${fmt(C.tot.inhib)}, assembly paid ${fmt(C.tot.buildE)} energy; light stored ${fmt(C.rate.rise)}/s`);
+      ` cost ${p.cost} per unit, wears ${fmt(p.wear)}/s; its trace to the dish ${on(p.shed)}) · saturation ${on(p.sat)} (Isat ${p.isat} of the full noon light) · bleaching ${on(p.inhib)} (${p.bleach} per photon past it)`];
+    if (C) lines.push(`pigments: totals built ${fmt(C.tot.built)}, worn ${fmt(C.tot.wear)}, bleached ${fmt(C.tot.inhib)}, trace shed ${fmt(C.tot.shed)}, assembly paid ${fmt(C.tot.buildE)} energy; light stored ${fmt(C.rate.rise)}/s`);
     return lines;
   }
 }

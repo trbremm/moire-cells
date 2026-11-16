@@ -44,13 +44,16 @@
 //   ?look=harmonic  step H1: start with the harmonic look (key `, src/harmonic.js; ?look=neon, ?look=flat too); ?blur=0,
 //               ?grain=0, ?scalebar=0 (its slight blur, photon grain and scale bar off)
 //   ?until=T    run until simulation time T (s), then pause, exactly at that tick (for comparing runs; tools/shot.py)
-//   ?charge=0   step C6b: start with the charge field off (Shift+7); ?qstock=0 the cells' B charges by fate instead of
+//   ?chargefield=1  step C12g: the dish-wide charge field ON as before C12g (the field, the free atoms' drift, cells feeling it, B
+//               charges from the stock; off by default since C12g); ?qgenes=0 with the stock off, B charges by fate instead of
+//               from the field genes
+//   ?charge=1   step C6b: the charge field on (Shift+7; off by default since C12g); ?qstock=0 the cells' B charges by fate instead of
 //               from their stock (Shift+8); ?qfeel=0 the cells not feeling the grid's field (Shift+9); ?contours=1 the
 //               charge field's contour lines drawn (Shift+0)
 //   ?honeycomb=0  step C6c: start with the ellipse cells instead of the elastic honeycomb (rules panel, Cell shape)
 //   ?membrane=0   step C6c: start with the membrane chemistry off; ?bites=0, ?burst=0, ?elastic=0, ?selectivity=0 its rules
 //               (rules panel, Membrane chemistry)
-//   ?dipoles=0    step C6d: start with the dipoles (charge per side) off; ?dd=0 no dipole-dipole, ?dphi=0 the substrate's
+//   ?dipoles=1    step C6d: the dipoles (charge per side) on (off by default since C12g); ?dd=0 no dipole-dipole, ?dphi=0 the substrate's
 //               field not acting on the side charges, ?dfield=0 no turning and stretching (rules panel, Charge per side)
 //   ?pumps=0      step C7: start with the pumps off; ?pumpcontact=0 no pumping across contact, ?voltage=0 no membrane
 //               voltage, ?v2b=0 the voltage's energy all heat (not back into the battery) (rules panel, Pumps)
@@ -575,7 +578,11 @@ function neonOptions(N) {
 /** Step C6b: the charge's URL options (see the top of this file). */
 function chargeOptions(Q) {
   const P = Q.params;
+  // step C12g: ?chargefield=1 the old C6b behaviour (the dish-wide field, the free atoms' drift, cells feel it, B charge from the stock)
+  if (params.has('chargefield')) { const v = flag('chargefield'); P.on = v; P.feel = v; P.stock = v; }
   if (params.has('charge')) P.on = flag('charge');
+  if (params.has('qgenes')) P.genes = flag('qgenes');
+  { const v = Number(params.get('qgene')); if (params.has('qgene') && Number.isFinite(v) && v >= 0) P.qGene = v; }
   if (params.has('qstock')) P.stock = flag('qstock');
   if (params.has('qfeel')) P.feel = flag('qfeel');
   if (params.has('contours')) P.contours = flag('contours');

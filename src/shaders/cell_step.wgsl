@@ -155,7 +155,9 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // rule 1 (step 6), leak by deformation: a cell whose strained A lattice reaches B's band also listens to B
   // through its A charge, in the share it leaks (me.lk.w): its charge in B is its own B charge plus that
   // (rule 2: a converted cell listens to B with the charge it emits with)
-  let myQB = cell_charge_b(FL, c) + FL.leak * me.lk.w * myQA;
+  // (step C12g: with the charges from the field genes the B sensing gene carries the listener's sign, so its charge here is the
+  // emitter's magnitude: like repels like by the genes' signs)
+  let myQB = cell_charge_b(FL, c) * select(1.0, fg_sgn_b(c), FL.qStock == 2u) + FL.leak * me.lk.w * myQA;
   var gB = vec2f(0.0);
   // rule 2 (step 6), conversion: how much A this cell feels at its centre (its neighbours' A field, tuned)
   var aFelt = 0.0;
@@ -1391,7 +1393,7 @@ fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
 fn fg_words(b: Bio, on: bool) -> array<u32, 4> {
   if (!on) { return array<u32, 4>(0u, 0u, 0u, 0u); }
   return array<u32, 4>(pack2x16float(vec2f(b.fa.x - 1.0, b.fa.y - 1.0)), pack2x16float(vec2f(b.fb.x - 1.0, b.fb.y - 1.0)),
-                       pack2x16float(b.fx.xy), pack2x16float(vec2f(b.fx.z, 0.0)));
+                       pack2x16float(b.fx.xy), pack2x16float(vec2f(b.fx.z, select(-1.0, 1.0, b.fb.z >= 0.0))));   // (step C12g: B's sign)
 }
 
 // step C13: the census of the field genes and the gates (Stats.fg; the frame's last tick): the genes' sums and squares, the strongest

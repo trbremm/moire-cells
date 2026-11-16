@@ -413,9 +413,9 @@ export function makeActions(app) {
         : 'charge field off: the free atoms only spread (as before step C6b)'),
       help: 'givers (+1) and takers (−1) make a screened field (it fades over a few cell radii); free charged atoms drift in it, so fast and slow partners stay together' },
     { id: 'chargeStock', keys: ['shift+8'], label: 'cells\' charge from stock', group: 'charge', type: 'toggle', get: () => Q().stock,
-      run: () => `a cell's charge in field B ${flip(Q(), 'stock') ? 'comes from what it holds: the net charge of its stock (givers minus takers)' : 'is the fixed charge of its fate (step 5)'}` +
+      run: () => `a cell's charge in field B ${flip(Q(), 'stock') ? 'comes from what it holds: the net charge of its stock (givers minus takers)' : Q().genes ? 'comes from its own field genes (the sign of its B sensing gene; step C12g)' : 'is the fixed charge of its fate (step 5)'}` +
         `, like ${app.charge.signB > 0 ? 'repels' : 'attracts'} like (U)${app.cells.eat.params.on ? '' : ' (cells eat is off: Shift+A, so the fixed charges apply)'}`,
-      help: 'a cell\'s charge in field B is the net charge of its stock (off: the fixed charge per fate of step 5)' },
+      help: 'a cell\'s charge in field B is the net charge of its stock (off, the default since step C12g: from its own field genes)' },
     { id: 'chargeFeel', keys: ['shift+9'], label: 'cells feel the charge field', group: 'charge', type: 'toggle', get: () => Q().feel,
       run: () => `cells ${flip(Q(), 'feel') ? 'feel the charge field: a charged cell drifts down (+) or up (−) the substrate\'s potential' : 'do not feel the charge field (field B still carries their charge)'}${qNote()}`,
       help: 'a charged cell is pushed through the substrate\'s field: + toward − clouds and back (needs the charge field)' },

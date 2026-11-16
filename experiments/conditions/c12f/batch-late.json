@@ -1,0 +1,180 @@
+{
+ "batch": "c12f-late",
+ "runs": [
+  {
+   "name": "c12f-late",
+   "description": "step C12f: the dark Deep vents preset; at 5 min (the founders nearly gone, the food ring formed) 150 cells of one hand-made genome (a founder eater whose engines are set to g + T -> gT at rate 2 and G + T -> GT at 1.5: a test, not a rule) placed on rings 12-20 R round the vents; 30 min",
+   "query": {
+    "preset": "vent",
+    "seed": 3
+   },
+   "duration": 1800,
+   "sample_every": 10,
+   "evals": [
+    {
+     "t": 300,
+     "js": "const v = moire.control.view(), R = moire.cells.R, m = Math.min(v.cssW, v.cssH), pts = []; for (let k = 0; k < 3; k++) { const a = (-90 + 120 * k) * Math.PI / 180, cx = v.cssW / 2 + Math.cos(a) * 0.27 * m, cy = v.cssH / 2 + Math.sin(a) * 0.27 * m; for (let j = 0; j < 50; j++) { const b = 2 * Math.PI * j / 50, r = (12 + 8 * ((j * 7) % 5) / 4) * R; pts.push([cx + Math.cos(b) * r, cy + Math.sin(b) * r]); } } const { founderGenome } = await import('/src/genome.js'); const g = founderGenome('burn'); g[32] = 12; g[36] = 2; g[33] = 14; g[37] = 1.5; g[38] = 0; return await moire.app.place(pts, g)"
+    }
+   ],
+   "snapshots": [
+    {
+     "t": 300,
+     "grid": true
+    },
+    {
+     "t": 330,
+     "grid": true
+    },
+    {
+     "t": 420,
+     "grid": true
+    },
+    {
+     "t": 600,
+     "grid": true
+    },
+    {
+     "t": 900,
+     "grid": true
+    },
+    {
+     "t": 1200,
+     "grid": true
+    },
+    {
+     "t": 1800,
+     "grid": true
+    }
+   ],
+   "shots": [
+    {
+     "t": 330
+    },
+    {
+     "t": 600
+    },
+    {
+     "t": 1200
+    },
+    {
+     "t": 1800
+    },
+    {
+     "t": 1800,
+     "panel": true,
+     "name": "panel"
+    },
+    {
+     "t": 1200,
+     "crop": [
+      540,
+      110,
+      200,
+      150
+     ],
+     "scale": 3,
+     "name": "close_t1200"
+    },
+    {
+     "t": 1800,
+     "crop": [
+      540,
+      110,
+      200,
+      150
+     ],
+     "scale": 3,
+     "name": "close_t1800"
+    }
+   ]
+  },
+  {
+   "name": "c12f-late-qfeel0",
+   "description": "step C12f: the dark Deep vents preset; at 5 min (the founders nearly gone, the food ring formed) 150 cells of one hand-made genome (a founder eater whose engines are set to g + T -> gT at rate 2 and G + T -> GT at 1.5: a test, not a rule) placed on rings 12-20 R round the vents; cells do not feel the charge field (?qfeel=0); 30 min",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "qfeel": 0
+   },
+   "duration": 1800,
+   "sample_every": 10,
+   "evals": [
+    {
+     "t": 300,
+     "js": "const v = moire.control.view(), R = moire.cells.R, m = Math.min(v.cssW, v.cssH), pts = []; for (let k = 0; k < 3; k++) { const a = (-90 + 120 * k) * Math.PI / 180, cx = v.cssW / 2 + Math.cos(a) * 0.27 * m, cy = v.cssH / 2 + Math.sin(a) * 0.27 * m; for (let j = 0; j < 50; j++) { const b = 2 * Math.PI * j / 50, r = (12 + 8 * ((j * 7) % 5) / 4) * R; pts.push([cx + Math.cos(b) * r, cy + Math.sin(b) * r]); } } const { founderGenome } = await import('/src/genome.js'); const g = founderGenome('burn'); g[32] = 12; g[36] = 2; g[33] = 14; g[37] = 1.5; g[38] = 0; return await moire.app.place(pts, g)"
+    }
+   ],
+   "snapshots": [
+    {
+     "t": 300,
+     "grid": true
+    },
+    {
+     "t": 330,
+     "grid": true
+    },
+    {
+     "t": 420,
+     "grid": true
+    },
+    {
+     "t": 600,
+     "grid": true
+    },
+    {
+     "t": 900,
+     "grid": true
+    },
+    {
+     "t": 1200,
+     "grid": true
+    },
+    {
+     "t": 1800,
+     "grid": true
+    }
+   ],
+   "shots": [
+    {
+     "t": 330
+    },
+    {
+     "t": 600
+    },
+    {
+     "t": 1200
+    },
+    {
+     "t": 1800
+    },
+    {
+     "t": 1800,
+     "panel": true,
+     "name": "panel"
+    },
+    {
+     "t": 1200,
+     "crop": [
+      540,
+      110,
+      200,
+      150
+     ],
+     "scale": 3,
+     "name": "close_t1200"
+    },
+    {
+     "t": 1800,
+     "crop": [
+      540,
+      110,
+      200,
+      150
+     ],
+     "scale": 3,
+     "name": "close_t1800"
+    }
+   ]
+  }
+ ]
+}

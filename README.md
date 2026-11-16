@@ -3987,6 +3987,139 @@ and `c12e-single/`, pictures `experiments/keep/c12e/`. Plainly:
 - With `?photolysis=0` seed 3 does not survive the founders' first crash (with or without C12e): the founders need some light-made t
   to restart.
 
+## Step C12f: vents in the dark
+
+The user, 2026-11-16: "maybe we should adapt the chemistry then", after the app worker found that a fully dark vent dish starves in
+about 100 s. First a diagnosis (what the budget really was), then CHEMOSYNTHESIS from a redox gradient, derived from the electron
+table of step C12d: no rule names a chemosynthesiser, nothing is set per substance.
+
+### Diagnosis: why life starved at a dark vent (before the change)
+
+Run `c12f-diag-dark` (`?preset=vent&light=off`, seed 3, 150 s, the code of 5ca47c0; condition `experiments/conditions/c12f/diag-dark.json`):
+- **What the vent dripped**: 18 atoms per s per vent, as atoms G 20 %, gT 36 %, GT 40 %, trace 4 %: per vent per s 3.6 free G, 3.2 gT,
+  3.6 GT. In the dark the only downhill uses of this are fermenting: G + gT -> GT + g (0.875), the trade gT + Gt (no rust here) and
+  G + gt (from the seeps, 0.375). GT is a dead end without a free t.
+- **The vent ate its own food in the open.** Even with no light the colony warms its surroundings (crawling, upkeep, reactions: 2.5
+  to 3 per R² under the cells), and G + gT -> GT + g has a small spark (0.375), so it runs by heat in the open: by 50 s the vent
+  zone held GT 7 per R², gT 0.35, G 0.13, and free g (no partner in the dark) piled up to 750 units. The one fermentable pair was
+  turned into GT before cells could take it.
+- **The founders had the wrong engine.** With 3 colonies only founders 0 to 2 are used; their fermenting engine (drawn at random from
+  four) was the trade gT + Gt -> gt + GT, which needs rust: 396 of 559 cells carried it, none carried G + gT.
+- **They sat too far out**: each colony is a blob 15 R wide, which drifted outward (6 to 25 R from the vents), while the vent's heavy
+  products spread at 0.14 R² per s (a few R per minute).
+- **The budget per cell per s** (at 15 s, 559 cells): income **0.000015** (batteries +0.008 per s for the whole culture); costs
+  **0.034**: engine, tolerance and pump upkeep 0.017, crawling 0.013, the stretch tolerance's upkeep 0.003, membrane repair and crust
+  cracking 0.0006. The starter charge (1.4 per cell) lasts about 45 s; starvation from 60 s, all dead by 90 s. The gap is about
+  2000 times.
+- **Saturation (C12e)** took 65 % of the reactions inside at 15 s, but of tiny attempted rates (the trade with no rust, G + gT with
+  its products all around): not the cause.
+- **Verdict: not a bug and not a mis-scaled number.** The old vent's food is used up by the open chemistry, and what is left (GT)
+  needs oxygen. That is chemistry, so the chemistry was changed.
+
+### Design (derived from the table)
+
+- **The HOT VENT** (`?hotvent=1`; the vents of tap mode 3 and of every preset follow the switch): it drips free GIVERS (as atoms: G 40 %, g 30 %: reduced, iron- and
+  hydrogen-like), a little of the old fuel (gT 11 %, GT 11 %) and trace 8 % (twice the old vent's: vent water is rich in metals, the
+  engines' cofactor), and it is HOT: it puts `heat` = 10 energy per atom it drips into the grid over its disc (like the warm fluid a
+  vent pours out), booked as energy in.
+- **The SEA** (`?sea=1`; on only in the Deep vents preset, so the other scenes stay as they were): on every grid pixel the free heavy
+  TAKER T (oxidised, sulfate- or CO2-like) is topped up at `seaRate` = 0.02 atoms per R² per s where the pixel holds none, less as it
+  nears the sea's `seaLevel` = 0.5 per R², none above (the sea renews what is used, it never takes anything out), booked as added
+  matter like a spring's.
+- **Nothing else.** By the table G + T -> GT releases 2.375 and g + T -> gT 1.5; their sparks (0.5, 0.375) keep them slow in the cold
+  open; near a vent its heat pays them, so the gradient burns away abiotically there (into fuel, mostly GT: the vent's "ash"); a cell's
+  engine (an enzyme: its spark is paid from the battery, not by heat) runs them anywhere. Both were already engines (C12d: "fermenting",
+  kind 1, no free t), and founders carry them by chance (one of four fermenting engines), so "eating the gradient" needed no new
+  engine; they are now COUNTED apart: a gradient engine is a bond made from two free atoms without a free t (`E2_GRAD`, `E2_GRADE`).
+- Exact books: the vent heat is integer heat counts per pixel (random rounding, the same count into the grid and the ledger), the sea
+  whole atom counts; every reaction already runs both ways (SYMMETRY: GT -> G + T is the uphill split, by light or a storer).
+- Defaults: the hot vent and the sea are OFF except in the Deep vents preset (`?hotvent=1`, `?sea=1` anywhere); off, the vent is the
+  C12d one exactly. With `?electrons=0` the vent is the old heavy spring and none of this acts.
+
+### As built
+
+- **Code** (README "Files": `src/vents.js`): the vent's mix follows the switch (`SPRING_KINDS.heavy.mix`, so the drip, the ink, the
+  toolbar label "hot vent" and the active channels agree); a hot vent's heat per tick sits in its spring record's spare word `amt[18]`,
+  and `matter.wgsl` `spread` adds it to the heat delta on the tick's first substep and books it (ledger `LG_VENT`, 64 slots); the sea is
+  struct MatterP `sea` (MP_BYTES 704), topped up in `spread` and booked as added T and in `LG_SEA`. LEDGER_WORDS 28288 -> 28416. The heat's
+  books count the vent heat as energy in (`heat.tot.vent`, `ledger.rate.vent`).
+- **Panel line** (and `moire.sample()` `vents.*`):
+
+      VENTS  3 hot vents (heat in 1200/s) · sea T +103/s (level 0.5/R²) · dish: G 302 g 1016 T 3788 · fuel gT 1300 GT 2404 · cells eat the gradient (g + T, G + T) 2.65/s → batteries +3.05/s
+
+- **Switches** (rules panel, group "Vents in the dark (step C12f)"): hot vents, the sea; knobs vent heat per atom, sea rate, sea level.
+  URL: `?hotvent=1`, `?ventheat=x`, `?sea=1`, `?searate=x`, `?sealevel=x`, and `?starter=x` (the founders' starter charge as a share of
+  the battery, any scene; booked as energy in as before). `moire.vents.params`.
+- **The Deep vents preset** (`?preset=vent`) is now the dark one: light off, hot vents and the sea on, three vents at 40 atoms per s each with
+  its mineral seep (12 per s, linkers for membranes), 600 cells in three colonies on the vents, RANDOM genomes (`diversity=random`: every
+  cell its own; about a third then carry a gradient engine, so selection has something to pick from), starter charge 0.55 of the
+  battery (just short of dividing). `&light=full` gives the old dim variant (a third of the power).
+- **Old snapshots** (no `vents.params`) run with the C12d vent and no sea; their books get vent heat 0.
+- **Look**: no new drawing. Round each vent the hot core glows in the ripple background; the vents' ash (GT, gT) is the green fuel dust
+  that spreads into a three-lobed cloud and, over 40 minutes, carpets the dish; the mineral seeps grow big oil lenses with iridescent
+  rims (`experiments/keep/c12f/`).
+
+### What happened (EXPERIMENTS.md "Vents in the dark")
+
+EXPERIMENTS.md "Vents in the dark" has the tables; conditions `experiments/conditions/c12f/`, summaries `experiments/summaries/c12f-vents/`
+and `c12f-controls/`, pictures `experiments/keep/c12f/`. Plainly:
+- **The chemistry makes the ring.** Round each hot vent a HOT CORE (about 6 heat per R² at the vent, 2.7 at 3 to 6 R) where the
+  vent's heat burns the gradient by itself: the sea's T is gone there and the "ash" GT piles up (21 per R² at 5 min, 60 at 40 min);
+  round it a COLD RING, 9 to 30 R, where free G (0.3 to 0.6 per R²), free g (0.3) and the sea's T (0.5) sit side by side, unburned: the
+  richest food in the dish. The ash front creeps outward over 40 minutes.
+- **No cell lives in the ring.** The cells are pushed out through it, within the first minute, to 40 to 60 R and beyond (between the
+  vents and the dish's edge), where only the fast light giver g reaches: the hot vent's free givers are +1 ions, the charge field round
+  each vent is strongly positive, and a cell full of g is positive and drifts out at the field's saturating speed (1 R per s). Cells
+  placed straight into the ring at 5 minutes were pushed out of it too.
+- **Selection is fast and total.** Founders are random genomes: at 1 minute a third to a half carry a gradient engine; at 2 minutes
+  175 to 223 of the 190 to 240 survivors carry g + T -> gT; from 5 minutes on every survivor does (G + T: a few, as they live where only g
+  reaches). Where the culture lasts (membrane chemistry off), the useless g + t engine is gone by 30 minutes and the permeability gene
+  rises.
+- **But life does not persist in the dark with every rule on.** Seeds 3 and 7: 600 founders, 190 cells at 2 minutes (earning 0.055 per
+  cell per s against 0.04 of costs: they divide), 10 to 18 at 5 minutes, none by 16 to 20 minutes. Why (pilots, `percell.py`): a cell's
+  stock is small (a cell with a poor membrane holds 0.3 to 0.4 of its capacity, step C6c; osmosis shrinks it in the ion-rich sea) and
+  fills with the plentiful, fast partner g and its own slow-leaving product gT, so the scarce heavy T cannot get in (inside: T 0.05 units
+  against 0.3 per R² outside). With the membrane chemistry off (`?membrane=0`, full capacity) the culture survives the 40 minutes as a
+  thin boom-and-bust belt of 8 to 100 cells along the dish's edge. Both limits (which ions pass, and how the cell's charge follows) are
+  what membranes decide in real cells: step C12g's subject.
+- **Dim light** (`&light=full`, a third of the power) warms the whole dish to 8 to 11 per R², the gradient burns everywhere, and the
+  culture dies at 36 minutes after a second wave.
+- **The old vent** (`?hotvent=0&sea=0`) in the same preset: all dead by 3 minutes.
+- **The default scene with a hot vent** (`?hotvent=1`): its colony fell to 140 to 330 cells (20 min) against 1000 to 1450 with the
+  C12d vent, so the hot vent is off by default and only the Deep vents preset turns it (and the sea) on.
+
+### Checked
+
+- **Books** (`check.json`, seed 5, the whole dish lit, 360 s at MAX: hot vents and a mineral spring, the sea switched on at runtime, N,
+  40 cells placed with the add-cell tool, a wash, a resize and back, the hot vent off and on, its heat x4 and the sea's rate x5 and level
+  x4 and back, the sea off and on, G, a snapshot saved and loaded at once): atoms and charge rounding 0 in every sample except the paused
+  instant of each resize (the old grid not yet drained, as before); energy within -0.046 and +0.001 while 26 M came in (186 k of it vent
+  heat); the snapshot loaded exact. Every experiment run: atoms and charge 0 in every sample, energy within -0.026 and +0.016.
+- **Old snapshots**: a C12e snapshot (`c12e-oxy-spot_s7` at 40 min) by `?snap=` runs with the C12d vent and no sea (`vents.hot` 0,
+  `vents.sea` 0), atoms and charge 0 (`reload-c12e.json`).
+- **Speed** at MAX (the default scene, where the hot vent and the sea are off; GTX 1650 free, headless Chrome, as "Speed after the
+  C12e/H1/APP merge"): 2000 cells neon x7.37, x7.49, x7.35 (mean x7.40; before x7.39), harmonic x7.86 (before x7.75); 10 000 cells neon
+  x1.75, x1.80, x1.74 (mean x1.76; before x1.75), harmonic x1.91 (before x1.92). No change. The Deep vents preset itself runs at x10 to
+  x21 (few cells). Runs `experiments/runs/c12f-speedafter-*`, condition `speed-after.json`.
+- **Consoles clean**: headless Chrome (every run), phone size (`tools/shot.py --mobile`, the Deep vents preset with the rules panel
+  open: the short VENTS line), headed Firefox (the Deep vents preset with the F overlay: the VENTS line, the overlay's vent and energy
+  lines with "hot vents 1200" as energy in; no console messages).
+
+### Known issues
+
+- Life does not persist in the dark preset with every rule on (above). The two limits are older rules (the charge field's push on
+  cells, the stock's room and the membranes' hold); not changed here, as they act in every scene. `?membrane=0` is the one switch that
+  keeps a dark culture alive for 40 minutes (thinly).
+- The hot vent is off by default: in the default scene it starves the colony (it lives on the C12d vent's fuel). The tap-mode-3 vent
+  is therefore the C12d one unless the rules panel's "hot vents" (or `?hotvent=1`) is on.
+- The vent's free givers are ions (+1): a hot vent is a strong positive charge source; real vent water is neutral (its metal ions come
+  with anions), and this toy has no inert anion.
+- The vent heat is booked as energy in (`heat.tot.vent`, in "in" of the energy line) but not drawn on its own; the ripple background
+  shows it as a warm shimmer round each vent.
+- The sea tops T up everywhere, also under the cells and in the hot core (where the vent burns it at once).
+- The founders of the Deep vents preset are random genomes (`diversity=random`); the dialog keeps that unless another diversity is picked.
+- Runs are not bit-repeatable; two seeds per condition at most.
+
 ## App: zoom, zoos, tools, new culture, presets
 
 The user, 2026-11-16: "on the app side of things, if we could zoom, and have panels with zoos of cells and molecules and tools to
@@ -4070,7 +4203,7 @@ works. `?springs=0` leaves a preset's springs out. Every other URL option still 
 
 | preset | `?preset=` | what it is (the dialog's line) | options it sets | springs and light |
 |---|---|---|---|---|
-| Deep vents | `vent` | Deep water: only a faint, steady glow from above (a third of the usual light, no days). Three vents pour out fuel and metal-like givers, each with a mineral seep beside it; three colonies start on them. (With ?light=off it is truly dark: then nothing lives for long.) | light full at 0.3 of its power, no days, no clouds, 600 cells, 3 colonies on the vents | 3 never-drying vents (3 x a spring's rate), each with a mineral seep (2 x) |
+| Deep vents | `vent` | (Since step C12f.) Deep water in total darkness. Three hot vents pour out free givers (metal-like G, hydrogen-like g) and heat; the sea brings a faint, steady supply of the free taker T everywhere; a mineral seep beside each vent brings linkers for membranes. Three colonies of random genomes start on the vents. (With &light=full: a faint glow from above.) | `light=off`, no days, no clouds, 600 cells, 3 colonies on the vents, `hotvent=1`, `sea=1`, `diversity=random`, `starter=0.55`; `&light=full` gives the old dim variant (0.3 of the power) | 3 never-drying HOT vents at 40 atoms per s, each with a mineral seep (12 atoms per s) |
 | Sunlit shallows | `shallows` | The whole dish lit, with days and nights. Mineral springs scattered over it, cells scattered too: light-catchers have it easy. | light full, scattered | 5 never-drying mineral springs |
 | Oxygen world | `oxygen` | The oxygen story: a spotlight, a never-drying mineral spring and a slow vent beside the culture, and light cannot free atoms in the open (photolysis off), so any free oxygen (t) is made by life. | spotlight, `photolysis=0` | the default scene's places: a never-drying mineral spring, a vent at a tenth of the rate (as the C12d oxygen runs' 2 s of every 20 s) |
 | Oil slick | `slick` | Oil and soap springs make droplets with iridescent rims and soapy films; a vent and a mineral spring feed the cells, which can take oil and soap into their skins. Lit from the side. | spotlight tilted 35°, wide (0.42), 1000 cells, 4 colonies | 2 oil + soap, 1 soap, 1 oil, a vent, a mineral spring |
@@ -4358,6 +4491,12 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   the t counters in `eat`, the census in `ledger`), the radius in `cell_step.wgsl`, the genes' drift in `cell_common.wgsl` `mutate`;
   photolysis in `src/electrons.js` (`freesAtom`); `experiments/conditions/c12e/`: `make.py` (the conditions), `analyse.py` (the
   tables), `cells.py` (a colony from its final snapshot: swelling, who makes and who takes in free t, pumps, the stretch genes)
+- `src/vents.js`: vents in the dark (step C12f): the hot vent's mix (`HOT_MIX`, `OLD_MIX`; `SPRING_KINDS.heavy` follows it), its heat
+  per tick (a spring's `amt[18]`), the sea's words (struct MatterP `sea`), the census (LG_VENT, LG_SEA; the gradient engines' E2_GRAD,
+  E2_GRADE from `src/eat.js`), the VENTS panel line and the overlay. The rules themselves: `matter.wgsl` `spread` (the heat into the
+  delta, the sea's top-up), `cell_eat.wgsl` (the gradient engines' counters), `src/heat.js` (the vent heat as energy in);
+  `experiments/conditions/c12f/`: `make.py` (the conditions), `analyse.py` (radial profiles from the nearest vent and the engine census,
+  from snapshots), `percell.py` (each cell's inside against the dish outside it), `speed.py` (the speed table)
 - `src/excited.js`: excited waste (step C12c): the switch and knobs (`moire.excited.params`, `.look`), the chemistry uniform's
   words (struct ChemP `ex`), the census (from the heat's ledger read-back: LG_EXC_N, LG_EXC_E, the dish's and the cells' g*, t*),
   the EXCITED panel line and the overlay. The excited atoms themselves are substances of `src/matter.js` (`ATOMS` g*, t*,

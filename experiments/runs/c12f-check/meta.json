@@ -1,0 +1,189 @@
+{
+  "name": "c12f-check",
+  "description": "Step C12f books check: 360 s at MAX (seed 5), the whole dish lit, hot vents and a mineral spring, the sea switched on at runtime, N (60 s), 40 cells placed with the add-cell tool (80 s), a wash (100 s), a resize (150 s) and back (210 s), the hot vent off and on, its heat and the sea's knobs up and back, the sea off and on, G, a snapshot saved and loaded at once (300 s); atoms and charge rounding must stay 0",
+  "condition": {
+    "name": "c12f-check",
+    "description": "Step C12f books check: 360 s at MAX (seed 5), the whole dish lit, hot vents and a mineral spring, the sea switched on at runtime, N (60 s), 40 cells placed with the add-cell tool (80 s), a wash (100 s), a resize (150 s) and back (210 s), the hot vent off and on, its heat and the sea's knobs up and back, the sea off and on, G, a snapshot saved and loaded at once (300 s); atoms and charge rounding must stay 0",
+    "query": {
+      "seed": 5,
+      "light": "full"
+    },
+    "duration": 360,
+    "sample_every": 10,
+    "evals": [
+      {
+        "t": 5,
+        "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.3, 'heavy', 300); moire.matter.addSpring(v.cssW * 0.7, v.cssH * 0.7, 'heavy', 300, {rate: 30}); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.3, 'light', 300); return moire.matter.springs.map(s => s.kind)"
+      },
+      {
+        "t": 30,
+        "js": "moire.vents.params.sea = true; return 'sea on'"
+      },
+      {
+        "t": 60,
+        "js": "return moire.control.action('culture')"
+      },
+      {
+        "t": 80,
+        "js": "return await moire.app.place(Array.from({length: 40}, (_, k) => [150 + 13 * k, 120]), moire.genome.founders[0])"
+      },
+      {
+        "t": 100,
+        "js": "return moire.control.action('wash')"
+      },
+      {
+        "t": 105,
+        "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.4, 'heavy', 300); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'light', 300); return 'springs again'"
+      },
+      {
+        "t": 170,
+        "js": "moire.vents.params.hot = false; return 'vent as in C12d'"
+      },
+      {
+        "t": 190,
+        "js": "moire.vents.params.hot = true; moire.vents.params.heat = 40; moire.vents.params.seaRate = 0.1; moire.vents.params.seaLevel = 2; return 'hot, knobs up'"
+      },
+      {
+        "t": 230,
+        "js": "moire.vents.params.sea = false; moire.vents.params.heat = 10; return 'sea off'"
+      },
+      {
+        "t": 250,
+        "js": "moire.vents.params.sea = true; moire.vents.params.seaRate = 0.02; moire.vents.params.seaLevel = 0.5; return 'sea on, knobs back'"
+      },
+      {
+        "t": 270,
+        "js": "return moire.control.action('genomes')"
+      },
+      {
+        "t": 300,
+        "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }"
+      }
+    ],
+    "resizes": [
+      {
+        "t": 150,
+        "size": "1000x700"
+      },
+      {
+        "t": 210,
+        "size": "1280x800"
+      }
+    ],
+    "shots": [
+      {
+        "t": 200
+      },
+      {
+        "t": 360,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "stall": 120
+  },
+  "url": "http://localhost:60769/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=5&light=full",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "c585dc2d604e28a0b190afb257dc743f34c416f9",
+  "dirty": true,
+  "started": "2026-11-16T16:38:24",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 360.0,
+  "run_wall_s": 59.91,
+  "speed_reached": 6.01,
+  "samples": 37,
+  "shots": [
+    "shots/t200.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 5.000000000000003,
+      "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.3, 'heavy', 300); moire.matter.addSpring(v.cssW * 0.7, v.cssH * 0.7, 'heavy', 300, {rate: 30}); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.3, 'light', 300); return moire.matter.springs.map(s => s.kind)",
+      "result": [
+        "light",
+        "heavy",
+        "heavy",
+        "heavy",
+        "light"
+      ]
+    },
+    {
+      "t": 29.999999999999865,
+      "js": "moire.vents.params.sea = true; return 'sea on'",
+      "result": "sea on"
+    },
+    {
+      "t": 60.0000000000008,
+      "js": "return moire.control.action('culture')",
+      "result": true
+    },
+    {
+      "t": 80.00000000000001,
+      "js": "return await moire.app.place(Array.from({length: 40}, (_, k) => [150 + 13 * k, 120]), moire.genome.founders[0])",
+      "result": 40
+    },
+    {
+      "t": 99.99999999999888,
+      "js": "return moire.control.action('wash')",
+      "result": true
+    },
+    {
+      "t": 104.99999999999869,
+      "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.4, 'heavy', 300); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'light', 300); return 'springs again'",
+      "result": "springs again"
+    },
+    {
+      "t": 169.99999999999923,
+      "js": "moire.vents.params.hot = false; return 'vent as in C12d'",
+      "result": "vent as in C12d"
+    },
+    {
+      "t": 189.99999999999898,
+      "js": "moire.vents.params.hot = true; moire.vents.params.heat = 40; moire.vents.params.seaRate = 0.1; moire.vents.params.seaLevel = 2; return 'hot, knobs up'",
+      "result": "hot, knobs up"
+    },
+    {
+      "t": 229.9999999999979,
+      "js": "moire.vents.params.sea = false; moire.vents.params.heat = 10; return 'sea off'",
+      "result": "sea off"
+    },
+    {
+      "t": 249.9999999999968,
+      "js": "moire.vents.params.sea = true; moire.vents.params.seaRate = 0.02; moire.vents.params.seaLevel = 0.5; return 'sea on, knobs back'",
+      "result": "sea on, knobs back"
+    },
+    {
+      "t": 269.9999999999957,
+      "js": "return moire.control.action('genomes')",
+      "result": true
+    },
+    {
+      "t": 299.9999999999928,
+      "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }",
+      "result": {
+        "exact": true,
+        "notes": [],
+        "rounding": {
+          "energy": -0.0072021484375,
+          "atoms": 0,
+          "charge": 0,
+          "snapshot": {
+            "energy": -0.0072021484375,
+            "atoms": 0,
+            "charge": 0
+          }
+        }
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-16T16:40:03",
+  "wall_s": 98.86
+}

@@ -1,0 +1,83 @@
+{
+ "batch": "c12f-speedafter",
+ "runs": [
+  {
+   "name": "c12f-speedafter-2k-neon-r1",
+   "description": "Speed after C12f: default scene, 2000 cells, seed 3, MAX, 150 s, neon, repeat 1",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 25
+  },
+  {
+   "name": "c12f-speedafter-10k-neon-r1",
+   "description": "Speed after C12f: default scene, 10000 cells, seed 3, MAX, 60 s, neon, repeat 1",
+   "query": {
+    "seed": 3,
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10
+  },
+  {
+   "name": "c12f-speedafter-2k-neon-r2",
+   "description": "Speed after C12f: default scene, 2000 cells, seed 3, MAX, 150 s, neon, repeat 2",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 25
+  },
+  {
+   "name": "c12f-speedafter-10k-neon-r2",
+   "description": "Speed after C12f: default scene, 10000 cells, seed 3, MAX, 60 s, neon, repeat 2",
+   "query": {
+    "seed": 3,
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10
+  },
+  {
+   "name": "c12f-speedafter-2k-neon-r3",
+   "description": "Speed after C12f: default scene, 2000 cells, seed 3, MAX, 150 s, neon, repeat 3",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 25
+  },
+  {
+   "name": "c12f-speedafter-10k-neon-r3",
+   "description": "Speed after C12f: default scene, 10000 cells, seed 3, MAX, 60 s, neon, repeat 3",
+   "query": {
+    "seed": 3,
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10
+  },
+  {
+   "name": "c12f-speedafter-2k-harmonic-r1",
+   "description": "Speed after C12f: default scene, 2000 cells, harmonic",
+   "query": {
+    "seed": 3,
+    "look": "harmonic"
+   },
+   "duration": 150,
+   "sample_every": 25
+  },
+  {
+   "name": "c12f-speedafter-10k-harmonic-r1",
+   "description": "Speed after C12f: default scene, 10000 cells, harmonic",
+   "query": {
+    "seed": 3,
+    "look": "harmonic",
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10
+  }
+ ]
+}

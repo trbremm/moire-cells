@@ -893,3 +893,109 @@ widens, runs with saturation and osmosis off, atoms and charge 0.
 **What to try next** (if wanted): 2-hour runs of the whole dish (the OUT t pumps of seed 7); a membrane that passes ions slower than
 water (a lower permeability for ions only), so osmosis has something to hold; founders without the hard-light self-burn (a harvester
 with only photosynthesis and a separate breather), so the loop has to be split between bodies.
+
+# Vents in the dark
+
+Step C12f (README "Step C12f: vents in the dark"): the vent can be HOT (free givers G and g, a little fuel, trace, and heat), the SEA
+tops up the free heavy taker T everywhere, and by the electron table G + T -> GT (2.375) and g + T -> gT (1.5) are a REDOX GRADIENT a
+cell's engine can eat in total darkness. The hope (never written as a rule): RINGS of life round the vents, where giver and taker meet
+cold, beyond the zone where the vent's heat burns them by itself.
+
+**How.** `experiments/conditions/c12f/` (`make.py` writes the conditions; `analyse.py` the radial profiles from each run's snapshots:
+cells per 100 R² of dish in rings of distance from the NEAREST vent, their batteries, the temperature and free G, g, T and the fuels per
+R² in the same rings, and the engine census; `percell.py` each cell's inside against the dish just outside it; `summarise.sh` the plots
+and one stacked phase picture per run in `experiments/summaries/c12f-vents/` and `c12f-controls/`). The Deep vents preset as shipped:
+total darkness, hot vents, the sea on (0.02 per R² per s toward 0.5 per R²), three vents at 40 atoms per s (10 energy per atom) with a
+mineral seep beside each, 600 founders of random genomes in three colonies on the vents, starter 0.55 of the battery. Headless Chrome on
+the GTX 1650 at MAX (x10 to x21), 40 minutes, seeds 3 and 7; controls once each (seed 3). Before the conditions: a diagnosis of the old
+dark vent (`diag-dark`, `diag-dim`) and about thirty short pilots (`pilot*`, `mx-*`, `why-*`, `thr-*`: the vent's rate and heat, the
+sea's rate and level, the starter charge, and existing rules switched off one at a time) to find what limits life; their numbers are in
+`experiments/runs/c12f-*` and quoted below where they decided something.
+
+| run | cells 1 / 2 / 5 / 10 / 20 / 30 / 40 min | gradient into batteries per s (2 / 10 / 40 min) | where the cells are (R from the nearest vent) | engines of the survivors | books: energy / atoms / charge |
+|---|---|---|---|---|---|
+| dark_s3 | 462 / 193 / 10 / 3 / 0 / 0 / 0 | 10.7 / 0.10 / 0 | 2 min: 30 to 60 R (109 of 193 at 40 to 60 R) | 2 min: g + T in 175 of 193; 5 min: all 10 | -0.007..+0.016 / 0 / 0 |
+| dark_s7 | 454 / 196 / 18 / 8 / 0 / 0 / 0 | 7.8 / 0.3 / 0 | 2 min: 25 to 60 R (114 at 40 to 60 R) | 2 min: g + T in 190 of 196 | -0.026..+0.003 / 0 / 0 |
+| dark, `?membrane=0` | 413 / 239 / 113 / 8 / 23 / 48 / 81 | 17.2 / 0.4 / 2.2 | 40 to 60 R and beyond, never inside 30 R | 30 and 40 min: g + T in every cell, the useless g + t lost | -0.023..+0.013 / 0 / 0 |
+| dim (`&light=full`, 0.3 of the power) | 414 / 123 / 55 / 24 / 19 / 45 / 0 | 5.4 / 0.7 / 0 | 40 to 60 R | g + T in all | -0.016..+0.004 / 0 / 0 |
+| late: 150 cells with g + T placed in the food ring (12 to 20 R) at 5 min | 456 / 190 / 161 / 29 / 2 / 0 / - | 2.7 at 6 min / 0.9 / - | pushed out of the ring to 30 to 60 R within minutes | - | 0 / 0 |
+| late, `?qfeel=0` (cells do not feel the charge field) | 431 / 59 / 150 / 0 / 0 / 0 / - | 0.1 / 0 / - | stayed in the ring and starved there in 100 s | - | 0 / 0 |
+| oldvent (`?hotvent=0&sea=0`: as before C12f) | 400 / 12 / 0 | 0 | - | - | 0 / 0 |
+| default scene, hot vent (`?hotvent=1`) | 1584 / 172 / 334 / 139 / 170 (20 min) | all engines: 12.6 / 10.9 / 9.5 | - | - | -0.024..+0.014 / 0 / 0 |
+| default scene, C12d vent (as shipped) | 1979 / 864 at 1.5 min / 225 at 3 min / 1006 at 7.5 min / 1011 to 1447 at 15 to 20 min | all engines: 15 to 224 | - | - | 0 / 0 |
+
+(Every sample of every run: atoms and charge rounding exactly 0. "Gradient" = `vents.rate.gradE`, the energy the gradient engines, g + T
+and G + T, put into batteries per s, for the whole culture.)
+
+**What it looks like** (`experiments/keep/c12f/`). At two minutes (`dark-s3-2min.jpg`): three soft clouds of green dust round the vents
+(the vents' fuel and the hot core's "ash", mostly GT) in a three-lobed fan, each vent with its mineral seep beside it (a pale blue
+ring, a white oil droplet growing); the cells are NOT at the vents: they hang in loose crowds in the four corners of the dish and along
+its bottom edge, neon tubes with green battery cores. In the harmonic look (`dark-s3-2min-harmonic.jpg`) the same dish is a dark violet
+mottled haze (the fuel) with three bright orange-gold fibrous knots where the seeps' linkers chain into crust, and the cells as thin
+green rims scattered along the dish's edges. By 10 minutes the dish is empty; the seeps have grown big oil lenses with iridescent rims.
+With the membrane chemistry off (`dark-nomembrane-s3-40min.jpg`, 40 min): the whole dish carpeted with green fuel dust, three huge glassy
+oil lenses round the seeps, and a thin living string of cells along the right edge of the dish, about 80 cells, booming and busting.
+
+**The radial profile, plainly** (`analyse.py`, `dark_s3` at 5 min; per R²; temperature = heat per R²):
+
+| ring | temperature | free G | free g | T (sea) | fuel gT | ash GT | cells |
+|---|---|---|---|---|---|---|---|
+| 0-3 R | 6.4 | 1.08 | 0.16 | 0.004 | 0.002 | 21.4 | 0 |
+| 3-6 R | 2.7 | 0.49 | 0.10 | 0.05 | 0.003 | 11.3 | 0 |
+| 9-12 R | 0.66 | 0.58 | 0.27 | 0.48 | 0.14 | 2.6 | 0 |
+| 16-20 R | 0.21 | 0.51 | 0.32 | 0.48 | 0.21 | 0.33 | 0 |
+| 25-30 R | 0.11 | 0.32 | 0.38 | 0.46 | 0.12 | 0.02 | 0 |
+| 40-60 R | 0.11 | 0.008 | 0.56 | 0.42 | 0.15 | 0 | 5 |
+
+So the chemistry made exactly the picture hoped for: a HOT CORE (6 per R² at the vent, 2.7 at 3 to 6 R) where the vent's heat burns
+the gradient away by itself (the sea's T is gone there, 0.004, and GT ash piles up to 21 per R²), and round it a COLD RING, 9 to 30 R,
+where free G (0.3 to 0.6), free g (0.3) and the sea's T (0.5) sit side by side, unburned: the richest food in the dish. **But no cell
+lives in it.** In every run the cells were somewhere else: 40 to 60 R and beyond, between the vents and the dish's edge, where only the
+light, fast g reaches (G stays within 30 R). Over 40 minutes the ash front (GT) creeps outward and eats into the ring (free G at 12 to
+16 R fell from 0.58 to 0 by 40 min in the membrane-off run).
+
+**Who eats what (the census).** The founders are random: at 1 minute a third to a half carry a gradient engine (g + T or G + T; 152 to
+211 of about 450), almost all carry the useless g + t (no free t in the dark), a third a pigment, a quarter a fermenter. By 2 minutes 175
+to 223 of the 190 to 240 survivors carry g + T, and from 5 minutes on every survivor does: SELECTION for eating the gradient, strong and
+fast, in every run. Almost all eat g + T, not G + T (they live where only g reaches). In the membrane-off run the useless g + t
+disappeared by 30 minutes (48 of 48 survivors without it) and the permeability gene rose (survivors at 5 to 10 against the founders'
+1.5 to 6). Breathers (t) and fermenters (G + gT) play no part. No harvesters survive the dark (the dim run keeps a few storers).
+
+**Why the ring stays empty, and why life starves anyway** (the pilots and `percell.py`; all from rules that existed before this step):
+1. **The vent's charge pushes the cells out.** The hot vent drips mostly free givers, which are +1 ions (step C6b), at 28 per s per
+   vent: the screened charge field is strongly positive round each vent. A cell full of g (light, it floods in) is positive and feels
+   the field at the saturating speed (1 R per s, faster than it crawls), so it is pushed out through the ring to 40 to 60 R within the
+   first minute (`why-nocharge`: with the field off the cells stay on the vents). With more of the sea's T inside, a cell turns NEGATIVE
+   and is pulled INTO the hot core instead (`pilot-lvl1`, sea level 1), where its insides burn the gradient as heat and it starves.
+   Cells placed straight into the ring at 5 minutes (`late`) were pushed out of it within minutes.
+2. **A cell's stock fills up with the wrong things.** Inflow is scaled by the room left in the stock (step C5), and the room is small
+   (step C6c: a cell holds 0.3 + 0.7 x membrane integrity of its capacity, and the membranes here are about 0.08 whole; osmosis shrinks
+   the cells by 7 to 40 % in the ion-rich sea). The light giver g pours in fast and the product gT leaves slowly (a heavy molecule), so
+   the stock is full of g and gT and the scarce heavy T cannot get in: inside a typical cell at 40 to 60 R, g 0.5 to 0.9 units, gT 0.3
+   to 0.9, T 0.05, against 0.3 per R² of T just outside. Cells placed in the ring with `?qfeel=0` (so the field cannot push them) took in
+   22 units of G and 55 of g but only 0.7 of T and starved in 100 s. With the membrane chemistry off (full capacity) the culture
+   survives the 40 minutes at 8 to 100 cells.
+3. **Little cofactor out there.** Trace barely moves (row 3), so far from the vents the engines run at the cofactor floor (0.35 of
+   their rate).
+4. **The budget** (per cell per s, `dark_s3`): at 2 minutes income 0.055 against costs 0.04 (upkeep 0.014, crawling 0.018, division,
+   tolerance): positive, the colony divides; then the g at the edge is eaten faster than it arrives, the stocks clog, and by 5 minutes
+   the colony has crashed from 193 to 10. With the membrane off, at 30 minutes: income 0.034, costs 0.027: a thin margin, boom and bust.
+
+**Dim light** (`dim`): the faint light warms the whole dish (dark matter catches warm light) to 8 to 11 per R², so the vent gradient
+burns everywhere (free G falls to 0.03 per R²), the cells live at 40 to 60 R on g + T, and after a second wave (45 cells at 30 min) the
+culture dies at 36 minutes. The light did not rescue it.
+
+**The default scene** (no sea): with a HOT vent the colony crashed to 140 to 330 cells and stayed there (20 min), against 1000 to 1450
+with the C12d vent: the default colony lives on the old vent's fuel. So the hot vent is OFF by default (`?hotvent=1`; on in the Deep
+vents preset only), and every other scene runs as before.
+
+**Honestly:** the redox chemistry works and makes the ring (a hot core that burns the gradient, a cold ring where it waits), and
+selection for eating it is fast and total; but with every existing rule on, life does not persist in the dark: both seeds die by 16 to
+20 minutes (the old vent: by 3 minutes). The ring stays empty because the vent's positive charge pushes positively loaded cells out of
+it, and the cells starve because their stocks fill with the plentiful partner (g) and their own product (gT), so the scarce one (T)
+cannot get in. Both are things membranes decide in real cells: which ions pass. That is step C12g's subject (CLAUDE.md: the bilayer
+blocks ions, channel genes), and the Deep vents preset is a good test for it.
+
+**What to try next.** After C12g, rerun `batch-dark.json` unchanged: if channel genes let T in and keep g out, cells should lose their
+charge and their clog together, and the ring is where they would sit. Without C12g: the membrane-off run for 2 hours (does the belt at 40
+to 60 R move inward as the cells evolve?).

@@ -1,0 +1,66 @@
+{
+  "name": "c12f-diag-dark",
+  "description": "C12f diagnosis: the Deep vents preset in total darkness, before the change (seed 3, 150 s)",
+  "condition": {
+    "name": "c12f-diag-dark",
+    "description": "C12f diagnosis: the Deep vents preset in total darkness, before the change (seed 3, 150 s)",
+    "query": {
+      "preset": "vent",
+      "light": "off",
+      "seed": 3
+    },
+    "duration": 150,
+    "sample_every": 5,
+    "snapshots": [
+      {
+        "t": 5
+      },
+      {
+        "t": 20
+      },
+      {
+        "t": 50
+      }
+    ],
+    "shots": [
+      {
+        "t": 20
+      },
+      {
+        "t": 60
+      },
+      {
+        "t": 150
+      }
+    ]
+  },
+  "url": "http://localhost:57447/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=vent&light=off&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "f4e3c9e2ccd1ddc7d690411d669afc7f3b16129e",
+  "dirty": false,
+  "started": "2026-11-16T15:10:25",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 150.0,
+  "run_wall_s": 6.51,
+  "speed_reached": 23.04,
+  "samples": 31,
+  "shots": [
+    "shots/t20.png",
+    "shots/t60.png",
+    "shots/t150.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t5.json",
+    "snapshots/snap_t20.json",
+    "snapshots/snap_t50.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T15:11:09",
+  "wall_s": 43.97
+}

@@ -1,0 +1,20 @@
+{
+ "name": "c12f-reload-c12e",
+ "description": "a C12e snapshot (oxy-spot_s7 at 40 min) loaded by ?snap= on the C12f page: it runs with the C12d vent and no sea",
+ "query": {
+  "snap": "experiments/runs/c12e-oxy-spot_s7/snapshots/snap_t2400.json"
+ },
+ "duration": 60,
+ "sample_every": 10,
+ "evals": [
+  {
+   "t": 2400,
+   "js": "return { hot: moire.vents.params.hot, sea: moire.vents.params.sea }"
+  }
+ ],
+ "shots": [
+  {
+   "t": 2460
+  }
+ ]
+}

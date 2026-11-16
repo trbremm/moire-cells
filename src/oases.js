@@ -43,12 +43,14 @@ export class Oases {
       scarce: true,       // trace only from the oases (?scarce=0: every spring drips its trace as before)
       roam: true,         // the oases wander, pulse, dry up and rise elsewhere (?roam=0: they stay put, never dry)
       count: 3,           // how many oases the dish keeps (?oases=N; 0: none)
-      rate: 1.2,          // atoms per s an oasis drips at its mean (trace and l, half each)
+      rate: 1,            // atoms per s an oasis drips at its mean (trace and l, half each)
       wander: 0.12,       // how fast an oasis wanders (R per s)
       pulse: 0.6,         // its rate swings by this share
       period: [40, 110],  // ... over this many s (each its own)
       life: 300,          // s an oasis lives (each 0.5 to 1.5 x this)
       gap: 20,            // s before a dried oasis rises again elsewhere (each 0.5 to 1.5 x this)
+      gush: 4,            // a new oasis gushes: x this rate at first, settling over `gushTime` s
+      gushTime: 30,
       margin: 0.08,       // shares of the dish's shorter side kept free at the edges
     };
     this.list = [];       // { s (the spring), vx, vy, period, phase, rate0 }
@@ -144,14 +146,15 @@ export class Oases {
     const m = P.margin * Math.min(v.cssW, v.cssH);
     for (const o of this.list) {
       const s = o.s;
-      if (!P.roam) { s.rate = o.rate0; continue; }
+      if (!P.roam) { s.rate = o.rate0 * (1 + Math.max(0, P.gush - 1) * Math.exp(-Math.max(0, s.age) / Math.max(1, P.gushTime))); continue; }
       // a smooth random walk: the heading turns slowly, the speed stays near `wander`
       const sp = Math.max(0, P.wander) * R, ang = Math.atan2(o.vy, o.vx) + (this.rng() - 0.5) * 0.6 * Math.sqrt(dt);
       o.vx = Math.cos(ang) * sp; o.vy = Math.sin(ang) * sp;
       s.x += o.vx * dt; s.y += o.vy * dt;
       if (s.x < m) { s.x = m; o.vx = Math.abs(o.vx); } else if (s.x > v.cssW - m) { s.x = v.cssW - m; o.vx = -Math.abs(o.vx); }
       if (s.y < m) { s.y = m; o.vy = Math.abs(o.vy); } else if (s.y > v.cssH - m) { s.y = v.cssH - m; o.vy = -Math.abs(o.vy); }
-      s.rate = o.rate0 * Math.max(0, 1 + P.pulse * Math.sin(TAU * frame.time / o.period + o.phase));
+      const g = 1 + Math.max(0, P.gush - 1) * Math.exp(-Math.max(0, s.age) / Math.max(1, P.gushTime));   // (a new one gushes, then settles)
+      s.rate = o.rate0 * g * Math.max(0, 1 + P.pulse * Math.sin(TAU * frame.time / o.period + o.phase));
       if (!(s.life < 1e8)) s.life = P.life * (0.5 + this.rng());   // (roaming switched on: it gets a life)
     }
     if (!P.roam) for (const o of this.list) if (o.s.life < 1e8) o.s.life = 1e9;

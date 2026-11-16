@@ -1,0 +1,28 @@
+{
+ "name": "n1-check",
+ "description": "Step N1 books check: 420 s at MAX (seed 5), the whole dish lit, every N1 part on (pigments from matter, saturation, bleaching, scarce trace from roaming oases, caustics, currents), a mineral spring and a vent; N (60 s); 40 cells placed (80 s); a wash (100 s); a resize (150 s) and back (210 s); each N1 switch off and on again at runtime (120 to 290 s); oases count up and down; G (300 s); a snapshot saved and loaded at once (330 s); atoms and charge rounding must stay 0",
+ "query": {"seed": 5, "light": "full"},
+ "duration": 420, "sample_every": 10,
+ "evals": [
+  {"t": 5, "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.3, 'heavy', 400); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.3, 'light', 400); if (!moire.oases.started) moire.oases.start(); return moire.matter.springs.map(s => s.kind)"},
+  {"t": 60, "js": "return moire.control.action('culture')"},
+  {"t": 80, "js": "return await moire.app.place(Array.from({length: 40}, (_, k) => [150 + 13 * k, 120]), moire.genome.founders[0])"},
+  {"t": 100, "js": "return moire.control.action('wash')"},
+  {"t": 105, "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.4, 'heavy', 400); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'light', 400); return 'springs again'"},
+  {"t": 120, "js": "moire.pigments.params.matter = false; return 'pigments free'"},
+  {"t": 135, "js": "moire.pigments.params.matter = true; moire.pigments.params.sat = false; return 'pigments built, no saturation'"},
+  {"t": 160, "js": "moire.pigments.params.sat = true; moire.pigments.params.inhib = false; return 'saturation, no bleaching'"},
+  {"t": 180, "js": "moire.pigments.params.inhib = true; moire.water.params.caustics = false; return 'caustics off'"},
+  {"t": 195, "js": "moire.water.params.caustics = true; moire.water.params.currents = false; return 'currents off'"},
+  {"t": 220, "js": "moire.water.params.currents = true; moire.water.params.speed = 2; moire.water.params.gyre = 2; return 'currents strong'"},
+  {"t": 240, "js": "moire.water.params.speed = 0.35; moire.water.params.gyre = 0.25; moire.oases.params.scarce = false; return 'trace everywhere'"},
+  {"t": 255, "js": "moire.oases.params.scarce = true; moire.oases.params.roam = false; moire.oases.params.count = 6; return 'oases fixed, 6'"},
+  {"t": 275, "js": "moire.oases.params.roam = true; moire.oases.params.count = 2; moire.oases.params.life = 20; return 'oases roam, 2, short lives'"},
+  {"t": 290, "js": "moire.oases.params.life = 300; moire.oases.params.count = 3; return 'oases back'"},
+  {"t": 300, "js": "return moire.control.action('genomes')"},
+  {"t": 330, "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }"}
+ ],
+ "resizes": [{"t": 150, "size": "1000x700"}, {"t": 210, "size": "1280x800"}],
+ "shots": [{"t": 200}, {"t": 420, "panel": true, "name": "panel"}],
+ "stall": 120
+}

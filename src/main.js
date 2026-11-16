@@ -90,6 +90,9 @@
 //               ?pushgene=0 the push gene off (field A pushes every cell as before), ?gatenull=1 the NEUTRAL control (the gate
 //               genes and the push gene drift but act on nothing); ?gateref=x the felt reference, ?gateturnrate=x the turn gate's
 //               rate (rules panel, Fields as guides); ?view=guides colour by the strongest gate
+//   ?preset=name  app (src/culture.js): a preset dish (vent, shallows, oxygen, slick, desert, lab; its options fill in what the URL
+//               does not say); ?spread=clump|scatter|colonies|ring, ?colonies=N, ?diversity=clone|few|mixed|random (the new culture);
+//               ?zoom=z or ?zoom=z,x,y the view zoomed (centre as shares of the dish)
 //   ?mut=0      start with mutation off (key M); ?life=0 with the life cycle off (key T: no births, no deaths)
 //   Experiments (src/lab.js, src/snapshot.js; README "Experiments: tools"): ?snap=<file> loads a snapshot at the start (its
 //               starting number and capacity, its settings); ?clone=1 copies the first live cell's genes to every cell
@@ -752,13 +755,14 @@ function hintLine() {
   const t = TOOLS[tool];
   const what = t.spot ? 'click or drag: move the light' : t.stir ? 'click or drag: stir' : t.addCell ? 'click: place a cell · drag: a line of cells'
     : t.pipette ? 'click or drag: drop the substance' : `click: ${t.label} · drag: stir`;
-  return `${what} · right-drag: move the light · wheel: tilt it · ?: all keys`;
+  // (app: the wheel zooms while the spotlight is off; Ctrl+wheel always; middle-drag or Space+drag pans)
+  return `${what} · right-drag: move the light · wheel: ${light && light.modeIndex === 1 ? 'tilt it, Ctrl+wheel: zoom' : 'zoom'} · Space+drag: pan · ?: all keys`;
 }
 /** Every key, from the action table, plus the mouse. */
 function fullHint() {
   const list = actions.filter((a) => a.keys.length).map((a) => `${keysText(a)}: ${a.label}`);
   return `click: ${TOOLS[tool].label} · drag: stir · ${list.join(' · ')} · right-drag: move the light · wheel: tilt it · ` +
-    'Shift+wheel: turn where the light comes from';
+    'Shift+wheel: turn where the light comes from · Ctrl+wheel (or the wheel without a spotlight): zoom · middle-drag or Space+drag: pan';
 }
 
 /** The app as the action table sees it (src/actions.js). */

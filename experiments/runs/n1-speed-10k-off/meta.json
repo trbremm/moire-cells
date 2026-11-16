@@ -1,0 +1,41 @@
+{
+  "name": "n1-speed-10k-off",
+  "description": "Speed after step N1, every N1 part off, 10000 cells, neon",
+  "condition": {
+    "name": "n1-speed-10k-off",
+    "description": "Speed after step N1, every N1 part off, 10000 cells, neon",
+    "query": {
+      "seed": 3,
+      "cells": 10000,
+      "pigmatter": 0,
+      "pigsat": 0,
+      "inhib": 0,
+      "scarce": 0,
+      "caustics": 0,
+      "currents": 0
+    },
+    "duration": 60,
+    "sample_every": 10
+  },
+  "url": "http://localhost:57799/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&cells=10000&pigmatter=0&pigsat=0&inhib=0&scarce=0&caustics=0&currents=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "7f4557c04ebacb18f1b3122a318c12159882902a",
+  "dirty": true,
+  "started": "2026-11-16T19:42:58",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 111.84,
+  "speed_reached": 0.54,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T19:45:30",
+  "wall_s": 152.35
+}

@@ -1,0 +1,5 @@
+{"name": "n1-oases2", "description": "Step N1: the Oases preset after its retune (half the light, mineral springs at a third of the rate), seed 3, 15 min",
+ "query": {"preset": "oases", "seed": 3}, "duration": 900, "sample_every": 30,
+ "snapshots": [{"t": 900}],
+ "evals": [{"t": 902, "js": "moire.control.action('harmonic'); return 'harmonic'"}],
+ "shots": [{"t": 300}, {"t": 600}, {"t": 900}, {"t": 900, "view": "strategy", "name": "strategy"}, {"t": 903, "name": "harmonic"}]}

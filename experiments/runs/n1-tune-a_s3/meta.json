@@ -1,0 +1,43 @@
+{
+  "name": "n1-tune-a_s3",
+  "description": "tuning: default scene, bury 1/300, isat 1.5, 12 min",
+  "condition": {
+    "name": "n1-tune-a_s3",
+    "description": "tuning: default scene, bury 1/300, isat 1.5, 12 min",
+    "query": {
+      "bury": 0.00333,
+      "isat": 1.5,
+      "seed": 3
+    },
+    "duration": 720,
+    "sample_every": 30,
+    "shots": [
+      {
+        "t": 720
+      }
+    ]
+  },
+  "url": "http://localhost:63764/index.html?speed=max&until=0&overlay=ghost&ui=0&bury=0.00333&isat=1.5&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-16T18:11:55",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 720.0,
+  "run_wall_s": 627.38,
+  "speed_reached": 1.15,
+  "samples": 25,
+  "shots": [
+    "shots/t720.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T18:23:13",
+  "wall_s": 677.86
+}

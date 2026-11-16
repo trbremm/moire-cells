@@ -569,6 +569,17 @@ C13. FIELDS AS GENES, FIELDS AS GUIDES (user 2026-11-16 chose it next, over more
     round / column / sprawl; turn: one sheet vs ring of rosettes; glue: tight sheet with a wedge flower vs loose rows;
     engines: dark-cored middle), ~4x stronger with the long beat. EVOLUTION: NULL, gate genes drift like the neutral
     control (+-0.6); beat periods do not tile the dish (median 4.5-7 R). Speed -7..8 %.
+C12g. MEMBRANES MODULATE ION FLOW (user 2026-11-16 "Yes, membranes modulate ion flow"; after C12f, same files).
+    C12e found ions cross the membrane as easily as anything, so osmosis barely bites and cells keep their own oxygen.
+    - The lipid BILAYER blocks free ions (g t G T), derived from its make-up: an intact soap/oil bilayer passes ions at a
+      small fraction of neutral molecules; damage (integrity) opens holes; the crust WALL is porous (does not block, like
+      a bacterial wall). Neutral molecules pass by the gradient as now. ?lipids=0: the linker membrane blocks by integrity.
+    - Ions pass through CHANNELS, as genes: a cation channel (givers +) and an anion channel (takers -), each an open
+      level that mutates; the C12e stretch channel opens a non-selective path when swollen; C7 pumps stay the active route.
+    - Optional, own switch: ion flow through channels also feels the C7 membrane VOLTAGE (charged atoms pushed by it), a
+      toy of real electrophysiology.
+    - Hoped for, never written: oxygen trapped -> cells swell -> stretch channels or anion-channel mutants let t out ->
+      haze builds; breathers evolve inward anion channels or pumps. Census of channel genes vs a neutral control.
 C12f. VENTS THAT FEED LIFE IN THE DARK (user 2026-11-16 "maybe we should adapt the chemistry then", after the app
     worker found a fully dark vent dish starves in 100 s: fermenting vent fuel earns the culture ~0.001 energy/s). Start
     after C12e is merged (same files). First DIAGNOSE (vent rate, engine rates, sparks, C12e saturation clogging small

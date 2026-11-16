@@ -672,6 +672,16 @@ N1. A NUTRIENT LANDSCAPE, LIGHT LESS EASY (user 2026-11-16: "I think light is fu
     ripple layer as the water surface focusing light into a wandering bright net; (5) CURRENTS: slow flow carrying
     nutrients in plumes and eddies, possibly derived from the medium's moire beat (the original "chemical landscape made
     of moire beats").
+    AS BUILT (N1 + merge, 2026-11-16): all five parts on by default (src/pigments.js, oases.js, water.js; presets oases,
+    plumes). Diagnosis: light made ~100 % of income, only 13-25 % of photons used (no trace / no material). Pigment =
+    2 l + 1 trace, wears 1/120 s, bleaches past saturation; trace = the scarce nutrient (oasis springs only, roam,
+    pulse, dry, settle into the floor); caustics from ripples + a fixed swell; currents from the medium's moire beat
+    (hex eddies ~19 R) + a reversing gyre, flux-form exact. Merge follow-ups: worn pigment's trace goes to the DISH
+    (?pigshed=0), founders get a mixed B sign (?bsign=plus). RESULT: light still makes 92-100 % of income where lit; the
+    default scene is one round colony round the lasting oasis in the spot; in the Oases preset cells sit near oases only
+    by chance (currents spread trace over the dish in ~50 R plumes); 5x faster trace settling gathers cells at oases at
+    10 min (x3.1) but kills light income, back to chance by 20 min: the wanted geography lies between (not tuned).
+    Speed (GPU free): 2000 cells x7.45 neon / x8.1 harmonic; 10 000 x1.84 / x2.06.
 EXPERIMENT STYLE FOR T1 AND PREDATORS (user 2026-11-16: "we just need to play with different very random initial stem
     cells in different colonies and see it unfolds"): no hand designs needed to start; several colonies, each from its own
     random founder (?spread=colonies&colonies=N, diversity mixed: colony k = founder k; works today), watched as they meet.

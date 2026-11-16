@@ -1,0 +1,104 @@
+{
+  "name": "c12b-graze-off_s3",
+  "description": "the C12b supply fix: the default scene, 15 min, cells graze crust off",
+  "condition": {
+    "name": "c12b-graze-off_s3",
+    "description": "the C12b supply fix: the default scene, 15 min, cells graze crust off",
+    "query": {
+      "graze": 0,
+      "seed": 3
+    },
+    "duration": 900,
+    "sample_every": 20,
+    "evals": [
+      {
+        "t": 300,
+        "js": "const E = moire.eat, C = moire.cells, d = C.device, n = C.count; const read = async (src, bytes) => { const buf = d.createBuffer({ size: bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }); const e = d.createCommandEncoder(); e.copyBufferToBuffer(src, 0, buf, 0, bytes); d.queue.submit([e.finish()]); await buf.mapAsync(GPUMapMode.READ); const out = buf.getMappedRange().slice(0); buf.destroy(); return out; }; const SW = E.stockBuf.size / 4 / n, CF = C.cellBuf.size / n / 4; const st = new Int32Array(await read(E.stockBuf, n * SW * 4)), cu = new Uint32Array(await read(C.cellBuf, C.cellBuf.size)); const r = { n: 0, withL: 0, withl: 0, withHeads: 0, withAll: 0, Lcells: [] }; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; const o = i * SW; r.n++; const gt = st[o] + st[o + 1], l = st[o + 2], L = st[o + 5]; let soap = 0, wall = 0; for (let k = 0; k < 6; k++) { soap += st[o + 32 + k] + st[o + 38 + k]; wall += st[o + 50 + k] + st[o + 56 + k]; } if (L > 6) { r.withL++; if (r.Lcells.length < 8) r.Lcells.push([L, l, gt, Math.round(st[o + 13] / 655.36) / 100, soap, wall]); } if (l > 6) r.withl++; if (gt > 6) r.withHeads++; if (L > 6 && l > 6 && gt > 6) r.withAll++; } return JSON.stringify(r)"
+      },
+      {
+        "t": 300,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 6) })"
+      },
+      {
+        "t": 600,
+        "js": "const E = moire.eat, C = moire.cells, d = C.device, n = C.count; const read = async (src, bytes) => { const buf = d.createBuffer({ size: bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }); const e = d.createCommandEncoder(); e.copyBufferToBuffer(src, 0, buf, 0, bytes); d.queue.submit([e.finish()]); await buf.mapAsync(GPUMapMode.READ); const out = buf.getMappedRange().slice(0); buf.destroy(); return out; }; const SW = E.stockBuf.size / 4 / n, CF = C.cellBuf.size / n / 4; const st = new Int32Array(await read(E.stockBuf, n * SW * 4)), cu = new Uint32Array(await read(C.cellBuf, C.cellBuf.size)); const r = { n: 0, withL: 0, withl: 0, withHeads: 0, withAll: 0, Lcells: [] }; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; const o = i * SW; r.n++; const gt = st[o] + st[o + 1], l = st[o + 2], L = st[o + 5]; let soap = 0, wall = 0; for (let k = 0; k < 6; k++) { soap += st[o + 32 + k] + st[o + 38 + k]; wall += st[o + 50 + k] + st[o + 56 + k]; } if (L > 6) { r.withL++; if (r.Lcells.length < 8) r.Lcells.push([L, l, gt, Math.round(st[o + 13] / 655.36) / 100, soap, wall]); } if (l > 6) r.withl++; if (gt > 6) r.withHeads++; if (L > 6 && l > 6 && gt > 6) r.withAll++; } return JSON.stringify(r)"
+      },
+      {
+        "t": 900,
+        "js": "const E = moire.eat, C = moire.cells, d = C.device, n = C.count; const read = async (src, bytes) => { const buf = d.createBuffer({ size: bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }); const e = d.createCommandEncoder(); e.copyBufferToBuffer(src, 0, buf, 0, bytes); d.queue.submit([e.finish()]); await buf.mapAsync(GPUMapMode.READ); const out = buf.getMappedRange().slice(0); buf.destroy(); return out; }; const SW = E.stockBuf.size / 4 / n, CF = C.cellBuf.size / n / 4; const st = new Int32Array(await read(E.stockBuf, n * SW * 4)), cu = new Uint32Array(await read(C.cellBuf, C.cellBuf.size)); const r = { n: 0, withL: 0, withl: 0, withHeads: 0, withAll: 0, Lcells: [] }; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; const o = i * SW; r.n++; const gt = st[o] + st[o + 1], l = st[o + 2], L = st[o + 5]; let soap = 0, wall = 0; for (let k = 0; k < 6; k++) { soap += st[o + 32 + k] + st[o + 38 + k]; wall += st[o + 50 + k] + st[o + 56 + k]; } if (L > 6) { r.withL++; if (r.Lcells.length < 8) r.Lcells.push([L, l, gt, Math.round(st[o + 13] / 655.36) / 100, soap, wall]); } if (l > 6) r.withl++; if (gt > 6) r.withHeads++; if (L > 6 && l > 6 && gt > 6) r.withAll++; } return JSON.stringify(r)"
+      },
+      {
+        "t": 900,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 6) })"
+      }
+    ],
+    "shots": [
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 900
+      },
+      {
+        "t": 900,
+        "panel": true,
+        "name": "panel"
+      }
+    ]
+  },
+  "url": "http://localhost:56792/index.html?speed=max&until=0&overlay=ghost&ui=0&graze=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-16T00:28:02",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 900.0,
+  "run_wall_s": 127.17,
+  "speed_reached": 7.08,
+  "samples": 46,
+  "shots": [
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t900.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 300.0000000000003,
+      "js": "const E = moire.eat, C = moire.cells, d = C.device, n = C.count; const read = async (src, bytes) => { const buf = d.createBuffer({ size: bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }); const e = d.createCommandEncoder(); e.copyBufferToBuffer(src, 0, buf, 0, bytes); d.queue.submit([e.finish()]); await buf.mapAsync(GPUMapMode.READ); const out = buf.getMappedRange().slice(0); buf.destroy(); return out; }; const SW = E.stockBuf.size / 4 / n, CF = C.cellBuf.size / n / 4; const st = new Int32Array(await read(E.stockBuf, n * SW * 4)), cu = new Uint32Array(await read(C.cellBuf, C.cellBuf.size)); const r = { n: 0, withL: 0, withl: 0, withHeads: 0, withAll: 0, Lcells: [] }; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; const o = i * SW; r.n++; const gt = st[o] + st[o + 1], l = st[o + 2], L = st[o + 5]; let soap = 0, wall = 0; for (let k = 0; k < 6; k++) { soap += st[o + 32 + k] + st[o + 38 + k]; wall += st[o + 50 + k] + st[o + 56 + k]; } if (L > 6) { r.withL++; if (r.Lcells.length < 8) r.Lcells.push([L, l, gt, Math.round(st[o + 13] / 655.36) / 100, soap, wall]); } if (l > 6) r.withl++; if (gt > 6) r.withHeads++; if (L > 6 && l > 6 && gt > 6) r.withAll++; } return JSON.stringify(r)",
+      "result": "{\"n\":1482,\"withL\":4,\"withl\":99,\"withHeads\":1472,\"withAll\":0,\"Lcells\":[[10,0,25,1,3,0],[33,0,114,1.8,5,0],[29,0,34,4,0,0],[49,0,45,4,0,0]]}"
+    },
+    {
+      "t": 300.0000000000003,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 6) })",
+      "result": "{\"all\":{\"n\":1482,\"oilGene\":0.30560479854297506,\"wallGene\":0.528478196655889,\"head\":-0.05463837317754131,\"row\":0.6677180345430367,\"thick\":0.012757715883485059,\"soapP\":0.00004003115511133603,\"soapM\":0.00003591272351551957,\"oil\":0.000011366871204453442,\"ll\":0.00000807212592780027,\"LL\":4.942117914979757e-7,\"stiff\":0.2520635424660185,\"cover\":0.00008247113510271405,\"oilShare\":0.001877872156509928,\"bat\":0.4750335605842704},\"lit\":{\"n\":961,\"oilGene\":0.3152004542637473,\"wallGene\":0.5252989695618718,\"head\":-0.044565427768539397,\"row\":0.687958054963604,\"thick\":0.012608359847411621,\"soapP\":0.000052842091571279917,\"soapM\":0.000046744927159209154,\"oil\":0.000013972668444328824,\"ll\":0.000012448377341311135,\"LL\":7.621455515088449e-7,\"stiff\":0.25128508566104124,\"cover\":0.00012718233321771304,\"oilShare\":0.0024756347214570876,\"bat\":0.6290851160341198},\"dark\":{\"n\":521,\"oilGene\":0.2879053260906485,\"wallGene\":0.5343423756143354,\"head\":-0.07321822065940474,\"row\":0.6303847147269808,\"thick\":0.013033207535436252,\"soapP\":0.000016401001679462573,\"soapM\":0.000015932401631477925,\"oil\":0.000006560400671785029,\"ll\":0,\"LL\":0,\"stiff\":0.25349942920226237,\"cover\":0,\"oilShare\":0.0007752813217417485,\"bat\":0.19088088344932747},\"founders\":[{\"founder\":1,\"n\":813,\"oilGene\":0.36084956442156857,\"wallGene\":0.6384630957377793,\"head\":-0.04095476385902471,\"row\":0.7646234028160499,\"thick\":0.00893597566748329,\"soapP\":0.00003002959717097171,\"soapM\":0.000034534036746617466,\"oil\":0.00001771746233087331,\"ll\":3.002959717097171e-7,\"LL\":9.008879151291513e-7,\"stiff\":0.25166855590124454,\"cover\":0.000030549325101094145,\"oilShare\":0.0029319312800971152,\"bat\":0.47829048747945974},{\"founder\":9,\"n\":266,\"oilGene\":0.11362417289791138,\"wallGene\":0.5572920413617801,\"head\":-0.3825271583837982,\"row\":0.22106412108427376,\"thick\":0.016547117297383573,\"soapP\":0.00007526139567669173,\"soapM\":0.000057822779605263155,\"oil\":0.000004589109492481203,\"ll\":0,\"LL\":0,\"stiff\":0.2529166052385859,\"cover\":0,\"oilShare\":0.000769079561649221,\"bat\":0.530618136986754},{\"founder\":7,\"n\":215,\"oilGene\":0.4572400417265504,\"wallGene\":0.31162645084090357,\"head\":0.07671592142974394,\"row\":0.9131435557853343,\"thick\":0.024423317236522604,\"soapP\":0.00001021984011627907,\"soapM\":0.000013626453488372093,\"oil\":0.0000011355377906976744,\"ll\":0.000045421511627906976,\"LL\":0,\"stiff\":0.25222070223438137,\"cover\":0.00032223742210062313,\"oilShare\":0,\"bat\":0.43566010940906613},{\"founder\":2,\"n\":92,\"oilGene\":0.1223473750439513,\"wallGene\":0.14881439872450478,\"head\":0.24810244722048874,\"row\":0.7748946741871212,\"thick\":0.010474371415077021,\"soapP\":0.00009818699048913044,\"soapM\":0.00004245923913043478,\"oil\":0.000010614809782608695,\"ll\":0.00002122961956521739,\"LL\":0,\"stiff\":0.2521454958795107,\"cover\":0.000305484512645638,\"oilShare\":0.0021170787155441887,\"bat\":0.5130314619644828},{\"founder\":10,\"n\":56,\"oilGene\":0.21396393264876679,\"wallGene\":0.07679502313424434,\"head\":-0.00014526735010024692,\"row\":0.41689615004829,\"thick\":0.010146820468695037,\"soapP\":0.00004795619419642857,\"soapM\":0.00003487723214285714,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0.25219421101774014,\"cover\":0,\"oilShare\":0,\"bat\":0.3578054564339774},{\"founder\":5,\"n\":33,\"oilGene\":0.12334302912296896,\"wallGene\":0.9265341451673796,\"head\":0.37162550290425617,\"row\":0.49212738239403925,\"thick\":0.008758808479108142,\"soapP\":0,\"soapM\":0.000007398200757575758,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0.25098039215686274,\"cover\":0,\"oilShare\":0,\"bat\":0.39493595470081677}]}"
+    },
+    {
+      "t": 600.0000000000205,
+      "js": "const E = moire.eat, C = moire.cells, d = C.device, n = C.count; const read = async (src, bytes) => { const buf = d.createBuffer({ size: bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }); const e = d.createCommandEncoder(); e.copyBufferToBuffer(src, 0, buf, 0, bytes); d.queue.submit([e.finish()]); await buf.mapAsync(GPUMapMode.READ); const out = buf.getMappedRange().slice(0); buf.destroy(); return out; }; const SW = E.stockBuf.size / 4 / n, CF = C.cellBuf.size / n / 4; const st = new Int32Array(await read(E.stockBuf, n * SW * 4)), cu = new Uint32Array(await read(C.cellBuf, C.cellBuf.size)); const r = { n: 0, withL: 0, withl: 0, withHeads: 0, withAll: 0, Lcells: [] }; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; const o = i * SW; r.n++; const gt = st[o] + st[o + 1], l = st[o + 2], L = st[o + 5]; let soap = 0, wall = 0; for (let k = 0; k < 6; k++) { soap += st[o + 32 + k] + st[o + 38 + k]; wall += st[o + 50 + k] + st[o + 56 + k]; } if (L > 6) { r.withL++; if (r.Lcells.length < 8) r.Lcells.push([L, l, gt, Math.round(st[o + 13] / 655.36) / 100, soap, wall]); } if (l > 6) r.withl++; if (gt > 6) r.withHeads++; if (L > 6 && l > 6 && gt > 6) r.withAll++; } return JSON.stringify(r)",
+      "result": "{\"n\":1550,\"withL\":5,\"withl\":111,\"withHeads\":1546,\"withAll\":0,\"Lcells\":[[53,0,37,3.3,0,10],[24,0,46,1.85,3,4],[11,0,76,3.71,0,2],[497,0,145,4,2,0],[348,0,178,0,0,0]]}"
+    },
+    {
+      "t": 900.0000000001055,
+      "js": "const E = moire.eat, C = moire.cells, d = C.device, n = C.count; const read = async (src, bytes) => { const buf = d.createBuffer({ size: bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }); const e = d.createCommandEncoder(); e.copyBufferToBuffer(src, 0, buf, 0, bytes); d.queue.submit([e.finish()]); await buf.mapAsync(GPUMapMode.READ); const out = buf.getMappedRange().slice(0); buf.destroy(); return out; }; const SW = E.stockBuf.size / 4 / n, CF = C.cellBuf.size / n / 4; const st = new Int32Array(await read(E.stockBuf, n * SW * 4)), cu = new Uint32Array(await read(C.cellBuf, C.cellBuf.size)); const r = { n: 0, withL: 0, withl: 0, withHeads: 0, withAll: 0, Lcells: [] }; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; const o = i * SW; r.n++; const gt = st[o] + st[o + 1], l = st[o + 2], L = st[o + 5]; let soap = 0, wall = 0; for (let k = 0; k < 6; k++) { soap += st[o + 32 + k] + st[o + 38 + k]; wall += st[o + 50 + k] + st[o + 56 + k]; } if (L > 6) { r.withL++; if (r.Lcells.length < 8) r.Lcells.push([L, l, gt, Math.round(st[o + 13] / 655.36) / 100, soap, wall]); } if (l > 6) r.withl++; if (gt > 6) r.withHeads++; if (L > 6 && l > 6 && gt > 6) r.withAll++; } return JSON.stringify(r)",
+      "result": "{\"n\":906,\"withL\":8,\"withl\":63,\"withHeads\":898,\"withAll\":1,\"Lcells\":[[8,0,7,0.25,1,4],[42,0,11,0.85,1,0],[13,0,15,1.84,6,0],[29,0,60,0,0,0],[8,0,235,0,0,0],[526,0,15,1.21,0,0],[46,0,12,1.13,0,0],[22,13,98,0,6,0]]}"
+    },
+    {
+      "t": 900.0000000001055,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 6) })",
+      "result": "{\"all\":{\"n\":906,\"oilGene\":0.33047386497063125,\"wallGene\":0.63323331908806,\"head\":0.12977554845196046,\"row\":0.7229405565569732,\"thick\":0.007682063171709939,\"soapP\":0.00007652973233995585,\"soapM\":0.00008272756277593819,\"oil\":0.0000619783043598234,\"ll\":0.0003400722613134658,\"LL\":0.00001859349130794702,\"stiff\":0.2784660000865684,\"cover\":0.006310147311315988,\"oilShare\":0.007985254440260282,\"bat\":0.2632731128212632},\"lit\":{\"n\":568,\"oilGene\":0.3449878167781643,\"wallGene\":0.6148862014196708,\"head\":0.10721770419352229,\"row\":0.7276189755845133,\"thick\":0.007802910445271138,\"soapP\":0.00010057906029929578,\"soapM\":0.00010444748569542253,\"oil\":0.00008424570862676056,\"ll\":0.0005415795554577465,\"LL\":0.000029657928036971832,\"stiff\":0.2902835312528764,\"cover\":0.01004096474270459,\"oilShare\":0.010700312989045382,\"bat\":0.34807740466695436},\"dark\":{\"n\":338,\"oilGene\":0.30608355542424426,\"wallGene\":0.6640651617970692,\"head\":0.167683405075608,\"row\":0.7150785979544799,\"thick\":0.007478982546317154,\"soapP\":0.00003611547707100592,\"soapM\":0.00004622781065088757,\"oil\":0.000024558524408284024,\"ll\":0.0000014446190828402367,\"LL\":0,\"stiff\":0.2586069536295774,\"cover\":0.00004060795915999536,\"oilShare\":0.003422670843485324,\"bat\":0.12076175847702478},\"founders\":[{\"founder\":1,\"n\":905,\"oilGene\":0.3308390294623115,\"wallGene\":0.633341661573115,\"head\":0.13025304201259716,\"row\":0.7233412122199548,\"thick\":0.0076586659843338786,\"soapP\":0.0000766142955801105,\"soapM\":0.00008281897444751381,\"oil\":0.00006204678867403315,\"ll\":0.0003404480317679558,\"LL\":0.000018614036602209946,\"stiff\":0.2784963709240598,\"cover\":0.00631711984978153,\"oilShare\":0.00799407792582963,\"bat\":0.26356402233819276},{\"founder\":9,\"n\":1,\"oilGene\":0,\"wallGene\":0.5351833701133728,\"head\":-0.30235612392425537,\"row\":0.360347181558609,\"thick\":0.028856517747044563,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0,\"LL\":0,\"stiff\":0.25098039215686274,\"cover\":0,\"oilShare\":0,\"bat\":0}]}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-16T00:30:42",
+  "wall_s": 160.74
+}

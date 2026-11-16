@@ -540,3 +540,97 @@ not by breathing. The reason is probably built into the energy table (finding 6)
 - **The crater** is the most striking sight of the series and worth a look of its own: a poison spring makes a hole
   ringed by survivors; with two spring kinds it spans both. A clip in the strategy view at the crater's rim would show
   who survives there.
+
+# Oxygen with excited waste
+
+The oxygen retry above ended on a reason, not a run length: free light atoms carried no energy, so breathing could never beat
+burning. Step C12c (README "Step C12c: excited waste") gives the light-made waste energy: a light giver or taker freed by light
+(the uphill swaps, in the open and in harvesting cells, and hard light breaking a fuel) leaves EXCITED, holding E* = 0.625 (half
+the photon's surplus); it fades by itself (life 30 s, faster when hot); an engine that uses it banks E* into the battery,
+anything else dumps it as heat. Breathing gT with an excited t now gives 1.375 + the gt left to burn (1.5) = 2.875, against 2.25
+for burning the gT. Here the oxygen conditions are run again, excited waste on and off, to see whether that is enough.
+
+**How.** `experiments/conditions/c12c/` (made by `make.py` from `experiments/conditions/oxygen/`): the same springs as the oxygen
+retry (a never-drying light spring at (875, 328), a heavy one at (875, 472) re-dropped for 2 s of every 20 s), 1280 x 800,
+headless Chrome on the GTX 1650 at MAX, one run at a time (×3 to ×5). Commit 60f684c and later (C12b with the grazing supply fix
+is on in every run). **40 minutes instead of 50, and the whole dish with seed 3 only**: GPU time (four runs side by side ran at
+×0.7 each; one at a time ×3 to ×5). Runs: spotlight seeds 3 and 7, on and off; spotlight with the uphill swaps in the open ×15
+(`kUpSwap 0.3`, more light-made waste) seed 3, on and off; the whole dish lit, seed 3, on and off. Numbers every 20 s in
+`experiments/runs/c12c-*/samples.csv`; `analyse.py` prints the table below; `summarise.sh` makes the plots and the stacked phase
+pictures in `experiments/summaries/c12c/` (`stack_<run>.svg`: cells, the ground haze, the excited haze, excited made, excitation
+into batteries, breathing that runs, breathing carriers, uphill-swap carriers, bursts, entropy rate and ORDER on one time axis).
+The yardsticks are the oxygen retry's: breathing that RUNS = `cells.rate2.eSwap` (swap engine events per s); the energy it banks
+= `excited.rate.eBreath`; the excitation any engine banked = `excited.rate.eEngine`; burning = `excited.rate.eBurn`.
+
+| run | cells 10 / 20 / 30 / 40 min | free g + t (ground) | excited in the dish | excited made per s (light + pigments) | breathing that runs, swaps per s (peak) | energy banked by breathing per s | excitation into batteries per s | burning into batteries per s | breathing carriers | uphill-swap carriers | bursts per s | ENTROPY 40 min | ORDER | books: energy / atoms / charge |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| c12c-spot-on_s3 | 1812 / 2510 / 2528 / 2598 | 1018 / 2094 / 2951 / 3367 | 1.45 / 2.03 / 1.58 / 1.67 | 1.18 + 0.37 | 0.016 (peak 0.05) | 0.009 | 0.277 | 185 | 46 / 66 / 134 / 162 | 239 / 376 / 68 / 108 | 0 / 0 / 0 / 2 | 47.5 M | 0.268 | -0.01..+0.28 / 0 / 0 |
+| c12c-spot-off_s3 | 2243 / 2461 / 2423 / 2403 | 943 / 2094 / 2998 / 3406 | 0.00 / 0.00 / 0.00 / 0.00 | 0.00 + 0.00 | 0.035 (peak 0.20) | 0.020 | 0.000 | 179 | 58 / 63 / 35 / 28 | 47 / 288 / 52 / 31 | 0 / 3 / 0 / 0 | 48.5 M | 0.270 | -0.10..+0.02 / 0 / 0 |
+| c12c-spot-on_s7 | 1801 / 2596 / 2673 / 2540 | 972 / 2092 / 2923 / 3159 | 1.30 / 1.81 / 1.16 / 1.76 | 1.11 + 0.29 | 0.027 (peak 0.09) | 0.015 | 0.238 | 182 | 64 / 60 / 75 / 38 | 149 / 398 / 263 / 41 | 0 / 0 / 0 / 0 | 51.0 M | 0.275 | -0.10..+0.18 / 0 / 0 |
+| c12c-spot-off_s7 | 2015 / 2232 / 2973 / 2753 | 1005 / 2055 / 2881 / 3093 | 0.00 / 0.00 / 0.00 / 0.00 | 0.00 + 0.00 | 0.055 (peak 0.22) | 0.031 | 0.000 | 198 | 89 / 1128 / 2333 / 1794 | 82 / 123 / 70 / 307 | 0 / 0 / 2 / 1 | 48.6 M | 0.270 | -0.09..+0.08 / 0 / 0 |
+| c12c-upswap-on_s3 | 2216 / 2615 / 2497 / 2694 | 1019 / 2127 / 2966 / 3345 | 4.81 / 5.48 / 4.32 / 4.37 | 5.44 + 0.17 | 0.063 (peak 0.26) | 0.037 | 1.103 | 183 | 59 / 38 / 52 / 510 | 92 / 50 / 107 / 743 | 0 / 1 / 0 / 1 | 48.0 M | 0.266 | -0.01..+0.18 / 0 / 0 |
+| c12c-upswap-off_s3 | 2179 / 2286 / 2520 / 2279 | 996 / 2154 / 2979 / 3204 | 0.00 / 0.00 / 0.00 / 0.00 | 0.00 + 0.00 | 0.054 (peak 0.18) | 0.030 | 0.000 | 211 | 99 / 488 / 165 / 47 | 119 / 46 / 31 / 35 | 0 / 1 / 1 / 0 | 46.5 M | 0.269 | -0.14..+0.01 / 0 / 0 |
+| c12c-full-on_s3 | 3489 / 4937 / 5453 / 5997 | 531 / 608 / 1100 / 1247 | 3.83 / 6.75 / 8.57 / 11.94 | 3.63 + 3.24 | 0.086 (peak 0.25) | 0.050 | 1.417 | 465 | 84 / 204 / 223 / 291 | 1396 / 2510 / 2921 / 3133 | 0 / 0 / 0 / 1 | 179.1 M | 0.299 | -0.12..+0.17 / 0 / 0 |
+| c12c-full-off_s3 | 3134 / 4763 / 5934 / 6000 | 572 / 750 / 1241 / 1168 | 0.00 / 0.00 / 0.00 / 0.00 | 0.00 + 0.00 | 0.040 (peak 0.10) | 0.022 | 0.000 | 472 | 73 / 151 / 163 / 305 | 174 / 308 / 279 / 152 | 0 / 1 / 0 / 1 | 173.5 M | 0.295 | -0.01..+0.16 / 0 / 0 |
+
+(Columns at 10 / 20 / 30 / 40 min, or means from 5 min on: excited made, breathing, energies. "Breathing carriers": cells with a
+downhill swap engine; "uphill-swap carriers": cells with a light-driven swap engine, the harvesters whose waste is excited.
+Bursts: per s; the C12b membranes are rarely whole, so almost nothing bursts.)
+
+Pictures (`experiments/keep/c12c/`): `haze-sparkle-on.jpg` and `haze-sparkle-off.jpg` (the excited haze around a light and a heavy
+spring in an empty corner of the lit dish, close up, with the sparkle drawn and not: a sparse glitter of orange-red flecks among
+the green fuel dust), `spot-on-40min.jpg` (spotlight, seed 3, 40 min: the colony over the springs, the ground haze as fine red dust
+over the dark dish, soap and oil films at the colony's left rim), `full-on-light-spring-40min.jpg` (whole dish, seed 3, 40 min,
+the light spring close up: a packed honeycomb of harvest + burn cells, gold pigment discs; the haze is under the cells).
+
+## What we found
+
+1. **The excited haze is thin.** Under the spot 1.2 to 2 units of g* + t* in the dish against 1000 to 3400 units of ground free
+   light atoms (0.07 %); inside the cells 0.03 %. With the uphill swaps x15, 4 to 5.5 units (0.2 %); under the whole dish, where
+   the harvesting cells make half of it, 4 to 12 (0.8 %). Light makes 1.1 to 1.6 excited atoms per s under the spot, 5.6 with the
+   swaps x15, 6.9 under the whole dish. On the screen: a few orange flecks around the light spring, mostly under the cells.
+2. **Where the excited atoms go:** 37 to 47 % into reactions in the open (mostly the dish's own light making fuel from them: their
+   energy becomes heat), 34 to 42 % into cells' engines (the battery), 13 to 19 % fade, under 1 % bite membranes, under 1 % react
+   loose inside cells. The engines that take them are the fuel-making harvest engines (g + t -> gt by a pigment), not the breathing
+   swaps: those use 0.01 to 0.04 per s.
+3. **Breathing still does not run.** The swap engines make 0.016 to 0.086 swaps per s with the excited waste on, 0.035 to 0.055 with
+   it off (peaks 0.05 to 0.26 against 0.10 to 0.22): no change. The energy breathing banks is 0.009 to 0.05 per s against 180 to 470
+   per s from burning (about a 10 000th). All the excitation any engine banks, 0.24 to 1.4 per s, is 0.1 to 0.3 % of burning.
+4. **Breathers did not rise.** Breathing carriers end at 162 and 38 cells (spotlight on, seeds 3 and 7) against 28 and 1794 (off; seed 7
+   off had a wave of 2333 carriers at 30 min), 510 against 47 (swaps x15), 291 against 305 (whole dish): waves of passengers, as in
+   the oxygen retry, with no sign that the excited waste drives them.
+5. **One difference is large: the harvesters whose waste is excited.** Under the whole dish the cells carrying a light-driven uphill
+   swap (gT + G -> GT + g* and the like) rose to 1396 by 10 minutes and 3133 by 40 (52 % of the colony) with the excited waste on,
+   against 174 and 152 (2.5 %) with it off. A plausible reason, derived and not written: such a cell's own fuel-making engine takes
+   its excited waste from the pool and banks it, so with the excited waste on, light reaches the battery in two steps (photon ->
+   excited atom -> engine -> battery). But the energy is small (the batteries gained 1.4 per s from all excitation in that run, 465
+   from burning; the mean battery of the dominant harvest + burn cells was 0.80 against 0.86 with it off), it appeared within the
+   first 10 minutes (a lineage winning early can carry it), and it is one seed. Under the spot the end counts were higher with the
+   excited waste in two of three pairs (108 against 31; 743 against 35 with the swaps x15) and lower in one (41 against 307).
+   Worth a whole-dish run with seed 7 and a longer one.
+6. **No poison story to see.** The oxygen retry's burst storm (35 to 90 per s) came from the C6c linker weave, bitten through by the
+   haze. With the C12b lipid membranes almost no membrane is whole, so almost nothing bursts (0 to 3 per s, on and off), and the
+   excited haze's extra heat (0.4 to 1.7 energy units per s from loose reactions and bites) is lost in the colony's heat. Armour
+   against breathing could not be asked.
+7. **Entropy, ORDER, cells:** the same within the run-to-run swing (ENTROPY at 40 min 47.5 to 51 M on, 46.5 to 48.6 M off under the
+   spot; 179 M against 174 M under the whole dish; ORDER 0.266 to 0.299 in all). The books: atoms and charge rounding exactly 0 in every
+   sample of every run; energy within -0.14 and +0.28 while 47 to 180 M left as heat.
+
+**Why breathing still does not pay, in numbers.** Per event it now does: a breather that swaps an EXCITED light atom into gT banks
+1.375 and leaves gt worth 1.5, 2.875 per gT against 2.25 for burning it. But a breathing engine takes its light atoms from the pool in
+the cell, and 99.75 to 99.97 % of them are ground: the haze is not the harvesters' light-made waste. Its free light atoms come from
+the never-drying light spring (4 ground light atoms per s) and from every burner's exhaust (each fuel burned frees its atoms, ground:
+the burners bank 180 to 470 energy units per s, so hundreds of ground light atoms per s), against 1 to 7 per s made excited by light.
+So a breathing event carries E* about once in a thousand: its expected gain is 0.75 + 0.0006, still a third of burning the same fuel.
+The fix made the light's waste rich, but the waste the dish is full of is not the light's.
+
+## What to try next (oxygen)
+
+- **A haze that is the light's.** For breathing to pay on average, most free light atoms must be light-made: no light-atom spring
+  (light atoms only from fuel that light breaks or swaps: e.g. a heavy spring and a spring of light fuel gt), so the burners'
+  exhaust and the haze are the same atoms the light freed. A condition, not a rule.
+- **A longer-lived, richer haze** (`?exlife=300`, `?exshare=1`: E* = 1.25): more of it, but the ground atoms would still dominate.
+- **The whole-dish harvesters** (finding 5): seed 7 and 60 minutes, and a census of which engines eat the excited atoms (the fuel
+  makers inside the harvesters, or their neighbours).
+- **Membranes that can burst again** (README "C12b supply: cells graze crust": co-location and bites keep the bilayers at integrity
+  about 0.1): without whole membranes the excited haze has nothing to poison.

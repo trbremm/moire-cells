@@ -1,0 +1,76 @@
+{
+  "name": "c12c-reload-old",
+  "description": "Step C12c: a snapshot saved before C12c (commit 035d3e9, 16 substances; made by experiments/runs/c12c-old-snap, kept locally) loads with the excited waste off and runs 60 s; books exact",
+  "condition": {
+    "name": "c12c-reload-old",
+    "description": "Step C12c: a snapshot saved before C12c (commit 035d3e9, 16 substances; made by experiments/runs/c12c-old-snap, kept locally) loads with the excited waste off and runs 60 s; books exact",
+    "query": {
+      "snap": "experiments/runs/c12c-old-snap/snapshots/snap_t90.json"
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "evals": [
+      {
+        "t": 1,
+        "js": "return { excited: moire.excited.params.on, graze: moire.lipids.params.graze, cells: moire.cells.alive }"
+      }
+    ],
+    "shots": [
+      {
+        "t": 60
+      }
+    ]
+  },
+  "url": "http://localhost:50986/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/runs/c12c-old-snap/snapshots/snap_t90.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "71e1fbabc1b07eb6c3c6023daf44d3f6df4640a5",
+  "dirty": false,
+  "started": "2026-11-16T00:50:32",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": true,
+    "notes": [
+      "saved before step C12c: excited waste off (as it ran)"
+    ],
+    "rebased": null,
+    "rounding": {
+      "energy": 0.0006866455078125,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": 0.0006866455078125,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 953,
+    "time": 89.99999999999618
+  },
+  "t_start": 89.99999999999618,
+  "sim_s": 60.0,
+  "run_wall_s": 63.51,
+  "speed_reached": 0.94,
+  "samples": 7,
+  "shots": [
+    "shots/t60.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 1.0000000000000284,
+      "js": "return { excited: moire.excited.params.on, graze: moire.lipids.params.graze, cells: moire.cells.alive }",
+      "result": {
+        "excited": false,
+        "graze": true,
+        "cells": 953
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-16T00:52:14",
+  "wall_s": 102.95
+}

@@ -215,7 +215,6 @@ export class Neon {
     // step H1, harmonic: the last pass (blur, grain, shoulder) instead of the halo and the composite
     if (harm) {
       HM.encode(encoder, canvasView, this.views.light, this.view.pxW, this.view.pxH, this.time);
-      HM.scaleBar(L.cells.R);
       return;
     }
     // 4. the halo

@@ -560,6 +560,21 @@ C13. FIELDS AS GENES, FIELDS AS GUIDES (user 2026-11-16 chose it next, over more
     round / column / sprawl; turn: one sheet vs ring of rosettes; glue: tight sheet with a wedge flower vs loose rows;
     engines: dark-cored middle), ~4x stronger with the long beat. EVOLUTION: NULL, gate genes drift like the neutral
     control (+-0.6); beat periods do not tile the dish (median 4.5-7 R). Speed -7..8 %.
+VIEW AND APP (user 2026-11-16, alongside C12e; two parallel branches):
+H1. HARMONIC VIEW (user: "one of my original inspirations are these higher harmonic microscopy images"; they showed a
+    multiphoton tissue image: green thin rims around dark interiors (muscle-fibre honeycomb, threads, hollow rings),
+    orange/yellow fibrous swirls between them, blue-violet wisps on surfaces; black ground; 100 nm scale bar). An
+    ALTERNATIVE rendering mode beside the neon look (switch + URL ?look=harmonic). Colour keeps meaning, by the physics
+    of each channel: GREEN (THG-like) = interfaces: membranes (brighter with lipid), oil/soap boundaries, vesicles, so
+    packed tissue reads as a green honeycomb with dark insides; ORANGE (SHG-like) = ordered fibres: crust chains and
+    walls, stretched/aligned cells as fibrous streaks (the moire beat may give the fibre direction); BLUE-VIOLET
+    (autofluorescence-like) = metabolism: fuel, batteries, running engines. No neon halo, trails or flicker; slight
+    blur and photon grain. User to correct the channel reading if wrong.
+APP. Zoom and pan (pinch on touch; the wheel keeps tilting the spotlight in spotlight mode), ZOO panels (molecules: the
+    periodic table drawn, energies, absorption, glow; cells: the lineages living now, portraits, counts), tools to ADD
+    CELLS (pick from the zoo or founder types, tap to place) and a molecule pipette, NEW CULTURE dialog (founders, how
+    spread: one clump / scattered / several colonies, diversity) and PRESET ENVIRONMENTS (e.g. hot vent in the dark,
+    sunlit shallows, oil slick, oxygen world, crust desert, tissue lab), each with a one-line description.
 LATER, PURIST VERSION (user 2026-11-15: hoped for "a more game of life situation", surprised how many abstractions
     were needed; chose to KEEP GOING with lipids (C12b) and the oxygen story, "I can go back to the purist version
     later"). Idea on file: a separate small page "moire life": cells of a few colours, pairwise push/pull through

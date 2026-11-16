@@ -142,7 +142,7 @@ export function createApp(ctx) {
     if (ctx.preset) { const s = document.createElement('span'); s.className = 'lbl dimlbl'; s.textContent = `now: ${PRESETS[ctx.preset].label}`; m.append(s); }
     const h = document.createElement('p');
     h.className = 'help';
-    h.textContent = 'how many founders, how spread (one clump, scattered, colonies, a ring), how diverse, and a preset dish (dark vents, sunlit shallows, oxygen world, oil slick, crust desert, tissue lab); opens as a link you can share';
+    h.textContent = 'how many founders, how spread (one clump, scattered, colonies, a ring), how diverse, and a preset dish (deep vents, sunlit shallows, oxygen world, oil slick, crust desert, tissue lab); opens as a link you can share';
     r.append(m, h);
     body.append(r);
   };

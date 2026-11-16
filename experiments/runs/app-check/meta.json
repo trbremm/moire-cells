@@ -1,0 +1,145 @@
+{
+  "name": "app-check",
+  "description": "app books check (seed 5, the whole dish lit, 240 s): add-cell placements (50, then 200 cells), pipette drops of every substance, zoom and pan, the new culture dialog started in place (colonies, a few types), N, G, a snapshot saved and loaded; atoms and charge rounding must stay 0",
+  "condition": {
+    "name": "app-check",
+    "description": "app books check (seed 5, the whole dish lit, 240 s): add-cell placements (50, then 200 cells), pipette drops of every substance, zoom and pan, the new culture dialog started in place (colonies, a few types), N, G, a snapshot saved and loaded; atoms and charge rounding must stay 0",
+    "query": {
+      "seed": 5,
+      "light": "full"
+    },
+    "duration": 240,
+    "sample_every": 5,
+    "evals": [
+      {
+        "t": 10,
+        "js": "return await moire.app.place(Array.from({length: 50}, (_, k) => [150 + 13 * k, 120]), moire.genome.founders[1])"
+      },
+      {
+        "t": 20,
+        "js": "const r = []; moire.matter.SUBSTANCES.forEach((s, c) => { if (!s.excited) r.push(moire.matter.addSpring(120 + 60 * (r.length % 8), 650 + 50 * Math.floor(r.length / 8), 'drop:' + s.name, 1.5, {drop: true, rate: 40})); }); return r"
+      },
+      {
+        "t": 40,
+        "js": "moire.camera.set(4, 400, 300); moire.camera.panBy(-200, 100); return [moire.camera.z, moire.camera.x, moire.camera.y]"
+      },
+      {
+        "t": 60,
+        "js": "moire.camera.fit(); moire.app.openCulture(); document.querySelector('#culture [data-spread=colonies]').click(); document.querySelector('#culture [data-div=few]').click(); const t = document.querySelector('#culture .go').textContent; document.querySelector('#culture .go').click(); return t"
+      },
+      {
+        "t": 90,
+        "js": "return moire.control.action('culture')"
+      },
+      {
+        "t": 120,
+        "js": "return await moire.app.place(Array.from({length: 200}, () => [100 + Math.random() * 1080, 100 + Math.random() * 600]), moire.genome.founders[2])"
+      },
+      {
+        "t": 150,
+        "js": "return moire.control.action('genomes')"
+      },
+      {
+        "t": 200,
+        "js": "const s = await moire.snapshot(); const r = await moire.loadSnapshot(s); return {exact: r.exact, cells: r.cells}"
+      }
+    ],
+    "shots": [
+      {
+        "t": 75
+      },
+      {
+        "t": 240
+      }
+    ]
+  },
+  "url": "http://localhost:58955/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=5&light=full",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "7ba47e833f65ea4a1407b71a4338af4f128f3092",
+  "dirty": false,
+  "started": "2026-11-16T13:14:12",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 240.0,
+  "run_wall_s": 246.15,
+  "speed_reached": 0.98,
+  "samples": 49,
+  "shots": [
+    "shots/t75.png",
+    "shots/t240.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 10.000000000000083,
+      "js": "return await moire.app.place(Array.from({length: 50}, (_, k) => [150 + 13 * k, 120]), moire.genome.founders[1])",
+      "result": 50
+    },
+    {
+      "t": 20.000000000000046,
+      "js": "const r = []; moire.matter.SUBSTANCES.forEach((s, c) => { if (!s.excited) r.push(moire.matter.addSpring(120 + 60 * (r.length % 8), 650 + 50 * Math.floor(r.length / 8), 'drop:' + s.name, 1.5, {drop: true, rate: 40})); }); return r",
+      "result": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "t": 39.9999999999991,
+      "js": "moire.camera.set(4, 400, 300); moire.camera.panBy(-200, 100); return [moire.camera.z, moire.camera.x, moire.camera.y]",
+      "result": [
+        4,
+        290,
+        175
+      ]
+    },
+    {
+      "t": 59.99999999999796,
+      "js": "moire.camera.fit(); moire.app.openCulture(); document.querySelector('#culture [data-spread=colonies]').click(); document.querySelector('#culture [data-div=few]').click(); const t = document.querySelector('#culture .go').textContent; document.querySelector('#culture .go').click(); return t",
+      "result": "start here"
+    },
+    {
+      "t": 89.99999999999626,
+      "js": "return moire.control.action('culture')",
+      "result": true
+    },
+    {
+      "t": 119.99999999999456,
+      "js": "return await moire.app.place(Array.from({length: 200}, () => [100 + Math.random() * 1080, 100 + Math.random() * 600]), moire.genome.founders[2])",
+      "result": 200
+    },
+    {
+      "t": 150.0000000000116,
+      "js": "return moire.control.action('genomes')",
+      "result": true
+    },
+    {
+      "t": 200.0000000000514,
+      "js": "const s = await moire.snapshot(); const r = await moire.loadSnapshot(s); return {exact: r.exact, cells: r.cells}",
+      "result": {
+        "exact": true,
+        "cells": 1547
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-16T13:19:14",
+  "wall_s": 301.54
+}

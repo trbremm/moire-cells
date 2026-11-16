@@ -233,10 +233,14 @@ export class Genome {
     this.lrng = makeRng(this.seed ^ 0x6c697064);   // step C12b: the lipid genes' own stream
     this.grng = makeRng(this.seed ^ 0x67617465);   // step C13: the gates' own stream
     this.irng = makeRng(this.seed ^ 0x696f6e73);   // step C12g: the ion channels' own stream
+    this.brng = makeRng(this.seed ^ 0x62736e67);   // the founders' field-B sign (after the C12g + N1 merge): its own stream
     this.founders = [];
     // live-tunable (moire.genome.params); the rule switches are keys
     this.params = {
       founders: 12,     // founder genomes at a fresh start (0 = every cell its own random genome)
+      bSign: 'mixed',   // the founders' field-B SENSING SIGN (the sign of the senseB gene, which with the C12g default is also the sign of
+                        // their B charge): 'mixed' (default) each founder + or - at random from its own stream, both signs present
+                        // whenever there are 2 or more founders; 'plus': all + (as from step C13 until this switch) (?bsign=plus)
       tau: 2.0,         // accumulator time constant (s): brief contacts fade, sustained ones add up
       release: 0.3,     // a committed cell returns to stem when its channel falls below release x threshold
       reach: 1.15,      // neighbours closer than reach x (r_i + r_j) are in contact (signals, adhesion)
@@ -277,6 +281,19 @@ export class Genome {
       lipids(g, this.lrng, k % 4 === 1);                           // step C12b: a few founders build a crust wall
       this.founders.push(g);
     }
+    this.mixBSigns(this.founders);
+  }
+
+  /**
+   * The founders' field-B sensing sign (Bio fb.z, gene senseB): with bSign 'mixed' each + or - at random from its own stream
+   * (so every other gene of a seed stays as it was), and when all came out alike with 2 or more, one at random flips, so both
+   * signs are present. With the C12g default (field B's charge = qGene x this sign) like repels like and unlike attracts.
+   */
+  mixBSigns(list) {
+    if (this.params.bSign !== 'mixed' || !list.length) return;
+    const s = list.map(() => (this.brng() < 0.5 ? -1 : 1));
+    if (s.length > 1 && s.every((x) => x === s[0])) s[Math.floor(this.brng() * s.length)] *= -1;
+    list.forEach((g, k) => { g[BIO_FG + 6] = s[k] * Math.abs(g[BIO_FG + 6] || 1); });
   }
 
   /**
@@ -289,8 +306,9 @@ export class Genome {
     for (let i = 0; i < n; i++) {
       // (app: `pick(i)`, if given, chooses cell i's founder by its index, e.g. one founder per colony; else at random)
       const fi = pick && this.founders.length ? pick(i, this.founders.length) : -1;
-      const g = this.founders.length ? this.founders[fi >= 0 ? fi % this.founders.length : Math.floor(this.rng() * this.founders.length)]
+      let g = this.founders.length ? this.founders[fi >= 0 ? fi % this.founders.length : Math.floor(this.rng() * this.founders.length)]
         : randomGenome(this.rng, i, this.mrng, this.prng, this.wrng, this.drng, this.lrng, this.grng, this.irng);
+      if (!this.founders.length && this.params.bSign === 'mixed') { g = g.slice(); g[BIO_FG + 6] = this.brng() < 0.5 ? -1 : 1; }   // (each its own)
       const o = i * BIO_FLOATS;
       for (let k = 0; k < BIO_FLOATS; k++) f[o + k] = g[k] ?? 0;   // (founders from a snapshot before step C10 lack the walls' genes, before C12b the lipids')
       if (g.length <= BIO_FG) fieldDefaults(f, o);   // (... before step C13 the field genes: today's values)
@@ -305,9 +323,10 @@ export class Genome {
  * App (the add-cell tool, the new culture's diversity): one founder genome of a habit, as a fresh culture's founders get them:
  * 'burn' (eaters), 'both' (light + burn), 'pigments' (photosynthesisers / harvesters), 'other'. `rng` a random function.
  */
-export function founderGenome(strategy, rng = Math.random, founder = 0) {
+export function founderGenome(strategy, rng = Math.random, founder = 0, bSign = 'mixed') {
   const g = randomGenome(rng, founder);
   engines(g, rng, STRATEGIES.includes(strategy) ? strategy : 'burn');
+  if (bSign === 'mixed') g[BIO_FG + 6] = rng() < 0.5 ? -1 : 1;   // the field-B sign (drawn last, so the other genes stay as they were)
   return g;
 }
 export const HABITS = ['burn', 'both', 'pigments', 'other'];

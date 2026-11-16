@@ -453,6 +453,9 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       M.pigments.params.shed = false;   // (the C12g + N1 merge's follow-up)
       notes.push("saved before the trace shed: a worn pigment's trace goes back into the stock (as it ran)");
     }
+    if (opts.settings !== false && M.genome && !(S.settings && S.settings['genome.params'] && 'bSign' in S.settings['genome.params'])) {
+      M.genome.params.bSign = 'plus';   // (the C12g + N1 merge's follow-up: new founders, key G, as the page drew them then)
+    }
     if (opts.settings !== false && M.water && !(S.settings && S.settings['water.params'])) {
       Object.assign(M.water.params, { caustics: false, currents: false });   // step N1
       notes.push('saved before step N1: no caustic light, no currents (as it ran)');

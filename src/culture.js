@@ -157,7 +157,7 @@ export function layoutFromParams(params, preset) {
 /** Diversity: the genome's founders before a culture is seeded (clone: 1; few: one of each habit; mixed: 12; random: 0). */
 export function applyDiversity(genome, diversity) {
   if (diversity === 'clone') { genome.params.founders = 1; genome.newFounders(); }
-  else if (diversity === 'few') { genome.params.founders = HABITS.length; genome.founders = HABITS.map((h, k) => founderGenome(h, genome.rng, k)); }
+  else if (diversity === 'few') { genome.params.founders = HABITS.length; genome.founders = HABITS.map((h, k) => founderGenome(h, genome.rng, k, 'plus')); genome.mixBSigns(genome.founders); }   // (B signs from their own stream)
   else if (diversity === 'random') { genome.params.founders = 0; genome.founders = []; }
   else { genome.params.founders = 12; genome.newFounders(); }
 }

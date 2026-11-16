@@ -12,7 +12,7 @@
     "evals": [
       {
         "t": 5,
-        "js": "return { ions: [moire.ions.params.block, moire.ions.params.genes], pig: moire.pigments.params.matter, water: [moire.water.params.caustics, moire.water.params.currents], oases: [moire.oases.params.scarce, moire.oases.params.count] }"
+        "js": "return { ions: [moire.ions.params.block, moire.ions.params.genes], pig: moire.pigments.params.matter, shed: moire.pigments.params.shed, bSign: moire.genome.params.bSign, water: [moire.water.params.caustics, moire.water.params.currents], oases: [moire.oases.params.scarce, moire.oases.params.count] }"
       }
     ],
     "shots": [
@@ -21,12 +21,12 @@
       }
     ]
   },
-  "url": "http://localhost:63208/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/runs/c12f-dark_s3/snapshots/snap_t120.json",
+  "url": "http://localhost:53055/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/runs/c12f-dark_s3/snapshots/snap_t120.json",
   "browser": "chrome",
   "size": "1280x800",
-  "commit": "a7a41f13fbba1f18f0a3db3fe483e1f765a14942",
+  "commit": "a118d09c8e2ffaedbc6549515ab821de2abf204a",
   "dirty": true,
-  "started": "2026-11-16T21:29:08",
+  "started": "2026-11-16T21:42:00",
   "status": "ok",
   "browser_version": "Chrome/157.0.8103.51",
   "adapter": "nvidia turing",
@@ -54,8 +54,8 @@
   },
   "t_start": 120.0000000000005,
   "sim_s": 60.0,
-  "run_wall_s": 4.05,
-  "speed_reached": 14.8,
+  "run_wall_s": 4.09,
+  "speed_reached": 14.66,
   "samples": 7,
   "shots": [
     "shots/t60.png"
@@ -65,13 +65,15 @@
   "evals": [
     {
       "t": 4.999999999999986,
-      "js": "return { ions: [moire.ions.params.block, moire.ions.params.genes], pig: moire.pigments.params.matter, water: [moire.water.params.caustics, moire.water.params.currents], oases: [moire.oases.params.scarce, moire.oases.params.count] }",
+      "js": "return { ions: [moire.ions.params.block, moire.ions.params.genes], pig: moire.pigments.params.matter, shed: moire.pigments.params.shed, bSign: moire.genome.params.bSign, water: [moire.water.params.caustics, moire.water.params.currents], oases: [moire.oases.params.scarce, moire.oases.params.count] }",
       "result": {
         "ions": [
           false,
           false
         ],
         "pig": false,
+        "shed": true,
+        "bSign": "plus",
         "water": [
           false,
           false
@@ -84,6 +86,6 @@
     }
   ],
   "console_errors": [],
-  "ended": "2026-11-16T21:29:45",
-  "wall_s": 37.11
+  "ended": "2026-11-16T21:42:38",
+  "wall_s": 38.37
 }

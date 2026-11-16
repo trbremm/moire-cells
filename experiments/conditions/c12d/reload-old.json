@@ -1,0 +1,21 @@
+{
+ "name": "c12d-reload-old",
+ "description": "a stored configuration from before C12d (c11-pol-lb-t1-100) opened by ?snap= on an electrons page: the page reloads itself with ?electrons=0 and runs it as saved",
+ "query": {
+  "snap": "experiments/tissue/configs/c11-pol-lb-t1-100/snapshot.json"
+ },
+ "duration": 40,
+ "sample_every": 10,
+ "tissue": true,
+ "evals": [
+  {
+   "t": 0,
+   "js": "return { url: location.search, electrons: moire.electrons.on, excited: moire.excited.params.on }"
+  }
+ ],
+ "shots": [
+  {
+   "t": 40
+  }
+ ]
+}

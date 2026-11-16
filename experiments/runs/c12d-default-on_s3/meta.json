@@ -1,0 +1,66 @@
+{
+  "name": "c12d-default-on_s3",
+  "description": "step C12d: the default scene, 20 min, electrons on",
+  "condition": {
+    "name": "c12d-default-on_s3",
+    "description": "step C12d: the default scene, 20 min, electrons on",
+    "query": {
+      "electrons": 1,
+      "seed": 3
+    },
+    "duration": 1200,
+    "sample_every": 20,
+    "shots": [
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 600,
+        "view": "strategy"
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "view": "strategy"
+      },
+      {
+        "t": 1200,
+        "panel": true,
+        "name": "panel"
+      }
+    ]
+  },
+  "url": "http://localhost:49955/index.html?speed=max&until=0&overlay=ghost&ui=0&electrons=1&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "9c55eb92a7c25f4989fa7771865e8ad94a34b563",
+  "dirty": false,
+  "started": "2026-11-16T10:04:15",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 185.15,
+  "speed_reached": 6.48,
+  "samples": 61,
+  "shots": [
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t600_strategy.png",
+    "shots/t1200.png",
+    "shots/t1200_strategy.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T10:08:01",
+  "wall_s": 225.35
+}

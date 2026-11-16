@@ -1,0 +1,3 @@
+log.warning: The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127
+log.warning: The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127
+console.log: snapshot loaded: 100 cells at t 120.0 s, best effort: no grid in the snapshot (cells only): the page's grid kept; saved before step C12b: lipid membranes off (as it ran); saved before step C12c: excited waste off (as it ran); saved before step C13: field genes, gates and the push gene off (as it ran)

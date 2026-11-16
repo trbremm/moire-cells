@@ -1,0 +1,57 @@
+{
+ "name": "c12d-substrate",
+ "description": "step C12d: the substrate alone (one cell), the whole dish lit, a never-drying mineral spring (left) and vent (right), 6 min",
+ "query": {
+  "seed": 3,
+  "cells": 1,
+  "light": "full",
+  "springs": 0
+ },
+ "dpr": 2,
+ "duration": 360,
+ "sample_every": 10,
+ "evals": [
+  {
+   "t": 0,
+   "js": "const v = moire.control.view(); moire.matter.clearSprings(); moire.matter.addSpring(v.cssW * 0.42, v.cssH * 0.5, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.58, v.cssH * 0.5, 'heavy', 1e9); return moire.matter.springs.map(s => s.kind)"
+  }
+ ],
+ "shots": [
+  {
+   "t": 60
+  },
+  {
+   "t": 180
+  },
+  {
+   "t": 360
+  },
+  {
+   "t": 360,
+   "panel": true,
+   "name": "panel"
+  },
+  {
+   "t": 180,
+   "crop": [
+    430,
+    280,
+    420,
+    240
+   ],
+   "scale": 3,
+   "name": "springs_t180"
+  },
+  {
+   "t": 360,
+   "crop": [
+    430,
+    280,
+    420,
+    240
+   ],
+   "scale": 3,
+   "name": "springs_t360"
+  }
+ ]
+}

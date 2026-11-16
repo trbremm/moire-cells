@@ -156,7 +156,7 @@ export function setupUI(app) {
         () => app.compass(L.az), 'the direction the light comes from (the small triangle on the spot\'s rim)'));
       body.append(row(byId.get('day')));
       body.append(el('p', 'note', app.touch ? 'Move the spot with the move-light tool (the ellipse in the bar).'
-        : 'Move the spot with the move-light tool or a right-drag; the wheel tilts it, Shift+wheel turns it.'));
+        : 'Move the spot with the move-light tool or a right-drag; Alt+wheel tilts it, Shift+wheel turns it.'));
     },
     view(body) {
       // step C6n: the look first (neon, halo, trails, hum, clean / machinery), then what is drawn

@@ -140,7 +140,7 @@ export class Light {
     this.params.y = Math.max(0, Math.min(1, y / v.cssH));
   }
 
-  /** Mouse wheel: tilt by d degrees (clamped to 0 .. maxTilt). */
+  /** Alt+wheel: tilt by d degrees (clamped to 0 .. maxTilt). */
   tiltBy(d) {
     const p = this.params;
     p.tilt = Math.max(0, Math.min(p.maxTilt, p.tilt + d));
@@ -233,7 +233,7 @@ export class Light {
     let s = `light (Shift+L) ${p.mode}: power ${p.power}/100 px²/s · day ${Math.round(this.dayLevel * 100)}% at ` +
       `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')} (Shift+D cycle ${on(p.day)}, ${p.dayPeriod} s, night ${Math.round(p.dayMin * 100)}%)`;
     if (this.modeIndex === 1) {
-      s += ` · spot at ${sp.x.toFixed(0)},${sp.y.toFixed(0)} r ${sp.r.toFixed(0)} px · tilt ${p.tilt.toFixed(0)}° (wheel) · from ${p.az.toFixed(0)}° (Shift+wheel)`;
+      s += ` · spot at ${sp.x.toFixed(0)},${sp.y.toFixed(0)} r ${sp.r.toFixed(0)} px · tilt ${p.tilt.toFixed(0)}° (Alt+wheel) · from ${p.az.toFixed(0)}° (Shift+wheel)`;
     } else if (this.modeIndex === 2) {
       s += ` · clouds ${on(p.clouds)} (size ${p.cloudSize} px, depth ${p.cloudDepth})`;
     }

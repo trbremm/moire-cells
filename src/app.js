@@ -77,7 +77,7 @@ export function createApp(ctx) {
     return b;
   };
   const centre = () => [camera.W / 2 * 1, camera.H / 2 * 1];   // the screen's centre (CSS px)
-  btn('in', 'Zoom in (Ctrl+wheel; the wheel too while the spotlight is off; two fingers)', () => camera.zoomAt(...centre(), 1.5));
+  btn('in', 'Zoom in (the wheel, toward the pointer; two fingers)', () => camera.zoomAt(...centre(), 1.5));
   btn('out', 'Zoom out', () => camera.zoomAt(...centre(), 1 / 1.5));
   btn('fit', 'The whole dish', () => camera.fit());
   const zlabel = el('span', 'zval', '');

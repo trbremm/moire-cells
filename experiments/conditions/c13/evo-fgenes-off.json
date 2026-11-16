@@ -1,0 +1,74 @@
+{
+ "name": "c13-evo-fgenes-off",
+ "description": "Step C13, the control for field genes only: as evo-fgenes with the field genes off too (every cell today's values; the genes still drift, without effect); 20 minutes",
+ "query": {
+  "gates": 0,
+  "pushgene": 0,
+  "fgenes": 0
+ },
+ "duration": 1200,
+ "sample_every": 30,
+ "evals": [
+  {
+   "t": 120,
+   "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()"
+  },
+  {
+   "t": 300,
+   "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()"
+  },
+  {
+   "t": 600,
+   "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()"
+  },
+  {
+   "t": 900,
+   "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()"
+  },
+  {
+   "t": 1200,
+   "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()"
+  },
+  {
+   "t": 1200,
+   "js": "return await moire.walls.stats()"
+  }
+ ],
+ "shots": [
+  {
+   "t": 300,
+   "view": "machinery"
+  },
+  {
+   "t": 600,
+   "view": "machinery"
+  },
+  {
+   "t": 1200,
+   "view": "machinery"
+  },
+  {
+   "t": 600,
+   "view": "lineage"
+  },
+  {
+   "t": 1200,
+   "view": "lineage"
+  },
+  {
+   "t": 1200
+  },
+  {
+   "t": 1200,
+   "view": "lineage",
+   "panel": true
+  }
+ ],
+ "snapshots": [
+  {
+   "t": 1200,
+   "grid": false,
+   "name": "end"
+  }
+ ]
+}

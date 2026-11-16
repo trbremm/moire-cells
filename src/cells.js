@@ -44,7 +44,7 @@ import { pal } from './palette.js';
 import { Dipole, STATS_DIP, DIP_WORDS } from './dipole.js';
 import { Division, STATS_DIV, STATS_CLAIM, DIV_SNAP } from './division.js';
 import { Walls, STATS_WALL, WALL_WORDS } from './walls.js';
-import { Guides, STATS_FG, FG_WORDS } from './guides.js';
+import { Guides, STATS_FG, FG_WORDS, FG_CLEAR } from './guides.js';
 
 export const CELL_URL = 'src/shaders/cell_common.wgsl';
 
@@ -748,7 +748,8 @@ export class Cells {
     encoder.clearBuffer(this.statsBuf, STATS_DIP, DIP_WORDS * 4);   // step C6d: the dipoles' census, also on the last tick
     encoder.clearBuffer(this.statsBuf, STATS_DIV + 4 * DIV_SNAP, 4 * (15 - DIV_SNAP));   // step C9: its snapshot, on the last tick
     encoder.clearBuffer(this.statsBuf, STATS_WALL, 4 * WALL_WORDS);   // step C10: the walls' census, on the last tick too
-    encoder.clearBuffer(this.statsBuf, STATS_FG, 4 * FG_WORDS);       // step C13: the field genes' and gates' census (the same)
+    encoder.clearBuffer(this.statsBuf, STATS_FG, 4 * FG_CLEAR);       // step C13: the field genes' and gates' census (the same; its
+                                                                      // cumulative words after FG_CLEAR run on)
     for (let t = 0; t < ticks; t++) {
       this.encodeGrid(encoder, t);
       // ?check runs between the grid build and the move, so both see the same positions

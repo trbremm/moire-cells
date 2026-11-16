@@ -40,6 +40,7 @@ import { pal } from './palette.js';
 
 export const STATS_FG = 8768;    // byte offset of Stats.fg in struct Stats (cell_common.wgsl)
 export const FG_WORDS = 64;
+export const FG_CLEAR = 57;      // the census words cleared every frame (57, 58 are cumulative: the divisions against the gradient)
 export const BIO_FG = 56;        // the first field gene's word in Bio
 
 /** The genes of step C13, in Bio order from word 56, with today's values (what the founders carry). */
@@ -151,7 +152,17 @@ export class Guides {
       glueEff: w[46] / 1000 / m,         // mean |the glue gate's factor - 1| over the sides (what the glue gate does now)
       rateEff: w[47] / 1000 / m,         // mean |the engine gate's factor - 1| (what the engine gate does now)
       period: { hist, median: median == null ? null : median, mean: tot ? w[56] / 1000 / tot : null },
+      // the gates' marks: divisions against the felt gradient (|cos|; random 2 / pi = 0.64; cumulative, and since the last read-back),
+      // the fronts against it (cos; random 0), the contacts' sides against what the sides feel (+: on the high sides)
+      divN: w[57], divCos: w[57] ? w[58] / 1000 / w[57] : null,
+      frontCos: w[60] ? s[59] / 1000 / w[60] : null, frontN: w[60],
+      contactFelt: w[62] ? s[61] / 1000 / w[62] : null, contactN: w[62],
     };
+    // ... and over the latest 20 or more divisions (since the read-back that last closed such a window)
+    const dn = this.prevDiv ? w[57] - this.prevDiv[0] : -1, dc = this.prevDiv ? w[58] - this.prevDiv[1] : 0;
+    if (dn >= 20) this.divCosNow = dc / 1000 / dn;
+    if (dn < 0 || dn >= 20) this.prevDiv = [w[57], w[58]];
+    this.census.divCosNow = this.divCosNow ?? null;
     const S = this.series, last = S[S.length - 1];
     if (last && time < last[0]) S.length = 0;
     if (n && (!S.length || time - S[S.length - 1][0] >= 30)) {
@@ -183,8 +194,10 @@ export class Guides {
     const fb = `B lever ×${g.leverB.mean.toFixed(2)} emit ×${g.emitB.mean.toFixed(2)} sense ${sg(g.senseB)} pick ${g.pickB.mean.toFixed(2)}`;
     return `GUIDES${p.null ? '  NEUTRAL CONTROL (gates without effect)' : ''}  glue ${sg(g.gateGlue)}${gt('glue')} · pump ${sg(g.gatePump)}${gt('pump')} · engine ${sg(g.gateEngine)}${gt('engine')}` +
       ` · div ${sg(g.gateDiv)}${gt('div')} · turn ${sg(g.gateTurn)}${gt('turn')} · push ${sg(g.push)}${gt('push')}` +
-      ` · strongest ${strong[0]} ${Math.round(100 * strong[1])}%, unguided ${Math.round(100 * C.strongest.none)}%` +
+      ` · ${strong[1] > 0 ? `strongest ${strong[0]} ${Math.round(100 * strong[1])}%, ` : ''}unguided ${Math.round(100 * C.strongest.none)}%` +
       ` · felt ${C.felt.toFixed(2)}, sides ±${C.spread.toFixed(2)}, gradient ${C.guide.toFixed(2)}` +
+      ` · contacts on felt ${C.contactFelt == null ? '-' : (C.contactFelt >= 0 ? '+' : '') + C.contactFelt.toFixed(2)}` +
+      ` · front·gradient ${C.frontCos == null ? '-' : C.frontCos.toFixed(2)} · divisions |cos| ${C.divCos == null ? '-' : C.divCos.toFixed(2)} (chance 0.64)` +
       `\nFIELD GENES${p.genes ? '' : ' (off: today\'s values for all)'}  ${fa} · ${fb} · beat period median ${Guides.binText(C.period.median)}`;
   }
 

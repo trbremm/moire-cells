@@ -1,0 +1,15 @@
+{
+ "batch": "c13-glue",
+ "runs": [
+  "c13-glue-db-p.json",
+  "c13-glue-db-m.json",
+  "c13-glue-db-off.json",
+  "c13-glue-lb-p.json",
+  "c13-glue-lb-m.json",
+  "c13-glue-lb-off.json",
+  "c13-glue-db-p-100.json",
+  "c13-glue-db-off-100.json",
+  "c13-glue-lb-p-100.json",
+  "c13-glue-lb-off-100.json"
+ ]
+}

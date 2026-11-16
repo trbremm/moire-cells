@@ -448,6 +448,14 @@ const FGS_GLUE: u32 = 46u;      // sum of the mean |glue factor - 1| over the si
 const FGS_RATE: u32 = 47u;      // sum of |engine factor - 1| x 1000 (while the engine gate acts)
 const FGS_PH: u32 = 48u;        // 8 words: the beat period's histogram (bins at 2, 3, 4.5, 7, 10, 15, 25 R)
 const FGS_PSUM: u32 = 56u;      // sum of the beat period (R, at most 100) x 1000
+const FGS_DIVN: u32 = 57u;      // CUMULATIVE (never cleared): divisions of cells feeling a gradient (strength above 0.05)
+const FGS_DIVC: u32 = 58u;      // ... cumulative: the sum of |cos(the division axis, the felt gradient)| x 1000 (random: 2 / pi)
+const FGS_FRONT: u32 = 59u;     // cells feeling a gradient (strength above 0.05): the sum of cos(front, gradient) x 1000 (i32; random 0)
+const FGS_FRONTN: u32 = 60u;    // ... those cells
+const FGS_CONT: u32 = 61u;      // cells with a touching side (walls on): the sum of (the mean s of their touching sides - the mean s of
+                                // all six) x 1000 (i32; + : the contacts sit on the sides that feel the field high)
+const FGS_CONTN: u32 = 62u;     // ... those cells
+const FGS_CLEAR: u32 = 57u;     // the words cleared every frame (the rest, 57 and 58, run on)
 const FGS_MIN: f32 = 0.15;      // a gate gene below this counts as none (the census; the view has its own knob)
 // step C10: Stats.wall (signed sums are added as i32 bits and read back as Int32)
 const WS_N: u32 = 0u;           // cells counted

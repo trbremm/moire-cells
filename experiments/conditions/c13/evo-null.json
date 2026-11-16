@@ -1,0 +1,76 @@
+{
+ "name": "c13-evo-null",
+ "description": "Step C13, the NEUTRAL control: as evo-full with ?gatenull=1 (the gate genes and the push gene drift but act on nothing; the field genes act); 25 minutes",
+ "query": {
+  "gatenull": 1
+ },
+ "duration": 1500,
+ "sample_every": 30,
+ "evals": [
+  {
+   "t": 120,
+   "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()"
+  },
+  {
+   "t": 300,
+   "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()"
+  },
+  {
+   "t": 600,
+   "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()"
+  },
+  {
+   "t": 900,
+   "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()"
+  },
+  {
+   "t": 1200,
+   "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()"
+  },
+  {
+   "t": 1500,
+   "js": "const E = await import('/experiments/tissue/c13-evo.js'); return await E.patchiness()"
+  },
+  {
+   "t": 1500,
+   "js": "return await moire.walls.stats()"
+  }
+ ],
+ "shots": [
+  {
+   "t": 300,
+   "view": "machinery"
+  },
+  {
+   "t": 600,
+   "view": "machinery"
+  },
+  {
+   "t": 1500,
+   "view": "machinery"
+  },
+  {
+   "t": 600,
+   "view": "guides"
+  },
+  {
+   "t": 1500,
+   "view": "guides"
+  },
+  {
+   "t": 1500
+  },
+  {
+   "t": 1500,
+   "view": "lineage",
+   "panel": true
+  }
+ ],
+ "snapshots": [
+  {
+   "t": 1500,
+   "grid": false,
+   "name": "end"
+  }
+ ]
+}

@@ -4240,6 +4240,23 @@ reached could not be compared: with the GPU shared it swung between x0.6 and x7 
 - The colour-by views (V), the machinery marks, the membrane damage dashes, bursts and division flashes are not drawn in this look.
 - The user's reference image (`experiments/ref/harmonic-reference.webp`) is theirs and stays untracked (the repo is public).
 
+## Speed after the C12e/H1/APP merge
+
+Measured 2026-11-16 on main at 5ca47c0 (the merge of C12e, H1 and the App), with the GPU free for the first time that day (the
+earlier steps' numbers were taken while other workers shared it, and swung from ×0.6 to ×7). GTX 1650, headless Chrome 157, 1280 x
+800, the default scene, seed 3, MAX; the mean speed reached over the run (`speed_reached` in each run's meta.json). 2000 cells for
+150 s, 10 000 cells for 60 s of simulated time; three runs each, alternating the looks. Conditions
+`experiments/conditions/c12f/speed-base.json`, table by `experiments/conditions/c12f/speed.py`, runs `experiments/runs/c12f-speed-*`.
+
+| cells | neon look (default) | harmonic look (`?look=harmonic`) |
+|---|---|---|
+| 2000 | ×7.54, ×7.30, ×7.34 (mean ×7.39) | ×7.56, ×7.87, ×7.81 (mean ×7.75) |
+| 10 000 | ×1.73, ×1.77, ×1.75 (mean ×1.75) | ×1.91, ×1.94, ×1.90 (mean ×1.92) |
+
+The three runs of each agree within 3 %, so these are the numbers to compare against from now on. The harmonic look is 5 to 10 %
+faster (no halo passes, no trail fade), as its drawing times said. At 2000 cells the speed also follows how many cells are alive
+(the default scene's colony crashes and recovers), not only the drawing.
+
 ## The look of the landscape
 
 Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the

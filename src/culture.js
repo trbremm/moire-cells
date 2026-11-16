@@ -7,6 +7,7 @@
 //   ?spread=clump|scatter|colonies|ring   how the founders are placed (default clump: the old blob at the centre); with any
 //                       spread but clump the pull to the dish centre is nearly off (squeeze 0.02), so the culture stays spread
 //   ?colonies=N         how many colonies (spread=colonies; default 5)
+//   ?ventring=a,b       step M1: a preset's colonies (the Deep vents preset's) as a ring a..b R round each centre instead of a blob
 //   ?diversity=clone|few|mixed|random     one genome cloned / one founder of each habit (eater, light + burn, photosynthesiser,
 //                       other) / the usual 12 founders (default) / every cell its own random genome. With colonies, colony k is
 //                       founder k's
@@ -25,6 +26,9 @@ export const PRESETS = {
     query: { light: 'off', day: 0, clouds: 0, spread: 'colonies', colonies: 3, cells: 600, hotvent: 1, sea: 1, diversity: 'random', starter: 0.55, scarce: 0 },
     // (step N1: scarce=0: the vents' water is rich in metals, so here the vents drip trace as before; no oases)
     centres: (W, H) => ring3(W, H, 0.27, -90),
+    // step M1 (Task B): the founders on a RING round each vent (?ventring=inner,outer in R; 0,0 = the old blobs on the vents), where
+    // the vent's givers meet the sea's takers cold once the charge field is off (step C12g)
+    ring: [8, 20],
     scene({ matter, light, W, H }) {
       light.params.power *= 0.3;   // the faint glow, if the light is switched on (&light=full)
       // step C12f: each vent HOT (src/vents.js: free givers and heat), with a mineral seep beside it (linkers for membranes, and the
@@ -151,7 +155,12 @@ export function layoutFromParams(params, preset) {
   const colonies = Math.max(2, Math.min(12, Math.round(Number(params.get('colonies')) || 5)));
   const diversity = DIVERSITY.includes(params.get('diversity')) ? params.get('diversity') : 'mixed';
   const P = preset && PRESETS[preset];
-  return { spread, colonies, diversity, centres: P && P.centres ? P.centres : null };
+  let ring = P && P.ring ? P.ring : null;   // (step M1: a preset's founders on a ring round each colony centre, inner..outer R)
+  if (params.has('ventring')) {
+    const v = String(params.get('ventring')).split(',').map(Number);
+    ring = v.length === 2 && v.every(Number.isFinite) && v[1] > v[0] ? v : null;
+  }
+  return { spread, colonies, diversity, centres: P && P.centres ? P.centres : null, ring };
 }
 
 /** Diversity: the genome's founders before a culture is seeded (clone: 1; few: one of each habit; mixed: 12; random: 0). */
@@ -187,11 +196,12 @@ export function cultureLayout(L, W, H, R, n, rng) {
     return [W / 2 + Math.cos(a) * 0.3 * m, H / 2 + Math.sin(a) * 0.3 * m];
   });
   const kk = centres.length, per = Math.ceil(n / kk), s = R * Math.sqrt(per / 0.85);
+  const ring = L.ring;   // (step M1: an annulus inner..outer R round each centre instead of a blob)
   return {
     founder: (i, nf) => Math.floor(i / per) % nf,
     at: (i) => {
       const [cx, cy] = centres[Math.min(kk - 1, Math.floor(i / per))];
-      const a = rng() * 2 * Math.PI, dd = Math.sqrt(rng()) * s;
+      const a = rng() * 2 * Math.PI, dd = ring ? R * Math.sqrt(ring[0] ** 2 + rng() * (ring[1] ** 2 - ring[0] ** 2)) : Math.sqrt(rng()) * s;
       return [Math.max(pad, Math.min(W - pad, cx + Math.cos(a) * dd)), Math.max(pad, Math.min(H - pad, cy + Math.sin(a) * dd))];
     },
   };

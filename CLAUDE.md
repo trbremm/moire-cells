@@ -466,6 +466,13 @@ C12c. EXCITED WASTE, THE OXYGEN FIX (user 2026-11-15 chose "charged waste"; NEXT
       haze is a worse poison than before (like reactive oxygen). No rule names breathers or poison.
     - Books exact (excited energy counted as stored), own switch, the excited haze drawn as a faint glowing sparkle that
       fades. Then rerun the oxygen conditions and watch: breathers rising, the haze being eaten, armour vs breathing.
+    AS BUILT (C12b graze + C12c, 2026-11-16): grazing gives ~1 cell in 10 a whole membrane (mean integrity ~0.1, not
+    0.3): light and heavy crust sit at different springs, so few cells hold both linkers, and bites eat soap as fast as
+    fusion brings it. Excited g*/t* keep E* = 0.625 (half the photon surplus), fade at 1/30 s x (1 + T/4); through an
+    engine to the battery, else heat. Breathing an excited atom beats burning PER EVENT, but the haze is ~0.1 %
+    excited: most free light atoms come from springs and burners' exhaust (ground), light makes only 1-7 excited/s.
+    Breathing still did not rise. One seed only: under the whole dish, light-driven uphill swap carriers rose to 52 %
+    (2.5 % off), maybe eating their own excited waste. Haze drawn as sparse hot red-orange sparks.
 LATER, PURIST VERSION (user 2026-11-15: hoped for "a more game of life situation", surprised how many abstractions
     were needed; chose to KEEP GOING with lipids (C12b) and the oxygen story, "I can go back to the purist version
     later"). Idea on file: a separate small page "moire life": cells of a few colours, pairwise push/pull through

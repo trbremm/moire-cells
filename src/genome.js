@@ -35,7 +35,7 @@
 // Seeding: `founders` random genomes (0 = every cell its own), each cell a copy of one of them, scattered at
 // random. A seeded random generator (?seed=N) makes the start repeatable.
 
-import { ENGINES, engineIndex } from './matter.js';
+import { ENGINES, engineIndex, ELECTRONS } from './matter.js';
 import { fieldDefaults, founderGates, BIO_FG } from './guides.js';
 
 export const BIO_FLOATS = 76;   // (40 until step C6c's membrane genes, 44 until step C7's pumps, 48 until step C10's walls, 52 until step C12b's lipids,
@@ -122,8 +122,43 @@ const E = (name) => engineIndex(name);
 const HEAVY_BURN = ['gT → g + T', 'Gt → G + t', 'GT → G + T'];
 const slot = (g, k, eng, rate, band = 1) => { g[32 + k] = eng + 32 * band; g[36 + k] = rate; };
 
+// Step C12d (electrons): the founders' engine sets from the electrons' table. Free atoms are now the restless, energy-rich state,
+// and light makes them: in the open, hard light splits the water-like mineral gt into g + t and visible light splits the vent's
+// fuel; a pigment does it inside a cell. So the founders (the same four habits as before, in the new table):
+//   burn     ("eaters") bond free atoms: g + t -> gt (a free light taker grabbing a free giver: 4.5, the richest burn) and a
+//            fermenting engine (no oxygen needed: G + T -> GT, G + gT -> GT + g, g + T -> gT or the trade gT + Gt -> gt + GT)
+//   both     a visible 2 pigment SPLITTING the mineral gt -> g + t (the photon pays 3 of the 4.5, the battery the rest) and the burn
+//            g + t -> gt: light made into free atoms and burned back in one cell (as C6's "both": a harvester must burn)
+//   pigments PHOTOSYNTHESIS: gt + T -> gT + t (visible 2: fuel made, a free light taker thrown out) and Gt + T -> GT + t, and a
+//            small burn of g + t
+//   other    a chain maker, a BREATHER (t + gT -> gt + T, 3: idle until oxygen comes) and a small fermenter
+const FERMENT = ['G + T → GT', 'G + gT → GT + g', 'g + T → gT', 'gT + Gt → gt + GT'];
+function enginesE(g, rng, strategy) {
+  for (let k = 0; k < 3; k++) slot(g, k, E('g + t → gt'), 0, 1);
+  const fer = () => E(FERMENT[Math.floor(rng() * FERMENT.length)]);
+  if (strategy === 'burn') {
+    slot(g, 0, E('g + t → gt'), U(rng, 1.5, 3), 0);
+    slot(g, 1, fer(), U(rng, 1, 2.5), 0);
+  } else if (strategy === 'both') {
+    slot(g, 0, E('gt → g + t'), U(rng, 0.6, 1.5), 2);
+    slot(g, 1, E('g + t → gt'), U(rng, 1.5, 3), 0);
+    if (rng() < 0.5) slot(g, 2, fer(), U(rng, 0.5, 1.5), 0);
+  } else if (strategy === 'pigments') {
+    slot(g, 0, E('gt + T → gT + t'), U(rng, 0.8, 2), 2);
+    slot(g, 1, E('Gt + T → GT + t'), U(rng, 0.5, 1.5), 2);
+    slot(g, 2, E('g + t → gt'), U(rng, 0.3, 0.8), 0);
+  } else {
+    slot(g, 0, E('l + l → ll'), U(rng, 1, 2.5), 0);
+    slot(g, 1, E('t + gT → gt + T'), U(rng, 1, 2.5), 0);
+    slot(g, 2, fer(), U(rng, 0.3, 0.8), 0);
+  }
+  g[35] = U(rng, 10, 20);
+  g[39] = logU(rng, 1.5, 6);
+}
+
 /** Fill the engine genes (slots, tolerance, permeability) of genome g for a strategy. */
 function engines(g, rng, strategy) {
+  if (ELECTRONS) { enginesE(g, rng, strategy); return; }
   for (let k = 0; k < 3; k++) slot(g, k, E('gt → g + t'), 0, 1);
   if (strategy === 'burn') {
     slot(g, 0, E('gt → g + t'), U(rng, 1.5, 3));
@@ -178,7 +213,8 @@ export function strategyOf(g, o = 0) {
   for (let k = 0; k < 3; k++) {
     if (!(g[o + 36 + k] > 0)) continue;
     const code = Math.round(g[o + 32 + k]), kind = ENGINES[Math.min(ENGINES.length - 1, code & 31)].kind;
-    if (kind === 0 && code >> 5 > 0) h = true; else if (kind === 1) b = true;   // (an uphill engine without a pigment stores)
+    if (kind === 0 && code >> 5 > 0) h = true; else if (kind === 1 || (ELECTRONS && kind === 2)) b = true;   // (an uphill engine without a pigment
+                                                                                                         // stores; C12d: breathing feeds too)
   }
   return h && b ? 'both' : h ? 'harvest' : b ? 'burn' : 'other';
 }

@@ -167,8 +167,10 @@ struct Rx {
   by: u32,                      // 0: by heat (rate x exp(-spark / (theta x temperature))); 1: by light of `band`
   band: u32,
   fam: u32,                     // family, for the counters (make, burn, photo, swap, form, crack; step C12: oil formed,
-                                // oil cracked, head on, head off)
-  open: u32,                    // step C12: 1 = in the open dish only (its substances are not in the cells' stock)
+                                // oil cracked, head on, head off; step C12d: 10 fluorescence, 11 excited -> heat, not in the ledger's)
+  open: u32,                    // step C12: bit 0 = in the open dish only (its substances are not in the cells' stock); step C12d:
+                                // bit 1 an excited state's event (light, electrons on), bit 2 photochemistry, bits 8..15 the band it
+                                // emits + 1 (fluorescence; 0 none)
   heat16: i32,                  // heat counts released per event
   light16: i32,                 // light counts used per event (by light)
   k: f32,                       // by heat: rate constant (per s for one reactant, R^2 per s for two); by light: the
@@ -194,7 +196,9 @@ struct ChemP {
                                 // (its chain's energy, uphill), w its spark (heat counts per unit, lost as heat)
   ex: vec4f,                    // step C12c, excited waste (src/excited.js): x 1 = on; y the heat counts one excited count holds
                                 // (16 E*); z its fading rate (1 / lifetime, per s); w the temperature at which it fades twice as fast
-  rx: array<Rx, 32>,            // (24 until step C12)
+  el: vec4f,                    // step C12d, electrons (src/matter.js, src/electrons.js): x 1 = on (the reactions are the electrons'
+                                // table: light reactions excite, fluoresce, react; paint works out the glow); y z w spare
+  rx: array<Rx, 48>,            // (24 until step C12, 32 until step C12d)
 };
 const NONE: u32 = 255u;
 

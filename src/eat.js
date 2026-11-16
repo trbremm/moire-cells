@@ -41,7 +41,7 @@
 
 import { loadFieldShader } from './field.js';
 import { HEAT_COMMON_URL, HEAT_SCALE, LEDGER_WORDS, fmt } from './heat.js';
-import { SUBSTANCES, NCH, NCH_CELL, CH, ATOM_SCALE, ENGINES, ENGINE_KINDS, CHARGE_CODES, EXC0 } from './matter.js';
+import { SUBSTANCES, NCH, NCH_CELL, CH, ATOM_SCALE, ENGINES, ENGINE_KINDS, CHARGE_CODES, EXC0, ELECTRONS } from './matter.js';
 import { BANDS, LIGHT_COMMON_URL } from './light.js';
 import { Membrane, MB_SNAP_WORDS } from './membrane.js';
 import { Pumps, PU_SNAP_WORDS } from './pumps.js';
@@ -52,8 +52,9 @@ import { Lipids, LIP_SNAP } from './lipids.js';
 export const SW = 64;               // stock words per cell (cell_eat.wgsl; 16 until step C6c's membranes, words 16..27; step C7:
                                     // 14 the pumped charge across the membrane, 15 the voltage's energy; 32 until step C12b's
                                     // lipid membrane, words 32..61)
-const EP_BYTES = 1648;              // struct EatP (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat; step C8: + hl;
-                                    // step C9: + dv; step C10: + wl0, wl1; step C12b: + lp[9])
+const EP_BYTES = 1712;              // struct EatP (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat; step C8: + hl;
+                                    // step C9: + dv; step C10: + wl0, wl1; step C12b: + lp[9]; step C12d: + smellW)
+const EP_SMELL = 412;               // ... its words smellW (step C12d)
 const EP_LP = 376;                  // ... its words lp (step C12b)
 const EP_DV = 364;                  // ... its word dv (step C9)
 const EP_WL = 368;                  // ... its word wl0 (step C10)
@@ -223,9 +224,10 @@ export class Eat {
   writeParams(dt, mask, resetCur = 0, heatEnd = 0) {
     const p = this.params, H = this.heat;
     const u = new Uint32Array(this.paramAB), f = new Float32Array(this.paramAB), i = new Int32Array(this.paramAB);
-    u[0] = (p.on ? 1 : 0) | (this.rule('burner') ? 2 : 0) | (this.rule('inside') ? 4 : 0) |
+    // (step C12d: with electrons the C5 burner, fuel -> its atoms, would be uphill: it is not available; EF_ELEC 256)
+    u[0] = (p.on ? 1 : 0) | (this.rule('burner') && !ELECTRONS ? 2 : 0) | (this.rule('inside') ? 4 : 0) |
       (this.rule('engines') ? 8 : 0) | (this.pigmentsOn ? 16 : 0) | (this.rule('upkeep') ? 32 : 0) |
-      (this.rule('tolGene') ? 64 : 0) | (this.rule('permGene') ? 128 : 0);
+      (this.rule('tolGene') ? 64 : 0) | (this.rule('permGene') ? 128 : 0) | (ELECTRONS ? 256 : 0);
     u[1] = mask >>> 0; u[2] = H.n; u[3] = Math.round(Math.max(0, Math.min(1, p.ineff)) * 256);
     u[4] = SED_MASK; i[5] = Math.round(Math.max(0, p.starter) * this.batCounts); i[6] = this.batCounts; u[7] = resetCur;
     f[8] = dt; f[9] = this.cells.R; f[10] = Math.max(0, p.capR2); f[11] = Math.max(0, p.kBurner);
@@ -240,6 +242,7 @@ export class Eat {
       f[64 + c] = s.atoms.length;
       f[80 + c] = s.spark;
       f[116 + c] = s.spread / ROW1;                               // step C6: the permeability gene's scale per channel
+      f[EP_SMELL + c] = s.smell16;                                // step C12d: what smell weighs it by
     });
     // step C6: the engines' knobs and table (struct Eng: ch, kind, g16, spark)
     f[96] = Math.max(0, p.engMax) * dt * ATOM_SCALE; f[97] = Math.max(0, p.pigK);
@@ -428,17 +431,19 @@ export class Eat {
     const p = this.params;
     if (!p.on || !p.engines) return `ENGINES  not running (${!p.on ? 'Shift+A' : 'Shift+O'})${p.burner ? ' · everyone burns' : ''}`;
     const pc = (x) => `${Math.round(100 * x / C.n)}%`;
-    const sh = { harvest: 'harvest', burn: 'burn', both: 'both', other: 'other' };
+    // (step C12d, electrons: 'burn' is any engine that feeds the battery, fermenting or breathing)
+    const sh = { harvest: 'harvest', burn: ELECTRONS ? 'eat' : 'burn', both: 'both', other: 'other' };
     const mb = (c) => (c.n ? Math.round(100 * c.bat / c.n) : 0);
     const T = C.all.reduce((x, c) => x + c.tol, 0) / C.n, P = C.all.reduce((x, c) => x + c.perm, 0) / C.n;
-    const ab = { harvest: 'h', burn: 'b', both: 'h+b', other: 'o' };
+    const ab = ELECTRONS ? { harvest: 'h', burn: 'e', both: 'h+e', other: 'o' } : { harvest: 'h', burn: 'b', both: 'h+b', other: 'o' };
     const up = C.up.lit + C.up.dark, br = C.breath.lit + C.breath.dark;
     if (compact) return `ENGINES ${STRATS.map((s, k) => `${ab[s]} ${pc(C.all[k].n)}`).join(' ')} · free g ${fmt(C.free.g)} t ${fmt(C.free.t)}`;
     const nl = C.lit.reduce((x, c) => x + c.n, 0);
     const lit = nl ? `${STRATS.map((s, k) => Math.round(100 * C.lit[k].n / nl)).join(' · ')} %` : '-';
     return `ENGINES  ${STRATS.map((s, k) => `${sh[s]} ${pc(C.all[k].n)}`).join(' · ')}  (batteries ${STRATS.map((s, k) => mb(C.all[k])).join(' · ')} %)` +
       ` · in the light ${lit} · tolerance ${T.toFixed(1)} · perm ${P.toFixed(2)}` +
-      `\nFREE LIGHT ATOMS  g ${fmt(C.free.g)} · t ${fmt(C.free.t)} in the dish · cells with an uphill swap ${up} · breathers (downhill swap) ${br}`;
+      (ELECTRONS ? `\nFREE LIGHT ATOMS  g ${fmt(C.free.g)} · t ${fmt(C.free.t)} (oxygen) in the dish · cells with an uphill swap or trade ${up} · breathers (an engine using t) ${br}`
+        : `\nFREE LIGHT ATOMS  g ${fmt(C.free.g)} · t ${fmt(C.free.t)} in the dish · cells with an uphill swap ${up} · breathers (downhill swap) ${br}`);
   }
 
   /** The entropy panel's line (step C5). */

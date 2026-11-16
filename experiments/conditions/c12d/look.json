@@ -1,0 +1,10 @@
+{
+ "name": "c12d-look",
+ "description": "step C12d: close-ups of the springs under the spotlight (the minerals, the fuel, the fluorescence glow), 90 s",
+ "query": {"seed": 3},
+ "dpr": 2,
+ "duration": 90,
+ "sample_every": 30,
+ "shots": [{"t": 45}, {"t": 45, "crop": [775, 238, 200, 300], "scale": 3, "name": "springs_t45"},
+           {"t": 90, "crop": [775, 238, 200, 300], "scale": 3, "name": "springs_t90"}]
+}

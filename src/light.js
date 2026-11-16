@@ -184,6 +184,7 @@ export class Light {
     const H = this.heat;
     const px = H && H.px ? H.px : 3, dt = frame.tickDt || 1 / 60;
     const perPx = Math.max(0, p.power) / 100 * this.dayLevel * px * px * dt * HEAT_SCALE;
+    this.refPerPx = Math.max(1e-9, Math.max(0, p.power) / 100 * px * px * dt * HEAT_SCALE);   // (step C12d: full day, for the glow's scale)
     BANDS.forEach((b, k) => {
       f[16 + k] = perPx * b.share;
       f[20 + k] = Math.max(0, b.medium);

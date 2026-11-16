@@ -204,7 +204,11 @@ struct EatP {
                            // [5] x fusion's rate (share of the shortfall per s); y the oil one soap molecule holds between its tails
                            //     at most; z the stiffness floor; w a fully damaged side's share of its stiffness (as soft)
                            // [6] per kind its LIGHT linkers (l) in the chain, [7] its HEAVY linkers (L): what bites by row
-                           // [8] x the honeycomb corners' angular frequency at stiffness 1 (1/s; Fields.hex.x = its square); y z w spare
+                           // [8] x the honeycomb corners' angular frequency at stiffness 1 (1/s; Fields.hex.x = its square); y step C12d:
+                           //     the minus soap's (tlL) release built from atoms (heat counts; [4].x is glL's); z w spare
+  // ---- step C12d, electrons ----
+  smellW: array<vec4f, 4>, // per channel: what smell weighs it by (heat counts per count): the old table a fuel's energy; electrons the
+                           // energy the strongest taker would release taking its electron (fuel 3, 2.5; minerals 0)
 };
 // step C13: the gates' bits (FG_* in cell_common.wgsl; src/guides.js writes them into EatP.wl1.z)
 fn fg_bits() -> u32 { return bitcast<u32>(EP.wl1.z); }
@@ -349,6 +353,7 @@ const EF_PIG: u32 = 16u;     // ... pigments catch light (harvest engines)
 const EF_UPKEEP: u32 = 32u;  // ... upkeep costs
 const EF_TOLG: u32 = 64u;    // ... the heat tolerance is a gene (else the global `tol`)
 const EF_PERMG: u32 = 128u;  // ... the permeability is a gene (else the global `perm`)
+const EF_ELEC: u32 = 256u;   // step C12d: the electrons' table (the census counts breathing engines as eating; the burner is off)
 
 // counters (LG_K_EV + 128 k): per workgroup in wev, then one 64-bit add
 const EV_BURNED: u32 = 0u;      // fuel counts the burners broke
@@ -1000,7 +1005,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
       let pi = u32(px.y) * HP.hw + u32(px.x);
       var v = 0.0;
       for (var f = FUEL_CH; f < FUEL_CH + 4u; f++) {
-        if ((EP.mask & (1u << f)) != 0u) { v += f32(ep_i(EP.e16, f)) * f32(mg[cur - lw + f * EP.n + pi]); }
+        if ((EP.mask & (1u << f)) != 0u) { v += ep_f(EP.smellW, f) * f32(mg[cur - lw + f * EP.n + pi]); }   // (step C12d: smellW)
       }
       gr += v * cp;
       rr += dot(cp, cp);
@@ -1634,7 +1639,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         }
         let ns = nG + nT;
         m[0] -= nG; m[1] -= nT; m[MB_CH_L] -= ns; m[MB_CH_H] -= ns;
-        bat -= ns * spS; paid += ns * spS; heat += ns * (spS + i32(EP.lp[4].x));
+        bat -= ns * spS; paid += ns * spS; heat += ns * spS + nG * i32(EP.lp[4].x) + nT * i32(EP.lp[8].y);   // (step C12d: each soap its own)
         atomicAdd(&wlp[LC_SOAP], ns);
       }
       // then the oil between the tails
@@ -2276,8 +2281,8 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
         if (band > 0u) { hv = true; rr.x += b.rate[k]; up = up || (E.ch.w != NONE && E.ch.y != NONE); }
         else { rr.z += b.rate[k]; }
       }
-      else if (E.kind == 1u) { bu = true; rr.y += b.rate[k]; }
-      else { rr.z += b.rate[k]; br = br || E.kind == 2u; }
+      else if (E.kind == 1u || (E.kind == 2u && (EP.flags & EF_ELEC) != 0u)) { bu = true; rr.y += b.rate[k]; br = br || E.kind == 2u; }   // (step C12d:
+      else { rr.z += b.rate[k]; br = br || E.kind == 2u; }                                                                                //  breathing feeds too)
     }
     let pu = select(74u, 72u, lit);
     if (up) { atomicAdd(&wcen[pu], 1); }

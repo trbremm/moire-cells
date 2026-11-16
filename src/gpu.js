@@ -143,6 +143,15 @@ function webglRenderer() {
  * Shared snippets can be prepended (plain text concatenation; no #include): either one `prefix` text named
  * `prefixName`, or a list `prefixes` of { name, text }. Messages point at the right file and line.
  */
+// Step C12d: constants the page sets before any shader loads (e.g. ENG_COUNT, the engines a genome can name, which depends on the
+// chemistry's table: ?electrons=0 has 20, the electrons' 22). A line `const NAME: u32 = ...;` in any shader text gets the value.
+const SHADER_CONSTS = new Map();
+export function setShaderConst(name, value) { SHADER_CONSTS.set(name, value); }
+function patchConsts(code) {
+  for (const [name, v] of SHADER_CONSTS) code = code.replace(new RegExp(`const ${name}: u32 = [0-9]+u;`, 'g'), `const ${name}: u32 = ${v >>> 0}u;`);
+  return code;
+}
+
 export async function loadShader(device, url, { prefix = '', prefixName = 'prefix', prefixes = null } = {}) {
   const res = await fetch(url, { cache: 'no-cache' });
   if (!res.ok) throw new Error(`Could not load shader ${url}: HTTP ${res.status}`);
@@ -152,7 +161,7 @@ export async function loadShader(device, url, { prefix = '', prefixName = 'prefi
   let line = 1;
   for (const p of parts) { spans.push({ name: p.name, from: line }); line += p.text.split('\n').length - 1; }
   const bodyFrom = line;
-  const code = parts.map((p) => p.text).join('') + (await res.text());
+  const code = patchConsts(parts.map((p) => p.text).join('') + (await res.text()));
   const module = device.createShaderModule({ label: url, code });
   const ci = await module.getCompilationInfo();
   const errors = ci.messages.filter((m) => m.type === 'error');

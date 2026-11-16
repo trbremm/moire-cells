@@ -30,7 +30,7 @@
 import { CELL_FLOATS } from './cells.js';
 import { BIO_FLOATS } from './genome.js';
 import { LEDGER_WORDS } from './heat.js';
-import { NCH, SUBSTANCES } from './matter.js';
+import { NCH, SUBSTANCES, ELECTRONS } from './matter.js';
 import { fieldDefaults } from './guides.js';
 
 export const SNAP_FORMAT = 'moire-cells-snapshot';
@@ -157,6 +157,7 @@ export function settingObjects(M) {
     ...(M.oil ? { 'oil.params': M.oil.params } : {}),            // step C12
     ...(M.lipids ? { 'lipids.params': M.lipids.params, 'lipids.look': M.lipids.look } : {}),   // step C12b
     ...(M.excited ? { 'excited.params': M.excited.params, 'excited.look': M.excited.look } : {}),   // step C12c
+    ...(M.electrons ? { 'electrons.params': M.electrons.params, 'electrons.look': M.electrons.look } : {}),   // step C12d
     ...(M.guides ? { 'guides.params': M.guides.params, 'guides.look': M.guides.look } : {}),   // step C13
   };
 }
@@ -200,6 +201,7 @@ function captureBooks(M) {
     oil: M.oil ? clone(M.oil.tot) : null,   // step C12
     lipids: M.lipids ? clone(M.lipids.tot) : null,   // step C12b
     excited: M.excited ? clone(M.excited.tot) : null,   // step C12c
+    electrons: M.electrons ? clone(M.electrons.tot) : null,   // step C12d
     excitedE16: M.excited ? M.excited.table.e16 : null,   // (the energy one excited count holds: ?exshare=)
     division: { costTot: M.division.costTot || 0 },
     rounding: {
@@ -221,11 +223,12 @@ function restoreBooks(M, B) {
   M.division.costTot = B.division.costTot;
   if (M.lipids) { for (const k of Object.keys(M.lipids.tot)) M.lipids.tot[k] = (B.lipids && B.lipids[k]) || 0; }   // (step C12b)
   if (M.excited) { for (const k of Object.keys(M.excited.tot)) M.excited.tot[k] = (B.excited && B.excited[k]) || 0; }   // (step C12c)
+  if (M.electrons) { for (const k of Object.keys(M.electrons.tot)) M.electrons.tot[k] = (B.electrons && B.electrons[k]) || 0; }   // (step C12d)
 }
 
 /** Every rate history and time series starts again (their windows would span the jump in time). */
 function clearHistories(M) {
-  const mods = [M.heat, M.matter, M.eat, M.membrane, M.pumps, M.catalysts, M.hardlight, M.dipole, M.division, M.cells, M.charge, M.oil, M.lipids, M.excited].filter(Boolean);   // (step C12: + the oil; C12b: + the lipids)
+  const mods = [M.heat, M.matter, M.eat, M.membrane, M.pumps, M.catalysts, M.hardlight, M.dipole, M.division, M.cells, M.charge, M.oil, M.lipids, M.excited, M.electrons].filter(Boolean);   // (step C12: + the oil; C12b: + the lipids; C12d: + electrons)
   for (const m of mods) {
     for (const k of Object.keys(m)) if (/(^hist|Hist$|hist\d$|^series$)/.test(k) && Array.isArray(m[k])) m[k] = [];
   }
@@ -305,6 +308,7 @@ export async function snapshot(M, ctl, opts = {}) {
     const out = {
       format: SNAP_FORMAT, version: SNAP_VERSION, created: new Date().toISOString(), note: opts.note || '',
       url: location.href, query: location.search, seed: ctl.seed,
+      electrons: ELECTRONS,   // step C12d: the chemistry's table it runs on (absent before step C12d: the old one)
       time: ctl.time(), tick: C.tick >>> 0,
       view: { cssW: v.cssW, cssH: v.cssH }, R: C.R, start: C.start, count: C.count, alive: m,
       layout: { cellWords: CELL_FLOATS, bioWords: BIO_FLOATS, stockWords: SW, substances: SUBSTANCES.map((s) => s.name) },
@@ -332,6 +336,11 @@ export async function snapshot(M, ctl, opts = {}) {
 export async function loadSnapshot(M, ctl, S, opts = {}) {
   if (!S || S.format !== SNAP_FORMAT) throw new Error('not a moire-cells snapshot');
   if (S.version > SNAP_VERSION) throw new Error(`snapshot version ${S.version} is newer than this page (${SNAP_VERSION})`);
+  // step C12d: the table is fixed for the page (the energy of everything in the dish depends on it): a snapshot of the other table
+  // needs a page started with its ?electrons= (?snap= does that by itself: main.js reloads the page)
+  if (!!S.electrons !== ELECTRONS) {
+    throw new Error(`this snapshot runs on the ${S.electrons ? 'electrons table' : 'old (step C4) table'}: open the page with ?electrons=${S.electrons ? 1 : 0} to load it`);
+  }
   const wasPaused = ctl.paused();
   const notes = [];
   const C = M.cells, H = M.heat, d = M.gpu.device;

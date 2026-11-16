@@ -580,6 +580,28 @@ C12g. MEMBRANES MODULATE ION FLOW (user 2026-11-16 "Yes, membranes modulate ion 
       toy of real electrophysiology.
     - Hoped for, never written: oxygen trapped -> cells swell -> stretch channels or anion-channel mutants let t out ->
       haze builds; breathers evolve inward anion channels or pumps. Census of channel genes vs a neutral control.
+GLIDERS (user 2026-11-16: "did you notice our short lived gliders? When two cells combine and become fast little
+    swimmers"; "I notice gliders all the time, in any condition, they are just a bit rare"). Claude had not seen them
+    (screenshots miss them). Guess: a NON-RECIPROCAL pair (A's field genes pull it toward B, B's push it from A: a chase
+    at touching distance, as in particle-life gliders), ended by collisions, divisions, glue, drift. HUNT (parallel
+    worktree): a detector for fast touching pairs (speed, lifetime, heading, both cells' genes: field signs/gains, tuning,
+    lattice angles, glue, fates), census over runs; then make one on demand in the tissue lab from two hand-set genomes;
+    then what makes them last. They may be the first thing in the dish that REWARDS sticking together (moving to food).
+T1. TISSUES THAT PAY: PRESSURE TO LINK (user 2026-11-16: "we have no evolutive pressure to encourage linking"; asked
+    "could we design some tissues that run in our engine? like light eaters surrounded by strong celled ones (like
+    plants)"). After C12f, C12g. Pieces, each its own switch, in this order:
+    - AN INSIDE: a membrane side pressed against a neighbour exchanges with that neighbour (or not at all), not with the
+      dish; outer cells meet the haze, vandal atoms and heat, inner cells are sheltered.
+    - SAME DNA, DIFFERENT JOBS: each fate (existing contact-made fates; today they only change glue and colour) carries a
+      small inherited table of MODIFIERS to the shared genes (e.g. "bark": wall up, thick membrane, pigment off; "leaf":
+      pigment on, soft membrane); position decides fate, fate decides which genes are used (gene expression).
+    - KIN CHANNELS: passive sharing through contacts with similar cells (plasmodesmata / gap junctions) as a gene.
+    - Hand-designed tissues in the lab, each from ONE genome: PLANT (leaf core, bark ring), CYANOBACTERIAL FILAMENT
+      (light-eaters with a thick-walled breather every few cells eating the chain's oxygen, like heterocysts), BIOFILM
+      (crust-building top, fermenting bottom). Test survival vs the same cells loose; then release with mutation: do they
+      keep shape, do cheaters appear, does evolution find its own designs?
+    Background given to the user: real multicellularity from daughters not separating (snowflake yeast), safety in size
+    (algae under predation), division of labour (heterocysts).
 C12f. VENTS THAT FEED LIFE IN THE DARK (user 2026-11-16 "maybe we should adapt the chemistry then", after the app
     worker found a fully dark vent dish starves in 100 s: fermenting vent fuel earns the culture ~0.001 energy/s). Start
     after C12e is merged (same files). First DIAGNOSE (vent rate, engine rates, sparks, C12e saturation clogging small

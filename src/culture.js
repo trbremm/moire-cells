@@ -3,7 +3,7 @@
 // light go, so every preset opens by URL (?preset=vent) and can be shared as a link.
 //
 // URL options (read by src/main.js before anything else; a preset's own options never override the URL's):
-//   ?preset=name        vent | shallows | oxygen | slick | desert | lab (PRESETS below)
+//   ?preset=name        vent | shallows | oxygen | slick | desert | oases | plumes | lab (PRESETS below; step N1: oases, plumes)
 //   ?spread=clump|scatter|colonies|ring   how the founders are placed (default clump: the old blob at the centre); with any
 //                       spread but clump the pull to the dish centre is nearly off (squeeze 0.02), so the culture stays spread
 //   ?colonies=N         how many colonies (spread=colonies; default 5)
@@ -22,7 +22,8 @@ export const PRESETS = {
   vent: {
     label: 'Deep vents',
     desc: 'Deep water in total darkness. Three hot vents pour out free givers (metal-like G, hydrogen-like g) and heat; the sea brings a faint, steady supply of the free taker T everywhere. Where giver meets taker cold, a cell can eat the gradient (G + T, g + T); close to a vent its heat burns it away first. A mineral seep beside each vent brings linkers for membranes. Three colonies of random genomes start on the vents, their batteries just short of dividing. (With &light=full: a faint glow from above, a third of the usual light.)',
-    query: { light: 'off', day: 0, clouds: 0, spread: 'colonies', colonies: 3, cells: 600, hotvent: 1, sea: 1, diversity: 'random', starter: 0.55 },
+    query: { light: 'off', day: 0, clouds: 0, spread: 'colonies', colonies: 3, cells: 600, hotvent: 1, sea: 1, diversity: 'random', starter: 0.55, scarce: 0 },
+    // (step N1: scarce=0: the vents' water is rich in metals, so here the vents drip trace as before; no oases)
     centres: (W, H) => ring3(W, H, 0.27, -90),
     scene({ matter, light, W, H }) {
       light.params.power *= 0.3;   // the faint glow, if the light is switched on (&light=full)
@@ -83,6 +84,27 @@ export const PRESETS = {
         const r = 0.36 * Math.min(W, H), t = a * Math.PI / 180;
         matter.addSpring(W / 2 + Math.cos(t) * r, H / 2 + Math.sin(t) * r, 'light', 1e9);
       }
+    },
+  },
+  // step N1, a nutrient landscape (src/pigments.js, src/oases.js, src/water.js)
+  oases: {
+    label: 'Oases',
+    desc: 'Sunlit water with a moving net of light on the floor. Light is not free: pigments are built from trace, which comes only from four oases that wander, pulse, dry up and rise elsewhere; slow eddies carry it downstream in silver plumes. Mineral springs and a vent feed the cells, scattered over the dish: watch who finds the oases, and who settles in the shade between the bright lines.',
+    query: { light: 'full', spread: 'scatter', oases: 4, roam: 1, scarce: 1 },
+    scene({ matter, oases, W, H }) {
+      for (const [x, y] of [[0.2, 0.3], [0.78, 0.25], [0.5, 0.72]]) matter.addSpring(x * W, y * H, 'light', 1e9);
+      matter.addSpring(0.85 * W, 0.78 * H, 'heavy', 1e9, { rate: 3 });
+      oases.start([[0.32 * W, 0.62 * H], [0.66 * W, 0.42 * H]]);
+    },
+  },
+  plumes: {
+    label: 'Plumes',
+    desc: 'A strong slow current turns the whole dish like a lake: two fixed oases and a vent upstream pour trace and fuel into plumes that sweep round the basin. Cells start in five colonies; the light is a soft dappled field. Life should follow the plumes.',
+    query: { light: 'full', spread: 'colonies', colonies: 5, roam: 0, oases: 2, scarce: 1, curspeed: 0.5, gyre: 0.9, focus: 0.9 },
+    scene({ matter, oases, W, H }) {
+      matter.addSpring(0.18 * W, 0.22 * H, 'heavy', 1e9, { rate: 3 });
+      for (const [x, y] of [[0.8, 0.2], [0.22, 0.8]]) matter.addSpring(x * W, y * H, 'light', 1e9);
+      oases.start([[0.5 * W, 0.15 * H], [0.86 * W, 0.6 * H]]);
     },
   },
   lab: {

@@ -42,9 +42,9 @@ export class Pigments {
       // knobs
       want: 0.01,        // the pigment a cell wants, units per R^2 of its area per unit of harvest rate (?pigwant=)
       build: 0.5,        // share of the shortfall built per s
-      cost: 8,           // energy per unit of pigment built (from the battery, as heat; a multiple of 1/16)
-      wear: 1 / 90,      // share of the pigment that falls apart per s (?pigwear=)
-      isat: 0.5,         // the light (share of the full noon light) at which photosynthesis saturates (?isat=)
+      cost: 4,           // energy per unit of pigment built (from the battery, as heat; a multiple of 1/16)
+      wear: 1 / 120,     // share of the pigment that falls apart per s (?pigwear=)
+      isat: 1,           // the light (share of the full noon light) at which photosynthesis saturates (?isat=)
       bleach: 0.002,     // pigment counts bleached per photon past saturation (?bleach=)
     };
     this.tot = Object.fromEntries(N1.map((k) => [k, 0]));

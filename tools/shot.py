@@ -404,10 +404,10 @@ def pointer_js(points, button=0):
     }})()"""
 
 
-def wheel_js(x, y, dy, shift):
-    """One wheel event at (x, y) CSS px: dy pixels (100 = about one notch; negative = up), with Shift if asked."""
+def wheel_js(x, y, dy, shift, alt=False):
+    """One wheel event at (x, y) CSS px: dy pixels (100 = about one notch; negative = up), with Shift or Alt if asked."""
     return (f"document.querySelector('canvas').dispatchEvent(new WheelEvent('wheel', {{clientX: {x}, clientY: {y}, "
-            f"deltaY: {dy}, deltaMode: 0, shiftKey: {'true' if shift else 'false'}, bubbles: true, cancelable: true}}));")
+            f"deltaY: {dy}, deltaMode: 0, shiftKey: {'true' if shift else 'false'}, altKey: {'true' if alt else 'false'}, bubbles: true, cancelable: true}}));")
 
 
 def main():
@@ -501,7 +501,8 @@ def main():
             driver.eval(pointer_js([[x1 + (x2 - x1) * i / 24, y1 + (y2 - y1) * i / 24] for i in range(25)], button=2))
         for wspec in args.wheel:
             v = wspec.split(",")
-            driver.eval(wheel_js(float(v[0]), float(v[1]), float(v[2]), len(v) > 3 and v[3].lower() in ("1", "shift", "true")))
+            driver.eval(wheel_js(float(v[0]), float(v[1]), float(v[2]), len(v) > 3 and v[3].lower() in ("1", "shift", "true"),
+                                len(v) > 3 and v[3].lower() == "alt"))
         for js in args.eval:
             driver.eval(js)
         for sel in args.tapel:

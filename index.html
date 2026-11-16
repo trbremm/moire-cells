@@ -212,7 +212,7 @@ body.recording #overlay { margin-top: 30px; }
 .zoombox .zval { min-height: 14px; font-size: 10px; color: var(--epi); font-variant-numeric: tabular-nums; }
 .zoombox:not(.zoomed) { opacity: 0.7; }
 .scalebar {
-  position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + 26px);
+  position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + 48px);
   display: flex; flex-direction: column; align-items: flex-end; gap: 3px; pointer-events: none;
   color: var(--ink); font-size: 10px; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; opacity: 0.85;
   padding: 3px 6px 5px; background: var(--panel); border-radius: 3px;
@@ -220,8 +220,11 @@ body.recording #overlay { margin-top: 30px; }
 .scalebar .sline { display: block; height: 2px; background: var(--ink); }
 @media (pointer: coarse) { .zoombox { --s: 40px; } .zoombox svg { width: 20px; height: 20px; } }
 @media (max-width: 559px) {
-  .zoombox { right: 10px; top: auto; transform: none; bottom: calc(max(10px, env(safe-area-inset-bottom, 0px)) + var(--ui-h, 0px) + 40px); }
-  .scalebar { right: 10px; bottom: auto; top: 96px; }
+  /* a phone: a row just above the toolbar (hidden while a panel is open, which covers that place) */
+  .zoombox { flex-direction: row; right: 10px; top: auto; transform: none; bottom: calc(max(10px, env(safe-area-inset-bottom, 0px)) + var(--bar-h, 48px) + 10px); }
+  .zoombox .zval { min-width: 2.6em; text-align: center; }
+  .scalebar { right: 10px; bottom: calc(max(10px, env(safe-area-inset-bottom, 0px)) + var(--bar-h, 48px) + 62px); }
+  body.panel-open .zoombox, body.panel-open .scalebar { display: none; }
 }
 @media (max-height: 499px) { .zoombox { top: 50%; bottom: auto; transform: translateY(-50%); right: max(10px, env(safe-area-inset-right, 0px)); } }
 

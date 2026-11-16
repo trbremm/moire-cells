@@ -106,6 +106,8 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   still drift), `?gateglue=0`, `?gatepump=0`, `?gateengine=0`, `?gatediv=0`, `?gateturn=0` (one gate off; `?gates=0` all five),
   `?pushgene=0` (field A pushes every cell as before), `?gatenull=1` (the neutral control: the gate genes and the push gene drift but
   act on nothing), `?gateref=x`, `?gateturnrate=x`, `?view=guides` (colour by the strongest guide).
+  App ("App: zoom, zoos, tools, new culture, presets"): `?preset=vent|shallows|oxygen|slick|desert|lab`, `?spread=`, `?colonies=`,
+  `?diversity=`, `?zoom=`.
   Experiments (see "Experiments: tools"): `?mut=0` (mutation off), `?life=0` (life cycle off), `?snap=<file>` (load a
   saved state), `?clone=1` (every cell gets the first cell's genes; `?clone=@N`: slot N's), `?genes=adhesion:0.8,motility:0.5`.
 
@@ -3838,6 +3840,170 @@ pictures `experiments/keep/c12d/`):
 - Each excited state is resolved within its tick (no lasting excited atoms); the shares (react 0.5, fluoresce 0.4 of the rest) are
   knobs, the same for every substance: which substance glows in which colour comes from its gaps.
 
+## App: zoom, zoos, tools, new culture, presets
+
+The user, 2026-11-16: "on the app side of things, if we could zoom, and have panels with zoos of cells and molecules and tools to
+add cells. And to create new cultures with more spread and some preset interesting dish environments". Nothing here changes a rule
+of the simulation; it is the page around it. Code: `src/camera.js`, `src/app.js`, `src/zoo.js`, `src/culture.js`.
+
+### Zoom and pan
+
+- **Mouse:** Ctrl+wheel zooms toward the pointer, always (a trackpad's pinch arrives as Ctrl+wheel, so it zooms too). The plain
+  wheel zooms while the spotlight is NOT on; with the spotlight on it keeps tilting the light, and Shift+wheel turns it, as
+  before. Pan: drag with the middle button, or hold Space and drag with the left. Space pressed and let go without a drag still
+  pauses (it now acts on the key's release). Left-drag still stirs, right-drag still moves the light.
+- **Touch:** two fingers pinch-zoom and pan the view (the page itself no longer pinch-zooms on the dish). The second finger
+  cancels whatever the first one was doing; the remaining finger does nothing until both are lifted, so a pinch never drops a
+  spring or a cell by accident. One finger is the active tool, as before.
+- **Buttons** at the right edge: + and − (by 1.5), and "the whole dish"; the zoom shows under them (×2.4). From the whole dish
+  (×1) to ×8. The view never leaves the dish.
+- **Scale bar** (bottom right): a round length in micrometres at the toy's scale (a cell is about 10 µm across, R = 5 µm), its
+  length following the zoom.
+- Every tool, the stir, the spotlight, the springs and the pipette work in dish coordinates, so they land under the pointer at
+  any zoom. Zooming magnifies everything (the tubes too, as a lens would), and details that are too small to draw at ×1 (wall
+  bricks, notches, dipole marks) appear when zoomed. The neon trails start afresh when the view moves (a pan would smear them).
+- How: the drawing maps each screen pixel to the dish through the camera (`cam` in every draw shader's uniform: the pan, and the
+  zoom folded into its device-pixels-per-dish-pixel); the simulation never sees it. `moire.camera.set(zoom, x, y)`, `.fit()`.
+
+### The zoos (two new toolbar panels)
+
+- **Molecules** (three linked circles): the periodic table, six atoms by row and group plus trace, each with its ladder of levels
+  (the electrons' table: shells as lines, the bonding valence level bright, the empty shell light can lift an electron into
+  dashed, and its grip: "holds 1.25", "pulls 5.5"). Then every substance by kind (free atoms, minerals, fuels, crust, oil and soap,
+  trace), each a small picture of its atoms in chain order in its dish colour (+ and − on givers and takers), what it is in plain
+  words, its energy (counted from all atoms free = 0: lower is more settled) and spark, its charge, the light it absorbs and the
+  colour it glows ("absorbs hard → glows sky blue"), and how much is in the dish and inside cells now (updated each second). A tap
+  on an atom or a "pipette" button picks the pipette with it. With `?electrons=0` the panel shows that table (no ladders; which
+  light makes each fuel; the excited atoms of step C12c).
+- **Cells** (a hexagon): every live cell grouped by what its genes make it do: the engines it runs (only slots with a rate above
+  0.1; uphill ones with their pigment band) and its skin (crust wall, oily bilayer). The ten largest groups, each with a
+  PORTRAIT (the group's middle cell by battery, read back from the GPU and drawn on a small canvas in the dish's style: its real
+  honeycomb outline, the neon tube in its fate's colour, the battery's green core, its engines as parts, a crust wall as bricks),
+  a count and share, and its genes in two plain lines ("visible 2 pigment drives gt + T → gT + t · breathes g + t → gt" /
+  "oily bilayer (stiff) · minus heads · pumps T out · tolerates heat 13 · loose"). The group's name is its habit as the census
+  counts it (eaters, light + burn, light harvesters, others). "add" picks the add-cell tool with that cell's genome. Below:
+  four founder habits (eater, light + burn, photosynthesiser, chain maker / breather), fresh genomes as a new culture's founders
+  get them. Refreshed every 3 s while the panel is open, from two staging buffers in turn (mapAsync: the frame never waits; a
+  read is skipped while both are in flight).
+
+### Add tools (two new tools in the toolbar)
+
+- **Add cells** (a hexagon with +): a tap places one cell, a drag places a line of them (about one cell apart), each a copy of
+  the genome picked in the cells zoo (with nothing picked: the largest group living, else a founder eater). **Books:** a placed cell
+  starts as a new culture's founder does: an EMPTY stock (no atoms, so the atoms ledger is untouched) and the starter charge in
+  its battery, booked as "starter charges in" (energy in), as at a new culture. It goes into a free slot (dead, its stock already
+  handed back; the tool checks the stock is empty); with every slot taken (the capacity, `?cap=`) the tool says so and places
+  nothing. Placing pauses for a moment (the same settle as the genome edits of `src/lab.js`), so no division can claim the slot
+  meanwhile. From the console: `await moire.app.place([[x, y], ...], genome)` (dish coordinates; a genome is 76 floats, e.g.
+  `moire.genome.founders[0]`).
+- **Pipette** (a dropper): a tap drops the substance picked in the molecules zoo (default gT), as a short spring: 1.5 s at 40
+  atoms per s (60 atoms: 30 units of a two-atom molecule), booked as added like every spring (`drop:<name>` spring kinds, one per
+  substance). A drag drops more. A drop never pushes a real spring out (only an older drop, and none at all when 16 springs
+  drip). Springs have their own rate now (`addSpring(x, y, kind, life, { rate })`), which the presets use for a slow vent.
+
+### New culture and presets
+
+The dish panel's first row, **new culture…**, opens a dialog: the DISH (this dish as it is, or a preset), the number of founder
+CELLS, the SPREAD (one clump, scattered over the dish, colonies, a ring; and how many colonies), the DIVERSITY (one clone, a few
+types: one founder of each habit, mixed founders: the usual 12, all random: every cell its own genome) and a new random seed
+or this page's. It shows the link it will open; "open" goes there, "copy link" copies it (the presets are meant to be shared).
+With "this dish as it is" and the same number of cells it starts the culture in place instead ("start here": no reload; the
+springs, the light and the atoms stay). N and G work as before (the same layout as the page's).
+
+With any spread but the clump, the pull to the dish centre is nearly off (squeeze 0.02 instead of 0.25), or the culture would
+gather into the middle again within a few minutes; colonies spread by division instead. With colonies, colony k is founder k's
+(so "a few types" + colonies gives one habit per colony). The clump draws its random numbers in the same order as before, so
+`?seed=N` starts as it did.
+
+URL options: `?preset=name`, `?spread=clump|scatter|colonies|ring`, `?colonies=N` (2..12, default 5),
+`?diversity=clone|few|mixed|random`, and `?zoom=z` or `?zoom=z,x,y` (the view zoomed, centred at shares x, y of the dish;
+the tissue lab preset zooms ×3). A preset's options fill in only what the URL does not say, so `?preset=vent&cells=3000`
+works. `?springs=0` leaves a preset's springs out. Every other URL option still applies.
+
+| preset | `?preset=` | what it is (the dialog's line) | options it sets | springs and light |
+|---|---|---|---|---|
+| Deep vents | `vent` | Deep water: only a faint, steady glow from above (a third of the usual light, no days). Three vents pour out fuel and metal-like givers, each with a mineral seep beside it; three colonies start on them. (With ?light=off it is truly dark: then nothing lives for long.) | light full at 0.3 of its power, no days, no clouds, 600 cells, 3 colonies on the vents | 3 never-drying vents (3 x a spring's rate), each with a mineral seep (2 x) |
+| Sunlit shallows | `shallows` | The whole dish lit, with days and nights. Mineral springs scattered over it, cells scattered too: light-catchers have it easy. | light full, scattered | 5 never-drying mineral springs |
+| Oxygen world | `oxygen` | The oxygen story: a spotlight, a never-drying mineral spring and a slow vent beside the culture, and light cannot free atoms in the open (photolysis off), so any free oxygen (t) is made by life. | spotlight, `photolysis=0` | the default scene's places: a never-drying mineral spring, a vent at a tenth of the rate (as the C12d oxygen runs' 2 s of every 20 s) |
+| Oil slick | `slick` | Oil and soap springs make droplets with iridescent rims and soapy films; a vent and a mineral spring feed the cells, which can take oil and soap into their skins. Lit from the side. | spotlight tilted 35°, wide (0.42), 1000 cells, 4 colonies | 2 oil + soap, 1 soap, 1 oil, a vent, a mineral spring |
+| Crust desert | `desert` | Springs of single linkers (light l and heavy L) chain into fields of crust that grow on themselves; a vent at the edge and three mineral springs feed a ring of cells, which graze the crust to build their skins and walls. | light full, 1200 cells in a ring | 8 linker springs (`drop:l`, `drop:L` at 14 atoms per s), a vent, 3 mineral springs |
+| Tissue lab | `lab` | Sixty cells of one cloned genome, no evolution (no mutation, no births or deaths) and no springs: watch how they link into tissue, as the tissue experiments did. | 60 cells, `mut=0 life=0 clone=1 springs=0`, zoomed to x3 | none (the default spotlight) |
+
+Pictures at 3 min of simulation (seed 3, 1280 x 800, headless Chrome; `experiments/keep/app/preset-<name>-3min.jpg`; the runs'
+numbers in `experiments/runs/app-preset-*`, condition `experiments/conditions/app/presets.json`):
+- **Deep vents**: three glowing clouds of fluorescence (gold and sky-blue specks) round the vents and their seeps; the colonies
+  crashed (596 cells to about 30 by 80 s) and the survivors drift between the clouds. In the TRULY dark dish (`light=off`, the
+  first version of this preset) everything died by 100 s: no engine earns anything from the vent's fuel and metal alone
+  (fermenting G + gT → GT + g ran at about 0.001 energy per s for the whole culture). That is a finding about the chemistry, not
+  about the app.
+- **Sunlit shallows**: the scattered cells gathered round the five mineral springs into five loose colonies (1972 cells, then
+  about 1040 from 2 min on), each spring a brown crust halo.
+- **Oxygen world**: the crash of step C12d (1979 to 44 cells by 3 min); a few dozen survivors at the spot's rim, the spot full
+  of the minerals' blue lights and the gold of the slow vent. (The C12d runs recovered over 20 min.)
+- **Oil slick**: four oil droplets with iridescent rims and a soap ring, the cells (992 to about 190) crowded on the mineral spring
+  and in loose strings, the side-lit spot as a long ellipse.
+- **Crust desert**: eight crust discs (light amber and heavy brown) growing round their linker springs; the ring of cells (1150)
+  fell to about 760 and grew back to 1210 by 3 min, piling onto the mineral springs and the crust.
+- **Tissue lab**: sixty cloned cells packed into one honeycomb disc of neon tubes (zoomed ×3).
+
+### Checked
+
+- **The books** (`experiments/conditions/app/check.json`, seed 5, the whole dish lit, 240 s, headless Chrome; numbers in
+  `experiments/runs/app-check/`): 50 cells placed at 10 s, a pipette drop of every substance at 20 s, zoom and pan at 40 s, the new
+  culture dialog started in place (colonies, a few types) at 60 s, N at 90 s, 200 cells placed at 120 s, G at 150 s, a snapshot
+  saved and loaded at 200 s (exact). Atoms and charge rounding 0 in all 49 samples; energy rounding between −0.034 and +0.050
+  while 10.0 M came in. The starter charges in rose by exactly 1.6 per placed cell (`tools-quick`: 4 cells 3200 → 3206.4, 30 cells
+  → 3254.4). Every preset run (3 min each): atoms and charge 0 in every sample.
+- **Tools by hand** (headless Chrome, `tools/shot.py`): taps with the add-cell tool place cells exactly under the taps; the zoom
+  (wheel without a spotlight, ×3.8; `moire.camera.set(8, ...)`), the machinery and the charge contours drawn zoomed, the molecules
+  and cells panels, the dialog.
+- **Phone** (`tools/shot.py --mobile`, 390 x 844, touch): the cells panel, the dialog (full width, scrolls), the lab preset zoomed
+  with the zoom row above the toolbar; consoles clean. Pinch itself could not be tested: the tools send one finger at a time,
+  and headed Firefox has no touch screen here. The two-finger code path is untested on a device.
+- **Headed Firefox** (the user's browser, GTX 1650 shared with other workers): the oil slick preset with the molecules panel open,
+  the shallows zoomed ×3.8 by the wheel, the add-cell tool; console clean.
+- **Speed** at MAX, default view (2000 cells, seed 3, 90 s, headless Chrome), the commit before the app step (2c937b9) against the
+  app branch, alternating: base ×1.27, ×1.02, ×1.07; app ×0.98, ×0.97, ×1.6. The GPU was shared with two other workers' runs
+  the whole time, so these numbers are noise (the same run varied ×0.9 to ×3 during the day); no slowdown can be seen. The app adds
+  per frame only one small uniform write per draw layer; the cells zoo reads the cells back every 3 s only while its panel is open.
+
+### Known issues
+
+- Zoom magnifies everything, as a lens would: the neon tubes get thicker, the background ripples (the one soft layer, a 5 CSS px
+  grid) get blurrier, and the dust specks bigger. The spot's outline and marker keep their size on screen.
+- Space now pauses on its release (so Space + a drag can pan); a held Space does nothing until let go.
+- The page no longer pinch-zooms on the dish (the canvas takes two fingers); the panels still scroll normally.
+- Placing cells pauses the dish for a moment and reads back the whole cell and stock buffers (about 4 MB at 6000 slots); a long
+  drag places up to 400 cells in one go.
+- The cells zoo groups by engine set and skin: mutation makes many small groups, only the ten largest are shown; a group's name is
+  the census's habit, so "light + burn" covers both the gt-splitters and the photosynthesisers (their genes line tells them apart).
+  Portraits are coloured by fate, as the dish's default view.
+- The presets' springs never dry up (C clears them). Oxygen world and Deep vents crash hard in their first minutes (see the
+  pictures); the other presets keep hundreds to thousands of cells at 3 min.
+- New culture with another number of cells or a preset reloads the page (a few seconds of shader compiling); only "this dish as it
+  is" with the same number starts in place.
+- In one headed Firefox screenshot a thin horizontal seam crossed the zoomed picture; not seen in Chrome or in other Firefox shots
+  (possibly a frame caught mid-update by the screenshot).
+- The scale bar's micrometres are a toy scale (a cell about 10 µm across).
+
+### Files
+
+- `src/camera.js`: the view camera (zoom, pan, limits, `toDish` / `toScreen`, `moved` for the trails)
+- `src/app.js`: the zoom buttons, the scale bar, the add-cell tool and its placing (the books), the pipette, the dish panel's
+  new culture row; `createApp` hands the toolbar its extra panels and tool icons (`src/ui.js` takes `extraPanels`, `toolIcons`,
+  `dishExtra`)
+- `src/zoo.js`: the molecules and cells panels, the substance pictures and level ladders, the genes in words (`summary`), the
+  portraits (`drawPortrait`), the cells' read-back ring
+- `src/culture.js`: the presets (`PRESETS`), `?preset= ?spread= ?colonies= ?diversity=`, the layouts (`cultureLayout`, used by
+  `cells.seed`), the diversity (`applyDiversity`), the new culture dialog
+- changed: every draw shader and its writer (the `cam` uniform: `background_draw`, `cell_draw`, `charge_draw`, `landscape_draw`,
+  `light_common` / `light_draw`, `matter_draw`), `src/main.js` (pointer through the camera, pinch, pan, wheel, Space, presets),
+  `src/neon.js` (trails restart on a camera move), `src/matter.js` (`drop:` spring kinds, a spring's own rate, drops never evict
+  springs), `src/genome.js` (`founderGenome`, `HABITS`, `fill` with a founder per cell), `src/actions.js` (the two tools),
+  `index.html` (the styles; the canvas's `touch-action: none`)
+- `experiments/conditions/app/`: the books checks; `experiments/keep/app/`: the presets at 3 min
+
+
 ## The look of the landscape
 
 Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the
@@ -3971,6 +4137,8 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   the GPU side (mutation, key likeness, the `Bio` and `Stats` structs) is in `cell_common.wgsl`, the rules
   themselves in `cell_step.wgsl`
 - `tools/shot.py`: headless screenshots (below)
+- App (zoom, zoos, tools, new culture, presets; "App: zoom, zoos, tools, new culture, presets" above): `src/camera.js`, `src/app.js`,
+  `src/zoo.js`, `src/culture.js`
 - `src/lab.js`: the experiments' helpers on `window.moire` (`sample`, `tissue`, genome edits, views for screenshots, the
   `?snap= ?clone= ?genes=` options); `src/snapshot.js`: save and load the whole state
 - `tools/experiment.py`: the headless experiment runner; `tools/summarise.py`: tables and plots of its runs;

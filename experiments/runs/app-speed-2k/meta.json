@@ -1,0 +1,34 @@
+{
+  "name": "app-speed-2k",
+  "description": "app: the speed reached at MAX in the default view (2000 cells, seed 3), 90 s; compare with the commit before the app step",
+  "condition": {
+    "name": "app-speed-2k",
+    "description": "app: the speed reached at MAX in the default view (2000 cells, seed 3), 90 s; compare with the commit before the app step",
+    "query": {
+      "seed": 3
+    },
+    "duration": 90,
+    "sample_every": 30
+  },
+  "url": "http://localhost:57697/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "aa4f477a82d39a2448893cf274bd7cd6f508cebe",
+  "dirty": false,
+  "started": "2026-11-16T13:28:42",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 90.0,
+  "run_wall_s": 56.31,
+  "speed_reached": 1.6,
+  "samples": 4,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T13:30:17",
+  "wall_s": 94.23
+}

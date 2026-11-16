@@ -142,6 +142,7 @@ export function setupUI(app) {
       if (xp) xp.build(body, head); else BUILD[open](body);
     }
     panel.dataset.open = open || '';
+    document.body.classList.toggle('panel-open', !!open);   // (app: the phone hides the zoom row under an open panel)
     refresh();
   }
 

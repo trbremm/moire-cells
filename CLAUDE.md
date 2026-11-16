@@ -666,6 +666,17 @@ C12f. VENTS THAT FEED LIFE IN THE DARK (user 2026-11-16 "maybe we should adapt t
     takers T (sulfate/CO2-like, booked as input like springs); G+T -> GT 2.375, g+T -> gT 1.5. Sparks keep it slow in
     the cold open, vent heat burns it abiotically close in, cells' engines (enzymes) run it anywhere. Hoped for (never
     written): rings of life around vents in total darkness.
+    AS BUILT (C12f, 2026-11-16): src/vents.js. Diagnosis of the old dark vent: chemistry, not a bug (the vent's own
+    products reacted away in the open, founders carried the wrong engine, income ~2000x below upkeep). Hot vent (?hotvent=1:
+    drips G .4 g .3 gT .11 GT .11 trace .08, 10 energy of heat per atom) and SEA (?sea=1: T topped up toward 0.5 per R^2),
+    both booked; OFF by default (a hot vent starved the default scene), ON in the Deep vents preset (now truly dark;
+    &light=full = dim). Gradient engines (g+T, G+T) counted apart. RESULT: the hoped-for geography forms (hot core with
+    GT ash, a cold RING 9-30 R where free G, g and T sit unburned) and selection for gradient eaters is fast and complete
+    (every survivor by 5 min), but life still dies by 16-20 min and the ring stays EMPTY, from older rules: (1) the
+    vent's free givers make a strong + charge field that pushes g-flooded cells out at 1 R/s; (2) the stock clogs with
+    fast g and slow gT so T cannot get in (stock room 0.3 + 0.7 x integrity, integrity ~0.08); (3) trace floor far
+    from vents. ?membrane=0 survives 40 min as a boom-bust belt at the dish edge. Both main limits are ION FLOW: rerun
+    batch-dark after C12g. Speed after the merge (GPU free): 2000 cells x7.4 neon / x7.8 harmonic; 10 000 x1.75 / x1.9.
 VIEW AND APP (user 2026-11-16, alongside C12e; two parallel branches):
 H1. HARMONIC VIEW (user: "one of my original inspirations are these higher harmonic microscopy images"; they showed a
     multiphoton tissue image: green thin rims around dark interiors (muscle-fibre honeycomb, threads, hollow rings),

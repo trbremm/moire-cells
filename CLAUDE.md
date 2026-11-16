@@ -590,6 +590,15 @@ C12g. MEMBRANES MODULATE ION FLOW (user 2026-11-16 "Yes, membranes modulate ion 
       charge within ~1 nm and stays neutral, so the C6b dish-wide charge field (atom drift, pushing cells), C6d dipoles
       and the front following them go behind switches (off). KEEP atom charges (bookkeeping, polarity: oil, soap,
       bilayers) and membrane voltage, channels, pumps. Field B's strength comes from the C13 field genes, not stock charge.
+    AS BUILT (C12g, 2026-11-16): src/ions.js. Ion pass = (1-integrity) + integrity x min(1, 1/20 + channel) + stretch;
+    channels: level gene gate2.w (log), balance = the old C6c selectivity gene memb.w; ?ionblock ?channels ?ionvolt.
+    Charge field off by default (?chargefield=1 restores field, drift, cells feeling it, B from stock; ?dipoles=1);
+    field B charge = qGene 0.15 x sign of the B sensing gene (at 1 the colony crumbled). RESULT: the block bites only
+    where membranes are whole, and they are mostly holes (integrity 0.05-0.25: the C12b SUPPLY PROBLEM again), so ion
+    flow alone changed little (haze, swelling, self-burn loop as C12e); channel genes wander 2-5x the neutral control in a
+    different direction per run. Field off: default colony looser, pinker, dark gaps (664 vs 1136 cells); dark vents:
+    cells now sit between the vents, but givers pile up at the cores, the giver-taker zone thins and life dies by ~4 min
+    (vent preset needs retuning). All founders share B sign + (to fix). Speed: field off ~15 % faster at 2000 cells.
     - Hoped for, never written: oxygen trapped -> cells swell -> stretch channels or anion-channel mutants let t out ->
       haze builds; breathers evolve inward anion channels or pumps. Census of channel genes vs a neutral control.
 GLIDERS (user 2026-11-16: "did you notice our short lived gliders? When two cells combine and become fast little

@@ -784,13 +784,13 @@ function hintLine() {
   const what = t.spot ? 'click or drag: move the light' : t.stir ? 'click or drag: stir' : t.addCell ? 'click: place a cell · drag: a line of cells'
     : t.pipette ? 'click or drag: drop the substance' : `click: ${t.label} · drag: stir`;
   // (app: the wheel zooms while the spotlight is off; Ctrl+wheel always; middle-drag or Space+drag pans)
-  return `${what} · right-drag: move the light · wheel: ${light && light.modeIndex === 1 ? 'tilt it, Ctrl+wheel: zoom' : 'zoom'} · Space+drag: pan · ?: all keys`;
+  return `${what} · wheel: zoom · right-drag: move the light${light && light.modeIndex === 1 ? ' · Alt+wheel: tilt it' : ''} · Space+drag: pan · ?: all keys`;
 }
 /** Every key, from the action table, plus the mouse. */
 function fullHint() {
   const list = actions.filter((a) => a.keys.length).map((a) => `${keysText(a)}: ${a.label}`);
-  return `click: ${TOOLS[tool].label} · drag: stir · ${list.join(' · ')} · right-drag: move the light · wheel: tilt it · ` +
-    'Shift+wheel: turn where the light comes from · Ctrl+wheel (or the wheel without a spotlight): zoom · middle-drag or Space+drag: pan';
+  return `click: ${TOOLS[tool].label} · drag: stir · ${list.join(' · ')} · wheel: zoom · right-drag: move the light · ` +
+    'Alt+wheel: tilt it · Shift+wheel: turn where the light comes from · middle-drag or Space+drag: pan';
 }
 
 /** The app as the action table sees it (src/actions.js). */
@@ -1048,13 +1048,14 @@ function setupInput() {
   });
   // step C2: the wheel tilts the spotlight, Shift+wheel turns the direction it comes from. Browsers turn Shift+wheel
   // into a sideways scroll (deltaX), so either axis counts; one notch (about 100 px) = 5 degrees of tilt, 15 of turn.
-  // App: Ctrl+wheel (and a trackpad's pinch, which arrives as Ctrl+wheel) always zooms the view toward the pointer; the plain
-  // wheel zooms too while the spotlight is not on (with the spotlight on it keeps tilting it, as the user chose)
+  // App (user 2026-11-16: "the zoom should be by mouse wheel targeted on the mouse location"): the wheel (and Ctrl+wheel, a
+  // trackpad's pinch) always zooms the view toward the pointer; with the spotlight on, Alt+wheel tilts it and Shift+wheel
+  // turns where it comes from
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
     const unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 800 : 1;
     const d = (Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX) * unit;
-    if (e.ctrlKey || light.modeIndex !== 1) {
+    if (light.modeIndex !== 1 || !(e.altKey || e.shiftKey)) {
       const [sx, sy] = screenPos(e);
       camera.zoomAt(sx, sy, Math.exp(-Math.max(-300, Math.min(300, d)) * 0.00223));   // a notch (100 px) = x 1.25
       return;

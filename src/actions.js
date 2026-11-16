@@ -828,7 +828,7 @@ export function makeActions(app) {
   }
 
   function lightText(m) {
-    return m === 'spot' ? 'light: spotlight (right-drag moves it, the wheel tilts it, Shift+wheel turns where it comes from)'
+    return m === 'spot' ? 'light: spotlight (right-drag moves it, Alt+wheel tilts it, Shift+wheel turns where it comes from)'
       : m === 'full' ? 'light: full field, the whole dish lit (clouds drift over)' : 'light off: only the base warmth and the cells\' own motion heat the dish';
   }
 

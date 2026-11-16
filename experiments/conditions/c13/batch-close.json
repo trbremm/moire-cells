@@ -1,0 +1,152 @@
+{
+ "batch": "c13-close",
+ "runs": [
+  {
+   "name": "c13-close-full_s3",
+   "description": "close-ups of the end of c13-evo-full_s3 (its cells-only snapshot reloaded, run 1 s)",
+   "query": {
+    "snap": "experiments/runs/c13/c13-evo-full_s3/snapshots/end.json"
+   },
+   "duration": 1,
+   "sample_every": 0,
+   "dpr": 3,
+   "shots": [
+    {
+     "t": 1,
+     "view": "guides",
+     "crop": [
+      700,
+      300,
+      260,
+      180
+     ],
+     "scale": 3,
+     "name": "close_guides"
+    },
+    {
+     "t": 1,
+     "view": "machinery",
+     "crop": [
+      700,
+      300,
+      260,
+      180
+     ],
+     "scale": 3,
+     "name": "close_machinery"
+    },
+    {
+     "t": 1,
+     "view": "clean",
+     "crop": [
+      700,
+      300,
+      260,
+      180
+     ],
+     "scale": 3,
+     "name": "close_clean"
+    },
+    {
+     "t": 1,
+     "view": "guides",
+     "name": "whole_guides"
+    }
+   ]
+  },
+  {
+   "name": "c13-close-fgenes_s7",
+   "description": "close-ups of the end of c13-evo-fgenes_s7 (its cells-only snapshot reloaded, run 1 s)",
+   "query": {
+    "snap": "experiments/runs/c13/c13-evo-fgenes_s7/snapshots/end.json"
+   },
+   "duration": 1,
+   "sample_every": 0,
+   "dpr": 3,
+   "shots": [
+    {
+     "t": 1,
+     "view": "machinery",
+     "crop": [
+      640,
+      260,
+      260,
+      180
+     ],
+     "scale": 3,
+     "name": "close_machinery"
+    },
+    {
+     "t": 1,
+     "view": "lineage",
+     "crop": [
+      640,
+      260,
+      260,
+      180
+     ],
+     "scale": 3,
+     "name": "close_lineage"
+    },
+    {
+     "t": 1,
+     "view": "clean",
+     "crop": [
+      640,
+      260,
+      260,
+      180
+     ],
+     "scale": 3,
+     "name": "close_clean"
+    },
+    {
+     "t": 1,
+     "view": "guides",
+     "name": "whole_guides"
+    }
+   ]
+  },
+  {
+   "name": "c13-close-null_s3",
+   "description": "close-ups of the end of c13-evo-null_s3 (its cells-only snapshot reloaded, run 1 s)",
+   "query": {
+    "snap": "experiments/runs/c13/c13-evo-null_s3/snapshots/end.json"
+   },
+   "duration": 1,
+   "sample_every": 0,
+   "dpr": 3,
+   "shots": [
+    {
+     "t": 1,
+     "view": "guides",
+     "crop": [
+      700,
+      300,
+      260,
+      180
+     ],
+     "scale": 3,
+     "name": "close_guides"
+    },
+    {
+     "t": 1,
+     "view": "machinery",
+     "crop": [
+      700,
+      300,
+      260,
+      180
+     ],
+     "scale": 3,
+     "name": "close_machinery"
+    },
+    {
+     "t": 1,
+     "view": "guides",
+     "name": "whole_guides"
+    }
+   ]
+  }
+ ]
+}

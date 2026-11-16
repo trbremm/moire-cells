@@ -1,0 +1,100 @@
+{
+ "name": "c13-rate-lb-m",
+ "series": "rate",
+ "description": "uniform walls a0 0.6; whole dish lit; a light spring under the cells; a harvester (visible 1, g + t -> gt) and a gt burner, a pump of g IN; engines and pump gated together; the long beat (lever 0.2); the engine gate gene -1; 40 cells",
+ "tissue_setting": {
+  "knobs": {
+   "cells.params.lever": 0.2,
+   "eat.params.pay": true,
+   "guides.params.engine": true,
+   "guides.params.pump": true
+  },
+  "genes": {
+   "adhesion": 0.6,
+   "rate0": 1.5,
+   "rate1": 1.0,
+   "pumpRate0": 1.0,
+   "gateEngine": -1,
+   "gatePump": -1
+  },
+  "typeB": null,
+  "query": {
+   "light": "full"
+  },
+  "extra_js": "g.eng1 = moire.genome.engineCode('g + t → gt', 1); g.pump0 = moire.genome.pumpCode('g', 'in'); { const v = moire.control.view(); moire.matter.addSpring(v.cssW / 2, v.cssH / 2, 'light', 1e9); }"
+ },
+ "query": {
+  "seed": 3,
+  "cells": 40,
+  "mut": 0,
+  "life": 0,
+  "clone": 1,
+  "springs": 0,
+  "light": "full",
+  "day": 0
+ },
+ "duration": 120,
+ "sample_every": 5,
+ "tissue": true,
+ "evals": [
+  {
+   "t": 0,
+   "js": "const T = await import('/experiments/tissue/tissue-lab.js'); window.__T = T;\nconst knobs = T.apply({\"cells.params.squeeze\": 0, \"genome.rules.diff\": false, \"eat.params.pay\": true, \"walls.params.cost\": false, \"guides.params.glue\": false, \"guides.params.pump\": true, \"guides.params.engine\": true, \"guides.params.div\": false, \"guides.params.turn\": false, \"cells.params.lever\": 0.2});\nconst g = {\"keyAngle\": 0.35, \"keyScale\": 0.05, \"recAngle\": 0.35, \"recScale\": 0.05, \"recWidth\": 0.15, \"size\": 1, \"motility\": 1, \"mix\": 0, \"thickness\": 0.012, \"stiffness\": 1, \"pumpRate0\": 1.0, \"pumpRate1\": 0, \"rate0\": 1.5, \"rate1\": 1.0, \"rate2\": 0, \"w\": 0, \"divAxis\": 0, \"a1\": 0, \"a2\": 0, \"gateGlue\": 0, \"gatePump\": -1, \"gateEngine\": -1, \"gateDiv\": 0, \"gateTurn\": 0, \"push\": 1, \"adhesion\": 0.6}; g.eng0 = moire.genome.engineCode('gt → g + t', 0);\ng.eng1 = moire.genome.engineCode('g + t → gt', 1); g.pump0 = moire.genome.pumpCode('g', 'in'); { const v = moire.control.view(); moire.matter.addSpring(v.cssW / 2, v.cssH / 2, 'light', 1e9); }\nawait T.genes(g, null);\nconst fr = await T.fronts({ mode: 'random' });\nreturn { knobs, genes: g, fronts: fr, m: await T.measure({ every: 1 }) };"
+  },
+  {
+   "t": 60,
+   "js": "return await __T.measure({ every: 1 });"
+  },
+  {
+   "t": 80,
+   "js": "return await __T.measure({ every: 1 });"
+  },
+  {
+   "t": 82,
+   "js": "return await __T.stirThrough();"
+  },
+  {
+   "t": 120,
+   "js": "return await __T.measure({ every: 1 });"
+  }
+ ],
+ "dpr": 2,
+ "shots": [
+  {
+   "t": 30
+  },
+  {
+   "t": 60
+  },
+  {
+   "t": 80
+  },
+  {
+   "t": 120
+  },
+  {
+   "t": 80,
+   "view": "guides"
+  },
+  {
+   "t": 120,
+   "view": "guides"
+  },
+  {
+   "t": 80,
+   "view": "machinery"
+  }
+ ],
+ "snapshots": [
+  {
+   "t": 80,
+   "grid": false,
+   "name": "prestir"
+  },
+  {
+   "t": 120,
+   "grid": false,
+   "name": "end"
+  }
+ ]
+}

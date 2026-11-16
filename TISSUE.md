@@ -404,6 +404,64 @@ sides 1.3 → 2.0); turning strength 5 (= drag 0.2, the default) raised them mor
 (polar 2.4). A first form of the torque (r x F with the glue not anchored to the turning
 cell) made cells spin and linked worse (persistence 0.60 against 0.87); see the README.
 
+## C13: fields as guides, each gate alone
+
+Step C13 (README, "Step C13: fields as genes and guides") lets what a cell FEELS of field A on each membrane side gate what it does,
+each through its own gene: the glue per side, the pumps and engines, the division axis, the turning of the front. Here every gate
+runs ALONE, its gene set by hand to +1 or -1, against the same genes with that gate switched off (the control, side by side). The lab
+is C11's (one genome cloned, mutation, the life cycle and differentiation off, no squeeze, dark dish, no springs, the walls' cost off,
+the glue's turning on, fronts at random at the start; measures every 5 s, a stir through the largest cluster at 82 s, the end at
+120 s), but field A is always FELT (the gates read it), with the default beat (lever 0.4, "db") and with the long beat (lever 0.2,
+"lb"). The other gates are off throughout. `experiments/tissue/c13.py`, conditions `experiments/conditions/c13/lab/`, runs
+`experiments/runs/tissue-c13/`, table `experiments/tissue/c13-sweep.csv`. New measures (the panel's GUIDES census, `guides.*` in the
+samples): **felt** (the mean |s| of the field at the cells), **contacts on felt** (the mean s of a cell's touching sides minus that of
+all six: + means the contacts sit on the sides that feel the field high), **front·gradient** (mean cos between the front and the felt
+gradient; 0 by chance), **divisions |cos|** (between each division's axis and the felt gradient; 0.64 by chance, 1 along, 0 across).
+
+**In short:** every gate does what it says, and three of the four show in the shape; none breaks the tissue, and none makes stripes
+along the beat rings in a cloned lab culture (every cell is alike, so they all feel the same rings). The strength of every gate depends
+on the BEAT: with the default beat a packed cell feels little (felt 0.07 to 0.16: its neighbours' cores and dark rings cancel on its
+sides), with the long beat about four times as much (0.34 to 0.67), so the gates act mainly with the long beat.
+
+| gate (series) | beat | gene +1 | off (control) | gene -1 | what it looks like |
+|---|---|---|---|---|---|
+| **glue**, uniform walls a0 0.6, 40 cells | db | glue at contacts 1.15, contacts 4.5, score 0.96 | 1.18, 4.5, 1.00 | 0.84, 4.5, 1.00 | no difference to see (felt 0.15) |
+| | lb | glue **1.74**, contacts **5.4**, score 1.00 | 1.20, 5.3, 0.98 | **0.45**, 4.5, 0.94 | +1: a rosette of wedge-shaped cells in the middle, tighter; -1: looser straight rows |
+| glue, 100 cells | lb | glue **1.93**, contacts **7.3**, compact | 1.20, 6.0 | | +1: one compact sheet with a flower of narrow wedges in its middle (`lab-glue-longbeat.jpg`) |
+| **turn**, polar walls (front sticky), 40 cells | db | front·gradient **0.56**, contacts 2.1, islands 0.87 | 0.44, 2.0, 0.83 | **0.30**, 1.8, 0.75 | trefoil rosettes in every case (C11's polar look) |
+| | lb | 0.49, contacts **4.0**, score **0.69** (islands 0.98) | 0.46, 3.7, 0.43 | **0.04**, 3.5, 0.33 | +1: one larger packed sheet with a few trefoils; -1: a loose ring of trefoils, fronts outward (`lab-turn-longbeat.jpg`) |
+| **division**, one founder grows (uniform a0 0.8) | db | divisions \|cos\| **0.89**, elongation **1.09** | 0.67, **2.86** | **0.34**, 1.49 | off: a long column (daughters by the front, which all cells inherit); +1: a round blob; -1: a sprawling sheet (`lab-division-defaultbeat.jpg`) |
+| | lb | **0.93**, 2.08 | 0.60, 1.88 | **0.17**, 1.38 | a broad band (+1), a compact patch (off), a sheet with a bay (-1) (`lab-division-longbeat.jpg`) |
+| **engine + pump**, lit dish, a light spring, harvest + burn + pump g IN, 40 cells | db | light caught 82, fuel made 14/s, battery 159 | 74, 13, 157 | 65, 11, 141 | the same |
+| | lb | light caught **103**, fuel made **16**/s, battery 160 | 74, 13, 158 | **41**, **7**, **82** | -1: the middle cells' battery cores shrink to dark centres, the rim cells stay full (`lab-engines-longbeat.jpg`) |
+
+(Scores and measures as in the tables above: contacts per cell and glue at the contacts t 50..80 s; the turn series' islands score where
+the tissue score is low; elongation of the grown tissue at 80 s. One run each, seed 3.)
+
+What each gate does, in plain words:
+- **Glue** (+1: stickier where the field is high). In a packed lab tissue the sides that touch a neighbour feel more than the free
+  sides in every run, gate or not (contacts on felt +0.06 to +0.13): a neighbour's bright core is right there. So with +1 the glue
+  goes where the cells touch and the tissue packs tighter (contacts per cell 6.0 to 7.3 at 100 cells), and with -1 it goes away from
+  the contacts and the tissue loosens (glue at the contacts down from 1.2 to 0.45). The middle of the +1 tissue looks different: a
+  flower of narrow wedge-shaped cells round a point, the moire's rosette pressed into the honeycomb. No stripes: in a cloned culture
+  every cell feels the same rings, so the gate only scales the glue.
+- **Turn** (+1: the front turns up the felt gradient). The gradient a packed cell feels points toward its neighbours (field A's like
+  attracts like), so even without the gate polar cells' sticky fronts already lean that way (front·gradient 0.44 to 0.46, C11's glue
+  turning); +1 adds a little (0.49 to 0.56) and -1 turns them away (0.04 to 0.30). With the long beat that decides the shape: +1 makes
+  one packed sheet (score 0.69), -1 a loose ring of trefoils (0.33).
+- **Division** (+1: the daughter along the felt gradient). The clearest gate: the axis follows the gradient (|cos| 0.89 to 0.93
+  against 0.60 to 0.67 by the inherited front alone) or lies across it (0.17 to 0.34). In a growing clump the gradient points to the
+  middle, so +1 puts daughters in toward the centre and the clone grows ROUND (elongation 1.09) where by the inherited front alone it
+  grows a long column (2.86); -1 puts them along the rim and the clone sprawls.
+- **Engine and pump** (+1: faster where the field is high). With the long beat almost every cell feels the field high (s about +0.45),
+  so +1 speeds the whole tissue's engines up (light caught 103 against 74) and -1 slows it (41), and with -1 the batteries of the
+  middle cells, which feel the most, run half empty (82 against 158): a pattern of dark battery cores that follows the field. With the
+  default beat (felt 0.14) the effect is a tenth of that.
+
+Stored configurations (`experiments/tissue/configs/c13-*`, load with `?snap=experiments/tissue/configs/<name>/snapshot.json`):
+`c13-glue-lb-p-100` (the compact sheet with the wedge flower), `c13-turn-lb-p` (the packed polar sheet), `c13-div-db-p` (the round
+grown clone), `c13-rate-lb-m` (dark battery cores in the middle).
+
 ## How the runs were made
 
 - **Few cells, no evolution.** 40 cells (also 20, 100, 300), one genome cloned to every cell (`?clone=1`), mutation and the
@@ -805,5 +863,6 @@ Every stable run (120), with its kind and scores; open the folder for its pictur
 - `experiments/tissue/analyse.py`: the measures, the two scores, `sweep.csv`, and `configs/` for the stable runs
 - `experiments/tissue/tables.py` and `notes.json` (the plain-words column): the tables above; `crop.ps1`: crops the shots (Windows PowerShell, System.Drawing)
 - `experiments/runs/tissue/<run>/`: `samples.csv`, `meta.json`, `console.log` of every run (shots and snapshots there are not kept)
+- Step C13: `experiments/tissue/c13.py` (each gate alone; conditions in `experiments/conditions/c13/lab/`, runs in `experiments/runs/tissue-c13/`, table `c13-sweep.csv`) and `experiments/tissue/c13-evo.js` (how patchy the genes are in space, for the evolution runs)
 - Steps C10 and C11: `experiments/tissue/c10.py`, `experiments/tissue/c11.py` (conditions and analysis), runs in `experiments/runs/tissue-c10/` and `experiments/runs/tissue-c11/`, tables `c10-sweep.csv` and `c11-sweep.csv`
 - No change to `src/`: every knob used is reachable from the console (`moire.cells.params`, `.shape`, `.fields`, `.excl`, `.partner`, `moire.genome.params` / `.rules`, `moire.charge.params`, ...), and the genes through `moire.genome.setAll`.

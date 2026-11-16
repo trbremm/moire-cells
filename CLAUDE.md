@@ -530,6 +530,10 @@ C12e. WASTE MUST LEAVE (user 2026-11-16, correcting Claude's "small atoms leak o
       its membrane stiffness (crust wall holds hardest, like a bacterial wall holding turgor); STRETCH RAISES
       PERMEABILITY, so ions leak out down the gradient and the pressure relieves itself; overstretch costs integrity
       and bursts. Binding atoms into molecules lowers the load.
+      GENETIC (user: "remember to tie that to genes too"): a STRETCH-CHANNEL gene (like mechanosensitive channels:
+      how much permeability opens when swollen) and a STRETCH-TOLERANCE gene (how far before damage, at a cost), plus
+      the existing permeability, pump, stiffness, thickness and lipid-mix genes; a neutral control (effect off, genes
+      drifting) to tell selection from noise.
     - Waste leaves only by what exists: passive leak down the gradient (free) and C7 pump genes (up the gradient, costs).
     - Hoped for (watched, never written): full-battery harvesters make more t than they burn, clog and sour, dumpers win,
       the haze builds, breathers living on outside t rise and must dump their own waste (gt, T) like CO2.

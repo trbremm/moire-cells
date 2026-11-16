@@ -93,7 +93,11 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   or separates), `?phase=0` (no phase separation: everything only spreads), `?amphi=0` (no amphiphiles made, no boundary
   pull, no skin), `?fusion=0` (no membrane fusion), `?oilspring=oil|emulsion|soap` (what the oil tool drops),
   `?polarity=1` (the polarity wash shown); step C12b: `?lipids=0` (the C6c linker membrane, as before), `?lipheat=0` (heat does
-  not fluidise the bilayer), `?crack=0` (walls never crack), `?lipheads=0` (the soap heads do not charge the cells).
+  not fluidise the bilayer), `?crack=0` (walls never crack), `?lipheads=0` (the soap heads do not charge the cells), `?graze=0`
+  (cells do not graze the crust under them: the C12b supply fix off); step C12c: `?excited=0` (freed light atoms carry no energy:
+  the chemistry as before), `?exshare=x` (the share of the photon's surplus an excited atom keeps, 0..1, default 0.5, fixed for
+  the page), `?exlife=s` (its lifetime in a cold dish, default 30 s), `?exhot=T` (the temperature at which it fades twice as fast,
+  default 4), `?exlook=0` (the excited haze not drawn).
   Experiments (see "Experiments: tools"): `?mut=0` (mutation off), `?life=0` (life cycle off), `?snap=<file>` (load a
   saved state), `?clone=1` (every cell gets the first cell's genes; `?clone=@N`: slot N's), `?genes=adhesion:0.8,motility:0.5`.
 
@@ -3258,6 +3262,146 @@ channels stay active).
 - Walls in a dense, jostling colony crack about as fast as they are built; in a quiet tissue (the lab) they hold.
 - The head gene drifts but nothing selects it yet (heads balance in the colony: +12.5 −11.6).
 
+## C12b supply: cells graze crust
+
+The problem C12b found: in the default scene the cells could not build lipid membranes. Every soap and oil molecule needs one
+heavy linker L, and within minutes nearly all the L in the dish is locked in heavy crust (LL), so the bilayers stayed empty
+(integrity 0.00 to 0.03). The fix (Claude's call, CLAUDE.md "SUPPLY FIX"): **cells graze the crust under them**. No new
+chemistry and no new numbers per molecule: the crust is taken in as it is, and chains are cracked back into linkers by the
+reaction table's own reverse reaction, paid as the symmetry rule of step C6 says.
+
+**What it looks like.** Little, at the scale of the whole dish: the crusts under the colony thin out (the dish holds 120 to 140
+units of light crust after 15 minutes instead of 235, and 190 to 205 of heavy crust instead of 230), and about one cell in ten
+now has a whole membrane, drawn as the pearly soap tube of step C12b (glossier where it holds oil) instead of the thin dim tube
+of an unbuilt membrane. A few cells carry amber crust walls again (wall in all membranes up to 16 units, against 0.2 to 0.5).
+Pictures: `experiments/keep/c12c/graze-on-close.jpg` and `graze-off-close.jpg` (the colony over the springs at 10 minutes, seed 7,
+3 device px per CSS px): with grazing many outlines are crisp bright tubes, some pearly, some with an amber crust rim; without, the
+tubes are thin and dim (unbuilt) and the cells read as green cores in faint rings.
+
+**The rule** (in the builder's block of the eat pass, `cell_eat.wgsl`, LPF_GRAZE; after fusion, before the builder):
+- a cell's want: its wall's shortfall of light and of heavy crust (as the genes ask), and the linkers its bilayer lacks (each soap
+  and oil molecule needs one l and one L; what the stock already holds counts);
+- it takes up to `fuseK` (the lipid fusion knob, 1 per s) of that shortfall per s from the crust in its 3 x 3 pixels (a "take", as
+  everything the cells draw from the dish);
+- crust asked for the wall goes into the wall **whole** (the wall is crust: self-assembly, no bond changes, nothing paid);
+- the rest is **cracked** into linkers in the stock: ll -> l + l, LL -> L + L, uphill, the battery paying the chain's bond energy
+  (0.5 for ll, 1 for LL: it becomes the linkers' chemical energy) and its spark (0.25, 0.5: heat), exactly the table's numbers, the
+  heavy chains first; grazed crust the battery cannot crack waits in the stock as crust and is expelled with the sediment that
+  tick (a cell never keeps crust in its stock).
+Switch: rules panel, Lipid membranes, **cells graze crust**; URL `?graze=0`. Old snapshots load with grazing off. The LIPIDS line
+says `grazed …/s`; the F overlay and `moire.sample()` (`lipids.rate.grazeL`, `grazeH`, `grazeWall`, `crackL`, `crackH`,
+`crackPaid`) the details.
+
+**Experiment: the default scene, grazing on and off** (`experiments/conditions/c12b-graze/`, seeds 3 and 7, 15 minutes at MAX,
+headless Chrome on the GTX 1650, one run each):
+
+| run | cells 5 / 10 / 15 min | mean integrity 15 min | whole membranes | soap / oil / wall in membranes (units) | crust in dish ll / LL | ENTROPY 15 min | ORDER |
+|---|---|---|---|---|---|---|---|
+| grazing, seed 3 | 1411 / 1819 / 745 | 0.12 | 98 | 7.4 / 3.0 / 2.0 | 140 / 204 | 12.5 M | 0.227 |
+| grazing, seed 7 | 1057 / 1453 / 994 | 0.08 | 98 | 16.9 / 5.5 / 8.8 | 124 / 187 | 12.5 M | 0.231 |
+| no grazing, seed 3 | 1482 / 1550 / 906 | 0.007 | 0 | 0.1 / 0.1 / 0.3 | 237 / 229 | 14.5 M | 0.245 |
+| no grazing, seed 7 | 1370 / 1644 / 1335 | 0.001 | 0 | 0.2 / 0.1 / 0.2 | 236 / 229 | 15.1 M | 0.256 |
+
+Grazing takes 7 to 25 units of crust per s by 10 to 15 minutes and the batteries pay 2.5 to 5.7 energy units per s for cracking;
+50 to 100 times more soap gets into membranes, and the first whole membranes of the default scene appear. ORDER is a little lower
+(the crust patches, the most concentrated matter in the dish, are eaten); the entropy is lower too, but the count swings by more
+between runs than the two differ, so nothing can be read into it. No membrane burst in either. The books: atoms and charge
+rounding 0 in every sample, energy within −0.11 to +0.06.
+
+**Why it is not enough: integrity stays near 0.1, far from the 0.3 hoped for.** Two reasons, measured:
+1. **The two linkers never meet in one cell.** A soap molecule needs a head (g or t), one l and one L. In the default scene the light
+   linkers chain into light crust at the light spring and the heavy ones into heavy crust at the heavy spring, 144 px (about 11
+   cell diameters) apart. A diagnosis every 5 minutes read every cell's stock: with grazing, 145 to 373 cells hold heavy linkers
+   and 530 to 1230 hold light ones, but only 1 to 26 hold both (and a head); the L-holders listed hold 15 to 700 counts of L and 0 to 9 of l.
+   A cell on the heavy crust cracks LL and has L but no l; one on the light crust the other way round; and an unsealed membrane
+   leaks what it took in before it could be carried far (step C6c's hold rule: no closed membrane, no full stock): the
+   chicken-and-egg of building a membrane with a leaky one.
+2. **Bites cap the bilayer even when supply is plenty.** The co-location test (`same-on`, `same-off`: both springs dropped at one
+   place, 8 minutes): soap and oil now form in the open where l meets L, fusion brings 2 to 9 units of soap per s into the
+   membranes, and integrity rises to 0.19 (0.13 without grazing) at 4 minutes, then settles at 0.12 to 0.13 as the colony grows:
+   bites take out as much soap as fusion brings (the same numbers to within 10 %, 2 to 8 units per s). Soap is the fluid, exposed part
+   of the bilayer (x 2 / (1 + k)), and the free light atoms around a busy colony bite it. (C12b's experiment 3, with soap and oil
+   dripped in, reached 0.43; the bites were the limit there too.)
+
+The smallest derived changes that would help, for the user to choose (none made): a mixed spring (light and heavy linkers from
+one place: a scene change, not chemistry, and the test above shows it lifts integrity to only 0.12 to 0.19); cells carrying
+crust in their wall and cracking their own wall when the bilayer is short (a store that does not leak; the same reaction, so
+derived, but it trades the wall for the bilayer); or nothing: a thin membrane is what this dish can afford, and the oxygen
+story (step C12c) may change the bites anyway.
+
+## Step C12c: excited waste
+
+The oxygen retry found why breathing never ran: the free light atoms the harvesters throw away carry no energy (they are the zero
+of the table), so breathing a rich fuel with one (t + gT -> gt + T) releases only the step between two fuels (0.75), while burning
+the same gT releases 2.25. Real oxygen holds part of the sunlight that made it, which is why breathing beats fermenting. The user
+chose the "charged waste" fix: **a light atom freed by light leaves excited**, holding part of the photon.
+
+**What it looks like.** Where light frees light atoms (around the light spring under the spot, wherever hard light breaks fuel,
+inside harvesting cells), a faint glitter of tiny **hot red-orange sparks** appears over the dust: hotter and whiter than the dim
+threat-red of the ordinary free atoms, each spark flickering on its own phase, thinning out and dimming as the haze fades back to
+ground atoms. It is sparse by design (at most one spark per small grid square, fewer where there is less), and in the default and
+oxygen scenes it is thin: a few sparks around the light spring and the spot's rim. With the haze forced thick (a lifetime of 600 s)
+it becomes an orange dust cloud around the springs. Picture: see the experiments below.
+
+**The rule as built** (`src/excited.js`, `src/matter.js` EXCITED and the table, `matter.wgsl`, `cell_eat.wgsl`):
+- **Which reactions excite.** Every light-driven reaction of the table that frees a light giver or taker: the four uphill swaps
+  (gt + T -> gT + t*, gt + G -> Gt + g*, gT + G -> GT + g*, Gt + T -> GT + t*: in the open by the dish's light, and in cells by a
+  pigment's photon, the harvesting swap engines) and hard light breaking a fuel (gt -> g* + t*, gT -> g* + T, Gt -> G + t*; GT frees
+  only heavy atoms). Heavy atoms are never freed excited, so there are two new substances, **g\*** and **t\***. Making fuel by light
+  and the soap heads frees nothing; cracking crust and oil by hard light frees linkers, which have no excited form. A storer (an
+  uphill engine paid by the battery, no photon) frees a ground atom: no light, no excitation.
+- **How much it keeps.** E* = share x the photon's SURPLUS, the part that was heat until now: the uphill swaps are all driven by
+  visible 1 (photon 2) and step up by 0.75, so the surplus is 1.25 for each of them. share = 1/2 (URL `?exshare=`), so **E* = 0.625**
+  (taken as the smallest surplus of the reactions that excite, so every one of them can pay it; hard light breaking a fuel has 5 +
+  1.5 to spare; rounded down to 1/16, so one count of g* carries 10 whole heat counts and the books stay exact). The rest of the
+  photon is heat, as before. The share is fixed for the page: the excited atoms already made hold that much.
+- **Substances.** g* and t* are channels 16 and 17 on the grid and words 28, 29 of every cell's stock (with exchange words 40, 41).
+  They are the same atoms as g and t in every other way: row, group, charge (+1, −1: the charge field and its drift treat them
+  alike), speed (they spread and pass membranes at the light atoms' rate; every per-channel number the shaders read for them is
+  their ground twin's). The ledger counts their energy (E* each) as stored chemical energy wherever they are.
+- **Fading.** An excited atom fades back to its ground atom by itself, its E* as heat where it is, at 1 / `life` x (1 + T / `hot`)
+  per s (T the temperature there): `life` 30 s in a cold dish, `hot` 4, so about 10 s in the lit spot. The haze is rich but
+  temporary.
+- **Reacting.** Every reaction takes a light giver or taker from the POOL of ground and excited ones (the excited ones in proportion,
+  rounded at random), so they react as their ground atoms do, at the same rates. Whatever reaction takes an excited atom also
+  releases its E*:
+  - through a cell's **engine** (any genome engine that uses a light giver or taker: the breathing swaps t + gT -> gt + T,
+    g + Gt -> gt + G, g + GT -> gT + G, t + GT -> Gt + T, and fuel making) into the **battery**, less the engines' `ineff` share
+    (25 %) as heat, as far as the battery has room (the rest heat). So **breathing gT with t\* banks 0.75 + 0.625 = 1.375** before
+    ineff, and the gt it leaves can still be burned for 1.5: 2.875 in all, against 2.25 for burning the gT outright;
+  - in any **uncontrolled** reaction (in the open; loose inside a cell, the heat-driven reactions of step C5; biting a membrane) as
+    **heat on the spot**: the excited haze heats what it touches, a worse poison than the ground haze. An excited atom that bites a
+    membrane (steps C6c and C12b) spends its E* on it: it is put back as its ground atom and the heat goes to the cell.
+  - the soap builder (step C12b) takes ground heads only, and **pumps do not move excited atoms** (a pump's slot names a ground
+    substance; an excited atom passes the membrane only by permeability). Both are choices to keep the rule small.
+- **Off** (`?excited=0` or the rules panel): light frees ground atoms as before; excited atoms already there keep fading. From the
+  start, with it off, nothing is ever excited and the chemistry is exactly the previous one (the pool of a light atom and an empty
+  twin is the light atom).
+
+No rule names breathers, oxygen or poison.
+
+**The panel.** An EXCITED line:
+
+    EXCITED  haze g* 0.82 · t* 0.79 in the dish, 0.18 in cells · per s: made 1.76 (light 1.70, pigments 0.06) · faded 0.29 · eaten by engines 0.23 · breathing 0.007 swaps banks +0.005 (excitation +0.08) vs burning +187 · as heat: faded 0.18, loose 0.76
+
+(units of substance, and energy units per s: "banks" is what the swap engines put into batteries, "excitation" what all engines
+gained from excited atoms, "burning" what the burn engines put into batteries). On a phone `EXCITED g* … t* … · breathing +…/s vs
+burning +…/s`. The F overlay has every counter. `moire.sample()` includes `excited.*` (`excited.inDish`, `excited.rate.eBreath`,
+`excited.rate.eEngine`, ...) and, as before, `cells.rate2.eSwap` (breathing events per s) and `engines.*` (the strategies' census).
+
+**Switches and knobs.** Rules panel, group "Excited waste (step C12c)": **excited waste**, **excited lifetime**, **fades twice as fast
+at**, and the share (shown; set by URL). View panel: **excited haze drawn**. URL `?excited=0`, `?exshare=`, `?exlife=`, `?exhot=`,
+`?exlook=0`. Console: `moire.excited.params` (on, life, hot), `.look` (on, density, flicker, bright, radius, ink), `.table` (share,
+surplus, energy).
+
+**How it is computed.** The grid holds 18 channels (`NGRID`); every per-channel uniform of the shaders still holds 16, and an excited
+channel reads its ground twin's (`gc()` in `heat_common.wgsl`). The springs' uniform keeps its disc's pixel count in `amt[19]` (it was
+`amt[16]`). The ledger grew by 2176 words (`LEDGER_WORDS` 27776): the matter ledger of channels 16 and 17 (`lg_mc`), the cells' g* and
+t*, and the counters (8 counts and 6 energies). ChemP grew by `ex` (its reactions from byte 144). The drawing reads a fourth texture.
+Old snapshots (16 substances) load with the excited waste off; their grid's blocks are matched by name.
+
+<!-- C12C-RESULTS -->
+
 ## The look of the landscape
 
 Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the
@@ -3336,7 +3480,16 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   the overlay and `stats()` (per founder lineage, lit and dark); the membrane itself is in `cell_eat.wgsl` (stock words 32..61;
   the bites in `plan`, fusion, the builder, cracks, shedding, the stiffness and the heads' charge in `eat`, the books and the census
   in `ledger`), the corners' stiffness in `cell_step.wgsl` (MB_LIPID), the look in `cell_draw.wgsl` (Draw `lip`, `lip2`, `lipInk`);
-  `experiments/tissue/c12b.py`: the lab's conditions; `experiments/conditions/c12b/make.py`: experiments 2 to 4
+  `experiments/tissue/c12b.py`: the lab's conditions; `experiments/conditions/c12b/make.py`: experiments 2 to 4; the supply fix
+  (cells graze crust) is in the builder's block of `eat` (LPF_GRAZE; counters LG_LIP_G), its conditions in
+  `experiments/conditions/c12b-graze/make.py`
+- `src/excited.js`: excited waste (step C12c): the switch and knobs (`moire.excited.params`, `.look`), the chemistry uniform's
+  words (struct ChemP `ex`), the census (from the heat's ledger read-back: LG_EXC_N, LG_EXC_E, the dish's and the cells' g*, t*),
+  the EXCITED panel line and the overlay. The excited atoms themselves are substances of `src/matter.js` (`ATOMS` g*, t*,
+  `EXCITED`: the energy they keep, derived from the uphill swaps' photon surplus; `exOuts` on the light-driven reactions that free
+  light atoms), channels 16 and 17 on the grid (`matter.wgsl`: the pool of ground and excited reactants, the fading, the counters;
+  `matter_draw.wgsl` `sparkle`) and stock words 28, 29 in the cells (`cell_eat.wgsl`: `cell_ch`, `stock_w`, `xp`, `xtk`; the
+  engines, the reactions inside, the fading, the bites); `experiments/conditions/c12c/make.py`: the oxygen conditions on and off
 - `src/hardlight.js`: hard light mutates (step C8): the switch and knobs, the census (from the heat's ledger read-back),
   the HARD LIGHT panel line, the overlay and `stats()` (touching neighbours' likeness, light and dark); the dose is kept
   in `cell_eat.wgsl` (Cell.flags bits 19..31, struct EatP `hl`), the mutation at a birth in `cell_step.wgsl` (struct

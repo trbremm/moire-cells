@@ -35,7 +35,7 @@ const LIGHT_COMMON_URL = 'src/shaders/light_common.wgsl';
 
 export const HEAT_COMMON_URL = 'src/shaders/heat_common.wgsl';
 export const HEAT_SCALE = 65536;          // counts per energy unit (HEAT_SCALE in heat_common.wgsl)
-export const LEDGER_WORDS = 28928;              // LEDGER_WORDS in heat_common.wgsl (28416 until step C12g; 28288 until step C12f; 27776 until step C12e; words 3072 on: step C3's matter ledger;
+export const LEDGER_WORDS = 30976;              // LEDGER_WORDS in heat_common.wgsl (30464 on branch landscape: N1 alone; 28928 until step N1 merged; 28416 until step C12g; 28288 until step C12f; 27776 until step C12e; words 3072 on: step C3's matter ledger;
                                                 // 10240 on: step C4's chemistry; 11520 on: step C5, cells eat; 15872 on:
                                                 // step C6, engines; 19136 on: step C6b, charge; 19712 on: step C6c, the
                                                 // membrane chemistry; 20224 on: step C7, the pumps; 21760 on: step C7b,
@@ -89,6 +89,7 @@ export class Heat {
     this.matter = null;     // step C3: the substance grid (src/matter.js), whose channels live in this buffer too
     this.eat = null;        // step C5: the cells' eating (src/eat.js), which books into this ledger too
     this.charge = null;     // step C6b: the charge field (src/charge.js): its blocks live in this buffer too
+    this.water = null;      // step N1: the water (src/water.js): the caustic light and the currents, blocks in this buffer too
     // ledger (cumulative since the page started; energy units)
     this.tot = { work: 0, base: 0, out: 0, drag: 0, kick: 0, lin: [0, 0, 0, 0], labs: [0, 0, 0, 0], vent: 0 };   // (vent: step C12f)
     this.ledger = null;     // last snapshot: { time, moving, heat, in, out, rounding, rate }
@@ -177,11 +178,13 @@ export class Heat {
    * Blocks of n words that other bands keep in this buffer (step C3: the substances, 2 copies of 13 channels; step C6:
    * then the cells' pigments, 3 bands).
    */
-  get extraBlocks() { return (this.matter ? this.matter.blocks : 0) + (this.eat ? this.eat.blocks : 0) + (this.charge ? this.charge.blocks : 0); }
+  get extraBlocks() { return (this.matter ? this.matter.blocks : 0) + (this.eat ? this.eat.blocks : 0) + (this.charge ? this.charge.blocks : 0) + (this.water ? this.water.blocks : 0); }
   /** Step C6: word offset of the cells' pigment blocks (behind the substances'). */
   get pigOffset() { return this.extraBase() + (this.matter ? this.matter.blocks : 0) * this.n; }
   /** Step C6b: word offset of the charge's blocks (behind the pigments'): phi, then the cells' charge put down this tick. */
   get chargeOffset() { return this.pigOffset + (this.eat ? this.eat.blocks : 0) * this.n; }
+  /** Step N1: word offset of the water's blocks (behind the charge's): the caustic light, then the currents' stream function. */
+  get waterOffset() { return this.chargeOffset + (this.charge ? this.charge.blocks : 0) * this.n; }
   /** Step C6b: whether the cells put their net charge down this frame (the charge field on, the cells eating). */
   get qCellsOn() { return !!(this.charge && this.charge.cellsDeposit); }
   /** Step C6: whether the cells put their pigments down this frame (the light on and a pigment rule acting). */
@@ -234,6 +237,8 @@ export class Heat {
     f[8] = 1 - Math.exp(-Math.max(0, p.leak) * dt); f[9] = 1 - Math.exp(-Math.max(0, p.edge) * dt);
     f[10] = Math.max(0, p.warmth) * a * a * dt * HEAT_SCALE; f[11] = this.tempScale;
     u[12] = this.pigOn ? this.pigOffset : 0;   // step C6: where the cells' pigments are put down (0: not this frame)
+    u[13] = 0; u[14] = 0; f[15] = 0;
+    if (this.water) this.water.writeHeat(u, f, 13);   // step N1: the caustic block, the currents' stream function, the cells' drift
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
 
     const T = new Uint32Array(this.tickAB), w = HT_SLOT / 4;

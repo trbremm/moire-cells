@@ -1,0 +1,5 @@
+{"batch": "n1-tune", "seeds": [3],
+ "runs": [
+  {"name": "n1-tune-a", "description": "tuning: default scene, bury 1/300, isat 1.5, 12 min", "query": {"bury": 0.00333, "isat": 1.5}, "duration": 720, "sample_every": 30, "shots": [{"t": 720}]},
+  {"name": "n1-tune-b", "description": "tuning: default scene, bury 1/300, isat 1.5, oasis rate 2, 12 min", "query": {"bury": 0.00333, "isat": 1.5, "oasisrate": 2}, "duration": 720, "sample_every": 30, "shots": [{"t": 720}]}
+ ]}

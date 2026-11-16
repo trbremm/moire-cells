@@ -4272,6 +4272,170 @@ Conditions `experiments/conditions/c12g/`, summaries `experiments/summaries/c12g
   a sign flips by mutation; qGene 0.15 was chosen by eye (crumbs at 1).
 - `charge.params.feel` stays true but acts only with the field on (the overlay says "Shift+9 cells feel the grid on" while the field is off).
 
+## Step N1: nutrient landscape
+
+The user, 2026-11-16: "I think light is fueling them too easily. We might need to make the nutrient landscape more interesting." The dish
+should have GEOGRAPHY: things to find, defend, share. Five parts, as proposed in CLAUDE.md (N1), each its own switch, rules panel group
+**Nutrient landscape (step N1)**, URL option; all on in the default scene (old snapshots load with all of them off). Files:
+`src/pigments.js`, `src/oases.js`, `src/water.js`, `src/shaders/water_common.wgsl`, `water.wgsl`, `water_draw.wgsl`; changed:
+`cell_eat.wgsl` (the "step N1" blocks), `matter.wgsl` (advection, the caustic light, trace settling), `heat.wgsl` (the caustic light),
+`cell_step.wgsl` (the drift), `heat_common.wgsl`, `background_draw.wgsl` (the swell), and the JS around them.
+
+### Diagnosis: where the cells' energy came from (before the change)
+
+Runs `n1-diag-default_s3/_s7` and `n1-diag-shallows_s3/_s7` (`experiments/conditions/n1/diag.json`: 15 minutes, the light as it was:
+`?pigmatter=0&pigsat=0&inhib=0`, with the new counters; numbers by `experiments/conditions/n1/analyse.py`, means over 2 to 15 min):
+
+| run | cells (mean, end) | batteries' income per s | made by light | photons caught, used | idle: no trace / no material / clogged / battery | engines' speed (cofactor) |
+|---|---|---|---|---|---|---|
+| default s3 | 542, 1165 | 76 | 101 % | 138 units/s, 20 % | 40 / 22 / 16 / 2 % | 51 % |
+| default s7 | 1221, 1192 | 138 | 105 % | 336, 13 % | 44 / 41 / 1 / 1 % | 53 % |
+| shallows s3 | 4935, 6000 (the cap) | 679 | 116 % | 950, 25 % | 65 / 8 / 2 / 0 % | 35 % (no trace at all) |
+| shallows s7 | 5298, 6000 | 1018 | 129 % | 1828, 21 % | 65 / 11 / 2 / 0 % | 35 % |
+
+Plainly: **light made all of the cells' income** ("made by light" = the energy the pigments' photons stored uphill x 0.75, the share a
+burn gives back; above 100 % because some of it stays stored or leaves as fuel). Nothing else counted: the vent's fuel and the minerals
+fed under 5 % (the "eat" engines run mostly on what the cells' own pigments split). And **raw materials DID limit, locally**: of the
+photons the pigments caught only 13 to 25 % were used; most of the rest found no trace for the cofactor (40 to 65 %) or no material to
+split (8 to 41 %: the water-like gt ran out inside the cell). But light was so plentiful that even that fifth fed the shallows to the
+dish's capacity (6000 cells) within minutes. So the pressure had to come from light itself (pigments that cost, a ceiling, a price for
+too much) and from WHERE the materials are.
+
+### What was built (five parts, each its own switch)
+
+**1. Counters first.** Before changing anything, the eat pass got a new set of counters (ledger `LG_N1`, 16 x 64-bit, words 28416 to
+30463; LEDGER_WORDS 28416 -> 30464): the energy the pigments' photons store uphill (each harvest event x its rise: what light MAKES),
+the photons the pigments catch, and for every photon not used, why: past saturation, no cofactor (trace), no raw material (the
+engine's reactants ran out), the engine's top speed, the battery (it could not pay the spark), clogged by its products (step C12e).
+The panel's PIGMENTS line and `moire.sample()` `lightmatter.*` show them; "light made X % of income" = rise x (1 - ineff) / the
+batteries' income (every unit stored uphill gives 0.75 back when it is burned).
+
+**2. Light needs matter** (`src/pigments.js`; the "step N1" blocks in `cell_eat.wgsl`). A harvest slot's pigment is a molecule the
+cell BUILDS from its stock: two light linkers l (a chain that shares its electrons, an antenna, like the conjugated ring of
+chlorophyll, which is carbon and nitrogen: linkers) holding one TRACE atom at its heart (like chlorophyll's magnesium). Why these:
+the electron table gives linkers the shared, delocalised electrons a light-catching antenna needs, and trace is already the cells'
+one catalyst inside (the cofactor of step C7b), so the scarce element (part 3) becomes what light-catching costs. Stock word 30
+holds it (counts; the atoms' books count each count as 1 trace + 2 l with the cells' own, so atoms and charge stay exact; its
+energy is the free atoms', 0).
+- want: `want` (0.01) units per R^2 of the cell's area per unit of harvest rate; built at `build` (0.5/s) of the shortfall per s,
+  from one trace and two l of the stock each, the assembly paid from the battery, `cost` (4) energy per unit, as heat;
+- wear: `wear` (1/120 per s) of it falls apart into its atoms (back into the stock), so a harvester keeps paying matter and battery;
+- depth: a slot's optical depth = pigK x rate x the share of the wanted pigment held (so no pigment, no light);
+- SATURATION: of the photons caught at a light s (the light falling on the cell, x the caustic light, as a share of the full noon
+  light: power 33 straight down), only Isat tanh(s / Isat) / s can be used (`isat` 1: a cell under the full noon sun is near its
+  limit, one on a bright caustic line or the near side of a tilted spot is past it); the rest are idle photons (heat);
+- PHOTOINHIBITION: each photon past saturation bleaches `bleach` (0.002) counts of the pigment back into its atoms, which must be
+  rebuilt: shade is worth having.
+Switches: light needs matter (`?pigmatter=0`), photosynthesis saturates (`?pigsat=0`), strong light bleaches (`?inhib=0`); knobs
+`?pigwant= ?pigwear= ?pigcost= ?isat= ?bleach=`, `moire.pigments.params`.
+
+**3. One scarce nutrient** (`src/oases.js`). TRACE, nothing new: the rare inert row 3 atom, already the engines' cofactor (every
+engine at 35 % without it) and now the heart of every pigment. It never reacts, barely spreads (0.017 R^2/s) and passes a membrane
+slowly: it stays where it is dripped unless the water moves it. A new atom was not needed: trace already had every property a
+phosphorus-like nutrient wants (needed everywhere, used up by nothing, scarce by supply), and a new atom would have meant new grid and
+stock channels in every pass.
+- `scarce` (on): no spring drips trace (the vents' 4 % and the presets' springs: their trace share left out, the rest scaled up so a
+  spring drips as many atoms as before), except the OASES: `count` (3) nutrient springs (tap kind `oasis`, drawn in trace's silver),
+  each dripping trace and l half and half at `rate` (1 atom per s), gushing at 4 x when new (settling over 30 s);
+- `roam` (on): each oasis WANDERS (a smooth random walk at 0.12 R/s, turned back at the edges), PULSES (rate x (1 + 0.6 sin), its own
+  period 40 to 110 s), DRIES UP after 150 to 450 s, and 10 to 30 s later a new one rises elsewhere (away from the others).
+- TRACE SETTLES: with `scarce` on, 1/150 of the free trace in each pixel settles into the floor per s (buried, like phosphate in
+  sediment; booked as lost, with the rim's), so a plume fades with distance (about 50 R at the eddies' speed) and an old oasis's trace
+  does not pile up for ever (`?bury=`). Without it, 20 minutes of three oases left 800 units lying round the dish, and trace stopped
+  being scarce where it mattered. Off: they
+  stay put and never dry. The default scene's first oasis is a LASTING one (it stays put at the spot's edge on the springs' side, pulses,
+  never dries); the other two roam.
+- Matter is booked as every spring's: the GPU counts what it drips, wherever the spring is and however fast it drips.
+URL `?scarce=0 ?roam=0 ?oases=N`; `moire.oases.params`.
+
+**4. Caustic light** (`src/water.js`, `water_common.wgsl`, `water.wgsl`). The ripple background is the water's SURFACE: the simulated
+ripples (divisions, deaths, the heat's simmer: `ripples` 0.6) plus a slow SWELL of six travelling waves (wavelengths 5 to 12 R, from
+all round the wind's direction, each running at 0.3 to 0.5 R/s; drawn faintly in the background too). Light coming down through it
+is bent by the slope, so a point x of the surface lights the floor at x + D grad h: where neighbouring rays converge the floor is bright.
+Brightness = 1 / sqrt(det(I + D H)^2 + eps^2), H the surface's curvature, D `depth` (20 R), capped at `imax` (12), scaled so the
+swell alone averages 1 (light is moved, not made), mixed in by `strength`. The swell's height is set from `focus` (1.8: each wave's
+D h k^2 = focus / sqrt 6), which makes a connected net of thin bright fold lines. One pass per frame (before the ticks) writes each
+heat pixel's mean over 3 x 3 points into a block of the heat buffer; that multiplies the light wherever it is USED: the dish's
+absorption (heat.wgsl absorb), the substances' light reactions and glow (matter.wgsl light_here), the cells' pigments and their hard
+light dose (cell_eat.wgsl). The books are untouched (the light in is booked per pixel as it arrives). Drawn per screen pixel from the
+same surface (so the lines stay thin at any zoom): a faint net of the light's warm white under the cells (neon), a dimmer cool grey
+in the harmonic look. Measured (full field): mean 1.0, median 0.5, 10 % of the floor below 0.12, 10 % above 2.7, the brightest
+lines 4 to 6 x the mean. `?caustics=0 ?focus=x ?wind=deg`; `moire.water.params`.
+
+**5. Currents** (same module). A stream function psi at the heat pixels' CORNERS, so the velocity (d psi / dy, -d psi / dx) is
+divergence-free and psi = 0 on the rim (no flow through the wall):
+psi = window x (A x sum over m of cos(q_m . (x - centre) + phase_m) + G x sin(pi x / W) sin(pi y / H)),
+with q_m the MOIRE BEAT of the medium's lattice against a copy of itself turned by `turn` (2.2 degrees) (the user's original
+"chemical landscape made of moire beats": a hexagonal array of slow eddies, about 19 to 27 R across), following `breathe` (0.3) of
+the medium's breathing (the eddies swell and shrink a little) and wandering (phases +-0.015 t); A set so the eddies run at `speed`
+(0.35 R/s); plus one basin-wide GYRE that slowly reverses (`gyre` 0.25 R/s, period 360 s), so matter is not trapped in one eddy
+forever. The matter's spreading (matter.wgsl spread) adds to each edge's flow a share a = (psi at one end - psi at the other) x dt /
+px^2 of the pixel it leaves (upwind, flux form), before the edge's random rounding and within the same cap: every count that leaves
+one pixel arrives in the other, so the atoms and charge stay exact; both pixels of an edge compute a from the same two stored
+corners by the same expression. Sediment does not move; everything else (trace too, which hardly spreads by itself) drifts alike.
+Cells drift with `drift` (0.3) of the water's speed (a force, booked as work like every force). Streamlines (psi's level lines,
+faint teal) in the machinery view. `?currents=0 ?curspeed= ?gyre= ?curdrift=`.
+
+### What it looks like
+
+- **The caustic net**: where the light falls, a faint net of thin warm-white lines on the dish floor, cells of the net about 5 to 10
+  cell widths across, drifting and re-forming slowly (the waves run at 0.3 to 0.5 R/s); the ripples of divisions and deaths add small
+  bright rings to it. Under the colony it is mostly hidden by the cells (the cells still get it). The ripple background shows the swell
+  only as a very faint slow relief. Harmonic look: the same net as a very dim cool grey (light has no channel there; it should not look
+  like signal). Measured on the floor: mean 1.0, median 0.5, a tenth below 0.12, a tenth above 2.7, the brightest lines about 4 x.
+- **The oases**: silver rings (trace's ink) with a pulsing centre dot, trailing fine silver specks that the eddies draw out into
+  curving plumes, which fade within a few eddies (trace settling); a new oasis gushes, then settles. They wander slowly; one dries up
+  and, a little later, a new one rises elsewhere.
+- **The currents**: no drawing in the clean view (the plumes and the drifting specks show them); the machinery view (Shift+4) draws the
+  streamlines as faint teal closed loops (the hexagonal eddies of the moire beat) bent by the gyre.
+- **The cells**: pigment cells look as before; colonies hug the light and, in the presets, the mineral springs; crowds and streams
+  along the current in the Plumes preset.
+Pictures: `experiments/keep/n1/`.
+
+### What happened (EXPERIMENTS.md "Nutrient landscape")
+
+- **The default scene is harder and thinner**: batteries got 40 to 50 % less (47 and 68 energy per s against 71 and 128 with the old
+  light, seeds 3 and 7, 5 to 15 min); the colony settled at 700 to 880 cells (seed 7; old: 1190 to 1540) or dwindled to 100 by 20 min
+  (seed 3; old: 1165). Light still made 88 to 97 % of the income (in this scene there is nothing else: the springs dry up at 4 minutes),
+  but now only a fifth to a third of the photons caught are used (a third past saturation, the rest short of trace or of gt). The
+  colony crowds into the spot round its lasting oasis. Milder: `?isat=1.5&bury=0.0033` brought seed 3 back to ~600 cells.
+- **The full-light presets still fill up, but later and in patches**: the Oases preset as first built filled the dish (6000) by 10 min
+  like the old Sunlit shallows, with three colonies centred on the MINERAL springs, not the oases; retuned (half the light, slow mineral
+  springs) it crashed to 130 at 2 min and grew back to 2400 by 15 min as a patchwork of small colonies, light making 75 % of the income.
+  Plumes: crowds on the springs and fixed oases, swept round by the gyre; the cells near the oases had 1.5 x the battery and 3 x the
+  pigment.
+- **Why the oases decide where life STARTS, not where it stays**: trace is never used up, only recycled (a worn pigment gives it back,
+  a dying cell drops it, a daughter takes half), so a lineage that once found trace carries it along: at 20 minutes the cells held more
+  trace (460 to 510 units) than the dish (350 to 380). Not changed here: "trace must leave life too" is in EXPERIMENTS.md's next steps.
+- **Entropy and ORDER**: less life, less heat out (default 10.0 and 16.6 M at 15 min against 12.0 and 19.4 M); ORDER fell from 0.20 to
+  0.22 to 0.13 to 0.14 with the currents mixing the springs' matter.
+
+### Checked
+
+- **Books** (`n1-check`, seed 5, the whole dish lit, 420 s at MAX: N, 40 cells placed, a wash, a resize and back, every N1 switch off
+  and on at runtime and the currents x 6, the oases fixed and 6, roaming with short lives and 2, G, a snapshot saved and loaded at once,
+  exact): atoms and charge rounding 0 in every sample except the paused instant of each resize (as before); energy within -0.032 and
+  +0.016 while 16.3 M came in. Every experiment run: atoms and charge 0, energy within -0.09 and +0.17.
+- **Old snapshots**: one made by the code before N1 (5c7b944, default scene, 60 s) loads with every N1 part off and runs on with atoms
+  and charge 0 (`n1-reload-old`). Snapshots made now carry the N1 settings and the oases (a loaded snapshot's oases roam on).
+- **Consoles clean**: headless Chrome (every run), phone size (`tools/shot.py --mobile`, the Oases preset: the short PIGMENTS, WATER and
+  OASES lines fit, the caustic net shows), headed Firefox (the Oases preset; no console messages).
+- **Speed**: measured with the GPU shared with another worker's runs the whole time, so noisy (`n1-speed-*`, `experiments/conditions/n1/speed.json`, headless Chrome, MAX): 2000 cells x3.64 neon, x2.31 harmonic, x2.06 with every N1 part off (but the live cells differed, 275, 341 and 732 at the end, and at 2000 the speed follows the count); 10 000 cells x0.51 neon, x0.54 harmonic, x0.54 with every N1 part off (the README's reference with the GPU free: x1.75 / x1.92). Within the noise the N1 parts cost nothing visible; by construction they add one pass per frame (the water: a 3 x 3 caustic sample per heat pixel and the stream function at its corners), 4 corner reads per pixel per spreading substep, 4 reads per cell per tick (the drift) and one per cell for the caustic light, and the net drawn per screen pixel (six sines). Remeasure when the GPU is free.
+
+### Known issues
+
+- The default scene is thin and seed-dependent (100 to 900 cells); the knobs `isat`, `bury`, `pigcost`, `pigwant` move it between "as
+  before" and "thin". Light still makes nearly all of the income wherever there is light: it is dearer and patchier, not replaced.
+- Trace is recycled within lineages, so in a lit dish the oases set the start, not the end (above).
+- The caustic block is updated once per frame (all the frame's ticks see the same net); at MAX that is a few tenths of a second of
+  simulated time, much less than the net needs to change.
+- The cells drift with the current at 0.3 of its speed as a force (its work is booked as every force's); the heat grid and the charge
+  field are not carried by the water (only the substances).
+- The swell is the same set of six waves in every dish (a fixed table), so the net's character does not change with the seed.
+- EatP (`nl`), the ledger (LG_N1), HeatP (`caus`, `cur`, `curDrift`, its spare words) and MatterP (`n1`, 720 bytes) all grew at their
+  ends. Merged after C12g (README "Merge: C12g + N1"): EatP `nl` at words 448..455 (after C12g's `io` at 440..447; EP_BYTES 1824), LG_N1
+  at words 28928..30975 (after C12g's LG_IO 28416..28927; LEDGER_WORDS 30976); HeatP and MatterP unchanged (C12g did not grow them).
+
 ## App: zoom, zoos, tools, new culture, presets
 
 The user, 2026-11-16: "on the app side of things, if we could zoom, and have panels with zoos of cells and molecules and tools to
@@ -4360,6 +4524,8 @@ works. `?springs=0` leaves a preset's springs out. Every other URL option still 
 | Oxygen world | `oxygen` | The oxygen story: a spotlight, a never-drying mineral spring and a slow vent beside the culture, and light cannot free atoms in the open (photolysis off), so any free oxygen (t) is made by life. | spotlight, `photolysis=0` | the default scene's places: a never-drying mineral spring, a vent at a tenth of the rate (as the C12d oxygen runs' 2 s of every 20 s) |
 | Oil slick | `slick` | Oil and soap springs make droplets with iridescent rims and soapy films; a vent and a mineral spring feed the cells, which can take oil and soap into their skins. Lit from the side. | spotlight tilted 35°, wide (0.42), 1000 cells, 4 colonies | 2 oil + soap, 1 soap, 1 oil, a vent, a mineral spring |
 | Crust desert | `desert` | Springs of single linkers (light l and heavy L) chain into fields of crust that grow on themselves; a vent at the edge and three mineral springs feed a ring of cells, which graze the crust to build their skins and walls. | light full, 1200 cells in a ring | 8 linker springs (`drop:l`, `drop:L` at 14 atoms per s), a vent, 3 mineral springs |
+| Oases | `oases` | (Step N1.) Shallow water in a soft half light, with a moving net of brighter light on the floor. Light is not free: pigments are built from trace, which comes only from four oases that wander, pulse, dry up and rise elsewhere; slow eddies carry it downstream in silver plumes. Mineral springs and a vent feed the cells, scattered over the dish. | light full at half power, scattered, `oases=4 roam=1 scarce=1` | 3 never-drying mineral springs at a third of the rate, a vent at half rate, 4 roaming oases (the first two placed) |
+| Plumes | `plumes` | (Step N1.) A strong slow current turns the whole dish like a lake: two fixed oases and a vent upstream pour trace and fuel into plumes that sweep round the basin. Five colonies; a soft dappled light. | light full, 5 colonies, `roam=0 oases=2 curspeed=0.5 gyre=0.9 focus=0.9` | a vent, 2 mineral springs, 2 fixed oases |
 | Tissue lab | `lab` | Sixty cells of one cloned genome, no evolution (no mutation, no births or deaths) and no springs: watch how they link into tissue, as the tissue experiments did. | 60 cells, `mut=0 life=0 clone=1 springs=0`, zoomed to x3 | none (the default spotlight) |
 
 Pictures at 3 min of simulation (seed 3, 1280 x 800, headless Chrome; `experiments/keep/app/preset-<name>-3min.jpg`; the runs'
@@ -4654,6 +4820,13 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   themselves are in `cell_eat.wgsl` (`ion_chan`, `ion_open`; the block, the channels and the voltage push in `plan`'s exchange, the
   voltage's slower leak in `eat`, the counters in `eat`, the census in `ledger`), the channel level gene's drift in `cell_common.wgsl`
   `mutate` (gate2.w); `experiments/conditions/c12g/`: `make.py` (the conditions), `analyse.py` (the tables)
+- Step N1, a nutrient landscape ("Step N1: nutrient landscape"): `src/pigments.js` (light needs matter: the switches and knobs, the eat
+  pass's words EatP `nl`, the counters LG_N1, the PIGMENTS line; the rule in the "step N1" blocks of `cell_eat.wgsl`), `src/oases.js`
+  (the scarce nutrient: trace only from the oases, their roaming, trace settling; spring kind `oasis`), `src/water.js` +
+  `src/shaders/water_common.wgsl`, `water.wgsl`, `water_draw.wgsl` (the caustic light and the currents: the pass that writes the caustic
+  block and the stream function into the heat buffer, their drawing; the advection is in `matter.wgsl` spread, the light's use in
+  `heat.wgsl` absorb, `matter.wgsl` light_here, `cell_eat.wgsl`, the drift in `cell_step.wgsl`); `experiments/conditions/n1/`:
+  `analyse.py` (the light's share and why photons go unused), `where.py` (cells near the oases, from snapshots)
 - `src/excited.js`: excited waste (step C12c): the switch and knobs (`moire.excited.params`, `.look`), the chemistry uniform's
   words (struct ChemP `ex`), the census (from the heat's ledger read-back: LG_EXC_N, LG_EXC_E, the dish's and the cells' g*, t*),
   the EXCITED panel line and the overlay. The excited atoms themselves are substances of `src/matter.js` (`ATOMS` g*, t*,

@@ -1,0 +1,87 @@
+{
+  "name": "merge-n1-reload-n1",
+  "description": "an N1-branch snapshot (Oases preset s3 at 20 min) on the merged page: N1 parts as saved, C12g ion flow off as it ran",
+  "condition": {
+    "name": "merge-n1-reload-n1",
+    "description": "an N1-branch snapshot (Oases preset s3 at 20 min) on the merged page: N1 parts as saved, C12g ion flow off as it ran",
+    "query": {
+      "snap": "experiments/runs/merge-n1-snaps/snapshots/n1-oases_s3_t1200.json"
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "evals": [
+      {
+        "t": 5,
+        "js": "return { ions: [moire.ions.params.block, moire.ions.params.genes], pig: moire.pigments.params.matter, water: [moire.water.params.caustics, moire.water.params.currents], oases: [moire.oases.params.scarce, moire.oases.params.count, moire.oases.list.length] }"
+      }
+    ],
+    "shots": [
+      {
+        "t": 60
+      }
+    ]
+  },
+  "url": "http://localhost:63208/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/runs/merge-n1-snaps/snapshots/n1-oases_s3_t1200.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "a7a41f13fbba1f18f0a3db3fe483e1f765a14942",
+  "dirty": true,
+  "started": "2026-11-16T21:29:46",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": true,
+    "notes": [
+      "saved before step C12g: the bilayer passes ions as before, channel genes off (as it ran)"
+    ],
+    "rebased": null,
+    "rounding": {
+      "energy": 0.017608642578125,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": 0.017608642578125,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 6000,
+    "time": 1199.9999999992854
+  },
+  "t_start": 1199.9999999992854,
+  "sim_s": 60.0,
+  "run_wall_s": 28.71,
+  "speed_reached": 2.09,
+  "samples": 7,
+  "shots": [
+    "shots/t60.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 5.000000000000227,
+      "js": "return { ions: [moire.ions.params.block, moire.ions.params.genes], pig: moire.pigments.params.matter, water: [moire.water.params.caustics, moire.water.params.currents], oases: [moire.oases.params.scarce, moire.oases.params.count, moire.oases.list.length] }",
+      "result": {
+        "ions": [
+          false,
+          false
+        ],
+        "pig": true,
+        "water": [
+          true,
+          true
+        ],
+        "oases": [
+          true,
+          4,
+          4
+        ]
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-16T21:30:48",
+  "wall_s": 62.35
+}

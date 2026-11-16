@@ -1168,3 +1168,157 @@ are no longer pushed out of the food ring but the food ring itself shrinks to a 
 **What to try next** (if wanted): give the vent preset a broader meeting zone without the field (a slower sea burn near the vents, a
 wider vent plume, or founders carrying the gradient engine); a scene where membranes can be whole (a soap supply, or the T1 "inside":
 contact sides sheltered), where channels would matter; a run with the voltage push on.
+
+# Nutrient landscape
+
+Step N1 (README "Step N1: nutrient landscape"). The user, 2026-11-16: "I think light is fueling them too easily. We might need to make the
+nutrient landscape more interesting." Five parts, each with its own switch, all on by default: LIGHT NEEDS MATTER (a pigment built from
+a trace atom and two light linkers, wearing out; photosynthesis saturates; too much light bleaches it), ONE SCARCE NUTRIENT (trace only
+from a few oases that wander, pulse, dry up and rise elsewhere; trace settles into the floor), CAUSTIC LIGHT (the water's surface
+focuses the light into a moving net, which the cells and the chemistry receive), CURRENTS (slow eddies from the medium's moire beat
+plus a basin-wide gyre carry every dissolved substance; cells drift a little) and two presets, Oases and Plumes.
+
+**How.** `experiments/conditions/n1/`: `diag.json` (the diagnosis, 15 min, before the change), `main.json` (the default scene and the
+Oases preset, seeds 3 and 7, 20 min), `plumes.json` (the Plumes preset, 15 min), `check.json` (the books), `reload-old.json` (a
+snapshot from before N1), `speed.json`; `analyse.py` (means over a window of samples: the batteries' income and the share LIGHT made
+of it, the photons the pigments caught and why the unused ones were not used, pigment, trace, the engine census), `where.py` (from a
+run's last snapshot: the share of the cells within 15 R of an oasis against the share of the dish there, their batteries and pigment,
+the trace under them). Headless Chrome on the GTX 1650 at MAX; the GPU was shared with another worker's runs the whole time (speeds x0.6
+to x3). Not bit-repeatable, one run per seed.
+
+## 1. Diagnosis: light made all of the income, and most photons went unused
+
+Before anything changed (`n1-diag-*`: the light as it was, `?pigmatter=0&pigsat=0&inhib=0`, the new counters only; 15 min; means over
+2 to 15 min):
+
+| run | cells (mean, end) | batteries' income per s | made by light | photons caught, used | idle: no trace / no material / clogged / battery | engines' speed |
+|---|---|---|---|---|---|---|
+| default s3 | 542, 1165 | 76 | 101 % | 138 units/s, 20 % | 40 / 22 / 16 / 2 % | 51 % |
+| default s7 | 1221, 1192 | 138 | 105 % | 336, 13 % | 44 / 41 / 1 / 1 % | 53 % |
+| shallows s3 | 4935, 6000 (cap) | 679 | 116 % | 950, 25 % | 65 / 8 / 2 / 0 % | 35 % |
+| shallows s7 | 5298, 6000 | 1018 | 129 % | 1828, 21 % | 65 / 11 / 2 / 0 % | 35 % |
+
+"Made by light" = the energy the pigments' photons stored uphill x 0.75 (what burning it back returns), over the batteries' income;
+above 100 % because some of it stays stored or leaves as fuel. So: (a) everything the cells lived on was light; (b) raw materials DID
+limit locally (no trace for the cofactor: 40 to 65 % of the caught photons; no water-like gt left in the cell to split: 8 to 41 %),
+yet (c) the fifth of the photons that WAS used fed the sunlit shallows to the dish's capacity (6000 cells) in under 10 minutes. The
+light was simply too plentiful and too free.
+
+## 2. The default scene: thinner, all in the light, trace near the cells
+
+`n1-default_s3/_s7` (every N1 part on), against the diagnosis runs of the same seeds (the old light):
+
+| | cells 2 / 5 / 10 / 15 / 20 min | income per s (5 to 15 min) | made by light | entropy at 15 min, rate | ORDER at 15 min |
+|---|---|---|---|---|---|
+| old light s3 | 276 / 487 / 482 / 1165 / - | 71 | 97 % | 12.0 M, 13.6 k/s | 0.218 |
+| N1 s3 | 323 / 761 / 321 / 177 / 99 | 47 | 88 % | 10.0 M, 10.4 k/s | 0.137 |
+| old light s7 | 465 / 1541 / 1219 / 1192 / - | 128 | 102 % | 19.4 M, 23.5 k/s | 0.203 |
+| N1 s7 | 368 / 763 / 883 / 646 / 712 | 68 | 96 % | 16.6 M, 20.6 k/s | 0.132 |
+
+Between 10 and 20 minutes (`analyse.py --from 600`):
+- s3: 191 cells on average (99 at the end, still falling), income 27 per s, light made 88 % of it; of the photons caught 33 % used,
+  33 % past saturation, 12 % no trace, 20 % no material; pigment in 182 cells; engines at 83 % (trace no longer short inside); deaths
+  mostly bursts (membranes) and starving.
+- s7: 766 cells, income 55 per s, light 97 %; photons used 19 %, saturated 33 %, no trace 17 %, no material 29 %; pigment in about
+  720 cells; engines at 75 %; strategies 97 % harvest + burn.
+- WHERE (`where.py`, 20 min): 23 % of the cells within 15 R of an oasis, on 6 % of the dish (x4), their batteries 1.6 against 1.3
+  (s3) and 1.64 against 1.25 (s7), twice the pigment per cell near an oasis in s7. But the default's lasting oasis sits in the spot,
+  where the cells are anyway, so this mostly says the colony hugs the light; the two roaming oases wandered over empty dish.
+- Light still made nearly all of the income: in this scene there is nothing else to live on (the vent and the mineral spring dry up at
+  4 minutes; what fermenting and the gradient give is under 2 % of it). What changed is the AMOUNT: the batteries got 40 to 50 % less
+  (47 and 68 per s against 71 and 128), the colony is a third to a twelfth of the old size, and the seeds now diverge (s7 holds 700,
+  s3 dwindles to 100).
+- The milder knobs (`n1-tune-a_s3`: `?isat=1.5&bury=0.0033`, 12 min) brought s3 back to 540 to 600 cells and an income of 78 per s,
+  as the old light: the tuning sits between "as before" and "thin"; the shipped defaults (isat 1, bury 1/150) are the harder side.
+
+**What it looks like** (`experiments/keep/n1/default-s7-5min.jpg`; the machinery view `default-s7-machinery-2.5min.jpg`: the teal
+streamlines of the eddies, the oases' trace as silver halftone drawn out along them). The spot now carries a faint warm net of
+thin bright lines that drifts slowly over the colony; the dish round it is dark, with the old ripple background barely moved by the
+swell. Three silver rings (the oases) leave trails of fine silver specks where the eddies carry their trace; the roaming ones wander off
+into the dark and the specks fade within a few eddies. The colony crowds into the spot and stays there: at 20 minutes a dense disc of
+neon cells exactly the spot's size, the cells outside it few and dim.
+
+## 3. The Oases preset: geography at the start, a full dish later
+
+`n1-oases_s3/_s7` (the preset as first built: the whole dish lit at the usual power, three mineral springs at the usual rate, a slow
+vent, four roaming oases, cells scattered):
+
+| | cells 2 / 5 / 10 / 15 / 20 min | income per s (5 to 15 min) | made by light | photons used (10 to 20 min) | within 15 R of an oasis (20 min) |
+|---|---|---|---|---|---|
+| s3 | 491 / 2045 / 5999 / 6000 / 6000 | 790 | 114 % | 34 % (saturated 31, no trace 15, no material 17) | 10 % of the cells on 12 % of the dish |
+| s7 | 466 / 2988 / 6000 / 6000 / 5999 | 841 | 114 % | 38 % (31, 15, 13) | 12 % on 11 % |
+| shallows, old light (s3, s7) | 1050 / 4414 / 6000 ... and 1192 / 6000 ... | 820, 1112 | 119, 133 % | 21 to 25 % | (no oases) |
+
+At two minutes the scattered founders crashed to under 500 (no pigment without trace); at five minutes the survivors made THREE big
+colonies (`oases-s3-5min-old-tuning.jpg`): but round the three MINERAL springs (the water-like gt they split), not round the oases.
+By ten minutes the dish was full (6000, the capacity), as the old shallows. The reason, measured: trace is never used up, only
+recycled (a worn or bleached pigment gives its trace back to the stock, a dying cell to the dish under it, a dividing one half to its
+daughter), so once a lineage holds trace it carries it along as it grows: at 20 minutes the CELLS held 460 to 510 units of trace and the
+dish only 350 to 380. The oases decide where life starts, not where it stays. The preset was retuned (half the light, the mineral
+springs at a third of their rate; below).
+
+**The retuned Oases preset** (`n1-oases2`, seed 3, 15 min; half the light, the mineral springs at 2 atoms per s): the founders crash
+harder (1495 at 1 min, 129 at 2 min, 160 at 5 min) and the dish fills slowly again (1102 at 10 min, 2400 at 15 min, still rising).
+Between 5 and 15 minutes the income was 104 per s, light made 75 % of it (the eaters, 38 % of the cells at the end, live on the vent and
+the minerals), the pigments used 56 % of the photons they caught (saturated 15 %, no trace 19 %, no material 9 %). The picture at 10
+minutes (`oases-s3-10min.jpg`) is the most "geographic" of all the runs: a patchwork of small colonies, crust patches round the mineral
+springs, silver oases with their specks drifting off in the eddies, a faint net of light over all of it. But measured at 15 minutes the
+cells are NOT closer to the oases than chance (9 % of the cells within 15 R of one, on 11 % of the dish), for the reason above.
+
+In the harmonic look (`oases-s3-harmonic-2.5min.jpg`, the retuned preset during its crash) the survivors are green rims in small groups
+near the mineral springs, the springs' crust orange fibrous patches, the vent's fuel a violet haze; the oases and the springs are quiet
+grey rings, the caustic net all but invisible (deliberately: light has no channel in that look).
+
+## 4. The Plumes preset
+
+`n1-plumes` (seed 3, 15 min; the full light, a strong current: eddies 0.5 R/s, the gyre 0.9 R/s, two fixed oases and a vent upstream):
+1590 cells at 1 min, 86 at 2 min, 430 at 5 min, 3088 at 10 min, 5289 at 15 min (income 286 per s at 5 to 15 min, light 79 %); the colonies grew from the mineral springs and the
+fixed oases and were swept round the basin by the gyre (`plumes-s3-7min.jpg`: two big crowds on opposite sides of the dish, a long
+loose stream of cells between them along the current, the vent's green dust and the oases' silver drawn out in long curving tails).
+The cells within 15 R of an oasis had 1.85 battery against 1.19 elsewhere and three times the pigment (0.040 against 0.0135 per cell),
+on 1.6 x their share of the dish: here the oases, fixed and upstream, did mark where life is richest. Like the first Oases preset, the
+full light fills the dish in the end.
+
+## 5. Caustic light and currents, measured
+
+From `moire.water.stats()` at 10 minutes (the same in every run, as they do not depend on life): the light on the floor has mean 0.99
+(the swell's net only moves light around), median 0.53, a tenth of the floor below 0.12 of the mean and a tenth above 2.7, the
+brightest lines 4.0 to 4.3 x the mean; a quarter of the floor gets more than 1.5 x the mean. The currents: mean speed 0.39 R/s, at most
+1.17 R/s (where an eddy and the gyre add up), the eddies 19.4 R across. In the cells' books: 15 to 40 % of the photons the pigments
+caught in the spot and in the full light were past saturation (on a bright line, or the spot's near side), and photoinhibition bleached
+0.01 to 0.75 pigment units per s (3 to 18 % of what was built). Shade between the lines was worth having, but no lineage visibly
+avoided the bright lines: the net moves faster (the waves run at 0.3 to 0.5 R/s) than a colony grows.
+
+## 6. Entropy and ORDER
+
+| run | entropy (heat out) at 15 min | rate (5 to 15 min) | ORDER at 15 min |
+|---|---|---|---|
+| default, old light s3 / s7 | 12.0 M / 19.4 M | 13.6 / 23.5 k/s | 0.218 / 0.203 |
+| default, N1 s3 / s7 | 10.0 M / 16.6 M | 10.4 / 20.6 k/s | 0.137 / 0.132 |
+| shallows, old light s3 / s7 | 64.4 M / 81.6 M | 84 / 106 k/s | 0.249 / 0.251 |
+| Oases (first tuning) s3 / s7 | 62.9 M / 70.5 M | 84 / 95 k/s | 0.216 / 0.211 |
+| Oases (retuned) s3 | 21.0 M | 25.5 k/s | 0.141 |
+| Plumes s3 | 54.3 M | 72 k/s | 0.232 |
+
+Less life, less heat out: the entropy rate follows the living mass (the light absorbed by the dish itself is the same). ORDER fell
+with the currents (0.13 to 0.14 against 0.20 to 0.22 in the default scene): the eddies and the gyre smear the springs' matter over the
+dish, so it is less concentrated. In the full-light presets the crusts round the springs keep ORDER near 0.21.
+
+## 7. The books and the checks
+
+- `n1-check` (seed 5, the whole dish lit, 420 s at MAX): N, 40 cells placed, a wash, a resize and back, every N1 switch off and on at
+  runtime (pigments free, no saturation, no bleaching, caustics off, currents off, currents x 6, trace everywhere, oases fixed and 6,
+  roaming with 20 s lives and 2, back), G, a snapshot saved and loaded at once (exact, rounding unchanged): atoms and charge rounding 0
+  in every sample but the paused instant of each resize (the old grid not yet drained, as in every step before); energy within -0.032
+  and +0.016 while 16.3 M came in.
+- Every experiment run: atoms and charge 0 in every sample; energy within -0.09 and +0.17.
+- `n1-reload-old`: a snapshot made by the code before step N1 (5c7b944) loads with every N1 part off (pigments free, no caustics, no
+  currents, no oases, trace from every spring) and runs on with atoms and charge 0.
+
+## What to try next
+
+- Make trace LEAVE life too: trace that a dying or bursting cell spills settles where it falls (it is buried as the dish's is), or cells
+  must excrete some with their waste; then a lineage cannot carry its trace for ever and the oases would keep deciding where life stays.
+- A smell for the nutrient (the cells' smell weighs only fuel today), so cells can climb a trace plume to its oasis.
+- The harmonic look of a crowded full-light dish shows the caustic net only faintly by design (no channel for light); a view that
+  colours cells by the light they caught would show the net in the colony.

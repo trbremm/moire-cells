@@ -35,7 +35,7 @@
 
 const HEAT_SCALE: f32 = 65536.0;   // counts per energy unit
 const HEAT_V0: f32 = 10.0;         // CSS px / s: the speed whose motion energy is 0.5 units
-const LEDGER_WORDS: u32 = 28928u;   // (28416 until step C12g; 28288 until step C12f; 27776 until step C12e; 25600 until step C12c; 19200 until step C6b, 19712 until step C6c, 20224 until step C7, 21760 until C7b,
+const LEDGER_WORDS: u32 = 30976u;   // (28928 until step N1 merged; 28416 until step C12g; 28288 until step C12f; 27776 until step C12e; 25600 until step C12c; 19200 until step C6b, 19712 until step C6c, 20224 until step C7, 21760 until C7b,
                                     // 22016 until C8, 22272 until C9, 22528 until C12)
 const LG_WORK: u32 = 0u;     // 256 slots: work done on the cells by the forces (fields, contact, crawling, stirring)
 const LG_BASE: u32 = 256u;   // 64: the base warmth put into the dish
@@ -130,6 +130,9 @@ const LG_SEA: u32 = 28352u;
 // step C12g, ion flow (src/ions.js, cell_eat.wgsl), words 28416 .. 28927: 16 snapshot numbers x 16 slots (i32; the ledger pass: IZ_*),
 // then 16 counters x 16 slots (i32) since the last read-back (the eat pass: IC_*)
 const LG_IO: u32 = 28416u;
+// step N1, a nutrient landscape (src/pigments.js, cell_eat.wgsl): 16 counters, 64-bit, 64 slots (128 words each), words 28928 .. 30975 (28416 .. on branch landscape, before the merge with C12g):
+// N1_* in cell_eat.wgsl (the pigments' light, why photons went unused, the pigment built, worn, bleached; a snapshot of what is held)
+const LG_N1: u32 = 28928u;
 const XN_MADE_OPEN: u32 = 0u;    // excited atoms made by light in the open (the uphill swaps)
 const XN_MADE_CELL: u32 = 1u;    // ... made by the cells' harvesting uphill swaps (a pigment's photon)
 const XN_FADE_OPEN: u32 = 2u;    // ... faded to ground by themselves in the open
@@ -227,9 +230,11 @@ struct HeatP {
   base: f32,        // base warmth per pixel per tick (counts; fractional, added with random rounding)
   tempScale: f32,   // counts in one pixel x tempScale = temperature, as heat per R^2 (units)
   pig: u32,         // step C6: word offset of the cells' pigment blocks (visible 1, visible 2, hard; 0 = none this frame)
-  _p1: f32,
-  _p2: f32,
-  _p3: f32,
+  caus: u32,        // step N1: word offset of the CAUSTIC block (the light's focusing by the water surface, f32 bits per pixel, x the
+                    // light_factor; src/water.js; 0 = none this frame: x 1)
+  cur: u32,         // step N1: word offset of the CURRENTS' stream function (f32 bits at the pixel corners, (hw + 1) x (hh + 1), CSS px^2
+                    // per s; 0 = no currents this frame)
+  curDrift: f32,    // step N1: how much of the current the cells drift with (cell_step.wgsl: a force = curDrift x the water's velocity)
 };
 
 // motion energy of a velocity (CSS px / s)

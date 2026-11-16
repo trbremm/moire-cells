@@ -1,0 +1,89 @@
+{
+  "name": "n1-reload-old",
+  "description": "Step N1: a snapshot saved by the code before step N1 (5c7b944, default scene seed 3 at 60 s) loads with the N1 parts off and runs 60 s more; atoms and charge rounding must stay 0",
+  "condition": {
+    "name": "n1-reload-old",
+    "description": "Step N1: a snapshot saved by the code before step N1 (5c7b944, default scene seed 3 at 60 s) loads with the N1 parts off and runs 60 s more; atoms and charge rounding must stay 0",
+    "query": {
+      "snap": "experiments/runs/n1-oldsnap-make/snapshots/old.json"
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "evals": [
+      {
+        "t": 1,
+        "js": "return { pig: moire.pigments.params, water: [moire.water.params.caustics, moire.water.params.currents], oases: [moire.oases.params.scarce, moire.oases.params.roam, moire.oases.params.count, moire.oases.list.length] }"
+      }
+    ]
+  },
+  "url": "http://localhost:59944/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/runs/n1-oldsnap-make/snapshots/old.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "f20c225ddd0d6a35bac5d8e919d75e05d77aa289",
+  "dirty": false,
+  "started": "2026-11-16T17:56:14",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": true,
+    "notes": [
+      "saved before step N1: pigments free, no saturation (as it ran)",
+      "saved before step N1: no caustic light, no currents (as it ran)",
+      "saved before step N1: trace from every spring, no oases (as it ran)"
+    ],
+    "rebased": null,
+    "rounding": {
+      "energy": -0.01971435546875,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": -0.01971435546875,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 1595,
+    "time": 59.99999999999788
+  },
+  "t_start": 59.99999999999788,
+  "sim_s": 60.0,
+  "run_wall_s": 82.19,
+  "speed_reached": 0.73,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.9999999999999929,
+      "js": "return { pig: moire.pigments.params, water: [moire.water.params.caustics, moire.water.params.currents], oases: [moire.oases.params.scarce, moire.oases.params.roam, moire.oases.params.count, moire.oases.list.length] }",
+      "result": {
+        "pig": {
+          "matter": false,
+          "sat": false,
+          "inhib": false,
+          "want": 0.01,
+          "build": 0.5,
+          "cost": 4,
+          "wear": 0.008333333333333333,
+          "isat": 1,
+          "bleach": 0.002
+        },
+        "water": [
+          false,
+          false
+        ],
+        "oases": [
+          false,
+          false,
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-16T17:58:24",
+  "wall_s": 129.87
+}

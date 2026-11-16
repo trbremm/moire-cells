@@ -1,0 +1,22 @@
+{
+ "batch": "n1-diag",
+ "seeds": [3, 7],
+ "runs": [
+  {
+   "name": "n1-diag-default",
+   "description": "Step N1 diagnosis: the default scene with the old light (pigments free, no saturation), 2000 cells, 15 min: battery income from light, unused photons by reason",
+   "query": {"pigmatter": 0, "pigsat": 0, "inhib": 0},
+   "duration": 900, "sample_every": 30,
+   "snapshots": [{"t": 900}],
+   "shots": [{"t": 900, "view": "strategy"}]
+  },
+  {
+   "name": "n1-diag-shallows",
+   "description": "Step N1 diagnosis: the Sunlit shallows preset with the old light, 15 min",
+   "query": {"preset": "shallows", "pigmatter": 0, "pigsat": 0, "inhib": 0},
+   "duration": 900, "sample_every": 30,
+   "snapshots": [{"t": 900}],
+   "shots": [{"t": 900, "view": "strategy"}]
+  }
+ ]
+}

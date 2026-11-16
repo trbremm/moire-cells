@@ -1,0 +1,42 @@
+{
+  "name": "n1-oldsnap-make",
+  "description": "a snapshot made by the code before step N1 (5c7b944), default scene seed 3, 60 s",
+  "condition": {
+    "name": "n1-oldsnap-make",
+    "description": "a snapshot made by the code before step N1 (5c7b944), default scene seed 3, 60 s",
+    "query": {
+      "seed": 3
+    },
+    "duration": 60,
+    "sample_every": 30,
+    "snapshots": [
+      {
+        "t": 60,
+        "name": "old"
+      }
+    ]
+  },
+  "url": "http://localhost:62610/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-16T17:53:29",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 102.11,
+  "speed_reached": 0.59,
+  "samples": 3,
+  "shots": [],
+  "snapshots": [
+    "snapshots/old.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T17:56:05",
+  "wall_s": 156.32
+}

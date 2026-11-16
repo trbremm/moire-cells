@@ -1,0 +1,88 @@
+{
+  "name": "n1-oases_s3",
+  "description": "Step N1: the Oases preset (whole dish lit with a caustic net, 4 roaming oases, scattered cells, 3 mineral springs and a slow vent), 20 min",
+  "condition": {
+    "name": "n1-oases_s3",
+    "description": "Step N1: the Oases preset (whole dish lit with a caustic net, 4 roaming oases, scattered cells, 3 mineral springs and a slow vent), 20 min",
+    "query": {
+      "preset": "oases",
+      "seed": 3
+    },
+    "duration": 1200,
+    "sample_every": 30,
+    "evals": [
+      {
+        "t": 600,
+        "js": "return JSON.stringify(await moire.water.stats())"
+      },
+      {
+        "t": 1202,
+        "js": "moire.control.action('harmonic'); return 'harmonic'"
+      }
+    ],
+    "snapshots": [
+      {
+        "t": 1200
+      }
+    ],
+    "shots": [
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "view": "strategy",
+        "name": "strategy"
+      },
+      {
+        "t": 1201,
+        "name": "mach",
+        "view": "machinery"
+      },
+      {
+        "t": 1203,
+        "name": "harmonic"
+      }
+    ]
+  },
+  "url": "http://localhost:63539/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=oases&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-16T18:26:14",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 1263.38,
+  "speed_reached": 0.95,
+  "samples": 41,
+  "shots": [
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t1200.png",
+    "shots/strategy.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t1200.json"
+  ],
+  "clips": [],
+  "evals": [
+    {
+      "t": 599.9999999997895,
+      "js": "return JSON.stringify(await moire.water.stats())",
+      "result": "{\"caustic\":{\"mean\":0.9895261515056497,\"p10\":0.11798480153083801,\"p50\":0.5281240940093994,\"p90\":2.6879851818084717,\"p99\":4.013564109802246,\"max\":4.271708965301514,\"bright\":0.24897763055657793},\"current\":{\"mean\":0.3932313664976178,\"max\":1.1670020365637601,\"eddy\":19.43009197847585}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-16T18:48:06",
+  "wall_s": 1311.31
+}

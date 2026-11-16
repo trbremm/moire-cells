@@ -611,6 +611,17 @@ T1. TISSUES THAT PAY: PRESSURE TO LINK (user 2026-11-16: "we have no evolutive p
       keep shape, do cheaters appear, does evolution find its own designs?
     Background given to the user: real multicellularity from daughters not separating (snowflake yeast), safety in size
     (algae under predation), division of labour (heterocysts).
+PREDATORS (user 2026-11-16 "should we start planning for macrophages? and other types of predators"; UNDER
+    DISCUSSION, not agreed). Claude's proposal: predation is the missing PRESSURE TO LINK (algae evolve clumps under a
+    predator that eats single cells). ENGULF gene (costs battery + membrane); only smaller cells can be wrapped; the
+    prey's GLUE to its neighbours resists (pull it free first), so a clump acts as one big cell; crust walls / stiff
+    membranes resist; matter conserved (prey's stock and lipids into the predator, battery to heat/food, digested over
+    seconds). Look: outline wrapping round the prey, prey a fading ghost inside (phagosome). Kinds: engulfers, grazers
+    (nibble walls at tissue edges), poisoners (burst neighbours, eat the spill), pack hunters (gliders?), MACROPHAGES
+    (in-body cell type eating strangers/debris, sparing kin via the identity key; needs the T1 gene network). Suggested
+    order: free engulfers with T1 (the reason to link), macrophages after the gene network. Watch: boom-bust, predator
+    spirals and waves; risk of wipe-out (refuges, costs). Open: one evolvable gene vs a seeded predator lineage; kin
+    recognition from the start or cannibalism allowed.
 C12f. VENTS THAT FEED LIFE IN THE DARK (user 2026-11-16 "maybe we should adapt the chemistry then", after the app
     worker found a fully dark vent dish starves in 100 s: fermenting vent fuel earns the culture ~0.001 energy/s). Start
     after C12e is merged (same files). First DIAGNOSE (vent rate, engine rates, sparks, C12e saturation clogging small

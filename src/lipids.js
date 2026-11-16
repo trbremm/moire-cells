@@ -134,7 +134,10 @@ export class Lipids {
     f[o + 20] = Math.max(0, p.fuseK); f[o + 21] = Math.max(0, p.oilCap); f[o + 22] = Math.max(0.01, p.kMin);
     f[o + 23] = this.eat.membrane.params.soft;
     const SH = this.eat.cells.shape;   // the honeycomb corners' angular frequency at stiffness 1 (as cells.js writeFields)
-    f[o + 32] = 2 * Math.PI * SH.wobbleHz * Math.sqrt(Math.max(0.01, SH.stiffness)); f[o + 33] = 0; f[o + 34] = 0; f[o + 35] = 0;
+    f[o + 32] = 2 * Math.PI * SH.wobbleHz * Math.sqrt(Math.max(0.01, SH.stiffness)); f[o + 34] = 0; f[o + 35] = 0;
+    // step C12d: the minus soap's (tlL) own release when built from atoms (the table above holds glL's for both soaps: under the old
+    // table they are equal; with electrons the t-head's bond releases more, 4 against 2.25)
+    f[o + 33] = Math.round(16 * -S_('tlL').energy);
   }
 
   /** The drawing's words (struct Draw lip, lip2, lipInk[3], from float a[o]). */

@@ -39,6 +39,12 @@
 // glitter of tiny hot red-orange sparks, hotter and whiter than the old threat red of the free atoms; each spark flickers
 // on its own phase, and as the haze fades (the atoms relax) the sparks thin out and dim. Not busy: a spark per grid square at
 // most, and fewer where there is less.
+// Step C12d, ELECTRONS (the same fourth texture: y the minerals per R^2, z of which heavy; x and w what each pixel re-emits as
+// fluorescence per tick in visible 1 and visible 2, heat counts): the settled MINERALS as quiet dust (water-like gt a cool slate,
+// rust-like Gt rust), and the FLUORESCENCE as a soft glow of tiny lights, like a fluorescence microscope image: in the colour of
+// the band each emits (visible 1 gold, visible 2 sky blue), as many as the share of the light re-emitted there says (at most one of
+// each colour per grid square, at hashed places, so nothing flickers), each a small bright core in a soft halo. Steady: an excited
+// state lives far shorter than a frame. Not busy: only where light falls on something whose gap it matches.
 
 struct DrawP {
   dpr: f32,
@@ -79,6 +85,13 @@ struct DrawP {
   // step C12c, the excited haze (src/excited.js look)
   exc: vec4f,         // x 1 = drawn; y how many sparks per amount (x the coverage); z the flicker's speed (1/s); w brightness
   excInk: vec4f,      // rgb: the sparks' hot red-orange; w: a spark's radius (CSS px)
+  // step C12d, electrons (src/electrons.js look)
+  el: vec4f,          // x 1 = on (texD holds minerals and glow); y 1 / the full day's light per pixel per tick (the glow's scale);
+                      // z the glow's density (lights per share of the light re-emitted; 0 = not drawn); w its brightness
+  minL: vec4f,        // rgb the light mineral's ink (gt); w the minerals' brightness (share of the fuel's)
+  minH: vec4f,        // rgb the heavy mineral's ink (Gt, rust)
+  glow1: vec4f,       // rgb visible 1's colour (gold); w a light's core radius (CSS px)
+  glow2: vec4f,       // rgb visible 2's colour (sky blue); w the halo's strength
 };
 
 struct Spring {
@@ -173,6 +186,18 @@ fn dust(x: vec2f, under: vec4f) -> vec4f {
         res = over(speck(x, (g + h.xy) * cs, mix(D.dust.y, D.dust.z, cf), ink), res);
       }
     }
+    // step C12d: minerals, quiet dust (slate water, rust)
+    if (D.el.x > 0.5) {
+      let vd = textureSampleLevel(texD, samp, uv_of(centre), 0.0);
+      let cm = cover(vd.y);
+      if (cm > 0.0) {
+        let h = hash3(g, 7.0);
+        if (h.z < cm) {
+          let ink = mix(D.minL.rgb, D.minH.rgb, clamp(vd.z / max(vd.y, 1e-6), 0.0, 1.0)) * D.level * D.minL.w;
+          res = over(speck(x, (g + h.xy) * cs, mix(D.dust.y, D.dust.z, cm) * 0.85, ink), res);
+        }
+      }
+    }
     // trace: rare small sparks
     let ct = cover(va.w);
     if (ct > 0.0) {
@@ -210,6 +235,37 @@ fn sparkle(x: vec2f, under: vec4f) -> vec4f {
     let hot = 1.0 + 0.8 * clamp(1.0 - d / max(r, 1e-3), 0.0, 1.0) * D.neon;
     let ink = mix(D.excInk.rgb, vec3f(1.0, 0.95, 0.85), 0.25 * D.neon * clamp(1.0 - d / max(r, 1e-3), 0.0, 1.0));
     res = over(vec4f(ink * hot * D.exc.w * D.level * (0.4 + 0.6 * cv) * fl, 1.0) * a * fl, res);
+  }
+  return res;
+}
+
+// step C12d: the fluorescence glow (see the top of this file): per grid square at most one tiny light of each emitted band, at a
+// hashed place, present while another hash lies below its coverage (the share of the light re-emitted there x the density), a
+// small bright core in a soft halo, brighter where more is re-emitted
+fn glow(x: vec2f, under: vec4f) -> vec4f {
+  var res = under;
+  let cs = D.dust.x * 1.3;
+  let base = floor(x / cs - 0.5);
+  for (var k = 0; k < 4; k++) {
+    let g = base + vec2f(f32(k & 1), f32(k >> 1));
+    let v = textureSampleLevel(texD, samp, uv_of((g + 0.5) * cs), 0.0);
+    for (var j = 0; j < 2; j++) {
+      let e = select(v.w, v.x, j == 0) * D.el.y * D.el.z;
+      let cv = e / (e + 1.0);
+      if (cv < 0.02) { continue; }
+      let h = hash3(g, 11.0 + f32(j));
+      if (h.z >= cv) { continue; }
+      let ink = select(D.glow2.rgb, D.glow1.rgb, j == 0);
+      let c = (g + h.xy) * cs;
+      let d = length(x - c);
+      let r = D.glow1.w * (0.7 + 0.6 * cv);
+      let core = disc(d, r);
+      let halo = D.glow2.w * cv * exp(-d * d / (9.0 * r * r));
+      let a = clamp(max(core, halo), 0.0, 1.0);
+      if (a <= 0.0) { continue; }
+      let hot = 1.0 + 0.6 * core * D.neon;
+      res = over(vec4f(mix(ink, vec3f(1.0), 0.3 * core * D.neon) * hot * D.el.w * (0.45 + 0.55 * cv), 1.0) * a, res);
+    }
   }
   return res;
 }
@@ -303,6 +359,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     }
     var dres = dust(x, res);
     if (D.exc.x > 0.5) { dres = sparkle(x, dres); }   // step C12c
+    if (D.el.x > 0.5 && D.el.z > 0.0) { dres = glow(x, dres); }   // step C12d
     return over(mk, dres);
   }
 
@@ -362,7 +419,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       res = over(vec4f(ink, 1.0) * disc(length(u - cB), rmax * sqrt(cov)), res);
     }
   }
-  // trace on the down triangles' centres: small diamonds
+  // trace on the down triangles' centres: small diamonds (step C12d: where there is no trace, the minerals' dots)
   if (!keyC) {
     let v = textureSampleLevel(texA, samp, uv_of(wC), 0.0);
     let cov = cover(v.w);
@@ -370,8 +427,16 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       let q = abs(u - cC);
       let r = D.traceDot * rmax * 1.25 * sqrt(cov);
       res = over(vec4f(D.trace.rgb * D.level, 1.0) * disc((q.x + q.y) * 0.7071, r * 0.7071), res);
+    } else if (D.el.x > 0.5) {
+      let vd = textureSampleLevel(texD, samp, uv_of(wC), 0.0);
+      let cm = cover(vd.y);
+      if (cm > 0.0) {
+        let ink = mix(D.minL.rgb, D.minH.rgb, clamp(vd.z / max(vd.y, 1e-6), 0.0, 1.0)) * D.level;
+        res = over(vec4f(ink, 1.0) * disc(length(u - cC), rmax * sqrt(cm)), res);
+      }
     }
   }
   if (D.exc.x > 0.5) { res = sparkle(x, res); }   // step C12c
+  if (D.el.x > 0.5 && D.el.z > 0.0) { res = glow(x, res); }   // step C12d
   return over(mark, res);
 }

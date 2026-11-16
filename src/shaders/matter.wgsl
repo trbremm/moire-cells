@@ -520,6 +520,7 @@ fn paint(@builtin(global_invocation_id) id: vec3u) {
   var b = vec4f(0.0);
   var o = vec4f(0.0);   // step C12: the oil's share (as rho), the film's share, polar atoms, apolar atoms (per R^2)
   var ex = 0.0;         // step C12c: the excited atoms (per R^2)
+  var mn = vec2f(0.0);  // step C12d: the minerals (per R^2), of which heavy
   for (var c = 0u; c < NGRID; c++) {
     if (MP.show == 2u && c != MP.solo) { continue; }
     let mc = f32(max(mg[T.src + c * MP.n + i], 0));
@@ -536,13 +537,44 @@ fn paint(@builtin(global_invocation_id) id: vec3u) {
       case 2u: { b += vec4f(0.0, 0.0, v, v * h); }
       case 4u: { o.x += mp4(MP.vol, c) * mc * MP.ok.y; }
       case 5u: { o.x += mp4(MP.vol, c) * mc * MP.ok.y; o.y += na * mc * MP.ok.z; }
+      case 7u: { mn += vec2f(v, v * h); }   // step C12d: minerals
       default: { a.w += v; }
     }
   }
   textureStore(texA, vec2i(id.xy), a);
   textureStore(texB, vec2i(id.xy), b);
   textureStore(texC, vec2i(id.xy), min(o, vec4f(60000.0)));
-  textureStore(texD, vec2i(id.xy), vec4f(min(ex, 60000.0), 0.0, 0.0, 0.0));
+  // step C12d (electrons): what this pixel re-emits as fluorescence per tick (heat counts), in visible 1 and visible 2, worked out
+  // as react shares the light (every light reaction's depth; the glow's share of its band), from the current copy
+  var gl = vec2f(0.0);
+  if (CP.el.x > 0.5 && MP.show != 0u) {
+    let et = light_here(id.xy);
+    if (any(et > vec4f(0.0))) {
+      var m: array<i32, 18>;
+      for (var c = 0u; c < 16u; c++) { m[c] = max(mg[T.src + c * MP.n + i], 0); }
+      var tsum = vec4f(0.0);
+      var tdark = 0.0;
+      for (var r = 0u; r < CP.nrx; r++) {
+        let R = CP.rx[r];
+        if (R.by != 1u) { continue; }
+        var amt = f32(m[R.ch.x]) * MP.conc;
+        if (R.ch.y != NONE) { let b = f32(m[R.ch.y]) * MP.conc; amt = amt * b / max(amt + b, 1e-12); }
+        tsum[R.band] += R.k * amt;
+      }
+      for (var c = 0u; c < 16u; c++) { tdark += CP.dark[c / 4u][c % 4u] * f32(m[c]) * MP.conc; }
+      tsum.x += tdark;
+      let caught = et * (1.0 - exp(-tsum));
+      for (var r = 0u; r < CP.nrx; r++) {
+        let R = CP.rx[r];
+        let emit = (R.open >> 8u) & 255u;
+        if (emit < 2u || R.by != 1u) { continue; }
+        let tau = R.k * f32(m[R.ch.x]) * MP.conc;
+        let e = caught[R.band] * tau / max(tsum[R.band], 1e-12) * f32(R.light16 - R.heat16) / f32(max(R.light16, 1));
+        if (emit == 2u) { gl.x += e; } else { gl.y += e; }
+      }
+    }
+  }
+  textureStore(texD, vec2i(id.xy), vec4f(min(ex + gl.x, 60000.0), min(mn.x, 60000.0), min(mn.y, 60000.0), min(gl.y, 60000.0)));
 }
 
 // ---------- react (step C4) ----------
@@ -562,7 +594,9 @@ fn paint(@builtin(global_invocation_id) id: vec3u) {
 var<workgroup> wfam: array<atomic<i32>, 10>;
 var<workgroup> wlit: array<atomic<i32>, 4>;
 var<workgroup> wxn: array<atomic<i32>, 4>;   // step C12c: excited atoms made, faded, used (XN_MADE_OPEN, XN_FADE_OPEN, XN_RX_OPEN), and
-var<workgroup> wxe: array<atomic<i32>, 2>;   // ... their energy as heat: faded (XE_FADE), used by reactions (XE_LOOSE)
+var<workgroup> wxe: array<atomic<i32>, 3>;   // ... their energy as heat: faded (XE_FADE), used by reactions (XE_LOOSE); step C12d (electrons,
+                                             // where those are empty): excitations, fluoresced, photochemistry; the glow's energy in all
+                                             // (XE_FADE), in visible 1 (XE_LOOSE), in visible 2 (XE_ENGINE)
 
 // step C12c: a reaction's reactant channel c as a POOL: a light giver or taker with its excited twin (they react alike)
 fn xpool(m: ptr<function, array<i32, 18>>, c: u32) -> i32 {
@@ -579,6 +613,30 @@ fn xtake(m: ptr<function, array<i32, 18>>, c: u32, n: i32, r: f32) -> i32 {
   (*m)[c + EXC0] -= nx;
   (*m)[c] -= n - nx;
   return nx;
+}
+
+// the light that reaches the substances in pixel id (counts per pixel per tick, per band): the band's light there after the bare
+// medium, the cells (their cover, 3 x 3 mean) and the cells' pigments took their share (step C12d: paint uses it too, for the glow)
+fn light_here(id: vec2u) -> vec4f {
+  if (CP.light == 0u || LP.mode == LIGHT_OFF) { return vec4f(0.0); }
+  let s = light_factor(LP, (vec2f(id) + 0.5) * MP.px);
+  if (s <= 0.0) { return vec4f(0.0); }
+  let i = id.y * MP.hw + id.x;
+  let co = 3u * MP.n;   // the cells' cover (heat_common.wgsl), written by their step this tick
+  var cov = 0;
+  for (var dy = -1; dy <= 1; dy++) {
+    for (var dx = -1; dx <= 1; dx++) {
+      let q = clamp(vec2i(id) + vec2i(dx, dy), vec2i(0), vec2i(i32(MP.hw) - 1, i32(MP.hh) - 1));
+      cov += mg[co + u32(q.y) * MP.hw + u32(q.x)];
+    }
+  }
+  let cover = f32(cov) / (9.0 * COVER_SCALE);
+  // step C6: and minus what the cells' pigments caught (their depth, which each cell spread over its 3 x 3 pixels, per band)
+  var pig = vec4f(0.0);
+  if (MP.pig != 0u) {
+    for (var b = 1u; b < 4u; b++) { pig[b] = f32(mg[MP.pig + (b - 1u) * MP.n + i]) / COVER_SCALE; }
+  }
+  return LP.power * s * exp(-(LP.tauMed + LP.tauCell * cover + pig));
 }
 
 @compute @workgroup_size(8, 8)
@@ -605,30 +663,9 @@ fn react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
       var lit = vec4i(0);
 
       // the light that reaches the substances, per band (counts per pixel per tick)
-      var et = vec4f(0.0);
-      if (CP.light != 0u && LP.mode != LIGHT_OFF) {
-        let s = light_factor(LP, (vec2f(id.xy) + 0.5) * MP.px);
-        if (s > 0.0) {
-          let co = 3u * MP.n;   // the cells' cover (heat_common.wgsl), written by their step this tick
-          var cov = 0;
-          for (var dy = -1; dy <= 1; dy++) {
-            for (var dx = -1; dx <= 1; dx++) {
-              let q = clamp(vec2i(id.xy) + vec2i(dx, dy), vec2i(0), vec2i(i32(MP.hw) - 1, i32(MP.hh) - 1));
-              cov += mg[co + u32(q.y) * MP.hw + u32(q.x)];
-            }
-          }
-          let cover = f32(cov) / (9.0 * COVER_SCALE);
-          // step C6: and minus what the cells' pigments caught (their depth, which each cell spread over its 3 x 3
-          // pixels, per band)
-          var pig = vec4f(0.0);
-          if (MP.pig != 0u) {
-            for (var b = 1u; b < 4u; b++) { pig[b] = f32(mg[MP.pig + (b - 1u) * MP.n + i]) / COVER_SCALE; }
-          }
-          et = LP.power * s * exp(-(LP.tauMed + LP.tauCell * cover + pig));
-        }
-      }
+      let et = light_here(id.xy);
       // optical depths of the absorbers, per reaction and per band
-      var tau: array<f32, 32>;
+      var tau: array<f32, 48>;
       var tsum = vec4f(0.0);
       var tdark = 0.0;
       if (any(et > vec4f(0.0))) {
@@ -644,7 +681,7 @@ fn react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
           tau[r] = R.k * amt;
           tsum[R.band] += tau[r];
         }
-        for (var c = 0u; c < NCH; c++) { tdark += CP.dark[c / 4u][c % 4u] * f32(m[c]) * conc; }   // (sediment only: 0..12)
+        for (var c = 0u; c < 16u; c++) { tdark += CP.dark[c / 4u][c % 4u] * f32(m[c]) * conc; }   // (sediment; step C12d: whatever has a warm gap)
         tsum.x += tdark;
       }
       let caught = et * (1.0 - exp(-tsum));
@@ -703,8 +740,20 @@ fn react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
         if (R.ch.z >= EXC0 && R.ch.z != NONE) { atomicAdd(&wxn[0], n); }   // (light freed them excited)
         if (R.ch.w >= EXC0 && R.ch.w != NONE) { atomicAdd(&wxn[0], n); }
         heat += n * R.heat16;
-        if (R.by == 1u) { lit[R.band] += n * R.light16; }
-        atomicAdd(&wfam[R.fam], n);
+        // (step C12d: an excited state's event; a fluorescence event books only the photon's rest as caught: the light it emits
+        // passes on, out of the dish)
+        let emit = (R.open >> 8u) & 255u;
+        if (R.by == 1u) { lit[R.band] += n * select(R.light16, R.heat16, emit != 0u); }
+        if ((R.open & 2u) != 0u) { atomicAdd(&wxn[0], n); }
+        if ((R.open & 4u) != 0u) { atomicAdd(&wxn[2], n); }
+        if (emit != 0u) {
+          let e = n * (R.light16 - R.heat16);
+          atomicAdd(&wxn[1], n);
+          atomicAdd(&wxe[0], e);
+          if (emit == 2u) { atomicAdd(&wxe[1], e); }        // visible 1: gold
+          else if (emit == 3u) { atomicAdd(&wxe[2], e); }   // visible 2: sky blue
+        }
+        if (R.fam < 10u) { atomicAdd(&wfam[R.fam], n); }
       }
 
       // step C12c: the excited atoms FADE to their ground atom by themselves, the energy they held as heat on the spot, at the
@@ -748,8 +797,8 @@ fn react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
     let v = atomicLoad(&wxn[li - 14u]);
     let q = select(select(XN_RX_OPEN, XN_FADE_OPEN, li == 15u), XN_MADE_OPEN, li == 14u);
     if (v != 0) { atomicAdd(&hb[LG_EXC_N + 16u * q + (slot & 15u)], v); }
-  } else if (li < 19u) {
-    let q = select(XE_LOOSE, XE_FADE, li == 17u);
+  } else if (li < 20u) {
+    let q = select(select(XE_ENGINE, XE_LOOSE, li == 18u), XE_FADE, li == 17u);
     add64(LG_EXC_E + 128u * q + slot, atomicLoad(&wxe[li - 17u]));
   }
 }

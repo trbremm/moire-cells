@@ -17,7 +17,10 @@
 //   other          strategy view: a cell that neither harvests nor burns
 //   substances     the dish's substances by chemical function, a lighter row-1 and a deeper row-2 variant each:
 //                  reactive free atoms (givers, takers: hungry for partners) red, linkers dim grey-blue, fuels green,
-//                  sediment a dark flat crust, trace pale silver. A spring's marker mixes its atoms' inks
+//                  sediment a dark flat crust, trace pale silver. A spring's marker mixes its atoms' inks. Step C12d
+//                  (electrons): settled MINERALS (a giver-taker compound whose electron already sits in the deepest slot)
+//                  quiet: the light one (gt, water-like) a cool slate, the heavy one (Gt, rust-like) rust. Fluorescence
+//                  glows in the colour of the band it emits (band[1] gold, band[2] sky blue)
 //   spot           the spotlight's outline (warm white, as the light)
 //   field          the cells' fields drawn as halftone (keys K J ;): A pale warm, B print blue, the partner A' yellow
 //   charge         step C6b: the screened charge field's contour lines (machinery): + (givers' excess) a warm rose, - (takers')
@@ -51,6 +54,7 @@ export const FLAT = {
     trace: { light: [222, 222, 232], heavy: [222, 222, 232] },
     oil: { light: [150, 196, 214], heavy: [150, 196, 214] },             // step C12
     amphiphile: { light: [236, 226, 246], heavy: [236, 226, 246] },
+    mineral: { light: [150, 172, 192], heavy: [184, 108, 76] },          // step C12d: settled minerals (gt water-like, Gt rust)
   },
   oil: { film: [16, 22, 30], edge: [170, 210, 226], amph: [236, 226, 246] },   // step C12: the film, its rim, the soap lines
   polarity: { polar: [236, 150, 96], apolar: [104, 170, 236] },
@@ -84,6 +88,7 @@ export const NEON = {
     trace: { light: [226, 232, 255], heavy: [226, 232, 255] },
     oil: { light: [120, 200, 236], heavy: [120, 200, 236] },             // step C12
     amphiphile: { light: [246, 232, 255], heavy: [246, 232, 255] },
+    mineral: { light: [104, 146, 186], heavy: [204, 88, 44] },           // step C12d: settled minerals (gt water-like, Gt rust)
   },
   oil: { film: [8, 14, 28], edge: [140, 220, 255], amph: [255, 240, 255] },
   polarity: { polar: [255, 128, 56], apolar: [56, 150, 255] },

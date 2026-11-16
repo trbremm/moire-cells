@@ -1,0 +1,8 @@
+{
+ "name": "c12d-smoke",
+ "description": "step C12d smoke test: the default scene with electrons on, 120 s at MAX, sampled every 10 s (books)",
+ "query": {"seed": 3},
+ "duration": 120,
+ "sample_every": 10,
+ "shots": [{"t": 120}, {"t": 120, "panel": true, "name": "panel"}]
+}

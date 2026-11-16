@@ -35,6 +35,13 @@ import { BANDS, LIGHT_COMMON_URL } from './light.js';
 import { FLAT, pal } from './palette.js';
 import { Oil } from './oil.js';
 import { Excited } from './excited.js';
+import { Electrons } from './electrons.js';
+import { setShaderConst } from './gpu.js';
+
+// ---------- step C12d, ELECTRONS: which table this page runs (fixed for the page: changing it would change the energy of
+// every molecule in the dish). ?electrons=0 gives the previous table (step C4 to C12c) exactly ----------
+const QS = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
+export const ELECTRONS = !(QS && QS.has('electrons') && QS.get('electrons') === '0');
 
 // ---------- the periodic table (CLAUDE.md, Part C): every property derived from ROW and GROUP, nowhere else ----------
 // ROW is size: heavier = slower spreading (later: richer bonds, harder light needed). GROUP is role: a GIVER wants one
@@ -93,8 +100,47 @@ export const CHEM = { fuelPerRow: 0.75, sedPerRow: -0.25, sparkPerRow: 0.125 };
 // halfway between: (0.375 - 0.125) = 0.25 per row, uphill (putting a head on stores a little, as making fuel does, less).
 // A molecule's energy is the sum of its bonds'. A bond's SPARK is sparkPerRow x (row a + row b), whatever the groups.
 const TEND = { giver: CHEM.fuelPerRow / 2, taker: CHEM.fuelPerRow / 2, linker: CHEM.sedPerRow / 2, inert: 0 };
-const bondE = (a, b) => (TEND[a.group] + TEND[b.group]) * (a.row + b.row);
+const oldBondE = (a, b) => (TEND[a.group] + TEND[b.group]) * (a.row + b.row);
 const bondSpark = (a, b) => CHEM.sparkPerRow * (a.row + b.row);
+
+// ---------- step C12d, ELECTRONS: bonding rebuilt around GRIP (README "Step C12d: electrons") ----------
+// Every atom has a small LADDER of levels (orbitals), from its row and group only. Each group has a core PULL Z: shell k of the
+// atom sits at -Z / 2^(k-1) (each shell half as deep as the one inside it); a row-r atom has shells 1..r filled, its outermost
+// (shell r) the VALENCE shell, and shell r + 1 empty above it. So each row adds a shell, and outer shells sit higher and hold
+// looser. GRIP = the valence level: a giver's spare electron (heavier = looser: gives easily, metal-like), a taker's empty slot
+// (lighter = deeper: pulls harder, oxygen-like), the level a linker shares. Bonds:
+//   an electron FALLS (a bond with a giver or a taker; the donor is the partner whose valence sits higher): released = the
+//          donor's level - the acceptor's, + match when both are of one row (shells of one size overlap best); like with like
+//          (giver + giver, taker + taker): no bond
+//   linkers SHARE: released = share x (row + row) (bigger shells overlap more), as the old chains
+// A bond has a bonding level (where the electron now sits) and an anti-bonding one above: a fallen electron lifted is back on
+// its donor's EMPTY shell, so the bond's GAP = released + the donor's atom gap; a shared pair splits evenly: gap = released.
+// Light is absorbed only where a photon matches a gap (within tol of the band's photon): every substance has its own bands.
+// Free atoms are the top of the scale (0): every bond goes down from there.
+export const ELEC = { pull: { giver: 5 / 4, linker: 5 / 2, taker: 11 / 2, inert: 0 }, match: 1 / 4, share: 1 / 4, tol: 1 / 2 };
+/** Step C12d: an atom's levels, shell 1 up to its empty shell (energy units; [] for trace, a closed shell). */
+export function atomLevels(a) {
+  if (a.group === 'inert') return [];
+  return Array.from({ length: a.row + 1 }, (_, k) => -ELEC.pull[a.group] / 2 ** k);
+}
+const valence = (a) => -ELEC.pull[a.group] / 2 ** (a.row - 1);   // its grip (the valence level)
+const atomGap = (a) => ELEC.pull[a.group] / 2 ** a.row;           // valence -> the empty shell above
+/** Step C12d: the bond between atoms a and b: { rel (energy released forming it), gap, donor } or null (no bond). */
+export function eBond(a, b) {
+  if (a.group === 'inert' || b.group === 'inert') return null;
+  if (a.group === b.group && a.group !== 'linker') return null;
+  if (a.group === 'linker' && b.group === 'linker') { const rel = ELEC.share * (a.row + b.row); return { rel, gap: rel, donor: null }; }
+  const [d, c] = valence(a) >= valence(b) ? [a, b] : [b, a];
+  const rel = valence(d) - valence(c) + (a.row === b.row ? ELEC.match : 0);
+  return { rel, gap: rel + atomGap(d), donor: d };
+}
+/** Step C12d: the band whose photon a gap matches (within ELEC.tol; the nearest), or -1. */
+export function gapBand(gap) {
+  let best = -1;
+  BANDS.forEach((b, k) => { if (Math.abs(b.photon - gap) <= ELEC.tol && (best < 0 || Math.abs(b.photon - gap) < Math.abs(BANDS[best].photon - gap))) best = k; });
+  return best;
+}
+const bondE = (a, b) => (ELECTRONS ? -eBond(a, b).rel : oldBondE(a, b));
 
 // ---------- step C12c, EXCITED WASTE: how much energy an excited atom keeps (the user chose "charged waste") ----------
 // Light drives the uphill swaps (gt + T -> gT + t, gt + G -> Gt + g, gT + G -> GT + g, Gt + T -> GT + t): a photon of the
@@ -117,7 +163,7 @@ export const EXCITED = (() => {
       // the poorer fuel (giver, taker) and its two upgrades: a heavier giver, a heavier taker
       for (const [g2, t2] of [[giver === 'g' ? 'G' : null, taker], [giver, taker === 't' ? 'T' : null]]) {
         if (!g2 || !t2) continue;
-        const up = bondE(ATOMS[g2], ATOMS[t2]) - bondE(ATOMS[giver], ATOMS[taker]);
+        const up = oldBondE(ATOMS[g2], ATOMS[t2]) - oldBondE(ATOMS[giver], ATOMS[taker]);   // (the C4 table: step C12d leaves it)
         const sp = bondSpark(ATOMS[g2], ATOMS[t2]);
         const band = BANDS.findIndex((b) => b.photon >= up + sp);
         if (up > 0 && band >= 0) surplus = Math.min(surplus, BANDS[band].photon - up);
@@ -197,9 +243,20 @@ function derive(atoms) {
   const heavy = A.filter((a) => a.row >= 2).length / A.length;          // share of its atoms in row 2 or below
   const reactive = kind === 'atom' && (A[0].group === 'giver' || A[0].group === 'taker');
   const spread = kind === 'sediment' ? 0 : SPREAD.row1 * SPREAD.perRow ** (row - 1) * SPREAD.bond ** (atoms.length - 1);
-  const func = kind === 'atom' ? (reactive ? 'reactive' : 'linker') : kind === 'other' ? 'linker' : kind;
   const excited = atoms.length === 1 && !!ATOMS[atoms[0]].ground;   // step C12c
-  const layer = excited ? 6 : ({ atom: 0, fuel: 1, sediment: 2, trace: 3, oil: 4, amphiphile: 5 }[kind] ?? 0);   // drawing layer (C12c: 6)
+  // step C12d (electrons): a giver-taker compound is FUEL while a stronger taker would still take its electron (release energy
+  // swapping in), a settled MINERAL when its electron already sits in the deepest slot. SMELL (what the cells smell, cell_eat.wgsl):
+  // the energy the strongest taker would release taking it (heat counts per count); the old table: the fuel's own energy
+  let mineral = false, smell16 = kind === 'fuel' ? Math.round(16 * (atoms.length > 1 ? oldOrNewEnergy(A) : 0)) : 0;
+  if (ELECTRONS && kind === 'fuel') {
+    const gv = A.find((a) => a.group === 'giver'), tk = A.find((a) => a.group === 'taker');
+    const best = Object.values(ATOMS).filter((a) => a.group === 'taker' && !a.ground).reduce((m, a) => (valence(a) < valence(m) ? a : m));
+    const gain = eBond(gv, best).rel - eBond(gv, tk).rel;
+    mineral = gain <= 0;
+    smell16 = Math.round(16 * Math.max(0, gain));
+  }
+  const func = kind === 'atom' ? (reactive ? 'reactive' : 'linker') : kind === 'other' ? 'linker' : mineral ? 'mineral' : kind;
+  const layer = excited ? 6 : mineral ? 7 : ({ atom: 0, fuel: 1, sediment: 2, trace: 3, oil: 4, amphiphile: 5 }[kind] ?? 0);   // drawing layer (C12c: 6; C12d: 7)
   const name = atoms.length === 1 ? atoms[0] : atoms.join('');
   // step C4, the energy table (CHEM above): energy per unit, the bond's spark, and the light band that makes a fuel.
   // Step C12: the sum of its bonds' energies (bondE: the same numbers for the fuels and the sediments as before), and the
@@ -210,10 +267,20 @@ function derive(atoms) {
   const e16 = Math.round(16 * energy);   // heat counts per count of the substance (exact: see CHEM)
   if (e16 !== 16 * energy) throw new Error(`energy of ${name} (${energy}) is not a multiple of 1/16`);
   const charge = A.reduce((x, a) => x + a.charge, 0);   // step C6b: the sum of its atoms' charges (GROUP_CHARGE)
+  // step C12d (electrons): its GAPS (each bond's; a free atom's own: valence -> its empty shell) and the bands they match. Warm
+  // absorption only ever makes heat (the `dark` depth); a visible or hard band excites it (photochemistry, fluorescence, heat)
+  let gaps = [];
+  if (ELECTRONS && !excited) {
+    if (atoms.length === 1) { if (A[0].group !== 'inert') gaps = [atomGap(A[0])]; }
+    else for (let k = 1; k < A.length; k++) gaps.push(eBond(A[k - 1], A[k]).gap);
+  }
+  const bands = [...new Set(gaps.map(gapBand).filter((b) => b >= 0))].sort();
   return { name, atoms, kind, row, heavy, reactive, spread, func, layer, ink: inkOf(func, heavy), energy, spark, e16, charge, excited,
-    ground: excited ? ATOMS[atoms[0]].ground : null,
+    ground: excited ? ATOMS[atoms[0]].ground : null, mineral, smell16, gaps, bands,
     polarity: pol.cls, head: pol.head, tail: pol.tail, chi: pol.chi, beta: pol.beta, chained: pol.chained };
 }
+// (the old table's smell: a fuel's own energy, as cell_eat.wgsl summed it until step C12d)
+function oldOrNewEnergy(A) { let e = 0; for (let k = 1; k < A.length; k++) e += bondE(A[k - 1], A[k]); return e; }
 
 /** The light band that makes a fuel: the lowest whose photon covers its energy plus its spark (-1: none). */
 export function makingBand(s) {
@@ -250,7 +317,113 @@ function inkOf(func, heavy, inks = INKS) {
 export const FAMILIES = ['make', 'burn', 'photo', 'swap', 'form', 'crack', 'oil', 'oilcrack', 'head', 'unhead'];   // (step C6's
                                                                                                          // 'upswap' is counted as 'swap')
 export const HARD = BANDS.length - 1;
-export const REACTIONS = deriveReactions();
+// step C12d (electrons): the full table, every reaction both ways (TABLE_E), and from it the open dish's reactions
+export const TABLE_E = ELECTRONS ? deriveTableE() : [];
+export const REACTIONS = ELECTRONS ? deriveReactionsE() : deriveReactions();
+/** Step C12d: the families as the shaders number them (the ledger counts the first 10; glow and dark, the excited states'
+ * fluorescence and heat, are counted by the electrons' own counters). */
+export const FAM_GPU = [...FAMILIES, 'glow', 'dark'];
+/** Step C12d: what each family is called with electrons on (its ledger slot keeps the old name). */
+export const FAM_LABEL = ELECTRONS
+  ? { make: 'bond', burn: 'split', photo: 'trade', swap: 'swap', upswap: 'swap', form: 'chain', crack: 'crack', oil: 'oil', oilcrack: 'oil cracked', head: 'head on', unhead: 'head off', glow: 'fluorescence', dark: 'excited → heat' }
+  : Object.fromEntries([...FAMILIES, 'upswap'].map((f) => [f, f]));
+
+// ---------- step C12d: the electrons' table (README "Step C12d: electrons") ----------
+// Every reaction both ways (SYMMETRY), each with its energy change (heat counts per event, d16: < 0 downhill) and spark:
+//   bond   giver + taker -> compound (down)              split   compound -> giver + taker (up)
+//   swap   a free atom takes a partner's place where that releases energy (down; t + gT -> gt + T: breathing), and back (up)
+//   trade  two compounds swap partners where that releases energy (down: gT + Gt -> gt + GT), and back (up)
+//   chain  l + l -> ll, L + L -> LL (down)               crack   the chain back into its linkers (up)
+//   oil, head (the open dish only): l + L -> lL, a head atom on oil (down), and back (up)
+// Each entry: fam (its ledger slot: bond 'make', split 'burn', trade 'photo', chain 'form'), dir, ins, outs, d16, spark, open.
+function deriveTableE() {
+  const T = [];
+  const S = SUBSTANCES, ch = (name) => S.findIndex((s) => s.name === name);
+  const E16 = (cs) => cs.reduce((x, c) => x + S[c].e16, 0);
+  const nm = (cs) => cs.map((c) => S[c].name).join(' + ');
+  const both = (fam, upFam, ins, outs, spark, open = false) => {
+    const d = E16(outs) - E16(ins);
+    if (!(d < 0)) throw new Error(`electrons: ${nm(ins)} → ${nm(outs)} should be downhill`);
+    const back = fam === 'swap' ? [...ins].reverse() : ins;   // (an uphill swap names the richer compound first: gt + T → gT + t)
+    T.push({ fam, dir: 'down', ins, outs, d16: d, spark, open, name: `${nm(ins)} → ${nm(outs)}` });
+    T.push({ fam: upFam, dir: 'up', ins: outs, outs: back, d16: -d, spark, open, name: `${nm(outs)} → ${nm(back)}` });
+  };
+  const fuels = S.map((s, c) => [s, c]).filter(([s]) => s.kind === 'fuel');
+  const free = S.map((s, c) => [s, c]).filter(([s]) => s.kind === 'atom' && !s.excited);
+  for (const [f, c] of fuels) both('make', 'burn', f.atoms.map(ch), [c], f.spark);
+  for (const [f, c] of fuels) {
+    for (const [z, cz] of free) {
+      for (let k = 0; k < 2; k++) {
+        const old = f.atoms[k];
+        if (ATOMS[z.name].group !== ATOMS[old].group || z.name === old) continue;
+        const cn = ch((k === 0 ? [z.name, f.atoms[1]] : [f.atoms[0], z.name]).join(''));
+        if (cn < 0 || S[cn].e16 >= f.e16) continue;
+        both('swap', 'swap', [cz, c], [cn, ch(old)], f.spark);   // (the spark of the bond that breaks going down)
+      }
+    }
+  }
+  for (let i = 0; i < fuels.length; i++) {
+    for (let j = i + 1; j < fuels.length; j++) {
+      const [A, a] = fuels[i], [B, b] = fuels[j];
+      const c1 = ch(A.atoms[0] + B.atoms[1]), c2 = ch(B.atoms[0] + A.atoms[1]);
+      if (c1 < 0 || c2 < 0 || (c1 === a && c2 === b) || (c1 === b && c2 === a)) continue;
+      if (E16([c1, c2]) >= E16([a, b])) continue;
+      both('photo', 'photo', [a, b], [c1, c2], Math.max(A.spark, B.spark, S[c1].spark, S[c2].spark));
+    }
+  }
+  S.forEach((f, c) => {
+    if (f.kind === 'sediment') { const x = ch(f.atoms[0]); both('form', 'crack', [x, x], [c], f.spark); }
+    if (f.kind === 'oil') both('oil', 'oilcrack', f.atoms.map(ch), [c], f.spark, true);
+    if (f.kind === 'amphiphile') both('head', 'unhead', [ch(f.atoms[0]), ch(f.atoms.slice(1).join(''))], [c], f.spark, true);
+  });
+  return T;
+}
+
+// The open dish's reactions with electrons on:
+//   by heat   every downhill reaction of the table (its spark from the local heat, as before)
+//   by light  an uphill reaction runs where one of its reactants is EXCITED: it absorbs a visible or hard band (its gap matches)
+//             whose photon covers the rise + HALF the spark (the excited state's spark is lower); the photon pays the rise, the
+//             rest is heat. `absorber` is that reactant
+//   excited   every substance's excited state per band it absorbs (visible and hard; warm light is heat only, CP.dark): it
+//             FLUORESCES (emits the next lower band: `emit`, its energy leaves the dish; the photon's rest is heat) or turns into
+//             HEAT. Matter does not change (ins = outs). Their shares and the photochemistry's: writeChem (src/electrons.js)
+function deriveReactionsE() {
+  const out = [];
+  const L16 = (b) => Math.round(16 * BANDS[b].photon);
+  for (const r of TABLE_E) {
+    if (r.dir === 'down') out.push({ fam: r.fam, by: 'heat', ins: r.ins, outs: r.outs, heat16: -r.d16, light16: 0, spark: r.spark, open: r.open, name: r.name });
+  }
+  for (const r of TABLE_E) {
+    if (r.dir !== 'up') continue;
+    let best = null;
+    for (const c of new Set(r.ins)) {
+      for (const b of SUBSTANCES[c].bands) {
+        if (b < 1 || L16(b) < r.d16 + 8 * r.spark) continue;   // (warm makes heat only; 16 x half the spark = 8 x spark)
+        if (!best || b < best.band) best = { c, band: b };
+      }
+    }
+    if (!best) continue;
+    out.push({ fam: r.fam, by: 'light', band: best.band, ins: r.ins, outs: r.outs, heat16: L16(best.band) - r.d16, light16: L16(best.band),
+      spark: r.spark, open: r.open, photo: true, absorber: best.c, name: `${r.name} (${BANDS[best.band].name})` });
+  }
+  SUBSTANCES.forEach((s, c) => {
+    for (const b of s.bands) {
+      if (b < 1) continue;
+      const e = b - 1;
+      out.push({ fam: 'glow', by: 'light', band: b, ins: [c], outs: [c], heat16: L16(b) - L16(e), light16: L16(b), emit: e, emit16: L16(e),
+        spark: 0, absorber: c, name: `${s.name}* → ${s.name} + ${BANDS[e].name} light` });
+      out.push({ fam: 'dark', by: 'light', band: b, ins: [c], outs: [c], heat16: L16(b), light16: L16(b), spark: 0, absorber: c,
+        name: `${s.name}* → ${s.name} + heat` });
+    }
+  });
+  for (const r of out) {
+    const dE = r.outs.reduce((x, c) => x + SUBSTANCES[c].e16, 0) - r.ins.reduce((x, c) => x + SUBSTANCES[c].e16, 0);
+    if (r.light16 !== r.heat16 + dE + (r.emit16 || 0) || r.heat16 < 0) throw new Error(`reaction ${r.name} does not balance`);
+  }
+  checkCharge(out, 'reaction');
+  if (out.length > 48) throw new Error(`the shaders hold 48 reactions, the electrons' table has ${out.length}`);
+  return out;
+}
 
 function deriveReactions() {
   const out = [];
@@ -355,8 +528,33 @@ SUBSTANCES.forEach((s, c) => { if (c >= EXC0 && s.charge !== SUBSTANCES[c - EXC0
 //            battery minus a share as heat. Only these fill a battery.
 // In this order (4 make, 4 uphill swaps, 2 crack, 4 burn, 4 swap, 2 form = 20), so the order is part of the genome's
 // meaning: keep it (a slot holds the index + 32 x its band, 0 to 3).
-export const ENGINE_KINDS = ['harvest', 'burn', 'swap', 'form'];
-export const ENGINES = deriveEngines();
+export const ENGINE_KINDS = ELECTRONS ? ['harvest', 'ferment', 'breathe', 'form'] : ['harvest', 'burn', 'swap', 'form'];
+export const ENGINES = ELECTRONS ? deriveEnginesE() : deriveEngines();
+setShaderConst('ENG_COUNT', ENGINES.length);   // (cell_common.wgsl: the engines a slot can name)
+
+// Step C12d (electrons): every reaction of the table except the open dish's oil and heads, both ways (22): UPHILL (kind 0:
+// splits, uphill swaps, the uphill trade, cracks: a pigment's photon or the battery pays) then DOWNHILL: BREATHE (kind 2: a free
+// light taker, the strongest grabber, takes an electron: t + gT, t + GT, g + t, G + t), FERMENT (kind 1: the other bonds, swaps
+// and the trade, no free light taker), FORM (kind 3: chains). The genome names an engine by its index: keep the order.
+function deriveEnginesE() {
+  const tk = Object.entries(ATOMS).filter(([, a]) => a.group === 'taker' && !a.ground).reduce((m, x) => (valence(x[1]) < valence(m[1]) ? x : m))[0];
+  const best = SUBSTANCES.findIndex((s) => s.name === tk);
+  const out = [];
+  for (const fam of ['burn', 'swap', 'photo', 'crack']) {
+    for (const r of TABLE_E) if (r.dir === 'up' && !r.open && r.fam === fam) out.push({ kind: 0, fam, ins: r.ins, outs: r.outs, g16: r.d16, spark: r.spark, band: 0, name: r.name });
+  }
+  for (const fam of ['make', 'swap', 'photo', 'form']) {
+    for (const r of TABLE_E) {
+      if (r.dir !== 'down' || r.open || r.fam !== fam) continue;
+      out.push({ kind: fam === 'form' ? 3 : r.ins.includes(best) ? 2 : 1, fam, ins: r.ins, outs: r.outs, g16: -r.d16, spark: r.spark, band: 0, name: r.name });
+    }
+  }
+  const key = (e) => `${[...e.ins].sort()}>${[...e.outs].sort()}`, inv = (e) => `${[...e.outs].sort()}>${[...e.ins].sort()}`;
+  const keys = new Set(out.map(key));
+  if (out.length !== 22 || out.some((e) => e.g16 <= 0 || !keys.has(inv(e)))) throw new Error('electrons: the engine table is not as expected');
+  checkCharge(out, 'engine');
+  return out;
+}
 
 function deriveEngines() {
   const order = [['make', 0], ['upswap', 0], ['crack', 0], ['burn', 1], ['swap', 2], ['form', 3]];
@@ -402,7 +600,8 @@ export function describe(s) {
   const role = (a) => `${ATOMS[a].row === 1 ? 'light' : 'heavy'} ${ATOMS[a].group}`;
   if (s.excited) return `excited atom ${s.name} (a ${role(s.ground)} freed by light, holding ${s.energy} of the photon; it fades back to ${s.ground})`;
   if (s.kind === 'atom') return `free atom ${s.name} (${role(s.atoms[0])}${s.reactive ? ', reactive' : ''})`;
-  if (s.kind === 'fuel') return `fuel ${s.name} (${role(s.atoms[0])} + ${role(s.atoms[1])})`;
+  if (s.kind === 'fuel' && s.mineral) return `mineral ${s.name} (${role(s.atoms[0])} + ${role(s.atoms[1])}: its electron sits in the deepest slot, settled)`;
+  if (s.kind === 'fuel') return `${ELECTRONS ? 'fuel' : 'fuel'} ${s.name} (${role(s.atoms[0])} + ${role(s.atoms[1])}${ELECTRONS ? ': its electron still sits high' : ''})`;
   if (s.kind === 'sediment') return `sediment ${s.name} (${s.atoms[0] === 'l' ? 'light' : 'heavy'} linker chain)`;
   if (s.kind === 'oil') return `oil ${s.name} (a light and a heavy linker chained: apolar, water-shy)`;
   if (s.kind === 'amphiphile') return `amphiphile ${s.name} (${role(s.atoms[0])} head on an oil tail: soap-like, charge ${s.charge > 0 ? '+' : ''}${s.charge})`;
@@ -411,9 +610,15 @@ export function describe(s) {
 
 // The springs' mixes (shares of the dripped atoms). Tap mode 2 = LIGHT spring (row 1), tap mode 3 = HEAVY spring
 // (row 2, plus a little trace).
+// Step C12d (electrons): no free reactive light atoms from the springs any more (any free light taker in the dish is made by light
+// or life): tap mode 2 drips MINERALS (water-like gt, and the linkers that build crust, oil and membranes), tap mode 3 is a VENT
+// (the fuel-like gT and GT and free heavy givers G, metal-like, which give easily: food without oxygen; a little trace). The kinds
+// keep their keys ('light', 'heavy'), so tools and saved conditions still drop them.
 export const SPRING_KINDS = {
-  light: { label: 'light spring', mix: { g: 1 / 3, t: 1 / 3, l: 1 / 3 }, stroke: 1.25 },
-  heavy: { label: 'heavy spring', mix: { G: 0.32, T: 0.32, L: 0.32, trace: 0.04 }, stroke: 2.25 },
+  light: ELECTRONS ? { label: 'mineral spring', mix: { gt: 0.6, l: 0.2, L: 0.2 }, stroke: 1.25 }
+    : { label: 'light spring', mix: { g: 1 / 3, t: 1 / 3, l: 1 / 3 }, stroke: 1.25 },
+  heavy: ELECTRONS ? { label: 'vent', mix: { G: 0.2, gT: 0.36, GT: 0.4, trace: 0.04 }, stroke: 2.25 }
+    : { label: 'heavy spring', mix: { G: 0.32, T: 0.32, L: 0.32, trace: 0.04 }, stroke: 2.25 },
   // step C10, the tissue lab only (no tool drops them; experiments/tissue/c10.py): linkers for the walls' cost, and the C6d ion
   // test spring (light givers + heavy takers) that polarises the cells near it
   linker: { label: 'linker spring (lab)', mix: { l: 0.5, L: 0.5 }, stroke: 1.5 },
@@ -436,7 +641,7 @@ const MT_WASH = MT_LEDGER + 2;            // slot: Shift+C
 const MT_SLOTS = MT_LEDGER + 3;
 export const MAX_SPRINGS = 16;            // the springs uniform's capacity
 const SPRING_FLOATS = 28;                 // struct Spring: pos (4), amt (20: 18 channels, [19] its disc's pixels), ink (4)
-const DRAW_BYTES = 368;                   // struct DrawP in matter_draw.wgsl (224 until step C12, 336 until step C12c)
+const DRAW_BYTES = 448;                   // struct DrawP in matter_draw.wgsl (224 until step C12, 336 until step C12c, 368 until C12d)
 const K_MAX = 0.2;
 const LG_M = { ADD: 3072, LOST: 4736, GONE: 6400, DISH: 8064, ORDER: 9728 };   // heat_common.wgsl
 const LG_C = { LIGHT: 10240, RX: 10752 };
@@ -452,10 +657,11 @@ export function lgM(region, c) {
 /** The ledger word of a reaction family's events. */
 function lgRx(k) { return k < 6 ? LG_C.RX + 128 * k : LG_OIL_RX + 128 * (k - 6); }
 const LG_Q_PHI = 19200;                     // step C6b (heat_common.wgsl): phi's spread (256 f32), then its largest size   // step C4 (heat_common.wgsl): light caught per band, events per family
-const MAX_RX = 32;                          // struct ChemP's reactions (REACTIONS has 24 since step C6's uphill swaps, 30 since C12)
+const MAX_RX = 48;                          // struct ChemP's reactions (REACTIONS has 24 since step C6's uphill swaps, 30 since C12;
+                                            // step C12d's electrons 38)
 const RX_BYTES = 48;                        // struct Rx
-const CP_RX = 144;                          // struct ChemP: its first reaction's byte offset (96 until step C7b's cry, 112 until
-                                            // step C12's fuse, 128 until step C12c's ex)
+const CP_RX = 160;                          // struct ChemP: its first reaction's byte offset (96 until step C7b's cry, 112 until
+                                            // step C12's fuse, 128 until step C12c's ex, 144 until step C12d's el)
 const CP_BYTES = CP_RX + MAX_RX * RX_BYTES; // struct ChemP
 const NONE = 255;                           // no channel (Rx.ch)
 const SED_MASK = SUBSTANCES.reduce((m, s, c) => (s.kind === 'sediment' ? m | (1 << c) : m), 0);
@@ -474,6 +680,8 @@ export class Matter {
     this.blocks = 2 * NCH + 4;   // blocks of n words in the heat buffer (step C12: + the oil's rho, film, obar, a scratch)
     this.oil = new Oil(this);    // step C12: oils and water (src/oil.js)
     this.excited = new Excited(this, EXCITED);   // step C12c: excited waste (src/excited.js)
+    this.electrons = new Electrons(this);         // step C12d: electrons (src/electrons.js): absorption by gap, excited states
+    if (ELECTRONS) { this.excited.params.on = false; this.excited.look.on = false; }   // (C12c's lasting excited atoms are folded in)
     this.CH = CH; this.SUBSTANCES = SUBSTANCES;
     // live-tunable: moire.matter.params
     this.params = {
@@ -525,6 +733,9 @@ export class Matter {
       kCrack: 0.01,       // optical depth of sediment for hard light (cracking it), per unit per R^2
       dark: 3,            // optical depth of sediment for warm light (dark: it warms in the light), per unit per R^2
       traceK: 3,          // spark x 1 / (1 + traceK x trace per R^2)
+      // step C12d (electrons): the bonds and the trade run downhill by heat (R^2 per s, before the spark's factor)
+      kBond: 5,           // giver + taker -> compound
+      kTrade: 5,          // two compounds swap partners
     };
     this.springs = [];        // { x, y, kind, age }
     this.seen = new Float64Array(NCH).fill(-1e9);   // when each channel last had matter (or a spring dripping it)
@@ -912,14 +1123,25 @@ export class Matter {
     const famK = { make: p.kMake, burn: p.kBurn, photo: p.kPhoto, swap: p.kSwap, upswap: p.kUpSwap, form: p.kSed, crack: p.kCrack,
       oil: OP.kOil, oilcrack: OP.kCrack, head: OP.kHead, unhead: OP.kUnhead };
     const lightOn = !!(this.light && this.light.on);
-    const list = p.on ? REACTIONS.filter((r) => famOn[r.fam] && (r.by === 'heat' || lightOn) && famK[r.fam] > 0).slice(0, MAX_RX) : [];
+    let list;
+    if (ELECTRONS) {
+      // step C12d: the switches and knobs by family (bond F, split B, trade and swaps P, chains K), and the excited states' shares
+      // (src/electrons.js: the photochemistry, fluorescence and heat shares of what each substance absorbs)
+      Object.assign(famOn, { photo: p.swap, glow: true, dark: true });
+      Object.assign(famK, { make: p.kBond, photo: p.kTrade, glow: 1, dark: 1 });
+      list = p.on ? REACTIONS.filter((r) => famOn[r.fam] && (r.by === 'heat' || lightOn) && famK[r.fam] > 0 && this.electrons.allows(r)).slice(0, MAX_RX) : [];
+      this.electrons.shares(list, famK);
+    } else {
+      list = p.on ? REACTIONS.filter((r) => famOn[r.fam] && (r.by === 'heat' || lightOn) && famK[r.fam] > 0).slice(0, MAX_RX) : [];
+    }
     this.rxOn = list;
     const u = new Uint32Array(this.chemAB), f = new Float32Array(this.chemAB), i32 = new Int32Array(this.chemAB);
     u[0] = list.length; u[1] = p.trace ? 1 : 0; u[2] = CH.trace; u[3] = lightOn ? 1 : 0;
     f[4] = Math.max(1e-6, p.theta); f[5] = H.tempScale; f[6] = dt; f[7] = Math.max(0, p.traceK);
     // sediment is dark: it catches warm light (as heat) while the chemistry is on, whatever the rules
     this.dark = p.on && lightOn && p.dark > 0;
-    SUBSTANCES.forEach((s, c) => { f[8 + c] = s.kind === 'sediment' && this.dark ? p.dark : 0; });
+    // (step C12d, electrons: whatever has a gap in the warm band is dark: warm light only ever makes heat)
+    SUBSTANCES.forEach((s, c) => { if (c < 16) f[8 + c] = (ELECTRONS ? s.bands.includes(0) : s.kind === 'sediment') && this.dark ? p.dark : 0; });
     // step C7b: crystal seeding (src/catalysts.js): words 24..27 (struct ChemP cry)
     f[24] = 0; f[25] = 0; f[26] = 1; f[27] = 0;
     if (this.catalysts) this.catalysts.writeChem(f, 24);
@@ -927,14 +1149,18 @@ export class Matter {
     this.oil.writeFuse(f, 28, -SUBSTANCES[CH.lL].e16, Math.round(16 * SUBSTANCES[CH.lL].spark));
     // step C12c: the excited waste (words 32..35, struct ChemP ex)
     this.excited.write(f, 32);
-    const exOn = this.excited.on;
+    // step C12d: the electrons' words (36..39, struct ChemP el)
+    f[36] = ELECTRONS ? 1 : 0; f[37] = 0; f[38] = 0; f[39] = 0;
+    const exOn = this.excited.on && !ELECTRONS;
     list.forEach((r, k) => {
       const o = (CP_RX + k * RX_BYTES) / 4;
       const ex = exOn && !!r.exOuts;   // step C12c: the freed light atoms leave excited, keeping E* each of the heat
       const outs = ex ? r.outs.map((c, j) => r.exOuts[j] ?? c) : r.outs;
       u[o] = r.ins[0]; u[o + 1] = r.ins.length > 1 ? r.ins[1] : NONE; u[o + 2] = outs[0]; u[o + 3] = outs.length > 1 ? outs[1] : NONE;
-      u[o + 4] = r.by === 'light' ? 1 : 0; u[o + 5] = r.band ?? 0; u[o + 6] = FAMILIES.indexOf(r.fam === 'upswap' ? 'swap' : r.fam); u[o + 7] = r.open ? 1 : 0;
-      i32[o + 8] = ex ? r.exHeat16 : r.heat16; i32[o + 9] = r.light16; f[o + 10] = Math.max(0, famK[r.fam]); f[o + 11] = r.spark;
+      u[o + 4] = r.by === 'light' ? 1 : 0; u[o + 5] = r.band ?? 0; u[o + 6] = FAM_GPU.indexOf(r.fam === 'upswap' ? 'swap' : r.fam);
+      // (step C12d: open's bit 1 = an excited state's event, bit 2 = photochemistry, bits 8..15 the band it emits + 1)
+      u[o + 7] = (r.open ? 1 : 0) | (ELECTRONS && r.by === 'light' ? 2 : 0) | (r.photo ? 4 : 0) | (r.emit != null ? (r.emit + 1) << 8 : 0);
+      i32[o + 8] = ex ? r.exHeat16 : r.heat16; i32[o + 9] = r.light16; f[o + 10] = Math.max(0, r.kEff ?? famK[r.fam]); f[o + 11] = r.spark;
     });
     this.device.queue.writeBuffer(this.chemBuf, 0, this.chemAB);
     return list;
@@ -1055,7 +1281,8 @@ export class Matter {
     chem.cells = EL ? EL.chem : 0; chem.bat = EL ? EL.bat : 0; chem.start = this.eat ? this.eat.start : 0;
     this.ledger = { time: rec.time, add, lost, gone, dish, cells, rounding: add - (dish + cells + lost + gone), rateAdd: rate(1), rateLost: rate(2), order, entropy: Hn, chem };
     this.oil.apply(rec, w, (this.heat.px / this.heat.R) ** 2);   // step C12: the oil's census
-    this.excited.apply(rec, w);                                   // step C12c: the excited haze's census
+    if (!ELECTRONS) this.excited.apply(rec, w);                   // step C12c: the excited haze's census (folded into C12d's)
+    this.electrons.apply(rec, w);                                 // step C12d: the excited states, fluorescence
   }
 
   /**
@@ -1126,6 +1353,7 @@ export class Matter {
     f[60] = OP.filmAlpha; f[61] = OP.gloss; f[62] = OP.amphLine * P.levels.substances / 0.62; f[63] = OP.polarity ? OP.polAlpha : 0;
     put(64, IO.film); put(68, IO.edge); put(72, IO.amph); put(76, IP.polar); put(80, IP.apolar);
     this.excited.writeDraw(f, 84);   // step C12c: the excited haze's sparkle
+    this.electrons.writeDraw(f, 92, P, H);   // step C12d: the minerals and the fluorescence glow
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG);
@@ -1142,7 +1370,7 @@ export class Matter {
   showText() {
     const name = this.showName;
     if (name === 'off') return 'substances not drawn';
-    if (name === 'summary') return 'substances: summary (free atoms red to grey dots, fuels green, sediment flat, trace diamonds)';
+    if (name === 'summary') return `substances: summary (free atoms red to grey dots, fuels green${ELECTRONS ? ', minerals slate and rust' : ''}, sediment flat, trace diamonds)`;
     const s = SUBSTANCES[CH[name]], amt = this.dish[CH[name]];
     return `${describe(s)} alone${amt > 0 ? '' : ' (none in the dish' + (s.kind === 'fuel' || s.kind === 'sediment' ? ': made by the chemistry of C4)' : ')')}`;
   }
@@ -1166,7 +1394,8 @@ export class Matter {
       ` · drip ${p.rate} atoms/s for ${p.life} s over ${p.radius} R · edge sink ${p.edge}/s · ${this.nSub} substep(s)` +
       ` · channels moving ${SUBSTANCES.filter((s, c) => this.active & (1 << c)).map((s) => s.name).join(' ') || 'none'}`);
     lines.push('spreading (R²/s, from row and group): ' + SUBSTANCES.map((s) => `${s.name} ${(s.spread * p.spreadGain).toPrecision(2)}`).join(' · '));
-    lines.push('energy table (step C4, from row and group; free atoms 0): ' + SUBSTANCES.filter((s) => s.atoms.length > 1).map((s) =>
+    if (ELECTRONS) lines.push(...this.electrons.tableLines());
+    else lines.push('energy table (step C4, from row and group; free atoms 0): ' + SUBSTANCES.filter((s) => s.atoms.length > 1).map((s) =>
       `${s.name} ${s.energy} (spark ${s.spark}${s.kind === 'fuel' ? ', made by ' + (BANDS[makingBand(s)] || { name: 'nothing' }).name : ''})`).join(' · ') +
       ` · swaps: ${REACTIONS.filter((r) => r.fam === 'swap').map((r) => r.name).join(', ')}`);
     const C = this.chem, on = (x) => (x ? 'on' : 'off');
@@ -1175,7 +1404,11 @@ export class Matter {
       ` · theta ${+C.theta.toFixed(4)} · k make ${C.kMake}, burn ${C.kBurn}/s, photo ${C.kPhoto}, swap ${C.kSwap} (uphill by light ${C.kUpSwap}), sediment ${C.kSed}, crack ${C.kCrack}, dark ${C.dark}, trace ${C.traceK}`);
     if (L && L.chem) {
       const K = L.chem, R = K.rate;
-      lines.push(`chemistry per s: fuel made ${fmt(R.make)} · burned ${fmt(R.burn + R.photo)} (by heat ${fmt(R.burn)}, by hard light ${fmt(R.photo)})` +
+      if (ELECTRONS) lines.push(`chemistry per s (electrons): bonds formed ${fmt(R.make)} · split by light ${fmt(R.burn)} · trades ${fmt(R.photo)}` +
+        ` · swaps ${fmt(R.swap)} · chains formed ${fmt(R.form)}, cracked ${fmt(R.crack)} (substance units)` +
+        ` · light caught per band (net of fluorescence) ${K.lightRate.map((x, b) => `${BANDS[b].name} ${fmt(x)}`).join(', ')}` +
+        ` · stored ${fmt(K.dish)} (from all atoms free = 0) · out with matter ${fmt(K.out)}`);
+      else lines.push(`chemistry per s: fuel made ${fmt(R.make)} · burned ${fmt(R.burn + R.photo)} (by heat ${fmt(R.burn)}, by hard light ${fmt(R.photo)})` +
         ` · swaps ${fmt(R.swap)} · sediment formed ${fmt(R.form)}, cracked ${fmt(R.crack)} (substance units)` +
         ` · light caught per band ${K.lightRate.map((x, b) => `${BANDS[b].name} ${fmt(x)}`).join(', ')}` +
         ` · stored ${fmt(K.dish)} (fuel ${fmt(K.fuel)}, sediment ${fmt(K.sed)} units) · out with matter ${fmt(K.out)}`);

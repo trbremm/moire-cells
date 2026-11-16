@@ -18,10 +18,15 @@
 // The flash texts are the ones the keys showed before the table (checked by pressing every key in the old and the new
 // page and comparing the state and the flash after each press).
 
+import { ELECTRONS } from './matter.js';
+
+// (step C12d, electrons: tap mode 2 drips minerals, tap mode 3 is a vent; their ids stay)
 export const TOOLS = [
   { id: 'ripple', name: 'ripple', label: 'drop a ripple', key: '1' },
-  { id: 'light', name: 'light spring', label: 'drop a light spring', spring: 'light', key: '2' },
-  { id: 'heavy', name: 'heavy spring', label: 'drop a heavy spring', spring: 'heavy', key: '3' },
+  ELECTRONS ? { id: 'light', name: 'mineral spring', label: 'drop a mineral spring (water-like gt and linkers)', spring: 'light', key: '2' }
+    : { id: 'light', name: 'light spring', label: 'drop a light spring', spring: 'light', key: '2' },
+  ELECTRONS ? { id: 'heavy', name: 'vent', label: 'drop a vent (fuel-like gT and GT, free heavy givers G, trace)', spring: 'heavy', key: '3' }
+    : { id: 'heavy', name: 'heavy spring', label: 'drop a heavy spring', spring: 'heavy', key: '3' },
   // step C12: oil, soap or both (the rules panel, Oils and water: "oil tool drops"); no key is free
   { id: 'oil', name: 'oil spring', label: 'drop an oil spring (oil, soap or both: the rules panel, Oils and water)', spring: 'oil', oilSpring: true },
   { id: 'stir', name: 'stir', label: 'stir', stir: true },
@@ -52,6 +57,7 @@ export const RULE_GROUPS = [
   ['oil', 'Oils and water (step C12)'],
   ['lipids', 'Lipid membranes (step C12b)'],
   ['excited', 'Excited waste (step C12c)'],
+  ['electrons', 'Electrons (step C12d)'],
   ['guides', 'Fields as guides (step C13)'],
   ['state', 'Save and load the state (experiments)'],
 ];
@@ -398,6 +404,9 @@ export function makeActions(app) {
     { id: 'exLook', keys: [], label: 'excited haze drawn', group: 'look', type: 'toggle', get: () => app.matter.excited.look.on,
       run: () => `the excited haze ${flip(app.matter.excited.look, 'on') ? 'drawn: a faint glitter of hot red-orange sparks that flicker and thin out as the atoms fade' : 'not drawn'}`,
       help: 'the excited light atoms (step C12c) as a faint flickering glitter of hot red-orange sparks' },
+    { id: 'glowLook', keys: [], label: 'fluorescence glow drawn', group: 'look', type: 'toggle', get: () => ELECTRONS && app.matter.electrons.look.on,
+      run: () => (ELECTRONS ? `the fluorescence ${flip(app.matter.electrons.look, 'on') ? 'drawn: tiny lights in the colour each substance emits, where light falls on it (gold, sky blue)' : 'not drawn'}` : 'the glow needs electrons'),
+      help: 'step C12d: what fluoresces under the light, as a soft glow of tiny lights in the colour of the band it emits (a fluorescence microscope image)' },
     { id: 'polarity', keys: [], label: 'polarity wash', group: 'look', type: 'toggle', get: () => app.matter.oil.params.polarity,
       run: () => `polarity ${flip(app.matter.oil.params, 'polarity') ? 'shown: water-loving (polar) matter washed warm, water-shy (apolar) cool' : 'not shown'}`,
       help: 'step C12 (machinery): water-loving (polar) matter washed warm, water-shy (apolar) matter cool' },
@@ -563,6 +572,30 @@ export function makeActions(app) {
     { id: 'exShare', keys: [], label: 'share of the photon kept', group: 'excited', type: 'knob', get: () => app.matter.excited.table.share.toFixed(2),
       run: () => `the share is set when the page loads (?exshare=${app.matter.excited.table.share}): E* = ${app.matter.excited.table.energy} (the excited atoms already made hold it)`,
       help: 'the share of the photon’s surplus an excited atom keeps; fixed for the page (URL ?exshare=), as the atoms already made hold that much' },
+  );
+
+  // ---------- electrons (step C12d; panel only: no keys are free) ----------
+  const EL = () => app.matter.electrons, ELP = () => app.matter.electrons.params;
+  const eknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'electrons', type: 'knob', get: () => ELP()[key].toFixed(digits),
+    run: (k) => { const p = ELP(); p[key] = Math.max(lo, Math.min(hi, +(p[key] * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    { id: 'electrons', keys: [], label: 'electrons (reloads)', group: 'electrons', type: 'toggle', get: () => ELECTRONS,
+      run: () => {
+        const u = new URL(location.href);
+        u.searchParams.set('electrons', ELECTRONS ? '0' : '1');
+        setTimeout(() => location.assign(u.href), 600);
+        return `reloading with ${ELECTRONS ? 'the old table (step C4: a bond is a battery light charges)' : 'electrons (bonds release, free atoms are the restless state)'}: the table is fixed for the page`;
+      },
+      help: 'bonds rebuilt around electrons: givers give, takers take, bonds release energy, light pushes electrons back up; off: the old table. The table belongs to the page, so switching reloads it (a fresh dish)' },
+    { id: 'fluor', keys: [], label: 'fluorescence', group: 'electrons', type: 'toggle', get: () => ELECTRONS && ELP().fluor,
+      run: () => (ELECTRONS ? `fluorescence ${flip(ELP(), 'fluor') ? 'on: an excited substance can fall back by emitting the next lower band (it glows in that colour)' : 'off: what would fluoresce turns into heat'}` : 'fluorescence needs electrons'),
+      help: 'an excited substance falls back by emitting the next lower band (absorb high, emit low): soap and minerals glow blue under hard light, fuel GT and free t gold under visible 2' },
+    { id: 'photo', keys: [], label: 'excited states react', group: 'electrons', type: 'toggle', get: () => ELECTRONS && ELP().photo,
+      run: () => (ELECTRONS ? `excited states ${flip(ELP(), 'photo') ? 'react: light splits and upgrades what absorbs it (photochemistry, in the open)' : 'do not react: light only excites, fluoresces and warms'}` : 'needs electrons'),
+      help: 'a substance excited by light reacts more easily (half its spark): it can split, or swap or trade uphill, the photon paying the rise (photochemistry)' },
+    eknob('elKabs', 'absorption depth', 'kAbs', 0.01, 50, 1.5, 2, 'optical depth of a substance for a band its gap matches, per unit per R²'),
+    eknob('elYrx', 'share that reacts', 'yRx', 0, 1, 1.25, 2, 'share of the excitations that react, where a reaction is open to them'),
+    eknob('elYfl', 'share that glows', 'yFl', 0, 1, 1.25, 2, 'share of the rest that fluoresces (the others turn into heat)'),
   );
 
   // ---------- hard light mutates (step C8; panel only: no keys are free) ----------

@@ -473,6 +473,22 @@ C12c. EXCITED WASTE, THE OXYGEN FIX (user 2026-11-15 chose "charged waste"; NEXT
     excited: most free light atoms come from springs and burners' exhaust (ground), light makes only 1-7 excited/s.
     Breathing still did not rise. One seed only: under the whole dish, light-driven uphill swap carriers rose to 52 %
     (2.5 % off), maybe eating their own excited waste. Haze drawn as sparse hot red-orange sparks.
+C13. FIELDS AS GENES, FIELDS AS GUIDES (user 2026-11-16 chose it next, over more oxygen, the purist page or pruning;
+    their words earlier: "I envisioned the field just to guide the underlying interactions. Maybe we let them mutate
+    their different fields more"). Back to the moire as the heart of the look:
+    - FIELD GENES: every field parameter a cell uses becomes its own gene and mutates, per field (A, B, partner A'):
+      lever (how far its lattice is from the medium's, i.e. its beat period), emission strength, sensing gain and
+      SIGN, tuning width (how picky its receptor is), lattice angle. Founders start at today's values.
+    - FIELDS AS GUIDES: what a cell feels at each membrane side (the exact segment integrals sensing already computes)
+      GATES its interactions, each through its own small gene (start near 0, so guidance must evolve):
+      glue per side (more or less sticky where the field is high), pumps and engines (rate up or down with the
+      local field), division axis (along or across the local gradient), turning of the front toward the gradient.
+    - The direct PUSH becomes one more gene (push gain), so evolution chooses between pushing and guiding.
+    - Each gate its own switch; a control where gates have no effect but the genes still drift (neutral drift) to
+      tell selection from noise. Census of gate genes over time; a view that colours cells by their strongest gate.
+    - Expected look: tissues that follow the moire landscape: sticky stripes along beat rings, divisions lined up with
+      the rings, lineages with their own beat period tiling the dish. Tissue lab first (each gate alone, hand-set),
+      then evolution.
 LATER, PURIST VERSION (user 2026-11-15: hoped for "a more game of life situation", surprised how many abstractions
     were needed; chose to KEEP GOING with lipids (C12b) and the oxygen story, "I can go back to the purist version
     later"). Idea on file: a separate small page "moire life": cells of a few colours, pairwise push/pull through

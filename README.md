@@ -82,6 +82,7 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   the computer's size. The entropy panel gets shorter lines, panels take at most about half the screen and scroll,
   buttons are 42 px.
 - URL options: `?speed=32` or `?speed=max`, `?paused=1` (start paused), `?ui=0` (start with the toolbar folded);
+  step H1: `?look=harmonic` (the harmonic look; also `?look=neon`, `?look=flat`), `?blur=0`, `?grain=0`, `?scalebar=0`;
   step C6n: `?neon=0`, `?halo=off|low|medium|high`, `?trails=0`, `?hum=0`, `?machinery=1`, `?cheap=0|1`, and
   `?until=T` (run to simulation time T, then pause at exactly that tick); step C6b: `?charge=0`, `?qstock=0`, `?qfeel=0`,
   `?contours=1`, `?view=charge`; step C6c: `?honeycomb=0` (the ellipse cells), `?membrane=0` (no membrane chemistry),
@@ -129,6 +130,8 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
 - **T**: the life cycle on/off: births and deaths (step C9: by division, the count rising and falling, the default; or by the
   old turnover, a fixed count, where a dead cell's slot goes at once to a neighbour's daughter: rules panel, Division)
 - **M**: mutation on/off (off: daughters are exact copies of their parent)
+- **`** (backquote, the key left of 1, by its place on any layout): the harmonic look on/off (step H1, "Step H1: harmonic
+  view" below); E from it goes back to neon
 - **E**: the neon look on/off (step C6n; off: the flat look of steps 1 to C6). Until step C3 E switched rule E,
   nutrient and threat, which went with the sources
 - **Shift+1**: halo off / low / medium / high · **Shift+2**: light trails · **Shift+3**: hum · **Shift+4**: show the
@@ -3837,6 +3840,91 @@ pictures `experiments/keep/c12d/`):
 - Each excited state is resolved within its tick (no lasting excited atoms); the shares (react 0.5, fluoresce 0.4 of the rest) are
   knobs, the same for every substance: which substance glows in which colour comes from its gaps.
 
+## Step H1: harmonic view
+
+The user, 2026-11-16: "one of my original inspirations are these higher harmonic microscopy images" (a multiphoton image of
+tissue: thin green rims round dark insides, packed like a honeycomb, orange-yellow fibrous swirls between them, blue-violet wisps
+on surfaces, black ground), and then "they don't need to be strictly like that, just the general look". An ALTERNATIVE way to draw
+the dish, beside the neon look, which stays the default. Drawing only: the simulation and the books are untouched.
+
+**What it looks like.** Black ground, no ripples. Every cell is a thin bright green rim round a dark inside, so a packed
+colony reads as a green honeycomb of dark cells, much like the reference's cross-sectioned muscle fibres; a neuron has a second,
+fainter rim just inside the first. Inside the dark cells: a small soft violet glow where the battery is, faint violet granules where
+the engines sit, and in stretched cells fine orange streaks along the stretch (muscle cells show orange striations across their long
+axis instead). Where crust lies, between and under the cells, it is a dim orange-brown fibrous mat that turns yellow where dense
+and red where its chains are heavy; the green rims of the cells sitting on it go yellow where they cross it, as overlapping
+detector channels do. Oil droplets are hollow green rings, soap films thin concentric green lines (the reference's loose rings),
+fuel near a light spring a soft violet haze, minerals near a heavy spring sparse orange dust, the fluorescence glow tiny gold and
+blue lights. The picture is very slightly soft and carries a fine live grain; a "50 µm" scale bar sits in the corner. Pictures:
+`experiments/keep/h1/` (lit colony, whole and close up; crust under the colony, whole and close up, in the step C4 chemistry,
+`?electrons=0`, which makes crust fields; the oil and soap springs; the tissue lab).
+
+What shows depends on the scene, because colour keeps its meaning: in today's default chemistry (C12d) the dish holds little
+crust or fuel (a few hundredths of an atom per R² at 20 minutes), so the default scene is mostly the green honeycomb with orange
+streaked and striated cells, a violet haze at the light spring and orange mineral dust at the heavy one. The reference's big orange
+masses appear where crust piles up (`?electrons=0`, or a crust-rich scene).
+
+**The channels and what they mean** (a guide, not a contract; colour still means something):
+- **Green, like third-harmonic signal** (it lights up where the material changes: INTERFACES): every cell's membrane as a thin
+  rim (0.9 CSS px), brighter the more lipid each side holds (its integrity; a side with no membrane at all still shows at 0.6 of a
+  whole one, as the cell's edge is still an interface), up to a third brighter with oil in the bilayer; a neuron's rim doubled
+  (myelin). Neighbours' rims touch (no gap as the neon tubes have), so packed tissue reads as one green honeycomb wall. Oil
+  droplets' rims (one thin line, a faint inside) and soap films in the dish.
+- **Orange, like second-harmonic signal** (it lights up in ORDERED fibres, collagen and myosin): the crust (sediment chains) as a
+  dense fibrous texture, a dim orange fill as thick as the crust with brighter strands over it, yellow where it is dense, deeper
+  red where its chains are heavy; the strands follow the crust's own outlines and, where it is even, the iso-lines of the moire
+  beat of the medium's lattice against a copy turned by 2.2 degrees (the hidden machinery, shown as slow collagen-like swirls).
+  Crust WALLS round cells (step C12b) as a fibrous orange band outside the rim. Inside cells: streaks along a strongly
+  stretched cell's long axis, muscle's striations across it (myosin), cartilage's fibrous matrix (collagen). The minerals (step
+  C12d, crystals) as faint orange to red dust.
+- **Violet, like autofluorescence** (NADH, FAD: METABOLISM): fuel in the dish as a soft wispy haze (bluer for the light fuels),
+  a cell's battery as a soft glow at its centre, its engines as faint granules, and the whole inside a little brighter the busier
+  the cell (its battery changing fast either way, the same measure as the neon hum).
+- The channels ADD (every light is drawn with no cover), so green rims over orange crust go yellow and three channels white,
+  as overlapping detector channels do; a cell's inside is dark and nearly opaque, so what lies under a cell is hidden.
+- Not drawn: free atoms, trace, the excited haze (no channel for them), the ripple background, the light's flat tint, neon
+  halos, trails, hum and flicker, the flashes. The fluorescence glow (C12d) keeps its band colours (it is fluorescence). Springs
+  and the spot's outline are quiet grey lines. The colour-by views (V) and the machinery's marks do not apply in this look.
+- **A scanned image:** a slight softness at the pixel scale (the picture mixed with a 3 x 3 tent), photon grain per channel (it
+  grows with the square root of the signal, plus a faint dark noise on the black; a new pattern 24 times a second, so it reads
+  as a live scan), and a soft shoulder so bright overlaps roll off toward white. A **scale bar** in the corner, "50 µm" over a thin
+  bar, at the CPU version's scale (a cell 12 µm across): bottom left above the toolbar on wide screens (above an open panel),
+  bottom right above the hint line on narrow ones.
+
+**Switches.** View panel, Look group: **harmonic look**, and under it **slight blur**, **photon grain**, **scale bar**. Key **`**
+(backquote: the key left of 1, by its place on the keyboard, so it works on any layout; on a German keyboard that key is a dead
+key, ^, and still works). E from the harmonic look goes back to neon. URL: `?look=harmonic` (also `?look=neon`, `?look=flat`),
+`?blur=0`, `?grain=0`, `?scalebar=0`. Knobs live in `moire.neon.harmonic.params` (rim, rimBase, rimW, oilRim, inside, insideTint,
+bat, busy, parts, stretchFib, muscle, cartilage, wall, gap, crust, crustHalf, fibreLen, fibreW, swirl, swirlAngle, fuel, fuelHalf,
+oil, oilFill, minerals, springs; blurMix, grainAmt, dark, rate, gain, shoulder).
+
+**How it is drawn.** `src/neon.js` still runs the frame; while the harmonic look is on it skips the ripple background, the
+trails, the hum and the halo, and passes `frame.look.harmonic` to the layers: the cells draw with `fs_harm` (`cell_draw.wgsl`,
+its own pipeline and bind groups in `src/cells.js`; the cells' activity pass of the hum runs for the violet), the substances with
+`fs_harm` (`matter_draw.wgsl`, with its own small uniform `HarmP` at binding 8), the light draws no tint. The last pass
+(`src/shaders/harmonic.wgsl`) puts the light buffer onto the canvas with the blur, the grain and the shoulder. The crust's fibres
+are value noise stretched along the local direction, laid in tiles about a strand and a half wide, each with its own offset and
+blended bilinearly, so a curving direction does not shear the strands.
+
+**Speed** (this machine, GTX 1650, headless Chrome, 1280 x 800; the F overlay's "drawing per frame (gpu, probe)": all of the
+drawing timed on its own; the GPU was shared with two other workers' runs throughout, so every number is noisy):
+- 2000 cells: neon 2.8 ms, harmonic 2.0 ms per frame.
+- 10 000 cells: neon 5.6 ms, harmonic 4.0 ms.
+- Phone size (Chrome, 390 x 844 at 3 device px per CSS px, 800 cells): harmonic 1.35 ms.
+- Firefox (headed, 1600 x 1000, default scene): harmonic 2.45 ms; no console messages at all.
+The harmonic look is cheaper than neon (no halo passes, no trail fade; one full-screen last pass with five reads per pixel). MAX
+reached could not be compared: with the GPU shared it swung between x0.6 and x7 from run to run for the same look.
+
+**Known issues.**
+- The scale bar is a page element: it is not in recordings (Shift+V records the canvas only). It uses the CPU version's scale
+  (a cell 12 µm across) and will need the zoom's factor once zoom exists (the APP step).
+- In the default scene there is little orange (see above); the orange texture is only as strong as the crust it shows.
+- The fuel haze can show the grid's coarse shape (soft blocks a few grid pixels wide) where fuel is drifting.
+- Under a dense colony the crust is mostly hidden by the cells' dark insides (as in a real section, a cell hides what lies in
+  it); `moire.neon.harmonic.params.inside` (0.9) lowers that.
+- The colour-by views (V), the machinery marks, the membrane damage dashes, bursts and division flashes are not drawn in this look.
+- The user's reference image (`experiments/ref/harmonic-reference.webp`) is theirs and stays untracked (the repo is public).
+
 ## The look of the landscape
 
 Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the
@@ -3861,6 +3949,9 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   video recording
 - `src/main.js`: boot, frame loop (speeds and their budgets), input, overlay. Layers are classes with `resize`, `compute`, `render`;
   the loop runs every layer's compute passes, then hands the drawing to `src/neon.js`
+- `src/harmonic.js` + `src/shaders/harmonic.wgsl`: the harmonic look (step H1): its switches and knobs, the last pass (slight
+  blur, photon grain, shoulder) and the scale bar; the cells' harmonic drawing is `fs_harm` in `cell_draw.wgsl`, the dish's
+  `fs_harm` in `matter_draw.wgsl` (with its own uniform, `HarmP`); the channels' inks `HARMONIC` in `src/palette.js`
 - `src/neon.js` + `src/shaders/neon.wgsl`: the drawing as a whole (step C6n): the background onto the canvas, the cells
   into the trail buffer, the other layers into the light buffer, the halo, the composite; the neon switches and the
   drawing's probe. `src/palette.js`: every colour, flat and neon, with its meaning. `src/shaders/cell_glow.wgsl`: the

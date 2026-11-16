@@ -97,6 +97,7 @@ function gather(M, ctl) {
   if (M.electrons && M.electrons.census) flatten({ ...M.electrons.census, tot: undefined }, 'electrons', out);   // step C12d
   if (M.waste && M.waste.census) flatten(M.waste.census, 'waste', out);   // step C12e
   if (M.vents && M.vents.census) flatten(M.vents.census, 'vents', out);   // step C12f
+  if (M.ions && M.ions.census) flatten(M.ions.census, 'ions', out);   // step C12g
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;
   if (C.stats) flatten({ fate: C.stats.fate, births: C.stats.births, deaths: C.stats.deaths, heatDeaths: C.stats.heatDeaths,

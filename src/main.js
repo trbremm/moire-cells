@@ -93,6 +93,11 @@
 //               everywhere (on in the Deep vents preset), ?searate=x its rate (atoms per R² per s at an empty pixel), ?sealevel=x its
 //               level (atoms per R²) (rules panel, Vents in the dark); ?starter=x the founders' starter charge (a share of the
 //               battery, default 0.4; booked as energy in)
+//   ?ionblock=0   step C12g: the lipid bilayer does not block free ions (they pass as neutral molecules, as before; the C6c selectivity
+//               then scales them again); ?channels=0 the channel genes do not act (every cell's cation and anion channels at the base
+//               level: the genes drift, the NEUTRAL control); ?ionvolt=1 ions through the intact membrane feel the membrane voltage;
+//               ?ionpass=x the bilayer's own ion leak (share of a neutral's rate), ?chanbase=x the founders' channel level, ?kv=x the
+//               voltage push (rules panel, Ion flow)
 //   ?fgenes=0     step C13: start with the field genes off (every cell today's lever, emission, sensing, tuning, angle; the genes
 //               still drift); ?gateglue=0, ?gatepump=0, ?gateengine=0, ?gatediv=0, ?gateturn=0 one gate off (?gates=0 all five),
 //               ?pushgene=0 the push gene off (field A pushes every cell as before), ?gatenull=1 the NEUTRAL control (the gate
@@ -398,6 +403,16 @@ async function boot() {
         if (params.has(q) && Number.isFinite(v) && v >= 0) WP[k] = v;
       }
     }
+    {   // step C12g: ion flow
+      const IP = cells.eat.ions.params;
+      for (const [q, k] of [['ionblock', 'block'], ['channels', 'genes'], ['ionvolt', 'volt']]) {
+        if (params.has(q)) IP[k] = flag(q);
+      }
+      for (const [q, k] of [['ionpass', 'ionPass'], ['chanbase', 'chanBase'], ['kv', 'kV']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) IP[k] = v;
+      }
+    }
     {   // step C12f: vents in the dark
       const VP = matter.vents.params;
       if (params.has('hotvent')) VP.hot = flag('hotvent');
@@ -424,7 +439,7 @@ async function boot() {
   window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter, eat: cells.eat, neon, charge,
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
-    electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents };
+    electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
   window.moire.budgets = budgets;      // the fast speeds' tick budgets
@@ -673,7 +688,8 @@ function frame(now) {
   if (!entropyEl.hidden) {
     const compact = view.cssW < 560 || view.cssH < 500;   // a phone (either way up): shorter lines
     let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}\n${charge.panelLine(compact)}\n${cells.eat.membrane.panelLine(compact)}\n${cells.eat.lipids.panelLine(compact)}\n${cells.dipole.panelLine(compact)}\n${cells.eat.pumps.panelLine(compact)}\n${cells.eat.catalysts.panelLine(compact)}\n${cells.eat.hardlight.panelLine(compact)}\n${cells.division.panelLine(compact)}\n${cells.walls.panelLine(compact)}\n${cells.guides.panelLine(compact)}\n${matter.oil.panelLine(compact)}\n${ELECTRONS ? matter.electrons.panelLine(compact) : matter.excited.panelLine(compact)}
-${cells.eat.waste.panelLine(compact)}${ELECTRONS ? `
+${cells.eat.waste.panelLine(compact)}
+${cells.eat.ions.panelLine(compact)}${ELECTRONS ? `
 ${matter.vents.panelLine(compact)}` : ''}`;
     if (paused || speed !== 1) {
       const r = reachedText();
@@ -744,6 +760,7 @@ function drawOverlay() {
     ...cells.eat.lipids.overlayLines(),
     ...(ELECTRONS ? matter.electrons.overlayLines() : matter.excited.overlayLines()),
     ...cells.eat.waste.overlayLines(),
+    ...cells.eat.ions.overlayLines(),
     ...matter.vents.overlayLines(),
     ...cells.dipole.overlayLines(),
     ...cells.eat.pumps.overlayLines(),

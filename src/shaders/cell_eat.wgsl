@@ -216,7 +216,57 @@ struct EatP {
                            //     passive exchange x (1 + kStretch x e^gene x swelling)); w wTol (the stretch a membrane tolerates at gene 0)
   ws2: vec4f,              // x the tear rate past the tolerance (bursts per s per unit of relative excess); y the stretch tolerance's
                            // upkeep (heat counts per tick at gene 0, x e^gene); z w spare
+  // ---- step C12g, ion flow (src/ions.js) ----
+  io: array<vec4f, 2>,     // [0] x IOF_* bits (u32); y ionPass: an intact bilayer passes free ions at this share of a neutral molecule's
+                           //     rate; z chanBase: the founders' channel level (gene 0, balance 0), the same kind of share; w kV: with
+                           //     IOF_VOLT, an ion of charge z crossing through the intact membrane settles at inside / outside =
+                           //     exp(-z x kV x the membrane voltage)
+                           // [1] spare
 };
+// ---- step C12g, MEMBRANES MODULATE ION FLOW (src/ions.js). The lipid BILAYER blocks free ions (charged atoms: g t G T and the excited
+// g* t*), derived from its make-up: per side the intact share (its integrity: soap + the oil between its tails over what the thickness
+// asks; with ?lipids=0 the C6c weave's) passes ions at ionPass of a neutral molecule's rate, the damaged share (holes) as a neutral one;
+// the crust WALL does not count in the integrity, so it is porous. Ions pass the intact bilayer through CHANNELS: a cation channel
+// (free givers, +) and an anion channel (free takers, -), each an open level (a share of a neutral molecule's rate) from two genes:
+// gate2.w, the channels' level (a log factor on chanBase) and the C6c ION SELECTIVITY memb.w = s, now the channels' BALANCE: cation
+// = chanBase e^gene (1 + s), anion = chanBase e^gene (1 - s). The C12e STRETCH channels open a non-selective path when swollen (kStretch
+// e^gene x swelling, for ions and neutral molecules alike). C7 pumps are the active route (untouched). With IOF_VOLT the ions through
+// the intact membrane feel the C7 membrane VOLTAGE. Off (IOF_BLOCK clear): the exchange as before (s scales all ion exchange)
+const IOF_BLOCK: u32 = 1u;     // the bilayer blocks ions (needs the membrane chemistry)
+const IOF_GENES: u32 = 2u;     // the channel genes act (else every cell's channels at chanBase, balanced: the neutral control)
+const IOF_VOLT: u32 = 4u;      // ions through the intact membrane feel the membrane voltage
+fn io_flags() -> u32 { return bitcast<u32>(EP.io[0].x); }
+// a cell's cation (x) and anion (y) channel levels (shares of a neutral molecule's rate through an intact bilayer)
+fn ion_chan(gl: f32, s0: f32, selOn: bool) -> vec2f {
+  var lv = EP.io[0].z;
+  var s = 0.0;
+  if ((io_flags() & IOF_GENES) != 0u) { lv *= exp(clamp(gl, -4.0, 2.0)); s = select(0.0, clamp(s0, -1.0, 1.0), selOn); }
+  return lv * vec2f(1.0 + s, 1.0 - s);
+}
+// what the intact share of a membrane passes of an ion of charge z (its channel + the bilayer's own small leak, at most a neutral's)
+fn ion_open(ch: vec2f, z: i32) -> f32 { return min(1.0, EP.io[0].y + select(ch.y, ch.x, z > 0)); }
+// counters (LG_IO + 256 + 16 q + slot, i32, the eat pass) and the snapshot census (LG_IO + 16 q + slot, the ledger pass)
+const IC_CIN: u32 = 0u;        // free cations (givers) taken in through the membrane (counts; the passive exchange)
+const IC_COUT: u32 = 1u;       // ... put out
+const IC_AIN: u32 = 2u;        // free anions (takers) taken in
+const IC_AOUT: u32 = 3u;       // ... put out
+const IC_CBLK: u32 = 4u;       // cations the block held back (what a neutral molecule's rate would have moved, less what moved)
+const IC_ABLK: u32 = 5u;       // anions held back
+const IZ_N: u32 = 0u;          // snapshot: live cells
+const IZ_G: u32 = 1u;          // ... sum of the channel level gene x 1000
+const IZ_G2: u32 = 2u;         // ... sum of its square x 1000
+const IZ_S: u32 = 3u;          // ... sum of the balance (selectivity) gene x 1000
+const IZ_S2: u32 = 4u;         // ... sum of its square x 1000
+const IZ_CAT: u32 = 5u;        // ... sum of the cation channel's level x 1000
+const IZ_AN: u32 = 6u;         // ... sum of the anion channel's level x 1000
+const IZ_CSEL: u32 = 7u;       // ... cells with balance above 0.3 (cation-passing)
+const IZ_ASEL: u32 = 8u;       // ... cells with balance below -0.3 (anion-passing)
+const IZ_PC: u32 = 9u;         // ... sum of the share of a neutral's rate a cation passes now (holes, channels, stretch) x 1000
+const IZ_PA: u32 = 10u;        // ... the same for an anion
+const IZ_TIGHT: u32 = 11u;     // ... cells whose membrane passes ions at less than half a neutral's rate (both signs)
+const IZ_OPEN: u32 = 12u;      // ... cells with the channel gene above +1 (channels e^1 = 2.7 x the founders')
+const IZ_SHUT: u32 = 13u;      // ... cells with the channel gene below -1
+var<workgroup> wio: array<atomic<i32>, 16>;
 // ---- step C12e, WASTE MUST LEAVE (src/waste.js). Two pressures, both derived, no "expel" rule:
 //   SATURATION (mass action): every reaction a cell runs slows as its own products pile up against its reactants: its rate x
 //     (1 - Q / K), Q = the products' over the reactants' concentrations (each a share of the stock's capacity), K = exp(drive /
@@ -628,6 +678,10 @@ fn flush_counters(li: u32, slot: u32) {
   if (li < 16u) {
     let v = atomicLoad(&wws[li]);
     if (v != 0) { atomicAdd(&hb[LG_WS + 256u + 16u * li + (slot & 15u)], v); }
+  } else if (li < 32u) {
+    // step C12g: the ion flow's counters (16 slots, i32: cleared at each read-back)
+    let v = atomicLoad(&wio[li - 16u]);
+    if (v != 0) { atomicAdd(&hb[LG_IO + 256u + 16u * (li - 16u) + (slot & 15u)], v); }
   }
   // step C12c: the excited atoms' counters
   if (li < 8u) {
@@ -706,7 +760,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   if ((c.flags & CELL_ALIVE) == 0u) {
     // step C9: a free slot (or a cell that died this tick) asks nothing of its neighbours: its pump requests, which their
     // eat applies in reverse, are cleared (stale ones would make or lose matter)
-    for (var k = 16u; k < 44u; k++) { flux[i * SW + k] = 0; }   // (step C12b: and the lipid bites, 32..38; C12c: 40..43)
+    for (var k = 16u; k < 46u; k++) { flux[i * SW + k] = 0; }   // (step C12b: and the lipid bites, 32..38; C12c: 40..43; C12g: 44, 45)
     return;
   }
   let fo = i * SW;
@@ -760,12 +814,21 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   let pgene = bio[i].rate.w;
   // step C6c: a damaged membrane leaks (each side's share of the perimeter at 1 + leakK x its damage: the mean), and the
   // ion selectivity gene lets givers (+) through x (1 + s) and takers (-) x (1 - s)
-  var leak = select(1.0, min(1.0 + EP.mb1.x * (1.0 - integ), EP.mb3.z), membOn);
+  let leak = select(1.0, min(1.0 + EP.mb1.x * (1.0 - integ), EP.mb3.z), membOn);
   // step C12e: a SWOLLEN membrane's stretch channels open (the gene lip.w, a log factor on kStretch): x (1 + kStretch e^gene x swelling)
   let wsf = ws_flags();
-  if ((wsf & (WSF_OSM | WSF_STRETCH)) == (WSF_OSM | WSF_STRETCH) && c.osm > 0.0) { leak *= 1.0 + EP.ws[1].z * exp(bio[i].lip.w) * c.osm; }
+  var so = 0.0;
+  if ((wsf & (WSF_OSM | WSF_STRETCH)) == (WSF_OSM | WSF_STRETCH) && c.osm > 0.0) { so = EP.ws[1].z * exp(bio[i].lip.w) * c.osm; }
   var ionsOut = 0;   // step C12e: the free ions (free givers and takers, by number) in the 9 pixels under the cell
   let selOn = (mbf & MBF_SEL) != 0u;
+  // step C12g: the bilayer blocks ions (its intact share passes them through its channels only; holes and the stretch path as a
+  // neutral molecule), and with IOF_VOLT what crosses the intact share feels the membrane voltage (equilibrium inside / outside =
+  // exp(-z kV V)); the ions held back, per sign (counts, for the census)
+  let ioF = io_flags();
+  let blockOn = (ioF & IOF_BLOCK) != 0u && membOn;
+  let chl = ion_chan(bio[i].gate2.w, gm.w, selOn);
+  let voltOn = blockOn && (ioF & IOF_VOLT) != 0u;
+  var blk = vec2f(0.0);
   // step C6d: the through-flow onto each side (charge, counts per tick), the points just outside the sides' middles, each
   // side's share of the perimeter, and the mobile charge in the stock (atom-units)
   let dpOn = (EP.dpFlags & DPE_ON) != 0u && (c.flags & CELL_ALIVE) != 0u && !husk;
@@ -788,24 +851,43 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   for (var j = 0u; j < NCELL; j++) {
     let k = cell_ch(j);   // (step C12c: the excited atoms pass as their ground atoms do)
     var n = 0;
-    var pk = select(ep_f(EP.perm, k), pgene * ep_f(EP.ratio, k), permG) * leak;
-    if (selOn) { pk *= max(1.0 + gm.w * f32(charge_of(EP.qCodes, k)), 0.0); }
+    let zk = charge_of(EP.qCodes, k);
+    let pk0 = select(ep_f(EP.perm, k), pgene * ep_f(EP.ratio, k), permG) * leak;   // a neutral molecule's rate
+    var pk = pk0 * (1.0 + so);
+    var pkC = 0.0;   // step C12g: the part through the intact membrane (channels, the bilayer's leak, the stretch path)
+    if (blockOn && zk != 0) {
+      pkC = pk0 * (integ * ion_open(chl, zk) + so);
+      pk = pk0 * (1.0 - integ) + pkC;
+    } else if (selOn) { pk *= max(1.0 + gm.w * f32(zk), 0.0); }
     if (eatOn && pk > 0.0 && (EP.mask & (1u << k)) != 0u) {
       let base = cur - lw + k * EP.n;
       var Mo = 0;
       for (var q = 0; q < 9; q++) { Mo += max(mg[base + idx[q]], 0); }
       let Mi = stockP[fo + stock_w(k)];
-      if (charge_of(EP.qCodes, k) != 0) { ionsOut += Mo; }
+      if (zk != 0) { ionsOut += Mo; }
       if (Mo != 0 || Mi != 0) {
-        let jeq = (f32(Mo) * areaPx - f32(Mi) * Ao) / (Ao + areaPx);
+        let jeq0 = (f32(Mo) * areaPx - f32(Mi) * Ao) / (Ao + areaPx);
+        var jeq = jeq0;
+        if (voltOn && zk != 0) {
+          // what crosses the intact membrane settles at inside / outside concentrations exp(-z kV V) instead of 1; the holes' part as before
+          let bv = exp(-clamp(f32(zk) * EP.io[0].w * c.volt, -8.0, 8.0));
+          let jeqV = (f32(Mo) * areaPx * bv - f32(Mi) * Ao) / (Ao + areaPx * bv);
+          jeq = (jeq0 * (pk - pkC) + jeqV * pkC) / max(pk, 1e-9);
+        }
         var j = jeq * min(1.0, pk * EP.dt);
         if (j > 0.0) { j *= room; }
         n = i32(floor(j + u01(pcg(rs + k * 0x85ebca6bu))));
         n = clamp(n, -Mi, Mo);
+        if (blockOn && zk != 0) {
+          // held back: what a neutral molecule's rate would have moved, less what moves
+          let j0 = jeq0 * min(1.0, pk0 * (1.0 + so) * EP.dt) * select(1.0, room, jeq0 > 0.0);
+          let d = max(abs(j0) - abs(j), 0.0);
+          if (zk > 0) { blk.x += d; } else { blk.y += d; }
+        }
       }
       // step C6d: this channel's through-flow, if it is charged: per side its share of the perimeter x the exchange's
       // rate x (the concentration outside that side - the mean outside), in the units of jeq (9 pixels' worth)
-      let z = charge_of(EP.qCodes, k);
+      let z = zk;
       if (dpOn && z != 0) {
         mob += f32(Mi) / ATOM_SCALE;
         var cs: array<f32, 6>;
@@ -817,6 +899,8 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     }
     flux[fo + flux_w(k)] = n;
   }
+  flux[fo + 44u] = i32(floor(blk.x + u01(pcg(rs + 0x1f83d9abu))));   // step C12g: the ions held back (counts, + and -)
+  flux[fo + 45u] = i32(floor(blk.y + u01(pcg(rs + 0x5be0cd19u))));
   // ---- step C12e, the OSMOTIC PRESSURE: the free ions inside (units per R^2 of the cell's area: a swollen cell's are diluted) - outside
   // (the 9 pixels'), per unit of the stock's capacity (capR2); for the eat pass (flux 30)
   {
@@ -1302,7 +1386,16 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         for (var k = 0u; k < 6u; k++) { ig += clamp(c.integ[k], 0.0, 1.0) / 6.0; }
         let lk = select(1.0, min(1.0 + EP.mb1.x * (1.0 - ig), EP.mb3.z), (mb_flags() & MBF_ON) != 0u);
         let pg = select(3.0, bio[i].rate.w, (EP.flags & EF_PERMG) != 0u);
-        let kv = min(1.0, EP.pu1.y * pg / 3.0 * lk * EP.dt);
+        // step C12g: a voltage leaks back as ions cross, so a bilayer that blocks ions holds it: x the mean share of a neutral's rate
+        // that the two signs pass (holes, channels, the stretch path)
+        var ionK = 1.0;
+        if ((io_flags() & IOF_BLOCK) != 0u && (mb_flags() & MBF_ON) != 0u && (EP.flags & EF_EAT) != 0u) {
+          let chv = ion_chan(bio[i].gate2.w, bio[i].memb.w, (mb_flags() & MBF_SEL) != 0u);
+          var sov = 0.0;
+          if ((ws_flags() & (WSF_OSM | WSF_STRETCH)) == (WSF_OSM | WSF_STRETCH) && c.osm > 0.0) { sov = EP.ws[1].z * exp(bio[i].lip.w) * c.osm; }
+          ionK = (1.0 - ig) + ig * 0.5 * (ion_open(chv, 1) + ion_open(chv, -1)) + sov;
+        }
+        let kv = min(1.0, EP.pu1.y * pg / 3.0 * lk * ionK * EP.dt);
         vq -= i32(floor(f32(vq) * kv + u01(pcg(rs + 0x5bd1e995u))));
       } else {
         vq = 0;
@@ -1342,6 +1435,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           m[k] += got;
           up += got * na;
           if (k == 1u || k == EXC0 + 1u) { tIn += got; }
+          let zk = charge_of(EP.qCodes, k);   // step C12g: ions in, by sign
+          if (zk != 0 && got > 0) { atomicAdd(&wio[select(IC_AIN, IC_CIN, zk > 0)], got); }
         } else {
           let give = min(-n, m[k]);
           if (give > 0) {
@@ -1349,11 +1444,16 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
             m[k] -= give;
             down += give * na;
             if (k == 1u || k == EXC0 + 1u) { tOut += give; }
+            let zk = charge_of(EP.qCodes, k);   // step C12g: ions out, by sign
+            if (zk != 0) { atomicAdd(&wio[select(IC_AOUT, IC_COUT, zk > 0)], give); }
           }
         }
       }
       atomicAdd(&wev[EV_UPTAKE], up);
       atomicAdd(&wev[EV_RELEASE], down);
+      let bk = vec2i(flux[fo + 44u], flux[fo + 45u]);   // step C12g: the ions the block held back (the plan's)
+      if (bk.x != 0) { atomicAdd(&wio[IC_CBLK], bk.x); }
+      if (bk.y != 0) { atomicAdd(&wio[IC_ABLK], bk.y); }
     }
 
     // ---- step C12, MEMBRANE FUSION (src/oil.js, CP.fuse): the membrane is linker chains, so it is oily: oil (lL) under a
@@ -2570,6 +2670,35 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     atomicAdd(&wws[WZ_GTOL2], i32(round(b.gate2.z * b.gate2.z * 1000.0)));
     atomicAdd(&wws[WZ_IONS], i32(round(clamp(bitcast<f32>(flux[i * SW + 31u]), 0.0, 1e4) * 1000.0)));
     atomicAdd(&wws[WZ_K], i32(round(select(memb_stiff(gm, EP.mb3.w), ks, (lp_flags() & LPF_ON) != 0u) * 1000.0)));
+    // step C12g: the ion flow's census (the channel genes, the levels they give, what the membrane passes of each sign now)
+    {
+      let selI = (mb_flags() & MBF_SEL) != 0u;
+      let chI = ion_chan(b.gate2.w, b.memb.w, selI);
+      atomicAdd(&wio[IZ_N], 1);
+      atomicAdd(&wio[IZ_G], i32(round(b.gate2.w * 1000.0)));
+      atomicAdd(&wio[IZ_G2], i32(round(b.gate2.w * b.gate2.w * 1000.0)));
+      atomicAdd(&wio[IZ_S], i32(round(b.memb.w * 1000.0)));
+      atomicAdd(&wio[IZ_S2], i32(round(b.memb.w * b.memb.w * 1000.0)));
+      atomicAdd(&wio[IZ_CAT], i32(round(min(chI.x, 100.0) * 1000.0)));
+      atomicAdd(&wio[IZ_AN], i32(round(min(chI.y, 100.0) * 1000.0)));
+      if (b.memb.w > 0.3) { atomicAdd(&wio[IZ_CSEL], 1); }
+      if (b.memb.w < -0.3) { atomicAdd(&wio[IZ_ASEL], 1); }
+      if (b.gate2.w > 1.0) { atomicAdd(&wio[IZ_OPEN], 1); }
+      if (b.gate2.w < -1.0) { atomicAdd(&wio[IZ_SHUT], 1); }
+      var pc = 1.0;
+      var pa = 1.0;
+      if ((io_flags() & IOF_BLOCK) != 0u && (mb_flags() & MBF_ON) != 0u && (EP.flags & EF_EAT) != 0u) {
+        var igm = 0.0;
+        for (var k = 0u; k < 6u; k++) { igm += clamp(c.integ[k], 0.0, 1.0) / 6.0; }
+        var soI = 0.0;
+        if ((ws_flags() & (WSF_OSM | WSF_STRETCH)) == (WSF_OSM | WSF_STRETCH) && c.osm > 0.0) { soI = EP.ws[1].z * exp(b.lip.w) * c.osm; }
+        pc = ((1.0 - igm) + igm * ion_open(chI, 1) + soI) / (1.0 + soI);
+        pa = ((1.0 - igm) + igm * ion_open(chI, -1) + soI) / (1.0 + soI);
+      }
+      atomicAdd(&wio[IZ_PC], i32(round(pc * 1000.0)));
+      atomicAdd(&wio[IZ_PA], i32(round(pa * 1000.0)));
+      if (pc < 0.5 && pa < 0.5) { atomicAdd(&wio[IZ_TIGHT], 1); }
+    }
     // step C7: the pumps' census (PS_* above)
     let gp = b.pump;
     var act = false;
@@ -2639,6 +2768,9 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
   if (li >= 32u && li < 48u) {   // step C12e: the waste census
     let v = atomicLoad(&wws[li - 32u]);
     if (v != 0) { atomicAdd(&hb[LG_WS + 16u * (li - 32u) + (wid.x & 15u)], v); }
+  } else if (li >= 48u) {        // step C12g: the ion flow's census
+    let v = atomicLoad(&wio[li - 48u]);
+    if (v != 0) { atomicAdd(&hb[LG_IO + 16u * (li - 48u) + (wid.x & 15u)], v); }
   }
   if (li < 4u) {
     let v = atomicLoad(&wq[li]);

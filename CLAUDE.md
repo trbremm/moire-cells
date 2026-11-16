@@ -572,6 +572,11 @@ C13. FIELDS AS GENES, FIELDS AS GUIDES (user 2026-11-16 chose it next, over more
 BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a lot of things. Do the rest of the
     expansions"; glider WIP kept on branch `gliders`, resume later). Run back to back, report after each:
     1. C12f vents (running)   2. C12g ion flow  ||  N1 nutrient landscape (all five parts as proposed; parallel worktree)
+    2b. merge N1 + trace leaks from life + random founder B sign (running)
+    2c. M1 WHOLE MEMBRANES (Claude's call: membranes are mostly holes, integrity 0.05-0.25, so ion block, osmosis and
+       T1's "inside" cannot act): diagnose the membrane material budget (supply: fusion, grazing, in-cell making; losses:
+       bites, wear, division) and fix minimally, derived; plus retune the dark vent preset now the charge field is off
+       (broader giver-taker zone: vent rate, sea level, heat).
     3. T1a: an inside, kin channels, the self marker as a membrane landscape (Claude's reading), lineage-colour view,
        wild/blank founders   4. T1b: the gene regulatory network + reporter view   5. P1: engulf + kin sparing genes,
        hand-placed predator   6. T1c: designed tissues (plant, filament, biofilm) + random-colony experiments

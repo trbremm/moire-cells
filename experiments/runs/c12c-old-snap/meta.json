@@ -1,0 +1,42 @@
+{
+  "name": "c12c-old-snap",
+  "description": "a snapshot saved at commit 035d3e9 (C12b with the supply fix, before C12c): the default scene, seed 3, 90 s",
+  "condition": {
+    "name": "c12c-old-snap",
+    "description": "a snapshot saved at commit 035d3e9 (C12b with the supply fix, before C12c): the default scene, seed 3, 90 s",
+    "query": {
+      "seed": 3
+    },
+    "duration": 90,
+    "sample_every": 30,
+    "snapshots": [
+      {
+        "t": 90,
+        "grid": true
+      }
+    ]
+  },
+  "url": "http://localhost:62713/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-16T00:48:00",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 90.0,
+  "run_wall_s": 103.0,
+  "speed_reached": 0.87,
+  "samples": 4,
+  "shots": [],
+  "snapshots": [
+    "snapshots/snap_t90.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T00:50:24",
+  "wall_s": 143.99
+}

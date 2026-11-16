@@ -1,0 +1,87 @@
+{
+  "name": "c12c-pic-haze",
+  "description": "Step C12c, the look: a light and a heavy spring in an empty corner of the whole lit dish (no day cycle, 300 cells far away), the uphill swaps x15; the excited haze at its default lifetime and drawing, close up at 120 s, and the same 1 s after the haze is switched off (exlook), for comparison",
+  "condition": {
+    "name": "c12c-pic-haze",
+    "description": "Step C12c, the look: a light and a heavy spring in an empty corner of the whole lit dish (no day cycle, 300 cells far away), the uphill swaps x15; the excited haze at its default lifetime and drawing, close up at 120 s, and the same 1 s after the haze is switched off (exlook), for comparison",
+    "query": {
+      "seed": 3,
+      "light": "full",
+      "springs": 0,
+      "day": 0,
+      "n": 300
+    },
+    "size": "900x600",
+    "duration": 125,
+    "sample_every": 30,
+    "evals": [
+      {
+        "t": 0,
+        "js": "moire.matter.chem.kUpSwap = 0.3; moire.matter.addSpring(110, 110, 'light', 1e9); moire.matter.addSpring(150, 130, 'heavy', 1e9); return 1"
+      },
+      {
+        "t": 121,
+        "js": "moire.excited.look.on = false; return 'look off'"
+      }
+    ],
+    "shots": [
+      {
+        "t": 120,
+        "crop": [
+          30,
+          40,
+          220,
+          160
+        ],
+        "scale": 3,
+        "name": "haze-on"
+      },
+      {
+        "t": 122,
+        "crop": [
+          30,
+          40,
+          220,
+          160
+        ],
+        "scale": 3,
+        "name": "haze-off"
+      }
+    ]
+  },
+  "url": "http://localhost:57263/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&light=full&springs=0&day=0&n=300",
+  "browser": "chrome",
+  "size": "900x600",
+  "commit": "871c3e673a9b5588f18bad40335a1b1f2e499687",
+  "dirty": false,
+  "started": "2026-11-16T01:11:42",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 125.0,
+  "run_wall_s": 52.09,
+  "speed_reached": 2.4,
+  "samples": 6,
+  "shots": [
+    "shots/haze-on.png",
+    "shots/haze-off.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.matter.chem.kUpSwap = 0.3; moire.matter.addSpring(110, 110, 'light', 1e9); moire.matter.addSpring(150, 130, 'heavy', 1e9); return 1",
+      "result": 1
+    },
+    {
+      "t": 120.99999999999643,
+      "js": "moire.excited.look.on = false; return 'look off'",
+      "result": "look off"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-16T01:13:06",
+  "wall_s": 83.51
+}

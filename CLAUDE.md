@@ -483,6 +483,15 @@ C12d. ELECTRONS: BONDING REBUILT AROUND GRIP (user 2026-11-16; NEXT after C13). 
     - Forming a bond RELEASES energy: the electron falls from the giver's hold into the taker's pull; the bigger the gap
       the more released. Free atoms are now the HIGH, restless state; light is the only thing that pushes electrons
       back up (splits bonds). Linker chains share (release a little, as now); oil/soap follow from the same numbers.
+    - ORBITALS WITH ENERGY LEVELS (user 2026-11-16: "remember to add different energy levels to different orbitals"):
+      each atom has a small ladder of levels, derived from row and group (each row adds a shell, outer shells sit
+      higher and hold looser; grip = the level of the electron or empty slot that bonds). A bond has a lower (bonding)
+      and an upper (anti-bonding) level. LIGHT IS ABSORBED ONLY WHERE A PHOTON MATCHES A GAP between levels, so each
+      substance has its own absorption bands (colour from physics: pigments = molecules whose gap matches a visible
+      band). A lifted electron is an EXCITED state: it reacts more easily (lower spark: photochemistry) or falls back,
+      giving heat or re-emitting a LOWER band (FLUORESCENCE, Stokes shift: "absorb high, emit low", as in the band
+      ladder; the user is a microscopist, so substances glowing in their own emission colour under the spotlight is a
+      look to aim for). This folds in C12c's excited atoms as the general rule. Keep it a toy: 2-3 levels per atom.
     - What should follow (never written as rules): heavy giver + light taker = the most settled compound (water / rust
       / dead mineral); light giver + heavy taker = FUEL (electron still sits high); free light taker = OXYGEN (grabs
       anything, steals electrons from fuel: burning, breathing and damage are one reaction, through an engine to the

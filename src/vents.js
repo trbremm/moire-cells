@@ -15,8 +15,8 @@
 //   anywhere. The genome's engines already include every bond both ways (step C12d: g + T -> gT and G + T -> GT are "fermenting"
 //   engines, no free t), so cells can eat the gradient with what they have; nothing names a chemosynthesiser.
 //
-// Switches (rules panel, group "Vents in the dark (step C12f)"; URL): hot (?hotvent=0: the C12d vent, fuel and G, no heat), sea
-// (?sea=1 / 0; on in the Deep vents preset, off elsewhere, so the other scenes are as they were). Knobs: ?ventheat= ?searate= ?sealevel=.
+// Switches (rules panel, group "Vents in the dark (step C12f)"; URL): hot (?hotvent=1; off: the C12d vent, fuel and G, no heat), sea
+// (?sea=1); both on in the Deep vents preset and off elsewhere, so the other scenes are as they were. Knobs: ?ventheat= ?searate= ?sealevel=.
 // With ?electrons=0 the vent is the old heavy spring and none of this acts (it needs the electrons' table).
 //
 // The ledger (heat_common.wgsl, LG_VENT, LG_SEA): vent heat put in (heat counts) and sea atoms added (counts), 64 slots each, since
@@ -36,7 +36,9 @@ export class Vents {
     this.on = electrons;    // the electrons' table (fixed for the page)
     // live-tunable (moire.vents.params)
     this.params = {
-      hot: true,            // the vent drips free givers and heats the grid where it drips (?hotvent=0: the C12d vent)
+      hot: false,           // the vent drips free givers and heats the grid where it drips (?hotvent=1; the Deep vents preset turns it on).
+                            // Off by default: the default scene's colony lives on the C12d vent's fuel and fell from ~1300 to ~150 cells
+                            // with the hot vent (README "Step C12f"), so every other scene keeps the C12d vent
       heat: 10,             // energy put into the grid per atom a hot vent drips (?ventheat=)
       sea: false,           // the sea's faint supply of the free heavy taker T (?sea=1; the Deep vents preset turns it on)
       seaRate: 0.02,        // atoms of T per R^2 per s the sea brings to a pixel holding none (?searate=)

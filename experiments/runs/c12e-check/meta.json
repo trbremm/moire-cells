@@ -1,0 +1,223 @@
+{
+  "name": "c12e-check",
+  "description": "Step C12e books check: 420 s at MAX (seed 5), the whole dish lit, a mineral spring and a vent plus other springs, N (60 s), a wash (100 s), a resize (150 s), G (200 s), a resize back (220 s), every C12e switch and knob off and on at runtime (250 to 350 s), a snapshot saved and loaded at once (380 s); atoms and charge rounding must stay 0",
+  "condition": {
+    "name": "c12e-check",
+    "description": "Step C12e books check: 420 s at MAX (seed 5), the whole dish lit, a mineral spring and a vent plus other springs, N (60 s), a wash (100 s), a resize (150 s), G (200 s), a resize back (220 s), every C12e switch and knob off and on at runtime (250 to 350 s), a snapshot saved and loaded at once (380 s); atoms and charge rounding must stay 0",
+    "query": {
+      "seed": 5,
+      "light": "full"
+    },
+    "duration": 420,
+    "sample_every": 10,
+    "resizes": [
+      {
+        "t": 150,
+        "size": "1000x700"
+      },
+      {
+        "t": 220,
+        "size": "1280x800"
+      }
+    ],
+    "evals": [
+      {
+        "t": 5,
+        "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.35, 'soap', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.5, 'linker', 120); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.3, 'ions', 120); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'light', 1e9); return moire.matter.springs.length"
+      },
+      {
+        "t": 60,
+        "js": "return moire.control.action('culture')"
+      },
+      {
+        "t": 100,
+        "js": "return moire.control.action('wash')"
+      },
+      {
+        "t": 105,
+        "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.4, 'light', 200); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 200); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.4, 'ions', 200); return 1"
+      },
+      {
+        "t": 200,
+        "js": "return moire.control.action('genomes')"
+      },
+      {
+        "t": 240,
+        "js": "{ const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.5, 'light'); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.5, 'heavy'); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.3, 'ions'); } return moire.matter.springs.length"
+      },
+      {
+        "t": 250,
+        "js": "moire.waste.params.saturation = false; return 'saturation off'"
+      },
+      {
+        "t": 260,
+        "js": "moire.waste.params.saturation = true; moire.waste.params.osmosis = false; return 'osmosis off'"
+      },
+      {
+        "t": 270,
+        "js": "moire.waste.params.osmosis = true; moire.waste.params.stretch = false; moire.waste.params.tear = false; moire.waste.params.cost = false; return 'stretch, tear, cost off'"
+      },
+      {
+        "t": 280,
+        "js": "moire.waste.params.stretch = true; moire.waste.params.tear = true; moire.waste.params.cost = true; moire.waste.params.kOsm = 80; moire.waste.params.wTol = 0.1; moire.waste.params.satScale = 5; return 'strong swelling, low tolerance, strong saturation'"
+      },
+      {
+        "t": 300,
+        "js": "moire.waste.params.kOsm = 10; moire.waste.params.wTol = 0.5; moire.waste.params.satScale = 1; moire.electrons.params.photolysis = false; return 'knobs back, photolysis off'"
+      },
+      {
+        "t": 320,
+        "js": "moire.electrons.params.photolysis = true; moire.membrane.params.on = false; return 'photolysis on, membrane chemistry off'"
+      },
+      {
+        "t": 330,
+        "js": "moire.membrane.params.on = true; moire.lipids.params.on = false; return 'lipids off'"
+      },
+      {
+        "t": 340,
+        "js": "moire.lipids.params.on = true; moire.light.params.mode = 'spot'; return 'all on, spotlight'"
+      },
+      {
+        "t": 350,
+        "js": "moire.light.params.mode = 'full'; return 'whole dish'"
+      },
+      {
+        "t": 380,
+        "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }"
+      }
+    ],
+    "shots": [
+      {
+        "t": 120
+      },
+      {
+        "t": 290
+      },
+      {
+        "t": 420,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "stall": 120
+  },
+  "url": "http://localhost:58113/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=5&light=full",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "c7e33cf8ba0d3c68b0a4e4e19667674175c9ef7d",
+  "dirty": true,
+  "started": "2026-11-16T11:56:11",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 420.0,
+  "run_wall_s": 64.67,
+  "speed_reached": 6.49,
+  "samples": 43,
+  "shots": [
+    "shots/t120.png",
+    "shots/t290.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 5.000000000000003,
+      "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.35, 'soap', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.5, 'linker', 120); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.3, 'ions', 120); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'light', 1e9); return moire.matter.springs.length",
+      "result": 6
+    },
+    {
+      "t": 60.000000000000355,
+      "js": "return moire.control.action('culture')",
+      "result": true
+    },
+    {
+      "t": 99.99999999999854,
+      "js": "return moire.control.action('wash')",
+      "result": true
+    },
+    {
+      "t": 104.99999999999825,
+      "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.4, 'light', 200); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 200); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.4, 'ions', 200); return 1",
+      "result": 1
+    },
+    {
+      "t": 199.99999999999903,
+      "js": "return moire.control.action('genomes')",
+      "result": true
+    },
+    {
+      "t": 240.00000000000028,
+      "js": "{ const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.5, 'light'); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.5, 'heavy'); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.3, 'ions'); } return moire.matter.springs.length",
+      "result": 7
+    },
+    {
+      "t": 250.00000000000043,
+      "js": "moire.waste.params.saturation = false; return 'saturation off'",
+      "result": "saturation off"
+    },
+    {
+      "t": 259.9999999999995,
+      "js": "moire.waste.params.saturation = true; moire.waste.params.osmosis = false; return 'osmosis off'",
+      "result": "osmosis off"
+    },
+    {
+      "t": 269.99999999999903,
+      "js": "moire.waste.params.osmosis = true; moire.waste.params.stretch = false; moire.waste.params.tear = false; moire.waste.params.cost = false; return 'stretch, tear, cost off'",
+      "result": "stretch, tear, cost off"
+    },
+    {
+      "t": 279.99999999999915,
+      "js": "moire.waste.params.stretch = true; moire.waste.params.tear = true; moire.waste.params.cost = true; moire.waste.params.kOsm = 80; moire.waste.params.wTol = 0.1; moire.waste.params.satScale = 5; return 'strong swelling, low tolerance, strong saturation'",
+      "result": "strong swelling, low tolerance, strong saturation"
+    },
+    {
+      "t": 300.00000000000074,
+      "js": "moire.waste.params.kOsm = 10; moire.waste.params.wTol = 0.5; moire.waste.params.satScale = 1; moire.electrons.params.photolysis = false; return 'knobs back, photolysis off'",
+      "result": "knobs back, photolysis off"
+    },
+    {
+      "t": 320.0000000000024,
+      "js": "moire.electrons.params.photolysis = true; moire.membrane.params.on = false; return 'photolysis on, membrane chemistry off'",
+      "result": "photolysis on, membrane chemistry off"
+    },
+    {
+      "t": 330.0000000000019,
+      "js": "moire.membrane.params.on = true; moire.lipids.params.on = false; return 'lipids off'",
+      "result": "lipids off"
+    },
+    {
+      "t": 340.00000000000097,
+      "js": "moire.lipids.params.on = true; moire.light.params.mode = 'spot'; return 'all on, spotlight'",
+      "result": "all on, spotlight"
+    },
+    {
+      "t": 350.00000000000176,
+      "js": "moire.light.params.mode = 'full'; return 'whole dish'",
+      "result": "whole dish"
+    },
+    {
+      "t": 380.00000000000244,
+      "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }",
+      "result": {
+        "exact": true,
+        "notes": [],
+        "rounding": {
+          "energy": 0.0555419921875,
+          "atoms": 0,
+          "charge": 0,
+          "snapshot": {
+            "energy": 0.0555419921875,
+            "atoms": 0,
+            "charge": 0
+          }
+        }
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-16T11:57:55",
+  "wall_s": 103.9
+}

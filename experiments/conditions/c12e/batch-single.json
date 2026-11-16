@@ -1,0 +1,7 @@
+{
+ "batch": "c12e-single",
+ "runs": [
+  "sat-only.json",
+  "osm-only.json"
+ ]
+}

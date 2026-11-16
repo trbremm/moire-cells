@@ -1,0 +1,47 @@
+{
+  "name": "c12e-smoke",
+  "description": "step C12e smoke test: the default scene with saturation and osmosis on, 120 s at MAX, sampled every 10 s (books)",
+  "condition": {
+    "name": "c12e-smoke",
+    "description": "step C12e smoke test: the default scene with saturation and osmosis on, 120 s at MAX, sampled every 10 s (books)",
+    "query": {
+      "seed": 3
+    },
+    "duration": 120,
+    "sample_every": 10,
+    "shots": [
+      {
+        "t": 120
+      },
+      {
+        "t": 120,
+        "panel": true,
+        "name": "panel"
+      }
+    ]
+  },
+  "url": "http://localhost:50168/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "c7e33cf8ba0d3c68b0a4e4e19667674175c9ef7d",
+  "dirty": true,
+  "started": "2026-11-16T11:45:26",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 120.0,
+  "run_wall_s": 16.42,
+  "speed_reached": 7.31,
+  "samples": 13,
+  "shots": [
+    "shots/t120.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T11:46:15",
+  "wall_s": 49.65
+}

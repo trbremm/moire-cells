@@ -518,6 +518,18 @@ C12d. ELECTRONS: BONDING REBUILT AROUND GRIP (user 2026-11-16; NEXT after C13). 
     (self-burn ~3.4 per event beats ~2.25 from a thin haze). Haze 50-90 under the spot, to ~510 whole dish; rust grows
     (sink), oxygen also ends in tlL soap (an unwritten sink). Known: hard light splits water in the open (oxygen
     without life); default scene crashes harder then recovers higher than the old table. Speed unchanged.
+C12e. WASTE MUST LEAVE (user 2026-11-16, correcting Claude's "small atoms leak out" idea: "oxygen leaks out because of
+    reaction byproducts in nature, the cell has to expel co2 not to get saturated or too acidic"). Two derived pressures,
+    no "expel" rule:
+    - SATURATION (mass action): every reaction inside a cell slows as its own products pile up in the stock (the reverse
+      direction catches up), the balance point derived from the table's release (big release = hard to clog), no
+      per-substance tuning.
+    - ACIDITY: free charged atoms inside (givers +, takers -) unbalance the cell; the imbalance per capacity slows its
+      engines and weakens membrane repair (tolerance maybe a gene).
+    - Waste leaves only by what exists: passive leak down the gradient (free) and C7 pump genes (up the gradient, costs).
+    - Hoped for (watched, never written): full-battery harvesters make more t than they burn, clog and sour, dumpers win,
+      the haze builds, breathers living on outside t rise and must dump their own waste (gt, T) like CO2.
+    - Plus a switch (?photolysis=0) so hard light cannot split minerals in the open: oxygen made by life only.
 C13. FIELDS AS GENES, FIELDS AS GUIDES (user 2026-11-16 chose it next, over more oxygen, the purist page or pruning;
     their words earlier: "I envisioned the field just to guide the underlying interactions. Maybe we let them mutate
     their different fields more"). Back to the moire as the heart of the look:

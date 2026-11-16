@@ -37,6 +37,7 @@ import { Oil } from './oil.js';
 import { Excited } from './excited.js';
 import { Electrons } from './electrons.js';
 import { setShaderConst } from './gpu.js';
+import { camera } from './camera.js';   // app: the view camera (drawing only)
 
 // ---------- step C12d, ELECTRONS: which table this page runs (fixed for the page: changing it would change the energy of
 // every molecule in the dish). ?electrons=0 gives the previous table (step C4 to C12c) exactly ----------
@@ -641,7 +642,7 @@ const MT_WASH = MT_LEDGER + 2;            // slot: Shift+C
 const MT_SLOTS = MT_LEDGER + 3;
 export const MAX_SPRINGS = 16;            // the springs uniform's capacity
 const SPRING_FLOATS = 28;                 // struct Spring: pos (4), amt (20: 18 channels, [19] its disc's pixels), ink (4)
-const DRAW_BYTES = 448;                   // struct DrawP in matter_draw.wgsl (224 until step C12, 336 until step C12c, 368 until C12d)
+const DRAW_BYTES = 464;                   // struct DrawP in matter_draw.wgsl (224 until step C12, 336 until step C12c, 368 until C12d, 448 until the app's cam)
 const K_MAX = 0.2;
 const LG_M = { ADD: 3072, LOST: 4736, GONE: 6400, DISH: 8064, ORDER: 9728 };   // heat_common.wgsl
 const LG_C = { LIGHT: 10240, RX: 10752 };
@@ -1354,6 +1355,7 @@ export class Matter {
     put(64, IO.film); put(68, IO.edge); put(72, IO.amph); put(76, IP.polar); put(80, IP.apolar);
     this.excited.writeDraw(f, 84);   // step C12c: the excited haze's sparkle
     this.electrons.writeDraw(f, 92, P, H);   // step C12d: the minerals and the fluorescence glow
+    f[0] = this.view.dpr * camera.z; f.set(camera.vec(), 112);   // app: the view camera
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG);

@@ -26,9 +26,10 @@ import { LEDGER_WORDS, fmt } from './heat.js';
 import { SUBSTANCES, NCH } from './matter.js';
 import { pal } from './palette.js';
 import { CELL_FLOATS } from './cells.js';   // step C6c: the Cell record grew
+import { camera } from './camera.js';   // app: the view camera (drawing only)
 
 const LG_Q = { CEN: 19136, PHI: 19200, PMAX: 19456 };   // heat_common.wgsl
-const DRAW_BYTES = 64;                                  // struct ContourP in charge_draw.wgsl
+const DRAW_BYTES = 80;                                  // struct ContourP in charge_draw.wgsl (64 until the app's cam)
 
 export class Charge {
   constructor(device, format) {
@@ -308,6 +309,7 @@ export class Charge {
     const ink = Pal.charge, lv = Pal.levels.charge * P.alpha;
     for (let k = 0; k < 3; k++) { f[8 + k] = ink.pos[k] / 255 * lv; f[12 + k] = ink.neg[k] / 255 * lv; }
     f[11] = lv; f[15] = lv;
+    f[5] = this.view.dpr * camera.z; f.set(camera.vec(), 16);   // app: the view camera
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG);

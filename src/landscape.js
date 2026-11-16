@@ -9,6 +9,7 @@
 
 import { loadFieldShader } from './field.js';
 import { pal } from './palette.js';
+import { camera } from './camera.js';   // app: the view camera (drawing only)
 
 const DRAW_BYTES = 192;          // struct DrawParams in landscape_draw.wgsl
 
@@ -112,7 +113,8 @@ export class Landscape {
     const pOn = !!(C && C.fieldTex && p.partner && C.partnerDrawn());
     if (!cellOn && !bOn && !pOn) return;
     const F = this.drawF;
-    F[0] = this.view.dpr; F[1] = this.medium.R;
+    F[0] = this.view.dpr * camera.z; F[1] = this.medium.R;
+    F[3] = camera.x; F[4] = camera.y;   // app: the view camera
     F[5] = Math.max(2, p.pitch); F[6] = p.angle * Math.PI / 180; F[7] = p.threshold;
     F[8] = Math.max(0, Math.min(1, p.maxDot)); this.drawI[9] = p.hex ? 1 : 0;
     const P = pal();

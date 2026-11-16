@@ -28,6 +28,7 @@ struct LightP {
   tint: vec4f,       // drawing: rgb and alpha of the flat tint inside the spot (or over the full field)
   line: vec4f,       // drawing: rgb and alpha of the outline and the marker
   draw: vec4f,       // drawing: dpr, outline width (CSS px), marker size (CSS px), tint steps (posterised levels)
+  cam: vec4f,        // app, drawing only: the view camera (xy pan, z zoom; the outline and the marker keep their size on screen)
 };
 
 const LIGHT_OFF: u32 = 0u;

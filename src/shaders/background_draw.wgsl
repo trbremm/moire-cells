@@ -4,14 +4,14 @@
 
 struct DrawParams {
   canvas: vec2f,     // canvas size in device pixels
-  dpr: f32,          // device pixels per CSS pixel
+  dpr: f32,          // device pixels per dish CSS pixel (app: x the camera's zoom)
   sc: f32,           // CSS pixels per ripple grid cell
   grid: vec2f,       // ripple grid size (cells)
   time: f32,         // simulation seconds
   ripple: f32,       // ripple brightness gain (1 = reference)
   sheen: f32,        // sheen brightness gain (1 = reference)
-  _pad0: f32,
-  _pad1: f32,
+  panX: f32,         // app: the camera's pan (the dish point at the screen's top left, CSS px)
+  panY: f32,
   _pad2: f32,
 };
 
@@ -60,7 +60,7 @@ fn hash(p: vec2f) -> f32 {
 
 @fragment
 fn fs(in: VSOut) -> @location(0) vec4f {
-  let css = in.pos.xy / D.dpr;
+  let css = in.pos.xy / D.dpr + vec2f(D.panX, D.panY);   // (app: through the camera)
   let g = css / D.sc;                // grid coordinates, as in the reference
   let t = D.time;
 

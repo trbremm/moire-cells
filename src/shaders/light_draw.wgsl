@@ -24,7 +24,7 @@ fn vs(@builtin(vertex_index) i: u32) -> @builtin(position) vec4f {
   let ext = sqrt(a * a + b * b) + vec2f(m);
   var corner = array<vec2f, 6>(vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(-1.0, 1.0),
                                vec2f(-1.0, 1.0), vec2f(1.0, -1.0), vec2f(1.0, 1.0));
-  let x = L.centre + corner[i] * ext;                         // CSS px
+  let x = (L.centre + corner[i] * ext - L.cam.xy) * L.cam.z;   // CSS px on screen (app: through the camera)
   let ndc = vec2f(x.x / L.viewW * 2.0 - 1.0, 1.0 - x.y / L.viewH * 2.0);
   return vec4f(ndc, 0.0, 1.0);
 }
@@ -35,8 +35,8 @@ fn premul(rgb: vec3f, a: f32) -> vec4f {
 
 @fragment
 fn fs_tint(@builtin(position) fc: vec4f) -> @location(0) vec4f {
-  let dpr = L.draw.x;
-  let x = fc.xy / dpr;
+  let dpr = L.draw.x * L.cam.z;          // device px per dish px (app: the camera)
+  let x = fc.xy / dpr + L.cam.xy;
   let steps = max(L.draw.w, 1.0);
   if (L.mode == LIGHT_FULL) {
     // the clouds' shadow, posterised: clear sky = full tint, the deepest cloud = (1 - depth) of it
@@ -60,8 +60,8 @@ fn fs_tint(@builtin(position) fc: vec4f) -> @location(0) vec4f {
 
 @fragment
 fn fs_line(@builtin(position) fc: vec4f) -> @location(0) vec4f {
-  let dpr = L.draw.x;
-  let x = fc.xy / dpr;
+  let dpr = L.draw.x * L.cam.z;          // device px per dish px (app: the camera)
+  let x = fc.xy / dpr + L.cam.xy;
   let perp = vec2f(-L.toward.y, L.toward.x);
   let a = L.radius * L.stretch;          // half-axis toward the light
   let d = x - L.centre;
@@ -71,17 +71,17 @@ fn fs_line(@builtin(position) fc: vec4f) -> @location(0) vec4f {
   // distance to the ellipse, to first order: (rho - 1) / |grad rho| (CSS px), then in device px
   let g = length(u / a * L.toward + v / L.radius * perp) / rho;
   let dist = abs(rho - 1.0) / max(g, 1e-6) * dpr;
-  let half = 0.5 * L.draw.y * dpr;
+  let half = 0.5 * L.draw.y * L.draw.x;  // (the outline keeps its width on screen at any zoom)
   var cov = clamp(half + 0.5 - dist, 0.0, 1.0);
   // the marker: a small triangle outside the near rim, its tip on the outline, pointing inward
-  let h = L.draw.z;
+  let h = L.draw.z / L.cam.z;            // (the marker too)
   if (h > 0.0) {
     let w = 0.55 * h;
     let tip = L.centre + L.toward * a;
     let s = dot(x - tip, L.toward);       // 0 at the tip, h at the base (outward)
     let t = abs(dot(x - tip, perp));
     let side = (s * w - t * h) / sqrt(w * w + h * h);
-    let inside = min(min(side, h - s), s + 0.5 * L.draw.y) * dpr;
+    let inside = min(min(side, h - s), s + 0.5 * L.draw.y / L.cam.z) * dpr;
     cov = max(cov, clamp(inside + 0.5, 0.0, 1.0));
   }
   if (cov <= 0.0) { discard; }

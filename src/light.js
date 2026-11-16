@@ -21,9 +21,10 @@
 import { loadShader } from './gpu.js';
 import { HEAT_SCALE } from './heat.js';
 import { pal } from './palette.js';
+import { camera } from './camera.js';   // app: the view camera (drawing only)
 
 export const LIGHT_COMMON_URL = 'src/shaders/light_common.wgsl';
-const LP_BYTES = 160;   // struct LightP
+const LP_BYTES = 176;   // struct LightP (160 until the app's camera)
 
 // The bands, on the same energy ladder as everything else in Part C (CLAUDE.md): short period = high energy. Light,
 // the fields A / B / A', motion and heat all sit on one scale; heat is the lowest band (photon energy far below 1).
@@ -195,6 +196,7 @@ export class Light {
     f[31] = (mode === 2 ? p.fullTint : p.tintAlpha) * this.dayLevel;
     f[32] = c[0]; f[33] = c[1]; f[34] = c[2]; f[35] = p.lineAlpha * P.levels.spot / 0.55;
     f[36] = this.view.dpr; f[37] = Math.max(0.5, p.lineWidth); f[38] = Math.max(0, p.marker); f[39] = Math.max(1, Math.round(p.tintSteps));
+    f.set(camera.vec(), 40);   // app: the view camera (drawing only)
     this.device.queue.writeBuffer(this.buffer, 0, this.ab);
   }
 

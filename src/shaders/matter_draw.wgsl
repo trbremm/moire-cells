@@ -552,7 +552,7 @@ fn hm_minerals(x: vec2f) -> vec3f {
 
 @fragment
 fn fs_harm(in: VSOut) -> @location(0) vec4f {
-  let x = in.pos.xy / D.dpr;
+  let x = in.pos.xy / D.dpr + D.cam.xy;              // CSS px of the dish (app: through the camera)
   // the oil's texture and its slopes, here, while the control flow is uniform (derivatives need it)
   let oc = textureSampleLevel(texC, samp, uv_of(x), 0.0);
   let gO = vec2f(dpdx(min(oc.x, 1.0)), dpdy(min(oc.x, 1.0)));

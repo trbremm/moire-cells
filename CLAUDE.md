@@ -524,8 +524,12 @@ C12e. WASTE MUST LEAVE (user 2026-11-16, correcting Claude's "small atoms leak o
     - SATURATION (mass action): every reaction inside a cell slows as its own products pile up in the stock (the reverse
       direction catches up), the balance point derived from the table's release (big release = hard to clog), no
       per-substance tuning.
-    - ACIDITY: free charged atoms inside (givers +, takers -) unbalance the cell; the imbalance per capacity slows its
-      engines and weakens membrane repair (tolerance maybe a gene).
+    - OSMOSIS ON THE IONS (user, same day: "osmosis on the ions could do the job actually. And the membrane
+      permeability with it"; REPLACES the first idea, acidity slowing engines): free ions inside (free charged atoms,
+      counted by number; bonded molecules do not count) minus outside -> the cell swells (or shrinks), resisted by
+      its membrane stiffness (crust wall holds hardest, like a bacterial wall holding turgor); STRETCH RAISES
+      PERMEABILITY, so ions leak out down the gradient and the pressure relieves itself; overstretch costs integrity
+      and bursts. Binding atoms into molecules lowers the load.
     - Waste leaves only by what exists: passive leak down the gradient (free) and C7 pump genes (up the gradient, costs).
     - Hoped for (watched, never written): full-battery harvesters make more t than they burn, clog and sour, dumpers win,
       the haze builds, breathers living on outside t rise and must dump their own waste (gt, T) like CO2.

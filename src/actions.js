@@ -63,6 +63,7 @@ export const RULE_GROUPS = [
   ['electrons', 'Electrons (step C12d)'],
   ['waste', 'Waste must leave (step C12e)'],
   ['vents', 'Vents in the dark (step C12f)'],
+  ['n1', 'Nutrient landscape (step N1)'],
   ['guides', 'Fields as guides (step C13)'],
   ['state', 'Save and load the state (experiments)'],
 ];
@@ -663,6 +664,40 @@ export function makeActions(app) {
     vknob('seaLevel', 'sea level', 'seaLevel', 0.01, 20, 1.5, 3, 'the sea tops T up toward this many atoms per R², never above'),
   );
 
+  // ---------- a nutrient landscape (step N1; panel only: no keys are free) ----------
+  const PGP = () => app.cells.eat.pigments.params, WTP = () => app.water.params, OSP = () => app.oases.params;
+  const nknob = (id, label, obj, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'n1', type: 'knob', get: () => obj()[key].toFixed(digits),
+    run: (k) => { const p = obj(); p[key] = Math.max(lo, Math.min(hi, +(Math.max(p[key], lo || 1e-3) * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    { id: 'pigmatter', keys: [], label: 'light needs matter', group: 'n1', type: 'toggle', get: () => PGP().matter,
+      run: () => `pigments ${flip(PGP(), 'matter') ? 'are built from the stock (one trace and two light linkers l each, the assembly paid from the battery) and wear out: harvesting costs matter and energy' : 'are free (as before step N1): a harvest slot catches light by its rate alone'}`,
+      help: 'a pigment is a molecule the cell builds (two light linkers holding a trace atom, like chlorophyll’s ring and its magnesium) and keeps rebuilding as it wears out; a slot catches light in proportion to the pigment held' },
+    { id: 'pigsat', keys: [], label: 'photosynthesis saturates', group: 'n1', type: 'toggle', get: () => PGP().sat,
+      run: () => `photosynthesis ${flip(PGP(), 'sat') ? `saturates: past ${PGP().isat} of the full noon light the extra photons are only heat` : 'does not saturate: every photon caught can be used'}`,
+      help: 'of the photons caught at a light s (a share of the full noon light), only Isat tanh(s / Isat) / s can be used; the rest are heat' },
+    { id: 'pigbleach', keys: [], label: 'strong light bleaches', group: 'n1', type: 'toggle', get: () => PGP().inhib,
+      run: () => `photoinhibition ${flip(PGP(), 'inhib') ? 'on: photons past saturation bleach the pigment (shade is worth having)' : 'off: too much light does no harm'}`,
+      help: 'each photon past saturation breaks some pigment back into its atoms, which the cell must rebuild (with saturation on)' },
+    { id: 'scarce', keys: [], label: 'trace scarce (oases)', group: 'n1', type: 'toggle', get: () => OSP().scarce,
+      run: () => `trace ${flip(OSP(), 'scarce') ? 'scarce: only the oases drip it (vents and every other spring drip none)' : 'from every spring that has it (the vents, as before step N1)'}`,
+      help: 'trace, the engines’ cofactor and the heart of every pigment, comes only from a few nutrient springs (oases): life clusters where it can be found' },
+    { id: 'roam', keys: [], label: 'oases roam', group: 'n1', type: 'toggle', get: () => OSP().roam,
+      run: () => `oases ${flip(OSP(), 'roam') ? 'roam: they wander slowly, pulse, dry up and rise again elsewhere' : 'stay put, steady, and never dry up'}`,
+      help: 'the nutrient springs wander, their drip swells and fades, and after a while each dries up and a new one rises somewhere else' },
+    { id: 'oasisCount', keys: [], label: 'oases', group: 'n1', type: 'knob', get: () => String(OSP().count),
+      run: (k) => { const p = OSP(); p.count = Math.max(0, Math.min(12, Math.round(p.count) + (k === '-' ? -1 : 1))); if (!app.oases.started) app.oases.start(); return `oases ${p.count}`; },
+      help: 'how many nutrient springs the dish keeps' },
+    { id: 'caustics', keys: [], label: 'caustic light', group: 'n1', type: 'toggle', get: () => WTP().caustics,
+      run: () => `caustic light ${flip(WTP(), 'caustics') ? 'on: the water’s surface focuses the light into a wandering bright net (the cells and the chemistry get it)' : 'off: the light falls evenly'}`,
+      help: 'the ripple background is the water’s surface: its swell and ripples bend the light into a net of bright lines on the dish floor, which the pigments, the chemistry and the heat all receive' },
+    nknob('focus', 'focus', WTP, 'focus', 0.1, 4, 1.25, 2, 'how strongly the surface focuses: below ~0.8 soft dappling, ~1.3 a net of bright lines'),
+    { id: 'currents', keys: [], label: 'currents', group: 'n1', type: 'toggle', get: () => WTP().currents,
+      run: () => `currents ${flip(WTP(), 'currents') ? 'on: the water flows in slow eddies (the moire beat of the medium) and a basin-wide gyre, carrying the substances; cells drift a little' : 'off: still water'}`,
+      help: 'a slow, divergence-free flow carries every dissolved substance (springs make plumes downstream) and moves the cells a little; streamlines in the machinery view' },
+    nknob('curSpeed', 'eddies’ speed', WTP, 'speed', 0, 5, 1.5, 2, 'the eddies’ speed, R per s'),
+    nknob('gyre', 'gyre’s speed', WTP, 'gyre', 0, 5, 1.5, 2, 'the basin-wide gyre’s speed at its strongest, R per s'),
+  );
+
   // ---------- hard light mutates (step C8; panel only: no keys are free) ----------
   const HL = () => app.cells.eat.hardlight.params;
   const hknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'hardlight', type: 'knob', get: () => HL()[key].toFixed(digits),
@@ -800,6 +835,7 @@ export function makeActions(app) {
     app.matter.params.style = on ? 'halftone' : 'dust';
     Q().contours = on;   // step C6b: the charge field's contour lines
     app.matter.oil.params.polarity = on;   // step C12: the polarity wash
+    if (app.water) app.water.machinery = on;   // step N1: the currents' streamlines
     return on ? 'the machinery: the fields\' dots, the lattice inside the cells, the substances as halftone, the marks of steps 6 to 8, the charge contours'
       : 'clean: the cells, the materials and the light (Shift+4: the machinery)';
   }

@@ -638,7 +638,7 @@ for (const s of SUBSTANCES) {
 }
 
 export const ATOM_SCALE = 4096;          // counts per atom-unit (ATOM_SCALE in matter.wgsl)
-const MP_BYTES = 704;                     // struct MatterP (step C6b: + chg, cq; step C12: + the oil's, 400 until then; step C12f: + sea, 688 until then)
+const MP_BYTES = 720;                     // struct MatterP (step N1: + n1, 704 until then; step C6b: + chg, cq; step C12: + the oil's, 400 until then; step C12f: + sea, 688 until then)
 const MT_SLOT = 256;                      // struct MatterTick slots, bound with a dynamic offset
 const MAX_TICKS = 320;                    // as SLOTS in cells.js
 const MAX_SUB = 4;                        // spreading substeps per tick at most
@@ -689,6 +689,8 @@ export class Matter {
     this.excited = new Excited(this, EXCITED);   // step C12c: excited waste (src/excited.js)
     this.electrons = new Electrons(this);         // step C12d: electrons (src/electrons.js): absorption by gap, excited states
     this.vents = new Vents(this, ELECTRONS);      // step C12f: hot vents and the sea (src/vents.js)
+    this.water = null;                            // step N1: the water (src/water.js; set by main.js): caustic light, currents
+    this.oases = null;                            // step N1: the scarce nutrient's springs (src/oases.js sets it)
     if (ELECTRONS) { this.excited.params.on = false; this.excited.look.on = false; }   // (C12c's lasting excited atoms are folded in)
     this.CH = CH; this.SUBSTANCES = SUBSTANCES;
     // live-tunable: moire.matter.params
@@ -1062,6 +1064,8 @@ export class Matter {
     const oilMask = (1 << CH.lL) | (1 << CH.glL) | (1 << CH.tlL);
     this.oilRun = this.oil.writeMatter(u, f, SUBSTANCES, this.oilBase(), 1 / (ATOM_SCALE * a * a), (active & oilMask) !== 0);
     this.vents.writeMatter(f, 172, a * a, dt, CH.T);   // step C12f: the sea (struct MatterP sea)
+    u[176] = 0; u[177] = 0; u[178] = 0; u[179] = 0;
+    if (this.water) this.water.writeMatter(u, f, 176, dt / this.nSub);   // step N1: the caustic light, the currents (struct MatterP n1)
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
 
     const T = new Uint32Array(this.tickAB), w = MT_SLOT / 4;
@@ -1218,7 +1222,8 @@ export class Matter {
       F[o + 4 + 19] = discPixels(s.x / H.px, s.y / H.px, Math.max(rad / H.px, 0.75), H.hw, H.hh);   // amt[19]: its disc's pixels
       // (step C12: a mix's shares are of the atoms, so a molecule of n atoms drips 1 / n as many units)
       const rate = s.rate ?? p.rate;   // (app: a spring's own rate, e.g. a pipette's drop or a preset's slow vent)
-      for (const [atom, share] of Object.entries(K.mix)) F[o + 4 + CH[atom]] = rate * share / SUBSTANCES[CH[atom]].atoms.length * dt * ATOM_SCALE;
+      const mix = this.oases ? this.oases.mixFor(s, K.mix) : K.mix;   // (step N1: with the nutrient scarce, trace only from the oases)
+      for (const [atom, share] of Object.entries(mix)) F[o + 4 + CH[atom]] = rate * share / SUBSTANCES[CH[atom]].atoms.length * dt * ATOM_SCALE;
       F[o + 4 + 18] = this.vents.heatPerTick(s.kind, rate, dt);   // step C12f: a hot vent's heat per tick over its disc (amt[18])
       const ink = springInk(s.kind, pal().substances);
       F[o + 24] = ink[0] / 255; F[o + 25] = ink[1] / 255; F[o + 26] = ink[2] / 255; F[o + 27] = K.stroke;
@@ -1511,6 +1516,7 @@ function discPixels(cx, cy, r, w, h) {
 /** A spring's marker ink: its atoms' inks (from `inks`, a palette's substances), weighted by its mix. */
 export function springInk(kind, inks = INKS) {
   const mix = SPRING_KINDS[kind].mix, ink = [0, 0, 0];
+  if (mix.trace >= 0.5) return inks.trace.light.slice();   // (step N1: a nutrient spring, an oasis, in trace's silver)
   let tot = 0;
   for (const [a, share] of Object.entries(mix)) {
     if (a === 'trace') continue;

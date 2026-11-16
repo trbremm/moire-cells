@@ -12,7 +12,8 @@ struct DrawParams {
   sheen: f32,        // sheen brightness gain (1 = reference)
   panX: f32,         // app: the camera's pan (the dish point at the screen's top left, CSS px)
   panY: f32,
-  _pad2: f32,
+  swell: f32,        // step N1: the swell's slope drawn x this (0: not drawn; src/water.js)
+  wave: array<vec4f, 6>,   // step N1: the swell's waves (kx, ky per CSS px, height CSS px, phase now), as the caustic light's
 };
 
 @group(0) @binding(0) var<uniform> D: DrawParams;
@@ -71,6 +72,17 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   // ripples drawn as a slope, lit from the upper left (like the reference)
   var v = (height(g - vec2f(1.0, 0.0)) - height(g + vec2f(1.0, 0.0)))
         + (height(g - vec2f(0.0, 1.0)) - height(g + vec2f(0.0, 1.0)));
+  // step N1: the slow SWELL of the water's surface (src/water.js: the waves that focus the light into the caustic net), as a slope
+  // lit from the same side (its height in CSS px, so a slope; x 2 sc as the ripples' difference over two cells)
+  if (D.swell > 0.0) {
+    var sl = vec2f(0.0);
+    for (var j = 0u; j < 6u; j++) {
+      let w = D.wave[j];
+      if (w.z == 0.0) { continue; }
+      sl += w.z * cos(dot(w.xy, css) + w.w) * w.xy;
+    }
+    v -= D.swell * 2.0 * D.sc * (sl.x + sl.y);
+  }
   v = clamp(v * D.ripple, -1.2, 1.2);
 
   var c = vec3f(5.0, 8.0, 14.0)

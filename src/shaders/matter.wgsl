@@ -57,6 +57,11 @@ struct MatterP {
   // ---- step C12f, vents in the dark (src/vents.js) ----
   sea: vec4f,                   // the SEA: x counts of its channel per pixel per tick at an empty pixel (0 = no sea), y the sea's
                                 // level (counts per pixel: the top-up falls to 0 there), z its channel (the free heavy taker T), w spare
+  // ---- step N1, a nutrient landscape: the water (src/water.js) ----
+  n1: vec4u,                    // x: word offset in `mg` of the CAUSTIC block (f32 bits per pixel, x the light; 0 = none); y: of the
+                                // CURRENTS' stream function (f32 bits at the pixel corners, (hw + 1) x (hh + 1), CSS px^2 per s; 0 = none);
+                                // z: dt per substep / px^2 (f32 bits: a corner difference x z = the share of a pixel that crosses the
+                                // edge per substep); w spare
 };
 
 struct MatterTick {
@@ -132,8 +137,8 @@ var<workgroup> wsea: atomic<i32>;    // ... and the sea's atoms (counts)
 // what flows across the edge from its second pixel (holding ms) to its first (holding mf): random rounding with r, capped
 // at a quarter of the giver's amount (a pixel has at most 4 edges). Antisymmetric by construction: both pixels call it
 // with the same (mf, ms, r).
-fn edge_flow(mf: i32, ms: i32, k: f32, r: f32) -> i32 {
-  let f = i32(floor(k * f32(ms - mf) + r));
+fn edge_flow(mf: i32, ms: i32, k: f32, a: f32, r: f32) -> i32 {
+  let f = i32(floor(k * f32(ms - mf) + adv_up(mf, ms, a) + r));   // (step N1: + the current's share, a)
   return clamp(f, -(max(mf, 0) >> 2u), max(ms, 0) >> 2u);
 }
 
@@ -143,10 +148,10 @@ fn edge_flow(mf: i32, ms: i32, k: f32, r: f32) -> i32 {
 // it leaves. w is capped at DRIFT_MAX (a CFL-like limit), and the whole flow at a quarter of the giver as before, so no
 // pixel goes below zero; both pixels compute it from the same numbers, so the counts stay exact.
 const DRIFT_MAX: f32 = 0.2;
-fn edge_flow_q(mf: i32, ms: i32, pf: f32, ps: f32, k: f32, zq: f32, r: f32) -> i32 {
+fn edge_flow_q(mf: i32, ms: i32, pf: f32, ps: f32, k: f32, zq: f32, a: f32, r: f32) -> i32 {
   let w = clamp(k * zq * (ps - pf), -DRIFT_MAX, DRIFT_MAX);
   let up = select(f32(max(mf, 0)), f32(max(ms, 0)), w > 0.0);
-  let f = i32(floor(k * f32(ms - mf) + w * up + r));
+  let f = i32(floor(k * f32(ms - mf) + w * up + adv_up(mf, ms, a) + r));   // (step N1: + the current's share, a)
   return clamp(f, -(max(mf, 0) >> 2u), max(ms, 0) >> 2u);
 }
 fn phi_at(o: u32) -> f32 { return bitcast<f32>(mg[o]); }
@@ -163,11 +168,11 @@ fn phi_at(o: u32) -> f32 { return bitcast<f32>(mg[o]); }
 // numbers in the same order.
 fn bern(x: f32) -> f32 { return select(x / (exp(x) - 1.0), 1.0 - 0.5 * x, abs(x) < 1e-3); }
 fn oil_edge(mf: i32, ms: i32, k: f32, zq: f32, pf: f32, ps: f32, uf: f32, us: f32, rf: f32, rs: f32, Ff: f32, Fs: f32,
-            skin: f32, r: f32) -> i32 {
+            skin: f32, a: f32, r: f32) -> i32 {
   let ks = k / (1.0 + skin * 0.5 * (Ff + Fs));
   let dm = DRIFT_MAX / max(ks, 1e-6);
   let D = clamp(zq * (ps - pf) + (uf - us), -dm, dm);
-  let f = i32(floor(ks * (bern(-D) * f32(max(ms, 0)) * rf - bern(D) * f32(max(mf, 0)) * rs) + r));
+  let f = i32(floor(ks * (bern(-D) * f32(max(ms, 0)) * rf - bern(D) * f32(max(mf, 0)) * rs) + adv_up(mf, ms, a) + r));   // (step N1: + a)
   return clamp(f, -(max(mf, 0) >> 2u), max(ms, 0) >> 2u);
 }
 // the pull of a substance (bulk chi, boundary beta) where the smoothed oil share is ob, x gain
@@ -186,6 +191,14 @@ fn room(fill: u32, rho: f32, film: f32) -> f32 {
   if (fill == 2u) { return clamp(1.0 - film, ROOM_MIN, 1.0); }
   return 1.0;
 }
+
+// Step N1, CURRENTS (src/water.js): the water flows, carrying every mobile substance alike. The flow comes from a stream function
+// psi stored at the pixels' corners: what crosses an edge per substep is a = (psi at one end of the edge - psi at the other) x
+// dt / px^2 (a share of a pixel), so whatever flows into a pixel flows out of it (divergence-free, to the last bit in the corner
+// differences) and psi = 0 all round the dish's rim (no flow through the wall). Upwind: a share a of the pixel it LEAVES crosses
+// (a > 0: toward the edge's first pixel), added to the edge's flow before its random rounding, so the counts stay exact as before.
+fn psi_at(x: u32, y: u32) -> f32 { return bitcast<f32>(mg[MP.n1.y + y * (MP.hw + 1u) + x]); }
+fn adv_up(mf: i32, ms: i32, a: f32) -> f32 { return select(a * f32(max(mf, 0)), a * f32(max(ms, 0)), a > 0.0); }
 
 @compute @workgroup_size(16, 4)
 fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index) li: u32,
@@ -246,6 +259,18 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       if (hasU) { oR.z = oil_rho_at(i - MP.hw); oF.z = oil_film_at(i - MP.hw); oB.z = oil_obar_at(i - MP.hw); }
       if (hasD) { oR.w = oil_rho_at(i + MP.hw); oF.w = oil_film_at(i + MP.hw); oB.w = oil_obar_at(i + MP.hw); }
     }
+    // step N1, currents: each edge's share toward its first pixel (L = (i - 1, i), R = (i, i + 1), U = (i - hw, i), D = (i, i + hw)),
+    // each from the same two corners by the same expression from both of its pixels (so both get the same number, to the bit)
+    var aE = vec4f(0.0);   // L R U D
+    if (MP.n1.y != 0u) {
+      let sc = bitcast<f32>(MP.n1.z);
+      let p00 = psi_at(id.x, id.y);
+      let p10 = psi_at(id.x + 1u, id.y);
+      let p01 = psi_at(id.x, id.y + 1u);
+      let p11 = psi_at(id.x + 1u, id.y + 1u);
+      aE = vec4f(-(p01 - p00) * sc, -(p11 - p10) * sc, (p10 - p00) * sc, (p11 - p01) * sc);
+      aE = clamp(aE, vec4f(-DRIFT_MAX), vec4f(DRIFT_MAX));
+    }
     for (var c = 0u; c < NGRID; c++) {
       if ((MP.moving & (1u << c)) == 0u) { continue; }
       let s0 = T.src + c * MP.n;
@@ -271,30 +296,30 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
           let rC = room(fl, cR, cF);
           if (hasL) {
             acc -= oil_edge(mg[s0 + i - 1u], m, k, zq, pL, pC, oil_pull(G, chi, bet, oB.x), uC, room(fl, oR.x, oF.x), rC,
-                            oF.x, cF, skin, u01(mpcg(eL + cs)));
+                            oF.x, cF, skin, aE.x, u01(mpcg(eL + cs)));
           }
           if (hasR) {
             acc += oil_edge(m, mg[s0 + i + 1u], k, zq, pC, pR, uC, oil_pull(G, chi, bet, oB.y), rC, room(fl, oR.y, oF.y),
-                            cF, oF.y, skin, u01(mpcg(eR + cs)));
+                            cF, oF.y, skin, aE.y, u01(mpcg(eR + cs)));
           }
           if (hasU) {
             acc -= oil_edge(mg[s0 + i - MP.hw], m, k, zq, pU, pC, oil_pull(G, chi, bet, oB.z), uC, room(fl, oR.z, oF.z), rC,
-                            oF.z, cF, skin, u01(mpcg(eU + cs)));
+                            oF.z, cF, skin, aE.z, u01(mpcg(eU + cs)));
           }
           if (hasD) {
             acc += oil_edge(m, mg[s0 + i + MP.hw], k, zq, pC, pD, uC, oil_pull(G, chi, bet, oB.w), rC, room(fl, oR.w, oF.w),
-                            cF, oF.w, skin, u01(mpcg(eD + cs)));
+                            cF, oF.w, skin, aE.w, u01(mpcg(eD + cs)));
           }
         } else if (zq != 0.0) {
-          if (hasL) { acc -= edge_flow_q(mg[s0 + i - 1u], m, pL, pC, k, zq, u01(mpcg(eL + cs))); }
-          if (hasR) { acc += edge_flow_q(m, mg[s0 + i + 1u], pC, pR, k, zq, u01(mpcg(eR + cs))); }
-          if (hasU) { acc -= edge_flow_q(mg[s0 + i - MP.hw], m, pU, pC, k, zq, u01(mpcg(eU + cs))); }
-          if (hasD) { acc += edge_flow_q(m, mg[s0 + i + MP.hw], pC, pD, k, zq, u01(mpcg(eD + cs))); }
+          if (hasL) { acc -= edge_flow_q(mg[s0 + i - 1u], m, pL, pC, k, zq, aE.x, u01(mpcg(eL + cs))); }
+          if (hasR) { acc += edge_flow_q(m, mg[s0 + i + 1u], pC, pR, k, zq, aE.y, u01(mpcg(eR + cs))); }
+          if (hasU) { acc -= edge_flow_q(mg[s0 + i - MP.hw], m, pU, pC, k, zq, aE.z, u01(mpcg(eU + cs))); }
+          if (hasD) { acc += edge_flow_q(m, mg[s0 + i + MP.hw], pC, pD, k, zq, aE.w, u01(mpcg(eD + cs))); }
         } else {
-          if (hasL) { acc -= edge_flow(mg[s0 + i - 1u], m, k, u01(mpcg(eL + cs))); }
-          if (hasR) { acc += edge_flow(m, mg[s0 + i + 1u], k, u01(mpcg(eR + cs))); }
-          if (hasU) { acc -= edge_flow(mg[s0 + i - MP.hw], m, k, u01(mpcg(eU + cs))); }
-          if (hasD) { acc += edge_flow(m, mg[s0 + i + MP.hw], k, u01(mpcg(eD + cs))); }
+          if (hasL) { acc -= edge_flow(mg[s0 + i - 1u], m, k, aE.x, u01(mpcg(eL + cs))); }
+          if (hasR) { acc += edge_flow(m, mg[s0 + i + 1u], k, aE.y, u01(mpcg(eR + cs))); }
+          if (hasU) { acc -= edge_flow(mg[s0 + i - MP.hw], m, k, aE.z, u01(mpcg(eU + cs))); }
+          if (hasD) { acc += edge_flow(m, mg[s0 + i + MP.hw], k, aE.w, u01(mpcg(eD + cs))); }
         }
         if (first && rim && m > 0 && MP.edge > 0.0) {
           // the sink at the dish's rim: never more than the edges leave it (so it cannot go below zero)
@@ -651,9 +676,10 @@ fn xtake(m: ptr<function, array<i32, 18>>, c: u32, n: i32, r: f32) -> i32 {
 // medium, the cells (their cover, 3 x 3 mean) and the cells' pigments took their share (step C12d: paint uses it too, for the glow)
 fn light_here(id: vec2u) -> vec4f {
   if (CP.light == 0u || LP.mode == LIGHT_OFF) { return vec4f(0.0); }
-  let s = light_factor(LP, (vec2f(id) + 0.5) * MP.px);
-  if (s <= 0.0) { return vec4f(0.0); }
   let i = id.y * MP.hw + id.x;
+  var s = light_factor(LP, (vec2f(id) + 0.5) * MP.px);
+  if (MP.n1.x != 0u) { s *= bitcast<f32>(mg[MP.n1.x + i]); }   // step N1: x the caustic light (src/water.js)
+  if (s <= 0.0) { return vec4f(0.0); }
   let co = 3u * MP.n;   // the cells' cover (heat_common.wgsl), written by their step this tick
   var cov = 0;
   for (var dy = -1; dy <= 1; dy++) {

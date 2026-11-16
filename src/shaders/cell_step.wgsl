@@ -23,6 +23,23 @@
 @group(0) @binding(12) var<uniform> FL: Fields;
 @group(0) @binding(13) var<uniform> HP: HeatP;
 
+// step N1: the water's velocity at p (CSS px per s) from the currents' stream function at the 4 corners of its heat pixel (bilinear:
+// u = d psi / dy, v = -d psi / dx; psi in CSS px^2 per s at the corners, (hw + 1) x (hh + 1), src/water.js)
+fn water_vel(p: vec2f) -> vec2f {
+  let g = clamp(p / HP.px, vec2f(0.0), vec2f(f32(HP.hw), f32(HP.hh)) - 1e-3);
+  let b = vec2u(floor(g));
+  let t = g - vec2f(b);
+  let w = HP.hw + 1u;
+  let o = HP.cur + b.y * w + b.x;
+  let p00 = bitcast<f32>(atomicLoad(&hb[o]));
+  let p10 = bitcast<f32>(atomicLoad(&hb[o + 1u]));
+  let p01 = bitcast<f32>(atomicLoad(&hb[o + w]));
+  let p11 = bitcast<f32>(atomicLoad(&hb[o + w + 1u]));
+  let dx = mix(p10 - p00, p11 - p01, t.y) / HP.px;
+  let dy = mix(p01 - p00, p11 - p10, t.x) / HP.px;
+  return vec2f(dy, -dx);
+}
+
 @compute @workgroup_size(128)
 fn step(@builtin(global_invocation_id) id: vec3u) {
   let j = id.x;
@@ -704,6 +721,9 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // gentle pull to the middle, slow drift of the medium (as the reference)
   f += (S.centre - c.pos) * S.pull;
   f += S.drift * S.R * vec2f(sin(c.pos.y * 0.011 + S.time * 0.10), sin(c.pos.x * 0.012 - S.time * 0.08));
+  // step N1, CURRENTS (src/water.js): the water's velocity at the cell, x curDrift, as a force (so the cell drifts at curDrift x the
+  // water's speed; its work is booked as every force's)
+  if (HP.cur != 0u && HP.curDrift > 0.0) { f += HP.curDrift * water_vel(c.pos); }
 
   // soft walls, 3 R in from the dish edge
   let mg = 3.0 * S.R;

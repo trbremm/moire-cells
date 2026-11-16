@@ -569,7 +569,8 @@ H1. HARMONIC VIEW (user: "one of my original inspirations are these higher harmo
     packed tissue reads as a green honeycomb with dark insides; ORANGE (SHG-like) = ordered fibres: crust chains and
     walls, stretched/aligned cells as fibrous streaks (the moire beat may give the fibre direction); BLUE-VIOLET
     (autofluorescence-like) = metabolism: fuel, batteries, running engines. No neon halo, trails or flicker; slight
-    blur and photon grain. User to correct the channel reading if wrong.
+    blur and photon grain. User: "they don't need to be strictly like that, just the general look" (the mapping is a
+    guide). The reference image is the user's: never commit it (public repo).
 APP. Zoom and pan (pinch on touch; the wheel keeps tilting the spotlight in spotlight mode), ZOO panels (molecules: the
     periodic table drawn, energies, absorption, glow; cells: the lineages living now, portraits, counts), tools to ADD
     CELLS (pick from the zoo or founder types, tap to place) and a molecule pipette, NEW CULTURE dialog (founders, how

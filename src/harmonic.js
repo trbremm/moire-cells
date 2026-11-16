@@ -58,7 +58,7 @@ export class Harmonic {
       inside: 0.9,       // the inside's opacity (dark: what lies under a cell is hidden)
       insideTint: 0.03,  // ... its faint green
       bat: 0.25,         // violet: a full battery's glow at the centre (a soft spot, half the neon core's size)
-      busy: 0.2,         // violet: the whole inside at the busiest (activity, as the hum's)
+      busy: 0.12,        // violet: the whole inside at the busiest (activity, as the hum's)
       parts: 0.5,        // violet: the engines' granules
       stretchFib: 0.55,  // orange: streaks along the stretch, at a strong stretch
       muscle: 0.3,       // orange: muscle's striations
@@ -66,10 +66,10 @@ export class Harmonic {
       wall: 0.9,         // orange: a crust wall round a cell
       gap: 0,            // the rim's gap from the cell's wall, as a share of the neon tubes' (0: neighbours share one green wall)
       // the dish (matter_draw.wgsl fs_harm)
-      crust: 0.95,       // orange: the crust's fibres at a dense crust
+      crust: 1.2,        // orange: the crust's fibres at a dense crust
       crustHalf: 1.5,    // ... the crust (per R^2, in units of the halftone's sediment step) at half brightness
-      fibreLen: 9,       // ... a fibre's length (CSS px) ...
-      fibreW: 1.1,       // ... and width
+      fibreLen: 14,       // ... a fibre's length (CSS px) ...
+      fibreW: 1.5,       // ... and width
       swirl: 0.6,        // ... the moire swirl's weight in the fibres' direction where the crust is even (0 = none)
       swirlAngle: 2.2,   // ... the second lattice's turn (degrees): the beat's period is about the medium's / this angle
       fuel: 0.4,         // violet: the fuel haze at a rich spot

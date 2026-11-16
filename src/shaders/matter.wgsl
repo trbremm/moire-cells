@@ -61,7 +61,8 @@ struct MatterP {
   n1: vec4u,                    // x: word offset in `mg` of the CAUSTIC block (f32 bits per pixel, x the light; 0 = none); y: of the
                                 // CURRENTS' stream function (f32 bits at the pixel corners, (hw + 1) x (hh + 1), CSS px^2 per s; 0 = none);
                                 // z: dt per substep / px^2 (f32 bits: a corner difference x z = the share of a pixel that crosses the
-                                // edge per substep); w spare
+                                // edge per substep); w: the share of the free TRACE in each pixel that settles into the floor per tick
+                                // (f32 bits; 0 = none; src/oases.js: buried, booked as lost)
 };
 
 struct MatterTick {
@@ -321,9 +322,17 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
           if (hasU) { acc -= edge_flow(mg[s0 + i - MP.hw], m, k, aE.z, u01(mpcg(eU + cs))); }
           if (hasD) { acc += edge_flow(m, mg[s0 + i + MP.hw], k, aE.w, u01(mpcg(eD + cs))); }
         }
+        // step N1: trace SETTLES into the floor (src/oases.js: buried, like phosphate in sediment), booked as lost, so a plume fades
+        // with distance and an old oasis's trace does not pile up for ever
+        var bur = 0;
+        if (first && c == CP.trace && m > 0 && MP.n1.w != 0u) {
+          bur = clamp(i32(floor(f32(m) * bitcast<f32>(MP.n1.w) + u01(mpcg(eI + cs + 0x7f4a7c15u)))), 0, m - nEdges * (m >> 2u));
+          acc -= bur;
+          if (bur != 0) { atomicAdd(&wlost[c], bur); }
+        }
         if (first && rim && m > 0 && MP.edge > 0.0) {
           // the sink at the dish's rim: never more than the edges leave it (so it cannot go below zero)
-          let out = clamp(i32(floor(f32(m) * MP.edge + u01(mpcg(eI + cs)))), 0, m - nEdges * (m >> 2u));
+          let out = clamp(i32(floor(f32(m) * MP.edge + u01(mpcg(eI + cs)))), 0, m - nEdges * (m >> 2u) - bur);
           acc -= out;
           if (out != 0) { atomicAdd(&wlost[c], out); }
         }

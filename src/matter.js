@@ -1066,6 +1066,7 @@ export class Matter {
     this.vents.writeMatter(f, 172, a * a, dt, CH.T);   // step C12f: the sea (struct MatterP sea)
     u[176] = 0; u[177] = 0; u[178] = 0; u[179] = 0;
     if (this.water) this.water.writeMatter(u, f, 176, dt / this.nSub);   // step N1: the caustic light, the currents (struct MatterP n1)
+    if (this.oases) f[179] = this.oases.buryPerTick(dt);                 // step N1: trace settles into the floor
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
 
     const T = new Uint32Array(this.tickAB), w = MT_SLOT / 4;

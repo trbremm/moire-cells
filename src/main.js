@@ -433,6 +433,8 @@ async function boot() {
       if (params.has('roam')) OP.roam = flag('roam');
       const v = Number(params.get('oases'));
       if (params.has('oases') && Number.isFinite(v) && v >= 0) OP.count = Math.round(v);
+      const b = Number(params.get('bury'));
+      if (params.has('bury') && Number.isFinite(b) && b >= 0) OP.bury = b;
     }
     {   // step N1: a nutrient landscape (light needs matter)
       const PG = cells.eat.pigments;

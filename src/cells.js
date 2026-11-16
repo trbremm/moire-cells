@@ -44,6 +44,7 @@ import { pal } from './palette.js';
 import { Dipole, STATS_DIP, DIP_WORDS } from './dipole.js';
 import { Division, STATS_DIV, STATS_CLAIM, DIV_SNAP } from './division.js';
 import { Walls, STATS_WALL, WALL_WORDS } from './walls.js';
+import { Guides, STATS_FG, FG_WORDS } from './guides.js';
 
 export const CELL_URL = 'src/shaders/cell_common.wgsl';
 
@@ -53,8 +54,9 @@ export const CELL_URL = 'src/shaders/cell_common.wgsl';
 // and per side: integ[6] (48, membrane chemistry), sideQ[6] (54, step C6d: each side's charge); step C7: nbr[3] (60: the touching
 // neighbour across each side, 16 bits each), volt (63: the membrane voltage); step C10, patterned walls (src/walls.js): front (64),
 // mature[3] (65: each side's junction maturity, 16 bits), wadh[2] (68: each side's effective adhesion, 8 bits), wlink (70), wpay (71);
-// step C12b, lipid membranes (src/lipids.js): lip[6] (72: per side, 4 x 8 bits: stiffness, the wall's heavy share, oil share, wall cover)
-export const CELL_FLOATS = 78;
+// step C12b, lipid membranes (src/lipids.js): lip[6] (72: per side, 4 x 8 bits: stiffness, the wall's heavy share, oil share, wall cover);
+// step C13, fields as genes and guides (src/guides.js): fg[4] (78: the field genes the beat needs, f16 deltas), felt[2] (82: what each side felt)
+export const CELL_FLOATS = 84;
 export const CELL_BYTES = CELL_FLOATS * 4;
 const CELL_CORE_BYTES = 120;   // step C6c: struct CellCore (the grid's sorted copy: Cell without the outline and per-side slots;
                                // step C6d: + the dipole, 104 until then; step C10: + the walls, 112 until then)
@@ -68,17 +70,17 @@ const SLOT = 256;              // uniform slot stride (minUniformBufferOffsetAli
 const SLOTS = 320;             // ticks that can be encoded in one frame (main.js runs at most 256, plus warm-up)
 const BLOCK = 512;             // scan block (cell_grid.wgsl)
 const BRUTE_MAX = 20000;       // largest count the ?check brute force runs on
-const STATS_BYTES = 8768;      // struct Stats in cell_common.wgsl (counters, events, census, step 6 census; step C6d: + dip;
+const STATS_BYTES = 9024;      // struct Stats in cell_common.wgsl (step C13: + fg, 64 words; counters, events, census, step 6 census; step C6d: + dip;
                                // step C9: + div, claim; step C10: + wall; step C11: wall 24 -> 32 words)
 const STATS_EXTRA = 8192;      // byte offset of Stats.extra (step 6 census: STATS_X_* in cell_common.wgsl)
 const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder bitmap) in struct Stats
 const STATS_EVENTS = 64;
 const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_AW in cell_common.wgsl)
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
-const FIELDS_BYTES = 416;      // struct Fields in cell_common.wgsl (step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
+const FIELDS_BYTES = 432;      // struct Fields in cell_common.wgsl (step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
                                // step C9: + dv0..dv2; step C10: + wl0, wl1)
 const FIELD_FORMAT = 'rgba16float';
-const DRAW_BYTES = 944;        // struct Draw in cell_draw.wgsl (step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
+const DRAW_BYTES = 1056;       // struct Draw in cell_draw.wgsl (step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
                                // step C6d: + the dipoles)
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
@@ -335,6 +337,7 @@ export class Cells {
     this.dipole = new Dipole(this);   // step C6d: charge per side (src/dipole.js)
     this.division = new Division(this);   // step C9: division and death with a changing count (src/division.js)
     this.walls = new Walls(this);         // step C10: patterned walls, evolvable adhesion per side (src/walls.js)
+    this.guides = new Guides(this);       // step C13: fields as genes and guides (src/guides.js)
   }
 
   static async create(device, format, medium, count, seed, cap = 0) {
@@ -682,6 +685,7 @@ export class Cells {
     this.eat.hardlight.writeFields(f, 80);     // step C8: hard light mutates (Fields.hm)
     this.division.writeFields(f, u, 84);       // step C9: division and death (Fields.dv0..dv2)
     this.walls.writeFields(u, f, 96);          // step C10: patterned walls (Fields.wl0, wl1)
+    this.guides.writeFields(u, f, 104);        // step C13: fields as genes and guides (Fields.fg0)
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -744,6 +748,7 @@ export class Cells {
     encoder.clearBuffer(this.statsBuf, STATS_DIP, DIP_WORDS * 4);   // step C6d: the dipoles' census, also on the last tick
     encoder.clearBuffer(this.statsBuf, STATS_DIV + 4 * DIV_SNAP, 4 * (15 - DIV_SNAP));   // step C9: its snapshot, on the last tick
     encoder.clearBuffer(this.statsBuf, STATS_WALL, 4 * WALL_WORDS);   // step C10: the walls' census, on the last tick too
+    encoder.clearBuffer(this.statsBuf, STATS_FG, 4 * FG_WORDS);       // step C13: the field genes' and gates' census (the same)
     for (let t = 0; t < ticks; t++) {
       this.encodeGrid(encoder, t);
       // ?check runs between the grid build and the move, so both see the same positions
@@ -854,6 +859,7 @@ export class Cells {
       this.alive = fate.reduce((x, y) => x + y, 0);
       this.division.apply(time, new Uint32Array(u.buffer, STATS_DIV, 16), this.alive);
       this.walls.apply(time, new Uint32Array(u.buffer, STATS_WALL, WALL_WORDS));   // step C10
+      this.guides.apply(time, new Uint32Array(u.buffer, STATS_FG, FG_WORDS));      // step C13
       if (events.length && this.onEvents) this.onEvents(events);
     } catch (e) {
       // device lost or page closing: nothing to show
@@ -1343,6 +1349,7 @@ export class Cells {
     this.walls.writeDraw(a, 192, L, P);   // step C10: the walls' look (sticky sides, matured junctions, the front, the walls view)
     const u3 = (rgb) => rgb.map((x) => x / 255);
     this.eat.lipids.writeDraw(a, 216, { crustLight: u3(P.lipid.crustLight), crustHeavy: u3(P.lipid.crustHeavy), pearl: u3(P.lipid.pearl) });   // step C12b
+    this.guides.writeDraw(a, 236, L);   // step C13: the guides view
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBGs[this.bioCur]);

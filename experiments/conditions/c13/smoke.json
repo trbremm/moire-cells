@@ -1,0 +1,19 @@
+{
+ "name": "c13-smoke",
+ "description": "Step C13 smoke test: the default scene, seed 3, 90 s at MAX; every new switch toggled at runtime, the neutral control, the guides view; a snapshot saved and loaded",
+ "query": {"seed": 3},
+ "duration": 90,
+ "sample_every": 10,
+ "evals": [
+  {"t": 10, "js": "moire.guides.params.genes = false; return 'field genes off'"},
+  {"t": 15, "js": "moire.guides.params.genes = true; moire.guides.params.glue = false; moire.guides.params.pump = false; return 'genes on, glue and pump off'"},
+  {"t": 20, "js": "moire.guides.params.glue = true; moire.guides.params.pump = true; moire.guides.params.engine = false; moire.guides.params.div = false; return 'engine, div off'"},
+  {"t": 25, "js": "moire.guides.params.engine = true; moire.guides.params.div = true; moire.guides.params.turn = false; moire.guides.params.push = false; return 'turn, push off'"},
+  {"t": 30, "js": "moire.guides.params.turn = true; moire.guides.params.push = true; moire.guides.params.null = true; return 'null on'"},
+  {"t": 40, "js": "moire.guides.params.null = false; await moire.genome.setAll({ gateGlue: 1, gateDiv: -1, gateTurn: 1, gateEngine: 0.5, gatePump: -0.5, push: 0.5, leverA: 1.5, shareP: 0.3, senseB: -1, pickB: 1, angleA: 0.2 }); return 'genes set by hand'"},
+  {"t": 60, "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }"},
+  {"t": 70, "js": "return moire.genome.get()"}
+ ],
+ "shots": [{"t": 50, "view": "guides"}, {"t": 50, "view": "machinery", "name": "mach50"}, {"t": 90}],
+ "stall": 120
+}

@@ -1,0 +1,7 @@
+{
+ "name": "c13-speed-2k",
+ "description": "Speed: the default scene, 2000 cells, seed 3, MAX, 150 simulated s (the speed reached, mean of 'reached' from 40 to 150 s)",
+ "query": {"seed": 3},
+ "duration": 150,
+ "sample_every": 10
+}

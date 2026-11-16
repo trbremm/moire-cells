@@ -266,6 +266,7 @@ export class Eat {
     // step C9: a reset fills the first `start` slots (they get the starter charge); a division's cost (heat counts)
     u[EP_DV] = this.cells.start; u[EP_DV + 1] = this.cells.division.costCounts; u[EP_DV + 2] = 0; u[EP_DV + 3] = 0;
     this.cells.walls.writeEat(u, f, EP_WL, dt);   // step C10: the walls' pattern, maturity, linker cost and upkeep
+    this.cells.guides.writeEat(u, EP_WL + 6);     // step C13: the gates' bits (EatP wl1.z)
     this.lipids.write(u, f, EP_LP);               // step C12b: the lipid membranes
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
   }

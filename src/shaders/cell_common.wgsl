@@ -1,7 +1,7 @@
 // ===== cell_common.wgsl: the cells' state, the simulation uniforms and the neighbour grid =====
 // Not compiled on its own: src/cells.js prepends field_common.wgsl and then this file to every cell shader.
 //
-// Cells live in a fixed-capacity storage buffer (struct Cell, 312 bytes since step C12b, 288 since C10, 256 since C7; keep in step with CELL_* in
+// Cells live in a fixed-capacity storage buffer (struct Cell, 336 bytes since step C13, 312 since step C12b, 288 since C10, 256 since C7; keep in step with CELL_* in
 // src/cells.js, and CELL_FLOATS in heat.wgsl). Their order never changes, so drawing order is stable and a cell keeps its index.
 // Step C9: Sim.count is the CAPACITY; a slot is a live cell while its flags have CELL_ALIVE. The grid sorts the dead slots
 // into one more bucket after the last grid cell (cell_grid.wgsl), so sorted[0 .. starts[gw gh]) are the live cells and the
@@ -84,7 +84,41 @@ struct Cell {
                     // the thickness and the stiffness gene: what the step's corner springs use), y the wall's heavy share (LL of
                     // ll + LL), z the bilayer's oil share (oil / (soap + oil)), w the WALL's cover (crust / what a full wall
                     // holds); written by the eat pass while the lipid membranes are on (else 0), read by the step and the drawing
+  // ---- step C13, fields as genes and guides (src/guides.js; the record is 336 bytes since C13) ----
+  fg: array<u32, 4>, // the field genes the cell's BEAT needs (the grid's scatter and the drawing have no genome), copied from the genome by
+                    // the step every tick (all 0 while the field genes are off), pack2x16float, as DELTAS from today's values (0 = as
+                    // before step C13, so a record from before loads as it ran): [0] A's lever factor - 1, A's emission - 1; [1] B's
+                    // lever factor - 1, B's emission - 1; [2] A's lattice angle offset, B's (rad); [3] the share turned into A' (x 90
+                    // degrees of phase), 0
+  felt: array<u32, 2>, // what each side FELT of field A this tick (the step's segment integrals, with the sensing gene's gain and sign),
+                    // s_k = tanh(felt_k / ref), pack4x8snorm: sides 0..3 in word 0, sides 4, 5 in the low half of word 1; the eat pass
+                    // gates the glue, the pumps and the engines by it, the guides view shades the tubes by it
 };
+// step C13: a cell's field-gene words (Cell.fg) as numbers
+fn fg_a(c: Cell) -> vec2f { return unpack2x16float(c.fg[0]); }   // A: lever factor - 1, emission - 1
+fn fg_b(c: Cell) -> vec2f { return unpack2x16float(c.fg[1]); }   // B: lever factor - 1, emission - 1
+fn fg_ang(c: Cell) -> vec2f { return unpack2x16float(c.fg[2]); } // A's and B's lattice angle offsets (rad)
+fn fg_share(c: Cell) -> f32 { return unpack2x16float(c.fg[3]).x; } // the share of the beat turned into A'
+// ... what side k felt (s_k, -1..1), and the six sides' mean
+fn cell_felt(c: Cell, k: u32) -> f32 {
+  let v = select(unpack4x8snorm(c.felt[1] & 0xffffu), unpack4x8snorm(c.felt[0]), k < 4u);
+  return v[k & 3u];
+}
+fn cell_felt_mean(c: Cell) -> f32 {
+  let a = unpack4x8snorm(c.felt[0]);
+  let b = unpack4x8snorm(c.felt[1] & 0xffffu);
+  return (a.x + a.y + a.z + a.w + b.x + b.y) / 6.0;
+}
+// step C13: Fields.fg0.x bits (and EatP.wl1.z; keep in step with FG in src/guides.js)
+const FG_GENES: u32 = 1u;        // the field genes act (else today's values for everyone)
+const FG_GLUE: u32 = 2u;         // the glue gate: each side's adhesion x (1 + g s_k)
+const FG_PUMP: u32 = 4u;         // the pump gate: the pump slots' rates x (1 + g s)
+const FG_ENGINE: u32 = 8u;       // the engine gate: the engine slots' rates x (1 + g s)
+const FG_DIV: u32 = 16u;         // the division gate: the axis along or across the felt gradient
+const FG_TURN: u32 = 32u;        // the turn gate: the front turns toward or away from the felt gradient
+const FG_PUSH: u32 = 64u;        // the push gene: field A's push x the gene
+// a gate's factor (1 + g s), bounded to 0..2
+fn gate_factor(g: f32, s: f32) -> f32 { return clamp(1.0 + clamp(g, -1.0, 1.0) * s, 0.0, 2.0); }
 // step C12b: a side's lipid words (x stiffness / LIP_KMAX, y the wall's heavy share, z the oil share, w the wall's cover)
 const LIP_KMAX: f32 = 4.0;   // the honeycomb's stiffest (as memb_stiff's cap): a full crust wall
 fn lip_side(c: Cell, k: u32) -> vec4f { return unpack4x8unorm(c.lip[k]); }
@@ -281,7 +315,7 @@ fn fate_motility(kind: u32) -> f32 {
 }
 
 // ---------- the genome ----------
-// Every cell carries a Bio record (208 bytes since step C10, 192 since C7; keep in step with BIO_* in src/genome.js): its genome plus its
+// Every cell carries a Bio record (304 bytes since step C13, 224 since C12b, 208 since step C10, 192 since C7; keep in step with BIO_* in src/genome.js): its genome plus its
 // small mutable state. Bio is double-buffered: each tick reads last tick's copy of every cell (bioPrev) and
 // writes the new one (bioNext), so a newborn copies its parent's genome race-free.
 //
@@ -322,6 +356,16 @@ struct Bio {
   lip: vec4f,       // x WALL: the crust wall wanted, as a share of a full wall (a full wall holds as much crust as the bilayer
                     // holds lipid), 0..1; y HEAD: which head the cell puts on the soap it makes, -1 (all t: tlL, -) .. 1 (all g:
                     // glL, +); z the wall's ROW: its heavy share (LL of ll + LL), 0..1; w spare
+  // ---- step C13: FIELDS AS GENES (src/guides.js FG_GENES; the founders carry today's values: x 1, offset 0) ----
+  fa: vec4f,        // field A: x LEVER factor (x the global lever: the beat period), y EMISSION factor, z SENSING gain and sign (x),
+                    // w TUNING width factor (x tuneW: how picky the receptor is)
+  fb: vec4f,        // field B: x lever factor, y emission factor, z sensing gain and sign, w PICKINESS (0: feels every cell's B)
+  fx: vec4f,        // x A's lattice ANGLE offset from the key (rad), y B's; z the SHARE of the beat turned into the partner A' (-1..1,
+                    // x 90 degrees of phase); w the partner's sensing gain and sign (x step 8's rules a and c)
+  // ---- step C13: FIELDS AS GUIDES, the gates (-1..1; the founders' within +-0.05) and the push ----
+  gate: vec4f,      // x GLUE (each side's adhesion x (1 + g s_k)), y PUMP (rates x (1 + g s)), z ENGINE (rates x (1 + g s)), w DIVISION
+                    // (the axis along (+) or across (-) the felt gradient)
+  gate2: vec4f,     // x TURN (the front toward (+) or away from (-) the felt gradient), y PUSH (field A's push x this, 0..2), z w spare
 };
 // step C7: a pump slot's channel, direction (1 = OUT) and the substances it may pump: PUMP_NCH of them, channels 0..9 and
 // trace (12), not the sediments ll, LL (PUMP_CHANNELS in src/genome.js)
@@ -389,7 +433,22 @@ struct Stats {
   claim: atomic<u32>,                 // free slots claimed by dividing cells this tick (cleared before every tick's step)
   // ---- step C10, patterned walls (src/walls.js): a census, cleared every frame, counted on its last tick (WS_* below) ----
   wall: array<atomic<u32>, 32>,       // (24 words until step C11)
+  // ---- step C13, fields as genes and guides (src/guides.js): a census, cleared every frame, counted on its last tick (FGS_* below) ----
+  fg: array<atomic<u32>, 64>,
 };
+// step C13: Stats.fg (signed sums are added as i32 bits and read back as Int32)
+const FGS_N: u32 = 0u;          // cells counted
+const FGS_SUM: u32 = 1u;        // 18 words: per gene (Bio fa, fb, fx, gate, gate2.xy in order) the sum of its value x 1000 (i32)
+const FGS_SQ: u32 = 19u;        // 18 words: ... the sum of its square x 1000
+const FGS_STRONG: u32 = 37u;    // 6 words: cells whose strongest gate gene is none (all below FGS_MIN), glue, pump, engine, div, turn
+const FGS_FELT: u32 = 43u;      // sum of |the sides' mean s| x 1000
+const FGS_SPREAD: u32 = 44u;    // sum of (max - min) / 2 of the sides' s x 1000
+const FGS_GUIDE: u32 = 45u;     // sum of the guidance strength (the felt gradient's) x 1000
+const FGS_GLUE: u32 = 46u;      // sum of the mean |glue factor - 1| over the sides x 1000 (while the glue gate acts)
+const FGS_RATE: u32 = 47u;      // sum of |engine factor - 1| x 1000 (while the engine gate acts)
+const FGS_PH: u32 = 48u;        // 8 words: the beat period's histogram (bins at 2, 3, 4.5, 7, 10, 15, 25 R)
+const FGS_PSUM: u32 = 56u;      // sum of the beat period (R, at most 100) x 1000
+const FGS_MIN: f32 = 0.15;      // a gate gene below this counts as none (the census; the view has its own knob)
 // step C10: Stats.wall (signed sums are added as i32 bits and read back as Int32)
 const WS_N: u32 = 0u;           // cells counted
 const WS_A0: u32 = 1u;          // sum of a0 (the adhesion gene) x 1000
@@ -573,6 +632,19 @@ fn mutate(p: Bio, seed: u32, size: f32, jump: f32, engJump: f32, pumpJump: f32) 
   // step C12b: the lipid genes drift (wall, head and the wall's row: additive steps, as the mix's)
   b.lip = vec4f(nudge(b.lip.x, size * 0.03, 0.0, 1.0, seed, 150u), nudge(b.lip.y, size * 0.04, -1.0, 1.0, seed, 151u),
                 nudge(b.lip.z, size * 0.03, 0.0, 1.0, seed, 152u), b.lip.w);
+  // step C13: the field genes drift: the levers, emissions and A's tuning by small factors, the sensing gains (through 0: the sign can
+  // flip), B's pickiness, the angles and the partner's share by small steps; the gates and the push by 0.04 a birth (as the walls')
+  let lv = clamp(vec2f(b.fa.x, b.fb.x) * exp(size * 0.04 * vec2f(gauss(seed, 160u), gauss(seed, 161u))), vec2f(0.25), vec2f(4.0));
+  let em = clamp(vec2f(b.fa.y, b.fb.y) * exp(size * 0.05 * vec2f(gauss(seed, 162u), gauss(seed, 163u))), vec2f(0.1), vec2f(3.0));
+  b.fa = vec4f(lv.x, em.x, nudge(b.fa.z, size * 0.04, -2.0, 2.0, seed, 164u),
+               clamp(b.fa.w * exp(size * 0.05 * gauss(seed, 165u)), 0.2, 4.0));
+  b.fb = vec4f(lv.y, em.y, nudge(b.fb.z, size * 0.04, -2.0, 2.0, seed, 166u), nudge(b.fb.w, size * 0.04, 0.0, 4.0, seed, 167u));
+  b.fx = vec4f(nudge(b.fx.x, size * 0.02, -0.5, 0.5, seed, 168u), nudge(b.fx.y, size * 0.02, -0.5, 0.5, seed, 169u),
+               nudge(b.fx.z, size * 0.03, -1.0, 1.0, seed, 170u), nudge(b.fx.w, size * 0.04, -2.0, 2.0, seed, 171u));
+  b.gate = vec4f(nudge(b.gate.x, size * 0.04, -1.0, 1.0, seed, 172u), nudge(b.gate.y, size * 0.04, -1.0, 1.0, seed, 173u),
+                 nudge(b.gate.z, size * 0.04, -1.0, 1.0, seed, 174u), nudge(b.gate.w, size * 0.04, -1.0, 1.0, seed, 175u));
+  b.gate2 = vec4f(nudge(b.gate2.x, size * 0.04, -1.0, 1.0, seed, 176u), nudge(b.gate2.y, size * 0.04, 0.0, 2.0, seed, 177u),
+                  b.gate2.z, b.gate2.w);
   return b;
 }
 
@@ -752,7 +824,7 @@ fn sense_field(seg: ptr<function, array<f32, 6>>, mb: Membrane, rel: vec2f, q0: 
 // in its own band: every lattice involved (the cell's and the medium's) is `bBand` times longer, so A and B
 // make no slow beat with each other; it reaches further (power law from a larger r0) and has its own sign rule.
 // Each fate carries a charge per field: how strongly it emits into that field and listens to it.
-// Written once per frame by src/cells.js (writeFields; keep in step); 416 bytes since step C10 (256 until C6c, 288 until C6d).
+// Written once per frame by src/cells.js (writeFields; keep in step); 432 bytes since step C13, 416 since step C10 (256 until C6c, 288 until C6d).
 struct Fields {
   qA: vec4f,        // field A charge per fate: stem, epithelium, muscle, neuron (1 = as in step 4)
   qB: vec4f,        // field B charge per fate (signed: like charges repel, when bSign = 1)
@@ -852,6 +924,9 @@ struct Fields {
   wl1: vec4f,       // x the census's pattern threshold (|a1| or |a2| below it: uniform); y the pattern strength; z the maturity
                     // factor's extra at full maturity; w step C11: the glue's turning, turning strength / rotational drag (the
                     // body turns at w x torque / (r^2 / 2) rad / s; 0 = off)
+  // ---- step C13, fields as genes and guides (src/guides.js) ----
+  fg0: vec4f,       // x bits FG_*; y ref: the field felt on a side that gives s = tanh(1); z the turn gate's rate (rad / s at |g| = 1,
+                    // a full gradient and a right angle); w spare
 };
 // step C9: Fields.dv0.x bits
 const DV_ON: u32 = 1u;
@@ -942,10 +1017,15 @@ fn cell_field_b(b: CellBeat, x: vec2f, cutR: f32) -> vec3f {
 // ---------- the cell as an emitter ----------
 // The lattice a cell emits with: its key (angle, log period factor) plus its fate's period, with the
 // difference from the medium's lattice scaled by the lever (Sim.lever). Returns (angle, log period factor).
-fn cell_lattice(c: Cell, lever: f32) -> vec2f {
-  let base = P3 * round(c.la / P3);            // the nearest of the medium's hex directions (0 or 60 degrees)
-  return vec2f(base + lever * (c.la - base), lever * (c.aux + log(kind_period(c.kind))));
+fn cell_lattice(c: Cell, lever: f32) -> vec2f { return cell_lattice_off(c, lever, 0.0); }
+// step C13: ... with the field's own angle offset (its lattice turned from the key by da)
+fn cell_lattice_off(c: Cell, lever: f32, da: f32) -> vec2f {
+  let la = c.la + da;
+  let base = P3 * round(la / P3);              // the nearest of the medium's hex directions (0 or 60 degrees)
+  return vec2f(base + lever * (la - base), lever * (c.aux + log(kind_period(c.kind))));
 }
+// step C13: field A's lattice as the cell's genes give it (lever factor, angle offset; Cell.fg), as it emits and senses with
+fn cell_lattice_a(c: Cell, lever: f32) -> vec2f { return cell_lattice_off(c, lever * (1.0 + fg_a(c).x), fg_ang(c).x); }
 
 // A cell's beat, computed once per tick (cell_grid.wgsl, scatter) for everyone who senses or draws it (128 bytes;
 // keep in step with CELL_BEAT_BYTES in src/cells.js). The phases are taken at the cell's own centre, so the
@@ -969,12 +1049,16 @@ struct CellBeat {
 // strained by the cell's stretch (k = F^-1 . k0) and scaled by its period factor p; emitter_k does
 // k = adj(F) . k0 / kind_period, so p goes in as F / p (with kind = stem, period 1).
 fn cell_beat(c: Cell, S: Sim, M: Medium, FL: Fields) -> CellBeat {
-  let lat = cell_lattice(c, S.lever);
+  // step C13: the cell's field genes (Cell.fg: deltas from today's values, all 0 while the field genes are off)
+  let gA = fg_a(c);
+  let gB = fg_b(c);
+  let gAng = fg_ang(c);
+  let lat = cell_lattice_a(c, S.lever);
   let F = cell_F(c) * exp(-lat.y);
   var e: Emitter;
   e.pos = c.pos;
   e.la = lat.x;
-  e.amp = S.emit * charge_a(FL, c.kind) * min(1.0, c.r / S.R) * length(c.z);
+  e.amp = S.emit * charge_a(FL, c.kind) * min(1.0, c.r / S.R) * length(c.z) * max(1.0 + gA.y, 0.0);
   e.r0sq = (S.r0 * S.R) * (S.r0 * S.R);
   e.fa = F.x; e.fb = F.y; e.fd = F.z;
   e.kind = KIND_STEM;
@@ -992,11 +1076,14 @@ fn cell_beat(c: Cell, S: Sim, M: Medium, FL: Fields) -> CellBeat {
   if (S.anchor == 2u) { pa = vec3f(dot(b.q0, o), dot(b.q1, o), dot(b.q2, o)); }
   // step 8: the phasor's angle shifts the beat: each wave by sgn_m x angle, so A and the partner A' turn into each other
   if (abs(c.z.y) > 1e-6 || c.z.x < 0.0) { pa += p_sgn(FL.pSgn1) * atan2(c.z.y, c.z.x); }
+  // step C13: the share of its beat the cell turns into the partner A' (its genes): the same turn, by share x 90 degrees
+  let shP = fg_share(c);
+  if (shP != 0.0) { pa += p_sgn(FL.pSgn1) * (1.5707963 * shP); }
   cb.ph = pa - TAU * floor(pa / TAU);
   cb.idx = 0u;
   // field B: the same key and stretch, in B's band (the medium's lattice and the cell's both bBand times longer),
   // with B's own lever; pinned to the cell
-  let latB = cell_lattice(c, FL.bLever);
+  let latB = cell_lattice_off(c, FL.bLever * (1.0 + gB.x), gAng.y);
   var cs = c;
   cs.e1 *= FL.bStrain;
   cs.e2 *= FL.bStrain;
@@ -1010,7 +1097,7 @@ fn cell_beat(c: Cell, S: Sim, M: Medium, FL: Fields) -> CellBeat {
   let rB = FL.bR0 * S.R;
   let qb = cell_charge_b(FL, c);
   cb.b01 = vec4f(bb.q0, bb.q1);
-  cb.b2a = vec4f(bb.q2, FL.bEmit * qb * min(1.0, c.r / S.R), rB * rB);
+  cb.b2a = vec4f(bb.q2, FL.bEmit * qb * min(1.0, c.r / S.R) * max(1.0 + gB.y, 0.0), rB * rB);
   // rule 1, leak by deformation: a stretched cell's A lattice is squeezed the other way; where one of its three
   // wavevectors comes close to one of B's medium wavevectors (B's band: bBand x the medium's period), that pair
   // makes a slow beat, and that share of the cell's A emission lands in field B. Its level is a Gaussian in the

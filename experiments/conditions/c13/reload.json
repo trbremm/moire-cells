@@ -1,0 +1,13 @@
+{
+ "name": "c13-reload",
+ "description": "a stored configuration from before C13 (c11-pol-lb-t1-100) loads with the field genes, the gates and the push gene off and runs on",
+ "query": {"cells": 100, "seed": 3},
+ "duration": 40,
+ "sample_every": 10,
+ "tissue": true,
+ "evals": [
+  {"t": 0, "js": "const S = await (await fetch('/experiments/tissue/configs/c11-pol-lb-t1-100/snapshot.json')).json(); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, guides: moire.guides.params, g: await moire.genome.get() }"},
+  {"t": 40, "js": "const T = await import('/experiments/tissue/tissue-lab.js'); return await T.measure({ every: 1 })"}
+ ],
+ "shots": [{"t": 0}, {"t": 40}]
+}

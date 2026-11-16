@@ -52,10 +52,11 @@ export const RULE_GROUPS = [
   ['oil', 'Oils and water (step C12)'],
   ['lipids', 'Lipid membranes (step C12b)'],
   ['excited', 'Excited waste (step C12c)'],
+  ['guides', 'Fields as guides (step C13)'],
   ['state', 'Save and load the state (experiments)'],
 ];
 
-export const VIEWS = ['fate', 'lineage', 'strategy', 'charge', 'walls'];   // key V: what the cells' bodies are coloured by (cells.look.view;
+export const VIEWS = ['fate', 'lineage', 'strategy', 'charge', 'walls', 'guides'];   // key V: what the cells' bodies are coloured by (cells.look.view;
                                                                          // step C10: + the wall pattern)
 
 export const SQUEEZE_SOFT = 0.25, SQUEEZE_HARD = 1.2;   // key \ : cells.params.squeeze, normal or pressed together
@@ -642,6 +643,34 @@ export function makeActions(app) {
     tknob('wallRotDrag', 'rotational drag', 'rotDrag', 0.01, 100, 1.5, 2, 'how hard it is to turn a cell, x a disc’s r² / 2 (larger: slower turning)'),
   );
 
+  // ---------- step C13: fields as genes and guides (panel only) ----------
+  const GD = () => app.cells.guides.params;
+  const gdNote = () => (GD().null ? ' (the neutral control is on: no gate acts)' : '');
+  const gtoggle = (id, key, label, on, off, help) => ({ id, keys: [], label, group: 'guides', type: 'toggle', get: () => GD()[key],
+    run: () => `${label}: ${flip(GD(), key) ? on : off}${key === 'null' || key === 'genes' ? '' : gdNote()}`, help });
+  const gknob = (id, label, key, lo, hi, step, digits, help) => ({ id, keys: [], label, group: 'guides', type: 'knob',
+    get: () => GD()[key].toFixed(digits),
+    run: (k) => {
+      const p = GD(), up = k !== '-';
+      p[key] = Math.max(lo, Math.min(hi, +(p[key] * (up ? step : 1 / step)).toPrecision(3)));
+      return `${label} ${p[key].toFixed(digits)}`;
+    }, help });
+  A.push(
+    gtoggle('fgGenes', 'genes', 'field genes', 'each cell\u2019s fields from its own genes (lever: its beat period, emission, sensing gain and sign, tuning, angle)',
+      'today\u2019s values for every cell (the genes still drift)', 'per field (A, B, the partner A\u2032): lever, emission, sensing gain and sign, tuning, lattice angle, each a gene that mutates'),
+    gtoggle('gateGlue', 'glue', 'glue gate', 'each side stickier (or less) where it feels the field high, as its gene says', 'off',
+      'each side\u2019s adhesion x (1 + gene x what that side feels of field A)'),
+    gtoggle('gatePump', 'pump', 'pump gate', 'pumps faster (or slower) where the field is high, as the gene says', 'off', 'the pumps\u2019 rates x (1 + gene x the field felt)'),
+    gtoggle('gateEngine', 'engine', 'engine gate', 'engines faster (or slower) where the field is high, as the gene says', 'off', 'the engines\u2019 rates x (1 + gene x the field felt)'),
+    gtoggle('gateDiv', 'div', 'division gate', 'a daughter goes along (or across) the felt gradient, as the gene says', 'off', 'the division axis pulled toward the felt gradient (gene +) or across it (gene \u2212)'),
+    gtoggle('gateTurn', 'turn', 'turn gate', 'the front turns toward (or away from) the felt gradient, as the gene says', 'off', 'the front (the wall pattern\u2019s direction) turns up the felt gradient (gene +) or down it (gene \u2212)'),
+    gtoggle('pushGene', 'push', 'push gene', 'field A pushes each cell as hard as its push gene says', 'field A pushes every cell as before', 'field A\u2019s direct push x the push gene (0..2), so evolution can choose between pushing and guiding'),
+    gtoggle('gateNull', 'null', 'neutral control', 'NEUTRAL CONTROL: the gate genes and the push gene still drift but do nothing (to tell selection from noise)',
+      'the gates act', 'the gates and the push gene have no effect while their genes keep drifting (compare with it on)'),
+    gknob('gateRef', 'felt reference', 'ref', 0.05, 100, 1.5, 2, 'the field felt on a side that counts as tanh(1) of full for the gates (smaller: the gates react to weaker fields)'),
+    gknob('gateTurnRate', 'turn gate rate', 'turnRate', 0.01, 20, 1.5, 2, 'how fast the turn gate turns a cell (rad/s at gene 1, a full gradient, a right angle)'),
+  );
+
   // experiments (src/lab.js, src/snapshot.js): the whole state to a file and back
   const lab = () => window.moire;
   A.push(
@@ -687,6 +716,7 @@ export function makeActions(app) {
       ? 'colour by strategy: gold harvesters (light), green burners, half and half both, grey the others'
       : v === 'charge' ? 'colour by charge: rose cells hold more givers (+), blue more takers (−), grey neutral'
         : v === 'walls' ? 'colour by wall pattern (step C10): coral polar, mint two-ended, magenta sticky sides, grey uniform; bright tube = sticky side'
+          : v === 'guides' ? 'colour by strongest guide (step C13): ivory glue, teal pumps, green engines, lilac division, yellow turning, grey unguided; each side’s tube bright where it feels the field high, dark where low'
           : 'colour by fate';
   }
 

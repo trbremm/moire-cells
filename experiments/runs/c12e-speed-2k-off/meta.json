@@ -1,0 +1,36 @@
+{
+  "name": "c12e-speed-2k-off",
+  "description": "Speed: the default scene, 2000 cells, seed 3, MAX, 150 s, C12e off",
+  "condition": {
+    "name": "c12e-speed-2k-off",
+    "description": "Speed: the default scene, 2000 cells, seed 3, MAX, 150 s, C12e off",
+    "query": {
+      "seed": 3,
+      "saturation": 0,
+      "osmosis": 0
+    },
+    "duration": 150,
+    "sample_every": 10
+  },
+  "url": "http://localhost:61750/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&saturation=0&osmosis=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "2dbb2bd71b83961364848ed80aa283d638ee874d",
+  "dirty": false,
+  "started": "2026-11-16T11:59:22",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 150.0,
+  "run_wall_s": 20.32,
+  "speed_reached": 7.38,
+  "samples": 16,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T12:00:13",
+  "wall_s": 50.99
+}

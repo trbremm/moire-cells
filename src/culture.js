@@ -22,7 +22,7 @@ export const PRESETS = {
   vent: {
     label: 'Deep vents',
     desc: 'Deep water in total darkness. Three hot vents pour out free givers (metal-like G, hydrogen-like g) and heat; the sea brings a faint, steady supply of the free taker T everywhere. Where giver meets taker cold, a cell can eat the gradient (G + T, g + T); close to a vent its heat burns it away first. A mineral seep beside each vent brings linkers for membranes. Three colonies of random genomes start on the vents, their batteries just short of dividing. (With &light=full: a faint glow from above, a third of the usual light.)',
-    query: { light: 'off', day: 0, clouds: 0, spread: 'colonies', colonies: 3, cells: 600, sea: 1, diversity: 'random', starter: 0.55 },
+    query: { light: 'off', day: 0, clouds: 0, spread: 'colonies', colonies: 3, cells: 600, hotvent: 1, sea: 1, diversity: 'random', starter: 0.55 },
     centres: (W, H) => ring3(W, H, 0.27, -90),
     scene({ matter, light, W, H }) {
       light.params.power *= 0.3;   // the faint glow, if the light is switched on (&light=full)

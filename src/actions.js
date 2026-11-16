@@ -25,7 +25,7 @@ export const TOOLS = [
   { id: 'ripple', name: 'ripple', label: 'drop a ripple', key: '1' },
   ELECTRONS ? { id: 'light', name: 'mineral spring', label: 'drop a mineral spring (water-like gt and linkers)', spring: 'light', key: '2' }
     : { id: 'light', name: 'light spring', label: 'drop a light spring', spring: 'light', key: '2' },
-  ELECTRONS ? { id: 'heavy', name: 'vent', label: 'drop a vent (hot: free givers G and g, a little fuel gT and GT, trace; step C12f)', spring: 'heavy', key: '3' }
+  ELECTRONS ? { id: 'heavy', name: 'vent', label: 'drop a vent (fuel-like gT and GT, free heavy givers G, trace; with hot vents on: free givers G and g and heat)', spring: 'heavy', key: '3' }
     : { id: 'heavy', name: 'heavy spring', label: 'drop a heavy spring', spring: 'heavy', key: '3' },
   // step C12: oil, soap or both (the rules panel, Oils and water: "oil tool drops"); no key is free
   { id: 'oil', name: 'oil spring', label: 'drop an oil spring (oil, soap or both: the rules panel, Oils and water)', spring: 'oil', oilSpring: true },

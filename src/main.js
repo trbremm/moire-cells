@@ -87,7 +87,8 @@
 //               swelling: the stretch genes still drift, the NEUTRAL control), ?stretch=0 stretch opens no channels, ?tear=0 overstretch
 //               does not burst, ?tolcost=0 the stretch tolerance is free; ?satscale=x, ?kosm=x, ?kstretch=x, ?wtol=x knobs;
 //               ?photolysis=0 light cannot free atoms in the open dish (any free t is made by life) (rules panel, Waste must leave)
-//   ?hotvent=0    step C12f: the vent as in step C12d (fuel and metal-like givers, no heat) instead of a HOT vent of free givers;
+//   ?hotvent=1    step C12f: a HOT vent of free givers instead of the C12d vent (fuel and metal-like givers, no heat; the default
+//               except in the Deep vents preset);
 //               ?ventheat=x the heat a hot vent puts in per atom it drips; ?sea=1 the SEA's faint supply of the free heavy taker T
 //               everywhere (on in the Deep vents preset), ?searate=x its rate (atoms per R² per s at an empty pixel), ?sealevel=x its
 //               level (atoms per R²) (rules panel, Vents in the dark); ?starter=x the founders' starter charge (a share of the

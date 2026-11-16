@@ -35,7 +35,7 @@
 
 const HEAT_SCALE: f32 = 65536.0;   // counts per energy unit
 const HEAT_V0: f32 = 10.0;         // CSS px / s: the speed whose motion energy is 0.5 units
-const LEDGER_WORDS: u32 = 27776u;   // (25600 until step C12c; 19200 until step C6b, 19712 until step C6c, 20224 until step C7, 21760 until C7b,
+const LEDGER_WORDS: u32 = 28288u;   // (27776 until step C12e; 25600 until step C12c; 19200 until step C6b, 19712 until step C6c, 20224 until step C7, 21760 until C7b,
                                     // 22016 until C8, 22272 until C9, 22528 until C12)
 const LG_WORK: u32 = 0u;     // 256 slots: work done on the cells by the forces (fields, contact, crawling, stirring)
 const LG_BASE: u32 = 256u;   // 64: the base warmth put into the dish
@@ -120,6 +120,9 @@ const LG_EXC: u32 = 25600u;
 const LG_EXC_K: u32 = 26624u;
 const LG_EXC_N: u32 = 26880u;
 const LG_EXC_E: u32 = 27008u;
+// step C12e, waste must leave (src/waste.js, cell_eat.wgsl), words 27776 .. 28287: 16 snapshot numbers x 16 slots (i32; the ledger
+// pass: WS_*), then 16 counters x 16 slots (i32) since the last read-back (the eat pass: WC_*)
+const LG_WS: u32 = 27776u;
 const XN_MADE_OPEN: u32 = 0u;    // excited atoms made by light in the open (the uphill swaps)
 const XN_MADE_CELL: u32 = 1u;    // ... made by the cells' harvesting uphill swaps (a pigment's photon)
 const XN_FADE_OPEN: u32 = 2u;    // ... faded to ground by themselves in the open

@@ -159,6 +159,7 @@ export function settingObjects(M) {
     ...(M.excited ? { 'excited.params': M.excited.params, 'excited.look': M.excited.look } : {}),   // step C12c
     ...(M.electrons ? { 'electrons.params': M.electrons.params, 'electrons.look': M.electrons.look } : {}),   // step C12d
     ...(M.guides ? { 'guides.params': M.guides.params, 'guides.look': M.guides.look } : {}),   // step C13
+    ...(M.waste ? { 'waste.params': M.waste.params } : {}),   // step C12e
   };
 }
 const SCALARS = [['neon.on', (M) => M.neon, 'on'], ['background.heatOn', (M) => M.background, 'heatOn'], ['background.ambient', (M) => M.background, 'ambient']];
@@ -357,7 +358,9 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     const oldC10 = S.layout.cellWords === 64 && S.layout.bioWords === 48;
     const oldC12 = S.layout.cellWords === 72 && S.layout.bioWords === 52;
     const oldC13 = S.layout.cellWords === 78 && S.layout.bioWords === 56;
-    const widen = oldC10 || oldC12 || oldC13;
+    // step C12e: one from before osmosis (cells of 84 words) loads with the swelling words 0 and with saturation and osmosis OFF
+    const oldC12e = S.layout.cellWords === 84 && S.layout.bioWords === 76;
+    const widen = oldC10 || oldC12 || oldC13 || oldC12e;
     if (!widen && (S.layout.cellWords !== CELL_FLOATS || S.layout.bioWords !== BIO_FLOATS)) {
       throw new Error(`snapshot layout (cell ${S.layout.cellWords}, bio ${S.layout.bioWords} words) does not match this page (${CELL_FLOATS}, ${BIO_FLOATS})`);
     }
@@ -421,9 +424,13 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       for (let k = 0; k < m; k++) {
         r2.set(rec.subarray(k * cw, (k + 1) * cw), k * CELL_FLOATS);
         b2.set(bio.subarray(k * bw, (k + 1) * bw), k * BIO_FLOATS);
-        fieldDefaults(new Float32Array(b2.buffer), k * BIO_FLOATS);   // (step C13: the field genes at today's values)
+        if (bw < 76) fieldDefaults(new Float32Array(b2.buffer), k * BIO_FLOATS);   // (step C13: the field genes at today's values)
       }
       rec = r2; bio = b2;
+    }
+    if (opts.settings !== false && M.waste && !(S.settings && S.settings['waste.params'])) {
+      Object.assign(M.waste.params, { saturation: false, osmosis: false });   // step C12e
+      notes.push('saved before step C12e: saturation and osmosis off (as it ran)');
     }
     if (S.layout.stockWords < SW && S.layout.stockWords === 32) {   // (step C12b: stocks of 32 words: the lipid words empty)
       const s2 = new Uint32Array(m * SW), ow = S.layout.stockWords;

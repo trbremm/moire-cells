@@ -95,6 +95,7 @@ function gather(M, ctl) {
   if (M.lipids) { flatten({ ...(M.lipids.census || {}), tot: undefined }, 'lipids', out); if (M.lipids.last) flatten(M.lipids.last, 'lipstats', out); }   // step C12b
   if (M.excited && M.excited.census) flatten({ ...M.excited.census, tot: undefined }, 'excited', out);   // step C12c
   if (M.electrons && M.electrons.census) flatten({ ...M.electrons.census, tot: undefined }, 'electrons', out);   // step C12d
+  if (M.waste && M.waste.census) flatten(M.waste.census, 'waste', out);   // step C12e
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;
   if (C.stats) flatten({ fate: C.stats.fate, births: C.stats.births, deaths: C.stats.deaths, heatDeaths: C.stats.heatDeaths,

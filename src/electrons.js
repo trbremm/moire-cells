@@ -41,6 +41,8 @@ export class Electrons {
     this.params = {
       fluor: true,           // fluorescence (?fluor=0)
       photo: true,           // excited states react: photochemistry in the open (?photo=0)
+      photolysis: true,      // step C12e: light may free atoms in the open (splits, uphill swaps, heads off); off (?photolysis=0): any free
+                             // t in the dish is made by life (the absorbed photon glows or warms instead)
       kAbs: 1,               // optical depth of a substance for a band its gap matches, per unit per R^2
       yRx: 0.5,              // share of the excitations that react, where a reaction is open to them
       yFl: 0.4,              // share of the rest that fluoresces (the others: heat)
@@ -62,9 +64,12 @@ export class Electrons {
   /** Whether reaction r runs under the switches (photochemistry, fluorescence). */
   allows(r) {
     if (r.fam === 'glow') return !!this.params.fluor;
-    if (r.photo) return !!this.params.photo;
+    if (r.photo) return !!this.params.photo && (this.params.photolysis || !this.freesAtom(r));
     return true;
   }
+
+  /** Step C12e: whether a reaction leaves a free atom among its products (photolysis). */
+  freesAtom(r) { return r.outs.some((c) => SUBSTANCES[c].kind === 'atom'); }
 
   /**
    * The excited states' shares, as each light reaction's optical depth per unit (r.kEff): an absorber's photons in a band split
@@ -140,7 +145,7 @@ export class Electrons {
     const C = this.census, p = this.params;
     if (!C) return 'ELECTRONS  …';
     const r = C.rate;
-    const sw = `${p.photo ? '' : ' (no photochemistry)'}${p.fluor ? '' : ' (no fluorescence)'}`;
+    const sw = `${p.photo ? '' : ' (no photochemistry)'}${p.photolysis ? '' : ' (no photolysis)'}${p.fluor ? '' : ' (no fluorescence)'}`;
     if (compact) return `ELECTRONS t ${fmt(C.freeT)} · rust ${fmt(C.rust)} · glow ${fmt(r.eGlow)}/s · breathe +${fmt(r.eBreath)}/s ferment +${fmt(r.eFerment)}/s`;
     return `ELECTRONS  free t (oxygen) ${fmt(C.freeT)} · G ${fmt(C.freeG)} · fuel ${fmt(C.fuel)} · minerals ${fmt(C.minerals)} (rust ${fmt(C.rust)})` +
       ` · batteries from breathing +${fmt(r.eBreath)}/s, fermenting +${fmt(r.eFerment)}/s` +

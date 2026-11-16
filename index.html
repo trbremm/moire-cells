@@ -225,6 +225,35 @@ body.recording #overlay { margin-top: 30px; }
 }
 @media (max-height: 499px) { .zoombox { top: 50%; bottom: auto; transform: translateY(-50%); right: max(10px, env(safe-area-inset-right, 0px)); } }
 
+/* app: the zoos (src/zoo.js), in the panels' style */
+.pbody .note.zfirst { margin-top: 8px; }
+.ptable { display: grid; grid-template-columns: 3.4em repeat(3, 1fr); gap: 3px; margin: 4px 0 2px; }
+.ptable .ph { font-size: 10px; color: var(--dim); letter-spacing: 0.06em; align-self: end; text-align: center; }
+.ptable .prow { align-self: center; text-align: left; }
+.ui .pcell {
+  display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 2px 3px;
+  background: rgba(217, 221, 230, 0.03); border: 1px solid var(--line); border-radius: 2px;
+}
+.ui .pcell:hover { border-color: var(--line2); }
+.pcell b { font-size: 15px; font-weight: 600; line-height: 1.1; }
+.pcell small { font-size: 9.5px; color: var(--dim); }
+.ui .pcell.ptrace { grid-column: span 3; flex-direction: row; justify-content: center; gap: 10px; }
+.zrow { display: flex; align-items: center; gap: 9px; padding: 6px 0; border-top: 1px solid rgba(217, 221, 230, 0.07); }
+.pbody h3 + .zrow { border-top: 0; }
+.zpic { flex: none; width: 54px; display: flex; justify-content: center; }
+.zmain { flex: 1; min-width: 0; }
+.zhead { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.zhead b { font-weight: 600; }
+.zwhat { color: var(--ink); font-size: 11px; line-height: 1.35; }
+.znums, .zamt { color: var(--dim); font-size: 11px; line-height: 1.4; }
+.zamt { color: var(--epi); opacity: 0.85; font-variant-numeric: tabular-nums; }
+.zcount { color: var(--epi); font-variant-numeric: tabular-nums; font-size: 11px; }
+.ui .act.zpip { flex: none; }
+canvas.portrait { position: static; inset: auto; display: block; flex: none; width: 56px; height: 56px; background: #020306; border: 1px solid rgba(217, 221, 230, 0.08); border-radius: 2px; }
+.zfounders { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.zstatus { margin-top: 4px; }
+svg.mol { display: block; overflow: visible; }
+
 /* plain message: no WebGPU, device lost, shader error */
 #msg {
   position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center;

@@ -1,0 +1,12 @@
+{
+ "name": "app-tools-quick",
+ "description": "app: add cells (console place) and pipette drops; atoms and charge rounding must stay 0",
+ "query": {"seed": 5, "light": "full"},
+ "duration": 40, "sample_every": 5,
+ "evals": [
+  {"t": 5, "js": "const n = await moire.app.place([[100,100],[118,100],[136,100],[154,100]], moire.genome.founders[0]); return {n, alive: moire.cells.alive}"},
+  {"t": 10, "js": "const r = []; for (const s of ['gT','t','ll','glL','trace']) r.push(moire.matter.addSpring(300 + r.length * 40, 300, 'drop:' + s, 1.5, {drop: true, rate: 40})); return r"},
+  {"t": 20, "js": "return await moire.app.place(Array.from({length: 30}, (_, k) => [900 + 14 * (k % 6), 650 + 14 * Math.floor(k / 6)]), moire.genome.founders[3])"}
+ ],
+ "shots": [{"t": 40}]
+}

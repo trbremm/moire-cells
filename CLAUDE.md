@@ -473,6 +473,20 @@ C12c. EXCITED WASTE, THE OXYGEN FIX (user 2026-11-15 chose "charged waste"; NEXT
     excited: most free light atoms come from springs and burners' exhaust (ground), light makes only 1-7 excited/s.
     Breathing still did not rise. One seed only: under the whole dish, light-driven uphill swap carriers rose to 52 %
     (2.5 % off), maybe eating their own excited waste. Haze drawn as sparse hot red-orange sparks.
+C12d. THE HUNGRY ATOM, OXYGEN DONE RIGHT (user 2026-11-16: "the main thing about oxygen is how it binds to things so
+    easily; we might need to craft something in our chemistry that approximates that"; NEXT after C13). Oxygen's value
+    is not stored energy but HUNGER: it binds almost anything, with almost no spark, into the strongest bonds.
+    - A new, smallest row (row 0) with one TAKER, its properties DERIVED from its place like real electronegativity
+      (small takers hungriest): binds givers, linkers and the giver inside a fuel; its bonds release the most energy
+      of the table; its spark is the lowest (reacts cold and dark); spreads fast. Derive it in the table's formulas;
+      no per-atom hand-tuning.
+    - It starts LOCKED in a very stable pair with a giver (water-like). Only pigment-caught light splits that pair
+      (harvesters: giver for fuel, free hungry atom as waste = photosynthesis-like). Uphill difference paid by light.
+    - Breathing emerges: an engine letting the hungry atom take a fuel's giver banks the big release, so breathing
+      beats burning by a wide margin. Harm emerges: loose, it grabs membrane chains, crust, stock (heat on the spot).
+      Sinks emerge: free givers / heavy atoms in the dish catch it first (rust-like crust), then the haze builds.
+    - Replaces C12c's excited waste (kept as a switch for comparison). Never write rules naming breathers, poison or
+      oxygen. Then rerun the oxygen conditions (no light spring needed: the haze must come from harvesters).
 C13. FIELDS AS GENES, FIELDS AS GUIDES (user 2026-11-16 chose it next, over more oxygen, the purist page or pruning;
     their words earlier: "I envisioned the field just to guide the underlying interactions. Maybe we let them mutate
     their different fields more"). Back to the moire as the heart of the look:

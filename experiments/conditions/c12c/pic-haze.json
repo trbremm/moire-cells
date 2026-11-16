@@ -1,0 +1,16 @@
+{
+ "name": "c12c-pic-haze",
+ "description": "Step C12c, the look: a light and a heavy spring in an empty corner of the whole lit dish (no day cycle, 300 cells far away), the uphill swaps x15; the excited haze at its default lifetime and drawing, close up at 120 s, and the same 1 s after the haze is switched off (exlook), for comparison",
+ "query": {"seed": 3, "light": "full", "springs": 0, "day": 0, "n": 300},
+ "size": "900x600",
+ "duration": 125,
+ "sample_every": 30,
+ "evals": [
+  {"t": 0, "js": "moire.matter.chem.kUpSwap = 0.3; moire.matter.addSpring(110, 110, 'light', 1e9); moire.matter.addSpring(150, 130, 'heavy', 1e9); return 1"},
+  {"t": 121, "js": "moire.excited.look.on = false; return 'look off'"}
+ ],
+ "shots": [
+  {"t": 120, "crop": [30, 40, 220, 160], "scale": 3, "name": "haze-on"},
+  {"t": 122, "crop": [30, 40, 220, 160], "scale": 3, "name": "haze-off"}
+ ]
+}

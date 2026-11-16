@@ -1,0 +1,54 @@
+{
+  "name": "c12b-graze-pic-off",
+  "description": "the C12b supply fix: close-ups of the colony over the default springs, grazing off, seed 7",
+  "condition": {
+    "name": "c12b-graze-pic-off",
+    "description": "the C12b supply fix: close-ups of the colony over the default springs, grazing off, seed 7",
+    "query": {
+      "graze": 0,
+      "seed": 7
+    },
+    "duration": 600,
+    "sample_every": 60,
+    "shots": [
+      {
+        "t": 600,
+        "crop": [
+          760,
+          270,
+          240,
+          260
+        ],
+        "scale": 3,
+        "name": "graze-off-close"
+      },
+      {
+        "t": 600
+      }
+    ]
+  },
+  "url": "http://localhost:65225/index.html?speed=max&until=0&overlay=ghost&ui=0&graze=0&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "9bd8cee0b6bc6fa65b53a00ebd62a854a108abad",
+  "dirty": true,
+  "started": "2026-11-16T00:59:38",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 600.0,
+  "run_wall_s": 284.41,
+  "speed_reached": 2.11,
+  "samples": 11,
+  "shots": [
+    "shots/graze-off-close.png",
+    "shots/t600.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T01:04:56",
+  "wall_s": 317.78
+}

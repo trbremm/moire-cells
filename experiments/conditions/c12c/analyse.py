@@ -22,7 +22,7 @@ def at(rows, t):
 def main():
     for path in sorted(glob.glob('experiments/runs/c12c-*/samples.csv')):
         name = os.path.basename(os.path.dirname(path))
-        if any(s in name for s in ('check', 'old', 'reload')):
+        if any(s in name for s in ('check', 'old', 'reload', 'pic')):
             continue
         r = list(csv.DictReader(open(path, encoding='utf-8')))
         if len(r) < 3:

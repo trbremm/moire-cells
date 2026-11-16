@@ -1,0 +1,103 @@
+{
+  "name": "c12b-graze-on_s3",
+  "description": "the C12b supply fix: the default scene, 15 min, cells graze crust on",
+  "condition": {
+    "name": "c12b-graze-on_s3",
+    "description": "the C12b supply fix: the default scene, 15 min, cells graze crust on",
+    "query": {
+      "seed": 3
+    },
+    "duration": 900,
+    "sample_every": 20,
+    "evals": [
+      {
+        "t": 300,
+        "js": "const E = moire.eat, C = moire.cells, d = C.device, n = C.count; const read = async (src, bytes) => { const buf = d.createBuffer({ size: bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }); const e = d.createCommandEncoder(); e.copyBufferToBuffer(src, 0, buf, 0, bytes); d.queue.submit([e.finish()]); await buf.mapAsync(GPUMapMode.READ); const out = buf.getMappedRange().slice(0); buf.destroy(); return out; }; const SW = E.stockBuf.size / 4 / n, CF = C.cellBuf.size / n / 4; const st = new Int32Array(await read(E.stockBuf, n * SW * 4)), cu = new Uint32Array(await read(C.cellBuf, C.cellBuf.size)); const r = { n: 0, withL: 0, withl: 0, withHeads: 0, withAll: 0, Lcells: [] }; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; const o = i * SW; r.n++; const gt = st[o] + st[o + 1], l = st[o + 2], L = st[o + 5]; let soap = 0, wall = 0; for (let k = 0; k < 6; k++) { soap += st[o + 32 + k] + st[o + 38 + k]; wall += st[o + 50 + k] + st[o + 56 + k]; } if (L > 6) { r.withL++; if (r.Lcells.length < 8) r.Lcells.push([L, l, gt, Math.round(st[o + 13] / 655.36) / 100, soap, wall]); } if (l > 6) r.withl++; if (gt > 6) r.withHeads++; if (L > 6 && l > 6 && gt > 6) r.withAll++; } return JSON.stringify(r)"
+      },
+      {
+        "t": 300,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 6) })"
+      },
+      {
+        "t": 600,
+        "js": "const E = moire.eat, C = moire.cells, d = C.device, n = C.count; const read = async (src, bytes) => { const buf = d.createBuffer({ size: bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }); const e = d.createCommandEncoder(); e.copyBufferToBuffer(src, 0, buf, 0, bytes); d.queue.submit([e.finish()]); await buf.mapAsync(GPUMapMode.READ); const out = buf.getMappedRange().slice(0); buf.destroy(); return out; }; const SW = E.stockBuf.size / 4 / n, CF = C.cellBuf.size / n / 4; const st = new Int32Array(await read(E.stockBuf, n * SW * 4)), cu = new Uint32Array(await read(C.cellBuf, C.cellBuf.size)); const r = { n: 0, withL: 0, withl: 0, withHeads: 0, withAll: 0, Lcells: [] }; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; const o = i * SW; r.n++; const gt = st[o] + st[o + 1], l = st[o + 2], L = st[o + 5]; let soap = 0, wall = 0; for (let k = 0; k < 6; k++) { soap += st[o + 32 + k] + st[o + 38 + k]; wall += st[o + 50 + k] + st[o + 56 + k]; } if (L > 6) { r.withL++; if (r.Lcells.length < 8) r.Lcells.push([L, l, gt, Math.round(st[o + 13] / 655.36) / 100, soap, wall]); } if (l > 6) r.withl++; if (gt > 6) r.withHeads++; if (L > 6 && l > 6 && gt > 6) r.withAll++; } return JSON.stringify(r)"
+      },
+      {
+        "t": 900,
+        "js": "const E = moire.eat, C = moire.cells, d = C.device, n = C.count; const read = async (src, bytes) => { const buf = d.createBuffer({ size: bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }); const e = d.createCommandEncoder(); e.copyBufferToBuffer(src, 0, buf, 0, bytes); d.queue.submit([e.finish()]); await buf.mapAsync(GPUMapMode.READ); const out = buf.getMappedRange().slice(0); buf.destroy(); return out; }; const SW = E.stockBuf.size / 4 / n, CF = C.cellBuf.size / n / 4; const st = new Int32Array(await read(E.stockBuf, n * SW * 4)), cu = new Uint32Array(await read(C.cellBuf, C.cellBuf.size)); const r = { n: 0, withL: 0, withl: 0, withHeads: 0, withAll: 0, Lcells: [] }; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; const o = i * SW; r.n++; const gt = st[o] + st[o + 1], l = st[o + 2], L = st[o + 5]; let soap = 0, wall = 0; for (let k = 0; k < 6; k++) { soap += st[o + 32 + k] + st[o + 38 + k]; wall += st[o + 50 + k] + st[o + 56 + k]; } if (L > 6) { r.withL++; if (r.Lcells.length < 8) r.Lcells.push([L, l, gt, Math.round(st[o + 13] / 655.36) / 100, soap, wall]); } if (l > 6) r.withl++; if (gt > 6) r.withHeads++; if (L > 6 && l > 6 && gt > 6) r.withAll++; } return JSON.stringify(r)"
+      },
+      {
+        "t": 900,
+        "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 6) })"
+      }
+    ],
+    "shots": [
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 900
+      },
+      {
+        "t": 900,
+        "panel": true,
+        "name": "panel"
+      }
+    ]
+  },
+  "url": "http://localhost:56792/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-16T00:22:41",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 900.0,
+  "run_wall_s": 126.39,
+  "speed_reached": 7.12,
+  "samples": 46,
+  "shots": [
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t900.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 300.00000000000074,
+      "js": "const E = moire.eat, C = moire.cells, d = C.device, n = C.count; const read = async (src, bytes) => { const buf = d.createBuffer({ size: bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }); const e = d.createCommandEncoder(); e.copyBufferToBuffer(src, 0, buf, 0, bytes); d.queue.submit([e.finish()]); await buf.mapAsync(GPUMapMode.READ); const out = buf.getMappedRange().slice(0); buf.destroy(); return out; }; const SW = E.stockBuf.size / 4 / n, CF = C.cellBuf.size / n / 4; const st = new Int32Array(await read(E.stockBuf, n * SW * 4)), cu = new Uint32Array(await read(C.cellBuf, C.cellBuf.size)); const r = { n: 0, withL: 0, withl: 0, withHeads: 0, withAll: 0, Lcells: [] }; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; const o = i * SW; r.n++; const gt = st[o] + st[o + 1], l = st[o + 2], L = st[o + 5]; let soap = 0, wall = 0; for (let k = 0; k < 6; k++) { soap += st[o + 32 + k] + st[o + 38 + k]; wall += st[o + 50 + k] + st[o + 56 + k]; } if (L > 6) { r.withL++; if (r.Lcells.length < 8) r.Lcells.push([L, l, gt, Math.round(st[o + 13] / 655.36) / 100, soap, wall]); } if (l > 6) r.withl++; if (gt > 6) r.withHeads++; if (L > 6 && l > 6 && gt > 6) r.withAll++; } return JSON.stringify(r)",
+      "result": "{\"n\":1411,\"withL\":94,\"withl\":966,\"withHeads\":1406,\"withAll\":7,\"Lcells\":[[222,0,30,2.38,44,0],[51,0,72,1.4,12,12],[19,0,185,0.33,148,0],[22,0,163,1.39,9,4],[131,1,31,1.9,69,12],[16,0,235,0.73,14,0],[52,9,151,0,104,15],[15,3,336,0,36,0]]}"
+    },
+    {
+      "t": 300.00000000000074,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 6) })",
+      "result": "{\"all\":{\"n\":1411,\"oilGene\":0.4243153485227449,\"wallGene\":0.24656593775305558,\"head\":0.030041747449611432,\"row\":0.6500984859362666,\"thick\":0.03286182536502005,\"soapP\":0.0025229018094436568,\"soapM\":0.0021394747187278526,\"oil\":0.0009900585799078668,\"ll\":0.003179711031626506,\"LL\":0.00022078202515946136,\"stiff\":0.3797871995479038,\"cover\":0.019792202257704512,\"oilShare\":0.03374466725031617,\"bat\":0.4131943576307182},\"lit\":{\"n\":967,\"oilGene\":0.4786958869747941,\"wallGene\":0.2187439639819184,\"head\":0.0019372105576779843,\"row\":0.7214502185417461,\"thick\":0.035868390331106434,\"soapP\":0.0029057026402533608,\"soapM\":0.0023785406702430197,\"oil\":0.0011288032413391935,\"ll\":0.0028895444189503618,\"LL\":0.00026635817929162355,\"stiff\":0.33419983643233214,\"cover\":0.019127278626031613,\"oilShare\":0.03396597522152605,\"bat\":0.5043836749450621},\"dark\":{\"n\":444,\"oilGene\":0.30587845509226835,\"wallGene\":0.3071601914392935,\"head\":0.09125140324803405,\"row\":0.4946995547887471,\"thick\":0.02631374355825084,\"soapP\":0.0016891891891891893,\"soapM\":0.0016188063063063063,\"oil\":0.0006878827069256757,\"ll\":0.0038116730011261263,\"LL\":0.00012152044622747748,\"stiff\":0.4790731908378963,\"cover\":0.02124035800506386,\"oilShare\":0.03326267443914502,\"bat\":0.21459059672312694},\"founders\":[{\"founder\":7,\"n\":939,\"oilGene\":0.574040142202371,\"wallGene\":0.1266681443160589,\"head\":0.0018441100209094464,\"row\":0.805544943283922,\"thick\":0.04142086990440465,\"soapP\":0.002520446452342918,\"soapM\":0.002003825129792332,\"oil\":0.0011369829106762513,\"ll\":0.003014187716320554,\"LL\":0.0002639006755857295,\"stiff\":0.28916313419226375,\"cover\":0.01028071860622131,\"oilShare\":0.02930457237918241,\"bat\":0.42531873725346736},{\"founder\":9,\"n\":277,\"oilGene\":0.09956557650601539,\"wallGene\":0.44652386499225877,\"head\":0.11916509300255174,\"row\":0.16067804832946356,\"thick\":0.017279234777846868,\"soapP\":0.0030618936146209388,\"soapM\":0.0030266386507220217,\"oil\":0.0007315405009025271,\"ll\":0.002454626861462094,\"LL\":0.00014101985559566787,\"stiff\":0.5926334914230431,\"cover\":0.023217951440503985,\"oilShare\":0.041997593261131144,\"bat\":0.30343309808724195},{\"founder\":1,\"n\":84,\"oilGene\":0.2606388995690005,\"wallGene\":0.7607172450848988,\"head\":-0.014730382732869614,\"row\":0.8198027188579241,\"thick\":0.017478377746772907,\"soapP\":0.0024326869419642855,\"soapM\":0.002174014136904762,\"oil\":0.0013427734375,\"ll\":0.004103887648809524,\"LL\":0.0002732049851190476,\"stiff\":0.535543106131341,\"cover\":0.038787737317149074,\"oilShare\":0.09093526299408654,\"bat\":0.5957644326346261},{\"founder\":5,\"n\":46,\"oilGene\":0.1307593552628532,\"wallGene\":0.7689038450303285,\"head\":0.16275750564249314,\"row\":0.5569819441956022,\"thick\":0.010039805950920867,\"soapP\":0.000015922214673913043,\"soapM\":0.000015922214673913043,\"oil\":0.000015922214673913043,\"ll\":0.011076554008152174,\"LL\":0,\"stiff\":0.7030974708724069,\"cover\":0.15186132423984083,\"oilShare\":0.0018186984938903096,\"bat\":0.5430058189060377},{\"founder\":10,\"n\":37,\"oilGene\":0.06816363445407636,\"wallGene\":0.04253566881792771,\"head\":0.20057671659349188,\"row\":0.2637087533602843,\"thick\":0.01132050486331856,\"soapP\":0.003767683699324324,\"soapM\":0.0031144425675675674,\"oil\":0.0003563133445945946,\"ll\":0.00020455025337837838,\"LL\":0.000046188766891891894,\"stiff\":0.3419890478714008,\"cover\":0.004204204204204204,\"oilShare\":0.020031796502384736,\"bat\":0.45287920977618246},{\"founder\":4,\"n\":19,\"oilGene\":0.06503681323834155,\"wallGene\":0.14504109509289265,\"head\":-0.5037219540068978,\"row\":0.18196257909661845,\"thick\":0.01258607458715376,\"soapP\":0,\"soapM\":0,\"oil\":0,\"ll\":0.005833675986842105,\"LL\":0,\"stiff\":0.41871345029239765,\"cover\":0.07416580667354661,\"oilShare\":0,\"bat\":0.25815582275390625}]}"
+    },
+    {
+      "t": 600.000000000034,
+      "js": "const E = moire.eat, C = moire.cells, d = C.device, n = C.count; const read = async (src, bytes) => { const buf = d.createBuffer({ size: bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }); const e = d.createCommandEncoder(); e.copyBufferToBuffer(src, 0, buf, 0, bytes); d.queue.submit([e.finish()]); await buf.mapAsync(GPUMapMode.READ); const out = buf.getMappedRange().slice(0); buf.destroy(); return out; }; const SW = E.stockBuf.size / 4 / n, CF = C.cellBuf.size / n / 4; const st = new Int32Array(await read(E.stockBuf, n * SW * 4)), cu = new Uint32Array(await read(C.cellBuf, C.cellBuf.size)); const r = { n: 0, withL: 0, withl: 0, withHeads: 0, withAll: 0, Lcells: [] }; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; const o = i * SW; r.n++; const gt = st[o] + st[o + 1], l = st[o + 2], L = st[o + 5]; let soap = 0, wall = 0; for (let k = 0; k < 6; k++) { soap += st[o + 32 + k] + st[o + 38 + k]; wall += st[o + 50 + k] + st[o + 56 + k]; } if (L > 6) { r.withL++; if (r.Lcells.length < 8) r.Lcells.push([L, l, gt, Math.round(st[o + 13] / 655.36) / 100, soap, wall]); } if (l > 6) r.withl++; if (gt > 6) r.withHeads++; if (L > 6 && l > 6 && gt > 6) r.withAll++; } return JSON.stringify(r)",
+      "result": "{\"n\":1819,\"withL\":310,\"withl\":1228,\"withHeads\":1772,\"withAll\":12,\"Lcells\":[[39,0,1,1.83,2,68],[120,0,56,4,0,0],[25,0,67,1.68,7,0],[54,0,450,0.32,9,2],[34,3,31,1.94,39,0],[174,1,24,1.86,86,61],[8,0,241,0,4,0],[39,0,115,2.39,144,0]]}"
+    },
+    {
+      "t": 900.0000000001185,
+      "js": "const E = moire.eat, C = moire.cells, d = C.device, n = C.count; const read = async (src, bytes) => { const buf = d.createBuffer({ size: bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }); const e = d.createCommandEncoder(); e.copyBufferToBuffer(src, 0, buf, 0, bytes); d.queue.submit([e.finish()]); await buf.mapAsync(GPUMapMode.READ); const out = buf.getMappedRange().slice(0); buf.destroy(); return out; }; const SW = E.stockBuf.size / 4 / n, CF = C.cellBuf.size / n / 4; const st = new Int32Array(await read(E.stockBuf, n * SW * 4)), cu = new Uint32Array(await read(C.cellBuf, C.cellBuf.size)); const r = { n: 0, withL: 0, withl: 0, withHeads: 0, withAll: 0, Lcells: [] }; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; const o = i * SW; r.n++; const gt = st[o] + st[o + 1], l = st[o + 2], L = st[o + 5]; let soap = 0, wall = 0; for (let k = 0; k < 6; k++) { soap += st[o + 32 + k] + st[o + 38 + k]; wall += st[o + 50 + k] + st[o + 56 + k]; } if (L > 6) { r.withL++; if (r.Lcells.length < 8) r.Lcells.push([L, l, gt, Math.round(st[o + 13] / 655.36) / 100, soap, wall]); } if (l > 6) r.withl++; if (gt > 6) r.withHeads++; if (L > 6 && l > 6 && gt > 6) r.withAll++; } return JSON.stringify(r)",
+      "result": "{\"n\":745,\"withL\":145,\"withl\":530,\"withHeads\":733,\"withAll\":7,\"Lcells\":[[87,0,283,1.09,82,0],[50,0,294,0.36,136,11],[65,0,288,0.3,127,23],[158,0,330,0,142,0],[306,0,55,1.02,72,5],[144,0,47,0.86,52,16],[44,0,138,1.33,14,10],[43,0,328,0,17,0]]}"
+    },
+    {
+      "t": 900.0000000001185,
+      "js": "const s = await moire.lipids.stats(); return JSON.stringify({ all: s.all, lit: s.lit, dark: s.dark, founders: s.founders.slice(0, 6) })",
+      "result": "{\"all\":{\"n\":745,\"oilGene\":0.4158364820228452,\"wallGene\":0.15771725020565142,\"head\":0.19398282585328058,\"row\":0.6385340002759191,\"thick\":0.024103663303895583,\"soapP\":0.0055506763842281875,\"soapM\":0.004330956375838926,\"oil\":0.004054700608221476,\"ll\":0.0018820128984899328,\"LL\":0.0007720742449664429,\"stiff\":0.6182673158748964,\"cover\":0.022445935868754645,\"oilShare\":0.11103566258718252,\"bat\":0.24943903468599254},\"lit\":{\"n\":489,\"oilGene\":0.3814241826093369,\"wallGene\":0.16694453787601388,\"head\":0.21162668785465033,\"row\":0.6510283515230583,\"thick\":0.024832576136666604,\"soapP\":0.005982194210122699,\"soapM\":0.004716057962678937,\"oil\":0.003917233831799591,\"ll\":0.0022871333397239263,\"LL\":0.000985050006390593,\"stiff\":0.5995001136105436,\"cover\":0.02738548725557021,\"oilShare\":0.09721720999238147,\"bat\":0.3188017472655251},\"dark\":{\"n\":256,\"oilGene\":0.4815693508244294,\"wallGene\":0.14009168899156066,\"head\":0.16028029257722665,\"row\":0.6146678371515009,\"thick\":0.02271132590067282,\"soapP\":0.004726409912109375,\"soapM\":0.0035953521728515625,\"oil\":0.004317283630371094,\"ll\":0.0011081695556640625,\"LL\":0.00036525726318359375,\"stiff\":0.6541156045751632,\"cover\":0.01301062091503267,\"oilShare\":0.1374310661764706,\"bat\":0.11694541573524475},\"founders\":[{\"founder\":7,\"n\":514,\"oilGene\":0.5190031860233919,\"wallGene\":0.13775173983000336,\"head\":0.21672086203869448,\"row\":0.6683187430093956,\"thick\":0.022535720612248587,\"soapP\":0.006337681633025291,\"soapM\":0.004734143208900778,\"oil\":0.005433791342412451,\"ll\":0.0012349525778210116,\"LL\":0.0007499962001459144,\"stiff\":0.5741461305663644,\"cover\":0.016334782940413493,\"oilShare\":0.14083059942524342,\"bat\":0.21886693457221243},{\"founder\":9,\"n\":231,\"oilGene\":0.18627940039392318,\"wallGene\":0.20214267156098958,\"head\":0.14338823451430766,\"row\":0.5722597242369281,\"thick\":0.02759250548357765,\"soapP\":0.003799504531926407,\"soapM\":0.0034338220373376625,\"oil\":0.0009860744724025975,\"ll\":0.003321792140151515,\"LL\":0.0008212002840909091,\"stiff\":0.7164417282064341,\"cover\":0.036043912514500724,\"oilShare\":0.044738703562232966,\"bat\":0.3174652661079968}]}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-16T00:25:23",
+  "wall_s": 161.65
+}

@@ -3341,7 +3341,8 @@ inside harvesting cells), a faint glitter of tiny **hot red-orange sparks** appe
 threat-red of the ordinary free atoms, each spark flickering on its own phase, thinning out and dimming as the haze fades back to
 ground atoms. It is sparse by design (at most one spark per small grid square, fewer where there is less), and in the default and
 oxygen scenes it is thin: a few sparks around the light spring and the spot's rim. With the haze forced thick (a lifetime of 600 s)
-it becomes an orange dust cloud around the springs. Picture: see the experiments below.
+it becomes an orange dust cloud around the springs. Pictures (`experiments/keep/c12c/`): `haze-sparkle-on.jpg` and
+`haze-sparkle-off.jpg` (a light and a heavy spring in an empty corner of the lit dish, close up, the sparkle drawn and not).
 
 **The rule as built** (`src/excited.js`, `src/matter.js` EXCITED and the table, `matter.wgsl`, `cell_eat.wgsl`):
 - **Which reactions excite.** Every light-driven reaction of the table that frees a light giver or taker: the four uphill swaps
@@ -3400,7 +3401,45 @@ channel reads its ground twin's (`gc()` in `heat_common.wgsl`). The springs' uni
 t*, and the counters (8 counts and 6 energies). ChemP grew by `ex` (its reactions from byte 144). The drawing reads a fourth texture.
 Old snapshots (16 substances) load with the excited waste off; their grid's blocks are matched by name.
 
-<!-- C12C-RESULTS -->
+**The oxygen conditions again** (EXPERIMENTS.md, "Oxygen with excited waste"; `experiments/conditions/c12c/`: the oxygen retry's
+springs, spotlight seeds 3 and 7, spotlight with the uphill swaps x15, the whole dish seed 3; excited waste on and off; 40 minutes
+at MAX; one run each). Plainly: **breathing still does not run, and breathers do not rise.** The excited haze is thin: 1.2 to 2
+units in the dish under the spot against 1000 to 3400 units of ground free light atoms (0.07 %; up to 0.8 % under the whole dish).
+The free light atoms the dish is full of are not the light's waste: they come from the light spring and from every burner's
+exhaust, ground, hundreds per s, against 1 to 7 per s freed excited by light. So a breathing engine, which takes its light atoms from
+the cell's pool, gets an excited one about once in a thousand events: per event breathing an excited atom now beats burning (2.875
+against 2.25 per gT), on average it gains 0.0006. Breathing ran at 0.02 to 0.09 swaps per s with it on and 0.04 to 0.06 with it
+off; the excitation all engines banked was 0.1 to 0.3 % of burning, mostly through the harvesters' own fuel-making engines. One
+large difference, in one run: under the whole dish the cells carrying a light-driven uphill swap rose to 52 % of the colony with the
+excited waste on, against 2.5 % with it off (their own fuel makers bank their excited waste: light reaches the battery in two steps);
+it needs another seed before it means anything. Nothing burst (the C12b membranes are rarely whole), so the haze had nothing to
+poison. Entropy, ORDER and the count were the same within the runs' swing. The books: atoms and charge 0 in every sample, energy within
+-0.14 and +0.28 in 47 to 180 M.
+
+**Checked.**
+- The books (`experiments/conditions/c12c/check.json`, seed 5, the whole dish lit, the uphill swaps x15, 420 s at MAX): springs of
+  every kind, a quarter of the cells walled and oily, N (60 s), a wash (100 s), a resize to 1000 x 700 (150 s), G (200 s), a resize
+  back (220 s), new springs (240 s), the excited waste off and on, its look off and on, its lifetime at 3 s and 300 s, `hot` 0.5,
+  grazing off and on, the lipid membranes, the membrane chemistry, the engines and the chemistry each off and on at runtime (255 to
+  345 s), a snapshot saved and loaded at once (380 s: exact). Atoms and charge rounding exactly 0 in every sample except the two taken
+  in the same paused instant as each resize (the old grid not yet drained, as in steps C10 to C12b; 10 s later 0 again); energy
+  within -0.095 and +0.001 while 15 M came in. Up to 10 units of excited atoms in the dish and 2 in the cells during it.
+- Old snapshots: one saved at commit 035d3e9 (C12b with grazing, 16 substances; `reload-old.json`) loads exactly, the excited waste
+  off ("saved before step C12c: excited waste off (as it ran)"), and runs 60 s with atoms and charge 0; the C11 lab snapshot
+  (`experiments/conditions/c12b/reload-old.json`) loads with the lipid membranes and the excited waste off.
+- Consoles clean: headless Chrome (every run above), phone size (`tools/shot.py --mobile`, 390 x 844, the toolbar and the rules panel
+  open, the panel showing the short EXCITED line), headed Firefox (1280 x 800, the whole dish lit, the EXCITED line, g* in the dish).
+- Not bit-repeatable: every comparison is one run per seed.
+
+**Known issues.**
+- The share of the photon an excited atom keeps is fixed for the page (`?exshare=`): changing it with excited atoms in the dish would
+  change the energy they hold. A snapshot saved with another share says so when it loads, and its energy books will not match.
+- Pumps do not move excited atoms, and the soap builder takes ground heads only (choices to keep the rule small; README above).
+- With the excited waste on, light can reach a battery in two steps (a harvester's own engine eats its excited waste). The user's rule
+  "light never charges the battery" holds for the photon itself; this route goes through a substance and an engine, as the C12c spec
+  asks, and is small (0.1 to 0.3 % of burning in these runs). Worth the user's judgment.
+- The excited channels spread wherever light givers or takers are, even when they are empty (2 of 18 channels: a little speed).
+
 
 ## The look of the landscape
 

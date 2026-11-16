@@ -521,6 +521,12 @@ C13. FIELDS AS GENES, FIELDS AS GUIDES (user 2026-11-16 chose it next, over more
     - Expected look: tissues that follow the moire landscape: sticky stripes along beat rings, divisions lined up with
       the rings, lineages with their own beat period tiling the dish. Tissue lab first (each gate alone, hand-set),
       then evolution.
+    AS BUILT (C13, 2026-11-16): src/guides.js; field genes per field (A lever/emission/gain+sign/width/angle, B same,
+    A' share + gain); gates from s_k = tanh(felt/2.3) per side, genes -1..1 (founders +-0.05); push gene 0..2; view
+    V "guides" (ivory glue, teal pumps, green engines, lilac division, yellow turn). LAB: each gate visible (division:
+    round / column / sprawl; turn: one sheet vs ring of rosettes; glue: tight sheet with a wedge flower vs loose rows;
+    engines: dark-cored middle), ~4x stronger with the long beat. EVOLUTION: NULL, gate genes drift like the neutral
+    control (+-0.6); beat periods do not tile the dish (median 4.5-7 R). Speed -7..8 %.
 LATER, PURIST VERSION (user 2026-11-15: hoped for "a more game of life situation", surprised how many abstractions
     were needed; chose to KEEP GOING with lipids (C12b) and the oxygen story, "I can go back to the purist version
     later"). Idea on file: a separate small page "moire life": cells of a few colours, pairwise push/pull through

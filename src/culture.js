@@ -1,0 +1,339 @@
+// App: NEW CULTURES and PRESET DISHES (user 2026-11-16: "create new cultures with more spread and some preset interesting dish
+// environments"). Nothing here is a rule of the simulation: a preset is a set of existing URL options plus where its springs and
+// light go, so every preset opens by URL (?preset=vent) and can be shared as a link.
+//
+// URL options (read by src/main.js before anything else; a preset's own options never override the URL's):
+//   ?preset=name        vent | shallows | oxygen | slick | desert | lab (PRESETS below)
+//   ?spread=clump|scatter|colonies|ring   how the founders are placed (default clump: the old blob at the centre); with any
+//                       spread but clump the pull to the dish centre is nearly off (squeeze 0.02), so the culture stays spread
+//   ?colonies=N         how many colonies (spread=colonies; default 5)
+//   ?diversity=clone|few|mixed|random     one genome cloned / one founder of each habit (eater, light + burn, photosynthesiser,
+//                       other) / the usual 12 founders (default) / every cell its own random genome. With colonies, colony k is
+//                       founder k's
+// The NEW CULTURE dialog (the dish panel) sets these and opens the link; with the dish as it is and the same number of cells it
+// starts the culture in place instead (no reload: the springs, the light and the atoms stay).
+
+import { HABITS, founderGenome } from './genome.js';
+
+const VALUE = (v) => String(v);
+
+/** The presets: a one-line description, URL options, and the scene (springs, light) once the dish's size is known. */
+export const PRESETS = {
+  vent: {
+    label: 'Dark vents',
+    desc: 'No light at all. Three vents pour out fuel and metal-like givers; three colonies start beside them. Only cells that can live on what the vents bring (fermenters) keep going.',
+    query: { light: 'off', spread: 'colonies', colonies: 3, cells: 1000 },
+    centres: (W, H) => ring3(W, H, 0.27, -90).map(([x, y]) => [x + (W / 2 - x) * 0.18, y + (H / 2 - y) * 0.18]),
+    scene({ matter, W, H }) {
+      for (const [x, y] of ring3(W, H, 0.27, -90)) matter.addSpring(x, y, 'heavy', 1e9);
+    },
+  },
+  shallows: {
+    label: 'Sunlit shallows',
+    desc: 'The whole dish lit, with days and nights. Mineral springs scattered over it, cells scattered too: light-catchers have it easy.',
+    query: { light: 'full', spread: 'scatter' },
+    scene({ matter, W, H }) {
+      for (const [x, y] of [[0.22, 0.28], [0.75, 0.22], [0.5, 0.55], [0.25, 0.78], [0.8, 0.75]]) matter.addSpring(x * W, y * H, 'light', 1e9);
+    },
+  },
+  oxygen: {
+    label: 'Oxygen world',
+    desc: 'The oxygen story: a spotlight, a never-drying mineral spring and a slow vent beside the culture, and light cannot free atoms in the open (photolysis off), so any free oxygen (t) is made by life.',
+    query: { light: 'spot', photolysis: 0 },
+    scene({ matter, light, W, H, cells, hasSpot }) {
+      const s = defaultSpots(W, H, cells);
+      matter.addSpring(s.a[0], s.a[1], 'light', 1e9);
+      matter.addSpring(s.b[0], s.b[1], 'heavy', 1e9, { rate: 0.6 });   // a slow vent (a tenth of a spring's rate)
+      if (!hasSpot) light.moveTo(s.spot[0], s.spot[1]);
+    },
+  },
+  slick: {
+    label: 'Oil slick',
+    desc: 'Oil and soap springs make droplets with iridescent rims and soapy films; a vent and a mineral spring feed the cells, which can take oil and soap into their skins. Lit from the side.',
+    query: { light: 'spot', spread: 'colonies', colonies: 4, tilt: 35, cells: 1000 },
+    scene({ matter, light, W, H, hasSpot }) {
+      matter.addSpring(0.3 * W, 0.3 * H, 'emulsion', 1e9);
+      matter.addSpring(0.7 * W, 0.68 * H, 'emulsion', 1e9);
+      matter.addSpring(0.68 * W, 0.3 * H, 'soap', 1e9);
+      matter.addSpring(0.32 * W, 0.7 * H, 'oil', 1e9);
+      matter.addSpring(0.5 * W, 0.14 * H, 'heavy', 1e9);
+      matter.addSpring(0.5 * W, 0.86 * H, 'light', 1e9);
+      if (!hasSpot) { light.moveTo(0.5 * W, 0.5 * H); light.params.radius = 0.42; }
+    },
+  },
+  desert: {
+    label: 'Crust desert',
+    desc: 'Springs of single linkers (light l and heavy L) chain into fields of crust that grow on themselves; one vent at the edge. Cells must graze the crust to build their skins and walls.',
+    query: { light: 'full', spread: 'ring', cells: 1200 },
+    scene({ matter, W, H }) {
+      const pts = [[0.2, 0.25, 'l'], [0.4, 0.2, 'L'], [0.62, 0.3, 'l'], [0.8, 0.22, 'L'], [0.28, 0.7, 'L'], [0.5, 0.82, 'l'], [0.72, 0.72, 'L'], [0.85, 0.55, 'l']];
+      for (const [x, y, a] of pts) matter.addSpring(x * W, y * H, `drop:${a}`, 1e9, { rate: 14 });
+      matter.addSpring(0.06 * W, 0.5 * H, 'heavy', 1e9);
+    },
+  },
+  lab: {
+    label: 'Tissue lab',
+    desc: 'Sixty cells of one cloned genome, no evolution (no mutation, no births or deaths) and no springs: watch how they link into tissue, as the tissue experiments did.',
+    query: { cells: 60, mut: 0, life: 0, clone: 1, springs: 0 },
+    zoom: 3,
+    scene() {},
+  },
+};
+export const PRESET_NAMES = Object.keys(PRESETS);
+export const SPREADS = ['clump', 'scatter', 'colonies', 'ring'];
+export const DIVERSITY = ['clone', 'few', 'mixed', 'random'];
+const DIVERSITY_WORD = { clone: 'one clone', few: 'a few types', mixed: 'mixed founders', random: 'all random' };
+const SPREAD_WORD = { clump: 'one clump', scatter: 'scattered', colonies: 'colonies', ring: 'a ring' };
+
+function ring3(W, H, r, a0) {
+  const m = Math.min(W, H);
+  return [0, 1, 2].map((k) => { const a = (a0 + 120 * k) * Math.PI / 180; return [W / 2 + Math.cos(a) * r * m, H / 2 + Math.sin(a) * r * m]; });
+}
+/** Where main.js's default scene puts its two springs and the spot (beside the culture's rim). */
+function defaultSpots(W, H, cells) {
+  const m = Math.min(W, H), rim = 0.72 * cells.R * Math.sqrt(cells.start / 0.85);
+  const wide = W >= H, ax = wide ? [1, 0] : [0, 1], perp = wide ? [0, 1] : [1, 0];
+  const d = rim + 0.01 * m, s = 0.09 * m, cx = W / 2 + ax[0] * d, cy = H / 2 + ax[1] * d;
+  return { a: [cx - perp[0] * s, cy - perp[1] * s], b: [cx + perp[0] * s, cy + perp[1] * s], spot: [W / 2 + ax[0] * rim, H / 2 + ax[1] * rim] };
+}
+
+/** Main.js, first thing: the preset's URL options into `params` (the URL's own win). Returns the preset's name or null. */
+export function applyPreset(params) {
+  const name = params.get('preset');
+  const P = name && PRESETS[name];
+  if (!P) return null;
+  for (const [k, v] of Object.entries(P.query)) if (!params.has(k)) params.set(k, VALUE(v));
+  return name;
+}
+
+/** The culture's layout from the URL (spread, colonies, diversity), with a preset's colony centres. */
+export function layoutFromParams(params, preset) {
+  const spread = SPREADS.includes(params.get('spread')) ? params.get('spread') : 'clump';
+  const colonies = Math.max(2, Math.min(12, Math.round(Number(params.get('colonies')) || 5)));
+  const diversity = DIVERSITY.includes(params.get('diversity')) ? params.get('diversity') : 'mixed';
+  const P = preset && PRESETS[preset];
+  return { spread, colonies, diversity, centres: P && P.centres ? P.centres : null };
+}
+
+/** Diversity: the genome's founders before a culture is seeded (clone: 1; few: one of each habit; mixed: 12; random: 0). */
+export function applyDiversity(genome, diversity) {
+  if (diversity === 'clone') { genome.params.founders = 1; genome.newFounders(); }
+  else if (diversity === 'few') { genome.params.founders = HABITS.length; genome.founders = HABITS.map((h, k) => founderGenome(h, genome.rng, k)); }
+  else if (diversity === 'random') { genome.params.founders = 0; genome.founders = []; }
+  else { genome.params.founders = 12; genome.newFounders(); }
+}
+
+/**
+ * Where cell i goes (cells.seed): { at(i) -> [x, y], founder(i, nFounders) or null }. The clump draws its random numbers in the
+ * same order as before the app (so ?seed=N gives the same start as it did).
+ */
+export function cultureLayout(L, W, H, R, n, rng) {
+  const spread = (L && L.spread) || 'clump';
+  if (spread === 'clump') {
+    const s = R * Math.sqrt(n / 0.85);   // blob radius at 0.85 area fraction (overlaps settle in the warm-up)
+    return { founder: null, at: () => { const a = rng() * 2 * Math.PI, dd = Math.sqrt(rng()) * s; return [W / 2 + Math.cos(a) * dd, H / 2 + Math.sin(a) * dd]; } };
+  }
+  const m = Math.min(W, H), pad = 2.5 * R;
+  if (spread === 'scatter') {
+    return { founder: null, at: () => [pad + rng() * (W - 2 * pad), pad + rng() * (H - 2 * pad)] };
+  }
+  if (spread === 'ring') {
+    const r0 = 0.36 * m, w = Math.max(3 * R, Math.min(0.08 * m, n * Math.PI * R * R / (0.6 * 2 * Math.PI * r0)));   // a band about 60 % packed
+    return { founder: null, at: () => { const a = rng() * 2 * Math.PI, rr = r0 + (rng() - 0.5) * w; return [W / 2 + Math.cos(a) * rr, H / 2 + Math.sin(a) * rr]; } };
+  }
+  // colonies: k round blobs, on a ring round the centre (or at a preset's places), each cell's founder its colony's
+  const k = Math.max(2, L.colonies || 5);
+  const centres = L.centres ? L.centres(W, H).slice(0, k) : Array.from({ length: k }, (_, j) => {
+    const a = (j / k) * 2 * Math.PI - Math.PI / 2;
+    return [W / 2 + Math.cos(a) * 0.3 * m, H / 2 + Math.sin(a) * 0.3 * m];
+  });
+  const kk = centres.length, per = Math.ceil(n / kk), s = R * Math.sqrt(per / 0.85);
+  return {
+    founder: (i, nf) => Math.floor(i / per) % nf,
+    at: (i) => {
+      const [cx, cy] = centres[Math.min(kk - 1, Math.floor(i / per))];
+      const a = rng() * 2 * Math.PI, dd = Math.sqrt(rng()) * s;
+      return [Math.max(pad, Math.min(W - pad, cx + Math.cos(a) * dd)), Math.max(pad, Math.min(H - pad, cy + Math.sin(a) * dd))];
+    },
+  };
+}
+
+/** The squeeze (pull to the centre) for a spread: the old one for the clump, nearly none for the rest. */
+export const SPREAD_SQUEEZE = 0.02;
+
+// ---------- the dialog ----------
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+/**
+ * The NEW CULTURE dialog. ctx: { cells, params, flash, inPlace(opts) } (main.js). Builds a link of URL options; Start opens it,
+ * except "this dish as it is" with the same number of cells, which starts the culture in place.
+ */
+export function openCultureDialog(ctx) {
+  const old = document.getElementById('culture');
+  if (old) old.remove();
+  const C = ctx.cells, cur = ctx.params;
+  const st = {
+    preset: cur.get('preset') && PRESETS[cur.get('preset')] ? cur.get('preset') : '',
+    cells: C.start,
+    spread: SPREADS.includes(cur.get('spread')) ? cur.get('spread') : 'clump',
+    colonies: Math.round(Number(cur.get('colonies')) || 5),
+    diversity: DIVERSITY.includes(cur.get('diversity')) ? cur.get('diversity') : 'mixed',
+    newSeed: true,
+  };
+  const wrap = el('div', 'dlg-wrap');
+  wrap.id = 'culture';
+  const box = el('section', 'dlg');
+  box.setAttribute('role', 'dialog');
+  box.setAttribute('aria-label', 'New culture');
+  const head = el('header', 'phead');
+  head.append(el('h2', '', 'New culture'));
+  const x = el('button', 'x', '×');
+  x.type = 'button'; x.title = 'Close'; x.setAttribute('aria-label', 'Close');
+  head.append(x);
+  const body = el('div', 'pbody');
+  box.append(head, body);
+  wrap.append(box);
+
+  // environment
+  body.append(el('h3', '', 'Dish'));
+  const envList = el('div', 'envs');
+  const envs = [['', 'This dish as it is', 'Keep the springs, the light and the atoms; only new cells (with the same number: no reload).'],
+    ...PRESET_NAMES.map((n) => [n, PRESETS[n].label, PRESETS[n].desc])];
+  for (const [id, label, desc] of envs) {
+    const b = el('button', 'env');
+    b.type = 'button'; b.dataset.env = id;
+    b.append(el('b', '', label), el('span', '', desc));
+    envList.append(b);
+  }
+  body.append(envList);
+  // founders
+  body.append(el('h3', '', 'Founders'));
+  const nRow = el('div', 'rmain');
+  const nIn = el('input', 'num');
+  Object.assign(nIn, { type: 'number', min: 1, max: 20000, step: 1, value: String(st.cells) });
+  nIn.setAttribute('aria-label', 'number of founder cells');
+  nRow.append(el('span', 'lbl', 'cells'), nIn);
+  const quick = el('span', 'seg');
+  for (const v of [60, 400, 2000, 6000]) { const b = el('button', '', String(v)); b.type = 'button'; b.dataset.n = String(v); quick.append(b); }
+  nRow.append(quick);
+  body.append(nRow);
+  // spread
+  const spRow = el('div', 'rmain');
+  const spSeg = el('span', 'seg');
+  for (const s of SPREADS) { const b = el('button', '', SPREAD_WORD[s]); b.type = 'button'; b.dataset.spread = s; spSeg.append(b); }
+  spRow.append(el('span', 'lbl', 'spread'), spSeg);
+  body.append(spRow);
+  const colRow = el('div', 'rmain');
+  const colIn = el('input', 'num');
+  Object.assign(colIn, { type: 'number', min: 2, max: 12, step: 1, value: String(st.colonies) });
+  colIn.setAttribute('aria-label', 'number of colonies');
+  colRow.append(el('span', 'lbl', 'colonies'), colIn);
+  body.append(colRow);
+  // diversity
+  const dvRow = el('div', 'rmain');
+  const dvSeg = el('span', 'seg');
+  for (const s of DIVERSITY) { const b = el('button', '', DIVERSITY_WORD[s]); b.type = 'button'; b.dataset.div = s; dvSeg.append(b); }
+  dvRow.append(el('span', 'lbl', 'diversity'), dvSeg);
+  body.append(dvRow);
+  const dvHelp = el('p', 'help', '');
+  body.append(dvHelp);
+  const seedRow = el('label', 'rmain');
+  const seedIn = el('input');
+  Object.assign(seedIn, { type: 'checkbox', checked: true });
+  seedRow.append(seedIn, el('span', 'lbl', 'a new random seed (off: keep this page\'s)'));
+  body.append(seedRow);
+  // the link and the buttons
+  const link = el('p', 'note link', '');
+  body.append(link);
+  const btns = el('div', 'dlg-btns');
+  const go = el('button', 'act go', 'start');
+  go.type = 'button';
+  const copy = el('button', 'act', 'copy link');
+  copy.type = 'button';
+  const cancel = el('button', 'act', 'cancel');
+  cancel.type = 'button';
+  btns.append(go, copy, cancel);
+  body.append(btns);
+
+  const DIV_HELP = {
+    clone: 'one genome for every cell (with mutation on, they drift apart as they divide)',
+    few: 'one founder of each habit: an eater, a light + burn cell, a photosynthesiser, a chain maker / breather',
+    mixed: 'the usual 12 founder genomes of mixed habits',
+    random: 'every cell its own random genome',
+  };
+  function url() {
+    const u = new URL(location.href);
+    const keep = new URLSearchParams();
+    for (const k of ['electrons', 'exshare', 'ui']) if (u.searchParams.has(k)) keep.set(k, u.searchParams.get(k));   // (the table is fixed per page)
+    if (st.preset) keep.set('preset', st.preset);
+    const P = st.preset ? PRESETS[st.preset] : null;
+    const presetCells = P && P.query.cells;
+    if (st.cells !== presetCells) keep.set('cells', String(st.cells));
+    const presetSpread = (P && P.query.spread) || 'clump';
+    if (st.spread !== presetSpread) keep.set('spread', st.spread);
+    if (st.spread === 'colonies' && st.colonies !== ((P && P.query.colonies) || 5)) keep.set('colonies', String(st.colonies));
+    if (st.diversity !== 'mixed') keep.set('diversity', st.diversity);
+    if (!st.newSeed) keep.set('seed', String(ctx.control.seed));
+    u.search = keep.toString();
+    return u.href;
+  }
+  const inPlace = () => !st.preset && st.cells === C.start;
+  function sync() {
+    for (const b of envList.querySelectorAll('[data-env]')) b.setAttribute('aria-pressed', String(b.dataset.env === st.preset));
+    for (const b of spSeg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.spread === st.spread));
+    for (const b of dvSeg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.div === st.diversity));
+    for (const b of quick.querySelectorAll('button')) b.setAttribute('aria-pressed', String(Number(b.dataset.n) === st.cells));
+    colRow.style.display = st.spread === 'colonies' ? '' : 'none';
+    dvHelp.textContent = DIV_HELP[st.diversity];
+    link.textContent = inPlace() ? 'Starts here, now: the same dish, new cells (no reload).' : `Opens: ${url()}`;
+    go.textContent = inPlace() ? 'start here' : 'open';
+  }
+  body.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.env != null) {
+      st.preset = b.dataset.env;
+      const P = PRESETS[st.preset];
+      if (P) {
+        if (P.query.cells) st.cells = P.query.cells; else if (st.cells === 60) st.cells = C.start === 60 ? 2000 : C.start;
+        st.spread = P.query.spread || 'clump';
+        if (P.query.colonies) st.colonies = P.query.colonies;
+        nIn.value = String(st.cells); colIn.value = String(st.colonies);
+      }
+    } else if (b.dataset.n) { st.cells = Number(b.dataset.n); nIn.value = String(st.cells); }
+    else if (b.dataset.spread) st.spread = b.dataset.spread;
+    else if (b.dataset.div) st.diversity = b.dataset.div;
+    sync();
+  });
+  nIn.addEventListener('input', () => { st.cells = Math.max(1, Math.min(20000, Math.round(Number(nIn.value) || 1))); sync(); });
+  colIn.addEventListener('input', () => { st.colonies = Math.max(2, Math.min(12, Math.round(Number(colIn.value) || 5))); sync(); });
+  seedIn.addEventListener('change', () => { st.newSeed = seedIn.checked; sync(); });
+  const close = () => { wrap.remove(); window.removeEventListener('keydown', onEsc, true); };
+  const onEsc = (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+  window.addEventListener('keydown', onEsc, true);
+  x.addEventListener('click', close);
+  cancel.addEventListener('click', close);
+  wrap.addEventListener('pointerdown', (e) => { if (e.target === wrap) close(); });
+  copy.addEventListener('click', async () => {
+    const h = url();
+    try { await navigator.clipboard.writeText(h); ctx.flash('link copied'); } catch { window.prompt('The link:', h); }
+  });
+  go.addEventListener('click', () => {
+    if (inPlace()) {
+      close();
+      ctx.inPlace({ spread: st.spread, colonies: st.colonies, diversity: st.diversity });
+      return;
+    }
+    location.assign(url());
+  });
+  // keys typed into the dialog must not run the page's shortcuts
+  box.addEventListener('keydown', (e) => { if (e.key !== 'Escape') e.stopPropagation(); });
+  document.body.append(wrap);
+  sync();
+  return wrap;
+}

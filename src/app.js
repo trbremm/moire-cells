@@ -26,6 +26,7 @@ import { BIO_FLOATS, founderGenome } from './genome.js';
 import { SW } from './eat.js';
 import { KIND } from './field.js';
 import { settle, flushLedger, readBuffer, frames } from './snapshot.js';
+import { openCultureDialog, PRESETS } from './culture.js';
 
 const BAT_WORD = 13;          // cell_eat.wgsl: the battery's stock word
 const LG_K_START = 13312;     // heat_common.wgsl: the starter charges' ledger slots (64-bit: low words, then the carries + 64)
@@ -128,7 +129,24 @@ export function createApp(ctx) {
   });
   A.panels = [molZoo, cellsZoo];
   A.toolIcons = TOOL_ICONS;
-  A.dishExtra = null;
+  // the dish panel: the new culture dialog (src/culture.js) first
+  A.dishExtra = (body) => {
+    const r = document.createElement('div');
+    r.className = 'row t-do';
+    const m = document.createElement('div');
+    m.className = 'rmain';
+    const b = document.createElement('button');
+    b.className = 'act'; b.type = 'button'; b.textContent = 'new culture…'; b.dataset.ui = 'culture';
+    b.addEventListener('click', () => A.openCulture());
+    m.append(b);
+    if (ctx.preset) { const s = document.createElement('span'); s.className = 'lbl dimlbl'; s.textContent = `now: ${PRESETS[ctx.preset].label}`; m.append(s); }
+    const h = document.createElement('p');
+    h.className = 'help';
+    h.textContent = 'how many founders, how spread (one clump, scattered, colonies, a ring), how diverse, and a preset dish (dark vents, sunlit shallows, oxygen world, oil slick, crust desert, tissue lab); opens as a link you can share';
+    r.append(m, h);
+    body.append(r);
+  };
+  A.openCulture = () => openCultureDialog({ cells: ctx.cells, params: ctx.params, flash: ctx.flash, control: ctx.control, inPlace: ctx.inPlace });
   A.attach = (ui) => { A.ui = ui; };
 
   /** What the add-cell tool places now (the zoo's pick; else the largest group living, else a founder eater). */

@@ -1,0 +1,95 @@
+{
+ "batch": "app-presets",
+ "runs": [
+  {
+   "name": "app-preset-vent",
+   "description": "app: the vent preset, 3 min (screenshot for experiments/keep/app/)",
+   "query": {
+    "preset": "vent",
+    "seed": 3
+   },
+   "duration": 180,
+   "sample_every": 20,
+   "shots": [
+    {
+     "t": 180
+    }
+   ]
+  },
+  {
+   "name": "app-preset-shallows",
+   "description": "app: the shallows preset, 3 min (screenshot for experiments/keep/app/)",
+   "query": {
+    "preset": "shallows",
+    "seed": 3
+   },
+   "duration": 180,
+   "sample_every": 20,
+   "shots": [
+    {
+     "t": 180
+    }
+   ]
+  },
+  {
+   "name": "app-preset-oxygen",
+   "description": "app: the oxygen preset, 3 min (screenshot for experiments/keep/app/)",
+   "query": {
+    "preset": "oxygen",
+    "seed": 3
+   },
+   "duration": 180,
+   "sample_every": 20,
+   "shots": [
+    {
+     "t": 180
+    }
+   ]
+  },
+  {
+   "name": "app-preset-slick",
+   "description": "app: the slick preset, 3 min (screenshot for experiments/keep/app/)",
+   "query": {
+    "preset": "slick",
+    "seed": 3
+   },
+   "duration": 180,
+   "sample_every": 20,
+   "shots": [
+    {
+     "t": 180
+    }
+   ]
+  },
+  {
+   "name": "app-preset-desert",
+   "description": "app: the desert preset, 3 min (screenshot for experiments/keep/app/)",
+   "query": {
+    "preset": "desert",
+    "seed": 3
+   },
+   "duration": 180,
+   "sample_every": 20,
+   "shots": [
+    {
+     "t": 180
+    }
+   ]
+  },
+  {
+   "name": "app-preset-lab",
+   "description": "app: the lab preset, 3 min (screenshot for experiments/keep/app/)",
+   "query": {
+    "preset": "lab",
+    "seed": 3
+   },
+   "duration": 180,
+   "sample_every": 20,
+   "shots": [
+    {
+     "t": 180
+    }
+   ]
+  }
+ ]
+}

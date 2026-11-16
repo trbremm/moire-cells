@@ -279,11 +279,14 @@ export class Genome {
    * Fill the Bio records of n cells (Float32Array f) and return each
    * cell's key (angle, scale) for the Cell copies. Each cell is a copy of a random founder.
    */
-  fill(f, n) {
+  fill(f, n, pick = null) {
     if (!this.founders.length && this.params.founders > 0) this.newFounders();
     const keys = new Float32Array(n * 2);
     for (let i = 0; i < n; i++) {
-      const g = this.founders.length ? this.founders[Math.floor(this.rng() * this.founders.length)] : randomGenome(this.rng, i, this.mrng, this.prng, this.wrng, this.drng, this.lrng, this.grng);
+      // (app: `pick(i)`, if given, chooses cell i's founder by its index, e.g. one founder per colony; else at random)
+      const fi = pick && this.founders.length ? pick(i, this.founders.length) : -1;
+      const g = this.founders.length ? this.founders[fi >= 0 ? fi % this.founders.length : Math.floor(this.rng() * this.founders.length)]
+        : randomGenome(this.rng, i, this.mrng, this.prng, this.wrng, this.drng, this.lrng, this.grng);
       const o = i * BIO_FLOATS;
       for (let k = 0; k < BIO_FLOATS; k++) f[o + k] = g[k] ?? 0;   // (founders from a snapshot before step C10 lack the walls' genes, before C12b the lipids')
       if (g.length <= BIO_FG) fieldDefaults(f, o);   // (... before step C13 the field genes: today's values)

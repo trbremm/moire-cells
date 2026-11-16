@@ -1,0 +1,6 @@
+{
+ "name": "app-speed-2k",
+ "description": "app: the speed reached at MAX in the default view (2000 cells, seed 3), 90 s; compare with the commit before the app step",
+ "query": {"seed": 3},
+ "duration": 90, "sample_every": 30
+}

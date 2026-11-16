@@ -178,7 +178,7 @@ export class Neon {
     // the cells' activity for the hum (a small compute pass of the drawing's own; reads the cells only)
     if (on && P.hum && L.cells.encodeGlow) L.cells.encodeGlow(encoder, f, this.time);
     // 2. the cells into the trail buffer
-    const trails = on && P.trails;
+    const trails = on && P.trails && !f.camMoved;   // (app: a zoom or pan starts the trails afresh, instead of smearing them)
     pass = encoder.beginRenderPass({
       label: 'cells (trail)',
       colorAttachments: [{ view: this.views.trail, clearValue: { r: 0, g: 0, b: 0, a: 0 }, loadOp: trails ? 'load' : 'clear', storeOp: 'store' }],

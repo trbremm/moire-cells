@@ -45,6 +45,7 @@ import { Dipole, STATS_DIP, DIP_WORDS } from './dipole.js';
 import { Division, STATS_DIV, STATS_CLAIM, DIV_SNAP } from './division.js';
 import { Walls, STATS_WALL, WALL_WORDS } from './walls.js';
 import { Guides, STATS_FG, FG_WORDS, FG_CLEAR } from './guides.js';
+import { camera } from './camera.js';   // app: the view camera (drawing only)
 
 export const CELL_URL = 'src/shaders/cell_common.wgsl';
 
@@ -81,7 +82,7 @@ const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
 const FIELDS_BYTES = 432;      // struct Fields in cell_common.wgsl (step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
                                // step C9: + dv0..dv2; step C10: + wl0, wl1)
 const FIELD_FORMAT = 'rgba16float';
-const DRAW_BYTES = 1056;       // struct Draw in cell_draw.wgsl (step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
+const DRAW_BYTES = 1072;       // struct Draw in cell_draw.wgsl (app: + cam, 1056 until then; step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
                                // step C6d: + the dipoles)
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
@@ -1352,6 +1353,7 @@ export class Cells {
     const u3 = (rgb) => rgb.map((x) => x / 255);
     this.eat.lipids.writeDraw(a, 216, { crustLight: u3(P.lipid.crustLight), crustHeavy: u3(P.lipid.crustHeavy), pearl: u3(P.lipid.pearl) });   // step C12b
     this.guides.writeDraw(a, 236, L);   // step C13: the guides view
+    a[0] = v.cssW / camera.z; a[1] = v.cssH / camera.z; a[2] = v.dpr * camera.z; a.set(camera.vec(), 264);   // app: the view camera
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBGs[this.bioCur]);

@@ -22,8 +22,8 @@ struct DrawParams {
   dpr: f32,         // device pixels per CSS pixel
   R: f32,           // cell radius of the reference (CSS px)
   _s0: u32,         // (spare: the sources' count, gain and marker gain until step C3)
-  _s1: f32,
-  _s2: f32,
+  panX: f32,        // app: the camera's pan (dpr above is already x its zoom)
+  panY: f32,
   pitch: f32,       // halftone screen pitch: distance between neighbouring dot centres (CSS px)
   angle: f32,       // screen rotation (radians)
   thresh: f32,      // strength below which there is no dot
@@ -100,7 +100,7 @@ fn over(top: vec4f, under: vec4f) -> vec4f {
 
 @fragment
 fn fs(in: VSOut) -> @location(0) vec4f {
-  let x = in.pos.xy / D.dpr;       // CSS px, the world units of the field
+  let x = in.pos.xy / D.dpr + vec2f(D.panX, D.panY);   // CSS px, the world units of the field (app: through the camera)
   var res = vec4f(0.0);
 
   let o = medium.centre;                        // the halftone screen is anchored at the dish centre

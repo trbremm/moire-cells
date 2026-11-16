@@ -14,6 +14,7 @@
 //   impulse(x, y, amp, r)     public: drop a ripple at CSS pixel (x, y); later used by divisions and deaths
 
 import { loadShader } from './gpu.js';
+import { camera } from './camera.js';   // app: the view camera (drawing only)
 
 const MAX_IMPULSES = 256;
 
@@ -199,6 +200,7 @@ export class Background {
     a[0] = v.pxW; a[1] = v.pxH; a[2] = v.dpr; a[3] = this.sc;
     a[4] = this.gw; a[5] = this.gh; a[6] = frame.time; a[7] = this.params.ripple;
     a[8] = this.params.sheen;
+    a[2] = v.dpr * camera.z; a[9] = camera.x; a[10] = camera.y;   // app: the view camera
     this.device.queue.writeBuffer(this.drawU, 0, a);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.drawBG[this.cur]);

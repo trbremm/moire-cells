@@ -22,8 +22,8 @@
 // cell_glow.wgsl smooths it per cell), so busy cells shine brighter and idle ones dim a little. Colours: src/palette.js.
 
 struct Draw {
-  view: vec2f,      // canvas size in CSS px
-  dpr: f32,
+  view: vec2f,      // canvas size in CSS px of the dish (app: / the camera's zoom: the dish's part on screen)
+  dpr: f32,         // device px per dish px (app: x the zoom)
   R: f32,           // the cells' target radius (CSS px)
   fill: f32,        // disc fill: fraction of the cell colour (over black)
   fillA: f32,       // disc opacity
@@ -104,6 +104,7 @@ struct Draw {
   gd: vec4f,        // x: 1 = the guides view; y: the tubes' shading by what each side feels (0..1); z: the body's fill at |gene| = 1;
                     // w: a gate gene below this counts as none (the body then grey)
   gdInk: array<vec4f, 6>,     // the guides view's inks: unguided, glue, pump, engine, division, turn
+  cam: vec4f,       // app: the view camera (xy pan, CSS px of the dish; z zoom)
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
@@ -242,7 +243,7 @@ fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VSOut
     o.hh1 = vec4f(h[4], h[5], min(D.hexDraw.x * c.r, 0.8 * max(hmin, 0.0)), 1.0);
     let l = corner[vi] * (rmax + 1.5 / D.dpr);
     let w = c.pos + l;
-    o.pos = vec4f(w.x / D.view.x * 2.0 - 1.0, 1.0 - w.y / D.view.y * 2.0, 0.0, 1.0);
+    o.pos = vec4f((w.x - D.cam.x) / D.view.x * 2.0 - 1.0, 1.0 - (w.y - D.cam.y) / D.view.y * 2.0, 0.0, 1.0);
     o.local = l;
     let F = cell_F(c);                             // its inverse: [[fd, -fb], [-fb, fa]]
     o.lp = vec2f(F.z * l.x - F.y * l.y, F.x * l.y - F.y * l.x);
@@ -251,7 +252,7 @@ fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VSOut
     let l = corner[vi] * half;
     let F = cell_F(c);
     let w = c.pos + vec2f(F.x * l.x + F.y * l.y, F.y * l.x + F.z * l.y);
-    o.pos = vec4f(w.x / D.view.x * 2.0 - 1.0, 1.0 - w.y / D.view.y * 2.0, 0.0, 1.0);
+    o.pos = vec4f((w.x - D.cam.x) / D.view.x * 2.0 - 1.0, 1.0 - (w.y - D.cam.y) / D.view.y * 2.0, 0.0, 1.0);
     o.local = l;
     o.lp = l;
   }

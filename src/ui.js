@@ -37,7 +37,7 @@ function icon(name) {
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', '0 0 20 20');
   svg.setAttribute('aria-hidden', 'true');
-  const v = ICONS[name];
+  const v = ICONS[name] ?? EXTRA_ICONS[name] ?? '';
   svg.innerHTML = typeof v === 'function' ? v() : v;
   return svg;
 }
@@ -49,6 +49,7 @@ function el(tag, cls, text) {
   return e;
 }
 
+const EXTRA_ICONS = {};   // app: the extra panels' and tools' icons (src/app.js)
 const PANELS = [
   { id: 'light', icon: 'sun', title: 'Light: spotlight, full field or off; tilt and direction' },
   { id: 'view', icon: 'eye', title: 'View: what is drawn' },
@@ -62,6 +63,11 @@ const PANELS = [
  */
 export function setupUI(app) {
   const byId = new Map(app.actions.map((a) => [a.id, a]));
+  // app: extra panels (the zoos, src/app.js): { id, icon (svg markup), title, build(body), refresh() }; and extra tool icons
+  const extra = app.extraPanels || [];
+  for (const p of extra) EXTRA_ICONS[`panel-${p.id}`] = p.icon;
+  Object.assign(EXTRA_ICONS, app.toolIcons || {});
+  const panelList = [...PANELS, ...extra.map((p) => ({ id: p.id, icon: `panel-${p.id}`, title: p.title }))];
   const root = el('div', 'ui');
   root.id = 'ui';
   const panel = el('section', 'panel');
@@ -103,7 +109,7 @@ export function setupUI(app) {
     play.append(b);
   }
   const panels = el('div', 'grp');
-  for (const p of PANELS) {
+  for (const p of panelList) {
     const b = button(p.icon, p.title, 'btn');
     b.dataset.panel = p.id;
     panels.append(b);
@@ -126,14 +132,16 @@ export function setupUI(app) {
     panel.hidden = !open;
     if (open) {
       const head = el('header', 'phead');
-      head.append(el('h2', '', PANELS.find((p) => p.id === open).title.split(':')[0]));
+      head.append(el('h2', '', panelList.find((p) => p.id === open).title.split(':')[0]));
       const x = button('close', 'Close', 'x');
       x.dataset.ui = 'close';
       head.append(x);
       const body = el('div', 'pbody');
       panel.append(head, body);
-      BUILD[open](body);
+      const xp = extra.find((p) => p.id === open);
+      if (xp) xp.build(body, head); else BUILD[open](body);
     }
+    panel.dataset.open = open || '';
     refresh();
   }
 
@@ -166,6 +174,7 @@ export function setupUI(app) {
     },
     dish(body) {
       body.append(speedRow());
+      if (app.dishExtra) app.dishExtra(body);   // app: new culture (the dialog) and the presets
       for (const a of app.actions) if (a.group === 'play' && a.type === 'do') body.append(row(a));
       if (byId.has('record')) body.append(el('p', 'note', 'Recording saves only the dish (the canvas), not these panels.'));
     },
@@ -308,7 +317,9 @@ export function setupUI(app) {
         if (v) v.textContent = a.get();
       }
     }
-    for (const v of root.querySelectorAll('[data-value]')) v.textContent = byId.get(v.dataset.value).get();
+    for (const v of root.querySelectorAll('[data-value]')) { const a = byId.get(v.dataset.value); if (a) v.textContent = a.get(); }
+    const xp = open && extra.find((p) => p.id === open);
+    if (xp && xp.refresh) xp.refresh();
     for (const b of bar.querySelectorAll('[data-panel]')) b.setAttribute('aria-pressed', String(open === b.dataset.panel));
     const si = app.speedIndex();
     for (const b of root.querySelectorAll('[data-speed]')) b.setAttribute('aria-pressed', String(Number(b.dataset.speed) === si));
@@ -338,7 +349,7 @@ export function setupUI(app) {
   refresh();
   setInterval(refresh, 400);
   hint.classList.add('above-ui');
-  return { refresh, openPanel };
+  return { refresh, openPanel, get open() { return open; }, panel };
 }
 
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }

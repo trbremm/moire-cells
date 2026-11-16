@@ -16,6 +16,7 @@ struct ContourP {
   lineW: f32,       // CSS px
   pos: vec4f,       // ink of the + lines (premultiplied by its level; w the level)
   neg: vec4f,       // ink of the - lines
+  cam: vec4f,       // app: the camera (xy pan, z zoom; dpr above is already x zoom)
 };
 
 @group(0) @binding(0) var<uniform> C: ContourP;
@@ -34,7 +35,7 @@ fn phi_px(x: i32, y: i32) -> f32 {
 
 @fragment
 fn fs(@builtin(position) fc: vec4f) -> @location(0) vec4f {
-  let x = fc.xy / C.dpr;                         // CSS px
+  let x = fc.xy / C.dpr + C.cam.xy;              // CSS px of the dish (app: through the camera)
   let gp = x / C.px - 0.5;                       // grid coordinates (pixel centres at whole numbers)
   let b = floor(gp);
   let f = gp - b;

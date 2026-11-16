@@ -92,6 +92,7 @@ struct DrawP {
   minH: vec4f,        // rgb the heavy mineral's ink (Gt, rust)
   glow1: vec4f,       // rgb visible 1's colour (gold); w a light's core radius (CSS px)
   glow2: vec4f,       // rgb visible 2's colour (sky blue); w the halo's strength
+  cam: vec4f,         // app: the camera (xy pan, z zoom; dpr above is already x zoom)
 };
 
 struct Spring {
@@ -325,7 +326,7 @@ fn oil_layer(x: vec2f, oc: vec4f, gO: vec2f, gF: vec2f) -> vec4f {
 
 @fragment
 fn fs(in: VSOut) -> @location(0) vec4f {
-  let x = in.pos.xy / D.dpr;                         // CSS px
+  let x = in.pos.xy / D.dpr + D.cam.xy;              // CSS px of the dish (app: through the camera)
   // step C12: the oil's texture and its slopes, here, while the control flow is uniform (derivatives need it)
   let oc = textureSampleLevel(texC, samp, uv_of(x), 0.0);
   let gO = vec2f(dpdx(min(oc.x, 1.0)), dpdy(min(oc.x, 1.0)));   // (a full pixel and more is the film's inside: no slope)

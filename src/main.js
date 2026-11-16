@@ -122,6 +122,8 @@ import { Neon, LIGHT_FORMAT } from './neon.js';
 import { Charge } from './charge.js';
 import { setupLab } from './lab.js';
 import { fetchSnapshot } from './snapshot.js';
+import { camera } from './camera.js';
+import { createApp } from './app.js';
 
 window.__moireBooted = true;
 
@@ -533,6 +535,7 @@ function resize() {
   if (canvas.width !== pxW) canvas.width = pxW;
   if (canvas.height !== pxH) canvas.height = pxH;
   view = { cssW, cssH, dpr, pxW, pxH };
+  camera.setDish(cssW, cssH);   // app: the view camera stays inside the dish
   for (const l of layers) l.resize(view);
   if (neon) neon.resize(view);
   if (light && light.pendingSpotPx) {
@@ -580,7 +583,8 @@ function frame(now) {
 
   const t0 = performance.now();
   // realDt and reached: real time, for the drawing only (step C6n: the trails' fade, the hum)
-  const f = { dt: ticks * TICK, tickDt: TICK, ticks, time: simTime, frameNo, realDt: dtReal, reached: paused ? 1 : stats.reached };
+  const f = { dt: ticks * TICK, tickDt: TICK, ticks, time: simTime, frameNo, realDt: dtReal, reached: paused ? 1 : stats.reached, camMoved: camera.moved };
+  camera.moved = false;
   const device = gpu.device;
   const encoder = device.createCommandEncoder({ label: `frame ${frameNo}` });
   for (const l of layers) l.compute(encoder, f);
@@ -820,7 +824,12 @@ function onKey(e) {
   }
   const a = keys.plain.get(k);
   if (!a) return;
-  if (k === ' ') e.preventDefault();   // Space pauses; it must not also press a focused button
+  if (k === ' ') {
+    // Space pauses; it must not also press a focused button. App: on its release (keyup above), so Space + a drag can pan
+    e.preventDefault();
+    if (!e.repeat && !(e.target && e.target.closest && e.target.closest('input, textarea, select'))) { spaceHeld = true; spaceUsed = false; }
+    return;
+  }
   runAction(a, k);
 }
 
@@ -845,12 +854,52 @@ function setupInput() {
     if (m && !!m.get() !== flag('machinery')) m.run();
   }
   setTimeout(() => { hintQuiet = true; if (!flashTimer) hintEl.textContent = hintLine(); }, 8000);
-  const pointer = { down: false, drag: false, light: false, x: 0, y: 0, sx: 0, sy: 0 };
-  const pos = (e) => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  // app: the pointer in DISH coordinates (through the view camera); sx, sy: where it went down on SCREEN (CSS px), for the
+  // tap / drag threshold. Pan: middle-drag, or Space held while dragging (Space alone still pauses: on its release, when no
+  // drag happened). Touch: one finger is the active tool; two fingers pinch-zoom and pan the view (the second finger cancels
+  // the first one's gesture; the remaining finger does nothing until every finger is up)
+  const pointer = { down: false, drag: false, light: false, pan: false, x: 0, y: 0, sx: 0, sy: 0, px: 0, py: 0 };
+  const screenPos = (e) => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  const pos = (e) => { const [sx, sy] = screenPos(e); return camera.toDish(sx, sy); };
+  const touches = new Map();   // pointerId -> [sx, sy] of the fingers on the canvas
+  let pinch = null;            // { d, cx, cy } while two fingers are down
+  let pinchDone = false;       // after a pinch, until every finger is up: no tool
+  const pinchState = () => {
+    const [a, b] = [...touches.values()];
+    return { d: Math.max(1, Math.hypot(a[0] - b[0], a[1] - b[1])), cx: (a[0] + b[0]) / 2, cy: (a[1] + b[1]) / 2 };
+  };
+  const cancelGesture = () => {
+    pointer.down = pointer.drag = pointer.light = pointer.pan = false;
+    cells.release();
+    if (appUI) appUI.cancel();
+  };
 
   canvas.addEventListener('pointerdown', (e) => {
-    if (!e.isPrimary) return;   // a second finger: left to the browser (pinch); the first keeps its gesture
-    const [x, y] = pos(e);
+    if (e.pointerType === 'touch') {
+      touches.set(e.pointerId, screenPos(e));
+      if (touches.size >= 2) {   // a second finger: pinch-zoom and pan; the first finger's gesture is cancelled
+        cancelGesture();
+        if (touches.size === 2) pinch = pinchState();
+        pinchDone = true;
+        try { canvas.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+        return;
+      }
+      if (pinchDone) return;
+    } else if (!e.isPrimary) return;
+    const [x, y] = pos(e), [sx, sy] = screenPos(e);
+    if (e.button === 1 || (e.button === 0 && spaceHeld)) {
+      // app: pan the view (the middle button, or Space + a left drag)
+      e.preventDefault();
+      if (spaceHeld) spaceUsed = true;
+      Object.assign(pointer, { down: false, drag: false, light: false, pan: true, px: sx, py: sy });
+      try { canvas.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      return;
+    }
+    if (e.button === 0 && appUI && appUI.dishDown(x, y)) {   // app: the add tools (add cells, the pipette)
+      Object.assign(pointer, { down: false, drag: false, light: false, pan: false });
+      try { canvas.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      return;
+    }
     if (e.button === 0 && TOOLS[tool].spot) {
       // the move-light tool: a tap or a drag puts the spot's centre under the pointer (as the right button does)
       if (light.params.mode !== 'spot') { light.params.mode = 'spot'; flash('light: spotlight'); }
@@ -872,12 +921,30 @@ function setupInput() {
     try { canvas.setPointerCapture(e.pointerId); } catch { /* ignore */ }
   });
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  canvas.addEventListener('auxclick', (e) => { if (e.button === 1) e.preventDefault(); });
   canvas.addEventListener('pointermove', (e) => {
-    if (!e.isPrimary) return;
+    if (e.pointerType === 'touch' && touches.has(e.pointerId)) {
+      touches.set(e.pointerId, screenPos(e));
+      if (pinch && touches.size >= 2) {
+        const q = pinchState();
+        camera.panBy(q.cx - pinch.cx, q.cy - pinch.cy);
+        camera.zoomAt(q.cx, q.cy, q.d / pinch.d);
+        pinch = q;
+        return;
+      }
+      if (pinchDone) return;
+    } else if (!e.isPrimary) return;
+    if (pointer.pan) {
+      const [sx, sy] = screenPos(e);
+      camera.panBy(sx - pointer.px, sy - pointer.py);
+      pointer.px = sx; pointer.py = sy;
+      return;
+    }
+    if (appUI && appUI.dishMove(...pos(e))) return;   // app: the add tools (a drag places more)
     if (pointer.light) { const [x, y] = pos(e); light.moveTo(x, y); return; }
     if (!pointer.down) return;
-    const [x, y] = pos(e);
-    if (!pointer.drag && Math.hypot(x - pointer.sx, y - pointer.sy) > 6) pointer.drag = true;
+    const [x, y] = pos(e), [sx, sy] = screenPos(e);
+    if (!pointer.drag && Math.hypot(sx - pointer.sx, sy - pointer.sy) > 6) pointer.drag = true;
     if (pointer.drag) {
       // stir: small bumps along the path, spaced about one grid cell apart
       const dist = Math.hypot(x - pointer.x, y - pointer.y);
@@ -890,7 +957,13 @@ function setupInput() {
     pointer.x = x; pointer.y = y;
   });
   const up = (e) => {
-    if (!e.isPrimary) return;
+    if (e.pointerType === 'touch' && touches.has(e.pointerId)) {
+      touches.delete(e.pointerId);
+      if (touches.size < 2) pinch = null;
+      if (pinchDone) { if (!touches.size) pinchDone = false; return; }
+    } else if (!e.isPrimary) return;
+    if (appUI && appUI.dishUp()) return;
+    if (pointer.pan) { pointer.pan = false; return; }
     if (pointer.light) { if (e.button === 2 || !e.buttons) pointer.light = false; return; }
     if (e.button !== 0) return;
     if (pointer.down && !pointer.drag) tap(pointer.x, pointer.y);
@@ -898,14 +971,25 @@ function setupInput() {
     cells.release();
   };
   canvas.addEventListener('pointerup', up);
-  canvas.addEventListener('pointercancel', () => { pointer.down = pointer.drag = pointer.light = false; cells.release(); });
+  canvas.addEventListener('pointercancel', (e) => {
+    touches.delete(e.pointerId);
+    if (touches.size < 2) pinch = null;
+    if (!touches.size) pinchDone = false;
+    cancelGesture();
+  });
   // step C2: the wheel tilts the spotlight, Shift+wheel turns the direction it comes from. Browsers turn Shift+wheel
   // into a sideways scroll (deltaX), so either axis counts; one notch (about 100 px) = 5 degrees of tilt, 15 of turn.
+  // App: Ctrl+wheel (and a trackpad's pinch, which arrives as Ctrl+wheel) always zooms the view toward the pointer; the plain
+  // wheel zooms too while the spotlight is not on (with the spotlight on it keeps tilting it, as the user chose)
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
-    if (light.modeIndex !== 1) { flash('the wheel tilts the spotlight: Shift+L until it says "spotlight"'); return; }
     const unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 800 : 1;
     const d = (Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX) * unit;
+    if (e.ctrlKey || light.modeIndex !== 1) {
+      const [sx, sy] = screenPos(e);
+      camera.zoomAt(sx, sy, Math.exp(-Math.max(-300, Math.min(300, d)) * 0.00223));   // a notch (100 px) = x 1.25
+      return;
+    }
     if (e.shiftKey) {
       light.turnBy(d * 0.15);
       flash(turnText());
@@ -915,12 +999,28 @@ function setupInput() {
     }
   }, { passive: false });
 
+  // app: Space held + a drag pans; Space pressed and let go without a drag still pauses (onKey leaves it to the release)
+  window.addEventListener('keyup', (e) => {
+    if (e.key !== ' ') return;
+    const run = spaceHeld && !spaceUsed;
+    spaceHeld = spaceUsed = false;
+    if (run) { const a = keys.plain.get(' '); if (a) runAction(a, ' '); }
+  });
+  window.addEventListener('blur', () => { spaceHeld = spaceUsed = false; });
   window.addEventListener('keydown', onKey);
+  appUI = createApp({ app, params, flag, flash, cells, matter, light, background, control, get view() { return view; }, touch: TOUCH });
   ui = setupUI(Object.assign(app, {
     actions, runAction, touch: TOUCH,
     startFolded: params.has('ui') ? !flag('ui') : null,
+    extraPanels: appUI.panels, dishExtra: appUI.dishExtra,
   }));
+  appUI.attach(ui);
+  window.moire.app = appUI;
+  window.moire.camera = camera;   // app: the view camera (moire.camera.set(zoom, x, y), .fit())
 }
+let appUI = null;          // app: zoom buttons, scale bar, zoos, add tools, new culture (src/app.js)
+let spaceHeld = false;     // app: Space is down (a left drag then pans)
+let spaceUsed = false;     // ... and a drag used it (its release does not pause)
 
 /** A compass word for the direction the light comes from (screen: 0 = right, 90 = below). */
 function compass(az) {

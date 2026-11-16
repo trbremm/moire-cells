@@ -40,7 +40,8 @@ export class Dipole {
     this.cells = cells;
     // live-tunable (moire.dipole.params). Switches: the rules panel's group "Charge per side (step C6d)" and URL options.
     this.params = {
-      on: true,          // dipoles (master): the side charges move (through-flow, relaxation), the dipole is seen (?dipoles=0)
+      on: false,         // dipoles (master): the side charges move (through-flow, relaxation), the dipole is seen (?dipoles=1; step C12g:
+                         // off by default, with the dish-wide charge field: no outside field turns or pushes cells)
       dd: true,          // dipole-dipole: neighbours' dipoles turn each other (head-to-tail lines up) and push (?dd=0)
       phi: true,         // the substrate's charge field acts on the side charges (?dphi=0)
       field: true,       // the field turns the cells (the hexagon and the charges within) and stretches them along it (?dfield=0)

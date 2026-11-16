@@ -17,6 +17,15 @@
 //                                read phi, cell_eat.wgsl plan; the step pushes, cell_step.wgsl)
 //   contours (Shift+0)           phi drawn as thin crisp contour lines (+ and - in their own inks; drawing only; also with the
 //                                machinery, Shift+4)
+// STEP C12g, CHARGE FIELD OFF BY DEFAULT (the user, 2026-11-16: "maybe the way we are handling charge is too exaggerated. Maybe the
+// chemicals should be enough ... except the polarity case, membranes, oils etc"). Salty water screens charge within about a nanometre
+// and stays electroneutral, so no cell should feel a charge cloud across the dish; charge matters at membranes (voltage, gradients,
+// channels, pumps) and inside molecules (polarity). So by default: the screened field, the free atoms' drift in it and the cells
+// feeling it are OFF (`on: false`), and field B's charge comes from the cells' own C13 field genes (`stock: false, genes: true`:
+// qB x the sign of the B sensing gene, the emission gene scaling it as before) instead of the stock's net charge. The atoms' charges
+// stay as bookkeeping (the charge's books, exact), and the C12 polarity, the membrane voltage, channels and pumps do not use this
+// field. ?chargefield=1 gives the old behaviour (field, drift, cells feel it, B from the stock); the dipoles (step C6d) are off by
+// default too (?dipoles=1). Snapshots saved before this step load with the old behaviour (as they ran).
 // The books: free charge in the dish (from the matter's read-back), the cells' charge (from the eat's), a census of the
 // cells' charge and the spread of phi (ledger words LG_Q_* in heat_common.wgsl), shown in the F overlay and a short
 // CHARGE line in the entropy panel.
@@ -41,8 +50,10 @@ export class Charge {
     this.cells = null;
     // live-tunable: moire.charge.params. The switches are rules (keys Shift+7 to Shift+0); the rest are knobs.
     this.params = {
-      on: true,           // Shift+7: the screened charge field is computed, and the free charged atoms drift in it
-      stock: true,        // Shift+8: a cell's charge in field B from its stock's net charge (off: the fixed charges per fate)
+      on: false,          // Shift+7: the screened charge field is computed, and the free charged atoms drift in it (step C12g: off by default)
+      stock: false,       // Shift+8: a cell's charge in field B from its stock's net charge (step C12g: off by default; then from its genes)
+      genes: true,        // step C12g: with stock off, a cell's charge in field B from its own field genes (qB x the sign of its B sensing
+                          // gene; its emission gene scales the beat); off: the fixed charges per fate of step 5 (?qgenes=0)
       feel: true,         // Shift+9: cells feel the grid's field (needs Shift+7)
       contours: false,    // Shift+0: phi drawn as contour lines (drawing only; also shown with the machinery, Shift+4)
       // the field
@@ -59,6 +70,9 @@ export class Charge {
                           // 0.3 units of each free atom; most cells are neutral to a few counts, cells running swap engines hold
                           // about 0.01 to 0.04 more of one sign, see the README)
       qB: 1,              // ... (the fixed per-fate charges of step 5 are about 1)
+      qGene: 0.15,        // step C12g: a cell's charge in field B from its genes: qGene x the sign of its B sensing gene (x its emission
+                          // gene). Every founder carries the same sign, so at 1 like-repels-like scattered the culture into crumbs; 0.15 keeps
+                          // a colony whole (about the stock charges' typical size: mean |q| 0.07 to 0.2) (?qgene=)
       bSign: 1,           // field B's sign rule while the charges come from the stocks: +1 like repels like (as real charge,
                           // and as the substrate's field); -1 like attracts like. Key U flips it then (and fields.sign, the
                           // per-fate charges' rule, while Shift+8 is off), so Shift+8 off gives back step 5's page exactly
@@ -109,11 +123,15 @@ export class Charge {
   get feelOn() { return this.fieldOn && !!this.params.feel && !!(this.eat && this.eat.params.on) && this.params.feelGain > 0; }
   /** Whether a cell's B charge comes from its stock (needs the cells eating: otherwise there is no stock to speak of). */
   get stockOn() { return !!this.params.stock && !!(this.eat && this.eat.params.on); }
-  /** Field B's sign rule in use: the stock charges' (params.bSign) or the per-fate charges' (cells.fields.sign). */
-  get signB() { return this.stockOn ? this.params.bSign : this.cells.fields.sign; }
+  /** Step C12g: whether a cell's B charge comes from its field genes (the default; not while it comes from the stock). */
+  get genesOn() { return !this.stockOn && !!this.params.genes; }
+  /** Field B's charge mode for the step (Fields.qStock): 1 the stock, 2 the field genes, 0 the fixed charges per fate. */
+  get qMode() { return this.stockOn ? 1 : this.genesOn ? 2 : 0; }
+  /** Field B's sign rule in use: the stock's or genes' charges' (params.bSign) or the per-fate charges' (cells.fields.sign). */
+  get signB() { return this.qMode ? this.params.bSign : this.cells.fields.sign; }
   /** Key U: flip the sign rule in use; returns the new sign. */
   flipSignB() {
-    if (this.stockOn) return (this.params.bSign = -this.params.bSign);
+    if (this.qMode) return (this.params.bSign = -this.params.bSign);
     return (this.cells.fields.sign = -this.cells.fields.sign);
   }
 
@@ -263,7 +281,7 @@ export class Charge {
     const sg = (x) => (x >= 0 ? '+' : '−') + fmt(Math.abs(x));
     const cells = `cells + ${L.pos} · − ${L.neg} · |q| ${L.meanQ.toFixed(2)}`;
     if (compact) return `CHARGE free ${sg(L.net)} · ${cells}`;
-    const field = P.on ? '' : ' · field off (Shift+7)';
+    const field = P.on ? '' : ' · no dish-wide field (Shift+7, ?chargefield=1)';
     return `CHARGE  free +${fmt(L.plus)} −${fmt(L.minus)} (net ${sg(L.net)}) · in cells ${sg(L.cellsQ)} · ${cells}${field}`;
   }
 

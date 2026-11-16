@@ -684,8 +684,8 @@ export class Cells {
     f[52] = Math.max(0, E.biasFloor); f[53] = Math.max(0, E.smellGain); f[54] = Math.max(1e-6, E.smellHalf);
     // step C6b, charge (src/charge.js): the cells feel the substrate's field; their B charge from their stock
     const Q = this.charge;
-    f[55] = Q && Q.feelOn ? Q.params.feelGain : 0; u[56] = Q && Q.stockOn ? 1 : 0;
-    f[57] = Q ? Q.params.qB : 1; f[58] = Q ? Math.max(0.01, Q.params.feelSat) : 1;
+    f[55] = Q && Q.feelOn ? Q.params.feelGain : 0; u[56] = Q ? Q.qMode : 0;   // (step C12g: 2 = from the field genes)
+    f[57] = Q ? (Q.qMode === 2 ? Q.params.qGene : Q.params.qB) : 1; f[58] = Q ? Math.max(0.01, Q.params.feelSat) : 1;
     // step C6c: the honeycomb (omega^2 and the damping 2 zeta omega of the corners' springs, the turning, jelly)
     const SH = this.shape, om = 2 * Math.PI * SH.wobbleHz * Math.sqrt(Math.max(0.01, SH.stiffness));
     u[46] = SH.on ? 1 : 0;
@@ -1079,7 +1079,7 @@ export class Cells {
     }
     const F = this.fields, L = this.landscape;
     lines.push(`field B: Q felt ${on(F.on)} · J drawn ${on(L && L.params.fieldB)} · U like ${(this.charge ? this.charge.signB : F.sign) > 0 ? 'repels' : 'attracts'} like · like = ${F.like ? 'similar key (lineage)' : 'charge'}` +
-      ` · band ${F.band} · r0 ${F.r0} R · cut ${F.cut} R · gain ${F.gain} · charges ${this.charge && this.charge.stockOn ? `from the stock (Shift+8; by fate ${F.chargeB.join(' ')})` : F.chargeB.join(' ')}`);
+      ` · band ${F.band} · r0 ${F.r0} R · cut ${F.cut} R · gain ${F.gain} · charges ${this.charge && this.charge.stockOn ? `from the stock (Shift+8; by fate ${F.chargeB.join(' ')})` : this.charge && this.charge.genesOn ? 'from the field genes (the sign of the B sensing gene)' : F.chargeB.join(' ')}`);
     const s6 = st && st.step6;
     if (s6) {
       // a histogram's value below which a share p of the cells lie (bins of width w)

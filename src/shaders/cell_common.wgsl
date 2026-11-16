@@ -106,6 +106,8 @@ fn fg_a(c: Cell) -> vec2f { return unpack2x16float(c.fg[0]); }   // A: lever fac
 fn fg_b(c: Cell) -> vec2f { return unpack2x16float(c.fg[1]); }   // B: lever factor - 1, emission - 1
 fn fg_ang(c: Cell) -> vec2f { return unpack2x16float(c.fg[2]); } // A's and B's lattice angle offsets (rad)
 fn fg_share(c: Cell) -> f32 { return unpack2x16float(c.fg[3]).x; } // the share of the beat turned into A'
+// step C12g: the sign of the cell's B sensing gene (its B charge's sign with Fields.qStock = 2; +1 while the field genes are off)
+fn fg_sgn_b(c: Cell) -> f32 { let s = unpack2x16float(c.fg[3]).y; return select(1.0, s, s != 0.0); }
 // ... what side k felt (s_k, -1..1), and the six sides' mean
 fn cell_felt(c: Cell, k: u32) -> f32 {
   let v = select(unpack4x8snorm(c.felt[1] & 0xffffu), unpack4x8snorm(c.felt[0]), k < 4u);
@@ -913,7 +915,9 @@ struct Fields {
   smellHalf: f32,   // ... the fuel gradient (energy per R^2 per R) at which the steering is tanh(1) of full
   // ---- step C6b, charge (src/charge.js) ----
   qFeel: f32,       // cells feel the substrate's charge field: speed = qFeel x q x (-grad phi) (R / s per phi per R; 0 = off)
-  qStock: u32,      // 1: a cell's charge in field B is qB x its Cell.q (from its stock); 0: the fixed charge of its fate
+  qStock: u32,      // 1: a cell's charge in field B is qB x its Cell.q (from its stock); 0: the fixed charge of its fate; 2 (step C12g,
+                    // the default): from its own C13 field genes: qB x the sign of its B sensing gene (its emission gene scales the
+                    // beat as before), so B stays alive and evolvable without the stock's net charge
   qStockB: f32,     // ... x this (the fixed per-fate charges are about 1)
   qSat: f32,        // the grid's push saturates at this speed (R / s)
   hex: vec4f,       // step C6c: x the corners' spring (omega^2, 1/s^2), y their damping (1/s), z the contacts' turning pull on
@@ -1014,7 +1018,8 @@ fn charge_b(F: Fields, kind: u32) -> f32 {
 // x (1 + conv)) or of the other sign (mode 1: x -conv), and listens to B with the same charge
 fn cell_charge_b(F: Fields, c: Cell) -> f32 {
   // step C6b: from the cell's stock (its net charge, saturating; Cell.q, eat pass), or the fixed charge of its fate
-  let q = select(charge_b(F, c.kind), F.qStockB * c.q, F.qStock != 0u);
+  var q = select(charge_b(F, c.kind), F.qStockB * c.q, F.qStock == 1u);
+  if (F.qStock == 2u) { q = F.qStockB * fg_sgn_b(c); }   // step C12g: from the field genes
   if (F.conv > 0.0 && (c.flags & CELL_CONV) != 0u) {
     return select(q * (1.0 + F.conv), -q * F.conv, F.convMode == 1u);
   }

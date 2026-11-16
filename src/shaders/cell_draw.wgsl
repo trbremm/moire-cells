@@ -100,6 +100,10 @@ struct Draw {
                     // z: an oily bilayer's deeper, glossier tube (0..1); w: a full wall's rim width (share of r)
   lip2: vec4f,      // x: the rim's brightness; y: a brick's length (share of r); z w spare
   lipInk: array<vec4f, 3>,    // a light (ll) crust, a heavy (LL) crust, soap's pearl
+  // ---- step C13: the guides view (mode 5; src/guides.js writeDraw) ----
+  gd: vec4f,        // x: 1 = the guides view; y: the tubes' shading by what each side feels (0..1); z: the body's fill at |gene| = 1;
+                    // w: a gate gene below this counts as none (the body then grey)
+  gdInk: array<vec4f, 6>,     // the guides view's inks: unguided, glue, pump, engine, division, turn
 };
 
 @group(0) @binding(0) var<uniform> D: Draw;
@@ -306,7 +310,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   // the cell's own lattice as sharp dots (the reference turns its dot pattern by la + 90 degrees): the lattice
   // it emits with (key and fate, scaled by the lever), drawn in the unstretched frame and mapped through the
   // stretch with the outline, so the dots sit on the strained lattice
-  let lat = cell_lattice(c, D.lever);
+  let lat = cell_lattice_a(c, D.lever);   // (step C13: the lattice its genes give it: lever factor, angle offset)
   let s = D.period * D.R * exp(lat.y);
   let dd = hex_dist(lp, s, lat.x + 1.5707963);
   let aad = max(fwidth(dd), 0.35 / D.dpr);       // derivatives before any discard
@@ -329,7 +333,20 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   let chargeView = D.mode > 2.5 && D.mode < 3.5;
   // step C10, the walls view (mode 4): the body in its wall pattern's ink (from the genes a1, a2: uniform, polar, two-ended,
   // sticky sides); the tubes below are shaded strongly by each side's adhesion, so the pattern itself shows
-  let wallsView = D.mode > 3.5;
+  let wallsView = D.mode > 3.5 && D.mode < 4.5;
+  // step C13, the guides view (mode 5): the body in its STRONGEST gate's ink (glue, pump, engine, division, turn; grey when every gate
+  // gene is small), filled as strongly as that gene is; the tubes below are shaded by what each side feels of field A (bright where
+  // the field is high, dark where low), so the landscape a cell is guided by shows round its rim
+  let guidesView = D.gd.x > 0.5;
+  var gdFill = 0.0;
+  if (guidesView) {
+    let gv = array<f32, 5>(g.gate.x, g.gate.y, g.gate.z, g.gate.w, g.gate2.x);
+    var gb = 0u;
+    var gm = D.gd.w;
+    for (var k = 0u; k < 5u; k++) { if (abs(gv[k]) >= gm) { gm = abs(gv[k]); gb = k + 1u; } }
+    col = D.gdInk[gb].rgb;
+    gdFill = D.gd.z * select(0.25, clamp(gm, 0.25, 1.0), gb > 0u);
+  }
   if (wallsView) {
     let a1 = g.wall.x;
     let a2 = g.wall.y;
@@ -424,7 +441,8 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   }
   // committed cells get a flat fill in their colour, so tissues read as areas; stem cells stay dark inside
   // (neon: every inside dark, a faint tint; the fills come from src/cells.js by the look)
-  let fill = select(select(select(D.fill, D.fillC, c.kind != KIND_STEM), D.inkOther.w, strategyView || chargeView), D.wall2.y, wallsView);
+  let fill = select(select(select(select(D.fill, D.fillC, c.kind != KIND_STEM), D.inkOther.w, strategyView || chargeView), D.wall2.y, wallsView),
+                    gdFill, guidesView);
   var fillRgb = col * fill;   // (step 8 may tint it below)
   // step C6n: neon, the tube lights the inside near it (a soft glow falling off inward)
   if (neon) { fillRgb += col * D.neon2.x * exp(-max(ein2 - lw, 0.0) / max(D.neon.w * c.r, 1e-3)); }
@@ -498,6 +516,8 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     lineCol *= (1.0 - gain) + 2.0 * gain * aE;
     lineCol = mix(lineCol, vec3f(max(max(lineCol.r, lineCol.g), lineCol.b)), D.wall.z * mtr) * (1.0 + D.wall2.w * mtr);
   }
+  // step C13, the guides view: each side's tube by what that side feels (s, -1..1): bright where the field is high, dark where low
+  if (guidesView) { lineCol *= (1.0 - D.gd.y) + D.gd.y * (1.0 + cell_felt(c, min(side, 5u))); }
   // step C12b: soap's pearl (a pale sheen whose hue drifts along the tube and slowly in time) and oil's depth (more saturated)
   if (D.lip.x > 0.5) {
     let hsh = f32((c.seed >> 8u) & 255u) / 255.0;

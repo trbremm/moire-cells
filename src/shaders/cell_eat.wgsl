@@ -189,7 +189,8 @@ struct EatP {
   wl0: vec4f,              // x: WL_* bits (u32); y the pattern strength (x a1, a2); z the maturity factor's extra at full
                            // maturity (the cap - 1; 0 while junctions do not mature); w linker per R of side at adhesion 1 (atom-units)
   wl1: vec4f,              // x the upkeep: heat counts per tick per R of side at adhesion 1; y step C11: the FREE base glue (the
-                           // adhesion every side holds at no cost; only what a side asks above it is built and paid); z w spare
+                           // adhesion every side holds at no cost; only what a side asks above it is built and paid); z step C13:
+                           // the gates' bits (FG_*, u32: glue, pump, engine); w spare
   // ---- step C12b, lipid membranes (src/lipids.js) ----
   lp: array<vec4f, 9>,     // [0] x LPF_* bits (u32); y Tref (the temperature at which pure soap has stiffness 1: the heat's factor is
                            //     2 / (1 + T / Tref)); z crackAt (a corner's sudden strain, its speed over its own wobble's angular
@@ -205,6 +206,8 @@ struct EatP {
                            // [6] per kind its LIGHT linkers (l) in the chain, [7] its HEAVY linkers (L): what bites by row
                            // [8] x the honeycomb corners' angular frequency at stiffness 1 (1/s; Fields.hex.x = its square); y z w spare
 };
+// step C13: the gates' bits (FG_* in cell_common.wgsl; src/guides.js writes them into EatP.wl1.z)
+fn fg_bits() -> u32 { return bitcast<u32>(EP.wl1.z); }
 // step C7b: the cofactor's factor for a cell holding `tr` trace per R^2 (1 while the rule is off)
 fn cofactor(tr: f32) -> f32 {
   if (EP.cat.x <= 0.0) { return 1.0; }
@@ -739,7 +742,9 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   var pCostC = 0.0;
   var pCostG = 0.0;
   let puf = pu_flags();
-  let gpu = bio[i].pump;
+  // step C13, the pump gate: the slots' rates x (1 + g s), s the field A the cell's sides felt (their mean; the step's Cell.felt)
+  var gpu = bio[i].pump;
+  if ((fg_bits() & FG_PUMP) != 0u) { gpu = vec4f(gpu.xy, gpu.zw * gate_factor(bio[i].gate.y, cell_felt_mean(c))); }
   let pmax = EP.pu0.w;
   let pr = vec2f(min(max(gpu.z, 0.0), pmax), min(max(gpu.w, 0.0), pmax));
   if ((puf & PUF_ON) != 0u && eatOn && (pr.x > 0.0 || pr.y > 0.0)) {
@@ -1102,7 +1107,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     // its membrane VOLTAGE (into the voltage's store, stock word EVW); the voltage leaks back through the membrane (faster
     // when leaky or damaged), and the energy it frees becomes heat or, with PUF_V2B, partly battery charge
     let puf = pu_flags();
-    let gpu = bio[i].pump;
+    var gpu = bio[i].pump;
+    if ((fg_bits() & FG_PUMP) != 0u) { gpu = vec4f(gpu.xy, gpu.zw * gate_factor(bio[i].gate.y, cell_felt_mean(c))); }   // step C13 (as the plan)
     let pch = vec2u(pump_ch(gpu.x), pump_ch(gpu.y));
     let pz = vec2i(charge_of(EP.qCodes, pch.x), charge_of(EP.qCodes, pch.y));
     var vdq = 0;                                                // charge counts this cell's pumps moved in
@@ -1332,9 +1338,12 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       let uf = vec2f(cos(c.front), sin(c.front));
       let gw = bio[i].wall;
       let a0 = clamp(bio[i].body.x, 0.0, 1.0);
+      // step C13, the glue gate: each side's pattern x (1 + g s_k), s_k what that side felt of field A (the step's Cell.felt)
+      let glueG = (fg_bits() & FG_GLUE) != 0u;
       for (var k = 0u; k < 6u; k++) {
         let cs = dot(normalize(mbw.mid[k] + vec2f(1e-6, 0.0)), uf);
-        let p = clamp(a0 + EP.wl0.y * (gw.x * cs + gw.y * (2.0 * cs * cs - 1.0)), 0.0, 1.0);
+        var p = clamp(a0 + EP.wl0.y * (gw.x * cs + gw.y * (2.0 * cs * cs - 1.0)), 0.0, 1.0);
+        if (glueG) { p *= gate_factor(bio[i].gate.x, cell_felt(c, k)); }
         aReq[k] = min(p * (1.0 + EP.wl0.z * wall_mature(c.mature, k)), WALL_AMAX);
         aPay[k] = select(aReq[k], max(aReq[k] - EP.wl1.y, 0.0), wCost);
         if (wCost && membOn) { wX[k] = memb_want(c.r, EP.wl0.w * aPay[k]); }
@@ -1739,7 +1748,9 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     if (CP.traceOn != 0u) { sparkScale = 1.0 / (1.0 + CP.traceK * f32(m[CP.trace]) * concIn); }
 
     // ---- step C6: the engines from the genome ----
-    let b = bio[i];
+    var b = bio[i];
+    // step C13, the engine gate: the engine slots' rates x (1 + g s), s the field A the cell's sides felt (their mean)
+    if ((fg_bits() & FG_ENGINE) != 0u) { b.rate = vec4f(b.rate.xyz * gate_factor(b.gate.z, cell_felt_mean(c)), b.rate.w); }
     if ((EP.flags & EF_ENG) != 0u) {
       // pigments: each harvest slot's pigment catches its band of the light falling on the cell, in whole photons (one
       // photon = one event's worth); its optical depth is pigK x the slot's rate, and it shares the band with what else

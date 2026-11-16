@@ -41,6 +41,10 @@ export const GENES = {
   // step C12b, the lipid membrane: oilShare is the C6c mix gene (oil per soap); wall (a share of a full wall), head (-1 tlL .. 1 glL),
   // wallRow (the wall's heavy share)
   oilShare: 40, wall: 52, head: 53, wallRow: 54,
+  // step C13, fields as genes: per field lever (x), emission (x), sensing gain and sign (x), tuning width (x, A) or pickiness (B), lattice
+  // angle offset (rad); the partner's share and sensing; the gates (-1..1) and the push gene (0..2)
+  leverA: 56, emitA: 57, senseA: 58, tuneA: 59, leverB: 60, emitB: 61, senseB: 62, pickB: 63, angleA: 64, angleB: 65, shareP: 66, senseP: 67,
+  gateGlue: 68, gatePump: 69, gateEngine: 70, gateDiv: 71, gateTurn: 72, push: 73,
 };
 // words 19..31 are the cell's state, not genes (heading, accumulators, felt fields, conversion)
 const STATE = new Set([19, ...Array.from({ length: 12 }, (_, k) => 20 + k)]);
@@ -85,6 +89,7 @@ function gather(M, ctl) {
   flatten(M.hardlight.census, 'hardlight', out);
   flatten(M.division.census, 'division', out);
   flatten(M.walls.census, 'walls', out);         // step C10: the patterned walls' census
+  if (M.guides && M.guides.census) flatten(M.guides.census, 'guides', out);   // step C13: the field genes and the gates
   if (M.oil) { flatten(M.oil.census, 'oil', out); if (M.oil.last) flatten({ ...M.oil.last, sizes: undefined }, 'oilstats', out); }   // step C12
   if (M.walls.near) flatten(M.walls.near, 'wallstats', out);
   if (M.lipids) { flatten({ ...(M.lipids.census || {}), tot: undefined }, 'lipids', out); if (M.lipids.last) flatten(M.lipids.last, 'lipstats', out); }   // step C12b

@@ -99,6 +99,14 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var parent = 0xffffffffu; // energy-biased turnover: a neighbour weighs FL.bias + its battery share (else all 1)
   let biasOn = (FL.eat & EAT_BIAS) != 0u;
 
+  // step C13, fields as genes (src/guides.js): this cell's own sensing genes (today's values while the field genes are off)
+  let fgF = bitcast<u32>(FL.fg0.x);
+  let fgOn = (fgF & FG_GENES) != 0u;
+  let senseA = select(1.0, bio.fa.z, fgOn);          // field A: sensing gain and sign
+  let tuneA = select(1.0, max(bio.fa.w, 0.05), fgOn); // ... tuning width (x tuneW)
+  let senseB = select(1.0, bio.fb.z, fgOn);          // field B: sensing gain and sign
+  let pickB = select(0.0, max(bio.fb.w, 0.0), fgOn); // ... pickiness (0: feels every cell's B)
+  let senseP = select(1.0, bio.fx.w, fgOn);          // the partner A': sensing gain and sign
   // the loop: the field of the neighbours, averaged along each membrane segment
   let sensing = S.sense > 0.0;
   let cutR = S.cut * S.R;
@@ -136,12 +144,13 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let rk0 = select(mk0, lattice_k(bio.key.z, bio.key.w, S.lever, med.k0, 0), byRec);
   let rk1 = select(mk1, lattice_k(bio.key.z, bio.key.w, S.lever, med.k0, 1), byRec);
   let rk2 = select(mk2, lattice_k(bio.key.z, bio.key.w, S.lever, med.k0, 2), byRec);
-  let rw = select(S.tuneW, bio.rec.x, byRec);
+  let rw = select(S.tuneW * tuneA, bio.rec.x, byRec);
   var C = vec2f(0.0);                        // contact squeeze (traceless tensor: (xx - yy, 2 xy) parts)
   // field B (step 5): its gradient at the centre, summed over the neighbours within its reach, each weighted by
   // the sign rule; it reaches past the usual 3 x 3 grid block, so the block grows to FL.bReach cells around
   let feelB = FL.bGain > 0.0;
   let cutB = FL.bCut * S.R;
+  let kB0 = med.k0 / FL.bBand;               // step C13: B's band's wavenumber (B's pickiness)
   let myQA = charge_a(FL, c.kind);
   // rule 1 (step 6), leak by deformation: a cell whose strained A lattice reaches B's band also listens to B
   // through its A charge, in the share it leaks (me.lk.w): its charge in B is its own B charge plus that
@@ -283,6 +292,11 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           if (FL.bLike == 1u) {
             w = -FL.bSign * abs(myQB) * sign(ob.b2a.z + ob.lk.z) * exp(-key_dist2(c.la, c.aux, o.la, o.aux) / (2.0 * FL.bLikeW * FL.bLikeW));
           }
+          // step C13: a picky cell (gene pickB > 0) feels only cells whose B lattice is like its own (a Gaussian in the difference of
+          // the two B beats' wavevectors: the difference of the lattices', against the same medium)
+          if (pickB > 0.0 && w != 0.0) {
+            w *= exp(-pickB * lattice_dist2(me.b01.xy, me.b01.zw, me.b2a.xy, ob.b01.xy, ob.b01.zw, ob.b2a.xy) / (1.5 * kB0 * kB0));
+          }
           if (w != 0.0) {
             if (ob.b2a.z != 0.0) { gB += w * cell_field_b(ob, c.pos, cutB).xy; }
             if (ob.lk.z != 0.0) { gB += w * cell_field_leak(ob, c.pos, cutB).xy; }   // its leaked B (rule 1)
@@ -301,8 +315,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
               if (wq != 0.0) {
                 sense_pair(&segQ, &segP, mb, c.pos - ob.q2p.zw, ob.q01.xy, ob.q01.zw, ob.q2p.xy, ob.ph, ob.k2a.w, wq, wq, pSgn);
               }
-            } else if (sensing && wq != 0.0 && S.sense != 0.0) {
-              sense_field(&seg, mb, c.pos - ob.q2p.zw, ob.q01.xy, ob.q01.zw, ob.q2p.xy, ob.ph, ob.k2a.w, S.sense * wq);
+            } else if (sensing && wq != 0.0 && S.sense * senseA != 0.0) {
+              sense_field(&seg, mb, c.pos - ob.q2p.zw, ob.q01.xy, ob.q01.zw, ob.q2p.xy, ob.ph, ob.k2a.w, S.sense * senseA * wq);
             }
           }
         }
@@ -479,13 +493,17 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       let nrm = vec2f(mb.edge[a].y, -mb.edge[a].x);
       pA += vec3f(segQ[a] * nrm, segQ[a]);
       pP += vec3f(segP[a] * nrm, segP[a]);
-      if (sensing) { seg[a] += S.sense * segQ[a]; }
+      if (sensing) { seg[a] += S.sense * senseA * segQ[a]; }
     }
     pA = vec3f(pA.xy / sArea, pA.z / 6.0);
     pP = vec3f(pP.xy / sArea, pP.z / 6.0);
   }
 
   var Q = vec2f(0.0);                        // the field's pull on the outline (quadrupole of the membrane signal)
+  // step C13, fields as guides: the felt GRADIENT's direction and its strength 0..1 (tanh of the push it would give over the push's
+  // saturation: as strongly as the field could push, it guides), for the division and turn gates
+  var gDir = vec2f(0.0);
+  var gStr = 0.0;
   if (sensing) {
     // force = sum of (segment mean x outward normal x length) = area x gradient, then a saturating response
     var cf = vec2f(0.0);
@@ -498,7 +516,13 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     cf *= 1.3 * S.R / max(c.r, 0.1) * (2.598 * c.r * c.r / sArea);
     let cm = length(cf);
     let sat = S.senseMax * S.R;
-    if (cm > 1e-6) { f += cf * (sat * tanh(cm / sat) / cm); }
+    // step C13: the push gene (0..2; 1 = as before) scales the push (not the guidance)
+    let pushG = select(1.0, clamp(bio.gate2.y, 0.0, 2.0), (fgF & FG_PUSH) != 0u);
+    if (cm > 1e-6) {
+      f += cf * (pushG * sat * tanh(cm / sat) / cm);
+      gDir = cf / cm;
+      gStr = tanh(cm / sat);
+    }
   }
 
   // step C6b: the substrate's screened charge field (src/charge.js): a charged cell (Cell.q, from its stock) is pushed
@@ -545,7 +569,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // field B's force: area x gradient (the membrane integral, for a field this smooth over the cell), scaled as
   // field A's (x 1.3 R / r), saturating at its own speed
   if (feelB) {
-    let fb = FL.bGain * 3.38 * S.R * c.r * gB;
+    let fb = FL.bGain * senseB * 3.38 * S.R * c.r * gB;
     let bm = length(fb);
     let bs = FL.bSat * S.R;
     if (bm > 1e-6) { f += fb * (bs * tanh(bm / bs) / bm); }
@@ -556,7 +580,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // carried by the wave: gain x R x (R x phase gradient) per s, softened near zeros of the pair, saturating.
   if (partner && FL.pGain > 0.0) {
     let jc = pA.z * pP.xy - pP.z * pA.xy;
-    let fj = FL.pGain * S.R * S.R * jc / (pA.z * pA.z + pP.z * pP.z + FL.pEps * FL.pEps);
+    let fj = FL.pGain * senseP * S.R * S.R * jc / (pA.z * pA.z + pP.z * pP.z + FL.pEps * FL.pEps);
     let jm = length(fj);
     let js = FL.pSat * S.R;
     if (jm > 1e-6) { f += fj * (js * tanh(jm / js) / jm); }
@@ -665,7 +689,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // it is negative.
   if (partner && FL.side != 0.0) {
     if (FL.sideMode == 0u) {
-      let g = FL.side * S.sense * 3.38 * c.r * S.R * pP.xy;
+      let g = FL.side * senseP * S.sense * 3.38 * c.r * S.R * pP.xy;
       var fs = vec2f(-g.y, g.x);
       let fm = length(fs);
       let sat = S.senseMax * S.R;
@@ -673,7 +697,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       f += fs;
     } else {
       let a = tanh(pP.z / max(abs(pA.z), FL.pEps));
-      f += FL.side * a * vec2f(-c.vel.y, c.vel.x) / max(1.0 - S.damping, 1e-3);
+      f += FL.side * senseP * a * vec2f(-c.vel.y, c.vel.x) / max(1.0 - S.damping, 1e-3);
     }
   }
 
@@ -773,6 +797,14 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // (a disc's rotational drag on its substrate, against the drag 1 the motion has: velocity = force), at most TURN_MAX
   var wTurn = 0.0;
   if (glueTurn) { wTurn = clamp(FL.wl1.w * glueTq / max(0.5 * c.r * c.r, 1e-6), -TURN_MAX, TURN_MAX); }
+  // step C13, the turn gate: the front turns toward the felt gradient (gene > 0) or away from it (< 0), at the gate's rate x |gene| x
+  // the gradient's strength x the sine of the angle between them (with the glue's turning on, the body turns, front and outline
+  // together; else the front alone)
+  var gTurn = 0.0;
+  if ((fgF & FG_TURN) != 0u && wallOn && gStr > 0.0) {
+    gTurn = FL.fg0.z * clamp(bio.gate2.x, -1.0, 1.0) * gStr * (gDir.y * cos(c.front) - gDir.x * sin(c.front));
+    if (glueTurn) { wTurn = clamp(wTurn + gTurn, -TURN_MAX, TURN_MAX); }
+  }
   var dFront = 0.0;                          // ... and how far the body (and so the front) turned
   var t = select(0.5 * C, vec2f(0.0), hexShape);
   t += dStretch;                             // step C6d: a polarised cell in a field stretches along it
@@ -911,6 +943,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // seconds; a weak or passing dipole barely moves it (the front is a persistent property of the cell)
   if (wallOn) {
     var fr = c.front + select(dFront, wTurn * S.dt, glueTurn && !hexShape);   // (an ellipse cell: the glue turns the front alone)
+    if (!glueTurn) { fr += gTurn * S.dt; }     // step C13: the turn gate, without the glue's turning: the front alone
     if ((wlF & WL_FRONT) != 0u && dipOn && myDm > 1e-3) {
       fr += FL.wl0.y * clamp(bio.wall.z, 0.0, 1.0) * min(myDm, 1.0) * sin(atan2(myD.y, myD.x) - fr) * S.dt;
     }
@@ -1111,6 +1144,15 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           if (wallOn && (wlF & WL_DIVFRONT) != 0u) {
             ang = c.front + 1.5707963 * clamp(bio.wall.w, 0.0, 1.0) + select(0.0, 3.14159265, rand01(bs, 202u) < 0.5);
           }
+          // step C13, the division gate: the axis is pulled toward the felt gradient (gene > 0: the daughter up or down it) or across it
+          // (< 0), by |gene| x the gradient's strength (axes blended as doubled angles, either end at random)
+          let gd = clamp(bio.gate.w, -1.0, 1.0);
+          let wd = abs(gd) * gStr;
+          if ((fgF & FG_DIV) != 0u && wd > 0.0) {
+            let ag = atan2(gDir.y, gDir.x) + select(0.0, 1.5707963, gd < 0.0);
+            let v2 = (1.0 - wd) * vec2f(cos(2.0 * ang), sin(2.0 * ang)) + wd * vec2f(cos(2.0 * ag), sin(2.0 * ag));
+            ang = 0.5 * atan2(v2.y, v2.x) + select(0.0, 3.14159265, rand01(bs, 203u) < 0.5);
+          }
           let u = vec2f(cos(ang), sin(ang));
           let r0 = c.r;
           let np = clamp(c.pos + u * (FL.dv2.z * r0), vec2f(0.0), vec2f(S.W, S.H));
@@ -1141,6 +1183,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
             d.front = c.front;
             if (hexShape) { d.theta = c.theta; d.rad = c.rad; d.ea = c.ea; d.alpha = c.alpha; d.flags |= CELL_HEX; }
           }
+          d.fg = fg_words(nb, fgOn);              // step C13: her field genes for her beat at once
           nb.env.y = FL.dv1.w;                    // both flash
           bio.env.y = FL.dv1.w;
           cells[k] = d;
@@ -1254,6 +1297,16 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       atomicAdd(&stats.wall[WS_FD], bitcast<u32>(i32(round(1000.0 * cos(atan2(myD.y, myD.x) - c.front)))));
     }
   }
+  // step C13: what each side felt (s_k = tanh(felt / ref)), for the eat pass's gates and the guides view, and the field genes the beat
+  // needs (Cell.fg), from the genome (a newborn's from hers)
+  let sRef = max(FL.fg0.y, 1e-3);
+  var sk = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  if (sensing && !died && c.seed == sorted[j].seed) { for (var a = 0; a < 6; a++) { sk[a] = tanh(seg[a] / sRef); } }
+  c.felt = array<u32, 2>(pack4x8snorm(vec4f(sk[0], sk[1], sk[2], sk[3])), pack4x8snorm(vec4f(sk[4], sk[5], 0.0, 0.0)) & 0xffffu);
+  c.fg = fg_words(bio, fgOn && !died);
+  if (S.xCount != 0u && !died) {
+    fg_census(bio, sk, gStr, fgF, me);
+  }
   // step C7: the neighbours across the sides, 16 bits each (none while the pumps across contact are off)
   c.nbr = array<u32, 3>(nbIA.x | (nbIA.y << 16u), nbIA.z | (nbIA.w << 16u), nbIB.x | (nbIB.y << 16u));
   cells[i] = c;
@@ -1310,4 +1363,50 @@ fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
   nb.conv = vec4f(0.0);
   nb.body.w = TAU * rand01(bs, 200u);
   return nb;
+}
+
+// step C13: the field-gene words a cell's beat uses (Cell.fg), from its genome: deltas from today's values (all 0 while off)
+fn fg_words(b: Bio, on: bool) -> array<u32, 4> {
+  if (!on) { return array<u32, 4>(0u, 0u, 0u, 0u); }
+  return array<u32, 4>(pack2x16float(vec2f(b.fa.x - 1.0, b.fa.y - 1.0)), pack2x16float(vec2f(b.fb.x - 1.0, b.fb.y - 1.0)),
+                       pack2x16float(b.fx.xy), pack2x16float(vec2f(b.fx.z, 0.0)));
+}
+
+// step C13: the census of the field genes and the gates (Stats.fg; the frame's last tick): the genes' sums and squares, the strongest
+// gate, what the cell feels, what the gates do, the beat period
+fn fg_census(b: Bio, sk: array<f32, 6>, gStr: f32, fgF: u32, me: CellBeat) {
+  atomicAdd(&stats.fg[FGS_N], 1u);
+  let v = array<f32, 18>(b.fa.x, b.fa.y, b.fa.z, b.fa.w, b.fb.x, b.fb.y, b.fb.z, b.fb.w, b.fx.x, b.fx.y, b.fx.z, b.fx.w,
+                         b.gate.x, b.gate.y, b.gate.z, b.gate.w, b.gate2.x, b.gate2.y);
+  for (var k = 0u; k < 18u; k++) {
+    atomicAdd(&stats.fg[FGS_SUM + k], bitcast<u32>(i32(round(v[k] * 1000.0))));
+    atomicAdd(&stats.fg[FGS_SQ + k], u32(round(min(v[k] * v[k], 1000.0) * 1000.0)));
+  }
+  // the strongest gate gene (none: all below FGS_MIN)
+  var best = 0u;
+  var bv = FGS_MIN;
+  for (var k = 0u; k < 5u; k++) {
+    let a = abs(v[12u + k]);
+    if (a >= bv) { bv = a; best = k + 1u; }
+  }
+  atomicAdd(&stats.fg[FGS_STRONG + best], 1u);
+  var sm = 0.0;
+  var lo = 1.0;
+  var hi = -1.0;
+  var ga = 0.0;
+  for (var k = 0; k < 6; k++) { sm += sk[k]; lo = min(lo, sk[k]); hi = max(hi, sk[k]); ga += abs(gate_factor(b.gate.x, sk[k]) - 1.0); }
+  sm /= 6.0;
+  atomicAdd(&stats.fg[FGS_FELT], u32(round(abs(sm) * 1000.0)));
+  atomicAdd(&stats.fg[FGS_SPREAD], u32(round(max(hi - lo, 0.0) * 500.0)));
+  atomicAdd(&stats.fg[FGS_GUIDE], u32(round(gStr * 1000.0)));
+  if ((fgF & FG_GLUE) != 0u) { atomicAdd(&stats.fg[FGS_GLUE], u32(round(ga / 6.0 * 1000.0))); }
+  if ((fgF & FG_ENGINE) != 0u) { atomicAdd(&stats.fg[FGS_RATE], u32(round(abs(gate_factor(b.gate.z, sm) - 1.0) * 1000.0))); }
+  // the beat period (R): 2 pi / the mean length of the three beat wavevectors, at most 100 R
+  let qm = (length(me.q01.xy) + length(me.q01.zw) + length(me.q2p.xy)) / 3.0;
+  let per = min(TAU / max(qm, 1e-6) / S.R, 100.0);
+  var bin = 0u;
+  let edges = array<f32, 7>(2.0, 3.0, 4.5, 7.0, 10.0, 15.0, 25.0);
+  for (var k = 0u; k < 7u; k++) { if (per >= edges[k]) { bin = k + 1u; } }
+  atomicAdd(&stats.fg[FGS_PH + bin], 1u);
+  atomicAdd(&stats.fg[FGS_PSUM], u32(round(per * 1000.0)));
 }

@@ -31,6 +31,7 @@ import { CELL_FLOATS } from './cells.js';
 import { BIO_FLOATS } from './genome.js';
 import { LEDGER_WORDS } from './heat.js';
 import { NCH, SUBSTANCES } from './matter.js';
+import { fieldDefaults } from './guides.js';
 
 export const SNAP_FORMAT = 'moire-cells-snapshot';
 export const SNAP_VERSION = 1;
@@ -156,6 +157,7 @@ export function settingObjects(M) {
     ...(M.oil ? { 'oil.params': M.oil.params } : {}),            // step C12
     ...(M.lipids ? { 'lipids.params': M.lipids.params, 'lipids.look': M.lipids.look } : {}),   // step C12b
     ...(M.excited ? { 'excited.params': M.excited.params, 'excited.look': M.excited.look } : {}),   // step C12c
+    ...(M.guides ? { 'guides.params': M.guides.params, 'guides.look': M.guides.look } : {}),   // step C13
   };
 }
 const SCALARS = [['neon.on', (M) => M.neon, 'on'], ['background.heatOn', (M) => M.background, 'heatOn'], ['background.ambient', (M) => M.background, 'ambient']];
@@ -340,9 +342,13 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     // OFF, so it runs on as it was saved; other layouts are refused
     // step C12b: one from before the lipid membranes (cells of 72 words, genomes of 52, stocks of 32) loads the same way, with the new
     // words empty (no lipids in any membrane, lipid genes 0) and with the lipid membranes OFF, so it runs on as it was saved
+    // step C13: one from before the field genes (cells of 78 words, genomes of 56) loads with the new words empty (the beat's gene words 0:
+    // today's values; nothing felt yet), its genomes' field genes at today's values (x 1, offset 0, gates 0, push 1), and with the field
+    // genes, every gate and the push gene OFF, so it runs on as it was saved
     const oldC10 = S.layout.cellWords === 64 && S.layout.bioWords === 48;
     const oldC12 = S.layout.cellWords === 72 && S.layout.bioWords === 52;
-    const widen = oldC10 || oldC12;
+    const oldC13 = S.layout.cellWords === 78 && S.layout.bioWords === 56;
+    const widen = oldC10 || oldC12 || oldC13;
     if (!widen && (S.layout.cellWords !== CELL_FLOATS || S.layout.bioWords !== BIO_FLOATS)) {
       throw new Error(`snapshot layout (cell ${S.layout.cellWords}, bio ${S.layout.bioWords} words) does not match this page (${CELL_FLOATS}, ${BIO_FLOATS})`);
     }
@@ -389,6 +395,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       M.walls.params.freeGlue = 0;
       notes.push('saved before step C11: glue turning and division by the front off, no free base glue (as it ran)');
     }
+    if (opts.settings !== false && M.guides && !(S.settings && S.settings['guides.params'])) {
+      Object.assign(M.guides.params, { genes: false, glue: false, pump: false, engine: false, div: false, turn: false, push: false, null: false });   // step C13
+      notes.push('saved before step C13: field genes, gates and the push gene off (as it ran)');
+    }
     if (S.founders) M.genome.founders = clone(S.founders);
 
     // the cells: at their own slots when they fit, else packed from slot 0 (their neighbour words then cleared)
@@ -402,6 +412,7 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       for (let k = 0; k < m; k++) {
         r2.set(rec.subarray(k * cw, (k + 1) * cw), k * CELL_FLOATS);
         b2.set(bio.subarray(k * bw, (k + 1) * bw), k * BIO_FLOATS);
+        fieldDefaults(new Float32Array(b2.buffer), k * BIO_FLOATS);   // (step C13: the field genes at today's values)
       }
       rec = r2; bio = b2;
     }
@@ -429,8 +440,9 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     q.writeBuffer(C.eat.stockBuf, 0, su);
     const stats = await unpack(S.stats);
     if (stats.byteLength === C.statsBuf.size) q.writeBuffer(C.statsBuf, 0, stats);
-    else if (stats.byteLength < C.statsBuf.size && stats.byteLength >= C.statsBuf.size - 128) q.writeBuffer(C.statsBuf, 0, stats);   // (step C10
-    // appended Stats.wall, step C11 widened it: the counters are in front, the census words behind are refilled every frame)
+    else if (stats.byteLength < C.statsBuf.size && stats.byteLength >= C.statsBuf.size - 512) q.writeBuffer(C.statsBuf, 0, stats);   // (step C10
+    // appended Stats.wall, step C11 widened it, step C13 appended Stats.fg: the counters are in front, the census words behind are refilled
+    // every frame)
     else notes.push('stats buffer size differs: counters start from the page\'s');
     if (gridOK) writeGrid(M, await unpack(S.grid.data), S.grid.blocks || ['delta', 'heat', ...SUBSTANCES.slice(0, 13).map((s) => s.name), 'phi']);
 

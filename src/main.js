@@ -76,6 +76,11 @@
 //               ?exshare=x the share of the photon's surplus an excited atom keeps (0..1, default 0.5; fixed for the page),
 //               ?exlife=s its lifetime in a cold dish (s), ?exhot=T the temperature at which it fades twice as fast, ?exlook=0
 //               the haze not drawn (rules panel, Excited waste; view panel)
+//   ?fgenes=0     step C13: start with the field genes off (every cell today's lever, emission, sensing, tuning, angle; the genes
+//               still drift); ?gateglue=0, ?gatepump=0, ?gateengine=0, ?gatediv=0, ?gateturn=0 one gate off (?gates=0 all five),
+//               ?pushgene=0 the push gene off (field A pushes every cell as before), ?gatenull=1 the NEUTRAL control (the gate
+//               genes and the push gene drift but act on nothing); ?gateref=x the felt reference, ?gateturnrate=x the turn gate's
+//               rate (rules panel, Fields as guides); ?view=guides colour by the strongest gate
 //   ?mut=0      start with mutation off (key M); ?life=0 with the life cycle off (key T: no births, no deaths)
 //   Experiments (src/lab.js, src/snapshot.js; README "Experiments: tools"): ?snap=<file> loads a snapshot at the start (its
 //               starting number and capacity, its settings); ?clone=1 copies the first live cell's genes to every cell
@@ -235,8 +240,8 @@ async function boot() {
     landscape.cells = cells;
     if (params.has('founders')) cells.genome.params.founders = Number(params.get('founders')) || 0;
     if (params.has('view')) {   // ?view=1 lineage, ?view=2 or ?view=strategy (step C6), ?view=3 or ?view=charge (step C6b)
-      const v = params.get('view'), k = ['fate', 'lineage', 'strategy', 'charge', 'walls'].indexOf(v);   // (step C10: ?view=walls)
-      cells.look.view = k >= 0 ? k : Math.max(0, Math.min(4, Math.round(Number(v)) || 0));
+      const v = params.get('view'), k = ['fate', 'lineage', 'strategy', 'charge', 'walls', 'guides'].indexOf(v);   // (step C10: ?view=walls; C13: guides)
+      cells.look.view = k >= 0 ? k : Math.max(0, Math.min(5, Math.round(Number(v)) || 0));
     }
     if (flag('check')) cells.enableCheck();
     if (params.get('bio') === '0') {
@@ -304,6 +309,18 @@ async function boot() {
       const fg = Number(params.get('freeglue'));   // step C11: the free base glue
       if (params.has('freeglue') && Number.isFinite(fg)) WP.freeGlue = fg;
     }
+    {   // step C13: fields as genes and guides
+      const GP = cells.guides.params;
+      for (const [q, k] of [['fgenes', 'genes'], ['gateglue', 'glue'], ['gatepump', 'pump'], ['gateengine', 'engine'], ['gatediv', 'div'],
+        ['gateturn', 'turn'], ['pushgene', 'push'], ['gatenull', 'null']]) {
+        if (params.has(q)) GP[k] = flag(q);
+      }
+      if (params.get('gates') === '0') Object.assign(GP, { glue: false, pump: false, engine: false, div: false, turn: false });   // every gate off
+      for (const [q, k] of [['gateref', 'ref'], ['gateturnrate', 'turnRate']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v > 0) GP[k] = v;
+      }
+    }
     {   // step C12: oils and water
       const OP = matter.oil.params;
       for (const [q, k] of [['oil', 'on'], ['phase', 'phase'], ['amphi', 'amphi'], ['fusion', 'fusion'], ['polarity', 'polarity']]) {
@@ -337,7 +354,7 @@ async function boot() {
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
   window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter, eat: cells.eat, neon, charge,
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
-    division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited };
+    division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
   window.moire.budgets = budgets;      // the fast speeds' tick budgets
@@ -549,7 +566,7 @@ function frame(now) {
 
   if (!entropyEl.hidden) {
     const compact = view.cssW < 560 || view.cssH < 500;   // a phone (either way up): shorter lines
-    let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}\n${charge.panelLine(compact)}\n${cells.eat.membrane.panelLine(compact)}\n${cells.eat.lipids.panelLine(compact)}\n${cells.dipole.panelLine(compact)}\n${cells.eat.pumps.panelLine(compact)}\n${cells.eat.catalysts.panelLine(compact)}\n${cells.eat.hardlight.panelLine(compact)}\n${cells.division.panelLine(compact)}\n${cells.walls.panelLine(compact)}\n${matter.oil.panelLine(compact)}\n${matter.excited.panelLine(compact)}`;
+    let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}\n${charge.panelLine(compact)}\n${cells.eat.membrane.panelLine(compact)}\n${cells.eat.lipids.panelLine(compact)}\n${cells.dipole.panelLine(compact)}\n${cells.eat.pumps.panelLine(compact)}\n${cells.eat.catalysts.panelLine(compact)}\n${cells.eat.hardlight.panelLine(compact)}\n${cells.division.panelLine(compact)}\n${cells.walls.panelLine(compact)}\n${cells.guides.panelLine(compact)}\n${matter.oil.panelLine(compact)}\n${matter.excited.panelLine(compact)}`;
     if (paused || speed !== 1) {
       const r = reachedText();
       const sp = paused ? 'paused' : r ? (compact ? r : `${speedName(speed)} · reached ${r}`) : speedName(speed);
@@ -624,6 +641,7 @@ function drawOverlay() {
     ...cells.eat.hardlight.overlayLines(),
     ...cells.division.overlayLines(),
     ...cells.walls.overlayLines(),
+    ...cells.guides.overlayLines(),
     ...matter.oil.overlayLines(),
     neon.overlayLine(),
     `simmer (Shift+R) ${background.heatOn ? 'on' : 'off'}: ripple drops ${background.params.heatDrops} per cell per step x temperature², height ${background.params.heatAmp}`,

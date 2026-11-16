@@ -1,0 +1,9 @@
+{
+ "name": "c12g-speed-2k-on",
+ "description": "Speed: the default scene, 2000 cells, seed 3, MAX, 150 s, C12g block on",
+ "query": {
+  "seed": 3
+ },
+ "duration": 150,
+ "sample_every": 10
+}

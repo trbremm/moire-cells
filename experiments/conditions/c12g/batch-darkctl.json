@@ -1,0 +1,7 @@
+{
+ "batch": "c12g-darkctl",
+ "runs": [
+  "dark-null.json",
+  "dark-volt.json"
+ ]
+}

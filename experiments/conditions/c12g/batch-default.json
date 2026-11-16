@@ -1,0 +1,7 @@
+{
+ "batch": "c12g-default",
+ "runs": [
+  "default.json",
+  "default-qfield.json"
+ ]
+}

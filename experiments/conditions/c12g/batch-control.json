@@ -1,0 +1,10 @@
+{
+ "batch": "c12g-control",
+ "runs": [
+  "oxy-full-null.json"
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

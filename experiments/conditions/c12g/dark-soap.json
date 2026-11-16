@@ -1,0 +1,114 @@
+{
+ "name": "c12g-dark-soap",
+ "description": "step C12g: the Deep vents preset in darkness plus a never-drying soap spring in each vent's cold ring (15 R out), channel genes on, 40 min",
+ "query": {
+  "preset": "vent",
+  "seed": 3
+ },
+ "duration": 2400,
+ "sample_every": 10,
+ "snapshots": [
+  {
+   "t": 60,
+   "grid": true
+  },
+  {
+   "t": 120,
+   "grid": true
+  },
+  {
+   "t": 300,
+   "grid": true
+  },
+  {
+   "t": 600,
+   "grid": true
+  },
+  {
+   "t": 1200,
+   "grid": true
+  },
+  {
+   "t": 1800,
+   "grid": true
+  },
+  {
+   "t": 2400,
+   "grid": true
+  }
+ ],
+ "shots": [
+  {
+   "t": 120
+  },
+  {
+   "t": 600
+  },
+  {
+   "t": 1200
+  },
+  {
+   "t": 2400
+  },
+  {
+   "t": 2400,
+   "panel": true,
+   "name": "panel"
+  },
+  {
+   "t": 2400,
+   "view": "strategy",
+   "name": "strategy"
+  },
+  {
+   "t": 600,
+   "crop": [
+    540,
+    110,
+    200,
+    150
+   ],
+   "scale": 3,
+   "name": "close0_t600"
+  },
+  {
+   "t": 600,
+   "crop": [
+    1020,
+    40,
+    200,
+    150
+   ],
+   "scale": 3,
+   "name": "close1_t600"
+  },
+  {
+   "t": 2400,
+   "crop": [
+    540,
+    110,
+    200,
+    150
+   ],
+   "scale": 3,
+   "name": "close0_t2400"
+  },
+  {
+   "t": 2400,
+   "crop": [
+    1020,
+    40,
+    200,
+    150
+   ],
+   "scale": 3,
+   "name": "close1_t2400"
+  }
+ ],
+ "evals": [
+  {
+   "t": 0,
+   "js": "const v = moire.control.view(), R = moire.cells.R, m = Math.min(v.cssW, v.cssH); for (let k = 0; k < 3; k++) { const a = (-90 + 120 * k) * Math.PI / 180, cx = v.cssW / 2 + Math.cos(a) * (0.27 * m + 15 * R), cy = v.cssH / 2 + Math.sin(a) * (0.27 * m + 15 * R); moire.matter.addSpring(cx, cy, 'soap', 1e9); } return moire.matter.springs.map(s => s.kind)"
+  }
+ ]
+}

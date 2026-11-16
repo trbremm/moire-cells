@@ -999,3 +999,172 @@ blocks ions, channel genes), and the Deep vents preset is a good test for it.
 **What to try next.** After C12g, rerun `batch-dark.json` unchanged: if channel genes let T in and keep g out, cells should lose their
 charge and their clog together, and the ring is where they would sit. Without C12g: the membrane-off run for 2 hours (does the belt at 40
 to 60 R move inward as the cells evolve?).
+
+# Ion flow, charge field off
+
+Step C12g (README "Step C12g: ion flow"): the lipid BILAYER blocks free ions by its integrity (its intact share passes them at 1/20
+of a neutral molecule's rate plus its channels; holes pass them freely; the crust wall is porous); a cation and an anion CHANNEL as
+genes (a level gene x the old selectivity gene as their balance); the stretch channels a non-selective path; a tight bilayer holds its
+voltage; an optional voltage push (off). Decided with the user in the middle of the step: the dish-wide CHARGE FIELD is OFF by default
+(no drift of free atoms in it, cells do not feel it, dipoles off), field B's charge comes from the cells' field genes instead of the
+stock (README "The charge field off by default"). So every run below has BOTH changes unless its name says `qfield` (the charge field
+and dipoles back on, `?chargefield=1&dipoles=1`) or `null` (`?channels=0`: the channels at the base level for every cell, the channel
+genes drifting without effect: the neutral control).
+
+**How.** `experiments/conditions/c12g/` (`make.py` writes the conditions, `analyse.py` the tables, `summarise.sh` the plots and the
+stacked phase pictures in `experiments/summaries/c12g-oxygen/` and `c12g-dark-default/`; the C12f `analyse.py` and `percell.py` for
+the vents' radial profiles). The C12d/C12e oxygen conditions unchanged (no spring of free atoms: a never-drying mineral spring and a
+slow vent; spotlight or whole dish; 40 min); the C12f Deep vents preset in total darkness (40 min); the default scene (20 min).
+Headless Chrome on the GTX 1650 at MAX, commits cec9cab (ion flow) and e3a1796 (charge field off). The GPU was shared with the N1
+worker's runs all the time (x1.3 to x2.7 for the oxygen runs). The first dark runs and a pilot were made between the two commits
+(ion flow on, charge field still on): they are the dark `qfield` comparison. Runs are not bit-repeatable; one or two seeds per
+condition, so every difference below is a story, not a measurement.
+
+## 1. The oxygen conditions
+
+| run | cells 10 / 20 / 30 / 40 min | free t (oxygen) 10 / 20 / 30 / 40 min | breathing into batteries per s | swollen / shrunk (>10 %) at 40 min | torn, all bursts per s | mean integrity | books: energy / atoms / charge |
+|---|---|---|---|---|---|---|---|
+| C12e spot s3 (before) | 1811 / 1956 / 2094 / 1955 | 57 / 90 / 92 / 110 | 181 | 12 / 42 | 0.20, 1.46 | 0.23 | -0.10..+0.09 / 0 / 0 |
+| C12e spot s7 (before) | 1822 / 1955 / 2293 / 1924 | 57 / 96 / 74 / 114 | 216 | 23 / 47 | 0.04, 1.20 | 0.25 | -0.00..+0.19 / 0 / 0 |
+| C12e whole s3 (before) | 2409 / 5998 / 6000 / 6000 | 88 / 255 / 336 / 485 | 677 | 183 / 472 | 0.13, 1.82 | 0.16 | -0.08..+0.28 / 0 / 0 |
+| C12e whole s7 (before) | 5778 / 6000 / 5999 / 5999 | 130 / 302 / 395 / 503 | 467 | 116 / 250 | 0.33, 0.92 | 0.15 | -0.05..+0.51 / 0 / 0 |
+| spot s3 | 2493 / 2183 / 2344 / 2208 | 45 / 95 / 74 / 105 | 176 | 19 / 29 | 0.01, 3.03 | 0.25 | -0.07..+0.17 / 0 / 0 |
+| spot s7 | 2096 / 2080 / 2028 / 1875 | 72 / 104 / 99 / 117 | 167 | 42 / 43 | 0.02, 0.52 | 0.09 | +0.00..+0.32 / 0 / 0 |
+| whole s3 | 4416 / 5998 / 5999 / 5999 | 203 / 328 / 392 / 521 | 828 | 47 / 448 | 0.03, 0.57 | 0.16 | -0.06..+0.33 / 0 / 0 |
+| whole s7 | 4679 / 6000 / 6000 / 6000 | 177 / 363 / 381 / 474 | 793 | 186 / 314 | 0.53, 1.03 | 0.17 | -0.19..+0.08 / 0 / 0 |
+| spot s3 `qfield` | 2036 / 2271 / 2655 / 2416 | 64 / 96 / 71 / 107 | 161 | 127 / 76 | 0.39, 3.64 | 0.23 | -0.09..+0.09 / 0 / 0 |
+| spot s3 `null` | 2511 / 3073 / 4263 / 3308 | 58 / 67 / 29 / 86 | 263 | 6 / 6 | 0.02, 2.33 | 0.05 | -0.03..+0.30 / 0 / 0 |
+| whole s3 `null` (20 min) | 4406 / 5898 | 189 / 354 | 653 | 52 / 88 | 0.00, 0.07 | 0.11 | +0.01..+0.18 / 0 / 0 |
+| C12e spot s7 no photolysis (before) | 1122 / 1172 / 1359 / 1198 | 63 / 102 / 35 / 55 | 212 | 39 / 6 | 0.09, 19.94 | 0.54 | -0.12..+0.02 / 0 / 0 |
+| C12e whole s7 no photolysis (before) | 1160 / 6000 / 5999 / 6000 | 91 / 333 / 420 / 495 | 910 | 258 / 96 | 0.29, 3.43 | 0.15 | -0.06..+0.11 / 0 / 0 |
+| spot s7 no photolysis | 2097 / 2552 / 2492 / 2663 | 67 / 92 / 113 / 113 | 341 | 74 / 3 | 0.09, 0.98 | 0.08 | -0.05..+0.30 / 0 / 0 |
+| whole s7 no photolysis | 4551 / 6000 / 6000 / 6000 | 183 / 309 / 364 / 510 | 732 | 123 / 85 | 0.12, 0.83 | 0.16 | -0.05..+0.21 / 0 / 0 |
+
+| run | ion flow held back by the bilayer (mean 5..40 min) | membranes pass + / − of a neutral's rate (40 min) | tight cells (40 min) | channel LEVEL gene 10 → 40 min | channel BALANCE gene 10 → 40 min | channels + / − (40 min) | cation-only / anion-only cells (40 min) |
+|---|---|---|---|---|---|---|---|
+| spot s3 | 19 % | 0.97 / 0.87 | 13 of 2208 | +0.37 ± 0.79 → +1.04 ± 0.63 | +0.04 ± 0.34 → +0.48 ± 0.30 | 0.98 / 0.36 | 1568 / 6 |
+| spot s7 | 16 % | 0.94 / 0.94 | 88 of 1875 | −0.58 ± 0.68 → −2.80 ± 0.62 | +0.20 ± 0.33 → +0.06 ± 0.50 | 0.01 / 0.02 | 738 / 655 |
+| whole s3 | 19 % | 0.91 / 0.93 | 209 of 5999 | +0.53 ± 0.73 → +0.56 ± 0.83 | −0.10 ± 0.34 → −0.01 ± 0.52 | 0.47 / 0.49 | 1891 / 1856 |
+| whole s7 | 25 % | 0.88 / 0.88 | 627 of 6000 | +0.15 ± 0.59 → −0.91 ± 1.46 | +0.05 ± 0.31 → −0.21 ± 0.42 | 0.18 / 0.27 | 668 / 2610 |
+| spot s3 `qfield` | 20 % | 0.90 / 0.89 | 76 of 2416 | +0.43 ± 0.57 → +0.60 ± 0.92 | −0.04 ± 0.26 → +0.03 ± 0.58 | 0.51 / 0.54 | 926 / 932 |
+| spot s3 `null` | 17 % | 0.96 / 0.96 | 102 of 3308 | +0.02 ± 0.97 → −0.54 ± 0.35 (no effect) | +0.07 ± 0.53 → +0.08 ± 0.19 (no effect) | 0.20 / 0.20 (fixed) | 446 / 45 |
+| whole s3 `null` (20 min) | 22 % | 0.92 / 0.92 | 504 of 5898 | +0.14 ± 0.68 → +0.00 ± 0.87 (no effect) | −0.19 ± 0.29 → −0.23 ± 0.38 (no effect) | 0.20 / 0.20 (fixed) | 463 / 2441 |
+| spot s7 no photolysis | 12 % | 0.96 / 1.00 | 0 of 2663 | −0.06 ± 0.79 → +1.53 ± 0.45 | +0.10 ± 0.30 → −0.53 ± 0.36 | 0.45 / 1.55 | 42 / 2033 |
+| whole s7 no photolysis | 22 % | 0.92 / 0.92 | 192 of 6000 | +0.19 ± 0.62 → +0.54 ± 0.85 | +0.19 ± 0.34 → +0.04 ± 0.54 | 0.46 / 0.50 | 1985 / 1711 |
+
+| run | free t made inside / taken in / put out per s (mean 5..40 min) | breathers on OUTSIDE t / on their OWN t (10 / 20 / 30 / 40 min) | pumps at 40 min: t OUT / t IN / g OUT / T OUT | stretch channels gene 10 → 40 min |
+|---|---|---|---|---|
+| C12e spot s3 | 82.9 / 12.2 / 21.7 | 211/965 / 151/1084 / 144/1260 / 154/1212 | 18 / 35 / 41 / 39 | −0.02 → +0.47 |
+| C12e whole s3 | 276.2 / 31.6 / 55.1 | 816/679 / 1144/4080 / 664/4448 / 614/4807 | 103 / 544 / 91 / 149 | +0.04 → −0.77 |
+| C12e whole s7 | 227.0 / 27.2 / 55.1 | 421/3993 / 401/4885 / 235/4992 / 254/5123 | 713 / 119 / 72 / 76 | −0.08 → −0.58 |
+| spot s3 | 76.0 / 8.8 / 16.5 | 162/1313 / 53/1356 / 85/1286 / 73/1296 | 35 / 13 / 43 / 31 | +0.70 → +1.34 |
+| spot s7 | 76.1 / 7.3 / 15.3 | 174/1110 / 95/1233 / 43/1156 / 28/1125 | 7 / 30 / 0 / 4 | +0.01 → +1.54 |
+| whole s3 | 344.1 / 86.6 / 117.6 | 293/3287 / 646/4662 / 538/4831 / 594/4988 | 67 / 1382 / 46 / 305 | +0.29 → +0.62 |
+| whole s7 | 354.1 / 24.5 / 61.5 | 670/3052 / 653/4717 / 318/4915 / 225/5181 | 76 / 553 / 107 / 242 | +0.21 → +0.47 |
+| spot s3 `qfield` | 75.4 / 9.6 / 17.9 | 230/997 / 109/1368 / 121/1612 / 88/1617 | 13 / 44 / 13 / 34 | −0.17 → −0.79 |
+| spot s3 `null` | 92.8 / 13.7 / 18.6 | 140/1398 / 51/1799 / 79/2247 / 22/1953 | 476 / 1276 / 23 / 20 | −0.02 → −1.06 |
+| spot s7 no photolysis | 127.6 / 5.3 / 13.0 | 98/1230 / 78/1730 / 31/1694 / 18/1904 | 8 / 47 / 12 / 17 | +0.22 → −1.24 |
+| whole s7 no photolysis | 328.1 / 39.9 / 79.2 | 256/3382 / 430/4858 / 413/4799 / 520/4856 | 58 / 1112 / 71 / 63 | −0.29 → −0.45 |
+
+**What it looks like.** Much as in C12e: the whole-dish colony fills the dish with a mosaic of pink, cyan, amber and violet cells,
+each with its green battery core; the spot colony sits under the spot. In a close-up of the whole dish at 40 minutes (seed 7,
+`experiments/keep/c12g/oxy-full-s7-40min-close.jpg`) the tiling is uneven, as in C12e: here and there a cell puffed round and glossy
+next to small tight ones, and amber-walled cells scattered through the pink. Nothing new is drawn for the ions: the block is invisible
+except through the swelling.
+
+**What happened, plainly.**
+1. **The block bites only where a membrane is whole, and few are.** The bilayer held back 12 to 25 % of the ion flow the same cells
+   would pass with no block. Mean integrity stayed at 0.08 to 0.25, as before, so most of each membrane is "holes" and passes ions
+   freely; on average a cell's membrane passed 88 to 100 % of a neutral molecule's rate for each sign. Cells whose membrane passes ions
+   at less than half: 0 to 627 of thousands (at most 10 %, whole dish seed 7).
+2. **Trapped oxygen does not swell cells more.** Swollen / shrunk cells at 40 min: 19 to 186 / 29 to 448, the same range as C12e (12 to
+   183 / 42 to 472). Mean pressure stays near 0. Overstretch tears 0.01 to 0.53 cells per s (C12e 0.04 to 0.33).
+3. **The haze builds as before** (105 to 117 free t under the spot, 474 to 521 in the whole dish; C12e 110 to 114 and 485 to 503).
+4. **More t changes hands in the whole dish.** Cells made 344 to 354 free t per s (C12e 227 to 276), put out 61 to 118 per s (C12e 55)
+   and took in 24 to 87 (C12e 27 to 32); breathing put 793 to 828 per s into batteries (C12e 467 to 677). Pumping t IN is common at 40
+   min (553 and 1382 carriers; C12e 544 and 119). But breathers living on OUTSIDE t still do not rise as a lineage: 225 to 594 cells
+   (4 to 10 %) at 40 min, falling after 20 min in most runs, while 85 to 90 % burn their own t. The C12d self-burn loop holds.
+5. **The channel genes wander further than in the neutral control, but in a different direction in every run.** In the spot null
+   (40 min, the genes without effect) the level gene went to −0.54 ± 0.35 and the balance stayed at +0.08 ± 0.19; with the genes acting
+   the level ended at +1.04, −2.80 (spot), +0.56, −0.91 (whole dish), +1.53 and +0.54 (no photolysis), the balance at +0.48 (spot s3:
+   1568 of 2208 cells pass only cations), −0.21 (whole s7: 2610 of 6000 pass only anions), −0.53 (spot s7 no photolysis: 2033 of 2663
+   anion-only, with the anion channel wide open, 1.55 of a neutral's rate). The spot seed 7 colony nearly SHUT its channels (level
+   −2.80: 0.01 and 0.02 of a neutral's rate) and lived as well as the others: with integrity 0.09 its membranes are mostly holes, so
+   its channels hardly matter. So the genes are not plainly neutral (they wander 2 to 5 times further than in the null), but there is
+   no common answer: each colony's winning lineage carries its own channels, and the cells that would need channels (whole membranes)
+   are too few to show a rule. The hoped-for "anion channels let t out" appears once (spot s7 without photolysis: open anion
+   channels), but that colony put out 13 free t per s, the same as C12e's.
+6. **Photolysis off, seed 7**: the spot colony was twice as large as in C12e (2663 against 1198 cells at 40 min) with far fewer bursts
+   (0.98 against 19.9 per s) and thinner membranes (integrity 0.08 against 0.54); the whole dish as before (6000 cells, haze 510). This
+   run has both changes (ions and charge), so which one helped is not known.
+7. **The charge field alone (spot s3 with `qfield`)**: the same colony size and haze; more swollen and shrunk cells (127 / 76 against
+   19 / 29), more tears (0.39 against 0.01 per s) and the pumps' voltage work five times higher (3.4 against 0.6 energy per s). The
+   channel genes stayed balanced (926 cation-only, 932 anion-only). In the oxygen dish the charge field matters little.
+8. **Pumps still move ions through the block** (the active route): e.g. spot s3 at 40 min, light atoms (g, t) pumped out into the dish
+   0.15 per s, taken from it 0.06, pushed into neighbours 1.19, pulled from them 0.56.
+
+## 2. The dark vents (C12f's Deep vents preset)
+
+| run | cells 1 / 2 / 5 / 10 min | all dead at | gradient into batteries per s at 2 min | where the cells are at 1 min (R from the nearest vent) | cells + / − at 1 min | integrity at 1 min, ion flow held back |
+|---|---|---|---|---|---|---|
+| C12f s3 (before) | 462 / 193 / 10 / 3 | 16 min | 10.7 | 16 to 60 R (pushed out) | 340 / 118 | 0.09, - |
+| C12f s7 (before) | 454 / 196 / 18 / 8 | 19 min | 7.8 | 16 to 60 R | 360 / 89 | 0.12, - |
+| ion flow, `qfield` s3 | 464 / 187 / 28 / 3 | 13 min | 9.6 | 16 to 40 R | 362 / 98 | 0.10, 9 % |
+| ion flow, `qfield` s7 | 456 / 197 / 9 / 0 | 7 min | 9.8 | 16 to 40 R | 344 / 111 | 0.12, 10 % |
+| ion flow, `qfield`, `null` s3 | 465 / 227 / 20 / 6 | 15 min | 10.6 | - | 360 / 101 | 0.11, 10 % |
+| ion flow + charge field off s3 | 396 / 41 / 0 / 0 | 3.7 min | 0.25 | 0 to 25 R (on and round the vents) | 188 / 208 | 0.11, 22 % |
+| ion flow + charge field off s7 | 386 / 44 / 0 / 0 | 4.3 min | 0.25 | 0 to 25 R | 194 / 191 | 0.14, 20 % |
+| + soap springs in the rings, s3 | 388 / 48 / 0 / 0 | 5.5 min | 0.42 | - | - | 0.17 → 1.0 (survivors), 32 to 77 % |
+
+**The ion flow alone (with the charge field still on) changed nothing in the dark**: the cells' membranes are 5 to 12 % whole, the
+block holds back 3 to 10 % of the ions, the cells still flood with g, turn positive (344 to 362 of about 460 cells are + at 1 min) and
+are pushed out of the food ring to the dish's edges and corners (`experiments/keep/c12g/dark-s3-2min-field-on.jpg`: the vents' green
+fuel clouds in the middle, the cells in loose crowds in the four corners), then starve (dead at 7 to 15 min, as C12f's 16 to 19).
+
+**With the charge field off the picture changes, and life dies faster.** Without the drift, the vents' free givers are no longer
+spread wide by their mutual repulsion: they pile up at the vents (free G 12 per R² and g 3.7 per R² in the hot core at 1 min, against
+0.9 and 0.16 with the field) and reach only about 16 R out, while the sea's T is burnt away inside 6 R. The cells are no longer charged
+(188 + / 208 − at 1 min) and no longer pushed: at 1 minute they sit IN the vent zone and the cold ring, 0 to 25 R from the vents
+(`dark-s3-2min-field-off.jpg`: the few survivors at 2 minutes scattered in the space between the three vents, none in the corners).
+But the food zone is now narrow: near the vents a cell holds plenty of g and no T (inside g 1.2 to 1.9 units, T 0; outside T 0 to 0.1
+per R²), further out T and little g (`percell.py`), and only about a third of the random founders carry a gradient engine. The
+gradient earned 0.25 per s at 2 minutes against about 10 with the field, and the colony was gone by 4 minutes (both seeds). So in this
+toy the charge field was what spread the vents' givers into the sea and made a broad zone where giver and taker meet; with realistic
+screening that zone is a thin shell round each vent, and the random founders do not find it in time.
+
+**Whole membranes do not save them either** (one run: a never-drying soap spring in each vent's cold ring): the survivors fused soap
+membranes up to integrity 1, the bilayer then held back 30 to 77 % of the ion flow, and the colony still died by 5.5 minutes, earning
+0.4 per s from the gradient.
+
+## 3. The default scene
+
+| run | cells 2 / 4 / 6 / 8 / 10 / 12 / 14 / 16 / 18 / 20 min | ENTROPY 20 min | ORDER | free t | ion flow held back | channel balance gene at 20 min | books |
+|---|---|---|---|---|---|---|---|
+| C12f (before; the C12d vent) | 262 / 388 / 656 / 1315 / 1374 / 1317 / 1325 / 1373 / 1338 / 1149 | 21.1 M | 0.185 | 14 | - | - | -0.07..+0.03 / 0 / 0 |
+| ion flow, charge field off | 276 / 256 / 620 / 1397 / 1559 / 1556 / 1367 / 1192 / 940 / 664 | 15.4 M | 0.189 | 28 | 15 % | −0.74 (620 of 664 anion-only) | -0.04..+0.04 / 0 / 0 |
+| ion flow, `qfield` | 250 / 395 / 1030 / 1029 / 1084 / 1153 / 1164 / 1220 / 1200 / 1136 | 19.3 M | 0.194 | 14 | 10 % | −0.65 (1041 of 1136 anion-only) | -0.13..-0.00 / 0 / 0 |
+
+**Nothing broke.** The founders' crash, the recovery under the spot and the books are as before. With the charge field off the colony
+peaked a little higher (1559 at 10 min) and then shrank to 664 by 20 min, against about 1100 to 1150 with the field (one run each: the
+default scene swings by this much between seeds). **Visibly** (`default-s3-20min-field-off.jpg` against `default-s3-20min-field-on.jpg`):
+with the field off the colony is smaller and looser, the cells pinker and more spread apart with dark gaps between little groups; with
+the field on it is a larger, denser, whiter disc. The channel balance gene went anion-only in both (−0.74, −0.65): the winning seed-3
+lineage carries it, with and without the field. Before the field-B charge was scaled (qGene 1 instead of 0.15), the same scene broke
+into crumbs of 2 to 6 cells within 30 s (like repels like with every founder carrying the same sign); at 0.15 it holds.
+
+## 4. The books and the checks
+
+The books check (`check.json`, 420 s, every new switch and knob at runtime, membranes and lipids off and on, a snapshot saved and loaded)
+ran with the charge field on and again with the new defaults: atoms and charge rounding exactly 0 except the paused instant of each
+resize (as before), energy within −0.023 and +0.025 of 14.9 M; the snapshot loaded exact. Every experiment run: atoms and charge 0 in
+every sample, energy within −0.19 and +0.33. A C12f snapshot reloads with the block off, the channel genes off and its charge field on.
+
+**Honestly:** the bilayer's ion block is in and acts, but only as far as membranes are whole, and in these dishes they mostly are not,
+so the ion-flow change on its own moved little: no extra swelling, the same haze, the self-burn loop intact, breathers on outside t still
+a few percent; channel genes wander (more than the neutral control) without a common direction. The bigger change came from switching the
+dish-wide charge field off: little difference in the oxygen dishes, a looser colony in the default scene, and in the dark vents the cells
+are no longer pushed out of the food ring but the food ring itself shrinks to a thin shell round each vent, and life dies faster.
+
+**What to try next** (if wanted): give the vent preset a broader meeting zone without the field (a slower sea burn near the vents, a
+wider vent plume, or founders carrying the gradient engine); a scene where membranes can be whole (a soap supply, or the T1 "inside":
+contact sides sheltered), where channels would matter; a run with the voltage push on.

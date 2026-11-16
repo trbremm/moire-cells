@@ -89,10 +89,13 @@ export const PRESETS = {
   // step N1, a nutrient landscape (src/pigments.js, src/oases.js, src/water.js)
   oases: {
     label: 'Oases',
-    desc: 'Sunlit water with a moving net of light on the floor. Light is not free: pigments are built from trace, which comes only from four oases that wander, pulse, dry up and rise elsewhere; slow eddies carry it downstream in silver plumes. Mineral springs and a vent feed the cells, scattered over the dish: watch who finds the oases, and who settles in the shade between the bright lines.',
+    desc: 'Shallow water in a soft half light, with a moving net of brighter light on the floor. Light is not free: pigments are built from trace, which comes only from four oases that wander, pulse, dry up and rise elsewhere; slow eddies carry it downstream in silver plumes. Mineral springs and a vent feed the cells, scattered over the dish: watch who finds the oases, and who settles in the shade between the bright lines.',
     query: { light: 'full', spread: 'scatter', oases: 4, roam: 1, scarce: 1 },
-    scene({ matter, oases, W, H }) {
-      for (const [x, y] of [[0.2, 0.3], [0.78, 0.25], [0.5, 0.72]]) matter.addSpring(x * W, y * H, 'light', 1e9);
+    scene({ matter, oases, light, W, H }) {
+      // (half the light and slow mineral springs: with the full light and three springs at the usual rate the dish filled to its
+      // capacity, 6000 cells, within 10 minutes, the colonies centred on the springs and the oases mattered only at the start)
+      light.params.power *= 0.5;
+      for (const [x, y] of [[0.2, 0.3], [0.78, 0.25], [0.5, 0.72]]) matter.addSpring(x * W, y * H, 'light', 1e9, { rate: 2 });
       matter.addSpring(0.85 * W, 0.78 * H, 'heavy', 1e9, { rate: 3 });
       oases.start([[0.32 * W, 0.62 * H], [0.66 * W, 0.42 * H]]);
     },

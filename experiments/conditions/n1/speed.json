@@ -1,0 +1,11 @@
+{
+ "batch": "n1-speed",
+ "runs": [
+  {"name": "n1-speed-2k-neon", "description": "Speed after step N1: default scene (every N1 part on), 2000 cells, seed 3, MAX, 150 s, neon", "query": {"seed": 3}, "duration": 150, "sample_every": 25},
+  {"name": "n1-speed-2k-harmonic", "description": "Speed after step N1: as above, harmonic look", "query": {"seed": 3, "look": "harmonic"}, "duration": 150, "sample_every": 25},
+  {"name": "n1-speed-2k-off", "description": "Speed after step N1 with every N1 part off (the code's cost alone), 2000 cells, neon", "query": {"seed": 3, "pigmatter": 0, "pigsat": 0, "inhib": 0, "scarce": 0, "caustics": 0, "currents": 0}, "duration": 150, "sample_every": 25},
+  {"name": "n1-speed-10k-neon", "description": "Speed after step N1: default scene, 10000 cells, seed 3, MAX, 60 s, neon", "query": {"seed": 3, "cells": 10000}, "duration": 60, "sample_every": 10},
+  {"name": "n1-speed-10k-harmonic", "description": "Speed after step N1: 10000 cells, harmonic", "query": {"seed": 3, "cells": 10000, "look": "harmonic"}, "duration": 60, "sample_every": 10},
+  {"name": "n1-speed-10k-off", "description": "Speed after step N1, every N1 part off, 10000 cells, neon", "query": {"seed": 3, "cells": 10000, "pigmatter": 0, "pigsat": 0, "inhib": 0, "scarce": 0, "caustics": 0, "currents": 0}, "duration": 60, "sample_every": 10}
+ ]
+}

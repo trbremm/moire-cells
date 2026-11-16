@@ -1,0 +1,35 @@
+{
+  "name": "n1-speed-10k-neon",
+  "description": "Speed after step N1: default scene, 10000 cells, seed 3, MAX, 60 s, neon",
+  "condition": {
+    "name": "n1-speed-10k-neon",
+    "description": "Speed after step N1: default scene, 10000 cells, seed 3, MAX, 60 s, neon",
+    "query": {
+      "seed": 3,
+      "cells": 10000
+    },
+    "duration": 60,
+    "sample_every": 10
+  },
+  "url": "http://localhost:57799/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&cells=10000",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "7f4557c04ebacb18f1b3122a318c12159882902a",
+  "dirty": true,
+  "started": "2026-11-16T19:37:47",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 117.11,
+  "speed_reached": 0.51,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T19:40:26",
+  "wall_s": 158.98
+}

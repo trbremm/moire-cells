@@ -1,0 +1,62 @@
+{
+  "name": "n1-plumes",
+  "description": "Step N1: the Plumes preset (strong slow current, two fixed oases and a vent upstream, five colonies, dappled full light), seed 3, 15 min",
+  "condition": {
+    "name": "n1-plumes",
+    "description": "Step N1: the Plumes preset (strong slow current, two fixed oases and a vent upstream, five colonies, dappled full light), seed 3, 15 min",
+    "query": {
+      "preset": "plumes",
+      "seed": 3
+    },
+    "duration": 900,
+    "sample_every": 30,
+    "snapshots": [
+      {
+        "t": 900
+      }
+    ],
+    "shots": [
+      {
+        "t": 120
+      },
+      {
+        "t": 450
+      },
+      {
+        "t": 900
+      },
+      {
+        "t": 901,
+        "view": "machinery",
+        "name": "mach"
+      }
+    ]
+  },
+  "url": "http://localhost:56282/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=plumes&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-16T19:11:54",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 900.0,
+  "run_wall_s": 1191.39,
+  "speed_reached": 0.76,
+  "samples": 31,
+  "shots": [
+    "shots/t120.png",
+    "shots/t450.png",
+    "shots/t900.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t900.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T19:32:35",
+  "wall_s": 1241.46
+}

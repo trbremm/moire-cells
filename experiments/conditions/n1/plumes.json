@@ -1,0 +1,4 @@
+{"name": "n1-plumes", "description": "Step N1: the Plumes preset (strong slow current, two fixed oases and a vent upstream, five colonies, dappled full light), seed 3, 15 min",
+ "query": {"preset": "plumes", "seed": 3}, "duration": 900, "sample_every": 30,
+ "snapshots": [{"t": 900}],
+ "shots": [{"t": 120}, {"t": 450}, {"t": 900}, {"t": 901, "view": "machinery", "name": "mach"}]}

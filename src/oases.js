@@ -52,7 +52,7 @@ export class Oases {
       gush: 4,            // a new oasis gushes: x this rate at first, settling over `gushTime` s
       gushTime: 30,
       margin: 0.08,       // shares of the dish's shorter side kept free at the edges
-      bury: 1 / 90,       // with the nutrient scarce: the share of the free trace in the dish that settles into the floor per s (buried,
+      bury: 1 / 150,      // with the nutrient scarce: the share of the free trace in the dish that settles into the floor per s (buried,
                           // booked as lost), so plumes fade with distance and old oases do not leave trace everywhere (?bury=)
     };
     this.list = [];       // { s (the spring), vx, vy, period, phase, rate0 }
@@ -82,13 +82,14 @@ export class Oases {
     this.view = view;
   }
 
-  /** Place the dish's oases now (the default scene and the presets call it; `at`: a list of [x, y] for the first ones). */
+  /** Place the dish's oases now (the default scene and the presets call it; `at`: a list of [x, y] for the first ones; [x, y, 'fixed']: one
+   * that stays put and never dries, only pulses: a lasting oasis). */
   start(at = []) {
     this.started = true;
     for (const o of this.list) this.remove(o);
     this.list = []; this.pending = [];
     const n = Math.max(0, Math.round(this.params.count));
-    for (let k = 0; k < n; k++) this.rise(at[k] || null);
+    for (let k = 0; k < n; k++) this.rise(at[k] || null, !!(at[k] && at[k][2] === 'fixed'));
   }
 
   remove(o) {
@@ -97,7 +98,7 @@ export class Oases {
   }
 
   /** A new oasis at p (or a random place, away from the edges and from the other oases). */
-  rise(p = null) {
+  rise(p = null, fixed = false) {
     const v = this.view, P = this.params, R = this.R();
     if (!v) return;
     const W = v.cssW, H = v.cssH, m = P.margin * Math.min(W, H);
@@ -108,12 +109,13 @@ export class Oases {
       for (const o of this.list) d = Math.min(d, Math.hypot(o.s.x - q[0], o.s.y - q[1]));
       if (d > bestD) { bestD = d; best = q; }
     }
-    const life = P.roam ? P.life * (0.5 + this.rng()) : 1e9;
+    const life = P.roam && !fixed ? P.life * (0.5 + this.rng()) : 1e9;
     const rate0 = Math.max(0, P.rate);
     const ok = this.matter.addSpring(best[0], best[1], 'oasis', life, { rate: rate0 });
     if (!ok) return;
     const s = this.matter.springs[this.matter.springs.length - 1];
     s.roam = true;
+    if (fixed) s.fixed = true;
     const a = TAU * this.rng(), sp = P.wander * R;
     this.list.push({ s, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, period: P.period[0] + (P.period[1] - P.period[0]) * this.rng(), phase: TAU * this.rng(), rate0 });
   }
@@ -151,7 +153,7 @@ export class Oases {
     const m = P.margin * Math.min(v.cssW, v.cssH);
     for (const o of this.list) {
       const s = o.s;
-      if (!P.roam) { s.rate = o.rate0 * (1 + Math.max(0, P.gush - 1) * Math.exp(-Math.max(0, s.age) / Math.max(1, P.gushTime))); continue; }
+      if (!P.roam || s.fixed) { s.rate = o.rate0 * (s.fixed && P.roam ? Math.max(0, 1 + P.pulse * Math.sin(TAU * frame.time / o.period + o.phase)) : 1) * (1 + Math.max(0, P.gush - 1) * Math.exp(-Math.max(0, s.age) / Math.max(1, P.gushTime))); continue; }
       // a smooth random walk: the heading turns slowly, the speed stays near `wander`
       const sp = Math.max(0, P.wander) * R, ang = Math.atan2(o.vy, o.vx) + (this.rng() - 0.5) * 0.6 * Math.sqrt(dt);
       o.vx = Math.cos(ang) * sp; o.vy = Math.sin(ang) * sp;
@@ -162,7 +164,7 @@ export class Oases {
       s.rate = o.rate0 * g * Math.max(0, 1 + P.pulse * Math.sin(TAU * frame.time / o.period + o.phase));
       if (!(s.life < 1e8)) s.life = P.life * (0.5 + this.rng());   // (roaming switched on: it gets a life)
     }
-    if (!P.roam) for (const o of this.list) if (o.s.life < 1e8) o.s.life = 1e9;
+    for (const o of this.list) if ((!P.roam || o.s.fixed) && o.s.life < 1e8) o.s.life = 1e9;
   }
 
   render() {}

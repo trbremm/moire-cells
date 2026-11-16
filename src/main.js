@@ -553,9 +553,9 @@ function defaultScene() {
   matter.addSpring(cx - perp[0] * s, cy - perp[1] * s, 'light', SCENE.life);
   matter.addSpring(cx + perp[0] * s, cy + perp[1] * s, 'heavy', SCENE.life);
   if (!params.has('spot')) light.moveTo(W / 2 + ax[0] * rim, H / 2 + ax[1] * rim);
-  // step N1: the oases (the scarce nutrient's springs): the first beside the culture, on the far side from the springs, the others
-  // anywhere (src/oases.js)
-  oases.start([[W / 2 - ax[0] * d, H / 2 - ax[1] * d]]);
+  // step N1: the oases (the scarce nutrient's springs): the first beside the culture, in the spot's edge on the springs' side (a lasting
+  // one: it stays put and never dries, only pulses), the others anywhere, roaming (src/oases.js)
+  oases.start([[W / 2 + ax[0] * (rim - 0.06 * m) - perp[0] * 0.12 * m, H / 2 + ax[1] * (rim - 0.06 * m) - perp[1] * 0.12 * m, 'fixed']]);
 }
 
 /** App: a preset's springs and light (src/culture.js PRESETS), once the dish's size is known. ?springs=0 leaves them out. */

@@ -632,6 +632,11 @@ PREDATORS (user 2026-11-16 "should we start planning for macrophages? and other 
     under selection, so unrelated lineages could converge). Watch whether cannibalism dies out (kin selection) vs a
     neutral control; it may persist (starving colonies). View: colour by marker, like Brainbow / Confetti lineage tracing
     (a view, not the default).
+EXPERIMENT STYLE FOR T1 AND PREDATORS (user 2026-11-16: "we just need to play with different very random initial stem
+    cells in different colonies and see it unfolds"): no hand designs needed to start; several colonies, each from its own
+    random founder (?spread=colonies&colonies=N, diversity mixed: colony k = founder k; works today), watched as they meet.
+    Add a WILD FOUNDERS switch: every gene from its full range (field genes, gates, stretch genes, later the gene-network
+    wiring, engulf, kin sparing, marker) vs BLANK founders (new abilities at 0, must evolve). Lineage-colour view to watch.
 C12f. VENTS THAT FEED LIFE IN THE DARK (user 2026-11-16 "maybe we should adapt the chemistry then", after the app
     worker found a fully dark vent dish starves in 100 s: fermenting vent fuel earns the culture ~0.001 energy/s). Start
     after C12e is merged (same files). First DIAGNOSE (vent rate, engine rates, sparks, C12e saturation clogging small

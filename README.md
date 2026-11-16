@@ -3601,6 +3601,147 @@ lattice inside each cell follows its genes, but a packed colony hides the fields
 see even with the machinery. The turn gate needs the patterned walls (the front is theirs). Field B's tuning gene (pickiness) only matters
 where cells feel B; the partner's genes only with step 8's rules on.
 
+## Step C12d: electrons
+
+The user, 2026-11-16: "the main thing about oxygen is how it binds to things so easily"; then "on the linking we make the givers give
+spare electrons and the takers take (basically electron orbitals)"; then "remember to add different energy levels to different
+orbitals". The old table of step C4 ("a bond is a battery that light charges") made every giver + taker bond UPHILL: free atoms were
+the calm state, so nothing grabbed, and breathing could never beat burning (the oxygen retry and C12c). This step rebuilds the bonds
+around ELECTRONS. Past experiment numbers stop being comparable (the user accepted). The old table stays behind `?electrons=0`.
+
+### The table, on paper (designed and checked before any shader was touched)
+
+Still derived from ROW and GROUP only; nothing is set per substance. Energies are counted from the top: **all atoms free = 0**, every
+bond goes DOWN from there (settled matter has negative energy; free atoms are the high, restless state). Every number is a multiple
+of 1/16 (the books are integer: one count of a substance carries 16 x E heat counts).
+
+**The ladder of levels (orbitals).** Each group has a core PULL Z (giver 5/4, linker 5/2, taker 11/2: the giver's core hardly holds
+its spare electron, the taker's pulls hard on its empty slot). Shell k of an atom sits at -Z / 2^(k-1): each shell half as deep as
+the one inside it. A row-r atom has shells 1..r filled (its outermost, shell r, is the VALENCE shell: the one that bonds) and shell
+r+1 empty above it (where light can lift an electron). So **each row adds a shell, and outer shells sit higher and hold looser**:
+row 1 has 2 levels, row 2 has 3 (a full core, the valence, the empty one above). Trace (row 3) has a closed shell: no grip, no bond,
+no absorption.
+
+| atom | levels (shell 1, 2, 3) | valence | GRIP | atom gap (valence to the empty shell) |
+|---|---|---|---|---|
+| g (light giver) | -1.25, -0.625 | -1.25 | holds its electron at 1.25 | 0.625 |
+| G (heavy giver) | -1.25, **-0.625**, -0.3125 | -0.625 | holds at 0.625: **gives most easily (metal-like)** | 0.3125 |
+| l (light linker) | -2.5, -1.25 | -2.5 | shares at 2.5 | 1.25 |
+| L (heavy linker) | -2.5, **-1.25**, -0.625 | -1.25 | shares at 1.25 | 0.625 |
+| t (light taker) | -5.5, -2.75 | -5.5 | **pulls at 5.5: the hardest grabber (oxygen-like)** | 2.75 |
+| T (heavy taker) | -5.5, **-2.75**, -1.375 | -2.75 | pulls at 2.75 | 1.375 |
+
+GRIP is the valence level: for a giver how tightly its spare electron is held (heavier = looser), for a taker how hard its empty slot
+pulls (lighter = harder), for a linker the level it shares.
+
+**Bonds.** Two kinds, from the same levels:
+- an electron FALLS (any bond with a giver or a taker; the DONOR is the partner whose valence sits higher): released = donor's level -
+  acceptor's level, + 1/4 when both are of the same row (shells of one size overlap best). Like with like (g + g, t + t): no bond.
+- linkers SHARE (linker + linker): released = 1/4 x (row + row) (bigger shells overlap more), as the old chains.
+- A bond has a lower (bonding) level, where the electron now sits, and an upper (anti-bonding) level: for a falling electron the
+  donor's empty shell (the electron, lifted, is back on its donor, excited); for a shared pair the two levels split evenly. So the
+  **bond gap** = released + the donor's atom gap (falling), = released (sharing).
+- SPARK (activation) as before: 1/8 x (row + row) of the bond made or broken.
+
+**Light is absorbed only where a photon matches a gap**: a substance absorbs a band when one of its gaps lies within 1/2 of the band's
+photon (bands: warm 1, visible 1 = 2, visible 2 = 3, hard 5; the nearest band if two). So every substance has its own absorption
+bands, from its levels: colour from the ladder.
+
+| substance | kind | energy | bond gap(s) | absorbs | spark |
+|---|---|---|---|---|---|
+| gt | **mineral** (water-like) | -4.5 | 5.125 | hard | 0.25 |
+| gT | **fuel** (its electron still sits high) | -1.5 | 2.125 | visible 1 | 0.375 |
+| Gt | **mineral, the most settled** (rust-like) | -4.875 | 5.1875 | hard | 0.375 |
+| GT | **fuel** | -2.375 | 2.6875 | visible 2 | 0.5 |
+| ll, LL | crust | -0.5, -1 | 0.5, 1 | warm (dark: it warms) | 0.25, 0.5 |
+| lL | oil | -0.75 | 0.75 | warm | 0.375 |
+| glL | soap (+) | -2.25 (head 1.5 + tail 0.75) | 2.125, 0.75 | visible 1, warm | 0.25 |
+| tlL | soap (-) | -4 (head 3.25 + tail 0.75) | 4.5, 0.75 | hard, warm | 0.25 |
+| free g, l, L, T | atoms | 0 | 0.625, 1.25, 0.625, 1.375 | warm | - |
+| free t | atom | 0 | 2.75 | visible 2 | - |
+| free G | atom | 0 | 0.3125 | nothing | - |
+
+"Fuel" and "mineral" are not labels: a compound is FUEL when a free light taker would still take its electron and release energy (gT:
+3.0, GT: 2.5), a MINERAL when its electron already sits in the deepest slot (gt, Gt: nothing can take it). The drawing colours them
+by that.
+
+**Excited states.** A caught photon lifts an electron: the substance is EXCITED, holding the photon. It lives far shorter than a tick,
+so it is resolved in the tick it was made (C12c's lasting excited atoms are folded in here: with electrons on, g* and t* stay empty,
+because the free light taker itself is now the high, restless state the excited waste was invented for). In that instant it:
+1. **reacts** (photochemistry): if it meets a partner, any UPHILL reaction of the table it takes part in whose rise + HALF its spark
+   (excited: the spark is lower) the photon covers; the photon pays the rise, the rest is heat. Share `yRx` (1/2) when such a
+   reaction exists;
+2. **fluoresces**: falls back by emitting the next LOWER band (Stokes shift: absorb high, emit low; visible 1 emits warm, invisible);
+   the difference is heat, the emitted light leaves the dish. Share `yFl` (2/5) of what does not react;
+3. or turns into **heat**: the rest.
+Warm light only ever makes heat (warm is heat only, Part C): the crust, oil and free linkers absorb it (dark matter warms in the light).
+
+So under the spotlight: **soap tlL and the minerals glow sky blue** (hard in, visible 2 out: the fluorite / optical-brightener look),
+**fuel GT and free t glow gold** (visible 2 in, visible 1 out), gT and glL absorb visible 1 and re-emit warm (they look dark).
+
+**The reactions** (every one both ways: SYMMETRY; downhill by heat with its spark, uphill by light in the open, by a pigment or the
+battery in a cell). Energy change of the downhill direction:
+
+| family | downhill (by heat) | released | uphill (by light in the open) |
+|---|---|---|---|
+| bond | g + t -> gt | 4.5 | gt -> g + t: hard (5 >= 4.5 + 1/8) |
+| bond | g + T -> gT | 1.5 | gT -> g + T: visible 1 (2 >= 1.5 + 3/16) |
+| bond | G + t -> Gt | 4.875 | Gt -> G + t: **none** (5 < 4.875 + 3/16): only life can split it |
+| bond | G + T -> GT | 2.375 | GT -> G + T: visible 2 (3 >= 2.375 + 1/4) |
+| swap (breathe) | t + gT -> gt + T | **3.0** | gt + T -> gT + t: absorbed by gt, hard |
+| swap (breathe) | t + GT -> Gt + T | 2.5 | Gt + T -> GT + t: absorbed by Gt, hard |
+| swap | G + gT -> GT + g | 0.875 | GT + g -> gT + G: absorbed by GT, visible 2 |
+| swap | G + gt -> Gt + g | 0.375 | Gt + g -> gt + G: absorbed by Gt, hard |
+| trade (two compounds swap partners) | gT + Gt -> gt + GT | 0.5 | gt + GT -> gT + Gt: absorbed by GT, visible 2 |
+| chain | l + l -> ll, L + L -> LL | 0.5, 1 | (crust absorbs warm only: cells crack it, as C12b's grazing) |
+| oil (open) | l + L -> lL | 0.75 | (warm only) |
+| head (open) | g + lL -> glL, t + lL -> tlL | 1.5, 3.25 | glL: visible 1; tlL: hard |
+
+The engines a genome can carry are all of them except the open dish's oil and heads: 11 uphill (4 splits, 4 uphill swaps, the uphill
+trade, 2 cracks) and 11 downhill (4 bonds, 4 swaps, the trade, 2 chains), 22 in all. A downhill engine that uses a free light taker t
+(t + gT, t + GT, g + t, G + t) is BREATHING (census and the counter `cells.rate2.eSwap`); the other downhill ones (no t) FERMENT
+(`eBurn`); the chains FORM.
+
+### The checks (with numbers; none of these is written as a rule)
+
+- **(a) heavy giver + light taker is the most settled**: Gt releases 4.875, more than gt 4.5, GT 2.375, gT 1.5. It follows from the
+  ladder: G's electron sits highest (-0.625), t's slot lowest (-5.5).
+- **(b) light giver + heavy taker is fuel**: gT releases only 1.5; its electron sits at -2.75 (T's slot), 2.75 above where a free t
+  would take it.
+- **(c) breathing beats everything**: for gT, a free t releases 3.0 (t + gT -> gt + T); the other ways: a free G 0.875, trading with
+  Gt 0.5, breaking it is uphill (-1.5). For GT: t 2.5; nothing else takes it downhill. For a free giver as fuel: g + t 4.5 against
+  g + T 1.5. Any reaction that ends with the electron in t's slot releases the most, because t's slot is the lowest level of the
+  ladder (the taker's step between rows, 2.75, is larger than the giver's, 0.625, so a taker swap always beats a giver swap).
+- **(d) photosynthesis**: a harvester with a visible 2 pigment runs gt + T -> gT + t (+3.0, one photon of 3 pays it exactly; the
+  spark 0.375 from the battery) or Gt + T -> GT + t (+2.5, 0.5 of the photon heat): a settled mineral split, fuel made, a free light
+  taker thrown out. With a visible 1 pigment the battery pays the missing 1.0. In the open the minerals absorb only hard light (they
+  are clear in visible light), so without life only hard light makes fuel and t from them.
+- **(e) harvesters must burn**: unchanged engines: a photon pays only what goes into the bonds, the spark always comes from the
+  battery, only downhill engines fill it. A harvester must also breathe or ferment.
+- **(f) life without oxygen**: the vent (below) drips free heavy givers G and the fuels gT, GT; the mineral spring drips gt.
+  Fermenting runs downhill with no t at all: G + gT -> GT + g (0.875), G + gt -> Gt + g (0.375), g + T -> gT (1.5),
+  gT + Gt -> gt + GT (0.5). So cells can live at a vent in the dark, slowly.
+- **(g) crust, oil, soap**: l + l, L + L, l + L chain downhill by heat (0.5, 1, 0.75, as before); soap heads now go on downhill
+  (1.5, 3.25) where a free g or t meets oil. The lipid builder's numbers (each lipid's bonds released, positive) follow.
+- **(h) charges exact**: the electron picture gives the same rule as before (a giver that gave its electron is +1, a taker that took
+  one -1, linkers 0, bonds neutral); every reaction keeps each atom's group, so charge is conserved exactly. Kept as it was.
+- **(i) the swaps survive and rank**: t + gT -> gt + T (3.0) > t + GT -> Gt + T (2.5) > G + gT -> GT + g (0.875) > G + gt -> Gt + g
+  (0.375): the light taker's swaps (breathing) first, the heavy giver's (fermenting) after.
+- Every reaction balances to the heat count (light in = heat out + change of the bonds' energy + light re-emitted) and conserves
+  charge; src/matter.js checks this when it loads.
+
+**What was adjusted on the way.** First draft: a linear ladder (each row adds a fixed step) with the same step for givers and takers:
+the taker swap and the giver swap then released the same (both the row step), so (c) and (i) failed. Making the step come from the
+pull (each shell half as deep: the taker's step 2.75, the giver's 0.625) fixed both. Second: with gap = released energy alone, the
+minerals absorbed visible 2 and visible light split water in the open (abiotic oxygen everywhere); taking the anti-bonding level at
+the donor's empty shell (gap = released + the donor's atom gap) moved the minerals to hard light and left visible light to the fuels
+and the pigments.
+
+**Springs** (no free reactive atoms of row 1; light plus what springs carry is the energy in; any free t in the dish is made by light
+or life): tap mode 2 is now a **MINERAL spring** (water-like gt + the linkers l, L that build crust, oil and membranes), tap mode 3
+a **VENT** (fuel-like gT, GT, free heavy givers G, a little trace). The springs' energy (negative: settled matter) is counted in the
+ledger as before (`chem.added`). With `?electrons=0` the springs drip what they did.
+
 ## The look of the landscape
 
 Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the

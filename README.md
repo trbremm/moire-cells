@@ -4024,9 +4024,12 @@ and red where its chains are heavy; the green rims of the cells sitting on it go
 detector channels do. Oil droplets are hollow green rings, soap films thin concentric green lines (the reference's loose rings),
 fuel near a light spring a soft violet haze, minerals near a heavy spring sparse orange dust, the fluorescence glow tiny gold and
 blue lights. The picture is very slightly soft and carries a fine live grain; a scale bar ("50 µm" on the whole dish) sits in
-the corner. Pictures:
+the corner. It follows the zoom and pan (App, above) in every layer: zoomed in, the crust's fibres, the haze and the cells grow
+as through a lens, while the green rim widens only with the square root of the zoom (x 2 at x 4), so it stays a thin line. Pictures:
 `experiments/keep/h1/` (lit colony, whole and close up; crust under the colony, whole and close up, in the step C4 chemistry,
-`?electrons=0`, which makes crust fields; the oil and soap springs; the tissue lab).
+`?electrons=0`, which makes crust fields; the oil and soap springs; the tissue lab; after the merge with the App, `zoom-*.jpg`: the crust desert preset
+(`?look=harmonic&preset=desert`, 60 s) whole and at x 4 on its middle spring, cells sitting on their crust, and the default
+colony at x 7.4 in headed Firefox, reached with the backquote key and Ctrl+wheel).
 
 What shows depends on the scene, because colour keeps its meaning: in today's default chemistry (C12d) the dish holds little
 crust or fuel (a few hundredths of an atom per R² at 20 minutes), so the default scene is mostly the green honeycomb with orange
@@ -4086,6 +4089,7 @@ reached could not be compared: with the GPU shared it swung between x0.6 and x7 
 
 **Known issues.**
 - The scale bar is a page element: it is not in recordings (Shift+V records the canvas only).
+- The cells zoo's portraits (App) stay in the neon style under the harmonic look.
 - In the default scene there is little orange (see above); the orange texture is only as strong as the crust it shows.
 - The fuel haze can show the grid's coarse shape (soft blocks a few grid pixels wide) where fuel is drifting.
 - Under a dense colony the crust is mostly hidden by the cells' dark insides (as in a real section, a cell hides what lies in

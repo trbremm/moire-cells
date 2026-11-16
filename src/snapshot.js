@@ -161,6 +161,9 @@ export function settingObjects(M) {
     ...(M.guides ? { 'guides.params': M.guides.params, 'guides.look': M.guides.look } : {}),   // step C13
     ...(M.waste ? { 'waste.params': M.waste.params } : {}),   // step C12e
     ...(M.vents ? { 'vents.params': M.vents.params } : {}),   // step C12f
+    ...(M.pigments ? { 'pigments.params': M.pigments.params } : {}),   // step N1: light needs matter
+    ...(M.water ? { 'water.params': M.water.params } : {}),           // step N1: caustic light, currents
+    ...(M.oases ? { 'oases.params': M.oases.params } : {}),           // step N1: the scarce nutrient's springs
   };
 }
 const SCALARS = [['neon.on', (M) => M.neon, 'on'], ['background.heatOn', (M) => M.background, 'heatOn'], ['background.ambient', (M) => M.background, 'ambient']];
@@ -205,6 +208,7 @@ function captureBooks(M) {
     excited: M.excited ? clone(M.excited.tot) : null,   // step C12c
     electrons: M.electrons ? clone(M.electrons.tot) : null,   // step C12d
     vents: M.vents ? clone(M.vents.tot) : null,   // step C12f
+    pigments: M.pigments ? clone(M.pigments.tot) : null,   // step N1
     excitedE16: M.excited ? M.excited.table.e16 : null,   // (the energy one excited count holds: ?exshare=)
     division: { costTot: M.division.costTot || 0 },
     rounding: {
@@ -228,12 +232,13 @@ function restoreBooks(M, B) {
   if (M.excited) { for (const k of Object.keys(M.excited.tot)) M.excited.tot[k] = (B.excited && B.excited[k]) || 0; }   // (step C12c)
   if (M.electrons) { for (const k of Object.keys(M.electrons.tot)) M.electrons.tot[k] = (B.electrons && B.electrons[k]) || 0; }   // (step C12d)
   if (M.vents) { for (const k of Object.keys(M.vents.tot)) M.vents.tot[k] = (B.vents && B.vents[k]) || 0; }   // (step C12f)
+  if (M.pigments) { for (const k of Object.keys(M.pigments.tot)) M.pigments.tot[k] = (B.pigments && B.pigments[k]) || 0; }   // (step N1)
   if (!(H.tot.vent >= 0)) H.tot.vent = 0;
 }
 
 /** Every rate history and time series starts again (their windows would span the jump in time). */
 function clearHistories(M) {
-  const mods = [M.heat, M.matter, M.eat, M.membrane, M.pumps, M.catalysts, M.hardlight, M.dipole, M.division, M.cells, M.charge, M.oil, M.lipids, M.excited, M.electrons, M.vents].filter(Boolean);   // (step C12: + the oil; C12b: + the lipids; C12d: + electrons; C12f: + vents)
+  const mods = [M.heat, M.matter, M.eat, M.membrane, M.pumps, M.catalysts, M.hardlight, M.dipole, M.division, M.cells, M.charge, M.oil, M.lipids, M.excited, M.electrons, M.vents, M.pigments].filter(Boolean);   // (step C12: + the oil; C12b: + the lipids; C12d: + electrons; C12f: + vents)
   for (const m of mods) {
     for (const k of Object.keys(m)) if (/(^hist|Hist$|hist\d$|^series$)/.test(k) && Array.isArray(m[k])) m[k] = [];
   }
@@ -436,6 +441,18 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       Object.assign(M.vents.params, { hot: false, sea: false });   // step C12f
       notes.push('saved before step C12f: the vent as in step C12d (no heat), no sea (as it ran)');
     }
+    if (opts.settings !== false && M.pigments && !(S.settings && S.settings['pigments.params'])) {
+      Object.assign(M.pigments.params, { matter: false, sat: false, inhib: false });   // step N1
+      notes.push('saved before step N1: pigments free, no saturation (as it ran)');
+    }
+    if (opts.settings !== false && M.water && !(S.settings && S.settings['water.params'])) {
+      Object.assign(M.water.params, { caustics: false, currents: false });   // step N1
+      notes.push('saved before step N1: no caustic light, no currents (as it ran)');
+    }
+    if (opts.settings !== false && M.oases && !(S.settings && S.settings['oases.params'])) {
+      Object.assign(M.oases.params, { scarce: false, roam: false, count: 0 });   // step N1
+      notes.push('saved before step N1: trace from every spring, no oases (as it ran)');
+    }
     if (opts.settings !== false && M.waste && !(S.settings && S.settings['waste.params'])) {
       Object.assign(M.waste.params, { saturation: false, osmosis: false });   // step C12e
       notes.push('saved before step C12e: saturation and osmosis off (as it ran)');
@@ -472,6 +489,7 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
 
     // springs, time, the JS-side state
     M.matter.springs = clone(S.springs || []).map((s) => (sameView ? s : { ...s, x: s.x + dx, y: s.y + dy }));
+    if (M.oases) M.oases.adopt();   // step N1: the snapshot's oases roam on (the page's own are gone with its springs)
     ctl.setTime(S.time);
     C.tick = S.tick >>> 0;
     C.warm = 0;

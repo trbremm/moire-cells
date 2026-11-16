@@ -49,12 +49,14 @@ import { Catalysts, CAT_SNAP_WORDS } from './catalysts.js';
 import { HardLight, HL_SNAP_WORDS } from './hardlight.js';
 import { Lipids, LIP_SNAP } from './lipids.js';
 import { Waste } from './waste.js';
+import { Pigments } from './pigments.js';
 
 export const SW = 64;               // stock words per cell (cell_eat.wgsl; 16 until step C6c's membranes, words 16..27; step C7:
                                     // 14 the pumped charge across the membrane, 15 the voltage's energy; 32 until step C12b's
                                     // lipid membrane, words 32..61)
-const EP_BYTES = 1760;              // struct EatP (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat; step C8: + hl;
+const EP_BYTES = 1792;              // struct EatP (1760 until step N1's nl[2]) (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat; step C8: + hl;
                                     // step C9: + dv; step C10: + wl0, wl1; step C12b: + lp[9]; step C12d: + smellW; step C12e: + ws[2], ws2)
+const EP_NL = 440;                  // ... its words nl (step N1)
 const EP_WS = 428;                  // ... its words ws (step C12e)
 const EP_SMELL = 412;               // ... its words smellW (step C12d)
 const EP_LP = 376;                  // ... its words lp (step C12b)
@@ -79,6 +81,7 @@ const LG_Q_CEN = 19136;
 const LG_EXC_K = 26624;             // step C12c (heat_common.wgsl): the excited atoms in the cells' stocks, 2 channels, 64-bit             // step C6b (heat_common.wgsl): the cells' charge, 4 numbers x 16 slots
 const EV = ['burned', 'gain', 'bheat', 'inBurn', 'inSwap', 'inForm', 'uptake', 'release', 'expel', 'paid', 'dump', 'batBack', 'gone', 'inHeat'];
 const SED_MASK = SUBSTANCES.reduce((m, s, c) => (s.kind === 'sediment' ? m | (1 << c) : m), 0);
+if (CH.trace !== 12 || CH.l !== 2) throw new Error('step N1: cell_eat.wgsl expects trace in channel 12 and l in channel 2');
 const ROW1 = SUBSTANCES[CH.g].spread;   // the light atoms' spreading speed: permeability's reference
 
 export class Eat {
@@ -138,6 +141,7 @@ export class Eat {
     this.hardlight = new HardLight(this); // step C8: hard light mutates (src/hardlight.js)
     this.lipids = new Lipids(this);       // step C12b: lipid membranes (src/lipids.js)
     this.waste = new Waste(this);         // step C12e: waste must leave (src/waste.js)
+    this.pigments = new Pigments(this);   // step N1: light needs matter (src/pigments.js)
   }
 
   static async create(device, cells) {
@@ -275,6 +279,7 @@ export class Eat {
     this.cells.guides.writeEat(u, EP_WL + 6);     // step C13: the gates' bits (EatP wl1.z)
     this.lipids.write(u, f, EP_LP);               // step C12b: the lipid membranes
     this.waste.write(u, f, EP_WS, dt);            // step C12e: saturation, osmosis
+    this.pigments.writeEat(u, f, EP_NL, dt);      // step N1: light needs matter
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
   }
 
@@ -388,6 +393,7 @@ export class Eat {
     this.waste.apply(rec, w);      // step C12e (after the pumps: it reads their census)
     this.ledger = { time: rec.time, stock, held, atoms, chem, bat, start: this.start, full: cnt[0], empty: cnt[1], stuffed: cnt[2], n: cnt[3], hot: cnt[4], rate, rate2 };
     this.catalysts.apply(rec, w);  // step C7b (after the ledger: it reads the trace in the cells)
+    this.pigments.apply(rec, w);   // step N1 (after the ledger: it reads the batteries' income)
     this.hardlight.apply(rec, w);  // step C8
     // step C9: the energy the divisions' cost turned into heat
     let dc = 0;

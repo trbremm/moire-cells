@@ -54,7 +54,8 @@ const SPOT_SHIFT: u32 = 6u;
 struct Caught { inc: vec4i, abs: vec4i, };
 fn absorb(i: u32, p: vec2u) -> Caught {
   var r: Caught;
-  let s = light_factor(LP, (vec2f(p) + 0.5) * HP.px);
+  var s = light_factor(LP, (vec2f(p) + 0.5) * HP.px);
+  if (HP.caus != 0u) { s *= bitcast<f32>(atomicLoad(&hb[HP.caus + i])); }   // step N1: x the caustic light (src/water.js)
   if (s <= 0.0) { return r; }
   let co = LEDGER_WORDS + 3u * HP.n;
   var cov = 0;

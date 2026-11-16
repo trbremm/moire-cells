@@ -216,6 +216,12 @@ struct EatP {
                            //     passive exchange x (1 + kStretch x e^gene x swelling)); w wTol (the stretch a membrane tolerates at gene 0)
   ws2: vec4f,              // x the tear rate past the tolerance (bursts per s per unit of relative excess); y the stretch tolerance's
                            // upkeep (heat counts per tick at gene 0, x e^gene); z w spare
+  // ---- step N1, a nutrient landscape: light needs matter (src/pigments.js) ----
+  nl: array<vec4f, 2>,     // [0] x NLF_* bits (u32); y the pigment a cell wants (counts per R^2 of its area per unit of harvest rate);
+                           //     z the share of the shortfall built per tick; w the build's cost (heat counts per pigment count)
+                           // [1] x the share of the pigment that wears out per tick; y Isat (the light, as a share of the full noon
+                           //     light, at which photosynthesis saturates; 0 none); z pigment counts bleached per photon past
+                           //     saturation (photoinhibition); w the day's level (this frame's power over the full noon power)
 };
 // ---- step C12e, WASTE MUST LEAVE (src/waste.js). Two pressures, both derived, no "expel" rule:
 //   SATURATION (mass action): every reaction a cell runs slows as its own products pile up against its reactants: its rate x
@@ -458,6 +464,45 @@ const E2_GRAD: u32 = 14u;       // step C12f: counts the GRADIENT engines made (
 const E2_GRADE: u32 = 15u;      // ... and the heat counts they put into batteries
 var<workgroup> wev2: array<atomic<i32>, 16>;
 
+// ==== step N1, A NUTRIENT LANDSCAPE: LIGHT NEEDS MATTER (src/pigments.js; README "Step N1: nutrient landscape") ====
+// A harvest slot's PIGMENT is a molecule the cell BUILDS from its stock: two light linkers l (a chain that shares its electrons, an
+// antenna, like chlorophyll's conjugated ring) holding one trace atom at its heart (like chlorophyll's magnesium). Stock word W_PIG
+// holds it (counts; each count = 2 l + 1 trace; the atoms' books count it with the cells' l and trace; its energy is the free atoms',
+// 0, so building it costs only its assembly, nl[0].w heat counts per count from the battery, as heat). It WEARS OUT (nl[1].x per tick,
+// back into its atoms in the stock), so keeping it costs matter and battery all the time. A slot's optical depth is pigK x rate x the
+// share of the wanted pigment the cell holds. PHOTOSYNTHESIS SATURATES: of the photons caught at a light s (a share of the full noon
+// light), only Isat tanh(s / Isat) / s can be used; the rest are heat (idle photons) and, as PHOTOINHIBITION, each bleaches nl[1].z
+// counts of the pigment (back into its atoms): shade is worth having under a strong light or a bright caustic line.
+const W_PIG: u32 = 30u;          // stock word: the pigment (counts)
+const N1_TRACE: u32 = 12u;       // trace's channel (src/eat.js checks)
+const NLF_MATTER: u32 = 1u;      // pigments are built from the stock and wear out
+const NLF_SAT: u32 = 2u;         // photosynthesis saturates
+const NLF_INHIB: u32 = 4u;       // photons past saturation bleach the pigment
+// counters (LG_N1 + 128 k, 64-bit): counts of photons (events) unless said otherwise
+const N1_RISE: u32 = 0u;         // heat counts the pigments' photons stored uphill (n x the engine's rise): the energy light made
+const N1_CAUGHT: u32 = 1u;       // photons the pigments caught
+const N1_ISAT: u32 = 2u;         // ... not used: past saturation
+const N1_ICOF: u32 = 3u;         // ... not used: no cofactor (trace)
+const N1_IMAT: u32 = 4u;         // ... not used: the raw material ran out
+const N1_ICAP: u32 = 5u;         // ... not used: the engine's top speed
+const N1_IBAT: u32 = 6u;         // ... not used: the battery could not pay the spark (and a weak photon's difference)
+const N1_IWASTE: u32 = 7u;       // ... not used: saturation by the products (step C12e)
+const N1_BUILT: u32 = 8u;        // pigment counts built
+const N1_BUILDE: u32 = 9u;       // heat counts paid for building
+const N1_WEAR: u32 = 10u;        // pigment counts worn out (or let go while the rule is off)
+const N1_INHIB: u32 = 11u;       // pigment counts bleached by photoinhibition
+const N1_HELD: u32 = 12u;        // snapshot (ledger pass): pigment counts held
+const N1_CELLS: u32 = 13u;       // snapshot: cells holding pigment
+var<workgroup> wn1: array<atomic<i32>, 12>;
+fn n1_flags() -> u32 { return bitcast<u32>(EP.nl[0].x); }
+// the CAUSTIC light at p (src/water.js: the water surface focusing the light, x the light_factor; 1 without it)
+fn caustic_at(p: vec2f) -> f32 {
+  if (HP.caus == 0u) { return 1.0; }
+  let q = heat_xy(HP, p);
+  return bitcast<f32>(atomicLoad(&hb[HP.caus + u32(q.y) * HP.hw + u32(q.x)]));
+}
+// ==== end of step N1's declarations ====
+
 fn add64(lo: u32, x: i32) {
   if (x == 0) { return; }
   let old = bitcast<u32>(atomicAdd(&hb[lo], x));
@@ -587,6 +632,16 @@ fn give_back(i: u32, p: vec2f, cur: u32, slot: u32) {
       gone += m * na;
     }
   }
+  // step N1: the pigment, as its atoms (one trace and two light linkers per count)
+  let pgv = atomicExchange(&stock[i * SW + W_PIG], 0);
+  if (pgv > 0) {
+    for (var q = 0u; q < 2u; q++) {
+      let c = select(N1_TRACE, MB_CH_L, q == 1u);
+      let mm = select(pgv, 2 * pgv, q == 1u);
+      if (cur != 0u && (EP.mask & (1u << c)) != 0u) { spread9(cur + c * EP.n, idx, mm); back += mm; }
+      else { add64(lg_mc(LG_M_GONE, c) + slot, mm); gone += mm; }
+    }
+  }
   // (step C7: and the energy stored in its membrane voltage, as heat with the battery; the voltage itself is gone)
   atomicStore(&stock[i * SW + VQ], 0);
   atomicStore(&stock[i * SW + W_TMADE], 0);   // (step C12e: its t counters start again with the next cell in the slot)
@@ -628,6 +683,11 @@ fn flush_counters(li: u32, slot: u32) {
   if (li < 16u) {
     let v = atomicLoad(&wws[li]);
     if (v != 0) { atomicAdd(&hb[LG_WS + 256u + 16u * li + (slot & 15u)], v); }
+  }
+  // step N1: the pigments' counters
+  if (li < 12u) {
+    let v = atomicLoad(&wn1[li]);
+    if (v != 0) { add64(LG_N1 + 128u * li + slot, v); }
   }
   // step C12c: the excited atoms' counters
   if (li < 8u) {
@@ -676,6 +736,9 @@ fn split(@builtin(global_invocation_id) id: vec3u) {
     if (vh != 0) { atomicSub(&stock[pi * SW + VQ], vh); atomicAdd(&stock[i * SW + VQ], vh); }
     let eh = take_stock(pi * SW + EVW, atomicLoad(&stock[pi * SW + EVW]) / 2);
     if (eh > 0) { atomicAdd(&stock[i * SW + EVW], eh); }
+    // step N1: and half of its pigment
+    let pgh = take_stock(pi * SW + W_PIG, atomicLoad(&stock[pi * SW + W_PIG]) / 2);
+    if (pgh > 0) { atomicAdd(&stock[i * SW + W_PIG], pgh); }
     // step C6c: and a share r / (r + r_parent) of each side of the parent's membrane (side k to side k), so both start with
     // about the parent's integrity (the newborn is smaller and wants less)
     let sh = c.r / max(c.r + cells[pi].r, 1e-3);
@@ -1878,16 +1941,46 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     var b = bio[i];
     // step C13, the engine gate: the engine slots' rates x (1 + g s), s the field A the cell's sides felt (their mean)
     if ((fg_bits() & FG_ENGINE) != 0u) { b.rate = vec4f(b.rate.xyz * gate_factor(b.gate.z, cell_felt_mean(c)), b.rate.w); }
+    var fpg = 1.0;                                // step N1: the share of the wanted pigment the cell holds (1: light needs no matter)
+    var pg = atomicLoad(&stock[o + W_PIG]);       // ... the pigment it holds (counts)
+    let pg0 = pg;
     if ((EP.flags & EF_ENG) != 0u) {
+      // ---- step N1 block: LIGHT NEEDS MATTER. The pigment wears out into its atoms, then is built toward what the harvest slots
+      // want (one trace and two l from the stock per count, the assembly paid from the battery as heat) ----
+      let n1f = n1_flags();
+      if ((n1f & NLF_MATTER) != 0u) {
+        var hRate = 0.0;
+        for (var k = 0u; k < 3u; k++) {
+          if (b.rate[k] > 0.0 && EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) > 0u) { hRate += b.rate[k]; }
+        }
+        let pw = EP.nl[0].y * areaR2 * hRate;
+        let nw = min(i32(floor(f32(pg) * EP.nl[1].x + u01(pcg(rs + 0x2a4c3e1fu)))), pg);
+        if (nw > 0) { pg -= nw; m[N1_TRACE] += nw; m[MB_CH_L] += 2 * nw; atomicAdd(&wn1[N1_WEAR], nw); }
+        let c16 = i32(EP.nl[0].w);
+        if (f32(pg) < pw) {
+          var nb = i32(floor((pw - f32(pg)) * EP.nl[0].z + u01(pcg(rs + 0x5be0cd19u))));
+          nb = min(nb, min(max(m[N1_TRACE], 0), max(m[MB_CH_L], 0) / 2));
+          if (c16 > 0) { nb = min(nb, max(bat, 0) / c16); }
+          if (nb > 0) {
+            pg += nb; m[N1_TRACE] -= nb; m[MB_CH_L] -= 2 * nb; bat -= nb * c16; heat += nb * c16;
+            atomicAdd(&wn1[N1_BUILT], nb); atomicAdd(&wn1[N1_BUILDE], nb * c16);
+          }
+        }
+        fpg = select(0.0, clamp(f32(pg) / pw, 0.0, 1.0), pw > 0.5);
+      } else if (pg > 0) {
+        m[N1_TRACE] += pg; m[MB_CH_L] += 2 * pg; atomicAdd(&wn1[N1_WEAR], pg); pg = 0;   // (the rule off: what was built falls apart)
+      }
+      // ---- end of the step N1 block ----
       // pigments: each harvest slot's pigment catches its band of the light falling on the cell, in whole photons (one
       // photon = one event's worth); its optical depth is pigK x the slot's rate, and it shares the band with what else
       // catches it there (the medium, the cell's body) by depth, as the dish's absorption does
       var nph = vec3i(0);
+      var nsat = vec3i(0);                        // step N1: the photons the slot can use (saturation)
       if ((EP.flags & EF_PIG) != 0u && LP.mode != LIGHT_OFF) {
-        let s = light_factor(LP, c.pos);
+        let s = light_factor(LP, c.pos) * caustic_at(c.pos);   // (step N1: x the caustic light)
         var tb = vec4f(0.0);
         for (var k = 0u; k < 3u; k++) {
-          if (b.rate[k] > 0.0 && EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) > 0u) { tb[eng_band(b.eng[k])] += EP.pigK * b.rate[k]; }
+          if (b.rate[k] > 0.0 && EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) > 0u) { tb[eng_band(b.eng[k])] += EP.pigK * b.rate[k] * fpg; }
         }
         if (s > 0.0 && any(tb > vec4f(0.0))) {
           let apx = areaPx / (HP.px * HP.px);                  // the cell's area in heat pixels
@@ -1897,9 +1990,25 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
             let band = eng_band(b.eng[k]);
             if (b.rate[k] <= 0.0 || EP.eng[eng_index(b.eng[k])].kind != 0u || band == 0u) { continue; }
             let ph16 = EP.photon16[band];
-            let n = i32(floor(caught[band] * EP.pigK * b.rate[k] / f32(ph16) + u01(pcg(rs + k * 0x2f6b1e3du + 0x13579bdfu))));
+            let n = i32(floor(caught[band] * EP.pigK * b.rate[k] * fpg / f32(ph16) + u01(pcg(rs + k * 0x2f6b1e3du + 0x13579bdfu))));
             nph[k] = n;
             atomicAdd(&wev2[E2_PIG + band], n * ph16);
+            // ---- step N1 block: photosynthesis SATURATES (the light s, a share of the full noon light: Isat tanh(s / Isat) / s of the
+            // photons usable), and photons past it BLEACH the pigment (photoinhibition) ----
+            var nu1 = n;
+            if ((n1_flags() & NLF_SAT) != 0u && EP.nl[1].y > 0.0 && n > 0) {
+              let se = s * EP.nl[1].w;
+              let uf = select(1.0, EP.nl[1].y * tanh(se / EP.nl[1].y) / se, se > 1e-6);
+              nu1 = clamp(i32(floor(f32(n) * uf + u01(pcg(rs + k * 0x3c6ef372u + 0x0fedcba9u)))), 0, n);
+            }
+            nsat[k] = nu1;
+            atomicAdd(&wn1[N1_CAUGHT], n);
+            atomicAdd(&wn1[N1_ISAT], n - nu1);
+            if ((n1_flags() & NLF_INHIB) != 0u && n > nu1 && pg > 0) {
+              let nb = min(i32(floor(f32(n - nu1) * EP.nl[1].z + u01(pcg(rs + k * 0x27d4eb2fu + 0x165667b1u)))), pg);
+              if (nb > 0) { pg -= nb; m[N1_TRACE] += nb; m[MB_CH_L] += 2 * nb; atomicAdd(&wn1[N1_INHIB], nb); }
+            }
+            // ---- end of the step N1 block ----
           }
           // the pigments' depth, put down over the 3 x 3 pixels under the cell for the light's absorption this tick
           // (heat.wgsl absorb, matter.wgsl react: they see that much less of the band, which the cells caught instead;
@@ -1948,9 +2057,18 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           let d16 = max(E.g16 - ph16, 0);
           let c16 = sp16 + d16;                                 // from the battery per event
           var nu = np;                                          // the photons the engine can use (the cofactor's share)
-          if (band != 0u && cof < 1.0) { nu = i32(floor(f32(np) * cof + u01(pcg(rs + k * 0x1b873593u + 0x0badf00du)))); }
+          if (band != 0u) { nu = nsat[k]; }                     // (step N1: those past saturation are idle)
+          let nu0 = nu;
+          if (band != 0u && cof < 1.0) { nu = i32(floor(f32(nu) * cof + u01(pcg(rs + k * 0x1b873593u + 0x0badf00du)))); }
           var n = min(nu, min(a, cap));
           n = max(min(n, bat / c16), 0);
+          if (band != 0u) {   // step N1: why the photons went unused (counters only)
+            let na = min(nu, max(a, 0));
+            atomicAdd(&wn1[N1_ICOF], nu0 - nu);
+            atomicAdd(&wn1[N1_IMAT], nu - na);
+            atomicAdd(&wn1[N1_ICAP], na - min(na, cap));
+            atomicAdd(&wn1[N1_IBAT], min(na, cap) - n);
+          }
           // step C12e, SATURATION: x (1 - Q / K), the drive what the photon and the battery put in beyond the rise (its surplus + the spark)
           if (n > 0 && satOn) {
             let q = rx_lq(&m, E.ch);
@@ -1958,9 +2076,11 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
             let n1 = clamp(i32(floor(f32(n) * fs + u01(pcg(rs + k * 0x2d358dccu + 0x31b2f3c1u)))), 0, n);
             satW += f32(n);
             satL += f32(n - n1);
+            if (band != 0u) { atomicAdd(&wn1[N1_IWASTE], n - n1); }   // (step N1)
             n = n1;
           }
           tMade += n * max(t_net(E.ch), 0);
+          if (band != 0u) { atomicAdd(&wn1[N1_RISE], n * E.g16); }   // (step N1: the energy light stored)
           if (band == 0u) { np = n; }                           // (a storer has no photons to waste)
           var nx = 0;
           if (n > 0) {
@@ -2206,8 +2326,9 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     // write back what changed (only this invocation touches this cell's stock in this dispatch)
     for (var j = 0u; j < NCELL; j++) { let k = cell_ch(j); if (m[k] != m0[k]) { atomicStore(&stock[o + stock_w(k)], m[k]); } }
     if (bat != bat0) { atomicStore(&stock[o + BAT], bat); }
+    if (pg != pg0) { atomicStore(&stock[o + W_PIG], pg); }   // (step N1)
     if (heat != 0) { atomicAdd(&hb[LEDGER_WORDS + idx[4]], heat); }
-    var fill = 0.0;
+    var fill = 3.0 * f32(max(pg, 0));                        // (step N1: the pigment's three atoms take room too)
     for (var j = 0u; j < NCELL; j++) { let k = cell_ch(j); fill += f32(m[k]) * ep_f(EP.natoms, k); }
     cells[i].bat = clamp(f32(bat) / f32(batMax), 0.0, 1.0);
     cells[i].fill = clamp(fill / max(cap, 1.0), 0.0, 1.0);
@@ -2282,12 +2403,12 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       var dose = i32(fl2 >> CELL_DOSE_SHIFT);
       var add = 0.0;
       if (LP.mode != LIGHT_OFF) {
-        let lf = light_factor(LP, c.pos);
+        let lf = light_factor(LP, c.pos) * caustic_at(c.pos);   // (step N1: x the caustic light)
         if (lf > 0.0) {
           var th = 0.0;
           if ((EP.flags & EF_ENG) != 0u && (EP.flags & EF_PIG) != 0u) {
             for (var k = 0u; k < 3u; k++) {
-              if (b.rate[k] > 0.0 && EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) == 3u) { th += EP.pigK * b.rate[k]; }
+              if (b.rate[k] > 0.0 && EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) == 3u) { th += EP.pigK * b.rate[k] * fpg; }
             }
           }
           let tot = LP.tauMed.w + LP.tauCell.w + th;
@@ -2432,8 +2553,13 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     if (le != 0) { atomicAdd(&wle, le); }
     for (var q = 0u; q < 5u; q++) { if (lk[q] != 0) { atomicAdd(&wlps[q], lk[q]); } }
     let lAtoms = lk[LK_GP] + lk[LK_TM] + lk[LK_OIL];
+    // step N1: the pigment counts as its atoms with the cells' trace and l
+    let pgv = max(atomicLoad(&stock[i * SW + W_PIG]), 0);
+    if (pgv > 0) { add64(LG_N1 + 128u * N1_HELD + (i & 63u), pgv); add64(LG_N1 + 128u * N1_CELLS + (i & 63u), 1); }
     for (var k = 0u; k <= BAT; k++) {
       var v = max(atomicLoad(&stock[i * SW + k]), 0);
+      if (k == N1_TRACE) { v += pgv; }
+      if (k == MB_CH_L) { v += 2 * pgv; }
       if (k == MB_CH_L) { v += ml + lAtoms + 2 * lk[LK_CL]; }
       if (k == MB_CH_H) { v += mh + lAtoms + 2 * lk[LK_CH]; }
       if (k == 0u) { v += lk[LK_GP]; }

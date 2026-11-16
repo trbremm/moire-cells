@@ -131,6 +131,8 @@ import { setupUI } from './ui.js';
 import { Recorder } from './record.js';
 import { Neon, LIGHT_FORMAT } from './neon.js';
 import { Charge } from './charge.js';
+import { Water } from './water.js';
+import { Oases } from './oases.js';
 import { setupLab } from './lab.js';
 import { fetchSnapshot } from './snapshot.js';
 import { camera } from './camera.js';
@@ -193,6 +195,8 @@ let cells = null;
 let light = null;
 let matter = null;
 let charge = null;     // step C6b: the screened charge field (src/charge.js)
+let water = null;      // step N1: the water: caustic light and currents (src/water.js)
+let oases = null;      // step N1: the scarce nutrient's springs (src/oases.js)
 let recorder = null;   // step C3b: the video recorder (Shift+V, the record button)
 let neon = null;       // step C6n: the drawing as a whole, and the neon look (src/neon.js)
 let running = false;
@@ -252,6 +256,7 @@ async function boot() {
     light = await Light.create(gpu.device, LIGHT_FORMAT);
     matter = await Matter.create(gpu.device, LIGHT_FORMAT, medium);
     charge = await Charge.create(gpu.device, LIGHT_FORMAT);
+    water = await Water.create(gpu.device, LIGHT_FORMAT);   // step N1
     cells = await Cells.create(gpu.device, LIGHT_FORMAT, medium, nCells, SEED, nCap);
     const small = Math.min(window.innerWidth || 800, window.innerHeight || 800) < 600;
     neon = await Neon.create(gpu.device, gpu.format, params.has('cheap') ? flag('cheap') : TOUCH || small);
@@ -409,6 +414,37 @@ async function boot() {
         if (params.has(q) && Number.isFinite(v) && v >= 0) VP[k] = v;
       }
     }
+    // step N1: the water (caustic light, currents): its blocks live in the heat buffer (set before the first resize sizes it)
+    Object.assign(water, { heat: cells.heat, background, medium, light });
+    cells.heat.water = water; matter.water = water; background.water = water;
+    {
+      const WP = water.params;
+      for (const [q, k] of [['caustics', 'caustics'], ['currents', 'currents']]) { if (params.has(q)) WP[k] = flag(q); }
+      for (const [q, k] of [['focus', 'focus'], ['curspeed', 'speed'], ['gyre', 'gyre'], ['curdrift', 'drift'], ['wind', 'wind']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v)) WP[k] = v;
+      }
+    }
+    // step N1: the scarce nutrient and its roaming springs (src/oases.js)
+    oases = new Oases(matter, SEED);
+    {
+      const OP = oases.params;
+      if (params.has('scarce')) OP.scarce = flag('scarce');
+      if (params.has('roam')) OP.roam = flag('roam');
+      const v = Number(params.get('oases'));
+      if (params.has('oases') && Number.isFinite(v) && v >= 0) OP.count = Math.round(v);
+    }
+    {   // step N1: a nutrient landscape (light needs matter)
+      const PG = cells.eat.pigments;
+      PG.light = light;
+      for (const [q, k] of [['pigmatter', 'matter'], ['pigsat', 'sat'], ['inhib', 'inhib']]) {
+        if (params.has(q)) PG.params[k] = flag(q);
+      }
+      for (const [q, k] of [['pigwant', 'want'], ['pigwear', 'wear'], ['isat', 'isat'], ['bleach', 'bleach'], ['pigcost', 'cost']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) PG.params[k] = v;
+      }
+    }
     background.heat = cells.heat;
     // app: how the culture is spread and how diverse it is (?spread= ?colonies= ?diversity=, or a preset's), before the first
     // resize seeds it
@@ -419,12 +455,13 @@ async function boot() {
   }
   // the medium first: it writes the lattice every field-reading layer uses; the light before the cells (its uniform is
   // read by the heat passes the cells run), and its tint is drawn under them (its outline over them: renderTop)
-  layers = [medium, background, landscape, matter, charge, light, cells];   // (step C6b: the charge's contours over the substances)
+  layers = [medium, oases, background, landscape, matter, charge, water, light, cells];   // (step C6b: the charge's contours over the substances; step N1: the water
+  // after the ripples stepped and before the cells' ticks, its caustic net under the light's tint)
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
   window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter, eat: cells.eat, neon, charge,
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
-    electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents };
+    electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, pigments: cells.eat.pigments, water, oases };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
   window.moire.budgets = budgets;      // the fast speeds' tick budgets
@@ -514,12 +551,16 @@ function defaultScene() {
   matter.addSpring(cx - perp[0] * s, cy - perp[1] * s, 'light', SCENE.life);
   matter.addSpring(cx + perp[0] * s, cy + perp[1] * s, 'heavy', SCENE.life);
   if (!params.has('spot')) light.moveTo(W / 2 + ax[0] * rim, H / 2 + ax[1] * rim);
+  // step N1: the oases (the scarce nutrient's springs): the first beside the culture, on the far side from the springs, the others
+  // anywhere (src/oases.js)
+  oases.start([[W / 2 - ax[0] * d, H / 2 - ax[1] * d]]);
 }
 
 /** App: a preset's springs and light (src/culture.js PRESETS), once the dish's size is known. ?springs=0 leaves them out. */
 function presetScene() {
   if (params.has('springs') && !flag('springs')) return;
-  PRESETS[PRESET].scene({ matter, light, cells, W: view.cssW, H: view.cssH, hasSpot: params.has('spot') });
+  PRESETS[PRESET].scene({ matter, light, cells, oases, water, W: view.cssW, H: view.cssH, hasSpot: params.has('spot') });
+  if (!oases.started) oases.start();   // (step N1: a preset that places no oases of its own gets them anywhere)
 }
 
 /** App: the culture's layout and diversity (the URL's, a preset's, or the new culture dialog's); the pull to the centre nearly
@@ -674,7 +715,10 @@ function frame(now) {
     const compact = view.cssW < 560 || view.cssH < 500;   // a phone (either way up): shorter lines
     let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}\n${charge.panelLine(compact)}\n${cells.eat.membrane.panelLine(compact)}\n${cells.eat.lipids.panelLine(compact)}\n${cells.dipole.panelLine(compact)}\n${cells.eat.pumps.panelLine(compact)}\n${cells.eat.catalysts.panelLine(compact)}\n${cells.eat.hardlight.panelLine(compact)}\n${cells.division.panelLine(compact)}\n${cells.walls.panelLine(compact)}\n${cells.guides.panelLine(compact)}\n${matter.oil.panelLine(compact)}\n${ELECTRONS ? matter.electrons.panelLine(compact) : matter.excited.panelLine(compact)}
 ${cells.eat.waste.panelLine(compact)}${ELECTRONS ? `
-${matter.vents.panelLine(compact)}` : ''}`;
+${matter.vents.panelLine(compact)}` : ''}
+${cells.eat.pigments.panelLine(compact)}
+${water.panelLine(compact)}
+${oases.panelLine(compact)}`;
     if (paused || speed !== 1) {
       const r = reachedText();
       const sp = paused ? 'paused' : r ? (compact ? r : `${speedName(speed)} · reached ${r}`) : speedName(speed);
@@ -744,6 +788,9 @@ function drawOverlay() {
     ...cells.eat.lipids.overlayLines(),
     ...(ELECTRONS ? matter.electrons.overlayLines() : matter.excited.overlayLines()),
     ...cells.eat.waste.overlayLines(),
+    ...cells.eat.pigments.overlayLines(),
+    ...water.overlayLines(),
+    ...oases.overlayLines(),
     ...matter.vents.overlayLines(),
     ...cells.dipole.overlayLines(),
     ...cells.eat.pumps.overlayLines(),
@@ -800,6 +847,7 @@ function makeApp() {
     get cells() { return cells; }, get background() { return background; }, get landscape() { return landscape; },
     get light() { return light; }, get matter() { return matter; }, get heat() { return cells.heat; },
     get charge() { return charge; },
+    get water() { return water; }, get oases() { return oases; },   // step N1
     get neon() { return neon; },
     get view() { return view; },
     overlayEl, entropyEl, ANCHORS,

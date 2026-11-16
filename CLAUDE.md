@@ -505,6 +505,19 @@ C12d. ELECTRONS: BONDING REBUILT AROUND GRIP (user 2026-11-16; NEXT after C13). 
     - Past experiment numbers stop being comparable (user accepted). Then rerun the oxygen conditions WITHOUT a light
       spring: watch for the sink (free givers / heavy atoms catching takers first, rust-like crust), the haze building,
       breathers rising.
+    AS BUILT (C12d, 2026-11-16): src/electrons.js; core pull giver 5/4, linker 5/2, taker 11/2, shell k at -Z/2^(k-1)
+    (a linear ladder failed checks); grip g -1.25 G -0.625 l -2.5 L -1.25 t -5.5 T -2.75; bond gap = released + donor's
+    atom gap (anti-bonding at the donor's empty shell, else visible light split water in the open). Gt -4.875 (most
+    settled, open light cannot split it), gt -4.5, GT -2.375 / gT -1.5 (fuel, absorb visible 2 / 1); breathing t+gT 3.0.
+    Excited states resolve within the tick (react 1/2, fluoresce 2/5 of the rest, else heat); g*/t* empty with electrons.
+    Old charge rule kept (electrons give the same). Tap 2 = mineral spring (gt, l, L), tap 3 = vent (gT, GT, G, trace).
+    Look: sparse steady sky-blue (minerals, tlL) and gold (GT, free t) lights in the light. ?electrons=0 = old table
+    exactly (page reloads; old snapshots switch by themselves). RESULT (oxygen conditions, no free-atom spring, 40 min):
+    breathing runs (60-180 events/s, ~1000x C12c) but as a LOOP INSIDE EACH CELL: pigment splits gt, the cell burns
+    g + t back; pigments moved to hard light (a hard photon pays the whole split). No separate breather lineage
+    (self-burn ~3.4 per event beats ~2.25 from a thin haze). Haze 50-90 under the spot, to ~510 whole dish; rust grows
+    (sink), oxygen also ends in tlL soap (an unwritten sink). Known: hard light splits water in the open (oxygen
+    without life); default scene crashes harder then recovers higher than the old table. Speed unchanged.
 C13. FIELDS AS GENES, FIELDS AS GUIDES (user 2026-11-16 chose it next, over more oxygen, the purist page or pruning;
     their words earlier: "I envisioned the field just to guide the underlying interactions. Maybe we let them mutate
     their different fields more"). Back to the moire as the heart of the look:

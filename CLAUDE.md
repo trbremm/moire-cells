@@ -638,6 +638,14 @@ PREDATORS (user 2026-11-16 "should we start planning for macrophages? and other 
     landscapes are compared by their MOIRE BEAT: near-identical patterns beat slowly (match = kin), different ones beat
     fast (stranger). A gene sets how much marker the cell DISPLAYS (it can hide it: camouflage, mimicry), and the gene
     network may regulate it. Drawn as fine texture on the membrane when zoomed (like surface immunostaining).
+N1. A NUTRIENT LANDSCAPE, LIGHT LESS EASY (user 2026-11-16: "I think light is fueling them too easily. We might need to
+    make the nutrient landscape more interesting"; PROPOSED, awaiting the user's pick; after C12f). Claude's proposal:
+    (1) diagnose: share of energy from light, whether raw materials ever limit; (2) light needs matter: pigments built
+    from stock atoms and wearing out (upkeep); photosynthesis saturates, photoinhibition at high light; (3) ONE SCARCE
+    NUTRIENT (phosphorus-like) only from a few springs -> oases; springs that wander, pulse, dry up; (4) CAUSTIC LIGHT: the
+    ripple layer as the water surface focusing light into a wandering bright net; (5) CURRENTS: slow flow carrying
+    nutrients in plumes and eddies, possibly derived from the medium's moire beat (the original "chemical landscape made
+    of moire beats").
 EXPERIMENT STYLE FOR T1 AND PREDATORS (user 2026-11-16: "we just need to play with different very random initial stem
     cells in different colonies and see it unfolds"): no hand designs needed to start; several colonies, each from its own
     random founder (?spread=colonies&colonies=N, diversity mixed: colony k = founder k; works today), watched as they meet.

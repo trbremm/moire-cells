@@ -769,3 +769,127 @@ on the left, teal in the middle, where the light-split pieces are).
 - Old snapshots: the C11 lab configuration (`experiments/tissue/configs/c11-pol-lb-t1-100`) opened by `?snap=` on an electrons page
   (`reload-old.json`): the page reloads itself with `?electrons=0`, loads it ("saved before step C12b / C12c / C13 ... as it ran"),
   runs 40 s with atoms and charge 0.
+
+
+# Waste must leave
+
+Step C12e (README "Step C12e: waste must leave"): SATURATION (every reaction inside a cell slows as its own products pile up,
+x (1 - Q/K), K from the table's release over theta T) and OSMOSIS ON THE IONS (free ions inside minus outside swell a cell against
+its membrane's stiffness; stretch opens channels and past a tolerance tears), with the two stretch genes, and `?photolysis=0` (light
+frees no atoms in the open: any free t is made by life). The question (the user's): does a cell that keeps its waste clog and swell,
+so that dumpers win, the haze builds from life and breathers living on OUTSIDE t rise?
+
+**How.** `experiments/conditions/c12e/` (`make.py` writes them, `analyse.py` the tables below, `cells.py` a colony cell by cell from its
+final snapshot, `summarise.sh` the plots and one stacked phase picture per run in `experiments/summaries/c12e-oxygen/` and
+`c12e-single/`). The C12d oxygen conditions unchanged: no spring of free atoms, a never-drying mineral spring at (875, 328), a slow
+vent at (875, 472) (2 s of every 20 s), the spotlight or the whole dish, seeds 3 and 7, 40 min; then the same with `?photolysis=0`;
+each rule alone (the whole dish, seed 3, 20 min: shortened because the GPU was shared with two other workers' runs); a control for
+the photolysis runs with both new rules off (`np-control`, the spotlight, seeds 3 and 7, 10 min). Headless Chrome on the GTX 1650 at
+MAX, commit 2dbb2bd. kOsm = 10 (a first pilot at 1 showed no swelling at all: `c12e-pilot`; at 10, `c12e-pilot-k10`, the loaded tenth
+of the cells swell or shrink by 3 to 25 % of their area). Runs are not bit-repeatable: one run is a story, not a measurement.
+
+| run | cells 10 / 20 / 30 / 40 min | free t (oxygen) | rust Gt | photochemistry in the open per s | breathing into batteries per s | lost to saturation | swollen / shrunk (>10 %) at 40 min | torn, bursts per s | ENTROPY 40 min | ORDER | books: energy / atoms / charge |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| c12d-oxy-spot_s3 | 2036 / 2003 / 2248 / 2777 | 62 / 87 / 53 / 69 | 42 / 113 / 150 / 170 | 6.1 | 333 | - | - | -, 0.90 | 71.1 M | 0.278 | -0.15..+0.02 / 0 / 0 |
+| c12d-oxy-spot_s7 | 2060 / 2419 / 2692 / 2583 | 65 / 92 / 64 / 88 | 40 / 115 / 174 / 249 | 9.0 | 197 | - | - | -, 1.77 | 59.1 M | 0.288 | -0.19..+0.03 / 0 / 0 |
+| c12d-oxy-full_s3 | 4974 / 5999 / 6000 / 6000 | 115 / 223 / 340 / 522 | 32 / 87 / 134 / 190 | 27.7 | 536 | - | - | -, 3.27 | 188.2 M | 0.327 | -0.03..+0.51 / 0 / 0 |
+| c12d-oxy-full_s7 | 4869 / 6000 / 6000 / 5999 | 179 / 347 / 381 / 506 | 30 / 78 / 128 / 179 | 25.8 | 671 | - | - | -, 1.28 | 234.7 M | 0.334 | -0.04..+0.14 / 0 / 0 |
+| c12e-oxy-spot_s3 | 1811 / 1956 / 2094 / 1955 | 57 / 90 / 92 / 110 | 31 / 96 / 170 / 261 | 8.1 | 181 | 6% | 12 / 42 | 0.20, 1.46 | 53.2 M | 0.291 | -0.10..+0.09 / 0 / 0 |
+| c12e-oxy-spot_s7 | 1822 / 1955 / 2293 / 1924 | 57 / 96 / 74 / 114 | 41 / 113 / 180 / 247 | 8.0 | 216 | 7% | 23 / 47 | 0.04, 1.20 | 50.2 M | 0.290 | -0.00..+0.19 / 0 / 0 |
+| c12e-oxy-full_s3 | 2409 / 5998 / 6000 / 6000 | 88 / 255 / 336 / 485 | 41 / 92 / 143 / 202 | 30.3 | 677 | 9% | 183 / 472 | 0.13, 1.82 | 211.4 M | 0.327 | -0.08..+0.28 / 0 / 0 |
+| c12e-oxy-full_s7 | 5778 / 6000 / 5999 / 5999 | 130 / 302 / 395 / 503 | 34 / 91 / 146 / 211 | 24.7 | 467 | 4% | 116 / 250 | 0.33, 0.92 | 180.7 M | 0.334 | -0.05..+0.51 / 0 / 0 |
+| c12e-oxy-spot-np_s3 | 0 / 0 / 0 / 0 | 5 / 4 / 3 / 3 | 119 / 216 / 352 / 423 | 7.6 | 0 | 0% | 0 / 0 | 0.00, 0.00 | 16.4 M | 0.273 | -0.01..+0.02 / 0 / 0 |
+| c12e-oxy-spot-np_s7 | 1122 / 1172 / 1359 / 1198 | 63 / 102 / 35 / 55 | 60 / 145 / 179 / 238 | 2.0 | 212 | 9% | 39 / 6 | 0.09, 19.94 | 44.0 M | 0.275 | -0.12..+0.02 / 0 / 0 |
+| c12e-oxy-full-np_s3 | 2 / 0 / 0 / 0 | 13 / 4 / 2 / 1 | 122 / 238 / 357 / 467 | 5.7 | 0 | 0% | 0 / 0 | 0.00, 0.00 | 67.6 M | 0.272 | -0.01..+0.00 / 0 / 0 |
+| c12e-oxy-full-np_s7 | 1160 / 6000 / 5999 / 6000 | 91 / 333 / 420 / 495 | 95 / 93 / 158 / 202 | 2.8 | 910 | 7% | 258 / 96 | 0.29, 3.43 | 217.0 M | 0.342 | -0.06..+0.11 / 0 / 0 |
+| c12e-sat-only | 3658 / 6000 / 6000 / 6000 | 128 / 322 / 322 / 322 | 36 / 88 / 88 / 88 | 14.6 | 632 | 13% | 0 / 0 | 0.00, 0.76 | 82.0 M | 0.346 | -0.08..+0.11 / 0 / 0 |
+| c12e-osm-only | 5946 / 5999 / 5999 / 5999 | 180 / 338 / 338 / 338 | 29 / 97 / 97 / 97 | 13.9 | 776 | 0% | 136 / 182 | 0.06, 2.05 | 87.9 M | 0.325 | -0.05..+0.06 / 0 / 0 |
+
+(Columns at 10 / 20 / 30 / 40 min or means from 5 min on; "breathing" = engines that use a free t, `electrons.rate.eBreath`; "lost to
+saturation" = the share of the reaction events the cells' reactions would run without it; torn = bursts by overstretch per s, bursts
+= all bursts per s. sat-only and osm-only ran 20 min: their 30 / 40 min columns repeat the 20 min value.)
+
+| run | free t made inside / taken in / put out per s (mean 5..40 min) | breathers on OUTSIDE t / on their OWN t (10 / 20 / 30 / 40 min) | net importers / exporters of t at 40 min | pumps at 40 min: t OUT / t IN / gt OUT / T OUT / g OUT | gene stretch channels (mean ± sd) 10 / 40 min | gene stretch tolerance 10 / 40 min | pressure, swelling (mean 5..40 min) |
+|---|---|---|---|---|---|---|---|
+| c12e-oxy-spot_s3 | 82.9 / 12.2 / 21.7 | 211/965 / 151/1084 / 144/1260 / 154/1212 | 240 / 460 | 18 / 35 / 75 / 39 / 41 | -0.02±0.73 → +0.47±0.77 | -0.82±0.68 → -1.07±0.91 | -0.0004, -0.0021 |
+| c12e-oxy-spot_s7 | 93.7 / 10.3 / 18.7 | 125/1054 / 117/1171 / 202/1301 / 222/1127 | 307 / 392 | 3 / 17 / 12 / 66 / 32 | +0.34±0.75 → +0.39±1.21 | +0.24±0.73 → +0.50±0.69 | -0.0001, +0.0001 |
+| c12e-oxy-full_s3 | 276.2 / 31.6 / 55.1 | 816/679 / 1144/4080 / 664/4448 / 614/4807 | 980 / 1771 | 103 / 544 / 319 / 149 / 91 | +0.04±0.73 → -0.77±1.03 | -0.25±0.62 → +0.47±0.80 | -0.0013, -0.0107 |
+| c12e-oxy-full_s7 | 227.0 / 27.2 / 55.1 | 421/3993 / 401/4885 / 235/4992 / 254/5123 | 587 / 1759 | 713 / 119 / 144 / 76 / 72 | -0.08±0.60 → -0.58±0.92 | -0.42±0.57 → -0.68±0.71 | -0.0004, -0.0033 |
+| c12e-oxy-spot-np_s3 | 0.0 / 0.0 / 0.0 | 0/0 / 0/0 / 0/0 / 0/0 | 0 / 0 | 0 / 0 / 0 / 0 / 0 | +0.00±0.00 → +0.00±0.00 | +0.00±0.00 → +0.00±0.00 | -0.0000, -0.0001 |
+| c12e-oxy-spot-np_s7 | 73.7 / 9.5 / 13.0 | 107/637 / 184/673 / 242/629 / 170/532 | 227 / 123 | 3 / 7 / 0 / 70 / 3 | -0.17±0.79 → +1.40±0.66 | +0.78±0.58 → +0.17±0.76 | +0.0004, +0.0029 |
+| c12e-oxy-full-np_s3 | 0.0 / 0.0 / 0.0 | 1/1 / 0/0 / 0/0 / 0/0 | 0 / 0 | 0 / 0 / 0 / 0 / 0 | -0.11±0.11 → +0.00±0.00 | -0.04±0.04 → +0.00±0.00 | +0.0000, +0.0001 |
+| c12e-oxy-full-np_s7 | 403.1 / 16.9 / 62.1 | 25/684 / 332/5010 / 202/4997 / 201/5097 | 561 / 1851 | 49 / 323 / 83 / 134 / 73 | -0.02±0.74 → +0.45±0.98 | +0.15±0.45 → -0.35±0.95 | +0.0013, +0.0053 |
+| c12e-sat-only | 230.1 / 23.4 / 34.3 | 616/2046 / 539/4859 / 539/4859 / 539/4859 | 842 / 1252 | 28 / 58 / 547 / 152 / 124 | +0.08±0.64 → -0.16±0.79 | +0.30±0.54 → +0.60±0.71 | -0.0011, +0.0000 |
+| c12e-osm-only | 299.5 / 23.6 / 43.8 | 495/4289 / 370/5069 / 370/5069 / 370/5069 | 550 / 1144 | 30 / 217 / 27 / 58 / 48 | +0.03±0.51 → -0.07±0.72 | +0.24±0.57 → +0.41±0.77 | -0.0006, -0.0021 |
+
+("Breathers" = cells with an engine that uses a free t; on OUTSIDE t = took in more than one unit of t since birth and more than they
+made; on their OWN = made more than one unit and at least what they took in. The pumps: cells carrying a slot of that gene at rate >= 0.05.)
+
+**What it looks like.** Mostly as in C12d: the whole-dish colony fills the dish, the spot colony sits under the spot, green battery
+cores, gold and sky-blue fluorescence specks. The new thing is the SIZE of the cells: in a close-up the tiling is no longer even; a few
+cells in a hundred are puffed up to one and a half or twice the area of their neighbours, round and glossy, pressing the others into
+smaller hexagons, and a few are shrunk to small tight cells, mostly near the vent and in the oxygen-rich middle of the whole dish where
+the ions outside outnumber those inside (`experiments/keep/c12e/swelling-full-s3-40min-close.jpg`). It reads like a tissue under the
+microscope with turgid and plasmolysed cells side by side. The mean swelling stays near 0 (-1 % to +0.5 %): it is the spread, not the
+mean, that changed.
+
+**What happened, plainly.**
+1. **The self-burn loop holds.** As in C12d nearly every cell splits water-like gt with a (mostly hard-light) pigment and burns g + t
+   back. At 40 min about 60 to 85 % of all cells are breathers on their OWN t (1127 to 1212 under the spot, 4807 to 5123 in the whole dish);
+   breathers on OUTSIDE t are 4 to 12 % (150 to 600 cells) and do not rise: in the whole dish they peak at 10 to 20 min (816 to 1144,
+   seed 3) and then fall. No lineage living on someone else's oxygen took off.
+2. **Waste does leave, a little.** Cells make 74 to 403 units of free t per s, put out 13 to 62 per s (a sixth to a quarter) and take in 10 to
+   32 per s. The haze is the same size as in C12d: 110 to 114 under the spot (C12d 69 to 88), 485 to 503 in the whole dish (C12d 506 to
+   522). Rust grows as before (200 to 260).
+3. **Saturation costs 4 to 13 % of the reactions inside** (mean over 5 to 40 min; up to a quarter during the first crash), mostly the
+   small-release ones (fermenting swaps, trades, storers, photosynthesis with visible light). The big ones that make the loop never
+   clog: the burn g + t (release 4.5) has K = e^18, and the hard-light split (drive 0.75) clogs only in a cell stuffed with g and t. So
+   saturation, derived from the table, does not push the loop's t out: the loop consumes its own product.
+4. **Osmosis acts on a minority.** 2 to 8 % of the cells are swollen or shrunk by more than 10 % at 40 min; the pressure is near 0 for
+   most because free ions pass the membrane quickly (the passive exchange equalises them) and most membranes are thin (median
+   integrity 0 to 0.5: a leaky membrane holds no pressure). Overstretch tears 0.04 to 0.33 cells per s, a small share of all bursts
+   (0.9 to 3.4 per s; 20 per s in the photolysis-off spot colony, mostly bites).
+5. **Pumps.** In one run (`oxy-full_s7`) carriers of "OUT t" (pumping free t out) rose from 84 at 20 min to 713 at 40 min (12 % of the
+   cells, nearly all of them harvesters), while "IN t" fell from 249 to 119 and the t put out rose from 60 to 91 per s: the "dumpers
+   win" picture, in one run. In the other runs OUT t stayed at 3 to 103 carriers. A difference from C12d in the other direction: "IN t"
+   carriers rose in 3 of 4 C12d runs to 630 to 1725 at 40 min (the spot runs 1725 and 763), but reached only 544, 119, 35 and 17 with
+   C12e (the spot runs 35 and 17). Pulling ions in now swells the cell and opens its channels; this may be why. Two seeds per light,
+   so suggestive, not shown. OUT gt (water out) and OUT T carriers stay at 12 to 547 and 39 to 152, no trend.
+6. **Photolysis off: oxygen from life only.** Seed 3 died out under both lights within 7 minutes (the founders' first crash, with no
+   light-made t to restart on). The control with BOTH new rules off died the same way (seed 3: 0 cells by 10 min; seed 7: hanging on
+   at 16 to 32 cells), so this is photolysis alone, not saturation or osmosis. Seed 7 squeezed through a bottleneck of about 40 cells
+   (spot) and recovered: under the spot 1100 to 1360 cells with a haze of 35 to 102 free t; in the whole dish 6000 cells and a haze
+   of **495 free t at 40 min, as much as with photolysis on**, all of it made by the cells' pigments (photochemistry in the open 2.8 per
+   s: only the trade and the glow are left). So the oxygen in the dish comes from life just as well; the cells still burn most of it
+   themselves (5097 own-t breathers of 6000) and put out 62 per s (`experiments/keep/c12e/nophotolysis-full-s7-40min.jpg`: a dish full
+   of cells, a teal-white glow in the middle; `nophotolysis-spot-s7-40min-close.jpg`: pink-and-teal cells at the colony's edge, the
+   blue specks of the water-like mineral outside).
+7. **Each rule alone** (the whole dish, seed 3, 20 min; both on: `oxy-full_s3`; C12d: `c12d-oxy-full_s3`). Saturation alone: 13 % of
+   the reactions lost, no swelling, free t 322 at 20 min (C12d 223, both on 255), breathing 632 per s. Osmosis alone: no reaction lost,
+   136 swollen and 182 shrunk cells at 20 min, free t 338, breathing 776 per s, 0.06 tears per s. With both on, seed 3 crashed deeper
+   first (2409 cells at 10 min against 3658 and 5946) and recovered to 6000 by 20 min. Nothing here separates clearly from run-to-run
+   noise except the swelling (only with osmosis) and the lost share (only with saturation).
+8. **The stretch genes drift like the neutral control.** In the neutral control (`sat-only`: osmosis off, the genes drift without
+   effect) the stretch channels gene went to -0.16 ± 0.79 and the tolerance to +0.60 ± 0.71 in 20 min. With osmosis on, at 20 min the
+   means were -0.54 to +0.42 (channels) and -0.52 to +0.71 (tolerance), the same range; at 40 min +0.47, +0.39, -0.77, -0.58, +0.45 and
+   +1.40 (channels) and -1.07, +0.50, +0.47, -0.68, -0.35, +0.17 (tolerance): both signs, spreads 0.7 to 1.2. Even the pilot with no
+   swelling at all moved them to -0.45 and +0.49 in 10 min. The colonies pass through a bottleneck of a few hundred cells in their
+   first crash, and the genes ride on whichever lineages survive it. The one outlier is the photolysis-off spot colony (seed 7):
+   channels +1.40 ± 0.66 at 40 min (from -0.17 at 10 min), in a colony with more swollen than shrunk cells (39 / 6) and many bursts;
+   one run, and the control ran only 20 min, so it is not shown to be selection.
+
+**Honestly:** the waste pressures are in and visible (the cells' sizes), but the story the user hoped for did not appear in 40 minutes:
+the self-burn loop recycles its own t, so neither clogging nor swelling pushes much of it out; the haze is as big as before; breathers
+on outside t stay a few percent. Two hints worth a longer look: the OUT t pumps spreading in one whole-dish run, and fewer IN t pumps
+than in C12d. The clearest new result is from the photolysis switch: life alone makes as much oxygen haze as light did.
+
+**Books.** Every run: atoms and charge rounding 0 in every sample; energy within -0.12 and +0.51 of 16 to 217 M. The check (`check.json`,
+seed 5, the whole dish, 420 s: N, a wash, resizes, G, every C12e switch and knob off and on at runtime, a swelling of kOsm 80 with a
+tolerance of 0.1, photolysis off and on, membranes and lipids off and on, a snapshot saved and loaded at once): atoms and charge 0 except
+the paused instant of each resize (as before); energy between +0.001 and +0.066 while 15.5 M came in (C12d's check: -0.05 .. +0.002);
+the snapshot loaded exact. A C12d snapshot (`c12d-oxy-spot_s7` at 40 min, cells of 84 words) loaded on the C12e page (`reload-c12d.json`)
+widens, runs with saturation and osmosis off, atoms and charge 0.
+
+**What to try next** (if wanted): 2-hour runs of the whole dish (the OUT t pumps of seed 7); a membrane that passes ions slower than
+water (a lower permeability for ions only), so osmosis has something to hold; founders without the hard-light self-burn (a harvester
+with only photosynthesis and a separate breather), so the loop has to be split between bodies.

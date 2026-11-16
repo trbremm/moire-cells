@@ -1,0 +1,10 @@
+{
+ "batch": "c12e-control",
+ "runs": [
+  "np-control.json"
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

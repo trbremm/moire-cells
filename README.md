@@ -101,7 +101,10 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   C12c as it was; fixed for the page, the rules panel's switch reloads it), `?fluor=0` (no fluorescence), `?photo=0` (excited
   states do not react: no photochemistry in the open), `?glow=0` (the glow not drawn), `?kabs=x` (a matching gap's optical depth,
   default 1), `?yrx=x` (the share of the excitations that react, default 0.5), `?yfl=x` (the share of the rest that fluoresces,
-  default 0.4); step C13: `?fgenes=0` (every cell today's field numbers; the field genes
+  default 0.4); step C12e: `?saturation=0` (products never slow a reaction), `?osmosis=0` (no swelling; the stretch genes still
+  drift: the neutral control), `?stretch=0` (stretch opens no channels), `?tear=0` (overstretch never bursts), `?tolcost=0` (the
+  stretch tolerance is free), `?satscale=x`, `?kosm=x`, `?kstretch=x`, `?wtol=x` (knobs), `?photolysis=0` (light frees no atoms in
+  the open dish: any free t is made by life); step C13: `?fgenes=0` (every cell today's field numbers; the field genes
   still drift), `?gateglue=0`, `?gatepump=0`, `?gateengine=0`, `?gatediv=0`, `?gateturn=0` (one gate off; `?gates=0` all five),
   `?pushgene=0` (field A pushes every cell as before), `?gatenull=1` (the neutral control: the gate genes and the push gene drift but
   act on nothing), `?gateref=x`, `?gateturnrate=x`, `?view=guides` (colour by the strongest guide).
@@ -3837,6 +3840,146 @@ pictures `experiments/keep/c12d/`):
 - Each excited state is resolved within its tick (no lasting excited atoms); the shares (react 0.5, fluoresce 0.4 of the rest) are
   knobs, the same for every substance: which substance glows in which colour comes from its gaps.
 
+## Step C12e: waste must leave
+
+The user, 2026-11-16, after C12d (breathing ran, but as a loop inside each cell): "oxygen leaks out because of reaction byproducts
+in nature, the cell has to expel co2 not to get saturated or too acidic"; then, replacing acidity: "osmosis on the ions could do the
+job actually. And the membrane permeability with it"; then "remember to tie that to genes too". Two pressures, both DERIVED; no rule
+says "expel", "breather" or "toxin". Waste leaves only by what already exists: the passive exchange (down the gradient, free) and the
+C7 pump genes (up the gradient, paid).
+
+### The rules
+
+**Saturation (mass action).** Every reaction a cell runs, its engines (both ways), the table's heat-driven reactions inside it and
+the cracking of grazed crust, runs at
+
+    rate x (1 - Q / K),   Q = (products' concentrations) / (reactants' concentrations),   K = exp(drive / (theta x T))
+
+with each concentration the substance's count over the stock's capacity (a share of what the cell holds at most), theta the sparks'
+temperature scale (1/32, the same theta as every spark) and T the temperature under the cell. The DRIVE is the energy one event gives
+off: a downhill reaction's release (breathing g + t 4.5, t + gT 3.0, fermenting G + gt 0.375, chains 0.5 to 1); an uphill one's
+photon surplus over the rise plus its spark (the hard light split of water gt: 5 - 4.5 + 0.25 = 0.75; photosynthesis with visible 2,
+gt + T -> gT + t: 3 - 3 + 0.375 = 0.375; a storer, paid by the battery: its spark). So a big release is practically never clogged
+(K = e^18 for g + t at T 8) and a small one clogs as soon as its products stand about as high as its reactants (K = e^1.5 = 4.5 for
+photosynthesis with visible 2). Nothing is set per substance. A reaction the products slow simply runs fewer events (a pigment's
+unused photons become heat, as before), so the books do not change. The lipid builder is not slowed: its products go into the
+membrane, never into the stock. **No saturation gene**: an engine is a catalyst, and a catalyst speeds a reaction both ways alike,
+so it cannot move the balance point; what a cell can change is where its products go (leak, pumps, the next reaction).
+
+**Osmosis on the ions.** Per cell, every tick:
+- the PRESSURE = (free ions inside per R^2 of the cell - free ions in the dish under it per R^2) / the stock's capacity per R^2 (2):
+  free ions are the free givers and takers (g, t, G, T) counted by number, + or -; bonded molecules are neutral and do not count, so
+  binding atoms into a molecule lowers the load. A swollen cell's ions are spread over its larger area (dilution);
+- the SWELLING (the cell's area over its rest area - 1) relaxes, at 1 per s, toward kOsm x pressure x closure / stiffness, within
+  -0.4 .. +1: the CLOSURE is the membrane's mean integrity (a leaky membrane holds no pressure; 1 without the membrane chemistry), the
+  STIFFNESS the sides' mean stiffness from step C12b (the bilayer's packing, oil, heat; a crust wall pulls it toward 4: the wall holds
+  turgor hardest, as a bacterial cell wall) or, with the lipids off, the C6c material's; kOsm = 10;
+- the step grows the cell's radius toward its rest size x sqrt(1 + swelling) (at its usual 0.8 per s), so a swollen cell is
+  visibly bigger, a shrunk one smaller; a cell divides at its division size x the same factor;
+- a swollen membrane is THINNER: the same material over a longer outline, so its integrity falls (C6c's "what it holds over what
+  it wants", the want growing with the radius), so it leaks more and holds less, by the old rules;
+- its STRETCH CHANNELS open: the passive exchange x (1 + kStretch x e^gene x swelling), kStretch = 3;
+- past its STRETCH TOLERANCE, wTol x e^gene (wTol = 0.5), a membrane that has been whole TEARS: it bursts (C6c's burst: the stock,
+  the membrane and the battery spilled where it is; a neighbour's daughter takes the slot; needs turnover) at a chance of 2 x
+  (swelling / tolerance - 1) per s.
+
+**Genes** (both mutate at each birth by 0.06 of a normal draw; founders and older genomes carry 0, the knobs' values):
+- STRETCH CHANNELS, `Bio.lip.w` (-4..2, a log factor on kStretch), like bacteria's mechanosensitive channels MscL / MscS. It works
+  together with the permeability gene (both multiply the passive exchange);
+- STRETCH TOLERANCE, `Bio.gate2.z` (-2..1.5, a log factor on wTol). It costs upkeep, 0.003 x e^gene energy per s from the battery,
+  as heat, while osmosis is on. With `?osmosis=0` both genes drift unpaid and without effect: the neutral control.
+- The old genes feed in as they did: permeability (the exchange), the pumps, the stiffness gene, thickness, the lipid mix, the wall
+  and its row (how hard the swelling is resisted).
+
+**Photolysis switch** (`?photolysis=0`, rules panel): light cannot free atoms in the open dish: the light-driven splits (gt -> g + t,
+gT, GT), the uphill swaps that free t or G, and the soaps' heads coming off by light do not run (the uphill trade, which frees
+nothing, still does); the absorbed photon then fluoresces or warms. Inside cells the pigments work as before. So with it off any free
+t in the dish was made by life.
+
+**Pumps**: no change was needed: a pump slot can already name every grid substance a cell holds (the six atoms, the four
+compounds gt gT Gt GT, trace; the crusts are always expelled), so OUT t, IN t, OUT gt, OUT T are all in the gene's range.
+
+### As built
+
+- **Look.** The default view is unchanged except for the swelling itself: a cell loaded with free ions puffs up (at most to twice its
+  area), one in an ion-rich place shrinks; nothing is coloured for it.
+- **Code** (README "Files": `src/waste.js`): the plan pass works out the pressure (flux word 30; the free ions inside in word 31) and
+  the stretch channels' leak; the eat pass the saturation factors (`sat_f`, from `rx_lq`: ln Q in counts, the capacity's log for the
+  units), the swelling (`Cell.osm`; the pressure in `Cell.osmP`), the tear, the tolerance's upkeep, and two counters per cell in its
+  stock: the free t it MADE (word 62) and the free t it TOOK IN net through exchange and pumps (word 63), both since its birth (cleared
+  when the slot is given back). The Cell record grew to 352 bytes (88 words: `osm`, `osmP`, two spare), the eat uniform to 1760 bytes
+  (`ws[2]`, `ws2`), the ledger by 512 words (LG_WS 27776: 16 snapshot numbers and 16 counters, 16 slots each; LEDGER_WORDS 28288).
+- **Panel line**:
+
+      WASTE  saturation −16% of the reactions inside · pressure −0.00 · swelling −1% (puffed 1, shrunk 16) · torn 0/s · free t made 33.3/s, taken in 18.2/s, put out 9.88/s · breathers 2068: on outside t 1019, on their own 211 · pumps t OUT 14 IN 90, gt OUT 72, T OUT 21 · genes: stretch channels −0.60, tolerance −0.41
+
+  (the share of the cells' reaction events lost to saturation; mean pressure and swelling, cells swollen or shrunk by more than
+  10 %; bursts by overstretch per s; free t made inside, taken in and put out by all cells per s; cells with a breathing engine (one
+  that uses a free t), of them living on OUTSIDE t (took in more than one unit, more than they made) and on their OWN (made more than
+  one unit, at least what they took in); carriers of the pump genes OUT t, IN t, OUT gt, OUT T; the two stretch genes' means). The F
+  overlay adds the counts, the genes' spread and the line every 10 s; `moire.sample()` has `waste.*`; `experiments/conditions/
+  c12e/cells.py` reads the same from a snapshot, cell by cell, with every pump gene by the cells that carry it.
+- **Switches** (rules panel, group "Waste must leave (step C12e)"; panel only, as no keys are left): saturation · osmosis · stretch
+  opens channels · overstretch tears · tolerance costs · light frees atoms (open). Knobs: saturation scale, swelling per pressure,
+  stretch channels, stretch tolerance. URL: `?saturation=0`, `?osmosis=0`, `?stretch=0`, `?tear=0`, `?tolcost=0`, `?satscale=`,
+  `?kosm=`, `?kstretch=`, `?wtol=`, `?photolysis=0`. Console: `moire.waste.params` (also `rate`, `wMax`, `wMin`, `tearRate`, `upTol`).
+- **Old snapshots**: one saved before this step (cells of 84 words) loads with the new words 0 and with saturation and osmosis OFF,
+  so it runs as it ran (the evolved field genes are kept: only genomes shorter than 76 words get today's field genes).
+
+### What happened (EXPERIMENTS.md "Waste must leave")
+
+The C12d oxygen conditions (no spring of free atoms; a never-drying mineral spring and a slow vent; spot and whole dish; seeds 3
+and 7; 40 min at MAX) with both rules on, then with `?photolysis=0`, then each rule alone (whole dish, seed 3, 20 min), and a control
+for the photolysis runs with both rules off. Conditions `experiments/conditions/c12e/`, summaries `experiments/summaries/c12e-oxygen/`
+and `c12e-single/`, pictures `experiments/keep/c12e/`. Plainly:
+- **The look**: the cells now differ in size. In a close-up of a busy colony a few cells in a hundred are puffed up to one and a half
+  or twice their neighbours' area, round and glossy, and a few are shrunk small and tight, mostly near the vent and in the oxygen-rich
+  middle of the whole dish; the mean swelling stays near 0 (`swelling-full-s3-40min-close.jpg`).
+- **The self-burn loop of C12d holds**: 60 to 85 % of the cells burn their OWN t (split water with a pigment, burn g + t back);
+  breathers on OUTSIDE t are 4 to 12 % and do not rise as a lineage. Cells make 74 to 403 free t per s and put out a sixth to a
+  quarter of it; the haze is as in C12d (about 110 under the spot, about 500 in the whole dish).
+- **Saturation** costs 4 to 13 % of the reactions inside, mostly the small-release ones; it cannot clog the loop's big burn (release
+  4.5, K = e^18), so it does not push the loop's t out.
+- **Osmosis** acts on a minority (2 to 8 % of the cells swollen or shrunk by more than 10 %): free ions leak through the membrane fast
+  and most membranes are thin (a leaky membrane holds no pressure). Overstretch tears 0.04 to 0.33 cells per s.
+- **Pumps**: in one whole-dish run (seed 7) carriers of OUT t rose from 84 to 713 between 20 and 40 min while IN t fell (the "dumpers"
+  picture, once). IN t carriers rose to 630 to 1725 in 3 of 4 C12d runs but stayed at 17 to 544 with C12e (the spot runs 35 and 17
+  against 1725 and 763): suggestive, two seeds per light.
+- **Photolysis off**: seed 3 died out in the founders' first crash (the control without the new rules too: it is the missing
+  light-made t, not C12e); seed 7 got through a bottleneck and in the whole dish built a haze of **495 free t by 40 min, as much as with
+  light-made oxygen, all made by life** (`nophotolysis-full-s7-40min.jpg`).
+- **The stretch genes drift like the neutral control** (`?osmosis=0`: channels -0.16 ± 0.79, tolerance +0.60 ± 0.71 at 20 min; with
+  osmosis -0.77 to +1.40 and -1.07 to +0.50 at 40 min, both signs). No selection is shown; the one outlier (channels +1.40 in the
+  photolysis-off spot colony) is one run.
+
+### Checked
+
+- **Books** (`check.json`, seed 5, the whole dish, 420 s at MAX: springs of several kinds, N, a wash, two resizes, G, every C12e switch
+  and knob off and on at runtime, a strong swelling with a low tolerance, photolysis off and on, membranes and lipids off and on, a
+  snapshot saved and loaded at once): atoms and charge 0 in every sample except the paused instant of each resize (the old grid not
+  yet drained, as before); energy +0.001 .. +0.066 while 15.5 M came in (C12d: -0.05 .. +0.002); the snapshot loads exact. Every long
+  run: atoms and charge 0; energy within -0.12 and +0.51 of 16 to 217 M.
+- **Old snapshots**: a C12d snapshot (`c12d-oxy-spot_s7` at 40 min) by `?snap=` widens to the new record and runs with saturation and
+  osmosis off (atoms and charge 0, swelling 0).
+- **Consoles clean**: headless Chrome (every run), phone size (`tools/shot.py --mobile`: the short WASTE line wraps onto two lines;
+  touch works), headed Firefox (the whole dish, `?photolysis=0`: the WASTE line and "(no photolysis)" in the LIGHT line).
+- **Speed** at MAX (mean speed reached, GTX 1650, headless Chrome; NOTE: two other workers were running GPU jobs at the same time,
+  so these numbers are noisy): the commit before (22f9bb4, in a worktree, measured back to back) 2000 cells ×7.45, 10 000 cells ×1.86;
+  C12e on ×7.57 / ×1.78; C12e with `?saturation=0&osmosis=0` ×7.42 / ×1.80. No measurable cost at 2000; at most a few % at 10 000.
+
+### Known issues
+
+- Osmosis needs kOsm = 10 to show at all (at 1 nothing swelled): the passive exchange lets free ions through about as fast as water,
+  so few cells hold a pressure. A membrane that passes ions slower than the rest would make it bite harder (not built).
+- The swelling's drift of the stretch genes cannot be told from noise in 40 min: the colonies pass a bottleneck in their first crash
+  and the genes ride on the survivors. The neutral control ran 20 min only.
+- "Breathers on outside / own t" count per cell since its birth (stock words 62, 63): a young cell has not yet made or taken in a unit,
+  so it is in neither group.
+- The share lost to saturation counts the cells' reaction events (engines, reactions inside, cracking) in counts / 16, sampled; it
+  is a rate share, not energy.
+- With `?photolysis=0` seed 3 does not survive the founders' first crash (with or without C12e): the founders need some light-made t
+  to restart.
+
 ## The look of the landscape
 
 Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the
@@ -3929,6 +4072,12 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   springs' mixes); `matter.wgsl` (`light_here`, the excited states' counters in `react`, the glow in `paint`), `matter_draw.wgsl`
   (`glow`, the minerals' dust), `cell_eat.wgsl` (smell by `smellW`, the census's eaters, each soap's own release),
   `src/gpu.js` (`setShaderConst`: ENG_COUNT 22); `experiments/conditions/c12d/make.py`: the conditions
+- `src/waste.js`: waste must leave (step C12e): the switches and knobs (`moire.waste.params`), the eat uniform's words (struct EatP
+  `ws`, `ws2`), the census (LG_WS: a snapshot from the ledger pass, counters from the eat pass), the WASTE panel line and the overlay.
+  The rules themselves are in `cell_eat.wgsl` (`sat_f`, `rx_lq`, `t_net`; the osmotic pressure in `plan`, the swelling, the tear and
+  the t counters in `eat`, the census in `ledger`), the radius in `cell_step.wgsl`, the genes' drift in `cell_common.wgsl` `mutate`;
+  photolysis in `src/electrons.js` (`freesAtom`); `experiments/conditions/c12e/`: `make.py` (the conditions), `analyse.py` (the
+  tables), `cells.py` (a colony from its final snapshot: swelling, who makes and who takes in free t, pumps, the stretch genes)
 - `src/excited.js`: excited waste (step C12c): the switch and knobs (`moire.excited.params`, `.look`), the chemistry uniform's
   words (struct ChemP `ex`), the census (from the heat's ledger read-back: LG_EXC_N, LG_EXC_E, the dish's and the cells' g*, t*),
   the EXCITED panel line and the overlay. The excited atoms themselves are substances of `src/matter.js` (`ATOMS` g*, t*,

@@ -349,7 +349,8 @@ struct Bio {
   // ---- step C6c: the membrane's material and the ion selectivity (src/genome.js, cell_eat.wgsl) ----
   memb: vec4f,      // x MIX: the heavy linkers' (L) share of the membrane, 0..1 (the rest light, l); y THICKNESS: linker per
                     // R of membrane (atom-units); z the STIFFNESS gene (x the stiffness the material gives); w the ION
-                    // SELECTIVITY s, -1..1: givers (+) pass the membrane x (1 + s), takers (-) x (1 - s)
+                    // SELECTIVITY s, -1..1: givers (+) pass the membrane x (1 + s), takers (-) x (1 - s) (step C12g, with the
+                    // bilayer blocking ions: the channels' BALANCE, cation x (1 + s), anion x (1 - s); see gate2.w)
   // ---- step C7: the two PUMP SLOTS (src/genome.js, src/pumps.js, cell_eat.wgsl) ----
   pump: vec4f,      // x y: each slot's code, a whole number: the substance's channel (0..12; never sediment) + 16 x its direction
                     // (0 IN, 1 OUT); z w: each slot's rate (per s; 0 = an empty slot)
@@ -376,7 +377,9 @@ struct Bio {
                     // (the axis along (+) or across (-) the felt gradient)
   gate2: vec4f,     // x TURN (the front toward (+) or away from (-) the felt gradient), y PUSH (field A's push x this, 0..2); z step C12e:
                     // the STRETCH TOLERANCE gene, how far the membrane stretches before it tears, a log factor on the knob wTol (0 = the
-                    // knob's value; -2..1.5; it costs upkeep in proportion to the tolerance); w spare
+                    // knob's value; -2..1.5; it costs upkeep in proportion to the tolerance); w step C12g: the ION CHANNELS' level, a log
+                    // factor on the knob chanBase (0 = the knob's value; -4..2): with memb.w (the C6c selectivity, now the channels'
+                    // BALANCE s) the cation channel passes chanBase e^gene (1 + s), the anion channel chanBase e^gene (1 - s)
 };
 // step C7: a pump slot's channel, direction (1 = OUT) and the substances it may pump: PUMP_NCH of them, channels 0..9 and
 // trace (12), not the sediments ll, LL (PUMP_CHANNELS in src/genome.js)
@@ -664,7 +667,8 @@ fn mutate(p: Bio, seed: u32, size: f32, jump: f32, engJump: f32, pumpJump: f32) 
   b.gate = vec4f(nudge(b.gate.x, size * 0.04, -1.0, 1.0, seed, 172u), nudge(b.gate.y, size * 0.04, -1.0, 1.0, seed, 173u),
                  nudge(b.gate.z, size * 0.04, -1.0, 1.0, seed, 174u), nudge(b.gate.w, size * 0.04, -1.0, 1.0, seed, 175u));
   b.gate2 = vec4f(nudge(b.gate2.x, size * 0.04, -1.0, 1.0, seed, 176u), nudge(b.gate2.y, size * 0.04, 0.0, 2.0, seed, 177u),
-                  nudge(b.gate2.z, size * 0.06, -2.0, 1.5, seed, 178u), b.gate2.w);
+                  nudge(b.gate2.z, size * 0.06, -2.0, 1.5, seed, 178u), nudge(b.gate2.w, size * 0.06, -4.0, 2.0, seed, 179u));
+  // (step C12g: gate2.w, the ION CHANNELS' level, drifts by small steps of its log factor, as the stretch genes)
   return b;
 }
 

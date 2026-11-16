@@ -161,6 +161,7 @@ export function settingObjects(M) {
     ...(M.guides ? { 'guides.params': M.guides.params, 'guides.look': M.guides.look } : {}),   // step C13
     ...(M.waste ? { 'waste.params': M.waste.params } : {}),   // step C12e
     ...(M.vents ? { 'vents.params': M.vents.params } : {}),   // step C12f
+    ...(M.ions ? { 'ions.params': M.ions.params } : {}),     // step C12g
   };
 }
 const SCALARS = [['neon.on', (M) => M.neon, 'on'], ['background.heatOn', (M) => M.background, 'heatOn'], ['background.ambient', (M) => M.background, 'ambient']];
@@ -435,6 +436,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     if (opts.settings !== false && M.vents && !(S.settings && S.settings['vents.params'])) {
       Object.assign(M.vents.params, { hot: false, sea: false });   // step C12f
       notes.push('saved before step C12f: the vent as in step C12d (no heat), no sea (as it ran)');
+    }
+    if (opts.settings !== false && M.ions && !(S.settings && S.settings['ions.params'])) {
+      Object.assign(M.ions.params, { block: false, genes: false, volt: false });   // step C12g
+      notes.push('saved before step C12g: the bilayer passes ions as before, channel genes off (as it ran)');
     }
     if (opts.settings !== false && M.waste && !(S.settings && S.settings['waste.params'])) {
       Object.assign(M.waste.params, { saturation: false, osmosis: false });   // step C12e

@@ -62,6 +62,7 @@ export const RULE_GROUPS = [
   ['excited', 'Excited waste (step C12c)'],
   ['electrons', 'Electrons (step C12d)'],
   ['waste', 'Waste must leave (step C12e)'],
+  ['ions', 'Ion flow (step C12g)'],
   ['vents', 'Vents in the dark (step C12f)'],
   ['guides', 'Fields as guides (step C13)'],
   ['state', 'Save and load the state (experiments)'],
@@ -645,6 +646,25 @@ export function makeActions(app) {
     wsknob('kOsm', 'swelling per pressure', 'kOsm', 0.01, 20, 1.5, 2, 'how much a cell swells (area share) per unit of osmotic pressure, at stiffness 1'),
     wsknob('kStretch', 'stretch channels', 'kStretch', 0.01, 50, 1.5, 2, 'the passive exchange × (1 + this × e^gene × swelling)'),
     wsknob('wTol', 'stretch tolerance', 'wTol', 0.02, 5, 1.25, 2, 'the swelling a whole membrane bears at gene 0 (× e^gene) before it tears'),
+  );
+
+  // ---------- ion flow (step C12g; panel only: no keys are free) ----------
+  const IP = () => app.cells.eat.ions.params;
+  const ioknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'ions', type: 'knob', get: () => IP()[key].toFixed(digits),
+    run: (k) => { const p = IP(); p[key] = Math.max(lo, Math.min(hi, +(p[key] * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    { id: 'ionblock', keys: [], label: 'bilayer blocks ions', group: 'ions', type: 'toggle', get: () => IP().block,
+      run: () => `the bilayer ${flip(IP(), 'block') ? `blocks free ions: an intact membrane passes them at ${IP().ionPass} of a neutral molecule's rate, plus its channels; holes pass them freely` : 'passes free ions like any molecule (as before step C12g)'}${app.cells.eat.membrane.rule('on') ? '' : ' (needs the membrane chemistry)'}`,
+      help: 'a lipid bilayer is a barrier for charged atoms: its intact share passes free givers and takers only through channels (and a small leak); damaged sides (holes) and the stretch channels pass them freely; a crust wall is porous' },
+    { id: 'ionchannels', keys: [], label: 'channel genes', group: 'ions', type: 'toggle', get: () => IP().genes,
+      run: () => `channel genes ${flip(IP(), 'genes') ? 'act: each cell its own cation and anion channel (level gene × balance gene)' : `off: every cell's channels at the base level ${IP().chanBase}, balanced (the genes still drift: the neutral control)`}`,
+      help: 'two genes set the channels: a LEVEL (how open, a log factor) and a BALANCE (the C6c selectivity): cation channel = base × e^level × (1 + balance), anion channel = base × e^level × (1 − balance)' },
+    { id: 'ionvolt', keys: [], label: 'voltage pushes ions', group: 'ions', type: 'toggle', get: () => IP().volt,
+      run: () => `ions through the intact membrane ${flip(IP(), 'volt') ? 'feel the membrane voltage: a + cell pushes free givers out and pulls free takers in' : 'do not feel the voltage'}`,
+      help: 'a toy of electrophysiology: what crosses through channels settles at inside / outside = exp(−charge × kV × voltage) instead of equal concentrations' },
+    ioknob('ionPass', 'bilayer ion leak', 'ionPass', 0, 1, 1.5, 3, 'share of a neutral molecule’s rate at which an intact bilayer lets free ions through by itself'),
+    ioknob('chanBase', 'channel base level', 'chanBase', 0.001, 1, 1.5, 3, 'the channels’ level at gene 0 (the founders’), as a share of a neutral molecule’s rate'),
+    ioknob('ionKV', 'voltage push', 'kV', 0.1, 50, 1.5, 2, 'with "voltage pushes ions": inside / outside = exp(−charge × this × voltage)'),
   );
 
   // ---------- vents in the dark (step C12f; panel only: no keys are free) ----------

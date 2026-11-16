@@ -18,7 +18,8 @@
 //          harvest: the amount of pigment, its optical depth is pigK x rate); w the PERMEABILITY (per s, for the light atoms)
 //   memb   step C6c, genes of the membrane (src/membrane.js): x MIX, the heavy linkers' (L) share of the membrane (0..1, the
 //          rest light l); y THICKNESS, linker per R of membrane (atom-units); z the STIFFNESS gene (x what the material
-//          gives: heavy and thick = stiff); w the ION SELECTIVITY s (-1..1: givers pass x (1 + s), takers x (1 - s))
+//          gives: heavy and thick = stiff); w the ION SELECTIVITY s (-1..1: givers pass x (1 + s), takers x (1 - s); step C12g: with
+//          the bilayer blocking ions, the channels' BALANCE: the cation channel x (1 + s), the anion channel x (1 - s))
 //   pump   step C7, genes of the two PUMP SLOTS (src/pumps.js): x y each slot's code, a whole number: the substance's channel
 //          (0..12, SUBSTANCES order; sediment is never pumped) + 16 x its direction (0 IN, 1 OUT); z w each slot's rate (per s:
 //          the share of the source side's amount, per cell volume, it moves; 0 = an empty slot)
@@ -65,7 +66,7 @@ const U = (rng, a, b) => a + (b - a) * rng();
 const logU = (rng, a, b) => a * Math.pow(b / a, rng());
 
 /** One random genome, as a plain array of BIO_FLOATS numbers. */
-export function randomGenome(rng, founder, mrng = rng, prng = mrng, wrng = prng, drng = wrng, lrng = drng, grng = lrng) {
+export function randomGenome(rng, founder, mrng = rng, prng = mrng, wrng = prng, drng = wrng, lrng = drng, grng = lrng, irng = grng) {
   const g = new Array(BIO_FLOATS).fill(0);
   g[0] = U(rng, 0, KEY_SPAN); g[1] = U(rng, -KEY_SMAX, KEY_SMAX);
   g[2] = U(rng, 0, KEY_SPAN); g[3] = U(rng, -KEY_SMAX, KEY_SMAX);
@@ -87,6 +88,7 @@ export function randomGenome(rng, founder, mrng = rng, prng = mrng, wrng = prng,
   lipids(g, lrng, lrng() < 0.25);      // step C12b (and its own)
   fieldDefaults(g);                    // step C13: the field genes at today's values (x 1, offset 0), so mutation off changes nothing;
   founderGates(g, grng);               // ... the gates near 0 (within +-0.05; their own stream)
+  g[75] = U(irng, -0.5, 0.5);          // step C12g: the ion channels' level (log factor on chanBase), near the knob's value (its own stream)
   return g;
 }
 
@@ -187,7 +189,8 @@ function membrane(g, rng, heavy) {
   g[40] = heavy ? U(rng, 0.55, 0.9) : U(rng, 0, 0.15);                         // mix
   g[41] = heavy ? logU(rng, 1.5 * MEMB_THIN, 3 * MEMB_THIN) : logU(rng, 0.7 * MEMB_THIN, 1.4 * MEMB_THIN);   // thickness
   g[42] = logU(rng, 0.8, 1.25);                                                // stiffness gene
-  g[43] = U(rng, -0.08, 0.08);                                                 // ion selectivity
+  g[43] = U(rng, -0.25, 0.25);                                                 // ion selectivity (step C12g: the channels' balance;
+                                                                               //  -0.08..0.08 until C12g)
 }
 
 // Step C7: the founders' pumps: most have none (pumps must earn their place by selection); about a third get ONE weak pump
@@ -229,6 +232,7 @@ export class Genome {
     this.drng = makeRng(this.seed ^ 0x64697661);   // step C11: the division axis's own stream
     this.lrng = makeRng(this.seed ^ 0x6c697064);   // step C12b: the lipid genes' own stream
     this.grng = makeRng(this.seed ^ 0x67617465);   // step C13: the gates' own stream
+    this.irng = makeRng(this.seed ^ 0x696f6e73);   // step C12g: the ion channels' own stream
     this.founders = [];
     // live-tunable (moire.genome.params); the rule switches are keys
     this.params = {
@@ -267,7 +271,7 @@ export class Genome {
     const n = Math.max(0, Math.round(this.params.founders));
     this.founders = [];
     for (let k = 0; k < n; k++) {
-      const g = randomGenome(this.rng, k, this.mrng, this.prng, this.wrng, this.drng, this.lrng, this.grng);
+      const g = randomGenome(this.rng, k, this.mrng, this.prng, this.wrng, this.drng, this.lrng, this.grng, this.irng);
       engines(g, this.rng, STRATEGIES[k % STRATEGIES.length]);   // step C6: a spread of engine sets over the founders
       membrane(g, this.mrng, k % 4 === 3);                         // step C6c: mostly light thin membranes, a few heavy
       lipids(g, this.lrng, k % 4 === 1);                           // step C12b: a few founders build a crust wall
@@ -286,7 +290,7 @@ export class Genome {
       // (app: `pick(i)`, if given, chooses cell i's founder by its index, e.g. one founder per colony; else at random)
       const fi = pick && this.founders.length ? pick(i, this.founders.length) : -1;
       const g = this.founders.length ? this.founders[fi >= 0 ? fi % this.founders.length : Math.floor(this.rng() * this.founders.length)]
-        : randomGenome(this.rng, i, this.mrng, this.prng, this.wrng, this.drng, this.lrng, this.grng);
+        : randomGenome(this.rng, i, this.mrng, this.prng, this.wrng, this.drng, this.lrng, this.grng, this.irng);
       const o = i * BIO_FLOATS;
       for (let k = 0; k < BIO_FLOATS; k++) f[o + k] = g[k] ?? 0;   // (founders from a snapshot before step C10 lack the walls' genes, before C12b the lipids')
       if (g.length <= BIO_FG) fieldDefaults(f, o);   // (... before step C13 the field genes: today's values)

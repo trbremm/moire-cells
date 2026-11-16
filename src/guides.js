@@ -49,7 +49,8 @@ export const FG_GENES = [
   ['leverB', 1], ['emitB', 1], ['senseB', 1], ['pickB', 0],
   ['angleA', 0], ['angleB', 0], ['shareP', 0], ['senseP', 1],
   ['gateGlue', 0], ['gatePump', 0], ['gateEngine', 0], ['gateDiv', 0],
-  ['gateTurn', 0], ['push', 1], ['stretchTol', 0], ['fgSpare1', 0],   // (stretchTol: step C12e's stretch tolerance gene, src/waste.js)
+  ['gateTurn', 0], ['push', 1], ['stretchTol', 0], ['ionChan', 0],   // (stretchTol: step C12e's stretch tolerance gene, src/waste.js; ionChan: step
+                                                                       //  C12g's ion channels' level, src/ions.js)
 ];
 export const FG_DEFAULTS = FG_GENES.map(([, v]) => v);
 const GATES = ['glue', 'pump', 'engine', 'div', 'turn'];

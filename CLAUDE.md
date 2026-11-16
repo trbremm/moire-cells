@@ -538,6 +538,15 @@ C12e. WASTE MUST LEAVE (user 2026-11-16, correcting Claude's "small atoms leak o
     - Hoped for (watched, never written): full-battery harvesters make more t than they burn, clog and sour, dumpers win,
       the haze builds, breathers living on outside t rise and must dump their own waste (gt, T) like CO2.
     - Plus a switch (?photolysis=0) so hard light cannot split minerals in the open: oxygen made by life only.
+    AS BUILT (C12e, 2026-11-16): src/waste.js. Saturation: in-cell rate x (1 - Q/K), K = exp(drive/(theta T)), no gene
+    (a catalyst cannot move the balance); costs 4-22 % of in-cell events, never clogs the big self-burn. Osmosis: free
+    ions in/out per capacity, swelling toward kOsm=10 x pressure x integrity / stiffness (-0.4..+1), radius x sqrt(1+s),
+    stretch channels (Bio.lip.w) and tolerance (Bio.gate2.z, upkeep) genes; tearing via the burst path. Cell 352 bytes.
+    Look: a few cells in a hundred puffed round and glossy, some shrunk tight (turgid vs plasmolysed). RESULT: the C12d
+    self-burn loop HOLDS (60-85 % burn their own t, 4-12 % outside t); osmosis acts on 2-8 % of cells (ions cross the
+    membrane as fast as anything); genes drift like the neutral control; one run showed t-OUT pumps rising 84 -> 713.
+    ?photolysis=0: seed 3 dies in the founders' crash (with or without C12e), seed 7 builds 495 free t made by life.
+    Possible lever not built: membranes that pass ions slower than neutral molecules (real lipid bilayers do).
 C13. FIELDS AS GENES, FIELDS AS GUIDES (user 2026-11-16 chose it next, over more oxygen, the purist page or pruning;
     their words earlier: "I envisioned the field just to guide the underlying interactions. Maybe we let them mutate
     their different fields more"). Back to the moire as the heart of the look:
@@ -584,6 +593,15 @@ APP. Zoom and pan (pinch on touch; the wheel keeps tilting the spotlight in spot
     CELLS (pick from the zoo or founder types, tap to place) and a molecule pipette, NEW CULTURE dialog (founders, how
     spread: one clump / scattered / several colonies, diversity) and PRESET ENVIRONMENTS (e.g. hot vent in the dark,
     sunlit shallows, oil slick, oxygen world, crust desert, tissue lab), each with a one-line description.
+    AS BUILT (H1 + APP, merged 2026-11-16): src/harmonic.js + shaders/harmonic.wgsl (key ` backquote, ?look=harmonic,
+    ?blur ?grain ?scalebar): green rims (membranes, oil/soap rings), orange fibrous crust (swirl from the moire beat),
+    striations in stretched/muscle cells, violet fuel haze and battery glow; rims widen only with sqrt(zoom). Default
+    electron chemistry makes little crust, so the big orange masses show in crust-rich dishes (preset desert).
+    APP: src/camera.js app.js zoo.js culture.js; zoom x1..x8 (Ctrl+wheel, wheel when no spotlight, middle/Space-drag
+    pan, pinch: untested on a device), one scale bar (12 um per cell) following the zoom; molecules and cells zoos
+    (portraits stay neon), add-cell tool (starter charge booked), pipette; New culture dialog; ?preset= vent, shallows,
+    oxygen, slick, desert, lab; ?spread ?colonies ?diversity ?zoom. Finding: vents in total darkness starve in 100 s
+    (preset vent has a dim light; &light=off = dark) -> C12f.
 LATER, WATER-DROP UNIVERSE (user 2026-11-16 brainstorm, "keep it as a plan for us to go to later"; not scheduled).
     User's idea: "a 2.5D representation in which the 2D rendered cells can stack, but the rules under it go 3D" (chosen
     over a full 3D beaker, which would be close to a second engine; a 2D side-view "column mode" was also discussed).

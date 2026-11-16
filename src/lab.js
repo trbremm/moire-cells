@@ -98,6 +98,7 @@ function gather(M, ctl) {
   if (M.waste && M.waste.census) flatten(M.waste.census, 'waste', out);   // step C12e
   if (M.vents && M.vents.census) flatten(M.vents.census, 'vents', out);   // step C12f
   if (M.ions && M.ions.census) flatten(M.ions.census, 'ions', out);   // step C12g
+  if (M.whole && M.whole.census) flatten(M.whole.census, 'whole', out);   // step M1
   if (M.pigments && M.pigments.census) flatten(M.pigments.census, 'lightmatter', out);   // step N1: light needs matter
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;

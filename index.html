@@ -254,6 +254,46 @@ canvas.portrait { position: static; inset: auto; display: block; flex: none; wid
 .zstatus { margin-top: 4px; }
 svg.mol { display: block; overflow: visible; }
 
+/* app: the new culture dialog (src/culture.js) */
+.dlg-wrap {
+  position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center;
+  padding: 12px; box-sizing: border-box; background: rgba(2, 3, 6, 0.45);
+}
+.dlg {
+  --line2: rgba(217, 221, 230, 0.36);
+  box-sizing: border-box; width: 520px; max-width: 100%; max-height: 100%; overflow: auto; overscroll-behavior: contain;
+  background: rgba(6, 9, 15, 0.94); border: 1px solid var(--line); border-radius: 3px;
+}
+.dlg button { font: inherit; color: var(--ink); cursor: pointer; touch-action: manipulation; }
+.dlg .seg button, .dlg .act {
+  min-width: 30px; height: 26px; padding: 0 8px; background: none; border: 1px solid var(--line); border-radius: 2px;
+}
+.dlg .seg button[aria-pressed="true"] { border-color: var(--epi); color: var(--epi); }
+.dlg .act.go { border-color: var(--epi); color: var(--epi); }
+.dlg .rmain { flex-wrap: wrap; padding: 3px 0; }
+.dlg .rmain .lbl { min-width: 5.5em; }
+.dlg input.num {
+  width: 6em; height: 24px; box-sizing: border-box; padding: 0 6px; font: inherit; color: var(--ink);
+  background: rgba(217, 221, 230, 0.04); border: 1px solid var(--line); border-radius: 2px;
+}
+.dlg input[type="checkbox"] { accent-color: var(--epi); margin: 0; }
+.envs { display: flex; flex-direction: column; gap: 3px; }
+.dlg .env {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 5px 8px; text-align: left;
+  background: rgba(217, 221, 230, 0.02); border: 1px solid var(--line); border-radius: 2px;
+}
+.dlg .env b { font-weight: 500; }
+.dlg .env span { color: var(--dim); font-size: 11px; line-height: 1.35; }
+.dlg .env[aria-pressed="true"] { border-color: var(--epi); }
+.dlg .env[aria-pressed="true"] b { color: var(--epi); }
+.dlg .link { overflow-wrap: anywhere; }
+.dlg-btns { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.dimlbl { color: var(--dim) !important; font-size: 11px; }
+@media (pointer: coarse) {
+  .dlg .seg button, .dlg .act { min-width: 40px; height: 36px; }
+  .dlg input.num { height: 34px; }
+}
+
 /* plain message: no WebGPU, device lost, shader error */
 #msg {
   position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center;

@@ -124,6 +124,7 @@ import { setupLab } from './lab.js';
 import { fetchSnapshot } from './snapshot.js';
 import { camera } from './camera.js';
 import { createApp } from './app.js';
+import { applyPreset, layoutFromParams, applyDiversity, PRESETS, SPREAD_SQUEEZE } from './culture.js';
 
 window.__moireBooted = true;
 
@@ -144,6 +145,8 @@ let lastBud = null;   // the budget that limited the last frame (adapted at the 
 
 const params = new URLSearchParams(location.search);
 const flag = (name) => params.has(name) && params.get(name) !== '0';
+// app (src/culture.js): ?preset=name fills in its URL options (the URL's own win) before anything reads them
+const PRESET = applyPreset(params);
 
 const SPEEDS = [1, 2, 4, 8, 16, 32, 0];   // 0 = MAX
 let speed = params.get('speed') === 'max' ? 0 : Math.max(1, Math.min(32, Number(params.get('speed')) || 1));
@@ -385,6 +388,9 @@ async function boot() {
       }
     }
     background.heat = cells.heat;
+    // app: how the culture is spread and how diverse it is (?spread= ?colonies= ?diversity=, or a preset's), before the first
+    // resize seeds it
+    cultureOptions(layoutFromParams(params, PRESET), params.has('diversity'));
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));
     return;
@@ -408,7 +414,11 @@ async function boot() {
   };
 
   resize();
-  if (!snap) defaultScene();   // (a snapshot brings its own springs)
+  if (!snap) { if (PRESET) presetScene(); else defaultScene(); }   // (a snapshot brings its own springs; app: a preset its own)
+  {   // app: ?zoom=z or ?zoom=z,x,y (the view's centre as shares of the dish), or a preset's zoom
+    const zq = params.has('zoom') ? params.get('zoom').split(',').map(Number) : PRESET && PRESETS[PRESET].zoom ? [PRESETS[PRESET].zoom] : null;
+    if (zq && zq[0] > 1) camera.set(zq[0], (Number.isFinite(zq[1]) ? zq[1] : 0.5) * view.cssW, (Number.isFinite(zq[2]) ? zq[2] : 0.5) * view.cssH);
+  }
   window.addEventListener('resize', resize);
   setupInput();
   if (flag('overlay')) overlayEl.hidden = false;
@@ -482,6 +492,28 @@ function defaultScene() {
   matter.addSpring(cx - perp[0] * s, cy - perp[1] * s, 'light', SCENE.life);
   matter.addSpring(cx + perp[0] * s, cy + perp[1] * s, 'heavy', SCENE.life);
   if (!params.has('spot')) light.moveTo(W / 2 + ax[0] * rim, H / 2 + ax[1] * rim);
+}
+
+/** App: a preset's springs and light (src/culture.js PRESETS), once the dish's size is known. ?springs=0 leaves them out. */
+function presetScene() {
+  if (params.has('springs') && !flag('springs')) return;
+  PRESETS[PRESET].scene({ matter, light, cells, W: view.cssW, H: view.cssH, hasSpot: params.has('spot') });
+}
+
+/** App: the culture's layout and diversity (the URL's, a preset's, or the new culture dialog's); the pull to the centre nearly
+ * off for any spread but the clump (unless ?squeeze= says). */
+function cultureOptions(L, diversity = true) {
+  cells.layout = L;
+  if (!params.has('squeeze')) cells.params.squeeze = L.spread === 'clump' ? SQUEEZE_SOFT : SPREAD_SQUEEZE;
+  if (diversity) applyDiversity(cells.genome, L.diversity);
+}
+
+/** App: the new culture dialog's "start here" (the same number of cells: no reload; the dish, its springs and light stay). */
+function newCultureInPlace(o) {
+  cultureOptions({ spread: o.spread, colonies: o.colonies, diversity: o.diversity, centres: null });
+  cells.seed(false);
+  background.impulse(view.cssW / 2, view.cssH / 2, 2);
+  flash(`new culture: ${cells.start} cells, ${o.spread}, ${o.diversity}`);
 }
 
 /** Step C6n: the look's URL options (see the top of this file). */
@@ -1010,7 +1042,8 @@ function setupInput() {
   });
   window.addEventListener('blur', () => { spaceHeld = spaceUsed = false; });
   window.addEventListener('keydown', onKey);
-  appUI = createApp({ app, params, flag, flash, cells, matter, light, background, control, get view() { return view; }, touch: TOUCH, tools: TOOLS });
+  appUI = createApp({ app, params, flag, flash, cells, matter, light, background, control, get view() { return view; }, touch: TOUCH, tools: TOOLS,
+    inPlace: newCultureInPlace, preset: PRESET });
   ui = setupUI(Object.assign(app, {
     actions, runAction, touch: TOUCH,
     startFolded: params.has('ui') ? !flag('ui') : null,

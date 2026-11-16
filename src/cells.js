@@ -46,6 +46,7 @@ import { Division, STATS_DIV, STATS_CLAIM, DIV_SNAP } from './division.js';
 import { Walls, STATS_WALL, WALL_WORDS } from './walls.js';
 import { Guides, STATS_FG, FG_WORDS, FG_CLEAR } from './guides.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
+import { cultureLayout } from './culture.js';   // app: how a new culture is spread
 
 export const CELL_URL = 'src/shaders/cell_common.wgsl';
 
@@ -571,15 +572,16 @@ export class Cells {
     const { cssW: W, cssH: H } = this.view;
     const n = this.start, R = this.R, rng = this.genome.rng;
     if (fresh) this.genome.newFounders();
+    // app (src/culture.js): how the culture is spread (`layout`: one clump, the default; scattered; several colonies; a ring);
+    // with colonies each colony is one founder's (founder k mod the founders)
+    const place = cultureLayout(this.layout, W, H, R, n, rng);
     const bab = new ArrayBuffer(this.count * BIO_BYTES);
-    const keys = this.genome.fill(new Float32Array(bab, 0, n * BIO_BYTES / 4), n);
+    const keys = this.genome.fill(new Float32Array(bab, 0, n * BIO_BYTES / 4), n, place.founder);
     const ab = new ArrayBuffer(this.count * CELL_BYTES);
     const f = new Float32Array(ab), u = new Uint32Array(ab);
-    const spread = R * Math.sqrt(n / 0.85);  // blob radius at 0.85 area fraction (overlaps settle in the warm-up)
     for (let i = 0; i < n; i++) {
-      const a = rng() * 2 * Math.PI, dd = Math.sqrt(rng()) * spread;
       const o = i * CELL_FLOATS;
-      f[o] = W / 2 + Math.cos(a) * dd; f[o + 1] = H / 2 + Math.sin(a) * dd;
+      [f[o], f[o + 1]] = place.at(i);
       f[o + 2] = 0; f[o + 3] = 0;
       f[o + 4] = R;
       f[o + 5] = keys[2 * i];                          // lattice angle = the key angle

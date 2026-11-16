@@ -59,7 +59,8 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
     and change on a tap; the lever and the stiffness have - and +. The switches follow the state, also when a key changes it;
   - *dish* (the dish with three cells): the speed as a row of buttons, new culture (N), new genomes (G), clear
     springs (C), wash the atoms out (Shift+C).
-- **Touch:** one finger on the dish is the active tool; two fingers are left to the browser (pinch-zoom). On a
+- **Touch:** one finger on the dish is the active tool; two fingers pinch-zoom and pan the view (since the app step, see "App:
+  zoom, zoos, tools, new culture, presets"; before it they were left to the browser). On a
   touch-only screen the bottom line shows only the short messages after a tap, not the keys.
 - **Speeds:** 1×, 2×, 4×, 8× as before; **16×** and **32×** are a timelapse: more ticks of 1/60 s between two
   drawn frames (the ticks themselves are the same at every speed, so is the simulation); **MAX** runs as many ticks per

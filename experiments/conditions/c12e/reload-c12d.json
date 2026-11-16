@@ -1,0 +1,20 @@
+{
+ "name": "c12e-reload-c12d",
+ "description": "a C12d snapshot (oxy-spot_s7 at 40 min, cells of 84 words) loaded by ?snap= on the C12e page: it widens and runs with saturation and osmosis off",
+ "query": {
+  "snap": "experiments/runs/c12d-oxy-spot_s7/snapshots/snap_t2400.json"
+ },
+ "duration": 60,
+ "sample_every": 10,
+ "evals": [
+  {
+   "t": 2400,
+   "js": "return { sat: moire.waste.params.saturation, osm: moire.waste.params.osmosis }"
+  }
+ ],
+ "shots": [
+  {
+   "t": 2460
+  }
+ ]
+}

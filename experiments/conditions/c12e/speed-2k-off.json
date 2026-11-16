@@ -1,0 +1,11 @@
+{
+ "name": "c12e-speed-2k-off",
+ "description": "Speed: the default scene, 2000 cells, seed 3, MAX, 150 s, C12e off",
+ "query": {
+  "seed": 3,
+  "saturation": 0,
+  "osmosis": 0
+ },
+ "duration": 150,
+ "sample_every": 10
+}

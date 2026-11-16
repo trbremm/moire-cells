@@ -634,3 +634,138 @@ The fix made the light's waste rich, but the waste the dish is full of is not th
   makers inside the harvesters, or their neighbours).
 - **Membranes that can burst again** (README "C12b supply: cells graze crust": co-location and bites keep the bilayers at integrity
   about 0.1): without whole membranes the excited haze has nothing to poison.
+
+# Electrons
+
+Step C12d (README "Step C12d: electrons") rebuilt the bonds around electrons: givers give, takers take, every bond RELEASES energy,
+free atoms are the high, restless state, light pushes electrons back up (absorbed only where a photon matches a gap), and an
+excited substance reacts, fluoresces or warms. The springs drip minerals (water-like gt and linkers) and a vent (gT, GT, free heavy
+givers G, trace), never free light atoms. Past numbers (the oxygen retry, C12c) are not comparable (the user accepted).
+
+**How.** `experiments/conditions/c12d/` (`make.py` writes them; `analyse.py` prints the tables below; `engines.py` counts the engines
+a colony carries from its final snapshot; `summarise.sh` makes `experiments/summaries/c12d-default/` and `c12d-oxygen/`, with one
+stacked phase picture per oxygen run: `stack_<run>.svg`). Headless Chrome on the GTX 1650 at MAX, one run at a time, commit 9c55eb9
+and later, 1280 x 800.
+
+## 1. The substrate alone
+
+`substrate.json`: one cell (it divided to three), the whole dish lit, a never-drying mineral spring (left) and a never-drying vent
+(right) side by side, 6 min.
+
+**What it looks like** (`experiments/keep/c12d/substrate-springs-glow-6min.jpg`, `substrate-dish-glow-6min.jpg`). The whole dish fills
+with a fine **starfield of steady tiny lights**: sky blue (hard light re-emitted as visible 2 by the minerals gt and Gt and the minus
+soap tlL) and gold (visible 2 re-emitted as visible 1 by the fuel GT and by free light takers t), sparse and quiet, like a
+fluorescence image of a smear. Around the vent: a dense cloud of green fuel dust (GT, gT) studded with gold lights and silver trace
+sparks. At the mineral spring: an oil droplet forms at once (the spring's l and L chain into oil lL faster than into crust) with its
+iridescent rim, ringed by a brown crust halo (ll, LL), the slate mineral dust around it.
+
+**What forms** (amounts in the dish at 1 / 3 / 6 min): free g 113 / 359 / 543, free t (oxygen) 49 / 157 / 207, free T 34 / 146 / 199,
+G 42 / 146 / 146; fuel GT 97 / 246 / 568, gT 5 / 19 / 52; minerals gt 54 / 124 / 283, rust Gt 4 / 40 / 148; crust ll + LL 57 / 185 /
+376; oil 6 / 16 / 42; soap glL 0.1 / 0.1 / 0.5, tlL 0.4 / 0.2 / 1.3. ORDER 0.36 -> 0.24 (the matter spreads).
+
+**Where free light takers appear.** Without life, light makes them: hard light splits the water-like mineral (gt -> g + t) and the
+heavy photons excite the rest; photochemistry 15 to 175 events per s. In the cold dark dish they are frozen (g + t -> gt needs its
+spark from heat), so free t piles up to 207 units in 6 min: **abiotic oxygen**, made by hard light. The sink works: rust Gt grows
+from 0 to 148 where the vent's free G meets t (G + t -> Gt, 4.875), the most settled compound, quiet rust dust. Fluorescence leaves the
+dish at 50 to 450 energy per s (gold 70 %, blue 25 %, warm the rest); excited states 480 per s at the end: 25 % react, 30 %
+fluoresce, 45 % heat.
+
+## 2. The default scene, electrons on and off
+
+`default-on.json`, `default-off.json` (`?electrons=0`), seeds 3 and 7, 20 min (the default springs dry up at 4 min).
+
+| run | cells 5 / 10 / 15 / 20 min | eat / harvest / both / other at 20 min | into batteries per s (mean from 5 min) | breathing / fermenting into batteries per s | free t / G / rust / fuel at 20 min | births per s | ENTROPY 20 min, rate | ORDER | books: energy / atoms / charge |
+|---|---|---|---|---|---|---|---|---|---|
+| c12d-default-on_s3 | 558 / 534 / 1709 / 1135 | 1% / 0% / 99% / 0% | 106.2 | 31.85 / 74.23 | 13 / 24 / 119 / 375 | 16.16 | 16.5 M, 14.4 k/s | 0.197 | -0.03..+0.02 / 0 / 0 |
+| c12d-default-on_s7 | 306 / 1176 / 1169 / 1766 | 1% / 0% / 98% / 0% | 113.0 | 74.08 / 38.92 | 9 / 35 / 109 / 346 | 12.48 | 18.4 M, 16.7 k/s | 0.202 | -0.06..+0.01 / 0 / 0 |
+| c12d-default-off_s3 | 1343 / 1672 / 1040 / 623 | 2% / 1% / 97% / 0% | 105.2 | - | (free t 195: the old light atom) | 11.48 | 18.2 M, 15.9 k/s | 0.204 | -0.01..+0.08 / 0 / 0 |
+| c12d-default-off_s7 | 1622 / 1460 / 646 / 559 | 2% / 2% / 96% / 0% | 70.6 | - | (free t 219) | 10.56 | 20.4 M, 17.5 k/s | 0.225 | -0.03..+0.05 / 0 / 0 |
+
+(The census's "eat" is any engine that feeds the battery, fermenting or breathing; "both" a pigment engine and an eating one.)
+
+**Seen.** With electrons the colony **crashes harder at first** (300 to 560 cells at 5 min against 1300 to 1600 with the old table:
+the founders have no oxygen and little to ferment) and then **recovers to 1100 to 1800** at 20 min while the old table's colony keeps
+falling (560 to 620). Both tables end with the same habit: almost every cell is "both", a pigment plus an eater. With electrons
+that is a cell splitting the water-like mineral with its pigment (gt -> g + t) and burning the pieces back (g + t -> gt): light
+made into free atoms and burned in one cell (HARVESTERS MUST BURN holds: the photon only pays the split, the battery is filled by the
+burn). The batteries' income is the same size (70 to 113 per s); with electrons it moves from breathing (g + t, 114 per s at 5 min)
+toward fermenting (70 to 106 per s at 15 to 20 min). Free t in the dish stays low (9 to 28, against 195 to 219 free light takers in
+the old dish, where they were the springs' atoms); rust builds to 110 to 120. Entropy 16.5 to 18.4 M against 18.2 to 20.4 M,
+ORDER the same (0.20). Pictures: `experiments/keep/c12d/default-on-s3-20min.jpg` (the colony under the spot, green battery cores,
+the fuel dust drifting left).
+
+## 3. The oxygen story (no spring of free atoms)
+
+`oxy-spot.json`, `oxy-full.json`: a never-drying mineral spring at (875, 328) (gt + linkers) and a slow vent at (875, 472) dripping
+2 s of every 20 s; the spotlight and the whole dish lit; seeds 3 and 7; 40 min.
+
+| run | cells 10 / 20 / 30 / 40 min | free t (oxygen) | rust Gt | free G (the sink) | made by light in the open, photochemistry per s | harvesters (eat+harvest / harvest only) | breathing carriers | breathing: events / energy per s | fermenting energy per s | bursts per s | ENTROPY 40 min | ORDER | books |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| c12d-oxy-full_s3 | 4974 / 5999 / 6000 / 6000 | 115 / 223 / 340 / 522 | 32 / 87 / 134 / 190 | 15 / 15 / 10 / 13 | 27.7 | 3235+24 / 4565+12 / 4797+25 / 5207+13 | 4877 / 5968 / 5951 / 5982 | 158.96 / 536.35 | 1.87 | 2.5 / 1.5 / 0.0 / 2.4 | 188.2 M | 0.327 | -0.03..+0.51 / 0 / 0 |
+| c12d-oxy-full_s7 | 4869 / 6000 / 6000 / 5999 | 179 / 347 / 381 / 506 | 30 / 78 / 128 / 179 | 11 / 16 / 12 / 14 | 25.8 | 4419+56 / 5772+18 / 5812+47 / 5809+20 | 4784 / 5969 / 5937 / 5975 | 198.76 / 670.72 | 1.41 | 0.0 / 2.0 / 0.0 / 1.0 | 234.7 M | 0.334 | -0.04..+0.14 / 0 / 0 |
+| c12d-oxy-spot_s3 | 2036 / 2003 / 2248 / 2777 | 62 / 87 / 53 / 69 | 42 / 113 / 150 / 170 | 22 / 32 / 16 / 16 | 6.1 | 1598+21 / 1905+9 / 2183+20 / 2735+6 | 2003 / 1989 / 2219 / 2770 | 98.74 / 333.26 | 0.10 | 1.4 / 0.9 / 1.4 / 1.5 | 71.1 M | 0.278 | -0.15..+0.02 / 0 / 0 |
+| c12d-oxy-spot_s7 | 2060 / 2419 / 2692 / 2583 | 65 / 92 / 64 / 88 | 40 / 115 / 174 / 249 | 6 / 7 / 5 / 6 | 9.0 | 1862+8 / 2350+3 / 2583+2 / 2499+3 | 2027 / 2407 / 2683 / 2579 | 58.67 / 197.06 | 0.41 | 1.8 / 2.1 / 1.0 / 6.4 | 59.1 M | 0.288 | -0.19..+0.03 / 0 / 0 |
+
+(Columns at 10 / 20 / 30 / 40 min, or means from 5 min on. "Breathing" = the engines that use a free light taker t: g + t -> gt,
+G + t -> Gt, t + gT -> gt + T, t + GT -> Gt + T; `cells.rate2.eSwap` counts their events, `electrons.rate.eBreath` the energy they put
+into batteries.)
+
+Which engines the colonies carry at 40 min (`engines.py`, slots with a positive rate; a cell has three):
+
+| run | the top engines (cells carrying it) |
+|---|---|
+| oxy-spot_s3 | g + t -> gt 4373 slots in 2777 cells · gt -> g + t with a visible 2 pigment 1762, with a hard one 965 · t + GT -> Gt + T 41 · t + gT -> gt + T 19 |
+| oxy-spot_s7 | g + t -> gt 2778 · gt -> g + t hard 2462 · **t + gT -> gt + T 1425** (low rates: 1663 in all) · GT -> G + T storer 71 |
+| oxy-full_s3 | g + t -> gt 6000 · gt -> g + t hard 4526, visible 2 600 · l + l -> ll 1922 · G + t -> Gt 1230 |
+| oxy-full_s7 | g + t -> gt 6098 · gt -> g + t hard 5170, visible 2 586 · G + T -> GT 577 · t + GT -> Gt + T 55 |
+
+**The story, in order** (`experiments/summaries/c12d-oxygen/stack_*.svg`):
+1. **Harvesters split minerals and throw out free light takers.** From the first minutes nearly the whole colony splits water-like
+   gt with a pigment (gt -> g + t). Selection moved the pigment from visible 2 (the founders') to **HARD** light: hard photons (5) pay
+   the whole split (4.5), a visible 2 photon (3) leaves 1.5 for the battery to pay. By 40 min 2462 to 5170 cells carry a hard pigment.
+2. **But they burn their own oxygen.** The same cells carry g + t -> gt (often in two slots): the t they make is burned back inside,
+   with the g it came with, at 4.5 per event (0.75 of it after ineff into the battery). This is what "breathing" counts: 60 to 180
+   events and 200 to 670 energy per s into batteries, **thousands of times the C12c runs' 0.02 to 0.09 events per s**. Breathing now
+   pays: a free light taker releases more with anything than any other route (check c). But it is a closed loop in one cell
+   (photosynthesis and respiration in the same body), not a separate breather living on someone else's waste.
+3. **The haze.** Only what leaks out reaches the dish: under the spot free t stays at 50 to 90 units for 40 min (no build-up); under
+   the whole dish it **builds steadily**, 115 -> 223 -> 340 -> 522 (seed 3) and 179 -> 506 (seed 7), with free g alongside (685 to 707):
+   with the dish full of cells (6000, the capacity) the pieces leak faster than the cold dark parts can rebond them.
+4. **The sinks.** Rust Gt grows all the time, 30 -> 190 (whole dish), 40 -> 250 (spot): the vent's free G catching t (G + t -> Gt, the
+   most settled compound) keeps free G low (5 to 30). A second sink nobody wrote: **oxygen makes soap**. t + lL -> tlL (3.25) caught
+   t on the oil at the mineral spring: tlL rose to 72 to 85 (whole dish) and 156 to 322 (spot), the minus soap (a pearly film at the
+   oil's rim) now the commonest soap in the dish.
+5. **Damage.** Bursts 0 to 6 per s (seed 7 under the spot at 40 min: 6.4); most membranes are thin (mean integrity 0.15 to 0.22), so
+   there is little to burst. No crash: the colonies grew throughout.
+6. **Breathers of fuel.** The true breather (t + gT -> gt + T, 3.0: living on fuel and someone else's oxygen) is carried by 19 cells
+   (spot s3) and **1425 cells (spot s7)** at 40 min, but at small rates (the fuel gT in the dish is 55 to 120 units): passengers more
+   than a lineage that lives on it. Fermenting stays tiny (0.1 to 1.9 energy per s).
+
+**Honestly:** the oxygen story did not take off as a sequence of strangers (harvesters -> haze -> breathers). What took off is one
+body doing both: every cell splits water with hard light and burns the pieces. Why, in numbers: a cell that keeps its t gets 4.5 x
+0.75 = 3.4 into the battery per event from its own split, while a breather of fuel gets 3.0 x 0.75 = 2.25 per t it can find, and
+the t in the dish under the spot is 50 to 90 units spread over the whole dish (0.01 to 0.02 per R²) against what the harvester has
+inside. With the whole dish lit and full, the haze does build (500 units by 40 min, rising), so a longer run there is the place to
+look for outside breathers.
+
+Pictures (`experiments/keep/c12d/`): `oxygen-spot-s7-40min.jpg` (the spotlight colony, dense, its centre glowing white-green, an oil
+slick with an iridescent rim at its left edge), `oxygen-full-s3-40min.jpg` (the whole dish full: 6000 cells, warm orange-rimmed cells
+on the left, teal in the middle, where the light-split pieces are).
+
+## 4. The books and the checks
+
+- `check.json` (seed 5, the whole dish, 420 s at MAX): springs of every kind (soap, oil, emulsion, linker, ions, mineral, vent), N
+  (60 s), a wash (100 s), a resize to 1000 x 700 (150 s), G (200 s), a resize back (220 s), new springs (240 s), fluorescence off and
+  on, photochemistry off with the glow not drawn, the depth x5 and the shares 0.9, grazing, lipids, the membrane chemistry, the
+  engines (and "everyone burns", not available with electrons) and the chemistry off and on at runtime, the spotlight and back
+  (250 to 345 s), a snapshot saved and loaded at once (380 s: exact). Atoms and charge rounding exactly 0 in every sample except the
+  two taken in the same paused instant as each resize (the old grid not yet drained, as in steps C10 to C12c); energy within -0.05
+  and +0.002 while 15.7 M came in.
+- Every long run: atoms and charge 0 in every sample; energy within -0.19 and +0.51 of 59 to 235 M.
+- The substrate run shows a few one-sample spikes of the energy rounding (-9.2, +3.1, +4.6) that vanish at the next sample: they are
+  multiples of 1.53 (a cell's battery-sized amount) with one to three cells in the dish, so most likely a sample taken while the
+  cells' ledger belonged to another read-back (the heat's books then miss the cells' batteries for that one sample); they do not
+  accumulate (the rounding is back to 0.0004 at the end).
+- Old snapshots: the C11 lab configuration (`experiments/tissue/configs/c11-pol-lb-t1-100`) opened by `?snap=` on an electrons page
+  (`reload-old.json`): the page reloads itself with `?electrons=0`, loads it ("saved before step C12b / C12c / C13 ... as it ran"),
+  runs 40 s with atoms and charge 0.

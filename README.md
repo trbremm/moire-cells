@@ -97,7 +97,11 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   (cells do not graze the crust under them: the C12b supply fix off); step C12c: `?excited=0` (freed light atoms carry no energy:
   the chemistry as before), `?exshare=x` (the share of the photon's surplus an excited atom keeps, 0..1, default 0.5, fixed for
   the page), `?exlife=s` (its lifetime in a cold dish, default 30 s), `?exhot=T` (the temperature at which it fades twice as fast,
-  default 4), `?exlook=0` (the excited haze not drawn); step C13: `?fgenes=0` (every cell today's field numbers; the field genes
+  default 4), `?exlook=0` (the excited haze not drawn); step C12d: `?electrons=0` (the previous chemistry, the step C4 table with
+  C12c as it was; fixed for the page, the rules panel's switch reloads it), `?fluor=0` (no fluorescence), `?photo=0` (excited
+  states do not react: no photochemistry in the open), `?glow=0` (the glow not drawn), `?kabs=x` (a matching gap's optical depth,
+  default 1), `?yrx=x` (the share of the excitations that react, default 0.5), `?yfl=x` (the share of the rest that fluoresces,
+  default 0.4); step C13: `?fgenes=0` (every cell today's field numbers; the field genes
   still drift), `?gateglue=0`, `?gatepump=0`, `?gateengine=0`, `?gatediv=0`, `?gateturn=0` (one gate off; `?gates=0` all five),
   `?pushgene=0` (field A pushes every cell as before), `?gatenull=1` (the neutral control: the gate genes and the push gene drift but
   act on nothing), `?gateref=x`, `?gateturnrate=x`, `?view=guides` (colour by the strongest guide).
@@ -3742,6 +3746,97 @@ or life): tap mode 2 is now a **MINERAL spring** (water-like gt + the linkers l,
 a **VENT** (fuel-like gT, GT, free heavy givers G, a little trace). The springs' energy (negative: settled matter) is counted in the
 ledger as before (`chem.added`). With `?electrons=0` the springs drip what they did.
 
+### As built
+
+**What it looks like.** Under the spotlight the dish is now speckled with **tiny steady lights**, like a fluorescence microscope
+image: **gold** ones where fuel GT and free light takers t (the oxygen) catch visible 2 and re-emit visible 1, **sky blue** ones
+where the water-like mineral gt, the rust-like Gt and the minus soap catch hard light and re-emit visible 2. They sit at fixed places
+(no flicker: an excited state lives far shorter than a frame) and thin out where there is less matter or less light; outside the
+light nothing glows. The vent (tap mode 3, a green ring) is ringed with green fuel dust and gold lights and a few silver trace
+sparks; the mineral spring (tap mode 2, a slate-blue ring) grows an oil droplet with its iridescent rim and a brown crust halo
+around it (its linkers chain at once). Settled minerals are quiet dust: water-like gt a cool slate, rust Gt rust-brown. The cells
+look as before; their engine parts keep their kinds' inks (breathing engines in the swap red, fermenting in the burn green).
+Pictures: `experiments/keep/c12d/` (below and EXPERIMENTS.md "Electrons").
+
+**Code** (README "Files": `src/electrons.js`; the table in `src/matter.js`): everything above is derived when the page loads and
+checked (balance, charge, symmetry, 22 engines); `?electrons=0` builds the old table, and the derivation of the old table was
+compared value by value with the previous commit (node, both modules: every substance, reaction and engine identical).
+- The grid keeps its 18 channels (g* and t* stay empty with electrons on). The reactions grew to 38 (the shaders hold 48: ChemP
+  `rx` and `el`, its reactions from byte 160). Each reaction's `open` word carries the excited states' bits (an excited state's
+  event, photochemistry, the band it emits).
+- `react` books a fluorescence event's photon rest as heat and only that as light caught (the emitted light passes on): the energy
+  books stay exact. Warm light is caught by whatever has a warm gap (`dark` per channel, all 16 channels) and is heat.
+- `paint` works out, as `react` shares the light, how much each pixel re-emits per tick in visible 1 and visible 2 (texture D x, w;
+  y, z the minerals), and `matter_draw.wgsl` draws the lights (`glow`) and the minerals' dust.
+- Cells: the engines are the 22 of the table (`ENG_COUNT` patched into the shaders by `setShaderConst`); pigments are unchanged (a
+  gene picks the band: a pigment is the cell's own molecule whose gap matches that band); the C5 burner (fuel -> atoms) would be
+  uphill and is not available with electrons; smell weighs each compound by what a free light taker would release from it
+  (`smellW`: gT 3, GT 2.5, minerals 0); the census counts breathing engines as eating (strategies harvest / eat / both / other).
+- A bug the electrons showed: the lipid builder booked the plus soap's release for both soaps (equal in the old table: 0.25); the
+  minus soap now books its own (4 against 2.25), and the energy rounding went from +2.4 to about 0.01.
+- Founders (`src/genome.js`): no free t at the start, so the four habits became: eaters (g + t -> gt and a fermenting engine),
+  "both" (a visible 2 pigment splitting gt -> g + t and the burn g + t -> gt), photosynthesisers (gt + T -> gT + t and Gt + T -> GT + t
+  with visible 2 pigments, a small burn), and others (a chain maker, the breather t + gT -> gt + T, a fermenter). A first set built
+  on G + gT starved (gT is split by visible light and swapped away at once: 0.05 energy per s into all batteries against 26 with the
+  old table); this set gives 15 to 19 per s.
+- Snapshots record `electrons`. One saved before step C12d (or with the other table) opened by `?snap=` makes the page reload itself
+  with `?electrons=` set to its table, and runs as saved; loading one from the console into a page of the other table refuses with
+  a message saying which `?electrons=` to use (the table is fixed for the page).
+- The rules panel group **Electrons (step C12d)**: electrons (reloads the page with the other table), fluorescence, excited states
+  react (photochemistry), absorption depth, share that reacts, share that glows; the view panel: **fluorescence glow drawn**. The
+  panel's ELECTRONS and LIGHT lines (replacing EXCITED):
+
+      ELECTRONS  free t (oxygen) 82.3 · G 86.5 · fuel 174 · minerals 112 (rust 13.9) · batteries from breathing +0/s, fermenting +0/s
+      LIGHT  absorbs: hard gt Gt tlL · V2 t GT · V1 gT glL · warm g l T L ll LL lL glL tlL · excited 79.0/s → react 15.6, glow 25.3, heat 38.0 · fluorescence out 53.0/s (gold 40.7, blue 10.9)
+
+  (what absorbs which band among the substances in the dish now; the excitations per s and where they go; the fluorescence leaving
+  the dish, energy per s). The F overlay prints the whole table (levels, gaps, bands, every reaction and engine). `moire.sample()`
+  has `electrons.*` (`electrons.freeT`, `electrons.rust`, `electrons.rate.eBreath`, `.eFerment`, `.photo`, `.glow`, `.eGlow`, ...).
+
+**The experiments** (EXPERIMENTS.md "Electrons"; conditions `experiments/conditions/c12d/`, summaries `experiments/summaries/c12d-*`,
+pictures `experiments/keep/c12d/`):
+- **The substrate alone** (one cell, the whole dish lit, a mineral spring and a vent, 6 min): a starfield of steady sky-blue and gold
+  lights over the dish; an oil droplet with an iridescent rim and a crust halo at the mineral spring; green fuel dust and gold lights
+  round the vent. Hard light splits the water-like mineral in the open, so free t piles up without life (207 units in 6 min, frozen
+  in the cold dark); the vent's free G catches it as rust (0 -> 148).
+- **The default scene** (20 min, seeds 3 and 7): with electrons the colony crashes harder at first (300 to 560 cells at 5 min against
+  1300 to 1600 with the old table) and recovers to 1100 to 1800 at 20 min (the old table's falls to 560 to 620). Both end almost all
+  "both": with electrons, cells that split gt with a pigment and burn g + t back. Battery income the same size (70 to 113 per s).
+- **The oxygen story** (no spring of free atoms; a never-drying mineral spring and a slow vent; spot and whole dish; seeds 3 and 7;
+  40 min): breathing RUNS now (60 to 180 events and 200 to 670 energy per s into batteries, against 0.02 to 0.09 events in C12c), but
+  as a loop inside each cell: nearly every cell splits water with a pigment (selection moved the pigment from visible 2 to HARD light,
+  whose photon pays the whole split) and burns its own g + t back. The haze stays at 50 to 90 under the spot and builds under the whole
+  dish (to 500 by 40 min); rust grows all the time (to 170 to 250); oxygen also ends up as the minus soap tlL (to 320 units, a sink
+  nobody wrote). True breathers of fuel (t + gT -> gt + T) are carried by 19 and 1425 cells at small rates: passengers, not a lineage
+  living on it.
+
+**Checked.**
+- The books (`check.json`, seed 5, the whole dish, 420 s at MAX): springs of every kind, N, a wash, two resizes, G, the electrons'
+  switches and knobs, grazing, lipids, membranes, engines and the chemistry off and on at runtime, a snapshot saved and loaded at once
+  (exact). Atoms and charge 0 in every sample except the paused instant of each resize (the old grid not yet drained, as before);
+  energy within -0.05 and +0.002 while 15.7 M came in. Every long run: atoms and charge 0, energy within -0.19 and +0.51 of 59 to 235 M.
+- Old snapshots: the C11 lab configuration by `?snap=` reloads the page with `?electrons=0` and runs as saved (atoms and charge 0).
+  `?electrons=0` derives the old table identically (checked value by value against the previous commit).
+- Consoles clean: headless Chrome (every run), phone size (`tools/shot.py --mobile`, the rules panel open; the toolbar shows the
+  mineral spring and the vent), headed Firefox (the whole dish lit, the ELECTRONS and LIGHT lines; the rules panel has the group).
+- Speed at MAX (mean speed reached, GTX 1650, headless Chrome), the commit before (9a2822b) / electrons off / electrons on: 10 000
+  cells ×1.36 / ×1.37 / ×1.43 (60 s); 2000 cells ×5.9 / ×6.1 / ×6.6 (150 s; at 2000 the speed follows how many cells are alive, 445 /
+  677 / 224 at the end, more than the chemistry). No slowdown from the larger table.
+
+**Known issues.**
+- Light makes oxygen without life: hard light splits the water-like mineral in the open (photochemistry), so a lit dish gets free t
+  from the start (the user's "made by light/life" allows it, but it blurs the oxygen story). Fewer hard photons (`?kabs=`, `?yrx=`) or
+  a spotlight keep it small.
+- "Breathing" (the census and `eSwap`) counts every engine that uses a free light taker, so a cell burning its own split water counts
+  as a breather; `experiments/conditions/c12d/engines.py` tells the reactions apart from a snapshot.
+- Pigments do not fluoresce (only substances in the dish glow); a cell's pigment glowing when its light is more than it can use would
+  be the microscope's chlorophyll look, not built.
+- Energies are counted from the top (all atoms free = 0), so "stored" and the springs' energy are negative numbers: only their changes
+  mean something.
+- The electrons switch reloads the page (the table is fixed for the page); free atoms in the warm band warm the dish where they lie.
+- Each excited state is resolved within its tick (no lasting excited atoms); the shares (react 0.5, fluoresce 0.4 of the rest) are
+  knobs, the same for every substance: which substance glows in which colour comes from its gaps.
+
 ## The look of the landscape
 
 Since step C6n the landscape's dots are part of the machinery (Shift+4; off in the clean default view), and the
@@ -3827,6 +3922,13 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   `experiments/tissue/c12b.py`: the lab's conditions; `experiments/conditions/c12b/make.py`: experiments 2 to 4; the supply fix
   (cells graze crust) is in the builder's block of `eat` (LPF_GRAZE; counters LG_LIP_G), its conditions in
   `experiments/conditions/c12b-graze/make.py`
+- `src/electrons.js`: electrons (step C12d): the excited states' switches and knobs (`moire.electrons.params`, `.look`), their
+  shares as each light reaction's depth (`shares`), the drawing's words (the minerals, the glow), the census (the C12c counters'
+  slots read with their new meanings), the ELECTRONS / LIGHT panel lines and the overlay (the whole table). The table itself is in
+  `src/matter.js` (`ELECTRONS`, `ELEC`, `atomLevels`, `eBond`, `gapBand`, `TABLE_E`, `deriveReactionsE`, `deriveEnginesE`, the
+  springs' mixes); `matter.wgsl` (`light_here`, the excited states' counters in `react`, the glow in `paint`), `matter_draw.wgsl`
+  (`glow`, the minerals' dust), `cell_eat.wgsl` (smell by `smellW`, the census's eaters, each soap's own release),
+  `src/gpu.js` (`setShaderConst`: ENG_COUNT 22); `experiments/conditions/c12d/make.py`: the conditions
 - `src/excited.js`: excited waste (step C12c): the switch and knobs (`moire.excited.params`, `.look`), the chemistry uniform's
   words (struct ChemP `ex`), the census (from the heat's ledger read-back: LG_EXC_N, LG_EXC_E, the dish's and the cells' g*, t*),
   the EXCITED panel line and the overlay. The excited atoms themselves are substances of `src/matter.js` (`ATOMS` g*, t*,

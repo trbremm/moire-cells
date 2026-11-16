@@ -584,6 +584,20 @@ APP. Zoom and pan (pinch on touch; the wheel keeps tilting the spotlight in spot
     CELLS (pick from the zoo or founder types, tap to place) and a molecule pipette, NEW CULTURE dialog (founders, how
     spread: one clump / scattered / several colonies, diversity) and PRESET ENVIRONMENTS (e.g. hot vent in the dark,
     sunlit shallows, oil slick, oxygen world, crust desert, tissue lab), each with a one-line description.
+LATER, WATER-DROP UNIVERSE (user 2026-11-16 brainstorm, "keep it as a plan for us to go to later"; not scheduled).
+    User's idea: "a 2.5D representation in which the 2D rendered cells can stack, but the rules under it go 3D" (chosen
+    over a full 3D beaker, which would be close to a second engine; a 2D side-view "column mode" was also discussed).
+    A "drop" mode beside the petri dish:
+    - Look: flat neon cells at a height, overlapping where stacked; a FOCUS PLANE: in focus = sharp tubes, out of focus =
+      soft glowing bokeh discs (depth without spending colour); focus slider; optional depth-colour-coded projection.
+    - Rules 3D underneath: cells as hexagonal PRISMS (6 sides + top + bottom faces for sensing, glue, contact), so crowded
+      cells climb, pile, form spheroids; substrate in a few depth layers following the drop's dome (thin rim, thick
+      middle); gravity (crust sinks, oil floats into a surface skin, cells sink/float by what they carry); light fading
+      with depth; moire lattices stay in-plane, envelopes use 3D distance.
+    - Variants: SITTING drop (dome; coffee ring if evaporation at the rim) and HANGING drop (gravity to the tip: the
+      organoid/spheroid method; Claude's pick to go first). Switch: air brings oxygen in at the surface, or not.
+    - Order proposed: the drop alone (dome, layers, gravity, light depth) -> cells get height (3D contact, stacking,
+      buoyancy, focus drawing) -> hanging drop / coffee ring.
 LATER, PURIST VERSION (user 2026-11-15: hoped for "a more game of life situation", surprised how many abstractions
     were needed; chose to KEEP GOING with lipids (C12b) and the oxygen story, "I can go back to the purist version
     later"). Idea on file: a separate small page "moire life": cells of a few colours, pairwise push/pull through

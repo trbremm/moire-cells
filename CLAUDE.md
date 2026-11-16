@@ -569,6 +569,13 @@ C13. FIELDS AS GENES, FIELDS AS GUIDES (user 2026-11-16 chose it next, over more
     round / column / sprawl; turn: one sheet vs ring of rosettes; glue: tight sheet with a wedge flower vs loose rows;
     engines: dark-cored middle), ~4x stronger with the long beat. EVOLUTION: NULL, gate genes drift like the neutral
     control (+-0.6); beat periods do not tile the dish (median 4.5-7 R). Speed -7..8 %.
+BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a lot of things. Do the rest of the
+    expansions"; glider WIP kept on branch `gliders`, resume later). Run back to back, report after each:
+    1. C12f vents (running)   2. C12g ion flow  ||  N1 nutrient landscape (all five parts as proposed; parallel worktree)
+    3. T1a: an inside, kin channels, the self marker as a membrane landscape (Claude's reading), lineage-colour view,
+       wild/blank founders   4. T1b: the gene regulatory network + reporter view   5. P1: engulf + kin sparing genes,
+       hand-placed predator   6. T1c: designed tissues (plant, filament, biofilm) + random-colony experiments
+    7. P2: macrophages.
 C12g. MEMBRANES MODULATE ION FLOW (user 2026-11-16 "Yes, membranes modulate ion flow"; after C12f, same files).
     C12e found ions cross the membrane as easily as anything, so osmosis barely bites and cells keep their own oxygen.
     - The lipid BILAYER blocks free ions (g t G T), derived from its make-up: an intact soap/oil bilayer passes ions at a

@@ -63,6 +63,7 @@ export const RULE_GROUPS = [
   ['electrons', 'Electrons (step C12d)'],
   ['waste', 'Waste must leave (step C12e)'],
   ['ions', 'Ion flow (step C12g)'],
+  ['whole', 'Whole membranes (step M1)'],
   ['vents', 'Vents in the dark (step C12f)'],
   ['n1', 'Nutrient landscape (step N1)'],
   ['guides', 'Fields as guides (step C13)'],
@@ -666,6 +667,17 @@ export function makeActions(app) {
     ioknob('ionPass', 'bilayer ion leak', 'ionPass', 0, 1, 1.5, 3, 'share of a neutral molecule’s rate at which an intact bilayer lets free ions through by itself'),
     ioknob('chanBase', 'channel base level', 'chanBase', 0.001, 1, 1.5, 3, 'the channels’ level at gene 0 (the founders’), as a share of a neutral molecule’s rate'),
     ioknob('ionKV', 'voltage push', 'kV', 0.1, 50, 1.5, 2, 'with "voltage pushes ions": inside / outside = exp(−charge × this × voltage)'),
+  );
+
+  // ---------- whole membranes (step M1; panel only: no keys are free) ----------
+  const MP = () => app.cells.eat.whole.params;
+  A.push(
+    { id: 'oilsoap', keys: [], label: 'head on oil', group: 'whole', type: 'toggle', get: () => MP().oilSoap,
+      run: () => `cells ${flip(MP(), 'oilSoap') ? 'put a head (g or t from the stock) on oil to make the soap their bilayer lacks: the table’s “head on”, inside the cell, the spark from the battery' : 'make soap only from atoms (head + l + L) or take it from the dish (as step C12b); oil on a side without soap is shed'}`,
+      help: 'oil (lL) is soap without its head: a cell short of soap that holds oil and a free giver or taker joins them (g + lL → glL, t + lL → tlL), paying the bond’s spark' },
+    { id: 'biteblock', keys: [], label: 'bites through the block', group: 'whole', type: 'toggle', get: () => MP().biteBlock,
+      run: () => `free atoms ${flip(MP(), 'biteBlock') ? 'bite a bilayer where it is damaged: an intact one keeps these ions off its chains, as it keeps them out (bitten × (1 − integrity + integrity × the ion leak))' : 'bite a bilayer anywhere, whole or not (as step C12b)'}${app.cells.eat.ions.params.block ? '' : ' (needs “bilayer blocks ions”)'}`,
+      help: 'the biting atoms are ions; an intact bilayer keeps ions away from its oily core (step C12g), so they reach its chains only at holes (and through the bilayer’s own small ion leak)' },
   );
 
   // ---------- vents in the dark (step C12f; panel only: no keys are free) ----------

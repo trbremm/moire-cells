@@ -162,6 +162,7 @@ export function settingObjects(M) {
     ...(M.waste ? { 'waste.params': M.waste.params } : {}),   // step C12e
     ...(M.vents ? { 'vents.params': M.vents.params } : {}),   // step C12f
     ...(M.ions ? { 'ions.params': M.ions.params } : {}),     // step C12g
+    ...(M.whole ? { 'whole.params': M.whole.params } : {}),   // step M1
     ...(M.pigments ? { 'pigments.params': M.pigments.params } : {}),   // step N1: light needs matter
     ...(M.water ? { 'water.params': M.water.params } : {}),           // step N1: caustic light, currents
     ...(M.oases ? { 'oases.params': M.oases.params } : {}),           // step N1: the scarce nutrient's springs
@@ -445,6 +446,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     if (opts.settings !== false && M.ions && !(S.settings && S.settings['ions.params'])) {
       Object.assign(M.ions.params, { block: false, genes: false, volt: false });   // step C12g
       notes.push('saved before step C12g: the bilayer passes ions as before, channel genes off (as it ran)');
+    }
+    if (opts.settings !== false && M.whole && !(S.settings && S.settings['whole.params'])) {
+      Object.assign(M.whole.params, { oilSoap: false, biteBlock: false });   // step M1
+      notes.push('saved before step M1: no head on oil inside cells, bites as before (as it ran)');
     }
     if (opts.settings !== false && M.pigments && !(S.settings && S.settings['pigments.params'])) {
       Object.assign(M.pigments.params, { matter: false, sat: false, inhib: false });   // step N1

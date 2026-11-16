@@ -83,7 +83,8 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   the computer's size. The entropy panel gets shorter lines, panels take at most about half the screen and scroll,
   buttons are 42 px.
 - URL options: `?speed=32` or `?speed=max`, `?paused=1` (start paused), `?ui=0` (start with the toolbar folded);
-  step H1: `?look=harmonic` (the harmonic look; also `?look=neon`, `?look=flat`), `?blur=0`, `?grain=0`, `?scalebar=0`;
+  step H1: `?look=harmonic` (the harmonic look; also `?look=neon`, `?look=flat`), `?blur=0`, `?grain=0`, `?scalebar=0` (the scale
+  bar hidden, in every look);
   step C6n: `?neon=0`, `?halo=off|low|medium|high`, `?trails=0`, `?hum=0`, `?machinery=1`, `?cheap=0|1`, and
   `?until=T` (run to simulation time T, then pause at exactly that tick); step C6b: `?charge=0`, `?qstock=0`, `?qfeel=0`,
   `?contours=1`, `?view=charge`; step C6c: `?honeycomb=0` (the ellipse cells), `?membrane=0` (no membrane chemistry),
@@ -3860,8 +3861,9 @@ of the simulation; it is the page around it. Code: `src/camera.js`, `src/app.js`
   spring or a cell by accident. One finger is the active tool, as before.
 - **Buttons** at the right edge: + and − (by 1.5), and "the whole dish"; the zoom shows under them (×2.4). From the whole dish
   (×1) to ×8. The view never leaves the dish.
-- **Scale bar** (bottom right): a round length in micrometres at the toy's scale (a cell is about 10 µm across, R = 5 µm), its
-  length following the zoom.
+- **Scale bar** (bottom right): a round length in micrometres at the toy's scale (a cell is 12 µm across, R = 6 µm, the CPU
+  version's scale; 10 µm until the merge with step H1), its length following the zoom. One bar for every look: under the
+  harmonic look it sits on the black without the panel behind it. The View panel's "scale bar" (`?scalebar=0`) hides it.
 - Every tool, the stir, the spotlight, the springs and the pipette work in dish coordinates, so they land under the pointer at
   any zoom. Zooming magnifies everything (the tubes too, as a lens would), and details that are too small to draw at ×1 (wall
   bricks, notches, dipole marks) appear when zoomed. The neon trails start afresh when the view moves (a pan would smear them).
@@ -3987,7 +3989,7 @@ numbers in `experiments/runs/app-preset-*`, condition `experiments/conditions/ap
   is" with the same number starts in place.
 - In one headed Firefox screenshot a thin horizontal seam crossed the zoomed picture; not seen in Chrome or in other Firefox shots
   (possibly a frame caught mid-update by the screenshot).
-- The scale bar's micrometres are a toy scale (a cell about 10 µm across).
+- The scale bar's micrometres are a toy scale (a cell 12 µm across).
 
 ### Files
 
@@ -4021,7 +4023,8 @@ axis instead). Where crust lies, between and under the cells, it is a dim orange
 and red where its chains are heavy; the green rims of the cells sitting on it go yellow where they cross it, as overlapping
 detector channels do. Oil droplets are hollow green rings, soap films thin concentric green lines (the reference's loose rings),
 fuel near a light spring a soft violet haze, minerals near a heavy spring sparse orange dust, the fluorescence glow tiny gold and
-blue lights. The picture is very slightly soft and carries a fine live grain; a "50 µm" scale bar sits in the corner. Pictures:
+blue lights. The picture is very slightly soft and carries a fine live grain; a scale bar ("50 µm" on the whole dish) sits in
+the corner. Pictures:
 `experiments/keep/h1/` (lit colony, whole and close up; crust under the colony, whole and close up, in the step C4 chemistry,
 `?electrons=0`, which makes crust fields; the oil and soap springs; the tissue lab).
 
@@ -4053,11 +4056,11 @@ masses appear where crust piles up (`?electrons=0`, or a crust-rich scene).
   and the spot's outline are quiet grey lines. The colour-by views (V) and the machinery's marks do not apply in this look.
 - **A scanned image:** a slight softness at the pixel scale (the picture mixed with a 3 x 3 tent), photon grain per channel (it
   grows with the square root of the signal, plus a faint dark noise on the black; a new pattern 24 times a second, so it reads
-  as a live scan), and a soft shoulder so bright overlaps roll off toward white. A **scale bar** in the corner, "50 µm" over a thin
-  bar, at the CPU version's scale (a cell 12 µm across): bottom left above the toolbar on wide screens (above an open panel),
-  bottom right above the hint line on narrow ones.
+  as a live scan), and a soft shoulder so bright overlaps roll off toward white. The grain and the blur are per screen pixel
+  (the detector's), at any zoom. The **scale bar** is the app's (App, above: bottom right, following the zoom, at the CPU
+  version's scale, a cell 12 µm across), drawn on the black without its panel while this look is on.
 
-**Switches.** View panel, Look group: **harmonic look**, and under it **slight blur**, **photon grain**, **scale bar**. Key **`**
+**Switches.** View panel, Look group: **harmonic look**, and under it **slight blur**, **photon grain**, **scale bar** (in every look). Key **`**
 (backquote: the key left of 1, by its place on the keyboard, so it works on any layout; on a German keyboard that key is a dead
 key, ^, and still works). E from the harmonic look goes back to neon. URL: `?look=harmonic` (also `?look=neon`, `?look=flat`),
 `?blur=0`, `?grain=0`, `?scalebar=0`. Knobs live in `moire.neon.harmonic.params` (rim, rimBase, rimW, oilRim, inside, insideTint,
@@ -4082,8 +4085,7 @@ The harmonic look is cheaper than neon (no halo passes, no trail fade; one full-
 reached could not be compared: with the GPU shared it swung between x0.6 and x7 from run to run for the same look.
 
 **Known issues.**
-- The scale bar is a page element: it is not in recordings (Shift+V records the canvas only). It uses the CPU version's scale
-  (a cell 12 µm across) and will need the zoom's factor once zoom exists (the APP step).
+- The scale bar is a page element: it is not in recordings (Shift+V records the canvas only).
 - In the default scene there is little orange (see above); the orange texture is only as strong as the crust it shows.
 - The fuel haze can show the grid's coarse shape (soft blocks a few grid pixels wide) where fuel is drifting.
 - Under a dense colony the crust is mostly hidden by the cells' dark insides (as in a real section, a cell hides what lies in
@@ -4116,7 +4118,7 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
 - `src/main.js`: boot, frame loop (speeds and their budgets), input, overlay. Layers are classes with `resize`, `compute`, `render`;
   the loop runs every layer's compute passes, then hands the drawing to `src/neon.js`
 - `src/harmonic.js` + `src/shaders/harmonic.wgsl`: the harmonic look (step H1): its switches and knobs, the last pass (slight
-  blur, photon grain, shoulder) and the scale bar; the cells' harmonic drawing is `fs_harm` in `cell_draw.wgsl`, the dish's
+  blur, photon grain, shoulder) and the scale bar's switch (the bar itself is `src/app.js`'s); the cells' harmonic drawing is `fs_harm` in `cell_draw.wgsl`, the dish's
   `fs_harm` in `matter_draw.wgsl` (with its own uniform, `HarmP`); the channels' inks `HARMONIC` in `src/palette.js`
 - `src/neon.js` + `src/shaders/neon.wgsl`: the drawing as a whole (step C6n): the background onto the canvas, the cells
   into the trail buffer, the other layers into the light buffer, the halo, the composite; the neon switches and the

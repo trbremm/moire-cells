@@ -4,8 +4,10 @@
 //
 //   zoom and pan     the view camera (src/camera.js): the +, - and fit buttons at the right edge, the zoom shown under them;
 //                    Ctrl+wheel, the wheel without a spotlight, middle-drag, Space + drag and two fingers are in src/main.js
-//   scale bar        bottom right, a crisp line of a round length in micrometres at the toy's scale (a cell about 10 um
-//                    across: R = 5 um), following the zoom
+//   scale bar        bottom right, a crisp line of a round length in micrometres at the toy's scale (a cell 12 um across,
+//                    R = 6 um, as the CPU version's "50 um" bar), following the zoom; one bar for every look (step H1: the
+//                    harmonic look shows it on the black, without the panel behind it); hidden by the View panel's "scale
+//                    bar" (?scalebar=0)
 //   zoos             two toolbar panels, molecules and cells (src/zoo.js)
 //   add cells        a tool (the cell icon): a tap places one cell, a drag a line of them, each a copy of the genome picked in
 //                    the cells zoo (a lineage living now, or a founder habit). BOOKS: a placed cell starts as a new culture's
@@ -37,7 +39,7 @@ export const TOOL_ICONS = {
 };
 
 const NS = 'http://www.w3.org/2000/svg';
-const UM_PER_R = 5;   // the scale bar's toy scale: a cell's radius is 5 micrometres (a cell about 10 um across)
+const UM_PER_R = 6;   // the scale bar's toy scale: a cell's radius is 6 micrometres (a cell 12 um across, as the CPU version's)
 
 function el(tag, cls, text) {
   const e = document.createElement(tag);
@@ -87,11 +89,14 @@ export function createApp(ctx) {
   const line = el('span', 'sline');
   const label = el('span', 'slabel', '');
   bar.append(label, line);
-  bar.title = 'Scale bar (a toy scale: a cell is about 10 µm across)';
+  bar.title = 'Scale bar (a toy scale: a cell is 12 µm across, as in the CPU version)';
   document.body.append(bar);
 
   let lastKey = '';
   function update() {
+    const HM = ctx.app.neon && ctx.app.neon.harmonic;   // step H1: its switch hides the bar; its look puts the bar on the black
+    bar.hidden = !!(HM && !HM.params.scalebar);
+    bar.classList.toggle('scope', !!(HM && HM.on));
     const R = ctx.cells.R || 5;
     const pxPerUm = camera.z * R / UM_PER_R;   // screen CSS px per micrometre
     let best = 1;
@@ -109,6 +114,7 @@ export function createApp(ctx) {
     box.children[1].disabled = camera.z <= 1 + 1e-6;
   }
   camera.listeners.push(update);
+  if (ctx.app.neon && ctx.app.neon.harmonic) ctx.app.neon.harmonic.onBar = update;   // (step H1: the look or its switch changed)
   setInterval(update, 500);   // (R changes with a new culture, a resize)
   update();
 

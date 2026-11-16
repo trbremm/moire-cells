@@ -28,12 +28,10 @@
 //
 // The drawing itself: src/neon.js runs the frame (cleared to black, no halo, no trails), src/cells.js and cell_draw.wgsl
 // (fs_harm) draw the cells, src/matter.js and matter_draw.wgsl (fs_harm) the substances, src/shaders/harmonic.wgsl the
-// last pass (blur, grain, shoulder) onto the canvas. The scale bar is a small page element (not in recordings).
+// last pass (blur, grain, shoulder) onto the canvas. The scale bar is the app's (src/app.js), in every look.
 
 import { loadShader } from './gpu.js';
 import { LOOK, HARMONIC } from './palette.js';
-
-const UM_PER_D = 12;   // micrometres per cell diameter (2 R), as the CPU reference's scale bar (50 um = 50 / 12 x 2R)
 
 export class Harmonic {
   constructor(device, canvasFormat) {
@@ -79,8 +77,7 @@ export class Harmonic {
       minerals: 0.35,    // orange: minerals as faint dust
       springs: 0.3,      // springs' markers, quiet grey
     };
-    this.el = null;      // the scale bar's element
-    this.barKey = '';
+    this.onBar = null;   // the scale bar's refresh (src/app.js)
   }
 
   get on() { return LOOK.harmonic; }
@@ -152,34 +149,10 @@ export class Harmonic {
     });
   }
 
-  // ---------- the scale bar (a page element: crisp text; not in recordings) ----------
-  /** Called every frame by src/neon.js with the cells' radius R (CSS px): a round length 40 to 130 px long. */
-  scaleBar(R) {
-    if (!this.on || !this.params.scalebar || !(R > 0)) { this.showBar(); return; }
-    const pxPerUm = 2 * R / UM_PER_D;
-    const nice = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000];
-    let um = nice[0];
-    for (const n of nice) { um = n; if (n * pxPerUm >= 45) break; }
-    const px = Math.round(um * pxPerUm);
-    const key = `${um}|${px}`;
-    if (!this.el) {
-      if (typeof document === 'undefined') return;
-      this.el = document.createElement('div');
-      this.el.id = 'scalebar';
-      this.el.innerHTML = '<span></span><i></i>';
-      document.body.appendChild(this.el);
-    }
-    this.el.hidden = false;
-    if (key !== this.barKey) {
-      this.barKey = key;
-      this.el.firstChild.textContent = `${um} µm`;
-      this.el.lastChild.style.width = `${px}px`;
-    }
-  }
-
-  showBar() {
-    if (this.el) this.el.hidden = !(this.on && this.params.scalebar);
-  }
+  // ---------- the scale bar ----------
+  // (merged with the app's: one scale bar, src/app.js, that follows the zoom in every look, a cell 12 um across as in the CPU
+  // version; params.scalebar (View panel, ?scalebar=0) shows or hides it in every look. onBar: src/app.js's refresh.)
+  showBar() { if (this.onBar) this.onBar(); }
 
   // ---------- switches ----------
   toggle() {

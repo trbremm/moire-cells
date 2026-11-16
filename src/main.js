@@ -25,6 +25,7 @@
 //   ?paused=1   start paused (Space)
 //   ?ui=0|1     step C3b: start with the toolbar folded / unfolded (default: as the page last had it)
 //   ?founders=N founder genomes at the start (0 = every cell its own)
+//   ?pigshed=0   a worn or bleached pigment's trace back into the stock (default: into the dish under the cell; step N1 follow-up)
 //   ?view=1     colour by lineage from the start (key V); ?view=2 (or strategy): by strategy (step C6)
 //   ?bio=0      start with the biology rules off (D H B T M): the loop alone
 //   ?excl=0|1   step 7 exclusion off / on from the start (key 8); ?states=2..4 its number of states;
@@ -459,7 +460,7 @@ async function boot() {
     {   // step N1: a nutrient landscape (light needs matter)
       const PG = cells.eat.pigments;
       PG.light = light;
-      for (const [q, k] of [['pigmatter', 'matter'], ['pigsat', 'sat'], ['inhib', 'inhib']]) {
+      for (const [q, k] of [['pigmatter', 'matter'], ['pigsat', 'sat'], ['inhib', 'inhib'], ['pigshed', 'shed']]) {
         if (params.has(q)) PG.params[k] = flag(q);
       }
       for (const [q, k] of [['pigwant', 'want'], ['pigwear', 'wear'], ['isat', 'isat'], ['bleach', 'bleach'], ['pigcost', 'cost']]) {

@@ -528,6 +528,8 @@ const N1_TRACE: u32 = 12u;       // trace's channel (src/eat.js checks)
 const NLF_MATTER: u32 = 1u;      // pigments are built from the stock and wear out
 const NLF_SAT: u32 = 2u;         // photosynthesis saturates
 const NLF_INHIB: u32 = 4u;       // photons past saturation bleach the pigment
+const NLF_SHED: u32 = 8u;        // (after the C12g + N1 merge) TRACE LEAVES LIFE: a worn or bleached pigment's trace atom goes to the DISH
+                                 // under the cell (the broken antenna's metal is lost with it), its two l back into the stock
 // counters (LG_N1 + 128 k, 64-bit): counts of photons (events) unless said otherwise
 const N1_RISE: u32 = 0u;         // heat counts the pigments' photons stored uphill (n x the engine's rise): the energy light made
 const N1_CAUGHT: u32 = 1u;       // photons the pigments caught
@@ -543,8 +545,19 @@ const N1_WEAR: u32 = 10u;        // pigment counts worn out (or let go while the
 const N1_INHIB: u32 = 11u;       // pigment counts bleached by photoinhibition
 const N1_HELD: u32 = 12u;        // snapshot (ledger pass): pigment counts held
 const N1_CELLS: u32 = 13u;       // snapshot: cells holding pigment
-var<workgroup> wn1: array<atomic<i32>, 12>;
+const N1_SHED: u32 = 14u;        // trace counts a worn or bleached pigment put into the dish (NLF_SHED)
+var<workgroup> wn1: array<atomic<i32>, 16>;   // (12 until the trace shed; 12, 13 stay 0: the ledger pass writes those)
 fn n1_flags() -> u32 { return bitcast<u32>(EP.nl[0].x); }
+// a broken pigment's trace (n counts): with NLF_SHED into the dish under the cell (while trace moves in the dish), else back into the
+// stock; returns what stays in the stock
+fn n1_shed(n: i32, cur: u32, idx: array<u32, 9>) -> i32 {
+  if (n > 0 && (n1_flags() & NLF_SHED) != 0u && cur != 0u && (EP.mask & (1u << N1_TRACE)) != 0u) {
+    spread9(cur + N1_TRACE * EP.n, idx, n);
+    atomicAdd(&wn1[N1_SHED], n);
+    return 0;
+  }
+  return n;
+}
 // the CAUSTIC light at p (src/water.js: the water surface focusing the light, x the light_factor; 1 without it)
 fn caustic_at(p: vec2f) -> f32 {
   if (HP.caus == 0u) { return 1.0; }
@@ -739,7 +752,7 @@ fn flush_counters(li: u32, slot: u32) {
     if (v != 0) { atomicAdd(&hb[LG_IO + 256u + 16u * (li - 16u) + (slot & 15u)], v); }
   }
   // step N1: the pigments' counters
-  if (li < 12u) {
+  if (li < 16u) {
     let v = atomicLoad(&wn1[li]);
     if (v != 0) { add64(LG_N1 + 128u * li + slot, v); }
   }
@@ -2055,7 +2068,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         }
         let pw = EP.nl[0].y * areaR2 * hRate;
         let nw = min(i32(floor(f32(pg) * EP.nl[1].x + u01(pcg(rs + 0x2a4c3e1fu)))), pg);
-        if (nw > 0) { pg -= nw; m[N1_TRACE] += nw; m[MB_CH_L] += 2 * nw; atomicAdd(&wn1[N1_WEAR], nw); }
+        if (nw > 0) { pg -= nw; m[N1_TRACE] += n1_shed(nw, cur, idx); m[MB_CH_L] += 2 * nw; atomicAdd(&wn1[N1_WEAR], nw); }
         let c16 = i32(EP.nl[0].w);
         if (f32(pg) < pw) {
           var nb = i32(floor((pw - f32(pg)) * EP.nl[0].z + u01(pcg(rs + 0x5be0cd19u))));
@@ -2106,7 +2119,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
             atomicAdd(&wn1[N1_ISAT], n - nu1);
             if ((n1_flags() & NLF_INHIB) != 0u && n > nu1 && pg > 0) {
               let nb = min(i32(floor(f32(n - nu1) * EP.nl[1].z + u01(pcg(rs + k * 0x27d4eb2fu + 0x165667b1u)))), pg);
-              if (nb > 0) { pg -= nb; m[N1_TRACE] += nb; m[MB_CH_L] += 2 * nb; atomicAdd(&wn1[N1_INHIB], nb); }
+              if (nb > 0) { pg -= nb; m[N1_TRACE] += n1_shed(nb, cur, idx); m[MB_CH_L] += 2 * nb; atomicAdd(&wn1[N1_INHIB], nb); }
             }
             // ---- end of the step N1 block ----
           }

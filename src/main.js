@@ -87,6 +87,11 @@
 //               swelling: the stretch genes still drift, the NEUTRAL control), ?stretch=0 stretch opens no channels, ?tear=0 overstretch
 //               does not burst, ?tolcost=0 the stretch tolerance is free; ?satscale=x, ?kosm=x, ?kstretch=x, ?wtol=x knobs;
 //               ?photolysis=0 light cannot free atoms in the open dish (any free t is made by life) (rules panel, Waste must leave)
+//   ?hotvent=0    step C12f: the vent as in step C12d (fuel and metal-like givers, no heat) instead of a HOT vent of free givers;
+//               ?ventheat=x the heat a hot vent puts in per atom it drips; ?sea=1 the SEA's faint supply of the free heavy taker T
+//               everywhere (on in the Deep vents preset), ?searate=x its rate (atoms per R² per s at an empty pixel), ?sealevel=x its
+//               level (atoms per R²) (rules panel, Vents in the dark); ?starter=x the founders' starter charge (a share of the
+//               battery, default 0.4; booked as energy in)
 //   ?fgenes=0     step C13: start with the field genes off (every cell today's lever, emission, sensing, tuning, angle; the genes
 //               still drift); ?gateglue=0, ?gatepump=0, ?gateengine=0, ?gatediv=0, ?gateturn=0 one gate off (?gates=0 all five),
 //               ?pushgene=0 the push gene off (field A pushes every cell as before), ?gatenull=1 the NEUTRAL control (the gate
@@ -392,6 +397,17 @@ async function boot() {
         if (params.has(q) && Number.isFinite(v) && v >= 0) WP[k] = v;
       }
     }
+    {   // step C12f: vents in the dark
+      const VP = matter.vents.params;
+      if (params.has('hotvent')) VP.hot = flag('hotvent');
+      if (params.has('sea')) VP.sea = flag('sea');
+      const st = Number(params.get('starter'));   // (the starter charge, a share of the battery: any scene; the Deep vents preset fills it)
+      if (params.has('starter') && Number.isFinite(st) && st >= 0) cells.eat.params.starter = Math.min(1, st);
+      for (const [q, k] of [['ventheat', 'heat'], ['searate', 'seaRate'], ['sealevel', 'seaLevel']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) VP[k] = v;
+      }
+    }
     background.heat = cells.heat;
     // app: how the culture is spread and how diverse it is (?spread= ?colonies= ?diversity=, or a preset's), before the first
     // resize seeds it
@@ -407,7 +423,7 @@ async function boot() {
   window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter, eat: cells.eat, neon, charge,
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
-    electrons: matter.electrons, waste: cells.eat.waste };
+    electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
   window.moire.budgets = budgets;      // the fast speeds' tick budgets
@@ -656,7 +672,8 @@ function frame(now) {
   if (!entropyEl.hidden) {
     const compact = view.cssW < 560 || view.cssH < 500;   // a phone (either way up): shorter lines
     let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}\n${charge.panelLine(compact)}\n${cells.eat.membrane.panelLine(compact)}\n${cells.eat.lipids.panelLine(compact)}\n${cells.dipole.panelLine(compact)}\n${cells.eat.pumps.panelLine(compact)}\n${cells.eat.catalysts.panelLine(compact)}\n${cells.eat.hardlight.panelLine(compact)}\n${cells.division.panelLine(compact)}\n${cells.walls.panelLine(compact)}\n${cells.guides.panelLine(compact)}\n${matter.oil.panelLine(compact)}\n${ELECTRONS ? matter.electrons.panelLine(compact) : matter.excited.panelLine(compact)}
-${cells.eat.waste.panelLine(compact)}`;
+${cells.eat.waste.panelLine(compact)}${ELECTRONS ? `
+${matter.vents.panelLine(compact)}` : ''}`;
     if (paused || speed !== 1) {
       const r = reachedText();
       const sp = paused ? 'paused' : r ? (compact ? r : `${speedName(speed)} · reached ${r}`) : speedName(speed);
@@ -726,6 +743,7 @@ function drawOverlay() {
     ...cells.eat.lipids.overlayLines(),
     ...(ELECTRONS ? matter.electrons.overlayLines() : matter.excited.overlayLines()),
     ...cells.eat.waste.overlayLines(),
+    ...matter.vents.overlayLines(),
     ...cells.dipole.overlayLines(),
     ...cells.eat.pumps.overlayLines(),
     ...cells.eat.catalysts.overlayLines(),

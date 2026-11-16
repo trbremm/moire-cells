@@ -71,8 +71,8 @@ const LG_CAT = 21760;               // heat_common.wgsl: the catalysts' census (
 const LG_HL = 22016;                // heat_common.wgsl: the hard light census (its first 8 numbers are a snapshot; step C8)
 // heat_common.wgsl (COUNT: 5 x 64; step C6: EV2 16 counters, 64-bit; CEN the census, 72 numbers x 16 slots)
 const LG_K = { STOCK: 11520, BAT: 13184, START: 13312, EV: 13440, COUNT: 15488, EV2: 15872, CEN: 17920 };
-const EV2 = ['pig0', 'pig1', 'pig2', 'pig3', 'made', 'deficit', 'eBurn', 'eSwap', 'eForm', 'eGain', 'eHeat', 'upkeep', 'idle', 'stored'];
-const EV2_ENERGY = /^(pig\d|deficit|eGain|eHeat|upkeep|idle)$/;
+const EV2 = ['pig0', 'pig1', 'pig2', 'pig3', 'made', 'deficit', 'eBurn', 'eSwap', 'eForm', 'eGain', 'eHeat', 'upkeep', 'idle', 'stored', 'eGrad', 'eGradE'];   // (step C12f: + the gradient engines)
+const EV2_ENERGY = /^(pig\d|deficit|eGain|eHeat|upkeep|idle|eGradE)$/;
 export const STRATS = ['harvest', 'burn', 'both', 'other'];
 const CEN_N = 76;
 const LG_Q_CEN = 19136;
@@ -374,7 +374,7 @@ export class Eat {
     const rate = Object.fromEntries(EV.map((k, j) => [k, dt > 0.05 ? (H[H.length - 1][1 + j] - H[0][1 + j]) / dt : 0]));
     // step C6: the engines' counters (energy in energy units, matter in substance units) and the census
     const T2 = this.tot2;
-    EV2.forEach((k, j) => { const v = wide(LG_K.EV2 + 128 * j); T2[k] += EV2_ENERGY.test(k) ? v / HEAT_SCALE : v / ATOM_SCALE; });
+    EV2.forEach((k, j) => { const v = wide(LG_K.EV2 + 128 * j); T2[k] = (T2[k] || 0) + (EV2_ENERGY.test(k) ? v / HEAT_SCALE : v / ATOM_SCALE); });   // (|| 0: a snapshot from before step C12f)
     const H2 = this.hist2;
     H2.push([rec.time, ...EV2.map((k) => T2[k])]);
     while (H2.length > 2 && rec.time - H2[1][0] >= 1) H2.shift();

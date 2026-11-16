@@ -35,7 +35,7 @@ const LIGHT_COMMON_URL = 'src/shaders/light_common.wgsl';
 
 export const HEAT_COMMON_URL = 'src/shaders/heat_common.wgsl';
 export const HEAT_SCALE = 65536;          // counts per energy unit (HEAT_SCALE in heat_common.wgsl)
-export const LEDGER_WORDS = 28288;              // LEDGER_WORDS in heat_common.wgsl (27776 until step C12e; words 3072 on: step C3's matter ledger;
+export const LEDGER_WORDS = 28416;              // LEDGER_WORDS in heat_common.wgsl (28288 until step C12f; 27776 until step C12e; words 3072 on: step C3's matter ledger;
                                                 // 10240 on: step C4's chemistry; 11520 on: step C5, cells eat; 15872 on:
                                                 // step C6, engines; 19136 on: step C6b, charge; 19712 on: step C6c, the
                                                 // membrane chemistry; 20224 on: step C7, the pumps; 21760 on: step C7b,
@@ -49,6 +49,7 @@ const LG_WIDE = new Set(['OUT', 'HEAT', 'MOVE']);
 // step C2 (heat_common.wgsl): per band (4) light in and light absorbed, 64-bit, 128 words each; the snapshot of the
 // heat under cells and pixels in / out of the light: 4 classes of 64 counts (i32), and their heat (64-bit, 128 words each)
 const LG_LIGHT_IN = 1024, LG_LIGHT_ABS = 1536, LG_SPOT_N = 2048, LG_SPOT_T = 2304;
+const LG_VENT = 28288;   // step C12f (heat_common.wgsl): the heat the hot vents put in, 64 slots (i32)
 const SPOT_UNIT = 64;     // the spot snapshot counts heat in units of 64 counts (SPOT_SHIFT in heat.wgsl)
 const HP_BYTES = 64;                      // struct HeatP
 const HT_SLOT = 256;                      // struct HeatTick slots, bound with a dynamic offset
@@ -89,7 +90,7 @@ export class Heat {
     this.eat = null;        // step C5: the cells' eating (src/eat.js), which books into this ledger too
     this.charge = null;     // step C6b: the charge field (src/charge.js): its blocks live in this buffer too
     // ledger (cumulative since the page started; energy units)
-    this.tot = { work: 0, base: 0, out: 0, drag: 0, kick: 0, lin: [0, 0, 0, 0], labs: [0, 0, 0, 0] };
+    this.tot = { work: 0, base: 0, out: 0, drag: 0, kick: 0, lin: [0, 0, 0, 0], labs: [0, 0, 0, 0], vent: 0 };   // (vent: step C12f)
     this.ledger = null;     // last snapshot: { time, moving, heat, in, out, rounding, rate }
     this.hist = [];         // [time, work, base, out, drag, kick] for the rates
     this.seq = 0; this.nextSeq = 0; this.pending = new Map();
@@ -357,6 +358,7 @@ export class Heat {
     const plain = (a) => { let s = 0; for (let k = a; k < a + 64; k++) s += w[k]; return s; };
     const T = this.tot, kick = sum('KICK');
     T.work += sum('WORK'); T.base += sum('BASE'); T.out += sum('OUT'); T.drag += sum('DRAG'); T.kick += kick;
+    T.vent = (T.vent || 0) + plain(LG_VENT) / HEAT_SCALE;   // step C12f: the hot vents' heat (energy in; 0 in a snapshot from before)
     for (let b = 0; b < 4; b++) {
       T.lin[b] += wide(LG_LIGHT_IN + 128 * b) / HEAT_SCALE;
       T.labs[b] += wide(LG_LIGHT_ABS + 128 * b) / HEAT_SCALE;
@@ -370,7 +372,7 @@ export class Heat {
     // step C6: the light the cells' pigments caught came in too (src/eat.js reads it from the same read-back, first)
     const PG = this.eat ? this.eat.pig : { tot: 0, rate: [0, 0, 0, 0], sum: 0 };
     // (step C12: and the chemical energy springs of molecules brought in, C.added)
-    const moving = sum('MOVE'), heat = sum('HEAT'), inn = T.work + T.base + labs + C.light + (C.start || 0) + PG.tot + (C.added || 0);
+    const moving = sum('MOVE'), heat = sum('HEAT'), inn = T.work + T.base + labs + C.light + (C.start || 0) + PG.tot + (C.added || 0) + T.vent;
     // the heat under the cells / pixels in the light and the rest, as temperatures (heat per R^2)
     const ts = this.tempScale;
     const spot = [0, 1, 2, 3].map((k) => {
@@ -378,12 +380,12 @@ export class Heat {
       return { n, temp: n ? wide(LG_SPOT_T + 128 * k) * SPOT_UNIT * ts / n : 0 };
     });
     const H = this.hist;
-    H.push([rec.time, T.work, T.base, T.out, T.drag, T.kick, lin, labs, ...T.lin, ...T.labs]);
+    H.push([rec.time, T.work, T.base, T.out, T.drag, T.kick, lin, labs, ...T.lin, ...T.labs, T.vent]);
     while (H.length > 2 && rec.time - H[1][0] >= RATE_WINDOW) H.shift();
     const h0 = H[0], dt = rec.time - h0[0];
     const rate = (k) => (dt > 0.05 ? (H[H.length - 1][k] - h0[k]) / dt : 0);
     this.ledger = {
-      time: rec.time, moving, heat, in: inn, out: T.out, rounding: inn - (moving + heat + T.out + C.dish + cellsE + C.out),
+      time: rec.time, moving, heat, in: inn, vent: T.vent, out: T.out, rounding: inn - (moving + heat + T.out + C.dish + cellsE + C.out),
       chem: C.dish + cellsE, chemDish: C.dish, chemCells: C.cells || 0, bat: C.bat || 0, chemOut: C.out,
       light: { in: lin, abs: labs, chem: C.light, pig: PG.tot, pass: lin - labs - C.light - PG.tot },
       rate: {
@@ -393,6 +395,7 @@ export class Heat {
         binChem: C.lightRate || [0, 0, 0, 0], lchem: (C.lightRate || []).reduce((a, b) => a + b, 0),
         // step C6: the light the cells' pigments caught, per s
         binPig: PG.rate, lpig: PG.sum,
+        vent: rate(16),   // step C12f: the hot vents' heat per s
       },
       spot: { cellsIn: spot[0], cellsOut: spot[1], pxIn: spot[2], pxOut: spot[3] },
       kickPerTick: rec.ticks && this.count ? kick / (rec.ticks * this.count) : 0,
@@ -446,7 +449,7 @@ export class Heat {
       const area = view.cssW * view.cssH / (this.R * this.R);
       const sigma = HEAT_V0_PX * Math.sqrt(Math.max(0, L.kickPerTick)) / this.R;
       const r = L.rate;
-      lines.push(`energy per s: in ${fmt(r.work + r.base + r.labs + r.lchem + r.lpig)} (work by forces ${fmt(r.work)}, warmth ${fmt(r.base)}, light ${fmt(r.labs)}` +
+      lines.push(`energy per s: in ${fmt(r.work + r.base + r.labs + r.lchem + r.lpig + r.vent)} (work by forces ${fmt(r.work)}, warmth ${fmt(r.base)}, hot vents ${fmt(r.vent)}, light ${fmt(r.labs)}` +
         ` + caught by the substances ${fmt(r.lchem)} + by the cells' pigments ${fmt(r.lpig)}) · stored ${fmt(L.chem)} (in the dish's bonds ${fmt(L.chemDish)}, in the cells' stock ${fmt(L.chemCells)}, batteries ${fmt(L.bat)}), out with matter ${fmt(L.chemOut)} · drag → heat ${fmt(r.drag)}` +
         ` · kicks ← heat ${fmt(r.kick)} · out ${fmt(r.out)} · mean temperature ${(L.heat / area).toFixed(3)}/R² · kick ≈ ${sigma.toFixed(3)} R/s per axis` +
         ` (the old jitter ≈ 0.13) · rounding ${fmtRound(L.rounding)} (${L.in > 0 ? (L.rounding / L.in).toExponential(1) : '-'} of in)`);

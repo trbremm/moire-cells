@@ -1,0 +1,87 @@
+{
+ "batch": "c12f-pilot3",
+ "runs": [
+  {
+   "name": "c12f-pilot-sea20",
+   "description": "C12f pilot (sea20): vent preset, heat 20, 10 min",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "ventheat": 20,
+    "starter": 1,
+    "searate": 0.02,
+    "sealevel": 0.5
+   },
+   "duration": 600,
+   "sample_every": 10,
+   "snapshots": [
+    {
+     "t": 60,
+     "grid": true
+    },
+    {
+     "t": 180,
+     "grid": true
+    },
+    {
+     "t": 600,
+     "grid": true
+    }
+   ],
+   "shots": [
+    {
+     "t": 180
+    },
+    {
+     "t": 600
+    },
+    {
+     "t": 600,
+     "panel": true,
+     "name": "panel"
+    }
+   ]
+  },
+  {
+   "name": "c12f-pilot-sea50",
+   "description": "C12f pilot (sea50): vent preset, heat 20, 10 min",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "ventheat": 20,
+    "starter": 1,
+    "searate": 0.05,
+    "sealevel": 0.5
+   },
+   "duration": 600,
+   "sample_every": 10,
+   "snapshots": [
+    {
+     "t": 60,
+     "grid": true
+    },
+    {
+     "t": 180,
+     "grid": true
+    },
+    {
+     "t": 600,
+     "grid": true
+    }
+   ],
+   "shots": [
+    {
+     "t": 180
+    },
+    {
+     "t": 600
+    },
+    {
+     "t": 600,
+     "panel": true,
+     "name": "panel"
+    }
+   ]
+  }
+ ]
+}

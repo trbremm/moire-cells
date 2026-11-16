@@ -25,7 +25,7 @@ export const TOOLS = [
   { id: 'ripple', name: 'ripple', label: 'drop a ripple', key: '1' },
   ELECTRONS ? { id: 'light', name: 'mineral spring', label: 'drop a mineral spring (water-like gt and linkers)', spring: 'light', key: '2' }
     : { id: 'light', name: 'light spring', label: 'drop a light spring', spring: 'light', key: '2' },
-  ELECTRONS ? { id: 'heavy', name: 'vent', label: 'drop a vent (fuel-like gT and GT, free heavy givers G, trace)', spring: 'heavy', key: '3' }
+  ELECTRONS ? { id: 'heavy', name: 'vent', label: 'drop a vent (hot: free givers G and g, a little fuel gT and GT, trace; step C12f)', spring: 'heavy', key: '3' }
     : { id: 'heavy', name: 'heavy spring', label: 'drop a heavy spring', spring: 'heavy', key: '3' },
   // step C12: oil, soap or both (the rules panel, Oils and water: "oil tool drops"); no key is free
   { id: 'oil', name: 'oil spring', label: 'drop an oil spring (oil, soap or both: the rules panel, Oils and water)', spring: 'oil', oilSpring: true },
@@ -62,6 +62,7 @@ export const RULE_GROUPS = [
   ['excited', 'Excited waste (step C12c)'],
   ['electrons', 'Electrons (step C12d)'],
   ['waste', 'Waste must leave (step C12e)'],
+  ['vents', 'Vents in the dark (step C12f)'],
   ['guides', 'Fields as guides (step C13)'],
   ['state', 'Save and load the state (experiments)'],
 ];
@@ -644,6 +645,22 @@ export function makeActions(app) {
     wsknob('kOsm', 'swelling per pressure', 'kOsm', 0.01, 20, 1.5, 2, 'how much a cell swells (area share) per unit of osmotic pressure, at stiffness 1'),
     wsknob('kStretch', 'stretch channels', 'kStretch', 0.01, 50, 1.5, 2, 'the passive exchange × (1 + this × e^gene × swelling)'),
     wsknob('wTol', 'stretch tolerance', 'wTol', 0.02, 5, 1.25, 2, 'the swelling a whole membrane bears at gene 0 (× e^gene) before it tears'),
+  );
+
+  // ---------- vents in the dark (step C12f; panel only: no keys are free) ----------
+  const VP = () => app.matter.vents.params;
+  const vknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'vents', type: 'knob', get: () => VP()[key].toFixed(digits),
+    run: (k) => { const p = VP(); p[key] = Math.max(lo, Math.min(hi, +(p[key] * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    { id: 'hotvent', keys: [], label: 'hot vents', group: 'vents', type: 'toggle', get: () => ELECTRONS && VP().hot,
+      run: () => (ELECTRONS ? `vents ${flip(VP(), 'hot') ? 'hot: they drip free givers (G, g), a little fuel and trace, and heat the dish where they drip' : 'as in step C12d: fuel gT and GT, free G and trace, no heat'}` : 'needs electrons'),
+      help: 'a hot vent drips free givers (metal-like G, hydrogen-like g) and heats the grid where it drips (booked as energy in); its heat pays the sparks close in, so the gradient burns away there by itself' },
+    { id: 'sea', keys: [], label: 'the sea (free T)', group: 'vents', type: 'toggle', get: () => ELECTRONS && VP().sea,
+      run: () => (ELECTRONS ? `the sea ${flip(VP(), 'sea') ? `on: a faint supply of the free heavy taker T everywhere, topped up toward ${VP().seaLevel} per R²` : 'off: no T from outside'}` : 'needs electrons'),
+      help: 'a faint dish-wide supply of the free heavy taker T (oxidised, sulfate-like), topped up toward the sea’s level, booked as added matter: with the vents’ givers it makes a redox gradient (G + T → GT releases 2.375, g + T → gT 1.5)' },
+    vknob('ventHeat', 'vent heat per atom', 'heat', 0, 200, 1.5, 2, 'energy a hot vent puts into the grid per atom it drips'),
+    vknob('seaRate', 'sea rate', 'seaRate', 0.0001, 1, 1.5, 4, 'atoms of T per R² per s the sea brings to a pixel holding none (less as it nears the level)'),
+    vknob('seaLevel', 'sea level', 'seaLevel', 0.01, 20, 1.5, 3, 'the sea tops T up toward this many atoms per R², never above'),
   );
 
   // ---------- hard light mutates (step C8; panel only: no keys are free) ----------

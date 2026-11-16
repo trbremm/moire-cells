@@ -1,0 +1,13 @@
+{
+ "batch": "c12f-diag",
+ "runs": [
+  {"name": "c12f-diag-dark", "description": "C12f diagnosis: the Deep vents preset in total darkness, before the change (seed 3, 150 s)",
+   "query": {"preset": "vent", "light": "off", "seed": 3}, "duration": 150, "sample_every": 5,
+   "snapshots": [{"t": 5}, {"t": 20}, {"t": 50}],
+   "shots": [{"t": 20}, {"t": 60}, {"t": 150}]},
+  {"name": "c12f-diag-dim", "description": "C12f diagnosis: the Deep vents preset with its dim light, before the change (seed 3, 150 s)",
+   "query": {"preset": "vent", "seed": 3}, "duration": 150, "sample_every": 5,
+   "snapshots": [{"t": 20}, {"t": 60}],
+   "shots": [{"t": 60}, {"t": 150}]}
+ ]
+}

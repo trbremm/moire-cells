@@ -21,16 +21,17 @@ const VALUE = (v) => String(v);
 export const PRESETS = {
   vent: {
     label: 'Deep vents',
-    desc: 'Deep water: only a faint, steady glow from above (a third of the usual light, no days). Three vents pour out fuel and metal-like givers, each with a mineral seep beside it; three colonies start on them. (With ?light=off it is truly dark: then nothing lives for long.)',
-    query: { light: 'full', day: 0, clouds: 0, spread: 'colonies', colonies: 3, cells: 600 },
-    centres: (W, H) => ring3(W, H, 0.27, -90).map(([x, y]) => [x + (W / 2 - x) * 0.06, y + (H / 2 - y) * 0.06]),
+    desc: 'Deep water in total darkness. Three hot vents pour out free givers (metal-like G, hydrogen-like g) and heat; the sea brings a faint, steady supply of the free taker T everywhere. Where giver meets taker cold, a cell can eat the gradient (G + T, g + T); close to a vent its heat burns it away first. A mineral seep beside each vent brings linkers for membranes. Three colonies of random genomes start on the vents, their batteries just short of dividing. (With &light=full: a faint glow from above, a third of the usual light.)',
+    query: { light: 'off', day: 0, clouds: 0, spread: 'colonies', colonies: 3, cells: 600, sea: 1, diversity: 'random', starter: 0.55 },
+    centres: (W, H) => ring3(W, H, 0.27, -90),
     scene({ matter, light, W, H }) {
-      light.params.power *= 0.3;   // the faint glow
-      // each vent with a mineral spring beside it (the vent's fuel and metal alone feed nobody: in this chemistry fermenting earns a
-      // cell about 0.001 per s; the cells live on minerals split by light and on what they then burn)
+      light.params.power *= 0.3;   // the faint glow, if the light is switched on (&light=full)
+      // step C12f: each vent HOT (src/vents.js: free givers and heat), with a mineral seep beside it (linkers for membranes, and the
+      // water-like gt); the sea (?sea=1, the preset's) brings T everywhere. Before step C12f the vent's fuel and metal alone fed
+      // nobody in the dark (fermenting earned the culture about 0.001 per s; README "Step C12f: vents in the dark")
       const m = Math.min(W, H);
       for (const [x, y] of ring3(W, H, 0.27, -90)) {
-        matter.addSpring(x, y, 'heavy', 1e9, { rate: 18 });
+        matter.addSpring(x, y, 'heavy', 1e9, { rate: 40 });
         const dx = x - W / 2, dy = y - H / 2, d = Math.hypot(dx, dy) || 1;
         matter.addSpring(x + dx / d * 0.07 * m, y + dy / d * 0.07 * m, 'light', 1e9, { rate: 12 });
       }
@@ -290,7 +291,7 @@ export function openCultureDialog(ctx) {
     const presetSpread = (P && P.query.spread) || 'clump';
     if (st.spread !== presetSpread) keep.set('spread', st.spread);
     if (st.spread === 'colonies' && st.colonies !== ((P && P.query.colonies) || 5)) keep.set('colonies', String(st.colonies));
-    if (st.diversity !== 'mixed') keep.set('diversity', st.diversity);
+    if (st.diversity !== ((P && P.query.diversity) || 'mixed')) keep.set('diversity', st.diversity);
     if (!st.newSeed) keep.set('seed', String(ctx.control.seed));
     u.search = keep.toString();
     return u.href;
@@ -316,6 +317,7 @@ export function openCultureDialog(ctx) {
         if (P.query.cells) st.cells = P.query.cells; else if (st.cells === 60) st.cells = C.start === 60 ? 2000 : C.start;
         st.spread = P.query.spread || 'clump';
         if (P.query.colonies) st.colonies = P.query.colonies;
+        st.diversity = P.query.diversity || 'mixed';
         nIn.value = String(st.cells); colIn.value = String(st.colonies);
       }
     } else if (b.dataset.n) { st.cells = Number(b.dataset.n); nIn.value = String(st.cells); }

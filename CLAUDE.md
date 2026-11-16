@@ -632,6 +632,12 @@ PREDATORS (user 2026-11-16 "should we start planning for macrophages? and other 
     under selection, so unrelated lineages could converge). Watch whether cannibalism dies out (kin selection) vs a
     neutral control; it may persist (starving colonies). View: colour by marker, like Brainbow / Confetti lineage tracing
     (a view, not the default).
+    MARKER AS A MEMBRANE LANDSCAPE (user 2026-11-16: "add a gene for marker membrane landscape"; Claude's reading, to
+    confirm): the marker genes set a PATTERN on the membrane surface (a small periodic landscape around the outline:
+    e.g. lattice angle, period, phase per side), like surface molecules / MHC on a real cell. At a contact two membranes'
+    landscapes are compared by their MOIRE BEAT: near-identical patterns beat slowly (match = kin), different ones beat
+    fast (stranger). A gene sets how much marker the cell DISPLAYS (it can hide it: camouflage, mimicry), and the gene
+    network may regulate it. Drawn as fine texture on the membrane when zoomed (like surface immunostaining).
 EXPERIMENT STYLE FOR T1 AND PREDATORS (user 2026-11-16: "we just need to play with different very random initial stem
     cells in different colonies and see it unfolds"): no hand designs needed to start; several colonies, each from its own
     random founder (?spread=colonies&colonies=N, diversity mixed: colony k = founder k; works today), watched as they meet.

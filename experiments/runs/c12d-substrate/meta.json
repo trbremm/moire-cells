@@ -1,0 +1,98 @@
+{
+  "name": "c12d-substrate",
+  "description": "step C12d: the substrate alone (one cell), the whole dish lit, a never-drying mineral spring (left) and vent (right), 6 min",
+  "condition": {
+    "name": "c12d-substrate",
+    "description": "step C12d: the substrate alone (one cell), the whole dish lit, a never-drying mineral spring (left) and vent (right), 6 min",
+    "query": {
+      "seed": 3,
+      "cells": 1,
+      "light": "full",
+      "springs": 0
+    },
+    "dpr": 2,
+    "duration": 360,
+    "sample_every": 10,
+    "evals": [
+      {
+        "t": 0,
+        "js": "const v = moire.control.view(); moire.matter.clearSprings(); moire.matter.addSpring(v.cssW * 0.42, v.cssH * 0.5, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.58, v.cssH * 0.5, 'heavy', 1e9); return moire.matter.springs.map(s => s.kind)"
+      }
+    ],
+    "shots": [
+      {
+        "t": 60
+      },
+      {
+        "t": 180
+      },
+      {
+        "t": 360
+      },
+      {
+        "t": 360,
+        "panel": true,
+        "name": "panel"
+      },
+      {
+        "t": 180,
+        "crop": [
+          430,
+          280,
+          420,
+          240
+        ],
+        "scale": 3,
+        "name": "springs_t180"
+      },
+      {
+        "t": 360,
+        "crop": [
+          430,
+          280,
+          420,
+          240
+        ],
+        "scale": 3,
+        "name": "springs_t360"
+      }
+    ]
+  },
+  "url": "http://localhost:55346/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&cells=1&light=full&springs=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "9c55eb92a7c25f4989fa7771865e8ad94a34b563",
+  "dirty": false,
+  "started": "2026-11-16T10:02:52",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 360.0,
+  "run_wall_s": 28.03,
+  "speed_reached": 12.85,
+  "samples": 37,
+  "shots": [
+    "shots/t60.png",
+    "shots/t180.png",
+    "shots/springs_t180.png",
+    "shots/t360.png",
+    "shots/panel.png",
+    "shots/springs_t360.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "const v = moire.control.view(); moire.matter.clearSprings(); moire.matter.addSpring(v.cssW * 0.42, v.cssH * 0.5, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.58, v.cssH * 0.5, 'heavy', 1e9); return moire.matter.springs.map(s => s.kind)",
+      "result": [
+        "light",
+        "heavy"
+      ]
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-16T10:04:02",
+  "wall_s": 69.99
+}

@@ -1,0 +1,11 @@
+{
+ "batch": "c12d-oxygen",
+ "runs": [
+  "oxy-spot.json",
+  "oxy-full.json"
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

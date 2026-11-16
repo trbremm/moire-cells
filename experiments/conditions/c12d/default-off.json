@@ -1,0 +1,33 @@
+{
+ "name": "c12d-default-off",
+ "description": "step C12d: the default scene, 20 min, electrons off",
+ "query": {
+  "electrons": 0
+ },
+ "duration": 1200,
+ "sample_every": 20,
+ "shots": [
+  {
+   "t": 300
+  },
+  {
+   "t": 600
+  },
+  {
+   "t": 600,
+   "view": "strategy"
+  },
+  {
+   "t": 1200
+  },
+  {
+   "t": 1200,
+   "view": "strategy"
+  },
+  {
+   "t": 1200,
+   "panel": true,
+   "name": "panel"
+  }
+ ]
+}

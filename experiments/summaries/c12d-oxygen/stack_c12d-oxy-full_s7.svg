@@ -1,0 +1,675 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 1554" width="760" height="1554" role="img" aria-label="c12d-oxy-full_s7: 14 measures on one time axis">
+<style>:root{--surface:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--grid:#e4e3df}.s0{stroke:#2a78d6;fill:#2a78d6}.s1{stroke:#eb6834;fill:#eb6834}.s2{stroke:#1baf7a;fill:#1baf7a}.s3{stroke:#eda100;fill:#eda100}.s4{stroke:#e87ba4;fill:#e87ba4}.s5{stroke:#008300;fill:#008300}.s6{stroke:#6250d6;fill:#6250d6}.s7{stroke:#e34948;fill:#e34948}@media (prefers-color-scheme: dark){:root{--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--grid:#383835}.s0{stroke:#3987e5;fill:#3987e5}.s1{stroke:#d95926;fill:#d95926}.s2{stroke:#199e70;fill:#199e70}.s3{stroke:#c98500;fill:#c98500}.s4{stroke:#d55181;fill:#d55181}.s5{stroke:#008300;fill:#008300}.s6{stroke:#9085e9;fill:#9085e9}.s7{stroke:#e66767;fill:#e66767}}text{font:12px system-ui,-apple-system,'Segoe UI',sans-serif;fill:var(--ink2)}.title{font-size:14px;font-weight:600;fill:var(--ink)}.ptitle{font-weight:600;fill:var(--ink)}.line{fill:none;stroke-width:1.8;stroke-linejoin:round}.grid{stroke:var(--grid);stroke-width:1}.hit{fill:transparent;stroke:none}</style>
+<rect width="760" height="1554" fill="var(--surface)"/>
+<text class="title" x="64" y="22">c12d-oxy-full_s7</text>
+<line class="grid" x1="64.0" x2="64.0" y1="40" y2="1510"/>
+<text x="64.0" y="1528" text-anchor="middle">0</text>
+<line class="grid" x1="198.4" x2="198.4" y1="40" y2="1510"/>
+<text x="198.4" y="1528" text-anchor="middle">500</text>
+<line class="grid" x1="332.8" x2="332.8" y1="40" y2="1510"/>
+<text x="332.8" y="1528" text-anchor="middle">1000</text>
+<line class="grid" x1="467.2" x2="467.2" y1="40" y2="1510"/>
+<text x="467.2" y="1528" text-anchor="middle">1500</text>
+<line class="grid" x1="601.6" x2="601.6" y1="40" y2="1510"/>
+<text x="601.6" y="1528" text-anchor="middle">2000</text>
+<line class="grid" x1="736.0" x2="736.0" y1="40" y2="1510"/>
+<text x="736.0" y="1528" text-anchor="middle">2500</text>
+<text x="400" y="1546" text-anchor="middle">run time (s)</text>
+<line class="grid" x1="64" x2="736" y1="132" y2="132"/>
+<line class="grid" x1="64" x2="736" y1="40" y2="40"/>
+<text x="58" y="136" text-anchor="end">0</text>
+<text x="58" y="50" text-anchor="end">6000</text>
+<text class="ptitle" x="70" y="53">cells</text>
+<path class="line s0" d="M64.0,101.7 L80.1,106.5 L96.3,126.2 L112.4,126.9 L128.5,116.1 L144.6,100.7 L160.8,86.9 L176.9,80.6 L193.0,71.5 L209.2,64.6 L225.3,57.3 L241.4,54.4 L257.5,49.3 L273.7,46.5 L289.8,40.0 L305.9,40.0 L322.0,40.0 L338.2,40.0 L354.3,40.0 L370.4,40.0 L386.6,40.0 L402.7,40.0 L418.8,40.0 L434.9,40.0 L451.1,40.0 L467.2,40.0 L483.3,40.0 L499.5,40.0 L515.6,40.0 L531.7,40.0 L547.8,40.0 L564.0,40.0 L580.1,40.0 L596.2,40.0 L612.4,40.0 L628.5,40.0 L644.6,40.0 L660.7,40.0 L676.9,40.0 L693.0,40.0 L709.1,40.0"/>
+<circle class="hit" cx="64.0" cy="101.7" r="5"><title>cells 1978 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="106.5" r="5"><title>cells 1660 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="126.2" r="5"><title>cells 381 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="126.9" r="5"><title>cells 330 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="116.1" r="5"><title>cells 1035 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="100.7" r="5"><title>cells 2040 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="86.9" r="5"><title>cells 2943 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="80.6" r="5"><title>cells 3354 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="71.5" r="5"><title>cells 3945 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="64.6" r="5"><title>cells 4395 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="57.3" r="5"><title>cells 4869 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="54.4" r="5"><title>cells 5064 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="49.3" r="5"><title>cells 5393 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="46.5" r="5"><title>cells 5578 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="40.0" r="5"><title>cells 6000 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="40.0" r="5"><title>cells 5999 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="40.0" r="5"><title>cells 5998 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="40.0" r="5"><title>cells 6000 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="40.0" r="5"><title>cells 6000 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="40.0" r="5"><title>cells 5999 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="40.0" r="5"><title>cells 6000 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="40.0" r="5"><title>cells 5997 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="40.0" r="5"><title>cells 6000 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="40.0" r="5"><title>cells 6000 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="40.0" r="5"><title>cells 6000 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="40.0" r="5"><title>cells 5998 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="40.0" r="5"><title>cells 6000 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="40.0" r="5"><title>cells 6000 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="40.0" r="5"><title>cells 6000 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="40.0" r="5"><title>cells 6000 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="40.0" r="5"><title>cells 6000 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="40.0" r="5"><title>cells 6000 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="40.0" r="5"><title>cells 5999 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="40.0" r="5"><title>cells 5999 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="40.0" r="5"><title>cells 6000 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="40.0" r="5"><title>cells 6000 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="40.0" r="5"><title>cells 6000 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="40.0" r="5"><title>cells 6000 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="40.0" r="5"><title>cells 5999 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="40.0" r="5"><title>cells 6000 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="40.0" r="5"><title>cells 5999 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="238" y2="238"/>
+<line class="grid" x1="64" x2="736" y1="146" y2="146"/>
+<text x="58" y="242" text-anchor="end">0</text>
+<text x="58" y="156" text-anchor="end">73.5</text>
+<text class="ptitle" x="70" y="159">photochemistry in the open per s</text>
+<path class="line s1" d="M64.0,238.0 L80.1,234.7 L96.3,235.3 L112.4,233.9 L128.5,230.5 L144.6,228.1 L160.8,232.8 L176.9,234.1 L193.0,226.2 L209.2,221.7 L225.3,230.2 L241.4,231.2 L257.5,215.7 L273.7,209.2 L289.8,225.8 L305.9,228.6 L322.0,213.2 L338.2,200.6 L354.3,221.2 L370.4,229.1 L386.6,211.3 L402.7,204.2 L418.8,223.7 L434.9,223.8 L451.1,181.7 L467.2,186.7 L483.3,214.8 L499.5,218.9 L515.6,193.5 L531.7,159.7 L547.8,205.9 L564.0,215.3 L580.1,171.4 L596.2,146.0 L612.4,200.0 L628.5,211.4 L644.6,151.3 L660.7,158.6 L676.9,194.1 L693.0,207.3 L709.1,173.1"/>
+<circle class="hit" cx="64.0" cy="238.0" r="5"><title>photochemistry in the open per s 0 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="234.7" r="5"><title>photochemistry in the open per s 2.66 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="235.3" r="5"><title>photochemistry in the open per s 2.2 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="233.9" r="5"><title>photochemistry in the open per s 3.24 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="230.5" r="5"><title>photochemistry in the open per s 5.99 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="228.1" r="5"><title>photochemistry in the open per s 7.94 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="232.8" r="5"><title>photochemistry in the open per s 4.11 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="234.1" r="5"><title>photochemistry in the open per s 3.14 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="226.2" r="5"><title>photochemistry in the open per s 9.41 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="221.7" r="5"><title>photochemistry in the open per s 13 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="230.2" r="5"><title>photochemistry in the open per s 6.25 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="231.2" r="5"><title>photochemistry in the open per s 5.45 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="215.7" r="5"><title>photochemistry in the open per s 17.8 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="209.2" r="5"><title>photochemistry in the open per s 23 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="225.8" r="5"><title>photochemistry in the open per s 9.74 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="228.6" r="5"><title>photochemistry in the open per s 7.48 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="213.2" r="5"><title>photochemistry in the open per s 19.8 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="200.6" r="5"><title>photochemistry in the open per s 29.8 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="221.2" r="5"><title>photochemistry in the open per s 13.4 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="229.1" r="5"><title>photochemistry in the open per s 7.1 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="211.3" r="5"><title>photochemistry in the open per s 21.3 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="204.2" r="5"><title>photochemistry in the open per s 27 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="223.7" r="5"><title>photochemistry in the open per s 11.4 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="223.8" r="5"><title>photochemistry in the open per s 11.3 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="181.7" r="5"><title>photochemistry in the open per s 44.9 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="186.7" r="5"><title>photochemistry in the open per s 41 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="214.8" r="5"><title>photochemistry in the open per s 18.5 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="218.9" r="5"><title>photochemistry in the open per s 15.3 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="193.5" r="5"><title>photochemistry in the open per s 35.6 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="159.7" r="5"><title>photochemistry in the open per s 62.5 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="205.9" r="5"><title>photochemistry in the open per s 25.7 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="215.3" r="5"><title>photochemistry in the open per s 18.1 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="171.4" r="5"><title>photochemistry in the open per s 53.2 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="146.0" r="5"><title>photochemistry in the open per s 73.5 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="200.0" r="5"><title>photochemistry in the open per s 30.4 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="211.4" r="5"><title>photochemistry in the open per s 21.2 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="151.3" r="5"><title>photochemistry in the open per s 69.2 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="158.6" r="5"><title>photochemistry in the open per s 63.4 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="194.1" r="5"><title>photochemistry in the open per s 35.1 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="207.3" r="5"><title>photochemistry in the open per s 24.5 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="173.1" r="5"><title>photochemistry in the open per s 51.8 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="344" y2="344"/>
+<line class="grid" x1="64" x2="736" y1="252" y2="252"/>
+<text x="58" y="348" text-anchor="end">0</text>
+<text x="58" y="262" text-anchor="end">538</text>
+<text class="ptitle" x="70" y="265">free t (oxygen) in the dish</text>
+<path class="line s2" d="M64.0,344.0 L80.1,341.0 L96.3,339.3 L112.4,337.7 L128.5,329.2 L144.6,322.8 L160.8,323.5 L176.9,327.6 L193.0,312.5 L209.2,309.9 L225.3,313.4 L241.4,319.5 L257.5,298.7 L273.7,297.2 L289.8,304.7 L305.9,312.3 L322.0,291.3 L338.2,285.5 L354.3,296.6 L370.4,315.8 L386.6,284.6 L402.7,278.6 L418.8,294.1 L434.9,308.9 L451.1,269.9 L467.2,272.2 L483.3,287.2 L499.5,299.9 L515.6,269.6 L531.7,262.0 L547.8,278.9 L564.0,296.4 L580.1,258.9 L596.2,254.2 L612.4,275.7 L628.5,294.8 L644.6,252.0 L660.7,254.3 L676.9,272.8 L693.0,290.4 L709.1,257.4"/>
+<circle class="hit" cx="64.0" cy="344.0" r="5"><title>free t (oxygen) in the dish 0 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="341.0" r="5"><title>free t (oxygen) in the dish 17.6 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="339.3" r="5"><title>free t (oxygen) in the dish 27.4 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="337.7" r="5"><title>free t (oxygen) in the dish 36.7 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="329.2" r="5"><title>free t (oxygen) in the dish 86.8 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="322.8" r="5"><title>free t (oxygen) in the dish 124 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="323.5" r="5"><title>free t (oxygen) in the dish 120 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="327.6" r="5"><title>free t (oxygen) in the dish 96.1 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="312.5" r="5"><title>free t (oxygen) in the dish 184 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="309.9" r="5"><title>free t (oxygen) in the dish 200 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="313.4" r="5"><title>free t (oxygen) in the dish 179 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="319.5" r="5"><title>free t (oxygen) in the dish 144 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="298.7" r="5"><title>free t (oxygen) in the dish 265 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="297.2" r="5"><title>free t (oxygen) in the dish 274 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="304.7" r="5"><title>free t (oxygen) in the dish 230 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="312.3" r="5"><title>free t (oxygen) in the dish 185 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="291.3" r="5"><title>free t (oxygen) in the dish 308 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="285.5" r="5"><title>free t (oxygen) in the dish 342 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="296.6" r="5"><title>free t (oxygen) in the dish 277 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="315.8" r="5"><title>free t (oxygen) in the dish 165 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="284.6" r="5"><title>free t (oxygen) in the dish 347 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="278.6" r="5"><title>free t (oxygen) in the dish 382 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="294.1" r="5"><title>free t (oxygen) in the dish 292 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="308.9" r="5"><title>free t (oxygen) in the dish 205 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="269.9" r="5"><title>free t (oxygen) in the dish 433 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="272.2" r="5"><title>free t (oxygen) in the dish 420 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="287.2" r="5"><title>free t (oxygen) in the dish 332 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="299.9" r="5"><title>free t (oxygen) in the dish 258 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="269.6" r="5"><title>free t (oxygen) in the dish 435 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="262.0" r="5"><title>free t (oxygen) in the dish 480 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="278.9" r="5"><title>free t (oxygen) in the dish 381 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="296.4" r="5"><title>free t (oxygen) in the dish 279 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="258.9" r="5"><title>free t (oxygen) in the dish 498 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="254.2" r="5"><title>free t (oxygen) in the dish 525 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="275.7" r="5"><title>free t (oxygen) in the dish 400 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="294.8" r="5"><title>free t (oxygen) in the dish 288 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="252.0" r="5"><title>free t (oxygen) in the dish 538 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="254.3" r="5"><title>free t (oxygen) in the dish 525 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="272.8" r="5"><title>free t (oxygen) in the dish 416 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="290.4" r="5"><title>free t (oxygen) in the dish 313 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="257.4" r="5"><title>free t (oxygen) in the dish 506 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="450" y2="450"/>
+<line class="grid" x1="64" x2="736" y1="358" y2="358"/>
+<text x="58" y="454" text-anchor="end">0</text>
+<text x="58" y="368" text-anchor="end">18.8</text>
+<text class="ptitle" x="70" y="371">free G (the sink)</text>
+<path class="line s3" d="M64.0,450.0 L80.1,399.7 L96.3,365.9 L112.4,379.6 L128.5,412.0 L144.6,398.3 L160.8,412.9 L176.9,422.7 L193.0,402.9 L209.2,388.6 L225.3,398.5 L241.4,389.9 L257.5,358.0 L273.7,360.7 L289.8,375.3 L305.9,381.2 L322.0,359.9 L338.2,362.5 L354.3,377.8 L370.4,392.3 L386.6,373.9 L402.7,371.8 L418.8,381.2 L434.9,381.4 L451.1,365.8 L467.2,374.5 L483.3,390.3 L499.5,396.7 L515.6,380.4 L531.7,372.5 L547.8,393.2 L564.0,398.4 L580.1,375.5 L596.2,373.2 L612.4,390.8 L628.5,393.4 L644.6,370.9 L660.7,374.3 L676.9,387.4 L693.0,395.3 L709.1,379.9"/>
+<circle class="hit" cx="64.0" cy="450.0" r="5"><title>free G (the sink) 0 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="399.7" r="5"><title>free G (the sink) 10.3 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="365.9" r="5"><title>free G (the sink) 17.2 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="379.6" r="5"><title>free G (the sink) 14.4 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="412.0" r="5"><title>free G (the sink) 7.77 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="398.3" r="5"><title>free G (the sink) 10.6 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="412.9" r="5"><title>free G (the sink) 7.61 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="422.7" r="5"><title>free G (the sink) 5.6 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="402.9" r="5"><title>free G (the sink) 9.64 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="388.6" r="5"><title>free G (the sink) 12.6 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="398.5" r="5"><title>free G (the sink) 10.6 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="389.9" r="5"><title>free G (the sink) 12.3 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="358.0" r="5"><title>free G (the sink) 18.8 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="360.7" r="5"><title>free G (the sink) 18.3 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="375.3" r="5"><title>free G (the sink) 15.3 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="381.2" r="5"><title>free G (the sink) 14.1 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="359.9" r="5"><title>free G (the sink) 18.4 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="362.5" r="5"><title>free G (the sink) 17.9 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="377.8" r="5"><title>free G (the sink) 14.8 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="392.3" r="5"><title>free G (the sink) 11.8 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="373.9" r="5"><title>free G (the sink) 15.6 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="371.8" r="5"><title>free G (the sink) 16 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="381.2" r="5"><title>free G (the sink) 14.1 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="381.4" r="5"><title>free G (the sink) 14 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="365.8" r="5"><title>free G (the sink) 17.3 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="374.5" r="5"><title>free G (the sink) 15.5 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="390.3" r="5"><title>free G (the sink) 12.2 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="396.7" r="5"><title>free G (the sink) 10.9 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="380.4" r="5"><title>free G (the sink) 14.3 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="372.5" r="5"><title>free G (the sink) 15.9 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="393.2" r="5"><title>free G (the sink) 11.6 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="398.4" r="5"><title>free G (the sink) 10.6 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="375.5" r="5"><title>free G (the sink) 15.3 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="373.2" r="5"><title>free G (the sink) 15.7 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="390.8" r="5"><title>free G (the sink) 12.1 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="393.4" r="5"><title>free G (the sink) 11.6 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="370.9" r="5"><title>free G (the sink) 16.2 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="374.3" r="5"><title>free G (the sink) 15.5 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="387.4" r="5"><title>free G (the sink) 12.8 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="395.3" r="5"><title>free G (the sink) 11.2 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="379.9" r="5"><title>free G (the sink) 14.4 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="556" y2="556"/>
+<line class="grid" x1="64" x2="736" y1="464" y2="464"/>
+<text x="58" y="560" text-anchor="end">0</text>
+<text x="58" y="474" text-anchor="end">179</text>
+<text class="ptitle" x="70" y="477">rust Gt</text>
+<path class="line s4" d="M64.0,556.0 L80.1,555.9 L96.3,555.1 L112.4,554.1 L128.5,552.6 L144.6,550.9 L160.8,549.3 L176.9,548.0 L193.0,545.0 L209.2,542.3 L225.3,540.4 L241.4,540.5 L257.5,537.3 L273.7,533.5 L289.8,533.2 L305.9,533.1 L322.0,526.6 L338.2,522.8 L354.3,522.1 L370.4,523.0 L386.6,515.8 L402.7,511.9 L418.8,512.8 L434.9,513.4 L451.1,500.4 L467.2,499.5 L483.3,502.5 L499.5,501.9 L515.6,492.7 L531.7,485.2 L547.8,490.4 L564.0,492.2 L580.1,479.4 L596.2,472.7 L612.4,478.9 L628.5,482.3 L644.6,466.7 L660.7,467.3 L676.9,469.1 L693.0,474.3 L709.1,464.0"/>
+<circle class="hit" cx="64.0" cy="556.0" r="5"><title>rust Gt 0 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="555.9" r="5"><title>rust Gt 0.18 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="555.1" r="5"><title>rust Gt 1.84 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="554.1" r="5"><title>rust Gt 3.61 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="552.6" r="5"><title>rust Gt 6.65 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="550.9" r="5"><title>rust Gt 9.99 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="549.3" r="5"><title>rust Gt 13.1 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="548.0" r="5"><title>rust Gt 15.5 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="545.0" r="5"><title>rust Gt 21.4 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="542.3" r="5"><title>rust Gt 26.7 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="540.4" r="5"><title>rust Gt 30.4 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="540.5" r="5"><title>rust Gt 30.1 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="537.3" r="5"><title>rust Gt 36.3 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="533.5" r="5"><title>rust Gt 43.7 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="533.2" r="5"><title>rust Gt 44.5 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="533.1" r="5"><title>rust Gt 44.7 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="526.6" r="5"><title>rust Gt 57.2 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="522.8" r="5"><title>rust Gt 64.6 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="522.1" r="5"><title>rust Gt 66 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="523.0" r="5"><title>rust Gt 64.2 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="515.8" r="5"><title>rust Gt 78.3 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="511.9" r="5"><title>rust Gt 85.9 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="512.8" r="5"><title>rust Gt 84.1 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="513.4" r="5"><title>rust Gt 83 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="500.4" r="5"><title>rust Gt 108 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="499.5" r="5"><title>rust Gt 110 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="502.5" r="5"><title>rust Gt 104 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="501.9" r="5"><title>rust Gt 105 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="492.7" r="5"><title>rust Gt 123 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="485.2" r="5"><title>rust Gt 138 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="490.4" r="5"><title>rust Gt 128 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="492.2" r="5"><title>rust Gt 124 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="479.4" r="5"><title>rust Gt 149 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="472.7" r="5"><title>rust Gt 162 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="478.9" r="5"><title>rust Gt 150 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="482.3" r="5"><title>rust Gt 143 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="466.7" r="5"><title>rust Gt 174 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="467.3" r="5"><title>rust Gt 173 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="469.1" r="5"><title>rust Gt 169 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="474.3" r="5"><title>rust Gt 159 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="464.0" r="5"><title>rust Gt 179 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="662" y2="662"/>
+<line class="grid" x1="64" x2="736" y1="570" y2="570"/>
+<text x="58" y="666" text-anchor="end">0</text>
+<text x="58" y="580" text-anchor="end">84.6</text>
+<text class="ptitle" x="70" y="583">minus soap tlL (t heads)</text>
+<path class="line s5" d="M64.0,662.0 L80.1,661.4 L96.3,661.3 L112.4,661.4 L128.5,660.9 L144.6,658.6 L160.8,657.2 L176.9,658.3 L193.0,652.2 L209.2,648.4 L225.3,648.6 L241.4,648.7 L257.5,644.9 L273.7,640.1 L289.8,636.7 L305.9,637.5 L322.0,633.8 L338.2,630.2 L354.3,628.5 L370.4,629.3 L386.6,621.7 L402.7,617.9 L418.8,619.5 L434.9,624.6 L451.1,612.6 L467.2,604.6 L483.3,603.8 L499.5,609.3 L515.6,604.6 L531.7,600.4 L547.8,601.5 L564.0,600.9 L580.1,596.3 L596.2,594.0 L612.4,586.7 L628.5,588.3 L644.6,582.4 L660.7,581.5 L676.9,576.1 L693.0,578.7 L709.1,570.0"/>
+<circle class="hit" cx="64.0" cy="662.0" r="5"><title>minus soap tlL (t heads) 0 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="661.4" r="5"><title>minus soap tlL (t heads) 0.55 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="661.3" r="5"><title>minus soap tlL (t heads) 0.61 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="661.4" r="5"><title>minus soap tlL (t heads) 0.52 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="660.9" r="5"><title>minus soap tlL (t heads) 0.98 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="658.6" r="5"><title>minus soap tlL (t heads) 3.09 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="657.2" r="5"><title>minus soap tlL (t heads) 4.42 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="658.3" r="5"><title>minus soap tlL (t heads) 3.4 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="652.2" r="5"><title>minus soap tlL (t heads) 9 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="648.4" r="5"><title>minus soap tlL (t heads) 12.5 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="648.6" r="5"><title>minus soap tlL (t heads) 12.3 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="648.7" r="5"><title>minus soap tlL (t heads) 12.2 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="644.9" r="5"><title>minus soap tlL (t heads) 15.8 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="640.1" r="5"><title>minus soap tlL (t heads) 20.1 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="636.7" r="5"><title>minus soap tlL (t heads) 23.3 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="637.5" r="5"><title>minus soap tlL (t heads) 22.5 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="633.8" r="5"><title>minus soap tlL (t heads) 25.9 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="630.2" r="5"><title>minus soap tlL (t heads) 29.3 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="628.5" r="5"><title>minus soap tlL (t heads) 30.8 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="629.3" r="5"><title>minus soap tlL (t heads) 30.1 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="621.7" r="5"><title>minus soap tlL (t heads) 37.1 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="617.9" r="5"><title>minus soap tlL (t heads) 40.6 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="619.5" r="5"><title>minus soap tlL (t heads) 39.1 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="624.6" r="5"><title>minus soap tlL (t heads) 34.4 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="612.6" r="5"><title>minus soap tlL (t heads) 45.5 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="604.6" r="5"><title>minus soap tlL (t heads) 52.8 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="603.8" r="5"><title>minus soap tlL (t heads) 53.5 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="609.3" r="5"><title>minus soap tlL (t heads) 48.5 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="604.6" r="5"><title>minus soap tlL (t heads) 52.8 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="600.4" r="5"><title>minus soap tlL (t heads) 56.6 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="601.5" r="5"><title>minus soap tlL (t heads) 55.6 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="600.9" r="5"><title>minus soap tlL (t heads) 56.2 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="596.3" r="5"><title>minus soap tlL (t heads) 60.4 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="594.0" r="5"><title>minus soap tlL (t heads) 62.5 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="586.7" r="5"><title>minus soap tlL (t heads) 69.2 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="588.3" r="5"><title>minus soap tlL (t heads) 67.8 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="582.4" r="5"><title>minus soap tlL (t heads) 73.2 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="581.5" r="5"><title>minus soap tlL (t heads) 74 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="576.1" r="5"><title>minus soap tlL (t heads) 79 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="578.7" r="5"><title>minus soap tlL (t heads) 76.6 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="570.0" r="5"><title>minus soap tlL (t heads) 84.6 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="768" y2="768"/>
+<line class="grid" x1="64" x2="736" y1="676" y2="676"/>
+<text x="58" y="772" text-anchor="end">0</text>
+<text x="58" y="686" text-anchor="end">5883</text>
+<text class="ptitle" x="70" y="689">cells with a pigment</text>
+<path class="line s6" d="M64.0,755.1 L80.1,757.2 L96.3,764.4 L112.4,764.9 L128.5,754.5 L144.6,740.9 L160.8,728.0 L176.9,721.4 L193.0,712.1 L209.2,705.4 L225.3,698.0 L241.4,694.4 L257.5,688.7 L273.7,685.5 L289.8,679.1 L305.9,678.6 L322.0,677.9 L338.2,678.3 L354.3,678.2 L370.4,677.7 L386.6,677.5 L402.7,677.5 L418.8,677.1 L434.9,676.9 L451.1,676.7 L467.2,676.8 L483.3,676.7 L499.5,676.2 L515.6,676.0 L531.7,676.5 L547.8,676.4 L564.0,676.3 L580.1,676.2 L596.2,676.5 L612.4,676.7 L628.5,676.4 L644.6,676.4 L660.7,676.6 L676.9,676.8 L693.0,676.7 L709.1,676.8"/>
+<circle class="hit" cx="64.0" cy="755.1" r="5"><title>cells with a pigment 823 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="757.2" r="5"><title>cells with a pigment 690 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="764.4" r="5"><title>cells with a pigment 231 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="764.9" r="5"><title>cells with a pigment 199 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="754.5" r="5"><title>cells with a pigment 861 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="740.9" r="5"><title>cells with a pigment 1732 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="728.0" r="5"><title>cells with a pigment 2560 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="721.4" r="5"><title>cells with a pigment 2981 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="712.1" r="5"><title>cells with a pigment 3573 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="705.4" r="5"><title>cells with a pigment 4006 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="698.0" r="5"><title>cells with a pigment 4475 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="694.4" r="5"><title>cells with a pigment 4707 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="688.7" r="5"><title>cells with a pigment 5070 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="685.5" r="5"><title>cells with a pigment 5274 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="679.1" r="5"><title>cells with a pigment 5686 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="678.6" r="5"><title>cells with a pigment 5716 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="677.9" r="5"><title>cells with a pigment 5760 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="678.3" r="5"><title>cells with a pigment 5735 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="678.2" r="5"><title>cells with a pigment 5743 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="677.7" r="5"><title>cells with a pigment 5776 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="677.5" r="5"><title>cells with a pigment 5790 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="677.5" r="5"><title>cells with a pigment 5786 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="677.1" r="5"><title>cells with a pigment 5810 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="676.9" r="5"><title>cells with a pigment 5825 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="676.7" r="5"><title>cells with a pigment 5840 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="676.8" r="5"><title>cells with a pigment 5835 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="676.7" r="5"><title>cells with a pigment 5841 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="676.2" r="5"><title>cells with a pigment 5870 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="676.0" r="5"><title>cells with a pigment 5883 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="676.5" r="5"><title>cells with a pigment 5848 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="676.4" r="5"><title>cells with a pigment 5859 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="676.3" r="5"><title>cells with a pigment 5864 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="676.2" r="5"><title>cells with a pigment 5873 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="676.5" r="5"><title>cells with a pigment 5854 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="676.7" r="5"><title>cells with a pigment 5836 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="676.4" r="5"><title>cells with a pigment 5859 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="676.4" r="5"><title>cells with a pigment 5859 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="676.6" r="5"><title>cells with a pigment 5847 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="676.8" r="5"><title>cells with a pigment 5831 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="676.7" r="5"><title>cells with a pigment 5841 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="676.8" r="5"><title>cells with a pigment 5829 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="874" y2="874"/>
+<line class="grid" x1="64" x2="736" y1="782" y2="782"/>
+<text x="58" y="878" text-anchor="end">0</text>
+<text x="58" y="792" text-anchor="end">5977</text>
+<text class="ptitle" x="70" y="795">cells with a t-using engine</text>
+<path class="line s7" d="M64.0,843.6 L80.1,848.5 L96.3,868.3 L112.4,869.0 L128.5,858.2 L144.6,843.2 L160.8,829.5 L176.9,822.8 L193.0,814.0 L209.2,807.5 L225.3,800.4 L241.4,796.6 L257.5,791.7 L273.7,789.6 L289.8,783.0 L305.9,782.2 L322.0,782.3 L338.2,783.0 L354.3,782.9 L370.4,782.3 L386.6,782.1 L402.7,782.4 L418.8,782.5 L434.9,782.0 L451.1,782.1 L467.2,782.8 L483.3,782.6 L499.5,782.2 L515.6,782.2 L531.7,782.5 L547.8,782.6 L564.0,782.1 L580.1,782.1 L596.2,782.7 L612.4,782.6 L628.5,782.2 L644.6,782.3 L660.7,782.8 L676.9,782.4 L693.0,782.2 L709.1,782.0"/>
+<circle class="hit" cx="64.0" cy="843.6" r="5"><title>cells with a t-using engine 1978 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="848.5" r="5"><title>cells with a t-using engine 1658 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="868.3" r="5"><title>cells with a t-using engine 372 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="869.0" r="5"><title>cells with a t-using engine 328 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="858.2" r="5"><title>cells with a t-using engine 1025 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="843.2" r="5"><title>cells with a t-using engine 2001 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="829.5" r="5"><title>cells with a t-using engine 2894 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="822.8" r="5"><title>cells with a t-using engine 3329 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="814.0" r="5"><title>cells with a t-using engine 3897 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="807.5" r="5"><title>cells with a t-using engine 4319 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="800.4" r="5"><title>cells with a t-using engine 4784 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="796.6" r="5"><title>cells with a t-using engine 5026 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="791.7" r="5"><title>cells with a t-using engine 5347 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="789.6" r="5"><title>cells with a t-using engine 5480 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="783.0" r="5"><title>cells with a t-using engine 5915 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="782.2" r="5"><title>cells with a t-using engine 5962 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="782.3" r="5"><title>cells with a t-using engine 5959 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="783.0" r="5"><title>cells with a t-using engine 5911 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="782.9" r="5"><title>cells with a t-using engine 5916 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="782.3" r="5"><title>cells with a t-using engine 5960 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="782.1" r="5"><title>cells with a t-using engine 5969 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="782.4" r="5"><title>cells with a t-using engine 5948 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="782.5" r="5"><title>cells with a t-using engine 5944 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="782.0" r="5"><title>cells with a t-using engine 5977 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="782.1" r="5"><title>cells with a t-using engine 5969 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="782.8" r="5"><title>cells with a t-using engine 5926 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="782.6" r="5"><title>cells with a t-using engine 5937 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="782.2" r="5"><title>cells with a t-using engine 5967 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="782.2" r="5"><title>cells with a t-using engine 5963 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="782.5" r="5"><title>cells with a t-using engine 5944 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="782.6" r="5"><title>cells with a t-using engine 5937 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="782.1" r="5"><title>cells with a t-using engine 5971 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="782.1" r="5"><title>cells with a t-using engine 5970 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="782.7" r="5"><title>cells with a t-using engine 5929 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="782.6" r="5"><title>cells with a t-using engine 5941 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="782.2" r="5"><title>cells with a t-using engine 5964 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="782.3" r="5"><title>cells with a t-using engine 5956 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="782.8" r="5"><title>cells with a t-using engine 5926 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="782.4" r="5"><title>cells with a t-using engine 5951 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="782.2" r="5"><title>cells with a t-using engine 5967 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="782.0" r="5"><title>cells with a t-using engine 5975 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="980" y2="980"/>
+<line class="grid" x1="64" x2="736" y1="888" y2="888"/>
+<text x="58" y="984" text-anchor="end">0</text>
+<text x="58" y="898" text-anchor="end">1007</text>
+<text class="ptitle" x="70" y="901">breathing into batteries per s</text>
+<path class="line s0" d="M64.0,980.0 L80.1,978.1 L96.3,977.8 L112.4,977.3 L128.5,956.0 L144.6,941.1 L160.8,944.1 L176.9,944.1 L193.0,917.4 L209.2,911.5 L225.3,926.8 L241.4,929.3 L257.5,897.1 L273.7,888.0 L289.8,915.7 L305.9,923.5 L322.0,895.9 L338.2,888.7 L354.3,919.9 L370.4,933.2 L386.6,907.6 L402.7,902.2 L418.8,930.1 L434.9,933.6 L451.1,892.5 L467.2,896.9 L483.3,930.2 L499.5,933.2 L515.6,911.8 L531.7,902.1 L547.8,928.5 L564.0,934.8 L580.1,912.0 L596.2,903.8 L612.4,932.4 L628.5,937.4 L644.6,909.6 L660.7,915.7 L676.9,934.5 L693.0,938.8 L709.1,921.5"/>
+<circle class="hit" cx="64.0" cy="980.0" r="5"><title>breathing into batteries per s 0 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="978.1" r="5"><title>breathing into batteries per s 21.3 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="977.8" r="5"><title>breathing into batteries per s 24.4 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="977.3" r="5"><title>breathing into batteries per s 29 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="956.0" r="5"><title>breathing into batteries per s 263 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="941.1" r="5"><title>breathing into batteries per s 426 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="944.1" r="5"><title>breathing into batteries per s 393 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="944.1" r="5"><title>breathing into batteries per s 393 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="917.4" r="5"><title>breathing into batteries per s 685 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="911.5" r="5"><title>breathing into batteries per s 749 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="926.8" r="5"><title>breathing into batteries per s 582 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="929.3" r="5"><title>breathing into batteries per s 554 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="897.1" r="5"><title>breathing into batteries per s 907 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="888.0" r="5"><title>breathing into batteries per s 1007 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="915.7" r="5"><title>breathing into batteries per s 703 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="923.5" r="5"><title>breathing into batteries per s 618 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="895.9" r="5"><title>breathing into batteries per s 921 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="888.7" r="5"><title>breathing into batteries per s 999 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="919.9" r="5"><title>breathing into batteries per s 658 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="933.2" r="5"><title>breathing into batteries per s 512 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="907.6" r="5"><title>breathing into batteries per s 792 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="902.2" r="5"><title>breathing into batteries per s 852 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="930.1" r="5"><title>breathing into batteries per s 546 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="933.6" r="5"><title>breathing into batteries per s 508 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="892.5" r="5"><title>breathing into batteries per s 957 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="896.9" r="5"><title>breathing into batteries per s 909 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="930.2" r="5"><title>breathing into batteries per s 545 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="933.2" r="5"><title>breathing into batteries per s 512 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="911.8" r="5"><title>breathing into batteries per s 747 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="902.1" r="5"><title>breathing into batteries per s 852 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="928.5" r="5"><title>breathing into batteries per s 564 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="934.8" r="5"><title>breathing into batteries per s 495 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="912.0" r="5"><title>breathing into batteries per s 744 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="903.8" r="5"><title>breathing into batteries per s 834 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="932.4" r="5"><title>breathing into batteries per s 521 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="937.4" r="5"><title>breathing into batteries per s 466 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="909.6" r="5"><title>breathing into batteries per s 770 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="915.7" r="5"><title>breathing into batteries per s 704 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="934.5" r="5"><title>breathing into batteries per s 498 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="938.8" r="5"><title>breathing into batteries per s 450 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="921.5" r="5"><title>breathing into batteries per s 640 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="1086" y2="1086"/>
+<line class="grid" x1="64" x2="736" y1="994" y2="994"/>
+<text x="58" y="1090" text-anchor="end">0</text>
+<text x="58" y="1004" text-anchor="end">3.31</text>
+<text class="ptitle" x="70" y="1007">fermenting into batteries per s</text>
+<path class="line s1" d="M64.0,1086.0 L80.1,1085.7 L96.3,1070.2 L112.4,1053.2 L128.5,1024.4 L144.6,994.0 L160.8,1030.3 L176.9,1051.7 L193.0,1015.1 L209.2,1001.1 L225.3,1039.3 L241.4,1042.5 L257.5,1013.6 L273.7,1008.3 L289.8,1028.9 L305.9,1038.9 L322.0,1022.2 L338.2,1028.4 L354.3,1039.7 L370.4,1053.8 L386.6,1037.4 L402.7,1042.3 L418.8,1052.0 L434.9,1053.2 L451.1,1041.9 L467.2,1050.7 L483.3,1062.5 L499.5,1065.3 L515.6,1061.9 L531.7,1060.7 L547.8,1068.5 L564.0,1070.9 L580.1,1058.4 L596.2,1064.1 L612.4,1064.8 L628.5,1068.8 L644.6,1063.9 L660.7,1066.0 L676.9,1070.9 L693.0,1073.4 L709.1,1069.6"/>
+<circle class="hit" cx="64.0" cy="1086.0" r="5"><title>fermenting into batteries per s 0 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="1085.7" r="5"><title>fermenting into batteries per s 0.01 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="1070.2" r="5"><title>fermenting into batteries per s 0.57 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="1053.2" r="5"><title>fermenting into batteries per s 1.18 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="1024.4" r="5"><title>fermenting into batteries per s 2.21 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="994.0" r="5"><title>fermenting into batteries per s 3.31 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="1030.3" r="5"><title>fermenting into batteries per s 2 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="1051.7" r="5"><title>fermenting into batteries per s 1.23 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="1015.1" r="5"><title>fermenting into batteries per s 2.55 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="1001.1" r="5"><title>fermenting into batteries per s 3.05 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="1039.3" r="5"><title>fermenting into batteries per s 1.68 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="1042.5" r="5"><title>fermenting into batteries per s 1.57 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="1013.6" r="5"><title>fermenting into batteries per s 2.6 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="1008.3" r="5"><title>fermenting into batteries per s 2.79 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="1028.9" r="5"><title>fermenting into batteries per s 2.05 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="1038.9" r="5"><title>fermenting into batteries per s 1.69 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="1022.2" r="5"><title>fermenting into batteries per s 2.29 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="1028.4" r="5"><title>fermenting into batteries per s 2.07 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="1039.7" r="5"><title>fermenting into batteries per s 1.67 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="1053.8" r="5"><title>fermenting into batteries per s 1.16 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="1037.4" r="5"><title>fermenting into batteries per s 1.75 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="1042.3" r="5"><title>fermenting into batteries per s 1.57 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="1052.0" r="5"><title>fermenting into batteries per s 1.22 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="1053.2" r="5"><title>fermenting into batteries per s 1.18 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="1041.9" r="5"><title>fermenting into batteries per s 1.59 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="1050.7" r="5"><title>fermenting into batteries per s 1.27 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="1062.5" r="5"><title>fermenting into batteries per s 0.85 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="1065.3" r="5"><title>fermenting into batteries per s 0.75 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="1061.9" r="5"><title>fermenting into batteries per s 0.87 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="1060.7" r="5"><title>fermenting into batteries per s 0.91 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="1068.5" r="5"><title>fermenting into batteries per s 0.63 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="1070.9" r="5"><title>fermenting into batteries per s 0.54 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="1058.4" r="5"><title>fermenting into batteries per s 0.99 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="1064.1" r="5"><title>fermenting into batteries per s 0.79 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="1064.8" r="5"><title>fermenting into batteries per s 0.76 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="1068.8" r="5"><title>fermenting into batteries per s 0.62 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="1063.9" r="5"><title>fermenting into batteries per s 0.8 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="1066.0" r="5"><title>fermenting into batteries per s 0.72 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="1070.9" r="5"><title>fermenting into batteries per s 0.54 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="1073.4" r="5"><title>fermenting into batteries per s 0.45 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="1069.6" r="5"><title>fermenting into batteries per s 0.59 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="1192" y2="1192"/>
+<line class="grid" x1="64" x2="736" y1="1100" y2="1100"/>
+<text x="58" y="1196" text-anchor="end">0</text>
+<text x="58" y="1110" text-anchor="end">9.92</text>
+<text class="ptitle" x="70" y="1113">bursts per s</text>
+<path class="line s2" d="M64.0,1192.0 L80.1,1192.0 L96.3,1165.3 L112.4,1178.4 L128.5,1100.0 L144.6,1152.6 L160.8,1187.4 L176.9,1179.1 L193.0,1187.4 L209.2,1178.2 L225.3,1192.0 L241.4,1192.0 L257.5,1173.6 L273.7,1192.0 L289.8,1187.4 L305.9,1192.0 L322.0,1160.3 L338.2,1161.1 L354.3,1192.0 L370.4,1192.0 L386.6,1173.6 L402.7,1183.3 L418.8,1192.0 L434.9,1192.0 L451.1,1147.8 L467.2,1182.9 L483.3,1187.5 L499.5,1187.4 L515.6,1178.2 L531.7,1169.0 L547.8,1192.0 L564.0,1187.4 L580.1,1155.2 L596.2,1182.8 L612.4,1187.7 L628.5,1187.4 L644.6,1164.2 L660.7,1192.0 L676.9,1192.0 L693.0,1187.4 L709.1,1182.9"/>
+<circle class="hit" cx="64.0" cy="1192.0" r="5"><title>bursts per s 0 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="1192.0" r="5"><title>bursts per s 0 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="1165.3" r="5"><title>bursts per s 2.88 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="1178.4" r="5"><title>bursts per s 1.46 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="1100.0" r="5"><title>bursts per s 9.92 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="1152.6" r="5"><title>bursts per s 4.25 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="1187.4" r="5"><title>bursts per s 0.49 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="1179.1" r="5"><title>bursts per s 1.4 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="1187.4" r="5"><title>bursts per s 0.5 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="1178.2" r="5"><title>bursts per s 1.49 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="1192.0" r="5"><title>bursts per s 0 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="1192.0" r="5"><title>bursts per s 0 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="1173.6" r="5"><title>bursts per s 1.98 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="1192.0" r="5"><title>bursts per s 0 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="1187.4" r="5"><title>bursts per s 0.5 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="1192.0" r="5"><title>bursts per s 0 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="1160.3" r="5"><title>bursts per s 3.41 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="1161.1" r="5"><title>bursts per s 3.33 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="1192.0" r="5"><title>bursts per s 0 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="1192.0" r="5"><title>bursts per s 0 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="1173.6" r="5"><title>bursts per s 1.98 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="1183.3" r="5"><title>bursts per s 0.94 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="1192.0" r="5"><title>bursts per s 0 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="1192.0" r="5"><title>bursts per s 0 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="1147.8" r="5"><title>bursts per s 4.76 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="1182.9" r="5"><title>bursts per s 0.98 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="1187.5" r="5"><title>bursts per s 0.48 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="1187.4" r="5"><title>bursts per s 0.5 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="1178.2" r="5"><title>bursts per s 1.49 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="1169.0" r="5"><title>bursts per s 2.48 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="1192.0" r="5"><title>bursts per s 0 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="1187.4" r="5"><title>bursts per s 0.5 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="1155.2" r="5"><title>bursts per s 3.97 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="1182.8" r="5"><title>bursts per s 0.99 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="1187.7" r="5"><title>bursts per s 0.47 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="1187.4" r="5"><title>bursts per s 0.5 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="1164.2" r="5"><title>bursts per s 3 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="1192.0" r="5"><title>bursts per s 0 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="1192.0" r="5"><title>bursts per s 0 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="1187.4" r="5"><title>bursts per s 0.5 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="1182.9" r="5"><title>bursts per s 0.98 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="1298" y2="1298"/>
+<line class="grid" x1="64" x2="736" y1="1206" y2="1206"/>
+<text x="58" y="1302" text-anchor="end">0</text>
+<text x="58" y="1216" text-anchor="end">411</text>
+<text class="ptitle" x="70" y="1219">fluorescence out per s</text>
+<path class="line s3" d="M64.0,1298.0 L80.1,1294.1 L96.3,1295.7 L112.4,1295.5 L128.5,1288.4 L144.6,1281.7 L160.8,1291.0 L176.9,1294.1 L193.0,1277.7 L209.2,1273.1 L225.3,1288.4 L241.4,1292.0 L257.5,1262.9 L273.7,1256.9 L289.8,1284.9 L305.9,1290.4 L322.0,1263.0 L338.2,1249.5 L354.3,1282.3 L370.4,1292.2 L386.6,1267.1 L402.7,1255.9 L418.8,1284.8 L434.9,1289.3 L451.1,1238.3 L467.2,1237.5 L483.3,1278.1 L499.5,1286.0 L515.6,1246.1 L531.7,1222.3 L547.8,1272.2 L564.0,1284.0 L580.1,1225.7 L596.2,1206.0 L612.4,1270.3 L628.5,1282.9 L644.6,1217.8 L660.7,1211.6 L676.9,1267.1 L693.0,1281.1 L709.1,1234.6"/>
+<circle class="hit" cx="64.0" cy="1298.0" r="5"><title>fluorescence out per s 0 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="1294.1" r="5"><title>fluorescence out per s 17.4 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="1295.7" r="5"><title>fluorescence out per s 10.1 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="1295.5" r="5"><title>fluorescence out per s 11 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="1288.4" r="5"><title>fluorescence out per s 42.8 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="1281.7" r="5"><title>fluorescence out per s 72.6 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="1291.0" r="5"><title>fluorescence out per s 31.4 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="1294.1" r="5"><title>fluorescence out per s 17.5 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="1277.7" r="5"><title>fluorescence out per s 90.6 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="1273.1" r="5"><title>fluorescence out per s 111 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="1288.4" r="5"><title>fluorescence out per s 42.8 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="1292.0" r="5"><title>fluorescence out per s 26.6 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="1262.9" r="5"><title>fluorescence out per s 157 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="1256.9" r="5"><title>fluorescence out per s 184 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="1284.9" r="5"><title>fluorescence out per s 58.3 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="1290.4" r="5"><title>fluorescence out per s 33.9 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="1263.0" r="5"><title>fluorescence out per s 156 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="1249.5" r="5"><title>fluorescence out per s 217 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="1282.3" r="5"><title>fluorescence out per s 69.9 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="1292.2" r="5"><title>fluorescence out per s 26.1 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="1267.1" r="5"><title>fluorescence out per s 138 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="1255.9" r="5"><title>fluorescence out per s 188 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="1284.8" r="5"><title>fluorescence out per s 58.9 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="1289.3" r="5"><title>fluorescence out per s 39 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="1238.3" r="5"><title>fluorescence out per s 266 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="1237.5" r="5"><title>fluorescence out per s 270 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="1278.1" r="5"><title>fluorescence out per s 88.6 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="1286.0" r="5"><title>fluorescence out per s 53.5 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="1246.1" r="5"><title>fluorescence out per s 232 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="1222.3" r="5"><title>fluorescence out per s 338 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="1272.2" r="5"><title>fluorescence out per s 115 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="1284.0" r="5"><title>fluorescence out per s 62.3 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="1225.7" r="5"><title>fluorescence out per s 323 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="1206.0" r="5"><title>fluorescence out per s 411 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="1270.3" r="5"><title>fluorescence out per s 124 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="1282.9" r="5"><title>fluorescence out per s 67.2 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="1217.8" r="5"><title>fluorescence out per s 358 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="1211.6" r="5"><title>fluorescence out per s 386 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="1267.1" r="5"><title>fluorescence out per s 138 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="1281.1" r="5"><title>fluorescence out per s 75.5 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="1234.6" r="5"><title>fluorescence out per s 283 at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="1404" y2="1404"/>
+<line class="grid" x1="64" x2="736" y1="1312" y2="1312"/>
+<text x="58" y="1408" text-anchor="end">0</text>
+<text x="58" y="1322" text-anchor="end">167 k</text>
+<text class="ptitle" x="70" y="1325">entropy rate</text>
+<path class="line s4" d="M64.0,1404.0 L80.1,1373.7 L96.3,1393.9 L112.4,1397.5 L128.5,1380.9 L144.6,1367.7 L160.8,1382.0 L176.9,1385.8 L193.0,1355.2 L209.2,1342.9 L225.3,1368.9 L241.4,1373.9 L257.5,1331.5 L273.7,1319.8 L289.8,1357.1 L305.9,1366.0 L322.0,1327.7 L338.2,1318.9 L354.3,1357.6 L370.4,1365.8 L386.6,1337.7 L402.7,1331.1 L418.8,1358.3 L434.9,1363.5 L451.1,1327.0 L467.2,1314.8 L483.3,1351.8 L499.5,1360.2 L515.6,1326.5 L531.7,1317.1 L547.8,1351.6 L564.0,1359.2 L580.1,1319.9 L596.2,1312.0 L612.4,1350.6 L628.5,1359.2 L644.6,1321.9 L660.7,1313.3 L676.9,1349.6 L693.0,1357.7 L709.1,1325.8"/>
+<circle class="hit" cx="64.0" cy="1404.0" r="5"><title>entropy rate 0 at 0 s</title></circle>
+<circle class="hit" cx="80.1" cy="1373.7" r="5"><title>entropy rate 54.9 k at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="1393.9" r="5"><title>entropy rate 18.3 k at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="1397.5" r="5"><title>entropy rate 11.9 k at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="1380.9" r="5"><title>entropy rate 41.8 k at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="1367.7" r="5"><title>entropy rate 65.9 k at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="1382.0" r="5"><title>entropy rate 39.9 k at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="1385.8" r="5"><title>entropy rate 33 k at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="1355.2" r="5"><title>entropy rate 88.5 k at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="1342.9" r="5"><title>entropy rate 111 k at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="1368.9" r="5"><title>entropy rate 63.7 k at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="1373.9" r="5"><title>entropy rate 54.6 k at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="1331.5" r="5"><title>entropy rate 131 k at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="1319.8" r="5"><title>entropy rate 153 k at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="1357.1" r="5"><title>entropy rate 85 k at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="1366.0" r="5"><title>entropy rate 68.8 k at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="1327.7" r="5"><title>entropy rate 138 k at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="1318.9" r="5"><title>entropy rate 154 k at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="1357.6" r="5"><title>entropy rate 84 k at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="1365.8" r="5"><title>entropy rate 69.2 k at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="1337.7" r="5"><title>entropy rate 120 k at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="1331.1" r="5"><title>entropy rate 132 k at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="1358.3" r="5"><title>entropy rate 82.8 k at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="1363.5" r="5"><title>entropy rate 73.5 k at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="1327.0" r="5"><title>entropy rate 140 k at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="1314.8" r="5"><title>entropy rate 162 k at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="1351.8" r="5"><title>entropy rate 94.6 k at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="1360.2" r="5"><title>entropy rate 79.4 k at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="1326.5" r="5"><title>entropy rate 140 k at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="1317.1" r="5"><title>entropy rate 157 k at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="1351.6" r="5"><title>entropy rate 94.9 k at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="1359.2" r="5"><title>entropy rate 81.2 k at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="1319.9" r="5"><title>entropy rate 152 k at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="1312.0" r="5"><title>entropy rate 167 k at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="1350.6" r="5"><title>entropy rate 96.8 k at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="1359.2" r="5"><title>entropy rate 81.1 k at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="1321.9" r="5"><title>entropy rate 149 k at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="1313.3" r="5"><title>entropy rate 164 k at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="1349.6" r="5"><title>entropy rate 98.6 k at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="1357.7" r="5"><title>entropy rate 83.8 k at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="1325.8" r="5"><title>entropy rate 142 k at 2400 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="1510" y2="1510"/>
+<line class="grid" x1="64" x2="736" y1="1418" y2="1418"/>
+<text x="58" y="1514" text-anchor="end">0.33</text>
+<text x="58" y="1428" text-anchor="end">0.39</text>
+<text class="ptitle" x="70" y="1431">ORDER</text>
+<path class="line s5" d="M80.1,1418.0 L96.3,1467.5 L112.4,1501.6 L128.5,1498.0 L144.6,1495.2 L160.8,1485.2 L176.9,1483.6 L193.0,1490.0 L209.2,1487.8 L225.3,1482.8 L241.4,1482.4 L257.5,1491.1 L273.7,1492.2 L289.8,1483.5 L305.9,1486.5 L322.0,1495.3 L338.2,1499.0 L354.3,1493.9 L370.4,1495.1 L386.6,1500.6 L402.7,1502.0 L418.8,1498.2 L434.9,1498.1 L451.1,1506.8 L467.2,1504.5 L483.3,1497.8 L499.5,1500.1 L515.6,1504.2 L531.7,1506.5 L547.8,1500.0 L564.0,1501.0 L580.1,1507.7 L596.2,1510.0 L612.4,1503.1 L628.5,1503.1 L644.6,1509.6 L660.7,1506.1 L676.9,1501.8 L693.0,1499.7 L709.1,1501.2"/>
+<circle class="hit" cx="80.1" cy="1418.0" r="5"><title>ORDER 0.39 at 60 s</title></circle>
+<circle class="hit" cx="96.3" cy="1467.5" r="5"><title>ORDER 0.36 at 120 s</title></circle>
+<circle class="hit" cx="112.4" cy="1501.6" r="5"><title>ORDER 0.33 at 180 s</title></circle>
+<circle class="hit" cx="128.5" cy="1498.0" r="5"><title>ORDER 0.34 at 240 s</title></circle>
+<circle class="hit" cx="144.6" cy="1495.2" r="5"><title>ORDER 0.34 at 300 s</title></circle>
+<circle class="hit" cx="160.8" cy="1485.2" r="5"><title>ORDER 0.34 at 360 s</title></circle>
+<circle class="hit" cx="176.9" cy="1483.6" r="5"><title>ORDER 0.35 at 420 s</title></circle>
+<circle class="hit" cx="193.0" cy="1490.0" r="5"><title>ORDER 0.34 at 480 s</title></circle>
+<circle class="hit" cx="209.2" cy="1487.8" r="5"><title>ORDER 0.34 at 540 s</title></circle>
+<circle class="hit" cx="225.3" cy="1482.8" r="5"><title>ORDER 0.35 at 600 s</title></circle>
+<circle class="hit" cx="241.4" cy="1482.4" r="5"><title>ORDER 0.35 at 660 s</title></circle>
+<circle class="hit" cx="257.5" cy="1491.1" r="5"><title>ORDER 0.34 at 720 s</title></circle>
+<circle class="hit" cx="273.7" cy="1492.2" r="5"><title>ORDER 0.34 at 780 s</title></circle>
+<circle class="hit" cx="289.8" cy="1483.5" r="5"><title>ORDER 0.35 at 840 s</title></circle>
+<circle class="hit" cx="305.9" cy="1486.5" r="5"><title>ORDER 0.34 at 900 s</title></circle>
+<circle class="hit" cx="322.0" cy="1495.3" r="5"><title>ORDER 0.34 at 960 s</title></circle>
+<circle class="hit" cx="338.2" cy="1499.0" r="5"><title>ORDER 0.34 at 1020 s</title></circle>
+<circle class="hit" cx="354.3" cy="1493.9" r="5"><title>ORDER 0.34 at 1080 s</title></circle>
+<circle class="hit" cx="370.4" cy="1495.1" r="5"><title>ORDER 0.34 at 1140 s</title></circle>
+<circle class="hit" cx="386.6" cy="1500.6" r="5"><title>ORDER 0.33 at 1200 s</title></circle>
+<circle class="hit" cx="402.7" cy="1502.0" r="5"><title>ORDER 0.33 at 1260 s</title></circle>
+<circle class="hit" cx="418.8" cy="1498.2" r="5"><title>ORDER 0.34 at 1320 s</title></circle>
+<circle class="hit" cx="434.9" cy="1498.1" r="5"><title>ORDER 0.34 at 1380 s</title></circle>
+<circle class="hit" cx="451.1" cy="1506.8" r="5"><title>ORDER 0.33 at 1440 s</title></circle>
+<circle class="hit" cx="467.2" cy="1504.5" r="5"><title>ORDER 0.33 at 1500 s</title></circle>
+<circle class="hit" cx="483.3" cy="1497.8" r="5"><title>ORDER 0.34 at 1560 s</title></circle>
+<circle class="hit" cx="499.5" cy="1500.1" r="5"><title>ORDER 0.33 at 1620 s</title></circle>
+<circle class="hit" cx="515.6" cy="1504.2" r="5"><title>ORDER 0.33 at 1680 s</title></circle>
+<circle class="hit" cx="531.7" cy="1506.5" r="5"><title>ORDER 0.33 at 1740 s</title></circle>
+<circle class="hit" cx="547.8" cy="1500.0" r="5"><title>ORDER 0.33 at 1800 s</title></circle>
+<circle class="hit" cx="564.0" cy="1501.0" r="5"><title>ORDER 0.33 at 1860 s</title></circle>
+<circle class="hit" cx="580.1" cy="1507.7" r="5"><title>ORDER 0.33 at 1920 s</title></circle>
+<circle class="hit" cx="596.2" cy="1510.0" r="5"><title>ORDER 0.33 at 1980 s</title></circle>
+<circle class="hit" cx="612.4" cy="1503.1" r="5"><title>ORDER 0.33 at 2040 s</title></circle>
+<circle class="hit" cx="628.5" cy="1503.1" r="5"><title>ORDER 0.33 at 2100 s</title></circle>
+<circle class="hit" cx="644.6" cy="1509.6" r="5"><title>ORDER 0.33 at 2160 s</title></circle>
+<circle class="hit" cx="660.7" cy="1506.1" r="5"><title>ORDER 0.33 at 2220 s</title></circle>
+<circle class="hit" cx="676.9" cy="1501.8" r="5"><title>ORDER 0.33 at 2280 s</title></circle>
+<circle class="hit" cx="693.0" cy="1499.7" r="5"><title>ORDER 0.33 at 2340 s</title></circle>
+<circle class="hit" cx="709.1" cy="1501.2" r="5"><title>ORDER 0.33 at 2400 s</title></circle>
+</svg>

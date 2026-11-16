@@ -1,0 +1,197 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 1554" width="760" height="1554" role="img" aria-label="c12d-substrate: 14 measures on one time axis">
+<style>:root{--surface:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--grid:#e4e3df}.s0{stroke:#2a78d6;fill:#2a78d6}.s1{stroke:#eb6834;fill:#eb6834}.s2{stroke:#1baf7a;fill:#1baf7a}.s3{stroke:#eda100;fill:#eda100}.s4{stroke:#e87ba4;fill:#e87ba4}.s5{stroke:#008300;fill:#008300}.s6{stroke:#6250d6;fill:#6250d6}.s7{stroke:#e34948;fill:#e34948}@media (prefers-color-scheme: dark){:root{--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--grid:#383835}.s0{stroke:#3987e5;fill:#3987e5}.s1{stroke:#d95926;fill:#d95926}.s2{stroke:#199e70;fill:#199e70}.s3{stroke:#c98500;fill:#c98500}.s4{stroke:#d55181;fill:#d55181}.s5{stroke:#008300;fill:#008300}.s6{stroke:#9085e9;fill:#9085e9}.s7{stroke:#e66767;fill:#e66767}}text{font:12px system-ui,-apple-system,'Segoe UI',sans-serif;fill:var(--ink2)}.title{font-size:14px;font-weight:600;fill:var(--ink)}.ptitle{font-weight:600;fill:var(--ink)}.line{fill:none;stroke-width:1.8;stroke-linejoin:round}.grid{stroke:var(--grid);stroke-width:1}.hit{fill:transparent;stroke:none}</style>
+<rect width="760" height="1554" fill="var(--surface)"/>
+<text class="title" x="64" y="22">c12d-substrate</text>
+<line class="grid" x1="64.0" x2="64.0" y1="40" y2="1510"/>
+<text x="64.0" y="1528" text-anchor="middle">0</text>
+<line class="grid" x1="232.0" x2="232.0" y1="40" y2="1510"/>
+<text x="232.0" y="1528" text-anchor="middle">100</text>
+<line class="grid" x1="400.0" x2="400.0" y1="40" y2="1510"/>
+<text x="400.0" y="1528" text-anchor="middle">200</text>
+<line class="grid" x1="568.0" x2="568.0" y1="40" y2="1510"/>
+<text x="568.0" y="1528" text-anchor="middle">300</text>
+<line class="grid" x1="736.0" x2="736.0" y1="40" y2="1510"/>
+<text x="736.0" y="1528" text-anchor="middle">400</text>
+<text x="400" y="1546" text-anchor="middle">run time (s)</text>
+<line class="grid" x1="64" x2="736" y1="132" y2="132"/>
+<line class="grid" x1="64" x2="736" y1="40" y2="40"/>
+<text x="58" y="136" text-anchor="end">1</text>
+<text x="58" y="50" text-anchor="end">3</text>
+<text class="ptitle" x="70" y="53">cells</text>
+<path class="line s0" d="M64.0,132.0 L164.8,40.0 L265.6,40.0 L366.4,40.0 L467.2,40.0 L568.0,40.0 L668.8,40.0"/>
+<circle class="hit" cx="64.0" cy="132.0" r="5"><title>cells 1 at 0 s</title></circle>
+<circle class="hit" cx="164.8" cy="40.0" r="5"><title>cells 3 at 60 s</title></circle>
+<circle class="hit" cx="265.6" cy="40.0" r="5"><title>cells 3 at 120 s</title></circle>
+<circle class="hit" cx="366.4" cy="40.0" r="5"><title>cells 3 at 180 s</title></circle>
+<circle class="hit" cx="467.2" cy="40.0" r="5"><title>cells 3 at 240 s</title></circle>
+<circle class="hit" cx="568.0" cy="40.0" r="5"><title>cells 3 at 300 s</title></circle>
+<circle class="hit" cx="668.8" cy="40.0" r="5"><title>cells 3 at 360 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="238" y2="238"/>
+<line class="grid" x1="64" x2="736" y1="146" y2="146"/>
+<text x="58" y="242" text-anchor="end">0</text>
+<text x="58" y="156" text-anchor="end">177</text>
+<text class="ptitle" x="70" y="159">photochemistry in the open per s</text>
+<path class="line s1" d="M64.0,238.0 L164.8,221.0 L265.6,224.7 L366.4,227.6 L467.2,189.5 L568.0,146.0 L668.8,188.7"/>
+<circle class="hit" cx="64.0" cy="238.0" r="5"><title>photochemistry in the open per s 0 at 0 s</title></circle>
+<circle class="hit" cx="164.8" cy="221.0" r="5"><title>photochemistry in the open per s 32.7 at 60 s</title></circle>
+<circle class="hit" cx="265.6" cy="224.7" r="5"><title>photochemistry in the open per s 25.6 at 120 s</title></circle>
+<circle class="hit" cx="366.4" cy="227.6" r="5"><title>photochemistry in the open per s 19.9 at 180 s</title></circle>
+<circle class="hit" cx="467.2" cy="189.5" r="5"><title>photochemistry in the open per s 93.1 at 240 s</title></circle>
+<circle class="hit" cx="568.0" cy="146.0" r="5"><title>photochemistry in the open per s 177 at 300 s</title></circle>
+<circle class="hit" cx="668.8" cy="188.7" r="5"><title>photochemistry in the open per s 94.5 at 360 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="344" y2="344"/>
+<line class="grid" x1="64" x2="736" y1="252" y2="252"/>
+<text x="58" y="348" text-anchor="end">0</text>
+<text x="58" y="262" text-anchor="end">207</text>
+<text class="ptitle" x="70" y="265">free t (oxygen) in the dish</text>
+<path class="line s2" d="M64.0,344.0 L164.8,322.3 L265.6,305.3 L366.4,274.0 L467.2,278.4 L568.0,267.9 L668.8,252.0"/>
+<circle class="hit" cx="64.0" cy="344.0" r="5"><title>free t (oxygen) in the dish 0 at 0 s</title></circle>
+<circle class="hit" cx="164.8" cy="322.3" r="5"><title>free t (oxygen) in the dish 48.8 at 60 s</title></circle>
+<circle class="hit" cx="265.6" cy="305.3" r="5"><title>free t (oxygen) in the dish 86.9 at 120 s</title></circle>
+<circle class="hit" cx="366.4" cy="274.0" r="5"><title>free t (oxygen) in the dish 157 at 180 s</title></circle>
+<circle class="hit" cx="467.2" cy="278.4" r="5"><title>free t (oxygen) in the dish 148 at 240 s</title></circle>
+<circle class="hit" cx="568.0" cy="267.9" r="5"><title>free t (oxygen) in the dish 171 at 300 s</title></circle>
+<circle class="hit" cx="668.8" cy="252.0" r="5"><title>free t (oxygen) in the dish 207 at 360 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="450" y2="450"/>
+<line class="grid" x1="64" x2="736" y1="358" y2="358"/>
+<text x="58" y="454" text-anchor="end">0</text>
+<text x="58" y="368" text-anchor="end">146</text>
+<text class="ptitle" x="70" y="371">free G (the sink)</text>
+<path class="line s3" d="M64.0,450.0 L164.8,423.2 L265.6,401.8 L366.4,358.1 L467.2,380.4 L568.0,369.7 L668.8,358.0"/>
+<circle class="hit" cx="64.0" cy="450.0" r="5"><title>free G (the sink) 0 at 0 s</title></circle>
+<circle class="hit" cx="164.8" cy="423.2" r="5"><title>free G (the sink) 42.5 at 60 s</title></circle>
+<circle class="hit" cx="265.6" cy="401.8" r="5"><title>free G (the sink) 76.4 at 120 s</title></circle>
+<circle class="hit" cx="366.4" cy="358.1" r="5"><title>free G (the sink) 146 at 180 s</title></circle>
+<circle class="hit" cx="467.2" cy="380.4" r="5"><title>free G (the sink) 110 at 240 s</title></circle>
+<circle class="hit" cx="568.0" cy="369.7" r="5"><title>free G (the sink) 127 at 300 s</title></circle>
+<circle class="hit" cx="668.8" cy="358.0" r="5"><title>free G (the sink) 146 at 360 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="556" y2="556"/>
+<line class="grid" x1="64" x2="736" y1="464" y2="464"/>
+<text x="58" y="560" text-anchor="end">0</text>
+<text x="58" y="474" text-anchor="end">148</text>
+<text class="ptitle" x="70" y="477">rust Gt</text>
+<path class="line s4" d="M64.0,556.0 L164.8,553.2 L265.6,541.7 L366.4,531.2 L467.2,505.7 L568.0,485.9 L668.8,464.0"/>
+<circle class="hit" cx="64.0" cy="556.0" r="5"><title>rust Gt 0 at 0 s</title></circle>
+<circle class="hit" cx="164.8" cy="553.2" r="5"><title>rust Gt 4.48 at 60 s</title></circle>
+<circle class="hit" cx="265.6" cy="541.7" r="5"><title>rust Gt 23.1 at 120 s</title></circle>
+<circle class="hit" cx="366.4" cy="531.2" r="5"><title>rust Gt 40 at 180 s</title></circle>
+<circle class="hit" cx="467.2" cy="505.7" r="5"><title>rust Gt 81 at 240 s</title></circle>
+<circle class="hit" cx="568.0" cy="485.9" r="5"><title>rust Gt 113 at 300 s</title></circle>
+<circle class="hit" cx="668.8" cy="464.0" r="5"><title>rust Gt 148 at 360 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="662" y2="662"/>
+<line class="grid" x1="64" x2="736" y1="570" y2="570"/>
+<text x="58" y="666" text-anchor="end">0</text>
+<text x="58" y="580" text-anchor="end">1.32</text>
+<text class="ptitle" x="70" y="583">minus soap tlL (t heads)</text>
+<path class="line s5" d="M64.0,662.0 L164.8,636.0 L265.6,636.6 L366.4,645.5 L467.2,616.8 L568.0,589.9 L668.8,570.0"/>
+<circle class="hit" cx="64.0" cy="662.0" r="5"><title>minus soap tlL (t heads) 0 at 0 s</title></circle>
+<circle class="hit" cx="164.8" cy="636.0" r="5"><title>minus soap tlL (t heads) 0.37 at 60 s</title></circle>
+<circle class="hit" cx="265.6" cy="636.6" r="5"><title>minus soap tlL (t heads) 0.36 at 120 s</title></circle>
+<circle class="hit" cx="366.4" cy="645.5" r="5"><title>minus soap tlL (t heads) 0.24 at 180 s</title></circle>
+<circle class="hit" cx="467.2" cy="616.8" r="5"><title>minus soap tlL (t heads) 0.65 at 240 s</title></circle>
+<circle class="hit" cx="568.0" cy="589.9" r="5"><title>minus soap tlL (t heads) 1.03 at 300 s</title></circle>
+<circle class="hit" cx="668.8" cy="570.0" r="5"><title>minus soap tlL (t heads) 1.32 at 360 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="768" y2="768"/>
+<line class="grid" x1="64" x2="736" y1="676" y2="676"/>
+<text x="58" y="772" text-anchor="end">1</text>
+<text x="58" y="686" text-anchor="end">3</text>
+<text class="ptitle" x="70" y="689">cells with a pigment</text>
+<path class="line s6" d="M64.0,768.0 L164.8,676.0 L265.6,676.0 L366.4,676.0 L467.2,676.0 L568.0,676.0 L668.8,676.0"/>
+<circle class="hit" cx="64.0" cy="768.0" r="5"><title>cells with a pigment 1 at 0 s</title></circle>
+<circle class="hit" cx="164.8" cy="676.0" r="5"><title>cells with a pigment 3 at 60 s</title></circle>
+<circle class="hit" cx="265.6" cy="676.0" r="5"><title>cells with a pigment 3 at 120 s</title></circle>
+<circle class="hit" cx="366.4" cy="676.0" r="5"><title>cells with a pigment 3 at 180 s</title></circle>
+<circle class="hit" cx="467.2" cy="676.0" r="5"><title>cells with a pigment 3 at 240 s</title></circle>
+<circle class="hit" cx="568.0" cy="676.0" r="5"><title>cells with a pigment 3 at 300 s</title></circle>
+<circle class="hit" cx="668.8" cy="676.0" r="5"><title>cells with a pigment 3 at 360 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="874" y2="874"/>
+<line class="grid" x1="64" x2="736" y1="782" y2="782"/>
+<text x="58" y="878" text-anchor="end">1</text>
+<text x="58" y="792" text-anchor="end">3</text>
+<text class="ptitle" x="70" y="795">cells with a t-using engine</text>
+<path class="line s7" d="M64.0,874.0 L164.8,782.0 L265.6,782.0 L366.4,782.0 L467.2,782.0 L568.0,782.0 L668.8,782.0"/>
+<circle class="hit" cx="64.0" cy="874.0" r="5"><title>cells with a t-using engine 1 at 0 s</title></circle>
+<circle class="hit" cx="164.8" cy="782.0" r="5"><title>cells with a t-using engine 3 at 60 s</title></circle>
+<circle class="hit" cx="265.6" cy="782.0" r="5"><title>cells with a t-using engine 3 at 120 s</title></circle>
+<circle class="hit" cx="366.4" cy="782.0" r="5"><title>cells with a t-using engine 3 at 180 s</title></circle>
+<circle class="hit" cx="467.2" cy="782.0" r="5"><title>cells with a t-using engine 3 at 240 s</title></circle>
+<circle class="hit" cx="568.0" cy="782.0" r="5"><title>cells with a t-using engine 3 at 300 s</title></circle>
+<circle class="hit" cx="668.8" cy="782.0" r="5"><title>cells with a t-using engine 3 at 360 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="980" y2="980"/>
+<line class="grid" x1="64" x2="736" y1="888" y2="888"/>
+<text x="58" y="984" text-anchor="end">0</text>
+<text x="58" y="898" text-anchor="end">1.66</text>
+<text class="ptitle" x="70" y="901">breathing into batteries per s</text>
+<path class="line s0" d="M64.0,980.0 L164.8,888.0 L265.6,943.4 L366.4,943.2 L467.2,908.3 L568.0,891.7 L668.8,929.3"/>
+<circle class="hit" cx="64.0" cy="980.0" r="5"><title>breathing into batteries per s 0 at 0 s</title></circle>
+<circle class="hit" cx="164.8" cy="888.0" r="5"><title>breathing into batteries per s 1.66 at 60 s</title></circle>
+<circle class="hit" cx="265.6" cy="943.4" r="5"><title>breathing into batteries per s 0.66 at 120 s</title></circle>
+<circle class="hit" cx="366.4" cy="943.2" r="5"><title>breathing into batteries per s 0.66 at 180 s</title></circle>
+<circle class="hit" cx="467.2" cy="908.3" r="5"><title>breathing into batteries per s 1.29 at 240 s</title></circle>
+<circle class="hit" cx="568.0" cy="891.7" r="5"><title>breathing into batteries per s 1.59 at 300 s</title></circle>
+<circle class="hit" cx="668.8" cy="929.3" r="5"><title>breathing into batteries per s 0.92 at 360 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="1086" y2="1086"/>
+<line class="grid" x1="64" x2="736" y1="994" y2="994"/>
+<text x="58" y="1090" text-anchor="end">0</text>
+<text x="58" y="1004" text-anchor="end">1</text>
+<text class="ptitle" x="70" y="1007">fermenting into batteries per s</text>
+<path class="line s1" d="M64.0,1086.0 L164.8,1086.0 L265.6,1086.0 L366.4,1086.0 L467.2,1086.0 L568.0,1086.0 L668.8,1086.0"/>
+<circle class="hit" cx="64.0" cy="1086.0" r="5"><title>fermenting into batteries per s 0 at 0 s</title></circle>
+<circle class="hit" cx="164.8" cy="1086.0" r="5"><title>fermenting into batteries per s 0 at 60 s</title></circle>
+<circle class="hit" cx="265.6" cy="1086.0" r="5"><title>fermenting into batteries per s 0 at 120 s</title></circle>
+<circle class="hit" cx="366.4" cy="1086.0" r="5"><title>fermenting into batteries per s 0 at 180 s</title></circle>
+<circle class="hit" cx="467.2" cy="1086.0" r="5"><title>fermenting into batteries per s 0 at 240 s</title></circle>
+<circle class="hit" cx="568.0" cy="1086.0" r="5"><title>fermenting into batteries per s 0 at 300 s</title></circle>
+<circle class="hit" cx="668.8" cy="1086.0" r="5"><title>fermenting into batteries per s 0 at 360 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="1192" y2="1192"/>
+<line class="grid" x1="64" x2="736" y1="1100" y2="1100"/>
+<text x="58" y="1196" text-anchor="end">0</text>
+<text x="58" y="1110" text-anchor="end">1</text>
+<text class="ptitle" x="70" y="1113">bursts per s</text>
+<path class="line s2" d="M64.0,1192.0 L164.8,1192.0 L265.6,1192.0 L366.4,1192.0 L467.2,1192.0 L568.0,1192.0 L668.8,1192.0"/>
+<circle class="hit" cx="64.0" cy="1192.0" r="5"><title>bursts per s 0 at 0 s</title></circle>
+<circle class="hit" cx="164.8" cy="1192.0" r="5"><title>bursts per s 0 at 60 s</title></circle>
+<circle class="hit" cx="265.6" cy="1192.0" r="5"><title>bursts per s 0 at 120 s</title></circle>
+<circle class="hit" cx="366.4" cy="1192.0" r="5"><title>bursts per s 0 at 180 s</title></circle>
+<circle class="hit" cx="467.2" cy="1192.0" r="5"><title>bursts per s 0 at 240 s</title></circle>
+<circle class="hit" cx="568.0" cy="1192.0" r="5"><title>bursts per s 0 at 300 s</title></circle>
+<circle class="hit" cx="668.8" cy="1192.0" r="5"><title>bursts per s 0 at 360 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="1298" y2="1298"/>
+<line class="grid" x1="64" x2="736" y1="1206" y2="1206"/>
+<text x="58" y="1302" text-anchor="end">0</text>
+<text x="58" y="1216" text-anchor="end">447</text>
+<text class="ptitle" x="70" y="1219">fluorescence out per s</text>
+<path class="line s3" d="M64.0,1298.0 L164.8,1276.0 L265.6,1280.2 L366.4,1281.3 L467.2,1237.5 L568.0,1206.0 L668.8,1247.9"/>
+<circle class="hit" cx="64.0" cy="1298.0" r="5"><title>fluorescence out per s 0 at 0 s</title></circle>
+<circle class="hit" cx="164.8" cy="1276.0" r="5"><title>fluorescence out per s 107 at 60 s</title></circle>
+<circle class="hit" cx="265.6" cy="1280.2" r="5"><title>fluorescence out per s 86.6 at 120 s</title></circle>
+<circle class="hit" cx="366.4" cy="1281.3" r="5"><title>fluorescence out per s 81 at 180 s</title></circle>
+<circle class="hit" cx="467.2" cy="1237.5" r="5"><title>fluorescence out per s 294 at 240 s</title></circle>
+<circle class="hit" cx="568.0" cy="1206.0" r="5"><title>fluorescence out per s 447 at 300 s</title></circle>
+<circle class="hit" cx="668.8" cy="1247.9" r="5"><title>fluorescence out per s 243 at 360 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="1404" y2="1404"/>
+<line class="grid" x1="64" x2="736" y1="1312" y2="1312"/>
+<text x="58" y="1408" text-anchor="end">0</text>
+<text x="58" y="1322" text-anchor="end">47 k</text>
+<text class="ptitle" x="70" y="1325">entropy rate</text>
+<path class="line s4" d="M64.0,1404.0 L164.8,1327.6 L265.6,1370.9 L366.4,1382.0 L467.2,1330.4 L568.0,1312.0 L668.8,1363.9"/>
+<circle class="hit" cx="64.0" cy="1404.0" r="5"><title>entropy rate 0 at 0 s</title></circle>
+<circle class="hit" cx="164.8" cy="1327.6" r="5"><title>entropy rate 39 k at 60 s</title></circle>
+<circle class="hit" cx="265.6" cy="1370.9" r="5"><title>entropy rate 16.9 k at 120 s</title></circle>
+<circle class="hit" cx="366.4" cy="1382.0" r="5"><title>entropy rate 11.3 k at 180 s</title></circle>
+<circle class="hit" cx="467.2" cy="1330.4" r="5"><title>entropy rate 37.6 k at 240 s</title></circle>
+<circle class="hit" cx="568.0" cy="1312.0" r="5"><title>entropy rate 47 k at 300 s</title></circle>
+<circle class="hit" cx="668.8" cy="1363.9" r="5"><title>entropy rate 20.5 k at 360 s</title></circle>
+<line class="grid" x1="64" x2="736" y1="1510" y2="1510"/>
+<line class="grid" x1="64" x2="736" y1="1418" y2="1418"/>
+<text x="58" y="1514" text-anchor="end">0.24</text>
+<text x="58" y="1428" text-anchor="end">0.32</text>
+<text class="ptitle" x="70" y="1431">ORDER</text>
+<path class="line s5" d="M164.8,1418.0 L265.6,1457.6 L366.4,1478.8 L467.2,1494.6 L568.0,1504.8 L668.8,1510.0"/>
+<circle class="hit" cx="164.8" cy="1418.0" r="5"><title>ORDER 0.32 at 60 s</title></circle>
+<circle class="hit" cx="265.6" cy="1457.6" r="5"><title>ORDER 0.28 at 120 s</title></circle>
+<circle class="hit" cx="366.4" cy="1478.8" r="5"><title>ORDER 0.26 at 180 s</title></circle>
+<circle class="hit" cx="467.2" cy="1494.6" r="5"><title>ORDER 0.25 at 240 s</title></circle>
+<circle class="hit" cx="568.0" cy="1504.8" r="5"><title>ORDER 0.24 at 300 s</title></circle>
+<circle class="hit" cx="668.8" cy="1510.0" r="5"><title>ORDER 0.24 at 360 s</title></circle>
+</svg>

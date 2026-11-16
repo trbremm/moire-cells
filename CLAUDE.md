@@ -560,6 +560,14 @@ C13. FIELDS AS GENES, FIELDS AS GUIDES (user 2026-11-16 chose it next, over more
     round / column / sprawl; turn: one sheet vs ring of rosettes; glue: tight sheet with a wedge flower vs loose rows;
     engines: dark-cored middle), ~4x stronger with the long beat. EVOLUTION: NULL, gate genes drift like the neutral
     control (+-0.6); beat periods do not tile the dish (median 4.5-7 R). Speed -7..8 %.
+C12f. VENTS THAT FEED LIFE IN THE DARK (user 2026-11-16 "maybe we should adapt the chemistry then", after the app
+    worker found a fully dark vent dish starves in 100 s: fermenting vent fuel earns the culture ~0.001 energy/s). Start
+    after C12e is merged (same files). First DIAGNOSE (vent rate, engine rates, sparks, C12e saturation clogging small
+    releases, upkeep). Then CHEMOSYNTHESIS from a redox gradient, derived from the electron table: the vent becomes a
+    HOT source of free givers (g, G: hydrogen/iron-like, reduced), the "sea" a faint dish-wide background of free heavy
+    takers T (sulfate/CO2-like, booked as input like springs); G+T -> GT 2.375, g+T -> gT 1.5. Sparks keep it slow in
+    the cold open, vent heat burns it abiotically close in, cells' engines (enzymes) run it anywhere. Hoped for (never
+    written): rings of life around vents in total darkness.
 VIEW AND APP (user 2026-11-16, alongside C12e; two parallel branches):
 H1. HARMONIC VIEW (user: "one of my original inspirations are these higher harmonic microscopy images"; they showed a
     multiphoton tissue image: green thin rims around dark interiors (muscle-fibre honeycomb, threads, hollow rings),
@@ -569,12 +577,27 @@ H1. HARMONIC VIEW (user: "one of my original inspirations are these higher harmo
     packed tissue reads as a green honeycomb with dark insides; ORANGE (SHG-like) = ordered fibres: crust chains and
     walls, stretched/aligned cells as fibrous streaks (the moire beat may give the fibre direction); BLUE-VIOLET
     (autofluorescence-like) = metabolism: fuel, batteries, running engines. No neon halo, trails or flicker; slight
-    blur and photon grain. User to correct the channel reading if wrong.
+    blur and photon grain. User: "they don't need to be strictly like that, just the general look" (the mapping is a
+    guide). The reference image is the user's: never commit it (public repo).
 APP. Zoom and pan (pinch on touch; the wheel keeps tilting the spotlight in spotlight mode), ZOO panels (molecules: the
     periodic table drawn, energies, absorption, glow; cells: the lineages living now, portraits, counts), tools to ADD
     CELLS (pick from the zoo or founder types, tap to place) and a molecule pipette, NEW CULTURE dialog (founders, how
     spread: one clump / scattered / several colonies, diversity) and PRESET ENVIRONMENTS (e.g. hot vent in the dark,
     sunlit shallows, oil slick, oxygen world, crust desert, tissue lab), each with a one-line description.
+LATER, WATER-DROP UNIVERSE (user 2026-11-16 brainstorm, "keep it as a plan for us to go to later"; not scheduled).
+    User's idea: "a 2.5D representation in which the 2D rendered cells can stack, but the rules under it go 3D" (chosen
+    over a full 3D beaker, which would be close to a second engine; a 2D side-view "column mode" was also discussed).
+    A "drop" mode beside the petri dish:
+    - Look: flat neon cells at a height, overlapping where stacked; a FOCUS PLANE: in focus = sharp tubes, out of focus =
+      soft glowing bokeh discs (depth without spending colour); focus slider; optional depth-colour-coded projection.
+    - Rules 3D underneath: cells as hexagonal PRISMS (6 sides + top + bottom faces for sensing, glue, contact), so crowded
+      cells climb, pile, form spheroids; substrate in a few depth layers following the drop's dome (thin rim, thick
+      middle); gravity (crust sinks, oil floats into a surface skin, cells sink/float by what they carry); light fading
+      with depth; moire lattices stay in-plane, envelopes use 3D distance.
+    - Variants: SITTING drop (dome; coffee ring if evaporation at the rim) and HANGING drop (gravity to the tip: the
+      organoid/spheroid method; Claude's pick to go first). Switch: air brings oxygen in at the surface, or not.
+    - Order proposed: the drop alone (dome, layers, gravity, light depth) -> cells get height (3D contact, stacking,
+      buoyancy, focus drawing) -> hanging drop / coffee ring.
 LATER, PURIST VERSION (user 2026-11-15: hoped for "a more game of life situation", surprised how many abstractions
     were needed; chose to KEEP GOING with lipids (C12b) and the oxygen story, "I can go back to the purist version
     later"). Idea on file: a separate small page "moire life": cells of a few colours, pairwise push/pull through

@@ -1,0 +1,64 @@
+{
+  "name": "c12e-reload-c12d",
+  "description": "a C12d snapshot (oxy-spot_s7 at 40 min, cells of 84 words) loaded by ?snap= on the C12e page: it widens and runs with saturation and osmosis off",
+  "condition": {
+    "name": "c12e-reload-c12d",
+    "description": "a C12d snapshot (oxy-spot_s7 at 40 min, cells of 84 words) loaded by ?snap= on the C12e page: it widens and runs with saturation and osmosis off",
+    "query": {
+      "snap": "experiments/runs/c12d-oxy-spot_s7/snapshots/snap_t2400.json"
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "evals": [
+      {
+        "t": 2400,
+        "js": "return { sat: moire.waste.params.saturation, osm: moire.waste.params.osmosis }"
+      }
+    ],
+    "shots": [
+      {
+        "t": 2460
+      }
+    ]
+  },
+  "url": "http://localhost:49785/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/runs/c12d-oxy-spot_s7/snapshots/snap_t2400.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "f1e4322abcee3e4aa529342156a228c0c8be09c4",
+  "dirty": true,
+  "started": "2026-11-16T12:09:13",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": true,
+    "notes": [
+      "saved before step C12e: saturation and osmosis off (as it ran)"
+    ],
+    "rebased": null,
+    "rounding": {
+      "energy": -0.1834869384765625,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": -0.1834869384765625,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 2583,
+    "time": 2399.9999999996844
+  },
+  "t_start": 2399.9999999996844,
+  "sim_s": 60.0,
+  "run_wall_s": 40.05,
+  "speed_reached": 1.5,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T12:10:35",
+  "wall_s": 81.79
+}

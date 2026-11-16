@@ -1322,3 +1322,54 @@ dish, so it is less concentrated. In the full-light presets the crusts round the
 - A smell for the nutrient (the cells' smell weighs only fuel today), so cells can climb a trace plume to its oasis.
 - The harmonic look of a crowded full-light dish shows the caustic net only faintly by design (no channel for light); a view that
   colours cells by the light they caught would show the net in the colony.
+
+# Merge: C12g + N1
+
+After merging step C12g (ion flow, the charge field off) and step N1 (nutrient landscape), with two follow-ups on: TRACE LEAVES LIFE (a
+worn or bleached pigment's trace goes to the dish under the cell) and the founders' MIXED field-B sign (README "Merge: C12g + N1").
+
+**How.** `experiments/conditions/merge-n1/`: `main.json` (the default scene and the Oases preset, seeds 3 and 7, 20 min; the Oases
+preset again with `?pigshed=0` as the control), `bury.json` (a knob probe), `check.json` / `check-ab.json` (the books), `reload.json`
+(old snapshots), `speed.json`. Numbers by `experiments/conditions/n1/analyse.py --from 600` (means over 10..20 min) and `where.py`
+(from the snapshots at 10 and 20 min). Headless Chrome, GTX 1650, MAX, the GPU free. One run per seed.
+
+| run | cells 2 / 5 / 10 / 15 / 20 min | income per s, light made (10..20 min) | photons used (saturated, no trace, no material) | within 15 R of an oasis, 10 / 20 min | trace dish / cells (20 min) | heat out 15 min, ORDER 20 min |
+|---|---|---|---|---|---|---|
+| default s3 | 358 / 1037 / 909 / 555 / 623 | 76, 94 % | 20 % (33, 15, 30) | x2.3 / x2.7 (22 % on 8 %) | 308 / 94 | 11.0 M, 0.141 |
+| default s7 | 306 / 1054 / 897 / 524 / 498 | 67, 92 % | 21 % (33, 15, 29) | x2.5 / x3.1 (27 % on 9 %) | 321 / 64 | 10.4 M, 0.147 |
+| Oases s3 | 135 / 79 / 644 / 1990 / 4581 | 267, 92 % | 45 % (14, 26, 13) | x1.0 / x0.9 | 396 / 266 | 18.6 M, 0.147 |
+| Oases s7 | 82 / 124 / 2599 / 5811 / 6000 | 611, 100 % | 39 % (15, 26, 18) | x1.3 / x1.0 | 353 / 484 | 25.7 M, 0.164 |
+| Oases s3, shed off | 104 / 105 / 1384 / 3485 / 6000 | 421, 97 % | 46 % (14, 25, 13) | x0.6 / x1.0 | 371 / 425 | 21.0 M, 0.161 |
+| Oases s7, shed off | 80 / 191 / 3837 / 5999 / 5999 | 585, 105 % | 41 % (15, 19, 23) | x1.1 / x1.0 | 391 / 505 | 30.0 M, 0.158 |
+| probe: Oases s3, bury x5 | 126 / 58 / 289 / 892 / 1160 | 44, 12 % | 29 % (13, 43, 13) | x3.1 / x1.1 | 111 / 21 | 17.2 M, 0.136 |
+
+What it looks like:
+- **Default scene** (`experiments/keep/merge-n1/default-s3-20min.jpg`): one dense round colony of neon cells filling the spotlight, its
+  edge spilling a little into the dark; the lasting oasis's silver ring is inside the colony at the spot's edge; the two roaming oases
+  are small silver rings out in the dark half, each trailing a loose cloud of silver specks drawn out by the eddies, with nobody near
+  them. In the harmonic look (`default-s7-harmonic-20min.jpg`) the colony is a green honeycomb of rims with violet insides, orange
+  fibrous crust where the springs were, beside the colony.
+- **Oases preset at 10 minutes** (`oases-s3-10min.jpg`, harmonic `oases-s3-harmonic-10min.jpg`): a patchwork of small colonies and
+  chains scattered over the whole dish between brown-orange crust patches, cyan and violet clusters among cream ones; the oases are
+  pale rings among them, no crowd round them. By 15 to 20 minutes the dish fills to the capacity (6000) in seed 7 and nearly in seed 3.
+- Light still makes 92 to 100 % of the income wherever there is light (as in N1).
+
+Findings:
+- **The merged default scene is healthier than N1 alone** (seed 3 holds 500 to 900 cells instead of dwindling to 99), most likely
+  C12g's charge field off (N1's runs had it on).
+- **Trace leaves life**: with the shed the default colonies hold a fifth to a third of the dish's trace (N1 alone: the cells held more
+  than the dish); in the Oases preset the shed lowered the cells' trace (266 against 425, seed 3) and slowed the filling.
+- **But the oases still do not decide where life stays in a lit dish**: with or without the shed the cells sit at the oases no more
+  than chance (x0.9 to x1.0 at 20 min). The currents carry the trace over the whole dish before it settles (plumes ~50 R, dish ~100 x 60
+  R), so the trace under the cells equals the dish's mean; light and the mineral springs decide, then the dish fills.
+- **The probe** with trace settling 5 x faster (plumes ~20 R) gave the geography for a while (x3.1 at 10 min, trace under the cells 2.6
+  x the mean) but made trace so scarce that light stopped paying (12 % of the income; two thirds of the cells became eaters on the
+  mineral springs), and the eaters spread (x1.1 at 20 min). The wanted dish sits between the two settings.
+- **Founders' B sign**: starts mixed (mean +-0.3, spread 0.95); in the default scene one sign takes over within 5 minutes (s3 -, s7 +),
+  in the Oases preset both persist. No visible change in the colonies' shape (qGene 0.15).
+- **Entropy**: less life, less heat out (the shed: 18.6 and 25.7 M at 15 min against 21.0 and 30.0 M without it); ORDER 0.14 to 0.16.
+- **Books**: atoms and charge 0 in every sample of every run (but the paused resize instants of the check), energy within -0.11 and
+  +0.30. Speed (GPU free): 2000 cells x7.45 neon / x8.13 harmonic, 10 000 cells x1.84 / x2.06 (before: x7.39 / x7.75, x1.75 / x1.92).
+
+**What to try next**: plumes between the two settings (bury about 1/60, or slower currents in the Oases preset), a smell for trace so
+cells can climb a plume, and the shed-off control in the default scene.

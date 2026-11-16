@@ -1,0 +1,71 @@
+{
+  "name": "merge-n1-oases_s7",
+  "description": "After merging C12g + N1, with the follow-ups on: the Oases preset (half light with a caustic net, 4 roaming oases, scattered cells, mineral springs, a slow vent), 20 min",
+  "condition": {
+    "name": "merge-n1-oases_s7",
+    "description": "After merging C12g + N1, with the follow-ups on: the Oases preset (half light with a caustic net, 4 roaming oases, scattered cells, mineral springs, a slow vent), 20 min",
+    "query": {
+      "preset": "oases",
+      "seed": 7
+    },
+    "duration": 1200,
+    "sample_every": 30,
+    "snapshots": [
+      {
+        "t": 600
+      },
+      {
+        "t": 1200
+      }
+    ],
+    "evals": [
+      {
+        "t": 1202,
+        "js": "moire.control.action('harmonic'); return 'harmonic'"
+      }
+    ],
+    "shots": [
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1203,
+        "name": "harmonic"
+      }
+    ]
+  },
+  "url": "http://localhost:50639/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=oases&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "3a34fc241636cbcec7f468a5e3d45151a34d8493",
+  "dirty": true,
+  "started": "2026-11-16T21:55:40",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 327.87,
+  "speed_reached": 3.66,
+  "samples": 41,
+  "shots": [
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t1200.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t600.json",
+    "snapshots/snap_t1200.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T22:01:47",
+  "wall_s": 367.92
+}

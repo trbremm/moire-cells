@@ -1,0 +1,35 @@
+{
+  "name": "merge-n1-speed-10k-neon-r2",
+  "description": "Speed after the C12g + N1 merge and follow-ups: default scene, 10000 cells, seed 3, MAX, 60 s, neon look, repeat 2",
+  "condition": {
+    "name": "merge-n1-speed-10k-neon-r2",
+    "description": "Speed after the C12g + N1 merge and follow-ups: default scene, 10000 cells, seed 3, MAX, 60 s, neon look, repeat 2",
+    "query": {
+      "seed": 3,
+      "cells": 10000
+    },
+    "duration": 60,
+    "sample_every": 10
+  },
+  "url": "http://localhost:52671/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&cells=10000",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "3a34fc241636cbcec7f468a5e3d45151a34d8493",
+  "dirty": true,
+  "started": "2026-11-16T22:19:14",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 31.99,
+  "speed_reached": 1.88,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T22:20:20",
+  "wall_s": 65.96
+}

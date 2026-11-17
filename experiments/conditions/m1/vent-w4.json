@@ -1,0 +1,38 @@
+{
+ "name": "m1-vent-w4",
+ "description": "step M1 Task B pilot: the Deep vents preset in total darkness, ring, the M1 fixes off, 5 min",
+ "query": {
+  "preset": "vent",
+  "oilsoap": 0,
+  "biteblock": 0
+ },
+ "duration": 300,
+ "sample_every": 10,
+ "snapshots": [
+  {
+   "t": 60,
+   "grid": true
+  },
+  {
+   "t": 120,
+   "grid": true
+  },
+  {
+   "t": 300,
+   "grid": true
+  }
+ ],
+ "shots": [
+  {
+   "t": 120
+  },
+  {
+   "t": 300
+  },
+  {
+   "t": 300,
+   "panel": true,
+   "name": "panel"
+  }
+ ]
+}

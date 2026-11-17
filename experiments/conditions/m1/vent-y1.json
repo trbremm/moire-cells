@@ -1,0 +1,37 @@
+{
+ "name": "m1-vent-y1",
+ "description": "step M1 Task B pilot: the Deep vents preset in total darkness, ring, every founder only g + T -> gT (rate 2), 5 min",
+ "query": {
+  "preset": "vent",
+  "genes": "eng0:12,rate0:2,rate1:0,rate2:0"
+ },
+ "duration": 300,
+ "sample_every": 10,
+ "snapshots": [
+  {
+   "t": 60,
+   "grid": true
+  },
+  {
+   "t": 120,
+   "grid": true
+  },
+  {
+   "t": 300,
+   "grid": true
+  }
+ ],
+ "shots": [
+  {
+   "t": 120
+  },
+  {
+   "t": 300
+  },
+  {
+   "t": 300,
+   "panel": true,
+   "name": "panel"
+  }
+ ]
+}

@@ -1,0 +1,75 @@
+{
+  "name": "m1-reload",
+  "description": "a snapshot from before M1 (merge-n1-default_s3 at 10 min): the M1 fixes load off",
+  "condition": {
+    "name": "m1-reload",
+    "description": "a snapshot from before M1 (merge-n1-default_s3 at 10 min): the M1 fixes load off",
+    "query": {
+      "snap": "experiments/runs/merge-n1-default_s3/snapshots/snap_t600.json"
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "evals": [
+      {
+        "t": 5,
+        "js": "return moire.whole.params"
+      }
+    ],
+    "shots": [
+      {
+        "t": 60
+      }
+    ]
+  },
+  "url": "http://localhost:64864/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/runs/merge-n1-default_s3/snapshots/snap_t600.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "9e4078cc1c965de590e547dc78b96c5dbd31bc73",
+  "dirty": true,
+  "started": "2026-11-16T23:53:53",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": true,
+    "notes": [
+      "saved before step M1: no head on oil inside cells, bites as before (as it ran)"
+    ],
+    "rebased": null,
+    "rounding": {
+      "energy": 0.086212158203125,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": 0.086212158203125,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 909,
+    "time": 600.0000000000159
+  },
+  "t_start": 600.0000000000159,
+  "sim_s": 60.0,
+  "run_wall_s": 8.01,
+  "speed_reached": 7.49,
+  "samples": 7,
+  "shots": [
+    "shots/t60.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 4.999999999999886,
+      "js": "return moire.whole.params",
+      "result": {
+        "oilSoap": false,
+        "biteBlock": false
+      }
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-16T23:54:36",
+  "wall_s": 42.83
+}

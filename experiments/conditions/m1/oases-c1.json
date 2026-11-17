@@ -1,0 +1,33 @@
+{
+ "name": "m1-oases-c1",
+ "description": "step M1 Task C: the Oases preset, bury 1/60 per s, 20 min",
+ "query": {
+  "preset": "oases",
+  "bury": 0.0167
+ },
+ "duration": 1200,
+ "sample_every": 30,
+ "snapshots": [
+  {
+   "t": 600,
+   "grid": true
+  },
+  {
+   "t": 1200,
+   "grid": true
+  }
+ ],
+ "shots": [
+  {
+   "t": 600
+  },
+  {
+   "t": 1200
+  },
+  {
+   "t": 1200,
+   "panel": true,
+   "name": "panel"
+  }
+ ]
+}

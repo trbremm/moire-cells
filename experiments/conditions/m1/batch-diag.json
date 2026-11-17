@@ -1,0 +1,13 @@
+{
+ "batch": "m1-diag",
+ "runs": [
+  "diag-default.json",
+  "diag-oases.json",
+  "diag-shallows.json",
+  "diag-oxy-spot.json",
+  "diag-oxy-full.json"
+ ],
+ "seeds": [
+  3
+ ]
+}

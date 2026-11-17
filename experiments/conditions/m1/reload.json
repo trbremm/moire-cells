@@ -1,0 +1,24 @@
+{
+ "runs": [
+  {
+   "name": "m1-reload",
+   "description": "a snapshot from before M1 (merge-n1-default_s3 at 10 min): the M1 fixes load off",
+   "query": {
+    "snap": "experiments/runs/merge-n1-default_s3/snapshots/snap_t600.json"
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "evals": [
+    {
+     "t": 5,
+     "js": "return moire.whole.params"
+    }
+   ],
+   "shots": [
+    {
+     "t": 60
+    }
+   ]
+  }
+ ]
+}

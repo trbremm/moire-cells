@@ -1,0 +1,95 @@
+{
+  "name": "m1-vent-v4_s3",
+  "description": "step M1 Task B pilot: the Deep vents preset in total darkness, vents 15 atoms/s, heat 3, sea level 1 at 0.05, 5 min",
+  "condition": {
+    "name": "m1-vent-v4_s3",
+    "description": "step M1 Task B pilot: the Deep vents preset in total darkness, vents 15 atoms/s, heat 3, sea level 1 at 0.05, 5 min",
+    "query": {
+      "preset": "vent",
+      "ventheat": 3,
+      "sealevel": 1,
+      "searate": 0.05,
+      "seed": 3
+    },
+    "duration": 300,
+    "sample_every": 10,
+    "snapshots": [
+      {
+        "t": 60,
+        "grid": true
+      },
+      {
+        "t": 120,
+        "grid": true
+      },
+      {
+        "t": 300,
+        "grid": true
+      }
+    ],
+    "shots": [
+      {
+        "t": 120
+      },
+      {
+        "t": 300
+      },
+      {
+        "t": 300,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "evals": [
+      {
+        "t": 0,
+        "js": "moire.matter.springs.forEach(s => { if (s.kind === 'heavy') s.rate = 15; }); return moire.matter.springs.map(s => s.kind + ' ' + s.rate)"
+      }
+    ]
+  },
+  "url": "http://localhost:54849/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=vent&ventheat=3&sealevel=1&searate=0.05&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "9e4078cc1c965de590e547dc78b96c5dbd31bc73",
+  "dirty": true,
+  "started": "2026-11-16T23:35:42",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 300.0,
+  "run_wall_s": 15.09,
+  "speed_reached": 19.89,
+  "samples": 31,
+  "shots": [
+    "shots/t120.png",
+    "shots/t300.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t60.json",
+    "snapshots/snap_t120.json",
+    "snapshots/snap_t300.json"
+  ],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.matter.springs.forEach(s => { if (s.kind === 'heavy') s.rate = 15; }); return moire.matter.springs.map(s => s.kind + ' ' + s.rate)",
+      "result": [
+        "heavy 15",
+        "light 12",
+        "heavy 15",
+        "light 12",
+        "heavy 15",
+        "light 12",
+        "oasis 1",
+        "oasis 1",
+        "oasis 1"
+      ]
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-16T23:36:35",
+  "wall_s": 53.73
+}

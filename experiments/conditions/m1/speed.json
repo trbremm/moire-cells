@@ -1,0 +1,125 @@
+{
+ "batch": "m1-speed",
+ "runs": [
+  {
+   "name": "m1-speed-2k-neon-r1",
+   "description": "step M1 speed: default scene, 2000 cells, MAX, 150 s, neon",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 25
+  },
+  {
+   "name": "m1-speed-10k-neon-r1",
+   "description": "step M1 speed: default scene, 10000 cells, MAX, 60 s, neon",
+   "query": {
+    "seed": 3,
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10
+  },
+  {
+   "name": "m1-speed-2k-harmonic-r1",
+   "description": "step M1 speed: default scene, 2000 cells, MAX, 150 s, harmonic",
+   "query": {
+    "seed": 3,
+    "look": "harmonic"
+   },
+   "duration": 150,
+   "sample_every": 25
+  },
+  {
+   "name": "m1-speed-10k-harmonic-r1",
+   "description": "step M1 speed: default scene, 10000 cells, MAX, 60 s, harmonic",
+   "query": {
+    "seed": 3,
+    "cells": 10000,
+    "look": "harmonic"
+   },
+   "duration": 60,
+   "sample_every": 10
+  },
+  {
+   "name": "m1-speed-2k-neon-r2",
+   "description": "step M1 speed: default scene, 2000 cells, MAX, 150 s, neon",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 25
+  },
+  {
+   "name": "m1-speed-10k-neon-r2",
+   "description": "step M1 speed: default scene, 10000 cells, MAX, 60 s, neon",
+   "query": {
+    "seed": 3,
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10
+  },
+  {
+   "name": "m1-speed-2k-harmonic-r2",
+   "description": "step M1 speed: default scene, 2000 cells, MAX, 150 s, harmonic",
+   "query": {
+    "seed": 3,
+    "look": "harmonic"
+   },
+   "duration": 150,
+   "sample_every": 25
+  },
+  {
+   "name": "m1-speed-10k-harmonic-r2",
+   "description": "step M1 speed: default scene, 10000 cells, MAX, 60 s, harmonic",
+   "query": {
+    "seed": 3,
+    "cells": 10000,
+    "look": "harmonic"
+   },
+   "duration": 60,
+   "sample_every": 10
+  },
+  {
+   "name": "m1-speed-2k-neon-r3",
+   "description": "step M1 speed: default scene, 2000 cells, MAX, 150 s, neon",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 25
+  },
+  {
+   "name": "m1-speed-10k-neon-r3",
+   "description": "step M1 speed: default scene, 10000 cells, MAX, 60 s, neon",
+   "query": {
+    "seed": 3,
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10
+  },
+  {
+   "name": "m1-speed-2k-harmonic-r3",
+   "description": "step M1 speed: default scene, 2000 cells, MAX, 150 s, harmonic",
+   "query": {
+    "seed": 3,
+    "look": "harmonic"
+   },
+   "duration": 150,
+   "sample_every": 25
+  },
+  {
+   "name": "m1-speed-10k-harmonic-r3",
+   "description": "step M1 speed: default scene, 10000 cells, MAX, 60 s, harmonic",
+   "query": {
+    "seed": 3,
+    "cells": 10000,
+    "look": "harmonic"
+   },
+   "duration": 60,
+   "sample_every": 10
+  }
+ ]
+}

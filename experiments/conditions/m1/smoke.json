@@ -1,0 +1,2 @@
+{"name": "m1-smoke", "description": "step M1: does it run (default scene, 60 s)", "query": {}, "duration": 60, "sample_every": 10,
+ "shots": [{"t": 60, "panel": true, "name": "panel"}]}

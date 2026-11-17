@@ -1,0 +1,12 @@
+{
+ "batch": "m1-oases",
+ "runs": [
+  "oases-c0.json",
+  "oases-c1.json",
+  "oases-c2.json",
+  "oases-c4.json"
+ ],
+ "seeds": [
+  3
+ ]
+}

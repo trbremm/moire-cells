@@ -1,0 +1,35 @@
+{
+  "name": "m1-speed-2k-harmonic-r2",
+  "description": "step M1 speed: default scene, 2000 cells, MAX, 150 s, harmonic",
+  "condition": {
+    "name": "m1-speed-2k-harmonic-r2",
+    "description": "step M1 speed: default scene, 2000 cells, MAX, 150 s, harmonic",
+    "query": {
+      "seed": 3,
+      "look": "harmonic"
+    },
+    "duration": 150,
+    "sample_every": 25
+  },
+  "url": "http://localhost:60417/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&look=harmonic",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "52d5b9407275f75ea664ee1986827a79603e56a4",
+  "dirty": true,
+  "started": "2026-11-17T01:13:19",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 150.0,
+  "run_wall_s": 19.05,
+  "speed_reached": 7.87,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-17T01:14:12",
+  "wall_s": 52.4
+}

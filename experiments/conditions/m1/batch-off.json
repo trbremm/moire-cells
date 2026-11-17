@@ -1,0 +1,12 @@
+{
+ "batch": "m1-off",
+ "runs": [
+  "off-default.json",
+  "off-oxy-spot.json",
+  "off-oxy-full.json",
+  "null-oxy-full.json"
+ ],
+ "seeds": [
+  3
+ ]
+}

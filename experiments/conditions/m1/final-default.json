@@ -1,0 +1,84 @@
+{
+ "name": "m1-final-default",
+ "description": "step M1 record: default with the M1 defaults (head on oil, bites through the block), 20 min",
+ "query": {},
+ "duration": 1203,
+ "sample_every": 20,
+ "snapshots": [
+  {
+   "t": 600,
+   "grid": true
+  },
+  {
+   "t": 1200,
+   "grid": true
+  }
+ ],
+ "shots": [
+  {
+   "t": 600
+  },
+  {
+   "t": 1200
+  },
+  {
+   "t": 1200,
+   "panel": true,
+   "name": "panel"
+  },
+  {
+   "t": 1202,
+   "name": "harmonic"
+  },
+  {
+   "t": 1200,
+   "crop": [
+    560,
+    320,
+    160,
+    160
+   ],
+   "scale": 4,
+   "name": "close0"
+  },
+  {
+   "t": 1200,
+   "crop": [
+    700,
+    420,
+    160,
+    160
+   ],
+   "scale": 4,
+   "name": "close1"
+  },
+  {
+   "t": 1202,
+   "crop": [
+    560,
+    320,
+    160,
+    160
+   ],
+   "scale": 4,
+   "name": "close0_harmonic"
+  },
+  {
+   "t": 1202,
+   "crop": [
+    700,
+    420,
+    160,
+    160
+   ],
+   "scale": 4,
+   "name": "close1_harmonic"
+  }
+ ],
+ "evals": [
+  {
+   "t": 1201,
+   "js": "moire.control.action('harmonic'); return 'harmonic'"
+  }
+ ]
+}

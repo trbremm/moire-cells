@@ -39,7 +39,8 @@
 //   ?light=spot|full|off   step C2: the light's mode (Shift+L); ?spot=x,y,r the spot's centre and radius (shares of the
 //               dish's width, height and shorter side, or CSS px if any is above 2); ?tilt=deg (0..70); ?az=deg (the
 //               direction the light comes from: 0 right, 90 below, 180 left, 270 above); ?day=0 no day / night cycle
-//               (Shift+D); ?hour=h the hour of the day at the start (12 = noon); ?clouds=0 no clouds (full field)
+//               (Shift+D); ?hour=h the hour of the day at the start (12 = noon); ?clouds=0 no clouds (full field);
+//               ?power=x the light's power (default 33: per 100 px^2 at the reference R, i.e. 13.9 per R^2; src/dish.js)
 //   ?neon=0     step C6n: start with the flat look (key E); ?halo=off|low|medium|high (Shift+1); ?trails=0 (Shift+2);
 //               ?hum=0 (Shift+3); ?cheap=0|1 the phone's cheaper neon path off / on (default: on touch screens and small
 //               windows); ?machinery=1 start with every diagnostic layer shown (Shift+4; default: the clean view)
@@ -130,7 +131,8 @@
 //               ?zoom=z or ?zoom=z,x,y the view zoomed (centre as shares of the dish)
 //   ?dish=WxH     the dish's size in cell radii (or WxHum in micrometres), kept while the window changes (src/dish.js; default: the
 //               window's at the start); ?dishfollow=1 the window IS the dish, as before (a resize re-sizes it: new R, new grid, the
-//               old drained, supplies per px)
+//               old drained, supplies per px); ?medium=x the medium lattice's R in cell radii (default 1.389); ?perarea=0 a fixed
+//               dish with the old amounts (light per px^2, capacity 3 x the starting number, springs and oases per dish, medium 1.389 R)
 //   ?mut=0      start with mutation off (key M); ?life=0 with the life cycle off (key T: no births, no deaths)
 //   Experiments (src/lab.js, src/snapshot.js; README "Experiments: tools"): ?snap=<file> loads a snapshot at the start (its
 //               starting number and capacity, its settings); ?clone=1 copies the first live cell's genes to every cell
@@ -276,6 +278,7 @@ async function boot() {
   }
   // the DISH (src/dish.js): its own size, chosen now and kept while the window changes (?dishfollow=1: the window is the dish, as before)
   const dishR = parseDish(params.get('dish'));
+  if (params.has('perarea') && !flag('perarea')) dish.perArea = false;   // ?perarea=0: supplies per px / per dish as before (a comparison)
   let nCells = snap ? snap.start : Number(params.get('cells')) || defaultCells();
   {
     const [winW, winH] = windowSize();
@@ -288,6 +291,9 @@ async function boot() {
       dish.fromCells(dishR[0], dishR[1], winW, winH, params.has('dish') && PRESET && !new URLSearchParams(location.search).has('dish') ? 'preset' : 'url');
       if (!params.has('cells')) nCells = Math.min(nCells, dish.maxStart());
     } else dish.fromWindow(winW, winH, nCells);
+    // ?medium=x: the medium lattice's R in cell radii (default 1.389: the moire beats' size in cell units; the old window rule gave 1 to 3)
+    const mq = Number(params.get('medium'));
+    if (!snap && !dish.follow && params.has('medium') && mq > 0.2 && mq < 20) dish.mR = mq * dish.R;
   }
   // step C9: the capacity; with ?divide=0 (a fixed count) no room beyond the starting number unless ?cap= asks for it; per area (the dish's)
   const nCap = snap ? snap.count : Number(params.get('cap')) || (params.has('divide') && !flag('divide') ? nCells : dish.capacity(nCells));
@@ -750,6 +756,7 @@ function lightOptions(L) {
   if (params.has('day')) P.day = flag('day');
   if (params.has('hour')) P.dayStart = (((Number(params.get('hour')) || 0) / 24) % 1 + 1) % 1;
   if (params.has('clouds')) P.clouds = flag('clouds');
+  { const v = Number(params.get('power')); if (params.has('power') && Number.isFinite(v) && v >= 0) P.power = v; }   // (the light's power, default 33)
 }
 
 // ---------- size ----------

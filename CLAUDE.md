@@ -660,6 +660,11 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        SPECIES SLOTS on the grid (recycled when a species dies out); proteins decay back to atoms. Order: S1 parts 1-2, then
        X1 with fibres first (contact guidance, traction), then exoenzymes / adhesives / toxins / signals. Engines stay as
        they are (no rewrite into proteins unless the user asks).
+       DANGER SIGNALS (user 2026-11-17 asked whether bacteria have death/threat markers: yes, necrosignalling, kin-lysis
+       danger sensing, altruistic suicide). Not an alarm rule: KEPT (non-secreted) proteins reach the dish only when a cell
+       bursts, so 'inside-only stuff found outside' is a derived DAMP. Add ONE gene-network sense for it (kin-weighted by the
+       spilled membrane's self marker: my kin died vs a stranger died); evolution decides the response (walls, pumps, glue,
+       fleeing, faster division, suicide). Census: lineages wired to it vs a neutral control under predators / warfare.
     6a4. S2 FLAGELLA AND CILIA (user 2026-11-17 asked; after S1, needs G0's two-way water). Motors as PARTS (the user's
        body-plus-parts plan): FLAGELLUM = a swimmer's motor at the back (or front) along the cell's front; at low Reynolds a
        swimmer is force-free, so it stirs the water as a FORCE DIPOLE (pusher like E. coli / puller like algae), unlike a

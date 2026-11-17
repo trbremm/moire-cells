@@ -230,6 +230,18 @@ export function cultureLayout(L, W, H, R, n, rng) {
   };
 }
 
+/**
+ * The dish's size (src/dish.js), as the New culture dialog offers it: [label, size in R or null (the window's), help]. The reference is the
+ * experiments' default window (1280 x 800 px with 2000 cells: 198 x 123 R); the strip is the user's short wide window (1440 x 450 px).
+ */
+export const DISH_SIZES = {
+  window: ['this window', null, 'the dish is this window, as it is now (its size in cells set by the window and the number of cells)'],
+  small: ['small', [140, 88], "half the reference dish's area: 140 x 88 cell radii"],
+  ref: ['reference', [198, 123], 'the reference dish: 198 x 123 cell radii (a 1280 x 800 window with 2000 cells)'],
+  strip: ['strip', [396, 124], "a long strip, 396 x 124 cell radii (twice the reference's area): fronts have room to run"],
+  large: ['large', [280, 175], "twice the reference dish's area: 280 x 175 cell radii (more cells: slower)"],
+};
+
 /** The squeeze (pull to the centre) for a spread: the old one for the clump, nearly none for the rest. */
 export const SPREAD_SQUEEZE = 0.02;
 
@@ -257,7 +269,9 @@ export function openCultureDialog(ctx) {
     diversity: DIVERSITY.includes(cur.get('diversity')) ? cur.get('diversity') : 'mixed',
     founders: FOUNDER_MODES.includes(cur.get('founders')) ? cur.get('founders') : C.genome.params.founderMode || 'std',   // (step T1a)
     newSeed: true,
+    dish: Object.keys(DISH_SIZES).find((k) => DISH_SIZES[k][1] && DISH_SIZES[k][1].join('x') === cur.get('dish')) || 'window',   // (the dish's size)
   };
+  const dish0 = st.dish;
   const wrap = el('div', 'dlg-wrap');
   wrap.id = 'culture';
   const box = el('section', 'dlg');
@@ -284,6 +298,14 @@ export function openCultureDialog(ctx) {
     envList.append(b);
   }
   body.append(envList);
+  // the dish's size (src/dish.js): kept while the window changes; chosen here
+  const dsRow = el('div', 'rmain');
+  const dsSeg = el('span', 'seg');
+  for (const [k, [label]] of Object.entries(DISH_SIZES)) { const b = el('button', '', label); b.type = 'button'; b.dataset.dish = k; dsSeg.append(b); }
+  dsRow.append(el('span', 'lbl', 'size'), dsSeg);
+  body.append(dsRow);
+  const dsHelp = el('p', 'help', '');
+  body.append(dsHelp);
   // founders
   body.append(el('h3', '', 'Founders'));
   const nRow = el('div', 'rmain');
@@ -361,10 +383,12 @@ export function openCultureDialog(ctx) {
     if (st.diversity !== ((P && P.query.diversity) || 'mixed')) keep.set('diversity', st.diversity);
     if (st.founders !== 'std') keep.set('founders', st.founders);   // (step T1a)
     if (!st.newSeed) keep.set('seed', String(ctx.control.seed));
+    const ds = DISH_SIZES[st.dish][1];
+    if (ds && !(P && P.query.dish === ds.join('x'))) keep.set('dish', ds.join('x'));
     u.search = keep.toString();
     return u.href;
   }
-  const inPlace = () => !st.preset && st.cells === C.start;
+  const inPlace = () => !st.preset && st.cells === C.start && st.dish === dish0;
   function sync() {
     for (const b of envList.querySelectorAll('[data-env]')) b.setAttribute('aria-pressed', String(b.dataset.env === st.preset));
     for (const b of spSeg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.spread === st.spread));
@@ -374,6 +398,8 @@ export function openCultureDialog(ctx) {
     dvHelp.textContent = DIV_HELP[st.diversity];
     for (const b of fmSeg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.fm === st.founders));
     fmHelp.textContent = FOUNDER_HELP[st.founders];
+    for (const b of dsSeg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.dish === st.dish));
+    dsHelp.textContent = DISH_SIZES[st.dish][2];
     link.textContent = inPlace() ? 'Starts here, now: the same dish, new cells (no reload).' : `Opens: ${url()}`;
     go.textContent = inPlace() ? 'start here' : 'open';
   }
@@ -388,12 +414,14 @@ export function openCultureDialog(ctx) {
         st.spread = P.query.spread || 'clump';
         if (P.query.colonies) st.colonies = P.query.colonies;
         st.diversity = P.query.diversity || 'mixed';
+        if (P.query.dish) st.dish = Object.keys(DISH_SIZES).find((k) => DISH_SIZES[k][1] && DISH_SIZES[k][1].join('x') === P.query.dish) || st.dish;
         nIn.value = String(st.cells); colIn.value = String(st.colonies);
       }
     } else if (b.dataset.n) { st.cells = Number(b.dataset.n); nIn.value = String(st.cells); }
     else if (b.dataset.spread) st.spread = b.dataset.spread;
     else if (b.dataset.div) st.diversity = b.dataset.div;
     else if (b.dataset.fm) st.founders = b.dataset.fm;
+    else if (b.dataset.dish) st.dish = b.dataset.dish;
     sync();
   });
   nIn.addEventListener('input', () => { st.cells = Math.max(1, Math.min(20000, Math.round(Number(nIn.value) || 1))); sync(); });

@@ -46,6 +46,13 @@ for name, q in SCENES:
                       "shots": [{"t": 600, "name": "t600"}, {"t": 1200, "name": "end"}, {"t": 1200, "view": "machinery", "name": "end_mach"}],
                       "evals": [{"t": t, "js": GLUE} for t in (60, 300, 600, 900, 1199)]})
 write('quick', {"batch": "g0-quick", "runs": quick, "seeds": [3, 7]})
+# (the 20-min runs of the Chip and the colonies took ~50 min each on the shared GPU (they fill to ~10 000 cells): the rest of them at 10 min,
+#  compared at 600 s with the 20-min Chip run of seed 3)
+quick2 = [dict(r, name=r['name'].replace('g0-', 'g0q2-'), description=r['description'].replace('20 min', '10 min'), duration=600,
+               shots=[{"t": 600, "name": "end"}, {"t": 600, "view": "machinery", "name": "end_mach"}],
+               evals=[{"t": t, "js": GLUE} for t in (60, 300, 599)])
+          for r in quick if r['name'].startswith(('g0-chip', 'g0-colonies'))]
+write('quick2', {"batch": "g0-quick2", "runs": quick2, "seeds": [3, 7]})
 
 
 def pics(name, q, T, zoom=TORN):

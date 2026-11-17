@@ -2246,3 +2246,115 @@ read properties of null (reading 'dataset')" (once with `?carbon=0`); rerun, it 
   graze it (as C12b's cells graze crust) or the condense rate comes down (`?cbkcond=`; the spark's crowding factor is the derived knob).
 - Sources: the default scene's vent dries after a minute, so its methane seep is a pulse; a lasting seep (or a mineral spring with a
   little sugar-like carbon, the proposal's Q3) will decide whether a lineage can start on carbon fuel.
+
+# Cells eat carbon
+
+Step C15b (README "Step C15b: cells eat carbon"): the cells take part in carbon. The ladder molecules cross membranes, four carbon engines
+can sit in the genome (OXIDIZE: breathing on carbon; CONDENSE: storing granules; REDUCE: fixing carbon with a visible 2 pigment; HYDROLYZE:
+digesting granules), cells graze tar into granules, and, added half way on the user's direction, GROWTH NEEDS CARBON: every cell has a body
+of carbon and divides only with its body full.
+
+Words used below: the LADDER = the five one-carbon molecules, methane-like (fuel) .. CO2-like (exhaust). TAR = dead carbon that does not
+move (mud). A GRANULE = tar inside a cell (storage). The BODY = the carbon a cell is built of (it wants 0.05 carbon units per R^2 of its
+area). FIX = make fuel carbon from CO2-like carbon with light. The job colours (F0): lime light eater, hot pink breather, amber builder, cyan
+gradient eater, warm white undecided.
+
+Conditions: `experiments/conditions/c15b/` (`make.py` explains which files ran; `summary.py` prints the tables from the runs' probes).
+The GPU was shared the whole time with another worker's two runs, so runs went at x0.5 to x1.4 and the plan was cut: 10 minutes each (the
+default scene, seed 3, 20 minutes), seed 7 only for the default scene, ?carbon=0 for seed 3 only. Two rounds: v1 (`experiments/runs/c15b-v1-*`,
+the engines without the body rule) and v2 (the step as committed, with it). Pictures: `experiments/keep/c15b/`.
+
+## 1. What it looks like
+
+- THE DEFAULT SCENE WITH THE BODY RULE (`default-s3-20min_growth_neon.jpg`, `default-s3-5min_growth_tar-flecks_neon.jpg`): after the
+  founders' crash (as always, at 1-2 minutes) the dish is scattered with small flat AMBER FLECKS of tar where the dead founders lay: their
+  bodies, spilled. The colony that regrows is SPARSE: separate cells and small groups, not the packed disc of before, sitting over and
+  beside the flecks, with the fuel seep glowing yellow-green at its edge. Compare `default-s3-20min_no-growth-rule_neon.jpg` (v1) and
+  `default-s3-20min_carbon-off_neon.jpg` (?carbon=0): a dense round colony of 900-1000 cells, no flecks.
+- GRANULES (`zoom_granules_neon.jpg`, x4): most cells hold one to five small amber dots beside their green battery core (they graze the
+  flecks while their body is short); the tar field under the colony is a brown and amber floor. In the harmonic look (`zoom_granules_harmonic.jpg`,
+  `zoom_seep-tar-field_harmonic.jpg`) every cell is a green-rimmed dark hexagon with a few BRIGHT ORANGE DOTS inside, like starch granules in a
+  second-harmonic image, and the seep sits in a swirl of orange fibres (the tar round it) with a white ring.
+- CARBON FIXERS (`carbon-fixers_*.jpg`, `?cbfounder=1`: every eligible founder carries its carbon engines): the colony is lime and pink, the
+  fixers (lime tubes) in a loose sheet, each with granule dots; amber flecks round it.
+- OXYGEN WORLD (`oxygen-whole-dish_growth_neon.jpg`): a nearly empty dish, a handful of cells left (see the numbers).
+
+## 2. The numbers
+
+Cells alive (5 / 10 / 15 / 20 minutes):
+
+| scene | ?carbon=0 | carbon, engines only (v1) | carbon + growth needs carbon (v2) | v2, ?cbgrow=0 | v2, ?cbfounder=1 |
+|---|---|---|---|---|---|
+| default, seed 3 | 458 / 792 / 682 / 1023 | 481 / 780 / 568 / 878 | 154 / 189 / 318 / 339 | 599 / 863 | 178 / 184 |
+| default, seed 7 | - | 400 / 902 | 125 / 210 | - | - |
+| oxygen, spotlight | 83 / 447 | (runner flake, not rerun) | 21 / 2 | - | - |
+| oxygen, whole dish | 51 / 272 | 21 / 250 | 28 / 8 | - | - |
+| Deep vents, dim light | 18 / 0 | 16 / 1 | 2 / 0 | - | - |
+| Deep vents, dark | 0 / 0 | - | - | - | - |
+
+What the carbon does (v2, default scene, seed 3; per s; carbon in carbon units):
+
+| t | breathe (oxidize) | fix by light | graze (hands) | granules | bodies held / wanted, cells short | dish: methane-like .. CO2-like | tar | in cells |
+|---|---|---|---|---|---|---|---|---|
+| 5 min | 0.18 | 0.19 | 0.54 | 17 | 20 / 22, 101 of 154 | 20 10 12 8 9 | 633 | 38 |
+| 10 min | 0.06 | 0.04 | 1.2 | 32 | 27 / 30, 129 of 189 | 33 13 16 9 11 | 822 | 61 |
+| 20 min | 0 | 0 | 2.8 | 79 | 57 / 67, 264 of 339 | 27 14 18 9 12 | 1210 | 141 |
+
+In words, against the brief's questions:
+
+- DO CELLS EAT CARBON? Yes, but in the default scene carbon ENGINES stay rare: in v1, 10 to 15 cells in 900 carried one at 20 minutes and
+  breathing on carbon ran at 0.03 per s. The founders that got one (a third of the eaters, chain makers and photosynthesisers) were mostly
+  lost in the crash, and mutation (4 of 26 slot jumps land on one) did not bring them back within 20 minutes. Their food is there: the
+  seep's methane-like carbon piles up (20-35 units) and in the oxygen runs it sits UNBURNT beside 500-1150 free t (the open dish is too cold
+  for it to burn by itself): a large untouched store of energy, waiting for a breather on carbon to find it.
+- CARBON BREATHERS AND FIXERS: when the founders carry them (?cbfounder=1) they hold their own: 108 of 184 cells at 10 minutes are carbon
+  fixers (REDUCE with a visible 2 pigment + OXIDIZE + the g + t bond), fixing 0.9 and breathing 1.0 carbon hands per s: a light-driven
+  carbon loop inside each cell (fix a hand with a photon, burn it back for the battery), the C12d self-burn loop again, now on carbon. They
+  show lime (light eaters) and pink. Breathers living on outside methane did not appear.
+- TAR: cells graze it (hungry cells and the engines' grazers), up to 2.8 hands per s, and keep it as granules: 79 carbons in granules by 20
+  minutes. TRAILS THROUGH MUD did not show: the tar is in flecks where bodies fell and in a floor round the seep; the colony sits on it and
+  eats it from below, it does not cut paths. The open-dish slowing (only a lump's surface reacts) changed almost nothing: with the substrate
+  alone (`surf.json`, one cell, 5 minutes) the mobile share of the carbon was 4.2-4.3 % in the default scene and 1.3-1.5 % at the Deep vents
+  for a surface size of 0, 1 and 0.1 alike. Tar forms where TWO MOLECULES MEET in warm water (fuel and CO2-like carbon condensing, 11-25
+  per s), not on tar; the surface rule only slows settling. So the derived fix is kept (it is right for thick mud) but it is not what keeps
+  carbon mobile; the cells' grazing is.
+- GRANULES: yes, in most cells once the body rule is on (125 of 178 cells with ?cbfounder=1, 141 of 184 at 10 minutes). Without it (v1)
+  granules stayed tiny (0.1-0.6 carbons in the dish's cells).
+- THE CO2-LIKE BUILD-UP: small: 9-25 units of CO2-like carbon in the dish, most of the carbon in TAR (600-1200 carbons). Cells hold
+  CO2-like carbon too (v1: 16 of 23 units in cells), taken in by exchange, not made.
+- DOES CARBON NOW LIMIT GROWTH? Clearly. With the body rule the default colony regrows to 150-340 cells instead of 800-1000 (?cbgrow=0 on the
+  same build: 863 at 10 minutes); 70-80 % of the cells are short of body carbon at any time (they cannot divide), the batteries are not the
+  limit. In the oxygen runs and the vents the post-crash survivors (8-30 cells) could not rebuild and the dish emptied, although the oxygen
+  dishes held 55-75 units of buildable ladder carbon (methane- to formic-like): they take it in too slowly (a five-atom molecule passes at a
+  quarter of a light atom's rate) to divide before they starve. The body's size (0.05 carbon per R^2, `?cbbody=`) is the knob; the rule is
+  harsh as set.
+- THE BOOKS: every probe of every run: carbon rounding 0, the dish's carbon energy book 0, atoms 0, charge 0; the dish's whole energy
+  rounding at its usual noise (at most 0.11 of 3-32 million in).
+
+## 3. Checks
+
+- The merge with main (F0, G0, G1; `merge.json`): the default scene, Deep vents and `?carbon=0` load and run 60 s with every rounding 0 and
+  the job census counting; the C15a carbon snapshot and an old C11 tissue snapshot (fates, no carbon flag) load and run.
+- Firefox (headed, `browsers.json`): the default scene 30 s, no console error, every rounding 0, bodies held. Phone size (390 x 844 at device
+  px 3, Chrome): the page lays out as before (legend, zoom buttons, scale bar), 20 s, roundings 0.
+- `?carbon=0`: the carbon code is compiled out (CARBON_ON 0) and the engine table, mutation and job colours are the table's own; its books
+  stay 0 (`ab.json`, `watch-off`). At 30 s seed 3 has 1767 cells with `?carbon=0`, with carbon and the cells blind (`?cbcells=0`) and with
+  carbon on (before the body rule): the founders' first half minute is the same.
+
+## 4. Speed
+
+GPU shared all along. Over 150 s of the default scene, carbon on (v2) ran at x1.43 / x1.40, ?carbon=0 at x0.61 / x0.62 (each pair side by
+side), but that is the body rule's smaller population after the crash, not a cost. Over the first 60 s (2000 cells, before the crash; `speed60.json`), carbon on with the body rule off
+(`?cbgrow=0`, same cell count) against `?carbon=0`, side by side in pairs: x0.47 against x0.64, and x0.60 against x0.52: the noise of the shared
+GPU (+-15 %) is larger than carbon's cost, which these runs cannot separate (a guess from the work added: a few per cent). A measurement on
+a free GPU is still to do.
+
+## 5. What C15c will need
+
+- The recipes (README "Step C15b", the table of parts): membranes from carbon tails + a charged head atom; walls from carbon alone; pigments
+  from carbon + a bond whose gap matches a visible band + trace; engines from carbon + the heavy giver G (catalysis); `cb_build` takes them.
+- Uptake: if parts cost carbon, fuel carbon must get in faster than a neutral five-atom molecule's rate (the oxygen runs died of it), or the
+  body's want must be smaller; a pump channel list with the ladder (C7 pumps) would let evolution choose.
+- The founders' crash with the body rule: tools that place cells give them no body; designed tissues and predators will need one.
+- Linkers retiring: oil, soap, crust and pigments made from carbon; the C12b lipid builder working from the ladder; the mineral spring's
+  linkers replaced by a little sugar-like carbon (the proposal's Q3), else nothing in a lit dish can build a membrane before it can fix.

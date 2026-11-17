@@ -93,7 +93,9 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
     let mom = c.mom & 0x7fffffffu;
     let pdose = select(0.0, cell_dose(cells[min(mom, S.count - 1u)].flags), mom < S.count);
     let hx = select(0.0, min(FL.hm.x * pdose, max(FL.hm.y - 1.0, 0.0)), FL.hm.x > 0.0);
-    let ms = (select(0.0, 1.0, mOn) + hx) * S.mutSize;
+    // (step G1: x the parent's fidelity, as the step's daughter_genome; exactly as before while the gene does not act)
+    let pfid = select(0.0, bioW[min(mom, S.count - 1u)].conv.w, mom < S.count);
+    let ms = fid_birth(mOn, hx, pfid, FL.hm) * S.mutSize;
     if (ms > 0.0) {
       let bs = pcg(c.seed ^ pcg(S.tick * 0x2545f491u + 0x67726e31u));
       var u: array<f32, 17>;

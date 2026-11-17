@@ -184,7 +184,8 @@ struct EatP {
                            // per energy unit of dose (Fields.hm.x; the census only); w spare
   // ---- step C9, division and death with a changing count (src/division.js) ----
   dv: vec4u,               // x reset: how many slots the new culture fills (slots 0 .. x - 1 get the starter charge); y the
-                           // division's cost (heat counts, from the mother's battery, as heat); z, w spare
+                           // division's cost (heat counts, from the mother's battery, as heat); step G1 (src/fidelity.js): z proofreading's
+                           // cost at e^F - 1 = 1 (heat counts, any birth, from the parent's battery, as heat), w bits FID_*
   // ---- step C10, patterned walls (src/walls.js) ----
   wl0: vec4f,              // x: WL_* bits (u32); y the pattern strength (x a1, a2); z the maturity factor's extra at full
                            // maturity (the cap - 1; 0 while junctions do not mature); w linker per R of side at adhesion 1 (atom-units)
@@ -970,6 +971,21 @@ fn split(@builtin(global_invocation_id) id: vec3u) {
     if ((c.mom & MOM_DIV) != 0u && EP.dv.y > 0u) {
       let cost = take_stock(pi * SW + BAT, i32(EP.dv.y));
       if (cost > 0) { spread9(LEDGER_WORDS, footprint(cells[pi].pos), cost); atomicAdd(&hb[LG_DIV + (i & 15u)], cost); }
+    }
+    // step G1: PROOFREADING's cost (any birth: turnover or division), from the parent's battery, as heat where she is: dv.z x (e^F - 1) for
+    // her fidelity gene F above the founders' (src/fidelity.js)
+    if ((EP.dv.w & FID_ACT) != 0u && EP.dv.z > 0u) {
+      let pf = clamp(bio[pi].conv.w, FID_LO, FID_HI);
+      let want = i32(round(f32(EP.dv.z) * max(exp(pf) - 1.0, 0.0)));
+      if (want > 0) {
+        let paid = take_stock(pi * SW + BAT, want);
+        if (paid > 0) {
+          spread9(LEDGER_WORDS, footprint(cells[pi].pos), paid);
+          atomicAdd(&hb[LG_DIV + 16u * FDC_COST + (i & 15u)], paid);
+          atomicAdd(&hb[LG_DIV + 16u * FDC_PAID + (i & 15u)], 1);
+        }
+        if (want > paid) { atomicAdd(&hb[LG_DIV + 16u * FDC_SHORT + (i & 15u)], want - paid); }
+      }
     }
     for (var k = 0u; k <= BAT + 2u; k++) {
       let w = select(k, k + 14u, k > BAT);   // (step C12c: and the excited atoms, words 28, 29)

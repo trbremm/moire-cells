@@ -1557,12 +1557,23 @@ fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
   let hx = select(0.0, min(FL.hm.x * pdose, max(FL.hm.y - 1.0, 0.0)), FL.hm.x > 0.0);
   let mOn = (S.rules & RULE_MUT) != 0u;
   let ms = select(0.0, 1.0, mOn) + hx;
+  // step G1, error correction: the parent's FIDELITY gene scales the copying errors (and part of hard light's), cell_common.wgsl fid_birth
+  let fBits = bitcast<u32>(FL.hm.z);
+  let msF = fid_birth(mOn, hx, p.conv.w, FL.hm);
   let e0 = nb.eng.xyz;                      // (to count the slot jumps: an engine or pump slot changed, started or emptied)
   let r0 = nb.rate.xyz > vec3f(0.0);
   let q0 = nb.pump.xy;
   let qr0 = nb.pump.zw > vec2f(0.0);
-  if (ms > 0.0) {
-    nb = mutate(nb, bs, S.mutSize * ms, min(S.mutJump * ms, 1.0), min(S.engJump * ms, 1.0), min(FL.memb.w * ms, 1.0));
+  if (msF > 0.0) {
+    nb = mutate(nb, bs, S.mutSize * msF, min(S.mutJump * msF, 1.0), min(S.engJump * msF, 1.0), min(FL.memb.w * msF, 1.0));
+  }
+  // ... the gene itself drifts at today's size (not proofread by itself), on and in the neutral control
+  var fid = p.conv.w;
+  if ((fBits & FID_DRIFT) != 0u && ms > 0.0) { fid = nudge(fid, S.mutSize * ms * FID_STEP, FID_LO, FID_HI, bs, 196u); }
+  if (fBits != 0u) {
+    atomicAdd(&hb[LG_DIV + 16u * FDC_BIRTHS + (i & 15u)], 1);
+    atomicAdd(&hb[LG_DIV + 16u * FDC_MS + (i & 15u)], i32(round(msF * 1000.0)));
+    atomicAdd(&hb[LG_DIV + 16u * FDC_MS0 + (i & 15u)], i32(round(ms * 1000.0)));
   }
   if (FL.hm.x > 0.0 || mOn) {
     let lit = pdose >= 1.0;
@@ -1580,7 +1591,8 @@ fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
   // so marker distance grows with the time since a common ancestor
   // (step T1c, ?clockhard=0: the clock ticks only with mutation itself (key M), not with hard light's extra dose, so a lineage under hard
   // light keeps its kinship readable as long as one in the shade)
-  let cms = select(select(0.0, 1.0, mOn), ms, (bitcast<u32>(FL.t1.x) & T1S_CLOCKHARD) != 0u);
+  // (step G1: the clock is a copying error too: x e^-F, hard light's part as in fid_birth; exactly as before while the gene does not act)
+  let cms = select(select(0.0, fid_m(p.conv.w, FL.hm), mOn), msF, (bitcast<u32>(FL.t1.x) & T1S_CLOCKHARD) != 0u);
   if ((bitcast<u32>(FL.t1.x) & T1S_CLOCK) != 0u && cms > 0.0) {
     let ck = FL.t1.y * cms;
     var ang = nb.mark.x + ck * 0.02 * gauss(bs, 190u);
@@ -1591,7 +1603,7 @@ fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
   }
   if ((S.rules & RULE_INHERIT) == 0u) { nb.acc = vec4f(0.0); }
   nb.env = vec4f(0.0);                      // a newborn has felt nothing yet and is not converted (step C9: nor starving)
-  nb.conv = vec4f(0.0);
+  nb.conv = vec4f(0.0, 0.0, 0.0, fid);      // (step G1: w is the fidelity gene, inherited)
   nb.body.w = TAU * rand01(bs, 200u);
   return nb;
 }

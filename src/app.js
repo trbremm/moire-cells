@@ -237,7 +237,7 @@ export function createApp(ctx) {
       const R = C.R, W = camera.W, H = camera.H, starter = Math.round(E.starterShare * E.batCounts);
       const bio = new Float32Array(BIO_FLOATS);
       for (let k = 0; k < BIO_FLOATS; k++) bio[k] = genome[k] ?? 0;
-      for (let k = 20; k < 32; k++) bio[k] = 0;   // the accumulators and the step 6 state start empty (as genome.fill)
+      for (let k = 20; k < 31; k++) bio[k] = 0;   // the accumulators and the step 6 state start empty (as genome.fill; step G1: 31 the fidelity gene)
       const rec = new ArrayBuffer(CELL_BYTES), f = new Float32Array(rec), u = new Uint32Array(rec);
       const stock = new Int32Array(SW);
       stock[BAT_WORD] = starter;

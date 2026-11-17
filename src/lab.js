@@ -54,10 +54,13 @@ export const GENES = {
   // step T1b: the gene network (src/grn.js): the broadcast regulator and the signal's kinship weighting (the weights, codes and gains are
   // arrays: moire.grn's read-back, or setAll by word number 92..151)
   grnBroadcast: 152, grnKinWeight: 153,
+  // step G1: the FIDELITY gene (proofreading, src/fidelity.js): a log factor, copying errors x e^-fidelity (founders 0)
+  fidelity: 31,
 };
-// words 19..31 are the cell's state, not genes (heading, accumulators, felt fields, conversion)
+// words 19..30 are the cell's state, not genes (heading, accumulators, felt fields, conversion)
 // (step T1b: and 84..91, the regulators' expression)
-const STATE = new Set([19, ...Array.from({ length: 12 }, (_, k) => 20 + k), ...Array.from({ length: 8 }, (_, k) => 84 + k)]);
+// (step G1: word 31, Bio.conv.w, is the FIDELITY gene, not state)
+const STATE = new Set([19, ...Array.from({ length: 11 }, (_, k) => 20 + k), ...Array.from({ length: 8 }, (_, k) => 84 + k)]);
 
 // ---------- flattening for sample() ----------
 const SKIP = new Set(['time', 'top', 'series', 'hist', 'sizes', 'aHist', 'sHist', 'lHist', 'near', 'centre']);
@@ -112,6 +115,7 @@ function gather(M, ctl) {
   if (M.kin && M.kin.census) flatten(M.kin.census, 'kin', out);         // step T1a
   if (M.grn && M.grn.census) flatten(M.grn.census, 'grn', out);         // step T1b: the gene network's census (cell types)
   if (M.predators && M.predators.census) flatten(M.predators.census, 'pred', out);   // step P1: predation, the genes, the clusters
+  if (M.fidelity) flatten(M.fidelity.census || (M.fidelity.copy ? { copy: M.fidelity.copy } : null), 'fid', out);   // step G1: error correction
   if (M.pigments && M.pigments.census) flatten(M.pigments.census, 'lightmatter', out);   // step N1: light needs matter
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;

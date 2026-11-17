@@ -9,7 +9,9 @@
 //   body   x adhesion, y size factor, z motility factor, w spare
 //   acc    state (not inherited as genes): the four leaky accumulators
 //   env    state: x y spare (the nutrient and threat felt, until step C3); z the A felt (integrated), w converted (step 6)
-//   conv   state (step 6): x the converted share of the neighbourhood (integrated, for the relay); y z w spare
+//   conv   state (step 6): x the converted share of the neighbourhood (integrated, for the relay); y z step 8's clock (state);
+//          w step G1: the FIDELITY gene (proofreading; src/fidelity.js): a log factor, a birth's copying errors x e^-w (-2..3; founders 0:
+//          today's copying), a GENE although it sits among the state words (inherited; words 20..30 are the state)
 //   eng    step C6, genes: x y z the three ENGINE SLOTS, each a whole number: the engine's index in ENGINES (src/matter.js)
 //          + 32 x the light band its pigment catches (1 visible 1, 2 visible 2, 3 hard; 0 none: an uphill engine then
 //          runs on the battery, a storer; used by uphill engines only);
@@ -458,7 +460,8 @@ export class Genome {
       const o = i * BIO_FLOATS;
       for (let k = 0; k < BIO_FLOATS; k++) f[o + k] = g[k] ?? 0;   // (founders from a snapshot before step C10 lack the walls' genes, before C12b the lipids')
       if (g.length <= BIO_FG) fieldDefaults(f, o);   // (... before step C13 the field genes: today's values)
-      for (let k = 20; k < 32; k++) f[o + k] = 0;   // accumulators and step 6 state start empty (32..47: step C6's, C6c's and C7's genes)
+      for (let k = 20; k < 31; k++) f[o + k] = 0;   // accumulators and step 6 state start empty (32..47: step C6's, C6c's and C7's genes;
+                                                    //  step G1: word 31 is the fidelity gene, the founder's: 0)
       keys[2 * i] = g[0]; keys[2 * i + 1] = g[1];
     }
     return keys;

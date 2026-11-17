@@ -22,8 +22,9 @@ struct Cell {
   la: f32,          // lattice angle (radians); the cell's key angle (a copy of Bio.key.x)
   e1: f32,          // area-preserving stretch (traceless tensor [[e1, e2], [e2, -e1]]), length at most 0.5
   e2: f32,
-  kind: u32,        // always 0 since step F0 (it held the fate: stem, epithelium, muscle, neuron, cartilage; old snapshots' kinds are
-                    // cleared on load, and the step writes 0)
+  kind: u32,        // step G0: the JUNCTIONS' word (bits 0..5 each side torn, 8..13 each side's junction formed; JN_* below; written
+                    // by the step, read by the eat pass and the neighbours through the lean copy). Until step F0 it held the fate (old
+                    // snapshots' kinds are cleared on load)
   flags: u32,       // bit 0: alive; bit 1: converted (step 6, rule 2); bits 8..15: leak level 0..255 (step 6,
                     // rule 1), written by the step pass for the drawing and the census; bits 16..17: the state's
                     // offset from the key angle's bin (step 7, rule 2: a crowded cell flips its state)
@@ -232,7 +233,13 @@ fn cell_core(c: Cell, dip: vec2f) -> CellCore {
 // by the smaller of the two touching sides' effective values (Cell.wadh, the eat pass). Which side faces a neighbour: by the
 // direction to it against the hexagon's orientation theta, at the 8 bits the neighbours see (so the cell and its neighbour find the
 // same pair of sides): side k spans theta + k x 60 .. theta + (k + 1) x 60 degrees (its corners' regular places; an ellipse cell: 0)
-const WALL_AMAX: f32 = 3.0;      // the largest effective adhesion a side can hold (pattern 1 x a maturity factor of 3)
+const WALL_AMAX: f32 = 8.0;      // the largest effective adhesion a side can hold (step G0: the glue gene's top, 4, x a maturity factor of 2;
+                                 // 3 until then, on a linear 8-bit code)
+const WALL_CODE_K: f32 = 0.5;    // step G0: the 8 bits a side's adhesion is packed in are a log code, a = K (17^e - 1) (fine steps where the
+                                 // founders' glue lives, 0.006 at 0 .. 0.011 at 0.5, as fine as the old linear code; coarse near 8)
+fn wall_enc(a: f32) -> f32 { return clamp(log(1.0 + max(a, 0.0) / WALL_CODE_K) / log(1.0 + WALL_AMAX / WALL_CODE_K), 0.0, 1.0); }
+fn wall_dec(e: f32) -> f32 { return WALL_CODE_K * (exp(e * log(1.0 + WALL_AMAX / WALL_CODE_K)) - 1.0); }
+fn wall_dec4(e: vec4f) -> vec4f { return WALL_CODE_K * (exp(e * log(1.0 + WALL_AMAX / WALL_CODE_K)) - 1.0); }
 const WL_ON: u32 = 1u;           // patterned walls (master): per-side adhesion, the smaller side holds
 const WL_FRONT: u32 = 2u;        // ... the front follows the dipole (gene w)
 const WL_COST: u32 = 4u;         // ... adhesion costs linkers in the membrane and battery upkeep
@@ -250,8 +257,25 @@ fn wall_side(th: f32, d: vec2f) -> u32 {
 // side k's effective adhesion from the packed words (the low half of w1 holds sides 4, 5)
 fn wall_get(w0: u32, w1: u32, k: u32) -> f32 {
   let v = select(unpack4x8unorm(w1 & 0xffffu), unpack4x8unorm(w0), k < 4u);
-  return v[k & 3u] * WALL_AMAX;
+  return wall_dec(v[k & 3u]);
 }
+
+// ---------- step G0, STRONG GLUE and JUNCTIONS THAT BREAK (src/glue.js) ----------
+// The glue gene (Bio.body.x, the adhesion a0) on a LOG scale GLUE_LO..GLUE_HI (mutation multiplies it), above today's ceiling of 1; the
+// gene as it acts (glue_gene: under the neutral control the founder's value, Bio.rec.z, so the gene drifts without effect). Each side's
+// junction word (Cell.kind, a fate until step F0): bits 0..5 TORN (the side tore: it holds no glue until it heals), bits 8..13 FORMED (the
+// side's junction formed: it touched a glued neighbour closer than the contact distance and has kept touching since)
+const GLUE_LO: f32 = 0.05;
+const GLUE_HI: f32 = 4.0;
+const G0_CEIL: u32 = 1u;         // the gene on the log scale, up to GLUE_HI (else 0..1 as before)
+const G0_NULL: u32 = 2u;         // the neutral control: the gene drifts, every effect at the founder's value
+const G0_TEAR: u32 = 4u;         // junctions tear
+const G0_COST: u32 = 8u;         // glue above 1 costs more per unit (x a0)
+const JN_TORN: u32 = 0x3fu;
+const JN_FORM_SHIFT: u32 = 8u;
+fn glue_gene(b: Bio, bits: u32) -> f32 { return select(b.body.x, b.rec.z, (bits & G0_NULL) != 0u); }
+fn glue_top(bits: u32) -> f32 { return select(1.0, GLUE_HI, (bits & G0_CEIL) != 0u); }
+fn jn_torn(w: u32, k: u32) -> bool { return ((w >> min(k, 5u)) & 1u) != 0u; }
 // the orientation the side lookup uses: the hexagon's theta at the 8 bits its neighbours see (0 for an ellipse cell)
 fn wall_theta(flags: u32, th8: u32) -> f32 { return select(0.0, wall_dq8(th8), (flags & CELL_HEX) != 0u); }
 // step C11: the effective adhesion round the wall at the direction d, from the six sides' values, linear between the sides'
@@ -612,7 +636,23 @@ struct Stats {
   fg: array<atomic<u32>, 64>,
   // ---- step P1, predators (src/predators.js): PS_* counters (cumulative), PZ_* a census (cleared every frame, counted on its last tick) ----
   p1: array<atomic<u32>, 64>,
+  // ---- step G0 (src/glue.js): G0S_* (0..7 cumulative, 8.. cleared every frame; the census words counted on its last tick) ----
+  g0: array<atomic<u32>, 32>,
 };
+const G0S_TEARS: u32 = 0u;       // CUMULATIVE: sides torn (each tear counted by both cells of the pair)
+const G0S_HEALS: u32 = 1u;       // CUMULATIVE: torn sides healed
+const G0S_CLEAR: u32 = 8u;       // the first word cleared every frame
+const G0S_WORK: u32 = 8u;        // every tick: the stirred water's work on the cells, heat counts (i32), taken from the heat under them
+const G0S_TICKS: u32 = 9u;       // ... the ticks counted
+const G0S_N: u32 = 16u;          // census: live cells
+const G0S_GENE: u32 = 17u;       // ... sum of ln(the glue gene) x 1000 (i32)
+const G0S_GENE2: u32 = 18u;      // ... sum of its square x 1000
+const G0S_HIGH: u32 = 19u;       // ... cells with the gene above 1 (today's old ceiling)
+const G0S_FORMED: u32 = 20u;     // ... formed junctions (sides; each pair from both cells)
+const G0S_STR: u32 = 21u;        // ... their strength (the pair's glue x likeness - the base loss, the pull's peak in adhesion units) x 1000
+const G0S_LOAD: u32 = 22u;       // ... their load as a share of their strength x 1000 (i32: the pull they carry now; < 0 pressed together)
+const G0S_TORN: u32 = 23u;       // ... sides torn now
+const G0S_GSUM: u32 = 24u;       // ... sum of the gene x 1000
 // step C13: Stats.fg (signed sums are added as i32 bits and read back as Int32)
 const FGS_N: u32 = 0u;          // cells counted
 const FGS_SUM: u32 = 1u;        // 18 words: per gene (Bio fa, fb, fx, gate, gate2.xy in order) the sum of its value x 1000 (i32)
@@ -1124,7 +1164,16 @@ struct Fields {
                     // on; w the pull drawing a wrapped prey in (R per s at a full wrap)
   p1d: vec4f,       // x the mean membrane integrity needed to start (half of it to go on); y the wrap's cost (heat counts per s); z the
                     // start's cost (heat counts); w how much the pair's contact push softens at a full wrap (0..1)
+  // ---- step G0, strong glue, junctions that break, cells stir the water (src/glue.js, src/stir.js) ----
+  g0a: vec4f,       // x bits G0_* (u32); y a torn side heals at this rate (1 / s); z a formed junction tears when its pair is pulled
+                    // this share past the contact distance; w spare
+  g0b: vec4f,       // x bits ST_* (u32: the cells stir the water); y the WET share (the cells' drag on the water); z the stir grid's
+                    // spacing (CSS px); w the deposit's fixed point (counts per px/s of coverage-weighted force)
+  g0c: vec4f,       // x the stir grid's width (nodes, u32); y its height (u32); z word offset in hb of its force splat (x block, then
+                    // y block, u32; 0: none); w ... of its stream function (u32; 0: none)
 };
+const ST_ON: u32 = 1u;           // step G0: the cells stir the water (deposit their drag's reaction)
+const ST_SPLIT: u32 = 2u;        // ... the stirred water's push on a cell is paid from the heat under it
 // step G1, ERROR CORRECTION (src/fidelity.js; README "Step G1"): the FIDELITY gene F (Bio.conv.w, a log factor, FID_LO..FID_HI; founders 0)
 // scales a birth's copying errors by m = e^-F: every gene's small steps (mutate) and every jump's chance, the gene network's nudges, rewiring
 // and duplication, and the self marker's clock alike. Hard light's extra mutation (step C8) is damage to the template: a share hm.w of it

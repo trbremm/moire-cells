@@ -41,6 +41,27 @@ fn water_vel(p: vec2f) -> vec2f {
   return vec2f(dy, -dx);
 }
 
+// step G0: the STIRRED water's velocity at p alone (the cells' own flow, src/stir.js): from its stream function on the stir grid (spacing g0b.z,
+// g0c.x x g0c.y nodes, at word g0c.w of hb), bilinear as water_vel; 0 while the stirring is off
+fn stir_vel(p: vec2f) -> vec2f {
+  let po = bitcast<u32>(FL.g0c.w);
+  if (po == 0u) { return vec2f(0.0); }
+  let sw = bitcast<u32>(FL.g0c.x);
+  let sh = bitcast<u32>(FL.g0c.y);
+  let h = FL.g0b.z;
+  let g = clamp(p / h, vec2f(0.0), vec2f(f32(sw - 1u), f32(sh - 1u)) - 1e-3);
+  let b = vec2u(floor(g));
+  let t = g - vec2f(b);
+  let o = po + b.y * sw + b.x;
+  let p00 = bitcast<f32>(atomicLoad(&hb[o]));
+  let p10 = bitcast<f32>(atomicLoad(&hb[o + 1u]));
+  let p01 = bitcast<f32>(atomicLoad(&hb[o + sw]));
+  let p11 = bitcast<f32>(atomicLoad(&hb[o + sw + 1u]));
+  let dx = mix(p10 - p00, p11 - p01, t.y) / h;
+  let dy = mix(p01 - p00, p11 - p10, t.x) / h;
+  return vec2f(dy, -dx);
+}
+
 @compute @workgroup_size(128)
 fn step(@builtin(global_invocation_id) id: vec3u) {
   let j = id.x;
@@ -101,8 +122,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let wallOn = (wlF & WL_ON) != 0u;
   let mine0 = sorted[j].wadh;
   let myTh = wall_theta(sorted[j].flags, (mine0.y >> 16u) & 255u);
-  let wA = unpack4x8unorm(mine0.x) * WALL_AMAX;
-  let wB = unpack4x8unorm(mine0.y & 0xffffu).xy * WALL_AMAX;
+  let wA = wall_dec4(unpack4x8unorm(mine0.x));
+  let wB = wall_dec4(unpack4x8unorm(mine0.y & 0xffffu)).xy;
   let wFront = vec2f(cos(c.front), sin(c.front));
   var tchA = vec4f(0.0);
   var tchB = vec2f(0.0);
@@ -113,6 +134,21 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var wMatP = 0u;
   var wFrontP = 0u;
   let myMat = c.mature;
+  // step G0, JUNCTIONS THAT BREAK (src/glue.js): this cell's junction word (Cell.kind: sides torn, sides formed). A side's junction FORMS when
+  // it touches a glued neighbour closer than the contact distance R0 and stays formed while that side keeps touching one; it TEARS when the
+  // pair is pulled apart past R0 x (1 + g0a.z): the glue's pull peaks at R0 (its full strength: the pair's glue x likeness - the base loss, x
+  // adhesion x R x stiffness) and only weakens beyond, so a pair stretched past it is held by less than what pulls it apart (whatever that is:
+  // crawling, the water, the press, a predator's pull, a crowd's push). A torn side holds no glue (its own word, and its neighbours read it
+  // from the lean copy) until it heals (at g0a.y per s, at random), its junction's maturity gone
+  let g0F = bitcast<u32>(FL.g0a.x);
+  let tearOn = wallOn && (g0F & G0_TEAR) != 0u;
+  let jn0 = select(0u, c.kind & (JN_TORN | (JN_TORN << JN_FORM_SHIFT)), tearOn);
+  var jnTear = 0u;          // sides that tore this tick
+  var jnKeep = 0u;          // sides touching a glued neighbour within reach (a formed junction stays)
+  var jnMake = 0u;          // sides touching a glued neighbour closer than R0 (a junction forms)
+  var jnStr = 0.0;          // the census: formed junctions' strength and load (the frame's last tick)
+  var jnLoad = 0.0;
+  var jnN = 0u;
   // step C11, glue turns the cell: the torque of the contacts' adhesion about this cell's centre (below, in the neighbour loop)
   let glueTurn = wallOn && (wlF & WL_TURN) != 0u && FL.wl1.w > 0.0;
   var glueTq = 0.0;
@@ -437,17 +473,43 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
             // like sticks to like: both cells' stickiness, times how alike their keys are (step F0: no same-fate glue on top)
             let sa = S.adhSigma;
             let like = exp(-key_dist2(c.la, c.aux, o.la, o.aux) / (2.0 * sa * sa));
-            var stick = sqrt(max(bio.body.x * gofP(i, GRN_O_GLUE) * ob.body.x * gofP(beats[k].idx, GRN_O_GLUE), 0.0)) * like;   // (step T1b: as expressed)
+            var stick = sqrt(max(glue_gene(bio, g0F) * gofP(i, GRN_O_GLUE) * glue_gene(ob, g0F) * gofP(beats[k].idx, GRN_O_GLUE), 0.0)) * like;   // (step T1b: as expressed;
+                                                                                                                                  //  step G0: the null's founder value)
             // The pull fades out below 0.85 x contact distance, so sticky cells touch without piling up.
             let near = clamp((dist / R0 - 0.85) / 0.15, 0.0, 1.0);
             if (wallOn) {
               // step C10: the contact holds by the smaller of the two touching sides' effective adhesion (both must be sticky),
               // times the match (the keys' likeness): adhesion = molecules x how well they match
               let ks = wall_side(myTh, d);
-              let mine = select(wB[ks & 1u], wA[ks & 3u], ks < 4u);
+              var mine = select(wB[ks & 1u], wA[ks & 3u], ks < 4u);
               let ko = wall_side(wall_theta(o.flags, (o.wadh.y >> 16u) & 255u), -d);
-              let gl = min(mine, wall_get(o.wadh.x, o.wadh.y, ko));
+              var theirs = wall_get(o.wadh.x, o.wadh.y, ko);
+              // step G0: a torn side holds nothing (this cell's, or the neighbour's side facing it, from its lean copy)
+              if (tearOn) {
+                if (jn_torn(jn0, ks)) { mine = 0.0; }
+                if (jn_torn(o.kind, ko)) { theirs = 0.0; }
+              }
+              let gl = min(mine, theirs);
               stick = gl * like;
+              // step G0: the junction on side ks forms, holds or tears (see above; only a pulling pair: glue above the base loss)
+              let hold = stick - S.adhBase;
+              if (tearOn && hold > 0.0) {
+                let bit = 1u << ks;
+                if (dist < reach) { jnKeep |= bit; }
+                if (dist < R0) { jnMake |= bit; }
+                let formed = (jn0 & (bit << JN_FORM_SHIFT)) != 0u;
+                if (formed && dist > R0 * (1.0 + FL.g0a.z) && dist < reach && dot(o.vel - c.vel, d) > 0.0) { jnTear |= bit; }
+                if (formed && S.xCount != 0u) {
+                  // the census: its strength (the pull's peak, in adhesion units) and its load now (the pull it carries less the contact's
+                  // push, as a share of that peak)
+                  let tc = clamp((reach - dist) / (reach - R0 + 1e-3), 0.0, 1.0);
+                  let nr = clamp((dist / R0 - 0.85) / 0.15, 0.0, 1.0);
+                  let push = max(R0 - dist, 0.0) / max(S.adhesion * S.R * hold, 1e-6);
+                  jnStr += hold;
+                  jnLoad += clamp(tc * nr - push, -1.0, 1.0);
+                  jnN++;
+                }
+              }
               // ... and the side's junction matures while it touches a sticky neighbour
               let wt = touch * clamp(gl / 0.1, 0.0, 1.0);
               tchA += select(vec4f(0.0), vec4f(wt), vec4u(ks) == vec4u(0u, 1u, 2u, 3u));
@@ -557,6 +619,10 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     var mB = unpack2x16unorm(myMat[2]);
     mA = clamp(mA + S.dt * (FL.wl0.z * tA * (1.0 - mA) - FL.wl0.w * (1.0 - tA) * mA), vec4f(0.0), vec4f(1.0));
     mB = clamp(mB + S.dt * (FL.wl0.z * tB * (1.0 - mB) - FL.wl0.w * (1.0 - tB) * mB), vec2f(0.0), vec2f(1.0));
+    // step G0: a side that tore (or is still torn) has lost its junction's maturity
+    let gone = (jn0 & JN_TORN) | jnTear;
+    mA = select(mA, vec4f(0.0), (vec4u(gone) & vec4u(1u, 2u, 4u, 8u)) != vec4u(0u));
+    mB = select(mB, vec2f(0.0), (vec2u(gone) & vec2u(16u, 32u)) != vec2u(0u));
     c.mature = array<u32, 3>(pack2x16unorm(mA.xy), pack2x16unorm(mA.zw), pack2x16unorm(mB));
   } else {
     c.mature = array<u32, 3>(0u, 0u, 0u);
@@ -671,7 +737,22 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     if (jm > 1e-6) { f += fj * (js * tanh(jm / js) / jm); }
   }
 
-  c.kind = KIND_STEM;   // (step F0: no fates; a cell from an old snapshot loses its fate here)
+  // step G0: the junctions' word (step F0: the fates' kind word until then; 0 while tearing is off). A torn side heals at random (at g0a.y per
+  // s); a formed junction stays while its side keeps touching a glued neighbour, forms where one presses closer than R0, and is gone when it tears
+  var jnNew = 0u;
+  if (tearOn) {
+    var torn = (jn0 & JN_TORN) | jnTear;
+    var healed = 0u;
+    for (var k = 0u; k < 6u; k++) {
+      let bit = 1u << k;
+      if ((jn0 & bit) != 0u && rand01(c.seed ^ 0x1b873593u, S.tick * 6u + k) < S.dt * FL.g0a.y) { torn &= ~bit; healed++; }
+    }
+    let formed = ((((jn0 >> JN_FORM_SHIFT) & jnKeep) | jnMake) & ~torn) & JN_TORN;
+    jnNew = torn | (formed << JN_FORM_SHIFT);
+    if (jnTear != 0u) { atomicAdd(&stats.g0[G0S_TEARS], countOneBits(jnTear)); }
+    if (healed != 0u) { atomicAdd(&stats.g0[G0S_HEALS], healed); }
+  }
+  c.kind = jnNew;
 
   // rule 2 (step 6), conversion A -> B: the A felt goes through a leaky integrator (bio.env.z, time constant
   // convTau), and the cell converts above convOn and converts back below convOff (hysteresis, so it does not
@@ -774,7 +855,16 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   f += S.drift * S.R * vec2f(sin(c.pos.y * 0.011 + S.time * 0.10), sin(c.pos.x * 0.012 - S.time * 0.08));
   // step N1, CURRENTS (src/water.js): the water's velocity at the cell, x curDrift, as a force (so the cell drifts at curDrift x the
   // water's speed; its work is booked as every force's)
-  if (HP.cur != 0u && HP.curDrift > 0.0) { f += HP.curDrift * water_vel(c.pos); }
+  var uW = vec2f(0.0);       // step G0: the water's velocity here (prescribed + stirred), and the stirred part's push (its work is paid from heat)
+  var fStir = vec2f(0.0);
+  let stF = bitcast<u32>(FL.g0b.x);
+  if (HP.cur != 0u) {
+    uW = water_vel(c.pos);
+    if (HP.curDrift > 0.0) {
+      f += HP.curDrift * uW;
+      if ((stF & ST_SPLIT) != 0u) { fStir = HP.curDrift * stir_vel(c.pos); }
+    }
+  }
 
   // soft walls, 3 R in from the dish edge
   let mg = 3.0 * S.R;
@@ -848,6 +938,39 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let eDrag = heat_ke(v0) - heat_ke(v1);
   let eWork = heat_ke(v2) - heat_ke(v1);
   let eKick = heat_ke(v3) - heat_ke(v2);
+  // step G0, CELLS STIR THE WATER (src/stir.js): the cell's drag on the water, the reaction of its driven motion (before the heat's kick: the
+  // kicks are incoherent) RELATIVE to the water: wet x (v - u), x its footprint's share of a stir node's area, put down on the 4 nodes round it
+  // (bilinear, fixed point, summed over the frame's ticks; the stir passes turn its curl into vorticity). A crawler's motor pushes on the floor,
+  // but its body still moves through the water, so it drags the water by the WET share of its drag (the same share by which the water drags it:
+  // curDrift); a cell that drifts with the water drags nothing
+  if ((stF & ST_ON) != 0u && bitcast<u32>(FL.g0c.z) != 0u) {
+    let sw = bitcast<u32>(FL.g0c.x);
+    let sh = bitcast<u32>(FL.g0c.y);
+    let so = bitcast<u32>(FL.g0c.z);
+    let vr = v2 - uW;
+    let vm = length(vr);
+    let lim = 10.0 * S.R;
+    let vc = select(vr, vr * (lim / vm), vm > lim);
+    let m = FL.g0b.y * vc * (3.14159265 * c.r * c.r / (FL.g0b.z * FL.g0b.z)) * FL.g0b.w;
+    let gp = clamp(c.pos / FL.g0b.z, vec2f(0.0), vec2f(f32(sw - 1u), f32(sh - 1u)) - 1e-3);
+    let gb = vec2u(floor(gp));
+    let gt = gp - vec2f(gb);
+    let n = sw * sh;
+    let wq = array<f32, 4>((1.0 - gt.x) * (1.0 - gt.y), gt.x * (1.0 - gt.y), (1.0 - gt.x) * gt.y, gt.x * gt.y);
+    let oq = array<u32, 4>(0u, 1u, sw, sw + 1u);
+    let o0 = gb.y * sw + gb.x;
+    for (var q = 0; q < 4; q++) {
+      let mq = vec2i(round(m * wq[q]));
+      if (mq.x != 0) { atomicAdd(&hb[so + o0 + oq[q]], mq.x); }
+      if (mq.y != 0) { atomicAdd(&hb[so + n + o0 + oq[q]], mq.y); }
+    }
+  }
+  // ... and what the STIRRED water's push did on the cell this tick (its share of the forces' work) is taken from the heat under it: the
+  // water's motion came from the stirring cells' work, which their drag had made heat (exact: the same counts leave the heat and the work in)
+  var cStir = 0;
+  if (any(fStir != vec2f(0.0))) {
+    cStir = heat_counts(heat_ke(v2) - heat_ke(v2 - fStir * (1.0 - S.damping)));
+  }
   c.vel = v3;
   if (kicks) {
     c.pos += c.vel * S.dt;
@@ -1388,7 +1511,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // drag and the kicks (each in one of 256 or 160 slots, so the atomic adds do not all queue on one address)
   let cDrag = heat_counts(eDrag);
   let cKick = heat_counts(eKick);
-  let dep = cDrag - cKick + heat_counts(eDeath);
+  let dep = cDrag - cKick + heat_counts(eDeath) - cStir;   // (step G0: less the stirred water's work on the cell)
   if (dep != 0) {
     let part = dep / 9;
     for (var q = 0; q < 9; q++) {
@@ -1402,7 +1525,9 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     let cp = heat_xy(HP, c.pos);
     atomicAdd(&hb[LEDGER_WORDS + 3u * HP.n + u32(cp.y) * HP.hw + u32(cp.x)], cov);
   }
-  atomicAdd(&hb[LG_WORK + (j & 255u)], heat_counts(eWork));
+  atomicAdd(&hb[LG_WORK + (j & 255u)], heat_counts(eWork) - cStir);
+  if (cStir != 0) { atomicAdd(&stats.g0[G0S_WORK], bitcast<u32>(cStir)); }
+  if (j == 0u) { atomicAdd(&stats.g0[G0S_TICKS], 1u); }
   let slot = j % LG_SLOTS_DK;
   if (cDrag != 0) { atomicAdd(&hb[LG_DRAG + slot], cDrag); }
   if (cKick != 0) { atomicAdd(&hb[LG_KICK + slot], cKick); }
@@ -1416,7 +1541,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     let a1 = g.x;
     let a2 = g.y;
     atomicAdd(&stats.wall[WS_N], 1u);
-    atomicAdd(&stats.wall[WS_A0], u32(round(clamp(bio.body.x, 0.0, 1.0) * 1000.0)));
+    atomicAdd(&stats.wall[WS_A0], u32(round(clamp(bio.body.x, 0.0, GLUE_HI) * 1000.0)));   // (step G0: up to the log scale's top)
     atomicAdd(&stats.wall[WS_A1], u32(round(abs(a1) * 1000.0)));
     atomicAdd(&stats.wall[WS_A2], u32(round(abs(a2) * 1000.0)));
     atomicAdd(&stats.wall[WS_A1S], bitcast<u32>(i32(round(a1 * 1000.0))));
@@ -1436,7 +1561,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     var pHi = 0.0;
     for (var k = 0; k < 6; k++) {
       let cs = cos(myTh + (f32(k) + 0.5) * P3 - c.front);
-      let p = clamp(bio.body.x + FL.wl1.y * (a1 * cs + a2 * (2.0 * cs * cs - 1.0)), 0.0, 1.0);
+      let p = clamp(bio.body.x + FL.wl1.y * (a1 * cs + a2 * (2.0 * cs * cs - 1.0)), 0.0, max(1.0, bio.body.x));
       ask += p * (1.0 + FL.wl1.z * wall_mature(mm, u32(k)));
       pk[k] = p;
       pLo = min(pLo, p);
@@ -1477,6 +1602,21 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       atomicAdd(&stats.wall[WS_FDN], 1u);
       atomicAdd(&stats.wall[WS_FD], bitcast<u32>(i32(round(1000.0 * cos(atan2(myD.y, myD.x) - c.front)))));
     }
+  }
+  // step G0: the glue's census (the frame's last tick): the gene on its log scale, the formed junctions, their strength and load, the torn sides
+  if (S.xCount != 0u && !died) {
+    let gg = max(bio.body.x, 1e-3);
+    atomicAdd(&stats.g0[G0S_N], 1u);
+    atomicAdd(&stats.g0[G0S_GENE], bitcast<u32>(i32(round(log(gg) * 1000.0))));
+    atomicAdd(&stats.g0[G0S_GENE2], u32(round(log(gg) * log(gg) * 1000.0)));
+    atomicAdd(&stats.g0[G0S_GSUM], u32(round(min(gg, 100.0) * 1000.0)));
+    if (gg > 1.0) { atomicAdd(&stats.g0[G0S_HIGH], 1u); }
+    if (jnN > 0u) {
+      atomicAdd(&stats.g0[G0S_FORMED], jnN);
+      atomicAdd(&stats.g0[G0S_STR], u32(round(jnStr * 1000.0)));
+      atomicAdd(&stats.g0[G0S_LOAD], bitcast<u32>(i32(round(clamp(jnLoad, -1000.0, 1000.0) * 1000.0))));
+    }
+    if ((c.kind & JN_TORN) != 0u) { atomicAdd(&stats.g0[G0S_TORN], countOneBits(c.kind & JN_TORN)); }
   }
   // step C13: what each side felt (s_k = tanh(felt / ref)), for the eat pass's gates and the guides view, and the field genes the beat
   // needs (Cell.fg), from the genome (a newborn's from hers)
@@ -1579,6 +1719,17 @@ fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
   let qr0 = nb.pump.zw > vec2f(0.0);
   if (msF > 0.0) {
     nb = mutate(nb, bs, S.mutSize * msF, min(S.mutJump * msF, 1.0), min(S.engJump * msF, 1.0), min(FL.memb.w * msF, 1.0));
+    // step G0, the glue's CEILING: the glue gene on a log scale (GLUE_LO..GLUE_HI): its step multiplies it (x e^(0.06 x size x n), the same
+    // 6 % a step was at 0.5 on the old linear scale; the same random draw), its rare jump lands anywhere on the log scale (the same draws as
+    // mutate's jump into it)
+    if ((bitcast<u32>(FL.g0a.x) & G0_CEIL) != 0u) {
+      let sz = S.mutSize * msF;
+      var x = max(p.body.x, GLUE_LO) * exp(sz * 0.06 * gauss(bs, 16u));
+      if (rand01(bs, 101u) < min(S.mutJump * msF, 1.0) && min(u32(rand01(bs, 102u) * 18.0), 17u) == 15u) {
+        x = GLUE_LO * pow(GLUE_HI / GLUE_LO, rand01(bs, 103u));
+      }
+      nb.body.x = clamp(x, GLUE_LO, GLUE_HI);
+    }
   }
   // ... the gene itself drifts at today's size (not proofread by itself), on and in the neutral control
   var fid = p.conv.w;

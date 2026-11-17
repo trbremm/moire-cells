@@ -634,6 +634,11 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     let gain = select(D.wall.y, D.wall2.x, wallsView);
     lineCol *= (1.0 - gain) + 2.0 * gain * aE;
     lineCol = mix(lineCol, vec3f(max(max(lineCol.r, lineCol.g), lineCol.b)), D.wall.z * mtr) * (1.0 + D.wall2.w * mtr);
+    // step G0: a TORN side (its junction pulled apart, src/glue.js): the tube frayed, broken into short hot dashes, until it heals
+    if (jn_torn(c.kind, min(side, 5u))) {
+      let dash = step(0.45, fract(sd.y / max(0.32 * c.r, 1.0) + 0.37 * f32(side)));
+      lineCol = mix(lineCol, vec3f(1.0, 0.55, 0.35) * max(max(lineCol.r, lineCol.g), lineCol.b), 0.6) * (0.25 + 0.95 * dash);
+    }
   }
   // step C13, the guides view: each side's tube by what that side feels (s, -1..1): bright where the field is high, dark where low
   if (guidesView) { lineCol *= (1.0 - D.gd.y) + D.gd.y * (1.0 + cell_felt(c, min(side, 5u))); }
@@ -894,7 +899,9 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
   let ring = (1.0 - inner) * cover_in(ein2, aa);
   // step T1a: zoomed in, the self marker as fine stripes along the green rim (surface immunostaining), as deep as the cell displays it
   let mk = select(1.0, 1.0 - D.kin.y * clamp(g.mark.w, 0.0, 1.0) * (1.0 - marker_stripe(g, in.local, D.R)), D.kin.y > 0.0);
-  var rgb = G * D.harm.x * lipid * ring * mk;
+  // step G0: a torn junction's side (src/glue.js): the rim broken into short dashes, until it heals
+  let tornH = select(1.0, 0.2 + 0.8 * step(0.45, fract(sd.y / max(0.32 * c.r, 1.0) + 0.37 * f32(side))), jn_torn(c.kind, side) && D.wall.x > 0.5);
+  var rgb = G * D.harm.x * lipid * ring * mk * tornH;
   rgb += G * D.harm2.y * inner;
   // the pixel's offset from the centre on screen (a honeycomb cell: local; an ellipse cell: F lp), and the stretch's axis
   let Fd = cell_F(c);

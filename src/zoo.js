@@ -267,7 +267,7 @@ export function summary(g, o = 0, lipidsOn = true) {
     if (SUBSTANCES[ch]) pumps.push(`pumps ${SUBSTANCES[ch].name} ${out ? 'out' : 'in'}`);
   }
   const body = [`tolerates heat ${g[o + 35].toFixed(0)}`];
-  if (g[o + 16] > 0.7) body.push('sticky'); else if (g[o + 16] < 0.25) body.push('loose');
+  if (g[o + 16] > 1.5) body.push('glued fast'); else if (g[o + 16] > 0.7) body.push('sticky'); else if (g[o + 16] < 0.25) body.push('loose');   // (step G0: up to 4)
   if (g[o + 18] > 1.4) body.push('crawls fast');
   if (g[o + 80] > 0.3) body.push('opens kin channels');   // step T1a
   if (g[o + 79] < 0.3 && g.length > o + 79) body.push('hides its marker');

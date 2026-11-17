@@ -23,7 +23,24 @@ struct WaterP {
   dish: vec4f,          // W, H (CSS px), the window's width (CSS px), spare
   cen: vec4f,           // the medium's centre x, y; A (the beat's psi amplitude, px^2 / s); G (the gyre's)
   q: array<vec4f, 3>,   // the beat's wavevectors (radians per CSS px) and their phases now
+  stir: vec4u,          // step G0 (src/stir.js): word offset in hb of the STIRRED stream function on the stir grid (0: none), its width and
+                        // height (nodes), its spacing (CSS px, f32 bits)
 };
+
+// step G0: where p (CSS px) sits on the stir grid: o the word of the node at its cell's lower corner (0 if p lies outside the grid, which reaches
+// no further than its last node: beyond it the stirred psi is 0), t the bilinear weights; each shader reads its own buffer
+struct StirCell { o: u32, t: vec2f, };
+fn stir_cell(p: vec2f) -> StirCell {
+  var r: StirCell;
+  if (W.stir.x == 0u) { return r; }
+  let q = p / bitcast<f32>(W.stir.w);
+  let lim = vec2f(f32(W.stir.y - 1u), f32(W.stir.z - 1u));
+  if (q.x < 0.0 || q.y < 0.0 || q.x >= lim.x || q.y >= lim.y) { return r; }
+  let b = vec2u(floor(q));
+  r.o = W.stir.x + b.y * W.stir.y + b.x;
+  r.t = q - vec2f(b);
+  return r;
+}
 
 
 fn rcell(x: i32, y: i32) -> f32 {

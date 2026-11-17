@@ -3,8 +3,8 @@
 // Layout: struct Bio in cell_common.wgsl, 24 floats (96 bytes) per cell, double-buffered on the GPU.
 //   key    x key angle (0..60 deg), y key scale (log period factor, -0.15..0.15),
 //          z receptor angle, w receptor scale            -> WHICH keys the cell recognises (specific)
-//   rec    x receptor width (pickiness), y z spare (the fates' threshold and output until step F0), w founder id (a whole number,
-//          as a float)
+//   rec    x receptor width (pickiness), y spare (the fates' threshold until step F0), z step G0: the FOUNDER's glue (its body.x when
+//          it was made, inherited unchanged: the glue's neutral control acts with it), w founder id (a whole number, as a float)
 //   resp   step F0, state (inherited, not mutated): x y the JOB scores builder, predator (src/jobs.js); z w spare (the fates' response
 //          genes until then)
 //   relay  spare (the fates' relay genes until step F0)
@@ -53,6 +53,7 @@
 
 import { ENGINES, engineIndex, ELECTRONS } from './matter.js';
 import { fieldDefaults, founderGates, BIO_FG } from './guides.js';
+import { stampFounderGlue } from './glue.js';
 
 export const BIO_FLOATS = 156;  // (40 until step C6c's membrane genes, 44 until step C7's pumps, 48 until step C10's walls, 52 until step C12b's lipids,
                                 //  56 until step C13's field genes and gates, 76 until step T1a's marker and kin channels, 84 until step T1b's gene network)
@@ -459,6 +460,7 @@ export class Genome {
       if (g.length <= BIO_FG) fieldDefaults(f, o);   // (... before step C13 the field genes: today's values)
       for (let k = 20; k < 31; k++) f[o + k] = 0;   // accumulators and step 6 state start empty (32..47: step C6's, C6c's and C7's genes;
                                                     //  step G1: word 31 is the fidelity gene, the founder's: 0)
+      stampFounderGlue(f, o);                       // step G0: the founder's glue (Bio.rec.z), what the glue's neutral control acts with
       keys[2 * i] = g[0]; keys[2 * i + 1] = g[1];
     }
     return keys;

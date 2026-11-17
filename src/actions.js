@@ -70,6 +70,8 @@ export const RULE_GROUPS = [
   ['t1b', 'Gene network (step T1b)'],
   ['p1', 'Predators (step P1)'],
   ['g1', 'Error correction (step G1)'],
+  ['g0', 'Strong glue (step G0)'],
+  ['g0w', 'Stirred water (step G0)'],
   ['vents', 'Vents in the dark (step C12f)'],
   ['n1', 'Nutrient landscape (step N1)'],
   ['guides', 'Fields as guides (step C13)'],
@@ -791,6 +793,34 @@ export function makeActions(app) {
       help: 'the neutral control: the gene drifts as usual, without effect or cost, to tell selection from noise' },
     fdknob('fidCost', 'proofreading cost', 'cost', 0, 10, 1.25, 3, 'energy units a birth costs the parent at e^F − 1 = 1 (as heat); F = 1 costs 1.7 × this, F = 2 6.4 ×'),
     fdknob('fidBeyond', 'hard light beyond repair', 'beyond', 0, 1, 1.25, 2, 'the share of hard light’s extra mutation proofreading cannot catch (the rest is caught like any copying error)'),
+  );
+
+  // ---------- strong glue, junctions that break, stirred water (step G0; panel only: no keys are free) ----------
+  const GLP = () => app.cells.glue.params;
+  const STP = () => app.water.stir.params;
+  const g0knob = (id, label, P, key, lo, hi, f, digits, help, grp = 'g0') => ({ id, keys: [], label, group: grp, type: 'knob', get: () => P()[key].toFixed(digits),
+    run: (k) => { const p = P(); p[key] = Math.max(lo, Math.min(hi, +(Math.max(p[key], 1e-3) * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    { id: 'glueCeil', keys: [], label: 'glue up to 4 (log scale)', group: 'g0', type: 'toggle', get: () => GLP().ceiling,
+      run: () => `the glue gene ${flip(GLP(), 'ceiling') ? 'lives on a log scale, 0.05 to 4: mutation multiplies it, so cells can evolve glue far stronger than before' : 'is capped at 1 again (linear, as before step G0)'}`,
+      help: 'the adhesion gene on a log scale up to 4 × today’s ceiling; the founders keep their glue' },
+    { id: 'glueCost', keys: [], label: 'strong glue costs more', group: 'g0', type: 'toggle', get: () => GLP().cost,
+      run: () => `glue above 1 ${flip(GLP(), 'cost') ? 'costs a0 × more per unit (layers on layers: twice the glue, four times the cost)' : 'costs per unit as below it'}`,
+      help: 'above today’s ceiling each unit of glue costs a0 × as many linkers and as much upkeep' },
+    { id: 'glueTear', keys: [], label: 'junctions tear', group: 'g0', type: 'toggle', get: () => GLP().tear,
+      run: () => `junctions ${flip(GLP(), 'tear') ? 'tear when their pair is pulled apart harder than the glue holds (a torn side holds nothing until it heals)' : 'never tear: glue just weakens with distance, as before'}`,
+      help: 'a formed junction tears when its two cells are pulled past the contact distance (by crawling, water, the press, a predator, a crowd); torn sides show as frayed hot dashes' },
+    { id: 'glueNull', keys: [], label: 'glue neutral control', group: 'g0', type: 'toggle', get: () => GLP().null,
+      run: () => `the glue gene ${flip(GLP(), 'null') ? 'drifts WITHOUT effect: every cell glues at its founder’s value (NEUTRAL CONTROL)' : 'acts'}`,
+      help: 'the neutral control: the gene drifts as usual, its effects at the founder’s value, to tell selection from noise' },
+    g0knob('tearAt', 'tears past', GLP, 'stretch', 0.005, 0.15, 1.25, 3, 'a formed junction tears when its pair is pulled this share past the contact distance'),
+    g0knob('healTime', 'heals after', GLP, 'heal', 0.25, 60, 1.5, 2, 's a torn side stays without glue, on average'),
+    { id: 'stirWater', keys: [], label: 'cells stir the water', group: 'g0w', type: 'toggle', get: () => STP().on,
+      run: () => `the cells ${flip(STP(), 'on') ? 'stir the water: their drag pushes it, the swirls carry substances and other cells (pink streamlines in the machinery view)' : 'do not stir the water: the currents are only the prescribed eddies, gyre and through-flow'}`,
+      help: 'two-way water: moving cells drag the water (the wet share of their drag), the stirred flow is added to the currents' },
+    g0knob('stirGain', 'stirring gain', STP, 'gain', 0.05, 20, 1.5, 2, 'how fast the water goes where cells push it (× their coverage-weighted push)', 'g0w'),
+    g0knob('stirReach', 'viscous reach', STP, 'reach', 0.25, 20, 1.5, 2, 'R: how far a push moves the water round it (viscosity)', 'g0w'),
+    g0knob('stirFade', 'swirls fade in', STP, 'fade', 0.1, 60, 1.5, 2, 's: how fast the stirred flow dies down when the push stops', 'g0w'),
   );
 
   // ---------- vents in the dark (step C12f; panel only: no keys are free) ----------

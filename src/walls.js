@@ -64,7 +64,10 @@ import { ATOM_SCALE } from './matter.js';
 
 export const STATS_WALL = 8640;   // byte offset of Stats.wall in struct Stats (cell_common.wgsl)
 export const WALL_WORDS = 32;     // (24 until step C11)
-const AMAX = 3;                   // WALL_AMAX: the largest effective adhesion a side can hold
+const AMAX = 8;                   // WALL_AMAX: the largest effective adhesion a side can hold (step G0: 8, on a log code; 3 until then)
+const CODE_K = 0.5;               // WALL_CODE_K: a side's 8 bits e code the adhesion a = K (17^e - 1) (step G0)
+/** Step G0: a side's effective adhesion from its 8-bit code (cell_common.wgsl wall_dec). */
+export const wallDec = (q) => CODE_K * (Math.exp((q / 255) * Math.log(1 + AMAX / CODE_K)) - 1);
 const CLASSES = ['uniform', 'polar', 'two-ended', 'sticky sides'];
 
 /** A genome's wall pattern class: 0 uniform, 1 polar, 2 two-ended, 3 sticky sides (as the census and the walls view). */
@@ -144,7 +147,8 @@ export class Walls {
     this.dt = dt;
     u[o] = this.flags(); f[o + 1] = Math.max(0, p.strength);
     f[o + 2] = this.rule('mature') ? Math.max(0, Math.min(AMAX, p.matureCap) - 1) : 0; f[o + 3] = Math.max(0, p.linkPer);
-    f[o + 4] = Math.max(0, p.upkeep) * HEAT_SCALE * dt; f[o + 5] = Math.max(0, p.freeGlue); f[o + 6] = 0; f[o + 7] = 0;
+    f[o + 4] = Math.max(0, p.upkeep) * HEAT_SCALE * dt; f[o + 5] = Math.max(0, p.freeGlue); f[o + 6] = 0;
+    u[o + 7] = this.glue ? this.glue.bits() : 0;   // step G0: the glue's bits (EatP.wl1.w; src/glue.js)
   }
 
   /** The drawing's words (struct Draw wall, wall2, wallInk[4], from word o). */
@@ -239,7 +243,7 @@ export class Walls {
     const f = new Float32Array(cab), u = new Uint32Array(cab), g = new Float32Array(bab);
     const live = [];
     for (let i = 0; i < n; i++) if (u[i * F + 9] & 1) live.push(i);
-    const side = (o, k) => ((k < 4 ? u[o + 68] >>> (8 * k) : u[o + 69] >>> (8 * (k - 4))) & 255) / 255 * AMAX;
+    const side = (o, k) => wallDec((k < 4 ? u[o + 68] >>> (8 * k) : u[o + 69] >>> (8 * (k - 4))) & 255);   // (step G0: the log code)
     const mat = (o, k) => ((u[o + 65 + (k >> 1)] >>> (16 * (k & 1))) & 65535) / 65535;
     const th8 = (o) => ((u[o + 9] & 8) ? Math.round(((f[o + 38] / (2 * Math.PI)) % 1 + 1) % 1 * 256) % 256 * 2 * Math.PI / 256 : 0);
     const sideOf = (o, dx, dy) => { let a = Math.atan2(dy, dx) - th8(o); a -= 2 * Math.PI * Math.floor(a / (2 * Math.PI)); return Math.min(5, Math.floor(a / (Math.PI / 3))); };
@@ -263,7 +267,7 @@ export class Walls {
       const o = i * F, b = i * B, th = th8(o), pk = [];
       for (let k = 0; k < 6; k++) {
         const cs = Math.cos(th + (k + 0.5) * Math.PI / 3 - f[o + 64]);
-        pk.push(Math.max(0, Math.min(1, g[b + 16] + this.params.strength * (g[b + 48] * cs + g[b + 49] * (2 * cs * cs - 1)))));
+        pk.push(Math.max(0, Math.min(Math.max(1, g[b + 16]), g[b + 16] + this.params.strength * (g[b + 48] * cs + g[b + 49] * (2 * cs * cs - 1)))));
       }
       const lo = Math.min(...pk), hi = Math.max(...pk), mid = (lo + hi) / 2;
       if (hi - lo > 0.1) { const s = pk.map((v) => v >= mid); sticky.set(i, { s, share: s.filter(Boolean).length / 6 }); }

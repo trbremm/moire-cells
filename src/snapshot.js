@@ -172,6 +172,8 @@ export function settingObjects(M) {
     ...(M.water ? { 'water.params': M.water.params } : {}),           // step N1: caustic light, currents
     ...(M.perfusion ? { 'perfusion.params': M.perfusion.params } : {}),   // perfusion (src/perfusion.js)
     ...(M.oases ? { 'oases.params': M.oases.params } : {}),           // step N1: the scarce nutrient's springs
+    ...(M.glue ? { 'glue.params': M.glue.params } : {}),              // step G0: strong glue, junctions that break
+    ...(M.stir ? { 'stir.params': M.stir.params } : {}),              // step G0: the cells stir the water
   };
 }
 const SCALARS = [['neon.on', (M) => M.neon, 'on'], ['background.heatOn', (M) => M.background, 'heatOn'], ['background.ambient', (M) => M.background, 'ambient']];
@@ -509,6 +511,14 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     if (opts.settings !== false && M.oases && !(S.settings && S.settings['oases.params'])) {
       Object.assign(M.oases.params, { scarce: false, roam: false, count: 0 });   // step N1
       notes.push('saved before step N1: trace from every spring, no oases (as it ran)');
+    }
+    if (opts.settings !== false && M.glue && !(S.settings && S.settings['glue.params'])) {
+      Object.assign(M.glue.params, { ceiling: false, cost: false, tear: false, null: false });   // step G0
+      notes.push('saved before step G0: the glue gene capped at 1, no junctions tearing (as it ran)');
+    }
+    if (opts.settings !== false && M.stir && !(S.settings && S.settings['stir.params'])) {
+      M.stir.params.on = false;   // step G0
+      notes.push('saved before step G0: the cells do not stir the water (as it ran)');
     }
     if (opts.settings !== false && M.waste && !(S.settings && S.settings['waste.params'])) {
       Object.assign(M.waste.params, { saturation: false, osmosis: false });   // step C12e

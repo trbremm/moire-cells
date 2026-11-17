@@ -2077,20 +2077,28 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     var aReq = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     var aPay = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);    // step C11: the part of it above the free base glue (what costs)
     var wX = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);      // the extra linker counts each side wants for its adhesion
+    var wCf = 1.0;                                             // step G0: the cost per unit of glue above 1 (x a0)
     if (wallOn) {
       let mbw = membrane(c);
       let uf = vec2f(cos(c.front), sin(c.front));
       let gw = bio[i].wall;
-      let a0 = clamp(bio[i].body.x * gof(i, GRN_O_GLUE), 0.0, 1.0);   // (step T1b: the glue as expressed)
+      // (step T1b: the glue as expressed; step G0: up to the log scale's top, GLUE_HI, and under the neutral control the founder's value)
+      let g0 = bitcast<u32>(EP.wl1.w);
+      let a0 = clamp(glue_gene(bio[i], g0) * gof(i, GRN_O_GLUE), 0.0, glue_top(g0));
+      // step G0: glue above today's ceiling of 1 costs MORE PER UNIT, x a0: the adhesion molecules pack in layers on layers, each layer as
+      // costly as the first, so a side's linker want and upkeep grow as a0 x the glue it holds (a0 = 2: 4 x the cost of a0 = 1, for 2 x the
+      // hold; a0 = 4: 16 x); up to 1, as before
+      wCf = select(1.0, max(1.0, a0), (g0 & G0_COST) != 0u);
       // step C13, the glue gate: each side's pattern x (1 + g s_k), s_k what that side felt of field A (the step's Cell.felt)
       let glueG = (fg_bits() & FG_GLUE) != 0u;
       for (var k = 0u; k < 6u; k++) {
         let cs = dot(normalize(mbw.mid[k] + vec2f(1e-6, 0.0)), uf);
-        var p = clamp(a0 + EP.wl0.y * (gw.x * cs + gw.y * (2.0 * cs * cs - 1.0)), 0.0, 1.0);
+        var p = clamp(a0 + EP.wl0.y * (gw.x * cs + gw.y * (2.0 * cs * cs - 1.0)), 0.0, max(1.0, a0));   // (step G0: the pattern's top)
         if (glueG) { p *= gate_factor(bio[i].gate.x, cell_felt(c, k)); }
+        if ((g0 & G0_TEAR) != 0u && jn_torn(c.kind, k)) { p = 0.0; }   // step G0: a torn side holds (and asks, and pays for) nothing
         aReq[k] = min(p * (1.0 + EP.wl0.z * wall_mature(c.mature, k)), WALL_AMAX);
         aPay[k] = select(aReq[k], max(aReq[k] - EP.wl1.y, 0.0), wCost);
-        if (wCost && membOn) { wX[k] = memb_want(c.r, EP.wl0.w * aPay[k]); }
+        if (wCost && membOn) { wX[k] = memb_want(c.r, EP.wl0.w * aPay[k] * wCf); }
       }
     }
     if (membOn) {
@@ -2166,7 +2174,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           av[k] = clamp(extra / wX[k], 0.0, 1.0);
           linkC += min(extra, wX[k]);
         }
-        if (wCost) { up += EP.wl1.x * aPay[k] * av[k] * sideR; }
+        if (wCost) { up += EP.wl1.x * aPay[k] * wCf * av[k] * sideR; }
       }
       var pf = 1.0;
       var pay = 0;
@@ -2177,7 +2185,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         if (pay < owe) { pf = clamp(f32(pay) / up, 0.0, 1.0); }
       }
       var e = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-      for (var k = 0u; k < 6u; k++) { e[k] = clamp((aReq[k] - aPay[k] + aPay[k] * av[k] * pf) / WALL_AMAX, 0.0, 1.0); }
+      for (var k = 0u; k < 6u; k++) { e[k] = wall_enc(aReq[k] - aPay[k] + aPay[k] * av[k] * pf); }   // (step G0: the log code)
       cells[i].wadh = array<u32, 2>(pack4x8unorm(vec4f(e[0], e[1], e[2], e[3])), pack4x8unorm(vec4f(e[4], e[5], 0.0, 0.0)));
       cells[i].wlink = u32(round(linkC));
       cells[i].wpay = u32(pay);

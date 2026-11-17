@@ -49,6 +49,7 @@ import { Guides, STATS_FG, FG_WORDS, FG_CLEAR } from './guides.js';
 import { Kin } from './kin.js';
 import { Grn } from './grn.js';
 import { Predators, STATS_P1, P1_WORDS, P1_CLEAR } from './predators.js';
+import { Glue, STATS_G0, G0_WORDS, G0_CLEAR } from './glue.js';
 import { Fidelity } from './fidelity.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 import { dish } from './dish.js';      // the dish's own size and R
@@ -81,14 +82,14 @@ const SLOT = 256;              // uniform slot stride (minUniformBufferOffsetAli
 const SLOTS = 320;             // ticks that can be encoded in one frame (main.js runs at most 256, plus warm-up)
 const BLOCK = 512;             // scan block (cell_grid.wgsl)
 const BRUTE_MAX = 20000;       // largest count the ?check brute force runs on
-const STATS_BYTES = 9280;      // struct Stats in cell_common.wgsl (step P1: + p1, 64 words; step C13: + fg, 64 words; counters, events, census, step 6 census; step C6d: + dip;
+const STATS_BYTES = 9408;      // struct Stats in cell_common.wgsl (step G0: + g0, 32 words; step P1: + p1, 64 words; step C13: + fg, 64 words; counters, events, census, step 6 census; step C6d: + dip;
                                // step C9: + div, claim; step C10: + wall; step C11: wall 24 -> 32 words)
 const STATS_EXTRA = 8192;      // byte offset of Stats.extra (step 6 census: STATS_X_* in cell_common.wgsl)
 const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder bitmap) in struct Stats
 const STATS_EVENTS = 64;
 const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_AW in cell_common.wgsl)
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
-const FIELDS_BYTES = 512;      // struct Fields in cell_common.wgsl (step P1: + p1..p1d; step T1a: + t1; step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
+const FIELDS_BYTES = 560;      // struct Fields in cell_common.wgsl (step G0: + g0a..g0c; step P1: + p1..p1d; step T1a: + t1; step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
                                // step C9: + dv0..dv2; step C10: + wl0, wl1)
 const FIELD_FORMAT = 'rgba16float';
 const DRAW_BYTES = 1424;       // struct Draw in cell_draw.wgsl (step F0: + job[7], 1312 until then; step P1: + p1, p1Ink; step T1b: + grn, grnInk, grnInkH, 1232 until then; step T1a: + kin, 1216 until then; step H1: + harm, harm2, harm3, harm4, hInk[5] after cam, 1072 until then; app: + cam, 1056 until then; step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
@@ -349,6 +350,9 @@ export class Cells {
     this.dipole = new Dipole(this);   // step C6d: charge per side (src/dipole.js)
     this.division = new Division(this);   // step C9: division and death with a changing count (src/division.js)
     this.walls = new Walls(this);         // step C10: patterned walls, evolvable adhesion per side (src/walls.js)
+    this.glue = new Glue(this);           // step G0: strong glue, junctions that break (src/glue.js)
+    this.walls.glue = this.glue;
+    this.stir = null;                     // step G0: the cells stir the water (src/stir.js; set by main.js)
     this.guides = new Guides(this);       // step C13: fields as genes and guides (src/guides.js)
     this.kin = new Kin(this);             // step T1a: an inside, kin channels, the self marker (src/kin.js)
     this.grn = new Grn(this);             // step T1b: the gene regulatory network, the reporter view (src/grn.js)
@@ -724,6 +728,8 @@ export class Cells {
     this.kin.writeFields(u, f, 108);           // step T1a: the self marker's clock (Fields.t1)
     this.grn.writeFields(u, f, 110);           // step T1b: the gene network's outputs act (Fields.t1.z), field B's sense scale (t1.w)
     this.pred.writeFields(u, f, 112);          // step P1: predators (Fields.p1, p1b, p1c, p1d)
+    this.glue.writeFields(u, f, 128);          // step G0: strong glue, junctions that break (Fields.g0a)
+    if (this.stir) this.stir.writeFields(u, f, 132); else { u.fill(0, 132, 140); }   // step G0: the cells stir the water (Fields.g0b, g0c)
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -788,11 +794,13 @@ export class Cells {
     }
     this.device.queue.writeBuffer(this.simBuf, 0, this.simAB, 0, ticks * SLOT);
     this.writeFields();
+    if (this.stir && this.stir.active) this.stir.ticks += ticks;   // step G0: the ticks whose push the stir passes read next frame
     encoder.clearBuffer(this.statsBuf, 48, 16);   // step 7: neighbour pairs by state, counted on the last tick
     encoder.clearBuffer(this.statsBuf, STATS_DIP, DIP_WORDS * 4);   // step C6d: the dipoles' census, also on the last tick
     encoder.clearBuffer(this.statsBuf, STATS_DIV + 4 * DIV_SNAP, 4 * (15 - DIV_SNAP));   // step C9: its snapshot, on the last tick
     encoder.clearBuffer(this.statsBuf, STATS_WALL, 4 * WALL_WORDS);   // step C10: the walls' census, on the last tick too
     encoder.clearBuffer(this.statsBuf, STATS_P1 + 4 * P1_CLEAR, 4 * (P1_WORDS - P1_CLEAR));   // step P1: the predators' census (its counters run on)
+    encoder.clearBuffer(this.statsBuf, STATS_G0 + 4 * G0_CLEAR, 4 * (G0_WORDS - G0_CLEAR));   // step G0: the glue's census (its counters run on)
     encoder.clearBuffer(this.statsBuf, STATS_FG, 4 * FG_CLEAR);       // step C13: the field genes' and gates' census (the same; its
                                                                       // cumulative words after FG_CLEAR run on)
     for (let t = 0; t < ticks; t++) {
@@ -908,6 +916,7 @@ export class Cells {
       this.walls.apply(time, new Uint32Array(u.buffer, STATS_WALL, WALL_WORDS));   // step C10
       this.guides.apply(time, new Uint32Array(u.buffer, STATS_FG, FG_WORDS));      // step C13
       this.pred.applyStats(time, new Uint32Array(u.buffer, STATS_P1, P1_WORDS));   // step P1
+      this.glue.apply(time, new Uint32Array(u.buffer, STATS_G0, G0_WORDS));      // step G0
       if (events.length && this.onEvents) this.onEvents(events);
       if (events.length) for (const t of this.eventTaps) t(events, time);
     } catch (e) {

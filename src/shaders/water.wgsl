@@ -14,13 +14,23 @@
 //                   the wall). psi = window x (A x the MOIRE BEAT of the medium's lattice against a copy of itself turned by a couple of
 //                   degrees (three cosines: a hexagonal array of slow eddies, the user's "chemical landscape made of moire beats") +
 //                   G x one basin-wide gyre that slowly reverses). matter.wgsl moves every mobile substance with it (upwind, exact
-//                   counts), cell_step.wgsl lets the cells drift a little with it.
+//                   counts), cell_step.wgsl lets the cells drift a little with it. Step G0: plus the cells' own STIRRED psi (src/stir.js).
 
 // (struct WaterP and the surface's curvature: water_common.wgsl, prepended)
 
 @group(0) @binding(0) var<uniform> W: WaterP;
 @group(0) @binding(1) var<storage, read_write> hb: array<i32>;
 @group(0) @binding(2) var<storage, read> rip: array<f32>;
+
+// step G0: the cells' STIRRED psi at p (src/stir.js; 0 while it is off)
+fn stir_psi(p: vec2f) -> f32 {
+  let sc = stir_cell(p);
+  if (sc.o == 0u) { return 0.0; }
+  let w = W.stir.y;
+  let a = mix(bitcast<f32>(hb[sc.o]), bitcast<f32>(hb[sc.o + 1u]), sc.t.x);
+  let b = mix(bitcast<f32>(hb[sc.o + w]), bitcast<f32>(hb[sc.o + w + 1u]), sc.t.x);
+  return mix(a, b, sc.t.y);
+}
 
 fn psi_node(p: vec2f) -> f32 {
   let wd = max(W.dish.z, 1.0);
@@ -48,7 +58,10 @@ fn through(p: vec2f) -> f32 {
 fn surface(@builtin(global_invocation_id) id: vec3u) {
   if (id.x > W.hw || id.y > W.hh) { return; }
   if ((W.flags & 2u) != 0u) {
-    hb[W.cur + id.y * (W.hw + 1u) + id.x] = bitcast<i32>(psi_node(vec2f(id.xy) * W.px));
+    // (step G0: + the cells' stirred psi; 0 on the rim's corners, as the prescribed psi, so nothing flows through the wall)
+    var v = psi_node(vec2f(id.xy) * W.px);
+    if (id.x > 0u && id.y > 0u && id.x < W.hw && id.y < W.hh) { v += stir_psi(vec2f(id.xy) * W.px); }
+    hb[W.cur + id.y * (W.hw + 1u) + id.x] = bitcast<i32>(v);
   }
   if ((W.flags & 1u) != 0u && id.x < W.hw && id.y < W.hh) {
     // the pixel's mean over 3 x 3 points (the bright lines are thinner than a pixel)

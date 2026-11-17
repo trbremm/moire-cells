@@ -18,6 +18,9 @@ struct WDraw {
   lineInk: vec4f,       // the streamlines' colour
   cam: vec4f,           // the camera (xy pan)
   step: vec4f,          // x psi between two streamlines (px^2 / s); y the line width (CSS px); z the net's threshold; w its top
+  sgrid: vec4u,         // step G0: the stirred stream function on the stir grid: word offset in g (0: not drawn), width, height, spacing (f32 bits)
+  sstep: vec4f,         // ... x psi between two of its streamlines; y their brightness
+  sInk: vec4f,          // ... their colour (a pink: the cells' own flow)
 };
 
 @group(0) @binding(0) var<uniform> D: WDraw;
@@ -66,6 +69,27 @@ fn fs(@builtin(position) fc: vec4f) -> @location(0) vec4f {
     l *= 1.0 - smoothstep(0.25, 0.5, fw);   // crowded lines fade out
     col += D.lineInk.rgb * l * D.lineA;
     a += l * D.lineA * D.lineInk.w;
+  }
+  // step G0: the cells' STIRRED flow's own streamlines (pink), spaced by its own range (it is much weaker than the prescribed currents)
+  if (D.sgrid.x != 0u && D.sstep.y > 0.0) {
+    let q0 = x / bitcast<f32>(D.sgrid.w);
+    let lim = vec2f(f32(D.sgrid.y - 1u), f32(D.sgrid.z - 1u));
+    let inside = select(0.0, 1.0, q0.x >= 0.0 && q0.y >= 0.0 && q0.x < lim.x && q0.y < lim.y);
+    let q = clamp(q0, vec2f(0.0), lim - 1e-3);
+    let b = vec2u(floor(q));
+    let t = q - vec2f(b);
+    let o = D.sgrid.x + b.y * D.sgrid.y + b.x;
+    let w = D.sgrid.y;
+    let p = mix(mix(bitcast<f32>(g[o]), bitcast<f32>(g[o + 1u]), t.x), mix(bitcast<f32>(g[o + w]), bitcast<f32>(g[o + w + 1u]), t.x), t.y);
+    let v = p / max(D.sstep.x, 1e-9);
+    let fw = max(fwidth(v), 1e-6);   // (in uniform control flow: the bounds only mask the result)
+    let d = abs(v - round(v)) / fw;
+    let lw = D.step.y * D.dpr;
+    var l = 1.0 - smoothstep(0.5 * lw - 0.5, 0.5 * lw + 0.5, d);
+    l *= (1.0 - smoothstep(0.25, 0.5, fw)) * inside;
+    l *= select(1.0, 0.0, abs(round(v)) < 0.5);   // (the zero line, the still water's, left out)
+    col += D.sInk.rgb * l * D.sstep.y;
+    a += l * D.sstep.y;
   }
   return vec4f(col, min(a, 1.0));
 }

@@ -117,6 +117,8 @@ function gather(M, ctl) {
   if (M.predators && M.predators.census) flatten(M.predators.census, 'pred', out);   // step P1: predation, the genes, the clusters
   if (M.fidelity) flatten(M.fidelity.census || (M.fidelity.copy ? { copy: M.fidelity.copy } : null), 'fid', out);   // step G1: error correction
   if (M.pigments && M.pigments.census) flatten(M.pigments.census, 'lightmatter', out);   // step N1: light needs matter
+  if (M.glue && M.glue.census) flatten(M.glue.census, 'glue', out);       // step G0: the glue gene, junctions, tears
+  if (M.stir && M.stir.census) flatten(M.stir.census, 'stir', out);       // step G0: the stirred water
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;
   if (C.stats) flatten({ job: C.stats.job, births: C.stats.births, deaths: C.stats.deaths, heatDeaths: C.stats.heatDeaths,

@@ -222,7 +222,7 @@ body.recording #overlay { margin-top: 30px; }
 /* step F0: the job legend (bottom right, above the scale bar; src/app.js) */
 .joblegend {
   position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + 88px);
-  display: grid; gap: 1px; padding: 4px 7px 5px; background: var(--panel); border-radius: 3px; pointer-events: auto;
+  display: grid; gap: 1px; padding: 4px 7px 5px; background: rgba(6, 9, 15, 0.84); border-radius: 3px; pointer-events: auto;
   color: var(--ink); font-size: 10px; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; opacity: 0.85;
 }
 .joblegend[hidden] { display: none; }

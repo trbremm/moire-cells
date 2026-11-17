@@ -40,7 +40,7 @@ import { Vents } from './vents.js';
 import { setShaderConst } from './gpu.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 import { dish } from './dish.js';      // the dish: a scene's springs drip per area
-import { Carbon, CARBON, CNAMES, LADDER, LG_CB, describeCarbon } from './carbon.js';   // step C15a: carbon in the open dish
+import { Carbon, CARBON, CNAMES, LADDER, LG_CB, describeCarbon, carbonEngines } from './carbon.js';   // step C15a: carbon in the open dish
 
 // ---------- step C12d, ELECTRONS: which table this page runs (fixed for the page: changing it would change the energy of
 // every molecule in the dish). ?electrons=0 gives the previous table (step C4 to C12c) exactly ----------
@@ -534,7 +534,12 @@ SUBSTANCES.forEach((s, c) => { if (c >= EXC0 && s.charge !== SUBSTANCES[c - EXC0
 // meaning: keep it (a slot holds the index + 32 x its band, 0 to 3).
 export const ENGINE_KINDS = ELECTRONS ? ['harvest', 'ferment', 'breathe', 'form'] : ['harvest', 'burn', 'swap', 'form'];
 export const ENGINES = ELECTRONS ? deriveEnginesE() : deriveEngines();
-setShaderConst('ENG_COUNT', ENGINES.length);   // (cell_common.wgsl: the engines a slot can name)
+// Step C15b: the carbon engines (src/carbon.js carbonEngines), appended behind the table's (a slot naming one of them runs in the cell's
+// carbon section, cell_eat.wgsl; indices ENG_MAIN .. ENG_COUNT - 1). Without carbon, ALL_ENGINES is ENGINES and nothing changes.
+export const ALL_ENGINES = CARBON ? [...ENGINES, ...carbonEngines()] : ENGINES;
+setShaderConst('ENG_COUNT', ALL_ENGINES.length);   // (cell_common.wgsl: the engines a slot can name)
+setShaderConst('ENG_MAIN', ENGINES.length);        // step C15b: the table's own (EatP.eng holds these)
+setShaderConst('CARBON_ON', CARBON ? 1 : 0);       // step C15b: the cells' carbon code is compiled in
 
 // Step C12d (electrons): every reaction of the table except the open dish's oil and heads, both ways (22): UPHILL (kind 0:
 // splits, uphill swaps, the uphill trade, cracks: a pigment's photon or the battery pays) then DOWNHILL: BREATHE (kind 2: a free
@@ -581,7 +586,7 @@ function deriveEngines() {
   return out;
 }
 /** An engine's index by its reaction's name (as in REACTIONS, e.g. 'gt → g + t'). */
-export function engineIndex(name) { return ENGINES.findIndex((e) => e.name === name); }
+export function engineIndex(name) { return ALL_ENGINES.findIndex((e) => e.name === name); }   // (step C15b: and the carbon engines)
 
 /**
  * Step C5: every channel the cells' insides can make from the channels in `active`: their burner (fuel -> its atoms, as
@@ -640,6 +645,8 @@ for (const s of SUBSTANCES) {
 }
 // step C15a: and the carbon ladder's molecules (five atoms each: a fifth of the drop's atoms per s as molecules; src/carbon.js)
 if (CARBON) for (const name of LADDER) SPRING_KINDS[`drop:${name}`] = { label: `${name} (pipette)`, mix: {}, carbon: { [name]: 0.2 }, stroke: 1, drop: true };
+// step C15b: a lasting FUEL SEEP (methane-like carbon only, no atoms; its rate is molecules per s): the default scene's, by its vent
+if (CARBON) SPRING_KINDS.seep = { label: 'fuel seep (methane-like carbon)', mix: {}, carbon: { cg4: 1 }, stroke: 1.5, inkAs: 'gT' };
 
 export const ATOM_SCALE = 4096;          // counts per atom-unit (ATOM_SCALE in matter.wgsl)
 const CB_BYTES = 624;                     // step C15a: struct CarbonP (carbon.wgsl)
@@ -1435,10 +1442,12 @@ export class Matter {
     if (CL) {
       chem.light += CL.light; chem.dish += CL.dish.e; chem.out += CL.out.e; chem.added += CL.add.e;
       chem.lightRate = chem.lightRate.map((x, b) => x + CL.lightRate[b]);
+      chem.cells += CL.cells.e;   // step C15b: the carbon in the cells (their ladder molecules and granules) is stored energy too
     }
     const cA = CL ? CL.add.atoms : 0, cD = CL ? CL.dish.atoms : 0, cL = CL ? CL.lost.atoms : 0, cG = CL ? CL.washed.atoms : 0;
-    this.ledger = { time: rec.time, add: add + cA, lost: lost + cL, gone: gone + cG, dish: dish + cD, cells,
-      rounding: (add + cA) - (dish + cD + cells + lost + cL + gone + cG), rateAdd: rate(1), rateLost: rate(2), order, entropy: Hn, chem,
+    const cC = CL ? CL.cells.atoms : 0;   // step C15b: ... and its atoms are in the cells
+    this.ledger = { time: rec.time, add: add + cA, lost: lost + cL, gone: gone + cG, dish: dish + cD, cells: cells + cC,
+      rounding: (add + cA) - (dish + cD + cells + cC + lost + cL + gone + cG), rateAdd: rate(1), rateLost: rate(2), order, entropy: Hn, chem,
       carbonAtoms: cD };
     this.oil.apply(rec, w, (this.heat.px / this.heat.R) ** 2);   // step C12: the oil's census
     if (!ELECTRONS) this.excited.apply(rec, w);                   // step C12c: the excited haze's census (folded into C12d's)
@@ -1670,6 +1679,8 @@ function discPixels(cx, cy, r, w, h) {
 export function springInk(kind, inks = INKS) {
   const mix = SPRING_KINDS[kind].mix, ink = [0, 0, 0];
   if (mix.trace >= 0.5) return inks.trace.light.slice();   // (step N1: a nutrient spring, an oasis, in trace's silver)
+  const as = SPRING_KINDS[kind].inkAs;   // (step C15b: a seep of carbon only, in its fuel's ink)
+  if (as) { const s = SUBSTANCES[CH[as]]; return inkOf(s.func, s.heavy, inks).slice(); }
   let tot = 0;
   for (const [a, share] of Object.entries(mix)) {
     if (a === 'trace') continue;

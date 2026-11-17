@@ -69,6 +69,8 @@ export const CARBON_MIX = {
 // ledger words (heat_common.wgsl LG_CB...): per channel ADD, LOST, GONE, DISH (64-bit, 64 slots, 128 words each), events per type,
 // light caught per band, the light given off as fluorescence
 export const LG_CB = 32256;
+// step C15b (heat_common.wgsl LG_CBC_*): the carbon in the cells (snapshot), taken in, given back (per channel, 64-bit), events, census
+export const LG_CBC = { STOCK: 38400, IN: 39424, OUT: 40448, EV: 41472, CEN: 43520 };
 const LGC = { ADD: LG_CB, LOST: LG_CB + 1024, GONE: LG_CB + 2048, DISH: LG_CB + 3072, RX: LG_CB + 4096, LIGHT: LG_CB + 5120, GLOW: LG_CB + 5632,
   HEAT: LG_CB + 5760, GT: LG_CB + 5888 };
 export const RX_TYPES = ['oxidize', 'condense', 'reduce', 'hydrolyze', 'dissolve', 'settle', 'glow', 'warm'];
@@ -169,6 +171,28 @@ export function carbonTable() {
   return TABLE;
 }
 
+/**
+ * Step C15b: the four CARBON ENGINES a genome can carry (option S: appended behind the C12d table's 22, ENG_MAIN.., so old genomes keep
+ * their meaning). Each names a reaction TYPE of the carbon table, not a molecule: inside the cell it works on whatever carbon the cell
+ * holds (the ladder in its stock and its tar GRANULES), weighted by the hands there. Kinds as the main table's: 0 uphill (a pigment's
+ * photon or the battery pays the rise, the spark always from the battery), 2 breathe (a free t takes an electron), 3 form (chains).
+ *   OXIDIZE   t + [c-g] -> [c-t] + g   releases 2.75 (breathing on carbon; a g + t engine then bonds the freed g: 4.5 more)
+ *   CONDENSE  [c-g] + [c-t] -> [c-c] + gt   releases 0.75 (two carbons join: storage granules; fermenting carbon)
+ *   REDUCE    g + [c-t] -> [c-g] + t   uphill 2.75 (fixing carbon: a visible 2 photon pays it; with the water split that frees the g,
+ *             two photons per hand, as the proposal's Z-scheme)
+ *   HYDROLYZE gt + [c-c] -> [c-g] + [c-t]   uphill 0.75 (digesting storage: breaks a granule's backbone, usually battery-paid)
+ */
+export function carbonEngines() {
+  const T = carbonTable();
+  const E = (name, short, kind, g16, cb) => ({ name, short, kind, fam: 'carbon', g16, spark: T.spark, band: 0, carbon: true, cb, ins: [], outs: [] });
+  return [
+    E('t + [c-g] → [c-t] + g', 'oxidize carbon (breathing on carbon)', 2, T.ox16, 0),
+    E('[c-g] + [c-t] → [c-c] + gt', 'condense carbon (storage granules)', 3, T.cond16, 1),
+    E('g + [c-t] → [c-g] + t', 'reduce carbon (fixing carbon)', 0, T.ox16, 2),
+    E('gt + [c-c] → [c-g] + [c-t]', 'hydrolyze carbon (digesting granules)', 0, T.cond16, 3),
+  ];
+}
+
 /** Step C15a: what a carbon channel (or 'tar') is, in words. */
 export function describeCarbon(name) {
   const T = carbonTable();
@@ -199,6 +223,8 @@ export class Carbon {
       kDis: 0.02,          // per s: loose tar carbons dissolving
       kSet: 0.05,          // R^2 per s: ladder molecules settling on tar (x the tar's carbons per R^2)
       kAbs: null,          // optical depth per hand per R^2 (null: the electrons' kAbs)
+      surf: 1,             // step C15b: the tar's SURFACE size, carbons per R^2: thicker tar is a lump whose inside does not react (only
+                           // (surf / tar)^(1/3) of its hands; 0: all of them, as C15a; ?cbsurf=)
     };
     this.look = {
       on: true,            // drawn
@@ -211,7 +237,9 @@ export class Carbon {
     this.seen = -1e9;      // when carbon was last in the dish (or a spring dripping it)
     this.live = false;
     this.tot = { add: new Float64Array(NCB), lost: new Float64Array(NCB), gone: new Float64Array(NCB), rx: new Float64Array(8), light: new Float64Array(4), glow: 0,
-      heat: 0, gt: 0 };   // (the heat its reactions put down, the water they made: the carbon's own energy book)
+      heat: 0, gt: 0,     // (the heat its reactions put down, the water they made: the carbon's own energy book)
+      cin: new Float64Array(NCB), cout: new Float64Array(NCB) };   // (step C15b: taken into cells, given back by them)
+    this.cellsHeld = new Float64Array(NCB);   // step C15b: the carbon in the cells (last read-back)
     this.dish = new Float64Array(NCB);
     this.hist = [];
     this.series = [];
@@ -257,7 +285,7 @@ export class Carbon {
     if (!this.on) { this.live = false; return false; }
     const M = this.matter, p = this.params, T = this.table, EP = M.electrons.params, H = M.heat;
     const dt = frame.tickDt, a = H.px / H.R;
-    const dishC = this.dish.reduce((x, v) => x + v, 0);
+    const dishC = this.dish.reduce((x, v) => x + v, 0) + this.cellsHeld.reduce((x, v) => x + v, 0);   // (step C15b: cells breathe it out)
     if (dishC > 0 || M.springs.some((s) => this.drips(s.kind))) this.seen = frame.time;
     this.live = frame.time - this.seen < 2;
     const chemOn = M.chem.on, lightOn = !!(M.light && M.light.on);
@@ -274,7 +302,7 @@ export class Carbon {
     f[12] = photo && EP.photolysis ? yR : 0;   // REDUCE frees a t (?photolysis=0 blocks it)
     f[13] = yF;
     f[14] = photo ? yR : 0;                    // HYDROLYZE
-    f[15] = 0;
+    f[15] = Math.max(0, p.surf || 0);   // step C15b: the tar's surface size
     i32[16] = T.ox16; i32[17] = T.cond16; i32[18] = 0; i32[19] = 0;
     for (let b = 0; b < 4; b++) f[20 + b] = T.L16(b);
     u[24] = T.emit.cg + 1; u[25] = T.emit.ct + 1; u[26] = T.gtCh; u[27] = 0;
@@ -313,7 +341,16 @@ export class Carbon {
     };
     const out = new Float64Array(NCB);
     for (let c = 0; c < NCB; c++) out[c] = T.lost[c] + T.gone[c];
-    const add = els(T.add), dish = els(this.dish), gone = els(out), lost = els(T.lost), washed = els(T.gone);
+    // step C15b: the carbon the cells hold (their stocks' ladder and granules, a snapshot) and what they took from the dish and gave back
+    // (exchange, grazing; exhaled, spilled at deaths and bursts) since the start, per channel
+    const held = new Float64Array(NCB);
+    for (let c = 0; c < NCB; c++) {
+      held[c] = wide(LG_CBC.STOCK + 128 * c) / A;
+      T.cin[c] += wide(LG_CBC.IN + 128 * c) / A; T.cout[c] += wide(LG_CBC.OUT + 128 * c) / A;
+    }
+    this.cellsHeld = held;
+    const add = els(T.add), dish = els(this.dish), gone = els(out), lost = els(T.lost), washed = els(T.gone), cells = els(held);
+    const toCells = els(T.cin), fromCells = els(T.cout);
     const H = this.hist;
     H.push([rec.time, ...T.rx, ...T.light, T.glow, add.c, lost.c]);
     while (H.length > 2 && rec.time - H[1][0] >= 2) H.shift();
@@ -325,9 +362,11 @@ export class Carbon {
       time: rec.time, add, dish, out: gone, lost, washed, rx, light, lightRate: [0, 1, 2, 3].map((b) => rate(9 + b)), glowRate: rate(13),
       cIn: rate(14), cOut: rate(15),
       ladder: Array.from(this.dish.slice(0, 5)), tar: Array.from(this.dish.slice(5)),
-      rounding: add.c - (dish.c + gone.c),
-      // the carbon's energy book (exact): energy in with springs + light caught = held + out with matter + heat put down + the water made
-      eRounding: (add.e + light) - (dish.e + gone.e + T.heat + T.gt * MX.SUBSTANCES[MX.CH.gt].energy),
+      rounding: add.c - (dish.c + cells.c + gone.c),
+      // the carbon's energy book in the DISH (exact): energy in with springs + light caught + what the cells gave back = held + out with
+      // matter + heat put down + the water made + what the cells took (step C15b: the cells' side is in the dish's whole energy book)
+      eRounding: (add.e + light + fromCells.e) - (dish.e + gone.e + T.heat + T.gt * MX.SUBSTANCES[MX.CH.gt].energy + toCells.e),
+      cells, toCells, fromCells, cellsLadder: Array.from(held.slice(0, 5)), cellsTar: Array.from(held.slice(5)),
       heat: T.heat, water: T.gt,
     };
     const L = this.ledger;
@@ -375,7 +414,8 @@ export class Carbon {
     const tarC = L.dish.c - L.ladder.reduce((x, v) => x + v, 0);
     return {
       cg4: L.ladder[0], cg3t: L.ladder[1], cg2t2: L.ladder[2], cgt3: L.ladder[3], ct4: L.ladder[4],
-      tarCC: L.tar[0], tarCG: L.tar[1], tarCT: L.tar[2], tarC, carbon: L.dish.c, energy: L.dish.e,
+      tarCC: L.tar[0], tarCG: L.tar[1], tarCT: L.tar[2], tarC, carbon: L.dish.c, energy: L.dish.e, cellsC: L.cells.c, cellsE: L.cells.e,
+      toCells: L.toCells.c, fromCells: L.fromCells.c,
       added: L.add.c, out: L.out.c, rounding: L.rounding, eRounding: L.eRounding, heat: L.heat, water: L.water,
       oxidize: L.rx.oxidize, condense: L.rx.condense, reduce: L.rx.reduce, hydrolyze: L.rx.hydrolyze, dissolve: L.rx.dissolve, settle: L.rx.settle,
       glowOut: L.glowRate, light: L.lightRate.reduce((x, v) => x + v, 0), cIn: L.cIn, cOut: L.cOut,
@@ -394,7 +434,7 @@ export class Carbon {
     return `CARBON  ladder (methane-like → CO2-like) ${lad} · tar ${fmt(tarC)} carbons (hands c-c ${fmt(L.tar[0])}, fuel ${fmt(L.tar[1])}, burnt ${fmt(L.tar[2])})` +
       `\n        per s: oxidize ${fmt(r.oxidize)} · condense ${fmt(r.condense)} · reduce (hard light) ${fmt(r.reduce)} · hydrolyze ${fmt(r.hydrolyze)}` +
       ` · dissolve ${fmt(r.dissolve)} · settle ${fmt(r.settle)} · glow out ${fmt(L.glowRate)} · carbon in ${fmt(L.cIn)}/s out ${fmt(L.cOut)}/s` +
-      ` · in ${fmt(L.add.c)} = held ${fmt(L.dish.c)} + out ${fmt(L.out.c)} · rounding ${rd}`;
+      ` · in ${fmt(L.add.c)} = dish ${fmt(L.dish.c)} + cells ${fmt(L.cells.c)} + out ${fmt(L.out.c)} · rounding ${rd}`;
   }
 
   /** The F overlay's lines. */

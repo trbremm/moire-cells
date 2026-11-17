@@ -590,6 +590,26 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       partA = max(partA, pa);
     }
   }
+  // step C15b: tar GRANULES (carbon stored by condensing) as small dark-amber dots inside the body: more and bigger the more the cell
+  // holds (Cell.sns1.z, written by the eat pass), each at a place of its own from the cell's seed; a dim warm rim (neon: the granule
+  // catches the cell's light), nothing with carbon off (z is 0)
+  let gz = unpack4x8unorm(c.sns1).z;
+  if (gz > 0.02 && c.r * D.dpr > 3.0) {
+    let ng = 1u + u32(gz * 4.99);
+    let gr = max(c.r * (0.055 + 0.07 * gz), 0.55 / D.dpr);
+    for (var q = 0u; q < 5u; q++) {
+      if (q >= ng) { break; }
+      let hq = f32((c.seed >> (q * 5u + 3u)) & 31u) / 31.0;
+      let ang = 0.5236 + f32(q) * 2.3999632 + 0.8 * hq;
+      let gp = lp - vec2f(cos(ang), sin(ang)) * (c.r * (0.28 + 0.34 * fract(hq * 7.13 + f32(q) * 0.37)));
+      let gd = length(gp);
+      let ga = cover(gr, gd, aa);
+      var gi = vec3f(0.34, 0.17, 0.04);
+      if (neon) { gi = mix(gi, vec3f(0.95, 0.55, 0.16), smoothstep(0.45 * gr, gr, gd)); }
+      rgb = mix(rgb, gi, ga);
+      partA = max(partA, ga);
+    }
+  }
   // step P1: the PHAGOSOME of a meal being digested: the prey's ghost (dim, in its own colour, shrinking and fading as it is digested), its own
   // faint outline, and a bright ring round it (the phagosome's membrane, the host's); and the machinery's mark of an engulf-capable cell
   var phA = 0.0;
@@ -945,6 +965,19 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
   if (u32(hj.x) == 5u && hj.y > 0.0 && D.harm3.w > 0.0) {
     let ca = f32(c.seed & 255u) / 255.0 * 3.14159265;
     org += D.harm3.w * hj.y * hm_fibres(pw + sh, vec2f(cos(ca), sin(ca)), 0.7 * fl, fw);
+  }
+  // step C15b: tar GRANULES as bright orange dots (as starch granules shine in second-harmonic images), as many as the neon look's
+  let gzh = unpack4x8unorm(c.sns1).z;
+  if (gzh > 0.02) {
+    let ng = 1u + u32(gzh * 4.99);
+    let gr = max(c.r * (0.055 + 0.07 * gzh), 0.6);
+    for (var q = 0u; q < 5u; q++) {
+      if (q >= ng) { break; }
+      let hq = f32((c.seed >> (q * 5u + 3u)) & 31u) / 31.0;
+      let ang = 0.5236 + f32(q) * 2.3999632 + 0.8 * hq;
+      let gp = lp - vec2f(cos(ang), sin(ang)) * (c.r * (0.28 + 0.34 * fract(hq * 7.13 + f32(q) * 0.37)));
+      org += 1.4 * exp(-dot(gp, gp) / (gr * gr));
+    }
   }
   rgb += mix(O, Y, 0.3) * org * inner;
   // ORANGE: a crust wall, a fibrous band outside the rim along the wall, where this side's wall is (patchy where partial)

@@ -65,6 +65,7 @@ export const RULE_GROUPS = [
   ['excited', 'Excited waste (step C12c)'],
   ['electrons', 'Electrons (step C12d)'],
   ['carbon', 'Carbon (step C15a)'],
+  ['cbcells', 'Carbon in cells (step C15b)'],
   ['waste', 'Waste must leave (step C12e)'],
   ['ions', 'Ion flow (step C12g)'],
   ['whole', 'Whole membranes (step M1)'],
@@ -662,6 +663,31 @@ export function makeActions(app) {
     cbknob('cbKcond', 'condense rate', 'kCond', 0.01, 500, 1.5, 2, 'R² per s, before the spark’s factor'),
     cbknob('cbKdis', 'dissolve rate', 'kDis', 0.001, 5, 1.5, 3, 'per s, of the loose tar carbons'),
     cbknob('cbKset', 'settle rate', 'kSet', 0.001, 5, 1.5, 3, 'R² per s, x the tar’s carbons per R²'),
+    { id: 'cbSurf', keys: [], label: 'tar surface size (C15b)', group: 'carbon', type: 'knob', get: () => CBP().surf.toFixed(2),
+      run: (k) => { const p = CBP(); p.surf = k === '-' ? +(p.surf / 1.5).toPrecision(3) : +Math.max(0.05, p.surf * 1.5).toPrecision(3); if (p.surf < 0.05) p.surf = 0; return `tar surface size ${p.surf}`; },
+      help: 'carbons per R²: thicker tar is a lump that reacts only at its surface ((size / tar)^(1/3) of its hands); 0: all of it (as C15a)' },
+  );
+
+  // ---------- carbon in cells (step C15b; panel only) ----------
+  const CCP = () => app.cells.eat.carbon.params;
+  const cctoggle = (id, label, key, onText, offText, help) => ({ id, keys: [], label, group: 'cbcells', type: 'toggle', get: () => CARBON && CCP()[key],
+    run: () => (CARBON ? `${label} ${flip(CCP(), key) ? onText : offText}` : 'carbon is off (?carbon=0)'), help });
+  const ccknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'cbcells', type: 'knob', get: () => CCP()[key].toFixed(digits),
+    run: (k) => { const p = CCP(); p[key] = Math.max(lo, Math.min(hi, +(p[key] * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    cctoggle('cbCells', 'cells eat carbon', 'on', 'on: the cells take part in carbon (exchange, engines, grazing, granules)', 'off: the cells are blind to carbon (as C15a)',
+      'the carbon ladder crosses membranes, four carbon engines can sit in the genome, cells graze tar and keep granules'),
+    cctoggle('cbExch', 'carbon through membranes', 'exchange', 'on: the ladder molecules cross by concentration (neutral: no ion block)', 'off',
+      'CO2-like carbon made inside leaves by itself, down its gradient; fuel carbon comes in where the dish holds more'),
+    cctoggle('cbEng', 'carbon engines', 'engines', 'on: oxidize (breathe on carbon), condense (store), reduce (fix, by light), hydrolyze (digest)', 'off: idle',
+      'the carbon engines in the genome slots run, as every engine (spark from the battery; light pays only the rise)'),
+    cctoggle('cbGraze', 'cells graze tar', 'graze', 'on: cells with an oxidizing or hydrolyzing engine take in the tar under them', 'off',
+      'mud eaters: tar into granules, at kGraze x those engines’ rate per s'),
+    cctoggle('cbDis2', 'granules dissolve', 'dissolve', 'on: loose granule carbons leave as ladder molecules', 'off',
+      'a granule carbon with no backbone bond leaves as a molecule the engines can use (or CO2-like carbon that can leave)'),
+    cctoggle('cbSmell', 'smell carbon fuel', 'smell', 'on: the corners smell the ladder’s fuel', 'off', 'each molecule weighted by what a free t releases from it'),
+    ccknob('cbKgraze', 'graze rate', 'kGraze', 0.001, 5, 1.5, 3, 'share of the tar under the cell per s, per unit of the grazing engines’ rate'),
+    ccknob('cbKdis2', 'granule dissolve rate', 'kDis', 0.001, 10, 1.5, 3, 'per s, of the granules’ loose carbons'),
   );
 
   // ---------- waste must leave (step C12e; panel only: no keys are free) ----------

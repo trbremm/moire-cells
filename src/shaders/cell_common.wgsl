@@ -580,7 +580,9 @@ fn memb_stiff(m: vec4f, tRef: f32) -> f32 {
   return clamp((0.7 + clamp(m.x, 0.0, 1.0)) / 0.8 * sqrt(max(m.y, 1e-4) / max(tRef, 1e-4)) * m.z, 0.25, 4.0);
 }
 const ENG_RATE_MAX: f32 = 6.0;     // largest rate of an engine slot
-const ENG_COUNT: u32 = 20u;        // engines in ENGINES (src/matter.js)
+const ENG_COUNT: u32 = 20u;        // engines in ENGINES (src/matter.js; step C15b: + the carbon engines, ALL_ENGINES)
+const ENG_MAIN: u32 = 20u;         // step C15b: the table's own engines (EatP.eng); indices from here on are carbon engines
+const CARBON_ON: u32 = 0u;         // step C15b: 1 with carbon (src/matter.js sets it): the cells' carbon code runs
 fn eng_index(code: f32) -> u32 { return min(u32(round(max(code, 0.0))) & 31u, ENG_COUNT - 1u); }
 // the slot's band: 1..3 a pigment for that light band (visible 1, visible 2, hard), 0 none (an uphill engine is then a storer)
 fn eng_band(code: f32) -> u32 { return min(u32(round(max(code, 0.0))) >> 5u, 3u); }

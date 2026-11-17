@@ -163,7 +163,7 @@ export class Charge {
     const n = this.heat ? this.heat.n : 1;
     const cells = this.cells ? Math.max(1, this.cells.alive) : 1;   // (step C9: the live cells)
     this.ledger = {
-      time: rec.time, plus, minus, net: plus - minus, cellsQ, total: plus - minus + cellsQ, ...this.books(plus - minus + cellsQ + this.carbonQ('dish')),
+      time: rec.time, plus, minus, net: plus - minus, cellsQ, total: plus - minus + cellsQ, ...this.books(plus - minus + cellsQ + this.carbonQ('dish') + this.carbonQ('cells')),
       pos: v(0), neg: v(1), neutral: Math.max(0, cells - v(0) - v(1)), meanQ: v(2) / 1000 / cells, meanNet: v(3) / 1000 / cells,
       phiRms: Math.sqrt(Math.max(0, p2) / Math.max(1, n)), phiMax: pmax,
     };
@@ -186,7 +186,7 @@ export class Charge {
   /** Step C15a: the booked charge held in carbon molecules (the g and t on their hands; src/carbon.js), in the dish, added, out. */
   carbonQ(which) {
     const L = this.matter && this.matter.carbon && this.matter.carbon.ledger;
-    return L ? L[which].q : 0;
+    return L && L[which] ? L[which].q : 0;   // (step C15b: 'cells', the carbon the cells hold)
   }
 
   /** For tools and the console: the numbers of the last read-back. */

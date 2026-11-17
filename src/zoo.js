@@ -10,7 +10,7 @@
 //              button per group (clone that cell's genome with the add-cell tool) and per founder habit. Refreshed every
 //              3 s while the panel is open, from a ring of two staging buffers (mapAsync: the frame never waits).
 
-import { SUBSTANCES, ATOMS, ELECTRONS, ENGINES, ENGINE_KINDS, atomLevels, CH, describe, makingBand } from './matter.js';
+import { SUBSTANCES, ATOMS, ELECTRONS, ALL_ENGINES as ENGINES, ENGINE_KINDS, atomLevels, CH, describe, makingBand } from './matter.js';   // (step C15b: + carbon engines)
 import { BANDS } from './light.js';
 import { pal } from './palette.js';
 import { BIO_FLOATS, strategyOf, founderGenome, HABITS, predatorGenome } from './genome.js';
@@ -311,7 +311,7 @@ function carbonRows(body, P, rows) {
 // ---------- the cells ----------
 const KIND_WORD = ELECTRONS ? { 0: 'harvest', 1: 'ferment', 2: 'breathe', 3: 'chain' } : { 0: 'harvest', 1: 'burn', 2: 'swap', 3: 'chain' };
 const HABIT_NAME = { harvest: 'light harvesters', burn: ELECTRONS ? 'eaters' : 'burners', both: 'light + burn', other: 'others' };
-const HABIT_FOUNDER = { burn: ELECTRONS ? 'eater' : 'burner', both: 'light + burn', pigments: 'photosynthesiser', other: 'chain maker / breather' };
+const HABIT_FOUNDER = { burn: ELECTRONS ? 'eater' : 'burner', both: 'light + burn', pigments: 'photosynthesiser', other: 'chain maker / breather', carbon: 'carbon eater' };   // (step C15b: + carbon)
 
 /** The active engine slots of genome g (at float o): [{ e (ENGINES entry), band, rate, k }]. */
 export function enginesOf(g, o = 0) {

@@ -94,7 +94,11 @@
 //               load this way by themselves). With carbon on: ?cbox=0 no oxidizing by heat, ?cbcond=0 no condensing (no tar forming),
 //               ?cblight=0 no reducing / hydrolyzing by hard light, ?cbdis=0 tar neither dissolves nor takes molecules in, ?cbspring=0
 //               springs drip no carbon; ?cbkox=x, ?cbkcond=x, ?cbkdis=x, ?cbkset=x the rates; ?cblook=0 carbon not drawn (rules
-//               panel, Carbon)
+//               panel, Carbon). Step C15b, cells eat carbon (src/carboncells.js): ?cbcells=0 the cells blind to carbon (as C15a), ?cbexch=0
+//               no ladder through the membrane, ?cbeng=0 the carbon engines idle, ?cbgraze=0 no tar grazing, ?cbdis2=0 granules keep their
+//               loose carbons, ?cbsmell=0 no smell for carbon fuel; ?cbkgraze=x, ?cbkdis2=x; ?cbsurf=x the tar's surface size (C15b, the
+//               open dish: tar thicker than this reacts only at its surface; 0 = all of it, as C15a); ?seep=0 the default scene without
+//               its lasting fuel seep
 //   ?saturation=0 step C12e: no saturation (reactions inside cells do not slow as their products pile up); ?osmosis=0 no osmosis (no
 //               swelling: the stretch genes still drift, the NEUTRAL control), ?stretch=0 stretch opens no channels, ?tear=0 overstretch
 //               does not burst, ?tolcost=0 the stretch tolerance is free; ?satscale=x, ?kosm=x, ?kstretch=x, ?wtol=x knobs;
@@ -507,11 +511,20 @@ async function boot() {
       for (const [q, k] of [['cbox', 'oxidize'], ['cbcond', 'condense'], ['cblight', 'light'], ['cbdis', 'dissolve'], ['cbspring', 'springs']]) {
         if (params.has(q)) CP[k] = flag(q);
       }
-      for (const [q, k] of [['cbkox', 'kOx'], ['cbkcond', 'kCond'], ['cbkdis', 'kDis'], ['cbkset', 'kSet']]) {
+      for (const [q, k] of [['cbkox', 'kOx'], ['cbkcond', 'kCond'], ['cbkdis', 'kDis'], ['cbkset', 'kSet'], ['cbsurf', 'surf']]) {
         const v = Number(params.get(q));
         if (params.has(q) && Number.isFinite(v) && v >= 0) CP[k] = v;
       }
       if (params.has('cblook')) matter.carbon.look.on = flag('cblook');
+      // step C15b: cells eat carbon (src/carboncells.js)
+      const CC = cells.eat.carbon.params;
+      for (const [q, k] of [['cbcells', 'on'], ['cbexch', 'exchange'], ['cbeng', 'engines'], ['cbgraze', 'graze'], ['cbdis2', 'dissolve'], ['cbsmell', 'smell']]) {
+        if (params.has(q)) CC[k] = flag(q);
+      }
+      for (const [q, k] of [['cbkgraze', 'kGraze'], ['cbkdis2', 'kDis']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) CC[k] = v;
+      }
     }
     {   // step C12e: waste must leave
       const WP = cells.eat.waste.params;
@@ -679,7 +692,7 @@ async function boot() {
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
     kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, perfusion, glue: cells.glue, stir: water.stir,
-    carbon: matter.carbon };
+    carbon: matter.carbon, carbonCells: cells.eat.carbon };
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.warfare = new Warfare(window.moire);     // step T1c: the chemical warfare census (lineage borders against interiors)
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
@@ -766,7 +779,7 @@ function defaultCells() {
  * and the spotlight centred on the rim between them, so it lights both springs and the edge of the culture. The springs
  * drip for a whole day (SCENE.life, 240 s). ?springs=0: the old empty start (and the spot where it was).
  */
-const SCENE = { life: 240, rim: 0.72, gap: 0.01, apart: 0.09 };
+const SCENE = { life: 240, rim: 0.72, gap: 0.01, apart: 0.09, seep: 0.3, seepR: 2.5 };   // (step C15b: the fuel seep, molecules per s, R)
 function defaultScene() {
   if (params.has('springs') && !flag('springs')) return;
   const W = view.cssW, H = view.cssH, m = Math.min(W, H);
@@ -777,6 +790,11 @@ function defaultScene() {
   // (step T1a: the mineral spring lasts, ?lasting=0 as before: step M1 found the colony's membranes starve of linkers once it dries)
   matter.addSpring(cx - perp[0] * s, cy - perp[1] * s, 'light', !params.has('lasting') || flag('lasting') ? 1e9 : SCENE.life);
   matter.addSpring(cx + perp[0] * s, cy + perp[1] * s, 'heavy', SCENE.life);
+  // step C15b: a LASTING FUEL SEEP beside the vent (methane-like carbon only, SCENE.seep molecules per s over a patch SCENE.seepR across;
+  // per area, as the scene's springs: x the dish's supply), so carbon life can start once the vent has dried (?seep=0: none)
+  if (CARBON && !(params.has('seep') && !flag('seep'))) {
+    matter.addPatch(cx + perp[0] * s + ax[0] * 0.035 * m, cy + perp[1] * s + ax[1] * 0.035 * m, 'seep', SCENE.seepR, SCENE.seep / (Math.PI * SCENE.seepR ** 2), 1e9);
+  }
   if (!params.has('spot')) light.moveTo(W / 2 + ax[0] * rim, H / 2 + ax[1] * rim);
   // step N1: the oases (the scarce nutrient's springs): the first beside the culture, in the spot's edge on the springs' side (a lasting
   // one: it stays put and never dries, only pulses), the others anywhere, roaming (src/oases.js)
@@ -981,7 +999,8 @@ ${cells.pred.panelLine(compact)}
 ${cells.fidelity.panelLine(compact)}
 ${cells.glue.panelLine(compact)}${ELECTRONS ? `
 ${matter.vents.panelLine(compact)}` : ''}${CARBON ? `
-${matter.carbon.panelLine(compact)}` : ''}
+${matter.carbon.panelLine(compact)}
+${cells.eat.carbon.panelLine(compact)}` : ''}
 ${cells.eat.pigments.panelLine(compact)}
 ${water.panelLine(compact)}
 ${oases.panelLine(compact)}`;
@@ -1067,6 +1086,7 @@ function drawOverlay() {
     ...oases.overlayLines(),
     ...matter.vents.overlayLines(),
     ...matter.carbon.overlayLines(),
+    ...cells.eat.carbon.overlayLines(),
     ...cells.dipole.overlayLines(),
     ...cells.eat.pumps.overlayLines(),
     ...cells.eat.catalysts.overlayLines(),

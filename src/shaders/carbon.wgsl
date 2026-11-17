@@ -28,7 +28,8 @@ struct CarbonP {
                    // y what paint shows (0 nothing, 1 all, 2 one alone); z which (0..4 a ladder channel, 5 tar); w spare
   k: vec4f,        // x the ladder's spreading per substep; y the carbon spark (energy units); z kOx, w kCond (R^2 per s)
   k2: vec4f,       // x kDis (per s); y kSet (R^2 per s); z kAbs (depth per hand per R^2); w dark (warm depth per c-c bond per R^2)
-  y: vec4f,        // x REDUCE's share of a c-t excitation (0: off); y the share of the rest that fluoresces; z HYDROLYZE's share
+  y: vec4f,        // x REDUCE's share of a c-t excitation (0: off); y the share of the rest that fluoresces; z HYDROLYZE's share;
+                   // w step C15b: the tar's SURFACE size (carbons per R^2; 0: all of the tar reacts, as C15a)
   e: vec4i,        // x OXIDIZE's release, y CONDENSE's (heat counts per event)
   ph: vec4f,       // a photon's heat counts per band (warm, visible 1, visible 2, hard)
   em: vec4u,       // x, y the band a c-g, a c-t hand emits when it glows + 1 (0 none); z the water's channel (gt)
@@ -210,6 +211,13 @@ fn carbon_react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocat
       var glowE = 0;
       let rules = CB.cfg.x;
       var rk = 0u;   // the random stream's index
+      // step C15b, ONLY THE SURFACE OF A LUMP REACTS: tar thicker than CB.y.w carbons per R^2 is a lump whose inner hands are buried; a
+      // lump of N carbons has about N^(2/3) of them at its surface, so the share of its hands a molecule (or another lump) can reach is
+      // (N0 / N)^(1/3). It slows what happens ON tar (molecules condensing on it or settling, its own cross-linking, its fuel hands
+      // burning, its loose carbons dissolving), not the light (which goes in) nor two molecules meeting in the water
+      var sf = 1.0;
+      let tarN = 0.25 * f32(2 * cc + cg + ct) * conc;
+      if (CB.y.w > 0.0 && tarN > CB.y.w) { sf = pow(CB.y.w / tarN, 1.0 / 3.0); }
 
       // OXIDIZE: t + [c-g] -> [c-t] + g (by heat)
       if ((rules & 1u) != 0u && t > 0 && fs > 0.0) {
@@ -223,7 +231,7 @@ fn carbon_react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocat
         }
         rk += 1u;
         if (cg > 0 && t > 0) {
-          let nn = min(i32(floor(kx * f32(cg) + u01(mpcg(rs + rk * 0x9e3779b9u)))), min(cg, t));
+          let nn = min(i32(floor(kx * f32(cg) * sf + u01(mpcg(rs + rk * 0x9e3779b9u)))), min(cg, t));
           if (nn > 0) { cg -= nn; ct += nn; t -= nn; g += nn; heat += nn * CB.e.x; ev[0] += nn; }
         }
       }
@@ -249,7 +257,7 @@ fn carbon_react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocat
         for (var a = 0u; a < 4u; a++) {
           rk += 1u;
           if (S[a] <= 0 || ct <= 0) { continue; }
-          let nn = min(i32(floor(kc * f32(cb_gH(a)) * f32(S[a]) * f32(ct) + u01(mpcg(rs + rk * 0x9e3779b9u)))), min(S[a], ct));
+          let nn = min(i32(floor(kc * f32(cb_gH(a)) * f32(S[a]) * f32(ct) * sf + u01(mpcg(rs + rk * 0x9e3779b9u)))), min(S[a], ct));
           if (nn <= 0) { continue; }
           S[a] -= nn; ct -= nn; cc += nn; cg += nn * (cb_gH(a) - 1); ct += nn * cb_tH(a);
           gt += nn; heat += nn * CB.e.y; ev[1] += nn;
@@ -257,7 +265,7 @@ fn carbon_react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocat
         for (var b = 1u; b < 5u; b++) {
           rk += 1u;
           if (S[b] <= 0 || cg <= 0) { continue; }
-          let nn = min(i32(floor(kc * f32(cg) * f32(cb_tH(b)) * f32(S[b]) + u01(mpcg(rs + rk * 0x9e3779b9u)))), min(S[b], cg));
+          let nn = min(i32(floor(kc * f32(cg) * f32(cb_tH(b)) * f32(S[b]) * sf + u01(mpcg(rs + rk * 0x9e3779b9u)))), min(S[b], cg));
           if (nn <= 0) { continue; }
           S[b] -= nn; cg -= nn; cc += nn; cg += nn * cb_gH(b); ct += nn * (cb_tH(b) - 1);
           gt += nn; heat += nn * CB.e.y; ev[1] += nn;
@@ -265,7 +273,7 @@ fn carbon_react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocat
         // tar with itself (cross-linking)
         rk += 1u;
         if (cg > 0 && ct > 0) {
-          let nn = min(i32(floor(kc * f32(cg) * f32(ct) + u01(mpcg(rs + rk * 0x9e3779b9u)))), min(cg, ct));
+          let nn = min(i32(floor(kc * f32(cg) * f32(ct) * sf * sf + u01(mpcg(rs + rk * 0x9e3779b9u)))), min(cg, ct));
           if (nn > 0) { cg -= nn; ct -= nn; cc += nn; gt += nn; heat += nn * CB.e.y; ev[1] += nn; }
         }
       }
@@ -278,7 +286,7 @@ fn carbon_react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocat
           let p = f32(2 * cc) / f32(C4);
           let lp = (1.0 - p) * (1.0 - p);
           let loose = 0.25 * f32(C4) * lp * lp;
-          var rem = min(i32(floor(CB.k2.x * loose * CP.dt + u01(mpcg(rs + rk * 0x9e3779b9u)))), (cg + ct) / 4);
+          var rem = min(i32(floor(CB.k2.x * loose * sf * CP.dt + u01(mpcg(rs + rk * 0x9e3779b9u)))), (cg + ct) / 4);
           if (rem > 0) {
             // which molecule each carbon leaves as: k of its 4 hands givers, binomial in the tar's giver share q
             let q = f32(cg) / f32(cg + ct);
@@ -300,7 +308,7 @@ fn carbon_react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocat
             }
           }
         }
-        let tarC = 0.25 * f32(2 * cc + cg + ct) * conc;
+        let tarC = 0.25 * f32(2 * cc + cg + ct) * conc * sf;   // (step C15b: its surface)
         if (tarC > 0.0) {
           for (var j = 0u; j < 5u; j++) {
             rk += 1u;

@@ -32,6 +32,7 @@ import { BIO_FLOATS } from './genome.js';
 import { LEDGER_WORDS } from './heat.js';
 import { NCH, SUBSTANCES, ELECTRONS } from './matter.js';
 import { CARBON, LADDER, TAR } from './carbon.js';   // step C15a
+import { CW as CB_W, CW_STOCK as CB_STOCK } from './carboncells.js';   // step C15b: the cells' carbon words
 // step C15a: the carbon's grid blocks in a snapshot (behind phi): the ladder's current copy, then the tar's hand counts
 const CARBON_BLOCKS = CARBON ? [...LADDER, ...TAR.map((h) => `tar.${h}`)] : [];
 import { fieldDefaults } from './guides.js';
@@ -177,6 +178,8 @@ export function settingObjects(M) {
     ...(M.oases ? { 'oases.params': M.oases.params } : {}),           // step N1: the scarce nutrient's springs
     ...(M.glue ? { 'glue.params': M.glue.params } : {}),              // step G0: strong glue, junctions that break
     ...(M.stir ? { 'stir.params': M.stir.params } : {}),              // step G0: the cells stir the water
+    ...(CARBON && M.carbon ? { 'carbon.params': M.carbon.params } : {}),                // step C15a: carbon in the open dish
+    ...(CARBON && M.carbonCells ? { 'carbonCells.params': M.carbonCells.params } : {}),  // step C15b: cells eat carbon
   };
 }
 const SCALARS = [['neon.on', (M) => M.neon, 'on'], ['background.heatOn', (M) => M.background, 'heatOn'], ['background.ambient', (M) => M.background, 'ambient']];
@@ -250,14 +253,15 @@ function restoreBooks(M, B) {
   if (!(H.tot.vent >= 0)) H.tot.vent = 0;
   if (CARBON) {   // step C15a
     const CT = M.matter.carbon.tot, BC = B.carbon || {};
-    for (const k of ['add', 'lost', 'gone', 'rx', 'light']) { CT[k].fill(0); if (BC[k]) CT[k].set(BC[k].slice(0, CT[k].length)); }
+    for (const k of ['add', 'lost', 'gone', 'rx', 'light', 'cin', 'cout']) { CT[k].fill(0); if (BC[k]) CT[k].set(BC[k].slice(0, CT[k].length)); }   // (step C15b: + cin, cout)
     CT.glow = BC.glow || 0; CT.heat = BC.heat || 0; CT.gt = BC.gt || 0;
   }
 }
 
 /** Step C15a: the carbon's totals as plain numbers. */
 function cloneCarbon(T) {
-  return { add: Array.from(T.add), lost: Array.from(T.lost), gone: Array.from(T.gone), rx: Array.from(T.rx), light: Array.from(T.light), glow: T.glow, heat: T.heat, gt: T.gt };
+  return { add: Array.from(T.add), lost: Array.from(T.lost), gone: Array.from(T.gone), rx: Array.from(T.rx), light: Array.from(T.light), glow: T.glow, heat: T.heat, gt: T.gt,
+    cin: Array.from(T.cin), cout: Array.from(T.cout) };   // (step C15b: carbon taken into cells, given back)
 }
 
 /** Every rate history and time series starts again (their windows would span the jump in time). */
@@ -337,11 +341,13 @@ export async function snapshot(M, ctl, opts = {}) {
     if (!(await settle(M, ctl, true))) throw new Error('snapshot: the page did not settle (read-backs still in flight)');
     const C = M.cells, d = M.gpu.device, n = C.count;
     const SW = C.eat.stockBuf.size / 4 / n;
-    const [cellAB, bioAB, stockAB, statsAB] = await Promise.all([
+    const CB = CARBON ? C.eat.carbon : null;   // step C15b: the cells' carbon (its own buffer, CW words a cell)
+    const [cellAB, bioAB, stockAB, statsAB, cbAB] = await Promise.all([
       readBuffer(d, C.cellBuf, 0, n * CELL_FLOATS * 4),
       readBuffer(d, C.bioBuf[C.bioCur], 0, n * BIO_FLOATS * 4),
       readBuffer(d, C.eat.stockBuf, 0, C.eat.stockBuf.size),
       readBuffer(d, C.statsBuf, 0, C.statsBuf.size),
+      CB ? readBuffer(d, CB.buf, 0, n * CB_W * 4) : null,
     ]);
     const cu = new Uint32Array(cellAB), bu = new Uint32Array(bioAB), su = new Uint32Array(stockAB);
     const idx = [];
@@ -349,10 +355,12 @@ export async function snapshot(M, ctl, opts = {}) {
     for (let i = 0; i < n; i++) if ((cu[i * CELL_FLOATS + 9] & 1) || ((cu[i * CELL_FLOATS + 89] >>> 24) & 3) === 2) idx.push(i);
     const m = idx.length;
     const rec = new Uint32Array(m * CELL_FLOATS), bio = new Uint32Array(m * BIO_FLOATS), stock = new Uint32Array(m * SW);
+    const cbu = cbAB ? new Uint32Array(cbAB) : null, cstock = cbu ? new Uint32Array(m * CB_STOCK) : null;
     idx.forEach((i, k) => {
       rec.set(cu.subarray(i * CELL_FLOATS, (i + 1) * CELL_FLOATS), k * CELL_FLOATS);
       bio.set(bu.subarray(i * BIO_FLOATS, (i + 1) * BIO_FLOATS), k * BIO_FLOATS);
       stock.set(su.subarray(i * SW, (i + 1) * SW), k * SW);
+      if (cstock) cstock.set(cbu.subarray(i * CB_W, i * CB_W + CB_STOCK), k * CB_STOCK);   // (step C15b: the ladder and granules)
     });
     const H = M.heat, v = ctl.view();
     const out = {
@@ -370,7 +378,8 @@ export async function snapshot(M, ctl, opts = {}) {
       springs: clone(M.matter.springs),
       books: captureBooks(M),
       js: { aQuant: C.aQuant ? clone(C.aQuant) : null },
-      cells: { idx: await pack(new Uint32Array(idx)), rec: await pack(rec), bio: await pack(bio), stock: await pack(stock) },
+      cells: { idx: await pack(new Uint32Array(idx)), rec: await pack(rec), bio: await pack(bio), stock: await pack(stock),
+        ...(cstock ? { carbon: await pack(cstock) } : {}) },   // (step C15b: the cells' carbon, CB_STOCK words a cell; absent before)
       stats: await pack(new Uint32Array(statsAB)),
       grid: grid ? { hw: H.hw, hh: H.hh, px: H.px, blocks: ['delta', 'heat', ...SUBSTANCES.map((s) => s.name), 'phi', ...CARBON_BLOCKS], data: await pack(await readGrid(M)) } : null,
       measures: opts.measures || null,
@@ -554,6 +563,11 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       M.stir.params.on = false;   // step G0
       notes.push('saved before step G0: the cells do not stir the water (as it ran)');
     }
+    if (opts.settings !== false && CARBON && M.carbonCells && !(S.settings && S.settings['carbonCells.params'])) {
+      M.carbonCells.params.on = false;   // step C15b
+      if (M.carbon && !(S.settings && S.settings['carbon.params'])) M.carbon.params.surf = 0;   // (the tar reacted whole, as C15a)
+      notes.push('saved before step C15b: the cells blind to carbon, all of the tar reacting (as it ran)');
+    }
     if (opts.settings !== false && M.waste && !(S.settings && S.settings['waste.params'])) {
       Object.assign(M.waste.params, { saturation: false, osmosis: false });   // step C12e
       notes.push('saved before step C12e: saturation and osmosis off (as it ran)');
@@ -567,6 +581,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     if (!sameSlots) notes.push('slots packed (the capacity is smaller than the snapshot\'s slot numbers)');
     const cu = new Uint32Array(n * CELL_FLOATS), cf = new Float32Array(cu.buffer);
     const bu = new Uint32Array(n * BIO_FLOATS), su = new Uint32Array(n * SW);
+    // step C15b: the cells' carbon (a snapshot from before C15b: none, every cell's carbon empty)
+    const CBC = CARBON ? C.eat.carbon : null, cbs = CBC && S.cells.carbon ? await unpack(S.cells.carbon) : null;
+    const cbo = CBC ? new Uint32Array(n * CB_W) : null;
+    if (CBC && !cbs) notes.push('saved before step C15b: the cells hold no carbon');
     const dx = (v.cssW - S.view.cssW) / 2, dy = (v.cssH - S.view.cssH) / 2;
     // (step P1: packed slots renumber the engulfing partners, Cell.eng's bits 16..31 and Cell.engBy's 0..15, by the same map)
     const newOf = new Map();
@@ -576,6 +594,7 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       cu.set(rec.subarray(k * CELL_FLOATS, (k + 1) * CELL_FLOATS), o);
       bu.set(bio.subarray(k * BIO_FLOATS, (k + 1) * BIO_FLOATS), i * BIO_FLOATS);
       su.set(stock.subarray(k * SW, (k + 1) * SW), i * SW);
+      if (cbs) cbo.set(cbs.subarray(k * CB_STOCK, (k + 1) * CB_STOCK), i * CB_W);
       if (!sameView) { cf[o] += dx; cf[o + 1] += dy; }
       if (!sameSlots) {
         cu[o + 60] = cu[o + 61] = cu[o + 62] = 0xffffffff;
@@ -599,6 +618,7 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     q.writeBuffer(C.cellBuf, 0, cu);
     for (const b of C.bioBuf) q.writeBuffer(b, 0, bu);
     q.writeBuffer(C.eat.stockBuf, 0, su);
+    if (cbo) q.writeBuffer(CBC.buf, 0, cbo);   // step C15b
     const stats = await unpack(S.stats);
     if (stats.byteLength === C.statsBuf.size) q.writeBuffer(C.statsBuf, 0, stats);
     else if (stats.byteLength < C.statsBuf.size && stats.byteLength >= C.statsBuf.size - 512) q.writeBuffer(C.statsBuf, 0, stats);   // (step C10

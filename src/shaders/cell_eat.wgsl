@@ -870,10 +870,12 @@ fn give_back(i: u32, p: vec2f, cur: u32, slot: u32) {
   atomicAdd(&wev[EV_DUMP], back);
   atomicAdd(&wev[EV_GONE], gone);
   atomicAdd(&wev[EV_BATBACK], max(b, 0));
+  cb_give_back(i, idx, slot);   // step C15b: and its carbon (cell_carbon.wgsl)
 }
 
 fn flush_counters(li: u32, slot: u32) {
   workgroupBarrier();
+  cb_flush(li, slot);   // step C15b
   if (li < 16u) {
     let v = atomicLoad(&wev[li]);
     if (v != 0) { add64(LG_K_EV + 128u * li + slot, v); }
@@ -1017,6 +1019,7 @@ fn split(@builtin(global_invocation_id) id: vec3u) {
       if (got > 0) { atomicAdd(&stock[i * SW + LP0 + w], got); if (w < 18u) { gotB += got; } }
     }
     if (gotB > 0) { atomicAdd(&hb[LG_M1 + 256u + 16u * M1C_SPLIT + (i & 15u)], gotB); }   // (step M1: the bilayer the newborn took)
+    cb_split(i, pi, sh);   // step C15b: half the parent's ladder, the same share of its granules
   }
   cells[i].flags = c.flags & ~CELL_BORN;
 }
@@ -1078,6 +1081,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     else { integ += min(f32(ml[k] + mh[k]) / want, 1.0); }
   }
   integ /= 6.0;
+  if (CARBON_ON != 0u) { atomsIn += cb_atoms(i); }   // step C15b: the cell's carbon takes room too
   // a stock needs a closed membrane to hold it: the capacity x (hold + (1 - hold) x mean integrity)
   let capM = select(cap, cap * (EP.mb4.x + (1.0 - EP.mb4.x) * integ), membOn);
   let room = clamp(1.0 - atomsIn / max(capM, 1.0), 0.0, 1.0);
@@ -1190,6 +1194,10 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
       }
     }
     flux[fo + flux_w(k)] = n;
+  }
+  // step C15b: the ladder's exchange (a neutral molecule's rate) and the tar to graze (cell_carbon.wgsl)
+  if (CARBON_ON != 0u) {
+    cb_plan(i, idx, areaPx, Ao, select(ep_f(EP.perm, 0u), pgene * ep_f(EP.ratio, 0u), permG) * leak * freeS, room, freeS, eatOn, rs);
   }
   flux[fo + 44u] = i32(floor(blk.x + u01(pcg(rs + 0x1f83d9abu))));   // step C12g: the ions held back (counts, + and -)
   flux[fo + 45u] = i32(floor(blk.y + u01(pcg(rs + 0x5be0cd19u))));
@@ -1561,6 +1569,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
         if ((EP.mask & (1u << f)) != 0u) { v += ep_f(EP.smellW, f) * f32(mg[cur - lw + f * EP.n + pi]); }   // (step C12d: smellW)
       }
       if (wTr > 0.0) { v += wTr * f32(mg[cur - lw + TRACE_CH * EP.n + pi]); }   // (step T1a: the trace)
+      if (CARBON_ON != 0u) { v += cb_smell(pi); }   // (step C15b: the ladder's fuel)
       gr += v * cp;
       rr += dot(cp, cp);
     }
@@ -1756,6 +1765,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           movedL += n;
         }
         if (movedL > 0) { atomicAdd(&wt1[P1C_LIPID], movedL); }
+        cb_digest(i, g, dsh, pcg(rr + 97u));   // step C15b: and the meal's carbon
         let gbt = atomicLoad(&stock[go + BAT]);
         if (gbt > 0) {
           let n = min(gbt, i32(floor(f32(gbt) * dsh + u01(pcg(rr + 98u)))));
@@ -2598,13 +2608,15 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       var ef = vec3f(gof(i, GRN_O_ENG0), gof(i, GRN_O_ENG0 + 1u), gof(i, GRN_O_ENG0 + 2u));
       let pf = gof(i, GRN_O_PIG);
       for (var k = 0u; k < 3u; k++) {
-        if (EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) > 0u) { ef[k] *= pf; }
+        if (eng_at(b.eng[k]).kind == 0u && eng_band(b.eng[k]) > 0u) { ef[k] *= pf; }
       }
       b.rate = vec4f(b.rate.xyz * ef, b.rate.w);
     }
     var fpg = 1.0;                                // step N1: the share of the wanted pigment the cell holds (1: light needs no matter)
     var pg = atomicLoad(&stock[o + W_PIG]);       // ... the pigment it holds (counts)
     let pg0 = pg;
+    var cbPh = vec3i(0);                          // step C15b: the photons a carbon slot's pigment caught (its engine runs below)
+    var cbPs = vec3i(0);                          // ... of them, those it can use (saturation)
     if ((EP.flags & EF_ENG) != 0u) {
       // ---- step N1 block: LIGHT NEEDS MATTER. The pigment wears out into its atoms, then is built toward what the harvest slots
       // want (one trace and two l from the stock per count, the assembly paid from the battery as heat) ----
@@ -2612,7 +2624,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       if ((n1f & NLF_MATTER) != 0u) {
         var hRate = 0.0;
         for (var k = 0u; k < 3u; k++) {
-          if (b.rate[k] > 0.0 && EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) > 0u) { hRate += b.rate[k]; }
+          if (b.rate[k] > 0.0 && eng_at(b.eng[k]).kind == 0u && eng_band(b.eng[k]) > 0u) { hRate += b.rate[k]; }
         }
         let pw = EP.nl[0].y * areaR2 * hRate;
         let nw = min(i32(floor(f32(pg) * EP.nl[1].x + u01(pcg(rs + 0x2a4c3e1fu)))), pg);
@@ -2641,7 +2653,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         let s = light_factor(LP, c.pos) * caustic_at(c.pos);   // (step N1: x the caustic light)
         var tb = vec4f(0.0);
         for (var k = 0u; k < 3u; k++) {
-          if (b.rate[k] > 0.0 && EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) > 0u) { tb[eng_band(b.eng[k])] += EP.pigK * b.rate[k] * fpg; }
+          if (b.rate[k] > 0.0 && eng_at(b.eng[k]).kind == 0u && eng_band(b.eng[k]) > 0u) { tb[eng_band(b.eng[k])] += EP.pigK * b.rate[k] * fpg; }
         }
         if (s > 0.0 && any(tb > vec4f(0.0))) {
           let apx = areaPx / (HP.px * HP.px);                  // the cell's area in heat pixels
@@ -2649,7 +2661,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           let caught = LP.power * s * apx * (1.0 - exp(-tot)) / max(tot, vec4f(1e-9));   // x a depth = what it catches
           for (var k = 0u; k < 3u; k++) {
             let band = eng_band(b.eng[k]);
-            if (b.rate[k] <= 0.0 || EP.eng[eng_index(b.eng[k])].kind != 0u || band == 0u) { continue; }
+            if (b.rate[k] <= 0.0 || eng_at(b.eng[k]).kind != 0u || band == 0u) { continue; }
             let ph16 = EP.photon16[band];
             let n = i32(floor(caught[band] * EP.pigK * b.rate[k] * fpg / f32(ph16) + u01(pcg(rs + k * 0x2f6b1e3du + 0x13579bdfu))));
             nph[k] = n;
@@ -2691,6 +2703,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       for (var k = 0u; k < 3u; k++) {
         let rk = b.rate[k] * cof;
         if (rk <= 0.0) { continue; }
+        if (eng_index(b.eng[k]) >= ENG_MAIN) { cbPh[k] = nph[k]; cbPs[k] = nsat[k]; continue; }   // step C15b: a carbon engine (its section, below)
         let E = EP.eng[eng_index(b.eng[k])];
         let sp16 = max(i32(ceil(E.spark * sparkScale * 16.0)), 1);
         // what it works on: one reactant, two different ones (the scarcer), or a pair of the same (half of it)
@@ -2915,6 +2928,13 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       if (nf > 0) { heat += nf * ex16; atomicAdd(&wxn[XN_FADE_CELL], nf); atomicAdd(&wxe[XE_FADE], nf * ex16); }
     }
 
+    // ---- step C15b: CELLS EAT CARBON (cell_carbon.wgsl): the ladder's exchange, grazing tar, the carbon engines, granules dissolving ----
+    var cbo: CbOut;
+    if (CARBON_ON != 0u) {
+      cbo = cb_cell(i, b, cbPh, cbPs, &m, &bat, &heat, idx, lnCap, temp, satOn, sparkScale, cofactor(f32(max(m[CP.trace], 0)) * concIn),
+                    pcg(rs + 0x08c3a5e9u));
+    }
+
     // ---- step C6, upkeep: per s, upEng x the engines' rates (while they run) and upTol x tolerance / tolRef (while it is
     // a gene), paid from the battery as heat (what an empty battery cannot pay is not paid)
     if ((EP.flags & EF_UPKEEP) != 0u) {
@@ -2991,6 +3011,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     if (heat != 0) { atomicAdd(&hb[LEDGER_WORDS + idx[4]], heat); }
     var fill = 3.0 * f32(max(pg, 0));                        // (step N1: the pigment's three atoms take room too)
     for (var j = 0u; j < NCELL; j++) { let k = cell_ch(j); fill += f32(m[k]) * ep_f(EP.natoms, k); }
+    fill += cbo.atoms;                                        // (step C15b: and its carbon)
     cells[i].bat = clamp(f32(bat) / f32(batMax), 0.0, 1.0);
     cells[i].fill = clamp(fill / max(cap, 1.0), 0.0, 1.0);
     // step T1b: what the gene network senses of the cell's inside and its light (src/grn.js; Cell.sns0, sns1)
@@ -3001,7 +3022,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       let tmp = bitcast<f32>(flux[fo + 15u]) / max(2.0 * tol, 1e-3);
       cells[i].sns0 = pack4x8unorm(vec4f(ls, grn_amount(m[1] + m[17], cap, GRN_REF_T), grn_amount(m[6] + m[7] + m[8] + m[9], cap, GRN_REF_FUEL),
                                          grn_amount(m[2] + m[5], cap, GRN_REF_LINK)));
-      cells[i].sns1 = pack4x8unorm(vec4f(tr, clamp(tmp, 0.0, 1.0), 0.0, 0.0));
+      // (step C15b: z the granules, w the carbon fuel inside, for the drawing: as an amount, 1 - e^-(amount / (capacity x 0.05)))
+      cells[i].sns1 = pack4x8unorm(vec4f(tr, clamp(tmp, 0.0, 1.0), grn_amount(i32(cbo.gran), cap, 0.05), grn_amount(i32(cbo.fuel), cap, 0.1)));
     }
 
     // ---- step C6b: the cell's charge, the net charge of its stock (givers minus takers; fuel and sediment are neutral);
@@ -3079,7 +3101,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           var th = 0.0;
           if ((EP.flags & EF_ENG) != 0u && (EP.flags & EF_PIG) != 0u) {
             for (var k = 0u; k < 3u; k++) {
-              if (b.rate[k] > 0.0 && EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) == 3u) { th += EP.pigK * b.rate[k] * fpg; }
+              if (b.rate[k] > 0.0 && eng_at(b.eng[k]).kind == 0u && eng_band(b.eng[k]) == 3u) { th += EP.pigK * b.rate[k] * fpg; }
             }
           }
           let tot = LP.tauMed.w + LP.tauCell.w + th;
@@ -3248,6 +3270,7 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       atomicAdd(&whi[14u + j], u32(v) >> 16u);
     }
   }
+  if (i < S.count) { cb_ledger(i, (cells[i].flags & CELL_ALIVE) != 0u); }   // step C15b: the cells' carbon, its census
   // step C9: the census counts the live cells only (the books above count every slot: a free one holds nothing)
   if (i < S.count && (cells[i].flags & CELL_ALIVE) != 0u) {
     let c = cells[i];
@@ -3271,7 +3294,7 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     var br = false;
     for (var k = 0u; k < 3u; k++) {
       if (b.rate[k] <= 0.0) { continue; }
-      let E = EP.eng[eng_index(b.eng[k])];
+      let E = eng_at(b.eng[k]);
       if (E.kind == 0u) {
         let band = eng_band(b.eng[k]);
         atomicAdd(&wcen[pb + band], 1);
@@ -3415,7 +3438,7 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     if (tim < -one) { atomicAdd(&wws[WZ_EXP], 1); }
     var brt = false;
     for (var k = 0u; k < 3u; k++) {
-      let E = EP.eng[eng_index(b.eng[k])];
+      let E = eng_at(b.eng[k]);
       brt = brt || (b.rate[k] > 0.0 && E.kind != 0u && (E.ch.x == 1u || E.ch.y == 1u));
     }
     if (brt) {

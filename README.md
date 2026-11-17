@@ -5390,6 +5390,133 @@ dropped at 5 min into the default scene and the Sunlit shallows, 30 min, seeds 3
   wraps or ghosts.
 - Speed: 6 .. 10 % slower than T1b, from the record sizes (above).
 
+## Step G1: error correction
+
+BUILD QUEUE item 6b (2026-11-17, the user: "yes"): a FIDELITY gene, PROOFREADING. In real cells the enzyme that copies DNA checks its own
+work and cuts out wrong letters; that checking costs energy, and lineages differ in how careful they are ("mutators" copy sloppily, which
+can pay off when the world changes). Here: higher fidelity = smaller and rarer mutations at each birth, for every gene, paid with battery.
+Code: `src/fidelity.js` (switches, knobs, counters, census, panel line), `fid_m` / `fid_birth` in `cell_common.wgsl`, `daughter_genome` in
+`cell_step.wgsl`, the network's mutation in `cell_grn.wgsl`, the cost in `cell_eat.wgsl` (`split`). Every piece has its switch (rules panel
+group "Error correction (step G1)", URL options below).
+
+### The gene
+
+- FIDELITY F lives in genome word 31 (`Bio.conv.w`), a spare word among the state words, so the record does NOT grow (no speed cost from
+  a bigger genome). It is a gene: inherited, mutated, copied by the lab's `cloneAll`, settable as `setAll({ fidelity: x })`. Words 20..30
+  stay state. Old genomes and snapshots hold 0 there, which is the founders' value: they load copying exactly as before.
+- F is a LOG FACTOR (as the stretch and ion-channel genes): a birth's copying errors are x m = e^-F. F runs from -2 (7.4 x today's errors:
+  a sloppy "mutator") to 3 (0.05 x: very careful). Founders (std, blank and wild alike) start at 0: m = 1, today's mutation exactly, so with
+  the gene at the founders' value nothing changes.
+- WHAT IS PROOFREAD: everything a birth copies. The small steps of every gene and the chance of every jump (the big redraws, the engine and
+  pump slot jumps) in `mutate`, the gene network's nudges, rewiring, output moves and regulator duplication, and the SELF MARKER's clock
+  (T1a): a careful lineage's marker drifts slower, so its cells keep recognising each other as kin for longer.
+- ITS OWN DRIFT: F drifts at every birth by 0.08 x today's mutation size, NOT reduced by itself. My call: if proofreading proofread its own
+  gene, a careful lineage would lock itself in; this way care can be lost again, and the neutral control drifts exactly as the real thing.
+
+### Hard light (step C8)
+
+Hard light's extra mutation (the parent's dose: x (1 + 0.05 x dose), at most x 10) is DAMAGE TO THE TEMPLATE, not only a copying error.
+Proofreading checks the new copy against the template, so it can catch errors made while copying past a lesion but not a letter the light
+has already changed. Derived as a split: a share `beyond` (0.5, knob) of the extra lies beyond proofreading and acts as it is; the rest is
+caught like any copying error:
+
+    mutation scale at a birth = (key M on) x m  +  hard light's extra x (beyond + (1 - beyond) x m)
+
+So a careful lineage in the spotlight still mutates more than in the shade, but less than a sloppy one there: repair can evolve against hard
+light without ever cancelling it. With `beyond` 1 proofreading ignores the light; with 0 it catches it all.
+
+### The cost
+
+Proofreading costs the PARENT battery at every birth (turnover or division alike), as heat where she is (the eat pass's `split`, next to
+the division's own cost; counted in the step C9 ledger block):
+
+    cost per birth = cost x (e^F - 1)  for F > 0;  nothing for F <= 0          (cost 0.1 energy units)
+
+F = 0.5 costs 0.065 a birth, 1 costs 0.17, 2 costs 0.64, 3 costs 1.9 (a division itself costs 0.4; the battery holds 4). Today's copying is
+the cheapest there is: a sloppy lineage saves nothing, it only mutates more (my call: the founders' cost must be 0 so that nothing changes at
+the founders' value, and an energy refund for sloppiness would have to come from nowhere). A parent with too little pays what she has and
+the copy is proofread anyway (counted as "short"; rare: dividing cells need 0.6 of a battery).
+
+### The switches (rules panel "Error correction (step G1)"; URL)
+
+- `?fidelity=0`: off. The gene is frozen and has no effect and no cost: today's mutation.
+- `?fidelitynull=1`: the NEUTRAL CONTROL. The gene drifts at births exactly as when on, but has no effect and costs nothing: the yardstick
+  for "did selection move it?".
+- Knobs: `?fidcost=` (0.1), `?fidbeyond=` (0.5), `?fidcensus=` (s between the census's read-backs, 15).
+
+### The census and the panel line
+
+FIDELITY: the gene's mean ± spread (and what it means for the errors, e^-mean), the share of cells above and below the founders (|F| >
+0.1), the mutation scale per birth over the last 10 s (1 = today's copying with no hard light; the spotlight scene sits near 4 because of
+hard light) and what it would have been at the founders' care, proofreading's cost per s and per birth; the gene in the LIGHT and the
+SHADE (the cell's light sense, Cell.sns0.x, at least 0.25) and in cells with a hard light dose of 1 and more; in tissue INTERIORS (4 or
+more mutual contacts), EDGES (1..3) and LONERS (none); the self marker's MATCH at contacts within a lineage (the moire beat over the shared
+wall x the phases' register, without the displays, as the warfare census), and that match for CAREFUL pairs (both above the founders) and
+SLOPPY ones (both below). The overlay adds counts, births per s, the share that paid, the top five lineages (cells, F, match) and a series.
+`moire.fidelity.census`, `moire.fidelity.now()` (a fresh read-back), `moire.sample()`'s `fid.*`. The cells zoo says it in words when a
+lineage is off the founders' care ("copies carefully (proofreading: 0.4x the usual errors)", "copies sloppily").
+
+### What it looks like
+
+Nothing new is drawn: fidelity is a number in the genome, like a polymerase's error rate, invisible under the microscope. What shows is its
+consequence in the lineage view (key V, "marker": the Brainbow-like colours of the self marker): a careful lineage keeps one even colour
+for longer; a sloppy one breaks into speckles of near hues sooner. In the quick runs the spotlight colony ends as two lineages, lime and
+magenta, interleaved in patches (`experiments/runs/g1-spot-on_s3/shots/marker_end.png`, kept locally).
+
+### Quick checks (EXPERIMENTS.md "Error correction")
+
+QUICK CHECKS only (the user: experiments are not valid until more changes land). 20 minutes, the Colonies preset (five colonies of wild
+founders, the whole dish moderately lit) and the default scene (the spotlight: hard light), fidelity on against the neutral control, seeds
+3 and 7; the GPU was shared with other workers' batches (x0.1 to x0.45 at MAX), so the colonies' "on" runs were stopped at 20 minutes and
+every pair is compared at 1200 s (`experiments/summaries/g1-fidelity/summary.md`). In plain words:
+
+- **The gene moves, upward, in every pair, but no more than the controls wander.** At 20 min the mean F with fidelity on is above its
+  neutral control in 4 of 4 pairs: colonies +0.69 against +0.21 (seed 3) and +0.40 against -0.85 (seed 7); spotlight +1.36 against +0.96
+  and +1.09 against +0.86. Carriers above the founders: 62 .. 90 % on, 19 .. 75 % in the controls. But the controls themselves end
+  anywhere from -0.85 to +0.96 (each dish ends as one or two lineages, so the winners' F is a coin toss), and the spread inside a dish is
+  about ±1. With two seeds this is a HINT that copying carefully pays, not a result.
+- **It costs.** At F about 1 to 1.4 proofreading takes 0.3 .. 0.45 energy units a birth and 4 .. 9 energy units per s from the dish's
+  batteries (as heat); no parent was ever short. The populations are not visibly smaller for it (spotlight 1 169 and 823 cells on, 907 and
+  1 272 in the controls).
+- **Hard light limits what care can do.** In both scenes almost every cell carries a hard light dose, and the mutation per birth at the
+  founders' care is about x4 (hard light's extra x2 to x5 on top of the copying). Half of that lies beyond proofreading (`beyond` 0.5), so
+  even at F 1.4 a birth still mutates at about x2.5: the per-birth mutation on and in the controls stays within the same band (2 .. 4).
+- **Where: no clear place.** Light against shade, tissue interior against the few loners, all within 0.1 of each other in the on runs
+  (spotlight: light 1.45 / shade 1.30 and 1.14 / 1.06, a little higher in the light both times, but the controls show such gaps too).
+  Nearly every cell is inside a tissue (2 700 of 2 900 in the colonies, loners 0 .. 30), so tissue against loner cannot be read here.
+- **Kinship: the mechanism shows, the dish-wide effect not yet.** Within a dish, touching relatives that both copy carefully match their
+  self markers better than sloppy pairs in all four "on" runs at 20 min (0.66 / 0.59, 0.53 / 0.41, 0.89 / 0.75, 0.70 / 0.61), while in the
+  controls careful pairs are no better (0.59 / 0.64, 0.57 / 0.51, 0.63 / 0.82, 0.67 / 0.82): the slower clock works. The dish-wide marker
+  match within lineages and the TISSUES line's contact kinship do not differ consistently in 20 minutes (match 0.58 / 0.55, 0.44 / 0.45,
+  0.87 / 0.62, 0.56 / 0.65; kinship 0.05 / 0.03, 0.16 / 0.11, 0.25 / 0.35, 0.16 / 0.14).
+
+### Checked
+
+- **Books** (`experiments/conditions/g1/check.json`, seed 5, the whole dish lit, 420 s at MAX): springs; the gene set to 1.5 for all (the
+  costs paid), N, F 2.5 for all, a wash; the neutral control, off, on, the cost x5 (0.5), `beyond` 0 and 1, all at runtime; a resize at
+  150 s with G (wild founders), F -2 for all, key M off and on, F 3 for all, turnover mode (births by turnover pay too) and back, the
+  defaults, a snapshot saved and loaded at 300 s (exact: energy, atoms, charge), the null and on again: atoms and charge rounding exactly 0
+  in every sample but the paused resize instant (230 s, as before every step), energy within -0.011 and +0.057. (F 3 at cost 0.5, 9.5
+  energy units a birth, starved the dish: 495 cells to 14 when the starving cells' timers ran out together after the switch back to
+  division mode; it regrew to 85 by the end. A harsh setting, not a leak: the books stayed exact.)
+- **Old snapshots**: P1's Colonies snapshot (seed 3, 20 min) loads with every cell at F 0 (the founders' value) and runs 60 s, atoms and
+  charge 0; with whole-dish hard light F spreads to ±0.36 within those 60 s.
+- **Consoles**: headless Chrome (every run), headed Firefox (the default scene, F 1.5 for all: the FIDELITY line and overlay, no console
+  messages), phone size (`tools/shot.py --mobile`, a finger tap opening the rules panel; the short FIDELITY line fits). Founders at 0
+  reproduce today exactly (the gene's factor is exactly 1 at F 0, and every scale reduces to the old `(key M) + hard light's extra`).
+- **Speed**: not measured on a free GPU (other workers' batches ran the whole time). The step adds no words to any record (the gene uses a
+  spare genome word) and a few operations at births only (an exp, a nudge, three counter adds) and one read of the parent's genome word
+  in the split pass; I expect no measurable change from P1's x6.60 (2000 cells, neon) and x1.39 (10 000).
+
+### Known issues
+
+- A parent with too little battery still gets her copy proofread (paying what she has; "short" in the overlay). Never seen in the runs.
+- The gene's own drift is fast where hard light falls (0.08 x the birth's mutation size, about 0.3 a birth under the spotlight), so short
+  runs are dominated by drift and founder effects; the neutral control is essential, and two seeds are not enough.
+- Sloppiness saves nothing (F below 0 costs as F = 0); a mutator lineage gains only by its variety.
+- `beyond` is a knob, not derived from anything deeper; the census's "light" is the current light sense, while the hard light dose fades
+  over 20 s (nearly every cell under the spotlight counts as hard-lit).
+
 ## App: zoom, zoos, tools, new culture, presets
 
 The user, 2026-11-16: "on the app side of things, if we could zoom, and have panels with zoos of cells and molecules and tools to
@@ -5796,6 +5923,11 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   digestion, the phagosome's membrane; `dump`: orphaned ghosts spill), `cell_grid.wgsl` (the ghosts' bucket), `cell_grn.wgsl` (the ENGULF
   output, the MEAL and PREY senses), `cell_draw.wgsl` (`wrap_arm`, `phago`); `Cell.eng`, `engBy`, `hold`, `engPay` and their helpers in
   `cell_common.wgsl`; the genes in `src/genome.js` (`wildP1`, `predatorGenome`)
+- `src/fidelity.js`: error correction (step G1): the switches and knobs (`moire.fidelity.params`: on, null, cost, beyond, censusEvery,
+  lit), the step's words (`Fields.hm.z, hm.w`), the eat pass's (`EatP.dv.z, dv.w`), the counters (the step C9 ledger block `LG_DIV`, words
+  1..6), the census read-back every 15 s (`now()`), the FIDELITY panel line and overlay. The shader side: `fid_m`, `fid_birth`, `FID_*`,
+  `FDC_*` in `cell_common.wgsl`; `daughter_genome` in `cell_step.wgsl` (the scale, the gene's own drift, the marker clock, the counters);
+  the network's mutation in `cell_grn.wgsl`; proofreading's cost in `cell_eat.wgsl` `split`. The gene is genome word 31 (`Bio.conv.w`)
 - `src/whole.js`: whole membranes (step M1): the switches (`moire.whole.params`: head on oil, bites through the block), the eat uniform's
   words (struct EatP `m1`), the membrane budget's counters and census (LG_M1: a snapshot from the ledger pass, counters from the eat,
   dump, split and reset passes), the MEMBRANES panel line and the overlay. The rules are in `cell_eat.wgsl` (the "step M1" blocks: the

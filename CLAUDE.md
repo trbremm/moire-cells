@@ -718,6 +718,15 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        read) but each division costs more battery; hard light's extra mutation still acts (repair may evolve against it).
        Watch: tissues vs loners (do multicellular lineages copy tighter, fewer cheaters?), hot/bright places (mutators?).
        Neutral control as always.
+       AS BUILT (G1, 2026-11-17): src/fidelity.js; gene F = genome word 31 (Bio.conv.w, a spare: old genomes load F 0 =
+       founders), log factor -2..3; copying errors x e^-F for every gene step and jump, the GRN's nudges/rewires/duplication
+       and the self marker's clock; F drifts 0.08 x mutation size per birth, NOT reduced by itself. Hard light's extra = template
+       damage, a share beyond = 0.5 out of proofreading's reach. Cost at each birth 0.1 x (e^F - 1) from the parent's battery
+       (heat); F <= 0 costs nothing. ?fidelity=0 ?fidelitynull=1 ?fidcost ?fidbeyond; FIDELITY line. QUICK RESULT (20 min, 2
+       seeds, colonies + spotlight, shared GPU): F above its control 4/4 but controls wander -0.85..+0.96 (a hint, not a
+       result); careful-careful contacts match markers better than sloppy-sloppy in 4/4 on runs, not in controls; dish-wide
+       kinship not longer within 20 min; no light/shade or tissue/loner pattern; hard light keeps mutation x2-4 regardless.
+       Needs >= 4 seeds per side later. Merged D1 (branch dish) with it. Speed not measured.
     6c. G2 GENE DUPLICATION FOR ENGINES AND PUMPS: a few SILENT slots; a rare duplication copies a working engine or
        pump slot over a silent one (dosage x2, or the copy drifts into a new reaction while the original keeps the cell
        alive: new functions). The GRN already duplicates regulators (T1b, 0.005). Census of engine families branching.

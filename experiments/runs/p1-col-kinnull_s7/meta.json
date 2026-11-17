@@ -1,0 +1,143 @@
+{
+  "name": "p1-col-kinnull_s7",
+  "description": "colonies preset, kin sparing CONTROL (?kinsparenull=1: kinship ignored), 40 min",
+  "condition": {
+    "name": "p1-col-kinnull_s7",
+    "description": "colonies preset, kin sparing CONTROL (?kinsparenull=1: kinship ignored), 40 min",
+    "query": {
+      "preset": "colonies",
+      "kinsparenull": 1,
+      "seed": 7
+    },
+    "duration": 2403,
+    "sample_every": 15,
+    "stall": 150,
+    "snapshots": [
+      {
+        "t": 2400
+      }
+    ],
+    "shots": [
+      {
+        "t": 2397,
+        "view": "marker",
+        "name": "marker_end"
+      },
+      {
+        "t": 2399,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "evals": [
+      {
+        "t": 300,
+        "js": "return JSON.stringify(await moire.predators.clustersNow())"
+      },
+      {
+        "t": 600,
+        "js": "return JSON.stringify(await moire.predators.clustersNow())"
+      },
+      {
+        "t": 1200,
+        "js": "return JSON.stringify(await moire.predators.clustersNow())"
+      },
+      {
+        "t": 1800,
+        "js": "return JSON.stringify(await moire.predators.clustersNow())"
+      },
+      {
+        "t": 2400,
+        "js": "return JSON.stringify(await moire.predators.clustersNow())"
+      },
+      {
+        "t": 600,
+        "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+      },
+      {
+        "t": 1200,
+        "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+      },
+      {
+        "t": 1800,
+        "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+      },
+      {
+        "t": 2400,
+        "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+      }
+    ]
+  },
+  "url": "http://localhost:59850/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=colonies&kinsparenull=1&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "81778660dc45d2d4198634c720cd6900381c69fb",
+  "dirty": true,
+  "started": "2026-11-17T11:56:37",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 2403.0,
+  "run_wall_s": 667.07,
+  "speed_reached": 3.6,
+  "samples": 162,
+  "shots": [
+    "shots/marker_end.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t2400.json"
+  ],
+  "clips": [],
+  "evals": [
+    {
+      "t": 300.0000000000024,
+      "js": "return JSON.stringify(await moire.predators.clustersNow())",
+      "result": "{\"time\":286.1666666666684,\"n\":879,\"clusters\":276,\"largest\":73,\"top\":[73,71,69,50,23,17,17,16],\"in8\":0.515358361774744,\"singles\":0.19795221843003413,\"meanSize\":24.362912400455063,\"perCell\":1.651877133105802,\"ghosts\":28,\"hist\":{\"bins\":[1,2,4,8,16,32,64,128,\"more\"],\"cells\":[174,90,85,101,109,57,50,213,0]}}"
+    },
+    {
+      "t": 600.0000000000102,
+      "js": "return JSON.stringify(await moire.predators.clustersNow())",
+      "result": "{\"time\":587.4666666666758,\"n\":1817,\"clusters\":56,\"largest\":1719,\"top\":[1719,11,7,5,4,4,4,3],\"in8\":0.9521188772702256,\"singles\":0.02201430930104568,\"meanSize\":1626.47495872317,\"perCell\":3.861309851403412,\"ghosts\":122,\"hist\":{\"bins\":[1,2,4,8,16,32,64,128,\"more\"],\"cells\":[40,8,27,12,11,0,0,0,1719]}}"
+    },
+    {
+      "t": 600.0000000000102,
+      "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})",
+      "result": "{\"t\":600.0000000000102,\"genes\":{\"engulf\":0.7635288937809577,\"engulfSd\":0.21739303537344698,\"spare\":0.5075558613098514,\"spareSd\":0.2589235852408747,\"carriers\":0.9763346175013758,\"sparers\":0.5214205186020293,\"carrierSpare\":0.506303833145434,\"expressed\":1.2212900385250411,\"glue\":0.4836439185470556},\"now\":{\"wrapping\":96,\"digesting\":123,\"wrapped\":81,\"preyNear\":249,\"hold\":0.8956428178315906,\"armour\":0.2557567418822234},\"total\":{\"start\":20257,\"lost\":7774,\"held\":8435,\"poor\":54,\"eaten\":3742,\"kin\":24,\"alone\":1690,\"hold\":2064030,\"area\":10340174,\"kinSum\":171777},\"recent\":{\"meals\":168,\"kin\":0.023809523809523808,\"alone\":0.3869047619047619,\"hold\":0.5931309523809524,\"area\":3.3369940476190476,\"kinship\":0.05231547619047619},\"all\":{\"kin\":0.006413682522715126,\"alone\":0.45163014430785675,\"hold\":0.5515847140566542,\"area\":2.76327471940139,\"kinship\":0.04590513094601817},\"clusters\":{\"time\":587.4666666666758,\"n\":1817,\"clusters\":56,\"largest\":1719,\"top\":[1719,11,7,5,4,4,4,3],\"in8\":0.9521188772702256,\"singles\":0.02201430930104568,\"meanSize\":1626.47495872317,\"perCell\":3.861309851403412,\"ghosts\":122,\"hist\":{\"bins\":[1,2,4,8,16,32,64,128,\"more\"],\"cells\":[40,8,27,12,11,0,0,0,1719]}},\"digest\":{\"total\":{\"paid\":6823.030975341797,\"atoms\":8119.669677734375,\"lipid\":431.66259765625,\"bat\":2358.439483642578,\"heat\":2372.3450317382812,\"spill\":158.501220703125,\"meals\":3267,\"wrapm\":136.9326171875,\"void\":1,\"orphan\":353},\"rate\":{\"paid\":28.711247745160136,\"atoms\":39.05940160404695,\"lipid\":2.2921154744612307,\"bat\":11.239150544739083,\"heat\":11.292162923723223,\"spill\":0.6099297913208901,\"meals\":15.54817275748253,\"wrapm\":0.7767078488375813,\"void\":0,\"orphan\":1.3953488372099705}}}"
+    },
+    {
+      "t": 1199.9999999997574,
+      "js": "return JSON.stringify(await moire.predators.clustersNow())",
+      "result": "{\"time\":1189.4333333330974,\"n\":2884,\"clusters\":2,\"largest\":2883,\"top\":[2883,1],\"in8\":0.9996532593619972,\"singles\":0.00034674063800277393,\"meanSize\":2882.000693481276,\"perCell\":5.238557558945908,\"ghosts\":116,\"hist\":{\"bins\":[1,2,4,8,16,32,64,128,\"more\"],\"cells\":[1,0,0,0,0,0,0,0,2883]}}"
+    },
+    {
+      "t": 1199.9999999997574,
+      "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})",
+      "result": "{\"t\":1199.8999999997575,\"genes\":{\"engulf\":0.4274722607489598,\"engulfSd\":0.33188632730400086,\"spare\":0.6042343966712899,\"spareSd\":0.31624908630165754,\"carriers\":0.6158113730929264,\"sparers\":0.6863738738738738,\"carrierSpare\":0.6352865990990991,\"expressed\":0.7061983356449376,\"glue\":0.4540679611650485},\"now\":{\"wrapping\":90,\"digesting\":116,\"wrapped\":76,\"preyNear\":247,\"hold\":1.7108415395284327,\"armour\":0.4456754507628294},\"total\":{\"start\":67015,\"lost\":16596,\"held\":36287,\"poor\":354,\"eaten\":13203,\"kin\":698,\"alone\":4309,\"hold\":8636434,\"area\":45039066,\"kinSum\":1199329},\"recent\":{\"meals\":149,\"kin\":0.10067114093959731,\"alone\":0.2214765100671141,\"hold\":0.8211946308724832,\"area\":3.752657718120805,\"kinship\":0.10483892617449665},\"all\":{\"kin\":0.05286677270317352,\"alone\":0.32636522002575175,\"hold\":0.654126637885329,\"area\":3.4112751647352875,\"kinship\":0.09083761266378852},\"clusters\":{\"time\":1189.4333333330974,\"n\":2884,\"clusters\":2,\"largest\":2883,\"top\":[2883,1],\"in8\":0.9996532593619972,\"singles\":0.00034674063800277393,\"meanSize\":2882.000693481276,\"perCell\":5.238557558945908,\"ghosts\":116,\"hist\":{\"bins\":[1,2,4,8,16,32,64,128,\"more\"],\"cells\":[1,0,0,0,0,0,0,0,2883]}},\"digest\":{\"total\":{\"paid\":23225.99659729004,\"atoms\":31661.913330078125,\"lipid\":2894.6474609375,\"bat\":8825.236251831055,\"heat\":10245.272827148438,\"spill\":1314.221435546875,\"meals\":11762,\"wrapm\":943.994873046875,\"void\":7,\"orphan\":1327},\"rate\":{\"paid\":28.652084638505073,\"atoms\":35.00188863504491,\"lipid\":4.699384581370787,\"bat\":9.900846661267824,\"heat\":16.079447044526304,\"spill\":1.699356942807639,\"meals\":11.509433962271162,\"wrapm\":2.115271226416383,\"void\":0,\"orphan\":1.3207547169819367}}}"
+    },
+    {
+      "t": 1799.9999999993508,
+      "js": "return JSON.stringify(await moire.predators.clustersNow())",
+      "result": "{\"time\":1790.866666666023,\"n\":2893,\"clusters\":1,\"largest\":2893,\"top\":[2893],\"in8\":1,\"singles\":0,\"meanSize\":2893,\"perCell\":5.3086761147597645,\"ghosts\":107,\"hist\":{\"bins\":[1,2,4,8,16,32,64,128,\"more\"],\"cells\":[0,0,0,0,0,0,0,0,2893]}}"
+    },
+    {
+      "t": 1799.9999999993508,
+      "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})",
+      "result": "{\"t\":1799.9999999993508,\"genes\":{\"engulf\":0.40215312824058075,\"engulfSd\":0.3139841256597678,\"spare\":0.585628759073626,\"spareSd\":0.32329998958483286,\"carriers\":0.6152782578638092,\"sparers\":0.6247191011235955,\"carrierSpare\":0.5975016853932585,\"expressed\":0.5992976149325959,\"glue\":0.39988731420670587},\"now\":{\"wrapping\":84,\"digesting\":107,\"wrapped\":72,\"preyNear\":187,\"hold\":1.8346401659177323,\"armour\":0.7895973038368475},\"total\":{\"start\":113774,\"lost\":23711,\"held\":66413,\"poor\":462,\"eaten\":22334,\"kin\":1400,\"alone\":6163,\"hold\":17542178,\"area\":78586277,\"kinSum\":2150961},\"recent\":{\"meals\":143,\"kin\":0.06993006993006994,\"alone\":0.1958041958041958,\"hold\":1.1656083916083915,\"area\":3.852321678321678,\"kinship\":0.07353846153846154},\"all\":{\"kin\":0.0626846959792245,\"alone\":0.2759469866571147,\"hold\":0.785447210531029,\"area\":3.518683487060088,\"kinship\":0.09630881167726335},\"clusters\":{\"time\":1790.866666666023,\"n\":2893,\"clusters\":1,\"largest\":2893,\"top\":[2893],\"in8\":1,\"singles\":0,\"meanSize\":2893,\"perCell\":5.3086761147597645,\"ghosts\":107,\"hist\":{\"bins\":[1,2,4,8,16,32,64,128,\"more\"],\"cells\":[0,0,0,0,0,0,0,0,2893]}},\"digest\":{\"total\":{\"paid\":39401.52137756348,\"atoms\":54900.638671875,\"lipid\":7000.828369140625,\"bat\":15505.352432250977,\"heat\":22724.606185913086,\"spill\":5432.79736328125,\"meals\":20328,\"wrapm\":2352.8759765625,\"void\":15,\"orphan\":1899},\"rate\":{\"paid\":24.962406602034893,\"atoms\":36.274835833705815,\"lipid\":7.984031094274917,\"bat\":10.2335851929191,\"heat\":17.35494011661615,\"spill\":9.475154433146434,\"meals\":14.152823920276086,\"wrapm\":3.1875194663644475,\"void\":0,\"orphan\":0.3986710963458053}}}"
+    },
+    {
+      "t": 2400.000000000036,
+      "js": "return JSON.stringify(await moire.predators.clustersNow())",
+      "result": "{\"time\":2391.850000000004,\"n\":2906,\"clusters\":1,\"largest\":2906,\"top\":[2906],\"in8\":1,\"singles\":0,\"meanSize\":2906,\"perCell\":5.252580867171369,\"ghosts\":93,\"hist\":{\"bins\":[1,2,4,8,16,32,64,128,\"more\"],\"cells\":[0,0,0,0,0,0,0,0,2906]}}"
+    },
+    {
+      "t": 2400.000000000036,
+      "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})",
+      "result": "{\"t\":2399.7500000000355,\"genes\":{\"engulf\":0.34627163047225096,\"engulfSd\":0.29889395902828386,\"spare\":0.5315873836608066,\"spareSd\":0.3271588547932726,\"carriers\":0.5370561875215443,\"sparers\":0.5962772785622593,\"carrierSpare\":0.5590808729139923,\"expressed\":0.490709755256808,\"glue\":0.3492719751809721},\"now\":{\"wrapping\":86,\"digesting\":97,\"wrapped\":76,\"preyNear\":189,\"hold\":1.7636435711823508,\"armour\":0.7515184419165806},\"total\":{\"start\":153873,\"lost\":30239,\"held\":91844,\"poor\":525,\"eaten\":30161,\"kin\":1875,\"alone\":7954,\"hold\":26316374,\"area\":107597320,\"kinSum\":2827576},\"recent\":{\"meals\":140,\"kin\":0.04285714285714286,\"alone\":0.2642857142857143,\"hold\":1.2336428571428573,\"area\":3.9114714285714287,\"kinship\":0.08438571428571429},\"all\":{\"kin\":0.06216637379397235,\"alone\":0.2637180464838699,\"hold\":0.8725298895925201,\"area\":3.5674321143198173,\"kinship\":0.09374941149166142},\"clusters\":{\"time\":2391.850000000004,\"n\":2906,\"clusters\":1,\"largest\":2906,\"top\":[2906],\"in8\":1,\"singles\":0,\"meanSize\":2906,\"perCell\":5.252580867171369,\"ghosts\":93,\"hist\":{\"bins\":[1,2,4,8,16,32,64,128,\"more\"],\"cells\":[0,0,0,0,0,0,0,0,2906]}},\"digest\":{\"total\":{\"paid\":53224.097885131836,\"atoms\":74908.5693359375,\"lipid\":12348.80029296875,\"bat\":21230.62644958496,\"heat\":33370.09422302246,\"spill\":10199.98681640625,\"meals\":27772,\"wrapm\":4110.001220703125,\"void\":17,\"orphan\":2298},\"rate\":{\"paid\":25.31935424799161,\"atoms\":36.94843749991935,\"lipid\":11.254345703100434,\"bat\":8.969564819316359,\"heat\":22.601361083935043,\"spill\":5.659716796862646,\"meals\":12.599999999972496,\"wrapm\":3.367675781242649,\"void\":0,\"orphan\":0.5999999999986904}}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T12:09:01",
+  "wall_s": 744.26
+}

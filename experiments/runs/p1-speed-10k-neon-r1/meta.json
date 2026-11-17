@@ -1,0 +1,38 @@
+{
+  "name": "p1-speed-10k-neon-r1",
+  "description": "step P1 speed: default scene, 10000 cells, MAX, 60 s, neon",
+  "condition": {
+    "name": "p1-speed-10k-neon-r1",
+    "description": "step P1 speed: default scene, 10000 cells, MAX, 60 s, neon",
+    "query": {
+      "seed": 3,
+      "cells": 10000
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "snapshots": [],
+    "shots": [],
+    "evals": []
+  },
+  "url": "http://localhost:64558/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&cells=10000",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "1cedc5dd8159866c557fab7655fda3f59a88d5b7",
+  "dirty": false,
+  "started": "2026-11-17T09:03:29",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 43.88,
+  "speed_reached": 1.37,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-17T09:05:04",
+  "wall_s": 95.24
+}

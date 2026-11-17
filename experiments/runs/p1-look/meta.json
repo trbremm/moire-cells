@@ -1,0 +1,109 @@
+{
+  "name": "p1-look",
+  "description": "look: default scene, 24 predators dropped in the spot at 150 s, close-ups of wraps and phagosomes (both looks)",
+  "condition": {
+    "name": "p1-look",
+    "description": "look: default scene, 24 predators dropped in the spot at 150 s, close-ups of wraps and phagosomes (both looks)",
+    "query": {
+      "seed": 3
+    },
+    "duration": 200,
+    "sample_every": 10,
+    "stall": 120,
+    "evals": [
+      {
+        "t": 150,
+        "js": "const s = moire.light.spot(); const pts = []; for (let k = 0; k < 24; k++) { const a = 2 * Math.PI * k / 24, r = s.r * (0.25 + 0.5 * (k % 3) / 2); pts.push([s.x + r * Math.cos(a), s.y + r * Math.sin(a)]); } await moire.predators.place(pts); moire.camera.set(3, s.x, s.y); return JSON.stringify(s)"
+      },
+      {
+        "t": 176,
+        "js": "moire.control.action('harmonic'); return 'harmonic'"
+      }
+    ],
+    "shots": [
+      {
+        "t": 156,
+        "name": "n156"
+      },
+      {
+        "t": 160,
+        "name": "n160"
+      },
+      {
+        "t": 164,
+        "name": "n164"
+      },
+      {
+        "t": 168,
+        "name": "n168"
+      },
+      {
+        "t": 172,
+        "name": "n172"
+      },
+      {
+        "t": 175,
+        "name": "n175"
+      },
+      {
+        "t": 180,
+        "name": "h180"
+      },
+      {
+        "t": 186,
+        "name": "h186"
+      },
+      {
+        "t": 192,
+        "name": "h192"
+      },
+      {
+        "t": 199,
+        "name": "h199"
+      }
+    ]
+  },
+  "url": "http://localhost:53156/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "bde6104915946194de85dd4df347a4ecf76d331a",
+  "dirty": true,
+  "started": "2026-11-17T08:53:27",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 200.0,
+  "run_wall_s": 29.92,
+  "speed_reached": 6.68,
+  "samples": 21,
+  "shots": [
+    "shots/n156.png",
+    "shots/n160.png",
+    "shots/n164.png",
+    "shots/n168.png",
+    "shots/n172.png",
+    "shots/n175.png",
+    "shots/h180.png",
+    "shots/h186.png",
+    "shots/h192.png",
+    "shots/h199.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 149.99999999999812,
+      "js": "const s = moire.light.spot(); const pts = []; for (let k = 0; k < 24; k++) { const a = 2 * Math.PI * k / 24, r = s.r * (0.25 + 0.5 * (k % 3) / 2); pts.push([s.x + r * Math.cos(a), s.y + r * Math.sin(a)]); } await moire.predators.place(pts); moire.camera.set(3, s.x, s.y); return JSON.stringify(s)",
+      "result": "{\"x\":866.2975947988946,\"y\":400,\"r\":200}"
+    },
+    {
+      "t": 175.9999999999992,
+      "js": "moire.control.action('harmonic'); return 'harmonic'",
+      "result": "harmonic"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T08:54:58",
+  "wall_s": 91.48
+}

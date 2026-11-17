@@ -1,0 +1,81 @@
+{
+  "name": "p1-pilot",
+  "description": "pilot: default scene, 20 hand-made predators at 60 s, 6 min",
+  "condition": {
+    "name": "p1-pilot",
+    "description": "pilot: default scene, 20 hand-made predators at 60 s, 6 min",
+    "query": {
+      "seed": 3
+    },
+    "duration": 360,
+    "sample_every": 10,
+    "stall": 120,
+    "evals": [
+      {
+        "t": 60,
+        "js": "return await moire.predators.place(20)"
+      },
+      {
+        "t": 359,
+        "js": "return JSON.stringify(await moire.predators.clustersNow())"
+      }
+    ],
+    "shots": [
+      {
+        "t": 90
+      },
+      {
+        "t": 120,
+        "crop": [
+          440,
+          250,
+          400,
+          300
+        ],
+        "scale": 3,
+        "name": "close120"
+      },
+      {
+        "t": 360,
+        "panel": true,
+        "name": "panel"
+      }
+    ]
+  },
+  "url": "http://localhost:63352/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "bde6104915946194de85dd4df347a4ecf76d331a",
+  "dirty": true,
+  "started": "2026-11-17T08:51:04",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 360.0,
+  "run_wall_s": 54.37,
+  "speed_reached": 6.62,
+  "samples": 37,
+  "shots": [
+    "shots/t90.png",
+    "shots/close120.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 60.00000000000067,
+      "js": "return await moire.predators.place(20)",
+      "result": 20
+    },
+    {
+      "t": 358.9999999999959,
+      "js": "return JSON.stringify(await moire.predators.clustersNow())",
+      "result": "{\"time\":346.3833333333301,\"n\":569,\"clusters\":20,\"largest\":539,\"top\":[539,4,3,3,2,2,2,2],\"in8\":0.9472759226713533,\"singles\":0.0210896309314587,\"meanSize\":510.69068541300527,\"perCell\":3.8242530755711774,\"ghosts\":19,\"hist\":{\"bins\":[1,2,4,8,16,32,64,128,\"more\"],\"cells\":[12,8,10,0,0,0,0,0,539]}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T08:52:53",
+  "wall_s": 109.07
+}

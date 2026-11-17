@@ -1,0 +1,302 @@
+{
+  "name": "p1-check",
+  "description": "step P1 books check: 480 s at MAX (seed 5), the whole dish lit; springs; N, 40 predators placed, a wash, resizes (150: with G at the same instant, the old leak; 220); G with wild founders (predation genes wild); engulf null, kin null, engulfing off and on, easy engulfing (many meals) with the membrane chemistry off, lipids off and on; the harmonic look and the mark; G and N with wild founders, predators placed; a snapshot saved and loaded while meals are digested (360 s); atoms and charge rounding must stay 0",
+  "condition": {
+    "name": "p1-check",
+    "description": "step P1 books check: 480 s at MAX (seed 5), the whole dish lit; springs; N, 40 predators placed, a wash, resizes (150: with G at the same instant, the old leak; 220); G with wild founders (predation genes wild); engulf null, kin null, engulfing off and on, easy engulfing (many meals) with the membrane chemistry off, lipids off and on; the harmonic look and the mark; G and N with wild founders, predators placed; a snapshot saved and loaded while meals are digested (360 s); atoms and charge rounding must stay 0",
+    "query": {
+      "seed": 5,
+      "light": "full"
+    },
+    "duration": 480,
+    "sample_every": 10,
+    "stall": 150,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 205
+      },
+      {
+        "t": 245,
+        "name": "harm"
+      },
+      {
+        "t": 480,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "evals": [
+      {
+        "t": 5,
+        "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.35, 'soap', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.5, 'oil', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.3, 'linker', 120); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.3, 'ions', 120); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 1e9); if (!moire.oases.started) moire.oases.start(); return moire.matter.springs.map(s => s.kind)"
+      },
+      {
+        "t": 60,
+        "js": "return moire.control.action('culture')"
+      },
+      {
+        "t": 80,
+        "js": "return await moire.predators.place(40)"
+      },
+      {
+        "t": 100,
+        "js": "return moire.control.action('wash')"
+      },
+      {
+        "t": 105,
+        "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.4, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 400); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'emulsion', 300); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.4, 'soap', 200); return 'springs again'"
+      },
+      {
+        "t": 120,
+        "js": "moire.genome.params.founderMode = 'wild'; return moire.control.action('genomes')"
+      },
+      {
+        "t": 150,
+        "js": "moire.genome.params.founderMode = 'wild'; return moire.control.action('genomes')"
+      },
+      {
+        "t": 152,
+        "js": "return await moire.predators.place(40)"
+      },
+      {
+        "t": 170,
+        "js": "moire.predators.params.null = true; return 'engulf null'"
+      },
+      {
+        "t": 180,
+        "js": "moire.predators.params.null = false; moire.predators.params.kinNull = true; return 'kin null'"
+      },
+      {
+        "t": 190,
+        "js": "moire.predators.params.kinNull = false; moire.predators.params.on = false; return 'engulfing off'"
+      },
+      {
+        "t": 200,
+        "js": "moire.predators.params.on = true; moire.predators.params.drive = 30; moire.predators.params.sizeRatio = 1.05; moire.predators.params.wrapTime = 0.8; return 'easy engulfing'"
+      },
+      {
+        "t": 215,
+        "js": "moire.membrane.params.on = false; return 'membrane chemistry off (C6c weave path)'"
+      },
+      {
+        "t": 225,
+        "js": "moire.membrane.params.on = true; moire.lipids.params.on = false; return 'lipids off'"
+      },
+      {
+        "t": 235,
+        "js": "moire.lipids.params.on = true; return 'lipids on'"
+      },
+      {
+        "t": 240,
+        "js": "moire.predators.look.mark = true; moire.control.action('harmonic'); return 'harmonic, mark'"
+      },
+      {
+        "t": 260,
+        "js": "moire.control.action('harmonic'); return 'neon'"
+      },
+      {
+        "t": 300,
+        "js": "moire.genome.params.founderMode = 'wild'; return moire.control.action('genomes')"
+      },
+      {
+        "t": 310,
+        "js": "return await moire.predators.place(60)"
+      },
+      {
+        "t": 330,
+        "js": "moire.genome.params.founderMode = 'wild'; return moire.control.action('culture')"
+      },
+      {
+        "t": 335,
+        "js": "return await moire.predators.place(60)"
+      },
+      {
+        "t": 360,
+        "js": "const C = moire.predators.census; const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { digesting: C.now.digesting, wrapping: C.now.wrapping, exact: r.exact, notes: r.notes, rounding: r.rounding }"
+      },
+      {
+        "t": 420,
+        "js": "moire.predators.params.drive = 3; moire.predators.params.sizeRatio = 1.4; moire.predators.params.wrapTime = 3; return 'defaults'"
+      }
+    ],
+    "resizes": [
+      {
+        "t": 150,
+        "size": "1000x700"
+      },
+      {
+        "t": 220,
+        "size": "1280x800"
+      }
+    ]
+  },
+  "url": "http://localhost:57896/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=5&light=full",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "bde6104915946194de85dd4df347a4ecf76d331a",
+  "dirty": true,
+  "started": "2026-11-17T08:57:39",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 480.0,
+  "run_wall_s": 79.02,
+  "speed_reached": 6.07,
+  "samples": 49,
+  "shots": [
+    "shots/t205.png",
+    "shots/harm.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 4.999999999999996,
+      "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.35, 'soap', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.5, 'oil', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.3, 'linker', 120); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.3, 'ions', 120); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 1e9); if (!moire.oases.started) moire.oases.start(); return moire.matter.springs.map(s => s.kind)",
+      "result": [
+        "light",
+        "heavy",
+        "oasis",
+        "oasis",
+        "oasis",
+        "soap",
+        "oil",
+        "linker",
+        "ions",
+        "light",
+        "heavy"
+      ]
+    },
+    {
+      "t": 60.00000000000067,
+      "js": "return moire.control.action('culture')",
+      "result": true
+    },
+    {
+      "t": 79.99999999999996,
+      "js": "return await moire.predators.place(40)",
+      "result": 40
+    },
+    {
+      "t": 99.99999999999903,
+      "js": "return moire.control.action('wash')",
+      "result": true
+    },
+    {
+      "t": 104.99999999999875,
+      "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.4, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 400); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'emulsion', 300); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.4, 'soap', 200); return 'springs again'",
+      "result": "springs again"
+    },
+    {
+      "t": 119.9999999999983,
+      "js": "moire.genome.params.founderMode = 'wild'; return moire.control.action('genomes')",
+      "result": true
+    },
+    {
+      "t": 149.9999999999994,
+      "js": "moire.genome.params.founderMode = 'wild'; return moire.control.action('genomes')",
+      "result": true
+    },
+    {
+      "t": 151.99999999999937,
+      "js": "return await moire.predators.place(40)",
+      "result": 40
+    },
+    {
+      "t": 169.99999999999935,
+      "js": "moire.predators.params.null = true; return 'engulf null'",
+      "result": "engulf null"
+    },
+    {
+      "t": 179.99999999999946,
+      "js": "moire.predators.params.null = false; moire.predators.params.kinNull = true; return 'kin null'",
+      "result": "kin null"
+    },
+    {
+      "t": 190.00000000000048,
+      "js": "moire.predators.params.kinNull = false; moire.predators.params.on = false; return 'engulfing off'",
+      "result": "engulfing off"
+    },
+    {
+      "t": 200.0000000000008,
+      "js": "moire.predators.params.on = true; moire.predators.params.drive = 30; moire.predators.params.sizeRatio = 1.05; moire.predators.params.wrapTime = 0.8; return 'easy engulfing'",
+      "result": "easy engulfing"
+    },
+    {
+      "t": 215.00000000000117,
+      "js": "moire.membrane.params.on = false; return 'membrane chemistry off (C6c weave path)'",
+      "result": "membrane chemistry off (C6c weave path)"
+    },
+    {
+      "t": 225.0000000000016,
+      "js": "moire.membrane.params.on = true; moire.lipids.params.on = false; return 'lipids off'",
+      "result": "lipids off"
+    },
+    {
+      "t": 235.00000000000205,
+      "js": "moire.lipids.params.on = true; return 'lipids on'",
+      "result": "lipids on"
+    },
+    {
+      "t": 240.00000000000176,
+      "js": "moire.predators.look.mark = true; moire.control.action('harmonic'); return 'harmonic, mark'",
+      "result": "harmonic, mark"
+    },
+    {
+      "t": 260.0000000000013,
+      "js": "moire.control.action('harmonic'); return 'neon'",
+      "result": "neon"
+    },
+    {
+      "t": 300.0000000000037,
+      "js": "moire.genome.params.founderMode = 'wild'; return moire.control.action('genomes')",
+      "result": true
+    },
+    {
+      "t": 310.0000000000029,
+      "js": "return await moire.predators.place(60)",
+      "result": 60
+    },
+    {
+      "t": 330.000000000001,
+      "js": "moire.genome.params.founderMode = 'wild'; return moire.control.action('culture')",
+      "result": true
+    },
+    {
+      "t": 335.0000000000009,
+      "js": "return await moire.predators.place(60)",
+      "result": 60
+    },
+    {
+      "t": 360.00000000000114,
+      "js": "const C = moire.predators.census; const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { digesting: C.now.digesting, wrapping: C.now.wrapping, exact: r.exact, notes: r.notes, rounding: r.rounding }",
+      "result": {
+        "digesting": 56,
+        "wrapping": 8,
+        "exact": true,
+        "notes": [],
+        "rounding": {
+          "energy": 0.051666259765625,
+          "atoms": 0,
+          "charge": 0,
+          "snapshot": {
+            "energy": 0.051666259765625,
+            "atoms": 0,
+            "charge": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 419.9999999999982,
+      "js": "moire.predators.params.drive = 3; moire.predators.params.sizeRatio = 1.4; moire.predators.params.wrapTime = 3; return 'defaults'",
+      "result": "defaults"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T08:59:59",
+  "wall_s": 139.94
+}

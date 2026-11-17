@@ -1,0 +1,198 @@
+{
+ "batch": "p1-col",
+ "runs": [
+  {
+   "name": "p1-col-on",
+   "description": "colonies preset (wild founders: every gene, also engulf, kin sparing, the network's engulf output), engulfing on, 40 min",
+   "query": {
+    "preset": "colonies"
+   },
+   "duration": 2403,
+   "sample_every": 15,
+   "stall": 150,
+   "snapshots": [
+    {
+     "t": 1200
+    },
+    {
+     "t": 2400
+    }
+   ],
+   "shots": [
+    {
+     "t": 600,
+     "view": "marker",
+     "name": "marker_t600"
+    },
+    {
+     "t": 1200,
+     "view": "marker",
+     "name": "marker_t1200"
+    },
+    {
+     "t": 1800,
+     "view": "marker",
+     "name": "marker_t1800"
+    },
+    {
+     "t": 2397,
+     "view": "marker",
+     "name": "marker_end"
+    },
+    {
+     "t": 2398,
+     "name": "neon_end"
+    },
+    {
+     "t": 2399,
+     "panel": true,
+     "name": "panel"
+    },
+    {
+     "t": 2402,
+     "name": "harm_end"
+    }
+   ],
+   "evals": [
+    {
+     "t": 300,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 600,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 1200,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 1800,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 2400,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 600,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 1200,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 1800,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 2400,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 2401,
+     "js": "moire.control.action('harmonic'); return 'harmonic'"
+    }
+   ]
+  },
+  {
+   "name": "p1-col-null",
+   "description": "colonies preset, engulfing NEUTRAL CONTROL (?engulfnull=1: genes drift, nothing is eaten), 40 min",
+   "query": {
+    "preset": "colonies",
+    "engulfnull": 1
+   },
+   "duration": 2403,
+   "sample_every": 15,
+   "stall": 150,
+   "snapshots": [
+    {
+     "t": 2400
+    }
+   ],
+   "shots": [
+    {
+     "t": 600,
+     "view": "marker",
+     "name": "marker_t600"
+    },
+    {
+     "t": 1200,
+     "view": "marker",
+     "name": "marker_t1200"
+    },
+    {
+     "t": 1800,
+     "view": "marker",
+     "name": "marker_t1800"
+    },
+    {
+     "t": 2397,
+     "view": "marker",
+     "name": "marker_end"
+    },
+    {
+     "t": 2398,
+     "name": "neon_end"
+    },
+    {
+     "t": 2399,
+     "panel": true,
+     "name": "panel"
+    },
+    {
+     "t": 2402,
+     "name": "harm_end"
+    }
+   ],
+   "evals": [
+    {
+     "t": 300,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 600,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 1200,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 1800,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 2400,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 600,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 1200,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 1800,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 2400,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 2401,
+     "js": "moire.control.action('harmonic'); return 'harmonic'"
+    }
+   ]
+  }
+ ],
+ "seeds": [
+  3,
+  7,
+  11
+ ]
+}

@@ -152,7 +152,7 @@ function patchConsts(code) {
   return code;
 }
 
-export async function loadShader(device, url, { prefix = '', prefixName = 'prefix', prefixes = null } = {}) {
+export async function loadShader(device, url, { prefix = '', prefixName = 'prefix', prefixes = null, suffix = null } = {}) {
   const res = await fetch(url, { cache: 'no-cache' });
   if (!res.ok) throw new Error(`Could not load shader ${url}: HTTP ${res.status}`);
   const parts = prefixes || (prefix ? [{ name: prefixName, text: prefix }] : []);
@@ -161,12 +161,17 @@ export async function loadShader(device, url, { prefix = '', prefixName = 'prefi
   let line = 1;
   for (const p of parts) { spans.push({ name: p.name, from: line }); line += p.text.split('\n').length - 1; }
   const bodyFrom = line;
-  const code = patchConsts(parts.map((p) => p.text).join('') + (await res.text()));
+  // step C15a: a suffix, { name, text }: a file appended after the body (carbon.wgsl after matter.wgsl)
+  let body = await res.text();
+  let sufFrom = Infinity;
+  if (suffix) { body = body.replace(/\s*$/, '\n\n'); sufFrom = bodyFrom + body.split('\n').length - 1; body += suffix.text; }
+  const code = patchConsts(parts.map((p) => p.text).join('') + body);
   const module = device.createShaderModule({ label: url, code });
   const ci = await module.getCompilationInfo();
   const errors = ci.messages.filter((m) => m.type === 'error');
   // "file:line" of a message, in a prefix or in the file itself
   const where = (m) => {
+    if (m.lineNum >= sufFrom) return `${suffix.name}:${m.lineNum - sufFrom + 1}:${m.linePos}`;
     if (m.lineNum >= bodyFrom) return `${url}:${m.lineNum - bodyFrom + 1}:${m.linePos}`;
     let sp = spans[0];
     for (const s of spans) if (m.lineNum >= s.from) sp = s;

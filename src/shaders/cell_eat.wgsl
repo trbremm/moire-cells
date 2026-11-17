@@ -236,6 +236,10 @@ struct EatP {
                            //     neighbour closer than press x the two radii); w kinK (per s, at full conductance, per R of shared wall)
                            // [1] x kinCap (the most a pair moves per tick, share of the source); y the smell's trace weight at no trace
                            //     inside (smellW units: traceWorth x the richest fuel's); z w spare
+  // ---- step P1, predators (src/predators.js) ----
+  p1: array<vec4f, 2>,     // [0] x spare; y the share of the host's bilayer that wraps the meal (x the prey's perimeter over the host's);
+                           //     z the share of the meal's battery that goes to the host's (the rest heat); w the digestion's time (s)
+                           // [1] spare
 };
 // ---- step C12g, MEMBRANES MODULATE ION FLOW (src/ions.js). The lipid BILAYER blocks free ions (charged atoms: g t G T and the excited
 // g* t*), derived from its make-up: per side the intact share (its integrity: soap + the oil between its tails over what the thickness
@@ -607,6 +611,17 @@ const T1C_FUEL: u32 = 0u;      // fuel shared through kin channels
 const T1C_LINK: u32 = 1u;      // free linkers (l, L) shared
 const T1C_TRACE: u32 = 2u;     // trace shared
 const T1C_PAIRS: u32 = 3u;     // pairs that moved anything (per tick)
+// step P1, predators: counters 4..15 of the same block (src/predators.js reads them)
+const P1C_PAID: u32 = 4u;      // heat counts the batteries paid for engulfing (the step's Cell.engPay)
+const P1C_ATOMS: u32 = 5u;     // atom counts digested from meals into stocks (with the meals' membrane weave and pigment as atoms)
+const P1C_LIPID: u32 = 6u;     // lipid molecules (soap, oil, crust) from meals into the hosts' membranes
+const P1C_BAT: u32 = 7u;       // heat counts from meals' batteries into the hosts' batteries
+const P1C_HEAT: u32 = 8u;      // ... the rest of the meals' batteries, as heat
+const P1C_SPILL: u32 = 9u;     // atom counts left over at a digestion's end (no room in the host), spilled into the dish
+const P1C_MEALS: u32 = 10u;    // digestions finished
+const P1C_WRAPM: u32 = 11u;    // membrane molecules (or weave linkers) the hosts gave the phagosomes at the catch
+const P1C_VOID: u32 = 12u;     // digestions that found no meal (another predator caught it first)
+const P1C_ORPHAN: u32 = 13u;   // ghosts whose host died or burst: spilled into the dish
 var<workgroup> wt1: array<atomic<i32>, 16>;
 // the snapshot (LG_T1 + 16 q + slot, the ledger pass): T1Z_*
 const T1Z_N: u32 = 0u;         // live cells
@@ -921,7 +936,21 @@ fn dump(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_inde
   let i = id.x;
   if (i < S.count) {
     let c = cells[i];
-    if ((c.flags & CELL_BORN) != 0u) { give_back(i, c.dead, S.matterCur, wid.x & 63u); }
+    // step P1: a GHOST (a dead slot holding a meal) keeps its stock while its host digests it; one whose host no longer does (the host
+    // died, burst, or another predator got the meal) spills it at its place, as any death does
+    if (by_mode(c.engBy) == BY_GHOST && (c.flags & CELL_ALIVE) == 0u) {
+      let h = by_partner(c.engBy);
+      var keep = false;
+      if (h < S.count && h != i) {
+        let ch = cells[h];
+        keep = (ch.flags & CELL_ALIVE) != 0u && cell_burst(ch.flags) == 0u && eng_mode(ch.eng) == ENG_DIGEST && eng_partner(ch.eng) == i;
+      }
+      if (!keep) {
+        give_back(i, c.pos, S.matterCur, wid.x & 63u);
+        cells[i].engBy = 0u;
+        atomicAdd(&wt1[P1C_ORPHAN], 1);
+      }
+    } else if ((c.flags & CELL_BORN) != 0u) { give_back(i, c.dead, S.matterCur, wid.x & 63u); }
   }
   flush_counters(li, wid.x & 63u);
 }
@@ -1619,6 +1648,122 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     let cap = EP.capR2 * areaR2 * ATOM_SCALE;                // stock capacity, atom counts
     let rs = pcg(c.seed ^ pcg(S.tick * 0x9e3779b9u + 0x51ed27u));
     let fo = i * SW;
+
+    // ---- step P1, PREDATORS (src/predators.js): what this tick's engulfing costs (the step's Cell.engPay), from the battery as heat; and
+    // DIGESTION: a host's meal is the stock of its GHOST slot (the engulfed cell's, cell_step.wgsl); each tick a share of what is left moves
+    // into the host (so it is gone when the digestion's progress is full): atoms and fuels into the stock (as far as the host has room), the
+    // meal's membrane weave and pigment as their atoms, its lipids into the host's own membrane (the phagosome's membrane recycled), its
+    // battery a share EP.p1[0].z into the host's battery and the rest heat; at the end what found no room spills into the dish. At the catch
+    // (ENG_FRESH) a share of the host's own bilayer (or its C6c weave) goes round the meal (wrapping costs membrane; it comes back as the
+    // phagosome is digested). Every count leaves one word and arrives in another: the books stay exact
+    let ep = clamp(c.engPay, 0, bat);
+    if (ep > 0) { bat -= ep; heat += ep; atomicAdd(&wt1[P1C_PAID], ep); }
+    if (eng_mode(c.eng) == ENG_DIGEST) {
+      let g = eng_partner(c.eng);
+      var valid = g < S.count && g != i;
+      if (valid) {
+        let cg = cells[g];
+        valid = (cg.flags & CELL_ALIVE) == 0u && by_mode(cg.engBy) == BY_GHOST && by_partner(cg.engBy) == i;
+      }
+      if (!valid) {
+        cells[i].eng = 0u;
+        atomicAdd(&wt1[P1C_VOID], 1);
+      } else {
+        let go = g * SW;
+        cells[g].pos = c.pos;   // (the meal rides inside its host: if the host dies it spills here)
+        if ((c.eng & ENG_FRESH) != 0u) {
+          let wsh = clamp(EP.p1[0].y * cells[g].r / max(c.r, 1e-3), 0.0, 1.0);
+          var wm = 0;
+          if ((mb_flags() & MBF_ON) != 0u && (lp_flags() & LPF_ON) != 0u) {
+            for (var q = 0u; q < 3u; q++) {
+              for (var k = 0u; k < 6u; k++) {
+                let w = lpw(q, k);
+                let n = i32(floor(f32(atomicLoad(&stock[o + w])) * wsh));
+                if (n > 0) { atomicSub(&stock[o + w], n); atomicAdd(&stock[go + w], n); wm += n; }
+              }
+            }
+          } else if ((mb_flags() & MBF_ON) != 0u) {
+            for (var k = 0u; k < 12u; k++) {
+              let w = MB_L0 + k;
+              let n = i32(floor(f32(atomicLoad(&stock[o + w])) * wsh));
+              if (n > 0) { atomicSub(&stock[o + w], n); atomicAdd(&stock[go + w], n); wm += n; }
+            }
+          }
+          if (wm > 0) { atomicAdd(&wt1[P1C_WRAPM], wm); }
+          cells[i].eng = c.eng & ~ENG_FRESH;
+        }
+        let fin = eng_progN(c.eng) >= ENG_FULL;
+        let dsh = select(clamp(EP.dt / max((1.0 - eng_prog(c.eng)) * EP.p1[0].w + EP.dt, EP.dt), 0.0, 1.0), 1.0, fin);
+        var fillA = 3.0 * f32(max(atomicLoad(&stock[o + W_PIG]), 0));
+        for (var j = 0u; j < NCELL; j++) { let k = cell_ch(j); fillA += f32(max(m[k], 0)) * ep_f(EP.natoms, k); }
+        var roomA = max(cap - fillA, 0.0);
+        var movedA = 0;
+        let rr = pcg(rs + 0x7f4a7c15u);
+        for (var j = 0u; j < NCELL; j++) {
+          let k = cell_ch(j);
+          let w = stock_w(k);
+          let mv = atomicLoad(&stock[go + w]);
+          if (mv <= 0) { continue; }
+          let na = max(ep_f(EP.natoms, k), 1.0);
+          let n = min(min(mv, i32(floor(f32(mv) * dsh + u01(pcg(rr + j))))), i32(floor(roomA / na)));
+          if (n <= 0) { continue; }
+          atomicSub(&stock[go + w], n);
+          m[k] += n;
+          roomA -= f32(n) * na;
+          movedA += n * i32(na);
+        }
+        for (var k = 0u; k < 12u; k++) {
+          let w = MB_L0 + k;
+          let mv = atomicLoad(&stock[go + w]);
+          if (mv <= 0) { continue; }
+          let n = min(min(mv, i32(floor(f32(mv) * dsh + u01(pcg(rr + 40u + k))))), i32(floor(roomA)));
+          if (n <= 0) { continue; }
+          atomicSub(&stock[go + w], n);
+          m[select(MB_CH_H, MB_CH_L, k < 6u)] += n;
+          roomA -= f32(n);
+          movedA += n;
+        }
+        let pv = atomicLoad(&stock[go + W_PIG]);
+        if (pv > 0) {
+          let n = min(min(pv, i32(floor(f32(pv) * dsh + u01(pcg(rr + 99u))))), i32(floor(roomA / 3.0)));
+          if (n > 0) { atomicSub(&stock[go + W_PIG], n); m[N1_TRACE] += n; m[MB_CH_L] += 2 * n; roomA -= 3.0 * f32(n); movedA += 3 * n; }
+        }
+        if (movedA > 0) { atomicAdd(&wt1[P1C_ATOMS], movedA); }
+        var movedL = 0;
+        for (var w = 0u; w < 30u; w++) {
+          let mv = atomicLoad(&stock[go + LP0 + w]);
+          if (mv <= 0) { continue; }
+          let n = min(mv, i32(floor(f32(mv) * dsh + u01(pcg(rr + 60u + w)))));
+          if (n <= 0) { continue; }
+          atomicSub(&stock[go + LP0 + w], n);
+          atomicAdd(&stock[o + LP0 + w], n);
+          movedL += n;
+        }
+        if (movedL > 0) { atomicAdd(&wt1[P1C_LIPID], movedL); }
+        let gbt = atomicLoad(&stock[go + BAT]);
+        if (gbt > 0) {
+          let n = min(gbt, i32(floor(f32(gbt) * dsh + u01(pcg(rr + 98u)))));
+          if (n > 0) {
+            atomicSub(&stock[go + BAT], n);
+            let toB = clamp(i32(floor(f32(n) * clamp(EP.p1[0].z, 0.0, 1.0))), 0, max(batMax - bat, 0));
+            bat += toB;
+            heat += n - toB;
+            atomicAdd(&wt1[P1C_BAT], toB);
+            atomicAdd(&wt1[P1C_HEAT], n - toB);
+          }
+        }
+        if (fin) {
+          // the end: what found no room spills into the dish here (its battery's rest and the voltage's energy as heat); the slot is free
+          var left = 0;
+          for (var j = 0u; j < NCELL; j++) { let k = cell_ch(j); left += max(atomicLoad(&stock[go + stock_w(k)]), 0) * i32(ep_f(EP.natoms, k)); }
+          if (left > 0) { atomicAdd(&wt1[P1C_SPILL], left); }
+          give_back(g, c.pos, cur, slot);
+          cells[g].engBy = 0u;
+          cells[i].eng = 0u;
+          atomicAdd(&wt1[P1C_MEALS], 1);
+        }
+      }
+    }
 
     // ---- step C7, PUMPS (planned in the plan dispatch, flux 16..29): first what this cell's pumps move with its touching
     // neighbours (its own requests), then what theirs move with it (their requests, reversed: the same numbers, so every

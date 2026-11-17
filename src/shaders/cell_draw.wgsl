@@ -120,7 +120,39 @@ struct Draw {
                     // w: the harmonic look's reporter channel at full expression
   grnInk: vec4f,    // the reporter's ink (neon: GFP-like green)
   grnInkH: vec4f,   // ... in the harmonic look (an mCherry-like red: green is the membranes' channel there)
+  // ---- step P1: the predators' look (src/predators.js writeDraw) ----
+  p1: vec4f,        // x: 1 = draw the wraps (the wrapper's membrane round its prey) and the phagosomes (the meal's ghost inside its host);
+                    // y: the arms' reach outside the prey (share of its radius); z: the ghost's brightness (neon); w: 1 = the machinery's
+                    // mark of engulf-capable cells (a small dark-red mouth)
+  p1Ink: vec4f,     // the harmonic look's phagosome glow (rgb, violet); w the phagosome ring's brightness
 };
+// step P1: a neighbour WRAPPING this cell (Cell.engBy): the wrapper's membrane as a tube round this cell, from the wrapper's side as far round
+// as the wrap has gone (at the cell's radius x (1 + arm / 2)); returns (coverage, the tube's centre-line profile 0..1); p the pixel's offset
+// from the centre (CSS px)
+fn wrap_arm(c: Cell, p: vec2f, aa: f32, tw: f32) -> vec2f {
+  if (D.p1.x < 0.5 || by_mode(c.engBy) != BY_WRAPPED) { return vec2f(0.0); }
+  let w = cells[by_partner(c.engBy)];
+  let pr = by_prog(c.engBy);
+  let to = w.pos - c.pos;
+  var da = atan2(p.y, p.x) - atan2(to.y, to.x);
+  da -= TAU * round(da / TAU);
+  let rr = c.r * (1.0 + 0.5 * D.p1.y);
+  let span = 3.14159265 * (0.12 + 0.88 * pr);       // the arms' half-angle round the prey
+  let dr = length(p) - rr;
+  let e = max((abs(da) - span) * rr, 0.0);           // past an arm's end: a rounded cap
+  let dist = length(vec2f(e, dr));
+  let cov = cover(0.5 * tw, dist, aa);
+  return vec2f(cov, clamp(1.0 - dist / max(0.5 * tw, 1e-3), 0.0, 1.0));
+}
+// step P1: the PHAGOSOME of a host digesting a meal (Cell.eng): the meal's centre (offset from the host's, CSS px) and radius, its progress
+fn phago(c: Cell) -> vec4f {
+  if (D.p1.x < 0.5 || eng_mode(c.eng) != ENG_DIGEST) { return vec4f(0.0, 0.0, 0.0, -1.0); }
+  let g = cells[min(eng_partner(c.eng), arrayLength(&cells) - 1u)];
+  let pr = eng_prog(c.eng);
+  let a = f32(g.seed & 1023u) / 1024.0 * TAU;
+  let rg = min(g.r * mix(0.8, 0.35, pr), 0.55 * c.r);
+  return vec4f(0.22 * c.r * cos(a), 0.22 * c.r * sin(a), rg, pr);
+}
 // step T1a: the self marker as a colour (Brainbow-like lineage tracing): its angle sets the hue round the colour wheel (close relatives,
 // close hues), its period the brightness (fine stripes paler), saturation w
 fn marker_colour(g: Bio, sat: f32) -> vec3f {
@@ -269,14 +301,14 @@ fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VSOut
     o.tm0 = vec4f(tm[0], tm[1], tm[2], tm[3]);
     o.tm1 = vec4f(tm[4], tm[5], 0.0, 0.0);
     o.hh1 = vec4f(h[4], h[5], min(D.hexDraw.x * c.r, 0.8 * max(hmin, 0.0)), 1.0);
-    let l = corner[vi] * (rmax + 1.5 / D.dpr);
+    let l = corner[vi] * (rmax + 1.5 / D.dpr + select(0.0, (0.5 * D.p1.y + 0.25) * c.r + D.neon.y, by_mode(c.engBy) == BY_WRAPPED && D.p1.x > 0.5));   // (step P1: the arms)
     let w = c.pos + l;
     o.pos = vec4f((w.x - D.cam.x) / D.view.x * 2.0 - 1.0, 1.0 - (w.y - D.cam.y) / D.view.y * 2.0, 0.0, 1.0);
     o.local = l;
     let F = cell_F(c);                             // its inverse: [[fd, -fb], [-fb, fa]]
     o.lp = vec2f(F.z * l.x - F.y * l.y, F.x * l.y - F.y * l.x);
   } else {
-    let half = c.r + 1.5 / D.dpr;                  // room for the anti-aliased edge
+    let half = c.r + 1.5 / D.dpr + select(0.0, (0.5 * D.p1.y + 0.25) * c.r + D.neon.y, by_mode(c.engBy) == BY_WRAPPED && D.p1.x > 0.5);   // room for the anti-aliased edge (step P1: and the arms)
     let l = corner[vi] * half;
     let F = cell_F(c);
     let w = c.pos + vec2f(F.x * l.x + F.y * l.y, F.y * l.x + F.z * l.y);
@@ -344,7 +376,17 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   let dd = hex_dist(lp, s, lat.x + 1.5707963);
   let aad = max(fwidth(dd), 0.35 / D.dpr);       // derivatives before any discard
   let disc = cover_in(ein, aa);
-  if (disc <= 0.0) { discard; }
+  // step P1: a neighbour wrapping this cell: its membrane stretched round it, a tube in the wrapper's colour (white-hot along its middle)
+  let armV = wrap_arm(c, select(lp, in.local, in.hh1.w > 0.5), aa, max(D.neon.y, 0.8 / D.dpr));
+  var armRgb = vec3f(0.0);
+  if (armV.x > 0.0) {
+    let wc = cells[by_partner(c.engBy)];
+    armRgb = cell_colour(wc.kind) * max(D.line, 0.8);
+    if (D.neon.x > 0.5) { armRgb = mix(armRgb, vec3f(1.0), 0.55 * D.neon.z * armV.y * armV.y); }
+    armRgb *= hum_bright(wc, by_partner(c.engBy));
+  }
+  if (disc <= 0.0 && armV.x <= 0.0) { discard; }
+  if (disc <= 0.0) { return vec4f(armRgb * armV.x, armV.x); }
   var col = select(cell_colour(c.kind), key_colour(c), D.mode > 0.5);
   // step C6: the genome's engines (for the parts and the strategy view)
   let g = bio[in.id];
@@ -543,6 +585,33 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       partA = max(partA, pa);
     }
   }
+  // step P1: the PHAGOSOME of a meal being digested: the prey's ghost (dim, in its own colour, shrinking and fading as it is digested), its own
+  // faint outline, and a bright ring round it (the phagosome's membrane, the host's); and the machinery's mark of an engulf-capable cell
+  var phA = 0.0;
+  let ph = phago(c);
+  if (ph.w >= 0.0) {
+    let gc = cells[min(eng_partner(c.eng), arrayLength(&cells) - 1u)];
+    let dg = length(pw - ph.xy);
+    let fade = (1.0 - ph.w);
+    let gin = cover(ph.z, dg, aa);
+    let gcol = cell_colour(gc.kind);
+    rgb = mix(rgb, gcol * D.p1.z * (0.25 + 0.75 * fade) * fade, gin * 0.85);
+    let ow = max(0.6 * lw, 0.6 / D.dpr);
+    let gl = cover(0.5 * ow, abs(dg - 0.78 * ph.z), aa) * fade;
+    rgb = mix(rgb, gcol * D.p1.z * 1.2, gl);
+    let rw = max(0.8 * lw, 0.7 / D.dpr);
+    let rg = cover(0.5 * rw, abs(dg - ph.z - 0.6 * rw), aa);
+    var rc = mix(col, vec3f(1.0), 0.35) * D.p1Ink.w * (0.55 + 0.45 * fade);
+    if (neon) { rc = mix(rc, vec3f(1.0), 0.4 * D.neon.z * clamp(1.0 - abs(dg - ph.z - 0.6 * rw) / max(0.5 * rw, 1e-3), 0.0, 1.0)); }
+    rgb = mix(rgb, rc, rg);
+    phA = max(max(gin * 0.85, gl), rg);
+  }
+  if (D.p1.w > 0.5 && g.kin.z >= 0.25 && c.r * D.dpr > 4.0) {
+    let mp = pw - vec2f(0.0, -0.5 * c.r);
+    let mo = cover(max(0.12 * c.r, 0.6 / D.dpr), length(vec2f(mp.x, 1.6 * mp.y)), aa);
+    rgb = mix(rgb, vec3f(0.45, 0.0, 0.05), mo);
+    phA = max(phA, mo);
+  }
   var lineCol = select(col * D.line, D.blue.rgb, conv);
   // step C6d: each side's tube tinted toward the + ink (rose) or the - ink (blue) by its charge's difference from the even
   // share (a side's share of the dipole: about |p| / 2.6), slightly (the tube's white-hot centre stays)
@@ -737,9 +806,9 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   rgb *= 1.0 - fade;
   // step C6n: the hum (1 when it is off or the look is flat)
   rgb *= hum_bright(c, in.id);
-  let a = (1.0 - 0.6 * fade) * disc * mix(D.fillA, 1.0, max(max(max(max(max(max(max(max(max(ring, ring2), dot * (1.0 - clearA)), mark), bar), hnd), coreA), partA), notch), rimA));
-  // rgb is the colour as seen; blend premultiplied (one, one-minus-src-alpha)
-  return vec4f(rgb * a, a);
+  let a = (1.0 - 0.6 * fade) * disc * mix(D.fillA, 1.0, max(max(max(max(max(max(max(max(max(max(ring, ring2), dot * (1.0 - clearA)), mark), bar), hnd), coreA), partA), notch), rimA), phA));
+  // rgb is the colour as seen; blend premultiplied (one, one-minus-src-alpha) (step P1: a wrapper's arm over it)
+  return vec4f(armRgb * armV.x + rgb * a * (1.0 - armV.x), armV.x + a * (1.0 - armV.x));
 }
 
 // ======================================================================================================================
@@ -782,7 +851,11 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
   if (in.hh1.w > 0.5) { ein = hex_inside(in.local, in) - D.harm4.y * min(D.hexDraw.y, 0.08 * c.r); }
   let aa = max(fwidth(ein), 0.35 / D.dpr);
   let disc = cover_in(ein, aa);
-  if (disc <= 0.0) { discard; }
+  // step P1: a neighbour wrapping this cell: its membrane round it as a green rim (an interface), added
+  let armV = wrap_arm(c, select(lp, in.local, in.hh1.w > 0.5), aa, clamp(D.harm.z, 0.5 / D.dpr, 0.3 * c.r));
+  let armRgb = D.hInk[0].rgb * D.harm.x * armV.x;
+  if (disc <= 0.0 && armV.x <= 0.0) { discard; }
+  if (disc <= 0.0) { return vec4f(armRgb, 0.0); }
   let g = bio[in.id];
   let G = D.hInk[0].rgb;
   let O = D.hInk[1].rgb;
@@ -881,10 +954,22 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
     let rc = max(0.4 * c.r, 0.8);
     rgb += D.grnInkH.rgb * D.grn.w * xr * (exp(-d * d / (rc * rc)) + 0.18) * inner;
   }
+  // step P1: the PHAGOSOME: a dark ring round the meal (a vacuole: no signal) with a violet glow inside it (the meal's metabolism, digested)
+  // fading as the meal goes, and a faint green rim (its membrane)
+  let ph = phago(c);
+  if (ph.w >= 0.0) {
+    let dg = length(pw - ph.xy);
+    let fd = 1.0 - ph.w;
+    let rw = max(0.18 * ph.z, 0.7 / D.dpr);
+    let ringD = cover(rw, abs(dg - ph.z), aa);
+    rgb *= 1.0 - 0.85 * ringD;
+    rgb += D.p1Ink.rgb * (0.9 * fd * fd) * exp(-dg * dg / max(0.5 * ph.z * ph.z, 0.5)) * inner;
+    rgb += G * 0.4 * D.harm.x * cover(0.5 * lw, abs(dg - ph.z - rw), aa) * (0.4 + 0.6 * fd);
+  }
   // a starving cell (division mode) fades out as its starvation time runs down
   let fade = D.div.z * smoothstep(0.0, 1.0, g.env.x * D.div.w);
   rgb *= 1.0 - fade;
   // premultiplied: the inside dark and nearly opaque, every light ADDED (alpha 0 at the rim and the wall)
   let a = disc * inner * D.harm2.x * (1.0 - 0.6 * fade);
-  return vec4f(rgb * disc, a);
+  return vec4f(rgb * disc + armRgb, a);
 }

@@ -29,7 +29,9 @@
 //          The overall stickiness a0 is the adhesion gene (body.x)
 //   mark   step T1a, the SELF MARKER (src/kin.js): x its angle (rad), y its period (ln of the stripe spacing in R), z its phase (rad);
 //          w the DISPLAY gene (0..1); no other effect: it drifts at every birth (a molecular clock) and is compared at contacts
-//   kin    step T1a: x the KIN CHANNELS gene (0..1), y the TOLERANCE (0..1); z w spare
+//   kin    step T1a: x the KIN CHANNELS gene (0..1), y the TOLERANCE (0..1); step P1: z the ENGULF gene (0..1), w the KIN SPARING gene
+//          (0..1) (src/predators.js; founders 0, wild founders anywhere; the gene network's 17th output, ENGULF, has its gain and regulator
+//          in gm.z, gm.w)
 //   gx..gm step T1b, the GENE REGULATORY NETWORK (src/grn.js, cell_grn.wgsl), words 84..155: gx[2] (84..91) the 8 regulators' EXPRESSION
 //          (state: inherited, not mutated), gb[2] (92..99) their biases, gw[6] (100..123) the input weights (regulator i's input k at 3 i + k),
 //          gi[2] (124..131) the input codes (a + 32 b + 1024 c; a source 0 none, 1..8 a regulator, 9..22 a sense), gu[4] (132..147) the 16
@@ -283,7 +285,16 @@ export function blankGenes(g, o = 0) {
   g[o + 73] = 1; g[o + 74] = 0; g[o + 75] = 0;                                        // push 1, stretch tolerance 0, ion channels 0
   g[o + 80] = 0;                                                                      // no kin channels
 }
-export const WILD_GROUPS = ['body', 'membrane', 'pumps', 'walls', 'lipids', 'fields', 'gates', 'kin', 'grn'];
+export const WILD_GROUPS = ['body', 'membrane', 'pumps', 'walls', 'lipids', 'fields', 'gates', 'kin', 'grn', 'engulf'];
+// step P1: WILD founders' predation genes (group 'engulf'), from their own random stream (so a seed's other wild genes stay as in step T1b):
+// the ENGULF gene and the KIN SPARING gene anywhere in 0..1, and the gene network's 17th output (ENGULF) four times in ten from a random
+// regulator at a gain in -3..3 (only with the group 'grn' too)
+export const BIO_P1 = 82;         // step P1: the engulf gene's word (Bio.kin.z; kin sparing at 83)
+export function wildP1(g, rng, o = 0, groups = WILD_GROUPS) {
+  const e = U(rng, 0, 1), sp = U(rng, 0, 1), on = rng() < 0.4, r = Math.min(7, Math.floor(rng() * 8)), u = U(rng, -3, 3);
+  if (groups.includes('engulf')) { g[o + 82] = e; g[o + 83] = sp; }
+  if (groups.includes('engulf') && groups.includes('grn')) { g[o + BIO_GRN + 70] = on ? u : 0; g[o + BIO_GRN + 71] = on ? r : 0; }
+}
 export function wildGenes(g, rng, o = 0, groups = WILD_GROUPS) {
   // (every group draws its numbers whether it is kept or not, so leaving a group out does not change the others' draws)
   const on = (k) => groups.includes(k);
@@ -337,6 +348,7 @@ export class Genome {
     this.brng = makeRng(this.seed ^ 0x62736e67);   // the founders' field-B sign (after the C12g + N1 merge): its own stream
     this.krng = makeRng(this.seed ^ 0x6b696e31);   // step T1a: the marker and kin genes' own stream
     this.xrng = makeRng(this.seed ^ 0x77696c64);   // step T1a: the wild founders' own stream
+    this.erng = makeRng(this.seed ^ 0x656e6731);   // step P1: the wild founders' predation genes' own stream
     this.founders = [];
     // live-tunable (moire.genome.params); the rule switches are keys
     this.params = {
@@ -402,7 +414,7 @@ export class Genome {
     for (const g of list) {
       t1Genes(g, this.krng);
       if (mode === 'blank') blankGenes(g);
-      else if (mode === 'wild') wildGenes(g, this.xrng, 0, this.params.wildGroups);
+      else if (mode === 'wild') { wildGenes(g, this.xrng, 0, this.params.wildGroups); wildP1(g, this.erng, 0, this.params.wildGroups); }
     }
     // step T1b: wild founders' markers turned a golden angle apart (no random number drawn), so in the lineage view any few surviving
     // founders show clearly different hues (their markers are strangers either way)
@@ -465,3 +477,26 @@ export function founderGenome(strategy, rng = Math.random, founder = 0, bSign = 
   return g;
 }
 export const HABITS = ['burn', 'both', 'pigments', 'other'];
+
+/**
+ * Step P1: a HAND-MADE PREDATOR (the add-cell tool's founder "predator", moire.predators.genome()): a big cell (size gene at its top, 1.25)
+ * with the engulf gene high and kin sparing as asked (0: a cannibal), little glue (it sticks to nothing it would eat), crawling a little more,
+ * and engines that live on what cells hold: bonding free atoms (g + t -> gt), breathing (t + gT -> gt + T) and a fermenter (G + gT -> GT + g).
+ * opts: { engulf (1), spare (0), size (1.25), rng }
+ */
+export function predatorGenome(opts = {}) {
+  const rng = opts.rng || Math.random;
+  const g = founderGenome('burn', rng, opts.founder ?? 900);
+  for (let k = 0; k < 3; k++) slot(g, k, E('g + t → gt'), 0, 0);
+  if (ELECTRONS) {
+    slot(g, 0, E('g + t → gt'), 2, 0);
+    slot(g, 1, E('t + gT → gt + T'), 2, 0);
+    slot(g, 2, E('G + gT → GT + g'), 1, 0);
+  }
+  g[16] = 0.15;                                   // little glue
+  g[17] = opts.size ?? 1.25;                      // big (the size gene's top)
+  g[18] = 1.6;                                    // crawls a little more
+  g[82] = Math.max(0, Math.min(1, opts.engulf ?? 1));
+  g[83] = Math.max(0, Math.min(1, opts.spare ?? 0));
+  return g;
+}

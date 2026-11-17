@@ -45,7 +45,7 @@ const GF_KINW: u32 = 4u;     // ... weighted by kinship as the gene says (else e
 const GF_MUT: u32 = 8u;      // the network mutates at births
 
 // the sources an input can read (its code): 0 none, 1..8 the regulators, 9 + GRN_S_* the senses
-const GRN_NSRC: u32 = 23u;
+const GRN_NSRC: u32 = 25u;        // (23 until step P1's two senses)
 const GRN_S_CONTACT: u32 = 0u;   // the share of the six sides pressed against a neighbour (0 alone .. 1 enclosed)
 const GRN_S_FELTA: u32 = 1u;     // field A felt, the six sides' mean (-1..1, the C13 guides' s)
 const GRN_S_SPREADA: u32 = 2u;   // ... how differently the sides feel it (max - min) / 2 (0..1: the gradient across the cell)
@@ -60,6 +60,9 @@ const GRN_S_TRACE: u32 = 10u;    // trace (the cofactor it gives, 0..1)
 const GRN_S_INTEG: u32 = 11u;    // the membrane's integrity (0..1)
 const GRN_S_SIGNAL: u32 = 12u;   // the contact signal (0..1)
 const GRN_S_HEAT: u32 = 13u;     // the heat (the temperature over twice the tolerance, 0..1)
+const GRN_S_MEAL: u32 = 14u;     // step P1: a MEAL inside (digesting: the share of it still to digest, 1 .. 0; else 0)
+const GRN_S_PREY: u32 = 15u;     // step P1: PREY near (1 while a cell it could engulf touches it, or it is wrapping one)
+const GRN_NOUT: u32 = 17u;       // outputs (16 until step P1's ENGULF, whose gain and regulator live in Bio.gm.z, gm.w)
 
 fn grn_rand(seed: u32, k: u32) -> f32 { return rand01(seed, k); }
 
@@ -93,16 +96,18 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
     let ms = (select(0.0, 1.0, mOn) + hx) * S.mutSize;
     if (ms > 0.0) {
       let bs = pcg(c.seed ^ pcg(S.tick * 0x2545f491u + 0x67726e31u));
-      var u: array<f32, 16>;
-      var oreg: array<u32, 16>;
+      var u: array<f32, 17>;
+      var oreg: array<u32, 17>;
       for (var o = 0u; o < 16u; o++) { u[o] = bioW[i].gu[o >> 2u][o & 3u]; oreg[o] = grn_reg(bioW[i].go, o); }
       var gm = bioW[i].gm;
+      u[16] = gm.z;                                              // step P1: the ENGULF output
+      oreg[16] = min(u32(max(gm.w, 0.0)), 7u);
       // the small steps: weights and output gains in use, every bias
       for (var q = 0u; q < 24u; q++) {
         if (code[q] != 0u && code[q] < GRN_NSRC) { w[q] = clamp(w[q] + ms * GP.wStep * gauss(bs, 300u + q), -GRN_UMAX, GRN_UMAX); }
       }
       for (var r = 0u; r < GRN_R; r++) { bias[r] = clamp(bias[r] + ms * GP.wStep * gauss(bs, 330u + r), -GRN_UMAX, GRN_UMAX); }
-      for (var o = 0u; o < 16u; o++) {
+      for (var o = 0u; o < GRN_NOUT; o++) {
         if (u[o] != 0.0) { u[o] = clamp(u[o] + ms * GP.uStep * gauss(bs, 340u + o), -GRN_UMAX, GRN_UMAX); }
       }
       // REWIRE an input: another source (1..22), or cut (0) one time in seven; a new link starts at a random weight
@@ -116,7 +121,7 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
       }
       // an OUTPUT pointed at another regulator (switched on at a random gain if it was off), or switched off one time in five
       if (grn_rand(bs, 365u) < min(GP.orewire * ms, 1.0)) {
-        let o = min(u32(grn_rand(bs, 366u) * 16.0), 15u);
+        let o = min(u32(grn_rand(bs, 366u) * f32(GRN_NOUT)), GRN_NOUT - 1u);
         if (grn_rand(bs, 367u) < 0.2) { u[o] = 0.0; }
         else {
           oreg[o] = min(u32(grn_rand(bs, 368u) * 8.0), 7u);
@@ -134,7 +139,7 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
           let r = (r0 + t) & 7u;
           if (r == a) { continue; }
           var used = 0.0;
-          for (var o = 0u; o < 16u; o++) { if (oreg[o] == r && u[o] != 0.0) { used += 1.0; } }
+          for (var o = 0u; o < GRN_NOUT; o++) { if (oreg[o] == r && u[o] != 0.0) { used += 1.0; } }
           for (var q = 0u; q < 24u; q++) { if (code[q] == r + 1u && w[q] != 0.0 && q / 3u != r) { used += 1.0; } }
           if (used < best) { best = used; bb = r; }
         }
@@ -142,7 +147,7 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
           bias[bb] = bias[a];
           x[bb] = x[a];
           for (var k = 0u; k < 3u; k++) { w[3u * bb + k] = w[3u * a + k]; code[3u * bb + k] = select(code[3u * a + k], bb + 1u, code[3u * a + k] == a + 1u); }
-          for (var o = 0u; o < 16u; o++) { if (oreg[o] == a && grn_rand(bs, 380u + o) < 0.5) { oreg[o] = bb; } }
+          for (var o = 0u; o < GRN_NOUT; o++) { if (oreg[o] == a && grn_rand(bs, 380u + o) < 0.5) { oreg[o] = bb; } }
         }
       }
       // the broadcast regulator now and then another; the kinship weighting drifts
@@ -158,6 +163,8 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
       for (var v = 0u; v < 4u; v++) {
         bioW[i].go[v] = f32(oreg[4u * v] + 8u * oreg[4u * v + 1u] + 64u * oreg[4u * v + 2u] + 512u * oreg[4u * v + 3u]);
       }
+      gm.z = u[16];
+      gm.w = f32(oreg[16]);
       bioW[i].gm = gm;
     }
   }
@@ -215,6 +222,9 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
   src[o + GRN_S_INTEG] = ig / 6.0;
   src[o + GRN_S_SIGNAL] = select(0.0, sgS / sgW, sgW > 0.0);
   src[o + GRN_S_HEAT] = s1.y;
+  // step P1: a meal inside (the share still to digest) and prey near (the step's Cell.eng)
+  src[o + GRN_S_MEAL] = select(0.0, 1.0 - eng_prog(c.eng), eng_mode(c.eng) == ENG_DIGEST);
+  src[o + GRN_S_PREY] = select(0.0, 1.0, (c.eng & ENG_NEAR) != 0u);
 
   // ---- the update: each regulator relaxes toward sigmoid(its input) ----
   let a = clamp(S.dt / max(GP.tau, 1e-3), 0.0, 1.0);

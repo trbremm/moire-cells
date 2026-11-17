@@ -36,14 +36,15 @@ import { BIO_FLOATS, BIO_GRN } from './genome.js';
 
 export const GRN_R = 8;
 export const OUTPUTS = ['pigment', 'engine 1', 'engine 2', 'engine 3', 'wall', 'thickness', 'stiffness', 'glue', 'pumps', 'channels',
-  'kin channels', 'display', 'division', 'motility', 'emit A', 'emit B'];
+  'kin channels', 'display', 'division', 'motility', 'emit A', 'emit B', 'engulf'];   // (step P1: + engulf, its gain and regulator in gm.z, gm.w)
+const NOUT = OUTPUTS.length;
 export const SENSES = ['contact', 'field A', 'A spread', 'field B', 'light', 'free t', 'battery', 'swelling', 'fuel', 'linkers', 'trace',
-  'integrity', 'signal', 'heat'];
+  'integrity', 'signal', 'heat', 'meal', 'prey'];   // (step P1: + a meal inside, prey near)
 const GF = { RUN: 1, SIGNAL: 2, KINW: 4, MUT: 8 };
 const GRN_ACT = 1;
 // the Bio words (genome.js BIO_GRN = 84)
 const W_X = 0, W_B = 8, W_W = 16, W_I = 40, W_U = 48, W_O = 64, W_M = 68;
-const CELL_FLOATS = 88;
+import { CELL_FLOATS } from './cells.js';
 const C_POS = 0, C_FLAGS = 9, C_BAT = 16, C_NBR = 60, C_FELT1 = 83, C_SNS0 = 86, C_SNS1 = 87;
 const UNIFORM_BYTES = 48;
 
@@ -60,6 +61,7 @@ export function grnOf(g, o = 0) {
     u.push(g[b + W_U + q]);
     reg.push((Math.max(0, Math.round(g[b + W_O + (q >> 2)])) >> (3 * (q & 3))) & 7);
   }
+  u.push(g[b + W_M + 2]); reg.push(Math.max(0, Math.min(7, Math.round(g[b + W_M + 3]) || 0)));   // (step P1: the 17th output, ENGULF)
   return { x, bias, w, code, u, reg, bc: Math.round(g[b + W_M]) & 7, kw: g[b + W_M + 1] };
 }
 /**
@@ -242,7 +244,7 @@ export class Grn {
     const lin = new Map();   // founder id -> { n, cells: [...] }
     let live = 0, links = 0, outs = 0, wired = 0, repS = 0, repS2 = 0, repHi = 0, repLo = 0;
     const sense = new Array(9).fill(0);
-    const facS = new Array(16).fill(0);
+    const facS = new Array(NOUT).fill(0);
     const effG = Array.from({ length: GRN_R }, () => [0, 0, 0]);   // per regulator, over the cells where it drives an output: n, sum, sum of squares
     const fidOf = new Int32Array(n).fill(-1);
     for (let i = 0; i < n; i++) if (u[i * CELL_FLOATS + C_FLAGS] & 1) fidOf[i] = Math.round(g[i * BIO_FLOATS + 7]);
@@ -254,9 +256,9 @@ export class Grn {
       const ob = i * BIO_FLOATS, G = grnOf(g, ob);
       // the network in use: inputs with a source and a weight, outputs with a gain
       let li = 0, lo = 0;
-      for (let q = 0; q < 24; q++) if (G.code[q] > 0 && G.code[q] < 23 && Math.abs(G.w[q]) > 0.05) li++;
-      const fac = new Array(16), eff = new Set();
-      for (let q = 0; q < 16; q++) {
+      for (let q = 0; q < 24; q++) if (G.code[q] > 0 && G.code[q] < 25 && Math.abs(G.w[q]) > 0.05) li++;
+      const fac = new Array(NOUT), eff = new Set();
+      for (let q = 0; q < NOUT; q++) {
         fac[q] = Math.min(Math.exp(Math.max(-8, Math.min(8, G.u[q])) * Math.max(0, Math.min(1, G.x[G.reg[q]]))), 4);
         facS[q] += fac[q];
         if (Math.abs(G.u[q]) > 0.05) lo++;
@@ -306,12 +308,12 @@ export class Grn {
       for (let r = 0; r < GRN_R; r++) if (L.effN[r] >= 0.5 * L.n) regs.push(r);
       const label = clusterTypes(L.cells, regs, Math.max(5, 0.03 * L.n));
       const k = Math.max(...label) + 1;
-      const ts = Array.from({ length: k }, () => ({ n: 0, contact: 0, light: 0, fuel: 0, bat: 0, spring: 0, springN: 0, border: 0, fac: new Array(16).fill(0), x: new Array(GRN_R).fill(0) }));
+      const ts = Array.from({ length: k }, () => ({ n: 0, contact: 0, light: 0, fuel: 0, bat: 0, spring: 0, springN: 0, border: 0, fac: new Array(NOUT).fill(0), x: new Array(GRN_R).fill(0) }));
       L.cells.forEach((c, j) => {
         const T = ts[label[j]];
         T.n++; T.contact += c.contact; T.light += c.light; T.fuel += c.fuel; T.bat += c.bat; T.border += c.border;
         if (c.spring != null) { T.spring += c.spring; T.springN++; }
-        for (let q = 0; q < 16; q++) T.fac[q] += c.fac[q];
+        for (let q = 0; q < NOUT; q++) T.fac[q] += c.fac[q];
         for (let r = 0; r < GRN_R; r++) T.x[r] += c.x[r];
       });
       const tl = ts.filter((T) => T.n > 0).map((T) => {
@@ -347,7 +349,7 @@ export class Grn {
       // which outputs differ between its types (the largest over the smallest mean factor, at least x 1.5)
       const differ = [];
       if (tl.length > 1) {
-        for (let q = 0; q < 16; q++) {
+        for (let q = 0; q < NOUT; q++) {
           const v = tl.map((T) => T.fac[q]), hi = Math.max(...v), lo = Math.max(1e-3, Math.min(...v));
           if (hi / lo >= 1.5) differ.push({ out: OUTPUTS[q], ratio: hi / lo });
         }

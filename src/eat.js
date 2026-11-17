@@ -57,12 +57,13 @@ import { KW } from './kin.js';
 export const SW = 64;               // stock words per cell (cell_eat.wgsl; 16 until step C6c's membranes, words 16..27; step C7:
                                     // 14 the pumped charge across the membrane, 15 the voltage's energy; 32 until step C12b's
                                     // lipid membrane, words 32..61)
-const EP_BYTES = 1888;              // struct EatP (step T1a: + t1[2], 1856 until then; step M1: + m1[2], 1824 until then) (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat; step C8: + hl;
+const EP_BYTES = 1920;              // struct EatP (step P1: + p1[2], 1888 until then; step T1a: + t1[2], 1856 until then; step M1: + m1[2], 1824 until then) (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat; step C8: + hl;
                                     // step C9: + dv; step C10: + wl0, wl1; step C12b: + lp[9]; step C12d: + smellW; step C12e: + ws[2], ws2;
                                     // step C12g: + io[2] (1792); step N1: + nl[2] (1824; N1 alone had nl at 440, merged after io))
 const EP_NL = 448;                  // ... its words nl (step N1)
 const EP_M1 = 456;                  // ... its words m1 (step M1)
 const EP_T1 = 464;                  // ... its words t1 (step T1a)
+const EP_P1 = 472;                  // ... its words p1 (step P1)
 const EP_WS = 428;                  // ... its words ws (step C12e)
 const EP_IO = 440;                  // ... its words io (step C12g)
 const EP_SMELL = 412;               // ... its words smellW (step C12d)
@@ -298,6 +299,7 @@ export class Eat {
       this.cells.kin.writeEat(u, f, EP_T1, dt, smellMax, pumpWorst);
       this.cells.grn.writeEat(u, EP_T1 + 6);   // step T1b: the gene network's outputs act (EatP t1[1].z)
     }
+    this.cells.pred.writeEat(u, f, EP_P1);   // step P1: predators (the phagosome's membrane, the meal's battery, the digestion's time)
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
   }
 
@@ -415,6 +417,7 @@ export class Eat {
     this.ions.apply(rec, w);       // step C12g (after the waste: it reads the swelling)
     this.whole.apply(rec, w);      // step M1
     this.cells.kin.apply(rec, w);  // step T1a
+    this.cells.pred.apply(rec, w); // step P1 (the eat pass's counters in the T1a block)
     this.ledger = { time: rec.time, stock, held, atoms, chem, bat, start: this.start, full: cnt[0], empty: cnt[1], stuffed: cnt[2], n: cnt[3], hot: cnt[4], rate, rate2 };
     this.catalysts.apply(rec, w);  // step C7b (after the ledger: it reads the trace in the cells)
     this.pigments.apply(rec, w);   // step N1 (after the ledger: it reads the batteries' income)

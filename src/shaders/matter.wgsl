@@ -82,8 +82,18 @@ struct Spring {
                                 // [16] until then; springs never drip the excited atoms, 16 and 17); step C12f: [18] the heat a HOT
                                 // VENT puts into its disc per tick (heat counts; 0 for every other spring)
   ink: vec4f,                   // drawing only
+  seg: vec4f,                   // EXTENDED SOURCES (README "Dish size and densities"): x, y the unit direction of a LINE (a fissure),
+                                // z its half length (CSS px; 0 = a point or a patch), w a patch's radius for the drawing (0 = none).
+                                // It drips over every pixel within pos.z of its segment (a capsule)
 };
 struct Springs { s: array<Spring, 16>, };
+
+// the distance from p (CSS px) to a spring's segment (its centre for a point or a patch)
+fn spring_d(p: vec2f, s: Spring) -> f32 {
+  let d = p - s.pos.xy;
+  let t = clamp(dot(d, s.seg.xy), -s.seg.z, s.seg.z);
+  return length(d - t * s.seg.xy);
+}
 
 // (struct Rx and ChemP, step C4's reaction table, are in heat_common.wgsl since step C5: the cells' eat pass reads them too)
 
@@ -224,7 +234,7 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     if (first) {
       for (var k = 0u; k < min(T.count, 16u); k++) {
         let sp = SP.s[k].pos;
-        if (length(vec2f(id.xy) + 0.5 - sp.xy / MP.px) <= max(sp.z / MP.px, 0.75)) { drip |= 1u << k; }
+        if (spring_d((vec2f(id.xy) + 0.5) * MP.px, SP.s[k]) <= max(sp.z, 0.75 * MP.px)) { drip |= 1u << k; }
       }
       // step C12f: a HOT VENT's heat, shared evenly over its disc's pixels (random rounding), into the delta the heat's spreading
       // takes in this tick (heat_common.wgsl: the first block behind the ledger; only this invocation writes this pixel's word in
@@ -330,9 +340,14 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
           acc -= bur;
           if (bur != 0) { atomicAdd(&wlost[c], bur); }
         }
-        if (first && rim && m > 0 && MP.edge > 0.0) {
+        // PERFUSION (src/perfusion.js): the OUTLET side's rim (chg.w: 1 right, 2 left, 3 bottom, 4 top) lets out its share sea.w per
+        // tick instead, if larger: the water leaving the chip carries what it holds (booked as lost, as the rim's sink)
+        let os = MP.chg.w;
+        let atOut = (os == 1u && !hasR) || (os == 2u && !hasL) || (os == 3u && !hasD) || (os == 4u && !hasU);
+        let esh = select(MP.edge, max(MP.edge, MP.sea.w), atOut);
+        if (first && rim && m > 0 && esh > 0.0) {
           // the sink at the dish's rim: never more than the edges leave it (so it cannot go below zero)
-          let out = clamp(i32(floor(f32(m) * MP.edge + u01(mpcg(eI + cs)))), 0, m - nEdges * (m >> 2u) - bur);
+          let out = clamp(i32(floor(f32(m) * esh + u01(mpcg(eI + cs)))), 0, m - nEdges * (m >> 2u) - bur);
           acc -= out;
           if (out != 0) { atomicAdd(&wlost[c], out); }
         }

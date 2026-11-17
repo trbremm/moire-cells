@@ -169,6 +169,7 @@ export function settingObjects(M) {
     ...(M.predators ? { 'predators.params': M.predators.params, 'predators.look': M.predators.look } : {}),   // step P1
     ...(M.pigments ? { 'pigments.params': M.pigments.params } : {}),   // step N1: light needs matter
     ...(M.water ? { 'water.params': M.water.params } : {}),           // step N1: caustic light, currents
+    ...(M.perfusion ? { 'perfusion.params': M.perfusion.params } : {}),   // perfusion (src/perfusion.js)
     ...(M.oases ? { 'oases.params': M.oases.params } : {}),           // step N1: the scarce nutrient's springs
   };
 }
@@ -328,7 +329,7 @@ export async function snapshot(M, ctl, opts = {}) {
       electrons: ELECTRONS,   // step C12d: the chemistry's table it runs on (absent before step C12d: the old one)
       time: ctl.time(), tick: C.tick >>> 0,
       view: { cssW: v.cssW, cssH: v.cssH }, R: C.R, start: C.start, count: C.count, alive: m,
-      dish: { W: dish.W, H: dish.H, R: dish.R, mR: dish.mR, perArea: dish.perArea },   // (the dish's own size, src/dish.js)
+      dish: { W: dish.W, H: dish.H, R: dish.R, mR: dish.mR, perArea: dish.perArea, press: { ...dish.press } },   // (the dish's own size, src/dish.js)
       layout: { cellWords: CELL_FLOATS, bioWords: BIO_FLOATS, stockWords: SW, substances: SUBSTANCES.map((s) => s.name) },
       settings: captureSettings(M),
       founders: clone(M.genome.founders),
@@ -402,6 +403,7 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       if (H.old) { H.trash.push(H.old.buffer); H.old = null; }   // the replaced grid: dropped, not drained (the books are replaced too)
       rebind(M);
     }
+    if (S.dish && S.dish.press) dish.press = { ...S.dish.press };   // (the pressing wall, src/dish.js)
     // the starting number sets the cells' radius R (and with it the grid): take the snapshot's
     if (C.start !== S.start) {
       notes.push(`starting number ${C.start} -> ${S.start} (sets R)`);

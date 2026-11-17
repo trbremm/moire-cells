@@ -3,7 +3,7 @@
 // light go, so every preset opens by URL (?preset=vent) and can be shared as a link.
 //
 // URL options (read by src/main.js before anything else; a preset's own options never override the URL's):
-//   ?preset=name        vent | shallows | oxygen | slick | desert | oases | plumes | colonies | lab (PRESETS below; step N1: oases, plumes;
+//   ?preset=name        vent | fronts | chip | shallows | oxygen | slick | desert | oases | plumes | colonies | lab (PRESETS below; step N1: oases, plumes;
 //                       step T1b: colonies)
 //   ?spread=clump|scatter|colonies|ring   how the founders are placed (default clump: the old blob at the centre); with any
 //                       spread but clump the pull to the dish centre is nearly off (squeeze 0.02), so the culture stays spread
@@ -30,18 +30,44 @@ export const PRESETS = {
     // step M1 (Task B): the founders on a RING round each vent (?ventring=inner,outer in R; 0,0 = the old blobs on the vents), where
     // the vent's givers meet the sea's takers cold once the charge field is off (step C12g)
     ring: [8, 20],
-    scene({ matter, light, W, H }) {
+    scene({ matter, light, W, H, cells }) {
       light.params.power *= 0.3;   // the faint glow, if the light is switched on (&light=full)
       // step C12f: each vent HOT (src/vents.js: free givers and heat), with a mineral seep beside it (linkers for membranes, and the
       // water-like gt); the sea (?sea=1, the preset's) brings T everywhere. Before step C12f the vent's fuel and metal alone fed
       // nobody in the dark (fermenting earned the culture about 0.001 per s; README "Step C12f: vents in the dark")
       const m = Math.min(W, H);
+      // (the dish's size, 2026-11-17: each vent a FISSURE, a line 14 R long across the radius of the dish, dripping 40 / 14 atoms per s
+      // per R, and each seep a PATCH 3 R across its radius: the same totals as the old points; ?pointvents=1 the old points)
+      const R = cells ? cells.R : 6, point = new URLSearchParams(location.search).get('pointvents') === '1';
       for (const [x, y] of ring3(W, H, 0.27, -90)) {
-        matter.addSpring(x, y, 'heavy', 1e9, { rate: 40 });
         const dx = x - W / 2, dy = y - H / 2, d = Math.hypot(dx, dy) || 1;
-        matter.addSpring(x + dx / d * 0.07 * m, y + dy / d * 0.07 * m, 'light', 1e9, { rate: 12 });
+        const sx = x + dx / d * 0.07 * m, sy = y + dy / d * 0.07 * m;
+        if (point) {
+          matter.addSpring(x, y, 'heavy', 1e9, { rate: 40 });
+          matter.addSpring(sx, sy, 'light', 1e9, { rate: 12 });
+        } else {
+          matter.addLine(x, y, 'heavy', 14, Math.atan2(dy, dx) * 180 / Math.PI + 90, 40 / 14, 1e9);
+          matter.addPatch(sx, sy, 'light', 3, 12 / (Math.PI * 9), 1e9);
+        }
       }
     },
+  },
+  // the dish's size (README "Dish size and densities"): the waves the user saw after shrinking the window, on purpose
+  fronts: {
+    label: 'Fronts',
+    desc: 'A long strip of dish whose right wall slowly presses in and lets go again every four minutes, like the edge of a coverslip pushed and released. The cells in front of it are packed into a dense, bright front that runs into the looser tissue; when the wall lets go the front loosens and scatters, and the next press starts again. (What made the waves after shrinking the window: the walls closing in on the culture.)',
+    query: { dish: '396x124', press: '0.45,240', light: 'full', spread: 'scatter' },
+    scene({ matter, W, H }) {
+      for (const [x, y] of [[0.12, 0.3], [0.3, 0.75], [0.5, 0.3], [0.7, 0.72], [0.88, 0.35]]) matter.addSpring(x * W, y * H, 'light', 1e9);
+      matter.addSpring(0.06 * W, 0.8 * H, 'heavy', 1e9, { rate: 3 });
+    },
+  },
+  // the microfluidic chip (the user, 2026-11-17: "maybe the microfluidics chip analogy is better"; src/perfusion.js)
+  chip: {
+    label: 'Chip',
+    desc: 'A microfluidic channel. Fresh medium (minerals, linkers, some fuel and trace) flows in along the left wall, the water drifts slowly to the right, fastest down the middle, and leaves at the right wall with whatever it carries. Cells scattered along the channel, the whole dish lit: who thrives at the fresh inlet, who lives on what is left downstream?',
+    query: { dish: '396x124', perfusion: 1, light: 'full', spread: 'scatter', scarce: 0, oases: 0 },
+    scene() {},
   },
   shallows: {
     label: 'Sunlit shallows',

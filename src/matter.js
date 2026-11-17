@@ -648,7 +648,7 @@ const MT_DRAIN = MT_LEDGER + 1;           // slot: the old grid on a resize
 const MT_WASH = MT_LEDGER + 2;            // slot: Shift+C
 const MT_SLOTS = MT_LEDGER + 3;
 export const MAX_SPRINGS = 16;            // the springs uniform's capacity
-const SPRING_FLOATS = 28;                 // struct Spring: pos (4), amt (20: 18 channels, [19] its disc's pixels), ink (4)
+const SPRING_FLOATS = 32;                 // struct Spring: pos (4), amt (20: 18 channels, [19] its disc's pixels), ink (4), seg (4: a line's or patch's shape)
 const DRAW_BYTES = 464;                   // struct DrawP in matter_draw.wgsl (224 until step C12, 336 until step C12c, 368 until C12d, 448 until the app's cam)
 const K_MAX = 0.2;
 const LG_M = { ADD: 3072, LOST: 4736, GONE: 6400, DISH: 8064, ORDER: 9728 };   // heat_common.wgsl
@@ -941,6 +941,23 @@ export class Matter {
 
   clearSprings() { this.springs.length = 0; }
 
+  /**
+   * EXTENDED SOURCES (the user, 2026-11-17: "I am not happy with point like vents"): a LINE source, a fissure or a crack, centred at
+   * (x, y) CSS px, `len` cell radii long at `angle` degrees, dripping `perR` atoms per s for every R of its length; a PATCH, a seep
+   * field, `r` cell radii across its radius, dripping `perR2` atoms per s per R^2 of its area. Rates per length and per area, so a
+   * longer fissure or a wider seep gives more. Both are springs (they age, dry up, are booked, saved and drawn as springs).
+   */
+  addLine(x, y, kind, len, angle, perR, life = null, opts = {}) {
+    const ok = this.addSpring(x, y, kind, life, { ...opts, rate: Math.max(0, perR) * Math.max(0, len) });
+    if (ok) this.springs[this.springs.length - 1].shape = { type: 'line', len, angle };
+    return ok;
+  }
+  addPatch(x, y, kind, r, perR2, life = null, opts = {}) {
+    const ok = this.addSpring(x, y, kind, life, { ...opts, rate: Math.max(0, perR2) * Math.PI * r * r });
+    if (ok) this.springs[this.springs.length - 1].shape = { type: 'patch', r };
+    return ok;
+  }
+
   /** Shift+C: every atom out of the dish (booked as gone), now. */
   wash() {
     if (!this.bg || !this.heat.buffer) return;
@@ -1065,6 +1082,7 @@ export class Matter {
     const oilMask = (1 << CH.lL) | (1 << CH.glL) | (1 << CH.tlL);
     this.oilRun = this.oil.writeMatter(u, f, SUBSTANCES, this.oilBase(), 1 / (ATOM_SCALE * a * a), (active & oilMask) !== 0);
     this.vents.writeMatter(f, 172, a * a, dt, CH.T);   // step C12f: the sea (struct MatterP sea)
+    if (this.perfusion) this.perfusion.writeMatter(u, f, dt);   // perfusion: the outlet (sea.w, chg.w; src/perfusion.js)
     u[176] = 0; u[177] = 0; u[178] = 0; u[179] = 0;
     if (this.water) this.water.writeMatter(u, f, 176, dt / this.nSub);   // step N1: the caustic light, the currents (struct MatterP n1)
     if (this.oases) f[179] = this.oases.buryPerTick(dt);                 // step N1: trace settles into the floor
@@ -1220,8 +1238,15 @@ export class Matter {
     F.fill(0);
     for (let k = 0; k < n; k++) {
       const s = list[k], K = SPRING_KINDS[s.kind], o = k * SPRING_FLOATS;
-      F[o] = s.x; F[o + 1] = s.y; F[o + 2] = rad; F[o + 3] = Math.max(0, 1 - (s.age + aged) / this.lifeOf(s));
-      F[o + 4 + 19] = discPixels(s.x / H.px, s.y / H.px, Math.max(rad / H.px, 0.75), H.hw, H.hh);   // amt[19]: its disc's pixels
+      // EXTENDED SOURCES: a LINE (a fissure: its length and angle, in R and degrees) drips over a band `rad` wide round its segment, a
+      // PATCH (a seep field: its radius in R) over its disc; a point as before
+      const sh = s.shape;
+      let ux = 1, uy = 0, hl = 0, rr = rad, ring = 0;
+      if (sh && sh.type === 'line') { const a = (sh.angle || 0) * Math.PI / 180; ux = Math.cos(a); uy = Math.sin(a); hl = 0.5 * Math.max(0, sh.len || 0) * H.R; }
+      else if (sh && sh.type === 'patch') { rr = Math.max(rad, Math.max(0, sh.r || 0) * H.R); ring = rr; }
+      F[o] = s.x; F[o + 1] = s.y; F[o + 2] = rr; F[o + 3] = Math.max(0, 1 - (s.age + aged) / this.lifeOf(s));
+      F[o + 28] = ux; F[o + 29] = uy; F[o + 30] = hl; F[o + 31] = ring;
+      F[o + 4 + 19] = capsulePixels(s.x / H.px, s.y / H.px, ux, uy, hl / H.px, Math.max(rr / H.px, 0.75), H.hw, H.hh);   // amt[19]: its pixels
       // (step C12: a mix's shares are of the atoms, so a molecule of n atoms drips 1 / n as many units)
       // (app: a spring's own rate, e.g. a pipette's drop or a preset's slow vent; the dish: a scene's spring drips per area, x the dish's
       // area over the reference dish's, src/dish.js)
@@ -1504,6 +1529,24 @@ export class Matter {
     }
     return lines;
   }
+}
+
+/**
+ * How many pixels' centres lie within r of the segment through (cx, cy) along (ux, uy), half length hl (pixel units; hl 0: a disc),
+ * inside a w x h grid: the pixels a spring drips on (matter.wgsl's spring_d, the same test).
+ */
+function capsulePixels(cx, cy, ux, uy, hl, r, w, h) {
+  if (!(hl > 0)) return discPixels(cx, cy, r, w, h);
+  const ex = Math.abs(ux) * hl + r + 1, ey = Math.abs(uy) * hl + r + 1;
+  let n = 0;
+  for (let y = Math.floor(cy - ey); y <= cy + ey; y++) {
+    for (let x = Math.floor(cx - ex); x <= cx + ex; x++) {
+      if (x < 0 || y < 0 || x >= w || y >= h) continue;
+      const dx = x + 0.5 - cx, dy = y + 0.5 - cy, t = Math.max(-hl, Math.min(hl, dx * ux + dy * uy));
+      if (Math.hypot(dx - t * ux, dy - t * uy) <= r) n++;
+    }
+  }
+  return Math.max(1, n);
 }
 
 /** How many pixels' centres lie within r of (cx, cy) (pixel units), inside a w x h grid: the pixels a spring drips on. */

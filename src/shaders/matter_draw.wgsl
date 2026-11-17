@@ -99,8 +99,17 @@ struct Spring {
   pos: vec4f,         // x, y (CSS px), radius of its disc (CSS px), share of its life left
   amt: array<vec4f, 5>,
   ink: vec4f,         // rgb, ring stroke (CSS px)
+  seg: vec4f,         // a LINE's unit direction and half length (CSS px), a PATCH's radius (matter.wgsl)
 };
 struct Springs { s: array<Spring, 16>, };
+
+// the distance from p to a spring's segment (its centre for a point or a patch): the marker is drawn round the segment (a stadium round
+// a fissure, a ring round a point or at a patch's edge)
+fn spring_d(p: vec2f, s: Spring) -> f32 {
+  let d = p - s.pos.xy;
+  let t = clamp(dot(d, s.seg.xy), -s.seg.z, s.seg.z);
+  return length(d - t * s.seg.xy);
+}
 
 @group(0) @binding(0) var<uniform> medium: Medium;
 @group(0) @binding(1) var<uniform> D: DrawP;
@@ -352,9 +361,9 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     var mk = vec4f(0.0);
     for (var k = 0u; k < D.nSprings; k++) {
       let s = SP.s[k];
-      let rr = D.ringR;
-      let rc = 0.32 * rr * sqrt(clamp(s.pos.w, 0.0, 1.0)) + 0.6;
-      let d = length(x - s.pos.xy);
+      let rr = max(D.ringR, s.seg.w);
+      let rc = 0.32 * D.ringR * sqrt(clamp(s.pos.w, 0.0, 1.0)) + 0.6;
+      let d = spring_d(x, s);
       let a = max(disc(abs(d - rr), 0.5 * s.ink.w), disc(d, rc));
       mk = over(vec4f(s.ink.rgb, 1.0) * a, mk);
     }
@@ -386,16 +395,16 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   var mark = vec4f(0.0);
   for (var k = 0u; k < D.nSprings; k++) {
     let s = SP.s[k];
-    let rr = D.ringR;
-    let rc = 0.32 * rr * sqrt(clamp(s.pos.w, 0.0, 1.0)) + 0.6;
+    let rr = max(D.ringR, s.seg.w);
+    let rc = 0.32 * D.ringR * sqrt(clamp(s.pos.w, 0.0, 1.0)) + 0.6;
     let kw = 0.5 * s.ink.w + rmax + 1.0;
-    let dA = length(wA - s.pos.xy);
-    let dB = length(wB - s.pos.xy);
-    let dC = length(wC - s.pos.xy);
+    let dA = spring_d(wA, s);
+    let dB = spring_d(wB, s);
+    let dC = spring_d(wC, s);
     keyA = keyA || abs(dA - rr) < kw || dA < rc + rmax + 1.0;
     keyB = keyB || abs(dB - rr) < kw || dB < rc + rmax + 1.0;
     keyC = keyC || abs(dC - rr) < kw || dC < rc + rmax + 1.0;
-    let d = length(x - s.pos.xy);
+    let d = spring_d(x, s);
     let a = max(disc(abs(d - rr), 0.5 * s.ink.w), disc(d, rc));
     mark = over(vec4f(s.ink.rgb, 1.0) * a, mark);
   }
@@ -597,9 +606,9 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
   if (H.hm3.w > 0.0) {
     for (var k = 0u; k < D.nSprings; k++) {
       let s = SP.s[k];
-      let rr = D.ringR;
-      let rc = 0.32 * rr * sqrt(clamp(s.pos.w, 0.0, 1.0)) + 0.6;
-      let dd = length(x - s.pos.xy);
+      let rr = max(D.ringR, s.seg.w);
+      let rc = 0.32 * D.ringR * sqrt(clamp(s.pos.w, 0.0, 1.0)) + 0.6;
+      let dd = spring_d(x, s);
       let a = max(disc(abs(dd - rr), 0.4 * s.ink.w), disc(dd, rc));
       res += vec4f(vec3f(0.85, 0.85, 0.9) * H.hm3.w * a, 0.0);
     }

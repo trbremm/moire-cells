@@ -132,7 +132,8 @@
 //   ?dish=WxH     the dish's size in cell radii (or WxHum in micrometres), kept while the window changes (src/dish.js; default: the
 //               window's at the start); ?dishfollow=1 the window IS the dish, as before (a resize re-sizes it: new R, new grid, the
 //               old drained, supplies per px); ?medium=x the medium lattice's R in cell radii (default 1.389); ?perarea=0 a fixed
-//               dish with the old amounts (light per px^2, capacity 3 x the starting number, springs and oases per dish, medium 1.389 R)
+//               dish with the old amounts (light per px^2, capacity 3 x the starting number, springs and oases per dish, medium 1.389 R);
+//               ?press=depth,period[,bottom] the right (bottom) wall presses the cells in to depth x the dish and lets go, every period s
 //   ?mut=0      start with mutation off (key M); ?life=0 with the life cycle off (key T: no births, no deaths)
 //   Experiments (src/lab.js, src/snapshot.js; README "Experiments: tools"): ?snap=<file> loads a snapshot at the start (its
 //               starting number and capacity, its settings); ?clone=1 copies the first live cell's genes to every cell
@@ -168,8 +169,9 @@ import { Oases } from './oases.js';
 import { setupLab } from './lab.js';
 import { fetchSnapshot } from './snapshot.js';
 import { camera } from './camera.js';
-import { dish, parseDish, snapDish } from './dish.js';
-import { scaleDish } from './squeeze.js';   // the dish: its own size, kept while the window changes
+import { dish, parseDish, snapDish } from './dish.js';   // the dish: its own size, kept while the window changes
+import { scaleDish } from './squeeze.js';
+import { Perfusion, parseRecipe } from './perfusion.js';   // the microfluidic chip: inlet, through-flow, outlet
 import { createApp } from './app.js';
 import { applyPreset, layoutFromParams, applyDiversity, PRESETS, SPREAD_SQUEEZE } from './culture.js';
 
@@ -231,6 +233,7 @@ let matter = null;
 let charge = null;     // step C6b: the screened charge field (src/charge.js)
 let water = null;      // step N1: the water: caustic light and currents (src/water.js)
 let oases = null;      // step N1: the scarce nutrient's springs (src/oases.js)
+let perfusion = null;  // the microfluidic chip: inlet, through-flow, outlet (src/perfusion.js)
 let recorder = null;   // step C3b: the video recorder (Shift+V, the record button)
 let neon = null;       // step C6n: the drawing as a whole, and the neon look (src/neon.js)
 let running = false;
@@ -282,15 +285,24 @@ async function boot() {
   let nCells = snap ? snap.start : Number(params.get('cells')) || defaultCells();
   {
     const [winW, winH] = windowSize();
-    if (snap) {   // a snapshot's own dish (one from before: its window, its R, the medium as it was, the supplies per px as they were)
-      Object.assign(dish, snapDish(snap), { from: 'snapshot' });
-    } else if (flag('dishfollow')) {
+    if (flag('dishfollow')) {   // (also with a snapshot: it loads into the window, as before)
       dish.follow = true; dish.perArea = false;
       dish.fromWindow(winW, winH, nCells, 'follow');
+    } else if (snap) {   // a snapshot's own dish (one from before: its window, its R, the medium as it was, the supplies per px as they were)
+      Object.assign(dish, snapDish(snap), { from: 'snapshot' });
     } else if (dishR) {
       dish.fromCells(dishR[0], dishR[1], winW, winH, params.has('dish') && PRESET && !new URLSearchParams(location.search).has('dish') ? 'preset' : 'url');
       if (!params.has('cells')) nCells = Math.min(nCells, dish.maxStart());
     } else dish.fromWindow(winW, winH, nCells);
+    // ?press=depth,period[,bottom]: the pressing wall (src/dish.js; the Fronts preset)
+    if (params.has('press')) {
+      const v = String(params.get('press')).split(',');
+      const dp = Number(v[0]), pe = Number(v[1]);
+      dish.press.on = dp > 0;
+      if (dp > 0) dish.press.depth = Math.min(0.9, dp);
+      if (pe > 0) dish.press.period = pe;
+      if (v[2] === 'bottom') dish.press.side = 'bottom';
+    }
     // ?medium=x: the medium lattice's R in cell radii (default 1.389: the moire beats' size in cell units; the old window rule gave 1 to 3)
     const mq = Number(params.get('medium'));
     if (!snap && !dish.follow && params.has('medium') && mq > 0.2 && mq < 20) dish.mR = mq * dish.R;
@@ -536,6 +548,20 @@ async function boot() {
         if (params.has(q) && Number.isFinite(v)) WP[k] = v;
       }
     }
+    // perfusion, the microfluidic chip (src/perfusion.js): an inlet line, a through-flow, an outlet
+    perfusion = new Perfusion(matter);
+    water.perfusion = perfusion;
+    {
+      const PP = perfusion.params;
+      if (params.has('perfusion')) PP.on = flag('perfusion');
+      for (const [q, k] of [['flow', 'speed'], ['inlet', 'rate'], ['outlet', 'outlet']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) PP[k] = v;
+      }
+      if (['right', 'left', 'down', 'up'].includes(params.get('flowdir'))) PP.dir = params.get('flowdir');
+      const r = parseRecipe(params.get('recipe'), matter.SUBSTANCES.map((x) => x.name));
+      if (r) PP.recipe = r;
+    }
     // step N1: the scarce nutrient and its roaming springs (src/oases.js)
     oases = new Oases(matter, SEED);
     {
@@ -579,7 +605,7 @@ async function boot() {
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
-    kin: cells.kin, grn: cells.grn, predators: cells.pred };
+    kin: cells.kin, grn: cells.grn, predators: cells.pred, perfusion };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
   window.moire.budgets = budgets;      // the fast speeds' tick budgets
@@ -594,6 +620,7 @@ async function boot() {
   if (!snap) {   // (a snapshot brings its own springs; app: a preset its own)
     if (PRESET) presetScene(); else defaultScene();
     for (const s of matter.springs) if (s.kind !== 'oasis') s.scene = true;   // (the dish: a scene's springs drip per area, src/dish.js)
+    perfusion.start(view.cssW, view.cssH, cells.R);   // (an inlet drips per R of its length: not scaled again)
   }
   {   // app: ?zoom=z or ?zoom=z,x,y (the view's centre as shares of the dish), or a preset's zoom
     const zq = params.has('zoom') ? params.get('zoom').split(',').map(Number) : PRESET && PRESETS[PRESET].zoom ? [PRESETS[PRESET].zoom] : null;
@@ -938,6 +965,7 @@ function drawOverlay() {
     `vendor ${esc(i.vendor || '?')} · arch ${esc(i.architecture || '?')}${i.device ? ' · device ' + esc(i.device) : ''}`,
     `canvas ${view.pxW}×${view.pxH} (dpr ${view.dpr.toFixed(2)}) · ${gpu.format}`,
     dish.line(),
+    perfusion.overlayLine(),
     `ripple grid ${background.gw}×${background.gh} (${background.sc} css px/cell) · ambient ${background.ambient ? 'on' : 'off'}`,
     `tap ${TOOLS[tool].name} · landscape ${landscape.params.on ? 'on' : 'off'} · R ${medium.R.toFixed(2)} px · medium ${(medium.la0 * 180 / Math.PI).toFixed(2)}°`,
     ...cells.overlayLines(),

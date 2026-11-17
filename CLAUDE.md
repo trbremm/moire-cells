@@ -609,6 +609,23 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        SOURCES (line fissures, soft patches; rates per length/area; points only for the pipette) and PERFUSION: an inlet
        edge bringing a medium recipe (booked in), an outlet edge (booked out), a gentle through-flow added to the prescribed
        currents (chemostat-like gradients); preset 'chip'. G0b later adds the chip's walls and pillars.
+       AS BUILT (D1, 2026-11-17, branch dish): src/dish.js, squeeze.js, perfusion.js. CAUSE OF THE WAVES: the window's walls
+       closing in (cells kept their px positions, 956 of 1101 ended outside, the soft walls shoved them into a dense pile that
+       spread back as a front ~1.9 R/s), plus cells shrinking 3x in place (R from the window), light per cell falling 9x
+       (light was per px), the medium lattice 1.03 -> 3.09 R (clamped in px), and a heat-count overflow (2^31) from the
+       shove's drag heat that broke the books. The user's REPEATED waves not reproduced (guess: repeated drags + day cycle).
+       FIX: the dish has its own size (chosen at a new culture: window as before, ?dish=WxH in R or um, presets, New culture
+       dialog, snapshots); a resize only refits the view (dark bands), no drain, no R change. Per area against the 1280x800
+       reference of the same starting number: medium = kappa R, light per R^2, clouds in R, capacity, spring rates and oases x
+       area/ref (every preset unchanged at that window). ?dishfollow=1 = old exactly; ?perarea=0 ?medium ?power. SQUEEZE
+       moire.dish.scale(f) + 0.8x/1.25x buttons (cells move with the sample, grid resampled in whole counts). EXTENDED SOURCES
+       matter.addLine (fissures) / addPatch (seeps); Deep vents uses fissures (&pointvents=1 old). PERFUSION (?perfusion=1
+       ?flow ?flowdir ?inlet ?outlet ?recipe; prescribed through-flow in psi, outlet booked lost), preset CHIP (life regrows
+       from the inlet as a front following the flow profile). PRESS (?press=depth,period: a wall moving in and out, cells
+       only), preset FRONTS (strip dish 396x124 R, wall to 0.45 every 240 s: a packed column rides the wall ~2 R/s, the
+       tissue regrows as a front after release). Fixed: grid-buffer destroyed-in-submit crash on resize. Known: dish chosen
+       at page start; phones get more slots; press moves only the cells' wall; squeeze keeps capacity/oases. Speed not
+       measured (GPU shared). For G0: replace perfusion's through() with a pressure-driven flow.
        T1c PAUSED (user 2026-11-17: "stop the tissue experiments, we will change more things before they become valid").
        Committed and kept as tools: src/tissues.js (moire.tissues: PLANT, FILAMENT, BIOFILM as one hand-wired genome each,
        ?tissue=name, zoo buttons, census), src/warfare.js (moire.warfare.census(): border vs interior), ?clockhard=0 (marker

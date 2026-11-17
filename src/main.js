@@ -601,6 +601,7 @@ async function boot() {
   window.moire.adapter = () => adapterName(gpu.info);
   window.moire.control = control;
   window.moire.dish = dish;       // the dish's own size (src/dish.js)
+  dish.scale = (f) => scaleDish(window.moire, control, f);   // squeeze (f < 1) or stretch the sample, contents kept (src/squeeze.js)
   setupLab(window.moire, control, { params, snap, snapError });   // experiments: sample, snapshots, tissue, genome edits
   running = true;
   stage('running');

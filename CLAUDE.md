@@ -596,6 +596,14 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        exist (OUT pumps, same-row bites, free t inside, heat damage) but M1's bite block and untargeted dumping make
        them weak. NOT YET AGREED, on file: a KIN-GATED PUMP gene (pumping per side rises/falls with the neighbour's
        kinship, like the C13 gates), so evolution picks weapon vs sharing; would go after P2 if the user wants it.
+    6b. G1 ERROR CORRECTION (user 2026-11-17 "yes"): a FIDELITY gene (proofreading): higher = fewer mutations per
+       division (all genes, incl. the self marker, so the molecular clock slows with it: kin sparing gets something to
+       read) but each division costs more battery; hard light's extra mutation still acts (repair may evolve against it).
+       Watch: tissues vs loners (do multicellular lineages copy tighter, fewer cheaters?), hot/bright places (mutators?).
+       Neutral control as always.
+    6c. G2 GENE DUPLICATION FOR ENGINES AND PUMPS: a few SILENT slots; a rare duplication copies a working engine or
+       pump slot over a silent one (dosage x2, or the copy drifts into a new reaction while the original keeps the cell
+       alive: new functions). The GRN already duplicates regulators (T1b, 0.005). Census of engine families branching.
     7. P2: macrophages.
        AS BUILT (P1, 2026-11-17): src/predators.js. ENGULF gene kin.z, KIN SPARING kin.w (founders 0; wild 0..1). Wrap a
        touching cell >= 1.4x smaller in area when 3 x engulf x (1 - spare x kinship) beats the prey's HOLD (glue to its

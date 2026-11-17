@@ -605,6 +605,11 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        culture), the window is only a view; every supply PER AREA; keep the waves reachable on purpose (preset/knob).
        Plus a SQUEEZE / STRETCH tool (user: "scale the dish as if we are compressing the sample"): rescale the dish at
        runtime keeping its contents (cells crowd, substrate resampled, matter exact).
+       T1c PAUSED (user 2026-11-17: "stop the tissue experiments, we will change more things before they become valid").
+       Committed and kept as tools: src/tissues.js (moire.tissues: PLANT, FILAMENT, BIOFILM as one hand-wired genome each,
+       ?tissue=name, zoo buttons, census), src/warfare.js (moire.warfare.census(): border vs interior), ?clockhard=0 (marker
+       not clocked by hard light), colonies ?colpower ?colrate. No results yet: rerun designs + colonies + warfare after
+       D1, G0, G0b, G1, G2.
     6a. G0 STRONG GLUE + CELLS STIR THE WATER (user 2026-11-17 "yes! do both. Also, is the cells movement stirring the
        liquid too? if not, they should"; after D1, which touches the same grids). Today the adhesion gene is capped at 1
        (body.x 0..1), glue is free up to freeGlue 0.5 per side and costs above, nothing pulls joined cells apart, so the gene

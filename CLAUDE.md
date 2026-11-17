@@ -641,7 +641,8 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        look: cells lay down ORIENTED fibres (crust chains with a direction on the grid) along their long axis, crawl along
        fibres (contact guidance), traction aligns them; the matrix is a SHARED GOOD (cheaters possible: pressure to link).
        Harmonic view draws the real fibre direction (orange SHG streaks, green-rimmed spindles).
-       C15 CARBON (user 2026-11-17: "our chemistry should have a carbon like element"; BEFORE X1, which builds on it): a
+       C15 CARBON (user 2026-11-17: "our chemistry should have a carbon like element"; then "yes, carbon sooner": NEXT after
+       D1 merges, ahead of G0/G0b/S1; a design proposal is drafted first, while D1 and G1 run; BEFORE X1, which builds on it): a
        new group derived like the others, the BUILDER: wants FOUR partners (branches, rings, backbones of any length; today's
        linkers only make straight chains), grip in the MIDDLE of the electron table (shares rather than gives or takes), bonds
        strongly to itself. Expected from the C12d table, never written: c-g bonds hold electrons high = FUEL (hydrocarbon /

@@ -5945,6 +5945,148 @@ panel has **squeeze** (the dish x 0.8 across) and **stretch** (x 1.25) buttons; 
 - The press moves the cells' wall only: matter and water pass under it. The perfusion's through-flow is prescribed (see above).
 - Squeeze and stretch keep the capacity and the number of oases; the energy rounding blips for one sample at each squeeze.
 
+## Step C15a: carbon in the open dish
+
+The user (2026-11-17): "our chemistry should have a carbon like element"; after the design (`design/C15_carbon_proposal.md`, checked by
+`design/carbon_check.py`) they chose the REBUILD in stages: carbon will in the end make the oils, soaps, walls and pigments and the linkers
+l, L retire. This first stage is a SIDECAR: carbon lives and reacts in the OPEN DISH only. The cells are blind to it (C15b feeds them),
+nothing of the C12d table changes or retires, and `?carbon=0` gives the chemistry exactly as before. Code: `src/carbon.js` (the table,
+switches, books, panel), `src/shaders/carbon.wgsl` (appended to `matter.wgsl`: spreading, reactions, count, paint), the hooks in
+`src/matter.js`, the look in `matter_draw.wgsl`.
+
+### The atom: the builder c
+
+Derived in the electrons' way (C12d), from row and group only, with the old table untouched (a general bond rule is checked against
+every old pair when the page loads):
+
+| | group | levels (shell 1, empty) | grip | hands |
+|---|---|---|---|---|
+| g | giver | -1.25, -0.625 | -1.25 | 1 |
+| **c** | **builder** | **-2, -1** | **-2** | **4** |
+| l | linker | -2.5, -1.25 | -2.5 | 2 |
+| t | taker | -5.5, -2.75 | -5.5 | 1 |
+
+- Core pull Zc = 2: carbon's grip sits between the giver and the light linker, close to the giver (as real carbon sits close to
+  hydrogen). Row 1 only (no heavy builder). Four HANDS, always full: carbon is never free.
+- BONDS: a giver or taker on a hand bonds as every bond does (the electron falls: released = the donor's level - the acceptor's, + 1/4 in
+  one row); two SHARERS (linkers, builders) share: (share a + share b) / 2 x (row + row), 1/4 per row for a linker (so l-l 0.5, L-L 1,
+  l-L 0.75 exactly as before) and 1/2 for a builder:
+
+  | bond | released | gap | light it catches |
+  |---|---|---|---|
+  | c-g | 1 | 1.625 | visible 1 |
+  | c-t | 3.75 | 4.75 | hard |
+  | c-c | 1 | 1 | warm (dark: it warms) |
+
+- SPARK: 1/8 x (row + row), doubled on a bond to a four-handed atom (crowding): every carbon spark is 0.5. A carbon reaction runs at
+  exp(-0.5 / (theta x T)) = exp(-16 / T) (T in heat per R^2): frozen in the cool open dish (T about 0.1), quick where it is warm.
+- CHARGE: booked by group as before (g +1, t -1), so every reaction keeps it; a ladder molecule carries 2k - 4 (methane-like +4,
+  CO2-like -4). Only free atoms act as charges (the charge field is off by default anyway); the carbon molecules' booked charge is in the
+  charge books, not in the field.
+- POLARITY (for later stages): a bond is polar when its electron falls by 1 or more. c-g is water-shy, c-t water-loving, c-c water-shy.
+  Not used yet (the ladder does not drift into oil).
+
+### The molecules (new grid channels)
+
+- The LADDER: five mobile one-carbon molecules, k givers and 4 - k takers on the hands. Each step down is one OXIDIZE (2.75):
+
+  | channel | like | energy | burnt fully with oxygen releases |
+  |---|---|---|---|
+  | cg4 | methane | -4 | 29 |
+  | cg3t | methanol | -6.75 | 21.75 |
+  | cg2t2 | a sugar unit | -9.5 | 14.5 |
+  | cgt3 | formic acid | -12.25 | 7.25 |
+  | ct4 | CO2 | -15 | (the bottom) |
+
+  They spread at row 1 x 0.7^4 (five atoms): 0.29 R^2 per s, and leave at the dish's rim and a chip's outlet as every mobile substance;
+  the currents carry them.
+- TAR: dead, amorphous carbon as three IMMOBILE hand counts per pixel: backbone bonds c-c, fuel hands c-g, burnt hands c-t. No molecule
+  identity: energy -(cc + cg + 3.75 ct), carbons (2 cc + cg + ct) / 4. Mud, coal, crust.
+- CHANNELS: 8 new (5 + 3; 26 in all with the 18 of the main grid). The ladder is stored in two copies (ping-pong, as every mobile
+  substance), the tar in one: 13 blocks of the heat buffer, 52 bytes per pixel (the heat buffer: 52 -> 65 blocks of 4 bytes per pixel,
+  208 -> 260 bytes per pixel; at the 300 000-pixel cap 74.5 MiB, under the 128 MiB binding limit). With `?carbon=0` none of it exists.
+
+### The reactions (once per tick per pixel, after the main table's)
+
+Every one both ways; the uphill ways are driven by light, as in the open dish since C12d:
+
+- OXIDIZE: t + [c-g] -> [c-t] + g, by heat (spark 0.5), releases 2.75. Any carrier: the ladder steps down one rung, tar's fuel hand
+  becomes a burnt hand.
+- REDUCE (its reverse): g + [c-t] -> [c-g] + t, by HARD light caught by the c-t hand (photon 5 >= 2.75 + half the spark); the rest of
+  the photon is heat. Needs free g there. `?photolysis=0` blocks it (it frees a t).
+- CONDENSE: [c-g] + [c-t] -> [c-c] + gt, by heat, releases 0.75: two carbons join and leave a water. The two carbons go into TAR: two
+  ladder molecules (a fuel hand of one with a burnt hand of the other), a molecule and tar, or tar with itself (cross-linking).
+- HYDROLYZE (its reverse): gt + [c-c] -> [c-g] + [c-t], by HARD light caught by the water (the photon pays 0.75, the rest is heat).
+- DISSOLVE / SETTLE (zero energy, no spark): a tar carbon with no backbone bond (c (1 - p)^4 of them, p the backbone's share of tar's
+  hands) leaves as a ladder molecule (how many givers it takes: binomial in tar's fuel share); a ladder molecule sticks where tar is
+  (rate x the tar's carbons per R^2).
+- LIGHT: the hands catch what their gaps match (C12d) from the light the main table's absorbers LEFT (so the dish never catches more
+  than arrives): c-g hands visible 1 (no reaction is open to them: they fluoresce warm light or warm the dish), c-t hands hard (REDUCE
+  where g is, otherwise they fluoresce VISIBLE 2, sky blue, or warm), c-c bonds warm (heat: dark tar warms in light), the water next to
+  backbones hard (HYDROLYZE). The electrons' shares apply (react 1/2, fluoresce 2/5 of the rest).
+- Every event is checked when the page loads (48 kinds): carbon, g atoms, t atoms and charge conserved; light in = heat + change of
+  bonds + light out; the closed cycles (oxidize then reduce, condense then hydrolyze) lose battery energy (no free energy).
+
+Making fuel back from CO2-like carbon costs 7.25 per hand (split a water 4.5, then REDUCE 2.75): no photon holds that much, so it takes
+TWO photons per hand, like the real two-photosystem "Z-scheme"; in the open dish only hard light can do the second step.
+
+### Sources
+
+Springs drip carbon too, as molecules per atom of the spring's rate (so per length and per area for D1's fissures and seeps, and x the
+dish's supply factor for a scene's springs):
+
+- the MINERAL spring (tap mode 2): 0.08 CO2-like molecules per atom;
+- the VENT (tap mode 3, D1's fissures, the Deep vents' hot vents): a little FUEL SEEP, 0.025 methane-like and 0.025 CO2-like per atom;
+- the pipette: any ladder molecule (molecules zoo). Booked as added (their chemical energy is energy in, as every spring's molecules).
+
+### Books
+
+- CARBON: added = in the dish + lost at the edge + gone (washed, a resize). Counted per channel, exact (64-bit counts), rounding 0.
+- ATOMS: the carbon molecules' atoms (c, and the g and t on their hands) join the atoms ledger; carbon reactions move g and t atoms between
+  the hands and the free atoms (and make or use water), so the atoms rounding stays 0 only with both counted together: it does.
+- ENERGY: the carbon's chemical energy joins "stored", what leaves with matter "out", the light it catches "light in". Its own book
+  (in + light = held + out + heat it put down + the water it made x -4.5) is exact: `moire.carbon.ledger.eRounding`, 0.
+- CHARGE: the molecules' booked charge joins the charge books (rounding 0).
+- Snapshots carry a `carbon` flag, the carbon's blocks (ladder and tar) and its totals; one saved without carbon (all before C15a) reloads
+  the page with `?carbon=0` by itself, as `?electrons=` does.
+
+### Switches and knobs (rules panel "Carbon (step C15a)"; URL)
+
+- `?carbon=0`: no carbon (fixed for the page; the panel's switch reloads it). `?electrons=0` implies it.
+- `?cbox=0` no oxidizing, `?cbcond=0` no condensing (no tar forms), `?cblight=0` no reducing / hydrolyzing by hard light, `?cbdis=0` no
+  dissolving or settling, `?cbspring=0` springs drip no carbon, `?cblook=0` carbon not drawn.
+- Knobs: `?cbkox=` (5 R^2/s), `?cbkcond=` (5 R^2/s), `?cbkdis=` (0.02 /s), `?cbkset=` (0.05 R^2/s), all before the spark's factor.
+- Shift+S shows each ladder molecule and tar alone too (after the 18 substances).
+
+### Panel and tools
+
+CARBON line: the ladder (methane-like -> CO2-like amounts), tar's carbons and hands, per s oxidize / condense / reduce / hydrolyze /
+dissolve / settle, the light given off as glow, carbon in and out per s, the carbon book (in = held + out) and its rounding. The F overlay
+adds the table, the switches, the energy book and a 10-s series. `moire.carbon.census` and `moire.sample()`'s `carbon.*`;
+`moire.carbon.probeLine(y, x0, x1, step)` prints the ladder, tar, temperature and free g, t, water along a row. The molecules zoo has the
+builder in its own column of the periodic table (its two levels), a LADDER STRIP from methane-like to CO2-like (each a small picture of
+the carbon and its four hands, + givers and - takers, its energy, what burning it fully gives, its light, a pipette) and a TAR card.
+
+### What it looks like (EXPERIMENTS.md "Carbon in the open dish"; pictures in `experiments/keep/c15a/`)
+
+- Neon: the ladder as dust like the fuel's, shaded by how burnt it is (fuel green, methane-like, to a dim slate, CO2-like: most free
+  carbon is slate); TAR as flat hard-edged patches like the crust, amber where fresh, dull brown where burnt, with a faint waxy green sheen
+  where it still holds fuel hands; where hard light falls on burnt hands they glow sky blue (the minerals' fluorescence colour).
+- Harmonic: tar joins the crust's orange fibres (brighter where its backbone share is high), the ladder's fuel the violet haze; CO2-like
+  carbon is clear.
+- Where: a brown rim along each hot fissure in the dark, a fat amber blob there under a dim light, a tar mound 40 R across round the
+  default scene's mineral spring (amber core, brown fringe, blue specks), a small amber button where a vent's methane seep was. Under a
+  colony the tar is hidden by the cells (the colony's warmth makes carbon react there).
+
+### Known issues
+
+- Tar forms FAST wherever it is warm (hot vents, under colonies): nearly all the carbon that comes in ends as tar within minutes. The
+  knobs are `?cbkcond=` and the derived spark; C15b must decide (cells grazing tar, or slower condensing).
+- The ladder does not drift into oil yet (its polarity is derived but unused) and its booked charge does not act (only free atoms do).
+- HYDROLYZE takes its photons as an extra absorber next to the main table's water split (the water's hard-light depth grows a little where
+  tar is); the light the dish catches still never exceeds what arrives (the carbon takes what the main absorbers left).
+- Showing one carbon substance alone (Shift+S) still draws the main table's fluorescence glow, as the main substances' solo views do.
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start
@@ -6031,6 +6173,12 @@ panel has **squeeze** (the dish x 0.8 across) and **stretch** (x 1.25) buttons; 
   the t counters in `eat`, the census in `ledger`), the radius in `cell_step.wgsl`, the genes' drift in `cell_common.wgsl` `mutate`;
   photolysis in `src/electrons.js` (`freesAtom`); `experiments/conditions/c12e/`: `make.py` (the conditions), `analyse.py` (the
   tables), `cells.py` (a colony from its final snapshot: swelling, who makes and who takes in free t, pumps, the stretch genes)
+- `src/carbon.js` + `src/shaders/carbon.wgsl`: carbon in the open dish (step C15a): the builder's table (derived from the electrons'
+  rules and checked: `carbonTable`), the springs' carbon (`CARBON_MIX`), the switches and knobs (`moire.carbon.params`, `.look`), the
+  uniform (struct CarbonP), the books (ledger words LG_CB..), the CARBON panel line, the overlay, `census`, `probeLine`. The shader is
+  appended to `matter.wgsl` (`loadShader`'s suffix): `carbon_spread`, `carbon_react`, `carbon_count`, `carbon_paint`; the hooks in
+  `src/matter.js` (blocks, slots, dispatches, ledger, the books merged, `writeCarbonDraw`), the look in `matter_draw.wgsl` (`tar_layer`,
+  the ladder's dust, `hm_tar`); `experiments/conditions/c15a/`: `make.py` (the conditions), `summary.py` (the table)
 - `src/vents.js`: vents in the dark (step C12f): the hot vent's mix (`HOT_MIX`, `OLD_MIX`; `SPRING_KINDS.heavy` follows it), its heat
   per tick (a spring's `amt[18]`), the sea's words (struct MatterP `sea`), the census (LG_VENT, LG_SEA; the gradient engines' E2_GRAD,
   E2_GRADE from `src/eat.js`), the VENTS panel line and the overlay. The rules themselves: `matter.wgsl` `spread` (the heat into the

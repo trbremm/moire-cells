@@ -605,6 +605,10 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        culture), the window is only a view; every supply PER AREA; keep the waves reachable on purpose (preset/knob).
        Plus a SQUEEZE / STRETCH tool (user: "scale the dish as if we are compressing the sample"): rescale the dish at
        runtime keeping its contents (cells crowd, substrate resampled, matter exact).
+       Plus (user 2026-11-17: "not happy with point like vents. Maybe the microfluidics chip analogy is better"): EXTENDED
+       SOURCES (line fissures, soft patches; rates per length/area; points only for the pipette) and PERFUSION: an inlet
+       edge bringing a medium recipe (booked in), an outlet edge (booked out), a gentle through-flow added to the prescribed
+       currents (chemostat-like gradients); preset 'chip'. G0b later adds the chip's walls and pillars.
        T1c PAUSED (user 2026-11-17: "stop the tissue experiments, we will change more things before they become valid").
        Committed and kept as tools: src/tissues.js (moire.tissues: PLANT, FILAMENT, BIOFILM as one hand-wired genome each,
        ?tissue=name, zoo buttons, census), src/warfare.js (moire.warfare.census(): border vs interior), ?clockhard=0 (marker

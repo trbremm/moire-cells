@@ -1829,3 +1829,101 @@ Speed: README "Step T1b", Checked.
 - Colonies that stay apart longer: in 2 of 3 seeds one lineage takes the dish by 10 min. Springs further apart, a lower capacity, or
   borders that cost (P1) could keep several lineages meeting for the whole run.
 - The dark vents need a cheaper gradient engine (or a richer gradient), not idle-engine savings.
+
+# Predators
+
+Step P1 (BUILD QUEUE 5, 2026-11-17; README "Step P1: predators"): an ENGULF gene and a KIN SPARING gene, a cell that wraps and digests a
+smaller neighbour it out-pulls (its drive against the prey's glue to its other neighbours and its armour), and a hand-made predator. The
+questions: is predation the missing PRESSURE TO LINK (a clump acts as one big cell)? Does cannibalism select itself off (the user)? Do
+predator-prey patterns appear? Conditions `experiments/conditions/p1/` (`make.py`; tables by `summary.py` and `compare.py`), runs
+`experiments/runs/p1-*`, every table in `experiments/summaries/p1-predators/summary.md`, pictures in `experiments/keep/p1/`. Headless Chrome,
+GTX 1650, at MAX; the census every 15 s (genes, meals, clusters: cells joined by mutual contact).
+
+## 0. Pilots
+
+- Default scene, 20 predators dropped at 1 min at random over the dish (`p1-pilot`): most landed in the dark and starved; meals rose to 2
+  per s by 6 min, the engulf gene from 0 to 0.22 (38 % carriers) in the residents. The drops in section 2 put the predators in the light.
+- Colonies preset, 8 min, seeds 3 and 7 (`p1-pilot-col`): wild founders now start with engulf and kin sparing anywhere in 0..1, so most
+  colonies are predators from the start; 7 to 13 meals per s by 8 min, the dish still filling (2 840 and 1 630 cells).
+
+## 1. Colonies: on, the neutral control, kin sparing's control (40 min)
+
+`?preset=colonies` (`batch-col.json`, seeds 3, 7, 11; `batch-colk.json`, seeds 3, 7). At 40 min (on / null / kinship ignored):
+
+| | seed 3 | seed 7 | seed 11 |
+|---|---|---|---|
+| cells | 2909 / 3000 / 2908 | 2878 / 3000 / 2906 | 2943 / 3000 / - |
+| meals per s (meals in all) | 12.5 (30 008) / 0 / 12.1 | 16.2 (34 369) / 0 / 13.7 | 7.3 (7 252) / 0 / - |
+| engulf gene (carriers >= 0.25) | 0.53 (77 %) / 0.63 (85 %) / 0.63 (85 %) | 0.41 (60 %) / 0.57 (81 %) / 0.35 (54 %) | 0.25 (40 %) / 0.63 (84 %) / - |
+| kin sparing gene | 0.44 / 0.38 / 0.37 | 0.60 / 0.51 / 0.53 | 0.60 / 0.58 / - |
+| contacts' kinship (marker match) | 0.05 / 0.03 / 0.01 | 0.04 / 0.03 / 0.14 | 0.07 / 0.17 / - |
+| the meals' kinship | 0.03 / - / 0.00 | 0.01 / - / 0.08 | 0.07 / - / - |
+| single cells among the prey (in the dish) | 15 % (0 %) / - / 25 % (0 %) | 20 % (0 %) / - / 26 % (0 %) | 17 % (0 %) / - / - |
+| membrane genes' stiffness | 3.66 / 2.44 / 3.36 | 3.34 / 1.47 / 3.34 | 2.67 / 2.05 / - |
+| thickness gene | 0.08 / 0.04 / 0.07 | 0.03 / 0.02 / 0.06 | 0.02 / 0.01 / - |
+| the cells' hold | 2.04 / 1.40 / 1.62 | 1.48 / 0.61 / 1.76 | 1.71 / 1.72 / - |
+| glue gene a0 | 0.47 / 0.63 / 0.40 | 0.46 / 0.35 / 0.35 | 0.52 / 0.38 / - |
+| crust wall gene | 0.56 / 0.38 / 0.35 | 0.54 / 0.45 / 0.63 | 0.57 / 0.59 / - |
+| cells in clusters >= 8 | 100 % / 100 % / 100 % | 100 % / 99 % / 100 % | 100 % / 100 % / - |
+
+Every dish ends as one lineage at its capacity (3000), on or off. In plain words:
+- Predation runs the whole time, steady: no waves, spirals or crashes. About one wrap in five ends in a meal (seed 3: 167 446 wraps,
+  110 586 escapes "held", 24 600 "lost", 987 "poor"). The tissue shows small dark holes where cells were eaten.
+- Loners are eaten about ten times more than their share (15 to 26 % of the prey, 0 % of the cells): the hold works. But the dishes are
+  one clump already (100 % in clusters of 8 and more), so linking has nothing left to gain: the glue gene goes either way.
+- ARMOUR is selected: the membrane genes' stiffness and the thickness gene end higher with predation in every seed, and so the cells' hold.
+- The ENGULF gene ends lower with predation than in the neutral control in all three seeds (and in the kin control's seed 7): eating the
+  neighbours, who are all one's own lineage, does not pay here. KIN SPARING does not rise beyond its controls. Kin sparing cannot work
+  because kin RECOGNITION has gone: within a lineage the contacts' marker match falls to 0.03 .. 0.17 within 10 to 20 minutes (wild display
+  genes near 0.5, which multiply, the marker clock, and hard light's extra mutation under the whole-dish light), so relatives look like strangers;
+  the meals' kinship is the contacts'. Cannibalism "selects itself off" by the engulf gene falling, not by sparing.
+
+## 2. Hand-made predators dropped at 5 min (30 min)
+
+`batch-drop.json`: 20 predators (engulf 1, kin sparing 0, size gene 1.25, little glue, burn + breathe + ferment engines) placed in the
+spotlight (default scene) or over the dish (Sunlit shallows) at 5 min, seeds 3 and 7, each with its neutral control (they cannot engulf).
+At 30 min (on / null):
+
+| | default s3 | default s7 | shallows s3 | shallows s7 |
+|---|---|---|---|---|
+| cells | 1407 / 1625 | 1281 / 1561 | 5913 / 5999 | 5851 / 6000 |
+| meals per s (in all) | 2.9 (2 326) / 0 | 4.4 (3 681) / 0 | 12.2 (20 536) / 0 | 21.0 (27 738) / 0 |
+| marker-kin meals | 49 % | 13 % | 12 % | 17 % |
+| engulf gene (carriers) | 0.59 (84 %) / 0.23 (37 %) | 0.55 (85 %) / 0.40 (64 %) | 0.42 (67 %) / 0.35 (60 %) | 0.44 (63 %) / 0.27 (42 %) |
+| kin sparing gene | 0.42 / 0.37 | 0.46 / 0.45 | 0.29 / 0.25 | 0.37 / 0.31 |
+| membrane genes' stiffness | 3.81 / 2.08 | 1.69 / 1.57 | 2.94 / 1.57 | 3.43 / 2.62 |
+| glue gene a0 | 0.28 / 0.21 | 0.23 / 0.31 | 0.62 / 0.49 | 0.33 / 0.36 |
+| cells in clusters >= 8 | 92 % / 95 % | 91 % / 93 % | 98 % / 99 % | 100 % / 97 % |
+
+- The dropped predators themselves never built a lineage of 20 cells (empty stock, a starter charge, and the colony's own engulfers around
+  them); predation spread through the RESIDENTS' engulf genes, which drift up from 0 (the controls reach 0.23 .. 0.40) and, with predation,
+  higher in all four pairs. In this scene (std founders, full display) predation pays for the residents, unlike in the colonies.
+- The default dish keeps 15 % fewer cells; the shallows, full at 6000, do not notice.
+- The same armour signal (stiffness higher in 4 of 4), no linking signal (glue, clusters alike).
+- The default scene's kinship stays readable longer in seed 3 (contacts 0.25 .. 0.66), where half the meals are marker kin; in seed 7 it
+  falls to 0.09 by 30 min, as in the colonies.
+
+## 3. Pictures (`experiments/keep/p1/`)
+
+`batch-pics.json`: the default scene, seed 7, 20 predators in the spot at 5 min, the view centred (`moire.predators.focus`) on the
+furthest wrap and the freshest meal at zoom x6, at device pixel ratio 2:
+- `wrap-close-neon-s7.jpg`: a white-hot arc reaching round a small cell from its big neighbour's side, among neon honeycomb tissue.
+- `phagosome-close-neon-s7.jpg`: a glowing pale ghost off-centre in a cell, a fresh meal (a stem cell's warm white).
+- `wrap-close-harmonic-s7.jpg`: thin green arcs round two prey in the green honeycomb, and a violet vacuole in a dark ring in a third cell.
+- `phagosome-close-harmonic-s7.jpg`: two cells each holding a round violet glow in a dark ring with a faint green rim.
+- `lineage-colonies-s11-10min-holes.jpg`: one yellow lineage filling the dish, dark holes in it where cells were eaten.
+- `lineage-drop-default-s3-15min.jpg`: a pink and a green lineage interleaved in the spot, ten minutes after the predators came.
+- `engulfment-clip-s7.webm` (local only: `*.webm` is ignored): 12 s at 1x, zoom x5, a wrap closing and a meal fading.
+
+## 4. The books and the checks
+
+`check.json` (480 s, every switch at runtime, resizes, G at the instant of a resize, easy engulfing with hundreds of meals on both
+membrane paths, a snapshot saved and loaded with 56 meals in digestion): atoms and charge 0 in every sample but the paused resize instant;
+the old G-at-resize leak is fixed. `reload.json`: a T1b snapshot loads with engulfing off. Every run: atoms and charge 0. Speed: README.
+
+## What to try next
+
+- Give kin sparing something to read: a slower marker clock, the display at 1 for wild founders, or a marker that drifts per lineage
+  rather than per birth. Then repeat the colonies: does sparing beat its control once relatives look like relatives?
+- Dishes that are not one clump already: a lower capacity or scattered founders under predators, to see whether the glue gene answers.
+- Predators that are not cannibals by default (the macrophages of P2): an in-body type that eats strangers only.

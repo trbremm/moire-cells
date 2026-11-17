@@ -1,0 +1,12 @@
+{
+ "batch": "t1a-pilot",
+ "runs": [
+  "pilot-default.json",
+  "pilot-default-noin.json",
+  "pilot-wild.json",
+  "pilot-blank.json"
+ ],
+ "seeds": [
+  3
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "name": "t1a-wildx-only-gates",
+ "description": "six colonies, wild founders with only the group gates, 2 min",
+ "query": {
+  "spread": "colonies",
+  "colonies": 6,
+  "founders": "wild",
+  "wild": "gates"
+ },
+ "duration": 120,
+ "sample_every": 20
+}

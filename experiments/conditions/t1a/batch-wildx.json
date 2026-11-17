@@ -1,0 +1,24 @@
+{
+ "batch": "t1a-wildx",
+ "runs": [
+  "wildx-no-body.json",
+  "wildx-no-membrane.json",
+  "wildx-no-pumps.json",
+  "wildx-no-walls.json",
+  "wildx-no-lipids.json",
+  "wildx-no-fields.json",
+  "wildx-no-gates.json",
+  "wildx-no-kin.json",
+  "wildx-only-body.json",
+  "wildx-only-membrane.json",
+  "wildx-only-pumps.json",
+  "wildx-only-walls.json",
+  "wildx-only-lipids.json",
+  "wildx-only-fields.json",
+  "wildx-only-gates.json",
+  "wildx-only-kin.json"
+ ],
+ "seeds": [
+  3
+ ]
+}

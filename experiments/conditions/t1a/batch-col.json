@@ -1,0 +1,13 @@
+{
+ "batch": "t1a-col",
+ "runs": [
+  "col-wild-default.json",
+  "col-wild-oases.json",
+  "col-blank-default.json",
+  "col-blank-oases.json"
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

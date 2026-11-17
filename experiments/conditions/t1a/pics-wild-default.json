@@ -1,0 +1,48 @@
+{
+ "name": "t1a-pics-wild-default",
+ "description": "pictures from t1a-col-wild-default_s3 at 1800 s",
+ "query": {
+  "snap": "experiments/runs/t1a-col-wild-default_s3/snapshots/snap_t1800.json"
+ },
+ "duration": 6,
+ "sample_every": 0,
+ "dpr": 2,
+ "evals": [
+  {
+   "t": 0.5,
+   "js": "moire.camera.fit(); return 'fit'"
+  },
+  {
+   "t": 2,
+   "js": "moire.camera.set(5, 0.66 * moire.control.view().cssW, 0.4 * moire.control.view().cssH); return 'zoom'"
+  },
+  {
+   "t": 4.5,
+   "js": "moire.control.action('harmonic'); return 'harmonic'"
+  }
+ ],
+ "shots": [
+  {
+   "t": 1,
+   "view": "marker",
+   "name": "lineage"
+  },
+  {
+   "t": 1,
+   "name": "neon"
+  },
+  {
+   "t": 3,
+   "view": "marker",
+   "name": "zoom_lineage"
+  },
+  {
+   "t": 3,
+   "name": "zoom_neon"
+  },
+  {
+   "t": 5.5,
+   "name": "zoom_harmonic"
+  }
+ ]
+}

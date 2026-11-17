@@ -1,0 +1,38 @@
+{
+ "name": "t1a-oases-smell1",
+ "description": "Oases preset, smell for trace on, 30 min",
+ "query": {
+  "preset": "oases",
+  "smelltrace": 1
+ },
+ "duration": 1800,
+ "sample_every": 30,
+ "snapshots": [
+  {
+   "t": 600,
+   "grid": true
+  },
+  {
+   "t": 1200,
+   "grid": true
+  },
+  {
+   "t": 1800,
+   "grid": true
+  }
+ ],
+ "shots": [
+  {
+   "t": 600
+  },
+  {
+   "t": 1800
+  },
+  {
+   "t": 1800,
+   "panel": true,
+   "name": "panel"
+  }
+ ],
+ "evals": []
+}

@@ -1,0 +1,30 @@
+{
+ "name": "t1a-pilot-blank",
+ "description": "six colonies, blank founders, 5 min",
+ "query": {
+  "spread": "colonies",
+  "colonies": 6,
+  "founders": "blank"
+ },
+ "duration": 300,
+ "sample_every": 10,
+ "snapshots": [
+  {
+   "t": 300,
+   "grid": true
+  }
+ ],
+ "shots": [
+  {
+   "t": 300,
+   "view": "marker",
+   "name": "marker"
+  },
+  {
+   "t": 300,
+   "panel": true,
+   "name": "panel"
+  }
+ ],
+ "evals": []
+}

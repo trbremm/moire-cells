@@ -1,0 +1,10 @@
+{
+ "batch": "t1a-pics",
+ "runs": [
+  "pics-wild-oases.json",
+  "pics-wild-default.json"
+ ],
+ "seeds": [
+  3
+ ]
+}

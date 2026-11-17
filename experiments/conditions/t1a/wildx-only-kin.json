@@ -1,0 +1,12 @@
+{
+ "name": "t1a-wildx-only-kin",
+ "description": "six colonies, wild founders with only the group kin, 2 min",
+ "query": {
+  "spread": "colonies",
+  "colonies": 6,
+  "founders": "wild",
+  "wild": "kin"
+ },
+ "duration": 120,
+ "sample_every": 20
+}

@@ -1,0 +1,12 @@
+{
+ "name": "t1a-wildx-only-walls",
+ "description": "six colonies, wild founders with only the group walls, 2 min",
+ "query": {
+  "spread": "colonies",
+  "colonies": 6,
+  "founders": "wild",
+  "wild": "walls"
+ },
+ "duration": 120,
+ "sample_every": 20
+}

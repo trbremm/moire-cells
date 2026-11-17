@@ -1,0 +1,73 @@
+{
+ "name": "t1a-col-wild-default",
+ "description": "six colonies, wild founders, default, 30 min",
+ "query": {
+  "spread": "colonies",
+  "colonies": 6,
+  "founders": "wild"
+ },
+ "duration": 1803,
+ "sample_every": 20,
+ "snapshots": [
+  {
+   "t": 300,
+   "grid": true
+  },
+  {
+   "t": 600,
+   "grid": true
+  },
+  {
+   "t": 900,
+   "grid": true
+  },
+  {
+   "t": 1200,
+   "grid": true
+  },
+  {
+   "t": 1500,
+   "grid": true
+  },
+  {
+   "t": 1800,
+   "grid": true
+  }
+ ],
+ "shots": [
+  {
+   "t": 300,
+   "view": "marker",
+   "name": "marker_t300"
+  },
+  {
+   "t": 900,
+   "view": "marker",
+   "name": "marker_t900"
+  },
+  {
+   "t": 1800,
+   "view": "marker",
+   "name": "marker_t1800"
+  },
+  {
+   "t": 1800,
+   "name": "neon"
+  },
+  {
+   "t": 1800,
+   "panel": true,
+   "name": "panel"
+  },
+  {
+   "t": 1802,
+   "name": "harmonic"
+  }
+ ],
+ "evals": [
+  {
+   "t": 1801,
+   "js": "moire.control.action('harmonic'); return 'harmonic'"
+  }
+ ]
+}

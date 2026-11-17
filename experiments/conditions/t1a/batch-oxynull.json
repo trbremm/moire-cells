@@ -1,0 +1,9 @@
+{
+ "batch": "t1a-oxynull",
+ "runs": [
+  "oxy-spot-null.json"
+ ],
+ "seeds": [
+  7
+ ]
+}

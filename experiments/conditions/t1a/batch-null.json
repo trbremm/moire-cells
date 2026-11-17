@@ -1,0 +1,13 @@
+{
+ "batch": "t1a-null",
+ "runs": [
+  "null-wild-default.json",
+  "null-wild-oases.json",
+  "null-blank-default.json",
+  "null-blank-oases.json"
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

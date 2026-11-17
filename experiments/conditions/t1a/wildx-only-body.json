@@ -1,0 +1,12 @@
+{
+ "name": "t1a-wildx-only-body",
+ "description": "six colonies, wild founders with only the group body, 2 min",
+ "query": {
+  "spread": "colonies",
+  "colonies": 6,
+  "founders": "wild",
+  "wild": "body"
+ },
+ "duration": 120,
+ "sample_every": 20
+}

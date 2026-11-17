@@ -1,0 +1,10 @@
+{
+ "batch": "t1a-noin",
+ "runs": [
+  "noin-wild-default.json",
+  "noin-wild-oases.json"
+ ],
+ "seeds": [
+  3
+ ]
+}

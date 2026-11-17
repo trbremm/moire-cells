@@ -1,0 +1,11 @@
+{
+ "batch": "t1a-wildx-all",
+ "runs": [
+  "wildx-all.json"
+ ],
+ "seeds": [
+  3,
+  7,
+  11
+ ]
+}

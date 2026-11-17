@@ -618,7 +618,15 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        viscosity and decay; added to the prescribed psi, so transport stays divergence-free, flux-form and exact); the water
        carries substances and other cells. Energy booked (water motion from the cells' work, decays to heat). Expected look:
        crawling colonies leave swirls; dense moving tissue may give "bacterial turbulence" (collective vortices); fronts
-       (D1 waves) drag the water. Own switches; streamlines in the machinery view.
+       (D1 waves) drag the water. Own switches; streamlines in the machinery view. Build the water solver MASK-READY
+       (psi held constant on solid pixels) for G0b.
+    6a2. G0b OBSTACLES (user 2026-11-17 asked; Claude: separate step right after G0, sharing its water solver): a solid
+       mask on the substrate grid, painted with a tool (walls, blocks, pillars, channels) and in presets (e.g. a MICROFLUIDIC
+       chip: channels and pillar arrays, a chamber with an inlet flow). Cells cannot enter (contact push from the mask), water
+       flows around (no-slip, low Reynolds: smooth flow, dead zones, no vortex streets), substances do not cross (flux 0 at
+       solid faces, exact), optional shadows. Variants: POROUS walls (water and small atoms pass, cells do not: a filter /
+       membrane insert). The dish rim itself can become a mask (round dish). Expected: crevices as refuges from predators and
+       shear, matter piling in dead zones, colonies channelled along walls, fronts (D1) bending round blocks.
     6b. G1 ERROR CORRECTION (user 2026-11-17 "yes"): a FIDELITY gene (proofreading): higher = fewer mutations per
        division (all genes, incl. the self marker, so the molecular clock slows with it: kin sparing gets something to
        read) but each division costs more battery; hard light's extra mutation still acts (repair may evolve against it).

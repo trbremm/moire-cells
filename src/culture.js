@@ -3,7 +3,7 @@
 // light go, so every preset opens by URL (?preset=vent) and can be shared as a link.
 //
 // URL options (read by src/main.js before anything else; a preset's own options never override the URL's):
-//   ?preset=name        vent | shallows | oxygen | slick | desert | oases | plumes | colonies | lab (PRESETS below; step N1: oases, plumes;
+//   ?preset=name        vent | fronts | chip | shallows | oxygen | slick | desert | oases | plumes | colonies | lab (PRESETS below; step N1: oases, plumes;
 //                       step T1b: colonies)
 //   ?spread=clump|scatter|colonies|ring   how the founders are placed (default clump: the old blob at the centre); with any
 //                       spread but clump the pull to the dish centre is nearly off (squeeze 0.02), so the culture stays spread
@@ -30,18 +30,44 @@ export const PRESETS = {
     // step M1 (Task B): the founders on a RING round each vent (?ventring=inner,outer in R; 0,0 = the old blobs on the vents), where
     // the vent's givers meet the sea's takers cold once the charge field is off (step C12g)
     ring: [8, 20],
-    scene({ matter, light, W, H }) {
+    scene({ matter, light, W, H, cells }) {
       light.params.power *= 0.3;   // the faint glow, if the light is switched on (&light=full)
       // step C12f: each vent HOT (src/vents.js: free givers and heat), with a mineral seep beside it (linkers for membranes, and the
       // water-like gt); the sea (?sea=1, the preset's) brings T everywhere. Before step C12f the vent's fuel and metal alone fed
       // nobody in the dark (fermenting earned the culture about 0.001 per s; README "Step C12f: vents in the dark")
       const m = Math.min(W, H);
+      // (the dish's size, 2026-11-17: each vent a FISSURE, a line 14 R long across the radius of the dish, dripping 40 / 14 atoms per s
+      // per R, and each seep a PATCH 3 R across its radius: the same totals as the old points; ?pointvents=1 the old points)
+      const R = cells ? cells.R : 6, point = new URLSearchParams(location.search).get('pointvents') === '1';
       for (const [x, y] of ring3(W, H, 0.27, -90)) {
-        matter.addSpring(x, y, 'heavy', 1e9, { rate: 40 });
         const dx = x - W / 2, dy = y - H / 2, d = Math.hypot(dx, dy) || 1;
-        matter.addSpring(x + dx / d * 0.07 * m, y + dy / d * 0.07 * m, 'light', 1e9, { rate: 12 });
+        const sx = x + dx / d * 0.07 * m, sy = y + dy / d * 0.07 * m;
+        if (point) {
+          matter.addSpring(x, y, 'heavy', 1e9, { rate: 40 });
+          matter.addSpring(sx, sy, 'light', 1e9, { rate: 12 });
+        } else {
+          matter.addLine(x, y, 'heavy', 14, Math.atan2(dy, dx) * 180 / Math.PI + 90, 40 / 14, 1e9);
+          matter.addPatch(sx, sy, 'light', 3, 12 / (Math.PI * 9), 1e9);
+        }
       }
     },
+  },
+  // the dish's size (README "Dish size and densities"): the waves the user saw after shrinking the window, on purpose
+  fronts: {
+    label: 'Fronts',
+    desc: 'A long strip of dish whose right wall slowly presses in and lets go again every four minutes, like the edge of a coverslip pushed and released. The cells in front of it are packed into a dense, bright front that runs into the looser tissue; when the wall lets go the front loosens and scatters, and the next press starts again. (What made the waves after shrinking the window: the walls closing in on the culture.)',
+    query: { dish: '396x124', press: '0.45,240', light: 'full', spread: 'scatter' },
+    scene({ matter, W, H }) {
+      for (const [x, y] of [[0.12, 0.3], [0.3, 0.75], [0.5, 0.3], [0.7, 0.72], [0.88, 0.35]]) matter.addSpring(x * W, y * H, 'light', 1e9);
+      matter.addSpring(0.06 * W, 0.8 * H, 'heavy', 1e9, { rate: 3 });
+    },
+  },
+  // the microfluidic chip (the user, 2026-11-17: "maybe the microfluidics chip analogy is better"; src/perfusion.js)
+  chip: {
+    label: 'Chip',
+    desc: 'A microfluidic channel. Fresh medium (minerals, linkers, some fuel and trace) flows in along the left wall, the water drifts slowly to the right, fastest down the middle, and leaves at the right wall with whatever it carries. Cells scattered along the channel, the whole dish lit: who thrives at the fresh inlet, who lives on what is left downstream?',
+    query: { dish: '396x124', perfusion: 1, light: 'full', spread: 'scatter', scarce: 0, oases: 0 },
+    scene() {},
   },
   shallows: {
     label: 'Sunlit shallows',
@@ -248,6 +274,18 @@ export function cultureLayout(L, W, H, R, n, rng) {
   };
 }
 
+/**
+ * The dish's size (src/dish.js), as the New culture dialog offers it: [label, size in R or null (the window's), help]. The reference is the
+ * experiments' default window (1280 x 800 px with 2000 cells: 198 x 123 R); the strip is the user's short wide window (1440 x 450 px).
+ */
+export const DISH_SIZES = {
+  window: ['this window', null, 'the dish is this window, as it is now (its size in cells set by the window and the number of cells)'],
+  small: ['small', [140, 88], "half the reference dish's area: 140 x 88 cell radii"],
+  ref: ['reference', [198, 123], 'the reference dish: 198 x 123 cell radii (a 1280 x 800 window with 2000 cells)'],
+  strip: ['strip', [396, 124], "a long strip, 396 x 124 cell radii (twice the reference's area): fronts have room to run"],
+  large: ['large', [280, 175], "twice the reference dish's area: 280 x 175 cell radii (more cells: slower)"],
+};
+
 /** The squeeze (pull to the centre) for a spread: the old one for the clump, nearly none for the rest. */
 export const SPREAD_SQUEEZE = 0.02;
 
@@ -275,7 +313,9 @@ export function openCultureDialog(ctx) {
     diversity: DIVERSITY.includes(cur.get('diversity')) ? cur.get('diversity') : 'mixed',
     founders: FOUNDER_MODES.includes(cur.get('founders')) ? cur.get('founders') : C.genome.params.founderMode || 'std',   // (step T1a)
     newSeed: true,
+    dish: Object.keys(DISH_SIZES).find((k) => DISH_SIZES[k][1] && DISH_SIZES[k][1].join('x') === cur.get('dish')) || 'window',   // (the dish's size)
   };
+  const dish0 = st.dish;
   const wrap = el('div', 'dlg-wrap');
   wrap.id = 'culture';
   const box = el('section', 'dlg');
@@ -302,6 +342,14 @@ export function openCultureDialog(ctx) {
     envList.append(b);
   }
   body.append(envList);
+  // the dish's size (src/dish.js): kept while the window changes; chosen here
+  const dsRow = el('div', 'rmain');
+  const dsSeg = el('span', 'seg');
+  for (const [k, [label]] of Object.entries(DISH_SIZES)) { const b = el('button', '', label); b.type = 'button'; b.dataset.dish = k; dsSeg.append(b); }
+  dsRow.append(el('span', 'lbl', 'size'), dsSeg);
+  body.append(dsRow);
+  const dsHelp = el('p', 'help', '');
+  body.append(dsHelp);
   // founders
   body.append(el('h3', '', 'Founders'));
   const nRow = el('div', 'rmain');
@@ -379,10 +427,12 @@ export function openCultureDialog(ctx) {
     if (st.diversity !== ((P && P.query.diversity) || 'mixed')) keep.set('diversity', st.diversity);
     if (st.founders !== 'std') keep.set('founders', st.founders);   // (step T1a)
     if (!st.newSeed) keep.set('seed', String(ctx.control.seed));
+    const ds = DISH_SIZES[st.dish][1];
+    if (ds && !(P && P.query.dish === ds.join('x'))) keep.set('dish', ds.join('x'));
     u.search = keep.toString();
     return u.href;
   }
-  const inPlace = () => !st.preset && st.cells === C.start;
+  const inPlace = () => !st.preset && st.cells === C.start && st.dish === dish0;
   function sync() {
     for (const b of envList.querySelectorAll('[data-env]')) b.setAttribute('aria-pressed', String(b.dataset.env === st.preset));
     for (const b of spSeg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.spread === st.spread));
@@ -392,6 +442,8 @@ export function openCultureDialog(ctx) {
     dvHelp.textContent = DIV_HELP[st.diversity];
     for (const b of fmSeg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.fm === st.founders));
     fmHelp.textContent = FOUNDER_HELP[st.founders];
+    for (const b of dsSeg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.dish === st.dish));
+    dsHelp.textContent = DISH_SIZES[st.dish][2];
     link.textContent = inPlace() ? 'Starts here, now: the same dish, new cells (no reload).' : `Opens: ${url()}`;
     go.textContent = inPlace() ? 'start here' : 'open';
   }
@@ -406,12 +458,14 @@ export function openCultureDialog(ctx) {
         st.spread = P.query.spread || 'clump';
         if (P.query.colonies) st.colonies = P.query.colonies;
         st.diversity = P.query.diversity || 'mixed';
+        if (P.query.dish) st.dish = Object.keys(DISH_SIZES).find((k) => DISH_SIZES[k][1] && DISH_SIZES[k][1].join('x') === P.query.dish) || st.dish;
         nIn.value = String(st.cells); colIn.value = String(st.colonies);
       }
     } else if (b.dataset.n) { st.cells = Number(b.dataset.n); nIn.value = String(st.cells); }
     else if (b.dataset.spread) st.spread = b.dataset.spread;
     else if (b.dataset.div) st.diversity = b.dataset.div;
     else if (b.dataset.fm) st.founders = b.dataset.fm;
+    else if (b.dataset.dish) st.dish = b.dataset.dish;
     sync();
   });
   nIn.addEventListener('input', () => { st.cells = Math.max(1, Math.min(20000, Math.round(Number(nIn.value) || 1))); sync(); });

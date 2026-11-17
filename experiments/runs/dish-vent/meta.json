@@ -1,0 +1,82 @@
+{
+  "name": "dish-vent",
+  "description": "the Deep vents preset with fissure vents (&light=full to see them)",
+  "condition": {
+    "name": "dish-vent",
+    "description": "the Deep vents preset with fissure vents (&light=full to see them)",
+    "query": {
+      "preset": "vent",
+      "seed": 3,
+      "light": "full"
+    },
+    "size": "1280x800",
+    "duration": 120,
+    "sample_every": 10,
+    "stall": 300,
+    "evals": [
+      {
+        "t": 60.5,
+        "js": "moire.control.action('harmonic'); return 'harmonic'"
+      },
+      {
+        "t": 61.5,
+        "js": "moire.control.action('harmonic'); return 'neon'"
+      }
+    ],
+    "shots": [
+      {
+        "t": 20,
+        "name": "t0020"
+      },
+      {
+        "t": 60,
+        "name": "t0060"
+      },
+      {
+        "t": 61,
+        "name": "t0061_harm"
+      },
+      {
+        "t": 120,
+        "name": "t0120"
+      }
+    ]
+  },
+  "url": "http://localhost:60337/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=vent&seed=3&light=full",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-17T16:53:08",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 120.0,
+  "run_wall_s": 478.17,
+  "speed_reached": 0.25,
+  "samples": 13,
+  "shots": [
+    "shots/t0020.png",
+    "shots/t0060.png",
+    "shots/t0061_harm.png",
+    "shots/t0120.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 60.49999999999785,
+      "js": "moire.control.action('harmonic'); return 'harmonic'",
+      "result": "harmonic"
+    },
+    {
+      "t": 61.49999999999779,
+      "js": "moire.control.action('harmonic'); return 'neon'",
+      "result": "neon"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T17:02:35",
+  "wall_s": 567.76
+}

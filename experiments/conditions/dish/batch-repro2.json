@@ -1,0 +1,959 @@
+{
+ "batch": "dish-repro2",
+ "runs": [
+  {
+   "name": "dish-fhd-shrinkwide",
+   "description": "1920x1080 10 min, then 1152x360 (5x less area, wide-short), 20 min",
+   "query": {},
+   "size": "1920x1080",
+   "duration": 1800,
+   "sample_every": 30,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 0,
+     "js": "\nwindow.__kymo = async () => {\n  const M = window.moire, C = M.cells, d = M.gpu.device, n = C.count, F = 92;\n  const buf = d.createBuffer({ size: n * F * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\n  const e = d.createCommandEncoder(); e.copyBufferToBuffer(C.cellBuf, 0, buf, 0, n * F * 4); d.queue.submit([e.finish()]);\n  await buf.mapAsync(GPUMapMode.READ); const f = new Float32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\n  const u = new Uint32Array(f.buffer), v = M.control.view(), W = (M.dish ? M.dish.W : v.cssW), H = (M.dish ? M.dish.H : v.cssH);\n  const b = 4 * C.R, nx = Math.ceil(W / b), ny = Math.ceil(H / b);\n  const g = new Array(nx * ny).fill(0), bat = new Array(nx * ny).fill(0); let alive = 0, out = 0, rs = 0;\n  for (let i = 0; i < n; i++) {\n    if (!(u[i * F + 9] & 1)) continue; alive++; rs += f[i * F + 4];\n    const ix = Math.floor(f[i * F] / b), iy = Math.floor(f[i * F + 1] / b);\n    if (ix < 0 || iy < 0 || ix >= nx || iy >= ny) { out++; continue; }\n    g[iy * nx + ix]++; bat[iy * nx + ix] += f[i * F + 16];\n  }\n  return { t: M.time(), R: C.R, mR: M.medium.R, W, H, b, nx, ny, alive, out, rMean: alive ? rs / alive / C.R : 0,\n           g: g.join(','), bat: bat.map((x, k) => g[k] ? (x / g[k]).toFixed(3) : 0).join(',') };\n};\nreturn 'ok';\n"
+    },
+    {
+     "t": 0,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 30,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 60,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 90,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 120,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 150,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 180,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 210,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 240,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 270,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 300,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 330,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 360,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 390,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 420,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 450,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 480,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 510,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 540,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 570,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 600,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 605,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 610,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 615,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 620,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 625,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 630,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 635,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 640,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 645,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 650,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 655,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 660,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 665,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 670,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 675,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 680,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 685,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 690,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 695,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 700,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 705,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 710,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 715,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 720,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 725,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 730,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 735,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 740,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 745,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 750,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 755,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 760,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 765,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 770,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 775,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 780,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 785,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 790,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 795,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 800,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 805,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 810,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 815,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 820,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 825,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 830,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 835,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 840,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 845,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 850,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 855,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 860,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 865,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 870,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 875,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 880,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 885,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 890,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 895,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 900,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 905,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 910,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 915,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 920,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 925,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 930,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 935,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 940,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 945,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 950,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 955,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 960,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 965,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 970,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 975,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 980,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 985,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 990,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 995,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1000,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1005,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1010,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1015,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1020,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1025,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1030,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1035,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1040,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1045,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1050,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1055,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1060,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1065,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1070,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1075,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1080,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1085,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1090,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1095,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1100,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1105,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1110,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1115,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1120,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1125,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1130,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1135,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1140,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1145,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1150,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1155,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1160,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1165,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1170,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1175,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1180,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1185,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1190,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1195,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1200,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1230,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1260,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1290,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1320,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1350,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1380,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1410,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1440,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1470,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1500,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1530,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1560,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1590,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1620,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1650,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1680,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1710,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1740,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1770,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1800,
+     "js": "return await window.__kymo()"
+    }
+   ],
+   "shots": [
+    {
+     "t": 300,
+     "name": "t0300"
+    },
+    {
+     "t": 599,
+     "name": "t0599"
+    },
+    {
+     "t": 602,
+     "name": "t0602"
+    },
+    {
+     "t": 620,
+     "name": "t0620"
+    },
+    {
+     "t": 640,
+     "name": "t0640"
+    },
+    {
+     "t": 660,
+     "name": "t0660"
+    },
+    {
+     "t": 690,
+     "name": "t0690"
+    },
+    {
+     "t": 720,
+     "name": "t0720"
+    },
+    {
+     "t": 780,
+     "name": "t0780"
+    },
+    {
+     "t": 840,
+     "name": "t0840"
+    },
+    {
+     "t": 900,
+     "name": "t0900"
+    },
+    {
+     "t": 1020,
+     "name": "t1020"
+    },
+    {
+     "t": 1140,
+     "name": "t1140"
+    },
+    {
+     "t": 1260,
+     "name": "t1260"
+    },
+    {
+     "t": 1380,
+     "name": "t1380"
+    },
+    {
+     "t": 1500,
+     "name": "t1500"
+    },
+    {
+     "t": 1620,
+     "name": "t1620"
+    },
+    {
+     "t": 1800,
+     "name": "t1800"
+    }
+   ],
+   "resizes": [
+    {
+     "t": 600,
+     "size": "1152x360"
+    }
+   ]
+  },
+  {
+   "name": "dish-small-wide",
+   "description": "1152x360 from the start, 2000 cells (the R the resized dish gets), 20 min",
+   "query": {
+    "cells": 2000
+   },
+   "size": "1152x360",
+   "duration": 1200,
+   "sample_every": 30,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 0,
+     "js": "\nwindow.__kymo = async () => {\n  const M = window.moire, C = M.cells, d = M.gpu.device, n = C.count, F = 92;\n  const buf = d.createBuffer({ size: n * F * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\n  const e = d.createCommandEncoder(); e.copyBufferToBuffer(C.cellBuf, 0, buf, 0, n * F * 4); d.queue.submit([e.finish()]);\n  await buf.mapAsync(GPUMapMode.READ); const f = new Float32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\n  const u = new Uint32Array(f.buffer), v = M.control.view(), W = (M.dish ? M.dish.W : v.cssW), H = (M.dish ? M.dish.H : v.cssH);\n  const b = 4 * C.R, nx = Math.ceil(W / b), ny = Math.ceil(H / b);\n  const g = new Array(nx * ny).fill(0), bat = new Array(nx * ny).fill(0); let alive = 0, out = 0, rs = 0;\n  for (let i = 0; i < n; i++) {\n    if (!(u[i * F + 9] & 1)) continue; alive++; rs += f[i * F + 4];\n    const ix = Math.floor(f[i * F] / b), iy = Math.floor(f[i * F + 1] / b);\n    if (ix < 0 || iy < 0 || ix >= nx || iy >= ny) { out++; continue; }\n    g[iy * nx + ix]++; bat[iy * nx + ix] += f[i * F + 16];\n  }\n  return { t: M.time(), R: C.R, mR: M.medium.R, W, H, b, nx, ny, alive, out, rMean: alive ? rs / alive / C.R : 0,\n           g: g.join(','), bat: bat.map((x, k) => g[k] ? (x / g[k]).toFixed(3) : 0).join(',') };\n};\nreturn 'ok';\n"
+    },
+    {
+     "t": 0,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 30,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 60,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 90,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 120,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 150,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 180,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 210,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 240,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 270,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 300,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 330,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 360,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 390,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 420,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 450,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 480,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 510,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 540,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 570,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 600,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 630,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 660,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 690,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 720,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 750,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 780,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 810,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 840,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 870,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 900,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 930,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 960,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 990,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1020,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1050,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1080,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1110,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1140,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1170,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 1200,
+     "js": "return await window.__kymo()"
+    }
+   ],
+   "shots": [
+    {
+     "t": 60,
+     "name": "t0060"
+    },
+    {
+     "t": 120,
+     "name": "t0120"
+    },
+    {
+     "t": 240,
+     "name": "t0240"
+    },
+    {
+     "t": 360,
+     "name": "t0360"
+    },
+    {
+     "t": 600,
+     "name": "t0600"
+    },
+    {
+     "t": 900,
+     "name": "t0900"
+    },
+    {
+     "t": 1200,
+     "name": "t1200"
+    }
+   ],
+   "resizes": []
+  }
+ ],
+ "seeds": [
+  3
+ ]
+}

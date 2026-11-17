@@ -1980,3 +1980,137 @@ charge 0.
   mutation), and one where the world keeps changing (wandering springs, a day cycle) where sloppy "mutator" lineages might win.
 - With `beyond` lower, careful lineages could escape hard light: do they gather under the spotlight?
 - Kin sparing (P1) against careful lineages: does a slower clock let sparing work?
+
+# Waves after a resize
+
+The user, 2026-11-17: they let a dish evolve full screen, then made the window about 5x smaller; afterwards "amazing waves of cells are
+forming and going across the dish, reaching criticality and starting again". Their pictures (a wide, short window, neon, 16x): a DENSE
+FRONT of tightly packed bright cells moving left into an older, looser tissue; behind it a beige haze with thin white film lines and dark
+holes, a few springs, few cells; far behind, small clumps regrowing; minutes later the front loosened and scattered as it reached the old
+tissue. Their guess: "we need to calculate the density of energy we want to have based on the grid size".
+
+Conditions: `experiments/conditions/dish/` (`make.py` writes the batches; `kymo.py` draws kymographs). The resizes ran on the code as it
+was before the fix (a frozen copy of main, plus the fix for a crash the resize itself caused, below); the treatments one at a time ran on
+the new code with `?dishfollow=1` (the old window-is-the-dish behaviour, kept as a switch) from a snapshot taken just before the resize,
+so every treatment starts from the same evolved culture. Seed 3, default scene (spotlight, a mineral spring, a vent, oases). The GPU was
+shared with up to nine other experiment runs, so these are few and short (x0.2 to x0.7 of real time); one seed.
+
+Words used below: KYMOGRAPH = a picture with time going down and the dish's width going across, each row the cells counted along the
+width at one moment (a front shows as a slanted bright edge). R = the cells' radius, the unit everything in the dish should be measured in.
+
+## 1. What a resize did (the audit, README "Dish size and densities")
+
+The dish WAS the window. Shrinking 1920 x 1080 to 1152 x 360 with 2000 starting cells:
+- the cells' radius went from 8.75 to 2.92 px (R comes from the window's shorter side), but every cell stayed where it was in px;
+- the medium lattice stayed 9 px: from 1.03 R to 3.09 R, every moire beat three times longer in cell units;
+- the light stayed 33 per 100 px²: from 25 to 2.8 per cell area, a cell caught 9x less;
+- a NEW substrate grid was made and the old one DRAINED: every atom and all the heat counted as gone;
+- the dish in cell units grew (27 000 -> 49 000 R²) while the capacity stayed 6000 cells;
+- 956 of the 1101 cells were now OUTSIDE the window, and the soft walls (stiffness 2 per s, 3 R in from the edge) shoved them in.
+
+## 2. The resize, reproduced (`batch-repro3`, `diag-*`)
+
+- **1920 x 1080 for 10 min, then 1152 x 360 in one step** (`dish-fhd-shrinkwide_s3`). Within 2 s the culture lies as a dense, bright,
+  pink-and-cream band along the bottom and right walls (`t0602.png`), the rest of the window empty. Within 20 s most cells are dead
+  (1101 -> 426 at +20 s, 124 at +60 s, 3 at +120 s). The entropy panel goes wrong: heat in the dish -10 M, energy rounding -2.1e7, the
+  entropy rate jumps from 2e4 to 3.5e5 per s and stays near 2.6e5 per s for the next 20 min. A handful of survivors regrow a colony in
+  the spotlight, whose number then swings with the DAY (period 240 s, light per cell 9x lower than before: 182, 120, 243, 81, 360, 148,
+  310, 130, 346 cells at 2-min steps). No further travelling waves in this seed: in the kymograph the colony sits still at 220-270 R.
+- **Why the books broke: the shove boils the dish.** The walls push a cell 500 px outside at up to ~1000 px per s; drag turns that motion
+  into heat, and a single pixel's heat count overflows its 32-bit integer (2.1e9) within half a second and wraps NEGATIVE
+  (`dish-diag-follow`: max 3.2e5 counts before, 2.14e9 at +0.5 s; negative pixels 19 at +0.5 s, 47 000 of 195 000 at +40 s). A
+  negative temperature then feeds every heat-driven rule (kicks, sparks, heat damage) nonsense, and the leak of a wrapped number is the
+  "free entropy" the panel shows. Numerical error, as the user once hoped for, but not one we want.
+- **The same shrink as a window DRAGGED** (20 steps over 10 s, `dish-diag-gradual`). No overflow, but a scalding band: up to 4e8 counts
+  per pixel (1250x the usual hottest) where the walls pile the cells up. The culture is swept into the bottom-right corner, packed to
+  three times its density (0.09 cells per R² across the column against 0.03), then the pile spreads back to the LEFT as a dense front
+  at about 1.9 R per s, thinning as it goes (front from 388 to 304 R in 40 s) - the user's "dense front moving left". It dies out in
+  the dark corner (no spot there, 9x less light per cell): 0 cells by 160 s.
+- **Positions rescaled with R** (`dish-diag-rescaled`: the old resize, but each cell moved toward the new centre by the ratio of the
+  radii, so the culture keeps its shape in cell units and nothing is outside): no shove, no overflow (heat at most 15 000 counts), but
+  still the famine: 1100 -> 113 cells at 80 s, then a slow regrowth (350 at 230 s).
+- **The drain alone** (`dish-diag-drain`: the dish kept, only a new empty grid at 2 s): harmless, 1100 -> 794 at 80 s -> 1602 at 160 s,
+  as the undisturbed culture does.
+- **The small window from the start** (`dish-small-wide_s3`, old code, 1152 x 360, 2000 cells): no shove, but the same famine: 2000 ->
+  46 cells at 4 min, then the day-locked swing (130, 57, 285, 151, 322, 176, 333, 226 at 2-min steps).
+- **The same strip dish under the new rules** (`dish-strip-new_s3`: 395 x 123 R, R 2.92 px, but light, medium and capacity per area): the
+  usual founders' crash (2000 -> 540 at 2 min) and then a steady colony (1500 at 20 min) in the spotlight: no famine.
+
+## 3. What caused the waves
+
+Three things the window did, together:
+1. **The walls closed in on the culture.** Every cell outside the new window was shoved in at once and piled against the walls; the
+   pile, packed to several times the tissue's density, spread back into the dish as a DENSE FRONT (about 2 R per s) and loosened as it
+   met the looser cells. That is the bright front moving left.
+2. **The cells shrank in place.** R fell three times but positions stayed in px, so the old tissue became a loose scatter of small
+   cells three times further apart in cell units: the "older, looser tissue" the front ran into.
+3. **The world changed under them.** Light per cell fell 9x and the substrate was drained, so most cells starved or burst; the beige
+   haze with film lines and holes is most likely what the dying cells spilled (lipids make soap films) and the hot band's chemistry
+   (not checked in a picture: the shrunk runs died back too fast to show a haze like the user's). With the light per cell
+   so low the population rose and fell with every day: perhaps the "reaching criticality and starting again" (and each further drag
+   of the window shoved the culture anew; one seed and one window size here, so the repeat is a guess). And a sudden shrink boiled the dish past the heat counter's range, which made the energy books wrong for good.
+None of it was the biology. The fix (README "Dish size and densities") makes the dish keep its size: a resize is only a view.
+
+Measured fronts: 1.9 R per s spreading from the pile (gradual shrink), about 1 R per s while dying (one-step shrink); one front per
+shove, travelling 80-90 R before it thins out. Period of the later swings: the day, 240 s. Kymographs: `experiments/keep/dish/
+resize-kymograph.png` (the one-step shrink: a short bright smear at the walls, then the faint colony at the spot) and
+`drag-kymograph.png` (the dragged window: the culture swept to the right edge, then a bright fan spreading back left and fading).
+Pictures: `resize-1..3`, `drag-1..3` (neon; the shrunk dish's cells are 3 px across).
+
+Found and fixed on the way: the resize also crashed a page whose overlay was open ("Buffer grid starts used in submit while destroyed":
+the timing probe submitted command buffers recorded before the resize); replaced grid buffers are now destroyed a frame later.
+Not fixed (only reachable with `?dishfollow=1`): the heat counter's overflow under an extreme shove.
+
+## 4. The waves on purpose: the Fronts preset
+
+The cause was mechanical (walls closing in), so the clean way to get the fronts is a wall that closes in, without the rest of a resize:
+`dish.press` (README "Dish size and densities"), the right wall moving in and out for the cells only. The **Fronts** preset
+(`?preset=fronts`): a strip dish 396 x 124 R (R 3.23 px in a 1280 x 800 window), 2000 cells scattered, the whole dish lit, five mineral
+springs and a slow vent, the wall pressing in to 0.45 of the width and back every 240 s. Run `dish-fronts` (seed 3, 600 s; pictures in
+`experiments/keep/dish/fronts-*.jpg`):
+- First press (0-120 s): the scattered cells in the right part are gathered into a thin bright line along the moving wall
+  (`t0060`); most of them die there (no springs inside the line's reach), so after the wall's retreat the right third stays empty
+  but for gold fuel dust and the springs' haze (`t0240`).
+- Meanwhile the colonies round the springs on the left grow together into one tissue (1100 cells at 2-4 min, 2300 at 250 s, 3500
+  at 290 s). The second press meets that tissue: it is packed against the wall into a dense, straight, bright edge, cream with cyan
+  and violet patches (`t0330`, `t0345`, wall in at 0.38 and 0.43), the user's "dense front"; harmonic look: a green honeycomb packed
+  hardest along the wall (`t0360` harmonic).
+- When the wall lets go (360-480 s) the packed edge loosens first (`t0390`, `t0420`), then the tissue grows back into the freed space
+  as a cream front with a ragged edge running right toward the springs and the fuel there (`t0480`), and the count jumps (4200 at
+  440 s, 7400 at 490 s, 9100 at 530 s: the freed, fed space fills).
+- Measured (kymograph `experiments/keep/dish/fronts-kymograph.png`: time down, the strip's length across, brightness = cells per
+  column of 4 R): the densest column rides on the wall as it comes in (364 -> 304 -> 240 -> 212 R from the left in the first press:
+  about 2 R per s, the wall's own speed), packed to 0.14 cells per R² averaged over the strip's height (9 times the scattered start's
+  0.016), 0.095 in the second press and 0.19 in the third, when the tissue is full. After each release the packed edge spreads back at
+  about 0.5 R per s, and the regrowing tissue's edge reaches 256 R by 450 s and 304 R by 540 s, where the third press meets it.
+So the waves come back on purpose: each press packs a front, each release lets a growth front run out again. Not tuned further (one
+seed, one period); the press's depth and period, the light and the springs are the knobs.
+
+**The Chip preset** (`?preset=chip`, run `dish-chip`, 360 s; `experiments/keep/dish/chip-*.jpg`): the same strip with fresh medium
+flowing in from the left wall at 0.4 R per s and out at the right. Within two minutes every cell beyond ~70 R of the inlet has died
+(trace, which pigments need, only comes with the medium), and life grows back FROM the inlet as a front that runs downstream with the
+water, fastest down the middle of the channel: by 300 s a dense tissue fills the first 100 R and its edge bulges into a rounded tip in
+the middle (the channel's flow profile drawn by the cells), sparse cells ahead of it (4163 cells at 360 s). Harmonic: a green
+honeycomb with a warm band along the inlet. Fissure vents: `experiments/keep/dish/vent-fissures-*.jpg` (salmon stadiums round each
+fissure, blue rings at the seeps; cells gather along the fissures).
+
+## 5. Checks
+
+- Books across resizes with the fixed dish (`check-quick`: 1280 x 800 -> 900 x 400 -> 1600 x 500 while running): the dish, R (6.48 px),
+  the grid (396 x 247) and the medium unchanged, drawn at x0.50 and x0.63, letterboxed; atoms and charge rounding 0 in every sample.
+  With `?dishfollow=1` the old behaviour: R 3.24 px and a new grid 556 x 247 after the resize; atoms rounding 433 and charge 25 in the
+  sample taken AT the paused resize (the drain is booked on the next frame, as before), 0 after.
+- Squeeze and stretch (`check-squeeze`: x0.8, x0.8, x1.25, x1.5625 at 30, 50, 70, 90 s, then a window resize): atoms and charge rounding
+  0 in every sample; the energy line's rounding blips at the sample right after each squeeze (-18, -23, 4 028, 10 875) and is back at
+  ~0.01 at the next. The cells kept: `check-stretch` reads every cell before and after (1915 alive both, none outside, sizes unchanged).
+  (The culture's crash in that run, 1519 -> 1168 between 65 and 70 s, is the default scene's usual founders' crash between 60 and 90 s:
+  1656 -> 987 in the C12b runs.)
+- Reference dish (`check-ref`): the default scene and the Deep vents preset (600 cells: R 9 px) at 1280 x 800 have supply 1, capacity
+  6000 / 1800, medium 9 px and light per pixel exactly as before; the vents drip their 40 and 12 per s.
+- The Chip preset (`dish-chip`): atoms and charge rounding 0 with the inlet, the through-flow and the outlet (in = out + kept).
+- Firefox (headed, the Deep vents preset with fissures): starts, no console errors, the fissures drawn; the dish chosen at the window
+  Firefox opened with (1280 x 800) and drawn x1.25 once it grew to 1600 x 1000. Phone (Chrome, 390 x 844, touch): the dish 78 x 169 R,
+  R 4.99 px as before, 3246 slots, 2 oases; tap and panels work.
+- Speed: not measured cleanly: the GPU was shared with up to nine other experiment runs the whole time (runs went at x0.05 to x0.7).
+  At the default dish the per-frame work is the same as main's but for the springs' capsule test in the matter pass (16 springs at
+  most) and the through-flow term in the water pass (only with perfusion).

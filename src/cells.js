@@ -50,6 +50,7 @@ import { Grn } from './grn.js';
 import { Predators, STATS_P1, P1_WORDS, P1_CLEAR } from './predators.js';
 import { Fidelity } from './fidelity.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
+import { dish } from './dish.js';      // the dish's own size and R
 import { cultureLayout } from './culture.js';   // app: how a new culture is spread
 
 export const CELL_URL = 'src/shaders/cell_common.wgsl';
@@ -491,6 +492,8 @@ export class Cells {
 
   /** The cells' radius: the reference's R, or smaller if `count` cells would not fit in the dish. */
   fitR(view) {
+    // (the dish's own R, src/dish.js: chosen with the dish, kept while the window changes; it is the old rule's for a dish from the window)
+    if (dish.R > 0) return dish.R;
     // a round blob packed at about 0.82 area fraction, diameter at most 0.8 x the shorter side
     const blob = 0.4 * Math.min(view.cssW, view.cssH);
     return Math.min(this.medium.R, blob * Math.sqrt(0.82 / this.start));   // (step C9: by the starting number, not the capacity)
@@ -546,7 +549,8 @@ export class Cells {
     if (n + 3 <= this.grid.cap) return;   // (step C9: + the free slots' bucket, and its end in starts; step P1: + the ghosts' bucket)
     const cap = Math.ceil((n + 3) * 1.25);
     const d = this.device, U = GPUBufferUsage;
-    for (const b of [this.countsBuf, this.startsBuf, this.blockBuf]) if (b) b.destroy();
+    // (the old ones destroyed at the next frame when no timing probe holds them: a probe recorded before a resize submits them later)
+    this.gridTrash = (this.gridTrash || []).concat([this.countsBuf, this.startsBuf, this.blockBuf].filter(Boolean));
     this.countsBuf = d.createBuffer({ label: 'grid counts', size: cap * 4, usage: U.STORAGE | U.COPY_DST });
     this.startsBuf = d.createBuffer({ label: 'grid starts', size: cap * 4, usage: U.STORAGE });
     this.blockBuf = d.createBuffer({ label: 'grid block sums', size: Math.ceil(cap / BLOCK) * 4, usage: U.STORAGE });
@@ -639,7 +643,10 @@ export class Cells {
     const v = this.view, g = this.grid, p = this.params;
     const f = this.simF, u = this.simU, o = k * SLOT / 4;
     u[o] = this.count; u[o + 1] = g.gw; u[o + 2] = g.gh; u[o + 3] = this.tick >>> 0;
-    f[o + 4] = g.cs; f[o + 5] = this.R; f[o + 6] = v.cssW; f[o + 7] = v.cssH;
+    // (the PRESS, src/dish.js: the right or bottom wall moved in, for the cells only: they are held inside it and its soft wall pushes
+    // the crowd in front of it; the dish, its grid and its matter stay)
+    const pr = dish.pressAt(time);
+    f[o + 4] = g.cs; f[o + 5] = this.R; f[o + 6] = v.cssW - pr[0]; f[o + 7] = v.cssH - pr[1];
     f[o + 8] = v.cssW / 2; f[o + 9] = v.cssH / 2; f[o + 10] = dt;
     f[o + 11] = p.contact ? p.stiffness : 0;
     f[o + 12] = p.damping; f[o + 13] = p.jitter; f[o + 14] = this.pull(); f[o + 15] = p.wall;
@@ -752,6 +759,7 @@ export class Cells {
   }
 
   compute(encoder, frame) {
+    if (this.gridTrash && this.gridTrash.length && !this.probing) { for (const x of this.gridTrash) x.destroy(); this.gridTrash.length = 0; }
     // step T1b: the cell types' census (a read-back every few s of simulated time), before this frame's ticks are encoded: bioCur still
     // names the genome copy the queue holds now
     this.grn.maybeCensus(frame.time);

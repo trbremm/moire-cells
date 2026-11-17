@@ -76,7 +76,7 @@ export function createApp(ctx) {
     box.append(b);
     return b;
   };
-  const centre = () => [camera.W / 2 * 1, camera.H / 2 * 1];   // the screen's centre (CSS px)
+  const centre = () => [camera.SW / 2, camera.SH / 2];   // the canvas's centre (CSS px)
   btn('in', 'Zoom in (the wheel, toward the pointer; two fingers)', () => camera.zoomAt(...centre(), 1.5));
   btn('out', 'Zoom out', () => camera.zoomAt(...centre(), 1 / 1.5));
   btn('fit', 'The whole dish', () => camera.fit());
@@ -98,7 +98,7 @@ export function createApp(ctx) {
     bar.hidden = !!(HM && !HM.params.scalebar);
     bar.classList.toggle('scope', !!(HM && HM.on));
     const R = ctx.cells.R || 5;
-    const pxPerUm = camera.z * R / UM_PER_R;   // screen CSS px per micrometre
+    const pxPerUm = camera.z * camera.f * R / UM_PER_R;   // screen CSS px per micrometre (fit: the dish drawn smaller or larger)
     let best = 1;
     for (const L of [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000]) if (L * pxPerUm <= 130) best = L;
     const w = best * pxPerUm;
@@ -151,6 +151,39 @@ export function createApp(ctx) {
     h.textContent = 'how many founders, how spread (one clump, scattered, colonies, a ring), how diverse, and a preset dish (deep vents, sunlit shallows, oxygen world, oil slick, crust desert, tissue lab); opens as a link you can share';
     r.append(m, h);
     body.append(r);
+    // the dish's own size (src/dish.js) and the squeeze / stretch tool (src/squeeze.js): the sample compressed or spread, contents kept
+    const D = ctx.dish;
+    if (!D) return;
+    const r2 = document.createElement('div');
+    r2.className = 'row t-do';
+    const m2 = document.createElement('div');
+    m2.className = 'rmain';
+    const lbl = document.createElement('span');
+    lbl.className = 'lbl';
+    const size = () => { const [w, hh] = D.sizeR; lbl.textContent = `dish ${Math.round(w)} × ${Math.round(hh)} R`; };
+    size();
+    let busy = false;
+    const step = (f, text) => {
+      const b2 = document.createElement('button');
+      b2.className = 'act'; b2.type = 'button'; b2.textContent = text;
+      b2.title = f < 1 ? 'Squeeze the sample: the dish x 0.8 across, its cells and matter pushed closer (nothing lost)'
+        : 'Stretch the sample: the dish x 1.25 across, its cells and matter spread apart (nothing lost)';
+      b2.addEventListener('click', async () => {
+        if (busy || !D.scale) return;
+        busy = true;
+        try { await D.scale(f); size(); ctx.flash(`dish ${f < 1 ? 'squeezed' : 'stretched'}: ${D.line()}`); } catch (e) { ctx.flash(String(e.message || e)); }
+        busy = false;
+      });
+      m2.append(b2);
+    };
+    m2.append(lbl);
+    step(0.8, 'squeeze'); step(1.25, 'stretch');
+    const h2 = document.createElement('p');
+    h2.className = 'help';
+    h2.textContent = 'the dish keeps its size when the window changes; squeeze or stretch the sample like a coverslip pressed or let go: cells, atoms, heat and springs move with it, nothing is lost (moire.dish.scale(f))';
+    r2.append(m2, h2);
+    body.append(r2);
+    if (D.follow) r2.style.display = 'none';
   };
   A.openCulture = () => openCultureDialog({ cells: ctx.cells, params: ctx.params, flash: ctx.flash, control: ctx.control, inPlace: ctx.inPlace });
   A.attach = (ui) => { A.ui = ui; };

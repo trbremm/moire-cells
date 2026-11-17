@@ -1,0 +1,122 @@
+{
+  "name": "dish-check-squeeze",
+  "description": "the squeeze / stretch tool: books exact, contents kept",
+  "condition": {
+    "name": "dish-check-squeeze",
+    "description": "the squeeze / stretch tool: books exact, contents kept",
+    "query": {
+      "seed": 3
+    },
+    "size": "1280x800",
+    "duration": 120,
+    "sample_every": 5,
+    "resizes": [
+      {
+        "t": 100,
+        "size": "700x900"
+      }
+    ],
+    "evals": [
+      {
+        "t": 30,
+        "js": "const a = moire.sample(); const r = await moire.dish.scale(0.8); const b = moire.sample(); return JSON.stringify({notes: r.notes, exact: r.exact, line: moire.dish.line(), alive: [a['cells.alive'], b['cells.alive']]})"
+      },
+      {
+        "t": 50,
+        "js": "const r = await moire.dish.scale(0.8); return JSON.stringify({notes: r.notes, line: moire.dish.line()})"
+      },
+      {
+        "t": 70,
+        "js": "const r = await moire.dish.scale(1.25); return JSON.stringify({notes: r.notes, line: moire.dish.line()})"
+      },
+      {
+        "t": 90,
+        "js": "const r = await moire.dish.scale(1.5625); return JSON.stringify({notes: r.notes, line: moire.dish.line()})"
+      },
+      {
+        "t": 101,
+        "js": "return moire.dish.line() + ' | grid ' + moire.heat.hw + 'x' + moire.heat.hh"
+      }
+    ],
+    "shots": [
+      {
+        "t": 29,
+        "name": "a_before"
+      },
+      {
+        "t": 31,
+        "name": "b_sq08"
+      },
+      {
+        "t": 51,
+        "name": "c_sq064"
+      },
+      {
+        "t": 69,
+        "name": "d_later"
+      },
+      {
+        "t": 91,
+        "name": "e_back"
+      },
+      {
+        "t": 102,
+        "name": "f_tall_window"
+      }
+    ]
+  },
+  "url": "http://localhost:60255/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "85d0ef2ecae525fe7ff87f6d2f7145ec4b3764d6",
+  "dirty": true,
+  "started": "2026-11-17T14:26:30",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 120.0,
+  "run_wall_s": 97.62,
+  "speed_reached": 1.23,
+  "samples": 25,
+  "shots": [
+    "shots/a_before.png",
+    "shots/b_sq08.png",
+    "shots/c_sq064.png",
+    "shots/d_later.png",
+    "shots/e_back.png",
+    "shots/f_tall_window.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 30.000000000000068,
+      "js": "const a = moire.sample(); const r = await moire.dish.scale(0.8); const b = moire.sample(); return JSON.stringify({notes: r.notes, exact: r.exact, line: moire.dish.line(), alive: [a['cells.alive'], b['cells.alive']]})",
+      "result": "{\"notes\":[\"dish 1280x800 px (R 6.480) -> the snapshot's 1024x640 (R 6.480)\"],\"exact\":true,\"line\":\"dish 158\u00d799 R (1024\u00d7640 px, R 6.48 px, medium 1.39 R) \u00b7 area 15.6k R\u00b2 (\u00d7 0.64 the reference) \u00b7 fixed (window, squeezed) \u00b7 drawn \u00d7 1.25\",\"alive\":[null,null]}"
+    },
+    {
+      "t": 49.99999999999967,
+      "js": "const r = await moire.dish.scale(0.8); return JSON.stringify({notes: r.notes, line: moire.dish.line()})",
+      "result": "{\"notes\":[\"dish 1024x640 px (R 6.480) -> the snapshot's 819x512 (R 6.480)\"],\"line\":\"dish 126\u00d779 R (819\u00d7512 px, R 6.48 px, medium 1.39 R) \u00b7 area 10.0k R\u00b2 (\u00d7 0.41 the reference) \u00b7 fixed (window, squeezed) \u00b7 drawn \u00d7 1.56\"}"
+    },
+    {
+      "t": 69.99999999999896,
+      "js": "const r = await moire.dish.scale(1.25); return JSON.stringify({notes: r.notes, line: moire.dish.line()})",
+      "result": "{\"notes\":[\"dish 819x512 px (R 6.480) -> the snapshot's 1024x640 (R 6.480)\"],\"line\":\"dish 158\u00d799 R (1024\u00d7640 px, R 6.48 px, medium 1.39 R) \u00b7 area 15.6k R\u00b2 (\u00d7 0.64 the reference) \u00b7 fixed (window, squeezed) \u00b7 drawn \u00d7 1.25\"}"
+    },
+    {
+      "t": 89.99999999999783,
+      "js": "const r = await moire.dish.scale(1.5625); return JSON.stringify({notes: r.notes, line: moire.dish.line()})",
+      "result": "{\"notes\":[\"dish 1024x640 px (R 6.480) -> the snapshot's 1600x1000 (R 6.480)\"],\"line\":\"dish 247\u00d7154 R (1600\u00d71000 px, R 6.48 px, medium 1.39 R) \u00b7 area 38.1k R\u00b2 (\u00d7 1.56 the reference) \u00b7 fixed (window, squeezed) \u00b7 drawn \u00d7 0.80\"}"
+    },
+    {
+      "t": 100.9999999999972,
+      "js": "return moire.dish.line() + ' | grid ' + moire.heat.hw + 'x' + moire.heat.hh",
+      "result": "dish 247\u00d7154 R (1600\u00d71000 px, R 6.48 px, medium 1.39 R) \u00b7 area 38.1k R\u00b2 (\u00d7 1.56 the reference) \u00b7 fixed (window, squeezed) \u00b7 drawn \u00d7 0.44 | grid 494x309"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T14:29:50",
+  "wall_s": 199.99
+}

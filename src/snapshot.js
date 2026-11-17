@@ -32,6 +32,7 @@ import { BIO_FLOATS } from './genome.js';
 import { LEDGER_WORDS } from './heat.js';
 import { NCH, SUBSTANCES, ELECTRONS } from './matter.js';
 import { fieldDefaults } from './guides.js';
+import { dish, snapDish } from './dish.js';
 
 export const SNAP_FORMAT = 'moire-cells-snapshot';
 export const SNAP_VERSION = 1;
@@ -169,6 +170,7 @@ export function settingObjects(M) {
     ...(M.fidelity ? { 'fidelity.params': M.fidelity.params } : {}),   // step G1 (old snapshots: the gene 0 everywhere, the founders' value)
     ...(M.pigments ? { 'pigments.params': M.pigments.params } : {}),   // step N1: light needs matter
     ...(M.water ? { 'water.params': M.water.params } : {}),           // step N1: caustic light, currents
+    ...(M.perfusion ? { 'perfusion.params': M.perfusion.params } : {}),   // perfusion (src/perfusion.js)
     ...(M.oases ? { 'oases.params': M.oases.params } : {}),           // step N1: the scarce nutrient's springs
   };
 }
@@ -328,6 +330,7 @@ export async function snapshot(M, ctl, opts = {}) {
       electrons: ELECTRONS,   // step C12d: the chemistry's table it runs on (absent before step C12d: the old one)
       time: ctl.time(), tick: C.tick >>> 0,
       view: { cssW: v.cssW, cssH: v.cssH }, R: C.R, start: C.start, count: C.count, alive: m,
+      dish: { W: dish.W, H: dish.H, R: dish.R, mR: dish.mR, perArea: dish.perArea, start: dish.start, press: { ...dish.press } },   // (the dish's own size, src/dish.js)
       layout: { cellWords: CELL_FLOATS, bioWords: BIO_FLOATS, stockWords: SW, substances: SUBSTANCES.map((s) => s.name) },
       settings: captureSettings(M),
       founders: clone(M.genome.founders),
@@ -390,6 +393,18 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     }
     const m = S.alive;
     if (m > C.count) throw new Error(`the snapshot has ${m} cells, this page room for ${C.count}: load it with ?snap= or start the page with ?cap=${S.count}`);
+    // the dish (src/dish.js): take the snapshot's (its size, R, medium and whether supplies are per area; one from before: its window,
+    // R and medium, supplies per px), so the load is exact in any window (with ?dishfollow=1 the window stays the dish, as before)
+    const D = snapDish(S);
+    if (!dish.follow && (D.W !== dish.W || D.H !== dish.H || D.R !== dish.R || D.mR !== dish.mR || D.perArea !== dish.perArea)) {
+      notes.push(`dish ${Math.round(dish.W)}x${Math.round(dish.H)} px (R ${dish.R.toFixed(3)}) -> the snapshot's ${Math.round(D.W)}x${Math.round(D.H)} (R ${D.R.toFixed(3)})`);
+      Object.assign(dish, D, { from: 'snapshot' });
+      C.start = S.start;
+      ctl.resize();
+      if (H.old) { H.trash.push(H.old.buffer); H.old = null; }   // the replaced grid: dropped, not drained (the books are replaced too)
+      rebind(M);
+    }
+    if (S.dish && S.dish.press) dish.press = { ...S.dish.press };   // (the pressing wall, src/dish.js)
     // the starting number sets the cells' radius R (and with it the grid): take the snapshot's
     if (C.start !== S.start) {
       notes.push(`starting number ${C.start} -> ${S.start} (sets R)`);

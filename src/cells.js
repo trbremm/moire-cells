@@ -45,6 +45,7 @@ import { Dipole, STATS_DIP, DIP_WORDS } from './dipole.js';
 import { Division, STATS_DIV, STATS_CLAIM, DIV_SNAP } from './division.js';
 import { Walls, STATS_WALL, WALL_WORDS } from './walls.js';
 import { Guides, STATS_FG, FG_WORDS, FG_CLEAR } from './guides.js';
+import { Kin } from './kin.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 import { cultureLayout } from './culture.js';   // app: how a new culture is spread
 
@@ -80,10 +81,10 @@ const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder 
 const STATS_EVENTS = 64;
 const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_AW in cell_common.wgsl)
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
-const FIELDS_BYTES = 432;      // struct Fields in cell_common.wgsl (step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
+const FIELDS_BYTES = 448;      // struct Fields in cell_common.wgsl (step T1a: + t1; step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
                                // step C9: + dv0..dv2; step C10: + wl0, wl1)
 const FIELD_FORMAT = 'rgba16float';
-const DRAW_BYTES = 1216;       // struct Draw in cell_draw.wgsl (step H1: + harm, harm2, harm3, harm4, hInk[5] after cam, 1072 until then; app: + cam, 1056 until then; step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
+const DRAW_BYTES = 1232;       // struct Draw in cell_draw.wgsl (step T1a: + kin, 1216 until then; step H1: + harm, harm2, harm3, harm4, hInk[5] after cam, 1072 until then; app: + cam, 1056 until then; step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
                                // step C6d: + the dipoles)
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
@@ -341,6 +342,7 @@ export class Cells {
     this.division = new Division(this);   // step C9: division and death with a changing count (src/division.js)
     this.walls = new Walls(this);         // step C10: patterned walls, evolvable adhesion per side (src/walls.js)
     this.guides = new Guides(this);       // step C13: fields as genes and guides (src/guides.js)
+    this.kin = new Kin(this);             // step T1a: an inside, kin channels, the self marker (src/kin.js)
   }
 
   static async create(device, format, medium, count, seed, cap = 0) {
@@ -636,7 +638,7 @@ export class Cells {
     u[o + 24] = this.genome.ruleBits();
     f[o + 25] = this.excl.flip ? Math.max(0, this.excl.flipRate) : 0;
     u[o + 26] = this.heat.offsetAt(k);
-    u[o + 27] = this.pumps && this.pumps.contactOn && this.count <= 65535 ? 1 : 0;   // step C7: each side's touching neighbour
+    u[o + 27] = ((this.pumps && this.pumps.contactOn) || this.kin.needsNbr) && this.count <= 65535 ? 1 : 0;   // step C7: each side's touching neighbour (step T1a: and the inside, kin channels)
     const G = this.genome.params;
     f[o + 28] = G.tau; f[o + 29] = G.release; f[o + 30] = G.reach; f[o + 31] = G.adhesion;
     f[o + 32] = G.adhSigma; f[o + 33] = G.fateAdh; f[o + 34] = this.genome.rules.body ? 1 : 0; f[o + 35] = G.adhBase;
@@ -697,6 +699,7 @@ export class Cells {
     this.division.writeFields(f, u, 84);       // step C9: division and death (Fields.dv0..dv2)
     this.walls.writeFields(u, f, 96);          // step C10: patterned walls (Fields.wl0, wl1)
     this.guides.writeFields(u, f, 104);        // step C13: fields as genes and guides (Fields.fg0)
+    this.kin.writeFields(u, f, 108);           // step T1a: the self marker's clock (Fields.t1)
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -1365,6 +1368,7 @@ export class Cells {
     a[0] = v.cssW / camera.z; a[1] = v.cssH / camera.z; a[2] = v.dpr * camera.z; a.set(camera.vec(), 264);   // app: the view camera
     const HM = look.harmonic;            // step H1: the harmonic look (src/harmonic.js)
     if (HM) HM.writeCells(a, 268);
+    this.kin.writeDraw(a, 304, L, camera.z);   // step T1a: the lineage (marker) view, the marker's texture when zoomed in
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(HM ? this.harmPipe : this.drawPipe);
     pass.setBindGroup(0, (HM ? this.harmBGs : this.drawBGs)[this.bioCur]);

@@ -382,7 +382,33 @@ struct Bio {
                     // knob's value; -2..1.5; it costs upkeep in proportion to the tolerance); w step C12g: the ION CHANNELS' level, a log
                     // factor on the knob chanBase (0 = the knob's value; -4..2): with memb.w (the C6c selectivity, now the channels'
                     // BALANCE s) the cation channel passes chanBase e^gene (1 + s), the anion channel chanBase e^gene (1 - s)
+  // ---- step T1a: the SELF MARKER and the KIN CHANNELS (src/kin.js; README "Step T1a") ----
+  mark: vec4f,      // the self MARKER, a fine stripe pattern on the membrane (no other effect; it drifts at every birth, a molecular
+                    // clock): x its ANGLE (rad, 0..2 pi, the stripes' wavevector direction in the dish), y its PERIOD (ln of the stripe
+                    // spacing in R: ln 0.12 .. ln 0.5), z its PHASE (rad, 0..2 pi); w the DISPLAY gene (0..1): how much of it the cell shows
+  kin: vec4f,       // x the KIN CHANNELS gene (0..1: how far the cell opens gap junctions to a recognised neighbour), y the TOLERANCE (0..1:
+                    // it accepts a neighbour whose marker matches at least 1 - tolerance); z w spare (P1: engulf, kin sparing)
 };
+// step T1a: the marker's period range (ln of the stripe spacing in R)
+const MARK_PLO: f32 = -2.1202635;   // ln 0.12
+const MARK_PHI: f32 = -0.6931472;   // ln 0.5
+// step T1a: KINSHIP by the marker's MOIRE BEAT. Two cells' stripe patterns lie on top of each other along their shared wall (length ell,
+// in R); where they differ (wavevector difference dq) they beat, N = |dq| ell / (2 pi) fringes across the wall. Near-identical
+// patterns beat slowly (N << 1: one bright band over the whole wall, a match), different ones beat fast (many fringes that average
+// out: a stranger). The beat's contrast over the wall exp(-(pi N)^2 / 6) (the sinc's own start), times how far their phases are in
+// register (1 + cos dpsi) / 2, times what both cells DISPLAY (a hidden pattern cannot beat)
+fn kin_match(a: Bio, b: Bio, ell: f32) -> f32 {
+  let qa = exp(-a.mark.y) * vec2f(cos(a.mark.x), sin(a.mark.x));
+  let qb = exp(-b.mark.y) * vec2f(cos(b.mark.x), sin(b.mark.x));
+  let n = length(qa - qb) * ell;   // (|dq| = 2 pi |qa - qb| in units of 1/R, so N = |qa - qb| ell)
+  let beat = exp(-9.8696044 * n * n / 6.0);
+  return beat * (0.5 + 0.5 * cos(a.mark.z - b.mark.z)) * clamp(a.mark.w, 0.0, 1.0) * clamp(b.mark.w, 0.0, 1.0);
+}
+// ... a cell ACCEPTS a match m as kin as far as m is above 1 - its tolerance (fully 0.1 above it)
+fn kin_accept(m: f32, tol: f32) -> f32 {
+  let th = 1.0 - clamp(tol, 0.0, 1.0);
+  return smoothstep(th - 0.1, th, m);
+}
 // step C7: a pump slot's channel, direction (1 = OUT) and the substances it may pump: PUMP_NCH of them, channels 0..9 and
 // trace (12), not the sediments ll, LL (PUMP_CHANNELS in src/genome.js)
 const PUMP_OUT: u32 = 16u;
@@ -671,6 +697,10 @@ fn mutate(p: Bio, seed: u32, size: f32, jump: f32, engJump: f32, pumpJump: f32) 
   b.gate2 = vec4f(nudge(b.gate2.x, size * 0.04, -1.0, 1.0, seed, 176u), nudge(b.gate2.y, size * 0.04, 0.0, 2.0, seed, 177u),
                   nudge(b.gate2.z, size * 0.06, -2.0, 1.5, seed, 178u), nudge(b.gate2.w, size * 0.06, -4.0, 2.0, seed, 179u));
   // (step C12g: gate2.w, the ION CHANNELS' level, drifts by small steps of its log factor, as the stretch genes)
+  // step T1a: the marker's DISPLAY, the KIN CHANNELS and the TOLERANCE drift by small steps (as the walls'); the marker itself drifts
+  // as a molecular clock in daughter_genome (cell_step.wgsl), by its own knob
+  b.mark.w = nudge(b.mark.w, size * 0.03, 0.0, 1.0, seed, 180u);
+  b.kin = vec4f(nudge(b.kin.x, size * 0.04, 0.0, 1.0, seed, 181u), nudge(b.kin.y, size * 0.04, 0.0, 1.0, seed, 182u), b.kin.zw);
   return b;
 }
 
@@ -955,7 +985,12 @@ struct Fields {
   // ---- step C13, fields as genes and guides (src/guides.js) ----
   fg0: vec4f,       // x bits FG_*; y ref: the field felt on a side that gives s = tanh(1); z the turn gate's rate (rad / s at |g| = 1,
                     // a full gradient and a right angle); w spare
+  // ---- step T1a, the self marker (src/kin.js) ----
+  t1: vec4f,        // x bits T1S_* (u32); y the molecular clock's size (1: the marker's angle drifts 0.02 rad, its period's log 0.01,
+                    // its phase 0.05 rad per birth); z w spare
 };
+// step T1a: Fields.t1.x bits
+const T1S_CLOCK: u32 = 1u;        // the marker drifts at every birth (with mutation, or hard light's extra)
 // step C9: Fields.dv0.x bits
 const DV_ON: u32 = 1u;
 // step C9: a daughter of a DIVISION (not a turnover birth) has this bit set in Cell.mom: the eat pass's split takes the

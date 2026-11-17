@@ -1402,6 +1402,16 @@ fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
     }
     if (jumped) { atomicAdd(&hb[LG_HL + 16u * select(HL_JUMP_CLEAN, HL_JUMP_HIT, lit) + (i & 15u)], 1); }
   }
+  // step T1a: the self MARKER drifts at every birth, a molecular clock (small Gaussian steps of its angle, period and phase; never a jump),
+  // so marker distance grows with the time since a common ancestor
+  if ((bitcast<u32>(FL.t1.x) & T1S_CLOCK) != 0u && ms > 0.0) {
+    let ck = FL.t1.y * ms;
+    var ang = nb.mark.x + ck * 0.02 * gauss(bs, 190u);
+    ang -= TAU * floor(ang / TAU);
+    var ph = nb.mark.z + ck * 0.05 * gauss(bs, 192u);
+    ph -= TAU * floor(ph / TAU);
+    nb.mark = vec4f(ang, nudge(nb.mark.y, ck * 0.01, MARK_PLO, MARK_PHI, bs, 191u), ph, nb.mark.w);
+  }
   if ((S.rules & RULE_INHERIT) == 0u) { nb.acc = vec4f(0.0); }
   nb.env = vec4f(0.0);                      // a newborn has felt nothing yet and is not converted (step C9: nor starving)
   nb.conv = vec4f(0.0);

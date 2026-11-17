@@ -14,7 +14,7 @@
 // The NEW CULTURE dialog (the dish panel) sets these and opens the link; with the dish as it is and the same number of cells it
 // starts the culture in place instead (no reload: the springs, the light and the atoms stay).
 
-import { HABITS, founderGenome } from './genome.js';
+import { HABITS, founderGenome, FOUNDER_MODES } from './genome.js';
 
 const VALUE = (v) => String(v);
 
@@ -127,6 +127,12 @@ export const SPREADS = ['clump', 'scatter', 'colonies', 'ring'];
 export const DIVERSITY = ['clone', 'few', 'mixed', 'random'];
 const DIVERSITY_WORD = { clone: 'one clone', few: 'a few types', mixed: 'mixed founders', random: 'all random' };
 const SPREAD_WORD = { clump: 'one clump', scatter: 'scattered', colonies: 'colonies', ring: 'a ring' };
+const FOUNDER_WORD = { std: 'as usual', blank: 'blank', wild: 'wild' };   // (step T1a)
+const FOUNDER_HELP = {
+  std: 'the founders’ genes as usual (no kin channels yet: they must evolve)',
+  blank: 'the newer abilities at zero: no pumps, no guide gates, no kin channels, uniform walls; they must evolve',
+  wild: 'every gene drawn over its whole range: field genes, gates, pumps, walls, membranes, marker, kin channels (engines keep their habit)',
+};
 
 function ring3(W, H, r, a0) {
   const m = Math.min(W, H);
@@ -166,7 +172,7 @@ export function layoutFromParams(params, preset) {
 /** Diversity: the genome's founders before a culture is seeded (clone: 1; few: one of each habit; mixed: 12; random: 0). */
 export function applyDiversity(genome, diversity) {
   if (diversity === 'clone') { genome.params.founders = 1; genome.newFounders(); }
-  else if (diversity === 'few') { genome.params.founders = HABITS.length; genome.founders = HABITS.map((h, k) => founderGenome(h, genome.rng, k, 'plus')); genome.mixBSigns(genome.founders); }   // (B signs from their own stream)
+  else if (diversity === 'few') { genome.params.founders = HABITS.length; genome.founders = HABITS.map((h, k) => founderGenome(h, genome.rng, k, 'plus', false)); genome.mixBSigns(genome.founders); genome.finishFounders(genome.founders); }   // (B signs from their own stream; step T1a: the marker and mode from theirs)
   else if (diversity === 'random') { genome.params.founders = 0; genome.founders = []; }
   else { genome.params.founders = 12; genome.newFounders(); }
 }
@@ -232,6 +238,7 @@ export function openCultureDialog(ctx) {
     spread: SPREADS.includes(cur.get('spread')) ? cur.get('spread') : 'clump',
     colonies: Math.round(Number(cur.get('colonies')) || 5),
     diversity: DIVERSITY.includes(cur.get('diversity')) ? cur.get('diversity') : 'mixed',
+    founders: FOUNDER_MODES.includes(cur.get('founders')) ? cur.get('founders') : C.genome.params.founderMode || 'std',   // (step T1a)
     newSeed: true,
   };
   const wrap = el('div', 'dlg-wrap');
@@ -291,6 +298,14 @@ export function openCultureDialog(ctx) {
   body.append(dvRow);
   const dvHelp = el('p', 'help', '');
   body.append(dvHelp);
+  // step T1a: the founders' genes: today's, blank (the new abilities at 0) or wild (every gene over its whole range)
+  const fmRow = el('div', 'rmain');
+  const fmSeg = el('span', 'seg');
+  for (const s of FOUNDER_MODES) { const b = el('button', '', FOUNDER_WORD[s]); b.type = 'button'; b.dataset.fm = s; fmSeg.append(b); }
+  fmRow.append(el('span', 'lbl', 'genes'), fmSeg);
+  body.append(fmRow);
+  const fmHelp = el('p', 'help', '');
+  body.append(fmHelp);
   const seedRow = el('label', 'rmain');
   const seedIn = el('input');
   Object.assign(seedIn, { type: 'checkbox', checked: true });
@@ -327,6 +342,7 @@ export function openCultureDialog(ctx) {
     if (st.spread !== presetSpread) keep.set('spread', st.spread);
     if (st.spread === 'colonies' && st.colonies !== ((P && P.query.colonies) || 5)) keep.set('colonies', String(st.colonies));
     if (st.diversity !== ((P && P.query.diversity) || 'mixed')) keep.set('diversity', st.diversity);
+    if (st.founders !== 'std') keep.set('founders', st.founders);   // (step T1a)
     if (!st.newSeed) keep.set('seed', String(ctx.control.seed));
     u.search = keep.toString();
     return u.href;
@@ -339,6 +355,8 @@ export function openCultureDialog(ctx) {
     for (const b of quick.querySelectorAll('button')) b.setAttribute('aria-pressed', String(Number(b.dataset.n) === st.cells));
     colRow.style.display = st.spread === 'colonies' ? '' : 'none';
     dvHelp.textContent = DIV_HELP[st.diversity];
+    for (const b of fmSeg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.fm === st.founders));
+    fmHelp.textContent = FOUNDER_HELP[st.founders];
     link.textContent = inPlace() ? 'Starts here, now: the same dish, new cells (no reload).' : `Opens: ${url()}`;
     go.textContent = inPlace() ? 'start here' : 'open';
   }
@@ -358,6 +376,7 @@ export function openCultureDialog(ctx) {
     } else if (b.dataset.n) { st.cells = Number(b.dataset.n); nIn.value = String(st.cells); }
     else if (b.dataset.spread) st.spread = b.dataset.spread;
     else if (b.dataset.div) st.diversity = b.dataset.div;
+    else if (b.dataset.fm) st.founders = b.dataset.fm;
     sync();
   });
   nIn.addEventListener('input', () => { st.cells = Math.max(1, Math.min(20000, Math.round(Number(nIn.value) || 1))); sync(); });
@@ -376,7 +395,7 @@ export function openCultureDialog(ctx) {
   go.addEventListener('click', () => {
     if (inPlace()) {
       close();
-      ctx.inPlace({ spread: st.spread, colonies: st.colonies, diversity: st.diversity });
+      ctx.inPlace({ spread: st.spread, colonies: st.colonies, diversity: st.diversity, founders: st.founders });
       return;
     }
     location.assign(url());

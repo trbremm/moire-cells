@@ -35,7 +35,7 @@
 
 const HEAT_SCALE: f32 = 65536.0;   // counts per energy unit
 const HEAT_V0: f32 = 10.0;         // CSS px / s: the speed whose motion energy is 0.5 units
-const LEDGER_WORDS: u32 = 31488u;   // (30976 until step M1; 28928 until step N1 merged; 28416 until step C12g; 28288 until step C12f; 27776 until step C12e; 25600 until step C12c; 19200 until step C6b, 19712 until step C6c, 20224 until step C7, 21760 until C7b,
+const LEDGER_WORDS: u32 = 32256u;   // (31488 until step T1a; 30976 until step M1; 28928 until step N1 merged; 28416 until step C12g; 28288 until step C12f; 27776 until step C12e; 25600 until step C12c; 19200 until step C6b, 19712 until step C6c, 20224 until step C7, 21760 until C7b,
                                     // 22016 until C8, 22272 until C9, 22528 until C12)
 const LG_WORK: u32 = 0u;     // 256 slots: work done on the cells by the forces (fields, contact, crawling, stirring)
 const LG_BASE: u32 = 256u;   // 64: the base warmth put into the dish
@@ -136,6 +136,9 @@ const LG_N1: u32 = 28928u;
 // step M1, whole membranes (src/whole.js, cell_eat.wgsl), words 30976 .. 31487: 16 snapshot numbers x 16 slots (i32; the ledger pass:
 // M1Z_*), then 16 counters x 16 slots (i32) since the last read-back (the eat, dump, split and reset passes: M1C_*)
 const LG_M1: u32 = 30976u;
+// step T1a, tissues 1 (src/kin.js, cell_eat.wgsl), words 31488 .. 32255: 32 snapshot numbers x 16 slots (i32; the ledger pass: T1Z_*), then
+// 16 counters x 16 slots (i32) since the last read-back (the eat pass: T1C_*)
+const LG_T1: u32 = 31488u;
 const XN_MADE_OPEN: u32 = 0u;    // excited atoms made by light in the open (the uphill swaps)
 const XN_MADE_CELL: u32 = 1u;    // ... made by the cells' harvesting uphill swaps (a pigment's photon)
 const XN_FADE_OPEN: u32 = 2u;    // ... faded to ground by themselves in the open

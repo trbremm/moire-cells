@@ -45,6 +45,10 @@ export const GENES = {
   // angle offset (rad); the partner's share and sensing; the gates (-1..1) and the push gene (0..2)
   leverA: 56, emitA: 57, senseA: 58, tuneA: 59, leverB: 60, emitB: 61, senseB: 62, pickB: 63, angleA: 64, angleB: 65, shareP: 66, senseP: 67,
   gateGlue: 68, gatePump: 69, gateEngine: 70, gateDiv: 71, gateTurn: 72, push: 73,
+  // (step C12e, C12g: the stretch channels on the lipid word 55, the stretch tolerance 74, the ion channels' level 75)
+  stretchChan: 55, stretchTol: 74, ionChan: 75,
+  // step T1a: the self marker (angle rad, period ln R, phase rad), its display; the kin channels and the tolerance
+  markAngle: 76, markPeriod: 77, markPhase: 78, display: 79, kinChan: 80, kinTol: 81,
 };
 // words 19..31 are the cell's state, not genes (heading, accumulators, felt fields, conversion)
 const STATE = new Set([19, ...Array.from({ length: 12 }, (_, k) => 20 + k)]);
@@ -99,6 +103,7 @@ function gather(M, ctl) {
   if (M.vents && M.vents.census) flatten(M.vents.census, 'vents', out);   // step C12f
   if (M.ions && M.ions.census) flatten(M.ions.census, 'ions', out);   // step C12g
   if (M.whole && M.whole.census) flatten(M.whole.census, 'whole', out);   // step M1
+  if (M.kin && M.kin.census) flatten(M.kin.census, 'kin', out);         // step T1a
   if (M.pigments && M.pigments.census) flatten(M.pigments.census, 'lightmatter', out);   // step N1: light needs matter
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;

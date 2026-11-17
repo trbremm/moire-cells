@@ -105,6 +105,12 @@
 //               voltage push (rules panel, Ion flow)
 //   ?oilsoap=0    step M1: cells do not put a head on oil to make soap (as step C12b); ?biteblock=0 free atoms bite a whole bilayer as a
 //               holey one (as step C12b) (rules panel, Whole membranes)
+//   ?inside=0     step T1a: no inside (a side pressed against a neighbour trades with the dish as any other); ?kinchan=0 no kin channels;
+//               ?kinnull=1 the kin channels' NEUTRAL control (they move nothing, the genes drift); ?kinblind=1 the channels open to every
+//               neighbour (kinship ignored); ?clock=0 the self marker does not drift; ?smelltrace=0 the corners smell the fuels only;
+//               ?kink=x ?seal=x ?press=x ?clocksize=x ?traceworth=x the knobs; ?founders=wild|blank|std the founder mode (any number:
+//               how many founders, as before); ?view=marker colour by the self marker (lineage); ?lasting=0 the default scene's mineral
+//               spring dries after a day (240 s) as before step T1a (rules panel, Tissues 1)
 //   ?fgenes=0     step C13: start with the field genes off (every cell today's lever, emission, sensing, tuning, angle; the genes
 //               still drift); ?gateglue=0, ?gatepump=0, ?gateengine=0, ?gatediv=0, ?gateturn=0 one gate off (?gates=0 all five),
 //               ?pushgene=0 the push gene off (field A pushes every cell as before), ?gatenull=1 the NEUTRAL control (the gate
@@ -288,11 +294,16 @@ async function boot() {
     lightOptions(light);
     cells.landscape = landscape;
     landscape.cells = cells;
-    if (params.has('founders')) cells.genome.params.founders = Number(params.get('founders')) || 0;
+    if (params.has('founders')) {   // (step T1a: ?founders=wild|blank|std the founder mode; a number: how many founders)
+      const fm = params.get('founders');
+      if (['wild', 'blank', 'std'].includes(fm)) cells.genome.params.founderMode = fm;
+      else cells.genome.params.founders = Number(fm) || 0;
+    }
+    if (params.has('wild')) cells.genome.params.wildGroups = String(params.get('wild')).split(',').filter(Boolean);   // (step T1a: the wild groups)
     if (params.get('bsign') === 'plus' || params.get('bsign') === 'mixed') cells.genome.params.bSign = params.get('bsign');   // the founders' B sign
     if (params.has('view')) {   // ?view=1 lineage, ?view=2 or ?view=strategy (step C6), ?view=3 or ?view=charge (step C6b)
-      const v = params.get('view'), k = ['fate', 'lineage', 'strategy', 'charge', 'walls', 'guides'].indexOf(v);   // (step C10: ?view=walls; C13: guides)
-      cells.look.view = k >= 0 ? k : Math.max(0, Math.min(5, Math.round(Number(v)) || 0));
+      const v = params.get('view'), k = ['fate', 'lineage', 'strategy', 'charge', 'walls', 'guides', 'marker'].indexOf(v);   // (step C10: ?view=walls; C13: guides; T1a: marker)
+      cells.look.view = k >= 0 ? k : Math.max(0, Math.min(6, Math.round(Number(v)) || 0));
     }
     if (flag('check')) cells.enableCheck();
     if (params.get('bio') === '0') {
@@ -432,6 +443,16 @@ async function boot() {
         if (params.has(q)) MP[k] = flag(q);
       }
     }
+    {   // step T1a: an inside, kin channels, the self marker, the smell for trace
+      const KP = cells.kin.params;
+      for (const [q, k] of [['inside', 'inside'], ['kinchan', 'channels'], ['kinnull', 'null'], ['kinblind', 'blind'], ['clock', 'clock'], ['smelltrace', 'smellTrace']]) {
+        if (params.has(q)) KP[k] = flag(q);
+      }
+      for (const [q, k] of [['kink', 'kinK'], ['seal', 'seal'], ['press', 'press'], ['clocksize', 'clockSize'], ['traceworth', 'traceWorth']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) KP[k] = v;
+      }
+    }
     {   // step C12f: vents in the dark
       const VP = matter.vents.params;
       if (params.has('hotvent')) VP.hot = flag('hotvent');
@@ -494,7 +515,8 @@ async function boot() {
   window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter, eat: cells.eat, neon, charge,
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
-    electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole };
+    electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
+    kin: cells.kin };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
   window.moire.budgets = budgets;      // the fast speeds' tick budgets
@@ -581,7 +603,8 @@ function defaultScene() {
   const wide = W >= H, ax = wide ? [1, 0] : [0, 1], perp = wide ? [0, 1] : [1, 0];
   const d = rim + SCENE.gap * m, s = SCENE.apart * m;
   const cx = W / 2 + ax[0] * d, cy = H / 2 + ax[1] * d;
-  matter.addSpring(cx - perp[0] * s, cy - perp[1] * s, 'light', SCENE.life);
+  // (step T1a: the mineral spring lasts, ?lasting=0 as before: step M1 found the colony's membranes starve of linkers once it dries)
+  matter.addSpring(cx - perp[0] * s, cy - perp[1] * s, 'light', !params.has('lasting') || flag('lasting') ? 1e9 : SCENE.life);
   matter.addSpring(cx + perp[0] * s, cy + perp[1] * s, 'heavy', SCENE.life);
   if (!params.has('spot')) light.moveTo(W / 2 + ax[0] * rim, H / 2 + ax[1] * rim);
   // step N1: the oases (the scarce nutrient's springs): the first beside the culture, in the spot's edge on the springs' side (a lasting
@@ -606,6 +629,7 @@ function cultureOptions(L, diversity = true) {
 
 /** App: the new culture dialog's "start here" (the same number of cells: no reload; the dish, its springs and light stay). */
 function newCultureInPlace(o) {
+  if (o.founders) cells.genome.params.founderMode = o.founders;   // (step T1a: before the founders are drawn)
   cultureOptions({ spread: o.spread, colonies: o.colonies, diversity: o.diversity, centres: null });
   cells.seed(false);
   background.impulse(view.cssW / 2, view.cssH / 2, 2);
@@ -753,7 +777,8 @@ function frame(now) {
     let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}\n${charge.panelLine(compact)}\n${cells.eat.membrane.panelLine(compact)}\n${cells.eat.lipids.panelLine(compact)}\n${cells.dipole.panelLine(compact)}\n${cells.eat.pumps.panelLine(compact)}\n${cells.eat.catalysts.panelLine(compact)}\n${cells.eat.hardlight.panelLine(compact)}\n${cells.division.panelLine(compact)}\n${cells.walls.panelLine(compact)}\n${cells.guides.panelLine(compact)}\n${matter.oil.panelLine(compact)}\n${ELECTRONS ? matter.electrons.panelLine(compact) : matter.excited.panelLine(compact)}
 ${cells.eat.waste.panelLine(compact)}
 ${cells.eat.ions.panelLine(compact)}
-${cells.eat.whole.panelLine(compact)}${ELECTRONS ? `
+${cells.eat.whole.panelLine(compact)}
+${cells.kin.panelLine(compact)}${ELECTRONS ? `
 ${matter.vents.panelLine(compact)}` : ''}
 ${cells.eat.pigments.panelLine(compact)}
 ${water.panelLine(compact)}
@@ -829,6 +854,7 @@ function drawOverlay() {
     ...cells.eat.waste.overlayLines(),
     ...cells.eat.ions.overlayLines(),
     ...cells.eat.whole.overlayLines(),
+    ...cells.kin.overlayLines(),
     ...cells.eat.pigments.overlayLines(),
     ...water.overlayLines(),
     ...oases.overlayLines(),

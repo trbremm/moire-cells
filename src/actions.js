@@ -64,13 +64,14 @@ export const RULE_GROUPS = [
   ['waste', 'Waste must leave (step C12e)'],
   ['ions', 'Ion flow (step C12g)'],
   ['whole', 'Whole membranes (step M1)'],
+  ['t1a', 'Tissues 1: inside, kin, marker (step T1a)'],
   ['vents', 'Vents in the dark (step C12f)'],
   ['n1', 'Nutrient landscape (step N1)'],
   ['guides', 'Fields as guides (step C13)'],
   ['state', 'Save and load the state (experiments)'],
 ];
 
-export const VIEWS = ['fate', 'lineage', 'strategy', 'charge', 'walls', 'guides'];   // key V: what the cells' bodies are coloured by (cells.look.view;
+export const VIEWS = ['fate', 'lineage', 'strategy', 'charge', 'walls', 'guides', 'marker'];   // key V: what the cells' bodies are coloured by (cells.look.view;
                                                                          // step C10: + the wall pattern)
 
 export const SQUEEZE_SOFT = 0.25, SQUEEZE_HARD = 1.2;   // key \ : cells.params.squeeze, normal or pressed together
@@ -680,6 +681,41 @@ export function makeActions(app) {
       help: 'the biting atoms are ions; an intact bilayer keeps ions away from its oily core (step C12g), so they reach its chains only at holes (and through the bilayer’s own small ion leak)' },
   );
 
+  // ---------- tissues 1: an inside, kin channels, the self marker (step T1a; panel only: no keys are free) ----------
+  const KP = () => app.cells.kin.params;
+  const kknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 't1a', type: 'knob', get: () => KP()[key].toFixed(digits),
+    run: (k) => { const p = KP(); p[key] = Math.max(lo, Math.min(hi, +(p[key] * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    { id: 'inside', keys: [], label: 'an inside', group: 't1a', type: 'toggle', get: () => KP().inside,
+      run: () => `a side pressed against a neighbour ${flip(KP(), 'inside') ? 'does not trade with the dish: only the free sides meet the haze, vandal atoms, oxygen, the soap and crust under the cell (rim cells exposed, inner cells sheltered)' : 'trades with the dish under it like any other (as before step T1a)'}`,
+      help: 'every exchange with the dish (passive, fusion, grazing, bites, pumps to the dish, osmosis’s outside) goes through the free sides only; light and heat reach every cell' },
+    { id: 'kinchan', keys: [], label: 'kin channels', group: 't1a', type: 'toggle', get: () => KP().channels,
+      run: () => `kin channels ${flip(KP(), 'channels') ? 'open: touching cells that accept each other as kin (by their markers) share fuel, free linkers and trace down the gradient, free (a gene sets how far)' : 'closed'}`,
+      help: 'gap junctions: conductance = the smaller of the two cells’ (channel gene × how far it accepts the other as kin) × kinK × the shared wall' },
+    { id: 'kinblind', keys: [], label: 'channels blind to kin', group: 't1a', type: 'toggle', get: () => KP().blind,
+      run: () => `kin channels ${flip(KP(), 'blind') ? 'open to EVERY neighbour (control: kinship ignored)' : 'open only to kin (by the markers)'}`,
+      help: 'a control: does recognising kin matter, or only sharing?' },
+    { id: 'kinnull', keys: [], label: 'kin channels neutral control', group: 't1a', type: 'toggle', get: () => KP().null,
+      run: () => `kin channels ${flip(KP(), 'null') ? 'move nothing (NEUTRAL CONTROL: their genes still drift)' : 'act'}`,
+      help: 'the neutral control: the genes drift as usual but have no effect, to tell selection from noise' },
+    { id: 'clock', keys: [], label: 'marker clock', group: 't1a', type: 'toggle', get: () => KP().clock,
+      run: () => `the self marker ${flip(KP(), 'clock') ? 'drifts at every birth (a molecular clock): relatives far apart in time look less alike' : 'is copied exactly at birth'}`,
+      help: 'with mutation on (key M), each birth turns the marker’s angle, period and phase a little' },
+    { id: 'smelltrace', keys: [], label: 'smell for trace', group: 't1a', type: 'toggle', get: () => KP().smellTrace,
+      run: () => `the membrane’s corners ${flip(KP(), 'smellTrace') ? 'smell trace too, as strongly as its lack holds the cell’s engines back: cells short of trace climb its plumes' : 'smell the fuels only'}`,
+      help: 'a unit of trace smells like traceWorth units of the richest fuel × (1 − the cofactor at the trace inside) / (1 − f0)' },
+    kknob('kinK', 'kin channel rate', 'kinK', 0.01, 50, 1.5, 2, 'per s at full conductance, per R of shared wall (× each molecule’s own speed)'),
+    kknob('kinSeal', 'seal', 'seal', 0, 1, 1.25, 2, 'a covered side’s share closed to the dish'),
+    kknob('kinPress', 'press', 'press', 0.8, 1.6, 1.05, 2, 'a side counts as covered by a neighbour closer than this × the two radii'),
+    kknob('clockSize', 'clock size', 'clockSize', 0.05, 20, 1.5, 2, 'the marker’s drift per birth, × (angle 0.02 rad, period 1 %, phase 0.05 rad)'),
+    kknob('traceWorth', 'trace worth', 'traceWorth', 0.5, 2000, 1.5, 1, 'a unit of trace smells like this many units of the richest fuel to a cell without trace'),
+    { id: 'founderMode', keys: [], label: 'founders', group: 't1a', type: 'cycle', get: () => app.cells.genome.params.founderMode,
+      options: () => ['std', 'blank', 'wild'],
+      set: (v) => { app.cells.genome.params.founderMode = ['std', 'blank', 'wild'].includes(v) ? v : 'std'; return `founders ${app.cells.genome.params.founderMode} (G or N draws them)`; },
+      run: () => { const G = app.cells.genome.params, M = ['std', 'blank', 'wild']; G.founderMode = M[(M.indexOf(G.founderMode) + 1) % 3]; return `founders ${G.founderMode}: ${G.founderMode === 'wild' ? 'every gene over its whole range' : G.founderMode === 'blank' ? 'the new abilities at 0 (no pumps, gates, kin channels)' : 'today’s'} (G or N draws them)`; },
+      help: 'std: today’s founders; blank: the new abilities at 0 (they must evolve); wild: every gene drawn over its whole range' },
+  );
+
   // ---------- vents in the dark (step C12f; panel only: no keys are free) ----------
   const VP = () => app.matter.vents.params;
   const vknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'vents', type: 'knob', get: () => VP()[key].toFixed(digits),
@@ -889,6 +925,7 @@ export function makeActions(app) {
       : v === 'charge' ? 'colour by charge: rose cells hold more givers (+), blue more takers (−), grey neutral'
         : v === 'walls' ? 'colour by wall pattern (step C10): coral polar, mint two-ended, magenta sticky sides, grey uniform; bright tube = sticky side'
           : v === 'guides' ? 'colour by strongest guide (step C13): ivory glue, teal pumps, green engines, lilac division, yellow turning, grey unguided; each side’s tube bright where it feels the field high, dark where low'
+          : v === 'marker' ? 'colour by lineage, the self marker (step T1a): each family its own hue, close relatives close hues (the marker drifts at every birth, a molecular clock)'
           : 'colour by fate';
   }
 

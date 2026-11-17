@@ -16,6 +16,7 @@ import { pal } from './palette.js';
 import { BIO_FLOATS, strategyOf, founderGenome, HABITS, predatorGenome } from './genome.js';
 import { DESIGNS, DESIGN_NAMES, designGenome } from './tissues.js';
 import { CELL_FLOATS } from './cells.js';
+import { CARBON, LADDER, carbonTable, describeCarbon } from './carbon.js';   // step C15a: the builder c, its ladder, tar
 
 const NS = 'http://www.w3.org/2000/svg';
 const rgb = (c, a = 1) => (a >= 1 ? `rgb(${c.map((v) => Math.round(v)).join(',')})` : `rgba(${c.map((v) => Math.round(v)).join(',')},${a})`);
@@ -103,8 +104,8 @@ function picture(s, P) {
 }
 
 /** The ladder of an atom's levels (electrons' table): shells as short lines, the valence one bright, the empty one dashed. */
-function ladder(a, ink) {
-  const L = atomLevels(a);
+function ladder(a, ink, levels = null) {
+  const L = levels || atomLevels(a);
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', '0 0 34 40');
   svg.setAttribute('width', '34'); svg.setAttribute('height', '40');
@@ -134,11 +135,23 @@ export function moleculePanel(ctx, onPipette) {
         : 'The step C4 table (?electrons=0): energies count up from the free atoms (0); light makes fuel, burning gives it back.'));
       // the periodic table
       body.append(el('h3', '', 'Periodic table'));
-      const tbl = el('div', 'ptable');
-      tbl.append(el('span', 'ph', ''), el('span', 'ph', 'giver +'), el('span', 'ph', 'linker'), el('span', 'ph', 'taker −'));
+      const tbl = el('div', CARBON ? 'ptable p4' : 'ptable');
+      const COLS = CARBON ? ['giver', 'builder', 'linker', 'taker'] : ['giver', 'linker', 'taker'];
+      tbl.append(el('span', 'ph', ''), el('span', 'ph', 'giver +'), ...(CARBON ? [el('span', 'ph', 'builder')] : []), el('span', 'ph', 'linker'), el('span', 'ph', 'taker −'));
       for (const row of [1, 2]) {
         tbl.append(el('span', 'ph prow', `row ${row}`));
-        for (const group of ['giver', 'linker', 'taker']) {
+        for (const group of COLS) {
+          if (group === 'builder') {   // step C15a: the builder c (row 1 only; never free: no pipette)
+            if (row !== 1) { tbl.append(el('span', 'ph', '')); continue; }
+            const T = carbonTable(), ink = (P.substances.carbon || { light: [150, 230, 150] }).light;
+            const cell = el('div', 'pcell');
+            cell.title = 'the builder c: four hands, each holding a giver, a taker or another carbon; never free. Grip between the giver and the linker';
+            const sym = el('b', '', 'c');
+            sym.style.color = rgb(ink); sym.style.textShadow = `0 0 6px ${rgb(ink, 0.6)}`;
+            cell.append(sym, ladder({ row: 1 }, ink, T.levels), el('small', '', `4 hands · ${-T.grip}`));
+            tbl.append(cell);
+            continue;
+          }
           const name = Object.keys(ATOMS).find((k) => ATOMS[k].row === row && ATOMS[k].group === group && !ATOMS[k].ground);
           const s = SUBSTANCES[CH[name]], ink = inkOf(s, P), A = ATOMS[name];
           const cell = el('button', 'pcell');
@@ -202,9 +215,10 @@ export function moleculePanel(ctx, onPipette) {
           P0.rows.push({ c, amt });
         }
       }
+      if (CARBON) carbonRows(body, P, P0.rows);   // step C15a
       body.addEventListener('click', (e) => {
         const b = e.target.closest('[data-pip]');
-        if (b) onPipette(Number(b.dataset.pip));
+        if (b) onPipette(b.dataset.pip.startsWith('c:') ? b.dataset.pip.slice(2) : Number(b.dataset.pip));
       });
       this.refresh(true);
     },
@@ -213,13 +227,84 @@ export function moleculePanel(ctx, onPipette) {
       if (!force && P0.last && performance.now() - P0.last < 900) return;
       P0.last = performance.now();
       const inside = E && E.ledger ? E.ledger.stock : null;
-      for (const { c, amt } of P0.rows) {
+      for (const { c, amt, carbon } of P0.rows) {
+        if (carbon != null) {   // step C15a: a ladder molecule (0..4) or tar (5: its carbons, and its hands)
+          const CD = M.carbon.dish, d = carbon < 5 ? CD[carbon] : (2 * CD[5] + CD[6] + CD[7]) / 4;
+          const t = carbon < 5 ? `in the dish ${fmtN(d)}` : `in the dish ${fmtN(d)} carbons (backbone ${fmtN(CD[5])}, fuel hands ${fmtN(CD[6])}, burnt hands ${fmtN(CD[7])})`;
+          if (amt.textContent !== t) amt.textContent = t;
+          continue;
+        }
         const d = M.dish ? M.dish[c] || 0 : 0, k = inside ? inside[c] || 0 : 0;
         const t = `in the dish ${fmtN(d)}${c < 13 || SUBSTANCES[c].excited ? ` · inside cells ${fmtN(k)}` : ''}`;
         if (amt.textContent !== t) amt.textContent = t;
       }
     },
   };
+}
+
+// ---------- step C15a: carbon ----------
+/** A one-carbon molecule: the carbon in the middle, its four hands as stubs ending in + (a giver) or − (a taker). */
+function carbonPicture(g, P, ink) {
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 34 26'); svg.setAttribute('width', '34'); svg.setAttribute('height', '26');
+  svg.classList.add('mol');
+  Object.assign(svg.style, { width: '34px', height: '26px', stroke: 'none' });
+  const gi = inkOf({ func: 'reactive', heavy: 0 }, P), ti = (P.substances.mineral || P.substances.linker).light;
+  let inner = '';
+  [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([dx, dy], k) => {
+    const giver = k < g, x = 17 + 10 * dx, y = 13 + 8 * dy, hi = giver ? gi : ti;
+    inner += `<path d="M17 13L${x} ${y}" stroke="${rgb(ink, 0.7)}" stroke-width="1.3"/>`;
+    inner += `<circle cx="${x}" cy="${y}" r="3.4" fill="${rgb(hi, 0.85)}"/>`;
+    inner += `<text x="${x}" y="${y + 2.6}" text-anchor="middle" font-size="7.5" font-weight="700" fill="#04060a">${giver ? '+' : '−'}</text>`;
+  });
+  inner += `<circle cx="17" cy="13" r="4.6" fill="${rgb(ink, 0.9)}" stroke="${rgb(ink)}" stroke-width="0.8"/>`;
+  svg.innerHTML = inner;
+  svg.style.filter = `drop-shadow(0 0 2px ${rgb(ink, 0.65)})`;
+  return svg;
+}
+/** The molecules zoo's carbon: the ladder strip (fuel to exhaust), each with its energy and light, then tar. */
+function carbonRows(body, P, rows) {
+  const T = carbonTable(), I = P.substances.carbon || { light: [176, 236, 150], heavy: [128, 140, 156] }, Tr = P.substances.tar || { light: [150, 104, 56] };
+  body.append(el('h3', '', 'Carbon: the ladder, fuel to exhaust (step C15a)'));
+  body.append(el('p', 'note', `One carbon with four hands. Each step down the ladder a taker (oxygen-like t) takes a giver's place: it releases ${T.ox16 / 16}. ` +
+    `Making fuel back from CO2-like carbon needs two photons per hand (water split, then the hand). The cells do not eat carbon yet.`));
+  T.ladder.forEach((s, j) => {
+    const ink = I.light.map((v, k) => v + (I.heavy[k] - v) * (j / 4));
+    const r = el('div', 'zrow');
+    const pic = el('div', 'zpic');
+    pic.append(carbonPicture(s.g, P, ink));
+    const main = el('div', 'zmain');
+    const head = el('div', 'zhead');
+    const nm = el('b', '', s.name);
+    nm.style.color = rgb(ink);
+    head.append(nm, el('span', 'zwhat', describeCarbon(s.name)));
+    const bands = s.bands.map((b) => (b === 1 ? 'visible 1 (warms, glows warm)' : b === 3 ? 'hard (sky blue glow; fixed back where g is)' : BAND_WORD[b]));
+    const nums = el('div', 'znums', `energy ${fmtE(s.energy)} (spark ${T.spark}) · ${s.g ? `burnt fully with oxygen it releases ${s.g * (T.ox16 / 16 + 4.5)}` : 'fully burnt'} · absorbs ${bands.join(', ')}`);
+    const amt = el('div', 'zamt');
+    main.append(head, nums, amt);
+    const pip = el('button', 'act zpip', 'pipette');
+    pip.type = 'button'; pip.dataset.pip = `c:${s.name}`;
+    pip.title = `drop ${s.name} where you tap (booked as added, like a spring)`;
+    r.append(pic, main, pip);
+    body.append(r);
+    rows.push({ carbon: j, amt });
+  });
+  const r = el('div', 'zrow');
+  const pic = el('div', 'zpic');
+  const sw = el('div', '');
+  Object.assign(sw.style, { width: '30px', height: '16px', margin: '5px 2px', background: rgb(Tr.light, 0.8), boxShadow: `inset 0 0 0 1px ${rgb(Tr.light)}` });
+  pic.append(sw);
+  const main = el('div', 'zmain');
+  const head = el('div', 'zhead');
+  const nm = el('b', '', 'tar');
+  nm.style.color = rgb(Tr.light);
+  head.append(nm, el('span', 'zwhat', describeCarbon('tar')));
+  const nums = el('div', 'znums', `three numbers per place: backbone bonds c-c (${fmtE(-T.bonds.cc.rel)} each), fuel hands (${fmtE(-T.bonds.cg.rel)}), burnt hands (${fmtE(-T.bonds.ct.rel)}) · forms where fuel and burnt carbon meet (releases ${T.cond16 / 16} and a water) · warms in light`);
+  const amt = el('div', 'zamt');
+  main.append(head, nums, amt);
+  r.append(pic, main);
+  body.append(r);
+  rows.push({ carbon: 5, amt });
 }
 
 // ---------- the cells ----------

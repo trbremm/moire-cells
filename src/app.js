@@ -120,6 +120,9 @@ export function createApp(ctx) {
 
   // ---------- the zoos and the add tools ----------
   const pick = { genome: null, label: '', sub: CH.gT ?? 0 };   // what the add-cell tool places, what the pipette drops
+  // (step C15a: the pipette's substance is a channel number, or a carbon ladder molecule's name: five atoms each)
+  const subName = (x) => (typeof x === 'string' ? x : SUBSTANCES[x].name);
+  const subAtoms = (x) => (typeof x === 'string' ? 5 : SUBSTANCES[x].atoms.length);
   const toolIndex = (id) => ctx.tools.findIndex((t) => t.id === id);
   const cellsZoo = cellPanel(ctx, (g, label) => {
     pick.genome = g.slice(); pick.label = label;
@@ -130,7 +133,7 @@ export function createApp(ctx) {
   const molZoo = moleculePanel(ctx, (c) => {
     pick.sub = c;
     ctx.app.setTool(toolIndex('pipette'));
-    ctx.flash(`pipette: ${SUBSTANCES[c].name}. Tap or drag on the dish to drop it (booked as added)`);
+    ctx.flash(`pipette: ${subName(c)}. Tap or drag on the dish to drop it (booked as added)`);
     if (A.ui) A.ui.refresh();
   });
   A.panels = [molZoo, cellsZoo];
@@ -198,7 +201,7 @@ export function createApp(ctx) {
   }
   /** The flash for the tool buttons (main.js setTool). */
   A.toolText = (t) => (t.addCell ? `add cells: ${genomeNow().label}; tap places one, a drag a line (pick another in the cells zoo)`
-    : `pipette: ${SUBSTANCES[pick.sub].name}; tap drops it, a drag drops more (pick another in the molecules zoo)`);
+    : `pipette: ${subName(pick.sub)}; tap drops it, a drag drops more (pick another in the molecules zoo)`);
 
   // the pointer (dish coordinates), while one of the two tools is active
   const drag = { on: false, kind: '', x: 0, y: 0, pts: [] };
@@ -231,10 +234,10 @@ export function createApp(ctx) {
   A.cancel = () => { drag.on = false; drag.pts = []; };
 
   function drop(x, y) {
-    const s = SUBSTANCES[pick.sub];
-    const ok = ctx.matter.addSpring(x, y, `drop:${s.name}`, PIPETTE.life, { drop: true, rate: PIPETTE.rate });
+    const name = subName(pick.sub);
+    const ok = ctx.matter.addSpring(x, y, `drop:${name}`, PIPETTE.life, { drop: true, rate: PIPETTE.rate });
     ctx.background.impulse(x, y, 1.5);
-    ctx.flash(ok ? `pipette: ${s.name} (${(PIPETTE.life * PIPETTE.rate / s.atoms.length).toFixed(0)} units over ${PIPETTE.life} s, booked as added)`
+    ctx.flash(ok ? `pipette: ${name} (${(PIPETTE.life * PIPETTE.rate / subAtoms(pick.sub)).toFixed(0)} units over ${PIPETTE.life} s, booked as added)`
       : 'pipette: the dish holds as many springs as it can; wait for one to dry up');
   }
 

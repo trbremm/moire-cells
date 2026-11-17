@@ -19,6 +19,7 @@
 // page and comparing the state and the flash after each press).
 
 import { ELECTRONS } from './matter.js';
+import { CARBON } from './carbon.js';   // step C15a
 
 // (step C12d, electrons: tap mode 2 drips minerals, tap mode 3 is a vent; their ids stay)
 export const TOOLS = [
@@ -61,6 +62,7 @@ export const RULE_GROUPS = [
   ['lipids', 'Lipid membranes (step C12b)'],
   ['excited', 'Excited waste (step C12c)'],
   ['electrons', 'Electrons (step C12d)'],
+  ['carbon', 'Carbon (step C15a)'],
   ['waste', 'Waste must leave (step C12e)'],
   ['ions', 'Ion flow (step C12g)'],
   ['whole', 'Whole membranes (step M1)'],
@@ -623,6 +625,41 @@ export function makeActions(app) {
     eknob('elKabs', 'absorption depth', 'kAbs', 0.01, 50, 1.5, 2, 'optical depth of a substance for a band its gap matches, per unit per R²'),
     eknob('elYrx', 'share that reacts', 'yRx', 0, 1, 1.25, 2, 'share of the excitations that react, where a reaction is open to them'),
     eknob('elYfl', 'share that glows', 'yFl', 0, 1, 1.25, 2, 'share of the rest that fluoresces (the others turn into heat)'),
+  );
+
+  // ---------- carbon (step C15a; panel only: no keys are free) ----------
+  const CBP = () => app.matter.carbon.params;
+  const cbknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'carbon', type: 'knob', get: () => CBP()[key].toFixed(digits),
+    run: (k) => { const p = CBP(); p[key] = Math.max(lo, Math.min(hi, +(p[key] * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  const cbtoggle = (id, label, key, onText, offText, help) => ({ id, keys: [], label, group: 'carbon', type: 'toggle', get: () => CARBON && CBP()[key],
+    run: () => (CARBON ? `${label} ${flip(CBP(), key) ? onText : offText}` : 'carbon is off (?carbon=0)'), help });
+  A.push(
+    { id: 'carbon', keys: [], label: 'carbon (reloads)', group: 'carbon', type: 'toggle', get: () => CARBON,
+      run: () => {
+        const u = new URL(location.href);
+        u.searchParams.set('carbon', CARBON ? '0' : '1');
+        if (!CARBON) u.searchParams.delete('electrons');
+        setTimeout(() => location.assign(u.href), 600);
+        return `reloading ${CARBON ? 'without carbon (the chemistry as before C15a)' : 'with carbon (the builder atom c, its ladder from methane-like to CO2-like, tar)'}: carbon is fixed for the page`;
+      },
+      help: 'the builder atom c (four hands): a ladder of one-carbon molecules from methane-like fuel to CO2-like exhaust, and tar (dead carbon, mud); in the open dish only (the cells ignore it for now). Switching reloads the page (a fresh dish)' },
+    cbtoggle('cbOx', 'oxidizing', 'oxidize', 'on: a free taker (oxygen-like t) takes a giver off a carbon hand, by heat (fuel burns where it is hot)', 'off',
+      't + [c-g] -> [c-t] + g releases 2.75; its spark (0.5) makes it slow in the cool dish, fast near hot vents'),
+    cbtoggle('cbCond', 'condensing (tar forms)', 'condense', 'on: a fuel hand and a burnt hand join two carbons and leave water: tar', 'off',
+      '[c-g] + [c-t] -> [c-c] + gt releases 0.75: where fuel and burnt carbon meet, dead carbon (tar, mud) slowly builds up'),
+    cbtoggle('cbLight', 'hard light fixes carbon', 'light', 'on: hard light caught by a burnt hand puts a giver back on it (where free g is), and splits backbones with water', 'off',
+      'REDUCE g + [c-t] -> [c-g] + t and HYDROLYZE gt + [c-c] -> [c-g] + [c-t], by hard light (one photon per hand: making fuel from CO2-like carbon is hard)'),
+    cbtoggle('cbDis', 'tar dissolves / takes in', 'dissolve', 'on: loose tar carbons leave as molecules, molecules stick to tar', 'off',
+      'zero energy: a tar carbon with no backbone bond leaves as a ladder molecule; a ladder molecule sticks where tar is'),
+    cbtoggle('cbSpring', 'springs drip carbon', 'springs', 'on: mineral springs drip CO2-like carbon, vents a little methane-like fuel with it', 'off: no new carbon',
+      'per atom a spring drips: 0.08 CO2-like molecules at a mineral spring; 0.025 methane-like and 0.025 CO2-like at a vent (a fuel seep)'),
+    { id: 'cbLook', keys: [], label: 'carbon drawn', group: 'carbon', type: 'toggle', get: () => CARBON && app.matter.carbon.look.on,
+      run: () => (CARBON ? `carbon ${flip(app.matter.carbon.look, 'on') ? 'drawn: dust green (fuel) to slate (burnt), tar as amber patches' : 'not drawn'}` : 'carbon is off'),
+      help: 'the ladder as dust shaded fuel green to slate, tar as flat amber patches with a waxy green sheen where it holds fuel' },
+    cbknob('cbKox', 'oxidize rate', 'kOx', 0.01, 500, 1.5, 2, 'R² per s, before the spark’s factor exp(−0.5 / (theta T))'),
+    cbknob('cbKcond', 'condense rate', 'kCond', 0.01, 500, 1.5, 2, 'R² per s, before the spark’s factor'),
+    cbknob('cbKdis', 'dissolve rate', 'kDis', 0.001, 5, 1.5, 3, 'per s, of the loose tar carbons'),
+    cbknob('cbKset', 'settle rate', 'kSet', 0.001, 5, 1.5, 3, 'R² per s, x the tar’s carbons per R²'),
   );
 
   // ---------- waste must leave (step C12e; panel only: no keys are free) ----------

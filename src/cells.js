@@ -48,6 +48,7 @@ import { Guides, STATS_FG, FG_WORDS, FG_CLEAR } from './guides.js';
 import { Kin } from './kin.js';
 import { Grn } from './grn.js';
 import { Predators, STATS_P1, P1_WORDS, P1_CLEAR } from './predators.js';
+import { Fidelity } from './fidelity.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 import { cultureLayout } from './culture.js';   // app: how a new culture is spread
 
@@ -349,6 +350,7 @@ export class Cells {
     this.kin = new Kin(this);             // step T1a: an inside, kin channels, the self marker (src/kin.js)
     this.grn = new Grn(this);             // step T1b: the gene regulatory network, the reporter view (src/grn.js)
     this.pred = new Predators(this);      // step P1: predators, engulfing and kin sparing (src/predators.js)
+    this.fidelity = new Fidelity(this);   // step G1: error correction, the fidelity gene (src/fidelity.js)
   }
 
   static async create(device, format, medium, count, seed, cap = 0) {
@@ -706,6 +708,7 @@ export class Cells {
     this.dipole.writeFields(u, f, 68);         // step C6d: the dipoles
     f[67] = Math.max(0, this.genome.params.pumpJump ?? 0);   // step C7: pump slot jumps per birth (Fields.memb.w)
     this.eat.hardlight.writeFields(f, 80);     // step C8: hard light mutates (Fields.hm)
+    this.fidelity.writeFields(u, f, 82);       // step G1: error correction (Fields.hm.z, hm.w; after the hard light's words)
     this.division.writeFields(f, u, 84);       // step C9: division and death (Fields.dv0..dv2)
     this.walls.writeFields(u, f, 96);          // step C10: patterned walls (Fields.wl0, wl1)
     this.guides.writeFields(u, f, 104);        // step C13: fields as genes and guides (Fields.fg0)
@@ -753,6 +756,7 @@ export class Cells {
     // names the genome copy the queue holds now
     this.grn.maybeCensus(frame.time);
     this.pred.maybeCensus(frame.time);   // step P1: the clusters' census (a read-back every few s)
+    this.fidelity.maybeCensus(frame.time);   // step G1: the fidelity census (a read-back every few s)
     if (this.gridSize() !== this.grid.cs) this.sizeGrid();   // params.cut or range changed
     // after a reset, the warm-up ticks run first (all in this frame, at the current time)
     const warm = Math.min(this.warm, SLOTS - frame.ticks);

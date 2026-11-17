@@ -408,7 +408,8 @@ struct Bio {
                     // z the A felt, through a leaky integrator; w > 0 converted (rule 2: 1; with the relay,
                     // rule 3: seconds converted so far), w < 0 resting (seconds left), 0 neither (step 6)
   conv: vec4f,      // state (step 6): x the converted share of the neighbourhood, through the same integrator
-                    // (rule 3, relay); y z w spare
+                    // (rule 3, relay); y z step 8's partner clock (state); w step G1: the FIDELITY gene (proofreading, a GENE although it
+                    // sits among the state words: inherited, see FID_* below; 0 = the founders, today's copying; old genomes 0)
   // ---- step C6: engines and the genes of the membrane and the heat (src/genome.js; ENGINES in src/matter.js) ----
   eng: vec4f,       // x y z: the three engine slots, each the engine's index + 32 x its pigment's light band (a whole number);
                     // w: the heat tolerance (temperature, heat per R^2)
@@ -1081,7 +1082,8 @@ struct Fields {
                     // charge along it (atom-units per s at a full field: dpRelax x polar x pHalf / 2.6); w spare
   // ---- step C8, hard light mutates (src/hardlight.js) ----
   hm: vec4f,        // x the extra mutation per energy unit of hard light dose (0 = off): a birth's mutation x (1 + x dose of the
-                    // parent), at most y x (with mutation itself off, key M, only the extra part); z, w spare
+                    // parent), at most y x (with mutation itself off, key M, only the extra part); step G1 (src/fidelity.js): z bits FID_*
+                    // (u32), w the share of hard light's extra mutation that proofreading cannot catch (0..1)
   // ---- step C9, division and death with a changing count (src/division.js) ----
   dv0: vec4f,       // x bits DV_ON (division mode: cells divide into free slots and die for good; else turnover keeps the
                     // count); y the battery share from which a cell may divide; z crowding: the sum of its overlaps (each as a
@@ -1112,8 +1114,38 @@ struct Fields {
   p1d: vec4f,       // x the mean membrane integrity needed to start (half of it to go on); y the wrap's cost (heat counts per s); z the
                     // start's cost (heat counts); w how much the pair's contact push softens at a full wrap (0..1)
 };
+// step G1, ERROR CORRECTION (src/fidelity.js; README "Step G1"): the FIDELITY gene F (Bio.conv.w, a log factor, FID_LO..FID_HI; founders 0)
+// scales a birth's copying errors by m = e^-F: every gene's small steps (mutate) and every jump's chance, the gene network's nudges, rewiring
+// and duplication, and the self marker's clock alike. Hard light's extra mutation (step C8) is damage to the template: a share hm.w of it
+// lies beyond proofreading (as it is), the rest is caught like any copying error (x m). F itself drifts at today's size (not x m: a careful
+// lineage can still lose its care, and the neutral control drifts alike). Proofreading costs the parent's battery at each birth (the eat
+// pass's split: EatP.dv.z x (e^F - 1) for F > 0, as heat; copying at the founders' care or sloppier costs nothing extra)
+const FID_ACT: u32 = 1u;          // the gene acts (Fields.hm.z, EatP.dv.w): scales the mutation and costs (off and the neutral control: not)
+const FID_DRIFT: u32 = 2u;        // ... it drifts at births (on and the neutral control)
+const FID_LO: f32 = -2.0;         // the gene's range: e^2 = 7.4 x today's errors ..
+const FID_HI: f32 = 3.0;          // .. e^-3 = 0.05 x
+const FID_STEP: f32 = 0.08;       // its own drift per birth (x today's mutation size)
+// m = e^-F while the gene acts (1 otherwise: today's copying)
+fn fid_m(f: f32, hm: vec4f) -> f32 {
+  if ((bitcast<u32>(hm.z) & FID_ACT) == 0u) { return 1.0; }
+  return exp(-clamp(f, FID_LO, FID_HI));
+}
+// a birth's mutation scale from the copying (mOn: key M) and hard light's extra hx: (mOn) m + hx (h + (1 - h) m), h = hm.w; exactly
+// (mOn) + hx while the gene does not act
+fn fid_birth(mOn: bool, hx: f32, f: f32, hm: vec4f) -> f32 {
+  let m = fid_m(f, hm);
+  let h = clamp(hm.w, 0.0, 1.0);
+  return select(0.0, m, mOn) + hx * (h + (1.0 - h) * m);
+}
+// step G1: its counters in the heat ledger's step C9 block (LG_DIV: 16 numbers x 16 slots, [0] the divisions' cost), since the last read-back
+const FDC_BIRTHS: u32 = 1u;       // births while the gene drifts or acts (the step)
+const FDC_MS: u32 = 2u;           // ... the sum of their mutation scale x 1000 (the copying and hard light, after proofreading)
+const FDC_MS0: u32 = 3u;          // ... the sum of what it would have been at the founders' care x 1000
+const FDC_COST: u32 = 4u;         // heat counts proofreading took from the parents' batteries (the eat pass's split)
+const FDC_PAID: u32 = 5u;         // births that paid any
+const FDC_SHORT: u32 = 6u;        // heat counts asked but not there (an empty battery: the copy is proofread anyway)
 // step T1a: Fields.t1.x bits
-const T1S_CLOCK: u32 = 1u;        // the marker drifts at every birth (with mutation, or hard light's extra)
+const T1S_CLOCK: u32 = 1u;       // the marker drifts at every birth (with mutation, or hard light's extra)
 const T1S_CLOCKHARD: u32 = 2u;    // step T1c: ... and with hard light's extra dose too (off, ?clockhard=0: only with mutation itself)
 // step C9: Fields.dv0.x bits
 const DV_ON: u32 = 1u;

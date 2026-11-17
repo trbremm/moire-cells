@@ -284,7 +284,8 @@ export class Eat {
     this.catalysts.writeEat(f, EP_CAT); // step C7b
     this.hardlight.writeEat(f, EP_HL, dt); // step C8
     // step C9: a reset fills the first `start` slots (they get the starter charge); a division's cost (heat counts)
-    u[EP_DV] = this.cells.start; u[EP_DV + 1] = this.cells.division.costCounts; u[EP_DV + 2] = 0; u[EP_DV + 3] = 0;
+    u[EP_DV] = this.cells.start; u[EP_DV + 1] = this.cells.division.costCounts;
+    this.cells.fidelity.writeEat(u, EP_DV + 2);   // step G1: proofreading's cost, the bits (EatP.dv.z, dv.w)
     this.cells.walls.writeEat(u, f, EP_WL, dt);   // step C10: the walls' pattern, maturity, linker cost and upkeep
     this.cells.guides.writeEat(u, EP_WL + 6);     // step C13: the gates' bits (EatP wl1.z)
     this.lipids.write(u, f, EP_LP);               // step C12b: the lipid membranes
@@ -426,6 +427,7 @@ export class Eat {
     let dc = 0;
     for (let k = 0; k < 16; k++) dc += w[LG_DIV + k];
     this.cells.division.applyLedger(rec.time, dc / HEAT_SCALE);
+    this.cells.fidelity.apply(rec, w);   // step G1: births, their mutation scale, proofreading's cost (the C9 block's words 1..6)
   }
 
   /**

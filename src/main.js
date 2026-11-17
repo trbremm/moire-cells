@@ -115,6 +115,10 @@
 //               ever engulfed); ?kinsparenull=1 kinship ignored (the sparing gene drifts without effect); knobs ?sizeratio= ?drive= ?holdbase=
 //               ?wallarm= ?stiffarm= ?wraptime= ?digesttime= ?startrate= ?batstart= ?wrapcost= ?startcost= ?wrapshare= ?batshare= ?predcensus=;
 //               ?predmark=1 the machinery's mark of engulf-capable cells; the founders' wild group 'engulf' (?founders=wild) draws the genes
+//   ?fidelity=0   step G1: no error correction (the fidelity gene frozen, no effect, no cost: today's mutation); ?fidelitynull=1 its NEUTRAL
+//               control (the gene drifts, no effect, no cost); ?fidcost=x proofreading's cost (energy units a birth at e^F - 1 = 1, 0.1),
+//               ?fidbeyond=x the share of hard light's extra mutation proofreading cannot catch (0.5), ?fidcensus=s the census's interval
+//               (rules panel, Error correction)
 //   ?grn=0        step T1b: the gene network frozen, without effect (as before T1b); ?grnnull=1 its NEUTRAL control (it runs and mutates,
 //               its outputs have no effect); ?grnsignal=0 no contact signal; ?grnkin=0 the signal not weighted by kinship; ?grnmut=0 the
 //               network copied exactly at births; ?grntau=x the expression's time constant (s); ?reporter=i the regulator the reporter
@@ -491,6 +495,16 @@ async function boot() {
       }
       if (params.has('predmark')) cells.pred.look.mark = flag('predmark');
     }
+    {   // step G1: error correction, the fidelity gene
+      const FP = cells.fidelity.params;
+      for (const [q, k] of [['fidelity', 'on'], ['fidelitynull', 'null']]) {
+        if (params.has(q)) FP[k] = flag(q);
+      }
+      for (const [q, k] of [['fidcost', 'cost'], ['fidbeyond', 'beyond'], ['fidcensus', 'censusEvery']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) FP[k] = k === 'beyond' ? Math.min(1, v) : v;
+      }
+    }
     {   // step C12f: vents in the dark
       const VP = matter.vents.params;
       if (params.has('hotvent')) VP.hot = flag('hotvent');
@@ -559,7 +573,7 @@ async function boot() {
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
-    kin: cells.kin, grn: cells.grn, predators: cells.pred };
+    kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity };
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.warfare = new Warfare(window.moire);     // step T1c: the chemical warfare census (lineage borders against interiors)
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
@@ -825,7 +839,8 @@ ${cells.eat.ions.panelLine(compact)}
 ${cells.eat.whole.panelLine(compact)}
 ${cells.kin.panelLine(compact)}
 ${cells.grn.panelLine(compact)}
-${cells.pred.panelLine(compact)}${ELECTRONS ? `
+${cells.pred.panelLine(compact)}
+${cells.fidelity.panelLine(compact)}${ELECTRONS ? `
 ${matter.vents.panelLine(compact)}` : ''}
 ${cells.eat.pigments.panelLine(compact)}
 ${water.panelLine(compact)}
@@ -904,6 +919,7 @@ function drawOverlay() {
     ...cells.kin.overlayLines(),
     ...cells.grn.overlayLines(),
     ...cells.pred.overlayLines(),
+    ...cells.fidelity.overlayLines(),
     ...cells.eat.pigments.overlayLines(),
     ...water.overlayLines(),
     ...oases.overlayLines(),

@@ -704,6 +704,19 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        giver, metal-like); light capture (pigments) a bond whose gap matches a visible band; membrane heads a charged atom;
        structure (walls, fibres) carbon alone; trace stays the scarce cofactor. Ecological stoichiometry follows: colonies
        limited by whichever element their jobs need (Liebig's law of the minimum), not written as a rule. Full recipes in C15c.
+       AS BUILT (C15b, 2026-11-18, branch carbon): src/carboncells.js + shaders/cell_carbon.wgsl; per-cell carbon buffer 24
+       words (ladder, granules, body, part element, requests); ladder crosses membranes as neutral molecules (CO2-like leaves
+       down its gradient); 4 carbon engine kinds after the 22 (oxidize = breather, reduce + pigment = light eater, two photons
+       per hand, condense = builder/granules, hydrolyse); default vent's lasting methane seep 0.3/s (?seep=0); founders get
+       carbon engines with chance 1/3 (?cbfounder=, ?habit=carbon). GROWTH NEEDS CARBON: body 0.05 carbon per R^2 (?cbbody=),
+       built from fuel carbon paying the spark, no division without a full body (turnover mode not gated); cb_build(n c + k
+       element) = the recipe helper, ONLY THE BODY charged so far. Tar: cells graze it into granules (works); open-dish
+       surface rule (?cbsurf) barely helps. RESULT (short runs, shared GPU): default seed 3 cells 154/189/318/339 at 5-20 min
+       vs 458/792/682/1023 carbon off (70-80 % short of body carbon: carbon limits growth); carbon engines rare (~10/900:
+       founders that had them died in the crash); ?cbfounder=1 -> 108/184 carbon fixers running a light loop inside each cell;
+       oxygen dishes with the body rule empty (8 and 2 cells: uptake too slow); dark vents die either way; CO2-like build-up
+       small, most carbon ends as tar. Look: dead founders leave flat amber tar flecks; granules = bright orange dots in cells
+       (harmonic: starch-like, keep/c15b/zoom_granules_harmonic.jpg). Speed unread.
        X1 SECRETED PROTEINS (user 2026-11-17: "or fibre/protein excretion", "or proteins even for that matter"): S1 part 3
        generalised. Cells BUILD polymers from their stock (linkers + charged atoms, battery paid, matter exact) and keep or
        SECRETE them; every property DERIVED from the polymer's short sequence (as C14 soup would, but made by life): long

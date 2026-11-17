@@ -85,7 +85,11 @@ export async function scaleDish(M, ctl, f) {
   });
   Object.assign(G, { hw: nw, hh: nh, px, data: await pack(out) });
   // the springs with the sample; the dish's new size
-  for (const s of S.springs) { s.x = ncx + (s.x - cx) * f; s.y = ncy + (s.y - cy) * f; }
+  for (const s of S.springs) {
+    s.x = ncx + (s.x - cx) * f; s.y = ncy + (s.y - cy) * f;
+    if (s.shape && s.shape.type === 'line') s.shape.len *= f;    // (a fissure or a seep stretches with the sample: its rate per R and per R^2
+    if (s.shape && s.shape.type === 'patch') s.shape.r *= f;     // stays the spring's total, so its drip per length thins or thickens)
+  }
   S.view = { cssW: W2, cssH: H2 };
   S.dish = { W: W2, H: H2, R: dish.R, mR: dish.mR, perArea: dish.perArea };
   const from = dish.from;

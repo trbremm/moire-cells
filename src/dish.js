@@ -96,13 +96,30 @@ export const dish = {
   /** A length given in px at the reference (clouds): in this dish's px. */
   refPx(x) { return this.perArea && this.R > 0 ? x * this.R / R_REF : x; },
 
+  /**
+   * THE PRESS (EXPERIMENTS.md "Waves after a resize": the waves were the dish's walls closing in on the culture): the right (or bottom)
+   * wall moves in and out again, slowly, for the CELLS only (the substrate and the water pass under it, as under a coverslip's edge):
+   * in to `depth` x the dish's width over half a `period`, back over the other half (a cosine), again and again. The crowd in front of
+   * the wall is packed into a dense front; when it lets go, the front spreads. ?press=depth,period[,bottom]; the Fronts preset.
+   */
+  press: { on: false, depth: 0.45, period: 240, side: 'right', phase: 0 },
+  /** How far the pressing wall is in at time t: [x, y] (dish px). */
+  pressAt(t) {
+    const P = this.press;
+    if (!P.on || !(P.depth > 0) || !(P.period > 0)) return [0, 0];
+    const k = 0.5 - 0.5 * Math.cos(2 * Math.PI * (t / P.period + P.phase));
+    const d = Math.min(0.9, P.depth) * k;
+    return P.side === 'bottom' ? [0, d * this.H] : [d * this.W, 0];
+  },
+
   /** For the panels. */
   line() {
     const [w, h] = this.sizeR;
     return `dish ${Math.round(w)}×${Math.round(h)} R (${Math.round(this.W)}×${Math.round(this.H)} px, R ${this.R.toFixed(2)} px, medium ${(this.mR / this.R).toFixed(2)} R)` +
       ` · area ${(this.area / 1000).toFixed(1)}k R² (× ${(this.area / A_REF).toFixed(2)} the reference)` +
       ` · ${this.follow ? 'follows the window (?dishfollow=1)' : `fixed (${this.from})`}${this.perArea ? '' : ' · supplies per px (old)'}` +
-      (this.fit !== 1 ? ` · drawn × ${this.fit.toFixed(2)}` : '');
+      (this.fit !== 1 ? ` · drawn × ${this.fit.toFixed(2)}` : '') +
+      (this.press.on ? ` · press: the ${this.press.side} wall in to ${this.press.depth} of the dish and back every ${this.press.period} s` : '');
   },
 };
 

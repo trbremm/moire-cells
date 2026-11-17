@@ -116,7 +116,9 @@ export class Water {
   /** Blocks of n words this keeps in the heat buffer: the caustic block, then psi ((hw + 1) x (hh + 1) words fit in 2 blocks). */
   get blocks() { return 3; }
   get causticsOn() { return !!(this.params.caustics && this.light && this.light.on && this.params.strength > 0); }
-  get currentsOn() { return !!(this.params.currents && (this.params.speed > 0 || this.params.gyre > 0)); }
+  get eddiesOn() { return !!(this.params.currents && (this.params.speed > 0 || this.params.gyre > 0)); }
+  /** The water flows: the eddies and the gyre, or a perfusion's through-flow (src/perfusion.js), or both. */
+  get currentsOn() { return this.eddiesOn || !!(this.perfusion && this.perfusion.flowing); }
 
   resize(view) { this.view = view; }
 
@@ -210,7 +212,9 @@ export class Water {
     f[12] = Math.max(1e-3, p.eps); f[13] = Math.max(1, p.imax); f[14] = this.norm; f[15] = Math.max(0, Math.min(1, p.strength));
     f.set(this.waves, 16);
     const W = this.view.cssW, Hh = this.view.cssH;
-    f[40] = W; f[41] = Hh; f[42] = Math.max(0.5, p.window) * R; f[43] = 0;
+    // PERFUSION (src/perfusion.js): the through-flow's mean speed along x (f[43]) and y (f[51]), CSS px per s
+    const thr = this.perfusion && this.perfusion.flowing ? this.perfusion.velocity(R) : [0, 0];
+    f[40] = W; f[41] = Hh; f[42] = Math.max(0.5, p.window) * R; f[43] = thr[0];
     // the currents: the medium's beat against its turned copy (k0 and the breathing from src/field.js Medium)
     const k0 = Md ? Md.k0 : 2 * Math.PI / (0.62 * 9), la = (Md ? Md.la0 : 0) * Math.max(0, p.breathe), turn = p.turn * Math.PI / 180;
     let qmag = 0;
@@ -221,10 +225,12 @@ export class Water {
       qmag = Math.max(qmag, Math.hypot(qx, qy));
       f[48 + 4 * m] = qx; f[49 + 4 * m] = qy; f[50 + 4 * m] = ph[m]; f[51 + 4 * m] = 0;
     }
-    const A = qmag > 1e-9 ? Math.max(0, p.speed) * R / qmag : 0;     // |u| ~ A |q|: the eddies' speed
-    const G = Math.max(0, p.gyre) * R * Math.min(W, Hh) / Math.PI * Math.cos(2 * Math.PI * t / Math.max(10, p.gyrePeriod));
+    f[51] = thr[1];
+    const eddies = this.eddiesOn;
+    const A = eddies && qmag > 1e-9 ? Math.max(0, p.speed) * R / qmag : 0;     // |u| ~ A |q|: the eddies' speed
+    const G = !eddies ? 0 : Math.max(0, p.gyre) * R * Math.min(W, Hh) / Math.PI * Math.cos(2 * Math.PI * t / Math.max(10, p.gyrePeriod));
     f[44] = Md ? Md.cx : W / 2; f[45] = Md ? Md.cy : Hh / 2; f[46] = A; f[47] = G;
-    this.psiScale = A * 3 + Math.abs(G);
+    this.psiScale = A * 3 + Math.abs(G) + Math.abs(thr[0]) * Hh + Math.abs(thr[1]) * W;
     this.speedNow = Math.max(0, p.speed) + Math.abs(G) * Math.PI / Math.min(W, Hh) / R;
     this.eddy = qmag > 1e-9 ? 2 * Math.PI / qmag / R : 0;   // the beat's period (R)
     this.device.queue.writeBuffer(this.uBuf, 0, this.uAB);

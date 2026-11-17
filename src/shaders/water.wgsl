@@ -25,12 +25,23 @@
 fn psi_node(p: vec2f) -> f32 {
   let wd = max(W.dish.z, 1.0);
   let win = smoothstep(0.0, wd, p.x) * smoothstep(0.0, wd, W.dish.x - p.x) * smoothstep(0.0, wd, p.y) * smoothstep(0.0, wd, W.dish.y - p.y);
-  if (win <= 0.0) { return 0.0; }
+  if (win <= 0.0) { return through(p); }
   let d = p - W.cen.xy;
   var beat = 0.0;
   for (var m = 0u; m < 3u; m++) { beat += cos(dot(W.q[m].xy, d) + W.q[m].z); }
   let gyre = sin(3.14159265 * p.x / W.dish.x) * sin(3.14159265 * p.y / W.dish.y);
-  return win * (W.cen.z * beat + W.cen.w * gyre);
+  return win * (W.cen.z * beat + W.cen.w * gyre) + through(p);
+}
+
+// PERFUSION (src/perfusion.js): a gentle THROUGH-FLOW from the inlet side to the outlet side, mean speed U (dish.w along x, q[0].w along
+// y; CSS px per s), with the channel's profile (Poiseuille: fastest in the middle, still at the side walls): psi = U H (3 s^2 - 2 s^3),
+// s across the channel, so it stays divergence-free; at the inlet and outlet walls no flux is taken (the rim has no outer edge): matter
+// piles against the outlet, whose sink lets it out
+fn through(p: vec2f) -> f32 {
+  var v = 0.0;
+  if (W.dish.w != 0.0) { let s = clamp(p.y / W.dish.y, 0.0, 1.0); v += W.dish.w * W.dish.y * s * s * (3.0 - 2.0 * s); }
+  if (W.q[0].w != 0.0) { let s = clamp(p.x / W.dish.x, 0.0, 1.0); v -= W.q[0].w * W.dish.x * s * s * (3.0 - 2.0 * s); }
+  return v;
 }
 
 @compute @workgroup_size(8, 8)

@@ -640,7 +640,10 @@ export class Cells {
     const v = this.view, g = this.grid, p = this.params;
     const f = this.simF, u = this.simU, o = k * SLOT / 4;
     u[o] = this.count; u[o + 1] = g.gw; u[o + 2] = g.gh; u[o + 3] = this.tick >>> 0;
-    f[o + 4] = g.cs; f[o + 5] = this.R; f[o + 6] = v.cssW; f[o + 7] = v.cssH;
+    // (the PRESS, src/dish.js: the right or bottom wall moved in, for the cells only: they are held inside it and its soft wall pushes
+    // the crowd in front of it; the dish, its grid and its matter stay)
+    const pr = dish.pressAt(time);
+    f[o + 4] = g.cs; f[o + 5] = this.R; f[o + 6] = v.cssW - pr[0]; f[o + 7] = v.cssH - pr[1];
     f[o + 8] = v.cssW / 2; f[o + 9] = v.cssH / 2; f[o + 10] = dt;
     f[o + 11] = p.contact ? p.stiffness : 0;
     f[o + 12] = p.damping; f[o + 13] = p.jitter; f[o + 14] = this.pull(); f[o + 15] = p.wall;

@@ -1,0 +1,282 @@
+{
+  "name": "g1-check",
+  "description": "step G1 books check: 420 s at MAX (seed 5), the whole dish lit; springs; the gene set high for all (costs), N, a wash, null / off / on / cost x5 / beyond 0 and 1 toggled at runtime, a resize with G (wild founders), sloppy -2 then careful 3, key M off and on, turnover mode and back, a snapshot saved and loaded (300 s): atoms and charge rounding must stay 0",
+  "condition": {
+    "name": "g1-check",
+    "description": "step G1 books check: 420 s at MAX (seed 5), the whole dish lit; springs; the gene set high for all (costs), N, a wash, null / off / on / cost x5 / beyond 0 and 1 toggled at runtime, a resize with G (wild founders), sloppy -2 then careful 3, key M off and on, turnover mode and back, a snapshot saved and loaded (300 s): atoms and charge rounding must stay 0",
+    "query": {
+      "seed": 5,
+      "light": "full"
+    },
+    "duration": 420,
+    "sample_every": 10,
+    "stall": 200,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 420,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "evals": [
+      {
+        "t": 5,
+        "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.35, 'soap', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.5, 'oil', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.3, 'linker', 120); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.3, 'ions', 120); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 1e9); if (!moire.oases.started) moire.oases.start(); return moire.matter.springs.map(s => s.kind)"
+      },
+      {
+        "t": 30,
+        "js": "await moire.genome.setAll({fidelity: 1.5}); return 'fidelity 1.5 for all'"
+      },
+      {
+        "t": 60,
+        "js": "return moire.control.action('culture')"
+      },
+      {
+        "t": 70,
+        "js": "await moire.genome.setAll({fidelity: 2.5}); return 'fidelity 2.5 for all'"
+      },
+      {
+        "t": 90,
+        "js": "moire.fidelity.params.null = true; return 'null'"
+      },
+      {
+        "t": 100,
+        "js": "return moire.control.action('wash')"
+      },
+      {
+        "t": 105,
+        "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.4, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 400); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'emulsion', 300); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.4, 'soap', 200); return 'springs again'"
+      },
+      {
+        "t": 110,
+        "js": "moire.fidelity.params.null = false; moire.fidelity.params.on = false; return 'off'"
+      },
+      {
+        "t": 125,
+        "js": "moire.fidelity.params.on = true; moire.fidelity.params.cost = 0.5; return 'on, cost 0.5'"
+      },
+      {
+        "t": 140,
+        "js": "moire.fidelity.params.beyond = 0; return 'beyond 0'"
+      },
+      {
+        "t": 150,
+        "js": "moire.genome.params.founderMode = 'wild'; return moire.control.action('genomes')"
+      },
+      {
+        "t": 165,
+        "js": "moire.fidelity.params.beyond = 1; await moire.genome.setAll({fidelity: -2}); return 'beyond 1, sloppy'"
+      },
+      {
+        "t": 185,
+        "js": "moire.genome.rules.mut = false; return 'key M off'"
+      },
+      {
+        "t": 200,
+        "js": "moire.genome.rules.mut = true; await moire.genome.setAll({fidelity: 3}); return 'key M on, careful 3'"
+      },
+      {
+        "t": 220,
+        "js": "moire.division.params.on = false; return 'turnover mode'"
+      },
+      {
+        "t": 260,
+        "js": "moire.division.params.on = true; return 'division mode'"
+      },
+      {
+        "t": 280,
+        "js": "moire.fidelity.params.cost = 0.1; moire.fidelity.params.beyond = 0.5; return 'defaults'"
+      },
+      {
+        "t": 300,
+        "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }"
+      },
+      {
+        "t": 305,
+        "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+      },
+      {
+        "t": 340,
+        "js": "moire.fidelity.params.null = true; return 'null'"
+      },
+      {
+        "t": 360,
+        "js": "moire.fidelity.params.null = false; return 'on'"
+      },
+      {
+        "t": 418,
+        "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+      }
+    ],
+    "resizes": [
+      {
+        "t": 150,
+        "size": "1000x700"
+      },
+      {
+        "t": 230,
+        "size": "1280x800"
+      }
+    ]
+  },
+  "url": "http://localhost:54368/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=5&light=full",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "e691d2b2e06f28249d567a3bf7176fd787744e36",
+  "dirty": true,
+  "started": "2026-11-17T15:26:12",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 420.0,
+  "run_wall_s": 1559.54,
+  "speed_reached": 0.27,
+  "samples": 43,
+  "shots": [
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 4.999999999999989,
+      "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.35, 'soap', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.5, 'oil', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.3, 'linker', 120); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.3, 'ions', 120); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 1e9); if (!moire.oases.started) moire.oases.start(); return moire.matter.springs.map(s => s.kind)",
+      "result": [
+        "light",
+        "heavy",
+        "oasis",
+        "oasis",
+        "oasis",
+        "soap",
+        "oil",
+        "linker",
+        "ions",
+        "light",
+        "heavy"
+      ]
+    },
+    {
+      "t": 29.99999999999958,
+      "js": "await moire.genome.setAll({fidelity: 1.5}); return 'fidelity 1.5 for all'",
+      "result": "fidelity 1.5 for all"
+    },
+    {
+      "t": 59.999999999997875,
+      "js": "return moire.control.action('culture')",
+      "result": true
+    },
+    {
+      "t": 69.99999999999731,
+      "js": "await moire.genome.setAll({fidelity: 2.5}); return 'fidelity 2.5 for all'",
+      "result": "fidelity 2.5 for all"
+    },
+    {
+      "t": 89.99999999999618,
+      "js": "moire.fidelity.params.null = true; return 'null'",
+      "result": "null"
+    },
+    {
+      "t": 99.99999999999561,
+      "js": "return moire.control.action('wash')",
+      "result": true
+    },
+    {
+      "t": 104.99999999999532,
+      "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.4, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 400); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'emulsion', 300); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.4, 'soap', 200); return 'springs again'",
+      "result": "springs again"
+    },
+    {
+      "t": 109.99999999999504,
+      "js": "moire.fidelity.params.null = false; moire.fidelity.params.on = false; return 'off'",
+      "result": "off"
+    },
+    {
+      "t": 124.99999999999419,
+      "js": "moire.fidelity.params.on = true; moire.fidelity.params.cost = 0.5; return 'on, cost 0.5'",
+      "result": "on, cost 0.5"
+    },
+    {
+      "t": 140.00000000000355,
+      "js": "moire.fidelity.params.beyond = 0; return 'beyond 0'",
+      "result": "beyond 0"
+    },
+    {
+      "t": 150.0000000000115,
+      "js": "moire.genome.params.founderMode = 'wild'; return moire.control.action('genomes')",
+      "result": true
+    },
+    {
+      "t": 165.00000000002345,
+      "js": "moire.fidelity.params.beyond = 1; await moire.genome.setAll({fidelity: -2}); return 'beyond 1, sloppy'",
+      "result": "beyond 1, sloppy"
+    },
+    {
+      "t": 185.00000000003936,
+      "js": "moire.genome.rules.mut = false; return 'key M off'",
+      "result": "key M off"
+    },
+    {
+      "t": 200.0000000000513,
+      "js": "moire.genome.rules.mut = true; await moire.genome.setAll({fidelity: 3}); return 'key M on, careful 3'",
+      "result": "key M on, careful 3"
+    },
+    {
+      "t": 220.00000000006722,
+      "js": "moire.division.params.on = false; return 'turnover mode'",
+      "result": "turnover mode"
+    },
+    {
+      "t": 260.0000000000922,
+      "js": "moire.division.params.on = true; return 'division mode'",
+      "result": "division mode"
+    },
+    {
+      "t": 280.000000000074,
+      "js": "moire.fidelity.params.cost = 0.1; moire.fidelity.params.beyond = 0.5; return 'defaults'",
+      "result": "defaults"
+    },
+    {
+      "t": 300.0000000000558,
+      "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }",
+      "result": {
+        "exact": true,
+        "notes": [],
+        "rounding": {
+          "energy": 0.0477142333984375,
+          "atoms": 0,
+          "charge": 0,
+          "snapshot": {
+            "energy": 0.0477142333984375,
+            "atoms": 0,
+            "charge": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 305.0000000000513,
+      "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})",
+      "result": "{\"t\":300.16666666672234,\"n\":13,\"mean\":3,\"sd\":0,\"above\":1,\"below\":0,\"lit\":{\"n\":9,\"mean\":3},\"shade\":{\"n\":4,\"mean\":3},\"hard\":{\"n\":13,\"mean\":3},\"interior\":{\"n\":0,\"mean\":null},\"edge\":{\"n\":8,\"mean\":3},\"loner\":{\"n\":5,\"mean\":3},\"kin\":{\"same\":{\"pairs\":2,\"match\":0.9993333231960757,\"over05\":1},\"cross\":{\"pairs\":2,\"match\":6.882249762595798e-17,\"over05\":0},\"careful\":{\"pairs\":2,\"match\":0.9993333231960757,\"over05\":1},\"founders\":{\"pairs\":0,\"match\":null,\"over05\":null},\"sloppy\":{\"pairs\":0,\"match\":null,\"over05\":null}},\"lineages\":[{\"id\":5,\"n\":5,\"mean\":3,\"sd\":0,\"match\":0.9988491952726615},{\"id\":9,\"n\":5,\"mean\":3,\"sd\":0,\"match\":0.9998174511194898},{\"id\":4,\"n\":3,\"mean\":3,\"sd\":0,\"match\":null}],\"copy\":{\"time\":304.9833333333846,\"birthsPerS\":0.09933774834446121,\"perBirth\":1.385,\"perBirth0\":3.544,\"ratio\":0.39080135440180586,\"costPerS\":0.18960359080755035,\"costPerBirth\":1.9086761474609375,\"paidShare\":1,\"shortPerS\":0,\"costTot\":157.91390991210938,\"births\":974}}"
+    },
+    {
+      "t": 340.00000000001944,
+      "js": "moire.fidelity.params.null = true; return 'null'",
+      "result": "null"
+    },
+    {
+      "t": 360.00000000000125,
+      "js": "moire.fidelity.params.null = false; return 'on'",
+      "result": "on"
+    },
+    {
+      "t": 417.9999999999485,
+      "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})",
+      "result": "{\"t\":405.2833333332934,\"n\":86,\"mean\":2.887889681860458,\"sd\":0.13726831146831345,\"above\":1,\"below\":0,\"lit\":{\"n\":20,\"mean\":2.8700736284255983},\"shade\":{\"n\":66,\"mean\":2.8932884859316275},\"hard\":{\"n\":81,\"mean\":2.8868575508211864},\"interior\":{\"n\":15,\"mean\":2.876788791020711},\"edge\":{\"n\":62,\"mean\":2.882770884421564},\"loner\":{\"n\":9,\"mean\":2.94165399339464},\"kin\":{\"same\":{\"pairs\":94,\"match\":0.9985344305289721,\"over05\":1},\"cross\":{\"pairs\":0,\"match\":null,\"over05\":null},\"careful\":{\"pairs\":94,\"match\":0.9985344305289721,\"over05\":1},\"founders\":{\"pairs\":0,\"match\":null,\"over05\":null},\"sloppy\":{\"pairs\":0,\"match\":null,\"over05\":null}},\"lineages\":[{\"id\":9,\"n\":69,\"mean\":2.8907467316890108,\"sd\":0.1361589519877577,\"match\":0.9987763438152679},{\"id\":5,\"n\":12,\"mean\":2.8532766302426658,\"sd\":0.14983893251693065,\"match\":0.9959338627012938},{\"id\":4,\"n\":5,\"mean\":2.9315337181091308,\"sd\":0.09733371648000295,\"match\":null}],\"copy\":{\"time\":417.9999999999485,\"birthsPerS\":1.497504159735139,\"perBirth\":0.34280000000000005,\"perBirth0\":1.5425333333333335,\"ratio\":0.2222318264327081,\"costPerS\":2.544876581026129,\"costPerBirth\":1.6994120279947917,\"paidShare\":1,\"shortPerS\":0,\"costTot\":300.75299072265625,\"births\":1073}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T15:54:52",
+  "wall_s": 1719.89
+}

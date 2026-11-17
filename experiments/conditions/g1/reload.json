@@ -1,0 +1,22 @@
+{
+ "name": "g1-reload-p1",
+ "description": "a P1 snapshot (genomes from before G1: word 31 = 0) loads and runs 60 s",
+ "query": {
+  "snap": "experiments/runs/p1-col-on_s3/snapshots/snap_t1200.json"
+ },
+ "duration": 60,
+ "sample_every": 10,
+ "stall": 200,
+ "snapshots": [],
+ "shots": [],
+ "evals": [
+  {
+   "t": 1,
+   "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+  },
+  {
+   "t": 59,
+   "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+  }
+ ]
+}

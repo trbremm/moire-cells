@@ -1,0 +1,110 @@
+{
+  "name": "g1-colctl_s7",
+  "description": "col: fidelity NEUTRAL CONTROL (?fidelitynull=1), 25 min",
+  "condition": {
+    "name": "g1-colctl_s7",
+    "description": "col: fidelity NEUTRAL CONTROL (?fidelitynull=1), 25 min",
+    "query": {
+      "preset": "colonies",
+      "fidelitynull": 1,
+      "seed": 7
+    },
+    "duration": 1203,
+    "sample_every": 30,
+    "stall": 200,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 1200.5,
+        "view": "marker",
+        "name": "marker_end"
+      },
+      {
+        "t": 1201,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "evals": [
+      {
+        "t": 300,
+        "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+      },
+      {
+        "t": 600,
+        "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+      },
+      {
+        "t": 900,
+        "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+      },
+      {
+        "t": 1200,
+        "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+      },
+      {
+        "t": 600,
+        "js": "const C = moire.kin.census; return JSON.stringify(C ? {kinship: C.kinship, accepted: C.accepted, strangers: C.strangers, n: C.n} : null)"
+      },
+      {
+        "t": 1200,
+        "js": "const C = moire.kin.census; return JSON.stringify(C ? {kinship: C.kinship, accepted: C.accepted, strangers: C.strangers, n: C.n} : null)"
+      }
+    ]
+  },
+  "url": "http://localhost:63508/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=colonies&fidelitynull=1&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "31dc892be141df27851c06606860b0d8654549d3",
+  "dirty": true,
+  "started": "2026-11-17T15:51:55",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1203.0,
+  "run_wall_s": 5402.65,
+  "speed_reached": 0.22,
+  "samples": 42,
+  "shots": [
+    "shots/marker_end.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 300.0000000000558,
+      "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})",
+      "result": "{\"t\":285.1500000000693,\"n\":1044,\"mean\":-0.130137086753605,\"sd\":0.45346300624161157,\"above\":0.2681992337164751,\"below\":0.5268199233716475,\"lit\":{\"n\":453,\"mean\":-0.15249073444238595},\"shade\":{\"n\":591,\"mean\":-0.11300307253530081},\"hard\":{\"n\":1027,\"mean\":-0.13029945888098587},\"interior\":{\"n\":151,\"mean\":-0.07082954683149888},\"edge\":{\"n\":751,\"mean\":-0.13569047385777103},\"loner\":{\"n\":142,\"mean\":-0.16383317698606512},\"kin\":{\"same\":{\"pairs\":942,\"match\":0.839908502309335,\"over05\":0.9267515923566879},\"cross\":{\"pairs\":120,\"match\":2.1852635583080608e-16,\"over05\":0},\"careful\":{\"pairs\":109,\"match\":0.8895265288694117,\"over05\":0.963302752293578},\"founders\":{\"pairs\":477,\"match\":0.8367701991487204,\"over05\":0.9266247379454927},\"sloppy\":{\"pairs\":356,\"match\":0.8289214397041786,\"over05\":0.9157303370786517}},\"lineages\":[{\"id\":2,\"n\":923,\"mean\":-0.18933113722709832,\"sd\":0.4216489887197374,\"match\":0.8341273757322393},{\"id\":4,\"n\":94,\"mean\":0.1882840740306184,\"sd\":0.35217013675249664,\"match\":0.9249779073859704},{\"id\":1,\"n\":27,\"mean\":0.7848451159618519,\"sd\":0.3626415313033304,\"match\":0.9549719366261287}],\"copy\":{\"time\":300.0000000000558,\"birthsPerS\":25.415282392049694,\"perBirth\":3.386913725490196,\"perBirth0\":3.386913725490196,\"ratio\":1,\"costPerS\":0,\"costPerBirth\":0,\"paidShare\":0,\"shortPerS\":0,\"costTot\":0,\"births\":1921}}"
+    },
+    {
+      "t": 599.999999999783,
+      "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})",
+      "result": "{\"t\":585.4833333331295,\"n\":1822,\"mean\":-0.10237384934190959,\"sd\":0.8696510806253135,\"above\":0.41602634467618005,\"below\":0.4818880351262349,\"lit\":{\"n\":405,\"mean\":-0.14235528408561224},\"shade\":{\"n\":1417,\"mean\":-0.09094655147938344},\"hard\":{\"n\":1799,\"mean\":-0.0993683551774133},\"interior\":{\"n\":904,\"mean\":-0.05235861447244157},\"edge\":{\"n\":853,\"mean\":-0.14092235665895037},\"loner\":{\"n\":65,\"mean\":-0.2920953198121144},\"kin\":{\"same\":{\"pairs\":3041,\"match\":0.5555046537742118,\"over05\":0.5896086813548175},\"cross\":{\"pairs\":27,\"match\":1.8251708657836424e-44,\"over05\":0},\"careful\":{\"pairs\":685,\"match\":0.6031412755242155,\"over05\":0.656934306569343},\"founders\":{\"pairs\":1486,\"match\":0.5157672607843163,\"over05\":0.5376850605652759},\"sloppy\":{\"pairs\":870,\"match\":0.5858709527216049,\"over05\":0.6252873563218391}},\"lineages\":[{\"id\":2,\"n\":1813,\"mean\":-0.10533185820909442,\"sd\":0.8701139800223394,\"match\":0.5551700371147169},{\"id\":4,\"n\":9,\"mean\":0.49350060356987846,\"sd\":0.48706625173565293,\"match\":0.809562352495645}],\"copy\":{\"time\":599.949999999783,\"birthsPerS\":20.56572379369591,\"perBirth\":3.8891941747572814,\"perBirth0\":3.8891941747572814,\"ratio\":1,\"costPerS\":0,\"costPerBirth\":0,\"paidShare\":0,\"shortPerS\":0,\"costTot\":0,\"births\":10914}}"
+    },
+    {
+      "t": 599.999999999783,
+      "js": "const C = moire.kin.census; return JSON.stringify(C ? {kinship: C.kinship, accepted: C.accepted, strangers: C.strangers, n: C.n} : null)",
+      "result": "{\"kinship\":0.12834988962472407,\"accepted\":0.10706401766004416,\"strangers\":0.6637233259749816,\"n\":1825}"
+    },
+    {
+      "t": 899.9999999995101,
+      "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})",
+      "result": "{\"t\":885.8166666661897,\"n\":1573,\"mean\":-0.20939683798376119,\"sd\":1.2405178451271859,\"above\":0.3776223776223776,\"below\":0.5594405594405595,\"lit\":{\"n\":245,\"mean\":-0.2707019541944776},\"shade\":{\"n\":1328,\"mean\":-0.19808678265874197},\"hard\":{\"n\":1546,\"mean\":-0.20675003764497896},\"interior\":{\"n\":444,\"mean\":-0.47485968038473314},\"edge\":{\"n\":1048,\"mean\":-0.10673686571220178},\"loner\":{\"n\":81,\"mean\":-0.0825097875462638},\"kin\":{\"same\":{\"pairs\":2095,\"match\":0.4070395874285678,\"over05\":0.4014319809069212},\"cross\":{\"pairs\":2,\"match\":3.291931500737054e-63,\"over05\":0},\"careful\":{\"pairs\":384,\"match\":0.529552980697199,\"over05\":0.546875},\"founders\":{\"pairs\":859,\"match\":0.3166589050853656,\"over05\":0.2910360884749709},\"sloppy\":{\"pairs\":852,\"match\":0.4429455300549235,\"over05\":0.4471830985915493}},\"lineages\":[{\"id\":2,\"n\":1572,\"mean\":-0.20902471769240902,\"sd\":1.2408245804389295,\"match\":0.4070395874285678},{\"id\":4,\"n\":1,\"mean\":-0.7943699359893799,\"sd\":0,\"match\":null}],\"copy\":{\"time\":899.9666666661768,\"birthsPerS\":14.875207986702382,\"perBirth\":2.4269731543624165,\"perBirth0\":2.4269731543624165,\"ratio\":1,\"costPerS\":0,\"costPerBirth\":0,\"paidShare\":0,\"shortPerS\":0,\"costTot\":0,\"births\":19814}}"
+    },
+    {
+      "t": 1199.9999999992374,
+      "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})",
+      "result": "{\"t\":1186.14999999925,\"n\":2568,\"mean\":-0.8518009340235343,\"sd\":1.1447092203619311,\"above\":0.18730529595015577,\"below\":0.7834890965732088,\"lit\":{\"n\":942,\"mean\":-0.8141121869776279},\"shade\":{\"n\":1626,\"mean\":-0.8736353741940409},\"hard\":{\"n\":2547,\"mean\":-0.8470523084152211},\"interior\":{\"n\":2171,\"mean\":-0.8931407612846681},\"edge\":{\"n\":391,\"mean\":-0.6332560622173807},\"loner\":{\"n\":6,\"mean\":-0.13551424940427145},\"kin\":{\"same\":{\"pairs\":5921,\"match\":0.4478090232305024,\"over05\":0.4629285593649721},\"cross\":{\"pairs\":0,\"match\":null,\"over05\":null},\"careful\":{\"pairs\":430,\"match\":0.5673350264117142,\"over05\":0.6232558139534884},\"founders\":{\"pairs\":1493,\"match\":0.24898080746927942,\"over05\":0.22705961152042867},\"sloppy\":{\"pairs\":3998,\"match\":0.5092033065630631,\"over05\":0.5337668834417209}},\"lineages\":[{\"id\":2,\"n\":2568,\"mean\":-0.8518009340235343,\"sd\":1.1447092203619311,\"match\":0.4478090232305024}],\"copy\":{\"time\":1199.9833333325707,\"birthsPerS\":48.03986710967824,\"perBirth\":3.9464149377593363,\"perBirth0\":3.9464149377593363,\"ratio\":1,\"costPerS\":0,\"costPerBirth\":0,\"paidShare\":0,\"shortPerS\":0,\"costTot\":0,\"births\":29934}}"
+    },
+    {
+      "t": 1199.9999999992374,
+      "js": "const C = moire.kin.census; return JSON.stringify(C ? {kinship: C.kinship, accepted: C.accepted, strangers: C.strangers, n: C.n} : null)",
+      "result": "{\"kinship\":0.10479925187032418,\"accepted\":0.15140719629497684,\"strangers\":0.733701460634129,\"n\":2568}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T17:24:42",
+  "wall_s": 5567.22
+}

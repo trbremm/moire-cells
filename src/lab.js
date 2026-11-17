@@ -15,7 +15,7 @@
 //   moire.genome.cloneAll(i)    copy cell i's genes (default: the first live cell's) to every live cell; moire.genome.setAll(
 //                               field, value) or setAll({ field: value, ... }) one gene for all; moire.genome.get(i); the gene
 //                               names: moire.genome.GENES; engineCode(name, band), pumpCode(substance, 'in' | 'out')
-//   moire.lab.view(name)        for screenshots: 'clean' | 'fate' | 'lineage' | 'strategy' | 'charge' | 'walls' | 'machinery'; returns the
+//   moire.lab.view(name)        for screenshots: 'clean' | 'job' | 'lineage' | 'strategy' | 'charge' | 'walls' | 'machinery'; returns the
 //                               previous view for moire.lab.restoreView(prev)
 // URL options handled here, once the page runs: ?snap=<file> (load a snapshot; its settings replace the page's), then
 // ?clone=1 (cloneAll of the first live cell; ?clone=@N: of slot N) and ?genes=adhesion:0.8,motility:0.5 (setAll each).
@@ -30,8 +30,8 @@ import { VIEWS } from './actions.js';
 
 // ---------- the genome's fields (struct Bio, src/genome.js) ----------
 export const GENES = {
-  keyAngle: 0, keyScale: 1, recAngle: 2, recScale: 3, recWidth: 4, threshold: 5, output: 6, founder: 7,
-  resp0: 8, resp1: 9, resp2: 10, resp3: 11, relay0: 12, relay1: 13, relay2: 14, relay3: 15,
+  keyAngle: 0, keyScale: 1, recAngle: 2, recScale: 3, recWidth: 4, founder: 7,   // (step F0: threshold 5, output 6, resp 8..11, relay
+                                                                                     //  12..15 were the fates' genes; 8, 9, 20..23 are job state now)
   adhesion: 16, size: 17, motility: 18,
   eng0: 32, eng1: 33, eng2: 34, tolerance: 35, rate0: 36, rate1: 37, rate2: 38, permeability: 39,
   mix: 40, thickness: 41, stiffness: 42, selectivity: 43, pump0: 44, pump1: 45, pumpRate0: 46, pumpRate1: 47,
@@ -119,7 +119,7 @@ function gather(M, ctl) {
   if (M.pigments && M.pigments.census) flatten(M.pigments.census, 'lightmatter', out);   // step N1: light needs matter
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;
-  if (C.stats) flatten({ fate: C.stats.fate, births: C.stats.births, deaths: C.stats.deaths, heatDeaths: C.stats.heatDeaths,
+  if (C.stats) flatten({ job: C.stats.job, births: C.stats.births, deaths: C.stats.deaths, heatDeaths: C.stats.heatDeaths,
     clusters: C.stats.clusters, founders: C.stats.founders, birthRate: C.stats.birthRate, deathRate: C.stats.deathRate,
     step6: { leak: C.stats.step6.leak, conv: C.stats.step6.conv }, step7: C.stats.step7, step8: C.stats.step8 }, 'census', out);
   flatten(C.motion, 'motion', out);
@@ -376,7 +376,7 @@ function makeViews(M, ctl) {
       else {
         if (prev.machinery) ctl.action('machinery');
         const k = VIEWS.indexOf(name);
-        M.cells.look.view = k >= 0 ? k : 0;   // 'clean': colour by fate, no machinery
+        M.cells.look.view = k >= 0 ? k : 0;   // 'clean': colour by job, no machinery
       }
       return prev;
     },

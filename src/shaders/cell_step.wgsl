@@ -1,4 +1,5 @@
-// One simulation tick for every cell: the field felt on the membrane (step 4), contact signalling and fate choice from the genome, adhesion, soft
+// One simulation tick for every cell: the field felt on the membrane (step 4), adhesion (step F0: no fates any more; the cell's job is
+// low-passed here from its genes as expressed, for the colours), soft
 // contact push, gentle pull to the dish centre, slow drift of the medium, soft walls, stirring, crawling,
 // damped (viscous) velocity and random kicks from the heat under the cell (step C1; or the old constant jitter).
 // Needs field_common.wgsl, heat_common.wgsl and cell_common.wgsl in front of it (src/cells.js does that).
@@ -133,11 +134,9 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var tw = 0.0;
 
   var f = vec2f(0.0);
-  let diff = (S.rules & RULE_DIFF) != 0u;
   let adh = (S.rules & RULE_ADH) != 0u && S.adhesion > 0.0;
   var M = 0.0;              // recognised contact: sum over touching neighbours of (contact x key match)
   var comp = 0.0;           // step C9, crowding: the sum of the overlaps, each as a share of the contact distance
-  var sig = vec4f(0.0);     // committed neighbours' signals per fate channel
   var wParent = 0.0;        // touching neighbours' weight so far, and the one picked as parent (sorted slot); step C5,
   var parent = 0xffffffffu; // energy-biased turnover: a neighbour weighs FL.bias + its battery share (else all 1)
   let biasOn = (FL.eat & EAT_BIAS) != 0u;
@@ -194,7 +193,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let feelB = FL.bGain > 0.0;
   let cutB = FL.bCut * S.R;
   let kB0 = med.k0 / FL.bBand;               // step C13: B's band's wavenumber (B's pickiness)
-  let myQA = charge_a(FL, c.kind);
+  let myQA = charge_a(FL);
   // rule 1 (step 6), leak by deformation: a cell whose strained A lattice reaches B's band also listens to B
   // through its A charge, in the share it leaks (me.lk.w): its charge in B is its own B charge plus that
   // (rule 2: a converted cell listens to B with the charge it emits with)
@@ -358,11 +357,11 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         if (d2 < cutR * cutR) {
           let ob = beats[k];
           if (ob.k2a.z > 0.0) {
-            // weight: sign by fates (EMW), receptor tuning by how alike the lattices are, strength, taper
+            // weight: EMW_ALL (step F0: the fates' signs went), receptor tuning by how alike the lattices are, strength, taper
             let tn = tuning(lattice_dist2(rk0, rk1, rk2, ob.k01.xy, ob.k01.zw, ob.k2a.xy), med.k0, rw);
             aFelt += tn * cell_field(ob, c.pos, cutR);
             if (changeOn) { pFelt += tn * cell_field_ph(ob, c.pos, cutR, p_shift(FL.pSgn1)); }
-            let wq = myQA * emw(c.kind, o.kind) * tn * ob.k2a.z * cut_taper(d2, cutR);
+            let wq = myQA * EMW_ALL * tn * ob.k2a.z * cut_taper(d2, cutR);
             if (partner) {
               // step 8: field A and its partner A' on the membrane, with the same weight (S.sense is put on A after)
               if (wq != 0.0) {
@@ -376,7 +375,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         // step 7, exclusion: the distance below which this pair pushes apart (Rt) and how hard (kx)
         var Rt = R0;
         var kx = 1.0;
-        if (o.kind == c.kind) {
+        // (step F0: the same TYPE = the same founder line, Bio.rec.w; it was the same fate)
+        if ((exclOn || S.xCount != 0u) && bioPrev[beats[k].idx].rec.w == bio.rec.w) {
           let os = cell_state(o.la, o.flags, S.states);
           let same = os == myState;
           if (d2 < shell * shell * R0 * R0) { nState[min(os, 3u)]++; }
@@ -432,24 +432,22 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           if (rand01(c.seed ^ pcg(S.tick ^ 0x27d4eb2fu), k) * wParent < wp) { parent = k; }
         }
         var pairStick = 0.0;      // step P1: this pair's glue (the adhesion below)
-        if (diff || adh) {
-          if (diff && o.kind >= 1u && o.kind <= 4u) { sig[o.kind - 1u] += touch * ob.rec.z; }
-          if (adh && dist > 1e-3) {
-            // like sticks to like: both cells' stickiness, times how alike their keys are, plus same-fate glue
+        if (adh) {
+          if (dist > 1e-3) {
+            // like sticks to like: both cells' stickiness, times how alike their keys are (step F0: no same-fate glue on top)
             let sa = S.adhSigma;
             let like = exp(-key_dist2(c.la, c.aux, o.la, o.aux) / (2.0 * sa * sa));
-            let fateGlue = select(0.0, S.fateAdh, o.kind == c.kind && c.kind != KIND_STEM);
-            var stick = sqrt(max(bio.body.x * gofP(i, GRN_O_GLUE) * ob.body.x * gofP(beats[k].idx, GRN_O_GLUE), 0.0)) * like + fateGlue;   // (step T1b: as expressed)
+            var stick = sqrt(max(bio.body.x * gofP(i, GRN_O_GLUE) * ob.body.x * gofP(beats[k].idx, GRN_O_GLUE), 0.0)) * like;   // (step T1b: as expressed)
             // The pull fades out below 0.85 x contact distance, so sticky cells touch without piling up.
             let near = clamp((dist / R0 - 0.85) / 0.15, 0.0, 1.0);
             if (wallOn) {
               // step C10: the contact holds by the smaller of the two touching sides' effective adhesion (both must be sticky),
-              // times the match (the keys' likeness plus the same-fate glue): adhesion = molecules x how well they match
+              // times the match (the keys' likeness): adhesion = molecules x how well they match
               let ks = wall_side(myTh, d);
               let mine = select(wB[ks & 1u], wA[ks & 3u], ks < 4u);
               let ko = wall_side(wall_theta(o.flags, (o.wadh.y >> 16u) & 255u), -d);
               let gl = min(mine, wall_get(o.wadh.x, o.wadh.y, ko));
-              stick = gl * (like + fateGlue);
+              stick = gl * like;
               // ... and the side's junction matures while it touches a sticky neighbour
               let wt = touch * clamp(gl / 0.1, 0.0, 1.0);
               tchA += select(vec4f(0.0), vec4f(wt), vec4u(ks) == vec4u(0u, 1u, 2u, 3u));
@@ -476,7 +474,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
                 let gDn = min(wall_at_a(mine0.x, mine0.y, tn, a0 + 0.5235988), jp) + 2.0 * min(wall_at_a(mine0.x, mine0.y, tn, a0), jc)
                         + min(wall_at_a(mine0.x, mine0.y, tn, a0 - 0.5235988), jm);
                 let h = 0.2886751 * dist;               // half the shared wall: a hexagon's side, at the contact's distance
-                glueTq += touch * near * (like + fateGlue) * S.adhesion * S.R * S.stiffness * h * 0.1745329 * (gUp - gDn) / (8.0 * TURN_DA);
+                glueTq += touch * near * like * S.adhesion * S.R * S.stiffness * h * 0.1745329 * (gUp - gDn) / (8.0 * TURN_DA);
               }
               if (S.xCount != 0u) {
                 rtA += select(vec4f(0.0), vec4f(touch), vec4u(ks) == vec4u(0u, 1u, 2u, 3u));
@@ -673,24 +671,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     if (jm > 1e-6) { f += fj * (js * tanh(jm / js) / jm); }
   }
 
-  // differentiation: leaky accumulators per fate channel (SUFFICIENT: only sustained input crosses the
-  // threshold); a stem cell commits to its strongest channel above threshold, a committed cell falls back to
-  // stem only when its channel drops below release x threshold (sticky)
-  if (diff) {
-    let input = bio.resp * M + bio.relay * sig;
-    bio.acc += (input - bio.acc) * min(1.0, S.dt / S.tau);
-    let thr = bio.rec.y;
-    if (c.kind == KIND_STEM) {
-      var best = 0u;
-      for (var ch = 1u; ch < 4u; ch++) { if (bio.acc[ch] > bio.acc[best]) { best = ch; } }
-      if (bio.acc[best] > thr) { c.kind = best + 1u; }
-    } else if (c.kind <= 4u) {
-      if (bio.acc[c.kind - 1u] < S.release * thr) { c.kind = KIND_STEM; }
-    }
-  } else {
-    bio.acc = vec4f(0.0);
-    c.kind = KIND_STEM;
-  }
+  c.kind = KIND_STEM;   // (step F0: no fates; a cell from an old snapshot loses its fate here)
 
   // rule 2 (step 6), conversion A -> B: the A felt goes through a leaky integrator (bio.env.z, time constant
   // convTau), and the cell converts above convOn and converts back below convOff (hysteresis, so it does not
@@ -805,12 +786,12 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let pd2 = dot(p, p);
   if (pd2 < S.stirR2) { f += S.pvel * (1.0 - pd2 / S.stirR2) * S.stir; }
 
-  // body traits: size and motility from the genome, times a fate-typical factor
+  // body traits: size and motility from the genome (step F0: no fate-typical factor on top)
   var size = 1.0;
   var mot = 1.0;
   if (S.body > 0.0) {
-    size = mix(1.0, bio.body.y * fate_size(c.kind), S.body);
-    mot = mix(1.0, bio.body.z * gofP(i, GRN_O_MOT) * fate_motility(c.kind), S.body);   // (step T1b: the motility as expressed)
+    size = mix(1.0, bio.body.y, S.body);
+    mot = mix(1.0, bio.body.z * gofP(i, GRN_O_MOT), S.body);   // (step T1b: the motility as expressed)
   }
   // crawling: each cell slowly wanders on its own heading (Bio.body.w), a persistent random walk, so the
   // tissue stays fluid enough for cells to change neighbours and sort out
@@ -909,7 +890,6 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     }
     let qm = length(Q);
     if (qm > 1e-6) { t += S.activeGain * (0.35 * tanh(qm / 1.5) / qm) * Q; }
-    if (c.kind == KIND_MUS) { t += S.activeGain * 0.3 * vec2f(cos(2.0 * bio.body.w), sin(2.0 * bio.body.w)); }
   }
   if (!hexShape) {
     var e = vec2f(c.e1, c.e2);
@@ -1154,7 +1134,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       d.la = nb.key.x;
       d.e1 = 0.0;
       d.e2 = 0.0;
-      d.kind = select(KIND_STEM, pc.kind, (S.rules & RULE_INHERIT) != 0u);
+      d.kind = KIND_STEM;
       d.seed = pcg(bs ^ 0x5bd1e995u);
       d.aux = nb.key.y;
       d.z = vec2f(1.0, 0.0);
@@ -1278,7 +1258,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           d.pos = np;
           d.r = FL.dv2.y * r0;
           d.la = nb.key.x;
-          d.kind = select(KIND_STEM, c.kind, (S.rules & RULE_INHERIT) != 0u);
+          d.kind = KIND_STEM;
           d.flags = CELL_ALIVE | CELL_BORN | (c.flags & CELL_WHOLE);
           d.seed = pcg(bs ^ 0x5bd1e995u);
           d.aux = nb.key.y;
@@ -1527,8 +1507,41 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   }
   // step C7: the neighbours across the sides, 16 bits each (none while the pumps across contact are off)
   c.nbr = array<u32, 3>(nbIA.x | (nbIA.y << 16u), nbIA.z | (nbIA.w << 16u), nbIB.x | (nbIB.y << 16u));
+  // step F0: the JOB scores follow what the genes ask for now, as expressed, through a low-pass (cell_common.wgsl job_of, src/jobs.js)
+  let jt = job_targets(bio, eng_mode(c.eng) != ENG_IDLE);
+  let ja = min(1.0, S.dt / JOB_TAU);
+  bio.acc += (jt[0] - bio.acc) * ja;
+  bio.resp = vec4f(bio.resp.xy + (jt[1].xy - bio.resp.xy) * ja, 0.0, 0.0);
   cells[i] = c;
   bioNext[i] = bio;
+}
+
+// step F0: the job scores a genome asks for now (its genes x the gene network's outputs; the targets of the low-pass): [0] light eater,
+// breather, fermenter, gradient eater; [1].xy builder, predator. eating: the cell wraps or digests a meal now
+fn job_targets(b: Bio, eating: bool) -> array<vec4f, 2> {
+  let act = (bitcast<u32>(FL.t1.z) & GRN_ACT) != 0u;
+  var s = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  let pig = select(1.0, gofB(b, GRN_O_PIG), act);
+  for (var k = 0u; k < 3u; k++) {
+    let r = b.rate[k];
+    if (r <= 0.0) { continue; }
+    let e = eng_index(b.eng[k]);
+    let cl = job_class(e);
+    var x = r * select(1.0, gofB(b, GRN_O_ENG0 + k), act);
+    if (cl == 1u) {
+      if (eng_band(b.eng[k]) == 0u) { continue; }   // (a battery-paid uphill engine: a storer, no job of its own)
+      x *= pig * JOB_W_LIGHT;
+    }
+    if (cl >= 1u && cl <= 5u) { s[cl - 1u] += x; }
+  }
+  s[4] += JOB_W_WALL * clamp(b.lip.x, 0.0, 1.0) * select(1.0, gofB(b, GRN_O_WALL), act);
+  s[5] += JOB_W_ENGULF * clamp(b.kin.z, 0.0, 1.0) * select(1.0, grn_fac_engulf(b), act) + select(0.0, JOB_W_EAT, eating);
+  return array<vec4f, 2>(vec4f(s[0], s[1], s[2], s[3]), vec4f(s[4], s[5], 0.0, 0.0));
+}
+// a genome's factor for output o of the gene network (as gofP, from a Bio in hand)
+fn gofB(b: Bio, o: u32) -> f32 {
+  let j = grn_reg(b.go, o);
+  return grn_fac(b.gu[o >> 2u][o & 3u], b.gx[j >> 2u][j & 3u]);
 }
 
 // step C11: the fastest the glue turns a cell (rad / s)
@@ -1548,7 +1561,7 @@ fn hex_target(r0: f32, b: f32, snap: f32) -> f32 {
 }
 
 // A daughter's genome (turnover and, step C9, division): the parent's p copied with mutation (cell_common.wgsl mutate; its
-// state reset: the accumulators unless fates are inherited, what it felt, its heading), and the step C8 census of the birth.
+// state reset: what it felt, its heading; step F0: the job scores are inherited), and the step C8 census of the birth.
 // Step C8, hard light mutates: the parent's hard light dose (Cell.flags, from the eat pass) scales this copy's mutation,
 // x (1 + hm.x x dose), at most hm.y x (the small steps' size and every jump's chance alike); with mutation off (key M) only the
 // extra part mutates, so in the dark a lineage then stays pure. bs: the birth's random stream; i: the slot counting it.
@@ -1601,7 +1614,6 @@ fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
     ph -= TAU * floor(ph / TAU);
     nb.mark = vec4f(ang, nudge(nb.mark.y, ck * 0.01, MARK_PLO, MARK_PHI, bs, 191u), ph, nb.mark.w);
   }
-  if ((S.rules & RULE_INHERIT) == 0u) { nb.acc = vec4f(0.0); }
   nb.env = vec4f(0.0);                      // a newborn has felt nothing yet and is not converted (step C9: nor starving)
   nb.conv = vec4f(0.0, 0.0, 0.0, fid);      // (step G1: w is the fidelity gene, inherited)
   nb.body.w = TAU * rand01(bs, 200u);

@@ -13,9 +13,9 @@ import { dish } from './dish.js';
 
 export const COMMON_URL = 'src/shaders/field_common.wgsl';
 
-// emitter kinds (the cells' fates), numbered as in the reference and in field_common.wgsl. (The reference's
-// nutrient and threat sources, kinds 5 and 6, were removed in step C3: springs of atoms took their place.)
-export const KIND = { STEM: 0, EPI: 1, MUS: 2, NEU: 3, CHO: 4 };
+// emitter kinds, as in field_common.wgsl: since step F0 only the cells' (Cell.kind is always 0; kinds 1..4 were the fates). (The
+// reference's nutrient and threat sources, kinds 5 and 6, were removed in step C3: springs of atoms took their place.)
+export const KIND = { STEM: 0 };
 
 const texts = new Map();
 async function shaderText(url) {

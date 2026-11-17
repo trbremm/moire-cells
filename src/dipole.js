@@ -61,7 +61,7 @@ export class Dipole {
       pushSat: 1,        // ... saturating at (R / s)
       phiHalf: 0.02,     // the substrate's field: phi per R that is tanh(1) of a full field
       phiW: 1,           // ... its weight against the neighbours' dipoles
-      stretch: 0.3,      // the stretch along the field (target stretch at a full dipole in a full field; muscle's own: 0.3)
+      stretch: 0.3,      // the stretch along the field (target stretch at a full dipole in a full field; the fates' muscle had 0.3 until step F0)
     };
     this.census = null;
     this.series = [];     // [time, mean |d|, polarised share, polar order, head-to-tail, thread cells] every 10 s

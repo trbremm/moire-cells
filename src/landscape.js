@@ -28,7 +28,7 @@ export class Landscape {
       angle: 15,          // screen rotation (degrees); beats lie near 0 or 30 degrees, 15 keeps clear of both
       threshold: 0.12,    // strength below which there is no dot
       maxDot: 0.9,        // largest dot radius as a fraction of pitch/2 (1 = neighbours touch; capped at 1)
-      // the cells' field (step 4): positive part only, in a pale warm ink (the stem colour, dimmer)
+      // the cells' field (step 4): positive part only, in a pale warm ink (the undecided cells' colour, dimmer)
       cellField: false,   // drawn on/off (key K; step C6n: off in the clean view, the default)
       cellGain: 0.5,      // strength gain of the cells' field (1 left a grey haze in every gap once field B opened
                           // the culture up)

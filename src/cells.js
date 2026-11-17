@@ -25,7 +25,7 @@
 //
 // Field B (step 5): a second, separate field in its own lattice band (every lattice bBand times longer, so it
 // makes no slow beat with field A), with a longer reach and its own sign rule. Its beat rides along in the
-// same CellBeat; it is scattered into the texture's G channel. Each fate has a charge per field (`fields`,
+// same CellBeat; it is scattered into the texture's G channel. Every cell has a charge per field (`fields`,
 // uniform struct Fields, written once per frame).
 //
 // Size: the cells' radius R is the reference's R (from the screen area, 5 to 9 CSS px), but smaller when
@@ -40,6 +40,7 @@ import { Genome, BIO_BYTES } from './genome.js';
 import { Heat, HEAT_COMMON_URL } from './heat.js';
 import { Eat } from './eat.js';
 import { ENGINES, SUBSTANCES } from './matter.js';
+import { JOBS } from './jobs.js';   // step F0: colour by job (also writes the engines' job classes into the shaders)
 import { pal } from './palette.js';
 import { Dipole, STATS_DIP, DIP_WORDS } from './dipole.js';
 import { Division, STATS_DIV, STATS_CLAIM, DIV_SNAP } from './division.js';
@@ -90,7 +91,7 @@ const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
 const FIELDS_BYTES = 512;      // struct Fields in cell_common.wgsl (step P1: + p1..p1d; step T1a: + t1; step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
                                // step C9: + dv0..dv2; step C10: + wl0, wl1)
 const FIELD_FORMAT = 'rgba16float';
-const DRAW_BYTES = 1312;       // struct Draw in cell_draw.wgsl (step P1: + p1, p1Ink; step T1b: + grn, grnInk, grnInkH, 1232 until then; step T1a: + kin, 1216 until then; step H1: + harm, harm2, harm3, harm4, hInk[5] after cam, 1072 until then; app: + cam, 1056 until then; step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
+const DRAW_BYTES = 1424;       // struct Draw in cell_draw.wgsl (step F0: + job[7], 1312 until then; step P1: + p1, p1Ink; step T1b: + grn, grnInk, grnInkH, 1232 until then; step T1a: + kin, 1216 until then; step H1: + harm, harm2, harm3, harm4, hInk[5] after cam, 1072 until then; app: + cam, 1056 until then; step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
                                // step C6d: + the dipoles)
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
@@ -168,8 +169,8 @@ export class Cells {
     };
     // the fields' charges and field B (step 5; live-tunable: moire.cells.fields)
     this.fields = {
-      chargeA: [1, 1, 1, 1, 1],     // field A charge per fate (stem, epithelium, muscle, neuron, cartilage)
-      chargeB: [1, 1, -1, 0.5, -1], // field B charge per fate (signed)
+      chargeA: 1,     // field A charge, every cell (step F0: one for all; per fate until then)
+      chargeB: 1,     // field B's fixed charge (signed; only with the charges neither from the stock nor the genes, ?qgenes=0)
       band: 1.5,      // B's lattice period in units of the medium's (its band; A's is 1)
       lever: 0.1,     // as params.lever, for B's lattices: small, so B's beat is much longer than its reach and
                       // B is a smooth bump around each cell (at 0.4 its rings make the summed force jitter)
@@ -181,7 +182,7 @@ export class Cells {
       gain: 0.6,      // gain of B's force (as params.sense for A)
       sat: 2,         // B's force saturates at this speed (R / s)
       sign: -1,       // +1: like repels like; -1: like attracts like (key U). Default attracts: with the biology
-                      // on, repelling keeps cells apart so fates rarely form; ?bio=0 sets +1 (the labyrinth)
+                      // on, repelling kept cells apart so fates rarely formed (until step F0); ?bio=0 sets +1 (the labyrinth)
       like: 0,        // what "like" means: 0 = by charge (signed charges multiply), 1 = by key (lineage)
       likeW: 0.15,    // lineage likeness width (Gaussian in the key difference)
       // step 6, rule 1: leak by deformation (key 4). A stretched cell's A lattice is squeezed the other way; when
@@ -212,7 +213,7 @@ export class Cells {
       relayOn: 2,     // seconds a cell stays converted
       relayRest: 6,   // seconds it then rests before it can convert again
     };
-    // step 7: exclusion (live-tunable: moire.cells.excl). A cell's TYPE is its fate; its STATE is which of `states`
+    // step 7: exclusion (live-tunable: moire.cells.excl). A cell's TYPE is its founder line (step F0; its fate until then); its STATE is which of `states`
     // equal bins of the hex lattice's 60 degrees its lattice angle lies in (2 bins: like spin up / down). Two cells
     // of the same type and state push apart hard, out past contact; of the same type in different states, they
     // may pack closer than contact. Cells of different types meet as before.
@@ -265,9 +266,10 @@ export class Cells {
     this.fieldScale = 0.5;     // texels per CSS px of the cells' field texture
     this.fieldTex = null;
     this.look = {
-      view: 0,        // 0 = colour by fate, 1 = colour by lineage (the key's hue), 2 = by strategy (step C6), 3 = by charge
+      legend: true,   // step F0: the job legend (src/app.js; View panel, ?legend=0)
+      view: 0,        // 0 = colour by job (step F0, src/jobs.js; by fate until then), 1 = colour by lineage (the key's hue), 2 = by strategy (step C6), 3 = by charge
                       // (step C6b; key V cycles)
-      fill: 0.09,     // disc fill of stem cells, as a fraction of the cell colour over black
+      fill: 0.09,     // disc fill of undecided cells, as a fraction of the cell colour over black (fillC: with a clear job)
       fillC: 0.34,    // disc fill of committed cells (flat colour, so tissues read as areas)
       fillA: 0.88,    // disc opacity (1 = background fully hidden under a cell)
       line: 0.72,     // outline brightness
@@ -277,7 +279,7 @@ export class Cells {
       period: 0.62,   // dot spacing per lattice period, in units of R (the medium's period is 0.62 R)
       leakDot: 0.42,  // step 6: largest blue centre dot of a leaking cell, as a fraction of its radius (0 = none)
       leakMin: 0.2,   // leak level below which no dot is drawn
-      convFill: 0.55, // fill of a converted stem cell, as a fraction of field B's ink (outline: the ink itself)
+      convFill: 0.55, // fill of a converted undecided cell, as a fraction of field B's ink (outline: the ink itself)
       stateMark: true, // step 7: while exclusion is on, a bar across each cell shows its state (its angle: one of
                       // `states` directions, 180 / states degrees apart)
       bar: 0.8,       // the bar's brightness (as the outline's)
@@ -301,7 +303,7 @@ export class Cells {
       white: 0.6,       // how white-hot the tube's centre line is (0 = its colour all across)
       innerGlow: 0.08,  // the inside lit by the tube: brightness next to it, as a share of the colour ...
       innerReach: 0.3,  // ... falling off inward over this share of the radius
-      nFill: 0.03,      // the inside's tint, stem cells ...
+      nFill: 0.03,      // the inside's tint, undecided cells ...
       nFillC: 0.06,     // ... committed cells
       nFillA: 0.8,      // the inside's opacity (it darkens what lies under the cell)
       nLine: 1.0,       // the tube's brightness
@@ -589,7 +591,7 @@ export class Cells {
   }
 
   /**
-   * A fresh culture: all stem cells in a round blob at the dish centre, a little looser than packed, each a
+   * A fresh culture: all cells (undecided: no job shows yet) in a round blob at the dish centre, a little looser than packed, each a
    * copy of one of the founder genomes. fresh = true draws new founders (key G); else the same ones (key N).
    * Step C9: `start` cells in the first slots; every other slot of the capacity is free (dead, all zero).
    */
@@ -659,8 +661,9 @@ export class Cells {
     u[o + 26] = this.heat.offsetAt(k);
     u[o + 27] = ((this.pumps && this.pumps.contactOn) || this.kin.needsNbr) && this.count <= 65535 ? 1 : 0;   // step C7: each side's touching neighbour (step T1a: and the inside, kin channels)
     const G = this.genome.params;
-    f[o + 28] = G.tau; f[o + 29] = G.release; f[o + 30] = G.reach; f[o + 31] = G.adhesion;
-    f[o + 32] = G.adhSigma; f[o + 33] = G.fateAdh; f[o + 34] = this.genome.rules.body ? 1 : 0; f[o + 35] = G.adhBase;
+    f[o + 28] = 0; f[o + 29] = 0; f[o + 30] = G.reach;   // (28, 29: the fates' tau and release until step F0)
+    f[o + 31] = G.adhesion;
+    f[o + 32] = G.adhSigma; f[o + 33] = 0; f[o + 34] = this.genome.rules.body ? 1 : 0; f[o + 35] = G.adhBase;
     f[o + 36] = this.genome.rules.body ? G.crawl : 0; f[o + 37] = G.turnRate;
     f[o + 38] = G.turnover; f[o + 39] = G.unhappy; f[o + 40] = G.mutSize; f[o + 41] = G.mutJump;
     f[o + 42] = Math.max(0, G.engJump ?? 0);       // step C6: engine slot jumps per birth
@@ -677,11 +680,10 @@ export class Cells {
     u[o + 62] = Math.max(1, Math.min(4, Math.round(X.states))); u[o + 63] = count ? 1 : 0;
   }
 
-  /** Write the fields' uniform (struct Fields): charges per fate, field B's band, range and rules. */
+  /** Write the fields' uniform (struct Fields): the charges, field B's band, range and rules. */
   writeFields() {
     const F = this.fields, f = new Float32Array(this.fieldsAB), u = new Uint32Array(this.fieldsAB);
-    for (let k = 0; k < 4; k++) { f[k] = F.chargeA[k]; f[4 + k] = F.chargeB[k]; }
-    f[8] = F.chargeA[4]; f[9] = F.chargeB[4];
+    f[0] = F.chargeA; f[4] = F.chargeB;   // (step F0: one charge per field; words 1..3, 5..9 spare, the fates' until then)
     f[10] = Math.max(0.1, F.band); f[11] = F.lever; f[12] = Math.max(0.1, F.r0); f[13] = Math.max(0.1, F.cut);
     const feel = F.on && F.emit && F.gain > 0;
     f[14] = feel ? F.gain : 0; f[15] = Math.max(0.01, F.sat); f[16] = this.charge ? this.charge.signB : F.sign; u[17] = F.like ? 1 : 0;
@@ -833,13 +835,13 @@ export class Cells {
   }
 
   // ---------- stats: census and read-back for the overlay ----------
-  /** Every few frames: count fates, key bins and founder lines, and copy the stats out (if a buffer is free). */
+  /** Every few frames: count jobs (step F0), key bins and founder lines, and copy the stats out (if a buffer is free). */
   maybeCensus(encoder, k, frame) {
     if (frame.frameNo % 4 !== 0) return;
     const rb = this.statsRead.find((r) => !r.busy);
     if (!rb) return;
     rb.busy = true;
-    encoder.clearBuffer(this.statsBuf, 0, 32);                       // fate counts
+    encoder.clearBuffer(this.statsBuf, 0, 32);                       // job counts (step F0)
     encoder.clearBuffer(this.statsBuf, STATS_CENSUS, STATS_DIP - STATS_CENSUS);   // key bins, founder bitmap (not the dipoles')
     const pass = encoder.beginComputePass({ label: 'cell census' });
     pass.setPipeline(this.pipes.census);
@@ -858,14 +860,14 @@ export class Cells {
       const u = new Uint32Array(rb.buf.getMappedRange().slice(0));
       rb.buf.unmap();
       const f = new Float32Array(u.buffer);
-      const fate = Array.from(u.subarray(0, 5));
+      const job = Array.from(u.subarray(0, JOBS.length));   // step F0: cells per job (cell_census.wgsl; per fate until then)
       const births = u[8], deaths = u[9], heatDeaths = u[11];   // (step C5: of the deaths, from heat damage)
       const nEv = Math.min(u[10], STATS_EVENTS);
       const events = [];
       for (let e = 0; e < nEv; e++) events.push([f[16 + 4 * e], f[17 + 4 * e], f[18 + 4 * e], f[19 + 4 * e]]);   // (step T1c: w a death's cause + 16 x founder)
       // key bins holding a real share of the cells: a rough count of distinct lineages (genotype clusters)
       const bins = u.subarray(STATS_CENSUS / 4, STATS_CENSUS / 4 + 144);
-      const big = Math.max(3, Math.max(1, u.subarray(0, 5).reduce((x, y) => x + y, 0)) / 400);
+      const big = Math.max(3, Math.max(1, job.reduce((x, y) => x + y, 0)) / 400);
       let clusters = 0;
       for (const b of bins) if (b >= big) clusters++;
       let founders = 0;
@@ -898,10 +900,10 @@ export class Cells {
       while (H.length > 2 && time - H[0][0] > 2) H.shift();
       const h0 = H[0], dt = time - h0[0];
       const rate = dt > 0.2 ? [((births - h0[1]) >>> 0) / dt, ((deaths - h0[2]) >>> 0) / dt, ((heatDeaths - h0[3]) >>> 0) / dt] : [0, 0, 0];
-      this.stats = { time, fate, births, deaths, heatDeaths, clusters, founders, birthRate: rate[0], deathRate: rate[1], heatDeathRate: rate[2], step6, step7, step8 };
+      this.stats = { time, job, births, deaths, heatDeaths, clusters, founders, birthRate: rate[0], deathRate: rate[1], heatDeathRate: rate[2], step6, step7, step8 };
       this.dipole.apply(time, new Int32Array(u.buffer, STATS_DIP, DIP_WORDS));   // step C6d
-      // step C9: the live cells (the census counted them by fate) and the division's counters
-      this.alive = fate.reduce((x, y) => x + y, 0);
+      // step C9: the live cells (the census counted them by job) and the division's counters
+      this.alive = job.reduce((x, y) => x + y, 0);
       this.division.apply(time, new Uint32Array(u.buffer, STATS_DIV, 16), this.alive);
       this.walls.apply(time, new Uint32Array(u.buffer, STATS_WALL, WALL_WORDS));   // step C10
       this.guides.apply(time, new Uint32Array(u.buffer, STATS_FG, FG_WORDS));      // step C13
@@ -1096,12 +1098,11 @@ export class Cells {
     ];
     const st = this.stats, r = this.genome.rules, on = (x) => (x ? 'on' : 'off');
     if (st) {
-      const F = st.fate;
-      lines.push(`fates: stem <b>${F[0]}</b> · epithelium <b>${F[1]}</b> · muscle <b>${F[2]}</b> · neuron <b>${F[3]}</b> · cartilage <b>${F[4]}</b>`);
+      lines.push(`jobs: ${JOBS.map((J, k) => `${J.label} <b>${st.job[k]}</b>`).join(' · ')}`);   // (step F0: a job counts once it shows at least half)
       lines.push(`lineages: ${st.founders} founder lines · ${st.clusters} key clusters · births ${st.birthRate.toFixed(1)}/s · deaths ${st.deathRate.toFixed(1)}/s` +
         ` (from heat ${st.heatDeathRate.toFixed(1)}/s; ${st.heatDeaths} so far)`);
     }
-    lines.push(`rules: D differentiation ${on(r.diff)} · H adhesion ${on(r.adh)} · B body ${on(r.body)} · T turnover ${on(r.turn)} · M mutation ${on(r.mut)} · I inherit fate ${on(r.inherit)} · view ${this.look.view ? 'lineage' : 'fate'}`);
+    lines.push(`rules: H adhesion ${on(r.adh)} · B body ${on(r.body)} · T turnover ${on(r.turn)} · M mutation ${on(r.mut)} · view ${this.look.view ? 'lineage' : 'job'}`);
     const mo = this.motion;
     lines.push(`loop: S sense ${on(p.senseOn)} · O emit ${on(p.emit)} · W active shape ${on(p.active)} · X beat ${ANCHORS[p.anchor] || p.anchor} · R tuning by ${p.receptor ? 'receptor' : 'own lattice'} · lever ${p.lever.toFixed(2)}` +
       (mo ? ` · speed ${mo.speed.toFixed(1)} px/s · net ${mo.net == null ? '-' : mo.net.toFixed(1)} px/s · stretch ${mo.stretch.toFixed(2)} · spread ${mo.spread.toFixed(1)} R` : ''));
@@ -1114,7 +1115,7 @@ export class Cells {
     }
     const F = this.fields, L = this.landscape;
     lines.push(`field B: Q felt ${on(F.on)} · J drawn ${on(L && L.params.fieldB)} · U like ${(this.charge ? this.charge.signB : F.sign) > 0 ? 'repels' : 'attracts'} like · like = ${F.like ? 'similar key (lineage)' : 'charge'}` +
-      ` · band ${F.band} · r0 ${F.r0} R · cut ${F.cut} R · gain ${F.gain} · charges ${this.charge && this.charge.stockOn ? `from the stock (Shift+8; by fate ${F.chargeB.join(' ')})` : this.charge && this.charge.genesOn ? 'from the field genes (the sign of the B sensing gene)' : F.chargeB.join(' ')}`);
+      ` · band ${F.band} · r0 ${F.r0} R · cut ${F.cut} R · gain ${F.gain} · charges ${this.charge && this.charge.stockOn ? `from the stock (Shift+8; else ${F.chargeB} for all)` : this.charge && this.charge.genesOn ? 'from the field genes (the sign of the B sensing gene)' : `${F.chargeB} for all`}`);
     const s6 = st && st.step6;
     if (s6) {
       // a histogram's value below which a share p of the cells lie (bins of width w)
@@ -1369,8 +1370,7 @@ export class Cells {
     this.drawU32[51] = kinds(0); this.drawU32[35] = kinds(16);   // the engines' kinds, 2 bits each
     a[55] = Math.max(1e-3, L.partRate); a[59] = L.coreParts; a[63] = neon ? L.nStrategyFill : L.strategyFill;
     if (a[39] > 0) a[8] *= L.partDots;
-    // step C6n: the palette's fate inks, the neon look and the hum
-    P.fate.forEach((ink, j) => { for (let k = 0; k < 3; k++) a[64 + 4 * j + k] = ink[k] / 255; });
+    // step C6n: the neon look and the hum (words 64..83 spare: the fates' inks until step F0)
     a[84] = neon ? 1 : 0; a[85] = L.tube; a[86] = L.white; a[87] = L.innerReach;
     a[88] = L.innerGlow; a[89] = L.coreRim; a[90] = L.partWhite; a[91] = L.coreDim;
     a[92] = hum ? L.humDepth : 0; a[93] = L.humRate; a[94] = (frame.now || 0) % 3600; a[95] = hum ? 1 : 0;
@@ -1403,6 +1403,7 @@ export class Cells {
     this.kin.writeDraw(a, 304, L, camera.z);   // step T1a: the lineage (marker) view, the marker's texture when zoomed in
     this.grn.writeDraw(a, 308, L);             // step T1b: the reporter view
     this.pred.writeDraw(a, 320);               // step P1: the wraps' arms, the phagosomes
+    P.job.forEach((ink, j) => { for (let k = 0; k < 3; k++) a[328 + 4 * j + k] = ink[k] / 255; });   // step F0: the jobs' inks
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(HM ? this.harmPipe : this.drawPipe);
     pass.setBindGroup(0, (HM ? this.harmBGs : this.drawBGs)[this.bioCur]);

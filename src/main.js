@@ -28,7 +28,8 @@
 //   ?bsign=plus  the founders' field-B sensing sign all + (as until the C12g + N1 merge; default mixed: + or - at random, both present)
 //   ?pigshed=0   a worn or bleached pigment's trace back into the stock (default: into the dish under the cell; step N1 follow-up)
 //   ?view=1     colour by lineage from the start (key V); ?view=2 (or strategy): by strategy (step C6)
-//   ?bio=0      start with the biology rules off (D H B T M): the loop alone
+//   ?bio=0      start with the biology rules off (H B T M): the loop alone
+//   ?legend=0   step F0: the job legend hidden (View panel); ?view=job (the default; ?view=fate means it too)
 //   ?excl=0|1   step 7 exclusion off / on from the start (key 8); ?states=2..4 its number of states;
 //               ?flip=0|1 its state flip (key 9)
 //   ?partner=0|1 step 8, rule a: the partner A' felt as a phase current (key Z); ?change=0|1 rule b (key ,);
@@ -48,9 +49,9 @@
 //               ?grain=0, ?scalebar=0 (its slight blur, photon grain and scale bar off)
 //   ?until=T    run until simulation time T (s), then pause, exactly at that tick (for comparing runs; tools/shot.py)
 //   ?chargefield=1  step C12g: the dish-wide charge field ON as before C12g (the field, the free atoms' drift, cells feeling it, B
-//               charges from the stock; off by default since C12g); ?qgenes=0 with the stock off, B charges by fate instead of
+//               charges from the stock; off by default since C12g); ?qgenes=0 with the stock off, B charges fixed (one for all since step F0) instead of
 //               from the field genes
-//   ?charge=1   step C6b: the charge field on (Shift+7; off by default since C12g); ?qstock=0 the cells' B charges by fate instead of
+//   ?charge=1   step C6b: the charge field on (Shift+7; off by default since C12g); ?qstock=0 the cells' B charges fixed (one for all since step F0) instead of
 //               from their stock (Shift+8); ?qfeel=0 the cells not feeling the grid's field (Shift+9); ?contours=1 the
 //               charge field's contour lines drawn (Shift+0)
 //   ?honeycomb=0  step C6c: start with the ellipse cells instead of the elastic honeycomb (rules panel, Cell shape)
@@ -163,7 +164,7 @@ import { Landscape } from './landscape.js';
 import { Cells, DEFAULT_CELLS, ANCHORS } from './cells.js';
 import { Light } from './light.js';
 import { Matter, SHOWS, ELECTRONS } from './matter.js';
-import { makeActions, keyMaps, keysText, TOOLS, SQUEEZE_SOFT, SQUEEZE_HARD } from './actions.js';
+import { makeActions, keyMaps, keysText, TOOLS, SQUEEZE_SOFT, SQUEEZE_HARD, VIEWS } from './actions.js';
 import { setupUI } from './ui.js';
 import { Recorder } from './record.js';
 import { Neon, LIGHT_FORMAT } from './neon.js';
@@ -355,13 +356,14 @@ async function boot() {
     if (params.has('habit')) cells.genome.params.habit = params.get('habit');   // (step T1b: every founder one habit: burn, both, pigments, other)
     if (params.get('bsign') === 'plus' || params.get('bsign') === 'mixed') cells.genome.params.bSign = params.get('bsign');   // the founders' B sign
     if (params.has('view')) {   // ?view=1 lineage, ?view=2 or ?view=strategy (step C6), ?view=3 or ?view=charge (step C6b)
-      const v = params.get('view'), k = ['fate', 'lineage', 'strategy', 'charge', 'walls', 'guides', 'marker', 'reporter'].indexOf(v);   // (step C10: ?view=walls; C13: guides; T1a: marker; T1b: reporter)
+      const v = params.get('view') === 'fate' ? 'job' : params.get('view');   // (step F0: ?view=job; the old ?view=fate means it too)
+      const k = VIEWS.indexOf(v);   // (step C10: ?view=walls; C13: guides; T1a: marker; T1b: reporter)
       cells.look.view = k >= 0 ? k : Math.max(0, Math.min(7, Math.round(Number(v)) || 0));
     }
     if (flag('check')) cells.enableCheck();
     if (params.get('bio') === '0') {
-      // the loop alone: no fates, adhesion, body traits, turnover or mutation
-      Object.assign(cells.genome.rules, { diff: false, adh: false, body: false, turn: false, mut: false });
+      // the loop alone: no adhesion, body traits, turnover or mutation
+      Object.assign(cells.genome.rules, { adh: false, body: false, turn: false, mut: false });
       cells.fields.sign = 1;   // like repels like: islands and a labyrinth of strands (key U flips)
       cells.excl.on = true;    // step 7 exclusion: pinwheel rosettes (key 8; the user chose it as this view's default)
     }
@@ -771,6 +773,7 @@ function neonOptions(N) {
   if (params.has('blur')) HP.blur = flag('blur');
   if (params.has('grain')) HP.grain = flag('grain');
   if (params.has('scalebar')) HP.scalebar = flag('scalebar');
+  if (params.has('legend')) cells.look.legend = flag('legend');   // step F0: the job legend
 }
 
 /** Step C6b: the charge's URL options (see the top of this file). */

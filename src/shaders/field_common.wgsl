@@ -17,12 +17,9 @@
 const P3: f32 = 1.0471975512;      // 60 degrees
 const TAU: f32 = 6.2831853072;
 
-// emitter kinds, numbered as in the reference (0..4 cell types; the reference's sources, 5 and 6, are gone since C3)
+// emitter kinds: since step F0 only one, the cells' (kinds 1..4 were the fates: epithelium, muscle, neuron, cartilage, each with its
+// own lattice period; the reference's sources, 5 and 6, went in step C3)
 const KIND_STEM: u32 = 0u;
-const KIND_EPI: u32 = 1u;
-const KIND_MUS: u32 = 2u;
-const KIND_NEU: u32 = 3u;
-const KIND_CHO: u32 = 4u;
 
 // The medium's lattice. Written once per frame by src/field.js (Medium).
 struct Medium {
@@ -58,16 +55,6 @@ struct Beat {
   kind: u32,
 };
 
-// lattice period of each emitter kind, in units of the medium's period (PER in the reference)
-fn kind_period(kind: u32) -> f32 {
-  switch kind {
-    case 1u: { return 0.86; }   // epithelium
-    case 2u: { return 1.16; }   // muscle
-    case 4u: { return 0.74; }   // cartilage
-    default: { return 1.0; }    // stem, neuron
-  }
-}
-
 // the medium's wavevector m (0..2)
 fn medium_k(M: Medium, m: i32) -> vec2f {
   let a = M.la0 + f32(m) * P3;
@@ -76,7 +63,7 @@ fn medium_k(M: Medium, m: i32) -> vec2f {
 
 // the emitter's wavevector m (0..2): k = F^-1 . k0 (stretching the cell squeezes its lattice the other way)
 fn emitter_k(e: Emitter, M: Medium, m: i32) -> vec2f {
-  let km = M.k0 / kind_period(e.kind);
+  let km = M.k0;   // (step F0: every emitter at the medium's period; the fates had their own, PER in the reference)
   let a = e.la + f32(m) * P3;
   let kx = km * cos(a);
   let ky = km * sin(a);

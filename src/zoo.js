@@ -14,6 +14,7 @@ import { SUBSTANCES, ATOMS, ELECTRONS, ENGINES, ENGINE_KINDS, atomLevels, CH, de
 import { BANDS } from './light.js';
 import { pal } from './palette.js';
 import { BIO_FLOATS, strategyOf, founderGenome, HABITS, predatorGenome } from './genome.js';
+import { DESIGNS, DESIGN_NAMES, designGenome } from './tissues.js';
 import { CELL_FLOATS } from './cells.js';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -465,6 +466,18 @@ export function cellPanel(ctx, onAdd) {
         fr.append(b);
       }
       body.append(fr);
+      // step T1c: DESIGNED TISSUES, each one genome whose gene network gives cells different jobs by where they sit (src/tissues.js); a tap
+      // places one cell that grows into the tissue as it divides, a drag a line
+      body.append(el('h3', '', 'Designed tissues'));
+      const tr = el('div', 'zfounders');
+      for (const name of DESIGN_NAMES) {
+        const b = el('button', 'act', DESIGNS[name].label);
+        b.type = 'button';
+        b.title = `add cells of the designed tissue "${DESIGNS[name].label}" where you tap or drag: ${DESIGNS[name].desc} (one cell grows into the tissue as it divides; the reporter view shows the jobs)`;
+        b.addEventListener('click', () => { onAdd(designGenome(name), `tissue: ${DESIGNS[name].label}`, null); });
+        tr.append(b);
+      }
+      body.append(tr);
       if (Z.list) render();
       Z.last = 0;
       this.refresh();

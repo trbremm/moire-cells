@@ -165,6 +165,8 @@ import { fetchSnapshot } from './snapshot.js';
 import { camera } from './camera.js';
 import { createApp } from './app.js';
 import { applyPreset, layoutFromParams, applyDiversity, PRESETS, SPREAD_SQUEEZE } from './culture.js';
+import { Tissues, useDesignFounder, DESIGNS } from './tissues.js';
+import { Warfare } from './warfare.js';
 
 window.__moireBooted = true;
 
@@ -539,6 +541,11 @@ async function boot() {
     // app: how the culture is spread and how diverse it is (?spread= ?colonies= ?diversity=, or a preset's), before the first
     // resize seeds it
     cultureOptions(layoutFromParams(params, PRESET), params.has('diversity'));
+    // step T1c: ?tissue=plant|filament|biofilm, the culture's one founder is a designed tissue's genome (src/tissues.js); the reporter
+    // view shows its job regulator
+    if (params.has('tissue') && useDesignFounder(cells.genome, params.get('tissue'), SEED) && !params.has('reporter')) {
+      cells.grn.look.reporter = DESIGNS[params.get('tissue')].reporter;
+    }
   } catch (e) {
     showError(e.shaderError ? 'Shader did not compile' : 'Could not set up the GPU passes', e.message || String(e));
     return;
@@ -553,6 +560,8 @@ async function boot() {
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
     kin: cells.kin, grn: cells.grn, predators: cells.pred };
+  window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
+  window.moire.warfare = new Warfare(window.moire);     // step T1c: the chemical warfare census (lineage borders against interiors)
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
   window.moire.budgets = budgets;      // the fast speeds' tick budgets

@@ -140,10 +140,10 @@ export const PRESETS = {
   },
 };
 export const PRESET_NAMES = Object.keys(PRESETS);
-export const SPREADS = ['clump', 'scatter', 'colonies', 'ring'];
+export const SPREADS = ['clump', 'scatter', 'colonies', 'ring', 'line'];   // (step T1c: + line, a filament)
 export const DIVERSITY = ['clone', 'few', 'mixed', 'random'];
 const DIVERSITY_WORD = { clone: 'one clone', few: 'a few types', mixed: 'mixed founders', random: 'all random' };
-const SPREAD_WORD = { clump: 'one clump', scatter: 'scattered', colonies: 'colonies', ring: 'a ring' };
+const SPREAD_WORD = { clump: 'one clump', scatter: 'scattered', colonies: 'colonies', ring: 'a ring', line: 'a line' };
 const FOUNDER_WORD = { std: 'as usual', blank: 'blank', wild: 'wild' };   // (step T1a)
 const FOUNDER_HELP = {
   std: 'the founders’ genes as usual (no kin channels yet: they must evolve)',
@@ -183,7 +183,9 @@ export function layoutFromParams(params, preset) {
     const v = String(params.get('ventring')).split(',').map(Number);
     ring = v.length === 2 && v.every(Number.isFinite) && v[1] > v[0] ? v : null;
   }
-  return { spread, colonies, diversity, centres: P && P.centres ? P.centres : null, ring };
+  // (step T1c: ?spreadr=s, a scattered culture within a central disc of s x half the shorter side, so loose cells share the tissue's place)
+  const sr = Number(params.get('spreadr'));
+  return { spread, colonies, diversity, centres: P && P.centres ? P.centres : null, ring, scatterR: params.has('spreadr') && sr > 0 ? sr : null };
 }
 
 /** Diversity: the genome's founders before a culture is seeded (clone: 1; few: one of each habit; mixed: 12; random: 0). */
@@ -211,8 +213,19 @@ export function cultureLayout(L, W, H, R, n, rng) {
   if (spread === 'ring') {
     const r0 = 0.36 * m, w = Math.max(3 * R, Math.min(0.08 * m, n * Math.PI * R * R / (0.6 * 2 * Math.PI * r0)));   // a band about 60 % packed
     return { founder: null, at: () => { const a = rng() * 2 * Math.PI, rr = r0 + (rng() - 0.5) * w; return [W / 2 + Math.cos(a) * rr, H / 2 + Math.sin(a) * rr]; } };
+    if (L.scatterR) {   // (step T1c: within a central disc)
+      const rr = L.scatterR * m / 2;
+      return { founder: null, at: () => { const a = rng() * 2 * Math.PI, dd = Math.sqrt(rng()) * rr; return [W / 2 + Math.cos(a) * dd, H / 2 + Math.sin(a) * dd]; } };
+    }
   }
   // colonies: k round blobs, on a ring round the centre (or at a preset's places), each cell's founder its colony's
+  if (spread === 'line') {   // step T1c: a chain through the centre, cells 1.9 R apart (rows 4 R apart when it would not fit)
+    const gap = 1.9 * R, per = Math.max(1, Math.floor((W - 2 * pad) / gap)), rows = Math.ceil(n / per);
+    return { founder: null, at: (i) => {
+      const row = Math.floor(i / per), k = i % per, inRow = Math.min(per, n - row * per);
+      return [W / 2 + (k - (inRow - 1) / 2) * gap, H / 2 + (row - (rows - 1) / 2) * 4 * R];
+    } };
+  }
   const k = Math.max(2, L.colonies || 5);
   const centres = L.centres ? L.centres(W, H).slice(0, k) : Array.from({ length: k }, (_, j) => {
     const a = (j / k) * 2 * Math.PI - Math.PI / 2;

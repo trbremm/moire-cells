@@ -1,0 +1,59 @@
+{
+ "batch": "g1-colnull",
+ "runs": [
+  {
+   "name": "g1-colctl",
+   "description": "col: fidelity NEUTRAL CONTROL (?fidelitynull=1), 25 min",
+   "query": {
+    "preset": "colonies",
+    "fidelitynull": 1
+   },
+   "duration": 1203,
+   "sample_every": 30,
+   "stall": 200,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 1200.5,
+     "view": "marker",
+     "name": "marker_end"
+    },
+    {
+     "t": 1201,
+     "panel": true,
+     "name": "panel"
+    }
+   ],
+   "evals": [
+    {
+     "t": 300,
+     "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+    },
+    {
+     "t": 600,
+     "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+    },
+    {
+     "t": 900,
+     "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+    },
+    {
+     "t": 1200,
+     "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+    },
+    {
+     "t": 600,
+     "js": "const C = moire.kin.census; return JSON.stringify(C ? {kinship: C.kinship, accepted: C.accepted, strangers: C.strangers, n: C.n} : null)"
+    },
+    {
+     "t": 1200,
+     "js": "const C = moire.kin.census; return JSON.stringify(C ? {kinship: C.kinship, accepted: C.accepted, strangers: C.strangers, n: C.n} : null)"
+    }
+   ]
+  }
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

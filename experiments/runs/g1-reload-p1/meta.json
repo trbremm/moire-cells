@@ -1,0 +1,75 @@
+{
+  "name": "g1-reload-p1",
+  "description": "a P1 snapshot (genomes from before G1: word 31 = 0) loads and runs 60 s",
+  "condition": {
+    "name": "g1-reload-p1",
+    "description": "a P1 snapshot (genomes from before G1: word 31 = 0) loads and runs 60 s",
+    "query": {
+      "snap": "experiments/runs/p1-col-on_s3/snapshots/snap_t1200.json"
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "stall": 200,
+    "snapshots": [],
+    "shots": [],
+    "evals": [
+      {
+        "t": 1,
+        "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+      },
+      {
+        "t": 59,
+        "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+      }
+    ]
+  },
+  "url": "http://localhost:54367/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/runs/p1-col-on_s3/snapshots/snap_t1200.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "31dc892be141df27851c06606860b0d8654549d3",
+  "dirty": true,
+  "started": "2026-11-17T15:55:17",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": true,
+    "notes": [],
+    "rebased": null,
+    "rounding": {
+      "energy": 0.168426513671875,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": 0.168426513671875,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 2999,
+    "time": 1199.999999999705
+  },
+  "t_start": 1199.999999999705,
+  "sim_s": 60.0,
+  "run_wall_s": 280.04,
+  "speed_reached": 0.21,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.9999999999993179,
+      "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})",
+      "result": "{\"t\":1199.999999999705,\"n\":2906,\"mean\":-0.00046883558781390673,\"sd\":0.049795695916171105,\"above\":0.0030970406056434964,\"below\":0.004817618719889883,\"lit\":{\"n\":1048,\"mean\":-0.0034657737297069937},\"shade\":{\"n\":1858,\"mean\":0.0012215794674627107},\"hard\":{\"n\":2879,\"mean\":-0.0009002349681999584},\"interior\":{\"n\":2803,\"mean\":-0.0007423040833519563},\"edge\":{\"n\":102,\"mean\":0.006031649114162314},\"loner\":{\"n\":1,\"mean\":0.10301391780376434},\"kin\":{\"same\":{\"pairs\":7796,\"match\":0.49443363818755837,\"over05\":0.5100051308363264},\"cross\":{\"pairs\":17,\"match\":4.6635960479461036e-45,\"over05\":0},\"careful\":{\"pairs\":0,\"match\":null,\"over05\":null},\"founders\":{\"pairs\":7796,\"match\":0.49443363818755837,\"over05\":0.5100051308363264},\"sloppy\":{\"pairs\":0,\"match\":null,\"over05\":null}},\"lineages\":[{\"id\":1,\"n\":2898,\"mean\":-0.00047012981994037716,\"sd\":0.049864373566201076,\"match\":0.4943736152395806},{\"id\":3,\"n\":8,\"mean\":0,\"sd\":0,\"match\":0.5528659780439185}],\"copy\":{\"time\":1200.9999999997044,\"birthsPerS\":0.02830974188177216,\"perBirth\":5.135794117647059,\"perBirth0\":5.135794117647059,\"ratio\":1,\"costPerS\":0,\"costPerBirth\":0,\"paidShare\":0,\"shortPerS\":0,\"costTot\":0,\"births\":34}}"
+    },
+    {
+      "t": 58.99999999994657,
+      "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})",
+      "result": "{\"t\":1245.0499999996644,\"n\":2871,\"mean\":0.001836797503806764,\"sd\":0.35603086760936964,\"above\":0.17833507488679903,\"below\":0.1703239289446186,\"lit\":{\"n\":1101,\"mean\":0.020279407294824057},\"shade\":{\"n\":1770,\"mean\":-0.009635130959419248},\"hard\":{\"n\":2849,\"mean\":0.00316103348314404},\"interior\":{\"n\":2780,\"mean\":0.004057376897038947},\"edge\":{\"n\":91,\"mean\":-0.06600068286086873},\"loner\":{\"n\":0,\"mean\":null},\"kin\":{\"same\":{\"pairs\":7690,\"match\":0.4663494709256906,\"over05\":0.4777633289986996},\"cross\":{\"pairs\":16,\"match\":8.808276503098976e-32,\"over05\":0},\"careful\":{\"pairs\":299,\"match\":0.4835616486983387,\"over05\":0.4816053511705686},\"founders\":{\"pairs\":7112,\"match\":0.46644925685577143,\"over05\":0.4780652418447694},\"sloppy\":{\"pairs\":279,\"match\":0.44535979820614313,\"over05\":0.4659498207885305}},\"lineages\":[{\"id\":1,\"n\":2865,\"mean\":0.0018076078524826465,\"sd\":0.35639925225639396,\"match\":0.4661985569674822},{\"id\":3,\"n\":6,\"mean\":0.015774856011072796,\"sd\":0.03527365037602994,\"match\":0.7563306416231277}],\"copy\":{\"time\":1258.9999999996517,\"birthsPerS\":38.63560732116659,\"perBirth\":6.523509043927649,\"perBirth0\":6.433612403100775,\"ratio\":1.0139729649836453,\"costPerS\":0.42042965500246227,\"costPerBirth\":0.01088192173368863,\"paidShare\":0.19638242894056848,\"shortPerS\":0,\"costTot\":11.5137939453125,\"births\":2203}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T16:01:39",
+  "wall_s": 381.36
+}

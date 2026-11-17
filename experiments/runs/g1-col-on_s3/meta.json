@@ -1,0 +1,60 @@
+{
+  "name": "g1-col-on_s3",
+  "status": "stopped",
+  "note": "stopped by hand at 1230 s of simulated time (planned 1503 s): the GPU was shared with other workers' batches (about x0.1-0.25 at MAX), so the colony pair is compared at 1200 s (the neutral control, g1-colctl, ran 1203 s). The evals' results were not written; samples.csv holds the census (fid.*) every 30 s.",
+  "condition": {
+    "name": "g1-col-on",
+    "description": "col: fidelity on, 25 min",
+    "query": {
+      "preset": "colonies",
+      "seed": 3
+    },
+    "duration": 1503,
+    "sample_every": 30,
+    "stall": 200,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 1500.5,
+        "view": "marker",
+        "name": "marker_end"
+      },
+      {
+        "t": 1501,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "evals": [
+      {
+        "t": 300,
+        "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+      },
+      {
+        "t": 600,
+        "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+      },
+      {
+        "t": 900,
+        "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+      },
+      {
+        "t": 1200,
+        "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+      },
+      {
+        "t": 1500,
+        "js": "const c = await moire.fidelity.now(); return JSON.stringify({t: c.time, n: c.n, mean: c.mean, sd: c.sd, above: c.above, below: c.below, lit: c.lit, shade: c.shade, hard: c.hard, interior: c.interior, edge: c.edge, loner: c.loner, kin: c.kin, lineages: c.lineages, copy: c.copy})"
+      },
+      {
+        "t": 600,
+        "js": "const C = moire.kin.census; return JSON.stringify(C ? {kinship: C.kinship, accepted: C.accepted, strangers: C.strangers, n: C.n} : null)"
+      },
+      {
+        "t": 1500,
+        "js": "const C = moire.kin.census; return JSON.stringify(C ? {kinship: C.kinship, accepted: C.accepted, strangers: C.strangers, n: C.n} : null)"
+      }
+    ]
+  },
+  "seed": 3
+}

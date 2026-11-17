@@ -1,0 +1,55 @@
+{
+ "batch": "g1-speed",
+ "runs": [
+  {
+   "name": "g1-speed-2k-neon-r1",
+   "description": "step G1 speed: default scene, 2000 cells, MAX, 150 s, neon",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g1-speed-10k-neon-r1",
+   "description": "step G1 speed: default scene, 10000 cells, MAX, 60 s, neon",
+   "query": {
+    "seed": 3,
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g1-speed-2k-neon-r2",
+   "description": "step G1 speed: default scene, 2000 cells, MAX, 150 s, neon",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g1-speed-10k-neon-r2",
+   "description": "step G1 speed: default scene, 10000 cells, MAX, 60 s, neon",
+   "query": {
+    "seed": 3,
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  }
+ ]
+}

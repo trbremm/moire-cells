@@ -5543,7 +5543,7 @@ numbers in `experiments/runs/app-preset-*`, condition `experiments/conditions/ap
 
 - `src/camera.js`: the view camera (zoom, pan, limits, `toDish` / `toScreen`, `moved` for the trails; `fit`: canvas px per dish px)
 - `src/dish.js`: the dish's own size, R and medium, chosen at a new culture; the per-area amounts (README "Dish size and densities");
-  `src/squeeze.js`: squeeze / stretch the sample (`moire.dish.scale(f)`)
+  `src/squeeze.js`: squeeze / stretch the sample (`moire.dish.scale(f)`); `src/perfusion.js`: the chip's inlet, through-flow and outlet
 - `src/app.js`: the zoom buttons, the scale bar, the add-cell tool and its placing (the books), the pipette, the dish panel's
   new culture row; `createApp` hands the toolbar its extra panels and tool icons (`src/ui.js` takes `extraPanels`, `toolIcons`,
   `dishExtra`)
@@ -5751,6 +5751,42 @@ column is the user's case in numbers: a 1920 x 1080 window made 5x smaller (1152
 - The F overlay has a `dish` line: its size in R and px, R, the medium in R, the area against the reference, fixed or following.
 - Found on the way: a resize while the timing probe (overlay) was in flight destroyed the neighbour grid's buffers it was about to
   use ("GPU error: Buffer grid starts used in submit while destroyed"); replaced buffers are now destroyed a frame later.
+
+### The press (the fronts, on purpose)
+
+EXPERIMENTS.md "Waves after a resize" found what made the user's waves: the window's walls closing in on the culture (and, with the
+old rules, the cells shrinking in place and a famine). A clean way to get the fronts without breaking anything: `dish.press`, the right
+(or bottom) wall moving in and out for the CELLS only, like a coverslip's edge pushed and let go (the substrate and the water pass under
+it). The wall goes in to `depth` x the dish's width over half a `period` and back over the other half (a cosine), again and again:
+the cells it meets are held inside it (`Sim.W`, the cells' wall, is the dish's width minus the press: no new shader word), and its soft
+wall pushes the crowd into a dense front; when it lets go, the front spreads. `?press=depth,period[,bottom]` (e.g. `?press=0.45,240`),
+saved in snapshots; the F overlay's dish line shows it. The **Fronts** preset (`?preset=fronts`): a strip dish 396 x 124 R, the right
+wall pressing to 0.45 and back every 240 s, cells scattered, the whole dish lit, five mineral springs and a slow vent.
+
+### Extended sources and perfusion (the microfluidic chip)
+
+The user, 2026-11-17: "I am not happy with point like vents. Maybe the microfluidics chip analogy is better".
+- **Lines and patches.** A spring can have a SHAPE: a LINE (a fissure or crack: `matter.addLine(x, y, kind, len, angle, perR, life)`,
+  length in R, angle in degrees, `perR` atoms per s for every R of its length) or a PATCH (a seep field: `matter.addPatch(x, y, kind,
+  r, perR2, life)`, radius in R, `perR2` atoms per s per R²). Rates per length and per area, so a longer fissure gives more. Both drip
+  over every pixel within the spring's radius of its segment (a capsule; a patch is a disc of its own radius), shared evenly and
+  booked as every spring's; they age, dry up, are saved and squeezed as springs (`struct Spring` + `seg`: the line's direction and half
+  length, a patch's radius). Drawn as springs: a line's marker is a stadium round the fissure with a bright core along it, a patch's a
+  ring at its edge. The pipette and the tap tools still drop points.
+- **The Deep vents preset** now has FISSURES: each vent a line 14 R long, across the dish's radius, dripping 40 / 14 atoms per s per R
+  (the old point's 40 in total), each mineral seep a patch 3 R across (12 per s in total). `&pointvents=1` the old points.
+- **Perfusion** (`src/perfusion.js`, `?perfusion=1`): one side is an INLET, a line source along the whole wall dripping a RECIPE of
+  fresh medium (default: gt 0.35, l 0.2, L 0.15, gT 0.15, GT 0.1, trace 0.05 of the atoms) at `?inlet=0.6` atoms per s per R; the water
+  flows through the dish to the opposite side at a mean `?flow=0.4` R per s (`?flowdir=right|left|down|up`), with a channel's profile:
+  fastest down the middle, still along the side walls (a stream-function term psi = U H (3 s² - 2 s³), s across the channel, added to
+  the currents in `water.wgsl`: divergence-free, carried by the same flux-form advection, exact counts; the cells drift with it as with
+  the eddies); the OUTLET, the opposite side's rim, lets out `?outlet=3` of its mobile matter per s (instead of the rim's usual 1),
+  booked as lost. In = out + kept, to the atom. `?recipe=gt:0.4,l:0.2,...` sets the medium.
+- **The Chip preset** (`?preset=chip`): a strip dish 396 x 124 R, perfusion from the left, the whole dish lit, cells scattered, trace
+  from the inlet only (no oases).
+- For the later water solver (G0): the through-flow is PRESCRIBED (it does not feel cells, matter or walls); G0 should replace
+  `through()` by a pressure-driven flow round obstacles, keep the inlet as a source line and the outlet as a sink line (the rim edges at
+  the inlet and outlet would then carry flux instead of piling matter against the outlet wall for the sink to take).
 
 ### Squeeze and stretch the sample
 

@@ -9,6 +9,7 @@
 // It must come before every layer that reads the field.
 
 import { loadShader } from './gpu.js';
+import { dish } from './dish.js';
 
 export const COMMON_URL = 'src/shaders/field_common.wgsl';
 
@@ -55,8 +56,9 @@ export class Medium {
 
   resize(view) {
     const { cssW: W, cssH: H } = view;
-    // as in the reference's resize(): R from the screen area; medium period 0.62 R
-    this.R = Math.max(5, Math.min(9, Math.sqrt(W * H / (420 * Math.PI * 3.6))));
+    // as in the reference's resize(): R from the screen area; medium period 0.62 R. Now the dish's (src/dish.js): KAPPA x the cells' R,
+    // fixed with the dish, so the moire beats keep their size in cell units (?dishfollow=1 and old snapshots: the old rule, from the area)
+    this.R = dish.mR > 0 ? dish.mR : Math.max(5, Math.min(9, Math.sqrt(W * H / (420 * Math.PI * 3.6))));
     this.k0 = 2 * Math.PI / (0.62 * this.R);
     this.cx = W / 2; this.cy = H / 2;
   }

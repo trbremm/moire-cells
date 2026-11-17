@@ -128,6 +128,9 @@
 //   ?preset=name  app (src/culture.js): a preset dish (vent, shallows, oxygen, slick, desert, lab; its options fill in what the URL
 //               does not say); ?spread=clump|scatter|colonies|ring, ?colonies=N, ?diversity=clone|few|mixed|random (the new culture);
 //               ?zoom=z or ?zoom=z,x,y the view zoomed (centre as shares of the dish)
+//   ?dish=WxH     the dish's size in cell radii (or WxHum in micrometres), kept while the window changes (src/dish.js; default: the
+//               window's at the start); ?dishfollow=1 the window IS the dish, as before (a resize re-sizes it: new R, new grid, the
+//               old drained, supplies per px)
 //   ?mut=0      start with mutation off (key M); ?life=0 with the life cycle off (key T: no births, no deaths)
 //   Experiments (src/lab.js, src/snapshot.js; README "Experiments: tools"): ?snap=<file> loads a snapshot at the start (its
 //               starting number and capacity, its settings); ?clone=1 copies the first live cell's genes to every cell
@@ -163,6 +166,8 @@ import { Oases } from './oases.js';
 import { setupLab } from './lab.js';
 import { fetchSnapshot } from './snapshot.js';
 import { camera } from './camera.js';
+import { dish, parseDish, snapDish } from './dish.js';
+import { scaleDish } from './squeeze.js';   // the dish: its own size, kept while the window changes
 import { createApp } from './app.js';
 import { applyPreset, layoutFromParams, applyDiversity, PRESETS, SPREAD_SQUEEZE } from './culture.js';
 
@@ -269,9 +274,23 @@ async function boot() {
       return;
     }
   }
-  const nCells = snap ? snap.start : Number(params.get('cells')) || defaultCells();
-  // step C9: the capacity; with ?divide=0 (a fixed count) no room beyond the starting number unless ?cap= asks for it
-  const nCap = snap ? snap.count : Number(params.get('cap')) || (params.has('divide') && !flag('divide') ? nCells : 0);
+  // the DISH (src/dish.js): its own size, chosen now and kept while the window changes (?dishfollow=1: the window is the dish, as before)
+  const dishR = parseDish(params.get('dish'));
+  let nCells = snap ? snap.start : Number(params.get('cells')) || defaultCells();
+  {
+    const [winW, winH] = windowSize();
+    if (snap) {   // a snapshot's own dish (one from before: its window, its R, the medium as it was, the supplies per px as they were)
+      Object.assign(dish, snapDish(snap), { from: 'snapshot' });
+    } else if (flag('dishfollow')) {
+      dish.follow = true; dish.perArea = false;
+      dish.fromWindow(winW, winH, nCells, 'follow');
+    } else if (dishR) {
+      dish.fromCells(dishR[0], dishR[1], winW, winH, params.has('dish') && PRESET && !new URLSearchParams(location.search).has('dish') ? 'preset' : 'url');
+      if (!params.has('cells')) nCells = Math.min(nCells, dish.maxStart());
+    } else dish.fromWindow(winW, winH, nCells);
+  }
+  // step C9: the capacity; with ?divide=0 (a fixed count) no room beyond the starting number unless ?cap= asks for it; per area (the dish's)
+  const nCap = snap ? snap.count : Number(params.get('cap')) || (params.has('divide') && !flag('divide') ? nCells : dish.capacity(nCells));
 
   stage('create-layers');
   try {
@@ -519,6 +538,8 @@ async function boot() {
       if (params.has('roam')) OP.roam = flag('roam');
       const v = Number(params.get('oases'));
       if (params.has('oases') && Number.isFinite(v) && v >= 0) OP.count = Math.round(v);
+      // (the dish, src/dish.js: the oases per area, so a dish twice the reference's keeps twice as many; a snapshot brings its own count)
+      if (!snap && OP.count > 0) OP.count = Math.max(1, Math.round(OP.count * dish.supply));
       const b = Number(params.get('bury'));
       if (params.has('bury') && Number.isFinite(b) && b >= 0) OP.bury = b;
       const r = Number(params.get('oasisrate'));
@@ -564,7 +585,10 @@ async function boot() {
   };
 
   resize();
-  if (!snap) { if (PRESET) presetScene(); else defaultScene(); }   // (a snapshot brings its own springs; app: a preset its own)
+  if (!snap) {   // (a snapshot brings its own springs; app: a preset its own)
+    if (PRESET) presetScene(); else defaultScene();
+    for (const s of matter.springs) if (s.kind !== 'oasis') s.scene = true;   // (the dish: a scene's springs drip per area, src/dish.js)
+  }
   {   // app: ?zoom=z or ?zoom=z,x,y (the view's centre as shares of the dish), or a preset's zoom
     const zq = params.has('zoom') ? params.get('zoom').split(',').map(Number) : PRESET && PRESETS[PRESET].zoom ? [PRESETS[PRESET].zoom] : null;
     if (zq && zq[0] > 1) camera.set(zq[0], (Number.isFinite(zq[1]) ? zq[1] : 0.5) * view.cssW, (Number.isFinite(zq[2]) ? zq[2] : 0.5) * view.cssH);
@@ -576,6 +600,7 @@ async function boot() {
   if (params.get('overlay') === 'ghost') overlayEl.style.opacity = '0';   // kept up to date but invisible (for tools/shot.py)
   window.moire.adapter = () => adapterName(gpu.info);
   window.moire.control = control;
+  window.moire.dish = dish;       // the dish's own size (src/dish.js)
   setupLab(window.moire, control, { params, snap, snapError });   // experiments: sample, snapshots, tissue, genome edits
   running = true;
   stage('running');
@@ -727,22 +752,46 @@ function lightOptions(L) {
 }
 
 // ---------- size ----------
+/** The window's size (CSS px): what the canvas may fill. */
+function windowSize() {
+  const e = document.documentElement;
+  return [Math.max(1, e.clientWidth || window.innerWidth || 1), Math.max(1, e.clientHeight || window.innerHeight || 1)];
+}
+
+/**
+ * The window changed (or the dish did): the canvas is fitted inside the window with the dish's shape, and every layer told. The DISH
+ * does not change (src/dish.js): `view` keeps the dish's size (cssW, cssH: dish px, the simulation's units) and gives the drawing
+ * dpr = device px per dish px. With ?dishfollow=1 the window is the dish again, as before (a new R, a new grid: the old one drained).
+ */
 function resize() {
-  const cssW = Math.max(1, canvas.clientWidth), cssH = Math.max(1, canvas.clientHeight);
+  const [winW, winH] = windowSize();
+  if (dish.follow) {
+    canvas.style.cssText = '';
+    dish.fromWindow(Math.max(1, canvas.clientWidth), Math.max(1, canvas.clientHeight), cells ? cells.start : 1, 'follow');
+  }
+  const f = dish.follow ? 1 : Math.min(winW / dish.W, winH / dish.H);
+  const cw = dish.follow ? dish.W : dish.W * f, ch = dish.follow ? dish.H : dish.H * f;
+  if (!dish.follow) {
+    const st = canvas.style;
+    st.width = `${cw}px`; st.height = `${ch}px`;
+    st.left = `${(winW - cw) / 2}px`; st.top = `${(winH - ch) / 2}px`; st.right = 'auto'; st.bottom = 'auto';
+  }
+  dish.fit = f;
   const maxDim = gpu.device.limits.maxTextureDimension2D;
-  const dpr = Math.min(2, window.devicePixelRatio || 1, maxDim / cssW, maxDim / cssH);
-  const pxW = Math.max(1, Math.round(cssW * dpr)), pxH = Math.max(1, Math.round(cssH * dpr));
+  const dpr0 = Math.min(2, window.devicePixelRatio || 1, maxDim / cw, maxDim / ch);
+  const pxW = Math.max(1, Math.round(cw * dpr0)), pxH = Math.max(1, Math.round(ch * dpr0));
   if (canvas.width !== pxW) canvas.width = pxW;
   if (canvas.height !== pxH) canvas.height = pxH;
-  view = { cssW, cssH, dpr, pxW, pxH };
-  camera.setDish(cssW, cssH);   // app: the view camera stays inside the dish
+  // (dpr: device px per DISH px; exactly the screen's when the dish is drawn at its own size, as on a page started in this window)
+  view = { cssW: dish.W, cssH: dish.H, dpr: f === 1 ? dpr0 : pxW / dish.W, pxW, pxH, winW, winH };
+  camera.setDish(dish.W, dish.H, f);   // app: the view camera stays inside the dish
   for (const l of layers) l.resize(view);
   if (neon) neon.resize(view);
   if (light && light.pendingSpotPx) {
     const [x, y, r] = light.pendingSpotPx;
     light.pendingSpotPx = null;
     if (Number.isFinite(x) && Number.isFinite(y)) light.moveTo(x, y);
-    if (Number.isFinite(r) && r > 0) light.params.radius = r / Math.min(cssW, cssH);
+    if (Number.isFinite(r) && r > 0) light.params.radius = r / Math.min(dish.W, dish.H);
   }
 }
 
@@ -809,7 +858,7 @@ function frame(now) {
   }
 
   if (!entropyEl.hidden) {
-    const compact = view.cssW < 560 || view.cssH < 500;   // a phone (either way up): shorter lines
+    const compact = view.winW < 560 || view.winH < 500;   // a phone (either way up): shorter lines
     let t = `${cells.heat.panelText(compact)}\n${matter.panelLine(compact)}\n${cells.eat.panelLine(compact)}\n${cells.eat.strategyLine(compact)}\n${charge.panelLine(compact)}\n${cells.eat.membrane.panelLine(compact)}\n${cells.eat.lipids.panelLine(compact)}\n${cells.dipole.panelLine(compact)}\n${cells.eat.pumps.panelLine(compact)}\n${cells.eat.catalysts.panelLine(compact)}\n${cells.eat.hardlight.panelLine(compact)}\n${cells.division.panelLine(compact)}\n${cells.walls.panelLine(compact)}\n${cells.guides.panelLine(compact)}\n${matter.oil.panelLine(compact)}\n${ELECTRONS ? matter.electrons.panelLine(compact) : matter.excited.panelLine(compact)}
 ${cells.eat.waste.panelLine(compact)}
 ${cells.eat.ions.panelLine(compact)}
@@ -880,6 +929,7 @@ function drawOverlay() {
     `adapter  <b>${esc(adapterName(i))}</b>${i.isFallbackAdapter ? '  (software fallback)' : ''}`,
     `vendor ${esc(i.vendor || '?')} · arch ${esc(i.architecture || '?')}${i.device ? ' · device ' + esc(i.device) : ''}`,
     `canvas ${view.pxW}×${view.pxH} (dpr ${view.dpr.toFixed(2)}) · ${gpu.format}`,
+    dish.line(),
     `ripple grid ${background.gw}×${background.gh} (${background.sc} css px/cell) · ambient ${background.ambient ? 'on' : 'off'}`,
     `tap ${TOOLS[tool].name} · landscape ${landscape.params.on ? 'on' : 'off'} · R ${medium.R.toFixed(2)} px · medium ${(medium.la0 * 180 / Math.PI).toFixed(2)}°`,
     ...cells.overlayLines(),
@@ -1235,7 +1285,7 @@ function setupInput() {
   window.addEventListener('blur', () => { spaceHeld = spaceUsed = false; });
   window.addEventListener('keydown', onKey);
   appUI = createApp({ app, params, flag, flash, cells, matter, light, background, control, get view() { return view; }, touch: TOUCH, tools: TOOLS,
-    inPlace: newCultureInPlace, preset: PRESET });
+    inPlace: newCultureInPlace, preset: PRESET, dish });
   ui = setupUI(Object.assign(app, {
     actions, runAction, touch: TOUCH,
     startFolded: params.has('ui') ? !flag('ui') : null,

@@ -76,7 +76,7 @@ export function createApp(ctx) {
     box.append(b);
     return b;
   };
-  const centre = () => [camera.W / 2 * 1, camera.H / 2 * 1];   // the screen's centre (CSS px)
+  const centre = () => [camera.SW / 2, camera.SH / 2];   // the canvas's centre (CSS px)
   btn('in', 'Zoom in (the wheel, toward the pointer; two fingers)', () => camera.zoomAt(...centre(), 1.5));
   btn('out', 'Zoom out', () => camera.zoomAt(...centre(), 1 / 1.5));
   btn('fit', 'The whole dish', () => camera.fit());
@@ -98,7 +98,7 @@ export function createApp(ctx) {
     bar.hidden = !!(HM && !HM.params.scalebar);
     bar.classList.toggle('scope', !!(HM && HM.on));
     const R = ctx.cells.R || 5;
-    const pxPerUm = camera.z * R / UM_PER_R;   // screen CSS px per micrometre
+    const pxPerUm = camera.z * camera.f * R / UM_PER_R;   // screen CSS px per micrometre (fit: the dish drawn smaller or larger)
     let best = 1;
     for (const L of [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000]) if (L * pxPerUm <= 130) best = L;
     const w = best * pxPerUm;

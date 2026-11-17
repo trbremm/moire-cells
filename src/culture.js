@@ -121,13 +121,18 @@ export const PRESETS = {
     desc: 'Five colonies of wild founders (every gene, the gene network too, drawn at random; each catches light and burns, so it can eat here), each with its own never-drying mineral spring and a slow vent beside it, under a moderate light over the whole dish. Each lineage has a home; they grow out and meet at the borders. Watch the lineage view (who holds the border) and the reporter view (which cells switch which genes on).',
     query: { light: 'full', spread: 'colonies', colonies: 5, founders: 'wild', habit: 'both', cells: 1000, scarce: 0, oases: 0 },
     scene({ matter, light, cells, W, H }) {
-      light.params.power *= 0.6;   // a moderate light: enough to live on, not enough to fill the dish at once
+      // (step T1c, the random-colony experiments' gentler starts: ?colpower= the light's share of the usual (0.6), ?colrate=a,b the mineral
+      // springs' and the vents' rates (8, 2))
+      const q = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
+      const pw = Number(q.get('colpower')), rr = String(q.get('colrate') || '').split(',').map(Number);
+      light.params.power *= q.has('colpower') && pw > 0 ? pw : 0.6;   // a moderate light: enough to live on, not enough to fill the dish at once
+      const rS = rr[0] > 0 ? rr[0] : 8, rV = rr[1] > 0 ? rr[1] : 2;
       const k = Math.max(2, (cells.layout && cells.layout.colonies) || 5), m = Math.min(W, H);
       for (let j = 0; j < k; j++) {
         const a = (j / k) * 2 * Math.PI - Math.PI / 2, x = W / 2 + Math.cos(a) * 0.3 * m, y = H / 2 + Math.sin(a) * 0.3 * m;
         // (rates from the pilots: at 4 and 1 the founders' crash left one lineage per dish in 2 of 3 seeds; at 8 and 2, two or three persist)
-        matter.addSpring(x, y, 'light', 1e9, { rate: 8 });                                          // its mineral spring, at its centre
-        matter.addSpring(x + Math.cos(a) * 0.08 * m, y + Math.sin(a) * 0.08 * m, 'heavy', 1e9, { rate: 2 });   // a slow vent outside it
+        matter.addSpring(x, y, 'light', 1e9, { rate: rS });                                          // its mineral spring, at its centre
+        matter.addSpring(x + Math.cos(a) * 0.08 * m, y + Math.sin(a) * 0.08 * m, 'heavy', 1e9, { rate: rV });   // a slow vent outside it
       }
     },
   },
@@ -208,17 +213,12 @@ export function cultureLayout(L, W, H, R, n, rng) {
   }
   const m = Math.min(W, H), pad = 2.5 * R;
   if (spread === 'scatter') {
-    return { founder: null, at: () => [pad + rng() * (W - 2 * pad), pad + rng() * (H - 2 * pad)] };
-  }
-  if (spread === 'ring') {
-    const r0 = 0.36 * m, w = Math.max(3 * R, Math.min(0.08 * m, n * Math.PI * R * R / (0.6 * 2 * Math.PI * r0)));   // a band about 60 % packed
-    return { founder: null, at: () => { const a = rng() * 2 * Math.PI, rr = r0 + (rng() - 0.5) * w; return [W / 2 + Math.cos(a) * rr, H / 2 + Math.sin(a) * rr]; } };
     if (L.scatterR) {   // (step T1c: within a central disc)
       const rr = L.scatterR * m / 2;
       return { founder: null, at: () => { const a = rng() * 2 * Math.PI, dd = Math.sqrt(rng()) * rr; return [W / 2 + Math.cos(a) * dd, H / 2 + Math.sin(a) * dd]; } };
     }
+    return { founder: null, at: () => [pad + rng() * (W - 2 * pad), pad + rng() * (H - 2 * pad)] };
   }
-  // colonies: k round blobs, on a ring round the centre (or at a preset's places), each cell's founder its colony's
   if (spread === 'line') {   // step T1c: a chain through the centre, cells 1.9 R apart (rows 4 R apart when it would not fit)
     const gap = 1.9 * R, per = Math.max(1, Math.floor((W - 2 * pad) / gap)), rows = Math.ceil(n / per);
     return { founder: null, at: (i) => {
@@ -226,6 +226,11 @@ export function cultureLayout(L, W, H, R, n, rng) {
       return [W / 2 + (k - (inRow - 1) / 2) * gap, H / 2 + (row - (rows - 1) / 2) * 4 * R];
     } };
   }
+  if (spread === 'ring') {
+    const r0 = 0.36 * m, w = Math.max(3 * R, Math.min(0.08 * m, n * Math.PI * R * R / (0.6 * 2 * Math.PI * r0)));   // a band about 60 % packed
+    return { founder: null, at: () => { const a = rng() * 2 * Math.PI, rr = r0 + (rng() - 0.5) * w; return [W / 2 + Math.cos(a) * rr, H / 2 + Math.sin(a) * rr]; } };
+  }
+  // colonies: k round blobs, on a ring round the centre (or at a preset's places), each cell's founder its colony's
   const k = Math.max(2, L.colonies || 5);
   const centres = L.centres ? L.centres(W, H).slice(0, k) : Array.from({ length: k }, (_, j) => {
     const a = (j / k) * 2 * Math.PI - Math.PI / 2;

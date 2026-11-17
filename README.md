@@ -4565,6 +4565,241 @@ the caustic light and the currents' reads. The follow-ups cost nothing measurabl
   otherwise it stays in the stock.
 - One run per seed; the shed-off control only in the Oases preset.
 
+## Step M1: whole membranes
+
+Claude's call (BUILD QUEUE 2c, 2026-11-16): membranes were mostly holes (mean integrity 0.05 to 0.25 in the C12g runs), so the C12g ion
+block, the C12e osmosis and the coming T1 "inside" (sheltered inner cells) could not act, and a stock held little (0.3 + 0.7 x
+integrity of its room). First the membrane material's BUDGET was counted (new counters), then the waste it showed was fixed by two
+derived rules, each its own switch. Plus two preset tasks: the dark vents (Task B) and the oases' geography (Task C).
+
+### Diagnosis: the membrane material budget (EXPERIMENTS.md "Whole membranes", 1)
+
+New counters (src/whole.js, ledger LG_M1) count, per s, every way bilayer material (soap glL/tlL, oil lL) enters or leaves the
+membranes: FUSED from the dish (soap, oil), MADE by the C12b builder from atoms (soap = head + l + L, oil = l + L), BITTEN out, SHED
+back into the dish, SPILLED at deaths and bursts, given TO NEWBORNS at births; and, when the builder wanted soap it could not make,
+what it lacked first (a head, l, L, the battery). A census gives the integrity's spread (bins), the bilayer held against wanted, and
+the cells whose stocks hold L, l, and both with a head. `experiments/conditions/m1/memb.py` reads each cell from a snapshot (its
+membrane, stock and the dish under it).
+
+Ten minutes of five scenes with the fixes off (`batch-diag.json`, seed 3; means over 2..10 min, molecule units per s):
+
+| scene | cells | integrity; whole (>= 0.6) / holes (< 0.2) | fused soap / oil | made soap / oil | bitten soap / oil | shed oil | spilled | builder short of L / l | stocks holding L |
+|---|---|---|---|---|---|---|---|---|---|
+| default | 637 | 0.46; 34 % / 25 % | 1.41 / 3.14 | 0.05 / 0.03 | 1.26 / 0.46 | 2.61 | 0.26 | 64 / 33 % | 1 % |
+| Oases | 162 | 0.83; 80 % / 6 % | 0.02 / 0.94 | 0.12 / 0.07 | 0.01 / 0.00 | 0.94 | 0.08 | 97 / 2 % | 61 % |
+| shallows | 4431 | 0.34; 25 % / 54 % | 2.77 / 31.9 | 0.50 / 0.20 | 2.13 / 1.00 | 30.7 | 0.93 | 72 / 28 % | 6 % |
+| oxygen, spot | 395 | 0.56; 43 % / 11 % | 0.58 / 2.01 | 0.13 / 0.04 | 0.37 / 0.15 | 1.78 | 0.38 | 86 / 11 % | 4 % |
+| oxygen, whole dish | 490 | 0.55; 49 % / 28 % | 0.26 / 8.44 | 0.09 / 0.05 | 0.19 / 0.17 | 8.20 | 0.13 | 81 / 17 % | 6 % |
+
+(molecule units of 4096 counts per s, the whole dish; "spilled" at deaths and bursts; the newborns took 0.1 to 0.5 per s. Heads were
+missing in under 1 % of the builder's shortfalls, the battery in 1 to 3 %.)
+
+What the numbers say, plainly:
+1. **The bottleneck atom is the heavy linker L.** Every soap and every oil molecule needs one L; when the builder wants soap it lacks L
+   first in 64 to 97 % of the cases (the light linker l in the rest; heads and batteries almost never). Only 1 to 6 % of the cells
+   hold any L in their stock (61 % in the Oases preset, where mineral springs and l-dripping oases are spread over the dish). Heads
+   (free g and t) are in 97 to 100 % of the stocks; batteries are empty in under 15 %.
+2. **The linkers are where the springs were, not where the cells are.** Cell by cell (memb.py on the 20..40 min snapshots of
+   `merge-n1-default_s3`, `c12g-oxy-spot_s3`, `c12g-oxy-full_s3`): holey cells (integrity < 0.2, 64 to 79 % of the cells there) hold
+   no L at all, have no soap, oil or free linkers in the dish under them, and sit in the light away from the springs; the whole cells
+   sit on or next to the springs' crust and oil. The crust that holds most of the dish's L (heavy crust LL: 88 units in the default
+   scene at 20 min, 1258 in the oxygen spot dish) lies in dense patches under about 3 % of the cells (34 of 1000 cells sit over more
+   than 0.1 per R²).
+3. **Oil was wasted.** The biggest flow of all was oil going in and out: fused 0.9 to 32 units per s and shed again just as fast.
+   Oil is soap without its head, but a cell took it only between its soap's tails; on a side without soap it was shed at once.
+4. **Bites ate soap as fast as fusion brought it** where the free light atoms are (default: fused soap 1.41 against bitten 1.26 per
+   s): a whole bilayer was bitten as freely as a torn one.
+5. Spills at deaths (0.1 to 0.9 per s) and the newborns' share (0.1 to 0.5) are small; nothing was lost to "wear"; tearing by
+   osmosis was nil.
+6. **When the springs stop, the membranes go.** In the default scene the springs dry up at 4 minutes; integrity is 0.4 to 0.5 at 2
+   to 10 min and falls to 0.2 by 20 min as births dilute what the colony holds.
+
+### The fixes (each its own switch; rules panel group "Whole membranes (step M1)")
+
+**HEAD ON OIL** (`?oilsoap=0` turns it off). Oil (lL) is exactly a soap's tail. A side short of soap whose oil is more than its soap's
+tails take puts a head from the stock on it: g + lL -> glL, t + lL -> tlL, the table's own "head on" reaction (step C12 ran it only
+in the open dish), at the bilayer's reseal rate:
+
+    x = min(wS - S, (O - cap S) / (1 + cap))     (soap short; oil beyond the tails of the soap it will have; cap = oil per soap, 1)
+    events per tick = repK dt 2 / (1 + k) x, rounded at random      (k: the bilayer's stiffness, as the C12b builder)
+    head: the head gene's share of g first, then t, as far as the stock holds them
+    battery pays the head bond's spark (soap's build sparks - oil's: 0.25) + the rise if the bond is uphill (old table: 0.5);
+    heat gets the spark + the release (electrons: g-head 1.5, t-head 3.25)
+
+Fusion takes oil for the soap still short (after the dish's soap), and oil waiting for a head is not shed (the shed's oil limit is the
+tails of the soap the side wants, plus that shortfall). Without heads in the stock all is as in step C12b.
+
+**BITES THROUGH THE BLOCK** (`?biteblock=0`). The biting atoms (C6c, C12b) are free IONS, and step C12g's rule is that an intact
+bilayer keeps ions away from its oily core. So they reach a side's chains where it is torn, and through the intact share only at the
+bilayer's own ion leak:
+
+    a side's bilayer exposure x ((1 - its integrity) + integrity x ionPass)        (ionPass 1/20; needs the ion block on)
+
+The crust wall, outside, is bitten as before. A whole membrane now resists bites, a holey one unravels as fast as before: poisoned and
+poor cells stay leaky.
+
+Nothing else changed: the counters only count; the books are exact (a head moves from the stock into a soap with the oil's l and L,
+the spark from the battery and the release to heat; the lipids' chemical energy is the ledger's snapshot as before). Old snapshots load
+with both fixes off ("saved before step M1").
+
+Candidates looked at and not taken (by the evidence): repair priority from the battery (batteries were not the limit: under 2 % of
+the builder's shortfalls), a cheaper crust wall (a wall does not seal: the C12g block rightly ignores it), more L from springs (a scene
+change: left to the user, below).
+
+### What changed (EXPERIMENTS.md "Whole membranes", 2 and 3)
+
+The same five scenes with both fixes on (`batch-fix12.json`, 10 min, seed 3), then records with the fixes on and controls with them off,
+on the same code (`batch-final.json`, `batch-off.json`, seed 3; default 20 min, oxygen spot 40 min, oxygen whole dish 40 min on, 20 min
+off). Mean integrity, the share of whole membranes (>= 0.6) and of holes (< 0.2):
+
+| run | fixes off | fixes on |
+|---|---|---|
+| default, 2..10 min | 0.46; 34 % / 25 % | 0.49; 40 % / 33 % (soap bites 1.26 -> 0.33 per s) |
+| default, 10..20 min | 0.27; 16 % / 56 % | 0.32; 22 % / 53 % (0.24 at 20 min) |
+| Oases, 2..10 min | 0.83; 80 % / 6 % | 0.92; 92 % / 3 % |
+| Oases (20 min runs of Task C) | (merge-n1: 0.53 to 0.59 at 20 min) | 0.66 to 0.92 at 20 min (whole 55 to 95 %) |
+| shallows, 2..10 min | 0.34; 25 % / 54 % | 0.55; 47 % / 26 % (0.64, 57 % whole at 10 min) |
+| oxygen spot, 2..10 min | 0.56; 43 % / 11 % | 0.72; 66 % / 7 % |
+| oxygen spot, 20..40 min | 0.77; 74 % / 6 % | **0.94; 94 % / 0 %** (0.97, 99 % whole at 40 min) |
+| oxygen whole dish, 2..10 min | 0.55; 49 % / 28 % | 0.67; 61 % / 18 % |
+| oxygen whole dish, 10..20 min | 0.27; 20 % / 63 % (3576 cells) | 0.65; 53 % / 5 % (2445 cells) |
+| oxygen whole dish, 20..40 min | - | **0.77; 70 % / 2 %** (5410 cells; 0.86, 82 % whole at 40 min) |
+
+Plainly:
+- **Where linkers keep coming, membranes are now whole.** In the oxygen dishes (a never-drying mineral spring), the shallows and the Oases
+  preset most cells hold a whole membrane, with a few leaky ones at the colonies' rims and in lineages that want thick membranes.
+  Head on oil turned the oil churn into soap (0.1 to 0.45 soap per s made this way; the oil fused-and-shed fell from 2 to 32 to 0.3 to
+  6 per s), and bites on whole membranes fell 3 to 6 times (soap bitten 0.37 -> 0.06 per s in the spot dish).
+- **Where the linkers run out, they still go.** The default scene's springs dry up at 4 minutes, so a growing colony dilutes what it
+  once took: 0.5 at 2 minutes, 0.24 at 20 minutes, with the fixes or without. That is the honest state of a linker-starved dish, not a
+  leak in the rules; a lasting linker source (a mineral spring that does not dry, as in the oxygen dishes) is the scene's choice.
+- **Cells evolve thin membranes.** In the oxygen dishes the thickness gene fell from 0.012..0.017 (the founders' and the first
+  minutes') to 0.005 within 40 minutes, with the fixes and without (the off control too: 0.0055): a thin bilayer is whole with a third of the material. So part of
+  the rise in every 40-minute run (off: 0.41 at 10 min to 0.77 at 30..40 min) is selection, not the fixes. In the default scene, where
+  nothing seals for long, the gene drifts up instead (0.017 to 0.033).
+- **Variety by lineage**: in each dish the holey cells belong to lineages with a high thickness gene (wanting 2 to 3 times more than
+  their neighbours) or sit away from the springs; bursts (only a membrane that has been whole can burst) rose with the whole membranes
+  (oxygen whole dish 10 to 12.5 per s with the fixes, 1.6 without them, 0.5 in the C12g run).
+
+### Downstream: what whole membranes change (EXPERIMENTS.md "Whole membranes", 3)
+
+Same code, fixes on against off (`down.py`; one seed each, so differences between lineages count as much as the rules):
+
+| | oxygen spot 20..40 min, off / on | oxygen whole dish 10..20 min, off / on | oxygen whole dish 20..40 min, on | default 10..20 min, off / on |
+|---|---|---|---|---|
+| ion flow held back by the block | 68 % / 41 % | 29 % / 41 % | 52 % | 26 % / 28 % |
+| cells passing ions at < half a neutral's rate (tight) | 58 % / 3 % | 6 % / 19 % | 27 % | 10 % / 8 % |
+| channel level gene (mean, spread) | +0.08 (0.92) / **+1.61 (0.40)** | +0.46 (0.73) / +0.87 (0.82) | +0.40 (1.00) | +0.29 / +0.38 |
+| channel balance (cation-only / anion-only cells) | +0.23 (575 / 135) / -0.31 (65 / 475) | +0.13 (2021 / 838) / -0.19 (244 / 1372) | -0.06 (1293 / 1805) | -0.35 / -0.39 |
+| swelling; puffed / shrunk cells | -0.026; 2 / 58 vs -0.028; 0 / 52 | -0.006; 7 / 35 vs -0.012; 7 / 36 | -0.011; 58 / 203 | -0.008; 0 / 10 vs -0.003; 0 / 3 |
+| free t made inside / taken in / put out per s | 11.6 / 8.4 / 1.0 vs **0.65 / 9.3 / 0.11** | 136 / 25 / 19 vs 66 / 19 / 9 | 227 / 40 / 42 | 17 / 1.7 / 1.0 both |
+| cells burning their own t / breathing outside t | 290 / 205 vs **14 / 409** | 2236 / 372 vs 1206 / 434 | 3631 / 649 | ~420 / ~3 both |
+| bursts per s | 0.84 vs 0.32 | 1.57 vs 9.93 | 12.5 | 1.11 both |
+
+Plainly:
+- **The ion block now holds ions back** where membranes are whole: 41 to 52 % of the ion flow in the oxygen dishes with the fixes (19
+  to 20 % in the C12g runs, 29 % in the whole dish's off control). The spot dish's off control held back more (68 %): its lineage kept
+  narrow channels, and by 30 minutes its membranes were mostly whole too (the thin membranes, above).
+- **The channel genes matter more**: with whole membranes the spot dish's lineage opened its channels wide (level +1.61, 5 x the
+  founders', spread 0.40: the strongest and narrowest the census has shown) and turned them toward anions (the takers t, T: 475
+  anion-only cells against 65); so only 3 % of its cells end up tight, against 58 % in the off control, whose channels stayed near the
+  founders' and whose holes did the passing. The whole-dish lineage went the same way more mildly (+0.87, anion-leaning). Selection or
+  drift? The neutral control in the whole dish (`?channels=0`: every cell's channels at the base level, the genes drifting with no
+  effect; 10..20 min) ended at level +0.43 (spread 0.82), balance +0.33: the whole-dish lineage's +0.87 / -0.19 lies within that drift;
+  the spot lineage's +1.61 (spread 0.40) lies well above it (suggestive; one seed, and the control is the whole dish). The control also
+  shows what fixed channels would do with whole membranes: 68 % of its cells tight, 66 % of the ion flow held back.
+- **Osmosis still swells little**: cells shrink a little (the ion-rich dish outside), a few puff; no visible change against the
+  controls. Whole membranes did not make osmosis bite more: the cells open their channels instead.
+- **Oxygen kept or released**: in the spot dish with whole membranes the self-burn loop of step C12d (a pigment splits the water-like
+  gt, the cell burns its own g + t) nearly vanished (cells burning their own t: 14 against 290; t made inside 0.65 per s against 11.6),
+  while cells breathing OUTSIDE t doubled (409 of 912 against 205): the haze is eaten from outside, as C12e hoped. In the whole dish
+  the loop stays (1206 to 3631 self-burners). One seed each: worth a second look before reading much into it.
+- **Bursts** rise with whole membranes (only a membrane that has been whole can burst): 10 to 12.5 per s in the whole dish.
+
+### Task B: the dark vents (charge field off)
+
+Step C12g found that, with the dish-wide charge field off, the Deep vents' givers piled up at the cores, the zone where giver meets taker
+thinned to a shell, and life died by about 4 minutes. Retuned within the preset's own options (EXPERIMENTS.md "Whole membranes", 4):
+18 pilots of 5 minutes (`batch-ventpilot*.json`, seed 3): the vents' rate (10, 15, 20, 40, 80 atoms per s), their heat (2, 3, 5, 10 per
+atom), the sea (level 0.5, 1, 2; rate 0.02, 0.05, 0.1), the starter charge (0.55, 0.9), where the founders start, which engines they
+carry (`?genes=`), and the M1 fixes and the ion block off.
+
+- **The geography is there.** At 1 minute (dark_s3, as shipped): free G 1.8 per R² and g 1.9 at 3..6 R (the hot core, 3.7 heat per R²,
+  the sea's T burnt to 0.05), then a cold zone 6..20 R where g (1.0 to 0.17), G (0.4 to 0.04) and the sea's T (0.23 to 0.43) sit side
+  by side; by 5 minutes g and G have spread to 20..30 R at 0.7 to 1.6 and 0.2 to 0.5 with T 0.4: a broad ring of food round each vent.
+- **One change kept: the founders start ON that ring** (`ring: [8, 20]` in the preset, `?ventring=a,b`; they started as blobs on the
+  hot cores). At 1 minute 400 of 600 are alive (C12g: 41 to 44 at 2 min) and they sit 6 to 25 R from the vents
+  (`experiments/keep/m1/dark-vents-rings-1min.jpg`: three loose rings of dim green cells round the vents' green fuel clouds).
+- **Life still does not hold in total darkness.** Every pilot and both seeds of the 40-minute runs die: the retuned preset (`dark_s3`,
+  `_s7`) has 47 to 53 cells at 2 minutes and none after 4.5 and 7 minutes; with every founder carrying only the gradient engine
+  g + T -> gT (`dark-eaters`, a probe) 230 to 240 at 2 minutes, none after 6 to 8 minutes. More food (vents 80 per s, a sea at 2 per
+  R²), a fuller starter (0.9), less heat, a wider ring: no pilot kept more than 14 cells at 5 minutes.
+  The budget says why (per cell per s, from the samples): the random founders earn 0.006 from the gradient at 30 s against 0.025 of
+  upkeep and crawling (they carry two or three engines, most useless in the dark, and pay upkeep for each; crawling is 40 to 60 % of
+  the cost); the founders that all carry only g + T earn 0.023 against 0.028, and within a minute and a half their income falls four
+  times (0.0056 at 2 min against 0.012 of costs): they eat the g near them faster than the vents' slow spreading (no charge field to
+  push it out) brings more. Saturation (C12e) costs a quarter to a third of the gradient engines' events. With the M1 fixes
+  off, or the ion block off, the same.
+- So the dark vents are an ECONOMY problem now, not a geography one. Not fixed here (it needs rules: e.g. upkeep only for engines that
+  ran, or vent water that carries its givers further); the preset keeps random founders (selection has something to pick from).
+
+### Task C: the oases' geography
+
+N1 found that in the Oases preset cells sit near oases only by chance (the currents spread trace over the dish faster than it settles),
+and that 5 x faster settling over-shoots. Four 20-minute runs (`batch-oases.json`, seed 3, with M1 on; `where.py`, `n1/analyse.py`):
+
+| run | cells 5 / 10 / 20 min | within 15 R of an oasis, 10 / 20 min | light made (10..20 min) | integrity 20 min |
+|---|---|---|---|---|
+| as shipped (bury 1/150 per s, currents 0.35 R/s, oases 1 atom/s) | 76 / 726 / 6000 | x1.8 / x1.0 | 98 % | 0.66 |
+| bury 1/60 | 58 / 243 / 996 | x0.9 / x0.4 | 10 % | 0.92 |
+| bury 1/60, currents 0.2 R/s | 107 / 886 / 1455 | x0.7 / x1.6 | 58 % | 0.82 |
+| bury 1/60, oases 2 atoms/s | 65 / 562 / 4414 | x0.7 / x1.1 | 92 % | 0.70 |
+
+No setting gives the wanted geography: faster settling makes trace so scarce that light stops paying (eaters on the mineral springs take
+over: 59 % eaters with bury 1/60), and where light still pays the cells sit at the oases no more than chance by 20 minutes. What the
+pictures show instead (`experiments/keep/m1/oases-10min.jpg`): colonies centred on the MINERAL springs, which now matter twice (food and
+the heavy linker L that every membrane needs). The preset is left as shipped; the knobs are not the lever. A smell for trace (cells
+climbing a plume) is the next thing to try.
+
+### Checked
+
+- **Books** (`check.json`, seed 5, the whole dish lit, 420 s at MAX: soap, oil, linker, ion, mineral, vent and emulsion springs; N; 40 cells
+  placed with the add-cell tool; a wash; two resizes; head on oil off and on, bites through the block off and on, the ion block, the lipid
+  membranes and the membrane chemistry off and on at runtime; G; a snapshot saved and loaded at once): atoms and charge rounding exactly
+  0 in every sample but the two paused instants of the resizes (the old grid not yet drained, as before; the energy line jumps at the
+  same two instants); energy within -0.061 and 0 elsewhere while 14.4 M came in; the snapshot loaded exact. Every experiment run: atoms
+  and charge 0 in every sample, energy within -0.06 and +0.18.
+- **Old snapshots**: a snapshot made before M1 (`merge-n1-default_s3` at 10 min) loads with both fixes off ("saved before step M1") and
+  runs 60 s with atoms and charge 0 (`reload.json`).
+- **Consoles clean**: headless Chrome (every run), phone size (`tools/shot.py --mobile`, the oxygen preset: the short MEMBRANES line fits
+  on one line), headed Firefox (the oxygen preset with the F overlay: the MEMBRANES line and the overlay's three lines; no console
+  messages).
+- **Speed** (GPU free, as "Merge: C12g + N1": headless Chrome, 1280 x 800, the default scene, seed 3, MAX; 2000 cells 150 s, 10 000
+  60 s; three runs each; `speed.json`):
+
+  | cells | neon look | harmonic look | before (Merge: C12g + N1) |
+  |---|---|---|---|
+  | 2000 | x7.48, x7.49, x7.56 (mean x7.51) | x7.93, x7.87, x7.86 (mean x7.89) | x7.45 / x8.13 |
+  | 10 000 | x1.85, x1.87, x1.87 (mean x1.86) | x2.08, x2.11, x2.05 (mean x2.08) | x1.84 / x2.06 |
+
+  No change within the runs' spread (the harmonic 2000-cell runs 3 % slower, inside the earlier runs' range); the fixes add a few
+  operations per side and tick in the eat pass and one census block in the ledger pass.
+
+### Known issues
+
+- The default scene stays holey after its springs dry (0.24 at 20 min): a linker-starved dish. Membranes are whole only where linkers keep
+  coming (or where lineages evolve thin membranes). A lasting mineral spring in the default scene would change that; a scene choice left
+  to the user.
+- The heavy linker L is still the bottleneck everywhere (the builder short of L in 56 to 97 % of its shortfalls): most of it lies in
+  heavy crust patches under a few % of the cells. Grazing serves only the cells on them; spreading membrane stuff through a colony is
+  T1's kin channels' job.
+- Oil still goes in and out of whole cells' membranes for nothing (fused and shed again, 0.3 to 3 per s): free, matter-neutral, but it
+  makes the counters noisy. The shed rounds each side's small excess up to a whole count per tick.
+- The dark vents do not hold life (above): an economy problem, needs rules.
+- The Oases geography is not reached by its knobs (above).
+- One seed per condition (two for the dark vents); the downstream differences (channel genes, the self-burn loop) may be lineage luck.
+- LG_M1 grew the ledger (LEDGER_WORDS 30976 -> 31488) and EatP by `m1[2]` (1856 bytes); the Cell, the genome and the stock did not grow.
+
 ## App: zoom, zoos, tools, new culture, presets
 
 The user, 2026-11-16: "on the app side of things, if we could zoom, and have panels with zoos of cells and molecules and tools to
@@ -4949,6 +5184,12 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   themselves are in `cell_eat.wgsl` (`ion_chan`, `ion_open`; the block, the channels and the voltage push in `plan`'s exchange, the
   voltage's slower leak in `eat`, the counters in `eat`, the census in `ledger`), the channel level gene's drift in `cell_common.wgsl`
   `mutate` (gate2.w); `experiments/conditions/c12g/`: `make.py` (the conditions), `analyse.py` (the tables)
+- `src/whole.js`: whole membranes (step M1): the switches (`moire.whole.params`: head on oil, bites through the block), the eat uniform's
+  words (struct EatP `m1`), the membrane budget's counters and census (LG_M1: a snapshot from the ledger pass, counters from the eat,
+  dump, split and reset passes), the MEMBRANES panel line and the overlay. The rules are in `cell_eat.wgsl` (the "step M1" blocks: the
+  bite factor in `plan`, fusion's oil, head on oil before the builder, the shed's oil limit, the counters, the census in `ledger`);
+  `experiments/conditions/m1/`: `make.py` (the conditions), `budget.py` (the budget from the samples), `memb.py` (each cell's membrane,
+  stock and the dish under it, from snapshots), `down.py` (the downstream effects)
 - Step N1, a nutrient landscape ("Step N1: nutrient landscape"): `src/pigments.js` (light needs matter: the switches and knobs, the eat
   pass's words EatP `nl`, the counters LG_N1, the PIGMENTS line; the rule in the "step N1" blocks of `cell_eat.wgsl`), `src/oases.js`
   (the scarce nutrient: trace only from the oases, their roaming, trace settling; spring kind `oasis`), `src/water.js` +

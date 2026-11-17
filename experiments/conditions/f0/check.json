@@ -1,0 +1,99 @@
+{
+ "name": "f0-check",
+ "description": "step F0 books check: 330 s at MAX (seed 5), the whole dish lit, springs; resizes at 60 s and 120 s, 20 predators at 90 s, the three designed tissues placed at 100 s, wild genomes (G) at 150 s, key M off and on, turnover mode and back, a snapshot saved and loaded at 280 s: atoms and charge rounding must stay 0; the job census every 30 s",
+ "query": {
+  "seed": 5,
+  "light": "full"
+ },
+ "duration": 330,
+ "sample_every": 10,
+ "stall": 200,
+ "snapshots": [],
+ "resizes": [
+  {
+   "t": 60,
+   "size": "1000x700"
+  },
+  {
+   "t": 120,
+   "size": "1280x800"
+  }
+ ],
+ "shots": [
+  {
+   "t": 330,
+   "panel": true,
+   "name": "panel"
+  },
+  {
+   "t": 200,
+   "name": "mid"
+  }
+ ],
+ "evals": [
+  {
+   "t": 5,
+   "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.35, 'soap', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.5, 'oil', 120); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 1e9); return moire.matter.springs.map(s => s.kind)"
+  },
+  {
+   "t": 90,
+   "js": "return await moire.predators.place(20)"
+  },
+  {
+   "t": 100,
+   "js": "const v = moire.control.view(); const out = []; for (const [k, n] of [['plant', 0.3], ['filament', 0.5], ['biofilm', 0.7]]) out.push(await moire.tissues.place(k, { x: v.cssW * n, y: v.cssH * 0.5, n: 30 })); return JSON.stringify(out)"
+  },
+  {
+   "t": 150,
+   "js": "moire.genome.params.founderMode = 'wild'; return moire.control.action('genomes')"
+  },
+  {
+   "t": 185,
+   "js": "moire.genome.rules.mut = false; return 'key M off'"
+  },
+  {
+   "t": 200,
+   "js": "moire.genome.rules.mut = true; return 'key M on'"
+  },
+  {
+   "t": 220,
+   "js": "moire.division.params.on = false; return 'turnover mode'"
+  },
+  {
+   "t": 250,
+   "js": "moire.division.params.on = true; return 'division mode'"
+  },
+  {
+   "t": 280,
+   "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }"
+  },
+  {
+   "t": 30,
+   "js": "const s = moire.cells.stats; return JSON.stringify({t: s && s.time, job: s && s.job, alive: moire.cells.alive})"
+  },
+  {
+   "t": 60,
+   "js": "const s = moire.cells.stats; return JSON.stringify({t: s && s.time, job: s && s.job, alive: moire.cells.alive})"
+  },
+  {
+   "t": 120,
+   "js": "const s = moire.cells.stats; return JSON.stringify({t: s && s.time, job: s && s.job, alive: moire.cells.alive})"
+  },
+  {
+   "t": 180,
+   "js": "const s = moire.cells.stats; return JSON.stringify({t: s && s.time, job: s && s.job, alive: moire.cells.alive})"
+  },
+  {
+   "t": 240,
+   "js": "const s = moire.cells.stats; return JSON.stringify({t: s && s.time, job: s && s.job, alive: moire.cells.alive})"
+  },
+  {
+   "t": 300,
+   "js": "const s = moire.cells.stats; return JSON.stringify({t: s && s.time, job: s && s.job, alive: moire.cells.alive})"
+  },
+  {
+   "t": 329,
+   "js": "const s = moire.cells.stats; return JSON.stringify({t: s && s.time, job: s && s.job, alive: moire.cells.alive})"
+  }
+ ]
+}

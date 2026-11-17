@@ -41,7 +41,7 @@
 // the mineral spring CO2-like carbon, the vent (fissure) a little methane-like FUEL SEEP with CO2-like carbon. Booked as added (energy
 // in: their chemical energy, as every spring's molecules).
 
-import { fmt, HEAT_SCALE } from './heat.js';
+import { fmt, HEAT_SCALE, LEDGER_WORDS } from './heat.js';
 import { BANDS } from './light.js';
 import * as MX from './matter.js';   // (a cycle: matter.js imports this module; nothing here reads MX at load time)
 
@@ -338,6 +338,34 @@ export class Carbon {
       if (S.length > 400) S.shift();
     }
     return L;
+  }
+
+  /**
+   * Tuning aid (console or tools/shot.py --eval): along the row of pixels at CSS y, every `step` CSS px from x0 to x1, the ladder and
+   * tar per R^2, the temperature and the free g, t and water there, e.g. moire.carbon.probeLine(400, 0, 1280, 40).then(console.log).
+   */
+  async probeLine(y, x0 = 0, x1 = this.matter.view.cssW, step = 20) {
+    const M = this.matter, H = M.heat, d = M.device, n = H.n;
+    const buf = d.createBuffer({ size: H.bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+    const e = d.createCommandEncoder();
+    e.copyBufferToBuffer(H.buffer, 0, buf, 0, H.bytes);
+    d.queue.submit([e.finish()]);
+    await buf.mapAsync(GPUMapMode.READ);
+    const w = new Int32Array(buf.getMappedRange().slice(0));
+    buf.unmap(); buf.destroy();
+    const a = H.px / H.R, conc = 1 / (ATOM_SCALE * a * a);
+    const hb = H.offset(H.cur), lb = LEDGER_WORDS + this.copyBase(this.cur), tb = LEDGER_WORDS + this.tarBase(), mb = LEDGER_WORDS + M.copyBase(M.cur);
+    const py = Math.max(0, Math.min(H.hh - 1, Math.floor(y / H.px)));
+    const rows = [];
+    for (let x = x0; x <= x1; x += step) {
+      const px = Math.max(0, Math.min(H.hw - 1, Math.floor(x / H.px))), i = py * H.hw + px;
+      const lad = LADDER.map((nm, j) => w[lb + j * n + i] * conc);
+      const tar = [0, 1, 2].map((j) => w[tb + j * n + i] * conc);
+      rows.push(`x ${x} T ${(w[hb + i] * H.tempScale).toFixed(2)} | ladder ${lad.map((v) => v.toFixed(2)).join(' ')}` +
+        ` | tar ${((2 * tar[0] + tar[1] + tar[2]) / 4).toFixed(2)} (cc ${tar[0].toFixed(2)} cg ${tar[1].toFixed(2)} ct ${tar[2].toFixed(2)})` +
+        ` | g ${(w[mb + i] * conc).toFixed(2)} t ${(w[mb + n + i] * conc).toFixed(2)} gt ${(w[mb + 6 * n + i] * conc).toFixed(2)}`);
+    }
+    return rows.join('\n');
   }
 
   /** For moire.sample(): the numbers of the last read-back. */

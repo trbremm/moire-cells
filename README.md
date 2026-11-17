@@ -5182,6 +5182,214 @@ random networks (and its control), seeds 3 and 7; a hand-wired "dark switch" in 
   cell, or packing).
 - G (new genomes) at the same instant as a resize leaks atoms (about 650): older than T1b (found by this check).
 
+## Step P1: predators
+
+BUILD QUEUE item 5 (2026-11-17): ENGULF and KIN SPARING as genes, and a hand-placed predator. The user: "I think it's fair to add those
+genes, right? It is a gigantic level of abstraction anyways." and "Cannibalism should select itself off. But then they need to be able to
+tell its genetic proximity to each other." Predation is meant as the missing PRESSURE TO LINK (algae evolve clumps under a predator that eats
+single cells): a cell glued into a tissue holds on, so a clump acts as one big cell. No rule names a predator: any cell whose engulf gene is
+above 0 may wrap a smaller neighbour it out-pulls. Code: `src/predators.js` (switches, knobs, counters, clusters, panel line, the hand-made
+predator), "step P1" in `cell_step.wgsl` (the hold, the search, the wrap, the catch, the census), `cell_eat.wgsl` (the cost, the digestion,
+the phagosome's membrane, orphans), `cell_grid.wgsl` (the ghosts' bucket), `cell_grn.wgsl` (the network's ENGULF output, two senses),
+`cell_draw.wgsl` (the look), `src/genome.js` (the genes, the hand-made predator). Every piece its own switch (rules panel group "Predators
+(step P1)", URL options below).
+
+### The genes
+
+- ENGULF (`Bio.kin.z`, 0..1): the cell's drive to wrap a smaller touching cell. Std and blank founders 0; it drifts at every birth (Gaussian
+  steps of 0.03, kept in 0..1, as the display gene), so predation must arise and pay to spread.
+- KIN SPARING (`Bio.kin.w`, 0..1): the drive x (1 - spare x kinship), kinship the T1a marker's moire match (`kin_match_m`: the two markers'
+  beat over the shared wall x their phases' register x what both DISPLAY, as expressed). Founders 0: early predators are cannibals. Hiding
+  the marker (the display gene, or the network's display output) lowers kinship both ways: a hidden cell is eaten as a stranger and eats
+  its kin as strangers.
+- The gene network gets a 17th output, ENGULF (gain `Bio.gm.z`, regulator `gm.w`: the two spare words), so engulfing can be expressed by
+  some cell types only, and two senses: MEAL (digesting: the share of the meal still to digest; 23) and PREY (a cell it could engulf touches
+  it, or it is wrapping one; 24). Mutation rewires to them and moves the 17th output like the others.
+- WILD founders (`?founders=wild`, gene group `engulf`) draw both genes anywhere in 0..1 and the ENGULF output four times in ten (gain
+  -3..3, a random regulator), from their own random stream (`erng`), so a seed's other wild genes are as in step T1b.
+
+### Engulfing (`cell_step.wgsl`, each tick, only with the changing count: division mode, C9)
+
+A cell i can START wrapping a touching cell j (within reach x the two radii) when
+
+    (a) it is bigger:        r_i^2 >= sizeRatio x r_j^2                                  (sizeRatio 1.4: about 18 % wider)
+    (b) it out-pulls it:     drive x e_i x (1 - s_i x kin_ij)  >  hold_j - glue_ij + holdBase
+                             e_i the engulf gene as expressed (x the network's ENGULF output), s_i the kin sparing gene, drive 3
+                             hold_j = sum over j's touching neighbours of their glue (the C10/C11 contact adhesion: the smaller of the two
+                                      sides' effective adhesion x the keys' likeness + same-fate glue, or the plain adhesion with the walls
+                                      off) + j's ARMOUR: wallArm x its crust wall's cover (C12b, mean of the sides) + stiffArm x (its
+                                      membrane's stiffness - 1) / (kmax - 1) (the lipid membrane's per side; else the C6c material's)
+                                      (wallArm 2, stiffArm 1, holdBase 0.25); glue_ij this pair's own glue (it does not hold j against i)
+    (c) it can pay:          battery >= batStart (0.25 of its capacity), membrane integrity >= integMin (0.3, the sides' mean)
+
+at a chance startRate (1) per s, against the best such neighbour (the largest margin). Starting costs startCost (0.05 of a full battery),
+wrapping wrapCost (0.03 of a full battery) per s, from the battery as heat (`Cell.engPay`, paid by the eat pass).
+
+The WRAP takes wrapTime (3 s). Meanwhile the prey is pulled toward the predator (pull x progress, 1 R/s at a full wrap), the pair's
+contact push softens (x (1 - 0.85 x progress)) and their honeycomb walls give way (past 0.3 of the wrap), so the prey sinks into the
+predator's side. Each tick the predator checks again; the prey ESCAPES when it slips out of reach ("lost"), when its hold rises above the
+drive or it grows too big ("held": e.g. it made new contacts, its junctions matured, it grew), or when the predator runs out (battery below
+batKeep 0.05, membrane below integMin / 2: "poor").
+
+At full progress the PREY is caught: in its own step it sees a neighbour's closed wrap and dies (a death by being EATEN, C9's alive flag,
+Stats div[6]); if two predators close at the same tick, the lowest index gets it and the other finds no meal. Its slot does not go back to
+the dish: it becomes a GHOST (`Cell.engBy` = BY_GHOST | host), kept in a grid bucket of its own after the free slots (so no newborn claims
+it), and its stock, membrane and battery are the predator's MEAL, a phagosome.
+
+### Digestion (`cell_eat.wgsl`)
+
+Over digestTime (8 s) the meal moves into the host, each tick a share of what is left (so it is gone at the end):
+
+- atoms and fuels into the host's stock, as far as the host has room (its capacity less what it holds);
+- the meal's C6c membrane weave and its pigment as their atoms (free linkers; trace + 2 l);
+- its lipids (soap, oil, crust) into the host's own membrane, side by side (the phagosome's membrane recycled; a side that holds more than
+  it wants sheds the extra into the dish as usual);
+- its battery: batShare (0.5) into the host's battery (as far as there is room), the rest heat at the host;
+- at the CATCH a share wrapShare x (prey radius / host radius) (0.4) of the host's own bilayer (soap and oil; with the lipid membranes off
+  its C6c weave) goes round the meal: wrapping costs membrane, which the host must repair from its stock, and which comes back as the
+  phagosome is digested;
+- at the END whatever found no room spills into the dish under the host (the battery's rest and the membrane voltage's energy as heat),
+  and the slot is free.
+
+A host that dies, bursts or is itself eaten while digesting leaves an ORPHAN ghost: the next tick it spills its whole content where the
+host was, as any death does (`dump`). Every count leaves one word and arrives in another (atomics), so atoms, charge and energy stay exact.
+The network's MEAL sense is the share still to digest; a digesting cell starts no new wrap (handling time).
+
+### The switches (rules panel "Predators (step P1)"; URL)
+
+| switch | URL | what |
+|---|---|---|
+| engulfing | `?engulf=0` | off: nobody eats (old snapshots load with it off) |
+| neutral control | `?engulfnull=1` | the genes drift as usual, nothing is ever engulfed |
+| kin sparing's control | `?kinsparenull=1` | kinship ignored (the sparing gene drifts without effect) |
+| mark engulfers | `?predmark=1` | a diagnostic: a small dark-red mouth in cells with the engulf gene >= 0.25 |
+| knobs | `?sizeratio= ?drive= ?holdbase= ?wallarm= ?stiffarm= ?wraptime= ?digesttime= ?startrate= ?batstart= ?wrapcost= ?startcost= ?wrapshare= ?batshare= ?predcensus=` | as above (`moire.predators.params`) |
+
+### The hand-made predator
+
+The cells zoo's last founder button "predator", and `moire.predators.place(points | n, { engulf, spare, size })` (`moire.predators.genome()`):
+a founder genome with the engulf gene 1, kin sparing 0 (a cannibal too; `spare` sets it), the size gene at its top (1.25), little glue (0.15),
+crawling 1.6 x, and engines that live on what cells hold: bonding free atoms (g + t -> gt), breathing (t + gT -> gt + T) and a fermenter
+(G + gT -> GT + g). Placed as any added cell: an empty stock and the starter charge (booked as energy in).
+
+### Layout and memory
+
+- Cell 352 -> 368 bytes: `eng` (88: mode, prey-near and fresh bits, 12-bit progress, the partner), `engBy` (89: wrapped by / ghost of, the
+  wrap's progress for the drawing), `hold` (90), `engPay` (91). The grid's lean copy (CellCore, 120 bytes) carries `eng` and `hold` in place
+  of `dead` (which only the cell's own slot needs). Bio unchanged (156 words: the genes in kin.z, kin.w, the output in gm.z, gm.w).
+- Fields + p1..p1d (448 -> 512 bytes), EatP + p1[2] (1888 -> 1920), Stats + p1 (64 words, 9024 -> 9280 bytes), Draw + p1, p1Ink (1280 ->
+  1312). The eat pass's counters use the T1a counter block's spare counters 4..13 (no new ledger words). The grid has one more bucket.
+- Snapshots save the ghosts with the live cells (their stocks are in the books) and renumber partners when slots are packed; snapshots from
+  before P1 (cells of 88 words) load with the new words 0 and engulfing OFF.
+
+### The look
+
+- NEON: a neighbour wrapping a cell draws its membrane as a TUBE round it (in the wrapper's colour, white-hot along its middle), at a
+  little more than the prey's radius, from the wrapper's side as far round as the wrap has gone; at a full wrap the prey sits in a closed
+  ring. Inside a digesting host the meal is a GHOST: a dim disc in the prey's own colour, its faint outline, shrinking (0.8 -> 0.35 of the
+  prey's radius) and fading as it is digested, inside a bright ring (the phagosome's membrane, the host's colour), off-centre.
+- HARMONIC: the wrap is a green rim round the prey (an interface: third harmonic); the phagosome a DARK ring (a vacuole gives no signal)
+  with a violet glow inside it (the meal's metabolism, autofluorescence) fading as it is digested, and a faint green membrane round it. Like
+  live imaging of a macrophage eating.
+- The machinery's mark (`?predmark=1`, off by default): a small dark-red mouth near the top of every cell with the engulf gene >= 0.25.
+
+### The census and the panel line
+
+PREDATION: the engulf gene (mean ± sd, carriers: >= 0.25), kin sparing (and the carriers' own), wraps, escapes and meals per s, how many
+cells are wrapping and digesting now, of the meals in the last 10 s the KIN share (marker match > 0.5: cannibalism of relatives) and the
+SINGLE-cell share (prey with no glue to others), the prey's hold; the cells' mean hold, armour and glue gene; the CLUSTERS (a read-back every
+15 s: cells joined by mutual contact, the share in clusters of 8 and more, singles, the largest, contacts per cell). `moire.predators.census`,
+`moire.sample()`'s `pred.*`, `moire.predators.clustersNow()`.
+
+### What it looks like
+
+- NEON, zoomed in (x6): a predator's membrane reaches round a neighbour as a white-hot arc, a little outside the prey's outline, from the
+  predator's side; over three seconds the arc closes into a ring and the prey slides into the predator. Then the prey is gone and the
+  predator carries a glowing GHOST off-centre inside it: a bright disc in the prey's colour inside a thin ring, dimming and shrinking over
+  eight seconds until only the predator's own core and parts are left (`experiments/keep/p1/wrap-close-neon-s7.jpg`,
+  `phagosome-close-neon-s7.jpg`). At the whole-dish scale predation shows mostly as small dark HOLES in a tissue, where cells were eaten
+  and not yet replaced (`lineage-colonies-s11-10min-holes.jpg`).
+- HARMONIC: the wrap is a thin green arc round the prey, like a membrane surface reaching round it; the phagosome a round violet glow in a
+  dark ring with a faint green rim, inside a cell of the green honeycomb, like live imaging of a macrophage with a labelled vacuole
+  (`wrap-close-harmonic-s7.jpg`, `phagosome-close-harmonic-s7.jpg`).
+- A clip of one engulfment (12 s at 1x, zoom x5): `experiments/keep/p1/engulfment-clip-s7.webm` (kept locally: `*.webm` is ignored by git).
+- The lineage view shows no predator waves or spirals: lineages mix and one takes the dish, as before (`lineage-drop-default-s3-15min.jpg`).
+
+### Experiments (EXPERIMENTS.md "Predators")
+
+The Colonies preset with wild founders (now drawing the engulf and kin sparing genes too: most start as predators), 40 min, seeds 3, 7, 11,
+against the neutral control (`?engulfnull=1`) and, seeds 3 and 7, kin sparing's control (`?kinsparenull=1`); 20 hand-made predators
+dropped at 5 min into the default scene and the Sunlit shallows, 30 min, seeds 3 and 7, each with its neutral control. Plainly:
+
+- **Predation is everywhere and steady, not boom-bust.** Colonies: 4 to 20 meals per s for the whole 40 minutes (7 000 to 34 000 meals per
+  run), about one wrap in five ending in a meal (the rest escape: mostly "held", the prey's hold rose, or "lost", it slipped away). The
+  dish still fills to its capacity (2 900 cells against 3 000 in the null); no waves, spirals or crashes. Dropped predators: the default
+  scene keeps 15 % fewer cells than its control (1 280 .. 1 400 against 1 560 .. 1 620 at 30 min); the shallows stay full.
+- **Clumps protect, but nothing new links.** Single cells (no glue to others) are 15 to 40 % of the prey but 0 to 4 % of the cells: the
+  hold works, a loner is about ten times likelier to be eaten. Yet the glue gene and the clusters do not move against the controls (glue
+  a0 0.46 .. 0.52 against 0.35 .. 0.63; 91 .. 100 % of cells in clusters of 8 and more either way): the dishes are already one big clump,
+  so there is little left to select.
+- **ARMOUR rises, in every pair**: the membrane genes' stiffness (thickness, mix and the stiffness gene together) ends higher with
+  predation than in its control in 9 of 9 seed pairs (colonies 3.66 / 3.34 / 2.67 against 2.44 / 1.47 / 2.05; kin control 3.36 / 3.34;
+  dropped predators 3.81 / 1.69 and 2.94 / 3.43 against 2.08 / 1.57 and 1.57 / 2.62), the THICKNESS gene in 8 of 9 (e.g. 0.08 against
+  0.04), and with it the cells' hold in 8 of 9 (colonies 2.04 / 1.48 / 1.71 against 1.40 / 0.61 / 1.72). Predation selects thicker, stiffer membranes, a prey's armour.
+  The crust wall gene does not follow (higher in 3 of 9).
+- **"Cannibalism selects itself off" by losing the ENGULF gene, not by sparing kin.** In the colonies the engulf gene falls further with
+  predation on than in the neutral control in all three seeds (40 min: 0.53 / 0.41 / 0.25 against 0.63 / 0.57 / 0.63; kin control 0.63 /
+  0.35); the kin sparing gene ends where its controls do (0.44 / 0.60 / 0.60 against 0.38 / 0.51 / 0.58, and 0.37 / 0.53 with kinship
+  ignored). The reason: KINSHIP HAS VANISHED. In one-lineage dishes the contacts' marker match is 0.03 .. 0.07 by 20 minutes (wild
+  displays near 0.5, the marker clock, hard light's extra mutation under the whole-dish light), so meals are "kin" by lineage but strangers by marker: the meals'
+  kinship equals the contacts' (0.03 against 0.05), and sparing has nothing to read. In the default scene (std founders, full display)
+  kinship stays readable longer in seed 3 (0.25 .. 0.66: half its meals are marker kin) but falls to 0.09 in seed 7.
+- **Dropped predators**: the hand-made ones (engulf 1, size 1.25) never built a lineage of 20 cells; predation spread by the residents'
+  own engulf genes, which ended higher than in the control in the default scene (0.59 / 0.55 against 0.23 / 0.40 at 30 min) and alike in
+  the shallows (0.42 / 0.44 against 0.35 / 0.27). The neutral controls' engulf genes rise too (0.2 .. 0.6): the gene drifts fast under hard
+  light's extra mutation and from a floor at 0, so only the comparison with the control means anything.
+
+### Checked
+
+- **Books** (`check.json`, seed 5, the whole dish lit, 480 s at MAX): springs, N, 40 predators placed, a wash, two resizes (150 s WITH G at
+  the same instant: the old leak; 220 s), G with WILD founders, 40 predators again, the neutral control, kin sparing's control, engulfing
+  off and on at runtime, EASY engulfing (drive 30, area ratio 1.05, wrap 0.8 s: hundreds of meals) with the membrane chemistry off (the
+  C6c-weave path), then the lipid membranes off and on, the harmonic look and the mark, G and N with wild founders and 60 predators each, a
+  snapshot saved and loaded while 56 meals were being digested and 8 wraps were closing (exact): atoms and charge rounding exactly 0 in
+  every sample but the paused resize instant at 220 s (as before), energy within -0.003 and +0.085; 1 474 meals, 1 107 digestions finished,
+  302 ghosts orphaned (their hosts died) and spilled, 0 void. Every experiment run: atoms and charge 0 in every sample, energy -0.18 .. +0.39.
+- **The old leak** (G at the instant of a resize, found in T1b): fixed. A resize leaves the old heat grid to be drained at the next frame,
+  and the drain copies the old grid's ledger over the new one's; a new culture's reset (and the old cells' heat deposit) in between booked
+  the stocks it handed back into the new ledger, which the copy then erased (~650 atoms for good). The old grid is now drained first
+  (`heat.drainNow()`): in the check the atoms rounding stays 0 after G at the resize instant.
+- **Old snapshots**: T1b's Colonies snapshot (seed 3, 20 min, cells of 88 words) loads with engulfing off and runs 60 s, atoms and charge 0.
+- **Consoles**: headless Chrome (every run), headed Firefox (the default scene with 15 predators placed and the mark: the PREDATION line
+  and overlay, no console messages), phone size (`tools/shot.py --mobile`, the Colonies preset, a finger tap opening the rules panel: the
+  short PREDATION line fits on one line; no console messages but the usual powerPreference note).
+- **Speed** (GPU free, as "Step T1b": headless Chrome, 1280 x 800, the default scene, seed 3, MAX; 2000 cells 150 s, 10 000 60 s; three
+  runs each; `experiments/conditions/p1/speed.json`, `speed-parts.json`):
+
+  | cells | neon look | harmonic look | before (Step T1b) |
+  |---|---|---|---|
+  | 2000 | x6.70, x6.47, x6.62 (mean x6.60) | x6.97, x7.07, x6.93 (mean x6.99) | x6.99 / x7.42 |
+  | 10 000 | x1.37, x1.41, x1.40 (mean x1.39) | x1.57, x1.58, x1.60 (mean x1.58) | x1.55 / x1.78 |
+
+  About 6 % slower at 2000 cells and 10 % at 10 000. The predation logic itself costs nothing measurable here (10 000 cells: engulfing off
+  x1.40, its null x1.39, on x1.40; the default scene's founders start at engulf 0); the T1b code measured the same day gave x1.54 / x1.51, so
+  the loss is in the bigger records (Cell 352 -> 368 bytes, read and written whole by the step, the drawing and the grid) and the extra
+  grid bucket.
+
+### Known issues
+
+- Kin recognition fades within a lineage in 10 to 20 minutes under the default marker clock and wild displays (contact kinship 0.03 ..
+  0.07), so kin sparing cannot act in long runs; a slower clock (`?clocksize=`) or full displays would give it something to read.
+- Predation only acts with the changing count (division mode, C9): with fixed-count turnover nothing is engulfed (a meal's slot must stay
+  a ghost while it is digested). A digestion already running finishes in either mode.
+- The engulf gene drifts fast from its floor at 0 (and faster where hard light falls), so its rise must be read against the neutral
+  control; the 'kin' meal count uses a marker match above 0.5, which the meals' mean kinship complements.
+- Two predators closing on one prey at the same tick: the lower index gets it; the other finds no meal (counted "void"; none seen).
+- A slot reused by a newborn while a wrap is under way can be wrapped in its place (the predator remembers the slot, not the cell).
+- The ghost is drawn by its host (the dead slot itself is not drawn); the arms are drawn by the prey. The cells zoo's portraits do not show
+  wraps or ghosts.
+- Speed: 6 .. 10 % slower than T1b, from the record sizes (above).
+
 ## App: zoom, zoos, tools, new culture, presets
 
 The user, 2026-11-16: "on the app side of things, if we could zoom, and have panels with zoos of cells and molecules and tools to
@@ -5579,6 +5787,15 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   line. The outputs are read where each gene is read: `gof` / `bio_memb` / `bio_pump` / `bio_mark` / `bio_kin_open` / `bio_chan` in
   `cell_eat.wgsl`, `gofP` in `cell_step.wgsl`; the senses the eat pass writes (`Cell.sns0`, `sns1`); the reporter view in `cell_draw.wgsl`;
   the layout and founders in `src/genome.js` (`grnDefaults`, `wildGrn`)
+- `src/predators.js`: predators (step P1): the switches and knobs (`moire.predators.params`: on, null, kinNull, the area ratio, drive, the
+  hold's parts, the wrap's and the digestion's times, costs and shares; `moire.predators.look`: the arms, the ghost, the mark), the step's
+  words (`Fields p1..p1d`), the eat pass's (`EatP p1`), the drawing's (`Draw p1, p1Ink`), the counters (`Stats.p1`: the step's events and
+  census; the eat pass's in the T1a counter block 4..13), the clusters' read-back (`clustersNow()`), `focus()` for pictures, the hand-made
+  predator (`genome()`, `place()`) and the PREDATION panel line. The shader side is "step P1" in `cell_step.wgsl` (the hold, the search,
+  the wrap's pull and softened push, the catch as a death, the state for the next tick, the census), `cell_eat.wgsl` (the cost, the
+  digestion, the phagosome's membrane; `dump`: orphaned ghosts spill), `cell_grid.wgsl` (the ghosts' bucket), `cell_grn.wgsl` (the ENGULF
+  output, the MEAL and PREY senses), `cell_draw.wgsl` (`wrap_arm`, `phago`); `Cell.eng`, `engBy`, `hold`, `engPay` and their helpers in
+  `cell_common.wgsl`; the genes in `src/genome.js` (`wildP1`, `predatorGenome`)
 - `src/whole.js`: whole membranes (step M1): the switches (`moire.whole.params`: head on oil, bites through the block), the eat uniform's
   words (struct EatP `m1`), the membrane budget's counters and census (LG_M1: a snapshot from the ledger pass, counters from the eat,
   dump, split and reset passes), the MEMBRANES panel line and the overlay. The rules are in `cell_eat.wgsl` (the "step M1" blocks: the

@@ -1,0 +1,37 @@
+{
+  "name": "c15a-speed-2k-on-r2",
+  "description": "speed, default scene, 2000 cells, carbon on, 150 s",
+  "condition": {
+    "name": "c15a-speed-2k-on-r2",
+    "description": "speed, default scene, 2000 cells, carbon on, 150 s",
+    "query": {
+      "seed": 3
+    },
+    "duration": 150,
+    "sample_every": 25,
+    "shots": [],
+    "snapshots": [],
+    "evals": []
+  },
+  "url": "http://localhost:55355/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "00aabbc72a914c7eb17173f14074aa9c10962be4",
+  "dirty": true,
+  "started": "2026-11-17T19:39:55",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 150.0,
+  "run_wall_s": 158.41,
+  "speed_reached": 0.95,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-17T19:43:54",
+  "wall_s": 238.95
+}

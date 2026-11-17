@@ -1,0 +1,196 @@
+{
+  "name": "c15a-pics-default",
+  "description": "default scene with ONE cell (the substrate alone), whole dish lit, 10 min: close-ups of the vent and the mineral spring",
+  "condition": {
+    "name": "c15a-pics-default",
+    "description": "default scene with ONE cell (the substrate alone), whole dish lit, 10 min: close-ups of the vent and the mineral spring",
+    "query": {
+      "seed": 3,
+      "light": "full",
+      "cells": 1
+    },
+    "dpr": 2,
+    "duration": 604.0,
+    "sample_every": 60,
+    "stall": 200,
+    "shots": [
+      {
+        "t": 600
+      },
+      {
+        "t": 600.7,
+        "name": "zoom_vent"
+      },
+      {
+        "t": 601.0,
+        "name": "zoom_vent_harmonic"
+      },
+      {
+        "t": 601.3,
+        "name": "zoom_vent_tar"
+      },
+      {
+        "t": 602.2,
+        "name": "zoom_spring"
+      },
+      {
+        "t": 602.5,
+        "name": "zoom_spring_harmonic"
+      },
+      {
+        "t": 602.8,
+        "name": "zoom_spring_tar"
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 1,
+        "js": "window.__sp = {}; for (const q of moire.matter.springs) if (!window.__sp[q.kind]) window.__sp[q.kind] = [q.x, q.y]; return JSON.stringify(window.__sp)"
+      },
+      {
+        "t": 599,
+        "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})"
+      },
+      {
+        "t": 600.5,
+        "js": "moire.camera.set(4, ...window.__sp['heavy']); return 'zoom vent'"
+      },
+      {
+        "t": 600.8,
+        "js": "moire.control.action('harmonic')"
+      },
+      {
+        "t": 601.1,
+        "js": "moire.control.action('harmonic')"
+      },
+      {
+        "t": 601.2,
+        "js": "moire.matter.params.show = 24"
+      },
+      {
+        "t": 601.4,
+        "js": "moire.matter.params.show = 0"
+      },
+      {
+        "t": 602.0,
+        "js": "moire.camera.set(4, ...window.__sp['light']); return 'zoom spring'"
+      },
+      {
+        "t": 602.3,
+        "js": "moire.control.action('harmonic')"
+      },
+      {
+        "t": 602.6,
+        "js": "moire.control.action('harmonic')"
+      },
+      {
+        "t": 602.7,
+        "js": "moire.matter.params.show = 24"
+      },
+      {
+        "t": 602.9,
+        "js": "moire.matter.params.show = 0"
+      },
+      {
+        "t": 603.5,
+        "js": "moire.camera.fit(); return 'unzoomed'"
+      }
+    ]
+  },
+  "url": "http://localhost:49616/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&light=full&cells=1",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "00aabbc72a914c7eb17173f14074aa9c10962be4",
+  "dirty": true,
+  "started": "2026-11-17T19:30:36",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 604.0,
+  "run_wall_s": 663.24,
+  "speed_reached": 0.91,
+  "samples": 12,
+  "shots": [
+    "shots/t600.png",
+    "shots/zoom_vent.png",
+    "shots/zoom_vent_harmonic.png",
+    "shots/zoom_vent_tar.png",
+    "shots/zoom_spring.png",
+    "shots/zoom_spring_harmonic.png",
+    "shots/zoom_spring_tar.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.9999999999999999,
+      "js": "window.__sp = {}; for (const q of moire.matter.springs) if (!window.__sp[q.kind]) window.__sp[q.kind] = [q.x, q.y]; return JSON.stringify(window.__sp)",
+      "result": "{\"light\":[655.0285468333244,328],\"heavy\":[655.0285468333244,472],\"oasis\":[599.0285468333244,304]}"
+    },
+    {
+      "t": 598.9999999998063,
+      "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})",
+      "result": "{\"t\":598.9999999998063,\"ladder\":[1.736083984375,1.61376953125,0.871826171875,0.441650390625,7.411376953125],\"tar\":[411.294921875,41.173828125,525.935546875],\"carbon\":359.49951171875,\"rx\":{\"oxidize\":2.762311091191037,\"condense\":5.565685835046046,\"reduce\":3.4151271132203194,\"hydrolyze\":5.369252689554064,\"dissolve\":0.6998831326850627,\"settle\":0.7847720286892383,\"glow\":33.604716316628924,\"warm\":3312.311051168484},\"rounding\":0,\"eRounding\":0,\"atoms\":0,\"charge\":0}"
+    },
+    {
+      "t": 600.4999999998049,
+      "js": "moire.camera.set(4, ...window.__sp['heavy']); return 'zoom vent'",
+      "result": "zoom vent"
+    },
+    {
+      "t": 600.7999999998046,
+      "js": "moire.control.action('harmonic')",
+      "result": null
+    },
+    {
+      "t": 601.0999999998044,
+      "js": "moire.control.action('harmonic')",
+      "result": null
+    },
+    {
+      "t": 601.1999999998043,
+      "js": "moire.matter.params.show = 24",
+      "result": null
+    },
+    {
+      "t": 601.3999999998041,
+      "js": "moire.matter.params.show = 0",
+      "result": null
+    },
+    {
+      "t": 601.9999999998035,
+      "js": "moire.camera.set(4, ...window.__sp['light']); return 'zoom spring'",
+      "result": "zoom spring"
+    },
+    {
+      "t": 602.2999999998033,
+      "js": "moire.control.action('harmonic')",
+      "result": null
+    },
+    {
+      "t": 602.599999999803,
+      "js": "moire.control.action('harmonic')",
+      "result": null
+    },
+    {
+      "t": 602.6999999998029,
+      "js": "moire.matter.params.show = 24",
+      "result": null
+    },
+    {
+      "t": 602.8999999998027,
+      "js": "moire.matter.params.show = 0",
+      "result": null
+    },
+    {
+      "t": 603.4999999998022,
+      "js": "moire.camera.fit(); return 'unzoomed'",
+      "result": "unzoomed"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T19:43:18",
+  "wall_s": 762.37
+}

@@ -1,0 +1,186 @@
+{
+  "name": "c15a-pics-vent",
+  "description": "Deep vents, dark, 10 min: close-ups of two fissures",
+  "condition": {
+    "name": "c15a-pics-vent",
+    "description": "Deep vents, dark, 10 min: close-ups of two fissures",
+    "query": {
+      "seed": 3,
+      "preset": "vent"
+    },
+    "dpr": 2,
+    "duration": 604.0,
+    "sample_every": 60,
+    "stall": 200,
+    "shots": [
+      {
+        "t": 600
+      },
+      {
+        "t": 600.7,
+        "name": "zoom_fissure_top"
+      },
+      {
+        "t": 601.0,
+        "name": "zoom_fissure_top_harmonic"
+      },
+      {
+        "t": 601.3,
+        "name": "zoom_fissure_top_tar"
+      },
+      {
+        "t": 602.2,
+        "name": "zoom_fissure_right"
+      },
+      {
+        "t": 602.5,
+        "name": "zoom_fissure_right_harmonic"
+      },
+      {
+        "t": 602.8,
+        "name": "zoom_fissure_right_tar"
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 599,
+        "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})"
+      },
+      {
+        "t": 600.5,
+        "js": "moire.camera.set(4, 640, 184); return 'zoom fissure_top'"
+      },
+      {
+        "t": 600.8,
+        "js": "moire.control.action('harmonic')"
+      },
+      {
+        "t": 601.1,
+        "js": "moire.control.action('harmonic')"
+      },
+      {
+        "t": 601.2,
+        "js": "moire.matter.params.show = 24"
+      },
+      {
+        "t": 601.4,
+        "js": "moire.matter.params.show = 0"
+      },
+      {
+        "t": 602.0,
+        "js": "moire.camera.set(4, 827, 508); return 'zoom fissure_right'"
+      },
+      {
+        "t": 602.3,
+        "js": "moire.control.action('harmonic')"
+      },
+      {
+        "t": 602.6,
+        "js": "moire.control.action('harmonic')"
+      },
+      {
+        "t": 602.7,
+        "js": "moire.matter.params.show = 24"
+      },
+      {
+        "t": 602.9,
+        "js": "moire.matter.params.show = 0"
+      },
+      {
+        "t": 603.5,
+        "js": "moire.camera.fit(); return 'unzoomed'"
+      }
+    ]
+  },
+  "url": "http://localhost:53251/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&preset=vent",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "00aabbc72a914c7eb17173f14074aa9c10962be4",
+  "dirty": true,
+  "started": "2026-11-17T19:09:01",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 604.0,
+  "run_wall_s": 784.25,
+  "speed_reached": 0.77,
+  "samples": 12,
+  "shots": [
+    "shots/t600.png",
+    "shots/zoom_fissure_top.png",
+    "shots/zoom_fissure_top_harmonic.png",
+    "shots/zoom_fissure_top_tar.png",
+    "shots/zoom_fissure_right.png",
+    "shots/zoom_fissure_right_harmonic.png",
+    "shots/zoom_fissure_right_tar.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 598.9999999997839,
+      "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})",
+      "result": "{\"t\":598.9999999997839,\"ladder\":[3.866455078125,0.068359375,0.173828125,0.43310546875,562.94775390625],\"tar\":[7170.2177734375,1.03173828125,3509.15380859375],\"carbon\":5030.144775390625,\"rx\":{\"oxidize\":0,\"condense\":11.877961705953426,\"reduce\":0,\"hydrolyze\":0,\"dissolve\":0.9728003329926881,\"settle\":5.548155737709964,\"glow\":0,\"warm\":0},\"rounding\":0,\"eRounding\":0,\"atoms\":0,\"charge\":0}"
+    },
+    {
+      "t": 600.4999999997825,
+      "js": "moire.camera.set(4, 640, 184); return 'zoom fissure_top'",
+      "result": "zoom fissure_top"
+    },
+    {
+      "t": 600.7999999997822,
+      "js": "moire.control.action('harmonic')",
+      "result": null
+    },
+    {
+      "t": 601.099999999782,
+      "js": "moire.control.action('harmonic')",
+      "result": null
+    },
+    {
+      "t": 601.1999999997819,
+      "js": "moire.matter.params.show = 24",
+      "result": null
+    },
+    {
+      "t": 601.3999999997817,
+      "js": "moire.matter.params.show = 0",
+      "result": null
+    },
+    {
+      "t": 601.9999999997812,
+      "js": "moire.camera.set(4, 827, 508); return 'zoom fissure_right'",
+      "result": "zoom fissure_right"
+    },
+    {
+      "t": 602.2999999997809,
+      "js": "moire.control.action('harmonic')",
+      "result": null
+    },
+    {
+      "t": 602.5999999997807,
+      "js": "moire.control.action('harmonic')",
+      "result": null
+    },
+    {
+      "t": 602.6999999997807,
+      "js": "moire.matter.params.show = 24",
+      "result": null
+    },
+    {
+      "t": 602.8999999997808,
+      "js": "moire.matter.params.show = 0",
+      "result": null
+    },
+    {
+      "t": 603.4999999997809,
+      "js": "moire.camera.fit(); return 'unzoomed'",
+      "result": "unzoomed"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T19:23:42",
+  "wall_s": 880.51
+}

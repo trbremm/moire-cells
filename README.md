@@ -5806,6 +5806,18 @@ panel has **squeeze** (the dish x 0.8 across) and **stretch** (x 1.25) buttons; 
   the new grid arrives a frame after the books are set) and is back at ~0.01 at the next sample.
 - Not with `?dishfollow=1`, and not across the grid's pixel cap (a dish above 1.2 M R²).
 
+### Known issues
+
+- The dish is chosen once, at the page's start: a window that is resized right after loading (a browser restoring its size, headed
+  Firefox in the tools) keeps the first size's dish, drawn larger or smaller. A new culture with another number of cells or dish picks
+  again (the New culture dialog: "this window").
+- When the window's shape differs from the dish's, dark bands fill the rest of the window (the dish is never stretched).
+- Phones get more slots than before (capacity per area: 3246 instead of 2400 at 390 x 844) and 2 oases instead of 3.
+- `?dishfollow=1` keeps the old behaviour on purpose, with its faults: a sudden shrink shoves the culture in hard enough to overflow
+  a pixel's heat count (2^31) and wrap it negative, which breaks the energy books for good (EXPERIMENTS.md "Waves after a resize").
+- The press moves the cells' wall only: matter and water pass under it. The perfusion's through-flow is prescribed (see above).
+- Squeeze and stretch keep the capacity and the number of oases; the energy rounding blips for one sample at each squeeze.
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start

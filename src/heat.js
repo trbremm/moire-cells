@@ -197,11 +197,14 @@ export class Heat {
   /** Whether the light is on this frame (then the cells put down their cover and the pixels absorb). */
   get lightOn() { return !!(this.light && this.light.on); }
 
+  /** The grid's pixel (CSS px) for a dish of W x H px and the cells' radius R. */
+  pxFor(W, H, R) { return Math.max(this.params.pxR * R, Math.sqrt(W * H / MAX_PIXELS), 0.5); }
+
   /** Size the grid from the dish and the cells' radius R; a new grid replaces the old at the next frame. */
   resize(view, R) {
     this.R = R;
-    const p = this.params, { cssW: W, cssH: H } = view;
-    const px = Math.max(p.pxR * R, Math.sqrt(W * H / MAX_PIXELS), 0.5);
+    const { cssW: W, cssH: H } = view;
+    const px = this.pxFor(W, H, R);
     this.px = px;
     const hw = Math.max(2, Math.ceil(W / px)), hh = Math.max(2, Math.ceil(H / px));
     if (this.buffer && hw === this.hw && hh === this.hh) return;

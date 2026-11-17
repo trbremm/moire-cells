@@ -1,0 +1,47 @@
+{
+  "name": "dish-check-ref-vent",
+  "description": "",
+  "condition": {
+    "name": "dish-check-ref-vent",
+    "query": {
+      "seed": 3,
+      "preset": "vent"
+    },
+    "size": "1280x800",
+    "duration": 5,
+    "sample_every": 0,
+    "evals": [
+      {
+        "t": 1,
+        "js": "return moire.dish.line() + ' | cap ' + moire.cells.count + ' | supply ' + moire.dish.supply + ' | mR ' + moire.medium.R + ' | light area at px 3: ' + moire.dish.lightArea(3, moire.cells.R) + ' | springs ' + moire.matter.springs.map(s => (s.rate||0).toFixed(2)).join(',')"
+      }
+    ]
+  },
+  "url": "http://localhost:53708/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&preset=vent",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "1eb64e3998ef8cc3e8a4e64d3bf536e26d87d8b4",
+  "dirty": true,
+  "started": "2026-11-17T16:47:20",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 5.0,
+  "run_wall_s": 14.91,
+  "speed_reached": 0.34,
+  "samples": 2,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.9999999999999999,
+      "js": "return moire.dish.line() + ' | cap ' + moire.cells.count + ' | supply ' + moire.dish.supply + ' | mR ' + moire.medium.R + ' | light area at px 3: ' + moire.dish.lightArea(3, moire.cells.R) + ' | springs ' + moire.matter.springs.map(s => (s.rate||0).toFixed(2)).join(',')",
+      "result": "dish 142\u00d789 R (1280\u00d7800 px, R 9.00 px, medium 1.00 R) \u00b7 area 12.6k R\u00b2 (\u00d7 1.00 the reference for 600 cells) \u00b7 fixed (window) | cap 1800 | supply 1 | mR 9 | light area at px 3: 9 | springs 40.00,12.00,40.00,12.00,40.00,12.00,6.25,5.47,5.52"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T16:48:51",
+  "wall_s": 90.63
+}

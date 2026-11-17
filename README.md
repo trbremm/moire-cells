@@ -5668,7 +5668,9 @@ numbers in `experiments/runs/app-preset-*`, condition `experiments/conditions/ap
 
 ### Files
 
-- `src/camera.js`: the view camera (zoom, pan, limits, `toDish` / `toScreen`, `moved` for the trails)
+- `src/camera.js`: the view camera (zoom, pan, limits, `toDish` / `toScreen`, `moved` for the trails; `fit`: canvas px per dish px)
+- `src/dish.js`: the dish's own size, R and medium, chosen at a new culture; the per-area amounts (README "Dish size and densities");
+  `src/squeeze.js`: squeeze / stretch the sample (`moire.dish.scale(f)`); `src/perfusion.js`: the chip's inlet, through-flow and outlet
 - `src/app.js`: the zoom buttons, the scale bar, the add-cell tool and its placing (the books), the pipette, the dish panel's
   new culture row; `createApp` hands the toolbar its extra panels and tool icons (`src/ui.js` takes `extraPanels`, `toolIcons`,
   `dishExtra`)
@@ -5803,6 +5805,145 @@ shows at its own centre, and its area grows with the amount (flat colour, no glo
 - Until step C3 the nutrient and threat sources' beat landscape was drawn here too (green and red rosettes with ring
   markers); it went with the sources.
 Key L hides or shows all of it. The background ripples stay soft on purpose.
+
+## Dish size and densities
+
+The user, 2026-11-17: they let a dish evolve full screen, then made the window about 5x smaller, and afterwards "amazing waves of
+cells are forming and going across the dish, reaching criticality and starting again"; "we need to calculate the density of energy
+we want to have based on the grid size". Until now THE DISH WAS THE WINDOW: every resize quietly made a different world. Now the dish
+has its own size, chosen at a new culture, and the window is only a view of it. Code: `src/dish.js`, `src/squeeze.js` (and the
+resize in `src/main.js`, the camera's `fit`). What caused the waves, and how to get them on purpose: EXPERIMENTS.md "Waves after a
+resize" and "The fronts preset" below.
+
+### What a resize did before (the audit)
+
+Every amount the dish runs on, and what it was measured against. "Per R²" means per cell area (R = the cells' radius), which is what a
+cell feels; "per px" means per screen pixel, which a cell does not care about; "per dish" means one of it whatever the size. The last
+column is the user's case in numbers: a 1920 x 1080 window made 5x smaller (1152 x 360, wide and short), with 2000 starting cells.
+
+| amount | before (window = dish) | measured against | 1920x1080 -> 1152x360 |
+|---|---|---|---|
+| cells' radius R | min(medium R, 0.4 x shorter side x sqrt(0.82 / start)) | the window's shorter side | 8.75 -> 2.92 px |
+| medium lattice R (sets every moire beat) | sqrt(window area / 4750), clamped 5..9 px | **px** | 9 -> 9 px: **1.03 -> 3.09 R** (every beat 3x longer in cell units) |
+| dish area | the window | px | 27 100 -> 48 800 R² (the small window is a BIGGER dish in cells) |
+| grid pixel | max(0.5 R, sqrt(area / 300 000)) | R (px only above 1.2 M R²) | 0.5 R both |
+| capacity (cell slots) | 3 x the starting number | **per dish** | 6000 both: 0.22 -> 0.12 per R² |
+| light | 33 per 100 px² (full field and spot) | **px** | **25 -> 2.8 per R²** (a cell catches 9x less) |
+| spot radius | 0.25 x shorter side | dish | 31 R both |
+| clouds | 380 px, drifting 6 px/s | px | 43 -> 130 R |
+| springs | 6 atoms/s each (presets their own), placed as shares of the dish | per dish | the same drip into 1.8x the area |
+| oases | 3 per dish, 1 atom/s each, wandering in R/s | per dish | the same |
+| sea, warmth, heat leak and spread, sparks, reactions, trace burying | per R² or per s | R | unchanged |
+| water: swell | in R | R | unchanged |
+| water: eddies | from the medium's beat (16 x medium R) | px | 17 -> 50 R |
+| field reaches | cut x R | R | unchanged (the lattices inside them follow the medium) |
+| ripples (background), dust, line widths | px | px | drawing only (the ripples also bend the caustic light a little) |
+| the resize itself | a NEW substrate grid; the old one DRAINED: every atom and all heat counted "gone" / "out" | | a famine and a cold, empty floor at once |
+| cells' positions | kept in px | | most of the culture now OUTSIDE the dish; the soft walls shove it in |
+| starting number | per culture (phones fewer) | | unchanged |
+
+### What the dish is now
+
+- `dish = { W, H, R, mR }`: its size in dish px (the simulation's CSS px, as every layer always used), the cells' radius R and the
+  medium lattice's R, all fixed with the dish. Chosen at the page's start, which is every new culture with another number of cells or
+  another dish: from the window as before (dish = the window, R from it and the starting number: exactly the old R), or from
+  `?dish=WxH` in cell radii (`?dish=1200x360um` in micrometres; R in px is then picked so the dish fills the window), a preset's
+  `dish`, the New culture dialog's size (this window, small 140 x 88 R, reference 198 x 123 R, strip 396 x 124 R, large 280 x 175 R),
+  or a snapshot's own.
+- A window resize changes only the drawing: the canvas is fitted inside the window with the dish's shape (dark bands at the sides when
+  the shapes differ), `view.dpr` = device px per dish px, the camera's `fit` = canvas CSS px per dish px for the pointer and the scale
+  bar. Zoom 1 is still the whole dish. Nothing is drained, nothing moves, R and the grid stay.
+- PER AREA, in cell units (`dish.supply` = the dish's area / the reference dish's): the reference dish is what the experiments' default
+  window (1280 x 800 px) gives the SAME STARTING NUMBER (2000 cells: R 6.48 px, 24 390 R²; a preset's 600 or 1200 cells: R 9 px, the
+  cap, 12 640 R²), so at that window every number is EXACTLY as before, for the default scene and for every preset.
+
+| amount | now |
+|---|---|
+| medium lattice R | 9 px over the reference R: 1.389 R for 2000 cells (1 R for 1150 or fewer): the moire beats keep their size in cell units on any screen (`?medium=x`) |
+| light | per R²: `power` 33 still reads "per 100 px² at the reference R" = 13.9 per R² for 2000 cells (`?power=x`) |
+| clouds | 380 px at the reference R: 59 R for 2000 cells |
+| capacity | 3 x the starting number x A / A_ref (0.246 per R² for 2000 cells: 85 % of the dish packed with hexagons; `?cap=N` as before) |
+| springs a scene places (presets, the default scene, vents) | each drips x `dish.supply` (pipette drops and tapped springs are the hand's: not scaled) |
+| oases | count x `dish.supply` (each drips as before) |
+| everything already per R² or per s | unchanged |
+| eddies | follow the medium: 16 x 1.389 = 22 R for 2000 cells, on any screen |
+
+- Switches for comparison: `?dishfollow=1` the window IS the dish again, exactly as before (a resize sets a new R, a new medium, a new
+  grid, drains the old one; supplies per px and per dish). `?perarea=0` a fixed dish with the old amounts (light per px², capacity 3 x
+  the starting number, springs and oases per dish; the medium stays 1.389 R unless `?medium=`).
+- Snapshots save the dish. One saved before loads with its window as its dish, its R, its medium and the old amounts, so it runs on as
+  it was saved, in any window (before, a different window only gave a best effort).
+- Phones: the dish is chosen from the phone's screen at the start, as before (390 x 844 px with 800 cells: 78 x 169 R, R 4.99 px);
+  turning the phone now letterboxes the same dish instead of making a new one. The capacity follows the area: 3246 slots (2400
+  before), 2 oases (3 before).
+- The F overlay has a `dish` line: its size in R and px, R, the medium in R, the area against the reference, fixed or following.
+- Found on the way: a resize while the timing probe (overlay) was in flight destroyed the neighbour grid's buffers it was about to
+  use ("GPU error: Buffer grid starts used in submit while destroyed"); replaced buffers are now destroyed a frame later.
+
+### The press (the fronts, on purpose)
+
+EXPERIMENTS.md "Waves after a resize" found what made the user's waves: the window's walls closing in on the culture (and, with the
+old rules, the cells shrinking in place and a famine). A clean way to get the fronts without breaking anything: `dish.press`, the right
+(or bottom) wall moving in and out for the CELLS only, like a coverslip's edge pushed and let go (the substrate and the water pass under
+it). The wall goes in to `depth` x the dish's width over half a `period` and back over the other half (a cosine), again and again:
+the cells it meets are held inside it (`Sim.W`, the cells' wall, is the dish's width minus the press: no new shader word), and its soft
+wall pushes the crowd into a dense front; when it lets go, the front spreads. `?press=depth,period[,bottom]` (e.g. `?press=0.45,240`),
+saved in snapshots; the F overlay's dish line shows it. The **Fronts** preset (`?preset=fronts`): a strip dish 396 x 124 R, the right
+wall pressing to 0.45 and back every 240 s, cells scattered, the whole dish lit, five mineral springs and a slow vent.
+
+### Extended sources and perfusion (the microfluidic chip)
+
+The user, 2026-11-17: "I am not happy with point like vents. Maybe the microfluidics chip analogy is better".
+- **Lines and patches.** A spring can have a SHAPE: a LINE (a fissure or crack: `matter.addLine(x, y, kind, len, angle, perR, life)`,
+  length in R, angle in degrees, `perR` atoms per s for every R of its length) or a PATCH (a seep field: `matter.addPatch(x, y, kind,
+  r, perR2, life)`, radius in R, `perR2` atoms per s per R²). Rates per length and per area, so a longer fissure gives more. Both drip
+  over every pixel within the spring's radius of its segment (a capsule; a patch is a disc of its own radius), shared evenly and
+  booked as every spring's; they age, dry up, are saved and squeezed as springs (`struct Spring` + `seg`: the line's direction and half
+  length, a patch's radius). Drawn as springs: a line's marker is a stadium round the fissure with a bright core along it, a patch's a
+  ring at its edge. The pipette and the tap tools still drop points.
+- **The Deep vents preset** now has FISSURES: each vent a line 14 R long, across the dish's radius, dripping 40 / 14 atoms per s per R
+  (the old point's 40 in total), each mineral seep a patch 3 R across (12 per s in total). `&pointvents=1` the old points.
+- **Perfusion** (`src/perfusion.js`, `?perfusion=1`): one side is an INLET, a line source along the whole wall dripping a RECIPE of
+  fresh medium (default: gt 0.35, l 0.2, L 0.15, gT 0.15, GT 0.1, trace 0.05 of the atoms) at `?inlet=0.6` atoms per s per R; the water
+  flows through the dish to the opposite side at a mean `?flow=0.4` R per s (`?flowdir=right|left|down|up`), with a channel's profile:
+  fastest down the middle, still along the side walls (a stream-function term psi = U H (3 s² - 2 s³), s across the channel, added to
+  the currents in `water.wgsl`: divergence-free, carried by the same flux-form advection, exact counts; the cells drift with it as with
+  the eddies); the OUTLET, the opposite side's rim, lets out `?outlet=3` of its mobile matter per s (instead of the rim's usual 1),
+  booked as lost. In = out + kept, to the atom. `?recipe=gt:0.4,l:0.2,...` sets the medium.
+- **The Chip preset** (`?preset=chip`): a strip dish 396 x 124 R, perfusion from the left, the whole dish lit, cells scattered, trace
+  from the inlet only (no oases).
+- For the later water solver (G0): the through-flow is PRESCRIBED (it does not feel cells, matter or walls); G0 should replace
+  `through()` by a pressure-driven flow round obstacles, keep the inlet as a source line and the outlet as a sink line (the rim edges at
+  the inlet and outlet would then carry flux instead of piling matter against the outlet wall for the sink to take).
+
+### Squeeze and stretch the sample
+
+The user, same day: "we can add a tool to scale the dish as if we are compressing the sample, to also play with that later". The dish
+panel has **squeeze** (the dish x 0.8 across) and **stretch** (x 1.25) buttons; `moire.dish.scale(f)` does any f from 0.2 to 5.
+
+- Kept: every cell moves toward (away from) the dish's centre in proportion; sizes do not change, so a squeeze crowds them and a
+  stretch opens gaps. Every pixel's atoms and heat move with the sample into the new grid (same pixel size, fewer or more pixels),
+  split by overlap in whole counts, so not one atom is made or lost: a squeeze piles them up (atoms and temperature per R² x 1/f²), a
+  stretch thins them. Springs move with the sample; oases roam on from their new places. The charge field starts again from 0 (it is
+  worked out from the atoms).
+- Follows at once: everything per area (light per R² stays, so a squeezed dish catches less light in total; a scene's springs drip x
+  the new area's share). Stays: R, the medium lattice, the capacity (the buffers) and the number of oases.
+- How: a snapshot of the whole state, transformed (positions, the grid resampled, springs, the dish), loaded back; the books are
+  exact across it (atoms and charge rounding 0). The energy line's rounding shows a one-sample blip at the squeeze (the read-back of
+  the new grid arrives a frame after the books are set) and is back at ~0.01 at the next sample.
+- Not with `?dishfollow=1`, and not across the grid's pixel cap (a dish above 1.2 M R²).
+
+### Known issues
+
+- The dish is chosen once, at the page's start: a window that is resized right after loading (a browser restoring its size, headed
+  Firefox in the tools) keeps the first size's dish, drawn larger or smaller. A new culture with another number of cells or dish picks
+  again (the New culture dialog: "this window").
+- When the window's shape differs from the dish's, dark bands fill the rest of the window (the dish is never stretched).
+- Phones get more slots than before (capacity per area: 3246 instead of 2400 at 390 x 844) and 2 oases instead of 3.
+- `?dishfollow=1` keeps the old behaviour on purpose, with its faults: a sudden shrink shoves the culture in hard enough to overflow
+  a pixel's heat count (2^31) and wrap it negative, which breaks the energy books for good (EXPERIMENTS.md "Waves after a resize").
+- The press moves the cells' wall only: matter and water pass under it. The perfusion's through-flow is prescribed (see above).
+- Squeeze and stretch keep the capacity and the number of oases; the energy rounding blips for one sample at each squeeze.
 
 ## Files
 

@@ -1,0 +1,109 @@
+{
+  "name": "dish-check-stretch",
+  "description": "",
+  "condition": {
+    "name": "dish-check-stretch",
+    "query": {
+      "seed": 3
+    },
+    "size": "1280x800",
+    "duration": 16,
+    "sample_every": 0,
+    "evals": [
+      {
+        "t": 0,
+        "js": "\nwindow.__cs = async () => { const M = window.moire, C = M.cells, d = M.gpu.device, n = C.count, F = 92;\n  const buf = d.createBuffer({ size: n * F * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\n  const e = d.createCommandEncoder(); e.copyBufferToBuffer(C.cellBuf, 0, buf, 0, n * F * 4); d.queue.submit([e.finish()]);\n  await buf.mapAsync(GPUMapMode.READ); const f = new Float32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\n  const u = new Uint32Array(f.buffer); let a = 0, bat = 0, out = 0, r = 0, low = 0;\n  for (let i = 0; i < n; i++) { if (!(u[i*F+9] & 1)) continue; a++; bat += f[i*F+16]; r += f[i*F+4]; if (f[i*F+16] < 0.02) low++;\n    if (f[i*F] < 0 || f[i*F+1] < 0 || f[i*F] > M.dish.W || f[i*F+1] > M.dish.H) out++; }\n  return { t: M.time(), alive: a, bat: bat / a, r: r / a / C.R, low, out, W: M.dish.W }; };\nreturn 'ok';"
+      },
+      {
+        "t": 10,
+        "js": "const a = await window.__cs(); const r = await moire.dish.scale(1.25); const b = await window.__cs(); return JSON.stringify({a, b, notes: r.notes})"
+      },
+      {
+        "t": 10.5,
+        "js": "return JSON.stringify(await window.__cs())"
+      },
+      {
+        "t": 11,
+        "js": "return JSON.stringify(await window.__cs())"
+      },
+      {
+        "t": 12,
+        "js": "const a = await window.__cs(); const r = await moire.dish.scale(0.8); const b = await window.__cs(); return JSON.stringify({a, b})"
+      },
+      {
+        "t": 13,
+        "js": "return JSON.stringify(await window.__cs())"
+      },
+      {
+        "t": 14,
+        "js": "const a = await window.__cs(); await moire.loadSnapshot(await moire.snapshot()); const b = await window.__cs(); return JSON.stringify({a, b})"
+      },
+      {
+        "t": 15,
+        "js": "return JSON.stringify(await window.__cs())"
+      }
+    ]
+  },
+  "url": "http://localhost:49735/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "85d0ef2ecae525fe7ff87f6d2f7145ec4b3764d6",
+  "dirty": true,
+  "started": "2026-11-17T14:30:38",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 16.0,
+  "run_wall_s": 22.94,
+  "speed_reached": 0.7,
+  "samples": 2,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "\nwindow.__cs = async () => { const M = window.moire, C = M.cells, d = M.gpu.device, n = C.count, F = 92;\n  const buf = d.createBuffer({ size: n * F * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\n  const e = d.createCommandEncoder(); e.copyBufferToBuffer(C.cellBuf, 0, buf, 0, n * F * 4); d.queue.submit([e.finish()]);\n  await buf.mapAsync(GPUMapMode.READ); const f = new Float32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\n  const u = new Uint32Array(f.buffer); let a = 0, bat = 0, out = 0, r = 0, low = 0;\n  for (let i = 0; i < n; i++) { if (!(u[i*F+9] & 1)) continue; a++; bat += f[i*F+16]; r += f[i*F+4]; if (f[i*F+16] < 0.02) low++;\n    if (f[i*F] < 0 || f[i*F+1] < 0 || f[i*F] > M.dish.W || f[i*F+1] > M.dish.H) out++; }\n  return { t: M.time(), alive: a, bat: bat / a, r: r / a / C.R, low, out, W: M.dish.W }; };\nreturn 'ok';",
+      "result": "ok"
+    },
+    {
+      "t": 10.000000000000078,
+      "js": "const a = await window.__cs(); const r = await moire.dish.scale(1.25); const b = await window.__cs(); return JSON.stringify({a, b, notes: r.notes})",
+      "result": "{\"a\":{\"t\":10.000000000000078,\"alive\":1915,\"bat\":0.2839617676896775,\"r\":1.0001504011803557,\"low\":0,\"out\":0,\"W\":1280},\"b\":{\"t\":10.000000000000078,\"alive\":1915,\"bat\":0.2839617676896775,\"r\":1.0001504011803557,\"low\":0,\"out\":0,\"W\":1600},\"notes\":[\"dish 1280x800 px (R 6.480) -> the snapshot's 1600x1000 (R 6.480)\"]}"
+    },
+    {
+      "t": 10.500000000000103,
+      "js": "return JSON.stringify(await window.__cs())",
+      "result": "{\"t\":10.500000000000103,\"alive\":1909,\"bat\":0.28014669123590147,\"r\":1.000143119317866,\"low\":0,\"out\":0,\"W\":1600}"
+    },
+    {
+      "t": 11.000000000000128,
+      "js": "return JSON.stringify(await window.__cs())",
+      "result": "{\"t\":11.000000000000128,\"alive\":1902,\"bat\":0.2762704803113807,\"r\":1.0000924242878684,\"low\":0,\"out\":0,\"W\":1600}"
+    },
+    {
+      "t": 12.000000000000178,
+      "js": "const a = await window.__cs(); const r = await moire.dish.scale(0.8); const b = await window.__cs(); return JSON.stringify({a, b})",
+      "result": "{\"a\":{\"t\":12.000000000000178,\"alive\":1890,\"bat\":0.2687836177765377,\"r\":1.000861565984444,\"low\":0,\"out\":0,\"W\":1600},\"b\":{\"t\":12.000000000000178,\"alive\":1890,\"bat\":0.2687836177765377,\"r\":1.000861565984444,\"low\":0,\"out\":0,\"W\":1280}}"
+    },
+    {
+      "t": 13.000000000000227,
+      "js": "return JSON.stringify(await window.__cs())",
+      "result": "{\"t\":13.000000000000227,\"alive\":1878,\"bat\":0.26177611264684836,\"r\":1.0016876025121602,\"low\":0,\"out\":0,\"W\":1280}"
+    },
+    {
+      "t": 14.000000000000277,
+      "js": "const a = await window.__cs(); await moire.loadSnapshot(await moire.snapshot()); const b = await window.__cs(); return JSON.stringify({a, b})",
+      "result": "{\"a\":{\"t\":14.000000000000277,\"alive\":1873,\"bat\":0.2548685863065134,\"r\":1.001837736563451,\"low\":0,\"out\":0,\"W\":1280},\"b\":{\"t\":14.000000000000277,\"alive\":1873,\"bat\":0.2548685863065134,\"r\":1.001837736563451,\"low\":0,\"out\":0,\"W\":1280}}"
+    },
+    {
+      "t": 15.000000000000327,
+      "js": "return JSON.stringify(await window.__cs())",
+      "result": "{\"t\":15.000000000000327,\"alive\":1868,\"bat\":0.24803122820639764,\"r\":1.0016013694759498,\"low\":0,\"out\":0,\"W\":1280}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T14:32:36",
+  "wall_s": 117.91
+}

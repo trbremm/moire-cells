@@ -1,0 +1,677 @@
+{
+ "name": "dish-diag-gradual",
+ "description": "the old resize (?dishfollow=1) from the 1920x1080 snapshot, shrunk to 1152x360 in 20 steps over 10 s (a window dragged)",
+ "query": {
+  "snap": "experiments/snaps/fhd599.json",
+  "dishfollow": 1
+ },
+ "size": "1920x1080",
+ "duration": 300,
+ "sample_every": 10,
+ "resizes": [
+  {
+   "t": 2.0,
+   "size": "1882x1044"
+  },
+  {
+   "t": 2.5,
+   "size": "1843x1008"
+  },
+  {
+   "t": 3.0,
+   "size": "1805x972"
+  },
+  {
+   "t": 3.5,
+   "size": "1766x936"
+  },
+  {
+   "t": 4.0,
+   "size": "1728x900"
+  },
+  {
+   "t": 4.5,
+   "size": "1690x864"
+  },
+  {
+   "t": 5.0,
+   "size": "1651x828"
+  },
+  {
+   "t": 5.5,
+   "size": "1613x792"
+  },
+  {
+   "t": 6.0,
+   "size": "1574x756"
+  },
+  {
+   "t": 6.5,
+   "size": "1536x720"
+  },
+  {
+   "t": 7.0,
+   "size": "1498x684"
+  },
+  {
+   "t": 7.5,
+   "size": "1459x648"
+  },
+  {
+   "t": 8.0,
+   "size": "1421x612"
+  },
+  {
+   "t": 8.5,
+   "size": "1382x576"
+  },
+  {
+   "t": 9.0,
+   "size": "1344x540"
+  },
+  {
+   "t": 9.5,
+   "size": "1306x504"
+  },
+  {
+   "t": 10.0,
+   "size": "1267x468"
+  },
+  {
+   "t": 10.5,
+   "size": "1229x432"
+  },
+  {
+   "t": 11.0,
+   "size": "1190x396"
+  },
+  {
+   "t": 11.5,
+   "size": "1152x360"
+  }
+ ],
+ "evals": [
+  {
+   "t": 0,
+   "js": "\nwindow.__kymo = async () => {\n  const M = window.moire, C = M.cells, d = M.gpu.device, n = C.count, F = 92;\n  const buf = d.createBuffer({ size: n * F * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\n  const e = d.createCommandEncoder(); e.copyBufferToBuffer(C.cellBuf, 0, buf, 0, n * F * 4); d.queue.submit([e.finish()]);\n  await buf.mapAsync(GPUMapMode.READ); const f = new Float32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\n  const u = new Uint32Array(f.buffer), v = M.control.view(), W = (M.dish ? M.dish.W : v.cssW), H = (M.dish ? M.dish.H : v.cssH);\n  const b = 4 * C.R, nx = Math.ceil(W / b), ny = Math.ceil(H / b);\n  const g = new Array(nx * ny).fill(0), bat = new Array(nx * ny).fill(0); let alive = 0, out = 0, rs = 0;\n  for (let i = 0; i < n; i++) {\n    if (!(u[i * F + 9] & 1)) continue; alive++; rs += f[i * F + 4];\n    const ix = Math.floor(f[i * F] / b), iy = Math.floor(f[i * F + 1] / b);\n    if (ix < 0 || iy < 0 || ix >= nx || iy >= ny) { out++; continue; }\n    g[iy * nx + ix]++; bat[iy * nx + ix] += f[i * F + 16];\n  }\n  return { t: M.time(), R: C.R, mR: M.medium.R, W, H, b, nx, ny, alive, out, rMean: alive ? rs / alive / C.R : 0,\n           g: g.join(','), bat: bat.map((x, k) => g[k] ? (x / g[k]).toFixed(3) : 0).join(',') };\n};\nreturn 'ok';\n"
+  },
+  {
+   "t": 1,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 2.0,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 2.5,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 3.0,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 3.5,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 4.0,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 4.5,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 5.0,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 5.5,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 6.0,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 6.5,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 7.0,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 7.5,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 8.0,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 8.5,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 9.0,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 9.5,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 10.0,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 10.5,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 11.0,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 11.5,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 12.0,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 12.5,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 13.0,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 13.5,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 15,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 18,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 21,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 24,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 27,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 30,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 33,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 36,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 39,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 42,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 45,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 48,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 51,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 54,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 57,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 60,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 63,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 66,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 69,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 72,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 75,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 78,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 81,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 84,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 87,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 90,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 93,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 96,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 99,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 102,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 105,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 108,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 111,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 114,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 117,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 120,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 123,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 126,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 129,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 132,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 135,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 138,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 141,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 144,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 147,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 150,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 153,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 156,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 159,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 162,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 165,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 168,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 171,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 174,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 177,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 180,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 183,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 186,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 189,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 192,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 195,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 198,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 201,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 204,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 207,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 210,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 213,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 216,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 219,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 222,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 225,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 228,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 231,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 234,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 237,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 240,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 243,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 246,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 249,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 252,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 255,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 258,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 261,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 264,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 267,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 270,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 273,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 276,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 279,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 282,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 285,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 288,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 291,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 294,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 297,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 300,
+   "js": "return await window.__kymo()"
+  },
+  {
+   "t": 1,
+   "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+  },
+  {
+   "t": 4,
+   "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+  },
+  {
+   "t": 8,
+   "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+  },
+  {
+   "t": 12,
+   "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+  },
+  {
+   "t": 20,
+   "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+  },
+  {
+   "t": 40,
+   "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+  },
+  {
+   "t": 80,
+   "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+  },
+  {
+   "t": 160,
+   "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+  },
+  {
+   "t": 300,
+   "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+  }
+ ],
+ "shots": [
+  {
+   "t": 1,
+   "name": "t0010"
+  },
+  {
+   "t": 6,
+   "name": "t0060"
+  },
+  {
+   "t": 12,
+   "name": "t0120"
+  },
+  {
+   "t": 14,
+   "name": "t0140"
+  },
+  {
+   "t": 18,
+   "name": "t0180"
+  },
+  {
+   "t": 24,
+   "name": "t0240"
+  },
+  {
+   "t": 30,
+   "name": "t0300"
+  },
+  {
+   "t": 45,
+   "name": "t0450"
+  },
+  {
+   "t": 60,
+   "name": "t0600"
+  },
+  {
+   "t": 90,
+   "name": "t0900"
+  },
+  {
+   "t": 120,
+   "name": "t1200"
+  },
+  {
+   "t": 180,
+   "name": "t1800"
+  },
+  {
+   "t": 240,
+   "name": "t2400"
+  },
+  {
+   "t": 300,
+   "name": "t3000"
+  }
+ ]
+}

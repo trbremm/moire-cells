@@ -22,6 +22,7 @@ import { loadShader } from './gpu.js';
 import { HEAT_SCALE } from './heat.js';
 import { pal } from './palette.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
+import { dish } from './dish.js';   // the dish: light per R^2, clouds in R
 
 export const LIGHT_COMMON_URL = 'src/shaders/light_common.wgsl';
 const LP_BYTES = 176;   // struct LightP (160 until the app's camera)
@@ -58,8 +59,8 @@ export class Light {
     this.params = {
       mode: 'spot',       // 'spot' | 'full' | 'off' (Shift+L cycles)
       power: 33,          // energy per s per 100 CSS px^2 falling on the dish at full day, straight down, no cloud
-                          // (per dish area, not per cell area, so the kicks it gives scale with the cells' radius:
-                          // 33 is about 14 per R^2 at 2000 cells on a 1280 x 800 window, R 6.5 px)
+                          // (33 is about 14 per R^2 at 2000 cells on a 1280 x 800 window, R 6.5 px. Since the dish has its own
+                          // size (src/dish.js) it is PER R^2: 100 px^2 at the reference R, 6.48 px; ?dishfollow=1: per px^2 as before)
       x: 0.5, y: 0.5,     // the spot's centre, as a share of the dish's width and height
       radius: 0.25,       // the beam's radius, as a share of the dish's shorter side
       tilt: 0,            // degrees from straight down (0 to maxTilt; mouse wheel)
@@ -73,8 +74,8 @@ export class Light {
       dayMin: 0.15,       // the night's power, as a share of the day's
       dayStart: 0.35,     // where in the day the page starts (0 = midnight, 0.5 = noon)
       clouds: true,       // full field only: soft cloud patches drifting over
-      cloudSize: 380,     // CSS px
-      cloudDrift: 6,      // CSS px per s of simulation time
+      cloudSize: 380,     // CSS px (at the reference R: 59 R)
+      cloudDrift: 6,      // CSS px per s of simulation time (at the reference R)
       cloudDepth: 0.45,   // how much a full cloud takes away
       // drawing
       // (the colour: the palette's `spot`, warm white; src/palette.js)
@@ -179,13 +180,15 @@ export class Light {
     f[4] = sp.x; f[5] = sp.y; f[6] = Math.cos(az); f[7] = Math.sin(az);
     f[8] = sp.r; f[9] = 1 / Math.cos(tilt); f[10] = Math.max(0, Math.min(0.95, p.near * Math.sin(tilt))); f[11] = Math.max(0.05, p.edge);
     // clouds: the noise drifts slowly along a fixed slant
-    const cs = Math.max(20, p.cloudSize), drift = p.cloudDrift * frame.time / cs;
+    const cs = Math.max(20, dish.refPx(p.cloudSize)), drift = p.cloudDrift * frame.time / Math.max(20, p.cloudSize);   // (the dish: in R)
     f[12] = 0.83 * drift + 3.1; f[13] = 0.31 * drift + 7.7; f[14] = 1 / cs; f[15] = Math.max(0, Math.min(1, p.cloudDepth));
     // per band: counts per heat pixel per tick where the light factor is 1
     const H = this.heat;
     const px = H && H.px ? H.px : 3, dt = frame.tickDt || 1 / 60;
-    const perPx = Math.max(0, p.power) / 100 * this.dayLevel * px * px * dt * HEAT_SCALE;
-    this.refPerPx = Math.max(1e-9, Math.max(0, p.power) / 100 * px * px * dt * HEAT_SCALE);   // (step C12d: full day, for the glow's scale)
+    // (the dish, src/dish.js: per R^2, `power` reading "per 100 px^2" at the reference R; per px^2 as before with ?dishfollow=1)
+    const pxA = dish.lightArea(px, H && H.R ? H.R : 1);
+    const perPx = Math.max(0, p.power) / 100 * this.dayLevel * pxA * dt * HEAT_SCALE;
+    this.refPerPx = Math.max(1e-9, Math.max(0, p.power) / 100 * pxA * dt * HEAT_SCALE);   // (step C12d: full day, for the glow's scale)
     BANDS.forEach((b, k) => {
       f[16 + k] = perPx * b.share;
       f[20 + k] = Math.max(0, b.medium);

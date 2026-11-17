@@ -1,0 +1,87 @@
+{
+  "name": "dish-chip",
+  "description": "the Chip preset: perfusion (inlet left, through-flow, outlet right)",
+  "condition": {
+    "name": "dish-chip",
+    "description": "the Chip preset: perfusion (inlet left, through-flow, outlet right)",
+    "query": {
+      "preset": "chip",
+      "seed": 3
+    },
+    "size": "1280x800",
+    "duration": 360,
+    "sample_every": 10,
+    "stall": 300,
+    "evals": [
+      {
+        "t": 300.5,
+        "js": "moire.control.action('harmonic'); return 'harmonic'"
+      },
+      {
+        "t": 301.5,
+        "js": "moire.control.action('harmonic'); return 'neon'"
+      }
+    ],
+    "shots": [
+      {
+        "t": 30,
+        "name": "t0030"
+      },
+      {
+        "t": 120,
+        "name": "t0120"
+      },
+      {
+        "t": 300,
+        "name": "t0300"
+      },
+      {
+        "t": 301,
+        "name": "t0301_harm"
+      },
+      {
+        "t": 360,
+        "name": "t0360",
+        "panel": true
+      }
+    ]
+  },
+  "url": "http://localhost:60337/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=chip&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-17T16:09:20",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 360.0,
+  "run_wall_s": 2494.92,
+  "speed_reached": 0.14,
+  "samples": 37,
+  "shots": [
+    "shots/t0030.png",
+    "shots/t0120.png",
+    "shots/t0300.png",
+    "shots/t0301_harm.png",
+    "shots/t0360.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 300.50000000005537,
+      "js": "moire.control.action('harmonic'); return 'harmonic'",
+      "result": "harmonic"
+    },
+    {
+      "t": 301.50000000005446,
+      "js": "moire.control.action('harmonic'); return 'neon'",
+      "result": "neon"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T16:53:08",
+  "wall_s": 2627.25
+}

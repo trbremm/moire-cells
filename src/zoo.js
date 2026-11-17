@@ -13,7 +13,7 @@
 import { SUBSTANCES, ATOMS, ELECTRONS, ENGINES, ENGINE_KINDS, atomLevels, CH, describe, makingBand } from './matter.js';
 import { BANDS } from './light.js';
 import { pal } from './palette.js';
-import { BIO_FLOATS, strategyOf, founderGenome, HABITS } from './genome.js';
+import { BIO_FLOATS, strategyOf, founderGenome, HABITS, predatorGenome } from './genome.js';
 import { CELL_FLOATS } from './cells.js';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -269,6 +269,7 @@ export function summary(g, o = 0, lipidsOn = true) {
   if (g[o + 18] > 1.4) body.push('crawls fast');
   if (g[o + 80] > 0.3) body.push('opens kin channels');   // step T1a
   if (g[o + 79] < 0.3 && g.length > o + 79) body.push('hides its marker');
+  if (g[o + 82] >= 0.25) body.push(`engulfs ${g[o + 82].toFixed(2)}${g[o + 83] >= 0.25 ? `, spares kin ${g[o + 83].toFixed(2)}` : ''}`);   // step P1
   return [parts.join(' · '), [...skin, ...pumps, ...body].join(' · ')];
 }
 
@@ -455,6 +456,14 @@ export function cellPanel(ctx, onAdd) {
         });
         fr.append(b);
       });
+      // step P1: a hand-made PREDATOR (big, the engulf gene high, no kin sparing: a cannibal too), to drop into a culture
+      {
+        const b = el('button', 'act', 'predator');
+        b.type = 'button';
+        b.title = 'add hand-made predators where you tap or drag: big cells with the engulf gene at 1 and no kin sparing (they eat smaller cells they out-pull, relatives too)';
+        b.addEventListener('click', () => { onAdd(predatorGenome(), 'founder: predator (engulf 1, kin sparing 0)', null); });
+        fr.append(b);
+      }
       body.append(fr);
       if (Z.list) render();
       Z.last = 0;

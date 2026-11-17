@@ -66,6 +66,7 @@ export const RULE_GROUPS = [
   ['whole', 'Whole membranes (step M1)'],
   ['t1a', 'Tissues 1: inside, kin, marker (step T1a)'],
   ['t1b', 'Gene network (step T1b)'],
+  ['p1', 'Predators (step P1)'],
   ['vents', 'Vents in the dark (step C12f)'],
   ['n1', 'Nutrient landscape (step N1)'],
   ['guides', 'Fields as guides (step C13)'],
@@ -745,6 +746,32 @@ export function makeActions(app) {
     grknob('grnTau', 'expression time', 'tau', 0.2, 100, 1.5, 1, 'the expression’s time constant (s): how fast a cell changes state'),
     grknob('grnRewire', 'rewiring', 'rewire', 0.001, 1, 1.5, 3, 'chance per birth that one input is rewired (or cut)'),
     grknob('grnDup', 'duplication', 'dup', 0.0001, 0.5, 1.5, 4, 'chance per birth that one regulator is duplicated into the least used slot'),
+  );
+
+  // ---------- predators: engulfing and kin sparing (step P1; panel only: no keys are free) ----------
+  const PRP = () => app.cells.pred.params;
+  const prknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'p1', type: 'knob', get: () => PRP()[key].toFixed(digits),
+    run: (k) => { const p = PRP(); p[key] = Math.max(lo, Math.min(hi, +(p[key] * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    { id: 'engulf', keys: [], label: 'engulfing', group: 'p1', type: 'toggle', get: () => PRP().on,
+      run: () => `engulfing ${flip(PRP(), 'on') ? 'on: a cell with the engulf gene may wrap a smaller touching cell whose hold (glue to its neighbours + armour) it out-pulls, and digest it (division mode only)' : 'off: nobody eats anybody'}`,
+      help: 'drive = drive × engulf gene × (1 − kin sparing × kinship) must beat the prey’s hold = its glue to its other neighbours + its crust wall and stiffness + a base; the prey must be smaller (area ratio); wrapping costs battery and membrane' },
+    { id: 'engulfnull', keys: [], label: 'engulfing neutral control', group: 'p1', type: 'toggle', get: () => PRP().null,
+      run: () => `engulfing ${flip(PRP(), 'null') ? 'NEVER happens (NEUTRAL CONTROL: the engulf and kin sparing genes still drift)' : 'acts'}`,
+      help: 'the neutral control: the genes drift as usual, nothing is eaten, to tell selection from noise' },
+    { id: 'kinsparenull', keys: [], label: 'kin sparing ignores kinship', group: 'p1', type: 'toggle', get: () => PRP().kinNull,
+      run: () => `kin sparing ${flip(PRP(), 'kinNull') ? 'is blind (control: kinship ignored, the sparing gene drifts without effect)' : 'reads kinship by the self marker'}`,
+      help: 'a control: does recognising kin matter for who gets eaten?' },
+    { id: 'predmark', keys: [], label: 'mark engulfers', group: 'p1', type: 'toggle', get: () => app.cells.pred.look.mark,
+      run: () => `cells with the engulf gene at 0.25 and more ${flip(app.cells.pred.look.mark, 'mark') ? 'carry a small dark-red mouth (diagnostic)' : 'look like any other'}`,
+      help: 'a diagnostic mark, off by default' },
+    prknob('predRatio', 'area ratio', 'sizeRatio', 1, 4, 1.1, 2, 'the area a predator needs over its prey’s'),
+    prknob('predDrive', 'drive', 'drive', 0.1, 50, 1.25, 2, 'the drive at engulf gene 1, against the prey’s hold'),
+    prknob('predHold', 'hold base', 'holdBase', 0, 10, 1.25, 2, 'the hold every cell has'),
+    prknob('predWall', 'wall armour', 'wallArm', 0, 20, 1.25, 2, 'a full crust wall’s armour'),
+    prknob('predWrap', 'wrap time', 'wrapTime', 0.2, 60, 1.25, 1, 's a wrap takes (the prey can escape meanwhile)'),
+    prknob('predDigest', 'digestion time', 'digestTime', 0.5, 120, 1.25, 1, 's a meal takes to move into the host'),
+    prknob('predBat', 'battery to the host', 'batShare', 0, 1, 1.2, 2, 'the share of the meal’s battery the host gets (the rest heat)'),
   );
 
   // ---------- vents in the dark (step C12f; panel only: no keys are free) ----------

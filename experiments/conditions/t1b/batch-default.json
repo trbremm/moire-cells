@@ -1,0 +1,9 @@
+{
+ "batch": "t1b-default",
+ "runs": [
+  "default.json"
+ ],
+ "seeds": [
+  3
+ ]
+}

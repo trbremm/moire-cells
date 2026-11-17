@@ -1,0 +1,61 @@
+{
+ "name": "t1b-vent",
+ "description": "Deep vents preset, a random gene network (?founders=wild&wild=grn), 40 min",
+ "query": {
+  "preset": "vent",
+  "founders": "wild",
+  "wild": "grn"
+ },
+ "duration": 2403,
+ "sample_every": 30,
+ "snapshots": [
+  {
+   "t": 1200
+  },
+  {
+   "t": 2400
+  }
+ ],
+ "shots": [
+  {
+   "t": 300,
+   "name": "neon_t300"
+  },
+  {
+   "t": 1200,
+   "name": "neon_t1200"
+  },
+  {
+   "t": 2397,
+   "name": "neon_end"
+  },
+  {
+   "t": 2398,
+   "view": "reporter",
+   "name": "reporter_end"
+  },
+  {
+   "t": 2399,
+   "panel": true,
+   "name": "panel"
+  }
+ ],
+ "evals": [
+  {
+   "t": 300,
+   "js": "const c = await moire.grn.typesNow(); return JSON.stringify({t: c.time, n: c.n, types: c.types, diff: c.diff, border: c.border, net: c.net, reporter: c.reporter, senses: c.senses, factors: c.factors, lineages: c.lineages})"
+  },
+  {
+   "t": 1200,
+   "js": "const c = await moire.grn.typesNow(); return JSON.stringify({t: c.time, n: c.n, types: c.types, diff: c.diff, border: c.border, net: c.net, reporter: c.reporter, senses: c.senses, factors: c.factors, lineages: c.lineages})"
+  },
+  {
+   "t": 2400,
+   "js": "const c = await moire.grn.typesNow(); return JSON.stringify({t: c.time, n: c.n, types: c.types, diff: c.diff, border: c.border, net: c.net, reporter: c.reporter, senses: c.senses, factors: c.factors, lineages: c.lineages})"
+  },
+  {
+   "t": 2396,
+   "js": "const c = await moire.grn.typesNow(); moire.grn.look.reporter = c.reporter.best ?? 0; return 'reporter r' + moire.grn.look.reporter"
+  }
+ ]
+}

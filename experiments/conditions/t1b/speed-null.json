@@ -1,0 +1,3 @@
+{"batch": "t1b-speednull", "runs": [
+ {"name": "t1b-speednull-10k", "description": "speed, 10000 cells, neon, ?grnnull=1 (the pass runs, the outputs read as 1 early)", "query": {"seed": 3, "cells": 10000, "grnnull": 1}, "duration": 60, "sample_every": 10}
+]}

@@ -1723,3 +1723,109 @@ atoms and charge 0 in every sample, energy within -0.17 and +0.37.
 - The inside matters little while membranes are whole (M1); it may matter more in the oxygen whole-dish or hard-light dishes, or with
   P1's predators nibbling rims.
 - The smell for trace gives the oases' geography at 10 minutes; a dish that does not fill (capacity, starvation) would show whether it lasts.
+
+# Tissues 2: gene network
+
+Step T1b (BUILD QUEUE 4, 2026-11-17; README "Step T1b: gene network"): every cell runs a gene regulatory network of 8 regulators
+whose expression (inherited) turns 16 of its genes up or down; the reporter view; the Colonies preset. Conditions in
+`experiments/conditions/t1b/` (`make.py` writes them); numbers over time by `summary.py` (samples.csv and the census the evals saved),
+cell types from the saved snapshots by `analyse.mjs` (Node 18+, the page's own census code: k-means expression clusters per lineage,
+where they sit, whether they sit together), side by side by `compare.py`. Pictures in `experiments/keep/t1b/`. Headless Chrome,
+GTX 1650, 1280 x 800, MAX speed.
+
+## 0. Pilots: the Colonies preset
+
+Five colonies of wild founders under a whole-dish light, each round its own lasting mineral spring and a slow vent (8 min, seeds 3
+and 7): with the founders' habits mixed (burners, harvesters, ...) all but one lineage starved in the founders' crash (60..90 s,
+everyone's starter battery empty). With every founder of the 'both' habit (light + burn) and 1000 cells, springs at rate 4 / 1 left one or
+two lineages; at 8 / 2, two or three persist past 5 min (seed 3: 1212 and 910 cells at 5 min). A starter charge of 0.9 did not help. The
+preset uses 'both', 1000 cells, springs 8 / 2. Wild founders' markers are turned a golden angle apart, so survivors show distinct hues.
+
+## 1. Colonies, network on vs its neutral control (40 min, seeds 3, 7, 11)
+
+`?preset=colonies` (`batch-col.json`), with `?grnnull=1` (the network runs and mutates, its outputs do nothing). Cells and lineages
+(>= 20 cells; their sizes) over time:
+
+| run | 1 min | 2 min | 5 min | 10 min | 20 min | 40 min |
+|---|---|---|---|---|---|---|
+| on, seed 3 | 477: 5 | 589: 3 (294/137/48) | 2293: 2 (1140/1041) | 3000: 2 (1972/1028) | 2 (2579/421) | 2 (2915/85) |
+| null, seed 3 | 558: 5 | 570: 4 | 2208: 2 (1101/983) | 2999: 2 (2257/742) | 2 (2704/296) | 2 (2902/98) |
+| on, seed 7 | 592: 5 | 296: 3 | 1241: 2 (1019/96) | 2622: 1 | 1 | 1 |
+| null, seed 7 | 492: 5 | 304: 3 | 881: 2 (654/105) | 2629: 1 | 1 | 1 |
+| on, seed 11 | 231: 5 | 65: 1 | 164: 1 | 2106: 1 | 1 | 1 |
+| null, seed 11 | 415: 5 | 356: 3 | 1188: 2 (1044/37) | 2495: 1 | 1 | 1 |
+
+The dish fills to its capacity (3000) by 10 to 20 min. Same seed, same winner, on or null: who wins is the founders' other genes.
+
+Cell types from the snapshots (`node experiments/conditions/t1b/analyse.mjs ... --table`):
+
+| run | t | lineages (sizes) | types per lineage | same-type neighbours (chance) | spread | inputs/reg, outputs/cell | outputs that differ between the biggest lineage's types |
+|---|---|---|---|---|---|---|---|
+| on s3 | 20 min | 2 (2579/421) | 5/6 | 0.47 (0.24) / 0.32 (0.22) | 0.23 | 1.68, 4.5 | display x2.1, motility x1.7, emit A x1.6 |
+| on s3 | 40 min | 2 (2915/85) | 6/6 | 0.37 (0.22) / 0.63 (0.21) | 0.25 | 1.69, 4.3 | display x2.0, division x1.5 |
+| on s7 | 20 min | 1 | 6 | 0.37 (0.20) | 0.27 | 2.19, 7.5 | wall x3.5, emit B x2.0, thickness x1.8 |
+| on s7 | 40 min | 1 | 6 | 0.34 (0.18) | 0.30 | 2.31, 8.7 | engine 1 x3.7, pigment x3.2, division x2.9, channels x2.5 |
+| on s11 | 20 min | 1 | 6 | 0.51 (0.27) | 0.29 | 2.17, 6.6 | display x2.7, wall x2.2, emit B x1.9 |
+| on s11 | 40 min | 1 | 5 | 0.51 (0.31) | 0.33 | 2.27, 7.1 | display x5.7, division x3.5, emit B x2.5, engine 3 x2.3 |
+| null s3 | 40 min | 2 (2902/98) | 6/6 | 0.39 (0.18) / 0.30 (0.19) | 0.26 | 1.74, 4.7 | motility x2.1, display x1.9, division x1.7 |
+| null s7 | 40 min | 1 | 6 | 0.26 (0.18) | 0.27 | 2.03, 7.7 | wall x2.4, engine 1 x2.2, display x2.1 |
+| null s11 | 40 min | 1 | 6 | 0.32 (0.17) | 0.31 | 2.07, 7.4 | emit B x2.6, motility x2.6, wall x2.5 |
+
+Where the types sit: in every run the biggest lineage's types (each >= 5 %) differ by at most 0.15 in sides pressed (0.71 .. 0.89),
+0.08 in light (0.22 .. 0.30) and 12 R in distance to the nearest spring (16 .. 28 R); none keeps to the rim, the springs, the light or
+the border. In plain words:
+- Five or six cell types per lineage, really different in what they express (engines, pigment, division readiness x3 to x4 between
+  them), sitting in PATCHES about twice as often next to their own kind as chance: a mosaic of clones, as the reporter pictures show.
+- The neutral control is the same: as many types, as patchy, outputs differing as much. The types are inherited states spreading as
+  clones, and nothing yet selects them into places. An honest NULL for "types in positions" and for "the network decides who wins".
+- The network grew a little more where it acts in two seeds of three (inputs per regulator +0.31 and +0.45 against +0.02 and +0.24 in the
+  control; seed 3 +0.05 against +0.10): a hint at most.
+- The seed-3 border: the losing lineage shrinks to the cells along the border (at 30 min 78 % of them touch the winner, at 40 min all 85).
+- One 6-minute pilot (`t1b-look-col`, seed 7) showed the reporter (its most varied regulator) OFF on the springs' crust rings and ON
+  further out: a position-dependent state early on, not seen at 40 minutes.
+
+## 2. Dark vents (40 min, seeds 3 and 7)
+
+The Deep vents preset with a random network on std founders (`?founders=wild&wild=grn`) and its control (`?grnnull=1`): every dish
+dies, by 5 min (seed 3), 8 min (seed 7), 4 and 5 min (the controls), as in M1. Diagnosis (`vent-dark.json`, 12 min): std founders plain vs
+the same with every cell given a hand-wired DARK SWITCH at 1 s (regulator 0 = sigmoid(4 - 8 light), the pigment output reading it at
+gain -8): the switch works (pigment factor 0.000 in every cell) but the culture's upkeep fell only from 3.62 to 3.46 per s at 1 min,
+against 1.6 .. 2.0 per s earned from the vent's gradient; both died by 4 to 5 min. Idle pigments are not the dark vents' problem: the
+gradient engines' own upkeep is larger than what they earn there.
+
+## 3. The default scene (20 min, seed 3)
+
+Std founders (no network at the start): the usual crash to 607 cells at 5 min and regrowth to 1632 at 20 min, membranes whole
+(integrity 0.76), books exact. Mutation alone grows a network: 0.04 inputs per regulator and 0.3 outputs per cell at 5 min, 0.25 and
+2.0 at 15 min; 3 types in the surviving lineage. Nothing broken; the default culture's phenotype drifts a little more than before.
+
+## 4. Pictures (`experiments/keep/t1b/`)
+
+- `reporter-close-neon-s7-40min.jpg` (Colonies, seed 7, 40 min, zoom x3, reporter view, regulator r3): a mosaic of green-lit cells,
+  bigger and rounder, filled green with a bright nucleus-like centre, among smaller dark cells whose engine parts show.
+- `reporter-close-harmonic-s7-40min.jpg` (the same, harmonic look): a green membrane honeycomb, red nucleus-like spots in the expressing
+  cells, empty dark insides in the rest, orange fibrous streaks through stretched cells.
+- `reporter-mosaic-neon-s7-40min.jpg` (the whole dish): green patches a few to a few dozen cells across among dark ones.
+- `harmonic-reporter-dish-s11-40min.jpg` (seed 11, 40 min, harmonic): the whole dish as a red-spotted honeycomb, yellow crust rings round
+  the five springs.
+- `harmonic-reporter-colonies-6min.jpg` (seed 7, 6 min): the reporter off on the springs' crust rings, on further out.
+- `lineage-border-s3-10min.jpg` (seed 3, 10 min, lineage view): a pink lineage and a yellow one meeting along a ragged, interdigitated
+  border.
+
+## 5. The books and the checks
+
+`check.json` (seed 5, whole dish lit, 420 s): springs, N, the add-cell tool, a wash, two resizes, G with wild founders (random networks),
+every network switch toggled at runtime, a fast tau (0.5 s) with heavy rewiring and duplication, the reporter view in both looks, G and N
+with wild founders, a snapshot saved and loaded (exact): atoms and charge 0 in every sample but the two paused resize instants. A first
+version had G at the same instant as a resize: atoms rounding +665 for good; T1a's code does the same (+651), an old edge case.
+`reload.json`: a T1a snapshot loads with the network off and runs 60 s with atoms and charge 0. `same.json`: a zero network gives output
+factors of exactly 1 and the same dish within the run-to-run spread. Every experiment run: atoms and charge 0, energy -0.11 .. +0.34.
+Speed: README "Step T1b", Checked.
+
+## What to try next
+
+- A reason to differ: nothing rewards a cell for expressing differently from its neighbour yet. P1's predators (a clump with a tough rim)
+  or T1c's designed tissues (light-eaters inside, a walled rim) may make positional types pay.
+- Colonies that stay apart longer: in 2 of 3 seeds one lineage takes the dish by 10 min. Springs further apart, a lower capacity, or
+  borders that cost (P1) could keep several lineages meeting for the whole run.
+- The dark vents need a cheaper gradient engine (or a richer gradient), not idle-engine savings.

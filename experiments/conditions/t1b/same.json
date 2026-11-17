@@ -1,0 +1,8 @@
+{
+ "batch": "t1b-same",
+ "runs": [
+  {"name": "t1b-same-off-a", "description": "grn off, mutation off, 60 s", "query": {"seed": 3, "grn": 0, "mut": 0}, "duration": 60, "sample_every": 30},
+  {"name": "t1b-same-off-b", "description": "grn off again (determinism)", "query": {"seed": 3, "grn": 0, "mut": 0}, "duration": 60, "sample_every": 30},
+  {"name": "t1b-same-on", "description": "grn on, std founders (zero network), mutation off", "query": {"seed": 3, "mut": 0}, "duration": 60, "sample_every": 30}
+ ]
+}

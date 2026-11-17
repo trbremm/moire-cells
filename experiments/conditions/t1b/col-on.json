@@ -1,0 +1,93 @@
+{
+ "name": "t1b-col-on",
+ "description": "colonies preset (wild founders, habit both), gene network on, 40 min",
+ "query": {
+  "preset": "colonies"
+ },
+ "duration": 2403,
+ "sample_every": 30,
+ "snapshots": [
+  {
+   "t": 1200
+  },
+  {
+   "t": 2400
+  }
+ ],
+ "shots": [
+  {
+   "t": 600,
+   "view": "marker",
+   "name": "marker_t600"
+  },
+  {
+   "t": 1200,
+   "view": "marker",
+   "name": "marker_t1200"
+  },
+  {
+   "t": 1200,
+   "view": "reporter",
+   "name": "reporter_t1200"
+  },
+  {
+   "t": 2397,
+   "view": "marker",
+   "name": "marker_end"
+  },
+  {
+   "t": 2397,
+   "view": "reporter",
+   "name": "reporter_end"
+  },
+  {
+   "t": 2398,
+   "name": "neon"
+  },
+  {
+   "t": 2399,
+   "view": "reporter",
+   "panel": true,
+   "name": "panel"
+  },
+  {
+   "t": 2402,
+   "view": "reporter",
+   "name": "harm_reporter"
+  },
+  {
+   "t": 2402.5,
+   "name": "harm"
+  }
+ ],
+ "evals": [
+  {
+   "t": 600,
+   "js": "const c = await moire.grn.typesNow(); return JSON.stringify({t: c.time, n: c.n, types: c.types, diff: c.diff, border: c.border, net: c.net, reporter: c.reporter, senses: c.senses, factors: c.factors, lineages: c.lineages})"
+  },
+  {
+   "t": 1200,
+   "js": "const c = await moire.grn.typesNow(); return JSON.stringify({t: c.time, n: c.n, types: c.types, diff: c.diff, border: c.border, net: c.net, reporter: c.reporter, senses: c.senses, factors: c.factors, lineages: c.lineages})"
+  },
+  {
+   "t": 1800,
+   "js": "const c = await moire.grn.typesNow(); return JSON.stringify({t: c.time, n: c.n, types: c.types, diff: c.diff, border: c.border, net: c.net, reporter: c.reporter, senses: c.senses, factors: c.factors, lineages: c.lineages})"
+  },
+  {
+   "t": 2400,
+   "js": "const c = await moire.grn.typesNow(); return JSON.stringify({t: c.time, n: c.n, types: c.types, diff: c.diff, border: c.border, net: c.net, reporter: c.reporter, senses: c.senses, factors: c.factors, lineages: c.lineages})"
+  },
+  {
+   "t": 1199,
+   "js": "const c = await moire.grn.typesNow(); moire.grn.look.reporter = c.reporter.best ?? 0; return 'reporter r' + moire.grn.look.reporter"
+  },
+  {
+   "t": 2396,
+   "js": "const c = await moire.grn.typesNow(); moire.grn.look.reporter = c.reporter.best ?? 0; return 'reporter r' + moire.grn.look.reporter"
+  },
+  {
+   "t": 2401,
+   "js": "moire.control.action('harmonic'); return 'harmonic'"
+  }
+ ]
+}

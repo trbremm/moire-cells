@@ -1,0 +1,8 @@
+{
+ "batch": "t1b-ventdark",
+ "runs": [
+  {"name": "t1b-ventdark-plain", "description": "Deep vents preset, std founders (no network), 12 min: the baseline", "query": {"preset": "vent"}, "duration": 720, "sample_every": 30},
+  {"name": "t1b-ventdark-switch", "description": "Deep vents preset, std founders, every cell given a hand-wired DARK SWITCH at t 1 s: r0 = sigmoid(4 - 8 light), the pigment output reads r0 at gain -8 (pigments off in the dark: no upkeep for them), 12 min", "query": {"preset": "vent"}, "duration": 720, "sample_every": 30,
+   "evals": [{"t": 1, "js": "return await moire.genome.setAll({92: 4, 100: -8, 124: 13, 132: -8, 148: 0, 84: 1})"}]}
+ ]
+}

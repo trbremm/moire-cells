@@ -1,0 +1,12 @@
+{
+ "batch": "t1b-col",
+ "runs": [
+  "col-on.json",
+  "col-null.json"
+ ],
+ "seeds": [
+  3,
+  7,
+  11
+ ]
+}

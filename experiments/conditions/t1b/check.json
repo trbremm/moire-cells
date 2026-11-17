@@ -1,0 +1,101 @@
+{
+ "name": "t1b-check",
+ "description": "step T1b books check: 420 s at MAX (seed 5), the whole dish lit; springs; N, 40 cells placed, a wash, resizes (150, 220 s); G with wild founders (140 s: random networks); the network null, signal, kin weighting, mutation, the whole network toggled at runtime, a fast tau with heavy rewiring and duplication (170..240 s); the reporter view in both looks (240..280 s); G and N with wild founders (300, 320 s); a snapshot saved and loaded at once (360 s); atoms and charge rounding must stay 0",
+ "query": {
+  "seed": 5,
+  "light": "full"
+ },
+ "duration": 420,
+ "sample_every": 10,
+ "resizes": [
+  {
+   "t": 150,
+   "size": "1000x700"
+  },
+  {
+   "t": 220,
+   "size": "1280x800"
+  }
+ ],
+ "shots": [
+  {
+   "t": 200
+  },
+  {
+   "t": 420,
+   "panel": true,
+   "name": "panel"
+  }
+ ],
+ "stall": 120,
+ "evals": [
+  {
+   "t": 5,
+   "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.35, 'soap', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.5, 'oil', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.3, 'linker', 120); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.3, 'ions', 120); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 1e9); if (!moire.oases.started) moire.oases.start(); return moire.matter.springs.map(s => s.kind)"
+  },
+  {
+   "t": 60,
+   "js": "return moire.control.action('culture')"
+  },
+  {
+   "t": 80,
+   "js": "return await moire.app.place(Array.from({length: 40}, (_, k) => [150 + 13 * k, 120]), moire.genome.founders[0])"
+  },
+  {
+   "t": 100,
+   "js": "return moire.control.action('wash')"
+  },
+  {
+   "t": 105,
+   "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.4, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 400); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'emulsion', 300); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.4, 'soap', 200); return 'springs again'"
+  },
+  {
+   "t": 140,
+   "js": "moire.genome.params.founderMode = 'wild'; return moire.control.action('genomes')"
+  },
+  {
+   "t": 170,
+   "js": "moire.grn.params.null = true; return 'grn null'"
+  },
+  {
+   "t": 180,
+   "js": "moire.grn.params.null = false; moire.grn.params.signal = false; return 'signal off'"
+  },
+  {
+   "t": 190,
+   "js": "moire.grn.params.signal = true; moire.grn.params.kinWeight = false; moire.grn.params.mutate = false; return 'kin weight off, mutation off'"
+  },
+  {
+   "t": 200,
+   "js": "moire.grn.params.kinWeight = true; moire.grn.params.mutate = true; moire.grn.params.on = false; return 'network off'"
+  },
+  {
+   "t": 210,
+   "js": "moire.grn.params.on = true; moire.grn.params.tau = 0.5; moire.grn.params.rewire = 0.5; moire.grn.params.dup = 0.2; return 'fast network, heavy rewiring'"
+  },
+  {
+   "t": 240,
+   "js": "moire.grn.params.tau = 5; moire.grn.params.rewire = 0.05; moire.grn.params.dup = 0.005; moire.cells.look.view = 7; moire.grn.look.reporter = 3; return 'defaults, reporter view'"
+  },
+  {
+   "t": 260,
+   "js": "moire.control.action('harmonic'); return 'harmonic'"
+  },
+  {
+   "t": 280,
+   "js": "moire.control.action('harmonic'); moire.cells.look.view = 0; return 'neon'"
+  },
+  {
+   "t": 300,
+   "js": "moire.genome.params.founderMode = 'wild'; return moire.control.action('genomes')"
+  },
+  {
+   "t": 320,
+   "js": "moire.genome.params.founderMode = 'wild'; return moire.control.action('culture')"
+  },
+  {
+   "t": 360,
+   "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }"
+  }
+ ]
+}

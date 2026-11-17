@@ -271,6 +271,12 @@ export function summary(g, o = 0, lipidsOn = true) {
   if (g[o + 80] > 0.3) body.push('opens kin channels');   // step T1a
   if (g[o + 79] < 0.3 && g.length > o + 79) body.push('hides its marker');
   if (g[o + 82] >= 0.25) body.push(`engulfs ${g[o + 82].toFixed(2)}${g[o + 83] >= 0.25 ? `, spares kin ${g[o + 83].toFixed(2)}` : ''}`);   // step P1
+  // step G1: the fidelity gene (copying errors x e^-F; founders 0), in words when it is off the founders' care
+  const fid = g[o + 31] || 0;
+  if (Math.abs(fid) >= 0.15) {
+    const m = Math.exp(-Math.max(-2, Math.min(3, fid)));
+    body.push(fid > 0 ? `copies carefully (proofreading: ${m < 0.1 ? m.toFixed(2) : m.toFixed(1)}× the usual errors)` : `copies sloppily (${m.toFixed(1)}× the usual errors)`);
+  }
   return [parts.join(' · '), [...skin, ...pumps, ...body].join(' · ')];
 }
 

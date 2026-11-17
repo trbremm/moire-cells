@@ -641,6 +641,16 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        look: cells lay down ORIENTED fibres (crust chains with a direction on the grid) along their long axis, crawl along
        fibres (contact guidance), traction aligns them; the matrix is a SHARED GOOD (cheaters possible: pressure to link).
        Harmonic view draws the real fibre direction (orange SHG streaks, green-rimmed spindles).
+       X1 SECRETED PROTEINS (user 2026-11-17: "or fibre/protein excretion", "or proteins even for that matter"): S1 part 3
+       generalised. Cells BUILD polymers from their stock (linkers + charged atoms, battery paid, matter exact) and keep or
+       SECRETE them; every property DERIVED from the polymer's short sequence (as C14 soup would, but made by life): long
+       uncharged runs -> FIBRES (polymerise, oriented, stiff, SHG-bright: the fibroblast matrix); charge patterns -> STICKY
+       (biofilm glue); a sequence hash -> which reaction it CATALYSES (exoenzymes: digest crust/food outside, a shared good,
+       cheaters possible), harmful ones (TOXINS: the warfare question), and slow-fading ones as SIGNALS (quorum sensing).
+       Genome: a few protein genes (sequence + rate + keep/secrete), a GRN output for each; the dish holds a few protein
+       SPECIES SLOTS on the grid (recycled when a species dies out); proteins decay back to atoms. Order: S1 parts 1-2, then
+       X1 with fibres first (contact guidance, traction), then exoenzymes / adhesives / toxins / signals. Engines stay as
+       they are (no rewrite into proteins unless the user asks).
     6a4. S2 FLAGELLA AND CILIA (user 2026-11-17 asked; after S1, needs G0's two-way water). Motors as PARTS (the user's
        body-plus-parts plan): FLAGELLUM = a swimmer's motor at the back (or front) along the cell's front; at low Reynolds a
        swimmer is force-free, so it stirs the water as a FORCE DIPOLE (pusher like E. coli / puller like algae), unlike a

@@ -650,6 +650,15 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        backbones = structure (fibres, membranes' tails). Molecules are too many to give each a grid channel: describe them by
        COMPOSITION in a few recycled SPECIES SLOTS (the C14 soup idea, shared with X1's proteins), properties derived from
        composition / sequence. A chemistry rebuild like C12d: old table behind a switch, past numbers stop being comparable.
+       DESIGN DONE (2026-11-17): design/C15_carbon_proposal.md (+ carbon_check.py, its output). One light builder c (pull
+       Zc = 2, levels -2/-1, hands hold g, t or c, never free), bonds c-g 1, c-t 3.75, c-c 1, carbon sparks doubled; a LADDER
+       of 5 mobile C1 molecules (methane-like -> CO2-like, each step OXIDIZE 2.75); TAR = 3 immobile hand counts (crust,
+       walls, mud, granules); polarity rule: a bond is polar when its electron falls >= 1. USER CHOICES: REBUILD in stages
+       (option R: carbon makes oil, soaps, walls, pigments; linkers l/L and g*/t* retire; inorganic g t G T, minerals,
+       fuels, rust, vents stay); dead carbon = MUD (c-c 1); a little FUEL SEEP at vents (springs mostly CO2-like); OXYGEN
+       DAMAGES membranes (fat -> soap -> crust) replacing same-row bites; slow open-dish carbon chemistry accepted.
+       Build: C15a carbon in the open dish -> C15b cells eat carbon -> C15c lipids/walls/pigments from carbon, linkers
+       retire -> species slots with X1. ?carbon=0 = old table; old snapshots load with carbon off.
        X1 SECRETED PROTEINS (user 2026-11-17: "or fibre/protein excretion", "or proteins even for that matter"): S1 part 3
        generalised. Cells BUILD polymers from their stock (linkers + charged atoms, battery paid, matter exact) and keep or
        SECRETE them; every property DERIVED from the polymer's short sequence (as C14 soup would, but made by life): long

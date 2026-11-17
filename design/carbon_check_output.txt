@@ -1,0 +1,111 @@
+## 1. atoms (levels: shell 1 .. empty shell)
+  g: giver    row 1  levels ['-1.25', '-0.625']  grip -1.25  atom gap 0.625 -> warm
+  t: taker    row 1  levels ['-5.5', '-2.75']  grip -5.5  atom gap 2.75 -> V2
+  l: linker   row 1  levels ['-2.5', '-1.25']  grip -2.5  atom gap 1.25 -> warm
+  G: giver    row 2  levels ['-1.25', '-0.625', '-0.3125']  grip -0.625  atom gap 0.3125 -> -
+  T: taker    row 2  levels ['-5.5', '-2.75', '-1.375']  grip -2.75  atom gap 1.375 -> warm
+  L: linker   row 2  levels ['-2.5', '-1.25', '-0.625']  grip -1.25  atom gap 0.625 -> warm
+  c: builder  row 1  levels ['-2', '-1']  grip -2  atom gap 1 -> warm
+
+## 2. bonds (released, gap -> band, spark, polar?)
+  g-t: rel 4.5     gap 5.125   -> hard  spark 0.25   polar True
+  g-T: rel 1.5     gap 2.125   -> V1    spark 0.375  polar True
+  G-t: rel 4.875   gap 5.1875  -> hard  spark 0.375  polar True
+  G-T: rel 2.375   gap 2.6875  -> V2    spark 0.5    polar True
+  l-l: rel 0.5     gap 0.5     -> warm  spark 0.25   polar False
+  L-L: rel 1       gap 1       -> warm  spark 0.5    polar False
+  l-L: rel 0.75    gap 0.75    -> warm  spark 0.375  polar False
+  g-l: rel 1.5     gap 2.125   -> V1    spark 0.25   polar True
+  t-l: rel 3.25    gap 4.5     -> hard  spark 0.25   polar True
+  c-g: rel 1       gap 1.625   -> V1    spark 0.5    polar False
+  c-t: rel 3.75    gap 4.75    -> hard  spark 0.5    polar True
+  c-c: rel 1       gap 1       -> warm  spark 0.5    polar False
+  c-G: rel 1.375   gap 1.6875  -> V1    spark 0.75   polar True
+  c-T: rel 0.75    gap 1.75    -> V1    spark 0.75   polar False
+  c-l: rel 0.75    gap 0.75    -> warm  spark 0.5    polar False
+
+## 3. polarity rule check (bond rule vs the C12 atom-charge classes)
+  gt: C12 polar      bond rule polar      OK
+  gT: C12 polar      bond rule polar      OK
+  Gt: C12 polar      bond rule polar      OK
+  GT: C12 polar      bond rule polar      OK
+  ll: C12 apolar     bond rule apolar     OK
+  LL: C12 apolar     bond rule apolar     OK
+  lL: C12 apolar     bond rule apolar     OK
+  glL: C12 amphiphile bond rule amphiphile OK
+  tlL: C12 amphiphile bond rule amphiphile OK
+
+## 4. one-carbon ladder (S_k = c g_k t_(4-k)); energy = -(sum of hand bonds); group-sum charge; chi per bond
+  S4 c g4 t0 (methane-like   ) E -4      charge +4 chi 1     absorbs ['V1'] spread 0.29 R2/s
+  S3 c g3 t1 (methanol-like  ) E -6.75   charge +2 chi 0.5   absorbs ['V1', 'hard'] spread 0.29 R2/s
+  S2 c g2 t2 (sugar-unit-like) E -9.5    charge +0 chi 0     absorbs ['V1', 'hard'] spread 0.29 R2/s
+  S1 c g1 t3 (formic-like    ) E -12.25  charge -2 chi -0.5  absorbs ['V1', 'hard'] spread 0.29 R2/s
+  S0 c g0 t4 (CO2-like       ) E -15     charge -4 chi -1    absorbs ['hard'] spread 0.29 R2/s
+
+## 5. reactions (release > 0 = downhill)
+  OXIDIZE   t + [c-g] -> [c-t] + g           2.75   
+  BOND      g + t -> gt                      4.5    
+  full burn [c-g] + 2t -> [c-t] + gt         7.25   
+  CONDENSE  [c-g] + [c-t] -> [c-c] + gt      0.75   
+  HYDROLYZE gt + [c-c] -> [c-g] + [c-t]      -0.75  
+  REDUCE    g + [c-t] -> [c-g] + t           -2.75  
+  inorganic breathe t + gT -> gt + T         3      
+  inorganic ferment G + gT -> GT + g         0.875  
+  methane fully burnt: S4 + 8t -> S0 + 4gt   29     
+  per free t: carbon breathing 3.625 vs inorganic t+gT 3 ; carbon breathing/fermenting per hand = 9.7x
+
+## 6. the backbone strength decides tar (E_cc sweep; Zc = 2)
+  E_cc 0.125: condense costs 0.125; c-c gap 0.125 -> -; breathe/ferment infx
+  E_cc 0.5  : condense releases 0.25; c-c gap 0.5 -> warm; breathe/ferment 29.0x
+  E_cc 1    : condense releases 0.75; c-c gap 1 -> warm; breathe/ferment 9.7x
+  E_cc 1.5  : condense releases 1.25; c-c gap 1.5 -> warm; breathe/ferment 5.8x
+  E_cc 2    : condense releases 1.75; c-c gap 2 -> V1; breathe/ferment 4.1x
+
+## 7. pull sweep for the builder (why Zc = 2)
+  Zc 1.5  : c-g 0.5    c-t 4.25   oxidize 3.75   breathe/t 4.125  c-g polar? False (methane oily)
+  Zc 1.75 : c-g 0.75   c-t 4      oxidize 3.25   breathe/t 3.875  c-g polar? False (methane oily)
+  Zc 2    : c-g 1      c-t 3.75   oxidize 2.75   breathe/t 3.625  c-g polar? False (methane oily)
+  Zc 2.25 : c-g 1.25   c-t 3.5    oxidize 2.25   breathe/t 3.375  c-g polar? True (methane water-loving)
+  Zc 2.5  : c-g 1.5    c-t 3.25   oxidize 1.75   breathe/t 3.125  c-g polar? True (methane water-loving)
+  Zc 3    : c-g 2      c-t 2.75   oxidize 0.75   breathe/t 2.625  c-g polar? True (methane water-loving)
+
+## 8. photosynthesis: CO2-like back to methane-like, per hand
+  split water gt -> g + t: rise 4.5 (hard 5, or V2 3 + battery 1.5)
+  reduce g + [c-t] -> [c-g] + t: rise 2.75 ... absorber [c-t] gap 4.75 -> hard; in a cell: V2 photon 3 >= 2.75 (spark 0.5 from the battery)
+  total 7.25 = exactly what breathing gives back: needs >= 2 photons (no band holds 7.25): a Z-scheme
+  open dish (photolysis on): reduce needs photon >= rise + half spark = 3 -> hard only (CO2 made into fuel by UV only)
+
+## 9. no free-energy loop (battery over closed cycles; ineff 1/4, sparks paid uphill, given back downhill)
+  oxidize then reduce (dark: battery pays)           battery net -1.1875 (<0: no perpetual motion)
+  condense then hydrolyze                            battery net -0.6875 (<0: no perpetual motion)
+  methane burnt to CO2-like, fixed back by battery   battery net -11.25 (<0: no perpetual motion)
+  (energies are a state function: every species = minus its bonds; any closed cycle has zero total change, so only light can make the
+   battery gain round a cycle, and only light that a pigment catches pays an uphill step: HARVESTERS MUST BURN holds unchanged)
+
+## 10. option R: lipids made of carbon (C2: two carbons, one c-c, 6 hands); head/tail read per carbon
+  oil c2 g6                E -7       apolar     chi +1.00 beta 0.00
+  soap1 c2 g5 t            E -9.75    amphiphile chi +0.00 beta 1.00
+  soap2 c2 g4 t2           E -12.5    amphiphile chi +0.00 beta 1.00
+  gunk c2 g3 t3 (-> tar)   E -15.25   polar      chi -1.00 beta 0.00
+  condensations of the ladder (S_a gives a g-hand, S_b a t-hand), each releases 0.75:
+    S2 + S3 -> soap2 + gt
+    S3 + S3 -> soap1 + gt
+    S4 + S1 -> soap2 + gt
+    S4 + S2 -> soap1 + gt
+    S4 + S3 -> oil + gt
+  oxidation runs down the lipids: oil + t -> soap1 + g -> soap2 + g -> gunk (tar): oxygen turns fat to soap to crust,
+  which is also how membranes are damaged (lipid peroxidation): no separate bite rule
+
+## 11. tar = three hand counts (cc, cg, ct), immobile; carbon atoms = (2cc + cg + ct)/4
+  oxidize    d(cc,cg,ct) = (0, -1, 1)  d(2cc+cg+ct) = 0  (carbon conserved: True)
+  condense   d(cc,cg,ct) = (1, -1, -1)  d(2cc+cg+ct) = 0  (carbon conserved: True)
+  hydrolyze  d(cc,cg,ct) = (-1, 1, 1)  d(2cc+cg+ct) = 0  (carbon conserved: True)
+  reduce     d(cc,cg,ct) = (0, 1, -1)  d(2cc+cg+ct) = 0  (carbon conserved: True)
+  an S_k molecule retired into tar adds (0, k, 4-k): weighted sum 4 per count, energy unchanged (same bonds)
+
+## 12. heat-buffer budget at 300 000 pixels (MAX_PIXELS), 128 MiB default binding limit
+  today (4 + 2x18 + 4 oil + 3 pig + 2 charge + 3 water)       52 blocks    59.6 MiB  OK
+  fallback S: + C1 5 + tar 3 (x2 copies)                      68 blocks    77.9 MiB  OK
+  option R: 20 channels (x2) instead of 18                    56 blocks    64.2 MiB  OK
+  option R + 8 species slots (X1 later)                       72 blocks    82.5 MiB  OK
+  option R + 16 species slots                                 88 blocks   100.8 MiB  OK

@@ -4800,6 +4800,179 @@ climbing a plume) is the next thing to try.
 - One seed per condition (two for the dark vents); the downstream differences (channel genes, the self-burn loop) may be lineage luck.
 - LG_M1 grew the ledger (LEDGER_WORDS 30976 -> 31488) and EatP by `m1[2]` (1856 bytes); the Cell, the genome and the stock did not grow.
 
+## Step T1a: tissues 1, an inside, kin channels, the self marker
+
+BUILD QUEUE item 3 (2026-11-17): the first pieces of "T1. Tissues that pay" (CLAUDE.md). What a cell gains by being inside a tissue, a way
+for relatives to recognise each other, and a channel through which they share; plus wild and blank founders for the random-colony
+experiments, and two scene fixes (a lasting mineral spring in the default scene, a smell for trace). Every piece is its own switch (rules
+panel group "Tissues 1: inside, kin, marker (step T1a)", URL options below), derived from what is there; no rule names a role.
+Code: `src/kin.js` (switches, knobs, census, panel line), `cell_eat.wgsl` (plan, eat, ledger: "step T1a"), `cell_common.wgsl`
+(`kin_match`, `kin_accept`, the genes' drift), `cell_step.wgsl` (the clock), `cell_draw.wgsl` (the view, the texture), `src/genome.js`
+(the genes, founder modes).
+
+### An inside (`?inside=0` turns it off)
+
+A membrane side is COVERED when the step lists a neighbour across it (Cell.nbr, the pumps' contact list) closer than `press` x the two
+radii (1.1). A covered side does not trade with the dish under it; only free sides do. Each per-cell and per-side exchange with the dish,
+checked one by one:
+
+| exchange | before | now |
+|---|---|---|
+| passive exchange (every substance, ions, oxygen-like t, the haze's excited atoms) | the cell's 9 pixels, the whole membrane | x the FREE SHARE of the perimeter: 1 - seal x (covered sides' length) / perimeter |
+| bites (C6c weave, C12b lipids) | per side, the pixel outside its middle | covered sides are not bitten (x (1 - seal)) |
+| pumps to the dish (C7) | per side, a free side only when contact pumping is on | a covered side never reaches the dish (x (1 - seal)) |
+| fusion of soap / oil (C12, C12b) and grazing crust (C12b supply fix) | the 9 pixels under the cell | x the free share |
+| osmosis's outside (C12e) | the free ions in the 9 pixels | over a covered side, the neighbour's inside (its free ions per R^2), weighted by length |
+| pumps across contact (C7) | neighbour to neighbour | unchanged (they already go to the neighbour) |
+| light | falls on every cell | unchanged: a 2D dish lit from above |
+| heat (temperature, heat damage) | the 9 pixels' heat | unchanged: heat is not matter; it passes through cells |
+| spills at deaths and bursts, expelled crust, shed lipids, a worn pigment's trace | into the dish under the cell | unchanged (debris leaves through the tissue's gaps; a toy simplification) |
+| smell (corners sample the grid) | | unchanged (sensing, not exchange) |
+
+`seal` (1) is how much of a covered side is closed. So a rim cell meets the haze, the vandal atoms and oxygen through its free sides, and
+an enclosed cell meets none of them, but it also gets no food, heads, linkers or soap from the dish: only what its neighbours pass on.
+
+### Kin channels (`?kinchan=0`; controls `?kinnull=1`, `?kinblind=1`)
+
+Gap junctions / plasmodesmata, a gene `kin.x` (0..1, how far the cell opens them). Two cells in CONTACT (each lists the other, pressed)
+share small NEUTRAL molecules down the gradient, free:
+
+    conductance G = min(open_i x accept_i, open_j x accept_j)          (both cells must open their half, as both sides' glue in C10)
+    per tick, per channel: the share min(1, kinK x G x wall / R x speed x dt) of the way to equal concentrations
+                           (wall: the shared sides' length; speed: the molecule's own spreading speed, EP.ratio; kinK 1 per s)
+    an inflow x the receiver's room (1 - fill); whole counts at random; a pair moves at most kinCap (1/32) of the source per tick
+
+What passes: the four FUELS (food), the free LINKERS l and L (membrane building blocks: L is the membrane's bottleneck, M1) and TRACE (the
+vitamin). Not the free ions (g t G T and the excited atoms: charged, they cross a bilayer only through the ion channels of C12g, which face
+the dish; leaving them out also keeps the membrane voltage and charge books simple), not lipids or crust (too big). The lower-index cell of
+each pair works the pair out in the plan pass; both cells apply it in the eat pass (the same numbers), so every count leaves one stock and
+arrives in the other. With the pumps' worst case (6 sides x 2 slots, out and pulled) the six pairs a cell can be in never take a stock
+below 0 (`kinCap` is capped at (1 - pumps' worst) / 6).
+
+Controls: `null` the channels move nothing while their genes drift (the neutral control); `blind` the channels open to every neighbour
+(kinship ignored: does recognition matter?).
+
+### The self marker as a membrane landscape (`?clock=0`: no drift)
+
+Marker genes `mark` (Bio words 76..79): an ANGLE (0..2 pi), a PERIOD (0.12 to 0.5 R; the founders 0.15 to 0.4), a PHASE (0..2 pi), and a
+DISPLAY gene (0..1). They set a fine stripe pattern on the membrane, cos(q . x + phase), q = 2 pi / period in the angle's direction (in
+the dish, as the cell's key lattice). They have no other effect. At every birth (with mutation on, key M, or hard light's extra) they
+drift as a MOLECULAR CLOCK: Gaussian steps of clockSize x (0.02 rad of angle, 1 % of period, 0.05 rad of phase), never a jump; so the
+marker distance between two cells grows with the births since their common ancestor.
+
+At a contact the two patterns lie on top of each other along the shared wall and beat (moire). KINSHIP:
+
+    N = |q_i - q_j| x ell / (2 pi)                (beat fringes across the wall; ell = (r_i + r_j) / 2, a honeycomb side)
+    kinship = exp(-(pi N)^2 / 6) x (1 + cos(phase_i - phase_j)) / 2 x display_i x display_j
+
+Near-identical patterns beat slowly (one bright band along the whole wall: N << 1, kinship near 1); different ones beat fast (many fringes
+that cancel: kinship near 0). exp(-(pi N)^2 / 6) is the start of the sinc that the exact overlap integral gives, without its side lobes.
+Each cell ACCEPTS a neighbour as kin as far as kinship is above 1 - its TOLERANCE gene (`kin.y`; smoothstep over 0.1). Hiding the marker
+(display) lowers kinship for both: others do not recognise the cell, and its own channels close (camouflage costs). The kinship per
+contact is what P1's kin sparing and engulfing will read.
+
+How it differs from the IDENTITY KEY (Bio.key, steps 3b..C13): the key is the cell's moire LATTICE, the one its fields beat with and its
+glue compares; it is under selection (fields, adhesion), so unrelated lineages can converge on the same key. The marker does nothing but
+be compared: it drifts neutrally, so it records descent (like MHC, or the fusion genes of slime moulds and sea squirts).
+
+### Lineage view and the marker's texture
+
+View `marker` (key V cycles to it; `?view=marker`): the body filled in its marker's colour, like Brainbow / Confetti lineage tracing: the
+angle sets the hue round the colour wheel (each founder its own hue; close relatives close hues, drifting apart over time), the period the
+brightness. Zoomed in (`?zoom=` 3 and more), each membrane tube carries the marker as fine stripes, as deep as the cell displays it
+(surface immunostaining); in the harmonic look on the green rim.
+
+### Wild and blank founders (`?founders=wild|blank`, the New culture dialog's "genes")
+
+- std (default): today's founders with a marker each (their own random stream), display 1, no kin channels (0), tolerance 0.5.
+- blank: the newer ABILITIES at 0: no pumps, every guide gate 0 (push 1), uniform walls, no A' share, stretch / ion genes at the knobs'
+  values, no kin channels.
+- wild: every gene drawn over the whole range mutate() keeps it in: heat tolerance, permeability, membrane (mix, thickness 0.002..0.2,
+  stiffness, selectivity, stretch tolerance, ion channels), pumps (each slot half the time empty, else any substance either way, rate
+  0.05..6), walls, lipids, field genes, gates, push, display, kin channels, tolerance. The ENGINES keep the founder's habit (slots and
+  rates: a founder must be able to eat), and key, receptors and body are random already. `?wild=groups` picks the gene groups (body,
+  membrane, pumps, walls, lipids, fields, gates, kin; default all).
+Both from their own random streams (`krng`, `xrng`), after every other draw, so a seed's std founders are unchanged.
+
+### Scene fixes
+
+(a) The default scene's MINERAL SPRING lasts (never dries; `?lasting=0`: 240 s as before), since M1 found the colony's membranes starve
+of linkers once it dries. (b) A SMELL FOR TRACE (`?smelltrace=0`): the membrane's six corners already smell the fuels (energy-weighted);
+they smell trace too, each unit weighing as traceWorth (50) units of the richest fuel x (1 - cofactor(trace inside)) / (1 - f0): 1 with
+no trace inside, 0 when the cofactor is saturated (nothing while the cofactor rule is off). A cell short of trace climbs its plume; a sated
+one follows the fuel.
+
+### What it looks like
+
+- The lineage view (`marker`): a culture of mixed founders is confetti, every founder its own hue (Brainbow-like); a colony from one
+  founder is one family of hues that mottles slowly as the clock drifts (yellow-green to green, or salmon to rose), and two lineages
+  that meet keep apart in colour as in kinship (0.01). `experiments/keep/t1a/lineage-view-*.jpg`.
+- Zoomed in (x3 and more), every membrane tube is broken into fine regular dashes, the marker's stripes, their spacing and slant
+  different from cell to cell, faint on cells that display little; in the harmonic look the green honeycomb rims are dotted like an
+  immunostained surface. `experiments/keep/t1a/marker-texture-close-*.jpg`.
+- The inside and the kin channels have no look of their own (a rim cell looks like an inner one); the TISSUES panel line counts them.
+
+### Experiments (EXPERIMENTS.md "Tissues 1: inside, kin, marker")
+
+Random colonies (`?spread=colonies&colonies=6`, founders wild or blank, the default scene and the Oases preset, seeds 3 and 7, 30 min),
+each with the kin channels' neutral control; two inside-off controls; the smell for trace on / off in the Oases preset (seeds 3, 7); the
+oxygen spot dish (seed 7) with its neutral control. Plainly:
+
+- **The colonies hardly meet.** Every run crashes in its first 2 to 5 minutes (2000 founders down to 4 .. 700 cells) and one colony
+  survives and fills the dish alone (in the default scene always the one sitting in the spotlight). Where two lineages touched, their
+  kinship was 0.01 and their hues stayed apart.
+- **Kin channels do not spread beyond drift**: blank founders' gene rises from 0 to 0.23 .. 0.31 in 30 min, the neutral control's to
+  0.21 .. 0.29; wild survivors end at 0.23 .. 0.57 against 0.31 .. 0.45 in the control (also 0.69 against 0.63 in the oxygen dish). The
+  channels work when open (up to 3 to 9 fuel units per s over a full dish), but with one lineage per dish every neighbour is kin anyway.
+  The DISPLAY gene wanders (0.37 .. 0.84 from 1 or from wild) as much in the control: drift. An honest null, as for C13's gates.
+- **Rim and inside cells differ, but mostly by geography**: in the default scene inner cells hold fuller batteries (0.30 .. 0.47 against
+  0.03 .. 0.17 at the rim), less whole membranes (0.63 .. 0.84 against 0.85 .. 1.00) and more of their own free t; the inside-off controls
+  show the same gradients. The inside itself doubles the free t enclosed cells keep (they cannot vent it) and barely changes the rest:
+  with whole membranes (M1) little haze gets into any cell.
+- **The smell for trace works early**: at 10 min x2.3 and x2.5 more cells within 15 R of an oasis than the area there (trace under them
+  twice the dish's mean), against x0.0 and x1.6 without it; by 20 to 30 min the dish is full (6000 cells) and the share is the area's again.
+- **The M1 oxygen finding holds on a second seed**: whole membranes, the self-burn loop nearly gone (51 and 23 self-burners against 384 and
+  429 cells breathing outside t, seed 7 with and without the kin channels; seed 3 in M1: 14 / 410). The channels open wide again (+1.71),
+  this time toward cations (M1's seed 3 went toward anions): the opening repeats, the direction is lineage luck.
+- **The default scene's lasting mineral spring** keeps its colony's membranes mostly whole (integrity 0.67 to 0.88 at 30 min in the colony runs,
+  against 0.24 at 20 min in M1 once the spring dried).
+
+### Checked
+
+- **Books** (`check.json`, seed 5, the whole dish lit, 420 s at MAX): springs, N, 40 cells placed with the add-cell tool, a wash, two
+  resizes, every T1a switch toggled at runtime (inside, kin channels, blind, null, clock, smell; seal 0.5, kinK 20), G and N with WILD
+  founders, a snapshot saved and loaded at once (exact): atoms and charge rounding exactly 0 in every sample but the two paused resize
+  instants (as before); energy within -0.041 and 0 elsewhere while 14.7 M came in. Every experiment run: atoms and charge 0 in every
+  sample, energy within -0.17 and +0.37.
+- **Old snapshots**: the M1 default snapshot at 10 min loads with the inside, kin channels, clock and smell off, its genomes widened
+  (marker and kin genes 0), and runs 60 s with atoms and charge 0 (`reload.json`).
+- **Consoles**: headless Chrome (every run), headed Firefox (the lineage view, the TISSUES line and overlay: no console messages),
+  phone size (`tools/shot.py --mobile`, six wild colonies in the lineage view, a finger tap on the dish: the short TISSUES line fits on one
+  line, the colonies show as distinct hues; no console messages but the usual powerPreference note).
+- **Speed** (GPU free, as "Step M1": headless Chrome, 1280 x 800, the default scene, seed 3, MAX; 2000 cells 150 s, 10 000 60 s; three runs
+  each; `experiments/conditions/t1a/speed.json`, table by `experiments/conditions/c12f/speed.py t1a-speed`):
+
+  | cells | neon look | harmonic look | before (Step M1) |
+  |---|---|---|---|
+  | 2000 | x7.65, x7.76, x7.67 (mean x7.69) | x7.93, x7.87, x8.01 (mean x7.94) | x7.51 / x7.89 |
+  | 10 000 | x1.83, x1.88, x1.83 (mean x1.85) | x2.01, x2.06, x2.02 (mean x2.03) | x1.86 / x2.08 |
+
+  No change within the runs' spread (the default scene's lasting spring and the cover check per side cost about what the noise is).
+
+### Known issues
+
+- The founders' crash leaves one colony per dish, so "colonies meeting" and kin recognition between lineages are barely tested.
+- The kinship formula's phase term compares the two genes' phases directly ("in register"), not the stripes' positions on the wall: a
+  toy simplification (the exact overlap would make kinship flicker with every move).
+- Crust expelled, shed lipids, a worn pigment's trace and the spills of deaths still leave into the dish under a cell, enclosed or not
+  (debris escapes through the tissue's gaps); light and heat reach every cell (a 2D dish lit from above; heat is not matter).
+- Kin channels pass neutral molecules only (fuels, l, L, trace), not ions; the lower-index cell works out each pair, so a pair's flow is
+  one-tick old for the other cell's view (exact in the books).
+- The lineage view's fill is bright on a packed dish; `moire.kin.look.viewFill` (0.4) tones it down.
+- One run per seed and condition; the wild founders' first version died on seed 3 (an unlucky draw: 19 later wild runs all lived).
+- The ledger grew (LEDGER_WORDS 31488 -> 32256), EatP by t1[2] (1888 bytes), Fields by t1 (448), Draw by kin (1232), Bio by 8 words (84),
+  the flux buffer by 24 words a cell; the Cell and the stock did not grow.
+
 ## App: zoom, zoos, tools, new culture, presets
 
 The user, 2026-11-16: "on the app side of things, if we could zoom, and have panels with zoos of cells and molecules and tools to
@@ -5184,6 +5357,12 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   themselves are in `cell_eat.wgsl` (`ion_chan`, `ion_open`; the block, the channels and the voltage push in `plan`'s exchange, the
   voltage's slower leak in `eat`, the counters in `eat`, the census in `ledger`), the channel level gene's drift in `cell_common.wgsl`
   `mutate` (gate2.w); `experiments/conditions/c12g/`: `make.py` (the conditions), `analyse.py` (the tables)
+- `src/kin.js`: tissues 1 (step T1a): the switches and knobs (`moire.kin.params`: inside, seal, press, kin channels, kinK, kinCap, blind,
+  null, the marker clock and its size, the smell for trace and traceWorth; `moire.kin.look`: the marker texture and the lineage view), the
+  eat uniform's words (`EatP t1`), the step's (`Fields t1`), the drawing's (`Draw kin`), the census (`LG_T1`) and the TISSUES panel line;
+  the shader side is "step T1a" in `cell_eat.wgsl` (plan: the cover bits, the free share, the kin requests, the trace smell; eat: the kin
+  flows; ledger: the census), `kin_match` / `kin_accept` in `cell_common.wgsl`, the clock in `cell_step.wgsl`, `marker_colour` /
+  `marker_stripe` in `cell_draw.wgsl`; the genes and founder modes in `src/genome.js` (`t1Genes`, `blankGenes`, `wildGenes`)
 - `src/whole.js`: whole membranes (step M1): the switches (`moire.whole.params`: head on oil, bites through the block), the eat uniform's
   words (struct EatP `m1`), the membrane budget's counters and census (LG_M1: a snapshot from the ledger pass, counters from the eat,
   dump, split and reset passes), the MEMBRANES panel line and the overlay. The rules are in `cell_eat.wgsl` (the "step M1" blocks: the

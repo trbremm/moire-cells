@@ -1543,3 +1543,183 @@ snapshot from before M1 loads with both fixes off. Every run above: atoms and ch
 - A second seed of the oxygen spot dish (the self-burn loop's collapse and the open anion channels).
 - The dark vents' economy (upkeep only for engines that ran; vent water that carries its givers further).
 - A smell for trace (Task C).
+
+# Tissues 1: inside, kin, marker
+
+Step T1a (BUILD QUEUE 3, 2026-11-17; README "Step T1a"): an inside, kin channels, the self marker as a membrane landscape, the lineage
+(marker) view, wild / blank founders, a lasting mineral spring in the default scene, a smell for trace. Conditions in
+`experiments/conditions/t1a/` (`make.py` writes them); numbers by `summary.py` (the panel's TISSUES numbers over time, from samples.csv)
+and `analyse.py` (cell by cell from the snapshots: lineages, contacts, kinship by founder, free sides); oases by
+`experiments/conditions/n1/where.py`; the oxygen dish by `experiments/conditions/m1/down.py`. Pictures in `experiments/keep/t1a/`.
+Headless Chrome, GTX 1650, 1280 x 800, MAX speed.
+
+## 0. Pilots and the wild founders
+
+- Default scene, 5 min, seed 3, the inside on against off (`pilot-default`, `pilot-default-noin`): both crash from 2000 founders to about
+  200 to 250 cells by 2.5 min and regrow (459 and 794 at 5 min: one seed, the regrowth is noisy). With the inside the enclosed cells kept
+  whole membranes (integrity 0.73 against 0.52 with it off) but emptier batteries (0.33 against 0.53): sheltered from the bites, cut off
+  from the dish's food.
+- The marker clock at its first size (1) made kin within a lineage only 0.5 alike after 5 minutes of crash and regrowth (the angle spread
+  0.10 to 0.14 rad): too fast for a 30-minute story, so the default became 0.4 (within a lineage the marker angle then spreads 0.06 to 0.15 rad in 30
+  min; the kinship between touching relatives, display included, is 0.13 to 0.58 at 30 min, below).
+- Wild founders, first version, seed 3: all six colonies died by 2 minutes. A diagnosis with every gene group drawn wild but one, and with
+  one group alone (`batch-wildx`, 2 min, seed 3; `?wild=` picks the groups): every one of the 16 runs lived (126 to 644 cells at 2 min),
+  and so did the final all-groups version on seeds 3, 7 and 11 (376, 146, 142 cells at 3 min). No gene group kills a colony by itself;
+  the first version's founders were an unlucky draw (the order of the wild draws changed since). Wild stays over the full ranges.
+
+## 1. Random colonies: six founders, wild or blank (30 min, seeds 3 and 7)
+
+`?spread=colonies&colonies=6`, founders `wild` or `blank`, the default scene or the Oases preset (`batch-col.json`); the same with the kin
+channels' neutral control `?kinnull=1` (`batch-null.json`). Cells at 2 / 5 / 10 / 20 / 30 min, then the kin genes at 1 min -> 30 min:
+
+| run | cells 2 / 5 / 10 / 20 / 30 min | kin channel gene (sd) | display | tolerance | kinship over contacts 5 -> 30 min | fuel shared /s (30 min) |
+|---|---|---|---|---|---|---|
+| wild, default, s3 | 565 / 698 / 1117 / 1948 / 1979 | 0.21 -> 0.23 (0.21) | 0.77 -> 0.47 | 0.56 -> 0.50 | 0.56 -> 0.22 | 0.67 |
+| wild, default, s7 | 120 / 70 / 963 / 1413 / 1324 | 0.26 -> 0.57 (0.32) | 0.53 -> 0.72 | 0.45 -> 0.65 | 0.19 -> 0.45 | 2.31 |
+| wild, Oases, s3 | 195 / 103 / 2224 / 5084 / 5998 | 0.19 -> 0.49 (0.33) | 0.72 -> 0.69 | 0.57 -> 0.46 | 0.63 -> 0.23 | 3.53 |
+| wild, Oases, s7 | 38 / 4 / 164 / 1852 / 6000 | 0.28 -> 0.37 (0.28) | 0.51 -> 0.37 | 0.44 -> 0.65 | 0.21 -> 0.16 | 5.63 |
+| blank, default, s3 | 190 / 574 / 1319 / 1413 / 1479 | 0 -> 0.31 (0.26) | 1 -> 0.75 | 0.50 -> 0.73 | 0.56 -> 0.38 | 2.74 |
+| blank, default, s7 | 195 / 584 / 1144 / 1253 / 1224 | 0 -> 0.28 (0.27) | 1 -> 0.44 | 0.50 -> 0.35 | 0.70 -> 0.13 | 0.06 |
+| blank, Oases, s3 | 76 / 23 / 36 / 2443 / 5999 | 0 -> 0.27 (0.25) | 1 -> 0.81 | 0.50 -> 0.37 | 0.87 -> 0.37 | 3.17 |
+| blank, Oases, s7 | 22 / 25 / 433 / 3579 / 6000 | 0 -> 0.23 (0.21) | 1 -> 0.84 | 0.50 -> 0.41 | 0.84 -> 0.58 | 4.58 |
+| NULL wild, default, s3 | 584 / 700 / 1036 / 1427 / 1460 | 0.21 -> 0.31 (0.28) | 0.77 -> 0.71 | 0.56 -> 0.38 | 0.58 -> 0.34 | 0 (null) |
+| NULL wild, default, s7 | 165 / 130 / 954 / 1209 / 1417 | 0.26 -> 0.36 (0.29) | 0.52 -> 0.56 | 0.45 -> 0.29 | 0.10 -> 0.26 | 0 |
+| NULL wild, Oases, s3 | 207 / 189 / 1831 / 4999 / 5997 | 0.19 -> 0.35 (0.30) | 0.72 -> 0.64 | 0.58 -> 0.59 | 0.69 -> 0.22 | 0 |
+| NULL wild, Oases, s7 | 33 / 4 / 70 / 1679 / 5999 | 0.28 -> 0.45 (0.32) | 0.51 -> 0.35 | 0.44 -> 0.50 | - -> 0.14 | 0 |
+| NULL blank, default, s3 | 209 / 558 / 1156 / 1499 / 1536 | 0 -> 0.24 (0.25) | 1 -> 0.62 | 0.50 -> 0.35 | 0.67 -> 0.26 | 0 |
+| NULL blank, default, s7 | 187 / 960 / 1029 / 1629 / 1441 | 0 -> 0.29 (0.21) | 1 -> 0.88 | 0.50 -> 0.32 | 0.63 -> 0.70 | 0 |
+| NULL blank, Oases, s3 | 82 / 11 / 34 / 3024 / 6000 | 0 -> 0.21 (0.20) | 1 -> 0.79 | 0.50 -> 0.49 | 0.95 -> 0.42 | 0 |
+| NULL blank, Oases, s7 | 20 / 40 / 1032 / 3713 / 6000 | 0 -> 0.29 (0.26) | 1 -> 0.80 | 0.50 -> 0.27 | 0.92 -> 0.52 | 0 |
+
+(wild: the gene's value at 1 min is the survivors' mean of the founders' random draws.)
+
+**Do colonies stay distinct?** They hardly meet. Every run crashes in the first 2 to 5 minutes (from 2000 founders to 4 .. 700 cells: the
+founders' crash every scene has had since C12d), and in every one of the 8 runs a SINGLE colony survives it and fills the dish alone (the
+analysis counts lineages by founder id: 1 at 30 min in 7 runs; in blank Oases s3 a second lineage of 44 cells at the edge). In the default
+lighting the survivor is always colony 1, the one whose blob lies in the spotlight: geography, not genes, picks it. Where two lineages did
+touch (blank Oases s3, 110 contacts at 30 min) their kinship was 0.01: total strangers, and their hues in the lineage view stay apart.
+Within the surviving lineage the marker clock shows: the lineage view goes from one hue to a spread of neighbouring hues (yellow-green to
+green, or rose to magenta) as sub-lineages drift (the angle's spread inside a lineage 0.06 to 0.15 rad at 30 min), and the kinship between
+touching relatives falls from 0.6 to 0.9 at 5 minutes to 0.13 to 0.58 at 30 min (with display, below).
+
+**Do kin channels spread?** Not beyond drift. In the blank runs the gene starts at 0 and rises to 0.23 .. 0.31 by 30 minutes (40 to 53 %
+of the cells above 0.25), and the neutral control (the genes drift, the channels move nothing) rises just as far (0.21 .. 0.29). In the wild
+runs the survivors' gene ends at 0.23 .. 0.57 with the channels working and 0.31 .. 0.45 in the control: means 0.42 against 0.39, within
+the spread between seeds. The channels do work when open (up to 3 to 9 fuel units per s shared over a full dish, 0.1 to 0.9 linker units,
+0.3 trace), but in these dishes sharing with kin neither pays nor costs enough to move the gene: an honest null, as for the C13 gates. One
+reason is plain from the colonies: a single lineage fills the dish, so every neighbour is kin anyway and there is nobody to tell apart.
+
+**Does the display gene move?** Yes, a lot, and in different directions per run: from 1 (blank) down to 0.44 .. 0.84; wild from a mean of
+0.5 to 0.7 among the first survivors to 0.37 .. 0.72. Since display multiplies kinship for both cells, the lineages where it fell (blank
+default s7: display 0.44, tolerance 0.35) effectively closed their own kin channels: kinship 0.13, both-kin 3 %, fuel shared 0.06 per s
+against 2.7 in the other seed. The neutral control moves display as much (0.35 .. 0.88 at 30 min, mean 0.67 against 0.64 with the channels on), and tolerance
+wanders too (0.27 .. 0.73 in both). Drift, not selection, with one lineage per dish and no predators yet: P1's kin sparing is what should
+give the marker a job.
+
+## 2. An inside: rim cells and inner cells
+
+Cells by their free sides at 30 min (`analyse.py`; enclosed = no free side), battery share and membrane integrity:
+
+(share of the cells: their battery share, mean membrane integrity, free t in the stock in units; "INSIDE OFF" = `batch-noin.json`, ?inside=0,
+the same founders and seed)
+
+| run (30 min) | enclosed | 1-2 free | 3-4 free | 5-6 free |
+|---|---|---|---|---|
+| wild-default_s3 | 20%: bat 0.47, integ 0.74, t 0.045 | 47%: bat 0.33, integ 0.86, t 0.013 | 22%: bat 0.15, integ 0.98, t 0.003 | 11%: bat 0.05, integ 1.00, t 0.001 |
+| INSIDE OFF: wild-default_s3 | 9%: bat 0.44, integ 0.67, t 0.021 | 41%: bat 0.34, integ 0.76, t 0.013 | 28%: bat 0.23, integ 0.88, t 0.008 | 22%: bat 0.08, integ 0.97, t 0.002 |
+| wild-default_s7 | 2%: bat 0.30, integ 0.84, t 0.033 | 20%: bat 0.36, integ 0.75, t 0.018 | 39%: bat 0.30, integ 0.79, t 0.008 | 40%: bat 0.17, integ 0.91, t 0.003 |
+| blank-default_s3 | 18%: bat 0.46, integ 0.63, t 0.089 | 48%: bat 0.31, integ 0.71, t 0.026 | 22%: bat 0.16, integ 0.83, t 0.007 | 12%: bat 0.03, integ 0.97, t 0.007 |
+| blank-default_s7 | 1%: bat 0.41, integ 0.80, t 0.010 | 29%: bat 0.34, integ 0.59, t 0.012 | 46%: bat 0.29, integ 0.63, t 0.007 | 23%: bat 0.16, integ 0.85, t 0.003 |
+| wild-oases_s3 | 15%: bat 0.59, integ 0.55, t 0.046 | 59%: bat 0.55, integ 0.60, t 0.028 | 22%: bat 0.63, integ 0.76, t 0.034 | 4%: bat 0.72, integ 0.92, t 0.038 |
+| INSIDE OFF: wild-oases_s3 | 13%: bat 0.77, integ 0.67, t 0.048 | 56%: bat 0.68, integ 0.65, t 0.035 | 25%: bat 0.75, integ 0.80, t 0.049 | 7%: bat 0.87, integ 0.95, t 0.055 |
+| wild-oases_s7 | 50%: bat 0.55, integ 0.17, t 0.035 | 46%: bat 0.64, integ 0.17, t 0.035 | 4%: bat 0.71, integ 0.22, t 0.018 | 0%: bat 0.71, integ 0.27, t 0.013 |
+| blank-oases_s3 | 17%: bat 0.51, integ 0.67, t 0.013 | 67%: bat 0.46, integ 0.69, t 0.010 | 15%: bat 0.43, integ 0.77, t 0.008 | 1%: bat 0.42, integ 0.91, t 0.008 |
+| blank-oases_s7 | 21%: bat 0.60, integ 0.73, t 0.023 | 68%: bat 0.61, integ 0.75, t 0.021 | 10%: bat 0.56, integ 0.76, t 0.016 | 1%: bat 0.49, integ 0.83, t 0.011 |
+
+Plainly:
+- **Inner cells are richer in the default scene, poorer in membrane, and keep their own oxygen.** In the default lighting enclosed cells hold
+  0.30 to 0.47 of a battery against 0.03 to 0.17 for cells with 5 or 6 free sides; their membranes are less whole (0.63 to 0.84 against 0.85
+  to 1.00) and they hold 3 to 13 times more free t (oxygen-like) in the stock. In the full-dish Oases preset the battery gradient turns
+  over (the rim a little richer: 0.42 to 0.72 against 0.51 to 0.60) and the membrane and oxygen gradients stay.
+- **But most of that is GEOGRAPHY, not the inside.** The controls with the inside off (same founders, same seed) show the same gradients:
+  enclosed 0.44 against rim 0.08 battery, integrity 0.67 against 0.97 (default); 0.77 against 0.87, 0.67 against 0.95 (Oases). A colony's
+  core sits deeper in the spot and further from the springs' soap and crust whatever the membrane does. What the inside itself adds: the
+  enclosed cells keep about twice the free t (0.045 against 0.021 in the default pair: they cannot vent it to the dish), and slightly
+  emptier batteries in the Oases pair (0.59 against 0.77). The haze-sheltering it was built for barely shows, because with whole membranes
+  (M1) the haze reaches few cells anyway (ions are blocked, bites go through the block).
+- Packed share: with the inside on, 15 to 50 % of the cells end enclosed in a full dish; one pair (default) had more enclosed cells with it
+  on (20 % against 9 %), the Oases pair the same (15 % against 13 %).
+
+## 3. The smell for trace (Oases preset, 30 min, seeds 3 and 7)
+
+`batch-oases.json`, std founders, the smell for trace on (`smell1`) against off (`smell0`); the share of cells within 15 R of an oasis
+against the share of the dish there (`where.py`):
+
+| run | 10 min | 20 min | 30 min |
+|---|---|---|---|
+| smell on, s3 | 22 % on 9 % (x2.5) | 5 % on 6 % (x0.8) | 9 % on 9 % (x1.0) |
+| smell on, s7 | 27 % on 12 % (x2.3) | 11 % on 9 % (x1.3) | 7 % on 8 % (x0.9) |
+| smell off, s3 | 0 % on 11 % (x0.0) | 16 % on 11 % (x1.4) | 12 % on 11 % (x1.1) |
+| smell off, s7 | 14 % on 9 % (x1.6) | 9 % on 8 % (x1.0) | 8 % on 8 % (x1.0) |
+
+At 10 minutes, with the smell, cells gather round the oases (x2.3 to x2.5; the trace under them twice the dish's mean) where without it
+they sit no closer than chance or by luck (x0.0, x1.6). Once the dish fills (6000 cells, the capacity, by 20 to 25 min) every pixel is
+under a cell and the share is the area's again. So the smell gives the early geography the N1 / M1 runs could not, but a full dish erases
+it: life does not stay at the oases because there is no room left elsewhere to leave. Batteries near oases end a little higher (2.6 to
+3.3 against 2.6 to 2.9).
+
+## 4. The oxygen spot dish, second seed (40 min, seed 7)
+
+The M1 oxygen spot condition (never-drying mineral spring, a slow vent re-dropped; `oxy-spot`), now with T1a on, seed 7, against M1's
+seed 3 (T1a did not exist then), means over 20..40 min (`down.py`):
+
+| | M1, seed 3 | T1a, seed 7 |
+|---|---|---|
+| cells | 934 | 933 |
+| integrity; whole | 0.94; 94 % | 0.95; 96 % |
+| cells burning their own t / breathing outside t (of the breathers) | 14 / 410 (of 913) | 51 / 384 (of 920) |
+| free t made inside / taken in / put out per s | 0.64 / 9.19 / 0.11 | 3.17 / 8.32 / 0.13 |
+| free t in the dish | 44 | 68 |
+| channel level gene; balance (cation-only / anion-only cells) | +1.61; -0.31 (62 / 470) | +1.71; +0.20 (341 / 75) |
+| ions held back by the block | 41 % | 27 % |
+
+The M1 finding holds on a second seed: with whole membranes the self-burn loop nearly vanishes (51 of 920 breathers burn their own t)
+and the colony lives by breathing the haze's t from outside (384); the channels open wide again (+1.71), but this time toward CATIONS
+(balance +0.20; 341 cation-only cells) where seed 3 went toward anions: the direction is lineage luck, the opening is repeatable.
+The same dish with the kin channels' neutral control (`oxy-spot-null`, seed 7) agrees again: 23 self-burners against 429 outside
+breathers of 960, integrity 0.95. In this dish the kin channel gene climbed the most of all runs, 0.69 (sd 0.29, 90 % carriers) by 40
+min, but the neutral control climbed nearly as far (0.63, 84 %): drift again.
+
+## 5. Pictures (`experiments/keep/t1a/`)
+
+- `lineage-view-oases-30min.jpg` (wild founders, Oases preset, 30 min, the lineage view): one lineage fills the whole dish (6000 cells):
+  one family of hues, salmon to rose, mottled where sub-lineages drifted apart; a few dark gaps.
+- `blank-oases-15min-lineage.jpg` (blank founders, Oases, 15 min): the surviving lineage spreading as loose rafts and small sheets in
+  yellow-green, brown crust patches between them.
+- `lineage-view-close-default.jpg` (wild, default scene, 30 min, zoom x5, lineage view): a packed honeycomb, every cell filled in its
+  marker's green; the slightly yellower and darker cells are drifted relatives; the striped tubes are the markers.
+- `marker-texture-close-neon.jpg` (wild, Oases, 30 min, zoom x5, neon): each warm-white tube is broken into fine regular dashes, the marker's
+  stripes, a different spacing and slant on different cells; a few cells (low display) have smooth tubes.
+- `marker-texture-close-harmonic.jpg` (the same, harmonic look): the green rims of the honeycomb are dotted like an immunostained surface,
+  violet batteries inside, orange fibrous streaks in stretched cells, a crust patch below.
+- `oxy-spot-s7-40min-neon.jpg` (the oxygen spot dish, seed 7, 40 min): a round colony of pink and cream cells under the spot, brown crust
+  at its edge.
+
+## 6. The books and the checks
+
+`check.json` (seed 5, the whole dish lit, 420 s at MAX): springs, N, 40 cells placed with the add-cell tool, a wash, two resizes, the
+inside, kin channels, blind, null, clock, smell for trace, seal 0.5 and kinK 20 switched at runtime (170..260 s), G and N with WILD founders
+(300, 320 s), a snapshot saved and loaded at once (360 s, exact): atoms and charge rounding exactly 0 in every sample but the two paused
+resize instants (150 s, 220 s: the old grid not yet drained, as in every step since C3); energy within -0.041 and 0 elsewhere while
+14.7 M came in. `reload.json`: the M1 default snapshot at 10 min (saved before T1a) loads with the inside, kin channels, clock and smell off,
+and its genomes widened (marker and kin genes 0: one marker for all, hidden), and runs 60 s with atoms and charge 0. Every run above:
+atoms and charge 0 in every sample, energy within -0.17 and +0.37.
+
+## What to try next
+
+- Colonies that actually MEET: the founders' crash leaves one colony per dish (in the default scene always the one in the spot). Start the
+  colonies closer together, give each a lasting spring, or start from fewer, fed cells, so lineages share borders for a long time.
+- A reason to know kin: P1's engulfing and kin sparing (the kinship per contact is ready for it).
+- The inside matters little while membranes are whole (M1); it may matter more in the oxygen whole-dish or hard-light dishes, or with
+  P1's predators nibbling rims.
+- The smell for trace gives the oases' geography at 10 minutes; a dish that does not fill (capacity, starvation) would show whether it lasts.

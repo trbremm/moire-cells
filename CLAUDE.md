@@ -590,6 +590,12 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
     3. T1a: an inside, kin channels, the self marker as a membrane landscape (Claude's reading), lineage-colour view,
        wild/blank founders   4. T1b: the gene regulatory network + reporter view   5. P1: engulf + kin sparing genes,
        hand-placed predator   6. T1c: designed tissues (plant, filament, biofilm) + random-colony experiments
+       + CHEMICAL WARFARE CHECK (user 2026-11-17 chose "measure first"): is poisoning still possible and does it pay?
+       Measure at lineage BORDERS vs colony interiors: bursts and membrane bites, OUT-pump genes and what they pump,
+       free light atoms / free t / heat in the contact zone, which lineage gains ground; vs a neutral control. Weapons
+       exist (OUT pumps, same-row bites, free t inside, heat damage) but M1's bite block and untargeted dumping make
+       them weak. NOT YET AGREED, on file: a KIN-GATED PUMP gene (pumping per side rises/falls with the neighbour's
+       kinship, like the C13 gates), so evolution picks weapon vs sharing; would go after P2 if the user wants it.
     7. P2: macrophages.
        AS BUILT (T1a, 2026-11-17): src/kin.js, Bio 84 words, TISSUES line. Inside (covered sides trade with the neighbour,
        not the dish; ?inside=0), kin channels (fuels, l, L, trace; gene kin.x; ?kinnull ?kinblind controls), self marker

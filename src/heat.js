@@ -256,21 +256,36 @@ export class Heat {
     this.device.queue.writeBuffer(this.tickBuf, 0, this.tickAB, 0, used * HT_SLOT);
     this.device.queue.writeBuffer(this.tickBuf, HT_LEDGER * HT_SLOT, this.tickAB, HT_LEDGER * HT_SLOT, HT_SLOT);
 
-    if (this.old) {
-      // the replaced grid: its heat counted as leaked out, and its ledger counters carried over to the new buffer
-      const O = this.old, D = HT_DRAIN * w;
-      T[D] = O.src; T[D + 4] = O.n;
-      this.device.queue.writeBuffer(this.tickBuf, HT_DRAIN * HT_SLOT, this.tickAB, HT_DRAIN * HT_SLOT, HT_SLOT);
-      const pass = encoder.beginComputePass({ label: 'heat drain' });
-      pass.setPipeline(this.pipes.drain);
-      pass.setBindGroup(0, O.bg, [HT_DRAIN * HT_SLOT]);
-      pass.dispatchWorkgroups(Math.ceil(O.n / 256));
-      pass.end();
-      if (this.matter) this.matter.encodeDrain(encoder, O.buffer, O.n);   // step C3: its atoms leave with the old dish
-      encoder.copyBufferToBuffer(O.buffer, 0, this.buffer, 0, LEDGER_WORDS * 4);
-      this.trash.push(O.buffer);
-      this.old = null;
-    }
+    this.encodeDrain(encoder);
+  }
+
+  /** A replaced grid (a resize): its heat counted as leaked out, its atoms as gone, its ledger counters carried over to the new buffer. */
+  encodeDrain(encoder) {
+    if (!this.old) return;
+    const T = new Uint32Array(this.tickAB), w = HT_SLOT / 4;
+    const O = this.old, D = HT_DRAIN * w;
+    T[D] = O.src; T[D + 4] = O.n;
+    this.device.queue.writeBuffer(this.tickBuf, HT_DRAIN * HT_SLOT, this.tickAB, HT_DRAIN * HT_SLOT, HT_SLOT);
+    const pass = encoder.beginComputePass({ label: 'heat drain' });
+    pass.setPipeline(this.pipes.drain);
+    pass.setBindGroup(0, O.bg, [HT_DRAIN * HT_SLOT]);
+    pass.dispatchWorkgroups(Math.ceil(O.n / 256));
+    pass.end();
+    if (this.matter) this.matter.encodeDrain(encoder, O.buffer, O.n);   // step C3: its atoms leave with the old dish
+    encoder.copyBufferToBuffer(O.buffer, 0, this.buffer, 0, LEDGER_WORDS * 4);
+    this.trash.push(O.buffer);
+    this.old = null;
+  }
+
+  /**
+   * Drain a replaced grid NOW, in its own submission (before work that writes into the new grid's ledger outside a frame, e.g. a new
+   * culture's reset: the drain's ledger copy would otherwise overwrite what it booked; step P1's fix of T1b's "G at a resize leaks atoms").
+   */
+  drainNow() {
+    if (!this.old) return;
+    const e = this.device.createCommandEncoder({ label: 'heat drain now' });
+    this.encodeDrain(e);
+    this.device.queue.submit([e.finish()]);
   }
 
   /**
@@ -413,6 +428,7 @@ export class Heat {
    */
   depositAll() {
     if (!this.buffer || !this.cellBuf || !this.bg) return;
+    this.drainNow();   // (step P1: a grid replaced this frame first, or its drain's ledger copy erases what this books)
     const T = new Uint32Array(this.tickAB), o = HT_DEPOSIT * HT_SLOT / 4;
     T[o + 4] = this.count;
     this.device.queue.writeBuffer(this.tickBuf, HT_DEPOSIT * HT_SLOT, this.tickAB, HT_DEPOSIT * HT_SLOT, HT_SLOT);

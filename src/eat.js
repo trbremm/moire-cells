@@ -349,6 +349,9 @@ export class Eat {
    */
   reset() {
     const M = this.matter;
+    // (a grid replaced by a resize this frame is drained first: the drain copies its ledger over the new one, which would erase what this
+    // reset books there, the stocks handed back: the ~650 atoms that leaked when G came at the instant of a resize, found in step T1b)
+    if (this.heat.old) this.heat.drainNow();
     if (!this.makeBG()) return false;
     const cur = M && M.bufVersion === this.heat.version ? M.copyAt(0, true) : 0;
     const mask = cur ? (M.active || 0) : 0;

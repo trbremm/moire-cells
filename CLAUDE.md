@@ -597,6 +597,19 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        them weak. NOT YET AGREED, on file: a KIN-GATED PUMP gene (pumping per side rises/falls with the neighbour's
        kinship, like the C13 gates), so evolution picks weapon vs sharing; would go after P2 if the user wants it.
     7. P2: macrophages.
+       AS BUILT (P1, 2026-11-17): src/predators.js. ENGULF gene kin.z, KIN SPARING kin.w (founders 0; wild 0..1). Wrap a
+       touching cell >= 1.4x smaller in area when 3 x engulf x (1 - spare x kinship) beats the prey's HOLD (glue to its
+       other neighbours + 2 x wall + stiffness armour + 0.25), battery >= 0.25, integrity >= 0.3; 3 s wrap (escape
+       possible), then a GHOST slot (own grid bucket) digested over 8 s (atoms to stock by room, lipids to the membrane,
+       half the battery, rest heat; spill if no room / host dies). GRN output 17 ENGULF, senses MEAL, PREY. ?engulf=0
+       ?engulfnull=1 ?kinsparenull=1 ?predmark=1; zoo "predator" button; PREDATION line; Cell 368 bytes. Look: white-hot
+       (harmonic: green) arc closing round the prey, ghost in a ring fading inside (harmonic: violet in a dark ring).
+       RESULT (colonies 40 min x3 seeds, drops into default/shallows, each vs null): steady 4-20 meals/s, no boom-bust;
+       loners ~10x likelier eaten but glue and clusters do not move (dishes are already one clump); ARMOUR SELECTED
+       (stiffness higher 9/9 seed pairs, thickness 8/9; crust wall not); cannibalism falls by LOSING the engulf gene
+       (colonies 0.25-0.53 vs null 0.57-0.63), not by sparing: kinship inside a lineage fades in 10-20 min (marker match
+       0.03-0.17), so sparing has nothing to read; dropped predators never found a lineage, residents' own engulf genes
+       spread instead. Only in division mode. Speed -6..10 % (bigger record, not the logic).
        AS BUILT (T1a, 2026-11-17): src/kin.js, Bio 84 words, TISSUES line. Inside (covered sides trade with the neighbour,
        not the dish; ?inside=0), kin channels (fuels, l, L, trace; gene kin.x; ?kinnull ?kinblind controls), self marker
        (Bio 76-79, stripe pattern, kinship = moire-fringe match x phase x display; clock 0.4), lineage view ?view=marker

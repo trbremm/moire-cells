@@ -1,0 +1,38 @@
+{
+ "name": "g0-check-press",
+ "description": "step G0 books with the press: the Fronts preset 300 s at MAX (seed 5)",
+ "query": {
+  "seed": 5,
+  "preset": "fronts"
+ },
+ "duration": 300,
+ "sample_every": 10,
+ "stall": 300,
+ "snapshots": [],
+ "shots": [
+  {
+   "t": 150,
+   "view": "machinery",
+   "name": "mach"
+  },
+  {
+   "t": 300,
+   "panel": true,
+   "name": "panel"
+  }
+ ],
+ "evals": [
+  {
+   "t": 60,
+   "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+  },
+  {
+   "t": 150,
+   "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+  },
+  {
+   "t": 299,
+   "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+  }
+ ]
+}

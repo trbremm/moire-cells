@@ -1,0 +1,113 @@
+{
+ "name": "g0-check",
+ "description": "step G0 books check: 400 s at MAX (seed 5), whole dish lit, perfusion on; every G0 switch off and on again (stir, split, ceiling, cost, breaks, null), a squeeze 0.8 and a stretch 1.25, the press, a resize, a snapshot saved and loaded: atoms and charge rounding must stay 0",
+ "query": {
+  "seed": 5,
+  "light": "full",
+  "perfusion": 1
+ },
+ "duration": 400,
+ "sample_every": 10,
+ "stall": 300,
+ "snapshots": [],
+ "resizes": [
+  {
+   "t": 300,
+   "size": "1000x700"
+  },
+  {
+   "t": 330,
+   "size": "1280x800"
+  }
+ ],
+ "shots": [
+  {
+   "t": 400,
+   "panel": true,
+   "name": "panel"
+  },
+  {
+   "t": 200,
+   "view": "machinery",
+   "name": "mach"
+  }
+ ],
+ "evals": [
+  {
+   "t": 30,
+   "js": "moire.stir.params.on = false; return 'stir.on False'"
+  },
+  {
+   "t": 50,
+   "js": "moire.stir.params.on = true; return 'stir.on True'"
+  },
+  {
+   "t": 60,
+   "js": "moire.stir.params.split = false; return 'stir.split False'"
+  },
+  {
+   "t": 80,
+   "js": "moire.stir.params.split = true; return 'stir.split True'"
+  },
+  {
+   "t": 90,
+   "js": "moire.glue.params.ceiling = false; return 'glue.ceiling False'"
+  },
+  {
+   "t": 110,
+   "js": "moire.glue.params.ceiling = true; return 'glue.ceiling True'"
+  },
+  {
+   "t": 120,
+   "js": "moire.glue.params.tear = false; return 'glue.tear False'"
+  },
+  {
+   "t": 140,
+   "js": "moire.glue.params.tear = true; return 'glue.tear True'"
+  },
+  {
+   "t": 150,
+   "js": "moire.glue.params.null = true; return 'glue.null True'"
+  },
+  {
+   "t": 170,
+   "js": "moire.glue.params.null = false; return 'glue.null False'"
+  },
+  {
+   "t": 175,
+   "js": "moire.glue.params.cost = false; return 'glue.cost False'"
+  },
+  {
+   "t": 185,
+   "js": "moire.glue.params.cost = true; return 'glue.cost True'"
+  },
+  {
+   "t": 210,
+   "js": "await moire.dish.scale(0.8); return 'squeezed'"
+  },
+  {
+   "t": 240,
+   "js": "await moire.dish.scale(1.25); return 'stretched'"
+  },
+  {
+   "t": 250,
+   "js": "Object.assign(moire.dish.press, { on: true, depth: 0.3, period: 60 }); return 'press on'"
+  },
+  {
+   "t": 360,
+   "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return JSON.stringify({ exact: r.exact, notes: r.notes, rounding: r.rounding })"
+  },
+  {
+   "t": 100,
+   "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+  },
+  {
+   "t": 200,
+   "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+  },
+  {
+   "t": 399,
+   "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+  }
+ ]
+}

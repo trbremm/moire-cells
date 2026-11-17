@@ -1,0 +1,109 @@
+{
+ "batch": "g0-speed",
+ "runs": [
+  {
+   "name": "g0-speed-2k-neon-r1",
+   "description": "step G0 speed, after G0: default scene, 2000 cells, MAX, 150 s, neon",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g0-speed-10k-neon-r1",
+   "description": "step G0 speed, after G0: default scene, 10000 cells, MAX, 60 s, neon",
+   "query": {
+    "seed": 3,
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g0-speed-2k-harmonic-r1",
+   "description": "step G0 speed, after G0: default scene, 2000 cells, MAX, 150 s, harmonic",
+   "query": {
+    "seed": 3,
+    "look": "harmonic"
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g0-speed-10k-harmonic-r1",
+   "description": "step G0 speed, after G0: default scene, 10000 cells, MAX, 60 s, harmonic",
+   "query": {
+    "seed": 3,
+    "look": "harmonic",
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g0-speed-2k-neon-r2",
+   "description": "step G0 speed, after G0: default scene, 2000 cells, MAX, 150 s, neon",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g0-speed-10k-neon-r2",
+   "description": "step G0 speed, after G0: default scene, 10000 cells, MAX, 60 s, neon",
+   "query": {
+    "seed": 3,
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g0-speed-2k-harmonic-r2",
+   "description": "step G0 speed, after G0: default scene, 2000 cells, MAX, 150 s, harmonic",
+   "query": {
+    "seed": 3,
+    "look": "harmonic"
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g0-speed-10k-harmonic-r2",
+   "description": "step G0 speed, after G0: default scene, 10000 cells, MAX, 60 s, harmonic",
+   "query": {
+    "seed": 3,
+    "look": "harmonic",
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  }
+ ]
+}

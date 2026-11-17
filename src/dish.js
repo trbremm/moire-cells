@@ -73,7 +73,7 @@ export const dish = {
   /** The dish from a window (CSS px) and a starting number, R and the medium as the old rules (mR = KAPPA R unless perArea is off). */
   fromWindow(W, H, start, from = 'window') {
     const L = legacyRadii(W, H, start);
-    Object.assign(this, { W, H, R: L.R, mR: this.perArea ? KAPPA * L.R : L.mR, from });
+    Object.assign(this, { W, H, R: L.R, mR: this.follow ? L.mR : KAPPA * L.R, from });
   },
 
   /** The dish from a size in R ([w, h]), fitted to a window (CSS px): R px so it fills the window, at most R_MAX. */

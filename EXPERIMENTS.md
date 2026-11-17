@@ -1927,3 +1927,56 @@ the old G-at-resize leak is fixed. `reload.json`: a T1b snapshot loads with engu
   rather than per birth. Then repeat the colonies: does sparing beat its control once relatives look like relatives?
 - Dishes that are not one clump already: a lower capacity or scattered founders under predators, to see whether the glue gene answers.
 - Predators that are not cannibals by default (the macrophages of P2): an in-body type that eats strangers only.
+
+# Error correction
+
+Step G1 (BUILD QUEUE 6b, 2026-11-17; README "Step G1: error correction"): a FIDELITY gene, proofreading. In a real cell the copying enzyme
+re-reads what it wrote and cuts out wrong letters, at an energy cost; here a careful lineage's daughters get smaller and rarer mutations
+(every gene, the gene network, the self marker's clock), and each birth costs the parent battery. QUICK CHECKS only: the user said
+experiments are not valid until more changes land, so no long batteries. Conditions `experiments/conditions/g1/` (`make.py`; the table by
+`summary.py`), runs `experiments/runs/g1-*`, the table in `experiments/summaries/g1-fidelity/summary.md`. Headless Chrome, GTX 1650, at
+MAX, but the GPU was shared with other workers' batches the whole time (x0.1 to x0.45), so every pair is compared at 20 minutes (the
+colonies' "on" runs were stopped at 1230 s; their meta.json says so).
+
+## 1. Does the gene move? (20 min, on against the neutral control, seeds 3 and 7)
+
+F is the gene (a log factor: daughters' copying errors x e^-F; founders 0; F 1 = a third of the errors). "Control" = `?fidelitynull=1`, the
+gene drifting with no effect and no cost.
+
+| scene, seed | F on | F control | above the founders on / control | cost on (energy / s) | cells on / control |
+|---|---|---|---|---|---|
+| Colonies, 3 | +0.69 ± 1.03 | +0.21 ± 1.14 | 68 % / 52 % | 7.8 | 2 897 / 2 907 |
+| Colonies, 7 | +0.40 ± 0.84 | -0.85 ± 1.14 | 62 % / 19 % | 3.8 | 2 916 / 2 568 |
+| Spotlight (default scene), 3 | +1.36 ± 0.90 | +0.96 ± 1.09 | 90 % / 75 % | 7.5 | 1 169 / 907 |
+| Spotlight (default scene), 7 | +1.09 ± 1.20 | +0.86 ± 1.35 | 73 % / 75 % | 9.1 | 823 / 1 272 |
+
+What it looks like in numbers: careful copying ends HIGHER than its control in all four pairs (by 0.2 to 1.2), and it is paid for (0.3 to
+0.45 energy units a birth). But the controls wander just as far (-0.85 .. +0.96): each dish ends as one or two lineages, and the winners'
+F is whatever they carried. A hint, not a result.
+
+Where: no clear place. Light and shade within 0.15 of each other (the spotlight dishes a little higher in the light both times, but the
+controls show such gaps too); nearly every cell sits inside a tissue (loners 0 to 30 of thousands), so tissue against loner cannot be
+read. Hard light dominates the mutation in both scenes (x4 per birth at the founders' care) and half of it lies beyond proofreading, so the
+per-birth mutation stays between x2 and x4 with care or without.
+
+## 2. Does kinship last longer?
+
+Within each dish, touching relatives that BOTH copy carefully match their self markers better than pairs that both copy sloppily, in all
+four "on" runs (0.66 / 0.59, 0.53 / 0.41, 0.89 / 0.75, 0.70 / 0.61), and not in the controls (0.59 / 0.64, 0.57 / 0.51, 0.63 / 0.82,
+0.67 / 0.82): the marker's clock really slows in careful lineages. Dish-wide, after 20 minutes, the marker match within lineages and the
+TISSUES line's contact kinship do not differ consistently between on and control (match 0.58 / 0.55, 0.44 / 0.45, 0.87 / 0.62, 0.56 / 0.65).
+
+## 3. The books and the checks
+
+`check.json` (420 s, every G1 switch and knob at runtime, a resize with G, sloppy and careful extremes, key M, turnover mode, a snapshot
+saved and loaded): atoms and charge 0 in every sample but the paused resize instant; F 3 at five times the cost starved the dish (a harsh
+setting; the books stayed exact). `reload.json`: P1's colonies snapshot loads with every cell at the founders' value. Every run: atoms and
+charge 0.
+
+## What to try next
+
+- More seeds and longer runs once the rules settle (and on a free GPU): the controls' wander (±1) needs four or more seeds per side.
+- A dish where mutation hurts more than it helps: a stable scene in the dark (no hard light, so proofreading reaches all of the
+  mutation), and one where the world keeps changing (wandering springs, a day cycle) where sloppy "mutator" lineages might win.
+- With `beyond` lower, careful lineages could escape hard light: do they gather under the spotlight?
+- Kin sparing (P1) against careful lineages: does a slower clock let sparing work?

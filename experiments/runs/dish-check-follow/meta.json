@@ -1,0 +1,71 @@
+{
+  "name": "dish-check-follow",
+  "description": "?dishfollow=1: the old behaviour",
+  "condition": {
+    "name": "dish-check-follow",
+    "description": "?dishfollow=1: the old behaviour",
+    "query": {
+      "seed": 3,
+      "dishfollow": 1
+    },
+    "size": "1280x800",
+    "duration": 40,
+    "sample_every": 10,
+    "resizes": [
+      {
+        "t": 20,
+        "size": "900x400"
+      }
+    ],
+    "evals": [
+      {
+        "t": 1,
+        "js": "return moire.dish.line() + ' | cap ' + moire.cells.count"
+      },
+      {
+        "t": 21,
+        "js": "return moire.dish.line() + ' | R ' + moire.cells.R + ' | grid ' + moire.heat.hw + 'x' + moire.heat.hh"
+      }
+    ],
+    "shots": [
+      {
+        "t": 22,
+        "name": "b_900x400"
+      }
+    ]
+  },
+  "url": "http://localhost:52744/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&dishfollow=1",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "85d0ef2ecae525fe7ff87f6d2f7145ec4b3764d6",
+  "dirty": true,
+  "started": "2026-11-17T14:23:39",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 40.0,
+  "run_wall_s": 57.55,
+  "speed_reached": 0.7,
+  "samples": 5,
+  "shots": [
+    "shots/b_900x400.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 1.0000000000000002,
+      "js": "return moire.dish.line() + ' | cap ' + moire.cells.count",
+      "result": "dish 198\u00d7123 R (1280\u00d7800 px, R 6.48 px, medium 1.39 R) \u00b7 area 24.4k R\u00b2 (\u00d7 1.00 the reference) \u00b7 follows the window (?dishfollow=1) \u00b7 supplies per px (old) | cap 6000"
+    },
+    {
+      "t": 21.000000000000092,
+      "js": "return moire.dish.line() + ' | R ' + moire.cells.R + ' | grid ' + moire.heat.hw + 'x' + moire.heat.hh",
+      "result": "dish 278\u00d7123 R (900\u00d7400 px, R 3.24 px, medium 2.69 R) \u00b7 area 34.3k R\u00b2 (\u00d7 1.41 the reference) \u00b7 follows the window (?dishfollow=1) \u00b7 supplies per px (old) | R 3.2397530770106537 | grid 556x247"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T14:26:03",
+  "wall_s": 144.22
+}

@@ -1,0 +1,43 @@
+{
+ "name": "dish-check-stretch",
+ "query": {
+  "seed": 3
+ },
+ "size": "1280x800",
+ "duration": 16,
+ "sample_every": 0,
+ "evals": [
+  {
+   "t": 0,
+   "js": "\nwindow.__cs = async () => { const M = window.moire, C = M.cells, d = M.gpu.device, n = C.count, F = 92;\n  const buf = d.createBuffer({ size: n * F * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\n  const e = d.createCommandEncoder(); e.copyBufferToBuffer(C.cellBuf, 0, buf, 0, n * F * 4); d.queue.submit([e.finish()]);\n  await buf.mapAsync(GPUMapMode.READ); const f = new Float32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\n  const u = new Uint32Array(f.buffer); let a = 0, bat = 0, out = 0, r = 0, low = 0;\n  for (let i = 0; i < n; i++) { if (!(u[i*F+9] & 1)) continue; a++; bat += f[i*F+16]; r += f[i*F+4]; if (f[i*F+16] < 0.02) low++;\n    if (f[i*F] < 0 || f[i*F+1] < 0 || f[i*F] > M.dish.W || f[i*F+1] > M.dish.H) out++; }\n  return { t: M.time(), alive: a, bat: bat / a, r: r / a / C.R, low, out, W: M.dish.W }; };\nreturn 'ok';"
+  },
+  {
+   "t": 10,
+   "js": "const a = await window.__cs(); const r = await moire.dish.scale(1.25); const b = await window.__cs(); return JSON.stringify({a, b, notes: r.notes})"
+  },
+  {
+   "t": 10.5,
+   "js": "return JSON.stringify(await window.__cs())"
+  },
+  {
+   "t": 11,
+   "js": "return JSON.stringify(await window.__cs())"
+  },
+  {
+   "t": 12,
+   "js": "const a = await window.__cs(); const r = await moire.dish.scale(0.8); const b = await window.__cs(); return JSON.stringify({a, b})"
+  },
+  {
+   "t": 13,
+   "js": "return JSON.stringify(await window.__cs())"
+  },
+  {
+   "t": 14,
+   "js": "const a = await window.__cs(); await moire.loadSnapshot(await moire.snapshot()); const b = await window.__cs(); return JSON.stringify({a, b})"
+  },
+  {
+   "t": 15,
+   "js": "return JSON.stringify(await window.__cs())"
+  }
+ ]
+}

@@ -1,0 +1,10 @@
+{"batch": "dish-check-squeeze", "runs": [
+ {"name": "dish-check-squeeze", "description": "the squeeze / stretch tool: books exact, contents kept", "query": {"seed": 3}, "size": "1280x800", "duration": 120, "sample_every": 5,
+  "resizes": [{"t": 100, "size": "700x900"}],
+  "evals": [{"t": 30, "js": "const a = moire.sample(); const r = await moire.dish.scale(0.8); const b = moire.sample(); return JSON.stringify({notes: r.notes, exact: r.exact, line: moire.dish.line(), alive: [a['cells.alive'], b['cells.alive']]})"},
+            {"t": 50, "js": "const r = await moire.dish.scale(0.8); return JSON.stringify({notes: r.notes, line: moire.dish.line()})"},
+            {"t": 70, "js": "const r = await moire.dish.scale(1.25); return JSON.stringify({notes: r.notes, line: moire.dish.line()})"},
+            {"t": 90, "js": "const r = await moire.dish.scale(1.5625); return JSON.stringify({notes: r.notes, line: moire.dish.line()})"},
+            {"t": 101, "js": "return moire.dish.line() + ' | grid ' + moire.heat.hw + 'x' + moire.heat.hh"}],
+  "shots": [{"t": 29, "name": "a_before"}, {"t": 31, "name": "b_sq08"}, {"t": 51, "name": "c_sq064"}, {"t": 69, "name": "d_later"}, {"t": 91, "name": "e_back"}, {"t": 102, "name": "f_tall_window"}]}
+]}

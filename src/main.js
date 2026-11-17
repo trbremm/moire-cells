@@ -28,7 +28,8 @@
 //   ?bsign=plus  the founders' field-B sensing sign all + (as until the C12g + N1 merge; default mixed: + or - at random, both present)
 //   ?pigshed=0   a worn or bleached pigment's trace back into the stock (default: into the dish under the cell; step N1 follow-up)
 //   ?view=1     colour by lineage from the start (key V); ?view=2 (or strategy): by strategy (step C6)
-//   ?bio=0      start with the biology rules off (D H B T M): the loop alone
+//   ?bio=0      start with the biology rules off (H B T M): the loop alone
+//   ?legend=0   step F0: the job legend hidden (View panel); ?view=job (the default; ?view=fate means it too)
 //   ?excl=0|1   step 7 exclusion off / on from the start (key 8); ?states=2..4 its number of states;
 //               ?flip=0|1 its state flip (key 9)
 //   ?partner=0|1 step 8, rule a: the partner A' felt as a phase current (key Z); ?change=0|1 rule b (key ,);
@@ -48,9 +49,9 @@
 //               ?grain=0, ?scalebar=0 (its slight blur, photon grain and scale bar off)
 //   ?until=T    run until simulation time T (s), then pause, exactly at that tick (for comparing runs; tools/shot.py)
 //   ?chargefield=1  step C12g: the dish-wide charge field ON as before C12g (the field, the free atoms' drift, cells feeling it, B
-//               charges from the stock; off by default since C12g); ?qgenes=0 with the stock off, B charges by fate instead of
+//               charges from the stock; off by default since C12g); ?qgenes=0 with the stock off, B charges fixed (one for all since step F0) instead of
 //               from the field genes
-//   ?charge=1   step C6b: the charge field on (Shift+7; off by default since C12g); ?qstock=0 the cells' B charges by fate instead of
+//   ?charge=1   step C6b: the charge field on (Shift+7; off by default since C12g); ?qstock=0 the cells' B charges fixed (one for all since step F0) instead of
 //               from their stock (Shift+8); ?qfeel=0 the cells not feeling the grid's field (Shift+9); ?contours=1 the
 //               charge field's contour lines drawn (Shift+0)
 //   ?honeycomb=0  step C6c: start with the ellipse cells instead of the elastic honeycomb (rules panel, Cell shape)
@@ -121,6 +122,13 @@
 //               ever engulfed); ?kinsparenull=1 kinship ignored (the sparing gene drifts without effect); knobs ?sizeratio= ?drive= ?holdbase=
 //               ?wallarm= ?stiffarm= ?wraptime= ?digesttime= ?startrate= ?batstart= ?wrapcost= ?startcost= ?wrapshare= ?batshare= ?predcensus=;
 //               ?predmark=1 the machinery's mark of engulf-capable cells; the founders' wild group 'engulf' (?founders=wild) draws the genes
+//   ?glueceil=0   step G0: the glue gene capped at 1 again (linear, as before G0); ?gluecost=0 glue above 1 costs per unit as below it;
+//               ?breaks=0 junctions never tear; ?gluenull=1 the glue's NEUTRAL control (the gene drifts, every effect at the founder's
+//               value); ?tearat=x a junction tears this share past the contact distance (0.05), ?heal=s a torn side heals after s on
+//               average (4) (rules panel, Strong glue)
+//   ?stir=0       step G0: the cells do not stir the water (the currents only prescribed, as before); ?stirsplit=0 the stirred water's work
+//               on cells not taken from heat (booked as work in, like the prescribed currents); ?stirgain=x ?stirwet=x ?stirreach=R
+//               ?stirfade=s ?stirscreen=R the knobs (rules panel, Stirred water)
 //   ?fidelity=0   step G1: no error correction (the fidelity gene frozen, no effect, no cost: today's mutation); ?fidelitynull=1 its NEUTRAL
 //               control (the gene drifts, no effect, no cost); ?fidcost=x proofreading's cost (energy units a birth at e^F - 1 = 1, 0.1),
 //               ?fidbeyond=x the share of hard light's extra mutation proofreading cannot catch (0.5), ?fidcensus=s the census's interval
@@ -169,7 +177,7 @@ import { Cells, DEFAULT_CELLS, ANCHORS } from './cells.js';
 import { Light } from './light.js';
 import { Matter, SHOWS, ELECTRONS } from './matter.js';
 import { CARBON } from './carbon.js';   // step C15a: carbon in the open dish
-import { makeActions, keyMaps, keysText, TOOLS, SQUEEZE_SOFT, SQUEEZE_HARD } from './actions.js';
+import { makeActions, keyMaps, keysText, TOOLS, SQUEEZE_SOFT, SQUEEZE_HARD, VIEWS } from './actions.js';
 import { setupUI } from './ui.js';
 import { Recorder } from './record.js';
 import { Neon, LIGHT_FORMAT } from './neon.js';
@@ -368,13 +376,14 @@ async function boot() {
     if (params.has('habit')) cells.genome.params.habit = params.get('habit');   // (step T1b: every founder one habit: burn, both, pigments, other)
     if (params.get('bsign') === 'plus' || params.get('bsign') === 'mixed') cells.genome.params.bSign = params.get('bsign');   // the founders' B sign
     if (params.has('view')) {   // ?view=1 lineage, ?view=2 or ?view=strategy (step C6), ?view=3 or ?view=charge (step C6b)
-      const v = params.get('view'), k = ['fate', 'lineage', 'strategy', 'charge', 'walls', 'guides', 'marker', 'reporter'].indexOf(v);   // (step C10: ?view=walls; C13: guides; T1a: marker; T1b: reporter)
+      const v = params.get('view') === 'fate' ? 'job' : params.get('view');   // (step F0: ?view=job; the old ?view=fate means it too)
+      const k = VIEWS.indexOf(v);   // (step C10: ?view=walls; C13: guides; T1a: marker; T1b: reporter)
       cells.look.view = k >= 0 ? k : Math.max(0, Math.min(7, Math.round(Number(v)) || 0));
     }
     if (flag('check')) cells.enableCheck();
     if (params.get('bio') === '0') {
-      // the loop alone: no fates, adhesion, body traits, turnover or mutation
-      Object.assign(cells.genome.rules, { diff: false, adh: false, body: false, turn: false, mut: false });
+      // the loop alone: no adhesion, body traits, turnover or mutation
+      Object.assign(cells.genome.rules, { adh: false, body: false, turn: false, mut: false });
       cells.fields.sign = 1;   // like repels like: islands and a labyrinth of strands (key U flips)
       cells.excl.on = true;    // step 7 exclusion: pinwheel rosettes (key 8; the user chose it as this view's default)
     }
@@ -436,6 +445,16 @@ async function boot() {
       }
       const fg = Number(params.get('freeglue'));   // step C11: the free base glue
       if (params.has('freeglue') && Number.isFinite(fg)) WP.freeGlue = fg;
+    }
+    {   // step G0: strong glue, junctions that break
+      const GP = cells.glue.params;
+      for (const [q, k] of [['glueceil', 'ceiling'], ['gluecost', 'cost'], ['breaks', 'tear'], ['gluenull', 'null']]) {
+        if (params.has(q)) GP[k] = flag(q);
+      }
+      for (const [q, k] of [['tearat', 'stretch'], ['heal', 'heal']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) GP[k] = v;
+      }
     }
     {   // step C13: fields as genes and guides
       const GP = cells.guides.params;
@@ -580,6 +599,15 @@ async function boot() {
     // step N1: the water (caustic light, currents): its blocks live in the heat buffer (set before the first resize sizes it)
     Object.assign(water, { heat: cells.heat, background, medium, light });
     cells.heat.water = water; matter.water = water; background.water = water;
+    water.stir.heat = cells.heat; cells.stir = water.stir;   // step G0: the cells stir the water (src/stir.js)
+    {
+      const SP = water.stir.params;
+      for (const [q, k] of [['stir', 'on'], ['stirsplit', 'split']]) { if (params.has(q)) SP[k] = flag(q); }
+      for (const [q, k] of [['stirgain', 'gain'], ['stirwet', 'wet'], ['stirreach', 'reach'], ['stirfade', 'fade'], ['stirscreen', 'screen']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v)) SP[k] = v;
+      }
+    }
     {
       const WP = water.params;
       for (const [q, k] of [['caustics', 'caustics'], ['currents', 'currents']]) { if (params.has(q)) WP[k] = flag(q); }
@@ -650,7 +678,8 @@ async function boot() {
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
-    kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, perfusion, carbon: matter.carbon };
+    kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, perfusion, glue: cells.glue, stir: water.stir,
+    carbon: matter.carbon };
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.warfare = new Warfare(window.moire);     // step T1c: the chemical warfare census (lineage borders against interiors)
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
@@ -795,6 +824,7 @@ function neonOptions(N) {
   if (params.has('blur')) HP.blur = flag('blur');
   if (params.has('grain')) HP.grain = flag('grain');
   if (params.has('scalebar')) HP.scalebar = flag('scalebar');
+  if (params.has('legend')) cells.look.legend = flag('legend');   // step F0: the job legend
 }
 
 /** Step C6b: the charge's URL options (see the top of this file). */
@@ -948,7 +978,8 @@ ${cells.eat.whole.panelLine(compact)}
 ${cells.kin.panelLine(compact)}
 ${cells.grn.panelLine(compact)}
 ${cells.pred.panelLine(compact)}
-${cells.fidelity.panelLine(compact)}${ELECTRONS ? `
+${cells.fidelity.panelLine(compact)}
+${cells.glue.panelLine(compact)}${ELECTRONS ? `
 ${matter.vents.panelLine(compact)}` : ''}${CARBON ? `
 ${matter.carbon.panelLine(compact)}` : ''}
 ${cells.eat.pigments.panelLine(compact)}
@@ -1042,6 +1073,7 @@ function drawOverlay() {
     ...cells.eat.hardlight.overlayLines(),
     ...cells.division.overlayLines(),
     ...cells.walls.overlayLines(),
+    ...cells.glue.overlayLines(),
     ...cells.guides.overlayLines(),
     ...matter.oil.overlayLines(),
     neon.overlayLine(),

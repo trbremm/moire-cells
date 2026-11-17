@@ -12,7 +12,9 @@
 // does: harvest (an uphill engine with a pigment) = a disc in its pigment's light band colour, storer (an uphill engine
 // without one, paid by the battery) = a ring in the battery's pale green, burn = a diamond in the fuel's green, swap = a
 // triangle in faded red, form (sediment) = a square in dim warm grey. A clear margin keeps the lattice dots off them. View 2
-// (strategy) colours the body by the strategy instead of the fate.
+// (strategy) colours the body by the strategy instead of the job.
+// Step F0: the body's colour (view 0) is the cell's JOB (src/jobs.js, cell_common.wgsl job_of): what it does, read from its genes as
+// expressed, low-passed, so it changes smoothly: the undecided ink mixed toward the job's by how clearly the job leads.
 // Step C6n, the NEON look (D.neon.x = 1; src/neon.js adds the halo and the trails): the same shapes as light. The outline
 // becomes a thin bright TUBE whose centre line is near white-hot and whose edges carry the colour; the inside goes dark
 // (a faint tint plus a soft inner glow near the tube, as a lit tube lights the wall behind it); the lattice dots are
@@ -32,13 +34,13 @@ struct Draw {
   dots: f32,        // dot brightness (0 = no dots)
   dotR: f32,        // dot radius, as a fraction of the dot spacing
   period: f32,      // dot spacing per unit lattice period, in units of R (0.62 = the medium's period)
-  mode: f32,        // 0 = colour by fate, 1 = colour by lineage (the key's hue)
-  fillC: f32,       // disc fill of committed (non-stem) cells
+  mode: f32,        // 0 = colour by job (step F0; by fate until then), 1 = colour by lineage (the key's hue)
+  fillC: f32,       // disc fill of a cell with a clear job (undecided ones: fill; between, by the job's strength)
   lever: f32,       // the lever (Sim.lever): the dots show the lattice the cell emits with
   leakDot: f32,     // step 6: largest radius of the blue centre dot of a leaking cell, as a fraction of r (0 = none)
   leakMin: f32,     // leak level below which no dot is drawn
   blue: vec4f,      // field B's ink (rgb) for the step 6 marks; a = the converted cells' outline (0 = none)
-  convFill: f32,    // fill of a converted stem cell, as a fraction of field B's ink
+  convFill: f32,    // fill of a converted undecided cell, as a fraction of field B's ink
   states: f32,      // step 7: number of states, for the state bar (0 = no bar: exclusion off)
   bar: f32,         // the bar's brightness
   hand: f32,        // step 8, rule b: the phasor's hand (0 = none)
@@ -56,8 +58,8 @@ struct Draw {
   inkSed: vec4f,    // a form (sediment) engine; w: the rate at which a part reaches its largest size
   inkSwap: vec4f,   // a swap engine; w: the battery's core radius at full charge while parts are drawn (share of r)
   inkOther: vec4f,  // strategy view: the body of a cell that neither harvests nor burns; w: every body's fill there
-  // ---- step C6n: the palette's fate inks, and the neon look ----
-  fate: array<vec4f, 5>,   // the fates' inks (rgb): stem, epithelium, muscle, neuron, cartilage
+  // ---- step C6n: the neon look ----
+  spare5: array<vec4f, 5>, // (the fates' inks until step F0: the jobs' are job[] at the end)
   neon: vec4f,      // x: 1 = the neon look; y: the tube's width (CSS px); z: how white its centre line is (0..1); w: the inner
                     // glow's reach (share of r)
   neon2: vec4f,     // x: the inner glow's brightness; y: the battery core's lit rim (share of its radius); z: how white the
@@ -109,7 +111,8 @@ struct Draw {
   harm: vec4f,      // green rim: x brightness at a whole membrane; y a side with none (share of x); z width (CSS px); w brighter by
                     // up to this share with oil in the bilayer
   harm2: vec4f,     // x the inside's opacity; y its faint green; z violet: a full battery's glow; w violet: the busiest cell's inside
-  harm3: vec4f,     // x violet: the engines' granules; y orange: streaks along a strong stretch; z muscle's striations; w cartilage
+  harm3: vec4f,     // x violet: the engines' granules; y orange: streaks along a strong stretch; z a predator's striations (contractile
+                    // actomyosin, as muscle's were until step F0); w a builder's fibrous matrix (collagen-like; cartilage's until then)
   harm4: vec4f,     // x orange: a crust wall; y the rim's gap from the wall, share of the neon tubes' (0 = shared walls); z w spare
   hInk: array<vec4f, 5>,      // green, orange, yellow, red (heavy chains), violet
   // ---- step T1a: the self marker's look (src/kin.js writeDraw) ----
@@ -125,6 +128,8 @@ struct Draw {
                     // y: the arms' reach outside the prey (share of its radius); z: the ghost's brightness (neon); w: 1 = the machinery's
                     // mark of engulf-capable cells (a small dark-red mouth)
   p1Ink: vec4f,     // the harmonic look's phagosome glow (rgb, violet); w the phagosome ring's brightness
+  // ---- step F0: colour by job (src/jobs.js writeDraw) ----
+  job: array<vec4f, 7>,    // the jobs' inks (rgb): undecided, light eater, breather, fermenter, gradient eater, builder, predator
 };
 // step P1: a neighbour WRAPPING this cell (Cell.engBy): the wrapper's membrane as a tube round this cell, from the wrapper's side as far round
 // as the wrap has gone (at the cell's radius x (1 + arm / 2)); returns (coverage, the tube's centre-line profile 0..1); p the pixel's offset
@@ -235,10 +240,9 @@ fn memb_side(p: vec2f, lp: vec2f, r: f32, in: VSOut) -> vec2f {
   return vec2f(f32(min(u32(ang / P3), 5u)), ang * r);
 }
 
-// the fate's ink (stem, epithelium, muscle, neuron, cartilage), from the palette in use (src/palette.js)
-fn cell_colour(kind: u32) -> vec3f {
-  return D.fate[min(kind, 4u)].rgb;
-}
+// step F0: cell i's JOB ink, from the palette in use (src/palette.js): the undecided ink mixed toward its job's by the job's strength
+fn job_ink(j: vec2f) -> vec3f { return mix(D.job[0].rgb, D.job[min(u32(j.x), 6u)].rgb, clamp(j.y, 0.0, 1.0)); }
+fn cell_colour(i: u32) -> vec3f { return job_ink(job_of(bio[min(i, arrayLength(&bio) - 1u)])); }
 
 // lineage colour: the key angle (60 degrees of hex symmetry) goes once round the hue circle, so related
 // cells (close keys) get close hues; the key scale shifts lightness a little. Base and amplitude from the palette
@@ -369,7 +373,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   let d = length(lp);
   let aa = max(fwidth(ein), 0.35 / D.dpr);
   // the cell's own lattice as sharp dots (the reference turns its dot pattern by la + 90 degrees): the lattice
-  // it emits with (key and fate, scaled by the lever), drawn in the unstretched frame and mapped through the
+  // it emits with (its key, scaled by the lever), drawn in the unstretched frame and mapped through the
   // stretch with the outline, so the dots sit on the strained lattice
   let lat = cell_lattice_a(c, D.lever);   // (step C13: the lattice its genes give it: lever factor, angle offset)
   let s = D.period * D.R * exp(lat.y);
@@ -381,15 +385,16 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   var armRgb = vec3f(0.0);
   if (armV.x > 0.0) {
     let wc = cells[by_partner(c.engBy)];
-    armRgb = cell_colour(wc.kind) * max(D.line, 0.8);
+    armRgb = cell_colour(by_partner(c.engBy)) * max(D.line, 0.8);
     if (D.neon.x > 0.5) { armRgb = mix(armRgb, vec3f(1.0), 0.55 * D.neon.z * armV.y * armV.y); }
     armRgb *= hum_bright(wc, by_partner(c.engBy));
   }
   if (disc <= 0.0 && armV.x <= 0.0) { discard; }
   if (disc <= 0.0) { return vec4f(armRgb * armV.x, armV.x); }
-  var col = select(cell_colour(c.kind), key_colour(c), D.mode > 0.5);
   // step C6: the genome's engines (for the parts and the strategy view)
   let g = bio[in.id];
+  let jb = job_of(g);                         // step F0: the job and its strength
+  var col = select(job_ink(jb), key_colour(c), D.mode > 0.5);
   var harvestBand = 0u;
   var burns = false;
   for (var k = 0u; k < 3u; k++) {
@@ -522,19 +527,19 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     let w2 = max(0.45 * lw, 0.5 / D.dpr);
     ring2 = clamp(min(ein2 - g0, g0 + w2 - ein2) / aa + 0.5, 0.0, 1.0) * mGap;
   }
-  // committed cells get a flat fill in their colour, so tissues read as areas; stem cells stay dark inside
-  // (neon: every inside dark, a faint tint; the fills come from src/cells.js by the look)
-  let fill = select(select(select(select(select(select(D.fill, D.fillC, c.kind != KIND_STEM), D.inkOther.w, strategyView || chargeView), D.wall2.y, wallsView),
+  // cells with a clear job get a flat fill in their colour, so tissues read as areas; undecided cells stay dark inside (step F0: by the
+  // job's strength; the committed fates until then) (neon: every inside dark, a faint tint; the fills come from src/cells.js by the look)
+  let fill = select(select(select(select(select(mix(D.fill, D.fillC, jb.y), D.inkOther.w, strategyView || chargeView), D.wall2.y, wallsView),
                     gdFill, guidesView), D.kin.z, markerView), D.grn.z * repX, reporterView);
   var fillRgb = col * fill;   // (step 8 may tint it below)
   // step C6n: neon, the tube lights the inside near it (a soft glow falling off inward)
   if (neon) { fillRgb += col * D.neon2.x * exp(-max(ein2 - lw, 0.0) / max(D.neon.w * c.r, 1e-3)); }
-  // step 6, rule 2: a converted cell's outline is drawn in field B's ink, and a converted stem cell is filled with
+  // step 6, rule 2: a converted cell's outline is drawn in field B's ink, and a converted undecided cell is filled with
   // it (flat, at the committed cells' level), so converted areas read as areas
   let conv = D.blue.a > 0.0 && (c.flags & CELL_CONV) != 0u;
-  if (conv && c.kind == KIND_STEM) { fillRgb = D.blue.rgb * D.convFill; }
-  // step 8, rule b, clock: a stem cell filled with the partner's ink as far as it emits A' (see the hand below)
-  if (D.hand < 0.0 && c.kind == KIND_STEM) { fillRgb = mix(fillRgb, D.pInk.rgb * 0.55, clamp(c.z.y, 0.0, 1.0)); }
+  if (conv && jb.y < 0.5) { fillRgb = D.blue.rgb * D.convFill; }
+  // step 8, rule b, clock: an undecided cell filled with the partner's ink as far as it emits A' (see the hand below)
+  if (D.hand < 0.0 && jb.y < 0.5) { fillRgb = mix(fillRgb, D.pInk.rgb * 0.55, clamp(c.z.y, 0.0, 1.0)); }
   var rgb = mix(fillRgb, col * D.dots, dot);
   if (reporterView) {   // (step T1b: the reporter's nucleus-like glow)
     let dn = length(lp) / max(0.38 * c.r, 0.5);
@@ -594,7 +599,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     let dg = length(pw - ph.xy);
     let fade = (1.0 - ph.w);
     let gin = cover(ph.z, dg, aa);
-    let gcol = cell_colour(gc.kind);
+    let gcol = cell_colour(eng_partner(c.eng));
     rgb = mix(rgb, gcol * D.p1.z * (0.25 + 0.75 * fade) * fade, gin * 0.85);
     let ow = max(0.6 * lw, 0.6 / D.dpr);
     let gl = cover(0.5 * ow, abs(dg - 0.78 * ph.z), aa) * fade;
@@ -629,6 +634,11 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     let gain = select(D.wall.y, D.wall2.x, wallsView);
     lineCol *= (1.0 - gain) + 2.0 * gain * aE;
     lineCol = mix(lineCol, vec3f(max(max(lineCol.r, lineCol.g), lineCol.b)), D.wall.z * mtr) * (1.0 + D.wall2.w * mtr);
+    // step G0: a TORN side (its junction pulled apart, src/glue.js): the tube frayed, broken into short hot dashes, until it heals
+    if (jn_torn(c.kind, min(side, 5u))) {
+      let dash = step(0.45, fract(sd.y / max(0.32 * c.r, 1.0) + 0.37 * f32(side)));
+      lineCol = mix(lineCol, vec3f(1.0, 0.55, 0.35) * max(max(lineCol.r, lineCol.g), lineCol.b), 0.6) * (0.25 + 0.95 * dash);
+    }
   }
   // step C13, the guides view: each side's tube by what that side feels (s, -1..1): bright where the field is high, dark where low
   if (guidesView) { lineCol *= (1.0 - D.gd.y) + D.gd.y * (1.0 + cell_felt(c, min(side, 5u))); }
@@ -814,11 +824,12 @@ fn fs(in: VSOut) -> @location(0) vec4f {
 // ======================================================================================================================
 // Step H1: the HARMONIC look (src/harmonic.js): a cell as a multiphoton microscope shows it, three channels that ADD.
 // GREEN (third harmonic: interfaces) a thin rim at the membrane, brighter the more lipid each side holds (its integrity), a little
-// more with oil; a neuron's doubled (myelin). The inside DARK and nearly opaque (what lies under a cell is hidden), so a packed
+// more with oil. The inside DARK and nearly opaque (what lies under a cell is hidden), so a packed
 // tissue reads as a green honeycomb with dark insides. VIOLET (autofluorescence: metabolism) a soft glow at the centre as large
 // as the battery is full, faint granules where the engines sit, and the whole inside a little brighter the busier the cell (its
 // battery changing fast either way: cell_glow.wgsl, as the neon hum). ORANGE (second harmonic: ordered fibres) streaks along a
-// strongly stretched cell's long axis, muscle's striations across it (myosin), cartilage's fibrous matrix (collagen), and a crust
+// strongly stretched cell's long axis, a predator's striations across it (actomyosin: engulfing is contractile work) and a builder's
+// fibrous matrix (collagen-like), each as strongly as the job shows (step F0; muscle's and cartilage's until then), and a crust
 // WALL as a fibrous orange band outside the rim (yellower for light chains, redder for heavy). The rim and every light inside are
 // added (alpha 0 at the rim), so a green rim over orange crust reads yellow. No hum, flashes, marks or views here.
 // ======================================================================================================================
@@ -881,19 +892,16 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
   let ein2 = ein - wOff;                                     // inside the rim's outer edge (the outline less the wall)
   let lw = clamp(D.harm.z, 0.5 / D.dpr, 0.3 * c.r);
   let inner = cover_in(ein2 - lw, aa);                       // 1 inside the rim
-  // GREEN: the rim (and a neuron's second, inner line)
+  // GREEN: the rim
   // (a thicker membrane gives more signal: the thickness gene against the founders' usual, 0.75 at half of it to 1.15 at twice)
   let thick = select(1.0, mix(0.75, 1.15, clamp(g.memb.y / max(D.memb2.w, 1e-4) - 0.5, 0.0, 1.5) / 1.5), D.memb.x > 0.5);
   let lipid = (D.harm.y + (1.0 - D.harm.y) * ig) * (1.0 + D.harm.w * oily) * thick;
   let ring = (1.0 - inner) * cover_in(ein2, aa);
   // step T1a: zoomed in, the self marker as fine stripes along the green rim (surface immunostaining), as deep as the cell displays it
   let mk = select(1.0, 1.0 - D.kin.y * clamp(g.mark.w, 0.0, 1.0) * (1.0 - marker_stripe(g, in.local, D.R)), D.kin.y > 0.0);
-  var rgb = G * D.harm.x * lipid * ring * mk;
-  if (c.kind == KIND_NEU) {
-    let g0 = lw + max(0.6, 0.5 * lw);
-    let w2 = max(0.6 * lw, 0.5 / D.dpr);
-    rgb += G * 0.55 * D.harm.x * lipid * clamp(min(ein2 - g0, g0 + w2 - ein2) / aa + 0.5, 0.0, 1.0);
-  }
+  // step G0: a torn junction's side (src/glue.js): the rim broken into short dashes, until it heals
+  let tornH = select(1.0, 0.2 + 0.8 * step(0.45, fract(sd.y / max(0.32 * c.r, 1.0) + 0.37 * f32(side))), jn_torn(c.kind, side) && D.wall.x > 0.5);
+  var rgb = G * D.harm.x * lipid * ring * mk * tornH;
   rgb += G * D.harm2.y * inner;
   // the pixel's offset from the centre on screen (a honeycomb cell: local; an ellipse cell: F lp), and the stretch's axis
   let Fd = cell_F(c);
@@ -923,19 +931,20 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
     }
   }
   rgb += V * vio * inner;
-  // ORANGE: streaks along a strong stretch, muscle's striations, cartilage's matrix
+  // ORANGE: streaks along a strong stretch, a predator's striations, a builder's matrix (step F0: by the job, as strongly as it shows)
+  let hj = job_of(g);
   var org = 0.0;
   let fl = max(0.9 * c.r, 3.0);
   let fw = max(0.13 * c.r, 0.7);
   let fst = D.harm3.y * smoothstep(0.08, 0.35, em);
   if (fst > 0.0) { org += fst * hm_fibres(pw + sh, t, fl, fw); }
-  if (c.kind == KIND_MUS && D.harm3.z > 0.0) {
+  if (u32(hj.x) == 6u && hj.y > 0.0 && D.harm3.z > 0.0) {
     let st = 0.5 + 0.5 * cos(TAU * (pw.x * t.x + pw.y * t.y) / max(0.3 * c.r, 1.4));
-    org += D.harm3.z * st * st * st * (0.55 + 0.45 * hm_noise(vec2f(t.x * pw.y - t.y * pw.x, 0.0) / fw + sh));
+    org += D.harm3.z * hj.y * st * st * st * (0.55 + 0.45 * hm_noise(vec2f(t.x * pw.y - t.y * pw.x, 0.0) / fw + sh));
   }
-  if (c.kind == KIND_CHO && D.harm3.w > 0.0) {
+  if (u32(hj.x) == 5u && hj.y > 0.0 && D.harm3.w > 0.0) {
     let ca = f32(c.seed & 255u) / 255.0 * 3.14159265;
-    org += D.harm3.w * hm_fibres(pw + sh, vec2f(cos(ca), sin(ca)), 0.7 * fl, fw);
+    org += D.harm3.w * hj.y * hm_fibres(pw + sh, vec2f(cos(ca), sin(ca)), 0.7 * fl, fw);
   }
   rgb += mix(O, Y, 0.3) * org * inner;
   // ORANGE: a crust wall, a fibrous band outside the rim along the wall, where this side's wall is (patchy where partial)

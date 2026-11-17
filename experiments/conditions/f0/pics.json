@@ -1,0 +1,138 @@
+{
+ "batch": "f0-pics",
+ "runs": [
+  {
+   "name": "f0-pics-default",
+   "description": "step F0 pictures: default, at 300 s, neon and harmonic, whole dish and a x4 zoom",
+   "query": {},
+   "duration": 308,
+   "sample_every": 60,
+   "stall": 200,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 300,
+     "name": "dish_neon"
+    },
+    {
+     "t": 302,
+     "name": "zoom_neon"
+    },
+    {
+     "t": 304,
+     "name": "zoom_harm"
+    },
+    {
+     "t": 306,
+     "name": "dish_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 301,
+     "js": "const C = moire.cells, s = moire.light.params.mode === 'spot' ? moire.light.spot() : null; const cam = moire.camera; let x = s ? s.x : cam.W / 2, y = s ? s.y : cam.H / 2; return JSON.stringify({x, y, z: cam.set(4, x, y)})"
+    },
+    {
+     "t": 303,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    },
+    {
+     "t": 305,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ],
+   "dpr": 2
+  },
+  {
+   "name": "f0-pics-shallows",
+   "description": "step F0 pictures: shallows, at 300 s, neon and harmonic, whole dish and a x4 zoom",
+   "query": {
+    "preset": "shallows"
+   },
+   "duration": 308,
+   "sample_every": 60,
+   "stall": 200,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 300,
+     "name": "dish_neon"
+    },
+    {
+     "t": 302,
+     "name": "zoom_neon"
+    },
+    {
+     "t": 304,
+     "name": "zoom_harm"
+    },
+    {
+     "t": 306,
+     "name": "dish_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 301,
+     "js": "const C = moire.cells, s = moire.light.params.mode === 'spot' ? moire.light.spot() : null; const cam = moire.camera; let x = s ? s.x : cam.W / 2, y = s ? s.y : cam.H / 2; return JSON.stringify({x, y, z: cam.set(4, x, y)})"
+    },
+    {
+     "t": 303,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    },
+    {
+     "t": 305,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ],
+   "dpr": 2
+  },
+  {
+   "name": "f0-pics-colonies",
+   "description": "step F0 pictures: colonies, at 480 s, neon and harmonic, whole dish and a x4 zoom",
+   "query": {
+    "preset": "colonies"
+   },
+   "duration": 488,
+   "sample_every": 60,
+   "stall": 200,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 480,
+     "name": "dish_neon"
+    },
+    {
+     "t": 482,
+     "name": "zoom_neon"
+    },
+    {
+     "t": 484,
+     "name": "zoom_harm"
+    },
+    {
+     "t": 486,
+     "name": "dish_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 481,
+     "js": "const { readBuffer } = await import('./src/snapshot.js'); const C = moire.cells, n = C.count, F = 92; const ab = await readBuffer(C.device, C.cellBuf, 0, n * F * 4); const f = new Float32Array(ab), u = new Uint32Array(ab); let best = null, bn = -1; const R = C.R; for (let i = 0; i < n; i += 7) { const o = i * F; if (!(u[o + 9] & 1)) continue; let k = 0; for (let j = 0; j < n; j += 3) { const q = j * F; if ((u[q + 9] & 1) && Math.hypot(f[q] - f[o], f[q + 1] - f[o + 1]) < 8 * R) k++; } if (k > bn) { bn = k; best = [f[o], f[o + 1]]; } } if (best) moire.camera.set(4, best[0], best[1]); return JSON.stringify({best, bn})"
+    },
+    {
+     "t": 483,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    },
+    {
+     "t": 485,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ],
+   "dpr": 2
+  }
+ ],
+ "seeds": [
+  3
+ ]
+}

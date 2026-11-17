@@ -2115,6 +2115,26 @@ fissure, blue rings at the seeps; cells gather along the fissures).
   At the default dish the per-frame work is the same as main's but for the springs' capsule test in the matter pass (16 springs at
   most) and the through-flow term in the water pass (only with perfusion).
 
+# Fates removed (step F0, 2026-11-17)
+
+Not an experiment: the same scenes before (main 58d1963) and after removing the fates, to see what changed besides the colours.
+`experiments/conditions/f0/pics.json` (seed 3), run from a worktree of main for "before"; pictures in `experiments/keep/f0/`.
+
+| scene | cells before / after | before (fates) | after (jobs: undecided, light, breather, fermenter, gradient, builder, predator) |
+|---|---|---|---|
+| default, 300 s | 529 / 490 | stem 507, cartilage 20 | 223, 143, 103, 0, 1, 13, 7 |
+| Sunlit shallows, 300 s | 3648 / 2783 | stem 2800, epithelium 605, cartilage 137, neuron 86 | 1177, 565, 881, 93, 3, 46, 18 |
+| Colonies, 480 s | 2807 / 2819 | stem 1486, epithelium 631, cartilage 318, neuron 233, muscle 139 | 1349, 429, 708, 0, 2, 19, 312 |
+
+- The colonies' and the default scene's numbers follow main's within a few % at every minute (the colonies: 947, 455, 519, 759, 1497,
+  1886, 2006, 1914, 2764 against 947, 461, 527, 688, 1351, 1895, 2067, 1918, 2778): the same-fate glue, the fate sign table and the
+  fate body traits did not hold these dishes together. The shallows grew slower in this one run (660 / 738 / 1299 / 2581 at 2 / 3 / 4 /
+  5 min against 788 / 972 / 1917 / 3443); one seed only, not followed up.
+- Look: where the fates painted the dish mostly warm white with cyan and amber sheets that formed by contact, the jobs follow the
+  lineages: each lineage's patch in the colour of what its genes run (pigment lineages lime, burners pink, wall builders amber at the
+  crust springs, wild founders' engulfers red). A third to a half of the cells stay undecided (warm white): founders that carry a
+  pigment and a burner of about equal weight.
+
 # Carbon in the open dish
 
 Step C15a (README "Step C15a: carbon in the open dish"): a carbon-like atom c with four hands, five one-carbon molecules on a LADDER

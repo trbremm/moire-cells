@@ -27,10 +27,11 @@ import { LIGHT_COMMON_URL } from './light.js';
 import { pal, LOOK } from './palette.js';
 import { camera } from './camera.js';
 import { readBuffer } from './snapshot.js';
+import { Stir } from './stir.js';
 
 const WATER_COMMON_URL = 'src/shaders/water_common.wgsl';
 const WP_BYTES = 256;     // struct WaterP
-const WD_BYTES = 112;     // struct WDraw
+const WD_BYTES = 144;     // struct WDraw (step G0: + the stirred streamlines, 112 until then)
 // the swell: directions (degrees from the wind), wavelengths (in R) and how fast each runs (R per s): a fixed set, so every dish's
 // light moves the same way
 const SWELL = [[-75, 9, 0.4], [-38, 6.2, 0.33], [-6, 12, 0.48], [23, 5.1, 0.3], [55, 7.7, 0.38], [101, 6.8, 0.35]];
@@ -82,6 +83,8 @@ export class Water {
   static async create(device, format) {
     const w = new Water(device, format);
     await w.init();
+    w.stir = await Stir.create(device);   // step G0: the cells stir the water (src/stir.js)
+    w.stir.water = w;
     return w;
   }
 
@@ -113,12 +116,17 @@ export class Water {
     this.noRip = d.createBuffer({ label: 'water: no ripples', size: 16, usage: U.STORAGE });
   }
 
-  /** Blocks of n words this keeps in the heat buffer: the caustic block, then psi ((hw + 1) x (hh + 1) words fit in 2 blocks). */
-  get blocks() { return 3; }
+  /**
+   * Blocks of n words this keeps in the heat buffer: the caustic block, then psi ((hw + 1) x (hh + 1) words fit in 2 blocks); step G0: then the
+   * cells' stirring (src/stir.js: its force splat, x and y, and its stream function on the coarse stir grid, 3 x sw x sh words in 2 blocks).
+   */
+  get blocks() { return 5; }
   get causticsOn() { return !!(this.params.caustics && this.light && this.light.on && this.params.strength > 0); }
   get eddiesOn() { return !!(this.params.currents && (this.params.speed > 0 || this.params.gyre > 0)); }
   /** The water flows: the eddies and the gyre, or a perfusion's through-flow (src/perfusion.js), or both. */
-  get currentsOn() { return this.eddiesOn || !!(this.perfusion && this.perfusion.flowing); }
+  get currentsOn() { return this.eddiesOn || !!(this.perfusion && this.perfusion.flowing) || this.stirOn; }
+  /** Step G0: the cells stir the water (src/stir.js). */
+  get stirOn() { return !!(this.stir && this.stir.on); }
 
   resize(view) { this.view = view; }
 
@@ -183,6 +191,8 @@ export class Water {
     this.ran = false;
     const H = this.heat, B = this.background, Md = this.medium;
     if (!H || !H.buffer || !this.view) return;
+    // step G0: the stirred flow first (the cells' push of the frame before -> its psi in hb, which the surface pass adds)
+    if (this.stir) { this.stir.heat = H; this.stir.compute(encoder, frame); }
     const caus = this.causticsOn, cur = this.currentsOn;
     if (!caus && !cur) return;
     const p = this.params, R = H.R, t = frame.time;
@@ -226,6 +236,8 @@ export class Water {
       f[48 + 4 * m] = qx; f[49 + 4 * m] = qy; f[50 + 4 * m] = ph[m]; f[51 + 4 * m] = 0;
     }
     f[51] = thr[1];
+    if (this.stir) this.stir.writeWater(u, f, 60);   // step G0: the stirred psi (struct WaterP stir)
+    else u.fill(0, 60, 64);
     const eddies = this.eddiesOn;
     const A = eddies && qmag > 1e-9 ? Math.max(0, p.speed) * R / qmag : 0;     // |u| ~ A |q|: the eddies' speed
     const G = !eddies ? 0 : Math.max(0, p.gyre) * R * Math.min(W, Hh) / Math.PI * Math.cos(2 * Math.PI * t / Math.max(10, p.gyrePeriod));
@@ -250,7 +262,10 @@ export class Water {
     const harm = !!(frame.look && frame.look.harmonic);
     const netA = this.causticsOn ? (harm ? p.netHarm : p.net) : 0;
     const lineA = this.currentsOn && this.machinery && !harm ? p.lines : 0;
-    if (!(netA > 0) && !(lineA > 0)) return;
+    // step G0: the stirred flow's own streamlines (pink), in the machinery view
+    const St = this.stir, stStep = St && St.active ? St.lineStep() : 0;
+    const stirA = St && St.active && this.machinery && !harm && stStep > 0 ? Math.max(0, St.params.lines) : 0;
+    if (!(netA > 0) && !(lineA > 0) && !(stirA > 0)) return;
     const rb = this.ripBuf || this.noRip;
     if (!this.dbgs.has(rb)) {
       this.dbgs.set(rb, this.device.createBindGroup({
@@ -276,6 +291,11 @@ export class Water {
     f[20] = p.lineStep > 0 ? p.lineStep : Math.max(1e-3, (this.psiScale || 1) / 6); f[21] = Math.max(0.3, p.lineW);
     const top = Math.max(1.01, p.imax * this.norm);   // the brightest the light gets (x the mean)
     f[22] = 1 + (top - 1) * Math.max(0, p.netFrom); f[23] = 1 + (top - 1) * Math.max(p.netFrom + 0.02, p.netTo);
+    // step G0: the stirred streamlines: the stir grid (offset, sw, sh, spacing) and their step, brightness and ink
+    if (stirA > 0) St.writeWater(u, f, 24); else u.fill(0, 24, 28);
+    f[28] = stStep; f[29] = stirA; f[30] = 0; f[31] = 0;
+    const pink = [255, 120, 190];
+    f[32] = pink[0] / 255; f[33] = pink[1] / 255; f[34] = pink[2] / 255; f[35] = 0;
     this.device.queue.writeBuffer(this.dBuf, 0, this.dAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.dbg);
@@ -314,13 +334,15 @@ export class Water {
     const p = this.params, on = (x) => (x ? 'on' : 'off');
     const c = this.causticsOn ? `caustics ${p.focus >= 1 ? 'net' : 'dappled'} (focus ${p.focus})` : 'caustics off';
     const k = this.currentsOn ? `currents ${fmt(this.speedNow || 0)} R/s (eddies ${fmt(this.eddy || 0)} R)` : 'currents off';
-    if (compact) return `WATER ${c} · ${k}`;
-    return `WATER  ${c} · ${k} · cells drift ${p.drift} of it · gyre ${p.gyre} R/s, turning every ${p.gyrePeriod} s · rules: caustics ${on(p.caustics)}, currents ${on(p.currents)}`;
+    const st = this.stir ? ` · ${this.stir.panelText()}` : '';   // step G0: the cells' own stirring
+    if (compact) return `WATER ${c} · ${k}${st}`;
+    return `WATER  ${c} · ${k}${st} · cells drift ${p.drift} of it · gyre ${p.gyre} R/s, turning every ${p.gyrePeriod} s · rules: caustics ${on(p.caustics)}, currents ${on(p.currents)}`;
   }
 
   overlayLines() {
     const p = this.params, on = (x) => (x ? 'on' : 'off');
     return [`water (step N1): caustics ${on(p.caustics)} (strength ${p.strength}, focus ${p.focus}, depth ${p.depth} R, wind ${p.wind}°, ripples ${p.ripples}, ` +
-      `mean scale ${this.norm.toFixed(3)}) · currents ${on(p.currents)} (eddies ${p.speed} R/s at ${p.turn}° beat, ${fmt(this.eddy || 0)} R across; gyre ${p.gyre} R/s; cells drift ${p.drift})`];
+      `mean scale ${this.norm.toFixed(3)}) · currents ${on(p.currents)} (eddies ${p.speed} R/s at ${p.turn}° beat, ${fmt(this.eddy || 0)} R across; gyre ${p.gyre} R/s; cells drift ${p.drift})`,
+      ...(this.stir ? this.stir.overlayLines() : [])];
   }
 }

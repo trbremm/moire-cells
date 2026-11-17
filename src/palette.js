@@ -2,11 +2,14 @@
 //   FLAT  the faded palette of steps 1 to C6 (crisp flat shapes, no glow): the look with neon off (key E)
 //   NEON  the 80s neon-light palette (user, 2026-11-15: "80s neon colour lights, think of video clip graphics"): the same
 //         meanings, more lit (hot pink, cyan, violet, ...), drawn as thin bright tubes with a tight halo (src/neon.js)
-// Colours are 0..255 sRGB. A colour carries a MEANING (CLAUDE.md, "colour means something"): fate or function, never
+// Colours are 0..255 sRGB. A colour carries a MEANING (CLAUDE.md, "colour means something"): function, never
 // decoration. The layers read the palette in use every frame through pal(), so key E swaps every colour at once.
 //
 // Meanings:
-//   fate[0..4]     a cell's body (outline, tube) by its fate: stem, epithelium, muscle, neuron, cartilage
+//   job[0..6]      step F0: a cell's body (outline, tube) by its JOB, what it does (src/jobs.js): undecided (warm white, the old stem
+//                  colour), light eater (lime: sunlight, chlorophyll-ish, yellower than the fuel's green), breather (hot pink: burns
+//                  with oxygen), fermenter (violet: works without it), gradient eater (cyan: the vents' cold redox), builder (amber,
+//                  as the crust walls' bricks), predator (red). Until step F0: fate[0..4], stem, epithelium, muscle, neuron, cartilage
 //   lineage        colour by lineage (key V): the key's hue round the colour wheel, base + amp x cos(hue)
 //   band[0..3]     the light bands, by photon energy: warm (heat only), visible 1, visible 2, hard. A harvest engine's
 //                  pigment part and the strategy view's harvesters are drawn in their band's colour
@@ -38,7 +41,7 @@
 
 export const FLAT = {
   name: 'flat',
-  fate: [[241, 236, 223], [121, 220, 216], [239, 134, 184], [185, 162, 255], [240, 201, 135]],
+  job: [[241, 236, 223], [190, 236, 120], [239, 134, 184], [185, 162, 255], [121, 220, 216], [240, 201, 135], [236, 110, 104]],
   lineage: { base: 0.64, amp: 0.26 },
   band: [[226, 138, 110], [236, 188, 104], [138, 190, 238], [212, 186, 250]],
   core: [180, 223, 164],
@@ -69,12 +72,13 @@ export const FLAT = {
   levels: { substances: 0.85, field: 0.32, spot: 0.55, charge: 0.7 },
 };
 
-// NEON: the same meanings, lit. Fates as the classic neon-sign gases and coatings: warm white (stem), cyan
-// (epithelium), hot pink (muscle), violet (neuron), amber (cartilage). The substances and the field dots are drawn
+// NEON: the same meanings, lit. Jobs (step F0; the fates until then) as the classic neon-sign gases and coatings: warm white
+// (undecided), lime (light eater), hot pink (breather), violet (fermenter), cyan (gradient eater), amber (builder), red (predator).
+// The substances and the field dots are drawn
 // QUIETER than the cells (lower levels, and a smaller share of the halo in src/neon.js): the scene is still the cells.
 export const NEON = {
   name: 'neon',
-  fate: [[226, 176, 138], [24, 232, 255], [255, 46, 158], [158, 92, 255], [255, 158, 24]],
+  job: [[226, 176, 138], [168, 255, 40], [255, 46, 158], [158, 92, 255], [24, 232, 255], [255, 158, 24], [255, 40, 40]],
   lineage: { base: 0.5, amp: 0.5 },
   band: [[255, 96, 56], [255, 204, 32], [40, 156, 255], [204, 128, 255]],
   core: [120, 255, 140],
@@ -111,10 +115,10 @@ export const NEON = {
 //   green   third-harmonic-like: INTERFACES. Cell membranes (brighter with lipid, a bit more with oil), oil and soap
 //           boundaries, so a packed tissue reads as a green honeycomb with dark insides
 //   orange  second-harmonic-like: ORDERED FIBRES. Crust (sediment chains) as a dense fibrous texture, crust walls round
-//           cells, stretched cells as streaks along their stretch, muscle's striations, cartilage's matrix; deeper and
+//           cells, stretched cells as streaks along their stretch, predators' striations, builders' matrix (step F0); deeper and
 //           redder for heavy chains, yellow where dense
 //   violet  autofluorescence-like: METABOLISM. Fuel in the dish as a soft wispy haze, batteries, running engines, busy cells
-// Every other meaning (fates, bands, ...) is the neon palette's (the views V, the fluorescence's band colours); the quiet
+// Every other meaning (jobs, bands, ...) is the neon palette's (the views V, the fluorescence's band colours); the quiet
 // layers are quieter still.
 export const HARMONIC = {
   ...NEON,

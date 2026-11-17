@@ -17,6 +17,7 @@ import { BIO_FLOATS, strategyOf, founderGenome, HABITS, predatorGenome } from '.
 import { DESIGNS, DESIGN_NAMES, designGenome } from './tissues.js';
 import { CELL_FLOATS } from './cells.js';
 import { CARBON, LADDER, carbonTable, describeCarbon } from './carbon.js';   // step C15a: the builder c, its ladder, tar
+import { JOBS, jobOf, jobInk } from './jobs.js';   // step F0: colour by job
 
 const NS = 'http://www.w3.org/2000/svg';
 const rgb = (c, a = 1) => (a >= 1 ? `rgb(${c.map((v) => Math.round(v)).join(',')})` : `rgba(${c.map((v) => Math.round(v)).join(',')},${a})`);
@@ -351,7 +352,7 @@ export function summary(g, o = 0, lipidsOn = true) {
     if (SUBSTANCES[ch]) pumps.push(`pumps ${SUBSTANCES[ch].name} ${out ? 'out' : 'in'}`);
   }
   const body = [`tolerates heat ${g[o + 35].toFixed(0)}`];
-  if (g[o + 16] > 0.7) body.push('sticky'); else if (g[o + 16] < 0.25) body.push('loose');
+  if (g[o + 16] > 1.5) body.push('glued fast'); else if (g[o + 16] > 0.7) body.push('sticky'); else if (g[o + 16] < 0.25) body.push('loose');   // (step G0: up to 4)
   if (g[o + 18] > 1.4) body.push('crawls fast');
   if (g[o + 80] > 0.3) body.push('opens kin channels');   // step T1a
   if (g[o + 79] < 0.3 && g.length > o + 79) body.push('hides its marker');
@@ -369,8 +370,7 @@ export function summary(g, o = 0, lipidsOn = true) {
 export function drawPortrait(cx, S, f, g, i, P = pal(), R0 = 6) {
   const o = i * CELL_FLOATS, b = i * BIO_FLOATS;
   cx.clearRect(0, 0, S, S);
-  const kind = Math.min(4, new Uint32Array(f.buffer, f.byteOffset, f.length)[o + 8] >>> 0);
-  const fate = P.fate[kind] || P.fate[0];
+  const ink = jobInk(P, jobOf(g, b));   // step F0: its JOB's ink, as the dish draws it (the fate's until then)
   const r = f[o + 4] || R0;
   const rad = Array.from({ length: 6 }, (_, k) => f[o + 26 + k]);
   const hex = rad.every((x) => x > 0.2 * r);
@@ -403,16 +403,16 @@ export function drawPortrait(cx, S, f, g, i, P = pal(), R0 = 6) {
     const ink = lip.crustLight.map((v, j) => v + (lip.crustHeavy[j] - v) * heavy);
     cx.save(); outline(); cx.lineWidth = S * 0.09; cx.strokeStyle = rgb(ink, 0.35 + 0.5 * cover); cx.setLineDash([S * 0.06, S * 0.025]); cx.stroke(); cx.restore();
   }
-  // body: dark, a faint tint of the fate
+  // body: dark, a faint tint of the job
   outline();
-  cx.fillStyle = rgb(fate.map((v) => v * 0.1));
+  cx.fillStyle = rgb(ink.map((v) => v * 0.1));
   cx.fill();
   // the tube: coloured with a tight glow, a near-white core
   cx.save();
-  cx.shadowColor = rgb(fate, 0.9); cx.shadowBlur = S * 0.08;
-  cx.lineWidth = S * 0.045; cx.strokeStyle = rgb(fate); outline(); cx.stroke();
+  cx.shadowColor = rgb(ink, 0.9); cx.shadowBlur = S * 0.08;
+  cx.lineWidth = S * 0.045; cx.strokeStyle = rgb(ink); outline(); cx.stroke();
   cx.restore();
-  cx.lineWidth = S * 0.014; cx.strokeStyle = rgb(fate.map((v) => v + (255 - v) * 0.75)); outline(); cx.stroke();
+  cx.lineWidth = S * 0.014; cx.strokeStyle = rgb(ink.map((v) => v + (255 - v) * 0.75)); outline(); cx.stroke();
   // the battery's core (pale green; full = 0.55 r)
   const bat = Math.max(0, Math.min(1, f[o + 16]));
   if (bat > 0.01) {
@@ -508,7 +508,9 @@ export function cellPanel(ctx, onAdd) {
       const main = el('div', 'zmain');
       const share = alive ? Math.round(100 * G.members.length / alive) : 0;
       const head = el('div', 'zhead');
-      head.append(el('b', '', `${HABIT_NAME[G.habit] || G.habit}`), el('span', 'zcount', `${G.members.length} (${share} %)`));
+      const J = jobOf(g, G.rep * BIO_FLOATS);   // step F0: the middle cell's job
+      head.append(el('b', '', `${HABIT_NAME[G.habit] || G.habit}`), el('span', 'zjob', ` · ${J.strength >= 0.5 ? JOBS[J.job].label : 'undecided'}`),
+        el('span', 'zcount', `${G.members.length} (${share} %)`));
       main.append(head, el('div', 'znums', G.text[0]), el('div', 'zamt', G.text[1]));
       const add = el('button', 'act zpip', 'add');
       add.type = 'button';

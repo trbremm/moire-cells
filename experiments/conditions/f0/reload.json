@@ -1,0 +1,117 @@
+{
+ "batch": "f0-reload",
+ "runs": [
+  {
+   "name": "f0-reload-tissue",
+   "description": "an old tissue-lab snapshot (C11, fates in its genomes and rules) loads and runs 40 s",
+   "query": {
+    "snap": "experiments/tissue/configs/c11-end-lb-t1/snapshot.json"
+   },
+   "duration": 40,
+   "sample_every": 10,
+   "stall": 200,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 2,
+     "name": "t2"
+    },
+    {
+     "t": 40,
+     "name": "t40"
+    }
+   ],
+   "evals": [
+    {
+     "t": 1,
+     "js": "const s = moire.cells.stats; return JSON.stringify({t: s && s.time, job: s && s.job, alive: moire.cells.alive})"
+    },
+    {
+     "t": 39,
+     "js": "const s = moire.cells.stats; return JSON.stringify({t: s && s.time, job: s && s.job, alive: moire.cells.alive})"
+    }
+   ]
+  },
+  {
+   "name": "f0-reload-p1",
+   "description": "a P1 snapshot (colonies, 20 min; cells with fates) loads and runs 60 s",
+   "query": {
+    "snap": "experiments/runs/p1-col-on_s3/snapshots/snap_t1200.json"
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "stall": 200,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 1,
+     "name": "t1"
+    },
+    {
+     "t": 60,
+     "name": "t60"
+    }
+   ],
+   "evals": [
+    {
+     "t": 0.5,
+     "js": "const s = moire.cells.stats; return JSON.stringify({t: s && s.time, job: s && s.job, alive: moire.cells.alive})"
+    },
+    {
+     "t": 59,
+     "js": "const s = moire.cells.stats; return JSON.stringify({t: s && s.time, job: s && s.job, alive: moire.cells.alive})"
+    }
+   ]
+  },
+  {
+   "name": "f0-lab",
+   "description": "the Tissue lab preset, 120 s",
+   "query": {
+    "preset": "lab"
+   },
+   "duration": 120,
+   "sample_every": 20,
+   "stall": 200,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 120,
+     "name": "lab"
+    }
+   ],
+   "evals": [
+    {
+     "t": 119,
+     "js": "const s = moire.cells.stats; return JSON.stringify({t: s && s.time, job: s && s.job, alive: moire.cells.alive})"
+    }
+   ]
+  },
+  {
+   "name": "f0-tissues",
+   "description": "the three designed tissues placed in an empty-ish dish (default scene, 60 cells) at 2 s, 120 s",
+   "query": {
+    "cells": 60
+   },
+   "duration": 120,
+   "sample_every": 20,
+   "stall": 200,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 120,
+     "name": "tissues"
+    }
+   ],
+   "evals": [
+    {
+     "t": 2,
+     "js": "const v = moire.control.view(); const out = []; for (const [k, n] of [['plant', 0.25], ['filament', 0.5], ['biofilm', 0.75]]) out.push(await moire.tissues.place(k, { x: v.cssW * n, y: v.cssH * 0.5, n: 40 })); return JSON.stringify(out)"
+    },
+    {
+     "t": 119,
+     "js": "const s = moire.cells.stats; return JSON.stringify({t: s && s.time, job: s && s.job, alive: moire.cells.alive})"
+    }
+   ]
+  }
+ ]
+}

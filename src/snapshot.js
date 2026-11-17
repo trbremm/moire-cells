@@ -175,6 +175,8 @@ export function settingObjects(M) {
     ...(M.water ? { 'water.params': M.water.params } : {}),           // step N1: caustic light, currents
     ...(M.perfusion ? { 'perfusion.params': M.perfusion.params } : {}),   // perfusion (src/perfusion.js)
     ...(M.oases ? { 'oases.params': M.oases.params } : {}),           // step N1: the scarce nutrient's springs
+    ...(M.glue ? { 'glue.params': M.glue.params } : {}),              // step G0: strong glue, junctions that break
+    ...(M.stir ? { 'stir.params': M.stir.params } : {}),              // step G0: the cells stir the water
   };
 }
 const SCALARS = [['neon.on', (M) => M.neon, 'on'], ['background.heatOn', (M) => M.background, 'heatOn'], ['background.ambient', (M) => M.background, 'ambient']];
@@ -358,6 +360,7 @@ export async function snapshot(M, ctl, opts = {}) {
       url: location.href, query: location.search, seed: ctl.seed,
       electrons: ELECTRONS,   // step C12d: the chemistry's table it runs on (absent before step C12d: the old one)
       carbon: CARBON,         // step C15a: carbon in the dish (absent before step C15a: no carbon)
+      jobs: 1,                // step F0: the cells carry job scores, no fates (absent before: fates, cleared on load)
       time: ctl.time(), tick: C.tick >>> 0,
       view: { cssW: v.cssW, cssH: v.cssH }, R: C.R, start: C.start, count: C.count, alive: m,
       dish: { W: dish.W, H: dish.H, R: dish.R, mR: dish.mR, perArea: dish.perArea, start: dish.start, press: { ...dish.press } },   // (the dish's own size, src/dish.js)
@@ -543,6 +546,14 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       Object.assign(M.oases.params, { scarce: false, roam: false, count: 0 });   // step N1
       notes.push('saved before step N1: trace from every spring, no oases (as it ran)');
     }
+    if (opts.settings !== false && M.glue && !(S.settings && S.settings['glue.params'])) {
+      Object.assign(M.glue.params, { ceiling: false, cost: false, tear: false, null: false });   // step G0
+      notes.push('saved before step G0: the glue gene capped at 1, no junctions tearing (as it ran)');
+    }
+    if (opts.settings !== false && M.stir && !(S.settings && S.settings['stir.params'])) {
+      M.stir.params.on = false;   // step G0
+      notes.push('saved before step G0: the cells do not stir the water (as it ran)');
+    }
     if (opts.settings !== false && M.waste && !(S.settings && S.settings['waste.params'])) {
       Object.assign(M.waste.params, { saturation: false, osmosis: false });   // step C12e
       notes.push('saved before step C12e: saturation and osmosis off (as it ran)');
@@ -572,6 +583,17 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
         if (e & 3) { const pn = newOf.get(e >>> 16); cu[o + 88] = pn == null ? 0 : ((e & 0xffff) | (pn << 16)) >>> 0; }
         if ((b >>> 24) & 3) { const pn = newOf.get(b & 0xffff); cu[o + 89] = pn == null ? 0 : ((b & 0xffff0000) | pn) >>> 0; }
       }
+    }
+    // step F0: a snapshot from before has fates: every cell's kind (Cell word 8) back to 0 and the fates' words of its genome (Bio 8..15,
+    // 20..23: response and relay genes, accumulators; now job state) cleared, so the job colours start undecided and settle in seconds
+    if (!S.jobs) {
+      for (let k = 0; k < m; k++) {
+        const i = sameSlots ? idx[k] : k;
+        cu[i * CELL_FLOATS + 8] = 0;
+        bu.fill(0, i * BIO_FLOATS + 8, i * BIO_FLOATS + 16);
+        bu.fill(0, i * BIO_FLOATS + 20, i * BIO_FLOATS + 24);
+      }
+      notes.push('saved before step F0: the fates ignored (every cell undecided until its job shows)');
     }
     const q = d.queue;
     q.writeBuffer(C.cellBuf, 0, cu);

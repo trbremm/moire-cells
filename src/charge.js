@@ -12,7 +12,7 @@
 //                                So a fast light atom cannot run far ahead of its slow partner of the other sign: their
 //                                cloud spreads as a pair.
 //   cells' charge from stock (Shift+8)  a cell's charge in field B (step 5) is its stock's net charge, saturating:
-//                                qB x tanh(net / qHalf), instead of the fixed charge per fate (off: those, for comparison)
+//                                qB x tanh(net / qHalf), instead of the fixed charge (one for all since step F0; per fate until then) (off: those, for comparison)
 //   cells feel the grid (Shift+9) a charged cell is pushed down (+) or up (-) the grid's potential (its membrane's six corners
 //                                read phi, cell_eat.wgsl plan; the step pushes, cell_step.wgsl)
 //   contours (Shift+0)           phi drawn as thin crisp contour lines (+ and - in their own inks; drawing only; also with the
@@ -53,7 +53,7 @@ export class Charge {
       on: false,          // Shift+7: the screened charge field is computed, and the free charged atoms drift in it (step C12g: off by default)
       stock: false,       // Shift+8: a cell's charge in field B from its stock's net charge (step C12g: off by default; then from its genes)
       genes: true,        // step C12g: with stock off, a cell's charge in field B from its own field genes (qB x the sign of its B sensing
-                          // gene; its emission gene scales the beat); off: the fixed charges per fate of step 5 (?qgenes=0)
+                          // gene; its emission gene scales the beat); off: the fixed charge of step 5 (one for all since step F0; per fate until then) (?qgenes=0)
       feel: true,         // Shift+9: cells feel the grid's field (needs Shift+7)
       contours: false,    // Shift+0: phi drawn as contour lines (drawing only; also shown with the machinery, Shift+4)
       // the field
@@ -69,13 +69,13 @@ export class Charge {
       qHalf: 0.01,        // a cell's charge in field B is qB x tanh(net charge / qHalf) (net charge in atom-units: a cell holds about
                           // 0.3 units of each free atom; most cells are neutral to a few counts, cells running swap engines hold
                           // about 0.01 to 0.04 more of one sign, see the README)
-      qB: 1,              // ... (the fixed per-fate charges of step 5 are about 1)
+      qB: 1,              // ... (the fixed charge of step 5 is 1)
       qGene: 0.15,        // step C12g: a cell's charge in field B from its genes: qGene x the sign of its B sensing gene (x its emission
                           // gene). Every founder carries the same sign, so at 1 like-repels-like scattered the culture into crumbs; 0.15 keeps
                           // a colony whole (about the stock charges' typical size: mean |q| 0.07 to 0.2) (?qgene=)
       bSign: 1,           // field B's sign rule while the charges come from the stocks: +1 like repels like (as real charge,
                           // and as the substrate's field); -1 like attracts like. Key U flips it then (and fields.sign, the
-                          // per-fate charges' rule, while Shift+8 is off), so Shift+8 off gives back step 5's page exactly
+                          // fixed charge's rule, while Shift+8 is off), so Shift+8 off gives back step 5's page exactly
       feelGain: 20,       // cells feel the grid: speed = feelGain x q x (-grad phi) (R / s per unit of phi per R; around a
                           // charged cell phi changes by about 0.01 to 0.05 per R, so a charged cell drifts at 0.2 to 1 R / s)
       feelSat: 1,         // ... saturating at this speed (R / s)
@@ -125,9 +125,9 @@ export class Charge {
   get stockOn() { return !!this.params.stock && !!(this.eat && this.eat.params.on); }
   /** Step C12g: whether a cell's B charge comes from its field genes (the default; not while it comes from the stock). */
   get genesOn() { return !this.stockOn && !!this.params.genes; }
-  /** Field B's charge mode for the step (Fields.qStock): 1 the stock, 2 the field genes, 0 the fixed charges per fate. */
+  /** Field B's charge mode for the step (Fields.qStock): 1 the stock, 2 the field genes, 0 the fixed charge (one for all since step F0). */
   get qMode() { return this.stockOn ? 1 : this.genesOn ? 2 : 0; }
-  /** Field B's sign rule in use: the stock's or genes' charges' (params.bSign) or the per-fate charges' (cells.fields.sign). */
+  /** Field B's sign rule in use: the stock's or genes' charges' (params.bSign) or the fixed charge's (cells.fields.sign). */
   get signB() { return this.qMode ? this.params.bSign : this.cells.fields.sign; }
   /** Key U: flip the sign rule in use; returns the new sign. */
   flipSignB() {

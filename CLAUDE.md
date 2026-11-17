@@ -596,6 +596,15 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        exist (OUT pumps, same-row bites, free t inside, heat damage) but M1's bite block and untargeted dumping make
        them weak. NOT YET AGREED, on file: a KIN-GATED PUMP gene (pumping per side rises/falls with the neighbour's
        kinship, like the C13 gates), so evolution picks weapon vs sharing; would go after P2 if the user wants it.
+    || D1 DISH SIZE AND DENSITIES (user 2026-11-17, running in worktree ../moire-cells-dish, branch dish): after a
+       full-screen dish was shrunk ~5x, WAVES formed: a dense bright front of packed cells sweeping across, an oil/soap
+       slick with droplets in its wake, sparse regrowth behind, the front collapsing and restarting (excitable medium).
+       Today the dish IS the window: a resize drains the whole substrate (famine), shrinks R, changes R vs the medium
+       lattice (clamped 5..9 px), and supplies scale inconsistently (some per area, some per dish). User: "calculate the
+       density of energy based on the grid size". Plan: audit; find the wave cause; the DISH gets its own size (set at a new
+       culture), the window is only a view; every supply PER AREA; keep the waves reachable on purpose (preset/knob).
+       Plus a SQUEEZE / STRETCH tool (user: "scale the dish as if we are compressing the sample"): rescale the dish at
+       runtime keeping its contents (cells crowd, substrate resampled, matter exact).
     6b. G1 ERROR CORRECTION (user 2026-11-17 "yes"): a FIDELITY gene (proofreading): higher = fewer mutations per
        division (all genes, incl. the self marker, so the molecular clock slows with it: kin sparing gets something to
        read) but each division costs more battery; hard light's extra mutation still acts (repair may evolve against it).

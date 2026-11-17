@@ -296,6 +296,7 @@ export class Eat {
       const pmax = f[EP_PU + 3], pumpWorst = this.pumps.rule('on') ? Math.min(1, 24 * pmax * dt / 6) : 0;
       const smellMax = Math.max(1, ...SUBSTANCES.slice(0, 16).map((s) => s.smell16 || 0));
       this.cells.kin.writeEat(u, f, EP_T1, dt, smellMax, pumpWorst);
+      this.cells.grn.writeEat(u, EP_T1 + 6);   // step T1b: the gene network's outputs act (EatP t1[1].z)
     }
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
   }

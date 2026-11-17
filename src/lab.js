@@ -49,9 +49,13 @@ export const GENES = {
   stretchChan: 55, stretchTol: 74, ionChan: 75,
   // step T1a: the self marker (angle rad, period ln R, phase rad), its display; the kin channels and the tolerance
   markAngle: 76, markPeriod: 77, markPhase: 78, display: 79, kinChan: 80, kinTol: 81,
+  // step T1b: the gene network (src/grn.js): the broadcast regulator and the signal's kinship weighting (the weights, codes and gains are
+  // arrays: moire.grn's read-back, or setAll by word number 92..151)
+  grnBroadcast: 152, grnKinWeight: 153,
 };
 // words 19..31 are the cell's state, not genes (heading, accumulators, felt fields, conversion)
-const STATE = new Set([19, ...Array.from({ length: 12 }, (_, k) => 20 + k)]);
+// (step T1b: and 84..91, the regulators' expression)
+const STATE = new Set([19, ...Array.from({ length: 12 }, (_, k) => 20 + k), ...Array.from({ length: 8 }, (_, k) => 84 + k)]);
 
 // ---------- flattening for sample() ----------
 const SKIP = new Set(['time', 'top', 'series', 'hist', 'sizes', 'aHist', 'sHist', 'lHist', 'near', 'centre']);
@@ -104,6 +108,7 @@ function gather(M, ctl) {
   if (M.ions && M.ions.census) flatten(M.ions.census, 'ions', out);   // step C12g
   if (M.whole && M.whole.census) flatten(M.whole.census, 'whole', out);   // step M1
   if (M.kin && M.kin.census) flatten(M.kin.census, 'kin', out);         // step T1a
+  if (M.grn && M.grn.census) flatten(M.grn.census, 'grn', out);         // step T1b: the gene network's census (cell types)
   if (M.pigments && M.pigments.census) flatten(M.pigments.census, 'lightmatter', out);   // step N1: light needs matter
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;

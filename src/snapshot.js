@@ -164,6 +164,7 @@ export function settingObjects(M) {
     ...(M.ions ? { 'ions.params': M.ions.params } : {}),     // step C12g
     ...(M.whole ? { 'whole.params': M.whole.params } : {}),   // step M1
     ...(M.kin ? { 'kin.params': M.kin.params, 'kin.look': M.kin.look } : {}),   // step T1a
+    ...(M.grn ? { 'grn.params': M.grn.params, 'grn.look': M.grn.look } : {}),   // step T1b
     ...(M.pigments ? { 'pigments.params': M.pigments.params } : {}),   // step N1: light needs matter
     ...(M.water ? { 'water.params': M.water.params } : {}),           // step N1: caustic light, currents
     ...(M.oases ? { 'oases.params': M.oases.params } : {}),           // step N1: the scarce nutrient's springs
@@ -375,7 +376,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     // step T1a: one from before the self marker (genomes of 76 words) loads with the marker and kin genes 0 (one marker for all, hidden: no
     // kinship, no channels) and with the inside, the kin channels, the clock and the smell for trace OFF, so it runs on as it was saved
     const oldT1 = S.layout.cellWords === CELL_FLOATS && S.layout.bioWords === 76;
-    const widen = oldC10 || oldC12 || oldC13 || oldC12e || oldT1;
+    // step T1b: one from before the gene network (genomes of 84 words) loads with the network's words 0 (no network: every output x 1) and
+    // with the network OFF (no mutation either), so it runs on as it was saved
+    const oldT1b = S.layout.cellWords === CELL_FLOATS && S.layout.bioWords === 84;
+    const widen = oldC10 || oldC12 || oldC13 || oldC12e || oldT1 || oldT1b;
     if (!widen && (S.layout.cellWords !== CELL_FLOATS || S.layout.bioWords !== BIO_FLOATS)) {
       throw new Error(`snapshot layout (cell ${S.layout.cellWords}, bio ${S.layout.bioWords} words) does not match this page (${CELL_FLOATS}, ${BIO_FLOATS})`);
     }
@@ -458,6 +462,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     if (opts.settings !== false && M.kin && !(S.settings && S.settings['kin.params'])) {
       Object.assign(M.kin.params, { inside: false, channels: false, clock: false, smellTrace: false });   // step T1a
       notes.push('saved before step T1a: no inside, no kin channels, no marker clock, no smell for trace (as it ran)');
+    }
+    if (opts.settings !== false && M.grn && !(S.settings && S.settings['grn.params'])) {
+      M.grn.params.on = false;   // step T1b
+      notes.push('saved before step T1b: no gene network (as it ran)');
     }
     if (opts.settings !== false && M.pigments && !(S.settings && S.settings['pigments.params'])) {
       Object.assign(M.pigments.params, { matter: false, sat: false, inhib: false });   // step N1

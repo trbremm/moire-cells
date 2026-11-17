@@ -228,6 +228,7 @@ export function createApp(ctx) {
       const free = [];
       for (let i = 0; i < n && free.length < points.length; i++) {
         if (cu[i * CELL_FLOATS + 9] & 1) continue;
+        if (((cu[i * CELL_FLOATS + 89] >>> 24) & 3) === 2) continue;   // (step P1: a ghost: its slot holds a meal being digested)
         let empty = true;
         for (let w = 0; w < SW; w++) if (st[i * SW + w] !== 0) { empty = false; break; }
         if (empty) free.push(i);

@@ -692,6 +692,12 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        places); colonies' warmth (T 8-12) makes carbon fast; hard light fixes CO2-like carbon in the open where free g is
        (fix 813 vs burn 504 under the spot), the fuel condenses straight into tar; hard light churns tar (near-futile).
        Books exact (carbon, atoms, charge, energy). Speed unread (GPU shared).
+       CARBON IS THE BODY (user 2026-11-17: "We should make carbon fundamental for all cells mechanisms"): carbon becomes
+       the cells' BUILDING MATERIAL (biomass); the battery stays the energy currency. C15b adds GROWTH NEEDS CARBON (a
+       daughter's carbon budget from her size, from the parent's fuel/granules; burnt carbon must be fixed first; no carbon,
+       no division; death returns the body carbon to the dish exactly: predators and grazers recycle it). Then every built
+       thing is charged in carbon: membranes and walls (C15c, linkers retire), pigments, engines (enzymes), glue/junction
+       molecules, channels and pumps, gene-network expression, proteins (X1), cilia and flagella (S2).
        X1 SECRETED PROTEINS (user 2026-11-17: "or fibre/protein excretion", "or proteins even for that matter"): S1 part 3
        generalised. Cells BUILD polymers from their stock (linkers + charged atoms, battery paid, matter exact) and keep or
        SECRETE them; every property DERIVED from the polymer's short sequence (as C14 soup would, but made by life): long

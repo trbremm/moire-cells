@@ -6223,6 +6223,173 @@ the carbon and its four hands, + givers and - takers, its energy, what burning i
   tar is); the light the dish catches still never exceeds what arrives (the carbon takes what the main absorbers left).
 - Showing one carbon substance alone (Shift+S) still draws the main table's fluorescence glow, as the main substances' solo views do.
 
+## Step C15b: cells eat carbon
+
+Stage 2 of the carbon rebuild (`design/C15_carbon_proposal.md`; option S, the "sidecar", ends here): the cells now take part in carbon.
+Nothing of the C12d chemistry changes or retires yet (linkers, oil, soap and crust stay as they are; C15c will make them from carbon).
+`?carbon=0` is still the chemistry before C15a exactly, and `?cbcells=0` gives C15a (carbon in the dish, the cells blind to it). Code:
+`src/carboncells.js` (switches, books, panel), `src/shaders/cell_carbon.wgsl` (put in front of `cell_eat.wgsl`), the four engines in
+`src/carbon.js` (`carbonEngines`).
+
+Words: the LADDER = the five one-carbon molecules from methane-like (all four hands hold a giver g: fuel) to CO2-like (all four hold a
+taker t: exhaust). TAR = dead carbon, counted as three numbers (backbone bonds c-c, fuel hands c-g, burnt hands c-t). A GRANULE is tar
+inside a cell: a storage lump, like a starch or glycogen granule.
+
+### What a cell holds and how carbon gets in and out
+
+- A cell holds its own ladder molecules, its tar granules and its body (11 numbers, in their own buffer beside the stock, 24 words a cell
+  with this tick's requests and spares for later parts; whole counts, exact).
+- THROUGH THE MEMBRANE: the ladder molecules carry no free charge, so the ion block of C12g does not hold them: they cross by
+  concentration at a neutral molecule's rate (the permeability gene x their spreading speed over the light atoms': 0.24, a five-atom
+  molecule passes slower), faster through a damaged membrane, only through the sides not pressed against a neighbour (T1a's inside), an
+  inflow only into the room left. So CO2-like carbon made inside LEAVES by itself, down its gradient, and what piles up inside first slows
+  the engine that makes it (C12e's saturation). No rule says "expel CO2".
+- GRAZING: a cell with an engine that can use tar (OXIDIZE or HYDROLYZE) takes in the tar lying under it, at kGraze (0.05) x those
+  engines' expressed rate per s, of the tar there: mud eaters (as M1's crust grazing; no energy changes, the hands only move).
+- GRANULES DISSOLVE: a granule carbon with no backbone bond (loose: the dish's DISSOLVE rule) leaves the granule as a ladder molecule in
+  the stock, 0.2 per s (inside a cell, enzymes: ten times the dish's), so digested granules become fuel again and burnt granule carbon can
+  leave as CO2-like carbon.
+- A death, a burst, the end of a meal and a new culture put the cell's carbon back into the dish where it is; a birth splits it (half the
+  ladder, the granules by the newborn's share, as the membrane); a predator digests a meal's carbon with the rest of it (P1).
+
+### The four carbon engines
+
+Engine slots in the genome, as every engine since C6: their index sits behind the table's 22 (so every old genome keeps its meaning),
+mutation jumps a slot onto them as onto any other (4 of 26), and each NAMES A REACTION TYPE, not a molecule: it works on whatever carbon the
+cell holds, the ladder molecules and the granules, picked by the hands they offer.
+
+| engine | reaction | energy | kind | job colour |
+|---|---|---|---|---|
+| OXIDIZE (breathing on carbon) | t + [c-g] -> [c-t] + g | releases 2.75 into the battery | breathe | hot pink, breather |
+| CONDENSE (storing) | [c-g] + [c-t] -> [c-c] + gt | releases 0.75 | form (chains) | amber, builder |
+| REDUCE (fixing carbon) | g + [c-t] -> [c-g] + t | takes 2.75 | uphill | lime, light eater (with a pigment) |
+| HYDROLYZE (digesting granules) | gt + [c-c] -> [c-g] + [c-t] | takes 0.75 | uphill | none of its own (a storer) |
+
+- The downhill two work as every downhill engine: the spark (0.5) from the battery first (an empty battery starts nothing), the release
+  into the battery less the ineff share (heat), nothing more into a full battery. OXIDIZE then hands its freed giver g to the cell's g + t
+  bond if it has one (4.5 more): breathing a fuel hand fully gives 7.25, ten times what condensing it gives (fermenting carbon).
+- The uphill two take a PIGMENT's photon per event when their slot has a light band (N1's pigment matter, saturation and bleaching apply,
+  and the pigment shades the dish under the cell, as for any harvest slot), or, without one, the battery pays it all (a STORER). The
+  spark always comes from the battery. HARVESTERS MUST BURN: light only pays the rise, the fixed carbon goes to the stock, never to the
+  battery. A visible 2 photon (3) pays REDUCE's 2.75; the free g it needs comes from splitting water (another photon), from the dish or
+  from OXIDIZE: TWO PHOTONS PER FIXED HAND, as the proposal's "Z-scheme".
+- Saturation (C12e), the trace cofactor (C7b), the gene network's expression (T1b), the C13 engine gate and the upkeep of an expressed
+  engine (T1b) act on them as on the others.
+- JOBS (F0's colours): OXIDIZE counts as breathing (a free t takes the electron: hot pink), REDUCE with a pigment as light eating (lime),
+  CONDENSE as building (it makes chains: amber; a separate "storer" colour was not clearly better: storing granules IS chain building in
+  this toy, and the amber reads as the granules' colour), HYDROLYZE without a pigment is a storer with no job of its own (as every
+  battery-paid uphill engine).
+
+### Growth needs carbon: the body
+
+The user (2026-11-17, while this step was built): "We should make carbon fundamental for all cells mechanisms", then "the organic chemistry
+becomes carbon + element needed for specialized work". Carbon is the cells' BUILDING MATERIAL; the battery stays the energy currency.
+
+- Every cell has a BODY of carbon (three more numbers in its carbon buffer: backbone bonds, fuel hands, burnt hands, as tar). It WANTS
+  kBody = 0.05 carbon units per R^2 of its area. Short of it, it BUILDS (half the shortfall per s) from the carbon in its stock: ladder
+  molecules that still hold a giver hand (sugar-unit-like first, then formic-, methanol-, methane-like) and its granules while at least a
+  quarter of their hands are fuel hands. CO2-like carbon cannot be built with: it must be FIXED first (REDUCE). Each carbon built pays the
+  carbon spark (0.5) from the battery (the assembly, as heat; the hands only move, no bond changes).
+- A cell DIVIDES only with its body full for its size (division mode, the default): the two halves (0.71 of the radius each) share it,
+  half each, and then have to build again as they grow. So carbon limits growth: a colony far from fuel carbon stalls, one at a seep or over
+  tar can grow. (In the fixed-count turnover mode a birth is not gated; the daughter takes her share.)
+- A HUNGRY cell (body short) grazes the tar under it as if it had one unit of a grazing engine: dead bodies are building material.
+- Founders start with a body (1.35 x a radius-R cell's want: full for the biggest founder), cellulose-like (per carbon one backbone bond,
+  one fuel hand, one burnt hand), booked as carbon and energy in. Cells placed by the tools (add cell, predators, designed tissues) start
+  with none and must build it before they divide.
+- A death, a burst, a meal's end, a new culture spill the body into the dish as TAR (exact); a birth splits it; a predator digests the
+  meal's body into its own granules.
+- The books count the body with the granules (both are tar hands); the CARBON IN CELLS line shows the bodies apart (held, wanted, the share
+  of cells short).
+- `?cbgrow=0` (carbon does not limit division), `?cbbody=` (0.05), `?cbbuild=` (0.5 per s), `?cbfound=` (1.35).
+
+A PART'S COST AS A RECIPE (`cb_build` in `cell_carbon.wgsl`, `PART_RECIPES` in `src/carboncells.js`): n carbons + k atoms of an element per
+carbon from the stock, the spark per carbon from the battery. Only the BODY is charged in this step (carbon alone). What the existing parts
+would naturally be made of, reading the electron table (C12d) for the job (C15c will decide the recipes):
+
+| part | today | carbon + the element its job needs (derived) |
+|---|---|---|
+| body, walls, crust, granules | (walls: linker crust) | carbon alone: c-c backbones are the strong, shared bonds (structure needs no special atom) |
+| engines (enzymes) | free (upkeep only) | carbon + the HEAVY GIVER G: catalysis moves electrons, and G holds the loosest electron of the table (grip -0.625: metal-like, as iron in real enzymes); trace stays the scarce cofactor (C7b) |
+| pigments | 2 l + 1 trace (N1) | carbon + a bond whose GAP matches a visible band: the c-g bond itself catches visible 1 (gap 1.625); visible 2 needs a heavier pair (GT's gap matches visible 2); + trace as the centre (as magnesium in chlorophyll) |
+| membrane heads (soap) | glL, tlL (linkers + g or t) | carbon tails + a CHARGED atom for the head: g (+) or t (-) (the polarity rule: a charge on one end) |
+| glue, junction molecules | linker per side (C10) | carbon + charged atoms in a pattern (sticky by charge, as X1's adhesives) |
+| channels, pumps | free (upkeep) | carbon + polar (t) lining for ions to pass; a pump also moves electrons: + G |
+| gene-network expression, proteins (X1) | free | carbon + a sequence of charged and uncharged atoms (X1 decides) |
+| cilia, flagella (S2) | not built | carbon (structure) + G (the motor's catalysis), paid per beat from the battery |
+
+### Founders, the default scene
+
+- FOUNDERS (with carbon on; from their own random stream, so a seed's other genes stay as they were): with chance 1/3 each, an eater
+  gets a weak OXIDIZE in its free third slot, a chain maker a CONDENSE (granules) in its third, and a photosynthesiser becomes a CARBON
+  FIXER (REDUCE with a visible 2 pigment, OXIDIZE to burn what it fixed, and the g + t bond); a light + burn founder keeps its three. WILD
+  founders draw, with chance 1/2, any one of the four into any slot (an uphill one with any light band). `?habit=carbon` (and the add-cell
+  tool's "carbon eater"): OXIDIZE, g + t, a little CONDENSE.
+- The default scene has a LASTING FUEL SEEP beside its vent (the vent itself dries after its day): 0.3 methane-like molecules per s over
+  a patch 2.5 R across, per area as every scene spring (D1). `?seep=0`: none.
+- SMELL: the membrane's corners smell the ladder's fuel as they smell the fuels (C12d): each molecule weighted by what a free t releases
+  from it (its giver hands x 2.75). Methane-like carbon is the richest smell in the dish (4 x 2.75).
+
+### Tar in the open dish: only a lump's surface reacts
+
+C15a found tar soaking up 85-99 % of the carbon where it arrives. Claude's call, two parts: (1) the cells graze it (above); (2) in the open
+dish, a DERIVED slowing: tar is a lump, and only its SURFACE can meet a molecule. A lump of N carbons has about N^(2/3) of them at its
+surface, so where tar is thicker than `surf` carbons per R^2 (1) only (surf / tar)^(1/3) of its hands react: molecules condensing on it,
+settling on it, its own cross-linking (surface with surface: the square), its fuel hands burning by heat, its loose carbons dissolving. Light
+(which goes in) and two molecules meeting in the water are not slowed. Thin new tar reacts as in C15a, a thick mound slowly: "mud piles
+up" stays true, but a pile stops eating everything that passes. `?cbsurf=0` is C15a.
+
+### Look
+
+- NEON: tar GRANULES as small dark-amber dots inside the body (up to five, bigger and more the more the cell holds, each at a place of
+  its own), with a warm lit rim. The ladder in a cell is not drawn.
+- HARMONIC: granules as bright orange dots (as starch granules shine in second-harmonic images).
+- The seep is drawn as a spring patch in the fuel's green.
+
+### Books
+
+- CARBON: added = in the dish + in the cells + lost + gone (`moire.carbon.ledger.rounding`, 0). ATOMS, ENERGY (the carbon in cells is
+  stored energy) and CHARGE (the molecules' booked charge) include the cells' carbon. The dish's own carbon energy book (C15a) now counts
+  what crossed membranes: energy in + light + what the cells gave back = held + out + heat + water x its energy + what the cells took
+  (`eRounding`, 0).
+- The ledger grew 38400 -> 43776 words (the cells' carbon per channel, what they took in and gave back, 16 event counters, a census).
+- Snapshots keep each cell's carbon and the carbon switches; one from before C15b loads with the cells blind to carbon and all of the tar
+  reacting (as it ran).
+
+### Switches and knobs (rules panel "Carbon in cells (step C15b)"; URL)
+
+`?cbcells=0` (the cells blind to carbon), `?cbexch=0`, `?cbeng=0`, `?cbgraze=0`, `?cbdis2=0`, `?cbsmell=0`, `?cbgrow=0`; knobs `?cbkgraze=`
+(0.05), `?cbkdis2=` (0.2), `?cbbody=` (0.05), `?cbbuild=` (0.5), `?cbfound=` (1.35); `?cbsurf=` (1; rules panel "Carbon"); `?seep=0`;
+`?habit=carbon`; `?cbfounder=` (the chance a std founder gets its carbon engines, 1/3).
+
+### Panel
+
+CARBON IN CELLS: what the cells hold (ladder, granules and in how many cells), per s breathe / store / fix / digest, granules dissolving,
+tar grazed, what the batteries got and the heat; cells with each carbon engine. The CARBON line's books add "cells". `moire.sample()`'s
+`cbcells.*`; F overlay: photons used and idle, saturation, a 10-s series.
+
+### What it looks like (EXPERIMENTS.md "Cells eat carbon"; pictures in `experiments/keep/c15b/`)
+
+- The default scene: after the founders' crash the dish is scattered with flat amber FLECKS of tar where the dead founders lay (their
+  bodies); the colony regrows SPARSE (150-340 cells in 20 minutes instead of 800-1000), over and beside the flecks, the seep glowing at its
+  edge. 70-80 % of the cells are short of body carbon at any time: carbon, not energy, limits growth.
+- Close up: most cells hold one to five amber granule dots beside their green battery core (hungry cells graze the flecks). Harmonic: green
+  rims round dark cells with bright orange granule dots; orange fibre swirls of tar round the seep.
+- With every eligible founder carrying its carbon engines (`?cbfounder=1`) the colony is lime and pink: carbon fixers (REDUCE with a
+  visible 2 pigment + OXIDIZE) running a light-driven carbon loop inside each cell.
+
+### Known issues
+
+- Carbon engines stay rare in the default scene (the founders that carry them mostly die in the crash; 20 minutes of mutation did not bring
+  them back); methane-like carbon piles up unburnt beside free oxygen in the cold dish.
+- The body rule is harsh as set: the oxygen conditions and the vents emptied after the crash (the few survivors take ladder carbon in too
+  slowly to divide). The body's size (`?cbbody=`) and the ladder's membrane rate are the knobs.
+- The tar surface rule hardly changes how much carbon stays mobile (4 % in the default scene, 1.4 % at the vents, with or without it): tar
+  forms where two molecules meet in warm water. Grazing cells are what recycles it.
+- Cells placed by the tools (add cell, predators, designed tissues) start without a body and must build one before they divide; the
+  fixed-count turnover mode does not gate births by carbon.
+- Speed not measured on a free GPU (the shared GPU's noise, +-15 %, hid carbon's cost).
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start
@@ -6315,6 +6482,12 @@ the carbon and its four hands, + givers and - takers, its energy, what burning i
   appended to `matter.wgsl` (`loadShader`'s suffix): `carbon_spread`, `carbon_react`, `carbon_count`, `carbon_paint`; the hooks in
   `src/matter.js` (blocks, slots, dispatches, ledger, the books merged, `writeCarbonDraw`), the look in `matter_draw.wgsl` (`tar_layer`,
   the ladder's dust, `hm_tar`); `experiments/conditions/c15a/`: `make.py` (the conditions), `summary.py` (the table)
+- `src/carboncells.js` + `src/shaders/cell_carbon.wgsl`: cells eat carbon (step C15b): the cells' carbon buffer (CW words a cell) and
+  uniform (struct CbCellP), the switches and knobs (`moire.carbonCells.params`), the event counters and census (ledger words LG_CBC..),
+  the CARBON IN CELLS panel line, the overlay, `sample`. The shader is prepended to `cell_eat.wgsl` (its functions are called from the
+  plan, eat, dump, split, ledger and reset passes: `cb_plan`, `cb_cell`, `cb_give_back`, `cb_split`, `cb_digest`, `cb_ledger`, `cb_flush`,
+  `eng_at`); the carbon engines themselves are `carbonEngines()` in `src/carbon.js` (`ALL_ENGINES` in `src/matter.js`);
+  `experiments/conditions/c15b/`: `make.py` (the conditions), `summary.py` (the tables)
 - `src/vents.js`: vents in the dark (step C12f): the hot vent's mix (`HOT_MIX`, `OLD_MIX`; `SPRING_KINDS.heavy` follows it), its heat
   per tick (a spring's `amt[18]`), the sea's words (struct MatterP `sea`), the census (LG_VENT, LG_SEA; the gradient engines' E2_GRAD,
   E2_GRADE from `src/eat.js`), the VENTS panel line and the overlay. The rules themselves: `matter.wgsl` `spread` (the heat into the

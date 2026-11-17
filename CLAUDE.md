@@ -698,6 +698,12 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        no division; death returns the body carbon to the dish exactly: predators and grazers recycle it). Then every built
        thing is charged in carbon: membranes and walls (C15c, linkers retire), pigments, engines (enzymes), glue/junction
        molecules, channels and pumps, gene-network expression, proteins (X1), cilia and flagella (S2).
+       RECIPES (user, same day: "the organic chemistry becomes carbon + element needed for specialized work"): every built
+       part = CARBON backbone + a SPECIALIST element for its job, like real N, P, Fe, Mg. Which element is DERIVED from the
+       electron table, not assigned: catalysis (engines/enzymes) needs a redox-active atom with a loose electron (heavy
+       giver, metal-like); light capture (pigments) a bond whose gap matches a visible band; membrane heads a charged atom;
+       structure (walls, fibres) carbon alone; trace stays the scarce cofactor. Ecological stoichiometry follows: colonies
+       limited by whichever element their jobs need (Liebig's law of the minimum), not written as a rule. Full recipes in C15c.
        X1 SECRETED PROTEINS (user 2026-11-17: "or fibre/protein excretion", "or proteins even for that matter"): S1 part 3
        generalised. Cells BUILD polymers from their stock (linkers + charged atoms, battery paid, matter exact) and keep or
        SECRETE them; every property DERIVED from the polymer's short sequence (as C14 soup would, but made by life): long

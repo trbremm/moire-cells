@@ -680,6 +680,18 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        DAMAGES membranes (fat -> soap -> crust) replacing same-row bites; slow open-dish carbon chemistry accepted.
        Build: C15a carbon in the open dish -> C15b cells eat carbon -> C15c lipids/walls/pigments from carbon, linkers
        retire -> species slots with X1. ?carbon=0 = old table; old snapshots load with carbon off.
+       AS BUILT (C15a, 2026-11-17, branch carbon): src/carbon.js + shaders/carbon.wgsl (own pass appended to matter.wgsl; the
+       18-channel arrays untouched). c: Zc 2, grip -2, 4 hands; general sharing-bond rule checked against every old pair; c-g
+       1 (absorbs V1), c-t 3.75 (hard), c-c 1, carbon spark 0.5; 48 event kinds checked at load. 8 channels: ladder cg4 -4,
+       cg3t -6.75, cg2t2 -9.5, cgt3 -12.25, ct4 -15; tar hands cc, cg, ct. Heat buffer 52 -> 65 blocks (260 B/px), ledger
+       38400 words. Springs drip CO2-like (0.08 per atom of rate), vents/fissures 0.025 methane + 0.025 CO2-like. ?carbon=0 =
+       old exactly (old snapshots reload with it); Shift+S; CARBON line; zoo builder column + ladder strip. Look: tar amber ->
+       dull brown, green sheen while it holds fuel, sky-blue glow of burnt hands; harmonic: tar = orange fibre swirls (best
+       picture: keep/c15a/zoom_spring_harmonic.jpg). SEEN (substrate alone, 10 min): tar rims along hot fissures; methane
+       never burns in the dark (no oxygen), condenses into tar; TAR SOAKS UP ~85-99 % OF CARBON where it arrives (not in quiet
+       places); colonies' warmth (T 8-12) makes carbon fast; hard light fixes CO2-like carbon in the open where free g is
+       (fix 813 vs burn 504 under the spot), the fuel condenses straight into tar; hard light churns tar (near-futile).
+       Books exact (carbon, atoms, charge, energy). Speed unread (GPU shared).
        X1 SECRETED PROTEINS (user 2026-11-17: "or fibre/protein excretion", "or proteins even for that matter"): S1 part 3
        generalised. Cells BUILD polymers from their stock (linkers + charged atoms, battery paid, matter exact) and keep or
        SECRETE them; every property DERIVED from the polymer's short sequence (as C14 soup would, but made by life): long

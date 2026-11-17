@@ -449,6 +449,7 @@ export class Cells {
     this.stats = null;          // last census, for the overlay (see readStats)
     this.statsHist = [];        // [time, births, deaths] for births / deaths per second
     this.onEvents = null;       // callback(events) for births and deaths (main.js drops ripples)
+    this.eventTaps = [];        // step T1c: more listeners (the warfare census's deaths at lineage borders)
     this.landscape = null;      // set by main.js (its inks colour the cells' step 6 and 8 marks)
     this.matter = null;         // step C3: the substance grid (src/matter.js; set by main.js), run inside the heat's frame
     this.charge = null;         // step C6b: the charge (src/charge.js; set by main.js)
@@ -849,7 +850,7 @@ export class Cells {
       const births = u[8], deaths = u[9], heatDeaths = u[11];   // (step C5: of the deaths, from heat damage)
       const nEv = Math.min(u[10], STATS_EVENTS);
       const events = [];
-      for (let e = 0; e < nEv; e++) events.push([f[16 + 4 * e], f[17 + 4 * e], f[18 + 4 * e]]);
+      for (let e = 0; e < nEv; e++) events.push([f[16 + 4 * e], f[17 + 4 * e], f[18 + 4 * e], f[19 + 4 * e]]);   // (step T1c: w a death's cause + 16 x founder)
       // key bins holding a real share of the cells: a rough count of distinct lineages (genotype clusters)
       const bins = u.subarray(STATS_CENSUS / 4, STATS_CENSUS / 4 + 144);
       const big = Math.max(3, Math.max(1, u.subarray(0, 5).reduce((x, y) => x + y, 0)) / 400);
@@ -894,6 +895,7 @@ export class Cells {
       this.guides.apply(time, new Uint32Array(u.buffer, STATS_FG, FG_WORDS));      // step C13
       this.pred.applyStats(time, new Uint32Array(u.buffer, STATS_P1, P1_WORDS));   // step P1
       if (events.length && this.onEvents) this.onEvents(events);
+      if (events.length) for (const t of this.eventTaps) t(events, time);
     } catch (e) {
       // device lost or page closing: nothing to show
     } finally {

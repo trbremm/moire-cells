@@ -18,14 +18,16 @@
 //   a snapshot         its own dish (?snap=: exact)
 //   otherwise          the window, as the page always did: dish = the window's CSS size, R from it and the starting number.
 // PER AREA (fixed dish only; ?dishfollow=1 keeps the old per-px and per-dish amounts): a bigger dish in cell units is more of the same
-// world, not a different balance. With A the dish's area in R^2 and A_REF the reference dish's (1280 x 800 px, 2000 cells, the
-// experiments' default window, where every number below is exactly as before):
-//   the medium lattice   mR = KAPPA x R (KAPPA = 9 / R_REF): the moire beats keep their size in cell units on any screen
+// world, not a different balance. With A the dish's area in R^2 and A_ref the REFERENCE dish's: what the experiments' default window
+// (1280 x 800 px) gives the same starting number (2000 cells: R 6.48 px, 24 390 R^2; a preset's 600: R 9 px, 12 640 R^2), where
+// every number below is exactly as before:
+//   the medium lattice   mR = kappa x R (kappa = 9 px / the reference R: 1.389 for 2000 cells): the moire beats keep their size in
+//                        cell units on any screen
 //   light                power per R^2 (the knob `power` still reads "per 100 px^2" at the reference R)
 //   clouds               size and drift in R
-//   capacity             CAP_DENSITY x A cells (3 x 2000 at the reference)
-//   springs              every scene's spring (and vent) drips x A / A_REF (pipette drops are the hand's, not scaled)
-//   oases                count x A / A_REF (each drips as before)
+//   capacity             3 x the starting number x A / A_ref
+//   springs              every scene's spring (and vent) drips x A / A_ref (pipette drops and tapped springs are the hand's)
+//   oases                count x A / A_ref (each drips as before)
 // Already per R^2 or per s before: warmth, the heat's leak and spread, the sea, sparks and reactions, the oases' burying, the field reaches.
 
 export const REF = { W: 1280, H: 800, cells: 2000, R_MAX: 9 };
@@ -34,6 +36,12 @@ export const R_REF = Math.min(REF.R_MAX, 0.4 * Math.min(REF.W, REF.H) * Math.sqr
 export const KAPPA = REF.R_MAX / R_REF;          // the medium's R per cell R (1.389: the reference's 9 px over 6.48 px)
 export const A_REF = REF.W * REF.H / (R_REF * R_REF);   // the reference dish's area in R^2 (24 390)
 export const CAP_DENSITY = 3 * REF.cells / A_REF;       // capacity per R^2 (0.246: 85 % of a dish packed with hexagons)
+/**
+ * The reference for a culture of `start` cells: the cells' radius the reference window (1280 x 800) gives that many (6.48 px for 2000;
+ * 9 px, the cap, for 1150 or fewer: a preset's 600 or 1200). Every per-area amount is measured against the reference dish OF THE SAME
+ * STARTING NUMBER, so each preset stays exactly as tuned at the reference window, whatever its number of cells.
+ */
+export function rRef(start) { return legacyRadii(REF.W, REF.H, Math.max(1, start || REF.cells)).R; }
 export const UM_PER_R = 6;                       // the toy scale (src/app.js's scale bar): a cell 12 um across
 
 /** The old rules, from a window (CSS px) and a starting number: the medium's R (5..9 px from the area) and the cells' R. */
@@ -66,35 +74,43 @@ export const dish = {
   /** Its area in R^2. */
   get area() { return this.W * this.H / Math.max(1e-9, this.R * this.R); },
   /** The per-area factor: this dish's area over the reference dish's (1 with perArea off). */
-  get supply() { return this.perArea ? this.area / A_REF : 1; },
+  start: REF.cells,    // the starting number the dish was chosen for (its reference: rRef)
+  /** The reference cells' radius (px) and dish area (R^2) for this dish's starting number. */
+  get rRef() { return rRef(this.start); },
+  get areaRef() { const r = this.rRef; return REF.W * REF.H / (r * r); },
+  get supply() { return this.perArea ? this.area / this.areaRef : 1; },
   /** Size in R, for the panels. */
   get sizeR() { return [this.W / this.R, this.H / this.R]; },
 
   /** The dish from a window (CSS px) and a starting number, R and the medium as the old rules (mR = KAPPA R unless perArea is off). */
   fromWindow(W, H, start, from = 'window') {
     const L = legacyRadii(W, H, start);
-    Object.assign(this, { W, H, R: L.R, mR: this.follow ? L.mR : KAPPA * L.R, from });
+    Object.assign(this, { W, H, R: L.R, start, from });
+    this.mR = this.follow ? L.mR : this.kappa * L.R;
   },
 
   /** The dish from a size in R ([w, h]), fitted to a window (CSS px): R px so it fills the window, at most R_MAX. */
-  fromCells(wR, hR, winW, winH, from = 'url') {
+  fromCells(wR, hR, winW, winH, start, from = 'url') {
     const R = Math.max(1, Math.min(REF.R_MAX, winW / wR, winH / hR));
-    Object.assign(this, { W: Math.round(wR * R), H: Math.round(hR * R), R, mR: KAPPA * R, from });
+    Object.assign(this, { W: Math.round(wR * R), H: Math.round(hR * R), R, start, from });
+    this.mR = this.kappa * R;
   },
+  /** The medium's R per cell R: the reference window's medium (9 px) over its cells' R for this starting number (1.389 for 2000). */
+  get kappa() { return REF.R_MAX / this.rRef; },
 
   /** The capacity for `start` cells (per area; ?cap= and the fixed count override it in main.js). */
   capacity(start) {
     if (!this.perArea) return 3 * start;
-    return Math.max(start, Math.round(CAP_DENSITY * this.area));
+    return Math.max(start, Math.round(3 * start * this.area / this.areaRef));
   },
 
   /** The largest starting number whose blob (0.8 x the shorter side) fits this dish. */
   maxStart() { const m = 0.4 * Math.min(this.W, this.H) / this.R; return Math.max(20, Math.floor(0.82 * m * m)); },
 
   /** Light: the px^2 that a heat pixel of `px` counts as for the power (per 100 px^2): px^2 before, (px / R x R_REF)^2 per area. */
-  lightArea(px, R) { if (!this.perArea) return px * px; const a = px / R * R_REF; return a * a; },
+  lightArea(px, R) { if (!this.perArea) return px * px; const a = px / R * this.rRef; return a * a; },
   /** A length given in px at the reference (clouds): in this dish's px. */
-  refPx(x) { return this.perArea && this.R > 0 ? x * this.R / R_REF : x; },
+  refPx(x) { return this.perArea && this.R > 0 ? x * this.R / this.rRef : x; },
 
   /**
    * THE PRESS (EXPERIMENTS.md "Waves after a resize": the waves were the dish's walls closing in on the culture): the right (or bottom)
@@ -116,7 +132,7 @@ export const dish = {
   line() {
     const [w, h] = this.sizeR;
     return `dish ${Math.round(w)}×${Math.round(h)} R (${Math.round(this.W)}×${Math.round(this.H)} px, R ${this.R.toFixed(2)} px, medium ${(this.mR / this.R).toFixed(2)} R)` +
-      ` · area ${(this.area / 1000).toFixed(1)}k R² (× ${(this.area / A_REF).toFixed(2)} the reference)` +
+      ` · area ${(this.area / 1000).toFixed(1)}k R² (× ${(this.area / this.areaRef).toFixed(2)} the reference for ${this.start} cells)` +
       ` · ${this.follow ? 'follows the window (?dishfollow=1)' : `fixed (${this.from})`}${this.perArea ? '' : ' · supplies per px (old)'}` +
       (this.fit !== 1 ? ` · drawn × ${this.fit.toFixed(2)}` : '') +
       (this.press.on ? ` · press: the ${this.press.side} wall in to ${this.press.depth} of the dish and back every ${this.press.period} s` : '');
@@ -125,7 +141,7 @@ export const dish = {
 
 /** A snapshot's dish: its own (saved since the dish has its own size), or, from before, its window, R and medium, supplies per px. */
 export function snapDish(S) {
-  if (S.dish) return { W: S.dish.W, H: S.dish.H, R: S.dish.R, mR: S.dish.mR, perArea: S.dish.perArea !== false, follow: false };
+  if (S.dish) return { W: S.dish.W, H: S.dish.H, R: S.dish.R, mR: S.dish.mR, perArea: S.dish.perArea !== false, follow: false, start: S.dish.start || S.start };
   const W = S.view.cssW, H = S.view.cssH;
-  return { W, H, R: S.R, mR: legacyRadii(W, H, S.start).mR, perArea: false, follow: false };
+  return { W, H, R: S.R, mR: legacyRadii(W, H, S.start).mR, perArea: false, follow: false, start: S.start };
 }

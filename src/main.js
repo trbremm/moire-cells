@@ -131,7 +131,7 @@
 //               ?zoom=z or ?zoom=z,x,y the view zoomed (centre as shares of the dish)
 //   ?dish=WxH     the dish's size in cell radii (or WxHum in micrometres), kept while the window changes (src/dish.js; default: the
 //               window's at the start); ?dishfollow=1 the window IS the dish, as before (a resize re-sizes it: new R, new grid, the
-//               old drained, supplies per px); ?medium=x the medium lattice's R in cell radii (default 1.389); ?perarea=0 a fixed
+//               old drained, supplies per px); ?medium=x the medium lattice's R in cell radii (default 9 px over the reference R: 1.389 for 2000 cells); ?perarea=0 a fixed
 //               dish with the old amounts (light per px^2, capacity 3 x the starting number, springs and oases per dish, medium 1.389 R);
 //               ?press=depth,period[,bottom] the right (bottom) wall presses the cells in to depth x the dish and lets go, every period s
 //   ?mut=0      start with mutation off (key M); ?life=0 with the life cycle off (key T: no births, no deaths)
@@ -291,8 +291,8 @@ async function boot() {
     } else if (snap) {   // a snapshot's own dish (one from before: its window, its R, the medium as it was, the supplies per px as they were)
       Object.assign(dish, snapDish(snap), { from: 'snapshot' });
     } else if (dishR) {
-      dish.fromCells(dishR[0], dishR[1], winW, winH, params.has('dish') && PRESET && !new URLSearchParams(location.search).has('dish') ? 'preset' : 'url');
-      if (!params.has('cells')) nCells = Math.min(nCells, dish.maxStart());
+      dish.fromCells(dishR[0], dishR[1], winW, winH, nCells, params.has('dish') && PRESET && !new URLSearchParams(location.search).has('dish') ? 'preset' : 'url');
+      if (!params.has('cells')) { nCells = Math.min(nCells, dish.maxStart()); dish.start = nCells; dish.mR = dish.kappa * dish.R; }
     } else dish.fromWindow(winW, winH, nCells);
     // ?press=depth,period[,bottom]: the pressing wall (src/dish.js; the Fronts preset)
     if (params.has('press')) {

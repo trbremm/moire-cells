@@ -91,7 +91,7 @@ export async function scaleDish(M, ctl, f) {
     if (s.shape && s.shape.type === 'patch') s.shape.r *= f;     // stays the spring's total, so its drip per length thins or thickens)
   }
   S.view = { cssW: W2, cssH: H2 };
-  S.dish = { W: W2, H: H2, R: dish.R, mR: dish.mR, perArea: dish.perArea };
+  S.dish = { W: W2, H: H2, R: dish.R, mR: dish.mR, perArea: dish.perArea, start: dish.start };
   const from = dish.from;
   const r = await loadSnapshot(M, ctl, S);
   dish.from = from === 'window' || from === 'url' || from === 'preset' ? `${from}, squeezed` : from;

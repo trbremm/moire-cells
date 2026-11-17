@@ -1577,8 +1577,11 @@ fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
   }
   // step T1a: the self MARKER drifts at every birth, a molecular clock (small Gaussian steps of its angle, period and phase; never a jump),
   // so marker distance grows with the time since a common ancestor
-  if ((bitcast<u32>(FL.t1.x) & T1S_CLOCK) != 0u && ms > 0.0) {
-    let ck = FL.t1.y * ms;
+  // (step T1c, ?clockhard=0: the clock ticks only with mutation itself (key M), not with hard light's extra dose, so a lineage under hard
+  // light keeps its kinship readable as long as one in the shade)
+  let cms = select(select(0.0, 1.0, mOn), ms, (bitcast<u32>(FL.t1.x) & T1S_CLOCKHARD) != 0u);
+  if ((bitcast<u32>(FL.t1.x) & T1S_CLOCK) != 0u && cms > 0.0) {
+    let ck = FL.t1.y * cms;
     var ang = nb.mark.x + ck * 0.02 * gauss(bs, 190u);
     ang -= TAU * floor(ang / TAU);
     var ph = nb.mark.z + ck * 0.05 * gauss(bs, 192u);

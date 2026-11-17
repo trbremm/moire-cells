@@ -1114,6 +1114,7 @@ struct Fields {
 };
 // step T1a: Fields.t1.x bits
 const T1S_CLOCK: u32 = 1u;        // the marker drifts at every birth (with mutation, or hard light's extra)
+const T1S_CLOCKHARD: u32 = 2u;    // step T1c: ... and with hard light's extra dose too (off, ?clockhard=0: only with mutation itself)
 // step C9: Fields.dv0.x bits
 const DV_ON: u32 = 1u;
 // step C9: a daughter of a DIVISION (not a turnover birth) has this bit set in Cell.mom: the eat pass's split takes the

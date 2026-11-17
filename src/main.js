@@ -455,7 +455,7 @@ async function boot() {
     }
     {   // step T1a: an inside, kin channels, the self marker, the smell for trace
       const KP = cells.kin.params;
-      for (const [q, k] of [['inside', 'inside'], ['kinchan', 'channels'], ['kinnull', 'null'], ['kinblind', 'blind'], ['clock', 'clock'], ['smelltrace', 'smellTrace']]) {
+      for (const [q, k] of [['inside', 'inside'], ['kinchan', 'channels'], ['kinnull', 'null'], ['kinblind', 'blind'], ['clock', 'clock'], ['clockhard', 'clockHard'], ['smelltrace', 'smellTrace']]) {
         if (params.has(q)) KP[k] = flag(q);
       }
       for (const [q, k] of [['kink', 'kinK'], ['seal', 'seal'], ['press', 'press'], ['clocksize', 'clockSize'], ['traceworth', 'traceWorth']]) {

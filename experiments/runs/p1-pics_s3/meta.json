@@ -1,0 +1,168 @@
+{
+  "name": "p1-pics_s3",
+  "description": "pictures: default scene, 20 predators dropped in the spot at 5 min; close-ups of a wrap and a phagosome in both looks, a clip",
+  "condition": {
+    "name": "p1-pics_s3",
+    "description": "pictures: default scene, 20 predators dropped in the spot at 5 min; close-ups of a wrap and a phagosome in both looks, a clip",
+    "query": {
+      "seed": 3
+    },
+    "duration": 425,
+    "sample_every": 30,
+    "stall": 150,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 360,
+        "name": "wrap_neon"
+      },
+      {
+        "t": 362,
+        "name": "digest_neon"
+      },
+      {
+        "t": 365,
+        "name": "wrap_harm"
+      },
+      {
+        "t": 367,
+        "name": "digest_harm"
+      },
+      {
+        "t": 421,
+        "view": "marker",
+        "name": "lineage_dish"
+      },
+      {
+        "t": 422,
+        "name": "neon_dish"
+      }
+    ],
+    "evals": [
+      {
+        "t": 300,
+        "js": "const v = moire.control.view(), s = moire.light.params.mode === 'spot' ? moire.light.spot() : null; const pts = []; for (let k = 0; k < 20; k++) { const a = 2 * Math.PI * k / 20 + 0.3; if (s) { const r = s.r * (0.2 + 0.6 * ((k * 7) % 10) / 10); pts.push([s.x + r * Math.cos(a), s.y + r * Math.sin(a)]); } else pts.push([v.cssW * (0.1 + 0.8 * ((k * 0.618034) % 1)), v.cssH * (0.1 + 0.8 * ((k * 0.381966 + 0.2) % 1))]); } return await moire.predators.place(pts)"
+      },
+      {
+        "t": 359.9,
+        "js": "return JSON.stringify(await moire.predators.focus('wrap', 6))"
+      },
+      {
+        "t": 361.9,
+        "js": "return JSON.stringify(await moire.predators.focus('digest', 6))"
+      },
+      {
+        "t": 363.9,
+        "js": "moire.control.action('harmonic'); return 'harmonic'"
+      },
+      {
+        "t": 364.9,
+        "js": "return JSON.stringify(await moire.predators.focus('wrap', 6))"
+      },
+      {
+        "t": 366.9,
+        "js": "return JSON.stringify(await moire.predators.focus('digest', 6))"
+      },
+      {
+        "t": 368.9,
+        "js": "moire.control.action('harmonic'); return 'neon'"
+      },
+      {
+        "t": 380.9,
+        "js": "return JSON.stringify(await moire.predators.focus('wrap', 5))"
+      },
+      {
+        "t": 420.9,
+        "js": "moire.camera.fit(); return 'whole dish'"
+      }
+    ],
+    "clips": [
+      {
+        "t": 381,
+        "until": 393,
+        "speed": 1
+      }
+    ],
+    "dpr": 2
+  },
+  "url": "http://localhost:52749/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "81778660dc45d2d4198634c720cd6900381c69fb",
+  "dirty": true,
+  "started": "2026-11-17T12:24:09",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 425.0,
+  "run_wall_s": 120.76,
+  "speed_reached": 3.52,
+  "samples": 16,
+  "shots": [
+    "shots/wrap_neon.png",
+    "shots/digest_neon.png",
+    "shots/wrap_harm.png",
+    "shots/digest_harm.png",
+    "shots/lineage_dish.png",
+    "shots/neon_dish.png"
+  ],
+  "snapshots": [],
+  "clips": [
+    {
+      "file": "clips/clip_t381-393.webm",
+      "t_end": 393.0000000000195,
+      "bytes": 7384989
+    }
+  ],
+  "evals": [
+    {
+      "t": 300.0000000000105,
+      "js": "const v = moire.control.view(), s = moire.light.params.mode === 'spot' ? moire.light.spot() : null; const pts = []; for (let k = 0; k < 20; k++) { const a = 2 * Math.PI * k / 20 + 0.3; if (s) { const r = s.r * (0.2 + 0.6 * ((k * 7) % 10) / 10); pts.push([s.x + r * Math.cos(a), s.y + r * Math.sin(a)]); } else pts.push([v.cssW * (0.1 + 0.8 * ((k * 0.618034) % 1)), v.cssH * (0.1 + 0.8 * ((k * 0.381966 + 0.2) % 1))]); } return await moire.predators.place(pts)",
+      "result": 20
+    },
+    {
+      "t": 359.90000000002453,
+      "js": "return JSON.stringify(await moire.predators.focus('wrap', 6))",
+      "result": "{\"x\":942.518310546875,\"y\":376.3735046386719,\"progress\":0.5490196078431373}"
+    },
+    {
+      "t": 361.900000000025,
+      "js": "return JSON.stringify(await moire.predators.focus('digest', 6))",
+      "result": "{\"x\":757.62158203125,\"y\":341.70611572265625,\"progress\":0.02857142857142858}"
+    },
+    {
+      "t": 363.90000000002505,
+      "js": "moire.control.action('harmonic'); return 'harmonic'",
+      "result": "harmonic"
+    },
+    {
+      "t": 364.9000000000253,
+      "js": "return JSON.stringify(await moire.predators.focus('wrap', 6))",
+      "result": "{\"x\":811.3276977539062,\"y\":461.986328125,\"progress\":0.792156862745098}"
+    },
+    {
+      "t": 366.9000000000257,
+      "js": "return JSON.stringify(await moire.predators.focus('digest', 6))",
+      "result": "{\"x\":778.0620727539062,\"y\":343.992919921875,\"progress\":0.10769230769230775}"
+    },
+    {
+      "t": 368.9000000000267,
+      "js": "moire.control.action('harmonic'); return 'neon'",
+      "result": "neon"
+    },
+    {
+      "t": 380.9000000000235,
+      "js": "return JSON.stringify(await moire.predators.focus('wrap', 5))",
+      "result": "{\"x\":900.2205200195312,\"y\":380.63079833984375,\"progress\":0.30980392156862746}"
+    },
+    {
+      "t": 420.9000000000177,
+      "js": "moire.camera.fit(); return 'whole dish'",
+      "result": "whole dish"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T12:27:13",
+  "wall_s": 183.67
+}

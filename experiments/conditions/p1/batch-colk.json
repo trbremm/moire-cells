@@ -1,0 +1,75 @@
+{
+ "batch": "p1-colk",
+ "runs": [
+  {
+   "name": "p1-col-kinnull",
+   "description": "colonies preset, kin sparing CONTROL (?kinsparenull=1: kinship ignored), 40 min",
+   "query": {
+    "preset": "colonies",
+    "kinsparenull": 1
+   },
+   "duration": 2403,
+   "sample_every": 15,
+   "stall": 150,
+   "snapshots": [
+    {
+     "t": 2400
+    }
+   ],
+   "shots": [
+    {
+     "t": 2397,
+     "view": "marker",
+     "name": "marker_end"
+    },
+    {
+     "t": 2399,
+     "panel": true,
+     "name": "panel"
+    }
+   ],
+   "evals": [
+    {
+     "t": 300,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 600,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 1200,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 1800,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 2400,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 600,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 1200,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 1800,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 2400,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    }
+   ]
+  }
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

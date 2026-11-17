@@ -1,0 +1,91 @@
+{
+ "batch": "p1-pics",
+ "runs": [
+  {
+   "name": "p1-pics",
+   "description": "pictures: default scene, 20 predators dropped in the spot at 5 min; close-ups of a wrap and a phagosome in both looks, a clip",
+   "query": {},
+   "duration": 425,
+   "sample_every": 30,
+   "stall": 150,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 360,
+     "name": "wrap_neon"
+    },
+    {
+     "t": 362,
+     "name": "digest_neon"
+    },
+    {
+     "t": 365,
+     "name": "wrap_harm"
+    },
+    {
+     "t": 367,
+     "name": "digest_harm"
+    },
+    {
+     "t": 421,
+     "view": "marker",
+     "name": "lineage_dish"
+    },
+    {
+     "t": 422,
+     "name": "neon_dish"
+    }
+   ],
+   "evals": [
+    {
+     "t": 300,
+     "js": "const v = moire.control.view(), s = moire.light.params.mode === 'spot' ? moire.light.spot() : null; const pts = []; for (let k = 0; k < 20; k++) { const a = 2 * Math.PI * k / 20 + 0.3; if (s) { const r = s.r * (0.2 + 0.6 * ((k * 7) % 10) / 10); pts.push([s.x + r * Math.cos(a), s.y + r * Math.sin(a)]); } else pts.push([v.cssW * (0.1 + 0.8 * ((k * 0.618034) % 1)), v.cssH * (0.1 + 0.8 * ((k * 0.381966 + 0.2) % 1))]); } return await moire.predators.place(pts)"
+    },
+    {
+     "t": 359.9,
+     "js": "return JSON.stringify(await moire.predators.focus('wrap', 6))"
+    },
+    {
+     "t": 361.9,
+     "js": "return JSON.stringify(await moire.predators.focus('digest', 6))"
+    },
+    {
+     "t": 363.9,
+     "js": "moire.control.action('harmonic'); return 'harmonic'"
+    },
+    {
+     "t": 364.9,
+     "js": "return JSON.stringify(await moire.predators.focus('wrap', 6))"
+    },
+    {
+     "t": 366.9,
+     "js": "return JSON.stringify(await moire.predators.focus('digest', 6))"
+    },
+    {
+     "t": 368.9,
+     "js": "moire.control.action('harmonic'); return 'neon'"
+    },
+    {
+     "t": 380.9,
+     "js": "return JSON.stringify(await moire.predators.focus('wrap', 5))"
+    },
+    {
+     "t": 420.9,
+     "js": "moire.camera.fit(); return 'whole dish'"
+    }
+   ],
+   "clips": [
+    {
+     "t": 381,
+     "until": 393,
+     "speed": 1
+    }
+   ],
+   "dpr": 2
+  }
+ ],
+ "seeds": [
+  7,
+  3
+ ]
+}

@@ -1,0 +1,332 @@
+{
+ "batch": "p1-drop",
+ "runs": [
+  {
+   "name": "p1-drop-default",
+   "description": "default scene, 20 hand-made predators (engulf 1, kin sparing 0, size 1.25) dropped in the spot at 5 min, 30 min",
+   "query": {},
+   "duration": 1803,
+   "sample_every": 15,
+   "stall": 150,
+   "snapshots": [
+    {
+     "t": 1800
+    }
+   ],
+   "shots": [
+    {
+     "t": 330,
+     "name": "neon_t330"
+    },
+    {
+     "t": 600,
+     "name": "neon_t600"
+    },
+    {
+     "t": 900,
+     "view": "marker",
+     "name": "marker_t900"
+    },
+    {
+     "t": 1200,
+     "name": "neon_t1200"
+    },
+    {
+     "t": 1797,
+     "view": "marker",
+     "name": "marker_end"
+    },
+    {
+     "t": 1798,
+     "name": "neon_end"
+    },
+    {
+     "t": 1799,
+     "panel": true,
+     "name": "panel"
+    }
+   ],
+   "evals": [
+    {
+     "t": 300,
+     "js": "const v = moire.control.view(), s = moire.light.params.mode === 'spot' ? moire.light.spot() : null; const pts = []; for (let k = 0; k < 20; k++) { const a = 2 * Math.PI * k / 20 + 0.3; if (s) { const r = s.r * (0.2 + 0.6 * ((k * 7) % 10) / 10); pts.push([s.x + r * Math.cos(a), s.y + r * Math.sin(a)]); } else pts.push([v.cssW * (0.1 + 0.8 * ((k * 0.618034) % 1)), v.cssH * (0.1 + 0.8 * ((k * 0.381966 + 0.2) % 1))]); } return await moire.predators.place(pts)"
+    },
+    {
+     "t": 290,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 420,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 600,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 900,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 1200,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 1500,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 1800,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 600,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 1200,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 1800,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    }
+   ]
+  },
+  {
+   "name": "p1-drop-default-null",
+   "description": "... the same, engulfing NEUTRAL CONTROL (?engulfnull=1)",
+   "query": {
+    "engulfnull": 1
+   },
+   "duration": 1803,
+   "sample_every": 15,
+   "stall": 150,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 1798,
+     "name": "neon_end"
+    },
+    {
+     "t": 1799,
+     "panel": true,
+     "name": "panel"
+    }
+   ],
+   "evals": [
+    {
+     "t": 300,
+     "js": "const v = moire.control.view(), s = moire.light.params.mode === 'spot' ? moire.light.spot() : null; const pts = []; for (let k = 0; k < 20; k++) { const a = 2 * Math.PI * k / 20 + 0.3; if (s) { const r = s.r * (0.2 + 0.6 * ((k * 7) % 10) / 10); pts.push([s.x + r * Math.cos(a), s.y + r * Math.sin(a)]); } else pts.push([v.cssW * (0.1 + 0.8 * ((k * 0.618034) % 1)), v.cssH * (0.1 + 0.8 * ((k * 0.381966 + 0.2) % 1))]); } return await moire.predators.place(pts)"
+    },
+    {
+     "t": 290,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 420,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 600,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 900,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 1200,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 1500,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 1800,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 600,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 1200,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 1800,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    }
+   ]
+  },
+  {
+   "name": "p1-drop-shallows",
+   "description": "Sunlit shallows preset, 20 hand-made predators dropped over the dish at 5 min, 30 min",
+   "query": {
+    "preset": "shallows"
+   },
+   "duration": 1803,
+   "sample_every": 15,
+   "stall": 150,
+   "snapshots": [
+    {
+     "t": 1800
+    }
+   ],
+   "shots": [
+    {
+     "t": 330,
+     "name": "neon_t330"
+    },
+    {
+     "t": 600,
+     "name": "neon_t600"
+    },
+    {
+     "t": 900,
+     "view": "marker",
+     "name": "marker_t900"
+    },
+    {
+     "t": 1200,
+     "name": "neon_t1200"
+    },
+    {
+     "t": 1797,
+     "view": "marker",
+     "name": "marker_end"
+    },
+    {
+     "t": 1798,
+     "name": "neon_end"
+    },
+    {
+     "t": 1799,
+     "panel": true,
+     "name": "panel"
+    }
+   ],
+   "evals": [
+    {
+     "t": 300,
+     "js": "const v = moire.control.view(), s = moire.light.params.mode === 'spot' ? moire.light.spot() : null; const pts = []; for (let k = 0; k < 20; k++) { const a = 2 * Math.PI * k / 20 + 0.3; if (s) { const r = s.r * (0.2 + 0.6 * ((k * 7) % 10) / 10); pts.push([s.x + r * Math.cos(a), s.y + r * Math.sin(a)]); } else pts.push([v.cssW * (0.1 + 0.8 * ((k * 0.618034) % 1)), v.cssH * (0.1 + 0.8 * ((k * 0.381966 + 0.2) % 1))]); } return await moire.predators.place(pts)"
+    },
+    {
+     "t": 290,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 420,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 600,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 900,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 1200,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 1500,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 1800,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 600,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 1200,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 1800,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    }
+   ]
+  },
+  {
+   "name": "p1-drop-shallows-null",
+   "description": "... the same, engulfing NEUTRAL CONTROL (?engulfnull=1)",
+   "query": {
+    "preset": "shallows",
+    "engulfnull": 1
+   },
+   "duration": 1803,
+   "sample_every": 15,
+   "stall": 150,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 1798,
+     "name": "neon_end"
+    },
+    {
+     "t": 1799,
+     "panel": true,
+     "name": "panel"
+    }
+   ],
+   "evals": [
+    {
+     "t": 300,
+     "js": "const v = moire.control.view(), s = moire.light.params.mode === 'spot' ? moire.light.spot() : null; const pts = []; for (let k = 0; k < 20; k++) { const a = 2 * Math.PI * k / 20 + 0.3; if (s) { const r = s.r * (0.2 + 0.6 * ((k * 7) % 10) / 10); pts.push([s.x + r * Math.cos(a), s.y + r * Math.sin(a)]); } else pts.push([v.cssW * (0.1 + 0.8 * ((k * 0.618034) % 1)), v.cssH * (0.1 + 0.8 * ((k * 0.381966 + 0.2) % 1))]); } return await moire.predators.place(pts)"
+    },
+    {
+     "t": 290,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 420,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 600,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 900,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 1200,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 1500,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 1800,
+     "js": "return JSON.stringify(await moire.predators.clustersNow())"
+    },
+    {
+     "t": 600,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 1200,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    },
+    {
+     "t": 1800,
+     "js": "const C = moire.predators.census; return JSON.stringify({t: C.time, genes: C.genes, now: C.now, total: C.total, recent: C.recent, all: C.all, clusters: C.clusters, digest: C.digest})"
+    }
+   ]
+  }
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

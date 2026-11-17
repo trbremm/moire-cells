@@ -1,0 +1,78 @@
+{
+  "name": "p1-pilot-col_s7",
+  "description": "pilot: colonies preset, wild founders with predation genes, 8 min",
+  "condition": {
+    "name": "p1-pilot-col_s7",
+    "description": "pilot: colonies preset, wild founders with predation genes, 8 min",
+    "query": {
+      "preset": "colonies",
+      "seed": 7
+    },
+    "duration": 483,
+    "sample_every": 15,
+    "stall": 150,
+    "evals": [
+      {
+        "t": 240,
+        "js": "return JSON.stringify(await moire.predators.clustersNow())"
+      },
+      {
+        "t": 480,
+        "js": "return JSON.stringify(await moire.predators.clustersNow())"
+      }
+    ],
+    "shots": [
+      {
+        "t": 240,
+        "view": "marker",
+        "name": "marker_t240"
+      },
+      {
+        "t": 480,
+        "view": "marker",
+        "name": "marker_t480"
+      },
+      {
+        "t": 481,
+        "panel": true,
+        "name": "panel"
+      }
+    ]
+  },
+  "url": "http://localhost:63948/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=colonies&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "3807df98652706d970375662495adc578018898f",
+  "dirty": true,
+  "started": "2026-11-17T09:20:48",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 483.0,
+  "run_wall_s": 64.03,
+  "speed_reached": 7.54,
+  "samples": 34,
+  "shots": [
+    "shots/marker_t240.png",
+    "shots/marker_t480.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 240.00000000000284,
+      "js": "return JSON.stringify(await moire.predators.clustersNow())",
+      "result": "{\"time\":226.2500000000023,\"n\":581,\"clusters\":164,\"largest\":99,\"top\":[99,65,53,30,20,18,13,12],\"in8\":0.576592082616179,\"singles\":0.19104991394148021,\"meanSize\":33.77796901893287,\"perCell\":1.8795180722891567,\"ghosts\":16,\"hist\":{\"bins\":[1,2,4,8,16,32,64,128,\"more\"],\"cells\":[111,40,52,59,34,68,53,164,0]}}"
+    },
+    {
+      "t": 479.99999999999915,
+      "js": "return JSON.stringify(await moire.predators.clustersNow())",
+      "result": "{\"time\":467.13333333333435,\"n\":1630,\"clusters\":106,\"largest\":1340,\"top\":[1340,45,12,10,10,10,10,9],\"in8\":0.8920245398773006,\"singles\":0.03742331288343558,\"meanSize\":1103.561963190184,\"perCell\":3.1239263803680983,\"ghosts\":77,\"hist\":{\"bins\":[1,2,4,8,16,32,64,128,\"more\"],\"cells\":[61,30,42,51,61,0,45,0,1340]}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T09:22:45",
+  "wall_s": 117.11
+}

@@ -1,0 +1,87 @@
+{
+ "batch": "p1-speedparts",
+ "runs": [
+  {
+   "name": "p1-speedparts-10k-off-r1",
+   "description": "step P1 speed parts: 10000 cells, MAX, 60 s, neon, off",
+   "query": {
+    "seed": 3,
+    "cells": 10000,
+    "engulf": 0
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "p1-speedparts-10k-null-r1",
+   "description": "step P1 speed parts: 10000 cells, MAX, 60 s, neon, null",
+   "query": {
+    "seed": 3,
+    "cells": 10000,
+    "engulfnull": 1
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "p1-speedparts-10k-on-r1",
+   "description": "step P1 speed parts: 10000 cells, MAX, 60 s, neon, on",
+   "query": {
+    "seed": 3,
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "p1-speedparts-10k-off-r2",
+   "description": "step P1 speed parts: 10000 cells, MAX, 60 s, neon, off",
+   "query": {
+    "seed": 3,
+    "cells": 10000,
+    "engulf": 0
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "p1-speedparts-10k-null-r2",
+   "description": "step P1 speed parts: 10000 cells, MAX, 60 s, neon, null",
+   "query": {
+    "seed": 3,
+    "cells": 10000,
+    "engulfnull": 1
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "p1-speedparts-10k-on-r2",
+   "description": "step P1 speed parts: 10000 cells, MAX, 60 s, neon, on",
+   "query": {
+    "seed": 3,
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  }
+ ]
+}

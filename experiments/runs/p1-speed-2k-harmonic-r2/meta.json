@@ -1,0 +1,38 @@
+{
+  "name": "p1-speed-2k-harmonic-r2",
+  "description": "step P1 speed: default scene, 2000 cells, MAX, 150 s, harmonic",
+  "condition": {
+    "name": "p1-speed-2k-harmonic-r2",
+    "description": "step P1 speed: default scene, 2000 cells, MAX, 150 s, harmonic",
+    "query": {
+      "seed": 3,
+      "look": "harmonic"
+    },
+    "duration": 150,
+    "sample_every": 25,
+    "snapshots": [],
+    "shots": [],
+    "evals": []
+  },
+  "url": "http://localhost:64558/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&look=harmonic",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "3807df98652706d970375662495adc578018898f",
+  "dirty": true,
+  "started": "2026-11-17T09:10:25",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 150.0,
+  "run_wall_s": 21.2,
+  "speed_reached": 7.07,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-17T09:11:33",
+  "wall_s": 67.67
+}

@@ -2114,3 +2114,115 @@ fissure, blue rings at the seeps; cells gather along the fissures).
 - Speed: not measured cleanly: the GPU was shared with up to nine other experiment runs the whole time (runs went at x0.05 to x0.7).
   At the default dish the per-frame work is the same as main's but for the springs' capsule test in the matter pass (16 springs at
   most) and the through-flow term in the water pass (only with perfusion).
+
+# Carbon in the open dish
+
+Step C15a (README "Step C15a: carbon in the open dish"): a carbon-like atom c with four hands, five one-carbon molecules on a LADDER
+from methane-like fuel (all four hands hold givers) down to CO2-like exhaust (all four hold takers), and TAR, dead carbon that does not
+move. In this first stage only the open dish knows about carbon: the cells are blind to it. Following the C4 lesson (watch the substrate
+alone first), these runs ask what the carbon does by itself.
+
+Words used below: the LADDER = the five carbon molecules (cg4 methane-like, cg3t methanol-like, cg2t2 sugar-unit-like, cgt3
+formic-like, ct4 CO2-like). TAR = dead carbon, counted as three numbers per place: backbone bonds (carbon holding carbon), fuel hands,
+burnt hands. OXIDIZE = an oxygen-like free taker (t) takes a giver's place on a carbon hand (fuel burning, one rung down the ladder).
+CONDENSE = a fuel hand and a burnt hand join two carbons into tar and leave a water. REDUCE = hard light puts a giver back on a burnt
+hand (fixing carbon). HYDROLYZE = hard light splits a backbone with a water. T = temperature as heat per R^2.
+
+Conditions: `experiments/conditions/c15a/` (`make.py` writes them; `summary.py` prints the tables), seed 3, 10 minutes each, cells
+present (2000 in the default scene, 600 in Deep vents) but blind to carbon. The GPU was shared with another worker, so runs went at
+x0.5 to x1.1. Pictures: `experiments/keep/c15a/`.
+
+## 1. What it looks like
+
+- DEEP VENTS IN THE DARK (`vent-dark_*.jpg`, `zoom_fissure_*.jpg`). Each hot fissure grows a RIM OF TAR along its length within the
+  first minute: a dull brown band, a few R wide, lighter amber along its core, hugging the line (under the fissure's marker). In the
+  harmonic look the rim is a bright tangle of orange fibres, swirling round the fissure and the mineral seep beside it, on the violet haze
+  of the vents' fuel. The rest of the dish fills slowly with CO2-like carbon (slate dust, hard to see under the green fuel dust of gT and GT)
+  and stays black. The cells died out by 4 minutes, as in every dark-vent run since C12f (carbon has nothing to do with it: they ignore it).
+- DEEP VENTS UNDER A DIM LIGHT (`vent-dim_*.jpg`). The tar is no longer a thin rim but a fat amber BLOB at each fissure, a quarter of the
+  way to the next one, sprinkled with tiny sky-blue lights: the burnt hands of the tar FLUORESCING under the hard part of the light (the
+  same sky blue as the minerals' glow since C12d). Harmonic: orange fibrous clouds at the three vents, between golden fluorescence. A colony
+  of 1300 cells regrew over two of them by 10 minutes (on the vents' iron and fuel, not on carbon).
+- THE DEFAULT SCENE WITH ONE CELL: THE SUBSTRATE ALONE, WHOLE DISH LIT (`substrate-alone_neon.jpg`, `zoom_spring_*.jpg`,
+  `zoom_old-vent_tar-button_neon.jpg`). The clearest picture of carbon by itself. Round the mineral spring a TAR MOUND about 40 R across:
+  amber in the middle where fresh tar still holds fuel hands, a dull brown fringe where it is burnt, every part dusted with sky-blue
+  fluorescence where hard light lands on it. Where the vent dripped its little methane seep during its first minute, a small round amber
+  BUTTON of tar is left behind, still holding fuel. Harmonic close-up of the mound: dense swirling orange fibres, wrapped round the springs'
+  centres like collagen round a hole, with blue and gold specks of fluorescence (`zoom_spring_harmonic.jpg`: the best picture of the set).
+- THE DEFAULT SCENE WITH ITS COLONY (spotlight `default-spot_*.jpg`, whole dish `default-full_harmonic.jpg`): the colony sits on the springs
+  (as always) and covers the tar; what shows is a faint orange fibre glow under the cells' green rims in the harmonic look. Carbon is under
+  the cells, not beside them.
+
+## 2. The numbers (10 minutes, seed 3)
+
+| run | ladder at 10 min: methane- .. CO2-like | tar carbons (backbone / fuel / burnt hands) | carbon in | oxidize | condense | reduce (light) | hydrolyze (light) |
+|---|---|---|---|---|---|---|---|
+| default, spotlight | 6.3 / 1.8 / 1.1 / 3.1 / 23.9 | 324 (362 / 49 / 521) | 362 | 504 | 1714 | 813 | 1299 |
+| default, whole dish lit | 13.4 / 2.7 / 0.9 / 0.8 / 19.4 | 323 (354 / 61 / 522) | 362 | 569 | 1667 | 917 | 1279 |
+| default, ONE cell, whole dish lit | 1.8 / 1.6 / 0.9 / 0.5 / 7.5 | 348 (412 / 41 / 527) | 362 | 1889 | 3141 | 2245 | 2741 |
+| Deep vents, dark | 3.8 / 0.1 / 0.2 / 0.4 / 565 | 4 498 (7 224 / 1 / 3 541) | 5 359 | 0 | 7 292 | 0 | 0 |
+| Deep vents, dim light | 1.2 / 0.3 / 0.1 / 0.1 / 34 | 5 292 (9 125 / 95 / 2 824) | 5 360 | 666 | 14 746 | 2 722 | 5 502 |
+
+(Events over the 10 minutes, in molecules; carbon in atoms-units. The default scene's vent drips its seep for its first minute only, then
+the mineral spring's CO2-like carbon is all that comes in: 0.48 per s.)
+
+In words, against the questions of the brief:
+
+- DOES THE LADDER FILL? Only its bottom. CO2-like carbon is most of the free carbon everywhere (24 of 36 in the default scene, 565 of 570
+  in the dark vents). The fuel end stays thin: a seep's methane-like carbon does not last.
+- WHERE DOES TAR FORM? Wherever fuel carbon meets burnt carbon somewhere WARM: on the hot fissures (dark vents), round the springs (default
+  scene: the mineral spring's CO2-like carbon meeting what light and the vent made). It forms FAST there: 12 condensations a second at the
+  dark vents, 25 under a dim light, and almost all the carbon that comes in ends as tar within the 10 minutes (4 500 of 5 360 in the dark,
+  5 300 of 5 360 dim). Tar keeps CROSS-LINKING (tar with tar: backbones up, hands down), so old tar is backbone-rich and burnt: 7 224
+  backbone bonds for 4 498 carbons at the dark vents. That is the user's "mud": it does not move, and only hard light (hydrolyze) and
+  dissolving take it apart again. Mud in QUIET places did not show: tar is where the carbon arrives, not where the water is still.
+- DOES FUEL BURN NEAR VENTS AND STAY COLD ELSEWHERE? In the dark there is no oxygen at all (the sea brings T, the heavy taker, and only t
+  oxidizes carbon): methane never burns; it CONDENSES with CO2-like carbon into tar at the hot fissure, which is the abiotic version of
+  fermenting (0.75 per event, against 7.25 per hand for burning). With light, a little oxygen appears and some fuel burns (oxidize 500 to
+  1 900 events in 10 minutes). Away from springs and colonies the dish is cold (T about 0.1, against 8 to 12 under the colony and near hot
+  vents) and carbon there is frozen: exp(-16 / T) is e^-160.
+- DOES LIGHT MAKE FUEL FROM CO2-LIKE CARBON IN THE OPEN? A little, and it costs a lot: REDUCE ran 800 to 2 700 times in 10 minutes in the
+  lit runs, never in the dark. It needs hard light AND free givers g on the spot (from hot vents, and from water split by hard light, as
+  C12d already allowed), and hard light is the band that also splits the backbones (hydrolyze, 1 300 to 5 500) and that the tar's burnt
+  hands mostly just GLOW away (fluorescence out 5 to 55 energy units a second). Net, the lit default dish fixes a little more than it burns
+  (reduce 813 against oxidize 504 with the spotlight), and the methane-like rung is twice as full under the whole dish's light (13 against
+  6). But the fuel it makes does not pile up: it condenses into tar next to the CO2-like carbon it came from. So the light turns CO2 into
+  tar, by way of a little fuel. Two photons per hand, as designed: the water split and then the hand.
+- THE WARMTH OF LIFE (a surprise): carbon chemistry is "slow in the cool open dish" as designed, but the dish is NOT cool where things
+  happen. Under a colony the cells' own heat keeps T at 8 to 12, so the carbon spark costs exp(-16 / 10) = 0.2 there, not e^-160: carbon
+  reacts inside every colony (and on the hot vents) instead of waiting for enzymes. With one cell and the whole dish lit it still reacted
+  round the springs (the temperature there was not measured).
+
+## 3. The books
+
+Every sample of every run: carbon rounding 0 (carbon in = held + lost + gone), the carbon's own energy book 0 (energy in with springs +
+light caught = held + out + heat its reactions put down + the water they made), atoms 0 (the carbon's atoms counted with the rest: carbon
+reactions move g and t atoms between hands and free atoms), charge 0 (the carbon molecules' booked charge in the charge books). The dish's
+whole energy rounding stays at its usual noise (1e-4 to 0.04 of hundreds of thousands to tens of millions in: the cells' motion in f32),
+with or without carbon. `books.json`: 20 minutes of the default scene under the whole dish's light with a WASH (Shift+C) at 10 minutes:
+all four roundings 0 before, after and at the end; the carbon came back from the springs and tar re-formed (242 carbons by 20 minutes).
+Snapshots (`reload.json`): one saved WITHOUT carbon (as every snapshot from before C15a) reloads the page with `?carbon=0` by itself and
+runs on (books 0); the books run's snapshot at 900 s (with carbon) loads with its carbon (144.05 carbons one second after the snapshot's
+143.98: the springs) and runs 2 minutes with every rounding 0.
+
+## 4. Speed
+
+The default scene, 2000 cells, 150 s at MAX, carbon on against `?carbon=0` (the chemistry before C15a, the same code path otherwise):
+on x0.69, x0.95, x0.75; off x0.78, x0.80. The GPU was shared with another worker's runs the whole time, which swings a run's speed by more
+than carbon could: no difference shows. What carbon adds per tick: 5 more channels spreading (13 blocks, 52 bytes per pixel) and one
+reaction pass that stops at once on pixels with no carbon; a measurement on a free GPU is still to do.
+
+One flake of the runner (not carbon's): twice a run that started right after another in the same process failed at once with "Cannot
+read properties of null (reading 'dataset')" (once with `?carbon=0`); rerun, it passed.
+
+## 5. What C15b (cells eat carbon) will need
+
+- The stock: 8 more words per cell (the ladder and tar's three hand counts as storage granules) or the proposal's 20-channel layout;
+  exchange of the ladder through the membrane (CO2-like carbon is neutral and small: it should pass; C12g's ion block does not apply).
+- The four carbon engines (the proposal's: chain l -> CONDENSE, chain L -> OXIDIZE as breathing, crack ll -> HYDROLYZE as digesting, crack
+  LL -> REDUCE as fixing with a pigment), their saturation (C12e: CO2-like carbon clogging the burner unless it leaves), smell (what a free
+  t would release from each rung), the census.
+- A decision on TAR: it forms fast wherever it is warm, and the colony is warm, so in C15b cells will sit in their own tar unless they
+  graze it (as C12b's cells graze crust) or the condense rate comes down (`?cbkcond=`; the spark's crowding factor is the derived knob).
+- Sources: the default scene's vent dries after a minute, so its methane seep is a pulse; a lasting seep (or a mineral spring with a
+  little sugar-like carbon, the proposal's Q3) will decide whether a lineage can start on carbon fuel.

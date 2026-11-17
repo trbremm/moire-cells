@@ -4973,6 +4973,215 @@ oxygen spot dish (seed 7) with its neutral control. Plainly:
 - The ledger grew (LEDGER_WORDS 31488 -> 32256), EatP by t1[2] (1888 bytes), Fields by t1 (448), Draw by kin (1232), Bio by 8 words (84),
   the flux buffer by 24 words a cell; the Cell and the stock did not grow.
 
+## Step T1b: gene network
+
+BUILD QUEUE item 4 (2026-11-17): "SAME DNA, DIFFERENT JOBS, BY A GENE NETWORK" from "T1. Tissues that pay" (CLAUDE.md). The user: "our
+genetics must be stronger, tissue differentiation by contact is too rigid. We need to approximate that with phenotype and genes." Every
+cell now runs a small GENE REGULATORY NETWORK. Its regulators' EXPRESSION levels are the cell's state (inherited by its daughters: cell
+memory); they rise and fall with what the cell senses and with each other, and they turn its existing genes up or down. PHENOTYPE = genes
+x state x surroundings. Cell types are then the network's stable states (attractors, a Waddington landscape), not rules. Code: `src/grn.js`
+(switches, knobs, the census, the GENES panel line, the reporter's words), `src/shaders/cell_grn.wgsl` (the network's own pass), the
+outputs where each gene is read (`cell_eat.wgsl` "step T1b": `gof`, `bio_memb`, `bio_pump`, `bio_mark`, `bio_kin_open`, `bio_chan`;
+`cell_step.wgsl`: `gofP`), the senses the eat pass hands over (`Cell.sns0`, `sns1`), the reporter view (`cell_draw.wgsl`), the layout and
+founders (`src/genome.js`: `grnDefaults`, `wildGrn`). Every piece its own switch (rules panel group "Gene network (step T1b)", URL below).
+
+### The network
+
+Eight regulators per cell, expression x_0 .. x_7 in 0..1. Each reads up to three SOURCES (another regulator, or a sense) through genome
+weights, and relaxes slowly toward a sigmoid of its input:
+
+    x_i  <-  x_i + dt / tau ( sigmoid( b_i + w_i1 src(c_i1) + w_i2 src(c_i2) + w_i3 src(c_i3) ) - x_i )        tau = 5 s (?grntau=)
+
+The regulators read each other as they were at the tick's start. The pass runs every tick for every live cell, after the cells' step and
+before they eat (so the step's newborns are still marked for the mutation below); a newborn starts with her mother's expression.
+
+### Senses (each 0..1; the fields and the swelling -1..1)
+
+| source | sense | from |
+|---|---|---|
+| 9 | contact: the share of the six sides pressed against a neighbour (0 alone, 1 enclosed) | the step's neighbour per side (`Cell.nbr`), closer than press x the two radii (T1a's) |
+| 10 | field A felt, the six sides' mean | the C13 guides' s per side (`Cell.felt`) |
+| 11 | field A's spread across the cell, (max - min) / 2 (a gradient) | the same |
+| 12 | field B at the cell: tanh(sensing gene x B x bRef) | the step's field-B loop (new: `Cell.felt[1]` byte 2) |
+| 13 | light: 1 - e^-(light x caustic x the day's level) | the eat pass (`Cell.sns0` x) |
+| 14, 15, 16 | free t (oxygen-like) inside, the battery, the swelling | `sns0` y; `Cell.bat`; `Cell.osm` |
+| 17, 18 | fuel (gt gT Gt GT), free linkers (l L) inside | `sns0` z, w |
+| 19 | trace: the cofactor it gives (0..1) | `sns1` x |
+| 20 | the membrane's integrity (the sides' mean) | `Cell.integ` |
+| 21 | the CONTACT SIGNAL: the mean over touching neighbours of the regulator each BROADCASTS | gene `gm.x`; last tick's genome copy (race-free) |
+| 22 | heat: the temperature over twice the cell's tolerance | `sns1` y |
+
+An amount inside is 1 - e^-(amount / (capacity x ref)), refs free t 0.001, fuel 0.005, linkers 0.001 of the capacity (chosen so the
+default scene's means are neither 0 nor 1). The contact signal is weighted per neighbour by mix(1, kin accepted, the gene `gm.y`): a cell
+may listen to kin only (T1a's marker). Source 0 is "none"; 1..8 are the regulators.
+
+### Outputs (16, each multiplies an existing gene's base level)
+
+    gene as expressed = gene x min( exp( u_o x_j(o) ), 4 )          u_o in -8..8; one regulator j(o) per output; u = 0: no effect
+
+| output | gene it scales | read in |
+|---|---|---|
+| pigment | the harvest slots' rate (their pigment, what they want, the light they catch) | eat |
+| engine 1, 2, 3 | each engine slot's rate | eat |
+| wall, thickness, stiffness | the crust wall wanted, the membrane's thickness, the stiffness gene | eat (plan and eat) |
+| glue | a0, the overall stickiness | eat (walls), step (the old adhesion) |
+| pumps | both pump slots' rates (the cap pmax still holds) | eat (plan and eat) |
+| channels | the ion channels' level (a log factor: + ln f) | eat |
+| kin channels, display | how far the kin channels open (at most 1), the marker's display (kinship as the channels see it) | eat |
+| division | division readiness: the chance per s to divide once able | step |
+| motility, emit A, emit B | motility, field A's and B's emission (the emissions only while the field genes are on) | step |
+
+ENGINE UPKEEP FOLLOWS THE EXPRESSED RATE (it was always upEng x the rate; now the rate as expressed), and so does the pigment a harvest
+slot builds and wants: a cell that expresses an engine near 0 pays nothing for it. This is the fix M1 asked for the dark vents' economy.
+The network moves no matter and no energy: the books are untouched.
+
+### Mutation (at every birth, with key M; hard light adds, as for every gene)
+
+- every weight and bias in use nudged by 0.1 x a Gaussian, every output gain in use by 0.08 (x the birth's mutation size);
+- chance 0.05: one input REWIRED to another source (any regulator or sense), or cut one time in seven; a new link starts at -3..3;
+- chance 0.03: one output pointed at another regulator (switched on at -3..3 if it was off), or switched off one time in five;
+- chance 0.005: one regulator DUPLICATED into the least used slot (bias, inputs and expression copied; each output it drives goes to the
+  copy half the time): gene families;
+- chance 0.02: the broadcast regulator changes; the kinship weighting drifts by 0.04.
+
+### Founders and controls
+
+- std and blank founders: NO network (every weight, gain and code 0, x = 0.5): every output is exp(0) = 1, exactly the gene as before. A
+  network grows only by mutation (rewiring, outputs switched on).
+- wild founders (`?founders=wild`, gene group `grn`; `?wild=grn` for the network alone): a random sparse network: biases -2..2, each input a
+  random source at -4..4 six times in ten, each output a random regulator at -3..3 four times in ten, a random broadcast regulator and kin
+  weighting. Wild founders' markers are now turned a golden angle apart (no random number drawn), so a few surviving lineages show clearly
+  different hues in the lineage view.
+- `?grn=0`: the network frozen, no effect, no mutation (as before T1b). `?grnnull=1` the NEUTRAL CONTROL: it runs and mutates, its outputs
+  have no effect. `?grnsignal=0` no contact signal; `?grnkin=0` the signal not weighted by kinship; `?grnmut=0` copied exactly at births;
+  `?grntau=`, `?grnrewire=`, `?grndup=`, `?grncensus=` (s between censuses, 0 never). `?habit=both|burn|pigments|other`: every founder's
+  engines of one habit (the Colonies preset's 'both').
+
+### Genome layout and memory
+
+Bio words 84..155 (struct Bio in `cell_common.wgsl`): `gx[2]` (84..91) the expression (state, not mutated), `gb[2]` (92..99) the biases,
+`gw[6]` (100..123) the weights (regulator i's input k at 3 i + k), `gi[2]` (124..131) the input codes (a + 32 b + 1024 c), `gu[4]` (132..147)
+the output gains, `go` (148..151) each output's regulator (four to a word, 3 bits each), `gm` (152..155) broadcast regulator, kin weighting,
+2 spare. Bio grew from 84 to 156 words (336 -> 624 bytes; double-buffered: 672 -> 1248 bytes a cell). The Cell record is unchanged (352
+bytes: its two spare words became `sns0`, `sns1`). All per-slot buffers together: about 1900 -> 2476 bytes a slot (+30 %): 11.4 -> 14.9 MB
+at the default capacity (6000 slots), 57 -> 74 MB at 30 000 slots (10 000 cells); the largest single buffer (one Bio copy) is 18.7 MB at
+30 000 slots, well inside the 128 MB binding limit. Draw uniform 1232 -> 1280 bytes. Old snapshots (genomes of 84 words) load with the
+network's words 0 and the network off.
+
+### The reporter view and the census
+
+- REPORTER view (key V cycles to it; `?view=reporter`, `?reporter=i`, the rules panel's "reporter"): like a GFP reporter line, every cell
+  glows by one regulator's expression: neon, off cells grey and dark, on cells a green tube, a green fill and a soft nucleus-like glow; in
+  the harmonic look (where green is the membranes' channel) the reporter is an extra red channel (mCherry-like): a soft red nucleus-like
+  spot and faint cytoplasm, as bright as the expression.
+- CENSUS (every 15 s of simulated time a read-back of the genomes and cells; `moire.grn.census`, `await moire.grn.typesNow()`; the same code
+  runs offline on saved snapshots: `experiments/conditions/t1b/analyse.mjs`): the CELL TYPES of each lineage (founder id, 20 cells and more)
+  are k-means clusters of its cells' expression over the regulators that drive an output (|u| >= 0.5) in at least half of them: the largest
+  k (1..6) whose clusters each hold at least 3 % of the lineage (and 5 cells) and whose centres differ by at least 0.25 in some regulator.
+  (A first version binned every output-driving regulator low / mid / high; once a lineage drives 6 or 7 regulators that split it into
+  hundreds of tiny patterns and counted 0 types.) Per type: its share, where it sits (sides pressed, light, fuel, battery, distance to the
+  nearest spring, share at a border with another lineage); per lineage which outputs differ between its types (mean factor ratio 1.5 and
+  up), its SPREAD (the mean sd of its output-driving regulators) and whether a type's cells sit together (same-type neighbours against
+  chance, the sum of the shares squared); dish-wide the wiring (inputs per regulator, outputs per cell), the BORDER (the share of touching
+  pairs between two lineages) and the regulator that differs most between cells (`reporter.best`: the reporter worth looking at). The GENES
+  panel line shows it.
+
+### The Colonies preset (`?preset=colonies`)
+
+T1a found random colonies crash and one lineage fills each dish. Five colonies of wild founders (all with the 'both' habit, light + burn,
+so each can eat under the light; everything else, the network too, wild), each round its own never-drying mineral spring (rate 8) with a
+slow vent beside it (rate 2), the whole dish lit at 0.6 of the usual power, 1000 cells, trace from every spring (no oases). Pilots (8 min,
+seeds 3, 7): at springs 4 / 1 the founders' crash (60 .. 120 s) left one or two lineages; at 8 / 2, two or three persist and meet.
+
+### What it looks like
+
+- The REPORTER view of a 40-minute colony dish is a MOSAIC: patches of green-lit cells among dark ones, the patches a few to a few dozen
+  cells across. Zoomed in, the "on" cells are bigger and rounder, filled green with a bright nucleus-like glow; the "off" cells are smaller,
+  dark inside, their engine parts showing (`experiments/keep/t1b/reporter-close-neon-s7-40min.jpg`, `reporter-mosaic-neon-s7-40min.jpg`).
+- In the harmonic look the same dish reads like a multiphoton image of a reporter line: a green membrane honeycomb, red nucleus-like spots
+  in the expressing cells, dark empty insides in the rest, orange fibrous streaks in stretched cells and yellow crust rings round the five
+  springs (`reporter-close-harmonic-s7-40min.jpg`, `harmonic-reporter-dish-s11-40min.jpg`). In one 6-minute pilot the reporter was OFF in
+  the cells on the springs' crust rings and ON further out (`harmonic-reporter-colonies-6min.jpg`); the 40-minute runs show no such
+  geography (below).
+- The lineage view of the Colonies preset at 10 minutes (seed 3): a pink lineage and a yellow one sharing the dish along a ragged,
+  interdigitated border (`lineage-border-s3-10min.jpg`).
+
+### Experiments (EXPERIMENTS.md "Tissues 2: gene network")
+
+The Colonies preset, 40 min, seeds 3, 7 and 11, the network on against its neutral control (`?grnnull=1`); the Deep vents preset with
+random networks (and its control), seeds 3 and 7; a hand-wired "dark switch" in the vents; the default scene once. Plainly:
+
+- **Colonies meet, briefly.** Every dish starts with five lineages; the founders' crash (1 to 2 min) leaves two to four. In seed 3 two
+  lineages share the dish for the whole 40 minutes (the loser shrinking from 1028 cells at 10 min to 85 at 40, all of them at the border);
+  in seeds 7 and 11 one lineage fills the dish by 10 minutes. The neutral control gives the SAME outcome seed by seed (the same winner,
+  nearly the same sizes): who wins is decided by the founders' other genes, not by what their networks do.
+- **Cell types: five or six per lineage, on and off alike.** Every lineage splits into 5 or 6 expression clusters (k-means) that differ
+  in what they express: at 40 min e.g. engine 1 x3.7, pigment x3.2, division x2.9 between the types of seed 7's lineage; display x5.7,
+  division x3.5 in seed 11's; display and motility in seed 3's. The types sit in PATCHES (same-type neighbours 0.34 to 0.63 against chance
+  0.18 to 0.31: about twice chance), not in places: their mean sides pressed (0.71 .. 0.89), light (0.22 .. 0.30) and distance to the
+  nearest spring (16 .. 28 R) barely differ, and no type keeps to the rim, the springs, the light or the border. The neutral control has as
+  many types (6), as patchy (0.26 .. 0.39 against 0.17 .. 0.19), with outputs differing as much (wall x2.4, engine 1 x2.2): the patches are
+  CLONES (a daughter inherits her mother's state), not induced positions. An honest NULL for "types in positions".
+- **The networks grew a little more where they act**: inputs per regulator 1.99 -> 2.30 (seed 7) and 1.81 -> 2.26 (seed 11) with the
+  network on, against 2.00 -> 2.02 and 1.82 -> 2.06 in the control; seed 3 the other way (1.64 -> 1.69 against 1.64 -> 1.74). A hint at
+  most.
+- **Dark vents: no.** With random networks (on or the control) life dies by 4 to 8 minutes, as in M1. The expression-scaled upkeep works
+  (a hand-wired dark switch, every cell's pigment output read from a regulator that is high in the dark, put the pigment factor at 0.000),
+  but it saved nothing: the culture's upkeep only fell from 3.62 to 3.46 per s against an income from the gradient of 1.6 to 2.0 per s.
+  The dark vents' problem is the GRADIENT ENGINES' own upkeep against what they earn, not idle pigments.
+- **Default scene** (seed 3, 20 min, std founders: no network at the start): runs as before (a crash to 607 cells at 5 min, regrowth to
+  1632 at 20 min, membranes whole, integrity 0.76, books exact). Mutation alone grows a network there: 0.25 inputs per regulator and 2.0
+  outputs per cell by 15 minutes, 3 types in the surviving lineage. So the default culture's genes now drift a little more in phenotype
+  than before T1b (outputs switched on by mutation are random gene multipliers).
+
+### Checked
+
+- **A blank network is the old cell**: with std founders and mutation off every output factor in the census is exactly 1 (the network's
+  words are 0 and exp(0) = 1, so every gene is multiplied by exactly 1.0). The dish itself is not bit-repeatable run to run (two runs of the
+  same seed with the network off differ: 1590 and 1585 cells at 60 s); with the network on it ended at 1585 cells, heat out 990 k against
+  988 .. 990 k (`same.json`).
+- **Books** (`check.json`, seed 5, the whole dish lit, 420 s at MAX): springs, N, 40 cells placed with the add-cell tool, a wash, two
+  resizes, G with WILD founders (random networks, 140 s), the network's null, contact signal, kin weighting, mutation and the whole network
+  switched at runtime, a fast tau (0.5 s) with heavy rewiring (0.5) and duplication (0.2), the reporter view in both looks, G and N with
+  wild founders again, a snapshot saved and loaded at once (exact): atoms and charge rounding exactly 0 in every sample but the two paused
+  resize instants (as before). Every experiment run: atoms and charge 0 in every sample, energy within -0.11 and +0.34.
+- A first version of the check put G (new genomes) at the very instant of a resize and the atoms rounding jumped by 665 and stayed: the same
+  happens on the code before T1b (651 atoms, T1a's check with G moved onto the resize): an old edge case, not the network (known issues).
+- **Old snapshots**: T1a's six-wild-colonies snapshot at 10 min loads (exact) with the network's words 0 and the network off, and runs 60 s
+  with atoms and charge 0 (`reload.json`).
+- **Consoles**: headless Chrome (every run), headed Firefox (the Colonies preset in the reporter view with the overlay: the GENES line, no
+  console messages), phone size (`tools/shot.py --mobile`, the Colonies preset, reporter view, a finger tap on the dish: the short GENES
+  line fits, no console messages but the usual powerPreference note).
+- **Speed** (GPU free, as "Step T1a": headless Chrome, 1280 x 800, the default scene, seed 3, MAX; 2000 cells 150 s, 10 000 60 s; three
+  runs each; `experiments/conditions/t1b/speed.json`):
+
+  | cells | neon look | harmonic look | before (Step T1a) |
+  |---|---|---|---|
+  | 2000 | x6.94, x7.01, x7.02 (mean x6.99) | x7.45, x7.45, x7.35 (mean x7.42) | x7.69 / x7.94 |
+  | 10 000 | x1.53, x1.54, x1.59 (mean x1.55) | x1.79, x1.78, x1.78 (mean x1.78) | x1.85 / x2.03 |
+
+  About 9 % slower at 2000 cells and 16 % at 10 000 (neon). Where it goes, at 10 000 cells (one run each, `speed-parts.json`,
+  `speed-null.json`): the network off (`?grn=0`: no pass, outputs not read) x1.82, so the bigger genome itself costs about 2 %; the pass
+  running with its outputs not read (`?grnnull=1`) x1.68, so the pass costs about 8 %; reading the outputs where the genes are read (about
+  20 look-ups a cell a tick in the eat pass and the step) another 8 %; the census's read-back nothing measurable (`?grncensus=0` x1.57).
+  Updating only half the cells each tick did not help (x1.54): the pass's cost is its dispatch, not its arithmetic.
+
+### Known issues
+
+- The founders' crash still decides most dishes: in 2 of 3 seeds one lineage fills the Colonies dish by 10 minutes, and the neutral
+  control gives the same winner, so the network has not yet been shown to matter for who wins.
+- Cell types are clonal patches, not positions: nothing in the dish yet rewards a cell for expressing differently from its neighbour
+  (no division of labour pays). P1's predators or T1c's designed tissues may give it a reason.
+- In a std or blank culture mutation switches outputs on at random (0.03 a birth), so the default culture's phenotypes drift a little more
+  than before T1b (each switched-on output multiplies a gene by up to 4 or down to 0). `?grnmut=0` (or `?grn=0`) keeps the old behaviour.
+- The emission outputs act only while the field genes are on (`?fgenes=0` leaves them at today's values); the kin weighting of the contact
+  signal uses the marker's display GENE, not the display as expressed; a newborn's senses are zero for its first tick.
+- The census reads the whole genome and cell buffers back every 15 s of simulated time (about 29 MB at 30 000 slots); `?grncensus=0`
+  turns it off.
+- Speed: 9 .. 16 % slower (above). A cheaper path would compute the 16 factors once per tick in the network's pass (it needs 16 more words a
+  cell, or packing).
+- G (new genomes) at the same instant as a resize leaks atoms (about 650): older than T1b (found by this check).
+
 ## App: zoom, zoos, tools, new culture, presets
 
 The user, 2026-11-16: "on the app side of things, if we could zoom, and have panels with zoos of cells and molecules and tools to
@@ -5363,6 +5572,13 @@ Key L hides or shows all of it. The background ripples stay soft on purpose.
   the shader side is "step T1a" in `cell_eat.wgsl` (plan: the cover bits, the free share, the kin requests, the trace smell; eat: the kin
   flows; ledger: the census), `kin_match` / `kin_accept` in `cell_common.wgsl`, the clock in `cell_step.wgsl`, `marker_colour` /
   `marker_stripe` in `cell_draw.wgsl`; the genes and founder modes in `src/genome.js` (`t1Genes`, `blankGenes`, `wildGenes`)
+- `src/grn.js` + `src/shaders/cell_grn.wgsl`: the gene regulatory network (step T1b): the switches and knobs (`moire.grn.params`: on, null,
+  the contact signal and its kin weighting, mutation and its rates, tau, the census's interval; `moire.grn.look`: the reporter, its fill and
+  inks), the pass (expression update, the network's mutation at births), the step's and the eat pass's words (`Fields t1.z, t1.w`, `EatP
+  t1[1].z`), the drawing's (`Draw grn`), the census (`moire.grn.census`, `moire.grn.typesNow()`: cell types per lineage) and the GENES panel
+  line. The outputs are read where each gene is read: `gof` / `bio_memb` / `bio_pump` / `bio_mark` / `bio_kin_open` / `bio_chan` in
+  `cell_eat.wgsl`, `gofP` in `cell_step.wgsl`; the senses the eat pass writes (`Cell.sns0`, `sns1`); the reporter view in `cell_draw.wgsl`;
+  the layout and founders in `src/genome.js` (`grnDefaults`, `wildGrn`)
 - `src/whole.js`: whole membranes (step M1): the switches (`moire.whole.params`: head on oil, bites through the block), the eat uniform's
   words (struct EatP `m1`), the membrane budget's counters and census (LG_M1: a snapshot from the ledger pass, counters from the eat,
   dump, split and reset passes), the MEMBRANES panel line and the overlay. The rules are in `cell_eat.wgsl` (the "step M1" blocks: the

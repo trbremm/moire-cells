@@ -713,6 +713,15 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        in main. COLOUR BY JOB: the neon tube's colour from what the cell actually does (its expressed network
        outputs / dominant engine: light eater, burner, breather, wall builder, predator, ...), keeping 'colour means
        function'. Check old presets/snapshots still load; the lab's hand-set fates keep working when the switch is on.
+       AS BUILT (F0, 2026-11-17): fates gone (no switch): fate choice, signals, keys D/I, same-fate glue (incl. C11 torque),
+       fate body traits, per-fate field signs/periods/charges, fate census and view. Cell.kind kept, always 0; old fate genes
+       unused (their random draws kept so seeds keep other genes). Step 7 'same type' = same founder line (Bio.rec.w).
+       COLOUR BY JOB (src/jobs.js, job_targets/job_of): six scores from expressed genes x GRN outputs, low-passed ~6 s,
+       inherited (Bio.acc, Bio.resp.xy): undecided warm white, LIGHT EATER lime, BREATHER hot pink, FERMENTER violet,
+       GRADIENT EATER cyan, BUILDER amber, PREDATOR red; strength from the lead over the second; legend bottom right
+       (?legend=0), zoo names jobs, harmonic striations = predators, fibrous matrix = builders. Weights are judgement, not
+       derived; a third to a half of cells stay undecided; job read from genes, not engines that actually ran. Speed before
+       (main 58d1963, GPU free): 2000 x6.46 neon / x6.83 harmonic, 10 000 x1.37 / x1.59; after not yet measured.
     6b. G1 ERROR CORRECTION (user 2026-11-17 "yes"): a FIDELITY gene (proofreading): higher = fewer mutations per
        division (all genes, incl. the self marker, so the molecular clock slows with it: kin sparing gets something to
        read) but each division costs more battery; hard light's extra mutation still acts (repair may evolve against it).

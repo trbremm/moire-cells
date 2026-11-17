@@ -632,6 +632,23 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        solid faces, exact), optional shadows. Variants: POROUS walls (water and small atoms pass, cells do not: a filter /
        membrane insert). The dish rim itself can become a mask (round dish). Expected: crevices as refuges from predators and
        shear, matter piling in dead zones, colonies channelled along walls, fronts (D1) bending round blocks.
+    6a3. S1 SHAPE (user 2026-11-17, after seeing harmonic images of fibroblasts: "shape could also be fundamental now";
+       "single cell organisms have no reason to form a static shape ... unless they collaborate more"). After G0b.
+       (1) shape genes: spindle (two poles, aspect well beyond today's 0.5 stretch cap), maybe arms; COLLISIONS ON THE REAL
+       SHAPE (capsules: segment + rounded ends, same grid). (2) shape as a GENE NETWORK OUTPUT (same DNA, shape by position:
+       flat bark, columns, spindles). Payoffs derived, not tuned: exchange ~ membrane length, engulfing must wrap the prey's
+       LENGTH (filamentation against grazers), sensing over the real extent, flow/shear (G0). (3) FIBROBLAST LOOP, second
+       look: cells lay down ORIENTED fibres (crust chains with a direction on the grid) along their long axis, crawl along
+       fibres (contact guidance), traction aligns them; the matrix is a SHARED GOOD (cheaters possible: pressure to link).
+       Harmonic view draws the real fibre direction (orange SHG streaks, green-rimmed spindles).
+    6a4. S2 FLAGELLA AND CILIA (user 2026-11-17 asked; after S1, needs G0's two-way water). Motors as PARTS (the user's
+       body-plus-parts plan): FLAGELLUM = a swimmer's motor at the back (or front) along the cell's front; at low Reynolds a
+       swimmer is force-free, so it stirs the water as a FORCE DIPOLE (pusher like E. coli / puller like algae), unlike a
+       crawler pushing on the floor: dense pushers may give bacterial turbulence. CILIA = short beaters on free sides
+       (a GRN output, so tissue edges can grow them), moving water along the surface (a colony pumping food past itself:
+       a shared good), each with a beat phase coupled to neighbours through the water -> METACHRONAL WAVES (like airway
+       cilia; kin of the loved step 8 curls). Genes: count/placement, beat strength, phase coupling; cost per beat from the
+       battery. Look: neon flagellum as a thin wiggling tube trailing the cell; cilia as fine hairs shimmering in waves.
     6b. G1 ERROR CORRECTION (user 2026-11-17 "yes"): a FIDELITY gene (proofreading): higher = fewer mutations per
        division (all genes, incl. the self marker, so the molecular clock slows with it: kin sparing gets something to
        read) but each division costs more battery; hard light's extra mutation still acts (repair may evolve against it).

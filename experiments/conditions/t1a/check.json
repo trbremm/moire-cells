@@ -1,0 +1,93 @@
+{
+ "name": "t1a-check",
+ "description": "step T1a books check: 420 s at MAX (seed 5), the whole dish lit; springs; N, 40 cells placed, a wash, resizes (150, 220 s); inside, kin channels, blind, null, clock, smell, seal, kinK toggled at runtime (170..260 s); G and N with wild founders (300, 320 s); a snapshot saved and loaded at once (360 s); atoms and charge rounding must stay 0",
+ "query": {
+  "seed": 5,
+  "light": "full"
+ },
+ "duration": 420,
+ "sample_every": 10,
+ "resizes": [
+  {
+   "t": 150,
+   "size": "1000x700"
+  },
+  {
+   "t": 220,
+   "size": "1280x800"
+  }
+ ],
+ "shots": [
+  {
+   "t": 200
+  },
+  {
+   "t": 420,
+   "panel": true,
+   "name": "panel"
+  }
+ ],
+ "stall": 120,
+ "evals": [
+  {
+   "t": 5,
+   "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.3, v.cssH * 0.35, 'soap', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.5, 'oil', 120); moire.matter.addSpring(v.cssW * 0.5, v.cssH * 0.3, 'linker', 120); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.3, 'ions', 120); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 1e9); if (!moire.oases.started) moire.oases.start(); return moire.matter.springs.map(s => s.kind)"
+  },
+  {
+   "t": 60,
+   "js": "return moire.control.action('culture')"
+  },
+  {
+   "t": 80,
+   "js": "return await moire.app.place(Array.from({length: 40}, (_, k) => [150 + 13 * k, 120]), moire.genome.founders[0])"
+  },
+  {
+   "t": 100,
+   "js": "return moire.control.action('wash')"
+  },
+  {
+   "t": 105,
+   "js": "const v = moire.control.view(); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.4, 'light', 1e9); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.6, 'heavy', 400); moire.matter.addSpring(v.cssW * 0.4, v.cssH * 0.6, 'emulsion', 300); moire.matter.addSpring(v.cssW * 0.6, v.cssH * 0.4, 'soap', 200); return 'springs again'"
+  },
+  {
+   "t": 170,
+   "js": "moire.kin.params.inside = false; return 'inside off'"
+  },
+  {
+   "t": 180,
+   "js": "moire.kin.params.inside = true; moire.kin.params.channels = false; return 'inside on, kin channels off'"
+  },
+  {
+   "t": 190,
+   "js": "moire.kin.params.channels = true; moire.kin.params.blind = true; return 'channels blind'"
+  },
+  {
+   "t": 200,
+   "js": "moire.kin.params.blind = false; moire.kin.params.null = true; moire.kin.params.clock = false; moire.kin.params.smellTrace = false; return 'null, clock off, smell off'"
+  },
+  {
+   "t": 210,
+   "js": "moire.kin.params.null = false; moire.kin.params.clock = true; moire.kin.params.smellTrace = true; moire.kin.params.seal = 0.5; return 'all on, seal 0.5'"
+  },
+  {
+   "t": 230,
+   "js": "moire.kin.params.seal = 1; moire.kin.params.kinK = 20; return 'kinK 20 (fast sharing)'"
+  },
+  {
+   "t": 260,
+   "js": "moire.kin.params.kinK = 1; return 'kinK 1'"
+  },
+  {
+   "t": 300,
+   "js": "moire.genome.params.founderMode = 'wild'; return moire.control.action('genomes')"
+  },
+  {
+   "t": 320,
+   "js": "moire.genome.params.founderMode = 'wild'; return moire.control.action('culture')"
+  },
+  {
+   "t": 360,
+   "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return { exact: r.exact, notes: r.notes, rounding: r.rounding }"
+  }
+ ]
+}

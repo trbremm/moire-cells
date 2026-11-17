@@ -1,0 +1,12 @@
+{
+ "name": "t1a-wildx-no-kin",
+ "description": "six colonies, wild founders without the group kin, 2 min",
+ "query": {
+  "spread": "colonies",
+  "colonies": 6,
+  "founders": "wild",
+  "wild": "body,membrane,pumps,walls,lipids,fields,gates"
+ },
+ "duration": 120,
+ "sample_every": 20
+}

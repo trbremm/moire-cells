@@ -1,0 +1,12 @@
+{
+ "name": "t1a-wildx-no-lipids",
+ "description": "six colonies, wild founders without the group lipids, 2 min",
+ "query": {
+  "spread": "colonies",
+  "colonies": 6,
+  "founders": "wild",
+  "wild": "body,membrane,pumps,walls,fields,gates,kin"
+ },
+ "duration": 120,
+ "sample_every": 20
+}

@@ -1,0 +1,23 @@
+{
+ "name": "t1a-pilot-default-noin",
+ "description": "default scene, ?inside=0, 5 min",
+ "query": {
+  "inside": 0
+ },
+ "duration": 300,
+ "sample_every": 10,
+ "snapshots": [
+  {
+   "t": 300,
+   "grid": true
+  }
+ ],
+ "shots": [
+  {
+   "t": 300,
+   "panel": true,
+   "name": "panel"
+  }
+ ],
+ "evals": []
+}

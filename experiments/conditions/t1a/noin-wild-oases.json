@@ -1,0 +1,47 @@
+{
+ "name": "t1a-noin-wild-oases",
+ "description": "six colonies, wild founders, oases, 30 min, the inside OFF (?inside=0): a control for the rim / inside numbers",
+ "query": {
+  "preset": "oases",
+  "spread": "colonies",
+  "colonies": 6,
+  "founders": "wild",
+  "inside": 0
+ },
+ "duration": 1803,
+ "sample_every": 20,
+ "snapshots": [
+  {
+   "t": 300,
+   "grid": true
+  },
+  {
+   "t": 600,
+   "grid": true
+  },
+  {
+   "t": 900,
+   "grid": true
+  },
+  {
+   "t": 1200,
+   "grid": true
+  },
+  {
+   "t": 1500,
+   "grid": true
+  },
+  {
+   "t": 1800,
+   "grid": true
+  }
+ ],
+ "shots": [
+  {
+   "t": 1800,
+   "panel": true,
+   "name": "panel"
+  }
+ ],
+ "evals": []
+}

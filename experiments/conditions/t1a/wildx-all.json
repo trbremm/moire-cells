@@ -1,0 +1,18 @@
+{
+ "name": "t1a-wildx-all",
+ "description": "six colonies, wild founders (all groups), 3 min",
+ "query": {
+  "spread": "colonies",
+  "colonies": 6,
+  "founders": "wild"
+ },
+ "duration": 180,
+ "sample_every": 20,
+ "shots": [
+  {
+   "t": 180,
+   "view": "marker",
+   "name": "marker"
+  }
+ ]
+}

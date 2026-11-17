@@ -1,0 +1,12 @@
+{
+ "name": "t1a-wildx-no-pumps",
+ "description": "six colonies, wild founders without the group pumps, 2 min",
+ "query": {
+  "spread": "colonies",
+  "colonies": 6,
+  "founders": "wild",
+  "wild": "body,membrane,walls,lipids,fields,gates,kin"
+ },
+ "duration": 120,
+ "sample_every": 20
+}

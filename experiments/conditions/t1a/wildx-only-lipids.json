@@ -1,0 +1,12 @@
+{
+ "name": "t1a-wildx-only-lipids",
+ "description": "six colonies, wild founders with only the group lipids, 2 min",
+ "query": {
+  "spread": "colonies",
+  "colonies": 6,
+  "founders": "wild",
+  "wild": "lipids"
+ },
+ "duration": 120,
+ "sample_every": 20
+}

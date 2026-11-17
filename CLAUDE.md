@@ -686,6 +686,15 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        a shared good), each with a beat phase coupled to neighbours through the water -> METACHRONAL WAVES (like airway
        cilia; kin of the loved step 8 curls). Genes: count/placement, beat strength, phase coupling; cost per beat from the
        battery. Look: neon flagellum as a thin wiggling tube trailing the cell; cilia as fine hairs shimmering in waves.
+    6a0. F0 FATES OFF (user 2026-11-17: "I thought we got rid of the types"; coordinator's miss: T1 said the gene network
+       REPLACES the per-fate table, but T1b added the network ALONGSIDE and the old contact-fate rules (Part B: surface ->
+       epithelium, cartilage/muscle recruit, neuron inhibition; like-sticks-like matrix J; muscle stretch) still run by
+       default (genome.rules.diff = true) and still colour cells. Seen by the user: small cyan (epithelium) and magenta
+       (muscle) cells snaking through gaps in amber (cartilage) tissue in the shallows.) Plan, after G1 in main: contact
+       fates OFF by default (switch kept for comparison); fate-based adhesion and body effects go with them (glue is
+       genetic since C10); COLOUR BY JOB: the neon tube's colour from what the cell actually does (its expressed network
+       outputs / dominant engine: light eater, burner, breather, wall builder, predator, ...), keeping 'colour means
+       function'. Check old presets/snapshots still load; the lab's hand-set fates keep working when the switch is on.
     6b. G1 ERROR CORRECTION (user 2026-11-17 "yes"): a FIDELITY gene (proofreading): higher = fewer mutations per
        division (all genes, incl. the self marker, so the molecular clock slows with it: kin sparing gets something to
        read) but each division costs more battery; hard light's extra mutation still acts (repair may evolve against it).

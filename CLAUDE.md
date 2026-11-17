@@ -641,6 +641,14 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        look: cells lay down ORIENTED fibres (crust chains with a direction on the grid) along their long axis, crawl along
        fibres (contact guidance), traction aligns them; the matrix is a SHARED GOOD (cheaters possible: pressure to link).
        Harmonic view draws the real fibre direction (orange SHG streaks, green-rimmed spindles).
+       C15 CARBON (user 2026-11-17: "our chemistry should have a carbon like element"; BEFORE X1, which builds on it): a
+       new group derived like the others, the BUILDER: wants FOUR partners (branches, rings, backbones of any length; today's
+       linkers only make straight chains), grip in the MIDDLE of the electron table (shares rather than gives or takes), bonds
+       strongly to itself. Expected from the C12d table, never written: c-g bonds hold electrons high = FUEL (hydrocarbon /
+       sugar-like), c-t settled = CO2-LIKE WASTE (breathing: c-g fuel + t -> c-t + g-t, the real "expel CO2" of C12e), c-c
+       backbones = structure (fibres, membranes' tails). Molecules are too many to give each a grid channel: describe them by
+       COMPOSITION in a few recycled SPECIES SLOTS (the C14 soup idea, shared with X1's proteins), properties derived from
+       composition / sequence. A chemistry rebuild like C12d: old table behind a switch, past numbers stop being comparable.
        X1 SECRETED PROTEINS (user 2026-11-17: "or fibre/protein excretion", "or proteins even for that matter"): S1 part 3
        generalised. Cells BUILD polymers from their stock (linkers + charged atoms, battery paid, matter exact) and keep or
        SECRETE them; every property DERIVED from the polymer's short sequence (as C14 soup would, but made by life): long

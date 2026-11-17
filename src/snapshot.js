@@ -31,6 +31,9 @@ import { CELL_FLOATS } from './cells.js';
 import { BIO_FLOATS } from './genome.js';
 import { LEDGER_WORDS } from './heat.js';
 import { NCH, SUBSTANCES, ELECTRONS } from './matter.js';
+import { CARBON, LADDER, TAR } from './carbon.js';   // step C15a
+// step C15a: the carbon's grid blocks in a snapshot (behind phi): the ladder's current copy, then the tar's hand counts
+const CARBON_BLOCKS = CARBON ? [...LADDER, ...TAR.map((h) => `tar.${h}`)] : [];
 import { fieldDefaults } from './guides.js';
 import { dish, snapDish } from './dish.js';
 
@@ -217,6 +220,7 @@ function captureBooks(M) {
     electrons: M.electrons ? clone(M.electrons.tot) : null,   // step C12d
     vents: M.vents ? clone(M.vents.tot) : null,   // step C12f
     pigments: M.pigments ? clone(M.pigments.tot) : null,   // step N1
+    carbon: CARBON ? cloneCarbon(M.matter.carbon.tot) : null,   // step C15a
     excitedE16: M.excited ? M.excited.table.e16 : null,   // (the energy one excited count holds: ?exshare=)
     division: { costTot: M.division.costTot || 0 },
     rounding: {
@@ -242,6 +246,16 @@ function restoreBooks(M, B) {
   if (M.vents) { for (const k of Object.keys(M.vents.tot)) M.vents.tot[k] = (B.vents && B.vents[k]) || 0; }   // (step C12f)
   if (M.pigments) { for (const k of Object.keys(M.pigments.tot)) M.pigments.tot[k] = (B.pigments && B.pigments[k]) || 0; }   // (step N1)
   if (!(H.tot.vent >= 0)) H.tot.vent = 0;
+  if (CARBON) {   // step C15a
+    const CT = M.matter.carbon.tot, BC = B.carbon || {};
+    for (const k of ['add', 'lost', 'gone', 'rx', 'light']) { CT[k].fill(0); if (BC[k]) CT[k].set(BC[k].slice(0, CT[k].length)); }
+    CT.glow = BC.glow || 0; CT.heat = BC.heat || 0; CT.gt = BC.gt || 0;
+  }
+}
+
+/** Step C15a: the carbon's totals as plain numbers. */
+function cloneCarbon(T) {
+  return { add: Array.from(T.add), lost: Array.from(T.lost), gone: Array.from(T.gone), rx: Array.from(T.rx), light: Array.from(T.light), glow: T.glow, heat: T.heat, gt: T.gt };
 }
 
 /** Every rate history and time series starts again (their windows would span the jump in time). */
@@ -261,17 +275,24 @@ function gridOffsets(M) {
     n, delta: LEDGER_WORDS, heat: H.offset(H.cur), heatCopies: [H.offset(0), H.offset(1)],
     matter: LEDGER_WORDS + Mt.copyBase(Mt.cur), matterCopies: [LEDGER_WORDS + Mt.copyBase(0), LEDGER_WORDS + Mt.copyBase(1)],
     phi: H.chargeOffset,
+    // step C15a: the carbon ladder (current copy, both copies) and the tar
+    ...(CARBON ? { carbon: LEDGER_WORDS + Mt.carbon.copyBase(Mt.carbon.cur), carbonCopies: [0, 1].map((k) => LEDGER_WORDS + Mt.carbon.copyBase(k)),
+      tar: LEDGER_WORDS + Mt.carbon.tarBase() } : {}),
   };
 }
 
 export async function readGrid(M) {   // (step T1c: also the warfare census)
   const d = M.gpu.device, H = M.heat, o = gridOffsets(M), n = o.n;
-  const staging = d.createBuffer({ size: (3 + NCH) * n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+  const staging = d.createBuffer({ size: (3 + NCH + CARBON_BLOCKS.length) * n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
   const e = d.createCommandEncoder({ label: 'lab grid read-back' });
   e.copyBufferToBuffer(H.buffer, o.delta * 4, staging, 0, n * 4);
   e.copyBufferToBuffer(H.buffer, o.heat * 4, staging, n * 4, n * 4);
   e.copyBufferToBuffer(H.buffer, o.matter * 4, staging, 2 * n * 4, NCH * n * 4);
   e.copyBufferToBuffer(H.buffer, o.phi * 4, staging, (2 + NCH) * n * 4, n * 4);
+  if (CARBON) {   // step C15a: the ladder's 5 blocks, then the tar's 3
+    e.copyBufferToBuffer(H.buffer, o.carbon * 4, staging, (3 + NCH) * n * 4, 5 * n * 4);
+    e.copyBufferToBuffer(H.buffer, o.tar * 4, staging, (8 + NCH) * n * 4, 3 * n * 4);
+  }
   d.queue.submit([e.finish()]);
   await staging.mapAsync(GPUMapMode.READ);
   const out = new Int32Array(staging.getMappedRange().slice(0));
@@ -290,6 +311,14 @@ function writeGrid(M, w, names) {
   SUBSTANCES.forEach((s, c) => { const k = at(s.name); if (k >= 0) subs.set(block(k), c * n); });
   for (const c of o.matterCopies) q.writeBuffer(H.buffer, c * 4, subs);
   q.writeBuffer(H.buffer, o.phi * 4, block(at('phi')));
+  if (CARBON) {   // step C15a: the ladder (both copies) and the tar; blocks the snapshot does not have stay empty
+    const lad = new Int32Array(5 * n), tar = new Int32Array(3 * n);
+    LADDER.forEach((nm, j) => { const k = at(nm); if (k >= 0) lad.set(block(k), j * n); });
+    TAR.forEach((h, j) => { const k = at(`tar.${h}`); if (k >= 0) tar.set(block(k), j * n); });
+    for (const c of o.carbonCopies) q.writeBuffer(H.buffer, c * 4, lad);
+    q.writeBuffer(H.buffer, o.tar * 4, tar);
+    M.matter.carbon.cur = 0;
+  }
   H.cur = 0; M.matter.cur = 0;
   M.charge.phiLive = true;
 }
@@ -328,6 +357,7 @@ export async function snapshot(M, ctl, opts = {}) {
       format: SNAP_FORMAT, version: SNAP_VERSION, created: new Date().toISOString(), note: opts.note || '',
       url: location.href, query: location.search, seed: ctl.seed,
       electrons: ELECTRONS,   // step C12d: the chemistry's table it runs on (absent before step C12d: the old one)
+      carbon: CARBON,         // step C15a: carbon in the dish (absent before step C15a: no carbon)
       time: ctl.time(), tick: C.tick >>> 0,
       view: { cssW: v.cssW, cssH: v.cssH }, R: C.R, start: C.start, count: C.count, alive: m,
       dish: { W: dish.W, H: dish.H, R: dish.R, mR: dish.mR, perArea: dish.perArea, start: dish.start, press: { ...dish.press } },   // (the dish's own size, src/dish.js)
@@ -339,7 +369,7 @@ export async function snapshot(M, ctl, opts = {}) {
       js: { aQuant: C.aQuant ? clone(C.aQuant) : null },
       cells: { idx: await pack(new Uint32Array(idx)), rec: await pack(rec), bio: await pack(bio), stock: await pack(stock) },
       stats: await pack(new Uint32Array(statsAB)),
-      grid: grid ? { hw: H.hw, hh: H.hh, px: H.px, blocks: ['delta', 'heat', ...SUBSTANCES.map((s) => s.name), 'phi'], data: await pack(await readGrid(M)) } : null,
+      grid: grid ? { hw: H.hw, hh: H.hh, px: H.px, blocks: ['delta', 'heat', ...SUBSTANCES.map((s) => s.name), 'phi', ...CARBON_BLOCKS], data: await pack(await readGrid(M)) } : null,
       measures: opts.measures || null,
     };
     return out;
@@ -360,6 +390,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
   // needs a page started with its ?electrons= (?snap= does that by itself: main.js reloads the page)
   if (!!S.electrons !== ELECTRONS) {
     throw new Error(`this snapshot runs on the ${S.electrons ? 'electrons table' : 'old (step C4) table'}: open the page with ?electrons=${S.electrons ? 1 : 0} to load it`);
+  }
+  // step C15a: carbon is fixed for the page too (its blocks live in the grid): a snapshot from before carbon loads with ?carbon=0
+  if (!!S.carbon !== CARBON) {
+    throw new Error(`this snapshot was saved ${S.carbon ? 'with' : 'without'} carbon: open the page with ?carbon=${S.carbon ? 1 : 0} to load it`);
   }
   const wasPaused = ctl.paused();
   const notes = [];

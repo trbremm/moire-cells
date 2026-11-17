@@ -55,6 +55,8 @@ export const FLAT = {
     oil: { light: [150, 196, 214], heavy: [150, 196, 214] },             // step C12
     amphiphile: { light: [236, 226, 246], heavy: [236, 226, 246] },
     mineral: { light: [150, 172, 192], heavy: [184, 108, 76] },          // step C12d: settled minerals (gt water-like, Gt rust)
+    carbon: { light: [176, 236, 150], heavy: [128, 140, 156] },          // step C15a: the ladder, fuel green (methane-like) to slate (CO2-like)
+    tar: { light: [150, 104, 56], heavy: [92, 68, 50], sheen: [120, 196, 112] },   // step C15a: tar, amber to dull brown; waxy green sheen
   },
   oil: { film: [16, 22, 30], edge: [170, 210, 226], amph: [236, 226, 246] },   // step C12: the film, its rim, the soap lines
   polarity: { polar: [236, 150, 96], apolar: [104, 170, 236] },
@@ -89,6 +91,8 @@ export const NEON = {
     oil: { light: [120, 200, 236], heavy: [120, 200, 236] },             // step C12
     amphiphile: { light: [246, 232, 255], heavy: [246, 232, 255] },
     mineral: { light: [104, 146, 186], heavy: [204, 88, 44] },           // step C12d: settled minerals (gt water-like, Gt rust)
+    carbon: { light: [120, 255, 120], heavy: [96, 112, 140] },           // step C15a: the ladder, fuel green (methane-like) to slate (CO2-like)
+    tar: { light: [176, 104, 30], heavy: [88, 56, 34], sheen: [90, 230, 110] },   // step C15a: tar, amber to dull brown; waxy green sheen
   },
   oil: { film: [8, 14, 28], edge: [140, 220, 255], amph: [255, 240, 255] },
   polarity: { polar: [255, 128, 56], apolar: [56, 150, 255] },

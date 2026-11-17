@@ -89,6 +89,11 @@
 //               ?fluor=0 no fluorescence, ?photo=0 excited states do not react (no photochemistry in the open), ?glow=0 the glow
 //               not drawn; ?kabs=x a matching gap's optical depth, ?yrx=x the share that reacts, ?yfl=x the share of the rest that
 //               fluoresces (rules panel, Electrons; view panel)
+//   ?carbon=0     step C15a: no carbon (today's chemistry exactly: no carbon channels written or drawn; fixed for the page; old snapshots
+//               load this way by themselves). With carbon on: ?cbox=0 no oxidizing by heat, ?cbcond=0 no condensing (no tar forming),
+//               ?cblight=0 no reducing / hydrolyzing by hard light, ?cbdis=0 tar neither dissolves nor takes molecules in, ?cbspring=0
+//               springs drip no carbon; ?cbkox=x, ?cbkcond=x, ?cbkdis=x, ?cbkset=x the rates; ?cblook=0 carbon not drawn (rules
+//               panel, Carbon)
 //   ?saturation=0 step C12e: no saturation (reactions inside cells do not slow as their products pile up); ?osmosis=0 no osmosis (no
 //               swelling: the stretch genes still drift, the NEUTRAL control), ?stretch=0 stretch opens no channels, ?tear=0 overstretch
 //               does not burst, ?tolcost=0 the stretch tolerance is free; ?satscale=x, ?kosm=x, ?kstretch=x, ?wtol=x knobs;
@@ -163,6 +168,7 @@ import { Landscape } from './landscape.js';
 import { Cells, DEFAULT_CELLS, ANCHORS } from './cells.js';
 import { Light } from './light.js';
 import { Matter, SHOWS, ELECTRONS } from './matter.js';
+import { CARBON } from './carbon.js';   // step C15a: carbon in the open dish
 import { makeActions, keyMaps, keysText, TOOLS, SQUEEZE_SOFT, SQUEEZE_HARD } from './actions.js';
 import { setupUI } from './ui.js';
 import { Recorder } from './record.js';
@@ -281,6 +287,13 @@ async function boot() {
     if (snap && !!snap.electrons !== ELECTRONS) {
       const u = new URL(location.href);
       u.searchParams.set('electrons', snap.electrons ? '1' : '0');
+      location.replace(u.href);
+      return;
+    }
+    // step C15a: and with or without carbon as it was saved (saved before step C15a: without)
+    if (snap && !!snap.carbon !== CARBON) {
+      const u = new URL(location.href);
+      u.searchParams.set('carbon', snap.carbon ? '1' : '0');
       location.replace(u.href);
       return;
     }
@@ -470,6 +483,17 @@ async function boot() {
       }
       if (params.has('photolysis')) EP.photolysis = flag('photolysis');   // step C12e
     }
+    if (CARBON) {   // step C15a: carbon in the open dish (?carbon= itself is read by src/carbon.js when it loads)
+      const CP = matter.carbon.params;
+      for (const [q, k] of [['cbox', 'oxidize'], ['cbcond', 'condense'], ['cblight', 'light'], ['cbdis', 'dissolve'], ['cbspring', 'springs']]) {
+        if (params.has(q)) CP[k] = flag(q);
+      }
+      for (const [q, k] of [['cbkox', 'kOx'], ['cbkcond', 'kCond'], ['cbkdis', 'kDis'], ['cbkset', 'kSet']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) CP[k] = v;
+      }
+      if (params.has('cblook')) matter.carbon.look.on = flag('cblook');
+    }
     {   // step C12e: waste must leave
       const WP = cells.eat.waste.params;
       for (const [q, k] of [['saturation', 'saturation'], ['osmosis', 'osmosis'], ['stretch', 'stretch'], ['tear', 'tear'], ['tolcost', 'cost']]) {
@@ -626,7 +650,7 @@ async function boot() {
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
-    kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, perfusion };
+    kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, perfusion, carbon: matter.carbon };
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.warfare = new Warfare(window.moire);     // step T1c: the chemical warfare census (lineage borders against interiors)
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
@@ -925,7 +949,8 @@ ${cells.kin.panelLine(compact)}
 ${cells.grn.panelLine(compact)}
 ${cells.pred.panelLine(compact)}
 ${cells.fidelity.panelLine(compact)}${ELECTRONS ? `
-${matter.vents.panelLine(compact)}` : ''}
+${matter.vents.panelLine(compact)}` : ''}${CARBON ? `
+${matter.carbon.panelLine(compact)}` : ''}
 ${cells.eat.pigments.panelLine(compact)}
 ${water.panelLine(compact)}
 ${oases.panelLine(compact)}`;
@@ -1010,6 +1035,7 @@ function drawOverlay() {
     ...water.overlayLines(),
     ...oases.overlayLines(),
     ...matter.vents.overlayLines(),
+    ...matter.carbon.overlayLines(),
     ...cells.dipole.overlayLines(),
     ...cells.eat.pumps.overlayLines(),
     ...cells.eat.catalysts.overlayLines(),

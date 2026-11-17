@@ -4,7 +4,15 @@
 //
 //   words 0..4   the cell's LADDER molecules (methane-like cg4 .. CO2-like ct4), counts (ATOM_SCALE per unit, as the dish)
 //   words 5..7   its tar GRANULES, as the dish's tar: backbone bonds c-c, fuel hands c-g, burnt hands c-t (storage granules inside)
-//   words 8..12  the plan pass's exchange per ladder channel this tick (+ in, - out); 13..15 the grazing it asks per tar hand
+//   words 8..10  its BODY, the carbon it is built of (the same three hand counts); 11 spare (a part's element store, later)
+//   words 12..16 the plan pass's exchange per ladder channel this tick (+ in, - out); 17..19 the grazing it asks per tar hand; 20..23 spare
+//
+// GROWTH NEEDS CARBON (the user, 2026-11-17: "make carbon fundamental for all cells mechanisms": carbon is the cells' building material,
+// the battery stays the energy currency; ?cbgrow=0 off): a cell's body wants kBody carbons per R^2 of its area and builds toward it from
+// its stock's carbon (never CO2-like: that must be fixed first), each carbon paying the carbon spark from the battery; a cell may divide
+// only with its body full for its size (the halves share it), so carbon limits growth. Founders start with a full body (booked in). A
+// death, burst, meal's end or reset spills the body into the dish as tar. A part's cost is a RECIPE (cell_carbon.wgsl cb_build: n
+// carbons + k x an element's atoms; PART_RECIPES below): the body is carbon alone; C15c's parts name their element.
 //
 // The rules (each a switch: moire.carbonCells.params; the rules panel's group "Carbon in cells (step C15b)"; URL options):
 //   exchange (?cbexch=0)  the ladder molecules are NEUTRAL (no free charge: C12g's ion block does not hold them), so they cross the
@@ -21,7 +29,8 @@
 //                         expression (T1b) and the upkeep of expressed engines (T1b) as for the others
 //   graze (?cbgraze=0)    a cell with a granule-eating engine (OXIDIZE or HYDROLYZE: it can use tar) takes in the tar lying under it
 //                         (kGraze x those engines' expressed rates per s, of the tar there; through its free sides, x the room left) into
-//                         its granules: MUD EATERS (as M1's crust grazing; zero energy, matter exact)
+//                         its granules: MUD EATERS (as M1's crust grazing; zero energy, matter exact); a HUNGRY cell (its body short of
+//                         its want) grazes as one unit of such an engine: dead bodies are building material
 //   dissolve (?cbdis2=0)  a granule's LOOSE carbons (no backbone bond: as the dish's DISSOLVE, c (1 - p)^4 of them) leave the granule as
 //                         ladder molecules in the stock, kDis per s (enzymes: faster than the dish's 0.02), so burnt granule carbon can
 //                         get out as CO2-like carbon and digested carbon becomes fuel the engines can burn
@@ -36,16 +45,25 @@
 import { fmt, HEAT_SCALE, LEDGER_WORDS } from './heat.js';
 import { CARBON, LADDER, LG_CBC, carbonTable } from './carbon.js';
 
-export const CW = 16;          // carbon words per cell (cell_eat.wgsl CW)
-export const CW_STOCK = 8;     // ... of them the stock (the ladder and the granules: what a snapshot keeps)
+export const CW = 24;          // carbon words per cell (cell_carbon.wgsl CW)
+export const CW_STOCK = 12;    // ... of them the stock (the ladder, the granules, the body, a spare: what a snapshot keeps; 8 before the body)
+
+/**
+ * What a cell's parts are built of: n carbons (per R^2 of the cell's area, or per part) + k atoms of an element per carbon (cb_build). Only
+ * the BODY is charged in C15b; the others are what C15c's recipes are meant to look like (the element from the electron table, by the job;
+ * see README "Step C15b").
+ */
+export const PART_RECIPES = {
+  body: { carbon: 'kBody per R^2 of the cell', element: null, k: 0, charged: true },
+};
 const ATOM_SCALE = 4096;
-const CBF = { ON: 1, EXCH: 2, ENG: 4, GRAZE: 8, DIS: 16, FLIP: 32, RESET: 64, SMELL: 128 };
+const CBF = { ON: 1, EXCH: 2, ENG: 4, GRAZE: 8, DIS: 16, FLIP: 32, RESET: 64, SMELL: 128, GROW: 256 };
 // the 64-bit event counters (LG_CBC.EV, cell_eat.wgsl CBE_*)
-const EV = ['ox', 'cond', 'red', 'hyd', 'dis', 'graze', 'gain', 'heat', 'paid', 'phUsed', 'phIdle', 'satWant', 'satLost', 'rise', 'xtr', 'xtr2'];
-const EV_ENERGY = /^(gain|heat|paid|rise)$/;
+const EV = ['ox', 'cond', 'red', 'hyd', 'dis', 'graze', 'gain', 'heat', 'paid', 'phUsed', 'phIdle', 'satWant', 'satLost', 'rise', 'built', 'buildPaid'];
+const EV_ENERGY = /^(gain|heat|paid|rise|buildPaid)$/;
 // the census (LG_CBC.CEN, 16 numbers x 16 slots, i32; cell_eat.wgsl CBZ_*)
-const CEN = ['n', 'ox', 'cond', 'red', 'redLit', 'hyd', 'granule', 'granC', 'ladder', 'any', 'oxOnly', 'litOnly'];
-export const CB_RULES = ['exchange', 'engines', 'graze', 'dissolve', 'smell'];
+const CEN = ['n', 'ox', 'cond', 'red', 'redLit', 'hyd', 'granule', 'granC', 'ladder', 'any', 'oxOnly', 'litOnly', 'body', 'short', 'want'];
+export const CB_RULES = ['exchange', 'engines', 'graze', 'dissolve', 'smell', 'growth'];
 
 export class CarbonCells {
   constructor(eat) {
@@ -59,15 +77,20 @@ export class CarbonCells {
       graze: true,       // cells with granule-eating engines take in the tar under them
       dissolve: true,    // loose granule carbons leave the granule as ladder molecules
       smell: true,       // the corners smell the ladder's fuel
+      growth: true,      // GROWTH NEEDS CARBON: a body of carbon, built from the stock; division only with it full (?cbgrow=0)
       kGraze: 0.05,      // share of the tar under the cell taken per s, per unit of the grazing engines' expressed rate
       kDis: 0.2,         // per s: loose granule carbons leaving as molecules (the dish's: 0.02)
+      kBody: 0.05,       // the body's want: carbon units per R^2 of the cell's area (?cbbody=)
+      kBuild: 0.5,       // share of the body's shortfall built per s (?cbbuild=)
+      found: 1.35,       // the founders' body at a new culture, as a share of a radius-R cell's want (1.35: full for the biggest founder,
+                         // size gene 1.15; ?cbfound=; booked as carbon and energy in)
     };
     this.tot = Object.fromEntries(EV.map((k) => [k, 0]));
     this.hist = [];
     this.census = null;
     this.series = [];
     this.ledger = null;
-    this.ab = new ArrayBuffer(64);
+    this.ab = new ArrayBuffer(80);   // struct CbCellP
   }
 
   /** The GPU side (called by src/eat.js init): the carbon buffer (CW words per cell; 16 bytes without carbon) and its uniform. */
@@ -75,7 +98,7 @@ export class CarbonCells {
     const U = GPUBufferUsage;
     this.device = device;
     this.buf = device.createBuffer({ label: 'cell carbon', size: CARBON ? n * CW * 4 : 64, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
-    this.ubuf = device.createBuffer({ label: 'cell carbon params', size: 64, usage: U.UNIFORM | U.COPY_DST });
+    this.ubuf = device.createBuffer({ label: 'cell carbon params', size: 80, usage: U.UNIFORM | U.COPY_DST });
   }
 
   rule(k) { return CARBON && !!this.params.on && !!this.params[k]; }
@@ -94,7 +117,8 @@ export class CarbonCells {
       const p = this.params;
       const flip = ok && M.active && M.carbonRun && M.ticks > 0;
       u[0] = (p.on ? CBF.ON : 0) | (this.rule('exchange') ? CBF.EXCH : 0) | (this.rule('engines') ? CBF.ENG : 0) | (this.rule('graze') ? CBF.GRAZE : 0) |
-        (this.rule('dissolve') ? CBF.DIS : 0) | (flip ? CBF.FLIP : 0) | (reset ? CBF.RESET : 0) | (this.rule('smell') && E.rule('smell') ? CBF.SMELL : 0);
+        (this.rule('dissolve') ? CBF.DIS : 0) | (flip ? CBF.FLIP : 0) | (reset ? CBF.RESET : 0) | (this.rule('smell') && E.rule('smell') ? CBF.SMELL : 0) |
+        (this.rule('growth') ? CBF.GROW : 0);
       u[1] = tickBase >>> 0; u[2] = ok ? Math.max(1, M.nSub || 1) : 1; u[3] = ok ? Cb.cur & 1 : 0;
       if (ok) {
         const LW = LEDGER_WORDS;   // (the heat buffer's grid starts behind the ledger)
@@ -104,6 +128,7 @@ export class CarbonCells {
       f[8] = T.ladder[0].spread / 1.2;   // the ladder's spreading speed over the light atoms' (SPREAD.row1): its membrane rate's share
       f[9] = Math.max(0, p.kGraze); f[10] = Math.max(0, p.kDis); f[11] = 0;
       i[12] = T.ox16; i[13] = T.cond16; i[14] = Math.round(16 * T.spark); i[15] = T.ox16;   // (smell: per giver hand, what a free t releases)
+      f[16] = Math.max(0, p.kBody); f[17] = Math.max(0, p.kBuild); f[18] = Math.max(0, p.found); f[19] = 0;
     }
     this.device.queue.writeBuffer(this.ubuf, 0, this.ab);
   }
@@ -121,11 +146,11 @@ export class CarbonCells {
     const rate = Object.fromEntries(EV.map((k, j) => [k, dt > 0.05 ? (H[H.length - 1][1 + j] - H[0][1 + j]) / dt : 0]));
     const v = (q) => { let s = 0; for (let k = 0; k < 16; k++) s += w[LG_CBC.CEN + 16 * q + k]; return s; };
     const C = Object.fromEntries(CEN.map((k, q) => [k, v(q)]));
-    C.granC /= 1000; C.ladder /= 1000;
+    C.granC /= 1000; C.ladder /= 1000; C.body /= 1000; C.want /= 1000;
     this.census = C;
     const held = [];
     for (let c = 0; c < 8; c++) held.push(wide(LG_CBC.STOCK + 128 * c) / ATOM_SCALE);
-    const tarC = (2 * held[5] + held[6] + held[7]) / 4;
+    const tarC = (2 * held[5] + held[6] + held[7]) / 4 - this.census.body;   // (the books hold the bodies with the granules)
     this.ledger = { time: rec.time, rate, held, ladder: held.slice(0, 5), granules: held.slice(5), granC: tarC, census: C };
     const S = this.series, last = S[S.length - 1];
     if (last && rec.time < last[0]) S.length = 0;
@@ -141,7 +166,8 @@ export class CarbonCells {
     if (!L) return null;
     const C = L.census, r = L.rate;
     const out = { cells: C.n, withOx: C.ox, withCond: C.cond, withRed: C.red, withRedLit: C.redLit, withHyd: C.hyd, anyCarbonEngine: C.any,
-      holdGranules: C.granule, granC: L.granC, ladderHeld: L.ladder.reduce((a, b) => a + b, 0), cg4In: L.ladder[0], ct4In: L.ladder[4] };
+      holdGranules: C.granule, granC: L.granC, ladderHeld: L.ladder.reduce((a, b) => a + b, 0), cg4In: L.ladder[0], ct4In: L.ladder[4],
+      body: C.body, bodyWant: C.want, short: C.short };
     for (const k of EV) out[`r_${k}`] = r[k];
     return out;
   }
@@ -153,11 +179,12 @@ export class CarbonCells {
     const L = this.ledger;
     if (!L) return 'CARBON IN CELLS  …';
     const C = L.census, r = L.rate, pc = (x) => (C.n ? `${Math.round(100 * x / C.n)}%` : '-');
-    if (compact) return `CARBON IN CELLS breathe ${fmt(r.ox)}/s store ${fmt(r.cond)}/s fix ${fmt(r.red)}/s · granules ${fmt(L.granC)} · engines ${pc(C.any)}`;
+    if (compact) return `CARBON IN CELLS bodies ${fmt(C.body)} (${pc(C.short)} short) · breathe ${fmt(r.ox)}/s fix ${fmt(r.red)}/s · granules ${fmt(L.granC)}`;
     return `CARBON IN CELLS  held: ladder ${L.ladder.map((x) => fmt(x)).join(' ')} · granules ${fmt(L.granC)} carbons in ${C.granule} cells` +
       ` · per s: breathe (oxidize) ${fmt(r.ox)} · store (condense) ${fmt(r.cond)} · fix (reduce) ${fmt(r.red)} · digest (hydrolyze) ${fmt(r.hyd)}` +
       ` · granules dissolve ${fmt(r.dis)} · tar grazed ${fmt(r.graze)} hands → batteries +${fmt(r.gain)}, heat ${fmt(r.heat)}` +
-      `\n        cells with a carbon engine ${pc(C.any)}: oxidize ${C.ox} · condense ${C.cond} · reduce ${C.red} (by light ${C.redLit}) · hydrolyze ${C.hyd}`;
+      `\n        cells with a carbon engine ${pc(C.any)}: oxidize ${C.ox} · condense ${C.cond} · reduce ${C.red} (by light ${C.redLit}) · hydrolyze ${C.hyd}` +
+      ` · BODIES ${fmt(C.body)} of ${fmt(C.want)} carbons wanted, ${pc(C.short)} short (cannot divide) · built ${fmt(r.built)}/s`;
   }
 
   /** The F overlay's lines. */
@@ -165,7 +192,7 @@ export class CarbonCells {
     if (!CARBON) return [];
     const p = this.params, on = (x) => (x ? 'on' : 'off');
     const lines = [`carbon in cells (step C15b) ${on(p.on)}: exchange ${on(p.exchange)} · engines ${on(p.engines)} · graze ${on(p.graze)} (k ${p.kGraze}/s per rate)` +
-      ` · granules dissolve ${on(p.dissolve)} (${p.kDis}/s) · smell ${on(p.smell)}`];
+      ` · granules dissolve ${on(p.dissolve)} (${p.kDis}/s) · smell ${on(p.smell)} · growth needs carbon ${on(p.growth)} (body ${p.kBody}/R², build ${p.kBuild}/s, founders ${p.found})`];
     const L = this.ledger;
     if (L) {
       const r = L.rate;

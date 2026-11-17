@@ -98,7 +98,8 @@
 //               no ladder through the membrane, ?cbeng=0 the carbon engines idle, ?cbgraze=0 no tar grazing, ?cbdis2=0 granules keep their
 //               loose carbons, ?cbsmell=0 no smell for carbon fuel; ?cbkgraze=x, ?cbkdis2=x; ?cbsurf=x the tar's surface size (C15b, the
 //               open dish: tar thicker than this reacts only at its surface; 0 = all of it, as C15a); ?seep=0 the default scene without
-//               its lasting fuel seep
+//               its lasting fuel seep; ?cbfounder=x the chance a std founder gets its carbon engines (1/3); GROWTH NEEDS CARBON: ?cbgrow=0
+//               off, ?cbbody=x the body's carbon per R^2 (0.05), ?cbbuild=x per s (0.5), ?cbfound=x the founders' body (share of the want, 1)
 //   ?saturation=0 step C12e: no saturation (reactions inside cells do not slow as their products pile up); ?osmosis=0 no osmosis (no
 //               swelling: the stretch genes still drift, the NEUTRAL control), ?stretch=0 stretch opens no channels, ?tear=0 overstretch
 //               does not burst, ?tolcost=0 the stretch tolerance is free; ?satscale=x, ?kosm=x, ?kstretch=x, ?wtol=x knobs;
@@ -378,6 +379,7 @@ async function boot() {
     }
     if (params.has('wild')) cells.genome.params.wildGroups = String(params.get('wild')).split(',').filter(Boolean);   // (step T1a: the wild groups)
     if (params.has('habit')) cells.genome.params.habit = params.get('habit');   // (step T1b: every founder one habit: burn, both, pigments, other)
+    if (params.has('cbfounder') && Number.isFinite(+params.get('cbfounder'))) cells.genome.params.cbFounder = Math.max(0, Math.min(1, +params.get('cbfounder')));   // (step C15b)
     if (params.get('bsign') === 'plus' || params.get('bsign') === 'mixed') cells.genome.params.bSign = params.get('bsign');   // the founders' B sign
     if (params.has('view')) {   // ?view=1 lineage, ?view=2 or ?view=strategy (step C6), ?view=3 or ?view=charge (step C6b)
       const v = params.get('view') === 'fate' ? 'job' : params.get('view');   // (step F0: ?view=job; the old ?view=fate means it too)
@@ -518,10 +520,10 @@ async function boot() {
       if (params.has('cblook')) matter.carbon.look.on = flag('cblook');
       // step C15b: cells eat carbon (src/carboncells.js)
       const CC = cells.eat.carbon.params;
-      for (const [q, k] of [['cbcells', 'on'], ['cbexch', 'exchange'], ['cbeng', 'engines'], ['cbgraze', 'graze'], ['cbdis2', 'dissolve'], ['cbsmell', 'smell']]) {
+      for (const [q, k] of [['cbcells', 'on'], ['cbexch', 'exchange'], ['cbeng', 'engines'], ['cbgraze', 'graze'], ['cbdis2', 'dissolve'], ['cbsmell', 'smell'], ['cbgrow', 'growth']]) {
         if (params.has(q)) CC[k] = flag(q);
       }
-      for (const [q, k] of [['cbkgraze', 'kGraze'], ['cbkdis2', 'kDis']]) {
+      for (const [q, k] of [['cbkgraze', 'kGraze'], ['cbkdis2', 'kDis'], ['cbbody', 'kBody'], ['cbbuild', 'kBuild'], ['cbfound', 'found']]) {
         const v = Number(params.get(q));
         if (params.has(q) && Number.isFinite(v) && v >= 0) CC[k] = v;
       }

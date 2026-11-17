@@ -379,7 +379,7 @@ export async function snapshot(M, ctl, opts = {}) {
       books: captureBooks(M),
       js: { aQuant: C.aQuant ? clone(C.aQuant) : null },
       cells: { idx: await pack(new Uint32Array(idx)), rec: await pack(rec), bio: await pack(bio), stock: await pack(stock),
-        ...(cstock ? { carbon: await pack(cstock) } : {}) },   // (step C15b: the cells' carbon, CB_STOCK words a cell; absent before)
+        ...(cstock ? { carbon: await pack(cstock), carbonWords: CB_STOCK } : {}) },   // (step C15b: the cells' carbon, CB_STOCK words a cell; absent before)
       stats: await pack(new Uint32Array(statsAB)),
       grid: grid ? { hw: H.hw, hh: H.hh, px: H.px, blocks: ['delta', 'heat', ...SUBSTANCES.map((s) => s.name), 'phi', ...CARBON_BLOCKS], data: await pack(await readGrid(M)) } : null,
       measures: opts.measures || null,
@@ -594,7 +594,7 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       cu.set(rec.subarray(k * CELL_FLOATS, (k + 1) * CELL_FLOATS), o);
       bu.set(bio.subarray(k * BIO_FLOATS, (k + 1) * BIO_FLOATS), i * BIO_FLOATS);
       su.set(stock.subarray(k * SW, (k + 1) * SW), i * SW);
-      if (cbs) cbo.set(cbs.subarray(k * CB_STOCK, (k + 1) * CB_STOCK), i * CB_W);
+      if (cbs) { const cw = S.cells.carbonWords || 8; cbo.set(cbs.subarray(k * cw, (k + 1) * cw), i * CB_W); }   // (8: saved before the body)
       if (!sameView) { cf[o] += dx; cf[o + 1] += dy; }
       if (!sameSlots) {
         cu[o + 60] = cu[o + 61] = cu[o + 62] = 0xffffffff;

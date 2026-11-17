@@ -686,6 +686,10 @@ export function makeActions(app) {
     cctoggle('cbDis2', 'granules dissolve', 'dissolve', 'on: loose granule carbons leave as ladder molecules', 'off',
       'a granule carbon with no backbone bond leaves as a molecule the engines can use (or CO2-like carbon that can leave)'),
     cctoggle('cbSmell', 'smell carbon fuel', 'smell', 'on: the corners smell the ladder’s fuel', 'off', 'each molecule weighted by what a free t releases from it'),
+    cctoggle('cbGrow', 'growth needs carbon', 'growth', 'on: a cell’s body is carbon; it divides only with its body full', 'off: carbon does not limit division',
+      'the body wants kBody carbons per R² of the cell, built from fuel carbon in the stock (never CO2-like), the spark per carbon from the battery'),
+    ccknob('cbBody', 'body carbon', 'kBody', 0.001, 2, 1.5, 3, 'carbon units per R² of a cell’s area'),
+    ccknob('cbBuild', 'body build rate', 'kBuild', 0.01, 10, 1.5, 2, 'share of the shortfall built per s'),
     ccknob('cbKgraze', 'graze rate', 'kGraze', 0.001, 5, 1.5, 3, 'share of the tar under the cell per s, per unit of the grazing engines’ rate'),
     ccknob('cbKdis2', 'granule dissolve rate', 'kDis', 0.001, 10, 1.5, 3, 'per s, of the granules’ loose carbons'),
   );

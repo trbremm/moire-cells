@@ -3022,8 +3022,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       let tmp = bitcast<f32>(flux[fo + 15u]) / max(2.0 * tol, 1e-3);
       cells[i].sns0 = pack4x8unorm(vec4f(ls, grn_amount(m[1] + m[17], cap, GRN_REF_T), grn_amount(m[6] + m[7] + m[8] + m[9], cap, GRN_REF_FUEL),
                                          grn_amount(m[2] + m[5], cap, GRN_REF_LINK)));
-      // (step C15b: z the granules, w the carbon fuel inside, for the drawing: as an amount, 1 - e^-(amount / (capacity x 0.05)))
-      cells[i].sns1 = pack4x8unorm(vec4f(tr, clamp(tmp, 0.0, 1.0), grn_amount(i32(cbo.gran), cap, 0.05), grn_amount(i32(cbo.fuel), cap, 0.1)));
+      // (step C15b: z the granules, for the drawing; w the BODY's share of its want, which the step's division reads: 1 without carbon)
+      cells[i].sns1 = pack4x8unorm(vec4f(tr, clamp(tmp, 0.0, 1.0), grn_amount(i32(cbo.gran), cap, 0.05), select(1.0, cbo.ready, CARBON_ON != 0u)));
     }
 
     // ---- step C6b: the cell's charge, the net charge of its stock (givers minus takers; fuel and sediment are neutral);
@@ -3601,6 +3601,7 @@ fn reset(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
     if (i < EP.dv.x) {   // step C9: only the slots the new culture fills (the rest stay free)
       atomicStore(&stock[i * SW + BAT], EP.starter);
       add64(LG_K_START + slot, EP.starter);
+      cb_found(i, EP.R, slot);   // step C15b: a founder's body (a full one for a cell of radius R)
     }
   }
   flush_counters(li, slot);

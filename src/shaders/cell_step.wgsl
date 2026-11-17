@@ -51,6 +51,31 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var bio = bioPrev[i];
   if ((c.flags & CELL_ALIVE) == 0u) { return; }   // (never: the grid sorted it among the live cells)
 
+  // step P1, PREDATORS (src/predators.js): this cell's engulfing (Cell.eng) and what it needs to choose a prey or go on wrapping one. A
+  // touching cell can be engulfed when it is SMALLER (area ratio p1.y), when this cell's DRIVE (p1.z x its engulf gene as expressed x (1 -
+  // its kin sparing gene x their kinship)) beats the other's HOLD (its glue to its other neighbours + its armour + p1.w), and when this cell
+  // can pay (battery, membrane). Only with the changing count (division), as a meal's slot must stay a ghost while it is digested
+  let p1F = bitcast<u32>(FL.p1.x);
+  let p1On = (p1F & P1_ON) != 0u && S.count <= NBR_NONE;
+  let p1Act = p1On && (p1F & P1_NULL) == 0u && (S.rules & RULE_TURN) != 0u && (bitcast<u32>(FL.dv0.x) & DV_ON) != 0u;
+  let myEng = c.eng;
+  let myMode = eng_mode(myEng);
+  let myPart = eng_partner(myEng);
+  let eGene = clamp(bio.kin.z, 0.0, 1.0);
+  let eExpr = eGene * select(1.0, grn_fac_engulf(bio), (bitcast<u32>(FL.t1.z) & GRN_ACT) != 0u);
+  let seekOn = p1Act && eGene > 0.0 && (myMode == ENG_IDLE || myMode == ENG_WRAP);
+  let mySpare = select(clamp(bio.kin.w, 0.0, 1.0), 0.0, (p1F & P1_KINNULL) != 0u);
+  let myMark = vec4f(bio.mark.xyz, bio.mark.w * gofP(i, GRN_O_DISP));
+  var holdG = 0.0;            // this cell's glue to its touching neighbours (part of its hold)
+  var bestM = 0.0;            // an idle predator: the best prey's margin (drive - hold) and index
+  var bestI = NBR_NONE;
+  var tFound = false;         // a wrapping predator: its prey still touches it ...
+  var tOk = false;            // ... and it still out-pulls it
+  var byP = 0.0;              // a prey: the furthest wrap round it, and its wrapper
+  var byI = NBR_NONE;
+  var capI = 0xffffffffu;     // ... a wrapper that has closed round it (the lowest index if several)
+  var capKin = 0.0;
+
   // step C6c, elastic honeycomb cells: a cell without a honeycomb outline yet (the rule just switched on, or a newborn)
   // starts from its ellipse: each corner on the ellipse of its stretch, the whole at the rest area, the hexagon turned at
   // random; with the rule off the cell goes back to its ellipse (its stretch as the corners last left it)
@@ -229,10 +254,17 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         let d = o.pos - c.pos;
         let R0 = c.r + o.r;
         let d2 = dot(d, d);
+        // step P1: how far this pair is wrapped (one of them wrapping the other): their walls give way and their push softens
+        var wrapP = 0.0;
+        if (p1On) {
+          let oe = o.eng.x;
+          if (eng_mode(oe) == ENG_WRAP && eng_partner(oe) == i) { wrapP = eng_prog(oe); }
+          if (myMode == ENG_WRAP && myPart == beats[k].idx) { wrapP = max(wrapP, eng_prog(myEng)); }
+        }
         // step C6c: contact flattens. The wall between the two cells is the line where their power distances |x - p|^2 - r^2
         // are equal (the midline, shifted toward the smaller cell; both cells find the same line, so they share a straight
         // wall): every corner of this cell must stay on its side of it
-        if (hexShape && d2 < 1.96 * R0 * R0 && d2 > 1e-6) {
+        if (hexShape && d2 < 1.96 * R0 * R0 && d2 > 1e-6 && wrapP < 0.3) {
           let dh = sqrt(d2);
           let uh = d / dh;
           let wall = 0.5 * dh + (c.r * c.r - o.r * o.r) / (2.0 * dh);
@@ -398,6 +430,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           wParent += wp;
           if (rand01(c.seed ^ pcg(S.tick ^ 0x27d4eb2fu), k) * wParent < wp) { parent = k; }
         }
+        var pairStick = 0.0;      // step P1: this pair's glue (the adhesion below)
         if (diff || adh) {
           if (diff && o.kind >= 1u && o.kind <= 4u) { sig[o.kind - 1u] += touch * ob.rec.z; }
           if (adh && dist > 1e-3) {
@@ -455,6 +488,38 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
             }
             // (minus a baseline: unlike neighbours push off a little, which lets the tissue sort itself out)
             f += d / dist * (touch * near * (stick - S.adhBase) * S.adhesion * S.R * S.stiffness);
+            pairStick = stick;
+          }
+        }
+        // step P1, predators: (a) this cell's HOLD gathers the glue to every touching neighbour; (b) a neighbour wrapping this cell pulls it
+        // in, and once its wrap has closed (full progress) this cell is caught (below, with the deaths); (c) a predator looks for a prey (idle)
+        // or checks its prey (wrapping): smaller by the area ratio, and out-pulled: drive x (1 - spare x kinship) > the prey's hold (its last
+        // tick's, less this pair's own glue) + the hold every cell has
+        if (p1On && dist < reach) {
+          let oi = beats[k].idx;
+          holdG += touch * max(pairStick, 0.0);
+          let oe = o.eng.x;
+          if (eng_mode(oe) == ENG_WRAP && eng_partner(oe) == i) {
+            let pp = eng_prog(oe);
+            if (byI == NBR_NONE || pp > byP) { byP = pp; byI = oi; }
+            if (dist > 1e-3) { f += d / dist * (FL.p1c.w * S.R * pp); }
+            if (eng_progN(oe) >= ENG_FULL && oi < capI) {
+              capI = oi;
+              capKin = kin_match_m(myMark, vec4f(ob.mark.xyz, ob.mark.w * gofP(oi, GRN_O_DISP)), 0.5 * R0 / S.R);
+            }
+          }
+          if (seekOn && (myMode == ENG_IDLE || oi == myPart)) {
+            var ok = false;
+            var margin = 0.0;
+            if (c.r * c.r >= FL.p1.y * o.r * o.r) {
+              let hold = max(bitcast<f32>(o.eng.y) - touch * max(pairStick, 0.0), 0.0) + FL.p1.w;
+              var kin = 0.0;
+              if (mySpare > 0.0) { kin = kin_match_m(myMark, vec4f(ob.mark.xyz, ob.mark.w * gofP(oi, GRN_O_DISP)), 0.5 * R0 / S.R); }
+              margin = FL.p1.z * eExpr * (1.0 - mySpare * kin) - hold;
+              ok = margin > 0.0;
+            }
+            if (myMode == ENG_IDLE) { if (ok && margin > bestM) { bestM = margin; bestI = oi; } }
+            else { tFound = true; tOk = ok; }
           }
         }
 
@@ -469,7 +534,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           let a = TAU * rand01(min(i, beats[k].idx) * 7919u + max(i, beats[k].idx), 17u);
           u = vec2f(cos(a), sin(a)) * select(-1.0, 1.0, i < beats[k].idx);
         }
-        if (dist < Rt) { f -= u * S.stiffness * kx * (Rt - dist); }
+        if (dist < Rt) { f -= u * S.stiffness * kx * (Rt - dist) * (1.0 - FL.p1d.w * wrapP); }   // (step P1: softer while wrapped)
         // contact squeezes the cell along the contact axis (passive deformation; by the real overlap)
         let ov = max(R0 - dist, 0.0) / R0;
         C -= ov * vec2f(u.x * u.x - u.y * u.y, 2.0 * u.x * u.y);
@@ -1126,7 +1191,9 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   if (turnOn && divOn) {
     bio.env.x = select(0.0, bio.env.x + S.dt, c.bat < FL.dv1.x);   // how long it has been starving
     var cause = 0u;
-    if (burstDie) {
+    if (capI != 0xffffffffu) {
+      cause = DV_EATEN;                         // step P1: a wrap closed round it
+    } else if (burstDie) {
       cause = DV_BURST;
     } else if (bio.env.x >= FL.dv1.y) {
       cause = DV_STARVED;
@@ -1150,6 +1217,23 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       c.fill = 0.0;
       c.pay = 0;
       died = true;
+      // step P1: an engulfed cell's slot becomes its predator's GHOST (its stock is the meal, digested by the host over the next seconds);
+      // whatever it was doing itself ends (a meal it was digesting is left to spill: the eat pass's dump)
+      c.eng = 0u;
+      c.engPay = 0;
+      let preyHold = c.hold;                    // (its hold as its predator last saw it)
+      c.hold = 0.0;
+      if (cause == DV_EATEN) {
+        c.engBy = (BY_GHOST << 24u) | capI;
+        atomicAdd(&stats.p1[PS_EATEN], 1u);
+        if (capKin > 0.5) { atomicAdd(&stats.p1[PS_KIN], 1u); }
+        if (holdG < 0.05) { atomicAdd(&stats.p1[PS_ALONE], 1u); }
+        atomicAdd(&stats.p1[PS_HOLD], u32(round(max(preyHold, 0.0) * 1000.0)));
+        atomicAdd(&stats.p1[PS_AREA], u32(round(3.14159265 * c.r * c.r / (S.R * S.R) * 1000.0)));
+        atomicAdd(&stats.p1[PS_KINSUM], u32(round(clamp(capKin, 0.0, 1.0) * 1000.0)));
+      } else {
+        c.engBy = 0u;
+      }
     } else if (c.bat >= FL.dv0.y && c.r >= FL.dv2.x * S.R * size * swell && bt == 0u) {   // (step C12e: at its own swelling)
       if (S.xCount != 0u) {
         atomicAdd(&stats.div[DV_READY], 1u);
@@ -1157,7 +1241,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       }
       if (comp <= FL.dv0.z && rand01(c.seed ^ 0x51ed270bu, S.tick) < FL.dv0.w * gofP(i, GRN_O_DIV) * S.dt) {   // (step T1b: readiness as expressed)
         let t = atomicAdd(&stats.claim, 1u);
-        if (t < S.count - aliveN) {
+        if (t < starts[S.gw * S.gh + 1u] - aliveN) {   // (step P1: the free slots end where the ghosts' bucket starts)
           let k = beats[aliveN + t].idx;          // a free slot (dead at this tick's grid build)
           let bs = pcg(c.seed ^ pcg(S.tick * 0x9e3779b9u + i));
           var nb = daughter_genome(bio, bs, cell_dose(c.flags), i);
@@ -1231,6 +1315,89 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     if (S.xCount != 0u && !died && bio.env.x > 0.0) { atomicAdd(&stats.div[DV_STARVING], 1u); }
   } else {
     bio.env.x = 0.0;
+  }
+
+  // step P1, predators: the engulfing for the next tick (Cell.eng), what it costs this tick (Cell.engPay, paid by the eat pass from the
+  // battery as heat), this cell's HOLD for its neighbours, and whether it is being wrapped (Cell.engBy, for the drawing)
+  //   idle      a prey touches it (out-pulled, smaller): a wrap starts at p1b.z per s, if the battery holds p1c.y and the membrane p1d.x
+  //             (the start costs p1d.z)
+  //   wrapping  the progress runs up over p1b.x s (costing p1d.y per s) while the prey stays in reach and out-pulled and the predator can
+  //             pay (battery p1c.z, membrane p1d.x / 2), else the prey ESCAPES; at full progress the prey is caught (its own step, above)
+  //             and the predator digests it
+  //   digesting the progress runs up over p1b.y s, whatever the switches; the eat pass moves the meal into the stock and ends it
+  if (!died && c.seed == sorted[j].seed) {
+    var ne = 0u;
+    var near = 0u;
+    var pay = 0;
+    var integM = 0.0;
+    for (var q = 0; q < 6; q++) { integM += clamp(c.integ[q], 0.0, 1.0); }
+    integM /= 6.0;
+    let prog = eng_progN(myEng);
+    if (myMode == ENG_DIGEST) {
+      let np = min(prog + max(1u, u32(round(S.dt / max(FL.p1b.y, 0.05) * f32(ENG_FULL)))), ENG_FULL);
+      ne = eng_word(ENG_DIGEST, np, myPart, 0u);
+    } else if (myMode == ENG_WRAP) {
+      if (!p1Act) {
+        ne = 0u;
+      } else if (prog >= ENG_FULL) {
+        if (tFound) { ne = eng_word(ENG_DIGEST, 0u, myPart, ENG_FRESH); } else { atomicAdd(&stats.p1[PS_LOST], 1u); }
+      } else if (!tFound) {
+        atomicAdd(&stats.p1[PS_LOST], 1u);
+      } else if (!tOk) {
+        atomicAdd(&stats.p1[PS_HELD], 1u);
+      } else if (c.bat < FL.p1c.z || integM < 0.5 * FL.p1d.x) {
+        atomicAdd(&stats.p1[PS_POOR], 1u);
+      } else {
+        let np = min(prog + max(1u, u32(round(S.dt / max(FL.p1b.x, 0.05) * f32(ENG_FULL)))), ENG_FULL);
+        ne = eng_word(ENG_WRAP, np, myPart, 0u);
+        near = ENG_NEAR;
+        pay += i32(floor(FL.p1d.y * S.dt + rand01(c.seed ^ 0x2d1f3a5bu, S.tick)));
+      }
+    } else if (p1Act && bestI != NBR_NONE) {
+      near = ENG_NEAR;
+      if (c.bat >= FL.p1c.y && integM >= FL.p1d.x && rand01(c.seed ^ 0x6c8e9cf5u, S.tick) < FL.p1b.z * S.dt) {
+        ne = eng_word(ENG_WRAP, 0u, bestI, 0u);
+        pay += i32(round(FL.p1d.z));
+        atomicAdd(&stats.p1[PS_START], 1u);
+      }
+    }
+    c.eng = ne | near;
+    c.engPay = pay;
+    // the hold: the glue to its touching neighbours + its ARMOUR (the crust wall's cover, the membrane's stiffness: the lipid membranes'
+    // per side, else the C6c material's)
+    var arm = 0.0;
+    if (p1On) {
+      var wc = 0.0;
+      var kk = 0.0;
+      for (var q = 0; q < 6; q++) { let l = unpack4x8unorm(c.lip[q]); wc += l.w; kk += l.x; }
+      var kq = kk / 6.0 * LIP_KMAX;
+      if (kk <= 0.0) { kq = select(1.0, memb_stiff(bio.memb, FL.memb.y), (bitcast<u32>(FL.memb.x) & MB_ELASTIC) != 0u); }
+      arm = FL.p1b.w * wc / 6.0 + FL.p1c.x * clamp((kq - 1.0) / (LIP_KMAX - 1.0), 0.0, 1.0);
+    }
+    c.hold = select(0.0, holdG + arm, p1On);
+    c.engBy = select(0u, (BY_WRAPPED << 24u) | (u32(round(clamp(byP, 0.0, 1.0) * 255.0)) << 16u) | byI, byI != NBR_NONE);
+    if (S.xCount != 0u) {
+      let sp = clamp(bio.kin.w, 0.0, 1.0);
+      atomicAdd(&stats.p1[PZ_N], 1u);
+      atomicAdd(&stats.p1[PZ_E], u32(round(eGene * 1000.0)));
+      atomicAdd(&stats.p1[PZ_E2], u32(round(eGene * eGene * 1000.0)));
+      atomicAdd(&stats.p1[PZ_S], u32(round(sp * 1000.0)));
+      atomicAdd(&stats.p1[PZ_S2], u32(round(sp * sp * 1000.0)));
+      if (eGene >= 0.25) {
+        atomicAdd(&stats.p1[PZ_CARRY], 1u);
+        atomicAdd(&stats.p1[PZ_SC], u32(round(sp * 1000.0)));
+        if (sp >= 0.5) { atomicAdd(&stats.p1[PZ_SPARER], 1u); }
+      }
+      let md = eng_mode(c.eng);
+      if (md == ENG_WRAP) { atomicAdd(&stats.p1[PZ_WRAP], 1u); }
+      if (md == ENG_DIGEST) { atomicAdd(&stats.p1[PZ_DIGEST], 1u); }
+      if (byI != NBR_NONE) { atomicAdd(&stats.p1[PZ_WRAPPED], 1u); }
+      if (near != 0u) { atomicAdd(&stats.p1[PZ_NEAR], 1u); }
+      atomicAdd(&stats.p1[PZ_EXPR], u32(round(min(eExpr, 4.0) * 1000.0)));
+      atomicAdd(&stats.p1[PZ_HOLD], u32(round(min(c.hold, 100.0) * 1000.0)));
+      atomicAdd(&stats.p1[PZ_GLUE], u32(round(clamp(bio.body.x * gofP(i, GRN_O_GLUE), 0.0, 4.0) * 1000.0)));
+      atomicAdd(&stats.p1[PZ_ARM], u32(round(min(arm, 100.0) * 1000.0)));
+    }
   }
 
   // step C1: the heat under the cell gets the drag's loss and a dead cell's motion, minus what the kick took, spread

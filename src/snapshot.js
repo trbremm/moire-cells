@@ -165,6 +165,7 @@ export function settingObjects(M) {
     ...(M.whole ? { 'whole.params': M.whole.params } : {}),   // step M1
     ...(M.kin ? { 'kin.params': M.kin.params, 'kin.look': M.kin.look } : {}),   // step T1a
     ...(M.grn ? { 'grn.params': M.grn.params, 'grn.look': M.grn.look } : {}),   // step T1b
+    ...(M.predators ? { 'predators.params': M.predators.params, 'predators.look': M.predators.look } : {}),   // step P1
     ...(M.pigments ? { 'pigments.params': M.pigments.params } : {}),   // step N1: light needs matter
     ...(M.water ? { 'water.params': M.water.params } : {}),           // step N1: caustic light, currents
     ...(M.oases ? { 'oases.params': M.oases.params } : {}),           // step N1: the scarce nutrient's springs
@@ -310,7 +311,8 @@ export async function snapshot(M, ctl, opts = {}) {
     ]);
     const cu = new Uint32Array(cellAB), bu = new Uint32Array(bioAB), su = new Uint32Array(stockAB);
     const idx = [];
-    for (let i = 0; i < n; i++) if (cu[i * CELL_FLOATS + 9] & 1) idx.push(i);
+    // (step P1: and the GHOSTS, dead slots whose stock is a meal being digested: Cell.engBy mode 2)
+    for (let i = 0; i < n; i++) if ((cu[i * CELL_FLOATS + 9] & 1) || ((cu[i * CELL_FLOATS + 89] >>> 24) & 3) === 2) idx.push(i);
     const m = idx.length;
     const rec = new Uint32Array(m * CELL_FLOATS), bio = new Uint32Array(m * BIO_FLOATS), stock = new Uint32Array(m * SW);
     idx.forEach((i, k) => {
@@ -375,11 +377,13 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     const oldC12e = S.layout.cellWords === 84 && S.layout.bioWords === 76;
     // step T1a: one from before the self marker (genomes of 76 words) loads with the marker and kin genes 0 (one marker for all, hidden: no
     // kinship, no channels) and with the inside, the kin channels, the clock and the smell for trace OFF, so it runs on as it was saved
-    const oldT1 = S.layout.cellWords === CELL_FLOATS && S.layout.bioWords === 76;
+    const oldT1 = S.layout.cellWords === 88 && S.layout.bioWords === 76;
     // step T1b: one from before the gene network (genomes of 84 words) loads with the network's words 0 (no network: every output x 1) and
     // with the network OFF (no mutation either), so it runs on as it was saved
-    const oldT1b = S.layout.cellWords === CELL_FLOATS && S.layout.bioWords === 84;
-    const widen = oldC10 || oldC12 || oldC13 || oldC12e || oldT1 || oldT1b;
+    const oldT1b = S.layout.cellWords === 88 && S.layout.bioWords === 84;
+    // step P1: one from before the predators (cells of 88 words) loads with the engulfing words 0 (no wraps, no ghosts) and with engulfing OFF
+    const oldP1 = S.layout.cellWords === 88 && S.layout.bioWords === 156;
+    const widen = oldC10 || oldC12 || oldC13 || oldC12e || oldT1 || oldT1b || oldP1;
     if (!widen && (S.layout.cellWords !== CELL_FLOATS || S.layout.bioWords !== BIO_FLOATS)) {
       throw new Error(`snapshot layout (cell ${S.layout.cellWords}, bio ${S.layout.bioWords} words) does not match this page (${CELL_FLOATS}, ${BIO_FLOATS})`);
     }
@@ -467,6 +471,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       M.grn.params.on = false;   // step T1b
       notes.push('saved before step T1b: no gene network (as it ran)');
     }
+    if (opts.settings !== false && M.predators && !(S.settings && S.settings['predators.params'])) {
+      M.predators.params.on = false;   // step P1
+      notes.push('saved before step P1: no engulfing (as it ran)');
+    }
     if (opts.settings !== false && M.pigments && !(S.settings && S.settings['pigments.params'])) {
       Object.assign(M.pigments.params, { matter: false, sat: false, inhib: false });   // step N1
       notes.push('saved before step N1: pigments free, no saturation (as it ran)');
@@ -499,13 +507,21 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     const cu = new Uint32Array(n * CELL_FLOATS), cf = new Float32Array(cu.buffer);
     const bu = new Uint32Array(n * BIO_FLOATS), su = new Uint32Array(n * SW);
     const dx = (v.cssW - S.view.cssW) / 2, dy = (v.cssH - S.view.cssH) / 2;
+    // (step P1: packed slots renumber the engulfing partners, Cell.eng's bits 16..31 and Cell.engBy's 0..15, by the same map)
+    const newOf = new Map();
+    for (let k = 0; k < m; k++) newOf.set(idx[k], sameSlots ? idx[k] : k);
     for (let k = 0; k < m; k++) {
       const i = sameSlots ? idx[k] : k, o = i * CELL_FLOATS;
       cu.set(rec.subarray(k * CELL_FLOATS, (k + 1) * CELL_FLOATS), o);
       bu.set(bio.subarray(k * BIO_FLOATS, (k + 1) * BIO_FLOATS), i * BIO_FLOATS);
       su.set(stock.subarray(k * SW, (k + 1) * SW), i * SW);
       if (!sameView) { cf[o] += dx; cf[o + 1] += dy; }
-      if (!sameSlots) cu[o + 60] = cu[o + 61] = cu[o + 62] = 0xffffffff;
+      if (!sameSlots) {
+        cu[o + 60] = cu[o + 61] = cu[o + 62] = 0xffffffff;
+        const e = cu[o + 88], b = cu[o + 89];
+        if (e & 3) { const pn = newOf.get(e >>> 16); cu[o + 88] = pn == null ? 0 : ((e & 0xffff) | (pn << 16)) >>> 0; }
+        if ((b >>> 24) & 3) { const pn = newOf.get(b & 0xffff); cu[o + 89] = pn == null ? 0 : ((b & 0xffff0000) | pn) >>> 0; }
+      }
     }
     const q = d.queue;
     q.writeBuffer(C.cellBuf, 0, cu);

@@ -13,6 +13,8 @@
 // Step C9: a dead slot (no CELL_ALIVE) goes into one more bucket, gw gh, after the last grid cell, so the scans run over
 // gw gh + 1 buckets: starts[gw gh] is the number of live cells (the end of the last grid cell), and the dead slots sit at the
 // end of the sorted list, where their beats carry only their index (idx) and no strength: the list of free slots.
+// Step P1: a GHOST (a dead slot whose stock is a meal a predator is digesting, Cell.engBy) goes into a last bucket, gw gh + 1, so the free
+// slots are sorted[starts[gw gh] .. starts[gw gh + 1]) and no newborn claims a ghost's slot.
 // Only core WebGPU: storage-buffer atomics and workgroup memory (256 invocations, 1 KiB of workgroup memory).
 
 @group(0) @binding(0) var<uniform> S: Sim;
@@ -38,7 +40,9 @@ fn count(@builtin(global_invocation_id) id: vec3u) {
   let i = id.x;
   if (i >= S.count) { return; }
   let c = cells[i];
-  let g = select(S.gw * S.gh, grid_index(S, grid_xy(S, c.pos)), (c.flags & CELL_ALIVE) != 0u);
+  // (step P1: a dead slot that holds a meal being digested, a GHOST, goes into one more bucket after the free slots': it is not free)
+  let dead = S.gw * S.gh + select(0u, 1u, by_mode(c.engBy) == BY_GHOST);
+  let g = select(dead, grid_index(S, grid_xy(S, c.pos)), (c.flags & CELL_ALIVE) != 0u);
   let rank = atomicAdd(&counts[g], 1u);
   cellGrid[i] = vec2u(g, rank);
 }
@@ -57,7 +61,7 @@ fn scan_shared(lid: u32) {
 @compute @workgroup_size(256)
 fn scan_local(@builtin(local_invocation_id) lid3: vec3u, @builtin(workgroup_id) wid: vec3u) {
   let lid = lid3.x;
-  let n = S.gw * S.gh + 1u;          // (step C9: + the dead slots' bucket)
+  let n = S.gw * S.gh + 2u;          // (step C9: + the dead slots' bucket; step P1: + the ghosts')
   let base = wid.x * BLOCK + 2u * lid;
   var a = 0u;
   var b = 0u;
@@ -76,7 +80,7 @@ fn scan_local(@builtin(local_invocation_id) lid3: vec3u, @builtin(workgroup_id) 
 @compute @workgroup_size(256)
 fn scan_top(@builtin(local_invocation_id) lid3: vec3u) {
   let lid = lid3.x;
-  let nb = (S.gw * S.gh + 1u + BLOCK - 1u) / BLOCK;
+  let nb = (S.gw * S.gh + 2u + BLOCK - 1u) / BLOCK;
   if (lid == 0u) { carry = 0u; }
   workgroupBarrier();
   let chunks = (nb + BLOCK - 1u) / BLOCK;
@@ -103,7 +107,7 @@ fn scan_top(@builtin(local_invocation_id) lid3: vec3u) {
 @compute @workgroup_size(256)
 fn scan_add(@builtin(global_invocation_id) id: vec3u) {
   let g = id.x;
-  if (g > S.gw * S.gh) { return; }   // (step C9: the dead slots' bucket too)
+  if (g > S.gw * S.gh + 1u) { return; }   // (step C9: the dead slots' bucket too; step P1: and the ghosts')
   starts[g] += blockSums[g / BLOCK];
 }
 

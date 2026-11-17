@@ -111,6 +111,10 @@
 //               ?kink=x ?seal=x ?press=x ?clocksize=x ?traceworth=x the knobs; ?founders=wild|blank|std the founder mode (any number:
 //               how many founders, as before); ?view=marker colour by the self marker (lineage); ?lasting=0 the default scene's mineral
 //               spring dries after a day (240 s) as before step T1a (rules panel, Tissues 1)
+//   ?engulf=0     step P1: no engulfing (predators); ?engulfnull=1 its NEUTRAL control (the engulf and kin sparing genes drift, nothing is
+//               ever engulfed); ?kinsparenull=1 kinship ignored (the sparing gene drifts without effect); knobs ?sizeratio= ?drive= ?holdbase=
+//               ?wallarm= ?stiffarm= ?wraptime= ?digesttime= ?startrate= ?batstart= ?wrapcost= ?startcost= ?wrapshare= ?batshare= ?predcensus=;
+//               ?predmark=1 the machinery's mark of engulf-capable cells; the founders' wild group 'engulf' (?founders=wild) draws the genes
 //   ?grn=0        step T1b: the gene network frozen, without effect (as before T1b); ?grnnull=1 its NEUTRAL control (it runs and mutates,
 //               its outputs have no effect); ?grnsignal=0 no contact signal; ?grnkin=0 the signal not weighted by kinship; ?grnmut=0 the
 //               network copied exactly at births; ?grntau=x the expression's time constant (s); ?reporter=i the regulator the reporter
@@ -472,6 +476,19 @@ async function boot() {
       if (params.has('reporter') && Number.isFinite(r)) cells.grn.look.reporter = Math.max(0, Math.min(7, Math.round(r)));
       cells.grn.matter = matter;
     }
+    {   // step P1: predators, engulfing, kin sparing
+      const PP = cells.pred.params;
+      for (const [q, k] of [['engulf', 'on'], ['engulfnull', 'null'], ['kinsparenull', 'kinNull']]) {
+        if (params.has(q)) PP[k] = flag(q);
+      }
+      for (const [q, k] of [['sizeratio', 'sizeRatio'], ['drive', 'drive'], ['holdbase', 'holdBase'], ['wallarm', 'wallArm'], ['stiffarm', 'stiffArm'],
+        ['wraptime', 'wrapTime'], ['digesttime', 'digestTime'], ['startrate', 'startRate'], ['batstart', 'batStart'], ['wrapcost', 'wrapCost'],
+        ['startcost', 'startCost'], ['wrapshare', 'wrapShare'], ['batshare', 'batShare'], ['predcensus', 'censusEvery']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) PP[k] = v;
+      }
+      if (params.has('predmark')) cells.pred.look.mark = flag('predmark');
+    }
     {   // step C12f: vents in the dark
       const VP = matter.vents.params;
       if (params.has('hotvent')) VP.hot = flag('hotvent');
@@ -535,7 +552,7 @@ async function boot() {
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
-    kin: cells.kin, grn: cells.grn };
+    kin: cells.kin, grn: cells.grn, predators: cells.pred };
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
   window.moire.budgets = budgets;      // the fast speeds' tick budgets
@@ -798,7 +815,8 @@ ${cells.eat.waste.panelLine(compact)}
 ${cells.eat.ions.panelLine(compact)}
 ${cells.eat.whole.panelLine(compact)}
 ${cells.kin.panelLine(compact)}
-${cells.grn.panelLine(compact)}${ELECTRONS ? `
+${cells.grn.panelLine(compact)}
+${cells.pred.panelLine(compact)}${ELECTRONS ? `
 ${matter.vents.panelLine(compact)}` : ''}
 ${cells.eat.pigments.panelLine(compact)}
 ${water.panelLine(compact)}
@@ -876,6 +894,7 @@ function drawOverlay() {
     ...cells.eat.whole.overlayLines(),
     ...cells.kin.overlayLines(),
     ...cells.grn.overlayLines(),
+    ...cells.pred.overlayLines(),
     ...cells.eat.pigments.overlayLines(),
     ...water.overlayLines(),
     ...oases.overlayLines(),

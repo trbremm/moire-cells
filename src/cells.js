@@ -47,6 +47,7 @@ import { Walls, STATS_WALL, WALL_WORDS } from './walls.js';
 import { Guides, STATS_FG, FG_WORDS, FG_CLEAR } from './guides.js';
 import { Kin } from './kin.js';
 import { Grn } from './grn.js';
+import { Predators, STATS_P1, P1_WORDS, P1_CLEAR } from './predators.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 import { cultureLayout } from './culture.js';   // app: how a new culture is spread
 
@@ -61,8 +62,9 @@ export const CELL_URL = 'src/shaders/cell_common.wgsl';
 // step C12b, lipid membranes (src/lipids.js): lip[6] (72: per side, 4 x 8 bits: stiffness, the wall's heavy share, oil share, wall cover);
 // step C13, fields as genes and guides (src/guides.js): fg[4] (78: the field genes the beat needs, f16 deltas), felt[2] (82: what each side felt)
 // step C12e, osmosis on the ions (src/waste.js): osm (84: the swelling), osmP (85: the osmotic pressure); step T1b:
-// sns0, sns1 (86, 87: the senses the eat pass hands the gene network, 4 x 8 bits each; spare until T1b)
-export const CELL_FLOATS = 88;
+// sns0, sns1 (86, 87: the senses the eat pass hands the gene network, 4 x 8 bits each; spare until T1b); step P1, predators (src/predators.js):
+// eng (88: what it engulfs, how far), engBy (89: who wraps it, or the host of the meal its dead slot holds), hold (90), engPay (91)
+export const CELL_FLOATS = 92;
 export const CELL_BYTES = CELL_FLOATS * 4;
 const CELL_CORE_BYTES = 120;   // step C6c: struct CellCore (the grid's sorted copy: Cell without the outline and per-side slots;
                                // step C6d: + the dipole, 104 until then; step C10: + the walls, 112 until then)
@@ -76,17 +78,17 @@ const SLOT = 256;              // uniform slot stride (minUniformBufferOffsetAli
 const SLOTS = 320;             // ticks that can be encoded in one frame (main.js runs at most 256, plus warm-up)
 const BLOCK = 512;             // scan block (cell_grid.wgsl)
 const BRUTE_MAX = 20000;       // largest count the ?check brute force runs on
-const STATS_BYTES = 9024;      // struct Stats in cell_common.wgsl (step C13: + fg, 64 words; counters, events, census, step 6 census; step C6d: + dip;
+const STATS_BYTES = 9280;      // struct Stats in cell_common.wgsl (step P1: + p1, 64 words; step C13: + fg, 64 words; counters, events, census, step 6 census; step C6d: + dip;
                                // step C9: + div, claim; step C10: + wall; step C11: wall 24 -> 32 words)
 const STATS_EXTRA = 8192;      // byte offset of Stats.extra (step 6 census: STATS_X_* in cell_common.wgsl)
 const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder bitmap) in struct Stats
 const STATS_EVENTS = 64;
 const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_AW in cell_common.wgsl)
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
-const FIELDS_BYTES = 448;      // struct Fields in cell_common.wgsl (step T1a: + t1; step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
+const FIELDS_BYTES = 512;      // struct Fields in cell_common.wgsl (step P1: + p1..p1d; step T1a: + t1; step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
                                // step C9: + dv0..dv2; step C10: + wl0, wl1)
 const FIELD_FORMAT = 'rgba16float';
-const DRAW_BYTES = 1280;       // struct Draw in cell_draw.wgsl (step T1b: + grn, grnInk, grnInkH, 1232 until then; step T1a: + kin, 1216 until then; step H1: + harm, harm2, harm3, harm4, hInk[5] after cam, 1072 until then; app: + cam, 1056 until then; step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
+const DRAW_BYTES = 1312;       // struct Draw in cell_draw.wgsl (step P1: + p1, p1Ink; step T1b: + grn, grnInk, grnInkH, 1232 until then; step T1a: + kin, 1216 until then; step H1: + harm, harm2, harm3, harm4, hInk[5] after cam, 1072 until then; app: + cam, 1056 until then; step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
                                // step C6d: + the dipoles)
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
@@ -346,6 +348,7 @@ export class Cells {
     this.guides = new Guides(this);       // step C13: fields as genes and guides (src/guides.js)
     this.kin = new Kin(this);             // step T1a: an inside, kin channels, the self marker (src/kin.js)
     this.grn = new Grn(this);             // step T1b: the gene regulatory network, the reporter view (src/grn.js)
+    this.pred = new Predators(this);      // step P1: predators, engulfing and kin sparing (src/predators.js)
   }
 
   static async create(device, format, medium, count, seed, cap = 0) {
@@ -537,8 +540,8 @@ export class Cells {
     const gw = Math.max(1, Math.ceil(W / cs)), gh = Math.max(1, Math.ceil(H / cs));
     const n = gw * gh;
     Object.assign(this.grid, { gw, gh, cs, n });
-    if (n + 2 <= this.grid.cap) return;   // (step C9: + the free slots' bucket, and its end in starts)
-    const cap = Math.ceil((n + 2) * 1.25);
+    if (n + 3 <= this.grid.cap) return;   // (step C9: + the free slots' bucket, and its end in starts; step P1: + the ghosts' bucket)
+    const cap = Math.ceil((n + 3) * 1.25);
     const d = this.device, U = GPUBufferUsage;
     for (const b of [this.countsBuf, this.startsBuf, this.blockBuf]) if (b) b.destroy();
     this.countsBuf = d.createBuffer({ label: 'grid counts', size: cap * 4, usage: U.STORAGE | U.COPY_DST });
@@ -707,6 +710,7 @@ export class Cells {
     this.guides.writeFields(u, f, 104);        // step C13: fields as genes and guides (Fields.fg0)
     this.kin.writeFields(u, f, 108);           // step T1a: the self marker's clock (Fields.t1)
     this.grn.writeFields(u, f, 110);           // step T1b: the gene network's outputs act (Fields.t1.z), field B's sense scale (t1.w)
+    this.pred.writeFields(u, f, 112);          // step P1: predators (Fields.p1, p1b, p1c, p1d)
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -721,14 +725,14 @@ export class Cells {
   /** Record the grid build for the tick whose uniforms are in slot k. */
   encodeGrid(encoder, k) {
     const g = this.grid, wg = Math.ceil(this.count / 256);
-    encoder.clearBuffer(this.countsBuf, 0, (g.n + 1) * 4);   // (step C9: + the free slots' bucket)
+    encoder.clearBuffer(this.countsBuf, 0, (g.n + 2) * 4);   // (step C9: + the free slots' bucket; step P1: + the ghosts')
     encoder.clearBuffer(this.statsBuf, STATS_CLAIM, 4);      // step C9: no free slot claimed yet this tick
     const pass = encoder.beginComputePass({ label: 'cell grid' });
     pass.setBindGroup(0, this.gridBG, [k * SLOT]);
     pass.setPipeline(this.pipes.count); pass.dispatchWorkgroups(wg);
-    pass.setPipeline(this.pipes.scan_local); pass.dispatchWorkgroups(Math.ceil((g.n + 1) / BLOCK));
+    pass.setPipeline(this.pipes.scan_local); pass.dispatchWorkgroups(Math.ceil((g.n + 2) / BLOCK));
     pass.setPipeline(this.pipes.scan_top); pass.dispatchWorkgroups(1);
-    pass.setPipeline(this.pipes.scan_add); pass.dispatchWorkgroups(Math.ceil((g.n + 1) / 256));
+    pass.setPipeline(this.pipes.scan_add); pass.dispatchWorkgroups(Math.ceil((g.n + 2) / 256));
     pass.setPipeline(this.pipes.scatter); pass.dispatchWorkgroups(wg);
     pass.end();
   }
@@ -747,6 +751,7 @@ export class Cells {
     // step T1b: the cell types' census (a read-back every few s of simulated time), before this frame's ticks are encoded: bioCur still
     // names the genome copy the queue holds now
     this.grn.maybeCensus(frame.time);
+    this.pred.maybeCensus(frame.time);   // step P1: the clusters' census (a read-back every few s)
     if (this.gridSize() !== this.grid.cs) this.sizeGrid();   // params.cut or range changed
     // after a reset, the warm-up ticks run first (all in this frame, at the current time)
     const warm = Math.min(this.warm, SLOTS - frame.ticks);
@@ -772,6 +777,7 @@ export class Cells {
     encoder.clearBuffer(this.statsBuf, STATS_DIP, DIP_WORDS * 4);   // step C6d: the dipoles' census, also on the last tick
     encoder.clearBuffer(this.statsBuf, STATS_DIV + 4 * DIV_SNAP, 4 * (15 - DIV_SNAP));   // step C9: its snapshot, on the last tick
     encoder.clearBuffer(this.statsBuf, STATS_WALL, 4 * WALL_WORDS);   // step C10: the walls' census, on the last tick too
+    encoder.clearBuffer(this.statsBuf, STATS_P1 + 4 * P1_CLEAR, 4 * (P1_WORDS - P1_CLEAR));   // step P1: the predators' census (its counters run on)
     encoder.clearBuffer(this.statsBuf, STATS_FG, 4 * FG_CLEAR);       // step C13: the field genes' and gates' census (the same; its
                                                                       // cumulative words after FG_CLEAR run on)
     for (let t = 0; t < ticks; t++) {
@@ -886,6 +892,7 @@ export class Cells {
       this.division.apply(time, new Uint32Array(u.buffer, STATS_DIV, 16), this.alive);
       this.walls.apply(time, new Uint32Array(u.buffer, STATS_WALL, WALL_WORDS));   // step C10
       this.guides.apply(time, new Uint32Array(u.buffer, STATS_FG, FG_WORDS));      // step C13
+      this.pred.applyStats(time, new Uint32Array(u.buffer, STATS_P1, P1_WORDS));   // step P1
       if (events.length && this.onEvents) this.onEvents(events);
     } catch (e) {
       // device lost or page closing: nothing to show
@@ -1381,6 +1388,7 @@ export class Cells {
     if (HM) HM.writeCells(a, 268);
     this.kin.writeDraw(a, 304, L, camera.z);   // step T1a: the lineage (marker) view, the marker's texture when zoomed in
     this.grn.writeDraw(a, 308, L);             // step T1b: the reporter view
+    this.pred.writeDraw(a, 320);               // step P1: the wraps' arms, the phagosomes
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(HM ? this.harmPipe : this.drawPipe);
     pass.setBindGroup(0, (HM ? this.harmBGs : this.drawBGs)[this.bioCur]);

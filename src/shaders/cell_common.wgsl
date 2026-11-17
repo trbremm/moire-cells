@@ -102,7 +102,68 @@ struct Cell {
   sns0: u32,        // pack4x8unorm: x the LIGHT at the cell (1 - e^-(light x caustic x the day's level)), y the free t (oxygen-like) inside, z the
                     // FUEL inside, w the free LINKERS inside (each 1 - e^-(amount / (capacity x its ref)))  (osm2, spare, until step T1b)
   sns1: u32,        // pack4x8unorm: x TRACE (the cofactor it gives, 0..1), y HEAT (the temperature / twice the cell's tolerance), z w spare
+  // ---- step P1, predators (src/predators.js; the record is 368 bytes since P1) ----
+  eng: u32,         // what this cell ENGULFS: bits 0..1 the mode (ENG_IDLE; ENG_WRAP: it wraps a touching cell; ENG_DIGEST: it digests a meal),
+                    // bit 2 ENG_NEAR (a cell it could engulf touches it: a sense of the gene network), bit 3 ENG_FRESH (the meal was caught
+                    // this tick: the eat pass takes the phagosome's membrane), bits 4..15 the progress (0..ENG_FULL: of the wrap, or of the
+                    // digestion), bits 16..31 the partner (the prey it wraps, or the slot of the GHOST that holds its meal). Written by the
+                    // step (the eat pass ends a digestion: 0)
+  engBy: u32,       // what is done TO it: bits 24..25 BY_WRAPPED (alive: a neighbour wraps it; bits 16..23 that wrap's progress, the
+                    // drawing's) or BY_GHOST (a dead slot that holds a meal being digested: its stock is the phagosome's), bits 0..15 the
+                    // wrapper or the host
+  hold: f32,        // its HOLD against being engulfed: the glue to its touching neighbours + its armour (crust wall, stiffness); the step
+                    // writes it for its neighbours (CellCore.eng.y), who must out-pull it
+  engPay: i32,      // heat counts this tick's engulfing costs (the step works it out, the eat pass pays them from the battery, as heat)
 };
+// step P1: Cell.eng and Cell.engBy (src/predators.js)
+const ENG_IDLE: u32 = 0u;
+const ENG_WRAP: u32 = 1u;
+const ENG_DIGEST: u32 = 2u;
+const ENG_NEAR: u32 = 4u;
+const ENG_FRESH: u32 = 8u;
+const ENG_FULL: u32 = 4095u;
+const BY_WRAPPED: u32 = 1u;
+const BY_GHOST: u32 = 2u;
+fn eng_mode(w: u32) -> u32 { return w & 3u; }
+fn eng_progN(w: u32) -> u32 { return (w >> 4u) & ENG_FULL; }
+fn eng_prog(w: u32) -> f32 { return f32((w >> 4u) & ENG_FULL) / f32(ENG_FULL); }
+fn eng_partner(w: u32) -> u32 { return w >> 16u; }
+fn eng_word(mode: u32, prog: u32, partner: u32, bits: u32) -> u32 { return mode | bits | (min(prog, ENG_FULL) << 4u) | (partner << 16u); }
+fn by_mode(w: u32) -> u32 { return (w >> 24u) & 3u; }
+fn by_partner(w: u32) -> u32 { return w & 0xffffu; }
+fn by_prog(w: u32) -> f32 { return f32((w >> 16u) & 255u) / 255.0; }
+// step P1: Fields.p1.x bits
+const P1_ON: u32 = 1u;           // engulfing (master): a cell with the engulf gene may wrap a smaller touching cell it out-pulls
+const P1_NULL: u32 = 2u;         // ... the NEUTRAL control: the genes drift, nothing is ever engulfed
+const P1_KINNULL: u32 = 4u;      // ... kin sparing's control: kinship ignored (the sparing gene drifts without effect)
+// step P1: Stats.p1 (0..15 cumulative counters, never cleared; 16.. a census, cleared every frame, counted on its last tick)
+const PS_START: u32 = 0u;        // wraps started (attempts)
+const PS_LOST: u32 = 1u;         // ... escapes: the prey slipped out of reach
+const PS_HELD: u32 = 2u;         // ... escapes: the prey's hold (glue + armour) rose above the drive, or it grew too big
+const PS_POOR: u32 = 3u;         // ... escapes: the predator ran out (battery, membrane)
+const PS_EATEN: u32 = 4u;        // cells engulfed (meals)
+const PS_KIN: u32 = 5u;          // ... of them kin of their predator (marker match above 0.5): cannibalism of relatives
+const PS_ALONE: u32 = 6u;        // ... of them holding no glue to other neighbours (single cells)
+const PS_HOLD: u32 = 7u;         // ... sum of their hold x 1000
+const PS_AREA: u32 = 8u;         // ... sum of their area in R^2 x 1000
+const PS_KINSUM: u32 = 9u;       // ... sum of their kinship to the predator x 1000
+const PZ_N: u32 = 16u;           // census: live cells
+const PZ_E: u32 = 17u;           // ... sum of the engulf gene x 1000
+const PZ_E2: u32 = 18u;          // ... its square x 1000
+const PZ_S: u32 = 19u;           // ... sum of the kin sparing gene x 1000
+const PZ_S2: u32 = 20u;          // ... its square x 1000
+const PZ_CARRY: u32 = 21u;       // ... cells with the engulf gene at 0.25 or more
+const PZ_SPARER: u32 = 22u;      // ... of them sparing kin at 0.5 or more
+const PZ_WRAP: u32 = 23u;        // ... cells wrapping now
+const PZ_DIGEST: u32 = 24u;      // ... digesting now
+const PZ_WRAPPED: u32 = 25u;     // ... being wrapped now
+const PZ_EXPR: u32 = 26u;        // ... sum of the engulf gene as expressed (x the gene network's output) x 1000
+const PZ_SC: u32 = 27u;          // ... the carriers' sum of the sparing gene x 1000
+const PZ_NEAR: u32 = 28u;        // ... cells with a cell they could engulf touching them
+const PZ_HOLD: u32 = 29u;        // ... sum of the hold x 1000
+const PZ_GLUE: u32 = 30u;        // ... sum of the glue gene a0 (as expressed) x 1000
+const PZ_ARM: u32 = 31u;         // ... sum of the armour x 1000
+const PZ_CLEAR: u32 = 16u;       // the census's first word (16 words cleared every frame)
 // step C13: a cell's field-gene words (Cell.fg) as numbers
 fn fg_a(c: Cell) -> vec2f { return unpack2x16float(c.fg[0]); }   // A: lever factor - 1, emission - 1
 fn fg_b(c: Cell) -> vec2f { return unpack2x16float(c.fg[1]); }   // B: lever factor - 1, emission - 1
@@ -150,15 +211,17 @@ fn nbr_side(w: array<u32, 3>, i: u32) -> u32 {
 // Step C10: plus the walls (wadh: x the effective adhesion of sides 0..3; y those of sides 4, 5 in the low half, the hexagon's
 // orientation theta in bits 16..23 and the front in bits 24..31, 8 bits each): what a neighbour needs to find the side facing it
 // and how sticky it is, and what a turnover daughter inherits. 120 bytes
+// Step P1: the Cell's `dead` (where a cell that died this tick was: its own slot's business) is replaced by `eng`: x the cell's engulfing word
+// (Cell.eng: whom it wraps, how far), y its hold (Cell.hold, f32 bits): what a neighbour needs to know it is being wrapped, and to out-pull it
 struct CellCore {
   pos: vec2f, vel: vec2f, r: f32, la: f32, e1: f32, e2: f32, kind: u32, flags: u32, seed: u32, aux: f32, z: vec2f,
-  dead: vec2f, bat: f32, pay: i32, mom: u32, fill: f32, smell: vec2f, q: f32, qNet: f32, efield: vec2f, dip: vec2f,
+  eng: vec2u, bat: f32, pay: i32, mom: u32, fill: f32, smell: vec2f, q: f32, qNet: f32, efield: vec2f, dip: vec2f,
   wadh: vec2<u32>,
 };
 fn cell_core(c: Cell, dip: vec2f) -> CellCore {
   let w = vec2u(c.wadh[0], (c.wadh[1] & 0xffffu) | (wall_q8(c.theta) << 16u) | (wall_q8(c.front) << 24u));
   return CellCore(c.pos, c.vel, c.r, c.la, c.e1, c.e2, c.kind, c.flags, c.seed, c.aux, c.z,
-                  c.dead, c.bat, c.pay, c.mom, c.fill, c.smell, c.q, c.qNet, c.efield, dip, w);
+                  vec2u(c.eng, bitcast<u32>(c.hold)), c.bat, c.pay, c.mom, c.fill, c.smell, c.q, c.qNet, c.efield, dip, w);
 }
 
 // ---------- step C10: patterned walls (src/walls.js) ----------
@@ -389,7 +452,8 @@ struct Bio {
                     // clock): x its ANGLE (rad, 0..2 pi, the stripes' wavevector direction in the dish), y its PERIOD (ln of the stripe
                     // spacing in R: ln 0.12 .. ln 0.5), z its PHASE (rad, 0..2 pi); w the DISPLAY gene (0..1): how much of it the cell shows
   kin: vec4f,       // x the KIN CHANNELS gene (0..1: how far the cell opens gap junctions to a recognised neighbour), y the TOLERANCE (0..1:
-                    // it accepts a neighbour whose marker matches at least 1 - tolerance); z w spare (P1: engulf, kin sparing)
+                    // it accepts a neighbour whose marker matches at least 1 - tolerance); step P1: z the ENGULF gene (0..1: its drive to
+                    // wrap a smaller touching cell, x Fields.p1.z), w the KIN SPARING gene (0..1: the drive x (1 - spare x kinship))
   // ---- step T1b: the GENE REGULATORY NETWORK (src/grn.js, cell_grn.wgsl; README "Step T1b") ----
   gx: array<vec4f, 2>,  // STATE, not genes: the 8 regulators' EXPRESSION x_0..x_7 (0..1), inherited by daughters (cell memory)
   gb: array<vec4f, 2>,  // the regulators' BIAS b_i
@@ -399,7 +463,8 @@ struct Bio {
   gu: array<vec4f, 4>,  // the OUTPUT GAINS u_o, o = 0..15 (GRN_O_*): output o's factor exp(u_o x_j), j the regulator it reads (0 = no effect)
   go: vec4f,            // which regulator each output reads, four to a word: o0 + 8 o1 + 64 o2 + 512 o3 (outputs 4 w .. 4 w + 3)
   gm: vec4f,            // x the regulator the cell BROADCASTS to touching neighbours (0..7; the contact signal), y how far the contact signal
-                        // is weighted by KINSHIP (0..1: 0 every neighbour alike, 1 kin only), z w spare
+                        // is weighted by KINSHIP (0..1: 0 every neighbour alike, 1 kin only); step P1: z the 17th output's gain (ENGULF), w its
+                        // regulator (0..7)
 };
 // step T1b: the gene network's outputs (Bio.gu, Bio.go): each output multiplies an existing gene (its base level) by exp(u x) (at most
 // GRN_FMAX); a cell switches an engine off by expressing a regulator its output reads with a strongly negative gain
@@ -420,12 +485,18 @@ const GRN_O_DIV: u32 = 12u;      // division readiness (the chance per s to divi
 const GRN_O_MOT: u32 = 13u;      // motility (Bio.body.z)
 const GRN_O_EMA: u32 = 14u;      // field A's emission (Bio.fa.y)
 const GRN_O_EMB: u32 = 15u;      // field B's emission (Bio.fb.y)
+const GRN_O_ENGULF: u32 = 16u;   // step P1: the ENGULF gene (Bio.kin.z); its gain and regulator live in Bio.gm.z, gm.w
 // Fields.t1.z, EatP t1[1].z bits
 const GRN_ACT: u32 = 1u;         // the network's outputs act (the network is on and not the neutral control)
 // output o's regulator (0..7) from its code word
 fn grn_reg(go: vec4f, o: u32) -> u32 { return (u32(max(go[o >> 2u], 0.0)) >> (3u * (o & 3u))) & 7u; }
 // ... and its factor at gain u and that regulator's expression x
 fn grn_fac(u: f32, x: f32) -> f32 { return min(exp(clamp(u, -GRN_UMAX, GRN_UMAX) * clamp(x, 0.0, 1.0)), GRN_FMAX); }
+// step P1: the 17th output (ENGULF) from a genome: its factor (gain gm.z, regulator gm.w)
+fn grn_fac_engulf(b: Bio) -> f32 {
+  let j = min(u32(max(b.gm.w, 0.0)), 7u);
+  return grn_fac(b.gm.z, b.gx[j >> 2u][j & 3u]);
+}
 // step T1a: the marker's period range (ln of the stripe spacing in R)
 const MARK_PLO: f32 = -2.1202635;   // ln 0.12
 const MARK_PHI: f32 = -0.6931472;   // ln 0.5
@@ -516,6 +587,8 @@ struct Stats {
   wall: array<atomic<u32>, 32>,       // (24 words until step C11)
   // ---- step C13, fields as genes and guides (src/guides.js): a census, cleared every frame, counted on its last tick (FGS_* below) ----
   fg: array<atomic<u32>, 64>,
+  // ---- step P1, predators (src/predators.js): PS_* counters (cumulative), PZ_* a census (cleared every frame, counted on its last tick) ----
+  p1: array<atomic<u32>, 64>,
 };
 // step C13: Stats.fg (signed sums are added as i32 bits and read back as Int32)
 const FGS_N: u32 = 0u;          // cells counted
@@ -578,6 +651,7 @@ const DV_HEAT: u32 = 2u;
 const DV_BURST: u32 = 3u;
 const DV_AGE: u32 = 4u;
 const DV_NOSLOT: u32 = 5u;
+const DV_EATEN: u32 = 6u;        // step P1: deaths by being ENGULFED (the slot becomes a ghost: the predator's meal)
 const DV_SNAP: u32 = 8u;         // the snapshot's first word
 const DV_STARVING: u32 = 8u;
 const DV_READY: u32 = 9u;
@@ -739,7 +813,9 @@ fn mutate(p: Bio, seed: u32, size: f32, jump: f32, engJump: f32, pumpJump: f32) 
   // step T1a: the marker's DISPLAY, the KIN CHANNELS and the TOLERANCE drift by small steps (as the walls'); the marker itself drifts
   // as a molecular clock in daughter_genome (cell_step.wgsl), by its own knob
   b.mark.w = nudge(b.mark.w, size * 0.03, 0.0, 1.0, seed, 180u);
-  b.kin = vec4f(nudge(b.kin.x, size * 0.04, 0.0, 1.0, seed, 181u), nudge(b.kin.y, size * 0.04, 0.0, 1.0, seed, 182u), b.kin.zw);
+  // step P1: the ENGULF gene and the KIN SPARING gene drift the same way (founders 0: predation and sparing must evolve)
+  b.kin = vec4f(nudge(b.kin.x, size * 0.04, 0.0, 1.0, seed, 181u), nudge(b.kin.y, size * 0.04, 0.0, 1.0, seed, 182u),
+                nudge(b.kin.z, size * 0.03, 0.0, 1.0, seed, 183u), nudge(b.kin.w, size * 0.03, 0.0, 1.0, seed, 184u));
   return b;
 }
 
@@ -1027,6 +1103,14 @@ struct Fields {
   // ---- step T1a, the self marker (src/kin.js) ----
   t1: vec4f,        // x bits T1S_* (u32); y the molecular clock's size (1: the marker's angle drifts 0.02 rad, its period's log 0.01,
                     // its phase 0.05 rad per birth); z step T1b: bits GRN_* (u32: the gene network's outputs act); w spare
+  // ---- step P1, predators (src/predators.js) ----
+  p1: vec4f,        // x bits P1_* (u32); y the AREA RATIO a predator needs over its prey; z the DRIVE at engulf gene 1; w the hold every cell has
+  p1b: vec4f,       // x the wrap's time (s); y the digestion's time (s); z the chance per s to start a wrap while a prey touches; w a full
+                    // crust wall's armour (added to the hold)
+  p1c: vec4f,       // x the armour of the stiffest membrane (x (k - 1) / (LIP_KMAX - 1)); y the battery share needed to start; z ... to go
+                    // on; w the pull drawing a wrapped prey in (R per s at a full wrap)
+  p1d: vec4f,       // x the mean membrane integrity needed to start (half of it to go on); y the wrap's cost (heat counts per s); z the
+                    // start's cost (heat counts); w how much the pair's contact push softens at a full wrap (0..1)
 };
 // step T1a: Fields.t1.x bits
 const T1S_CLOCK: u32 = 1u;        // the marker drifts at every birth (with mutation, or hard light's extra)

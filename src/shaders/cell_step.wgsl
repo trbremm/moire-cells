@@ -75,6 +75,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var byI = NBR_NONE;
   var capI = 0xffffffffu;     // ... a wrapper that has closed round it (the lowest index if several)
   var capKin = 0.0;
+  var capGlue = 0.0;          // ... and its glue to that wrapper (not a hold against it)
 
   // step C6c, elastic honeycomb cells: a cell without a honeycomb outline yet (the rule just switched on, or a newborn)
   // starts from its ellipse: each corner on the ellipse of its stretch, the whole at the rest area, the hexagon turned at
@@ -505,6 +506,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
             if (dist > 1e-3) { f += d / dist * (FL.p1c.w * S.R * pp); }
             if (eng_progN(oe) >= ENG_FULL && oi < capI) {
               capI = oi;
+              capGlue = touch * max(pairStick, 0.0);
               capKin = kin_match_m(myMark, vec4f(ob.mark.xyz, ob.mark.w * gofP(oi, GRN_O_DISP)), 0.5 * R0 / S.R);
             }
           }
@@ -1227,8 +1229,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         c.engBy = (BY_GHOST << 24u) | capI;
         atomicAdd(&stats.p1[PS_EATEN], 1u);
         if (capKin > 0.5) { atomicAdd(&stats.p1[PS_KIN], 1u); }
-        if (holdG < 0.05) { atomicAdd(&stats.p1[PS_ALONE], 1u); }
-        atomicAdd(&stats.p1[PS_HOLD], u32(round(max(preyHold, 0.0) * 1000.0)));
+        if (holdG - capGlue < 0.05) { atomicAdd(&stats.p1[PS_ALONE], 1u); }
+        atomicAdd(&stats.p1[PS_HOLD], u32(round(max(preyHold - capGlue, 0.0) * 1000.0)));
         atomicAdd(&stats.p1[PS_AREA], u32(round(3.14159265 * c.r * c.r / (S.R * S.R) * 1000.0)));
         atomicAdd(&stats.p1[PS_KINSUM], u32(round(clamp(capKin, 0.0, 1.0) * 1000.0)));
       } else {

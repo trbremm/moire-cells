@@ -7,13 +7,15 @@
 //
 // The channels and what they mean (src/palette.js HARMONIC; by the physics of each signal):
 //   green   (third harmonic: lights up where the material changes, at INTERFACES) the cells' membranes, brighter the more
-//           lipid each side holds (its integrity) and a little more with oil in it; a neuron's (myelin) doubled; oil
+//           lipid each side holds (its integrity) and a little more with oil in it; oil
 //           droplets' rims and soap films in the dish
 //   orange  (second harmonic: lights up in ORDERED, non-centrosymmetric fibres such as collagen and myosin) the crust as a
 //           dense fibrous texture, the fibres following the crust's own outlines and, where it is even, a slow swirl from
 //           the moire beat of the medium's lattice against a copy of itself turned by `swirlAngle` (the hidden machinery
 //           field, shown as collagen-like swirls); crust walls round cells; stretched cells as streaks along their
-//           stretch; muscle's striations across its long axis (myosin); cartilage's matrix (collagen). Heavy chains deeper
+//           stretch; a PREDATOR's striations across its long axis (actomyosin: engulfing is contractile work) and a BUILDER's
+//           fibrous matrix (collagen-like), each as strongly as the job shows (step F0, src/jobs.js; muscle's and cartilage's,
+//           and a neuron's doubled green rim, until then). Heavy chains deeper
 //           and redder, light ones yellower, dense crust brightest
 //   violet  (autofluorescence: NADH, FAD; METABOLISM) fuel in the dish as a soft wispy haze, a cell's battery as a soft
 //           glow at its centre, its engines as faint granules, and the whole inside a little brighter the busier the cell
@@ -60,8 +62,8 @@ export class Harmonic {
       busy: 0.12,        // violet: the whole inside at the busiest (activity, as the hum's)
       parts: 0.5,        // violet: the engines' granules
       stretchFib: 0.55,  // orange: streaks along the stretch, at a strong stretch
-      muscle: 0.3,       // orange: muscle's striations
-      cartilage: 0.35,   // orange: cartilage's matrix
+      striations: 0.3,   // orange: a predator's striations (step F0; muscle's until then)
+      matrix: 0.35,      // orange: a builder's matrix (step F0; cartilage's until then)
       wall: 0.9,         // orange: a crust wall round a cell
       gap: 0,            // the rim's gap from the cell's wall, as a share of the neon tubes' (0: neighbours share one green wall)
       // the dish (matter_draw.wgsl fs_harm)
@@ -133,7 +135,7 @@ export class Harmonic {
     const P = this.params, I = HARMONIC.harm;
     a[o] = P.rim; a[o + 1] = P.rimBase; a[o + 2] = Math.max(0.3, P.rimW) / Math.sqrt(camera.z); a[o + 3] = P.oilRim;
     a[o + 4] = P.inside; a[o + 5] = P.insideTint; a[o + 6] = P.bat; a[o + 7] = P.busy;
-    a[o + 8] = P.parts; a[o + 9] = P.stretchFib; a[o + 10] = P.muscle; a[o + 11] = P.cartilage;
+    a[o + 8] = P.parts; a[o + 9] = P.stretchFib; a[o + 10] = P.striations; a[o + 11] = P.matrix;
     a[o + 12] = P.wall; a[o + 13] = Math.max(0, P.gap); a[o + 14] = 0; a[o + 15] = 0;
     [I.green, I.orange, I.yellow, I.red, I.violet].forEach((rgb, k) => {
       for (let j = 0; j < 3; j++) a[o + 16 + 4 * k + j] = rgb[j] / 255;

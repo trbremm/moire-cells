@@ -219,6 +219,16 @@ body.recording #overlay { margin-top: 30px; }
 }
 .scalebar .sline { display: block; height: 2px; background: var(--ink); }
 .scalebar[hidden] { display: none; }
+/* step F0: the job legend (bottom right, above the scale bar; src/app.js) */
+.joblegend {
+  position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + 88px);
+  display: grid; gap: 1px; padding: 4px 7px 5px; background: var(--panel); border-radius: 3px; pointer-events: auto;
+  color: var(--ink); font-size: 10px; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; opacity: 0.85;
+}
+.joblegend[hidden] { display: none; }
+.joblegend .jrow { display: grid; grid-template-columns: 8px auto 3.2em; align-items: center; gap: 6px; cursor: default; }
+.joblegend .jdot { width: 7px; height: 7px; border-radius: 50%; }
+.joblegend .jn { text-align: right; color: var(--dim); }
 /* step H1: under the harmonic look the bar sits on the black as a microscope's does (no panel behind it) */
 .scalebar.scope { background: none; color: #e8e8e8; opacity: 1; letter-spacing: 0.02em; }
 .scalebar.scope .sline { background: #e8e8e8; }
@@ -228,8 +238,12 @@ body.recording #overlay { margin-top: 30px; }
   .zoombox { flex-direction: row; right: 10px; top: auto; transform: none; bottom: calc(max(10px, env(safe-area-inset-bottom, 0px)) + var(--bar-h, 48px) + 10px); }
   .zoombox .zval { min-width: 2.6em; text-align: center; }
   .scalebar { right: 10px; bottom: calc(max(10px, env(safe-area-inset-bottom, 0px)) + var(--bar-h, 48px) + 62px); }
-  body.panel-open .zoombox, body.panel-open .scalebar { display: none; }
+  body.panel-open .zoombox, body.panel-open .scalebar, body.panel-open .joblegend { display: none; }
+  .joblegend { right: 10px; bottom: calc(max(10px, env(safe-area-inset-bottom, 0px)) + var(--bar-h, 48px) + 100px); font-size: 9px; padding: 3px 6px 4px; }
+  .joblegend .jn { display: none; }
+  .joblegend .jrow { grid-template-columns: 7px auto; }
 }
+@media (max-height: 499px) { .joblegend { display: none; } }
 @media (max-height: 499px) { .zoombox { top: 50%; bottom: auto; transform: translateY(-50%); right: max(10px, env(safe-area-inset-right, 0px)); } }
 
 /* app: the zoos (src/zoo.js), in the panels' style */
@@ -255,6 +269,7 @@ body.recording #overlay { margin-top: 30px; }
 .znums, .zamt { color: var(--dim); font-size: 11px; line-height: 1.4; }
 .zamt { color: var(--epi); opacity: 0.85; font-variant-numeric: tabular-nums; }
 .zcount { color: var(--epi); font-variant-numeric: tabular-nums; font-size: 11px; }
+.zjob { color: var(--dim); font-size: 10px; margin-right: auto; padding-left: 4px; }   /* step F0: the middle cell's job */
 .ui .act.zpip { flex: none; }
 canvas.portrait { position: static; inset: auto; display: block; flex: none; width: 56px; height: 56px; background: #020306; border: 1px solid rgba(217, 221, 230, 0.08); border-radius: 2px; }
 .zfounders { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }

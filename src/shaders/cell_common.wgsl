@@ -22,7 +22,8 @@ struct Cell {
   la: f32,          // lattice angle (radians); the cell's key angle (a copy of Bio.key.x)
   e1: f32,          // area-preserving stretch (traceless tensor [[e1, e2], [e2, -e1]]), length at most 0.5
   e2: f32,
-  kind: u32,        // KIND_* from field_common.wgsl: its fate (stem, epithelium, muscle, neuron, cartilage)
+  kind: u32,        // always 0 since step F0 (it held the fate: stem, epithelium, muscle, neuron, cartilage; old snapshots' kinds are
+                    // cleared on load, and the step writes 0)
   flags: u32,       // bit 0: alive; bit 1: converted (step 6, rule 2); bits 8..15: leak level 0..255 (step 6,
                     // rule 1), written by the step pass for the drawing and the census; bits 16..17: the state's
                     // offset from the key angle's bin (step 7, rule 2: a crowded cell flips its state)
@@ -317,13 +318,13 @@ struct Sim {
   flip: f32,        // step 7, rule 2: chance per s that a cell crowded by its own state flips (0 = off)
   heatCur: u32,     // step C1: word offset of the current heat copy in the heat buffer this tick (heat_common.wgsl)
   nbrOn: u32,       // step C7: 1 = the step records each side's touching neighbour (Cell.nbr) for the pumps across contact
-  tau: f32,         // accumulator time constant (s): brief bumps fade, only sustained input counts
-  release: f32,     // a committed cell goes back to stem below release x threshold
+  tau: f32,         // (spare since step F0: the fates' accumulator time constant)
+  release: f32,     // (spare since step F0: the fates' release)
   reach: f32,       // neighbours within reach x (r_i + r_j) count as touching (signals, adhesion)
   adhesion: f32,    // adhesion pull at full stickiness, as the contact push of an overlap of adhesion x R
   adhSigma: f32,    // how alike two keys must be to stick (width of the Gaussian in the key difference)
-  fateAdh: f32,     // extra stickiness between cells of the same committed fate
-  body: f32,        // 1 = body traits on (size and motility from the genome and the fate), 0 = all alike
+  fateAdh: f32,     // (spare since step F0: the same-fate glue)
+  body: f32,        // 1 = body traits on (size and motility from the genome), 0 = all alike
   adhBase: f32,     // stickiness every pair loses: unlike neighbours (stick below this) push off a little
   crawl: f32,       // crawling speed, in units of R per s (times the motility factor)
   turnRate: f32,    // how fast a crawling cell's heading wanders (rad^2 / s)
@@ -359,34 +360,15 @@ struct Sim {
                     // until step C3)
   receptor: u32,    // tuning toward other cells (key R): 0 = by the cell's own lattice (like feels like, the
                     // reference); 1 = by its genome's receptor (angle, period, width), so A may feel B but not back
-  // ---- step 7: exclusion. Cells of the same type (fate) in the same state (their lattice angle, cut into
-  // `states` bins, like spin up / down) keep a gap; cells of the same type in different states pack closer ----
+  // ---- step 7: exclusion. Cells of the same type in the same state (their lattice angle, cut into `states` bins, like spin up /
+  // down) keep a gap; cells of the same type in different states pack closer. Step F0: the TYPE is the founder line (Bio.rec.w, the
+  // lineage a cell descends from; it was the fate until then) ----
   excl: f32,        // how hard same-state cells push apart, x the contact push (0 = exclusion off)
   exclReach: f32,   // ... out to this distance, x the contact distance r_i + r_j (1 = plain contact)
   pack: f32,        // cells of the same type in different states push apart only below pack x the contact distance
   states: u32,      // number of states (2..4): the key angle's 60 degrees cut into this many bins
   xCount: u32,      // 1 = this tick counts neighbour pairs by state for the census (Stats.xPairs)
 };
-
-// fate-typical body: size and motility factors per fate (stem, epithelium, muscle, neuron, cartilage)
-fn fate_size(kind: u32) -> f32 {
-  switch kind {
-    case 1u: { return 0.95; }
-    case 2u: { return 1.1; }
-    case 3u: { return 0.85; }
-    case 4u: { return 1.15; }
-    default: { return 1.0; }
-  }
-}
-fn fate_motility(kind: u32) -> f32 {
-  switch kind {
-    case 1u: { return 0.6; }
-    case 2u: { return 0.8; }
-    case 3u: { return 1.4; }
-    case 4u: { return 0.4; }
-    default: { return 1.0; }
-  }
-}
 
 // ---------- the genome ----------
 // Every cell carries a Bio record (304 bytes since step C13, 224 since C12b, 208 since step C10, 192 since C7; keep in step with BIO_* in src/genome.js): its genome plus its
@@ -398,11 +380,14 @@ fn fate_motility(kind: u32) -> f32 {
 // wavevector difference in units of the medium's wavenumber (as the reference's receptor tuning).
 struct Bio {
   key: vec4f,       // x key angle (0..pi/3), y key scale (log period factor), z receptor angle, w receptor scale
-  rec: vec4f,       // x receptor width (pickiness; small = picky), y threshold, z output once committed, w founder id (a whole number)
-  resp: vec4f,      // per fate channel (epi, mus, neu, cho): how recognised contact feeds that channel (-1..1)
-  relay: vec4f,     // per fate channel: how a committed neighbour's signal on that channel feeds it (-1..1)
+  rec: vec4f,       // x receptor width (pickiness; small = picky), y z spare (the fates' threshold and output until step F0), w founder id
+                    // (a whole number)
+  resp: vec4f,      // step F0, state (inherited, not mutated): x y the JOB scores, low-passed: builder, predator (job_of); z w spare (the
+                    // fates' response genes until then)
+  relay: vec4f,     // spare (the fates' relay genes until step F0)
   body: vec4f,      // x adhesion, y size factor, z motility factor, w spare
-  acc: vec4f,       // state, not genes: the four leaky accumulators
+  acc: vec4f,       // step F0, state (inherited): the JOB scores, low-passed: light eater, breather, fermenter, gradient eater (the
+                    // fates' accumulators until then)
   env: vec4f,       // state: x step C9, how long the cell has been starving (s; division mode); y step C9, the division
                     // flash still to run (s; the drawing); (x y held the nutrient and threat felt until step C3);
                     // z the A felt, through a leaky integrator; w > 0 converted (rule 2: 1; with the relay,
@@ -498,6 +483,44 @@ fn grn_fac_engulf(b: Bio) -> f32 {
   let j = min(u32(max(b.gm.w, 0.0)), 7u);
   return grn_fac(b.gm.z, b.gx[j >> 2u][j & 3u]);
 }
+// ---------- step F0: the cell's JOB (src/jobs.js), what colours it since the fates went ----------
+// Six scores, read from the genes AS EXPRESSED (the step's job_targets) and low-passed in the cell (Bio.acc: light eater, breather,
+// fermenter, gradient eater; Bio.resp.xy: builder, predator; inherited by daughters). The job is the highest; its STRENGTH (0 = the
+// undecided ink .. 1 = the job's own) grows with its lead over the second (margin, JOB_MLO..JOB_MHI) and its size (JOB_LLO..JOB_LHI).
+// Each engine's class (4 bits, 8 engines a word) is written in by src/jobs.js from the engine table: 0 none (a battery-paid uphill
+// engine), 1 light (uphill: with a pigment band only), 2 breathe, 3 ferment, 4 gradient, 5 build. Keep the numbers in step with JOB.
+const JOB_ENG0: u32 = 0u;
+const JOB_ENG1: u32 = 0u;
+const JOB_ENG2: u32 = 0u;
+const JOB_ENG3: u32 = 0u;
+const JOB_TAU: f32 = 6.0;        // the scores' time constant (s)
+const JOB_W_LIGHT: f32 = 2.5;    // a pigment slot's weight (every harvester also burns: its burners would outvote its pigment)
+const JOB_W_WALL: f32 = 3.0;     // the crust wall gene's weight (0..1 of a full wall)
+const JOB_W_ENGULF: f32 = 6.0;   // the engulf gene's weight (0..1)
+const JOB_W_EAT: f32 = 4.0;      // ... plus this while it wraps or digests a meal
+const JOB_MLO: f32 = 0.1;
+const JOB_MHI: f32 = 0.5;
+const JOB_LLO: f32 = 0.2;
+const JOB_LHI: f32 = 0.8;
+fn job_class(e: u32) -> u32 {
+  let w = select(select(select(JOB_ENG3, JOB_ENG2, e < 24u), JOB_ENG1, e < 16u), JOB_ENG0, e < 8u);
+  return (w >> (4u * (e & 7u))) & 15u;
+}
+// the job (0 undecided, 1 light eater, 2 breather, 3 fermenter, 4 gradient eater, 5 builder, 6 predator) and its strength 0..1
+fn job_of(b: Bio) -> vec2f {
+  let s = array<f32, 6>(b.acc.x, b.acc.y, b.acc.z, b.acc.w, b.resp.x, b.resp.y);
+  var top = 0.0;
+  var second = 0.0;
+  var k = 0u;
+  for (var j = 0u; j < 6u; j++) {
+    let v = max(s[j], 0.0);
+    if (v > top) { second = top; top = v; k = j + 1u; } else if (v > second) { second = v; }
+  }
+  if (k == 0u) { return vec2f(0.0); }
+  let st = smoothstep(JOB_MLO, JOB_MHI, (top - second) / max(top, 1e-3)) * smoothstep(JOB_LLO, JOB_LHI, top);
+  return vec2f(f32(k), st);
+}
+
 // step T1a: the marker's period range (ln of the stripe spacing in R)
 const MARK_PLO: f32 = -2.1202635;   // ln 0.12
 const MARK_PHI: f32 = -0.6931472;   // ln 0.5
@@ -554,20 +577,19 @@ fn cell_state(la: f32, flags: u32, n: u32) -> u32 {
 }
 
 // rule bits in Sim.rules (keep in step with RULE in src/cells.js)
-const RULE_DIFF: u32 = 1u;      // differentiation (contact signalling, accumulators, commitment)
+// (bit 1 was differentiation, bit 16 inherit fate, until step F0)
 const RULE_ADH: u32 = 2u;       // adhesion
 const RULE_TURN: u32 = 4u;      // turnover
 const RULE_MUT: u32 = 8u;       // mutation at birth
-const RULE_INHERIT: u32 = 16u;  // a newborn keeps its parent's fate (else it starts as stem)
 
 // Counters the GPU keeps for the overlay (read back a few times a second; see src/cells.js).
-// The census part (fate, bins, founders) is cleared and refilled by the census pass before each read-back.
+// The census part (jobs, bins, founders) is cleared and refilled by the census pass before each read-back.
 const STATS_EVENTS: u32 = 64u;
 const STATS_ABINS: u32 = 24u;          // key-space bins: 24 angles x 6 scales
 const STATS_SBINS: u32 = 6u;
 const STATS_FWORDS: u32 = 1632u;       // founder bitmap words (52 224 founders; ids wrap beyond)
 struct Stats {
-  fate: array<atomic<u32>, 8>,        // census: cells per fate (0..4)
+  job: array<atomic<u32>, 8>,         // census: cells per JOB (step F0, job_of: 0 undecided .. 6 predator; the fates until then)
   births: atomic<u32>,                // cumulative since the page started
   deaths: atomic<u32>,
   nEvents: atomic<u32>,               // births and deaths recorded in `events` since the last read-back
@@ -709,12 +731,7 @@ fn mutate(p: Bio, seed: u32, size: f32, jump: f32, engJump: f32, pumpJump: f32) 
   b.key.z -= KEY_SPAN * floor(b.key.z / KEY_SPAN);
   b.key.w = nudge(b.key.w, ks, -KEY_SMAX, KEY_SMAX, seed, 4u);
   b.rec.x = clamp(b.rec.x * exp(size * 0.06 * gauss(seed, 5u)), 0.03, 0.4);
-  b.rec.y = nudge(b.rec.y, size * 0.05, 0.2, 3.0, seed, 6u);
-  b.rec.z = nudge(b.rec.z, size * 0.05, 0.0, 2.0, seed, 7u);
-  for (var c = 0u; c < 4u; c++) {
-    b.resp[c] = nudge(b.resp[c], size * 0.05, -1.0, 1.0, seed, 8u + c);
-    b.relay[c] = nudge(b.relay[c], size * 0.05, -1.0, 1.0, seed, 12u + c);
-  }
+  // (step F0: rec.y, rec.z, resp and relay were the fates' genes; resp.xy now hold job state, rec.zw and relay are spare)
   b.body.x = nudge(b.body.x, size * 0.03, 0.0, 1.0, seed, 16u);
   b.body.y = nudge(b.body.y, size * 0.02, 0.8, 1.25, seed, 17u);
   b.body.z = clamp(b.body.z * exp(size * 0.06 * gauss(seed, 18u)), 0.3, 3.0);
@@ -728,10 +745,7 @@ fn mutate(p: Bio, seed: u32, size: f32, jump: f32, engJump: f32, pumpJump: f32) 
       case 2u: { b.key.z = u * KEY_SPAN; }
       case 3u: { b.key.w = (2.0 * u - 1.0) * KEY_SMAX; }
       case 4u: { b.rec.x = 0.06 * pow(0.25 / 0.06, u); }
-      case 5u: { b.rec.y = 0.6 + u; }
-      case 6u: { b.rec.z = 0.4 + u; }
-      case 7u, 8u, 9u, 10u: { b.resp[g - 7u] = 2.0 * u - 1.0; }
-      case 11u, 12u, 13u, 14u: { b.relay[g - 11u] = 2.0 * u - 1.0; }
+      case 5u, 6u, 7u, 8u, 9u, 10u, 11u, 12u, 13u, 14u: { }   // (step F0: the fates' genes until then; a jump here changes nothing)
       case 15u: { b.body.x = u; }
       case 16u: { b.body.y = 0.85 + 0.3 * u; }
       default: { b.body.z = 0.5 * pow(4.0, u); }
@@ -841,14 +855,10 @@ fn stretch_F(e: vec2f) -> vec3f {
 }
 
 // ---------- the loop (step 4): emitting, sensing, deforming ----------
-// EMW of the reference: how a cell of fate `fate` responds to the field of an emitter of kind `kind`
-// (positive = moves toward the field's bright blobs, negative = away). Like fates attract, unlike repel a
-// little; neurons barely care. (The reference's nutrient and threat rows went with the sources in step C3.)
-fn emw(fate: u32, kind: u32) -> f32 {
-  if (fate == KIND_NEU) { return -0.1; }
-  if (fate == kind) { return select(0.5, 0.15, fate == KIND_STEM); }
-  return -0.15;
-}
+// (step F0: EMW, the reference's per-fate sign and strength of the force from another cell's field, is gone with the fates; every cell
+// feels with the stem cells' weight EMW_ALL. What a cell feels and with which sign is genetic: the receptor tuning by how alike the
+// two lattices are, and since step C13 its own sensing gain and sign genes)
+const EMW_ALL: f32 = 0.15;
 
 // squared distance between two hex lattices given by their 3 wavevectors: each wavevector of a is paired with
 // the nearest of b's (either sign, as the hex lattice is symmetric), and the squared differences summed
@@ -995,12 +1005,13 @@ fn sense_field(seg: ptr<function, array<f32, 6>>, mb: Membrane, rel: vec2f, q0: 
 // Field A is the loop's field (step 4): the cell's lattice near the medium's period. Field B is a second field
 // in its own band: every lattice involved (the cell's and the medium's) is `bBand` times longer, so A and B
 // make no slow beat with each other; it reaches further (power law from a larger r0) and has its own sign rule.
-// Each fate carries a charge per field: how strongly it emits into that field and listens to it.
+// Every cell carries a charge per field: how strongly it emits into that field and listens to it (one for all since step F0, which
+// removed the per-fate charges; field B's comes from the cell's own genes since step C12g).
 // Written once per frame by src/cells.js (writeFields; keep in step); 432 bytes since step C13, 416 since step C10 (256 until C6c, 288 until C6d).
 struct Fields {
-  qA: vec4f,        // field A charge per fate: stem, epithelium, muscle, neuron (1 = as in step 4)
-  qB: vec4f,        // field B charge per fate (signed: like charges repel, when bSign = 1)
-  q4: vec2f,        // cartilage's charges (A, B)
+  qA: vec4f,        // x field A charge (1 = as in step 4); y z w spare (the fates' until step F0)
+  qB: vec4f,        // x field B's fixed charge (signed: like charges repel, when bSign = 1; used with qStock 0 only); y z w spare
+  q4: vec2f,        // spare (cartilage's charges until step F0)
   bBand: f32,       // B's lattice period, in units of the medium's period (its band)
   bLever: f32,      // as Sim.lever, for B's lattices
   bR0: f32,         // B's envelope range r0, in units of R
@@ -1008,7 +1019,7 @@ struct Fields {
   bGain: f32,       // gain of the force from B (0 = cells do not feel B)
   bSat: f32,        // B's force saturates at this speed, in units of R per s
   bSign: f32,       // +1: like repels like; -1: like attracts like
-  bLike: u32,       // what "like" means: 0 = by charge (the fates' signed charges multiply), 1 = by key (lineage)
+  bLike: u32,       // what "like" means: 0 = by charge (the signed charges multiply), 1 = by key (lineage)
   bLikeW: f32,      // lineage likeness width (Gaussian in the key difference, as adhSigma)
   bReach: u32,      // neighbour block radius in grid cells that covers bCut (1 = the usual 3 x 3)
   bEmit: f32,       // 1 = cells emit into B, 0 = not
@@ -1061,10 +1072,10 @@ struct Fields {
   smellHalf: f32,   // ... the fuel gradient (energy per R^2 per R) at which the steering is tanh(1) of full
   // ---- step C6b, charge (src/charge.js) ----
   qFeel: f32,       // cells feel the substrate's charge field: speed = qFeel x q x (-grad phi) (R / s per phi per R; 0 = off)
-  qStock: u32,      // 1: a cell's charge in field B is qB x its Cell.q (from its stock); 0: the fixed charge of its fate; 2 (step C12g,
+  qStock: u32,      // 1: a cell's charge in field B is qB x its Cell.q (from its stock); 0: the fixed charge qB.x; 2 (step C12g,
                     // the default): from its own C13 field genes: qB x the sign of its B sensing gene (its emission gene scales the
                     // beat as before), so B stays alive and evolvable without the stock's net charge
-  qStockB: f32,     // ... x this (the fixed per-fate charges are about 1)
+  qStockB: f32,     // ... x this (the fixed charge is about 1)
   qSat: f32,        // the grid's push saturates at this speed (R / s)
   hex: vec4f,       // step C6c: x the corners' spring (omega^2, 1/s^2), y their damping (1/s), z the contacts' turning pull on
                     // the hexagon (1/s^2), w jelly: how much the corners lag the centre's change of velocity (0 = rigid)
@@ -1197,19 +1208,14 @@ const FUEL_CH: u32 = 6u;   // the first fuel channel (gt, gT, Gt, GT: 6 .. 9; sr
 fn p_sgn(s1: f32) -> vec3f { return vec3f(1.0, s1, 1.0); }
 fn p_shift(s1: f32) -> vec3f { return -1.5707963 * p_sgn(s1); }
 
-fn charge_a(F: Fields, kind: u32) -> f32 {
-  if (kind < 4u) { return F.qA[kind]; }
-  return F.q4.x;
-}
-fn charge_b(F: Fields, kind: u32) -> f32 {
-  if (kind < 4u) { return F.qB[kind]; }
-  return F.q4.y;
-}
+// (step F0: one charge per field for every cell; the fates had their own)
+fn charge_a(F: Fields) -> f32 { return F.qA.x; }
+fn charge_b(F: Fields) -> f32 { return F.qB.x; }
 // a cell's B charge, after conversion (step 6, rule 2): a converted cell emits B more strongly (mode 0:
 // x (1 + conv)) or of the other sign (mode 1: x -conv), and listens to B with the same charge
 fn cell_charge_b(F: Fields, c: Cell) -> f32 {
-  // step C6b: from the cell's stock (its net charge, saturating; Cell.q, eat pass), or the fixed charge of its fate
-  var q = select(charge_b(F, c.kind), F.qStockB * c.q, F.qStock == 1u);
+  // step C6b: from the cell's stock (its net charge, saturating; Cell.q, eat pass), or the fixed charge
+  var q = select(charge_b(F), F.qStockB * c.q, F.qStock == 1u);
   if (F.qStock == 2u) { q = F.qStockB * fg_sgn_b(c); }   // step C12g: from the field genes
   if (F.conv > 0.0 && (c.flags & CELL_CONV) != 0u) {
     return select(q * (1.0 + F.conv), -q * F.conv, F.convMode == 1u);
@@ -1235,14 +1241,14 @@ fn cell_field_b(b: CellBeat, x: vec2f, cutR: f32) -> vec3f {
 }
 
 // ---------- the cell as an emitter ----------
-// The lattice a cell emits with: its key (angle, log period factor) plus its fate's period, with the
+// The lattice a cell emits with: its key (angle, log period factor; step F0: no fate's period on top), with the
 // difference from the medium's lattice scaled by the lever (Sim.lever). Returns (angle, log period factor).
 fn cell_lattice(c: Cell, lever: f32) -> vec2f { return cell_lattice_off(c, lever, 0.0); }
 // step C13: ... with the field's own angle offset (its lattice turned from the key by da)
 fn cell_lattice_off(c: Cell, lever: f32, da: f32) -> vec2f {
   let la = c.la + da;
   let base = P3 * round(la / P3);              // the nearest of the medium's hex directions (0 or 60 degrees)
-  return vec2f(base + lever * (la - base), lever * (c.aux + log(kind_period(c.kind))));
+  return vec2f(base + lever * (la - base), lever * c.aux);
 }
 // step C13: field A's lattice as the cell's genes give it (lever factor, angle offset; Cell.fg), as it emits and senses with
 fn cell_lattice_a(c: Cell, lever: f32) -> vec2f { return cell_lattice_off(c, lever * (1.0 + fg_a(c).x), fg_ang(c).x); }
@@ -1267,7 +1273,7 @@ struct CellBeat {
 
 // The cell as a field emitter: strength min(1, r/R) (times Sim.emit), range r0 = Sim.r0 x R. Its lattice is
 // strained by the cell's stretch (k = F^-1 . k0) and scaled by its period factor p; emitter_k does
-// k = adj(F) . k0 / kind_period, so p goes in as F / p (with kind = stem, period 1).
+// k = adj(F) . k0, so p goes in as F / p.
 fn cell_beat(c: Cell, S: Sim, M: Medium, FL: Fields) -> CellBeat {
   // step C13: the cell's field genes (Cell.fg: deltas from today's values, all 0 while the field genes are off)
   let gA = fg_a(c);
@@ -1278,7 +1284,7 @@ fn cell_beat(c: Cell, S: Sim, M: Medium, FL: Fields) -> CellBeat {
   var e: Emitter;
   e.pos = c.pos;
   e.la = lat.x;
-  e.amp = S.emit * charge_a(FL, c.kind) * min(1.0, c.r / S.R) * length(c.z) * max(1.0 + gA.y, 0.0);
+  e.amp = S.emit * charge_a(FL) * min(1.0, c.r / S.R) * length(c.z) * max(1.0 + gA.y, 0.0);
   e.r0sq = (S.r0 * S.R) * (S.r0 * S.R);
   e.fa = F.x; e.fb = F.y; e.fd = F.z;
   e.kind = KIND_STEM;

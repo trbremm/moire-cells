@@ -3,11 +3,14 @@
 // Layout: struct Bio in cell_common.wgsl, 24 floats (96 bytes) per cell, double-buffered on the GPU.
 //   key    x key angle (0..60 deg), y key scale (log period factor, -0.15..0.15),
 //          z receptor angle, w receptor scale            -> WHICH keys the cell recognises (specific)
-//   rec    x receptor width (pickiness), y threshold, z output once committed, w founder id (a whole number, as a float)
-//   resp   per fate channel (epithelium, muscle, neuron, cartilage): recognised contact -> accumulator
-//   relay  per fate channel: a committed neighbour's signal on that channel -> accumulator
+//   rec    x receptor width (pickiness), y z spare (the fates' threshold and output until step F0), w founder id (a whole number,
+//          as a float)
+//   resp   step F0, state (inherited, not mutated): x y the JOB scores builder, predator (src/jobs.js); z w spare (the fates' response
+//          genes until then)
+//   relay  spare (the fates' relay genes until step F0)
 //   body   x adhesion, y size factor, z motility factor, w spare
-//   acc    state (not inherited as genes): the four leaky accumulators
+//   acc    step F0, state (inherited): the JOB scores light eater, breather, fermenter, gradient eater, low-passed (the fates' four
+//          leaky accumulators until then)
 //   env    state: x y spare (the nutrient and threat felt, until step C3); z the A felt (integrated), w converted (step 6)
 //   conv   state (step 6): x the converted share of the neighbourhood (integrated, for the relay); y z step 8's clock (state);
 //          w step G1: the FIDELITY gene (proofreading; src/fidelity.js): a log factor, a birth's copying errors x e^-w (-2..3; founders 0:
@@ -62,7 +65,7 @@ export const KEY_SMAX = 0.15;
 
 // rule bits (keep in step with RULE_* in cell_common.wgsl)
 // (bit 32 was rule E, nutrient and threat, until step C3)
-export const RULE = { DIFF: 1, ADH: 2, TURN: 4, MUT: 8, INHERIT: 16 };
+export const RULE = { ADH: 2, TURN: 4, MUT: 8 };   // (step F0: 1 was differentiation, 16 inherit fate)
 
 /** Small seeded random generator (mulberry32): returns a function giving floats in [0, 1). */
 export function makeRng(seed) {
@@ -85,11 +88,9 @@ export function randomGenome(rng, founder, mrng = rng, prng = mrng, wrng = prng,
   g[0] = U(rng, 0, KEY_SPAN); g[1] = U(rng, -KEY_SMAX, KEY_SMAX);
   g[2] = U(rng, 0, KEY_SPAN); g[3] = U(rng, -KEY_SMAX, KEY_SMAX);
   g[4] = logU(rng, 0.06, 0.25);          // receptor width
-  g[5] = U(rng, 0.6, 1.6);               // threshold
-  g[6] = U(rng, 0.4, 1.4);               // output once committed
+  U(rng, 0.6, 1.6); U(rng, 0.4, 1.4);    // (step F0: the fates' threshold and output; still drawn, so a seed's founders keep their genes)
   g[7] = founder;                        // founder id (exact as a float up to 2^24)
-  for (let c = 0; c < 4; c++) g[8 + c] = U(rng, -1, 1);    // resp
-  for (let c = 0; c < 4; c++) g[12 + c] = U(rng, -1, 1);   // relay
+  for (let c = 0; c < 8; c++) U(rng, -1, 1);   // (step F0: the fates' resp and relay genes, drawn and dropped as above; the job state starts 0)
   g[16] = U(rng, 0, 1);                  // adhesion
   g[17] = U(rng, 0.85, 1.15);            // size
   g[18] = logU(rng, 0.5, 2);             // motility
@@ -362,12 +363,9 @@ export class Genome {
       bSign: 'mixed',   // the founders' field-B SENSING SIGN (the sign of the senseB gene, which with the C12g default is also the sign of
                         // their B charge): 'mixed' (default) each founder + or - at random from its own stream, both signs present
                         // whenever there are 2 or more founders; 'plus': all + (as from step C13 until this switch) (?bsign=plus)
-      tau: 2.0,         // accumulator time constant (s): brief contacts fade, sustained ones add up
-      release: 0.3,     // a committed cell returns to stem when its channel falls below release x threshold
       reach: 1.15,      // neighbours closer than reach x (r_i + r_j) are in contact (signals, adhesion)
       adhesion: 0.6,    // adhesion pull at full stickiness (as the contact push of an overlap of 0.6 R)
       adhSigma: 0.12,   // how alike keys must be to stick (Gaussian width in the wavevector difference)
-      fateAdh: 0.5,     // extra stickiness between cells of the same committed fate
       adhBase: 0.25,    // stickiness every pair loses (unlike neighbours push off a little; helps sorting)
       crawl: 0.6,       // crawling speed (R / s, times the motility factor); body traits (key B)
       turnRate: 0.5,    // how fast a crawling cell's heading wanders (rad^2 / s)
@@ -381,14 +379,13 @@ export class Genome {
                         // empty; an empty one starts up at a small rate)
       ripple: 0.4,      // ripple strength of a birth (a death dips by 0.7 of it); 0 = none
     };
-    this.rules = { diff: true, adh: true, body: true, turn: true, mut: true, inherit: false };
+    this.rules = { adh: true, body: true, turn: true, mut: true };   // (step F0: diff and inherit went with the fates)
   }
 
   /** Bits for Sim.rules. */
   ruleBits() {
     const r = this.rules;
-    return (r.diff ? RULE.DIFF : 0) | (r.adh ? RULE.ADH : 0) | (r.turn ? RULE.TURN : 0) |
-      (r.mut ? RULE.MUT : 0) | (r.inherit ? RULE.INHERIT : 0);
+    return (r.adh ? RULE.ADH : 0) | (r.turn ? RULE.TURN : 0) | (r.mut ? RULE.MUT : 0);
   }
 
   /** Draw a fresh set of founder genomes (key G). With founders = 0, every cell gets its own (made in fill). */

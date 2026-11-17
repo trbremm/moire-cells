@@ -15,9 +15,9 @@
 //               charge DIPOLE (step C6d) pull it round: toward the dipole's + end at frontRate x w x |d| rad/s x the sine of
 //               the angle between them. So chemistry -> polarity -> stickiness can evolve (switch "front follows the dipole")
 //   contact     a contact holds by the SMALLER of the two touching sides' effective adhesion (both must be sticky), times the
-//               match the adhesion already had (the keys' likeness, the J of the reference, plus the same-fate glue) and the
+//               match the adhesion already had (the keys' likeness, the J of the reference, plus the same-fate glue until step F0) and the
 //               same knobs (strength, the loss every pair pays, the contact stiffness): pull = (min(A_i, A_j) x (likeness +
-//               fate glue) - adhBase) x adhesion x R x stiffness, where it was (sqrt(a0_i a0_j) x likeness + fate glue -
+//               fate glue until F0) - adhBase) x adhesion x R x stiffness, where it was (sqrt(a0_i a0_j) x likeness + fate glue -
 //               adhBase) x ... Which side faces the neighbour: by the direction to it against each hexagon's orientation
 //               (cell_common.wgsl wall_side; both cells find the same pair)
 //   cost        adhesion molecules are made of LINKERS: a side wants, on top of its membrane (step C6c), linkPer x adhesion x

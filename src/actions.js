@@ -19,6 +19,8 @@
 // page and comparing the state and the flash after each press).
 
 import { ELECTRONS } from './matter.js';
+import { JOBS } from './jobs.js';
+const JOB_WORD = ['warm white', 'lime', 'pink', 'violet', 'cyan', 'amber', 'red'];   // step F0: the jobs' neon inks in words (src/palette.js)
 
 // (step C12d, electrons: tap mode 2 drips minerals, tap mode 3 is a vent; their ids stay)
 export const TOOLS = [
@@ -74,7 +76,7 @@ export const RULE_GROUPS = [
   ['state', 'Save and load the state (experiments)'],
 ];
 
-export const VIEWS = ['fate', 'lineage', 'strategy', 'charge', 'walls', 'guides', 'marker', 'reporter'];   // key V: what the cells' bodies are coloured by (cells.look.view;
+export const VIEWS = ['job', 'lineage', 'strategy', 'charge', 'walls', 'guides', 'marker', 'reporter'];   // key V: what the cells' bodies are coloured by (cells.look.view;
                                                                          // step C10: + the wall pattern)
 
 export const SQUEEZE_SOFT = 0.25, SQUEEZE_HARD = 1.2;   // key \ : cells.params.squeeze, normal or pressed together
@@ -110,7 +112,7 @@ export function makeActions(app) {
     { id: 'record', keys: ['shift+v'], label: 'record', group: 'play', type: 'toggle', get: () => app.recording(),
       run: () => app.toggleRecord(), help: 'record the dish (not the panels) as a video file; again to stop and save it' },
     { id: 'culture', keys: ['n'], label: 'new culture', group: 'play', type: 'do', run: () => newCulture(false),
-      help: 'a fresh blob of stem cells at the centre, the same founder genomes' },
+      help: 'a fresh blob of cells at the centre, the same founder genomes' },
     { id: 'genomes', keys: ['g'], label: 'new genomes', group: 'play', type: 'do', run: () => newCulture(true),
       help: 'a fresh blob with fresh random founder genomes' },
     { id: 'springs', keys: ['c'], label: 'clear springs', group: 'play', type: 'do',
@@ -127,7 +129,7 @@ export function makeActions(app) {
     // ---------- step H1: the harmonic look (src/harmonic.js) ----------
     { id: 'harmonic', keys: ['`'], label: 'harmonic look', group: 'look', type: 'toggle', get: () => app.neon.harmonic.on,
       run: () => app.neon.harmonic.toggle(),
-      help: 'the dish as a multiphoton (higher harmonic) microscope image, channels added on black: green = interfaces (membranes, brighter with lipid; oil rims), orange = ordered fibres (crust, stretched cells, muscle), violet = metabolism (fuel, batteries, busy cells)' },
+      help: 'the dish as a multiphoton (higher harmonic) microscope image, channels added on black: green = interfaces (membranes, brighter with lipid; oil rims), orange = ordered fibres (crust, stretched cells, builders, predators), violet = metabolism (fuel, batteries, busy cells)' },
     { id: 'hblur', keys: [], label: 'slight blur', group: 'look', type: 'toggle', get: () => app.neon.harmonic.params.blur,
       run: () => `slight blur ${flip(app.neon.harmonic.params, 'blur') ? 'on: soft at the pixel scale, as a scanned image' : 'off: sharp'}${app.neon.harmonic.on ? '' : ' (the harmonic look is off: `)'}`,
       help: 'a scanned image’s slight softness (harmonic look)' },
@@ -179,10 +181,13 @@ export function makeActions(app) {
     { id: 'show', keys: ['shift+s'], label: 'substances shown', group: 'view', type: 'cycle', get: () => app.matter.showName,
       run: () => app.matter.cycleShow(), help: 'the substances\' dots: summary, each substance alone, or off' },
     { id: 'colour', keys: ['v'], label: 'colour by', group: 'view', type: 'cycle',
-      get: () => VIEWS[C().look.view] || 'fate', options: () => VIEWS,
+      get: () => VIEWS[C().look.view] || 'job', options: () => VIEWS,
       set: (v) => { C().look.view = Math.max(0, VIEWS.indexOf(v)); return viewText(); },
       run: () => { C().look.view = (C().look.view + 1) % VIEWS.length; return viewText(); },
-      help: 'cells coloured by their fate (function), their lineage (the genome key\'s hue), their strategy (how their engines make a living), or their charge' },
+      help: 'cells coloured by their job (what they do, from their genes as expressed), their lineage (the genome key\'s hue), their strategy (how their engines make a living), or their charge' },
+    { id: 'legend', keys: [], label: 'job legend', group: 'view', type: 'toggle', get: () => C().look.legend !== false,
+      run: () => `job legend ${flip(C().look, 'legend') ? 'shown (bottom right, while the cells are coloured by job)' : 'hidden'}`,
+      help: 'names the colours of the jobs, with how many cells show each clearly (bottom right; colour by job, neon or flat look)' },
     { id: 'cellField', keys: ['k'], label: 'cells\' field drawn', group: 'view', type: 'toggle', get: () => LP().cellField,
       run: () => `cells' field ${flip(LP(), 'cellField') ? 'drawn (pale dots)' : 'not drawn'}`,
       help: 'field A in pale dots (drawing only)' },
@@ -246,11 +251,11 @@ export function makeActions(app) {
       run: () => `field B ${flip(F(), 'on') ? 'felt: cells move along it by the sign rule' : 'not felt (still emitted and drawn)'}`,
       help: 'cells move along field B by its sign rule (off: still emitted and drawn)' },
     { id: 'signB', keys: ['u'], label: 'like … like', group: 'fieldB', type: 'cycle', get: () => (app.charge.signB > 0 ? 'repels' : 'attracts'),
-      run: () => `field B: like ${app.charge.flipSignB() > 0 ? 'repels' : 'attracts'} like${app.charge.stockOn ? ' (for the charges from the stock; the per-fate charges keep their own rule)' : ''}`,
-      help: 'B\'s sign rule: like attracts like, or like repels like (step C6b: one rule for the charges from the stock, one for the per-fate charges)' },
+      run: () => `field B: like ${app.charge.flipSignB() > 0 ? 'repels' : 'attracts'} like${app.charge.stockOn ? ' (for the charges from the stock; the fixed charge keeps its own rule)' : ''}`,
+      help: 'B\'s sign rule: like attracts like, or like repels like (step C6b: one rule for the charges from the stock or genes, one for the fixed charge)' },
     { id: 'likeB', keys: ['y'], label: '"like" means', group: 'fieldB', type: 'cycle', get: () => (F().like ? 'lineage' : 'charge'),
-      run: () => { F().like = F().like ? 0 : 1; return `field B: "like" means ${F().like ? 'a similar key (the same lineage)' : 'the same sign of charge (charges by fate)'}`; },
-      help: 'for B, "like" means the same sign of charge (by fate) or a similar key (lineage)' },
+      run: () => { F().like = F().like ? 0 : 1; return `field B: "like" means ${F().like ? 'a similar key (the same lineage)' : 'the same sign of charge'}`; },
+      help: 'for B, "like" means the same sign of charge or a similar key (lineage)' },
 
     // ---------- where the fields meet (step 6) ----------
     { id: 'leak', keys: ['4'], label: 'leak by deformation', group: 'meet', type: 'toggle', get: () => F().leakOn,
@@ -268,8 +273,8 @@ export function makeActions(app) {
 
     // ---------- exclusion (step 7) ----------
     { id: 'excl', keys: ['8'], label: 'exclusion', group: 'excl', type: 'toggle', get: () => X().on,
-      run: () => `exclusion ${flip(X(), 'on') ? 'on: same fate and same state (the bar) keep apart, other states pack closer' : 'off'}`,
-      help: 'cells of the same fate in the same state (the bar) keep a gap; other states may touch' },
+      run: () => `exclusion ${flip(X(), 'on') ? 'on: the same founder line and the same state (the bar) keep apart, other states pack closer' : 'off'}`,
+      help: 'cells of the same founder line (lineage) in the same state (the bar) keep a gap; other states may touch' },
     { id: 'flip', keys: ['9'], label: 'state flip', group: 'excl', type: 'toggle', get: () => X().flip,
       run: () => `state flip ${flip(X(), 'flip') ? 'on: a cell crowded by its own state turns to the state least represented around it' : 'off'}${X().on ? '' : ' (exclusion is off: key 8)'}`,
       help: 'a cell crowded by its own state turns to the state least represented around it (needs exclusion)' },
@@ -303,24 +308,19 @@ export function makeActions(app) {
       help: 'the partner pushes at right angles to its pull: curls and spirals' },
 
     // ---------- biology ----------
-    { id: 'fates', keys: ['d'], label: 'differentiation', group: 'bio', type: 'toggle', get: () => rules().diff,
-      run: () => (flip(rules(), 'diff') ? 'differentiation on: cells read their contacts and choose fates' : 'differentiation off: every cell back to stem'),
-      help: 'cells read their contacts and choose fates (off: every cell back to stem)' },
+    // (step F0: key D, differentiation, and key I, inherit fate, went with the fates)
     { id: 'adhesion', keys: ['h'], label: 'adhesion', group: 'bio', type: 'toggle', get: () => rules().adh,
-      run: () => `adhesion ${flip(rules(), 'adh') ? 'on: like sticks to like (similar keys, same fate)' : 'off'}`,
-      help: 'like sticks to like (similar keys, same fate)' },
+      run: () => `adhesion ${flip(rules(), 'adh') ? 'on: like sticks to like (the glue genes, similar keys)' : 'off'}`,
+      help: 'like sticks to like (the glue genes, similar keys)' },
     { id: 'body', keys: ['b'], label: 'body traits', group: 'bio', type: 'toggle', get: () => rules().body,
-      run: () => `body traits ${flip(rules(), 'body') ? 'on: size and motility from the genome and the fate' : 'off: all cells alike'}`,
-      help: 'size, motility and crawling from the genome and the fate (off: all alike)' },
+      run: () => `body traits ${flip(rules(), 'body') ? 'on: size and motility from the genome' : 'off: all cells alike'}`,
+      help: 'size, motility and crawling from the genome (off: all alike)' },
     { id: 'turnover', keys: ['t'], label: 'life cycle', group: 'bio', type: 'toggle', get: () => rules().turn,
       run: () => `life cycle ${flip(rules(), 'turn') ? (app.cells.division.params.on ? 'on: cells divide when their battery can pay for it and die when they starve or overheat (step C9)' : 'on: turnover, cells die now and then, a neighbour divides into the gap') : 'off: nothing is born and nothing dies'}`,
       help: 'births and deaths (step C9: by division, the count changes; or by turnover, a fixed count: rules panel, Division)' },
     { id: 'mutation', keys: ['m'], label: 'mutation', group: 'bio', type: 'toggle', get: () => rules().mut,
       run: () => `mutation ${flip(rules(), 'mut') ? 'on: daughters differ a little from their parent' : 'off: daughters are exact copies'}`,
       help: 'daughters differ a little from their parent (off: exact copies)' },
-    { id: 'inherit', keys: ['i'], label: 'inherit fate', group: 'bio', type: 'toggle', get: () => rules().inherit,
-      run: () => (flip(rules(), 'inherit') ? "daughters inherit their parent's fate" : 'daughters start as stem cells'),
-      help: 'daughters keep their parent\'s fate (off: they start as stem cells)' },
 
     // ---------- heat and light (Part C) ----------
     { id: 'kicks', keys: ['shift+h'], label: 'jitter from heat', group: 'heatlight', type: 'toggle', get: () => app.heat.params.kicks,
@@ -419,7 +419,7 @@ export function makeActions(app) {
         : 'charge field off: the free atoms only spread (as before step C6b)'),
       help: 'givers (+1) and takers (−1) make a screened field (it fades over a few cell radii); free charged atoms drift in it, so fast and slow partners stay together' },
     { id: 'chargeStock', keys: ['shift+8'], label: 'cells\' charge from stock', group: 'charge', type: 'toggle', get: () => Q().stock,
-      run: () => `a cell's charge in field B ${flip(Q(), 'stock') ? 'comes from what it holds: the net charge of its stock (givers minus takers)' : Q().genes ? 'comes from its own field genes (the sign of its B sensing gene; step C12g)' : 'is the fixed charge of its fate (step 5)'}` +
+      run: () => `a cell's charge in field B ${flip(Q(), 'stock') ? 'comes from what it holds: the net charge of its stock (givers minus takers)' : Q().genes ? 'comes from its own field genes (the sign of its B sensing gene; step C12g)' : 'is the fixed charge, one for all (step 5)'}` +
         `, like ${app.charge.signB > 0 ? 'repels' : 'attracts'} like (U)${app.cells.eat.params.on ? '' : ' (cells eat is off: Shift+A, so the fixed charges apply)'}`,
       help: 'a cell\'s charge in field B is the net charge of its stock (off, the default since step C12g: from its own field genes)' },
     { id: 'chargeFeel', keys: ['shift+9'], label: 'cells feel the charge field', group: 'charge', type: 'toggle', get: () => Q().feel,
@@ -996,7 +996,7 @@ export function makeActions(app) {
   }
 
   function viewText() {
-    const v = VIEWS[C().look.view] || 'fate';
+    const v = VIEWS[C().look.view] || 'job';
     return v === 'lineage' ? 'colour by lineage (key)' : v === 'strategy'
       ? 'colour by strategy: gold harvesters (light), green burners, half and half both, grey the others'
       : v === 'charge' ? 'colour by charge: rose cells hold more givers (+), blue more takers (−), grey neutral'
@@ -1004,7 +1004,7 @@ export function makeActions(app) {
           : v === 'guides' ? 'colour by strongest guide (step C13): ivory glue, teal pumps, green engines, lilac division, yellow turning, grey unguided; each side’s tube bright where it feels the field high, dark where low'
           : v === 'marker' ? 'colour by lineage, the self marker (step T1a): each family its own hue, close relatives close hues (the marker drifts at every birth, a molecular clock)'
           : v === 'reporter' ? `reporter view (step T1b): cells glow green as far as they express regulator r${app.cells.grn.look.reporter} (like a GFP reporter line; the harmonic look shows it as a red channel)`
-          : 'colour by fate';
+          : `colour by job (step F0): ${JOBS.map((J, k) => `${JOB_WORD[k]} ${J.label}`).join(', ')}; the legend bottom right`;
   }
 
   function CH() { return app.matter.chem; }

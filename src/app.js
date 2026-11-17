@@ -8,6 +8,9 @@
 //                    R = 6 um, as the CPU version's "50 um" bar), following the zoom; one bar for every look (step H1: the
 //                    harmonic look shows it on the black, without the panel behind it); hidden by the View panel's "scale
 //                    bar" (?scalebar=0)
+//   job legend       step F0: bottom right, above the scale bar, the jobs' colours named (src/jobs.js), with how many cells show each
+//                    clearly; only while the cells are coloured by job in the neon or flat look; the View panel's "job legend"
+//                    (?legend=0) hides it
 //   zoos             two toolbar panels, molecules and cells (src/zoo.js)
 //   add cells        a tool (the cell icon): a tap places one cell, a drag a line of them, each a copy of the genome picked in
 //                    the cells zoo (a lineage living now, or a founder habit). BOOKS: a placed cell starts as a new culture's
@@ -29,6 +32,8 @@ import { SW } from './eat.js';
 import { KIND } from './field.js';
 import { settle, flushLedger, readBuffer, frames } from './snapshot.js';
 import { openCultureDialog, PRESETS } from './culture.js';
+import { JOBS } from './jobs.js';
+import { pal } from './palette.js';
 
 const BAT_WORD = 13;          // cell_eat.wgsl: the battery's stock word
 const LG_K_START = 13312;     // heat_common.wgsl: the starter charges' ledger slots (64-bit: low words, then the carries + 64)
@@ -117,6 +122,40 @@ export function createApp(ctx) {
   if (ctx.app.neon && ctx.app.neon.harmonic) ctx.app.neon.harmonic.onBar = update;   // (step H1: the look or its switch changed)
   setInterval(update, 500);   // (R changes with a new culture, a resize)
   update();
+
+  // ---------- step F0: the job legend ----------
+  const legend = el('div', 'joblegend');
+  legend.setAttribute('aria-label', 'Colour by job');
+  const rows = JOBS.map((J) => {
+    const r = el('div', 'jrow');
+    const dot = el('span', 'jdot');
+    const name = el('span', 'jname', J.label);
+    const n = el('span', 'jn', '');
+    r.title = J.help;
+    r.append(dot, name, n);
+    legend.append(r);
+    return { dot, n };
+  });
+  document.body.append(legend);
+  let legendKey = '';
+  function updateLegend() {
+    const C = ctx.cells, HM = ctx.app.neon && ctx.app.neon.harmonic;
+    const show = C.look.legend !== false && C.look.view === 0 && !(HM && HM.on);
+    legend.hidden = !show;
+    if (!show) return;
+    const P = pal(), st = C.stats;
+    const key = `${P.name}|${st ? st.job.join(',') : ''}`;
+    if (key === legendKey) return;
+    legendKey = key;
+    rows.forEach((r, k) => {
+      const c = P.job[k] || P.job[0];
+      r.dot.style.background = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+      r.dot.style.boxShadow = P.name === 'flat' ? 'none' : `0 0 5px rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.85)`;
+      r.n.textContent = st && st.job ? String(st.job[k] || 0) : '';
+    });
+  }
+  setInterval(updateLegend, 500);
+  updateLegend();
 
   // ---------- the zoos and the add tools ----------
   const pick = { genome: null, label: '', sub: CH.gT ?? 0 };   // what the add-cell tool places, what the pipette drops

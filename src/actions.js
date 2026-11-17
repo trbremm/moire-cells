@@ -67,6 +67,7 @@ export const RULE_GROUPS = [
   ['t1a', 'Tissues 1: inside, kin, marker (step T1a)'],
   ['t1b', 'Gene network (step T1b)'],
   ['p1', 'Predators (step P1)'],
+  ['g1', 'Error correction (step G1)'],
   ['vents', 'Vents in the dark (step C12f)'],
   ['n1', 'Nutrient landscape (step N1)'],
   ['guides', 'Fields as guides (step C13)'],
@@ -775,6 +776,21 @@ export function makeActions(app) {
     prknob('predWrap', 'wrap time', 'wrapTime', 0.2, 60, 1.25, 1, 's a wrap takes (the prey can escape meanwhile)'),
     prknob('predDigest', 'digestion time', 'digestTime', 0.5, 120, 1.25, 1, 's a meal takes to move into the host'),
     prknob('predBat', 'battery to the host', 'batShare', 0, 1, 1.2, 2, 'the share of the meal’s battery the host gets (the rest heat)'),
+  );
+
+  // ---------- error correction: the fidelity gene (step G1; panel only: no keys are free) ----------
+  const FDP = () => app.cells.fidelity.params;
+  const fdknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'g1', type: 'knob', get: () => FDP()[key].toFixed(digits),
+    run: (k) => { const p = FDP(); p[key] = Math.max(lo, Math.min(hi, +(Math.max(p[key], 1e-3) * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    { id: 'fidelity', keys: [], label: 'fidelity (proofreading)', group: 'g1', type: 'toggle', get: () => FDP().on,
+      run: () => `the fidelity gene ${flip(FDP(), 'on') ? 'acts: a birth copies with e^-F of the usual errors (all genes, the gene network, the self marker), and F above the founders costs the parent battery' : 'is off: every birth copies as before (the gene frozen)'}`,
+      help: 'proofreading: higher fidelity = smaller and rarer mutations at each birth, paid from the parent’s battery (as heat); founders copy as before' },
+    { id: 'fidelitynull', keys: [], label: 'fidelity neutral control', group: 'g1', type: 'toggle', get: () => FDP().null,
+      run: () => `the fidelity gene ${flip(FDP(), 'null') ? 'has NO effect and costs nothing (NEUTRAL CONTROL: it still drifts)' : 'acts'}`,
+      help: 'the neutral control: the gene drifts as usual, without effect or cost, to tell selection from noise' },
+    fdknob('fidCost', 'proofreading cost', 'cost', 0, 10, 1.25, 3, 'energy units a birth costs the parent at e^F − 1 = 1 (as heat); F = 1 costs 1.7 × this, F = 2 6.4 ×'),
+    fdknob('fidBeyond', 'hard light beyond repair', 'beyond', 0, 1, 1.25, 2, 'the share of hard light’s extra mutation proofreading cannot catch (the rest is caught like any copying error)'),
   );
 
   // ---------- vents in the dark (step C12f; panel only: no keys are free) ----------

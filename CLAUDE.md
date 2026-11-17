@@ -605,6 +605,20 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        culture), the window is only a view; every supply PER AREA; keep the waves reachable on purpose (preset/knob).
        Plus a SQUEEZE / STRETCH tool (user: "scale the dish as if we are compressing the sample"): rescale the dish at
        runtime keeping its contents (cells crowd, substrate resampled, matter exact).
+    6a. G0 STRONG GLUE + CELLS STIR THE WATER (user 2026-11-17 "yes! do both. Also, is the cells movement stirring the
+       liquid too? if not, they should"; after D1, which touches the same grids). Today the adhesion gene is capped at 1
+       (body.x 0..1), glue is free up to freeGlue 0.5 per side and costs above, nothing pulls joined cells apart, so the gene
+       drifts near 0.5 (P1: no change vs control). (a) CEILING: adhesion gene on a log scale (e.g. 0.05..4), cost rising with
+       strength; check numerical stability of very strong glue. (b) JUNCTIONS THAT BREAK: each contact has a breaking
+       strength from both sides' glue (and maturity); forces that try to break it: water shear, the squeeze tool, predators
+       pulling prey free, division pressure; a junction torn open costs/lets go. (c) CELLS STIR THE WATER: today the currents
+       are PRESCRIBED (N1 stream function: moire eddies + gyre) and only drag cells (curDrift); cells moving do not move the
+       water (the ripples are a surface layer, not flow). Two-way coupling: a moving cell's drag force goes into the water
+       (e.g. vorticity on the heat grid from the curl of the cells' forces, a stream function by a few relaxation passes,
+       viscosity and decay; added to the prescribed psi, so transport stays divergence-free, flux-form and exact); the water
+       carries substances and other cells. Energy booked (water motion from the cells' work, decays to heat). Expected look:
+       crawling colonies leave swirls; dense moving tissue may give "bacterial turbulence" (collective vortices); fronts
+       (D1 waves) drag the water. Own switches; streamlines in the machinery view.
     6b. G1 ERROR CORRECTION (user 2026-11-17 "yes"): a FIDELITY gene (proofreading): higher = fewer mutations per
        division (all genes, incl. the self marker, so the molecular clock slows with it: kin sparing gets something to
        read) but each division costs more battery; hard light's extra mutation still acts (repair may evolve against it).

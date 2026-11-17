@@ -297,6 +297,7 @@ function makeGenomeTools(M, ctl) {
   };
   const gene = (name) => {
     if (typeof name === 'number') return name;
+    if (/^\d+$/.test(String(name))) return Number(name);   // (step T1b: a word number as a key, e.g. setAll({ 132: -8 }) for the network's words)
     if (!(name in GENES)) throw new Error(`unknown gene ${name}; genes: ${Object.keys(GENES).join(' ')}`);
     return GENES[name];
   };

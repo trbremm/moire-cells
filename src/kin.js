@@ -56,6 +56,7 @@ export class Kin {
       null: false,       // control: the channels move nothing, the genes still drift (neutral drift) (?kinnull=1)
       clock: true,       // the marker drifts at every birth (a molecular clock; with mutation, key M) (?clock=0)
       clockSize: 0.4,    // ... x (angle 0.02 rad, period's log 0.01, phase 0.05 rad per birth); 0.4: a lineage stays mostly kin over 30 min (pilots)
+      clockHard: true,   // step T1c: the clock also ticks with hard light's extra mutation dose (off, ?clockhard=0: only with mutation itself)
       smellTrace: true,  // the membrane's corners smell trace too (?smelltrace=0)
       traceWorth: 50,    // ... a unit of trace smells like this many units of the richest fuel, to a cell with no trace inside
     };
@@ -95,7 +96,7 @@ export class Kin {
   /** The step's words (struct Fields t1, from word o). */
   writeFields(u, f, o) {
     const p = this.params;
-    u[o] = p.clock ? 1 : 0; f[o + 1] = Math.max(0, p.clockSize); f[o + 2] = 0; f[o + 3] = 0;
+    u[o] = (p.clock ? 1 : 0) | (p.clockHard ? 2 : 0); f[o + 1] = Math.max(0, p.clockSize); f[o + 2] = 0; f[o + 3] = 0;
   }
 
   /** The drawing's words (struct Draw kin, from word o): x the marker view; y the texture's depth (0 below texZoom); z the view's fill; w its saturation. */
@@ -160,7 +161,7 @@ export class Kin {
   overlayLines() {
     const p = this.params, on = (x) => (x ? 'on' : 'off'), C = this.census;
     const lines = [`tissues 1 (step T1a): inside ${on(p.inside)} (seal ${p.seal}, press ${p.press}) · kin channels ${on(p.channels)} (kinK ${p.kinK}/s, cap ${p.kinCap.toFixed(3)})` +
-      `${p.null ? ' · NEUTRAL CONTROL' : ''}${p.blind ? ' · BLIND (kinship ignored)' : ''} · marker clock ${on(p.clock)} ×${p.clockSize} · smell for trace ${on(p.smellTrace)} (worth ${p.traceWorth})` +
+      `${p.null ? ' · NEUTRAL CONTROL' : ''}${p.blind ? ' · BLIND (kinship ignored)' : ''} · marker clock ${on(p.clock)} ×${p.clockSize}${p.clockHard ? '' : ' (not by hard light)'} · smell for trace ${on(p.smellTrace)} (worth ${p.traceWorth})` +
       ` · founders ${this.cells.genome.params.founderMode}`];
     if (C && C.n) {
       const f3 = (x) => (x == null ? '-' : x.toFixed(3));

@@ -1,0 +1,55 @@
+{
+ "name": "t1b-col-null",
+ "description": "colonies preset, gene network NEUTRAL CONTROL (?grnnull=1), 40 min",
+ "query": {
+  "preset": "colonies",
+  "grnnull": 1
+ },
+ "duration": 2403,
+ "sample_every": 30,
+ "snapshots": [
+  {
+   "t": 2400
+  }
+ ],
+ "shots": [
+  {
+   "t": 2397,
+   "view": "marker",
+   "name": "marker_end"
+  },
+  {
+   "t": 2397,
+   "view": "reporter",
+   "name": "reporter_end"
+  },
+  {
+   "t": 2399,
+   "view": "reporter",
+   "panel": true,
+   "name": "panel"
+  }
+ ],
+ "evals": [
+  {
+   "t": 600,
+   "js": "const c = await moire.grn.typesNow(); return JSON.stringify({t: c.time, n: c.n, types: c.types, diff: c.diff, border: c.border, net: c.net, reporter: c.reporter, senses: c.senses, factors: c.factors, lineages: c.lineages})"
+  },
+  {
+   "t": 1200,
+   "js": "const c = await moire.grn.typesNow(); return JSON.stringify({t: c.time, n: c.n, types: c.types, diff: c.diff, border: c.border, net: c.net, reporter: c.reporter, senses: c.senses, factors: c.factors, lineages: c.lineages})"
+  },
+  {
+   "t": 1800,
+   "js": "const c = await moire.grn.typesNow(); return JSON.stringify({t: c.time, n: c.n, types: c.types, diff: c.diff, border: c.border, net: c.net, reporter: c.reporter, senses: c.senses, factors: c.factors, lineages: c.lineages})"
+  },
+  {
+   "t": 2400,
+   "js": "const c = await moire.grn.typesNow(); return JSON.stringify({t: c.time, n: c.n, types: c.types, diff: c.diff, border: c.border, net: c.net, reporter: c.reporter, senses: c.senses, factors: c.factors, lineages: c.lineages})"
+  },
+  {
+   "t": 2396,
+   "js": "const c = await moire.grn.typesNow(); moire.grn.look.reporter = c.reporter.best ?? 0; return 'reporter r' + moire.grn.look.reporter"
+  }
+ ]
+}

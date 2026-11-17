@@ -1,0 +1,41 @@
+{
+ "name": "t1b-default",
+ "description": "default scene, 20 min (std founders: no network at the start; mutation adds one)",
+ "query": {},
+ "duration": 1203,
+ "sample_every": 30,
+ "snapshots": [
+  {
+   "t": 1200
+  }
+ ],
+ "shots": [
+  {
+   "t": 600
+  },
+  {
+   "t": 1200,
+   "panel": true,
+   "name": "panel"
+  },
+  {
+   "t": 1201,
+   "view": "reporter",
+   "name": "reporter"
+  }
+ ],
+ "evals": [
+  {
+   "t": 600,
+   "js": "const c = await moire.grn.typesNow(); return JSON.stringify({t: c.time, n: c.n, types: c.types, diff: c.diff, border: c.border, net: c.net, reporter: c.reporter, senses: c.senses, factors: c.factors, lineages: c.lineages})"
+  },
+  {
+   "t": 1200,
+   "js": "const c = await moire.grn.typesNow(); return JSON.stringify({t: c.time, n: c.n, types: c.types, diff: c.diff, border: c.border, net: c.net, reporter: c.reporter, senses: c.senses, factors: c.factors, lineages: c.lineages})"
+  },
+  {
+   "t": 1199,
+   "js": "const c = await moire.grn.typesNow(); moire.grn.look.reporter = c.reporter.best ?? 0; return 'reporter r' + moire.grn.look.reporter"
+  }
+ ]
+}

@@ -1,0 +1,8 @@
+{
+ "batch": "t1b-speedparts",
+ "runs": [
+  {"name": "t1b-speedparts-10k-grn0", "description": "speed, 10000 cells, neon, ?grn=0 (no network pass, no census)", "query": {"seed": 3, "cells": 10000, "grn": 0, "grncensus": 0}, "duration": 60, "sample_every": 10},
+  {"name": "t1b-speedparts-10k-nocensus", "description": "speed, 10000 cells, neon, network on, ?grncensus=0", "query": {"seed": 3, "cells": 10000, "grncensus": 0}, "duration": 60, "sample_every": 10},
+  {"name": "t1b-speedparts-10k-on", "description": "speed, 10000 cells, neon, as the default (network on, census every 15 s)", "query": {"seed": 3, "cells": 10000}, "duration": 60, "sample_every": 10}
+ ]
+}

@@ -1,0 +1,7 @@
+{
+ "batch": "t1b-pilot",
+ "runs": [
+  {"name": "t1b-pilot-col", "description": "colonies preset (wild founders, habit both, 1000 cells), grn on, 8 min", "query": {"preset": "colonies"}, "duration": 480, "sample_every": 30,
+   "shots": [{"t": 477, "view": "marker", "name": "marker_end"}, {"t": 478, "name": "neon"}, {"t": 479, "panel": true, "name": "panel"}]}
+ ]
+}

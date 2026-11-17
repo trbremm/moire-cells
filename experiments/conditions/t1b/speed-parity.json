@@ -1,0 +1,8 @@
+{"batch": "t1b-speedparity", "runs": [
+ {"name": "t1b-speedparity-10k-neon-r1", "description": "speed after the parity update, 10000 cells, neon", "query": {"seed": 3, "cells": 10000}, "duration": 60, "sample_every": 10},
+ {"name": "t1b-speedparity-10k-neon-r2", "description": "speed after the parity update, 10000 cells, neon", "query": {"seed": 3, "cells": 10000}, "duration": 60, "sample_every": 10},
+ {"name": "t1b-speedparity-2k-neon-r1", "description": "speed after the parity update, 2000 cells, neon", "query": {"seed": 3}, "duration": 150, "sample_every": 25},
+ {"name": "t1b-speedparity-2k-neon-r2", "description": "speed after the parity update, 2000 cells, neon", "query": {"seed": 3}, "duration": 150, "sample_every": 25},
+ {"name": "t1b-speedparity-10k-harmonic", "description": "speed after the parity update, 10000 cells, harmonic", "query": {"seed": 3, "cells": 10000, "look": "harmonic"}, "duration": 60, "sample_every": 10},
+ {"name": "t1b-speedparity-2k-harmonic", "description": "speed after the parity update, 2000 cells, harmonic", "query": {"seed": 3, "look": "harmonic"}, "duration": 150, "sample_every": 25}
+]}

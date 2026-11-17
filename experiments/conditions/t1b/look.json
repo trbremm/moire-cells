@@ -1,0 +1,10 @@
+{
+ "batch": "t1b-look",
+ "runs": [
+  {"name": "t1b-look-col", "description": "colonies preset look check: marker, reporter (the most varied regulator), harmonic reporter, 6 min", "query": {"preset": "colonies", "seed": 7}, "duration": 360, "sample_every": 60,
+   "evals": [{"t": 350, "js": "const c = await moire.grn.typesNow(); moire.grn.look.reporter = c.reporter.best ?? 0; return JSON.stringify({best: c.reporter.best, sd: c.reporter.bestSd, lin: c.lineages.map(l => [l.id, l.n, l.types, l.differ.map(d => d.out + ' ' + d.ratio.toFixed(1)).join(',')])})"},
+             {"t": 356, "js": "moire.control.action('harmonic'); return 'harmonic'"}],
+   "shots": [{"t": 351, "view": "marker", "name": "marker"}, {"t": 352, "view": "reporter", "name": "reporter"}, {"t": 353, "view": "reporter", "panel": true, "name": "reporter_panel"},
+             {"t": 358, "view": "reporter", "name": "harm_reporter"}, {"t": 359, "name": "harm"}]}
+ ]
+}

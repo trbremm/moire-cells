@@ -1,0 +1,9 @@
+{
+ "name": "t1b-reload-t1a",
+ "description": "a T1a snapshot (six wild colonies, default scene, 10 min) loads with the network off and runs 60 s",
+ "query": {
+  "snap": "experiments/runs/t1a-col-wild-default_s3/snapshots/snap_t600.json"
+ },
+ "duration": 60,
+ "sample_every": 10
+}

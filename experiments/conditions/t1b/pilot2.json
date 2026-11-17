@@ -1,0 +1,8 @@
+{
+ "batch": "t1b-pilot2",
+ "runs": [
+  {"name": "t1b-pilot2-st9", "description": "colonies preset, starter 0.9, 5 min", "query": {"preset": "colonies", "starter": 0.9}, "duration": 300, "sample_every": 30},
+  {"name": "t1b-pilot2-r8", "description": "colonies preset, springs x2 (eval), 5 min", "query": {"preset": "colonies"}, "duration": 300, "sample_every": 30,
+   "evals": [{"t": 0, "js": "moire.matter.springs.forEach(s => { s.rate = (s.rate ?? 6) * 2; }); return moire.matter.springs.map(s => s.rate)"}]}
+ ]
+}

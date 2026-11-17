@@ -591,6 +591,14 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        wild/blank founders   4. T1b: the gene regulatory network + reporter view   5. P1: engulf + kin sparing genes,
        hand-placed predator   6. T1c: designed tissues (plant, filament, biofilm) + random-colony experiments
     7. P2: macrophages.
+       AS BUILT (T1a, 2026-11-17): src/kin.js, Bio 84 words, TISSUES line. Inside (covered sides trade with the neighbour,
+       not the dish; ?inside=0), kin channels (fuels, l, L, trace; gene kin.x; ?kinnull ?kinblind controls), self marker
+       (Bio 76-79, stripe pattern, kinship = moire-fringe match x phase x display; clock 0.4), lineage view ?view=marker
+       (Brainbow hues; dashes/dotting on the rim from zoom 3: looks immunostained), ?founders=wild|blank, lasting default
+       mineral spring, trace smell. RESULT: random colonies crash in 2-5 min and ONE lineage fills each dish (the one in
+       the spotlight), so lineages barely meet; kin genes and display drift like the null (every neighbour is kin);
+       rim/inside gradients are geography; trace smell x2.3-2.5 at oases at 10 min; M1 oxygen finding CONFIRMED on seed 7
+       (self-burners 51 vs 384 outside breathers).
 C12g. MEMBRANES MODULATE ION FLOW (user 2026-11-16 "Yes, membranes modulate ion flow"; after C12f, same files).
     C12e found ions cross the membrane as easily as anything, so osmosis barely bites and cells keep their own oxygen.
     - The lipid BILAYER blocks free ions (g t G T), derived from its make-up: an intact soap/oil bilayer passes ions at a

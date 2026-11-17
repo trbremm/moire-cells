@@ -1209,7 +1209,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       atomicAdd(&stats.deaths, 1u);
       if (cause == DV_HEAT) { atomicAdd(&stats.heatDeaths, 1u); }
       let ev = atomicAdd(&stats.nEvents, 1u);
-      if (ev < STATS_EVENTS) { stats.events[ev] = vec4f(c.pos, -1.0, 0.0); }
+      // (step T1c: w = the cause + 16 x the founder id, for the chemical warfare census's deaths at lineage borders)
+      if (ev < STATS_EVENTS) { stats.events[ev] = vec4f(c.pos, -1.0, f32(cause) + 16.0 * max(round(bio.rec.w), 0.0)); }
       eDeath = heat_ke(c.vel);                  // its motion becomes heat
       c.vel = vec2f(0.0);
       c.flags = CELL_BORN;                      // dead (no CELL_ALIVE): the eat pass hands its stock back where it is

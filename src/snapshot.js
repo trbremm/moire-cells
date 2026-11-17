@@ -261,7 +261,7 @@ function gridOffsets(M) {
   };
 }
 
-async function readGrid(M) {
+export async function readGrid(M) {   // (step T1c: also the warfare census)
   const d = M.gpu.device, H = M.heat, o = gridOffsets(M), n = o.n;
   const staging = d.createBuffer({ size: (3 + NCH) * n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
   const e = d.createCommandEncoder({ label: 'lab grid read-back' });

@@ -115,6 +115,11 @@ struct Draw {
   // ---- step T1a: the self marker's look (src/kin.js writeDraw) ----
   kin: vec4f,       // x: 1 = the lineage (marker) view (mode 6); y: the marker's texture on the tube (its depth; 0 = not drawn: zoomed out);
                     // z: the marker view's body fill; w: its hues' saturation
+  // ---- step T1b: the reporter view (src/grn.js writeDraw) ----
+  grn: vec4f,       // x: 1 = the REPORTER view (mode 7); y: the regulator it shows (0..7); z: the body's fill at full expression (neon);
+                    // w: the harmonic look's reporter channel at full expression
+  grnInk: vec4f,    // the reporter's ink (neon: GFP-like green)
+  grnInkH: vec4f,   // ... in the harmonic look (an mCherry-like red: green is the membranes' channel there)
 };
 // step T1a: the self marker as a colour (Brainbow-like lineage tracing): its angle sets the hue round the colour wheel (close relatives,
 // close hues), its period the brightness (fine stripes paler), saturation w
@@ -374,6 +379,15 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   // step T1a, the lineage (marker) view (mode 6): the body in its marker's hue, filled (each family its own hue, close relatives close hues)
   let markerView = D.kin.x > 0.5;
   if (markerView) { col = marker_colour(g, D.kin.w); }
+  // step T1b, the REPORTER view (mode 7): like a GFP reporter line, each cell glows by one regulator's expression: grey and dark when off,
+  // the reporter's ink when on, its body filled as strongly, with a soft nucleus-like glow at the centre
+  let reporterView = D.grn.x > 0.5;
+  var repX = 0.0;
+  if (reporterView) {
+    let rr = min(u32(D.grn.y), 7u);
+    repX = clamp(bio[in.id].gx[rr >> 2u][rr & 3u], 0.0, 1.0);
+    col = mix(D.inkOther.rgb * 0.45, D.grnInk.rgb, repX);
+  }
   if (wallsView) {
     let a1 = g.wall.x;
     let a2 = g.wall.y;
@@ -468,8 +482,8 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   }
   // committed cells get a flat fill in their colour, so tissues read as areas; stem cells stay dark inside
   // (neon: every inside dark, a faint tint; the fills come from src/cells.js by the look)
-  let fill = select(select(select(select(select(D.fill, D.fillC, c.kind != KIND_STEM), D.inkOther.w, strategyView || chargeView), D.wall2.y, wallsView),
-                    gdFill, guidesView), D.kin.z, markerView);
+  let fill = select(select(select(select(select(select(D.fill, D.fillC, c.kind != KIND_STEM), D.inkOther.w, strategyView || chargeView), D.wall2.y, wallsView),
+                    gdFill, guidesView), D.kin.z, markerView), D.grn.z * repX, reporterView);
   var fillRgb = col * fill;   // (step 8 may tint it below)
   // step C6n: neon, the tube lights the inside near it (a soft glow falling off inward)
   if (neon) { fillRgb += col * D.neon2.x * exp(-max(ein2 - lw, 0.0) / max(D.neon.w * c.r, 1e-3)); }
@@ -480,6 +494,10 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   // step 8, rule b, clock: a stem cell filled with the partner's ink as far as it emits A' (see the hand below)
   if (D.hand < 0.0 && c.kind == KIND_STEM) { fillRgb = mix(fillRgb, D.pInk.rgb * 0.55, clamp(c.z.y, 0.0, 1.0)); }
   var rgb = mix(fillRgb, col * D.dots, dot);
+  if (reporterView) {   // (step T1b: the reporter's nucleus-like glow)
+    let dn = length(lp) / max(0.38 * c.r, 0.5);
+    rgb += D.grnInk.rgb * (0.7 * repX * exp(-dn * dn));
+  }
   // step C5: the battery as a flat core at the centre, its AREA in proportion to the charge (full: a big core; empty:
   // none), in the fuel's green (energy); drawn over the lattice dots, crisp
   var coreA = 0.0;
@@ -854,6 +872,14 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
     let pch = smoothstep(0.0, 0.25, lq.w - hm_noise(vec2f(along / max(0.5 * c.r, 2.0), f32(side) * 3.1)));
     let fib = 0.35 + 0.65 * smoothstep(0.3, 0.8, hm_noise(vec2f(along / max(0.7 * c.r, 2.5), ein / max(0.35 * wOff, 0.5)) + sh));
     rgb += mix(mix(O, Y, 0.45), Rd, lq.y) * D.harm4.x * band * pch * fib;
+  }
+  // step T1b: the REPORTER as an extra fluorescence channel (red, as an mCherry line): a soft nucleus-like spot and a faint cytoplasm, as
+  // bright as the cell expresses the regulator the reporter view shows (only in that view)
+  if (D.grn.x > 0.5 && D.grn.w > 0.0) {
+    let rr = min(u32(D.grn.y), 7u);
+    let xr = clamp(bio[in.id].gx[rr >> 2u][rr & 3u], 0.0, 1.0);
+    let rc = max(0.4 * c.r, 0.8);
+    rgb += D.grnInkH.rgb * D.grn.w * xr * (exp(-d * d / (rc * rc)) + 0.18) * inner;
   }
   // a starving cell (division mode) fades out as its starvation time runs down
   let fade = D.div.z * smoothstep(0.0, 1.0, g.env.x * D.div.w);

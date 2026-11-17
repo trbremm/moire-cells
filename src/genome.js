@@ -30,6 +30,11 @@
 //   mark   step T1a, the SELF MARKER (src/kin.js): x its angle (rad), y its period (ln of the stripe spacing in R), z its phase (rad);
 //          w the DISPLAY gene (0..1); no other effect: it drifts at every birth (a molecular clock) and is compared at contacts
 //   kin    step T1a: x the KIN CHANNELS gene (0..1), y the TOLERANCE (0..1); z w spare
+//   gx..gm step T1b, the GENE REGULATORY NETWORK (src/grn.js, cell_grn.wgsl), words 84..155: gx[2] (84..91) the 8 regulators' EXPRESSION
+//          (state: inherited, not mutated), gb[2] (92..99) their biases, gw[6] (100..123) the input weights (regulator i's input k at 3 i + k),
+//          gi[2] (124..131) the input codes (a + 32 b + 1024 c; a source 0 none, 1..8 a regulator, 9..22 a sense), gu[4] (132..147) the 16
+//          output gains, go (148..151) each output's regulator (four to a word, 3 bits each), gm (152..155) x the broadcast regulator, y the
+//          contact signal's kinship weighting, z w spare. Every weight and gain 0 (std, blank founders, old genomes): no network, as before
 //   lip    step C12b, genes of the LIPID MEMBRANE (src/lipids.js): x WALL, the crust wall wanted as a share of a full wall (0..1);
 //          y HEAD, which head the soap the cell makes carries (-1 all t: tlL, -; 1 all g: glL, +); z the wall's ROW (its heavy
 //          share, LL of ll + LL); w spare. With the lipid membranes on, memb.x (the C6c mix) is the bilayer's OIL share (oil
@@ -42,8 +47,9 @@
 import { ENGINES, engineIndex, ELECTRONS } from './matter.js';
 import { fieldDefaults, founderGates, BIO_FG } from './guides.js';
 
-export const BIO_FLOATS = 84;   // (40 until step C6c's membrane genes, 44 until step C7's pumps, 48 until step C10's walls, 52 until step C12b's lipids,
-                                //  56 until step C13's field genes and gates, 76 until step T1a's marker and kin channels)
+export const BIO_FLOATS = 156;  // (40 until step C6c's membrane genes, 44 until step C7's pumps, 48 until step C10's walls, 52 until step C12b's lipids,
+                                //  56 until step C13's field genes and gates, 76 until step T1a's marker and kin channels, 84 until step T1b's gene network)
+export const BIO_GRN = 84;      // step T1b: the gene network's first word (Bio.gx)
 export const BIO_T1 = 76;       // step T1a: the first marker word (Bio.mark; Bio.kin at 80)
 export const BIO_BYTES = BIO_FLOATS * 4;
 
@@ -93,6 +99,7 @@ export function randomGenome(rng, founder, mrng = rng, prng = mrng, wrng = prng,
   fieldDefaults(g);                    // step C13: the field genes at today's values (x 1, offset 0), so mutation off changes nothing;
   founderGates(g, grng);               // ... the gates near 0 (within +-0.05; their own stream)
   g[75] = U(irng, -0.5, 0.5);          // step C12g: the ion channels' level (log factor on chanBase), near the knob's value (its own stream)
+  grnDefaults(g);                      // step T1b: no network (no random numbers drawn)
   return g;
 }
 
@@ -236,6 +243,37 @@ export function t1Genes(g, rng, o = 0) {
 //          the founder's habit (its slots and their rates: a founder must be able to eat), and the key, receptors and body are random
 //          already. From its own random stream, so a seed's std founders are unchanged
 export const FOUNDER_MODES = ['std', 'blank', 'wild'];
+// Step T1b: NO NETWORK (std and blank founders): every weight, gain and code 0, the expression at 0.5 (where a regulator with no input sits),
+// broadcasting regulator 0, no kinship weighting. Its outputs are all exp(0) = 1: the cell behaves exactly as before the network
+export function grnDefaults(g, o = 0) {
+  for (let k = BIO_GRN; k < BIO_FLOATS; k++) g[o + k] = 0;
+  for (let r = 0; r < 8; r++) g[o + BIO_GRN + r] = 0.5;
+}
+// ... WILD founders (group 'grn'): a random SPARSE network: each regulator a bias in -2..2 and each of its three inputs a source (any regulator
+// or sense) at a weight in -4..4 six times in ten; each output reads a random regulator at a gain in -3..3 four times in ten (else none);
+// a random broadcast regulator and kinship weighting. The expression starts at 0.5 (it settles in a few tau)
+export function wildGrn(g, rng, o = 0) {
+  const b = o + BIO_GRN;
+  for (let r = 0; r < 8; r++) {
+    g[b + r] = 0.5;
+    g[b + 8 + r] = U(rng, -2, 2);
+    let cw = 0;
+    for (let k = 0; k < 3; k++) {
+      const on = rng() < 0.6, c = 1 + Math.min(21, Math.floor(rng() * 22)), w = U(rng, -4, 4);
+      g[b + 16 + 3 * r + k] = on ? w : 0;
+      cw += (on ? c : 0) * 32 ** k;
+    }
+    g[b + 40 + r] = cw;
+  }
+  const regs = [0, 0, 0, 0];
+  for (let q = 0; q < 16; q++) {
+    const on = rng() < 0.4, r = Math.min(7, Math.floor(rng() * 8)), u = U(rng, -3, 3);
+    g[b + 48 + q] = on ? u : 0;
+    regs[q >> 2] += (on ? r : 0) * 8 ** (q & 3);
+  }
+  for (let w = 0; w < 4; w++) g[b + 64 + w] = regs[w];
+  g[b + 68] = Math.min(7, Math.floor(rng() * 8)); g[b + 69] = rng(); g[b + 70] = 0; g[b + 71] = 0;
+}
 export function blankGenes(g, o = 0) {
   g[o + 44] = 0; g[o + 45] = PUMP_OUT; g[o + 46] = 0; g[o + 47] = 0;                 // no pumps
   g[o + 48] = 0; g[o + 49] = 0; g[o + 50] = 0;                                        // uniform walls, the front its own
@@ -245,7 +283,7 @@ export function blankGenes(g, o = 0) {
   g[o + 73] = 1; g[o + 74] = 0; g[o + 75] = 0;                                        // push 1, stretch tolerance 0, ion channels 0
   g[o + 80] = 0;                                                                      // no kin channels
 }
-export const WILD_GROUPS = ['body', 'membrane', 'pumps', 'walls', 'lipids', 'fields', 'gates', 'kin'];
+export const WILD_GROUPS = ['body', 'membrane', 'pumps', 'walls', 'lipids', 'fields', 'gates', 'kin', 'grn'];
 export function wildGenes(g, rng, o = 0, groups = WILD_GROUPS) {
   // (every group draws its numbers whether it is kept or not, so leaving a group out does not change the others' draws)
   const on = (k) => groups.includes(k);
@@ -267,6 +305,10 @@ export function wildGenes(g, rng, o = 0, groups = WILD_GROUPS) {
   for (let k = 68; k <= 72; k++) set('gates', k, U(rng, -1, 1));   // the gates
   set('gates', 73, U(rng, 0, 2)); set('membrane', 74, U(rng, -2, 1.5)); set('membrane', 75, U(rng, -4, 2));   // push; stretch tolerance, ion channels
   set('kin', 79, U(rng, 0, 1)); set('kin', 80, U(rng, 0, 1)); set('kin', 81, U(rng, 0, 1));                     // display, kin channels, tolerance
+  // step T1b: the gene network (drawn last, so the earlier groups' draws stay as they were; drawn whether kept or not)
+  const net = new Array(BIO_FLOATS).fill(0);
+  wildGrn(net, rng, 0);
+  if (on('grn')) for (let k = BIO_GRN; k < BIO_FLOATS; k++) g[o + k] = net[k];
 }
 
 /** The strategy a genome's engines amount to: 'harvest', 'burn', 'both' or 'other' (as the census and the view). */
@@ -302,6 +344,7 @@ export class Genome {
       founderMode: 'std', // step T1a: 'std' today's founders, 'blank' the new abilities at 0, 'wild' every gene over its whole range
                         // (FOUNDER_MODES above; ?founders=wild|blank; acts on the next founders drawn: G, N, a new culture)
       wildGroups: WILD_GROUPS.slice(),   // step T1a: the gene groups wild founders draw over their whole range (?wild=fields,gates,...)
+      habit: null,      // step T1b: every founder's engines of this habit ('burn', 'both', 'pigments', 'other'; ?habit=); null: the usual spread
       bSign: 'mixed',   // the founders' field-B SENSING SIGN (the sign of the senseB gene, which with the C12g default is also the sign of
                         // their B charge): 'mixed' (default) each founder + or - at random from its own stream, both signs present
                         // whenever there are 2 or more founders; 'plus': all + (as from step C13 until this switch) (?bsign=plus)
@@ -340,7 +383,8 @@ export class Genome {
     this.founders = [];
     for (let k = 0; k < n; k++) {
       const g = randomGenome(this.rng, k, this.mrng, this.prng, this.wrng, this.drng, this.lrng, this.grng, this.irng);
-      engines(g, this.rng, STRATEGIES[k % STRATEGIES.length]);   // step C6: a spread of engine sets over the founders
+      // step C6: a spread of engine sets over the founders (step T1b: or every founder one habit, ?habit=; the Colonies preset's 'both')
+      engines(g, this.rng, HABITS.includes(this.params.habit) ? this.params.habit : STRATEGIES[k % STRATEGIES.length]);
       membrane(g, this.mrng, k % 4 === 3);                         // step C6c: mostly light thin membranes, a few heavy
       lipids(g, this.lrng, k % 4 === 1);                           // step C12b: a few founders build a crust wall
       this.founders.push(g);
@@ -360,6 +404,9 @@ export class Genome {
       if (mode === 'blank') blankGenes(g);
       else if (mode === 'wild') wildGenes(g, this.xrng, 0, this.params.wildGroups);
     }
+    // step T1b: wild founders' markers turned a golden angle apart (no random number drawn), so in the lineage view any few surviving
+    // founders show clearly different hues (their markers are strangers either way)
+    if (mode === 'wild' && list.length > 1) list.forEach((g, k) => { g[76] = (list[0][76] + k * 2 * Math.PI * 0.381966) % (2 * Math.PI); });
   }
 
   /**

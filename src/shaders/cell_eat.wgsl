@@ -630,6 +630,29 @@ const T1Z_FS: u32 = 29u;       // the free share of the perimeter x 1000, summed
 var<workgroup> wt1s: array<atomic<i32>, 32>;
 // ==== end of step T1a's declarations ====
 
+// ==== step T1b, THE GENE NETWORK'S OUTPUTS (src/grn.js; cell_common.wgsl GRN_*): cell i's factor for output o, exp(u x) of the
+// regulator it reads (1 while the outputs do not act: the network off, or its neutral control). Each output multiplies a gene's base
+// level where the gene is read; an engine's upkeep and pigment follow its expressed rate, so a cell can switch an engine off ====
+fn grn_on() -> bool { return (bitcast<u32>(EP.t1[1].z) & GRN_ACT) != 0u; }
+fn gof(i: u32, o: u32) -> f32 {
+  if (!grn_on()) { return 1.0; }
+  let j = grn_reg(bio[i].go, o);
+  return grn_fac(bio[i].gu[o >> 2u][o & 3u], bio[i].gx[j >> 2u][j & 3u]);
+}
+// the membrane's genes as expressed: the thickness and the stiffness gene x their outputs
+fn bio_memb(i: u32) -> vec4f { let m = bio[i].memb; return vec4f(m.x, m.y * gof(i, GRN_O_THICK), m.z * gof(i, GRN_O_STIFF), m.w); }
+// ... the pump slots' rates, the marker (its display), the kin channels' opening, the ion channels' level (a log factor)
+fn bio_pump(i: u32) -> vec4f { let p = bio[i].pump; return vec4f(p.xy, p.zw * gof(i, GRN_O_PUMP)); }
+fn bio_mark(i: u32) -> vec4f { let m = bio[i].mark; return vec4f(m.xyz, m.w * gof(i, GRN_O_DISP)); }
+fn bio_kin_open(i: u32) -> f32 { return clamp(bio[i].kin.x * gof(i, GRN_O_KIN), 0.0, 1.0); }
+fn bio_chan(i: u32) -> f32 { return bio[i].gate2.w + log(gof(i, GRN_O_CHAN)); }
+// the senses the eat pass hands the gene network (Cell.sns0, sns1): an amount as 1 - e^-(amount / (capacity x ref))
+const GRN_REF_T: f32 = 0.001;     // free t (oxygen-like)       (refs: the default scene's means come out 0.1 .. 0.4)
+const GRN_REF_FUEL: f32 = 0.005;  // fuel (gt gT Gt GT)
+const GRN_REF_LINK: f32 = 0.001;  // free linkers (l L)
+fn grn_amount(n: i32, cap: f32, sref: f32) -> f32 { return 1.0 - exp(-f32(max(n, 0)) / max(cap * sref, 1.0)); }
+// ==== end of step T1b's declarations ====
+
 // ==== step N1, A NUTRIENT LANDSCAPE: LIGHT NEEDS MATTER (src/pigments.js; README "Step N1: nutrient landscape") ====
 // A harvest slot's PIGMENT is a molecule the cell BUILDS from its stock: two light linkers l (a chain that shares its electrons, an
 // antenna, like chlorophyll's conjugated ring) holding one trace atom at its heart (like chlorophyll's magnesium). Stock word W_PIG
@@ -987,7 +1010,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   // step C6c: the membrane's material per side (it takes room in the cell too) and its integrity
   let mbf = mb_flags();
   let membOn = (mbf & MBF_ON) != 0u && (EP.flags & EF_EAT) != 0u;
-  let gm = bio[i].memb;
+  let gm = bio_memb(i);   // (step T1b: the thickness and stiffness as expressed)
   var ml: array<i32, 6>;
   var mh: array<i32, 6>;
   var integ = 0.0;
@@ -1032,7 +1055,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   // exp(-z kV V)); the ions held back, per sign (counts, for the census)
   let ioF = io_flags();
   let blockOn = (ioF & IOF_BLOCK) != 0u && membOn;
-  let chl = ion_chan(bio[i].gate2.w, gm.w, selOn);
+  let chl = ion_chan(bio_chan(i), gm.w, selOn);   // (step T1b: the channels' level as expressed)
   let voltOn = blockOn && (ioF & IOF_VOLT) != 0u;
   var blk = vec2f(0.0);
   // step C6d: the through-flow onto each side (charge, counts per tick), the points just outside the sides' middles, each
@@ -1167,7 +1190,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   var pCostG = 0.0;
   let puf = pu_flags();
   // step C13, the pump gate: the slots' rates x (1 + g s), s the field A the cell's sides felt (their mean; the step's Cell.felt)
-  var gpu = bio[i].pump;
+  var gpu = bio_pump(i);   // (step T1b: the rates as expressed)
   if ((fg_bits() & FG_PUMP) != 0u) { gpu = vec4f(gpu.xy, gpu.zw * gate_factor(bio[i].gate.y, cell_felt_mean(c))); }
   let pmax = EP.pu0.w;
   let pr = vec2f(min(max(gpu.z, 0.0), pmax), min(max(gpu.w, 0.0), pmax));
@@ -1280,7 +1303,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     let kb = S.count * SW + i * KW;
     var kq: array<i32, 24>;
     for (var w = 0u; w < KW; w++) { kq[w] = 0; }
-    let oi = clamp(bio[i].kin.x, 0.0, 1.0);
+    let oi = bio_kin_open(i);   // (step T1b: as expressed)
     if (eatOn && (t1f & T1F_NULL) == 0u && oi > 0.0 && covm != 0u) {
       let blind = (t1f & T1F_BLIND) != 0u;
       let capK = clamp(EP.t1[1].x, 0.0, 1.0 / 6.0);
@@ -1289,13 +1312,13 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
         let j = cell_nbr(c, k);
         if (j <= i || j >= S.count || nbr_side(c.nbr, j) != k) { continue; }
         if (nbr_side(cells[j].nbr, i) >= 6u) { continue; }   // (it must list this cell too: a contact)
-        let oj = clamp(bio[j].kin.x, 0.0, 1.0);
+        let oj = bio_kin_open(j);
         if (oj <= 0.0) { continue; }
         let rj = cells[j].r;
         var ai = 1.0;
         var aj = 1.0;
         if (!blind) {
-          let mt = kin_match(bio[i], bio[j], 0.5 * (c.r + rj) / EP.R);
+          let mt = kin_match_m(bio_mark(i), bio_mark(j), 0.5 * (c.r + rj) / EP.R);   // (step T1b: the displays as expressed)
           ai = kin_accept(mt, bio[i].kin.y);
           aj = kin_accept(mt, bio[j].kin.y);
         }
@@ -1604,7 +1627,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     // its membrane VOLTAGE (into the voltage's store, stock word EVW); the voltage leaks back through the membrane (faster
     // when leaky or damaged), and the energy it frees becomes heat or, with PUF_V2B, partly battery charge
     let puf = pu_flags();
-    var gpu = bio[i].pump;
+    var gpu = bio_pump(i);   // (step T1b: as expressed)
     if ((fg_bits() & FG_PUMP) != 0u) { gpu = vec4f(gpu.xy, gpu.zw * gate_factor(bio[i].gate.y, cell_felt_mean(c))); }   // step C13 (as the plan)
     let pch = vec2u(pump_ch(gpu.x), pump_ch(gpu.y));
     let pz = vec2i(charge_of(EP.qCodes, pch.x), charge_of(EP.qCodes, pch.y));
@@ -1739,7 +1762,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         // that the two signs pass (holes, channels, the stretch path)
         var ionK = 1.0;
         if ((io_flags() & IOF_BLOCK) != 0u && (mb_flags() & MBF_ON) != 0u && (EP.flags & EF_EAT) != 0u) {
-          let chv = ion_chan(bio[i].gate2.w, bio[i].memb.w, (mb_flags() & MBF_SEL) != 0u);
+          let chv = ion_chan(bio_chan(i), bio[i].memb.w, (mb_flags() & MBF_SEL) != 0u);
           var sov = 0.0;
           if ((ws_flags() & (WSF_OSM | WSF_STRETCH)) == (WSF_OSM | WSF_STRETCH) && c.osm > 0.0) { sov = EP.ws[1].z * exp(bio[i].lip.w) * c.osm; }
           ionK = (1.0 - ig) + ig * 0.5 * (ion_open(chv, 1) + ion_open(chv, -1)) + sov;
@@ -1811,7 +1834,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     // heat). Up to fuse.y x the shortfall per s (the larger of the l and the L the sides still want, less what the stock holds)
     // (step C12b: with the lipid membranes on, the oil and soap join the membrane as themselves instead: below)
     if (CP.fuse.x > 0.0 && (mb_flags() & MBF_ON) != 0u && (lp_flags() & LPF_ON) == 0u && (EP.flags & EF_EAT) != 0u && cur != 0u && (EP.mask & (1u << OIL_CH)) != 0u) {
-      let gf = bio[i].memb;
+      let gf = bio_memb(i);
       let wf = max(memb_want(c.r, gf.y), 1.0);
       let mxf = clamp(gf.x, 0.0, 1.0);
       var shL = 0.0;
@@ -1843,7 +1866,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     // at the free linkers' energy); a side holding more than shedAt x it wants lets the extra back into the stock
     let mbf = mb_flags();
     let membOn = (mbf & MBF_ON) != 0u && (EP.flags & EF_EAT) != 0u;
-    let gm = bio[i].memb;
+    let gm = bio_memb(i);   // (step T1b: as expressed)
     var sl: array<i32, 6>;
     var sh: array<i32, 6>;
     for (var k = 0u; k < 6u; k++) { sl[k] = atomicLoad(&stock[o + MB_L0 + k]); sh[k] = atomicLoad(&stock[o + MB_H0 + k]); }
@@ -1897,7 +1920,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       let mbw = membrane(c);
       let uf = vec2f(cos(c.front), sin(c.front));
       let gw = bio[i].wall;
-      let a0 = clamp(bio[i].body.x, 0.0, 1.0);
+      let a0 = clamp(bio[i].body.x * gof(i, GRN_O_GLUE), 0.0, 1.0);   // (step T1b: the glue as expressed)
       // step C13, the glue gate: each side's pattern x (1 + g s_k), s_k what that side felt of field A (the step's Cell.felt)
       let glueG = (fg_bits() & FG_GLUE) != 0u;
       for (var k = 0u; k < 6u; k++) {
@@ -2031,7 +2054,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     atomicAdd(&wm1[M1C_BITE_S], flux[fo + 32u] + flux[fo + 33u]);   // (step M1)
     atomicAdd(&wm1[M1C_BITE_O], flux[fo + 34u]);
     let tmpL = max(bitcast<f32>(flux[fo + 15u]), 1e-4);
-    let gl = bio[i].lip;
+    var gl = bio[i].lip;
+    gl.x *= gof(i, GRN_O_WALL);   // (step T1b: the wall wanted as expressed)
     let oilShare = clamp(gm.x, 0.0, 1.0);
     let wS = select(0.0, want / (1.0 + oilShare), lipOn);                 // soap a side wants (molecules)
     let wO = select(0.0, want * oilShare / (1.0 + oilShare), lipOn);      // oil
@@ -2398,6 +2422,17 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     var b = bio[i];
     // step C13, the engine gate: the engine slots' rates x (1 + g s), s the field A the cell's sides felt (their mean)
     if ((fg_bits() & FG_ENGINE) != 0u) { b.rate = vec4f(b.rate.xyz * gate_factor(b.gate.z, cell_felt_mean(c)), b.rate.w); }
+    // step T1b, the gene network: each slot's rate as EXPRESSED (its output x the gene), a harvest slot's also x the pigment output; the
+    // pigment it builds and wants, the photons it catches and the upkeep below all follow the expressed rate (an engine expressed near 0
+    // costs nothing)
+    if (grn_on()) {
+      var ef = vec3f(gof(i, GRN_O_ENG0), gof(i, GRN_O_ENG0 + 1u), gof(i, GRN_O_ENG0 + 2u));
+      let pf = gof(i, GRN_O_PIG);
+      for (var k = 0u; k < 3u; k++) {
+        if (EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) > 0u) { ef[k] *= pf; }
+      }
+      b.rate = vec4f(b.rate.xyz * ef, b.rate.w);
+    }
     var fpg = 1.0;                                // step N1: the share of the wanted pigment the cell holds (1: light needs no matter)
     var pg = atomicLoad(&stock[o + W_PIG]);       // ... the pigment it holds (counts)
     let pg0 = pg;
@@ -2789,6 +2824,16 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     for (var j = 0u; j < NCELL; j++) { let k = cell_ch(j); fill += f32(m[k]) * ep_f(EP.natoms, k); }
     cells[i].bat = clamp(f32(bat) / f32(batMax), 0.0, 1.0);
     cells[i].fill = clamp(fill / max(cap, 1.0), 0.0, 1.0);
+    // step T1b: what the gene network senses of the cell's inside and its light (src/grn.js; Cell.sns0, sns1)
+    {
+      let ls = select(0.0, 1.0 - exp(-light_factor(LP, c.pos) * caustic_at(c.pos) * EP.nl[1].w), LP.mode != LIGHT_OFF);
+      let tr = cofactor(f32(max(m[CP.trace], 0)) / (ATOM_SCALE * areaR2));
+      let tol = select(EP.tol, bio[i].eng.w, (EP.flags & EF_TOLG) != 0u);
+      let tmp = bitcast<f32>(flux[fo + 15u]) / max(2.0 * tol, 1e-3);
+      cells[i].sns0 = pack4x8unorm(vec4f(ls, grn_amount(m[1] + m[17], cap, GRN_REF_T), grn_amount(m[6] + m[7] + m[8] + m[9], cap, GRN_REF_FUEL),
+                                         grn_amount(m[2] + m[5], cap, GRN_REF_LINK)));
+      cells[i].sns1 = pack4x8unorm(vec4f(tr, clamp(tmp, 0.0, 1.0), 0.0, 0.0));
+    }
 
     // ---- step C6b: the cell's charge, the net charge of its stock (givers minus takers; fuel and sediment are neutral);
     // q saturates (tanh) for field B. With the charge field on it puts its net charge down where it is (cloud in cell:
@@ -3178,14 +3223,14 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
         if ((cm & (1u << k)) == 0u) { continue; }
         let j = cell_nbr(c, k);
         if (j <= i || nbr_side(c.nbr, j) != k || nbr_side(cells[j].nbr, i) >= 6u) { continue; }
-        let mt = kin_match(b, bio[j], 0.5 * (c.r + cells[j].r) / EP.R);
+        let mt = kin_match_m(bio_mark(i), bio_mark(j), 0.5 * (c.r + cells[j].r) / EP.R);   // (step T1b: as the channels see it)
         let ai = kin_accept(mt, b.kin.y);
         let aj = kin_accept(mt, bio[j].kin.y);
         atomicAdd(&wt1s[T1Z_CON], 1);
         atomicAdd(&wt1s[T1Z_KIN], i32(round(mt * 1000.0)));
         if (ai > 0.5 && aj > 0.5) { atomicAdd(&wt1s[T1Z_ACC], 1); }
         if (mt < 0.1) { atomicAdd(&wt1s[T1Z_STR], 1); }
-        atomicAdd(&wt1s[T1Z_OPEN], i32(round(min(gk * ai, clamp(bio[j].kin.x, 0.0, 1.0) * aj) * 1000.0)));
+        atomicAdd(&wt1s[T1Z_OPEN], i32(round(min(bio_kin_open(i) * ai, bio_kin_open(j) * aj) * 1000.0)));
       }
     }
     // step C12e: the waste census (osmosis, who makes and who takes in the free t, the two stretch genes)

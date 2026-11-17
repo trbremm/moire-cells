@@ -46,6 +46,7 @@ import { Division, STATS_DIV, STATS_CLAIM, DIV_SNAP } from './division.js';
 import { Walls, STATS_WALL, WALL_WORDS } from './walls.js';
 import { Guides, STATS_FG, FG_WORDS, FG_CLEAR } from './guides.js';
 import { Kin } from './kin.js';
+import { Grn } from './grn.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 import { cultureLayout } from './culture.js';   // app: how a new culture is spread
 
@@ -59,7 +60,8 @@ export const CELL_URL = 'src/shaders/cell_common.wgsl';
 // mature[3] (65: each side's junction maturity, 16 bits), wadh[2] (68: each side's effective adhesion, 8 bits), wlink (70), wpay (71);
 // step C12b, lipid membranes (src/lipids.js): lip[6] (72: per side, 4 x 8 bits: stiffness, the wall's heavy share, oil share, wall cover);
 // step C13, fields as genes and guides (src/guides.js): fg[4] (78: the field genes the beat needs, f16 deltas), felt[2] (82: what each side felt)
-// step C12e, osmosis on the ions (src/waste.js): osm (84: the swelling), osmP (85: the osmotic pressure), 86, 87 spare
+// step C12e, osmosis on the ions (src/waste.js): osm (84: the swelling), osmP (85: the osmotic pressure); step T1b:
+// sns0, sns1 (86, 87: the senses the eat pass hands the gene network, 4 x 8 bits each; spare until T1b)
 export const CELL_FLOATS = 88;
 export const CELL_BYTES = CELL_FLOATS * 4;
 const CELL_CORE_BYTES = 120;   // step C6c: struct CellCore (the grid's sorted copy: Cell without the outline and per-side slots;
@@ -84,7 +86,7 @@ const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
 const FIELDS_BYTES = 448;      // struct Fields in cell_common.wgsl (step T1a: + t1; step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
                                // step C9: + dv0..dv2; step C10: + wl0, wl1)
 const FIELD_FORMAT = 'rgba16float';
-const DRAW_BYTES = 1232;       // struct Draw in cell_draw.wgsl (step T1a: + kin, 1216 until then; step H1: + harm, harm2, harm3, harm4, hInk[5] after cam, 1072 until then; app: + cam, 1056 until then; step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
+const DRAW_BYTES = 1280;       // struct Draw in cell_draw.wgsl (step T1b: + grn, grnInk, grnInkH, 1232 until then; step T1a: + kin, 1216 until then; step H1: + harm, harm2, harm3, harm4, hInk[5] after cam, 1072 until then; app: + cam, 1056 until then; step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
                                // step C6d: + the dipoles)
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
@@ -343,6 +345,7 @@ export class Cells {
     this.walls = new Walls(this);         // step C10: patterned walls, evolvable adhesion per side (src/walls.js)
     this.guides = new Guides(this);       // step C13: fields as genes and guides (src/guides.js)
     this.kin = new Kin(this);             // step T1a: an inside, kin channels, the self marker (src/kin.js)
+    this.grn = new Grn(this);             // step T1b: the gene regulatory network, the reporter view (src/grn.js)
   }
 
   static async create(device, format, medium, count, seed, cap = 0) {
@@ -354,7 +357,7 @@ export class Cells {
   async init() {
     const d = this.device;
     const pre = [HEAT_COMMON_URL, CELL_URL];
-    const [drawMod, gridMod, checkMod, stepMod, censusMod, fieldMod, heat, glowMod] = await Promise.all([
+    const [drawMod, gridMod, checkMod, stepMod, censusMod, fieldMod, heat, glowMod, grnMod] = await Promise.all([
       loadFieldShader(d, 'src/shaders/cell_draw.wgsl', pre),
       loadFieldShader(d, 'src/shaders/cell_grid.wgsl', pre),
       loadFieldShader(d, 'src/shaders/cell_check.wgsl', pre),
@@ -363,6 +366,7 @@ export class Cells {
       loadFieldShader(d, 'src/shaders/cell_field.wgsl', pre),
       Heat.create(d),
       loadFieldShader(d, 'src/shaders/cell_glow.wgsl', pre),
+      loadFieldShader(d, 'src/shaders/cell_grn.wgsl', pre),   // step T1b: the gene network
     ]);
     this.heat = heat;           // step C1: the heat band (src/heat.js)
     this.eat = null;            // step C5: the cells' stock and battery (src/eat.js; made at the end of init)
@@ -405,6 +409,7 @@ export class Cells {
     // (binding 10 held the nutrient and threat sources until step C3)
     this.stepL = layout('cell step', [sim, ro(1), ro(3), rw(4), rw(5), ro(6), rw(7), rw(8), un(9), ro(11), un(12), un(13)]);
     this.censusL = layout('cell census', [sim, ro(1), ro(2), rw(3)]);
+    this.grnL = layout('cell grn', [sim, ro(1), rw(2), ro(3), un(4), un(5)]);   // step T1b (src/grn.js makes its bind groups)
     this.checkL = layout('cell check', [sim, ro(1), ro(2), ro(3), ro(4), ro(5), rw(6),
       { binding: 7, visibility: C, buffer: { type: 'uniform' } }]);
     const pipe = (L, module, entryPoint) => d.createComputePipeline({
@@ -415,6 +420,7 @@ export class Cells {
     this.pipes.step = pipe(this.stepL, stepMod, 'step');
     this.pipes.check = pipe(this.checkL, checkMod, 'check');
     this.pipes.census = pipe(this.censusL, censusMod, 'census');
+    this.pipes.grn = pipe(this.grnL, grnMod, 'grn');
 
     const U = GPUBufferUsage;
     const n = this.count;
@@ -700,6 +706,7 @@ export class Cells {
     this.walls.writeFields(u, f, 96);          // step C10: patterned walls (Fields.wl0, wl1)
     this.guides.writeFields(u, f, 104);        // step C13: fields as genes and guides (Fields.fg0)
     this.kin.writeFields(u, f, 108);           // step T1a: the self marker's clock (Fields.t1)
+    this.grn.writeFields(u, f, 110);           // step T1b: the gene network's outputs act (Fields.t1.z), field B's sense scale (t1.w)
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -737,6 +744,9 @@ export class Cells {
   }
 
   compute(encoder, frame) {
+    // step T1b: the cell types' census (a read-back every few s of simulated time), before this frame's ticks are encoded: bioCur still
+    // names the genome copy the queue holds now
+    this.grn.maybeCensus(frame.time);
     if (this.gridSize() !== this.grid.cs) this.sizeGrid();   // params.cut or range changed
     // after a reset, the warm-up ticks run first (all in this frame, at the current time)
     const warm = Math.min(this.warm, SLOTS - frame.ticks);
@@ -769,6 +779,7 @@ export class Cells {
       // ?check runs between the grid build and the move, so both see the same positions
       if (t === ticks - 1) this.maybeCheck(encoder, t, frame);
       this.encodeStep(encoder, t);
+      this.grn.encodeTick(encoder, t, SLOT);   // step T1b: the gene network (after the step, before the cells eat: its newborns still marked)
       this.eat.encodeTick(encoder, t, SLOT);   // step C5: the cells eat (after their step, before the dish spreads)
       this.heat.encodeTick(encoder, t, M && t >= warm ? (pass) => M.encodeTick(pass, t - warm) : null);
     }
@@ -1369,6 +1380,7 @@ export class Cells {
     const HM = look.harmonic;            // step H1: the harmonic look (src/harmonic.js)
     if (HM) HM.writeCells(a, 268);
     this.kin.writeDraw(a, 304, L, camera.z);   // step T1a: the lineage (marker) view, the marker's texture when zoomed in
+    this.grn.writeDraw(a, 308, L);             // step T1b: the reporter view
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     pass.setPipeline(HM ? this.harmPipe : this.drawPipe);
     pass.setBindGroup(0, (HM ? this.harmBGs : this.drawBGs)[this.bioCur]);

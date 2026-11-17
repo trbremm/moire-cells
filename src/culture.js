@@ -3,7 +3,8 @@
 // light go, so every preset opens by URL (?preset=vent) and can be shared as a link.
 //
 // URL options (read by src/main.js before anything else; a preset's own options never override the URL's):
-//   ?preset=name        vent | shallows | oxygen | slick | desert | oases | plumes | lab (PRESETS below; step N1: oases, plumes)
+//   ?preset=name        vent | shallows | oxygen | slick | desert | oases | plumes | colonies | lab (PRESETS below; step N1: oases, plumes;
+//                       step T1b: colonies)
 //   ?spread=clump|scatter|colonies|ring   how the founders are placed (default clump: the old blob at the centre); with any
 //                       spread but clump the pull to the dish centre is nearly off (squeeze 0.02), so the culture stays spread
 //   ?colonies=N         how many colonies (spread=colonies; default 5)
@@ -114,6 +115,22 @@ export const PRESETS = {
       oases.start([[0.5 * W, 0.15 * H], [0.86 * W, 0.6 * H]]);
     },
   },
+  // step T1b: colonies that MEET (T1a found random colonies crash and one lineage fills each dish): each colony its own lasting food
+  colonies: {
+    label: 'Colonies',
+    desc: 'Five colonies of wild founders (every gene, the gene network too, drawn at random; each catches light and burns, so it can eat here), each with its own never-drying mineral spring and a slow vent beside it, under a moderate light over the whole dish. Each lineage has a home; they grow out and meet at the borders. Watch the lineage view (who holds the border) and the reporter view (which cells switch which genes on).',
+    query: { light: 'full', spread: 'colonies', colonies: 5, founders: 'wild', habit: 'both', cells: 1000, scarce: 0, oases: 0 },
+    scene({ matter, light, cells, W, H }) {
+      light.params.power *= 0.6;   // a moderate light: enough to live on, not enough to fill the dish at once
+      const k = Math.max(2, (cells.layout && cells.layout.colonies) || 5), m = Math.min(W, H);
+      for (let j = 0; j < k; j++) {
+        const a = (j / k) * 2 * Math.PI - Math.PI / 2, x = W / 2 + Math.cos(a) * 0.3 * m, y = H / 2 + Math.sin(a) * 0.3 * m;
+        // (rates from the pilots: at 4 and 1 the founders' crash left one lineage per dish in 2 of 3 seeds; at 8 and 2, two or three persist)
+        matter.addSpring(x, y, 'light', 1e9, { rate: 8 });                                          // its mineral spring, at its centre
+        matter.addSpring(x + Math.cos(a) * 0.08 * m, y + Math.sin(a) * 0.08 * m, 'heavy', 1e9, { rate: 2 });   // a slow vent outside it
+      }
+    },
+  },
   lab: {
     label: 'Tissue lab',
     desc: 'Sixty cells of one cloned genome, no evolution (no mutation, no births or deaths) and no springs: watch how they link into tissue, as the tissue experiments did.',
@@ -131,7 +148,7 @@ const FOUNDER_WORD = { std: 'as usual', blank: 'blank', wild: 'wild' };   // (st
 const FOUNDER_HELP = {
   std: 'the founders’ genes as usual (no kin channels yet: they must evolve)',
   blank: 'the newer abilities at zero: no pumps, no guide gates, no kin channels, uniform walls; they must evolve',
-  wild: 'every gene drawn over its whole range: field genes, gates, pumps, walls, membranes, marker, kin channels (engines keep their habit)',
+  wild: 'every gene drawn over its whole range: field genes, gates, pumps, walls, membranes, marker, kin channels, a random gene network (engines keep their habit)',
 };
 
 function ring3(W, H, r, a0) {

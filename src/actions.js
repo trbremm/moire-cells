@@ -65,13 +65,14 @@ export const RULE_GROUPS = [
   ['ions', 'Ion flow (step C12g)'],
   ['whole', 'Whole membranes (step M1)'],
   ['t1a', 'Tissues 1: inside, kin, marker (step T1a)'],
+  ['t1b', 'Gene network (step T1b)'],
   ['vents', 'Vents in the dark (step C12f)'],
   ['n1', 'Nutrient landscape (step N1)'],
   ['guides', 'Fields as guides (step C13)'],
   ['state', 'Save and load the state (experiments)'],
 ];
 
-export const VIEWS = ['fate', 'lineage', 'strategy', 'charge', 'walls', 'guides', 'marker'];   // key V: what the cells' bodies are coloured by (cells.look.view;
+export const VIEWS = ['fate', 'lineage', 'strategy', 'charge', 'walls', 'guides', 'marker', 'reporter'];   // key V: what the cells' bodies are coloured by (cells.look.view;
                                                                          // step C10: + the wall pattern)
 
 export const SQUEEZE_SOFT = 0.25, SQUEEZE_HARD = 1.2;   // key \ : cells.params.squeeze, normal or pressed together
@@ -716,6 +717,36 @@ export function makeActions(app) {
       help: 'std: today’s founders; blank: the new abilities at 0 (they must evolve); wild: every gene drawn over its whole range' },
   );
 
+  // ---------- the gene network (step T1b; panel only: no keys are free) ----------
+  const GNP = () => app.cells.grn.params;
+  const grknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 't1b', type: 'knob', get: () => GNP()[key].toFixed(digits),
+    run: (k) => { const p = GNP(); p[key] = Math.max(lo, Math.min(hi, +(p[key] * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    { id: 'grn', keys: [], label: 'gene network', group: 't1b', type: 'toggle', get: () => GNP().on,
+      run: () => `the gene network ${flip(GNP(), 'on') ? 'runs: 8 regulators per cell, expression set by the cell’s senses and each other, modulating its genes (engines, pigment, wall, glue, pumps, …)' : 'is frozen and has no effect (as before step T1b)'}`,
+      help: 'x ← x + dt/τ (sigmoid(b + Σ w·source) − x); each output multiplies a gene by exp(u·x); upkeep follows the expressed engine rates' },
+    { id: 'grnnull', keys: [], label: 'gene network neutral control', group: 't1b', type: 'toggle', get: () => GNP().null,
+      run: () => `the gene network’s outputs ${flip(GNP(), 'null') ? 'have NO effect (NEUTRAL CONTROL: it still runs and mutates)' : 'act'}`,
+      help: 'the neutral control: the network runs and drifts but changes nothing, to tell selection from noise' },
+    { id: 'grnsignal', keys: [], label: 'contact signal', group: 't1b', type: 'toggle', get: () => GNP().signal,
+      run: () => `the contact signal ${flip(GNP(), 'signal') ? 'is sensed: each cell feels the mean of the regulator its touching neighbours broadcast' : 'is off (that sense reads 0)'}`,
+      help: 'each cell broadcasts one regulator (a gene); the mean over its touching neighbours is one of its senses' },
+    { id: 'grnkin', keys: [], label: 'signal weighted by kinship', group: 't1b', type: 'toggle', get: () => GNP().kinWeight,
+      run: () => `the contact signal ${flip(GNP(), 'kinWeight') ? 'is weighted by kinship (the marker) as far as each cell’s gene says' : 'counts every neighbour alike'}`,
+      help: 'weight = mix(1, kin accepted, the gene): a cell may listen to kin only' },
+    { id: 'grnmut', keys: [], label: 'network mutates', group: 't1b', type: 'toggle', get: () => GNP().mutate,
+      run: () => `the network ${flip(GNP(), 'mutate') ? 'mutates at births (with key M): weights nudged, inputs rewired, outputs moved, regulators duplicated' : 'is copied exactly at birth'}`,
+      help: 'weights, biases and gains in use nudged; rarely an input rewired, an output moved, a regulator duplicated' },
+    { id: 'reporter', keys: [], label: 'reporter', group: 't1b', type: 'cycle', get: () => `r${app.cells.grn.look.reporter}`,
+      options: () => ['r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7'],
+      set: (v) => { app.cells.grn.look.reporter = Math.max(0, Math.min(7, Number(String(v).replace('r', '')) || 0)); return `reporter shows regulator r${app.cells.grn.look.reporter}`; },
+      run: () => { const L = app.cells.grn.look; L.reporter = (L.reporter + 1) % 8; return `reporter shows regulator r${L.reporter} (view: reporter, key V)`; },
+      help: 'which regulator the reporter view lights up (key V cycles to the view)' },
+    grknob('grnTau', 'expression time', 'tau', 0.2, 100, 1.5, 1, 'the expression’s time constant (s): how fast a cell changes state'),
+    grknob('grnRewire', 'rewiring', 'rewire', 0.001, 1, 1.5, 3, 'chance per birth that one input is rewired (or cut)'),
+    grknob('grnDup', 'duplication', 'dup', 0.0001, 0.5, 1.5, 4, 'chance per birth that one regulator is duplicated into the least used slot'),
+  );
+
   // ---------- vents in the dark (step C12f; panel only: no keys are free) ----------
   const VP = () => app.matter.vents.params;
   const vknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'vents', type: 'knob', get: () => VP()[key].toFixed(digits),
@@ -926,6 +957,7 @@ export function makeActions(app) {
         : v === 'walls' ? 'colour by wall pattern (step C10): coral polar, mint two-ended, magenta sticky sides, grey uniform; bright tube = sticky side'
           : v === 'guides' ? 'colour by strongest guide (step C13): ivory glue, teal pumps, green engines, lilac division, yellow turning, grey unguided; each side’s tube bright where it feels the field high, dark where low'
           : v === 'marker' ? 'colour by lineage, the self marker (step T1a): each family its own hue, close relatives close hues (the marker drifts at every birth, a molecular clock)'
+          : v === 'reporter' ? `reporter view (step T1b): cells glow green as far as they express regulator r${app.cells.grn.look.reporter} (like a GFP reporter line; the harmonic look shows it as a red channel)`
           : 'colour by fate';
   }
 

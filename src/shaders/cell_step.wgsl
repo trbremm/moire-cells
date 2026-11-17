@@ -176,6 +176,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // emitter's magnitude: like repels like by the genes' signs)
   let myQB = cell_charge_b(FL, c) * select(1.0, fg_sgn_b(c), FL.qStock == 2u) + FL.leak * me.lk.w * myQA;
   var gB = vec2f(0.0);
+  var bFelt = 0.0;          // step T1b: field B's value at the cell (the gene network senses it, Cell.felt[1] byte 2)
   // rule 2 (step 6), conversion: how much A this cell feels at its centre (its neighbours' A field, tuned)
   var aFelt = 0.0;
   // step 8, rule b: ... and how much of the partner A' (as aFelt, the phases shifted a quarter period)
@@ -317,7 +318,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
             w *= exp(-pickB * lattice_dist2(me.b01.xy, me.b01.zw, me.b2a.xy, ob.b01.xy, ob.b01.zw, ob.b2a.xy) / (1.5 * kB0 * kB0));
           }
           if (w != 0.0) {
-            if (ob.b2a.z != 0.0) { gB += w * cell_field_b(ob, c.pos, cutB).xy; }
+            if (ob.b2a.z != 0.0) { let fbv = cell_field_b(ob, c.pos, cutB); gB += w * fbv.xy; bFelt += w * fbv.z; }
             if (ob.lk.z != 0.0) { gB += w * cell_field_leak(ob, c.pos, cutB).xy; }   // its leaked B (rule 1)
           }
         }
@@ -404,7 +405,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
             let sa = S.adhSigma;
             let like = exp(-key_dist2(c.la, c.aux, o.la, o.aux) / (2.0 * sa * sa));
             let fateGlue = select(0.0, S.fateAdh, o.kind == c.kind && c.kind != KIND_STEM);
-            var stick = sqrt(max(bio.body.x * ob.body.x, 0.0)) * like + fateGlue;
+            var stick = sqrt(max(bio.body.x * gofP(i, GRN_O_GLUE) * ob.body.x * gofP(beats[k].idx, GRN_O_GLUE), 0.0)) * like + fateGlue;   // (step T1b: as expressed)
             // The pull fades out below 0.85 x contact distance, so sticky cells touch without piling up.
             let near = clamp((dist / R0 - 0.85) / 0.15, 0.0, 1.0);
             if (wallOn) {
@@ -742,7 +743,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var mot = 1.0;
   if (S.body > 0.0) {
     size = mix(1.0, bio.body.y * fate_size(c.kind), S.body);
-    mot = mix(1.0, bio.body.z * fate_motility(c.kind), S.body);
+    mot = mix(1.0, bio.body.z * gofP(i, GRN_O_MOT) * fate_motility(c.kind), S.body);   // (step T1b: the motility as expressed)
   }
   // crawling: each cell slowly wanders on its own heading (Bio.body.w), a persistent random walk, so the
   // tissue stays fluid enough for cells to change neighbours and sort out
@@ -1154,7 +1155,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         atomicAdd(&stats.div[DV_READY], 1u);
         if (comp > FL.dv0.z) { atomicAdd(&stats.div[DV_CROWDED], 1u); }
       }
-      if (comp <= FL.dv0.z && rand01(c.seed ^ 0x51ed270bu, S.tick) < FL.dv0.w * S.dt) {
+      if (comp <= FL.dv0.z && rand01(c.seed ^ 0x51ed270bu, S.tick) < FL.dv0.w * gofP(i, GRN_O_DIV) * S.dt) {   // (step T1b: readiness as expressed)
         let t = atomicAdd(&stats.claim, 1u);
         if (t < S.count - aliveN) {
           let k = beats[aliveN + t].idx;          // a free slot (dead at this tick's grid build)
@@ -1208,7 +1209,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
             d.front = c.front;
             if (hexShape) { d.theta = c.theta; d.rad = c.rad; d.ea = c.ea; d.alpha = c.alpha; d.flags |= CELL_HEX; }
           }
-          d.fg = fg_words(nb, fgOn);              // step C13: her field genes for her beat at once
+          d.fg = fg_words(nb, fgOn, gofP(i, GRN_O_EMA), gofP(i, GRN_O_EMB));   // step C13: her field genes for her beat at once (T1b: her
+                                                                                 //  mother's expression, which she inherits)
           if (gStr > 0.05) {                      // step C13's census: the axis against the felt gradient (cumulative)
             atomicAdd(&stats.fg[FGS_DIVN], 1u);
             atomicAdd(&stats.fg[FGS_DIVC], u32(round(abs(cos(ang - atan2(gDir.y, gDir.x))) * 1000.0)));
@@ -1331,8 +1333,10 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let sRef = max(FL.fg0.y, 1e-3);
   var sk = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
   if (sensing && !died && c.seed == sorted[j].seed) { for (var a = 0; a < 6; a++) { sk[a] = tanh(seg[a] / sRef); } }
-  c.felt = array<u32, 2>(pack4x8snorm(vec4f(sk[0], sk[1], sk[2], sk[3])), pack4x8snorm(vec4f(sk[4], sk[5], 0.0, 0.0)) & 0xffffu);
-  c.fg = fg_words(bio, fgOn && !died);
+  // (step T1b: byte 2 of word 1, field B felt at the cell, tanh(sensing gene x B x bRef), for the gene network)
+  let bS = select(0.0, tanh(senseB * bFelt * FL.t1.w), !died && feelB);
+  c.felt = array<u32, 2>(pack4x8snorm(vec4f(sk[0], sk[1], sk[2], sk[3])), pack4x8snorm(vec4f(sk[4], sk[5], bS, 0.0)) & 0xffffffu);
+  c.fg = fg_words(bio, fgOn && !died, gofP(i, GRN_O_EMA), gofP(i, GRN_O_EMB));
   if (S.xCount != 0u && !died) {
     fg_census(bio, sk, gStr, fgF, me);
     // where the front points against the felt gradient (the turn gate's mark), and where the contacts sit against what the sides feel
@@ -1419,10 +1423,19 @@ fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
   return nb;
 }
 
+// step T1b: cell i's factor for the gene network's output o (cell_common.wgsl GRN_*), from its genome at the tick's start (1 while the
+// outputs do not act)
+fn gofP(i: u32, o: u32) -> f32 {
+  if ((bitcast<u32>(FL.t1.z) & GRN_ACT) == 0u) { return 1.0; }
+  let j = grn_reg(bioPrev[i].go, o);
+  return grn_fac(bioPrev[i].gu[o >> 2u][o & 3u], bioPrev[i].gx[j >> 2u][j & 3u]);
+}
+
 // step C13: the field-gene words a cell's beat uses (Cell.fg), from its genome: deltas from today's values (all 0 while off)
-fn fg_words(b: Bio, on: bool) -> array<u32, 4> {
+// (step T1b: the emissions x the gene network's outputs ea, eb)
+fn fg_words(b: Bio, on: bool, ea: f32, eb: f32) -> array<u32, 4> {
   if (!on) { return array<u32, 4>(0u, 0u, 0u, 0u); }
-  return array<u32, 4>(pack2x16float(vec2f(b.fa.x - 1.0, b.fa.y - 1.0)), pack2x16float(vec2f(b.fb.x - 1.0, b.fb.y - 1.0)),
+  return array<u32, 4>(pack2x16float(vec2f(b.fa.x - 1.0, b.fa.y * ea - 1.0)), pack2x16float(vec2f(b.fb.x - 1.0, b.fb.y * eb - 1.0)),
                        pack2x16float(b.fx.xy), pack2x16float(vec2f(b.fx.z, select(-1.0, 1.0, b.fb.z >= 0.0))));   // (step C12g: B's sign)
 }
 

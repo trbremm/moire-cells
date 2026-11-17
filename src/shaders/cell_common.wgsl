@@ -98,8 +98,10 @@ struct Cell {
                     // relaxes toward the osmotic pressure over the membrane's stiffness); the step grows the radius toward
                     // S.R x size x sqrt(1 + osm); 0 while osmosis is off
   osmP: f32,        // the osmotic PRESSURE (free ions inside - outside, per unit of the stock's capacity; the plan pass), for the census
-  osm2: f32,        // spare
-  osm3: f32,        // spare
+  // ---- step T1b, the gene network's senses (src/grn.js; written by the eat pass, read by the gene network's pass) ----
+  sns0: u32,        // pack4x8unorm: x the LIGHT at the cell (1 - e^-(light x caustic x the day's level)), y the free t (oxygen-like) inside, z the
+                    // FUEL inside, w the free LINKERS inside (each 1 - e^-(amount / (capacity x its ref)))  (osm2, spare, until step T1b)
+  sns1: u32,        // pack4x8unorm: x TRACE (the cofactor it gives, 0..1), y HEAT (the temperature / twice the cell's tolerance), z w spare
 };
 // step C13: a cell's field-gene words (Cell.fg) as numbers
 fn fg_a(c: Cell) -> vec2f { return unpack2x16float(c.fg[0]); }   // A: lever factor - 1, emission - 1
@@ -388,7 +390,42 @@ struct Bio {
                     // spacing in R: ln 0.12 .. ln 0.5), z its PHASE (rad, 0..2 pi); w the DISPLAY gene (0..1): how much of it the cell shows
   kin: vec4f,       // x the KIN CHANNELS gene (0..1: how far the cell opens gap junctions to a recognised neighbour), y the TOLERANCE (0..1:
                     // it accepts a neighbour whose marker matches at least 1 - tolerance); z w spare (P1: engulf, kin sparing)
+  // ---- step T1b: the GENE REGULATORY NETWORK (src/grn.js, cell_grn.wgsl; README "Step T1b") ----
+  gx: array<vec4f, 2>,  // STATE, not genes: the 8 regulators' EXPRESSION x_0..x_7 (0..1), inherited by daughters (cell memory)
+  gb: array<vec4f, 2>,  // the regulators' BIAS b_i
+  gw: array<vec4f, 6>,  // the input WEIGHTS: regulator i's input k (0..2) at 3 i + k
+  gi: array<vec4f, 2>,  // the INPUT CODES, regulator i's three inputs as one whole number a + 32 b + 1024 c, each a source: 0 none, 1..8 the
+                        // regulators x_0..x_7, 9..22 the senses (GRN_S* in cell_grn.wgsl)
+  gu: array<vec4f, 4>,  // the OUTPUT GAINS u_o, o = 0..15 (GRN_O_*): output o's factor exp(u_o x_j), j the regulator it reads (0 = no effect)
+  go: vec4f,            // which regulator each output reads, four to a word: o0 + 8 o1 + 64 o2 + 512 o3 (outputs 4 w .. 4 w + 3)
+  gm: vec4f,            // x the regulator the cell BROADCASTS to touching neighbours (0..7; the contact signal), y how far the contact signal
+                        // is weighted by KINSHIP (0..1: 0 every neighbour alike, 1 kin only), z w spare
 };
+// step T1b: the gene network's outputs (Bio.gu, Bio.go): each output multiplies an existing gene (its base level) by exp(u x) (at most
+// GRN_FMAX); a cell switches an engine off by expressing a regulator its output reads with a strongly negative gain
+const GRN_R: u32 = 8u;           // regulators
+const GRN_FMAX: f32 = 4.0;       // the largest factor an output gives
+const GRN_UMAX: f32 = 8.0;       // |u| at most
+const GRN_O_PIG: u32 = 0u;       // the pigment (the harvest slots' rate: their pigment and what it wants)
+const GRN_O_ENG0: u32 = 1u;      // engine slot 0's rate (1, 2, 3: slots 0, 1, 2); upkeep follows the expressed rate
+const GRN_O_WALL: u32 = 4u;      // the crust wall wanted (Bio.lip.x)
+const GRN_O_THICK: u32 = 5u;     // the membrane's thickness (Bio.memb.y)
+const GRN_O_STIFF: u32 = 6u;     // the stiffness gene (Bio.memb.z)
+const GRN_O_GLUE: u32 = 7u;      // the glue a0 (Bio.body.x)
+const GRN_O_PUMP: u32 = 8u;      // both pump slots' rates (Bio.pump.zw)
+const GRN_O_CHAN: u32 = 9u;      // the ion channels' level (Bio.gate2.w, a log factor: + ln f)
+const GRN_O_KIN: u32 = 10u;      // the kin channels' opening (Bio.kin.x)
+const GRN_O_DISP: u32 = 11u;     // the marker's display (Bio.mark.w)
+const GRN_O_DIV: u32 = 12u;      // division readiness (the chance per s to divide, once able)
+const GRN_O_MOT: u32 = 13u;      // motility (Bio.body.z)
+const GRN_O_EMA: u32 = 14u;      // field A's emission (Bio.fa.y)
+const GRN_O_EMB: u32 = 15u;      // field B's emission (Bio.fb.y)
+// Fields.t1.z, EatP t1[1].z bits
+const GRN_ACT: u32 = 1u;         // the network's outputs act (the network is on and not the neutral control)
+// output o's regulator (0..7) from its code word
+fn grn_reg(go: vec4f, o: u32) -> u32 { return (u32(max(go[o >> 2u], 0.0)) >> (3u * (o & 3u))) & 7u; }
+// ... and its factor at gain u and that regulator's expression x
+fn grn_fac(u: f32, x: f32) -> f32 { return min(exp(clamp(u, -GRN_UMAX, GRN_UMAX) * clamp(x, 0.0, 1.0)), GRN_FMAX); }
 // step T1a: the marker's period range (ln of the stripe spacing in R)
 const MARK_PLO: f32 = -2.1202635;   // ln 0.12
 const MARK_PHI: f32 = -0.6931472;   // ln 0.5
@@ -397,12 +434,14 @@ const MARK_PHI: f32 = -0.6931472;   // ln 0.5
 // patterns beat slowly (N << 1: one bright band over the whole wall, a match), different ones beat fast (many fringes that average
 // out: a stranger). The beat's contrast over the wall exp(-(pi N)^2 / 6) (the sinc's own start), times how far their phases are in
 // register (1 + cos dpsi) / 2, times what both cells DISPLAY (a hidden pattern cannot beat)
-fn kin_match(a: Bio, b: Bio, ell: f32) -> f32 {
-  let qa = exp(-a.mark.y) * vec2f(cos(a.mark.x), sin(a.mark.x));
-  let qb = exp(-b.mark.y) * vec2f(cos(b.mark.x), sin(b.mark.x));
+fn kin_match(a: Bio, b: Bio, ell: f32) -> f32 { return kin_match_m(a.mark, b.mark, ell); }
+// ... from the two markers (step T1b: w the display as EXPRESSED, the gene x the gene network's display output)
+fn kin_match_m(ma: vec4f, mb: vec4f, ell: f32) -> f32 {
+  let qa = exp(-ma.y) * vec2f(cos(ma.x), sin(ma.x));
+  let qb = exp(-mb.y) * vec2f(cos(mb.x), sin(mb.x));
   let n = length(qa - qb) * ell;   // (|dq| = 2 pi |qa - qb| in units of 1/R, so N = |qa - qb| ell)
   let beat = exp(-9.8696044 * n * n / 6.0);
-  return beat * (0.5 + 0.5 * cos(a.mark.z - b.mark.z)) * clamp(a.mark.w, 0.0, 1.0) * clamp(b.mark.w, 0.0, 1.0);
+  return beat * (0.5 + 0.5 * cos(ma.z - mb.z)) * clamp(ma.w, 0.0, 1.0) * clamp(mb.w, 0.0, 1.0);
 }
 // ... a cell ACCEPTS a match m as kin as far as m is above 1 - its tolerance (fully 0.1 above it)
 fn kin_accept(m: f32, tol: f32) -> f32 {
@@ -987,7 +1026,7 @@ struct Fields {
                     // a full gradient and a right angle); w spare
   // ---- step T1a, the self marker (src/kin.js) ----
   t1: vec4f,        // x bits T1S_* (u32); y the molecular clock's size (1: the marker's angle drifts 0.02 rad, its period's log 0.01,
-                    // its phase 0.05 rad per birth); z w spare
+                    // its phase 0.05 rad per birth); z step T1b: bits GRN_* (u32: the gene network's outputs act); w spare
 };
 // step T1a: Fields.t1.x bits
 const T1S_CLOCK: u32 = 1u;        // the marker drifts at every birth (with mutation, or hard light's extra)

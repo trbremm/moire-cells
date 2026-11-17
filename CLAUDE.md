@@ -599,6 +599,18 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        the spotlight), so lineages barely meet; kin genes and display drift like the null (every neighbour is kin);
        rim/inside gradients are geography; trace smell x2.3-2.5 at oases at 10 min; M1 oxygen finding CONFIRMED on seed 7
        (self-burners 51 vs 384 outside breathers).
+       AS BUILT (T1b, 2026-11-17): src/grn.js + cell_grn.wgsl. 8 regulators (x 0..1, inherited), <= 3 inputs each,
+       tau 5 s; 14 senses (contacts, fields A/B, battery, swelling, integrity, light, free t, fuel, linkers, trace, heat,
+       a neighbours' broadcast signal, kin-weighted); 16 outputs = gene x min(exp(u.x), 4) (pigment, engines, wall,
+       thickness, stiffness, glue, pumps, channels, kin channel, display, division, motility, emission A/B); upkeep only
+       for EXPRESSED engines and pigment. Mutation nudges, rewires (0.05), retargets outputs (0.03), duplicates (0.005).
+       Std/blank founders have no network (factors exactly 1); wild founders random sparse. Reporter view (neon green
+       tubes; harmonic red mCherry-like nuclei), k-means cell-type census (GENES line), preset `colonies` (5 wild colonies,
+       each own lasting spring + slow vent). Bio 84 -> 156 floats; speed -9..16 %. RESULT: 5-6 real cell types per
+       lineage (engine x3.7, pigment x3.2...), in CLONAL PATCHES (~2x chance), not in positions; the neutral control
+       looks the same, so types are inherited clones, not induced. Founders' crash still picks the winner (same winner
+       with network on or null). Dark vents still die: gradient engines cost more than they earn there. Nothing yet
+       rewards cells for differing from neighbours. Old bug found: G at the instant of a resize leaks ~650 atoms.
 C12g. MEMBRANES MODULATE ION FLOW (user 2026-11-16 "Yes, membranes modulate ion flow"; after C12f, same files).
     C12e found ions cross the membrane as easily as anything, so osmosis barely bites and cells keep their own oxygen.
     - The lipid BILAYER blocks free ions (g t G T), derived from its make-up: an intact soap/oil bilayer passes ions at a

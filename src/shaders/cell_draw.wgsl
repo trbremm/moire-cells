@@ -112,7 +112,23 @@ struct Draw {
   harm3: vec4f,     // x violet: the engines' granules; y orange: streaks along a strong stretch; z muscle's striations; w cartilage
   harm4: vec4f,     // x orange: a crust wall; y the rim's gap from the wall, share of the neon tubes' (0 = shared walls); z w spare
   hInk: array<vec4f, 5>,      // green, orange, yellow, red (heavy chains), violet
+  // ---- step T1a: the self marker's look (src/kin.js writeDraw) ----
+  kin: vec4f,       // x: 1 = the lineage (marker) view (mode 6); y: the marker's texture on the tube (its depth; 0 = not drawn: zoomed out);
+                    // z: the marker view's body fill; w: its hues' saturation
 };
+// step T1a: the self marker as a colour (Brainbow-like lineage tracing): its angle sets the hue round the colour wheel (close relatives,
+// close hues), its period the brightness (fine stripes paler), saturation w
+fn marker_colour(g: Bio, sat: f32) -> vec3f {
+  let h = g.mark.x / TAU;
+  let rgb = 0.55 + 0.45 * sat * cos(TAU * (h + vec3f(0.0, -1.0 / 3.0, 1.0 / 3.0)));
+  let v = 0.8 + 0.35 * clamp((g.mark.y - MARK_PLO) / (MARK_PHI - MARK_PLO), 0.0, 1.0);
+  return max(rgb, vec3f(0.0)) * v;
+}
+// ... and as the fine stripe pattern on the membrane (the offset p from the centre, CSS px; R the cells' radius): 0..1 (1 at a stripe)
+fn marker_stripe(g: Bio, p: vec2f, R: f32) -> f32 {
+  let q = TAU / (R * exp(g.mark.y)) * vec2f(cos(g.mark.x), sin(g.mark.x));
+  return 0.5 + 0.5 * cos(q.x * p.x + q.y * p.y + g.mark.z);
+}
 
 @group(0) @binding(0) var<uniform> D: Draw;
 @group(0) @binding(1) var<storage, read> cells: array<Cell>;
@@ -355,6 +371,9 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     col = D.gdInk[gb].rgb;
     gdFill = D.gd.z * select(0.25, clamp(gm, 0.25, 1.0), gb > 0u);
   }
+  // step T1a, the lineage (marker) view (mode 6): the body in its marker's hue, filled (each family its own hue, close relatives close hues)
+  let markerView = D.kin.x > 0.5;
+  if (markerView) { col = marker_colour(g, D.kin.w); }
   if (wallsView) {
     let a1 = g.wall.x;
     let a2 = g.wall.y;
@@ -449,8 +468,8 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   }
   // committed cells get a flat fill in their colour, so tissues read as areas; stem cells stay dark inside
   // (neon: every inside dark, a faint tint; the fills come from src/cells.js by the look)
-  let fill = select(select(select(select(D.fill, D.fillC, c.kind != KIND_STEM), D.inkOther.w, strategyView || chargeView), D.wall2.y, wallsView),
-                    gdFill, guidesView);
+  let fill = select(select(select(select(select(D.fill, D.fillC, c.kind != KIND_STEM), D.inkOther.w, strategyView || chargeView), D.wall2.y, wallsView),
+                    gdFill, guidesView), D.kin.z, markerView);
   var fillRgb = col * fill;   // (step 8 may tint it below)
   // step C6n: neon, the tube lights the inside near it (a soft glow falling off inward)
   if (neon) { fillRgb += col * D.neon2.x * exp(-max(ein2 - lw, 0.0) / max(D.neon.w * c.r, 1e-3)); }
@@ -526,6 +545,8 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   }
   // step C13, the guides view: each side's tube by what that side feels (s, -1..1): bright where the field is high, dark where low
   if (guidesView) { lineCol *= (1.0 - D.gd.y) + D.gd.y * (1.0 + cell_felt(c, min(side, 5u))); }
+  // step T1a: zoomed in, the self marker as a fine stripe texture along the tube (like surface immunostaining), as deep as the cell displays it
+  if (D.kin.y > 0.0) { lineCol *= 1.0 - D.kin.y * clamp(g.mark.w, 0.0, 1.0) * (1.0 - marker_stripe(g, in.local, D.R)); }
   // step C12b: soap's pearl (a pale sheen whose hue drifts along the tube and slowly in time) and oil's depth (more saturated)
   if (D.lip.x > 0.5) {
     let hsh = f32((c.seed >> 8u) & 255u) / 255.0;
@@ -774,7 +795,9 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
   let thick = select(1.0, mix(0.75, 1.15, clamp(g.memb.y / max(D.memb2.w, 1e-4) - 0.5, 0.0, 1.5) / 1.5), D.memb.x > 0.5);
   let lipid = (D.harm.y + (1.0 - D.harm.y) * ig) * (1.0 + D.harm.w * oily) * thick;
   let ring = (1.0 - inner) * cover_in(ein2, aa);
-  var rgb = G * D.harm.x * lipid * ring;
+  // step T1a: zoomed in, the self marker as fine stripes along the green rim (surface immunostaining), as deep as the cell displays it
+  let mk = select(1.0, 1.0 - D.kin.y * clamp(g.mark.w, 0.0, 1.0) * (1.0 - marker_stripe(g, in.local, D.R)), D.kin.y > 0.0);
+  var rgb = G * D.harm.x * lipid * ring * mk;
   if (c.kind == KIND_NEU) {
     let g0 = lw + max(0.6, 0.5 * lw);
     let w2 = max(0.6 * lw, 0.5 / D.dpr);

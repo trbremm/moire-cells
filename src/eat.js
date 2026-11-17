@@ -52,15 +52,17 @@ import { Waste } from './waste.js';
 import { Ions } from './ions.js';
 import { Pigments } from './pigments.js';
 import { Whole } from './whole.js';
+import { KW } from './kin.js';
 
 export const SW = 64;               // stock words per cell (cell_eat.wgsl; 16 until step C6c's membranes, words 16..27; step C7:
                                     // 14 the pumped charge across the membrane, 15 the voltage's energy; 32 until step C12b's
                                     // lipid membrane, words 32..61)
-const EP_BYTES = 1856;              // struct EatP (step M1: + m1[2], 1824 until then) (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat; step C8: + hl;
+const EP_BYTES = 1888;              // struct EatP (step T1a: + t1[2], 1856 until then; step M1: + m1[2], 1824 until then) (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat; step C8: + hl;
                                     // step C9: + dv; step C10: + wl0, wl1; step C12b: + lp[9]; step C12d: + smellW; step C12e: + ws[2], ws2;
                                     // step C12g: + io[2] (1792); step N1: + nl[2] (1824; N1 alone had nl at 440, merged after io))
 const EP_NL = 448;                  // ... its words nl (step N1)
 const EP_M1 = 456;                  // ... its words m1 (step M1)
+const EP_T1 = 464;                  // ... its words t1 (step T1a)
 const EP_WS = 428;                  // ... its words ws (step C12e)
 const EP_IO = 440;                  // ... its words io (step C12g)
 const EP_SMELL = 412;               // ... its words smellW (step C12d)
@@ -192,7 +194,7 @@ export class Eat {
     this.pipes.plan = d.createComputePipeline({ label: 'cell plan', layout: layoutP, compute: { module: mod, entryPoint: 'plan' } });
     const U = GPUBufferUsage, n = this.cells.count;
     this.stockBuf = d.createBuffer({ label: 'cell stock', size: n * SW * 4, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
-    this.fluxBuf = d.createBuffer({ label: 'cell flux', size: n * SW * 4, usage: U.STORAGE });
+    this.fluxBuf = d.createBuffer({ label: 'cell flux', size: n * (SW + KW) * 4, usage: U.STORAGE });   // (step T1a: + the kin channels' KW words a cell)
     this.paramBuf = d.createBuffer({ label: 'cell eat params', size: EP_BYTES, usage: U.UNIFORM | U.COPY_DST });
     this.paramAB = new ArrayBuffer(EP_BYTES);
   }
@@ -289,6 +291,12 @@ export class Eat {
     this.ions.write(u, f, EP_IO);                 // step C12g: the bilayer blocks ions, channels
     this.pigments.writeEat(u, f, EP_NL, dt);      // step N1: light needs matter
     this.whole.write(u, f, EP_M1);                // step M1: whole membranes
+    {   // step T1a: an inside, kin channels, the smell for trace (src/kin.js); the pumps' worst share of a stock per tick (pu2.w, pu0.w)
+      // (6 sides x 2 slots, out of its own stock and pulled by neighbours, each at most rate / 6 x dt of it, the rate at most pmax)
+      const pmax = f[EP_PU + 3], pumpWorst = this.pumps.rule('on') ? Math.min(1, 24 * pmax * dt / 6) : 0;
+      const smellMax = Math.max(1, ...SUBSTANCES.slice(0, 16).map((s) => s.smell16 || 0));
+      this.cells.kin.writeEat(u, f, EP_T1, dt, smellMax, pumpWorst);
+    }
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
   }
 
@@ -402,6 +410,7 @@ export class Eat {
     this.waste.apply(rec, w);      // step C12e (after the pumps: it reads their census)
     this.ions.apply(rec, w);       // step C12g (after the waste: it reads the swelling)
     this.whole.apply(rec, w);      // step M1
+    this.cells.kin.apply(rec, w);  // step T1a
     this.ledger = { time: rec.time, stock, held, atoms, chem, bat, start: this.start, full: cnt[0], empty: cnt[1], stuffed: cnt[2], n: cnt[3], hot: cnt[4], rate, rate2 };
     this.catalysts.apply(rec, w);  // step C7b (after the ledger: it reads the trace in the cells)
     this.pigments.apply(rec, w);   // step N1 (after the ledger: it reads the batteries' income)

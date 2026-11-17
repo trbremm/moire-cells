@@ -231,6 +231,11 @@ struct EatP {
   // ---- step M1, whole membranes (src/whole.js) ----
   m1: array<vec4f, 2>,     // [0] x M1F_* bits (u32); y z w spare
                            // [1] spare
+  // ---- step T1a, an inside, kin channels, the smell for trace (src/kin.js) ----
+  t1: array<vec4f, 2>,     // [0] x T1F_* bits (u32); y seal (a covered side's share closed to the dish); z press (a side is covered by a
+                           //     neighbour closer than press x the two radii); w kinK (per s, at full conductance, per R of shared wall)
+                           // [1] x kinCap (the most a pair moves per tick, share of the source); y the smell's trace weight at no trace
+                           //     inside (smellW units: traceWorth x the richest fuel's); z w spare
 };
 // ---- step C12g, MEMBRANES MODULATE ION FLOW (src/ions.js). The lipid BILAYER blocks free ions (charged atoms: g t G T and the excited
 // g* t*), derived from its make-up: per side the intact share (its integrity: soap + the oil between its tails over what the thickness
@@ -559,6 +564,72 @@ const M1Z_WOIL: u32 = 13u;     // sum of the oil in membranes beyond the soap's 
 var<workgroup> wm1s: array<atomic<i32>, 16>;
 // ==== end of step M1's declarations ====
 
+// ==== step T1a, TISSUES 1: AN INSIDE, KIN CHANNELS, THE SELF MARKER (src/kin.js; README "Step T1a") ====
+// AN INSIDE (T1F_INSIDE): a membrane side PRESSED against a neighbour (it lists one across it, closer than press x the two radii) does
+// not trade with the dish under it; only the FREE sides do. So every exchange with the dish is x the free share of the perimeter
+// (1 - seal x the covered sides' length / the perimeter): the passive exchange (and so the haze, the vandal atoms, oxygen), fusion and
+// grazing; per side, the bites and the pumps to the dish skip covered sides; osmosis's outside concentration is, over a covered side,
+// the neighbour's inside. Light still falls on every cell from above, and heat passes through cells (it is not matter).
+// KIN CHANNELS (T1F_KIN): gap junctions. Two cells in contact (each lists the other, pressed) share small NEUTRAL molecules (the four
+// fuels, the free linkers l and L, trace) down the gradient, free, through a conductance min(open_i accept_i, open_j accept_j) (each
+// cell's kin-channel gene x how far it accepts the other as kin: kin_match by the markers' moire beat, kin_accept by its tolerance), x kinK
+// x the shared wall's length / R, x each molecule's own speed (EP.ratio). The cell with the lower index works out each pair (plan, flux
+// words S.count SW + i KW..: per side 4 words, two channels each, + = into it); both apply it (eat), so every count leaves one stock and
+// arrives in the other. A pair moves at most kinCap of the source per tick (with the pumps' worst case, no stock goes below 0).
+// T1F_BLIND: the channels open to every neighbour (kinship ignored); T1F_NULL: the neutral control, the channels move nothing (genes drift).
+// SMELL FOR TRACE (T1F_SMELL): the membrane's corners smell trace too, each unit weighted as traceWorth units of the richest fuel x the
+// share of the engines' speed the lack of trace still holds back ((1 - cofactor) / (1 - f0) at the trace inside: 1 with none, 0 sated)
+const T1F_INSIDE: u32 = 1u;
+const T1F_KIN: u32 = 2u;
+const T1F_BLIND: u32 = 4u;
+const T1F_NULL: u32 = 8u;
+const T1F_SMELL: u32 = 16u;
+fn t1_flags() -> u32 { return bitcast<u32>(EP.t1[0].x); }
+const KW: u32 = 24u;   // kin-channel words per cell (6 sides x 4)
+const TRACE_CH: u32 = 12u;   // trace's channel (SUBSTANCES order; the plan has no ChemP: CP.trace in the eat pass)
+// the channels the kin channels pass, two to a word: gt gT | Gt GT | l L | trace -
+fn kin_ch(q: u32) -> u32 { return select(select(select(6u + q, 2u, q == 4u), 5u, q == 5u), 12u, q == 6u); }
+// the sides pressed against a live neighbour (bit k: side k), from the step's neighbour list
+fn cover_mask(c: Cell, i: u32) -> u32 {
+  if (S.count > NBR_NONE) { return 0u; }
+  var m = 0u;
+  for (var k = 0u; k < 6u; k++) {
+    let j = cell_nbr(c, k);
+    if (j >= S.count || j == i) { continue; }
+    let fj = cells[j].flags;
+    if ((fj & CELL_ALIVE) == 0u || (cell_burst(fj) != 0u && (mb_flags() & MBF_BURST) != 0u)) { continue; }
+    if (distance(cells[j].pos, c.pos) < EP.t1[0].z * (c.r + cells[j].r)) { m |= 1u << k; }
+  }
+  return m;
+}
+// counters (LG_T1 + 512 + 16 q + slot, i32; the eat pass), in counts
+const T1C_FUEL: u32 = 0u;      // fuel shared through kin channels
+const T1C_LINK: u32 = 1u;      // free linkers (l, L) shared
+const T1C_TRACE: u32 = 2u;     // trace shared
+const T1C_PAIRS: u32 = 3u;     // pairs that moved anything (per tick)
+var<workgroup> wt1: array<atomic<i32>, 16>;
+// the snapshot (LG_T1 + 16 q + slot, the ledger pass): T1Z_*
+const T1Z_N: u32 = 0u;         // live cells
+const T1Z_FREE: u32 = 1u;      // free sides, summed
+const T1Z_BIN: u32 = 2u;       // 2..5 cells with 0, 1-2, 3-4, 5-6 free sides (enclosed .. alone)
+const T1Z_BAT: u32 = 6u;       // 6..9 ... their battery share x 1000
+const T1Z_INTEG: u32 = 10u;    // 10..13 ... their mean integrity x 1000
+const T1Z_TIN: u32 = 14u;      // 14..17 ... the free t (oxygen-like) in their stock, x 1000 per unit
+const T1Z_CON: u32 = 18u;      // contacts (pairs in mutual pressed contact, each once)
+const T1Z_KIN: u32 = 19u;      // ... their kinship (marker match) x 1000
+const T1Z_ACC: u32 = 20u;      // ... those both cells accept as kin (accept > 0.5 both ways)
+const T1Z_OPEN: u32 = 21u;     // ... their channel conductance (min open x accept) x 1000
+const T1Z_GK: u32 = 22u;       // the kin channel gene x 1000, summed
+const T1Z_GK2: u32 = 23u;      // ... its square x 1000
+const T1Z_GT: u32 = 24u;       // the tolerance gene x 1000
+const T1Z_GD: u32 = 25u;       // the display gene x 1000
+const T1Z_GD2: u32 = 26u;      // ... its square x 1000
+const T1Z_KC: u32 = 27u;       // cells with a kin channel gene above 0.25
+const T1Z_STR: u32 = 28u;      // contacts between strangers (match below 0.1)
+const T1Z_FS: u32 = 29u;       // the free share of the perimeter x 1000, summed
+var<workgroup> wt1s: array<atomic<i32>, 32>;
+// ==== end of step T1a's declarations ====
+
 // ==== step N1, A NUTRIENT LANDSCAPE: LIGHT NEEDS MATTER (src/pigments.js; README "Step N1: nutrient landscape") ====
 // A harvest slot's PIGMENT is a molecule the cell BUILDS from its stock: two light linkers l (a chain that shares its electrons, an
 // antenna, like chlorophyll's conjugated ring) holding one trace atom at its heart (like chlorophyll's magnesium). Stock word W_PIG
@@ -802,6 +873,11 @@ fn flush_counters(li: u32, slot: u32) {
     let v = atomicLoad(&wm1[li - 16u]);
     if (v != 0) { atomicAdd(&hb[LG_M1 + 256u + 16u * (li - 16u) + (slot & 15u)], v); }
   }
+  // step T1a: the kin channels' counters (16 slots, i32: cleared at each read-back)
+  if (li >= 32u && li < 48u) {
+    let v = atomicLoad(&wt1[li - 32u]);
+    if (v != 0) { atomicAdd(&hb[LG_T1 + 512u + 16u * (li - 32u) + (slot & 15u)], v); }
+  }
   // step N1: the pigments' counters
   if (li < 16u) {
     let v = atomicLoad(&wn1[li]);
@@ -890,6 +966,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     // step C9: a free slot (or a cell that died this tick) asks nothing of its neighbours: its pump requests, which their
     // eat applies in reverse, are cleared (stale ones would make or lose matter)
     for (var k = 16u; k < 46u; k++) { flux[i * SW + k] = 0; }   // (step C12b: and the lipid bites, 32..38; C12c: 40..43; C12g: 44, 45)
+    if ((t1_flags() & T1F_KIN) != 0u) { for (var w = 0u; w < KW; w++) { flux[S.count * SW + i * KW + w] = 0; } }   // (step T1a: its kin requests)
     return;
   }
   let fo = i * SW;
@@ -966,6 +1043,24 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   var sw = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
   var mob = 0.0;
   let mbd = membrane(c);
+  // ---- step T1a, AN INSIDE: the sides pressed against a neighbour (bits), each side's length, and the share of the perimeter still free to
+  // trade with the dish (1 - seal x the covered length / the perimeter); for the eat pass too (flux 39: the free share, 46: the bits)
+  let t1f = t1_flags();
+  var lenK: array<f32, 6>;
+  var perim = 0.0;
+  for (var k = 0u; k < 6u; k++) { lenK[k] = length(mbd.edge[k]); perim += lenK[k]; }
+  var covm = 0u;
+  if ((t1f & (T1F_INSIDE | T1F_KIN)) != 0u && !husk) { covm = cover_mask(c, i); }
+  let insideOn = (t1f & T1F_INSIDE) != 0u;
+  var freeS = 1.0;
+  var covW = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);   // each side's share closed to the dish (seal or 0)
+  if (insideOn && covm != 0u) {
+    var cl = 0.0;
+    for (var k = 0u; k < 6u; k++) { if ((covm & (1u << k)) != 0u) { cl += lenK[k]; covW[k] = clamp(EP.t1[0].y, 0.0, 1.0); } }
+    freeS = 1.0 - clamp(EP.t1[0].y, 0.0, 1.0) * cl / max(perim, 1e-6);
+  }
+  flux[fo + 39u] = bitcast<i32>(freeS);
+  flux[fo + 46u] = i32(covm);
   if (dpOn) {
     var L = 0.0;
     for (var k = 0u; k < 6u; k++) {
@@ -981,7 +1076,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     let k = cell_ch(j);   // (step C12c: the excited atoms pass as their ground atoms do)
     var n = 0;
     let zk = charge_of(EP.qCodes, k);
-    let pk0 = select(ep_f(EP.perm, k), pgene * ep_f(EP.ratio, k), permG) * leak;   // a neutral molecule's rate
+    let pk0 = select(ep_f(EP.perm, k), pgene * ep_f(EP.ratio, k), permG) * leak * freeS;   // a neutral molecule's rate (step T1a: x the free share)
     var pk = pk0 * (1.0 + so);
     var pkC = 0.0;   // step C12g: the part through the intact membrane (channels, the bilayer's leak, the stretch path)
     if (blockOn && zk != 0) {
@@ -1036,7 +1131,23 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     var ionsIn = 0;
     for (var j = 0u; j < NCELL; j++) { let k = cell_ch(j); if (charge_of(EP.qCodes, k) != 0) { ionsIn += max(stockP[fo + stock_w(k)], 0); } }
     let cin = f32(ionsIn) / (ATOM_SCALE * areaR2);
-    let cout = f32(ionsOut) / (ATOM_SCALE * Ao / (EP.R * EP.R));
+    var cout = f32(ionsOut) / (ATOM_SCALE * Ao / (EP.R * EP.R));
+    // step T1a: over a covered side the outside is the neighbour's inside (its free ions per R^2), by the side's share of the perimeter
+    if (insideOn && covm != 0u) {
+      var cn = 0.0;
+      var wn = 0.0;
+      for (var k = 0u; k < 6u; k++) {
+        if (covW[k] <= 0.0) { continue; }
+        let j = cell_nbr(c, k);
+        var ij = 0;
+        for (var jj = 0u; jj < NCELL; jj++) { let q = cell_ch(jj); if (charge_of(EP.qCodes, q) != 0) { ij += max(stockP[j * SW + stock_w(q)], 0); } }
+        let rj = cells[j].r;
+        cn += covW[k] * lenK[k] * f32(ij) / (ATOM_SCALE * max(3.14159265 * rj * rj / (EP.R * EP.R), 1e-3));
+        wn += covW[k] * lenK[k];
+      }
+      let fw = wn / max(perim, 1e-6);
+      cout = (1.0 - fw) * cout + cn / max(perim, 1e-6);
+    }
     flux[fo + 30u] = bitcast<i32>(select(0.0, (cin - cout) / max(EP.capR2, 1e-3), eatOn));
     flux[fo + 31u] = bitcast<i32>(cin);
   }
@@ -1119,10 +1230,10 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
           let Mp = f32(max(mg[cur - lw + ch * EP.n + mouth[k]], 0));
           let co = Mp * concPx;
           if (out) {
-            a.y = -ks * Mi;
+            a.y = -ks * Mi * (1.0 - covW[k]);   // (step T1a: a covered side does not reach the dish)
             pCostG += -a.y * pump_cost(ci, co);
           } else {
-            a.y = min(ks * Mp * areaPx / (HP.px * HP.px), 0.25 * Mp) * room;
+            a.y = min(ks * Mp * areaPx / (HP.px * HP.px), 0.25 * Mp) * room * (1.0 - covW[k]);
             pCostG += a.y * pump_cost(co, ci);
           }
           vdq += z * a.y;
@@ -1161,6 +1272,58 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   for (var k = 0u; k < 6u; k++) { flux[fo + 16u + k] = pcq[k]; flux[fo + 22u + k] = pgq[k]; }
   flux[fo + 28u] = i32(ceil(pCostC));
   flux[fo + 29u] = i32(ceil(pCostG));
+  // ---- step T1a, KIN CHANNELS: for each neighbour in mutual pressed contact with a HIGHER index (the lower works out the pair), on this
+  // cell's first side listing it: the conductance (each cell's open level x how far it accepts the other as kin, the smaller), then per
+  // channel the share of the way to equal concentrations that kinK x conductance x the shared wall (R) x the molecule's speed x dt moves,
+  // an inflow x the receiver's room; whole counts at random, at most kinCap of the source. + = into this cell
+  if ((t1f & T1F_KIN) != 0u) {
+    let kb = S.count * SW + i * KW;
+    var kq: array<i32, 24>;
+    for (var w = 0u; w < KW; w++) { kq[w] = 0; }
+    let oi = clamp(bio[i].kin.x, 0.0, 1.0);
+    if (eatOn && (t1f & T1F_NULL) == 0u && oi > 0.0 && covm != 0u) {
+      let blind = (t1f & T1F_BLIND) != 0u;
+      let capK = clamp(EP.t1[1].x, 0.0, 1.0 / 6.0);
+      for (var k = 0u; k < 6u; k++) {
+        if ((covm & (1u << k)) == 0u) { continue; }
+        let j = cell_nbr(c, k);
+        if (j <= i || j >= S.count || nbr_side(c.nbr, j) != k) { continue; }
+        if (nbr_side(cells[j].nbr, i) >= 6u) { continue; }   // (it must list this cell too: a contact)
+        let oj = clamp(bio[j].kin.x, 0.0, 1.0);
+        if (oj <= 0.0) { continue; }
+        let rj = cells[j].r;
+        var ai = 1.0;
+        var aj = 1.0;
+        if (!blind) {
+          let mt = kin_match(bio[i], bio[j], 0.5 * (c.r + rj) / EP.R);
+          ai = kin_accept(mt, bio[i].kin.y);
+          aj = kin_accept(mt, bio[j].kin.y);
+        }
+        let G = min(oi * ai, oj * aj);
+        if (G < 1e-3) { continue; }
+        var wl = 0.0;   // the shared wall: this cell's covered sides listing j
+        for (var a = 0u; a < 6u; a++) { if (cell_nbr(c, a) == j && (covm & (1u << a)) != 0u) { wl += lenK[a]; } }
+        let Aj = 3.14159265 * rj * rj;
+        let roomJ = clamp(1.0 - cells[j].fill, 0.0, 1.0);
+        let kr = EP.t1[0].w * G * wl / EP.R * EP.dt;
+        var nq: array<i32, 8>;
+        for (var q = 0u; q < 8u; q++) { nq[q] = 0; }
+        for (var q = 0u; q < 7u; q++) {
+          let ch = kin_ch(q);
+          let Mi = max(stockP[fo + ch], 0);
+          let Mj = max(stockP[j * SW + ch], 0);
+          if (Mi == 0 && Mj == 0) { continue; }
+          let jeq = (f32(Mj) * areaPx - f32(Mi) * Aj) / (areaPx + Aj);
+          var x = jeq * min(1.0, kr * ep_f(EP.ratio, ch));
+          x *= select(roomJ, room, x > 0.0);
+          let n = i32(floor(x + u01(pcg(rs + k * 0x5f356495u + q * 0x2c1b3c6du + 0x1d872b41u))));
+          nq[q] = clamp(n, -i32(floor(capK * f32(Mi))), i32(floor(capK * f32(Mj))));
+        }
+        for (var w = 0u; w < 4u; w++) { kq[4u * k + w] = pack2(nq[2u * w], nq[2u * w + 1u]); }
+      }
+    }
+    for (var w = 0u; w < KW; w++) { flux[kb + w] = kq[w]; }
+  }
   // step C6d: the side charges: each side's difference from the even share D (sum 0) gets the through-flow and relaxes
   // (dpRelax per s) toward 0; kept within dpCap x mobile / 6. The even share stays the last net charge / 6 (the eat dispatch
   // puts it on the new one)
@@ -1211,7 +1374,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
       let px = heat_xy(HP, c.pos + mbn.mid[k] + nrm * (0.5 * HP.px));
       let pi = u32(px.y) * HP.hw + u32(px.x);
       let base = cur - lw;
-      let x0 = EP.mb0.y * len / EP.R * ATOM_SCALE * EP.dt * conc;
+      let x0 = EP.mb0.y * len / EP.R * ATOM_SCALE * EP.dt * conc * (1.0 - covW[k]);   // (step T1a: a covered side is not bitten)
       if (mL && ml[k] > 0) {
         let gx = f32(max(mg[base + EXC0 * EP.n + pi], 0));
         let tx = f32(max(mg[base + (EXC0 + 1u) * EP.n + pi], 0));
@@ -1277,7 +1440,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
         let ibk = clamp((S + min(f32(lpm[LK_OIL][k]), EP.lp[5].y * S)) / want, 0.0, 1.0);
         expB *= (1.0 - ibk) + ibk * EP.io[0].y;
       }
-      let x0 = EP.mb0.y * len / EP.R * ATOM_SCALE * EP.dt * conc / lam;
+      let x0 = EP.mb0.y * len / EP.R * ATOM_SCALE * EP.dt * conc / lam * (1.0 - covW[k]);   // (step T1a: a covered side is not bitten)
       for (var q = 0u; q < 5u; q++) {
         let n0 = lpm[q][k];
         if (n0 <= 0 || (EP.mask & (1u << lk_ch(q))) == 0u) { continue; }
@@ -1312,6 +1475,13 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   var g = vec2f(0.0);
   if (EP.smell != 0u && cur != 0u) {
     let mb = membrane(c);
+    // step T1a, the smell for trace: each unit of trace outside weighs as the richest fuel x traceWorth (EP.t1[1].y), x the share of the
+    // engines' speed the lack of trace still holds back at the trace inside ((1 - cofactor) / (1 - f0)); nothing while the cofactor is off
+    var wTr = 0.0;
+    if ((t1f & T1F_SMELL) != 0u && EP.cat.x > 0.0 && (EP.mask & (1u << TRACE_CH)) != 0u) {
+      let trIn = f32(max(stockP[fo + TRACE_CH], 0)) / (ATOM_SCALE * areaR2);
+      wTr = EP.t1[1].y * (1.0 - cofactor(trIn)) / max(1.0 - EP.cat.y, 1e-3);
+    }
     var gr = vec2f(0.0);
     var rr = 0.0;
     for (var a = 0; a < 6; a++) {
@@ -1322,6 +1492,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
       for (var f = FUEL_CH; f < FUEL_CH + 4u; f++) {
         if ((EP.mask & (1u << f)) != 0u) { v += ep_f(EP.smellW, f) * f32(mg[cur - lw + f * EP.n + pi]); }   // (step C12d: smellW)
       }
+      if (wTr > 0.0) { v += wTr * f32(mg[cur - lw + TRACE_CH * EP.n + pi]); }   // (step T1a: the trace)
       gr += v * cp;
       rr += dot(cp, cp);
     }
@@ -1466,6 +1637,48 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         if (a.y != 0) { m[pump_ch(gj.y)] -= a.y; if (pump_ch(gj.y) == 1u) { tIn += max(-a.y, 0); tOut += max(a.y, 0); } }
       }
     }
+    // ---- step T1a, KIN CHANNELS (worked out in the plan, flux S.count SW + i KW ..): this cell's own pairs (it has the lower index),
+    // then the pairs its lower-index neighbours worked out with it, reversed (the same numbers: every count leaves one stock, arrives in
+    // the other)
+    if ((t1_flags() & T1F_KIN) != 0u && S.count <= NBR_NONE) {
+      let kb = S.count * SW + i * KW;
+      var sh = vec3i(0);
+      for (var k = 0u; k < 6u; k++) {
+        var moved = false;
+        for (var w = 0u; w < 4u; w++) {
+          let v = flux[kb + 4u * k + w];
+          if (v == 0) { continue; }
+          let a = unpack2(v);
+          for (var h = 0u; h < 2u; h++) {
+            let q = 2u * w + h;
+            if (q >= 7u || a[h] == 0) { continue; }
+            m[kin_ch(q)] += a[h];
+            let am = abs(a[h]);
+            if (q < 4u) { sh.x += am; } else if (q < 6u) { sh.y += am; } else { sh.z += am; }
+            moved = true;
+          }
+        }
+        if (moved) { atomicAdd(&wt1[T1C_PAIRS], 1); }
+      }
+      if (sh.x != 0) { atomicAdd(&wt1[T1C_FUEL], sh.x); }
+      if (sh.y != 0) { atomicAdd(&wt1[T1C_LINK], sh.y); }
+      if (sh.z != 0) { atomicAdd(&wt1[T1C_TRACE], sh.z); }
+      for (var k = 0u; k < 6u; k++) {
+        let j = cell_nbr(c, k);
+        if (j >= i || j >= S.count || nbr_side(c.nbr, j) != k) { continue; }
+        if ((cells[j].flags & CELL_ALIVE) == 0u) { continue; }
+        let q = nbr_side(cells[j].nbr, i);
+        if (q >= 6u) { continue; }
+        let jb = S.count * SW + j * KW + 4u * q;
+        for (var w = 0u; w < 4u; w++) {
+          let v = flux[jb + w];
+          if (v == 0) { continue; }
+          let a = unpack2(v);
+          m[kin_ch(2u * w)] -= a.x;
+          if (w < 3u) { m[kin_ch(2u * w + 1u)] -= a.y; }
+        }
+      }
+    }
     if (cur != 0u) {
       let mbp = membrane(c);
       for (var k = 0u; k < 6u; k++) {
@@ -1608,7 +1821,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         shH += max(mxf * wf - f32(atomicLoad(&stock[o + MB_H0 + k])), 0.0);
       }
       let per = i32(CP.fuse.z) + i32(CP.fuse.w);
-      var nf = i32(floor(CP.fuse.y * EP.dt * max(max(shL - f32(m[MB_CH_L]), shH - f32(m[MB_CH_H])), 0.0) + u01(pcg(rs + 0x6b43a9b5u))));
+      var nf = i32(floor(CP.fuse.y * EP.dt * bitcast<f32>(flux[fo + 39u]) * max(max(shL - f32(m[MB_CH_L]), shH - f32(m[MB_CH_H])), 0.0) + u01(pcg(rs + 0x6b43a9b5u))));
       nf = min(nf, max(bat, 0) / max(per, 1));
       if (nf > 0) {
         let part = nf / 9;
@@ -1837,7 +2050,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           shS += max(wS - S, 0.0);
           shO += max(min(wO, EP.lp[5].y * max(S, wS)) - f32(lpm[LK_OIL][k]), 0.0);
         }
-        let kf = EP.lp[5].x * EP.dt;
+        let kf = EP.lp[5].x * EP.dt * bitcast<f32>(flux[fo + 39u]);   // (step T1a: through the free sides only)
         var nS = i32(floor(kf * shS + u01(pcg(rs + 0x4f1bbcdcu))));
         let nS0 = nS;
         // soap: the head the gene prefers first, then the other
@@ -1902,7 +2115,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           shW.x += max(wWl - f32(lpm[LK_CL][k]), 0.0);
           shW.y += max(wWh - f32(lpm[LK_CH][k]), 0.0);
         }
-        let kg = EP.lp[5].x * EP.dt;
+        let kg = EP.lp[5].x * EP.dt * bitcast<f32>(flux[fo + 39u]);   // (step T1a: through the free sides only)
         let needl = max(shB - f32(max(m[MB_CH_L], 0)), 0.0);  // linkers the stock lacks for that bilayer
         let needL = max(shB - f32(max(m[MB_CH_H], 0)), 0.0);
         var got = vec2i(0);
@@ -2939,6 +3152,42 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       if (sh >= one && sl >= one && hd >= one) { atomicAdd(&wm1s[M1Z_HAS_ALL], 1); }
       if (c.bat < 0.05) { atomicAdd(&wm1s[M1Z_EMPTY], 1); }
     }
+    // step T1a: the tissues' census: cells by their free sides (rim vs inside: battery, integrity, free t), the contacts and their kinship,
+    // the kin genes (the sides pressed against a neighbour, whether or not the inside is on)
+    {
+      let cm = cover_mask(c, i);
+      let nf = 6u - countOneBits(cm);
+      let bin = select(select(select(3u, 2u, nf <= 4u), 1u, nf <= 2u), 0u, nf == 0u);
+      atomicAdd(&wt1s[T1Z_N], 1);
+      atomicAdd(&wt1s[T1Z_FREE], i32(nf));
+      atomicAdd(&wt1s[T1Z_BIN + bin], 1);
+      atomicAdd(&wt1s[T1Z_BAT + bin], i32(round(c.bat * 1000.0)));
+      atomicAdd(&wt1s[T1Z_INTEG + bin], i32(round(im * 1000.0)));
+      atomicAdd(&wt1s[T1Z_TIN + bin], i32(round(f32(max(atomicLoad(&stock[i * SW + 1u]), 0)) / ATOM_SCALE * 1000.0)));
+      let fsv = bitcast<f32>(flux[i * SW + 39u]);
+      atomicAdd(&wt1s[T1Z_FS], i32(round(select(1.0, clamp(fsv, 0.0, 1.0), (t1_flags() & T1F_INSIDE) != 0u) * 1000.0)));
+      let gk = clamp(b.kin.x, 0.0, 1.0);
+      let gd = clamp(b.mark.w, 0.0, 1.0);
+      atomicAdd(&wt1s[T1Z_GK], i32(round(gk * 1000.0)));
+      atomicAdd(&wt1s[T1Z_GK2], i32(round(gk * gk * 1000.0)));
+      atomicAdd(&wt1s[T1Z_GT], i32(round(clamp(b.kin.y, 0.0, 1.0) * 1000.0)));
+      atomicAdd(&wt1s[T1Z_GD], i32(round(gd * 1000.0)));
+      atomicAdd(&wt1s[T1Z_GD2], i32(round(gd * gd * 1000.0)));
+      if (gk > 0.25) { atomicAdd(&wt1s[T1Z_KC], 1); }
+      for (var k = 0u; k < 6u; k++) {
+        if ((cm & (1u << k)) == 0u) { continue; }
+        let j = cell_nbr(c, k);
+        if (j <= i || nbr_side(c.nbr, j) != k || nbr_side(cells[j].nbr, i) >= 6u) { continue; }
+        let mt = kin_match(b, bio[j], 0.5 * (c.r + cells[j].r) / EP.R);
+        let ai = kin_accept(mt, b.kin.y);
+        let aj = kin_accept(mt, bio[j].kin.y);
+        atomicAdd(&wt1s[T1Z_CON], 1);
+        atomicAdd(&wt1s[T1Z_KIN], i32(round(mt * 1000.0)));
+        if (ai > 0.5 && aj > 0.5) { atomicAdd(&wt1s[T1Z_ACC], 1); }
+        if (mt < 0.1) { atomicAdd(&wt1s[T1Z_STR], 1); }
+        atomicAdd(&wt1s[T1Z_OPEN], i32(round(min(gk * ai, clamp(bio[j].kin.x, 0.0, 1.0) * aj) * 1000.0)));
+      }
+    }
     // step C12e: the waste census (osmosis, who makes and who takes in the free t, the two stretch genes)
     atomicAdd(&wws[WZ_N], 1);
     atomicAdd(&wws[WZ_P], i32(round(clamp(c.osmP, -100.0, 100.0) * 1000.0)));
@@ -3064,6 +3313,10 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
   if (li >= 16u && li < 32u) {   // step M1: the whole membranes' census
     let v = atomicLoad(&wm1s[li - 16u]);
     if (v != 0) { atomicAdd(&hb[LG_M1 + 16u * (li - 16u) + (wid.x & 15u)], v); }
+  }
+  if (li < 32u) {                // step T1a: the tissues' census
+    let v = atomicLoad(&wt1s[li]);
+    if (v != 0) { atomicAdd(&hb[LG_T1 + 16u * li + (wid.x & 15u)], v); }
   }
   if (li >= 32u && li < 48u) {   // step C12e: the waste census
     let v = atomicLoad(&wws[li - 32u]);

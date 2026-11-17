@@ -1,0 +1,200 @@
+{
+  "name": "dish-diag-drain",
+  "description": "the fixed dish from the 1920x1080 snapshot, only the drain at 2 s (a new empty grid: every atom and all heat leave)",
+  "condition": {
+    "name": "dish-diag-drain",
+    "description": "the fixed dish from the 1920x1080 snapshot, only the drain at 2 s (a new empty grid: every atom and all heat leave)",
+    "query": {
+      "snap": "experiments/snaps/fhd599.json"
+    },
+    "size": "1920x1080",
+    "duration": 300,
+    "sample_every": 10,
+    "evals": [
+      {
+        "t": 2,
+        "js": "const H = moire.heat; H.hw = 0; H.resize(moire.control.view(), H.R); return 'drained ' + H.hw + 'x' + H.hh;"
+      },
+      {
+        "t": 1,
+        "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+      },
+      {
+        "t": 2,
+        "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+      },
+      {
+        "t": 2.5,
+        "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+      },
+      {
+        "t": 3,
+        "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+      },
+      {
+        "t": 4,
+        "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+      },
+      {
+        "t": 6,
+        "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+      },
+      {
+        "t": 10,
+        "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+      },
+      {
+        "t": 20,
+        "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+      },
+      {
+        "t": 40,
+        "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+      },
+      {
+        "t": 80,
+        "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+      },
+      {
+        "t": 160,
+        "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+      },
+      {
+        "t": 300,
+        "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n"
+      }
+    ],
+    "shots": [
+      {
+        "t": 1,
+        "name": "a"
+      },
+      {
+        "t": 4,
+        "name": "b"
+      },
+      {
+        "t": 20,
+        "name": "c"
+      },
+      {
+        "t": 100,
+        "name": "d"
+      },
+      {
+        "t": 300,
+        "name": "e"
+      }
+    ]
+  },
+  "url": "http://localhost:49896/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/snaps/fhd599.json",
+  "browser": "chrome",
+  "size": "1920x1080",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-17T15:27:16",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": true,
+    "notes": [],
+    "rebased": null,
+    "rounding": {
+      "energy": 0.0318756103515625,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": 0.0318756103515625,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 1128,
+    "time": 598.9999999997839
+  },
+  "t_start": 598.9999999997839,
+  "sim_s": 300.0,
+  "run_wall_s": 1274.44,
+  "speed_reached": 0.24,
+  "samples": 31,
+  "shots": [
+    "shots/a.png",
+    "shots/b.png",
+    "shots/c.png",
+    "shots/d.png",
+    "shots/e.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 1.0000000000002274,
+      "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n",
+      "result": "{\"t\":599.9999999997841,\"hw\":439,\"hh\":247,\"px\":4.373666653964382,\"R\":8.747333307928765,\"min\":1639,\"max\":319516,\"sum\":2883757798,\"neg\":0,\"alive\":1097,\"dish\":\"dish 219\u00d7123 R (1920\u00d71080 px, R 8.75 px, medium 1.03 R) \u00b7 area 27.1k R\u00b2 (\u00d7 1.11 the reference) \u00b7 fixed (snapshot) \u00b7 supplies per px (old)\"}"
+    },
+    {
+      "t": 2.000000000000796,
+      "js": "const H = moire.heat; H.hw = 0; H.resize(moire.control.view(), H.R); return 'drained ' + H.hw + 'x' + H.hh;",
+      "result": "drained 439x247"
+    },
+    {
+      "t": 2.000000000000796,
+      "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n",
+      "result": "{\"t\":600.9999999997847,\"hw\":439,\"hh\":247,\"px\":4.373666653964382,\"R\":8.747333307928765,\"min\":0,\"max\":0,\"sum\":0,\"neg\":0,\"alive\":1094,\"dish\":\"dish 219\u00d7123 R (1920\u00d71080 px, R 8.75 px, medium 1.03 R) \u00b7 area 27.1k R\u00b2 (\u00d7 1.11 the reference) \u00b7 fixed (snapshot) \u00b7 supplies per px (old)\"}"
+    },
+    {
+      "t": 2.500000000000796,
+      "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n",
+      "result": "{\"t\":601.4999999997847,\"hw\":439,\"hh\":247,\"px\":4.373666653964382,\"R\":8.747333307928765,\"min\":357,\"max\":100821,\"sum\":564181802,\"neg\":0,\"alive\":1094,\"dish\":\"dish 219\u00d7123 R (1920\u00d71080 px, R 8.75 px, medium 1.03 R) \u00b7 area 27.1k R\u00b2 (\u00d7 1.11 the reference) \u00b7 fixed (snapshot) \u00b7 supplies per px (old)\"}"
+    },
+    {
+      "t": 3.000000000000341,
+      "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n",
+      "result": "{\"t\":601.9999999997842,\"hw\":439,\"hh\":247,\"px\":4.373666653964382,\"R\":8.747333307928765,\"min\":641,\"max\":146925,\"sum\":1001671774,\"neg\":0,\"alive\":1096,\"dish\":\"dish 219\u00d7123 R (1920\u00d71080 px, R 8.75 px, medium 1.03 R) \u00b7 area 27.1k R\u00b2 (\u00d7 1.11 the reference) \u00b7 fixed (snapshot) \u00b7 supplies per px (old)\"}"
+    },
+    {
+      "t": 3.9999999999994316,
+      "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n",
+      "result": "{\"t\":602.9999999997833,\"hw\":439,\"hh\":247,\"px\":4.373666653964382,\"R\":8.747333307928765,\"min\":1033,\"max\":221973,\"sum\":1611130038,\"neg\":0,\"alive\":1101,\"dish\":\"dish 219\u00d7123 R (1920\u00d71080 px, R 8.75 px, medium 1.03 R) \u00b7 area 27.1k R\u00b2 (\u00d7 1.11 the reference) \u00b7 fixed (snapshot) \u00b7 supplies per px (old)\"}"
+    },
+    {
+      "t": 5.999999999997613,
+      "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n",
+      "result": "{\"t\":604.9999999997815,\"hw\":439,\"hh\":247,\"px\":4.373666653964382,\"R\":8.747333307928765,\"min\":1416,\"max\":243894,\"sum\":2196304984,\"neg\":0,\"alive\":1083,\"dish\":\"dish 219\u00d7123 R (1920\u00d71080 px, R 8.75 px, medium 1.03 R) \u00b7 area 27.1k R\u00b2 (\u00d7 1.11 the reference) \u00b7 fixed (snapshot) \u00b7 supplies per px (old)\"}"
+    },
+    {
+      "t": 9.999999999993975,
+      "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n",
+      "result": "{\"t\":608.9999999997779,\"hw\":439,\"hh\":247,\"px\":4.373666653964382,\"R\":8.747333307928765,\"min\":1608,\"max\":271835,\"sum\":2366210409,\"neg\":0,\"alive\":1065,\"dish\":\"dish 219\u00d7123 R (1920\u00d71080 px, R 8.75 px, medium 1.03 R) \u00b7 area 27.1k R\u00b2 (\u00d7 1.11 the reference) \u00b7 fixed (snapshot) \u00b7 supplies per px (old)\"}"
+    },
+    {
+      "t": 19.99999999998488,
+      "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n",
+      "result": "{\"t\":618.9999999997688,\"hw\":439,\"hh\":247,\"px\":4.373666653964382,\"R\":8.747333307928765,\"min\":1637,\"max\":229170,\"sum\":2099970026,\"neg\":0,\"alive\":968,\"dish\":\"dish 219\u00d7123 R (1920\u00d71080 px, R 8.75 px, medium 1.03 R) \u00b7 area 27.1k R\u00b2 (\u00d7 1.11 the reference) \u00b7 fixed (snapshot) \u00b7 supplies per px (old)\"}"
+    },
+    {
+      "t": 39.99999999996669,
+      "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n",
+      "result": "{\"t\":638.9999999997506,\"hw\":439,\"hh\":247,\"px\":4.373666653964382,\"R\":8.747333307928765,\"min\":1639,\"max\":185730,\"sum\":1727392505,\"neg\":0,\"alive\":851,\"dish\":\"dish 219\u00d7123 R (1920\u00d71080 px, R 8.75 px, medium 1.03 R) \u00b7 area 27.1k R\u00b2 (\u00d7 1.11 the reference) \u00b7 fixed (snapshot) \u00b7 supplies per px (old)\"}"
+    },
+    {
+      "t": 79.99999999993031,
+      "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n",
+      "result": "{\"t\":678.9999999997142,\"hw\":439,\"hh\":247,\"px\":4.373666653964382,\"R\":8.747333307928765,\"min\":1638,\"max\":265643,\"sum\":2297904419,\"neg\":0,\"alive\":794,\"dish\":\"dish 219\u00d7123 R (1920\u00d71080 px, R 8.75 px, medium 1.03 R) \u00b7 area 27.1k R\u00b2 (\u00d7 1.11 the reference) \u00b7 fixed (snapshot) \u00b7 supplies per px (old)\"}"
+    },
+    {
+      "t": 159.99999999985755,
+      "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n",
+      "result": "{\"t\":758.9999999996414,\"hw\":439,\"hh\":247,\"px\":4.373666653964382,\"R\":8.747333307928765,\"min\":1639,\"max\":618713,\"sum\":5626291836,\"neg\":0,\"alive\":1602,\"dish\":\"dish 219\u00d7123 R (1920\u00d71080 px, R 8.75 px, medium 1.03 R) \u00b7 area 27.1k R\u00b2 (\u00d7 1.11 the reference) \u00b7 fixed (snapshot) \u00b7 supplies per px (old)\"}"
+    },
+    {
+      "t": 299.9999999997302,
+      "js": "\nconst M = moire, H = M.heat, d = M.gpu.device, n = H.n;\nconst off = H.offset(H.cur);\nconst buf = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\nconst e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, off * 4, buf, 0, n * 4); d.queue.submit([e.finish()]);\nawait buf.mapAsync(GPUMapMode.READ); const a = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\nlet mn = 1e30, mx = -1e30, s = 0, neg = 0; for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v; s += v; if (v < 0) neg++; }\nreturn JSON.stringify({ t: M.time(), hw: H.hw, hh: H.hh, px: H.px, R: H.R, min: mn, max: mx, sum: s, neg, alive: M.cells.alive, dish: M.dish.line() });\n",
+      "result": "{\"t\":898.9999999995141,\"hw\":439,\"hh\":247,\"px\":4.373666653964382,\"R\":8.747333307928765,\"min\":1639,\"max\":203539,\"sum\":1852030437,\"neg\":0,\"alive\":1104,\"dish\":\"dish 219\u00d7123 R (1920\u00d71080 px, R 8.75 px, medium 1.03 R) \u00b7 area 27.1k R\u00b2 (\u00d7 1.11 the reference) \u00b7 fixed (snapshot) \u00b7 supplies per px (old)\"}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T15:51:09",
+  "wall_s": 1432.71
+}

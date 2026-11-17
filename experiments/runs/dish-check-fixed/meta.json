@@ -1,0 +1,99 @@
+{
+  "name": "dish-check-fixed",
+  "description": "fixed dish: resizes are only views",
+  "condition": {
+    "name": "dish-check-fixed",
+    "description": "fixed dish: resizes are only views",
+    "query": {
+      "seed": 3
+    },
+    "size": "1280x800",
+    "duration": 60,
+    "sample_every": 10,
+    "resizes": [
+      {
+        "t": 20,
+        "size": "900x400"
+      },
+      {
+        "t": 40,
+        "size": "1600x500"
+      }
+    ],
+    "evals": [
+      {
+        "t": 1,
+        "js": "return moire.dish.line() + ' | cap ' + moire.cells.count + ' | mR ' + moire.medium.R"
+      },
+      {
+        "t": 21,
+        "js": "return moire.dish.line() + ' | R ' + moire.cells.R + ' | grid ' + moire.heat.hw + 'x' + moire.heat.hh + ' | view ' + JSON.stringify(moire.control.view())"
+      },
+      {
+        "t": 41,
+        "js": "return moire.dish.line() + ' | R ' + moire.cells.R + ' | grid ' + moire.heat.hw + 'x' + moire.heat.hh"
+      }
+    ],
+    "shots": [
+      {
+        "t": 19,
+        "name": "a"
+      },
+      {
+        "t": 22,
+        "name": "b_900x400"
+      },
+      {
+        "t": 42,
+        "name": "c_1600x500"
+      },
+      {
+        "t": 60,
+        "name": "d",
+        "panel": true
+      }
+    ]
+  },
+  "url": "http://localhost:52744/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "85d0ef2ecae525fe7ff87f6d2f7145ec4b3764d6",
+  "dirty": true,
+  "started": "2026-11-17T14:20:53",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 72.33,
+  "speed_reached": 0.83,
+  "samples": 7,
+  "shots": [
+    "shots/a.png",
+    "shots/b_900x400.png",
+    "shots/c_1600x500.png",
+    "shots/d.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.9999999999999999,
+      "js": "return moire.dish.line() + ' | cap ' + moire.cells.count + ' | mR ' + moire.medium.R",
+      "result": "dish 198\u00d7123 R (1280\u00d7800 px, R 6.48 px, medium 1.39 R) \u00b7 area 24.4k R\u00b2 (\u00d7 1.00 the reference) \u00b7 fixed (window) | cap 6000 | mR 9"
+    },
+    {
+      "t": 21.000000000000092,
+      "js": "return moire.dish.line() + ' | R ' + moire.cells.R + ' | grid ' + moire.heat.hw + 'x' + moire.heat.hh + ' | view ' + JSON.stringify(moire.control.view())",
+      "result": "dish 198\u00d7123 R (1280\u00d7800 px, R 6.48 px, medium 1.39 R) \u00b7 area 24.4k R\u00b2 (\u00d7 1.00 the reference) \u00b7 fixed (window) \u00b7 drawn \u00d7 0.50 | R 6.4795061540213075 | grid 396x247 | view {\"cssW\":1280,\"cssH\":800,\"dpr\":0.5,\"pxW\":640,\"pxH\":400,\"winW\":900,\"winH\":400}"
+    },
+    {
+      "t": 40.999999999999105,
+      "js": "return moire.dish.line() + ' | R ' + moire.cells.R + ' | grid ' + moire.heat.hw + 'x' + moire.heat.hh",
+      "result": "dish 198\u00d7123 R (1280\u00d7800 px, R 6.48 px, medium 1.39 R) \u00b7 area 24.4k R\u00b2 (\u00d7 1.00 the reference) \u00b7 fixed (window) \u00b7 drawn \u00d7 0.63 | R 6.4795061540213075 | grid 396x247"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T14:23:39",
+  "wall_s": 165.79
+}

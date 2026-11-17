@@ -1,0 +1,659 @@
+{
+ "batch": "dish-presets",
+ "runs": [
+  {
+   "name": "dish-fronts",
+   "description": "the Fronts preset: a strip dish, the right wall presses in and lets go every 240 s",
+   "query": {
+    "preset": "fronts",
+    "seed": 3
+   },
+   "size": "1280x800",
+   "duration": 600,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 0,
+     "js": "\nwindow.__kymo = async () => {\n  const M = window.moire, C = M.cells, d = M.gpu.device, n = C.count, F = 92;\n  const buf = d.createBuffer({ size: n * F * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });\n  const e = d.createCommandEncoder(); e.copyBufferToBuffer(C.cellBuf, 0, buf, 0, n * F * 4); d.queue.submit([e.finish()]);\n  await buf.mapAsync(GPUMapMode.READ); const f = new Float32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy();\n  const u = new Uint32Array(f.buffer), v = M.control.view(), W = (M.dish ? M.dish.W : v.cssW), H = (M.dish ? M.dish.H : v.cssH);\n  const b = 4 * C.R, nx = Math.ceil(W / b), ny = Math.ceil(H / b);\n  const g = new Array(nx * ny).fill(0), bat = new Array(nx * ny).fill(0); let alive = 0, out = 0, rs = 0;\n  for (let i = 0; i < n; i++) {\n    if (!(u[i * F + 9] & 1)) continue; alive++; rs += f[i * F + 4];\n    const ix = Math.floor(f[i * F] / b), iy = Math.floor(f[i * F + 1] / b);\n    if (ix < 0 || iy < 0 || ix >= nx || iy >= ny) { out++; continue; }\n    g[iy * nx + ix]++; bat[iy * nx + ix] += f[i * F + 16];\n  }\n  return { t: M.time(), R: C.R, mR: M.medium.R, W, H, b, nx, ny, alive, out, rMean: alive ? rs / alive / C.R : 0,\n           g: g.join(','), bat: bat.map((x, k) => g[k] ? (x / g[k]).toFixed(3) : 0).join(',') };\n};\nreturn 'ok';\n"
+    },
+    {
+     "t": 0,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 5,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 10,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 15,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 20,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 25,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 30,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 35,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 40,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 45,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 50,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 55,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 60,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 65,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 70,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 75,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 80,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 85,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 90,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 95,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 100,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 105,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 110,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 115,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 120,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 125,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 130,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 135,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 140,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 145,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 150,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 155,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 160,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 165,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 170,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 175,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 180,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 185,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 190,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 195,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 200,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 205,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 210,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 215,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 220,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 225,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 230,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 235,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 240,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 245,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 250,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 255,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 260,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 265,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 270,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 275,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 280,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 285,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 290,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 295,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 300,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 305,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 310,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 315,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 320,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 325,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 330,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 335,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 340,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 345,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 350,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 355,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 360,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 365,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 370,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 375,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 380,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 385,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 390,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 395,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 400,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 405,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 410,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 415,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 420,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 425,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 430,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 435,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 440,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 445,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 450,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 455,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 460,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 465,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 470,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 475,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 480,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 485,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 490,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 495,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 500,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 505,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 510,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 515,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 520,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 525,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 530,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 535,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 540,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 545,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 550,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 555,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 560,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 565,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 570,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 575,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 580,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 585,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 590,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 595,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 600,
+     "js": "return await window.__kymo()"
+    },
+    {
+     "t": 360.5,
+     "js": "moire.control.action('harmonic'); return 'harmonic'"
+    },
+    {
+     "t": 361.5,
+     "js": "moire.control.action('harmonic'); return 'neon'"
+    }
+   ],
+   "shots": [
+    {
+     "t": 60,
+     "name": "t0060"
+    },
+    {
+     "t": 240,
+     "name": "t0240"
+    },
+    {
+     "t": 300,
+     "name": "t0300"
+    },
+    {
+     "t": 330,
+     "name": "t0330"
+    },
+    {
+     "t": 345,
+     "name": "t0345"
+    },
+    {
+     "t": 360,
+     "name": "t0360"
+    },
+    {
+     "t": 375,
+     "name": "t0375"
+    },
+    {
+     "t": 390,
+     "name": "t0390"
+    },
+    {
+     "t": 420,
+     "name": "t0420"
+    },
+    {
+     "t": 450,
+     "name": "t0450"
+    },
+    {
+     "t": 480,
+     "name": "t0480"
+    },
+    {
+     "t": 540,
+     "name": "t0540"
+    },
+    {
+     "t": 600,
+     "name": "t0600"
+    },
+    {
+     "t": 361,
+     "name": "t0361_harm"
+    }
+   ]
+  },
+  {
+   "name": "dish-chip",
+   "description": "the Chip preset: perfusion (inlet left, through-flow, outlet right)",
+   "query": {
+    "preset": "chip",
+    "seed": 3
+   },
+   "size": "1280x800",
+   "duration": 360,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 300.5,
+     "js": "moire.control.action('harmonic'); return 'harmonic'"
+    },
+    {
+     "t": 301.5,
+     "js": "moire.control.action('harmonic'); return 'neon'"
+    }
+   ],
+   "shots": [
+    {
+     "t": 30,
+     "name": "t0030"
+    },
+    {
+     "t": 120,
+     "name": "t0120"
+    },
+    {
+     "t": 300,
+     "name": "t0300"
+    },
+    {
+     "t": 301,
+     "name": "t0301_harm"
+    },
+    {
+     "t": 360,
+     "name": "t0360",
+     "panel": true
+    }
+   ]
+  },
+  {
+   "name": "dish-vent",
+   "description": "the Deep vents preset with fissure vents (&light=full to see them)",
+   "query": {
+    "preset": "vent",
+    "seed": 3,
+    "light": "full"
+   },
+   "size": "1280x800",
+   "duration": 120,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 60.5,
+     "js": "moire.control.action('harmonic'); return 'harmonic'"
+    },
+    {
+     "t": 61.5,
+     "js": "moire.control.action('harmonic'); return 'neon'"
+    }
+   ],
+   "shots": [
+    {
+     "t": 20,
+     "name": "t0020"
+    },
+    {
+     "t": 60,
+     "name": "t0060"
+    },
+    {
+     "t": 61,
+     "name": "t0061_harm"
+    },
+    {
+     "t": 120,
+     "name": "t0120"
+    }
+   ]
+  }
+ ]
+}

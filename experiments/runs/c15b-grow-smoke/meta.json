@@ -1,0 +1,72 @@
+{
+  "name": "c15b-grow-smoke",
+  "description": "",
+  "condition": {
+    "name": "c15b-grow-smoke",
+    "query": {
+      "seed": 3
+    },
+    "duration": 300.0,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 120
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 2,
+        "js": "const L = moire.carbon.ledger, CC = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, cells: L && L.cells.c, add: L && L.add.c, cc: CC && {census: CC.census, built: CC.rate.built}, div: moire.division.census})"
+      },
+      {
+        "t": 60,
+        "js": "const L = moire.carbon.ledger, CC = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, cells: L && L.cells.c, add: L && L.add.c, cc: CC && {census: CC.census, built: CC.rate.built}, div: moire.division.census})"
+      },
+      {
+        "t": 120,
+        "js": "const L = moire.carbon.ledger, CC = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, cells: L && L.cells.c, add: L && L.add.c, cc: CC && {census: CC.census, built: CC.rate.built}, div: moire.division.census})"
+      }
+    ]
+  },
+  "url": "http://localhost:58929/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "382b645d99d04a4f6e94e042596086efde6af377",
+  "dirty": true,
+  "started": "2026-11-17T22:59:22",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 300.0,
+  "run_wall_s": 489.28,
+  "speed_reached": 0.61,
+  "samples": 11,
+  "shots": [
+    "shots/t120.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 2,
+      "js": "const L = moire.carbon.ledger, CC = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, cells: L && L.cells.c, add: L && L.add.c, cc: CC && {census: CC.census, built: CC.rate.built}, div: moire.division.census})",
+      "result": "{\"t\":2,\"alive\":1970,\"cRound\":0,\"eRound\":0,\"atoms\":0,\"charge\":0,\"energy\":0.0040740966796875,\"eIn\":92414.56053161621,\"cells\":417.99786376953125,\"add\":425.392578125,\"cc\":{\"census\":{\"n\":1970,\"ox\":172,\"cond\":166,\"red\":172,\"redLit\":172,\"hyd\":0,\"granule\":0,\"granC\":0.001,\"ladder\":0.045,\"any\":338,\"oxOnly\":0,\"litOnly\":0,\"body\":417.64,\"short\":0,\"want\":316.667},\"built\":0},\"div\":{\"time\":0.8333333333333333,\"alive\":1970,\"cap\":6000,\"rate\":{\"births\":0,\"starved\":0,\"heat\":0,\"burst\":0,\"age\":10.8,\"noslot\":0},\"deaths\":10.8,\"starving\":0,\"ready\":0,\"crowded\":0,\"tot\":[0,0,0,0,30,0]}}"
+    },
+    {
+      "t": 59.99999999999788,
+      "js": "const L = moire.carbon.ledger, CC = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, cells: L && L.cells.c, add: L && L.add.c, cc: CC && {census: CC.census, built: CC.rate.built}, div: moire.division.census})",
+      "result": "{\"t\":59.99999999999788,\"alive\":1580,\"cRound\":0,\"eRound\":0,\"atoms\":0,\"charge\":0,\"energy\":-0.022369384765625,\"eIn\":981603.4459838867,\"cells\":341.0150146484375,\"add\":489.072509765625,\"cc\":{\"census\":{\"n\":1581,\"ox\":153,\"cond\":145,\"red\":153,\"redLit\":153,\"hyd\":0,\"granule\":0,\"granC\":0.799,\"ladder\":5.341,\"any\":298,\"oxOnly\":0,\"litOnly\":0,\"body\":334.563,\"short\":6,\"want\":254.306},\"built\":0.0008474302685950895},\"div\":{\"time\":59.89999999999789,\"alive\":1580,\"cap\":6000,\"rate\":{\"births\":0,\"starved\":0.198675496688753,\"heat\":0,\"burst\":0,\"age\":5.860927152318214,\"noslot\":0},\"deaths\":6.059602649006967,\"starving\":846,\"ready\":1,\"crowded\":1,\"tot\":[3,2,4,0,417,0]}}"
+    },
+    {
+      "t": 119.99999999999447,
+      "js": "const L = moire.carbon.ledger, CC = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, cells: L && L.cells.c, add: L && L.add.c, cc: CC && {census: CC.census, built: CC.rate.built}, div: moire.division.census})",
+      "result": "{\"t\":119.99999999999447,\"alive\":127,\"cRound\":0,\"eRound\":0,\"atoms\":0,\"charge\":0,\"energy\":-0.013885498046875,\"eIn\":1583191.6614837646,\"cells\":26.99932861328125,\"add\":553.80810546875,\"cc\":{\"census\":{\"n\":127,\"ox\":15,\"cond\":0,\"red\":16,\"redLit\":16,\"hyd\":0,\"granule\":8,\"granC\":1.319,\"ladder\":2.778,\"any\":16,\"oxOnly\":0,\"litOnly\":0,\"body\":22.878,\"short\":34,\"want\":19.632},\"built\":0.02167000258264586},\"div\":{\"time\":119.93333333332781,\"alive\":127,\"cap\":6000,\"rate\":{\"births\":0.49668874172188254,\"starved\":11.821192052980804,\"heat\":0,\"burst\":0,\"age\":0.29801324503312954,\"noslot\":0},\"deaths\":12.119205298013933,\"starving\":19,\"ready\":1,\"crowded\":1,\"tot\":[24,1314,4,0,579,0]}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T23:08:53",
+  "wall_s": 570.84
+}

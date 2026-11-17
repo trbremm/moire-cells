@@ -1,0 +1,142 @@
+{
+ "batch": "c15b-merge",
+ "runs": [
+  {
+   "name": "merge-default",
+   "description": "merge check: loads, books over 60 s, job census",
+   "query": {
+    "seed": 3
+   },
+   "duration": 60,
+   "sample_every": 20,
+   "stall": 200,
+   "shots": [
+    {
+     "t": 60,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 2,
+     "js": "const L = moire.carbon.ledger; const s = moire.cells.stats; return JSON.stringify({t: moire.time(), on: moire.carbon.on, ladder: L && L.ladder, tar: L && L.tar, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, job: s && s.job, alive: moire.cells.alive})"
+    },
+    {
+     "t": 60,
+     "js": "const L = moire.carbon.ledger; const s = moire.cells.stats; return JSON.stringify({t: moire.time(), on: moire.carbon.on, ladder: L && L.ladder, tar: L && L.tar, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, job: s && s.job, alive: moire.cells.alive})"
+    }
+   ]
+  },
+  {
+   "name": "merge-vent",
+   "description": "merge check: loads, books over 60 s, job census",
+   "query": {
+    "seed": 3,
+    "preset": "vent"
+   },
+   "duration": 60,
+   "sample_every": 20,
+   "stall": 200,
+   "shots": [
+    {
+     "t": 60,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 2,
+     "js": "const L = moire.carbon.ledger; const s = moire.cells.stats; return JSON.stringify({t: moire.time(), on: moire.carbon.on, ladder: L && L.ladder, tar: L && L.tar, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, job: s && s.job, alive: moire.cells.alive})"
+    },
+    {
+     "t": 60,
+     "js": "const L = moire.carbon.ledger; const s = moire.cells.stats; return JSON.stringify({t: moire.time(), on: moire.carbon.on, ladder: L && L.ladder, tar: L && L.tar, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, job: s && s.job, alive: moire.cells.alive})"
+    }
+   ]
+  },
+  {
+   "name": "merge-nocarbon",
+   "description": "merge check: loads, books over 60 s, job census",
+   "query": {
+    "seed": 3,
+    "carbon": 0
+   },
+   "duration": 60,
+   "sample_every": 20,
+   "stall": 200,
+   "shots": [
+    {
+     "t": 60,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 2,
+     "js": "const L = moire.carbon.ledger; const s = moire.cells.stats; return JSON.stringify({t: moire.time(), on: moire.carbon.on, ladder: L && L.ladder, tar: L && L.tar, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, job: s && s.job, alive: moire.cells.alive})"
+    },
+    {
+     "t": 60,
+     "js": "const L = moire.carbon.ledger; const s = moire.cells.stats; return JSON.stringify({t: moire.time(), on: moire.carbon.on, ladder: L && L.ladder, tar: L && L.tar, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, job: s && s.job, alive: moire.cells.alive})"
+    }
+   ]
+  },
+  {
+   "name": "merge-reload-carbon",
+   "description": "C15a carbon snapshot (900 s) loads",
+   "query": {
+    "snap": "experiments/runs/c15a-books/snapshots/snap_t900.json"
+   },
+   "duration": 30,
+   "sample_every": 10,
+   "stall": 200,
+   "shots": [
+    {
+     "t": 30,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 1,
+     "js": "const L = moire.carbon.ledger; const s = moire.cells.stats; return JSON.stringify({t: moire.time(), on: moire.carbon.on, ladder: L && L.ladder, tar: L && L.tar, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, job: s && s.job, alive: moire.cells.alive})"
+    },
+    {
+     "t": 30,
+     "js": "const L = moire.carbon.ledger; const s = moire.cells.stats; return JSON.stringify({t: moire.time(), on: moire.carbon.on, ladder: L && L.ladder, tar: L && L.tar, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, job: s && s.job, alive: moire.cells.alive})"
+    }
+   ]
+  },
+  {
+   "name": "merge-reload-old",
+   "description": "old C11 tissue snapshot (fates, no carbon flag) loads: F0 clears fates, carbon off",
+   "query": {
+    "snap": "experiments/tissue/configs/c11-end-lb-t1/snapshot.json"
+   },
+   "duration": 30,
+   "sample_every": 10,
+   "stall": 200,
+   "shots": [
+    {
+     "t": 30,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 1,
+     "js": "return JSON.stringify({search: location.search, carbon: moire.carbon.on, job: moire.cells.stats && moire.cells.stats.job, alive: moire.cells.alive})"
+    },
+    {
+     "t": 30,
+     "js": "const L = moire.carbon.ledger; const s = moire.cells.stats; return JSON.stringify({t: moire.time(), on: moire.carbon.on, ladder: L && L.ladder, tar: L && L.tar, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, job: s && s.job, alive: moire.cells.alive})"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,57 @@
+{
+ "batch": "c15b-speed60",
+ "runs": [
+  {
+   "name": "c15b-speed60-nogrow-r1",
+   "description": "speed over the first 60 s (2000 cells, before the founders' crash), nogrow",
+   "query": {
+    "seed": 3,
+    "cbgrow": 0
+   },
+   "duration": 60,
+   "sample_every": 20,
+   "shots": [],
+   "snapshots": [],
+   "evals": []
+  },
+  {
+   "name": "c15b-speed60-off-r1",
+   "description": "speed over the first 60 s (2000 cells, before the founders' crash), off",
+   "query": {
+    "seed": 3,
+    "carbon": 0
+   },
+   "duration": 60,
+   "sample_every": 20,
+   "shots": [],
+   "snapshots": [],
+   "evals": []
+  },
+  {
+   "name": "c15b-speed60-nogrow-r2",
+   "description": "speed over the first 60 s (2000 cells, before the founders' crash), nogrow",
+   "query": {
+    "seed": 3,
+    "cbgrow": 0
+   },
+   "duration": 60,
+   "sample_every": 20,
+   "shots": [],
+   "snapshots": [],
+   "evals": []
+  },
+  {
+   "name": "c15b-speed60-off-r2",
+   "description": "speed over the first 60 s (2000 cells, before the founders' crash), off",
+   "query": {
+    "seed": 3,
+    "carbon": 0
+   },
+   "duration": 60,
+   "sample_every": 20,
+   "shots": [],
+   "snapshots": [],
+   "evals": []
+  }
+ ]
+}

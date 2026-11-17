@@ -1,0 +1,51 @@
+{
+ "batch": "c15b-smoke",
+ "runs": [
+  {
+   "name": "c15b-smoke",
+   "description": "smoke: default scene 90 s",
+   "query": {
+    "seed": 3
+   },
+   "duration": 90,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 90,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 5,
+     "js": "const L = moire.carbon.ledger, CC = moire.carbonCells.ledger; return JSON.stringify({t: moire.time(), cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: moire.heat.ledger.rounding, cells: L && L.cells, ladder: L && L.ladder, tar: L && L.tar, cc: CC && {rate: CC.rate, census: CC.census, gran: CC.granC, lad: CC.ladder}, job: moire.cells.stats && moire.cells.stats.job})"
+    },
+    {
+     "t": 90,
+     "js": "const L = moire.carbon.ledger, CC = moire.carbonCells.ledger; return JSON.stringify({t: moire.time(), cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: moire.heat.ledger.rounding, cells: L && L.cells, ladder: L && L.ladder, tar: L && L.tar, cc: CC && {rate: CC.rate, census: CC.census, gran: CC.granC, lad: CC.ladder}, job: moire.cells.stats && moire.cells.stats.job})"
+    }
+   ]
+  },
+  {
+   "name": "c15b-smoke-off",
+   "description": "smoke: ?carbon=0 30 s",
+   "query": {
+    "seed": 3,
+    "carbon": 0
+   },
+   "duration": 30,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 30,
+     "js": "return JSON.stringify({atoms: moire.matter.ledger.rounding, energy: moire.heat.ledger.rounding, job: moire.cells.stats && moire.cells.stats.job})"
+    }
+   ]
+  }
+ ]
+}

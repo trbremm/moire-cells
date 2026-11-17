@@ -1,0 +1,54 @@
+{
+  "name": "c15b-firefox",
+  "description": "Firefox (headed): the default scene 30 s, books, console",
+  "condition": {
+    "name": "c15b-firefox",
+    "description": "Firefox (headed): the default scene 30 s, books, console",
+    "query": {
+      "seed": 3
+    },
+    "duration": 30,
+    "sample_every": 10,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 30
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 30,
+        "js": "const L = moire.carbon.ledger, CC = moire.carbonCells.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: moire.heat.ledger.rounding, body: CC && CC.census.body, adapter: moire.gpu.adapterName || null})"
+      }
+    ]
+  },
+  "url": "http://localhost:50853/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "firefox",
+  "size": "1280x800",
+  "commit": "cf39e2c633f7c13a5eba333bc1843e0b12fb2e2e",
+  "dirty": true,
+  "started": "2026-11-18T00:41:33",
+  "status": "ok",
+  "adapter": "ANGLE (NVIDIA, NVIDIA GeForce GTX 980 Direct3D11 vs_5_0 ps_5_0), or similar  (WebGL's name; WebGPU hides it)",
+  "t_start": 0,
+  "sim_s": 30.0,
+  "run_wall_s": 72.49,
+  "speed_reached": 0.41,
+  "samples": 4,
+  "shots": [
+    "shots/t30.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 29.99999999999958,
+      "js": "const L = moire.carbon.ledger, CC = moire.carbonCells.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: moire.heat.ledger.rounding, body: CC && CC.census.body, adapter: moire.gpu.adapterName || null})",
+      "result": "{\"t\":29.99999999999958,\"alive\":1766,\"cRound\":0,\"eRound\":0,\"atoms\":0,\"charge\":0,\"energy\":-0.02423095703125,\"body\":374.392,\"adapter\":null}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T00:43:53",
+  "wall_s": 140.4
+}

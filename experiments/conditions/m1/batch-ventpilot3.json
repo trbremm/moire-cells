@@ -1,0 +1,11 @@
+{
+ "batch": "m1-ventpilot3",
+ "runs": [
+  "vent-x1.json",
+  "vent-x2.json",
+  "vent-x3.json"
+ ],
+ "seeds": [
+  3
+ ]
+}

@@ -1,0 +1,11 @@
+{
+ "batch": "m1-final",
+ "runs": [
+  "final-default.json",
+  "final-oxy-spot.json",
+  "final-oxy-full.json"
+ ],
+ "seeds": [
+  3
+ ]
+}

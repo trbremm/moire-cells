@@ -1,0 +1,30 @@
+{
+ "name": "m1-fix12-default",
+ "description": "step M1: default, both fixes (the M1 defaults), 10 min",
+ "query": {},
+ "duration": 600,
+ "sample_every": 20,
+ "snapshots": [
+  {
+   "t": 300,
+   "grid": true
+  },
+  {
+   "t": 600,
+   "grid": true
+  }
+ ],
+ "shots": [
+  {
+   "t": 300
+  },
+  {
+   "t": 600
+  },
+  {
+   "t": 600,
+   "panel": true,
+   "name": "panel"
+  }
+ ]
+}

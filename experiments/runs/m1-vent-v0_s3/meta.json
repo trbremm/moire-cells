@@ -1,0 +1,70 @@
+{
+  "name": "m1-vent-v0_s3",
+  "description": "step M1 Task B pilot: the Deep vents preset in total darkness, as shipped (vents 40 atoms/s, heat 10 per atom, sea 0.02 per R2 per s toward 0.5), 5 min",
+  "condition": {
+    "name": "m1-vent-v0_s3",
+    "description": "step M1 Task B pilot: the Deep vents preset in total darkness, as shipped (vents 40 atoms/s, heat 10 per atom, sea 0.02 per R2 per s toward 0.5), 5 min",
+    "query": {
+      "preset": "vent",
+      "seed": 3
+    },
+    "duration": 300,
+    "sample_every": 10,
+    "snapshots": [
+      {
+        "t": 60,
+        "grid": true
+      },
+      {
+        "t": 120,
+        "grid": true
+      },
+      {
+        "t": 300,
+        "grid": true
+      }
+    ],
+    "shots": [
+      {
+        "t": 120
+      },
+      {
+        "t": 300
+      },
+      {
+        "t": 300,
+        "panel": true,
+        "name": "panel"
+      }
+    ]
+  },
+  "url": "http://localhost:54849/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=vent&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "9e4078cc1c965de590e547dc78b96c5dbd31bc73",
+  "dirty": true,
+  "started": "2026-11-16T23:32:00",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 300.0,
+  "run_wall_s": 15.53,
+  "speed_reached": 19.32,
+  "samples": 31,
+  "shots": [
+    "shots/t120.png",
+    "shots/t300.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t60.json",
+    "snapshots/snap_t120.json",
+    "snapshots/snap_t300.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T23:32:55",
+  "wall_s": 54.8
+}

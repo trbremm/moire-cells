@@ -1,0 +1,131 @@
+{
+  "name": "m1-off-default_s3",
+  "description": "step M1 control: default with every M1 fix off (?oilsoap=0&biteblock=0), 20 min",
+  "condition": {
+    "name": "m1-off-default_s3",
+    "description": "step M1 control: default with every M1 fix off (?oilsoap=0&biteblock=0), 20 min",
+    "query": {
+      "oilsoap": 0,
+      "biteblock": 0,
+      "seed": 3
+    },
+    "duration": 1203,
+    "sample_every": 20,
+    "snapshots": [
+      {
+        "t": 600,
+        "grid": true
+      },
+      {
+        "t": 1200,
+        "grid": true
+      }
+    ],
+    "shots": [
+      {
+        "t": 600
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "panel": true,
+        "name": "panel"
+      },
+      {
+        "t": 1202,
+        "name": "harmonic"
+      },
+      {
+        "t": 1200,
+        "crop": [
+          560,
+          320,
+          160,
+          160
+        ],
+        "scale": 4,
+        "name": "close0"
+      },
+      {
+        "t": 1200,
+        "crop": [
+          700,
+          420,
+          160,
+          160
+        ],
+        "scale": 4,
+        "name": "close1"
+      },
+      {
+        "t": 1202,
+        "crop": [
+          560,
+          320,
+          160,
+          160
+        ],
+        "scale": 4,
+        "name": "close0_harmonic"
+      },
+      {
+        "t": 1202,
+        "crop": [
+          700,
+          420,
+          160,
+          160
+        ],
+        "scale": 4,
+        "name": "close1_harmonic"
+      }
+    ],
+    "evals": [
+      {
+        "t": 1201,
+        "js": "moire.control.action('harmonic'); return 'harmonic'"
+      }
+    ]
+  },
+  "url": "http://localhost:56747/index.html?speed=max&until=0&overlay=ghost&ui=0&oilsoap=0&biteblock=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "52d5b9407275f75ea664ee1986827a79603e56a4",
+  "dirty": true,
+  "started": "2026-11-17T00:47:04",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1203.0,
+  "run_wall_s": 166.26,
+  "speed_reached": 7.24,
+  "samples": 62,
+  "shots": [
+    "shots/t600.png",
+    "shots/t1200.png",
+    "shots/panel.png",
+    "shots/close0.png",
+    "shots/close1.png",
+    "shots/harmonic.png",
+    "shots/close0_harmonic.png",
+    "shots/close1_harmonic.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t600.json",
+    "snapshots/snap_t1200.json"
+  ],
+  "clips": [],
+  "evals": [
+    {
+      "t": 1201.0000000000605,
+      "js": "moire.control.action('harmonic'); return 'harmonic'",
+      "result": "harmonic"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T00:50:40",
+  "wall_s": 215.92
+}

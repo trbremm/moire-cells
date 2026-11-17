@@ -1,0 +1,11 @@
+{
+ "batch": "m1-dark",
+ "runs": [
+  "dark.json",
+  "dark-eaters.json"
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

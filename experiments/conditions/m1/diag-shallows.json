@@ -1,0 +1,34 @@
+{
+ "name": "m1-diag-shallows",
+ "description": "step M1 diagnosis: shallows, every M1 fix off (the membrane budget as before), 10 min",
+ "query": {
+  "preset": "shallows",
+  "oilsoap": 0,
+  "biteblock": 0
+ },
+ "duration": 600,
+ "sample_every": 20,
+ "snapshots": [
+  {
+   "t": 300,
+   "grid": true
+  },
+  {
+   "t": 600,
+   "grid": true
+  }
+ ],
+ "shots": [
+  {
+   "t": 300
+  },
+  {
+   "t": 600
+  },
+  {
+   "t": 600,
+   "panel": true,
+   "name": "panel"
+  }
+ ]
+}

@@ -1,0 +1,66 @@
+{
+  "name": "m1-oases-c1_s3",
+  "description": "step M1 Task C: the Oases preset, bury 1/60 per s, 20 min",
+  "condition": {
+    "name": "m1-oases-c1_s3",
+    "description": "step M1 Task C: the Oases preset, bury 1/60 per s, 20 min",
+    "query": {
+      "preset": "oases",
+      "bury": 0.0167,
+      "seed": 3
+    },
+    "duration": 1200,
+    "sample_every": 30,
+    "snapshots": [
+      {
+        "t": 600,
+        "grid": true
+      },
+      {
+        "t": 1200,
+        "grid": true
+      }
+    ],
+    "shots": [
+      {
+        "t": 600
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "panel": true,
+        "name": "panel"
+      }
+    ]
+  },
+  "url": "http://localhost:62785/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=oases&bury=0.0167&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "52d5b9407275f75ea664ee1986827a79603e56a4",
+  "dirty": false,
+  "started": "2026-11-17T00:00:16",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 172.89,
+  "speed_reached": 6.94,
+  "samples": 41,
+  "shots": [
+    "shots/t600.png",
+    "shots/t1200.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t600.json",
+    "snapshots/snap_t1200.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-17T00:03:49",
+  "wall_s": 213.61
+}

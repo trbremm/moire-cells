@@ -1,0 +1,110 @@
+{
+  "name": "m1-dark-eaters_s7",
+  "description": "step M1 Task B: the same, every founder only the gradient engine g + T -> gT (rate 2), 40 min",
+  "condition": {
+    "name": "m1-dark-eaters_s7",
+    "description": "step M1 Task B: the same, every founder only the gradient engine g + T -> gT (rate 2), 40 min",
+    "query": {
+      "preset": "vent",
+      "genes": "eng0:12,rate0:2,rate1:0,rate2:0",
+      "seed": 7
+    },
+    "duration": 2400,
+    "sample_every": 10,
+    "snapshots": [
+      {
+        "t": 60,
+        "grid": true
+      },
+      {
+        "t": 120,
+        "grid": true
+      },
+      {
+        "t": 300,
+        "grid": true
+      },
+      {
+        "t": 600,
+        "grid": true
+      },
+      {
+        "t": 1200,
+        "grid": true
+      },
+      {
+        "t": 2400,
+        "grid": true
+      }
+    ],
+    "shots": [
+      {
+        "t": 60
+      },
+      {
+        "t": 120
+      },
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 2400
+      },
+      {
+        "t": 2400,
+        "panel": true,
+        "name": "panel"
+      },
+      {
+        "t": 120,
+        "crop": [
+          540,
+          110,
+          200,
+          150
+        ],
+        "scale": 3,
+        "name": "close_t120"
+      }
+    ]
+  },
+  "url": "http://localhost:54660/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=vent&genes=eng0:12,rate0:2,rate1:0,rate2:0&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "52d5b9407275f75ea664ee1986827a79603e56a4",
+  "dirty": true,
+  "started": "2026-11-17T00:20:20",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 2400.0,
+  "run_wall_s": 92.69,
+  "speed_reached": 25.89,
+  "samples": 241,
+  "shots": [
+    "shots/t60.png",
+    "shots/t120.png",
+    "shots/close_t120.png",
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/t2400.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t60.json",
+    "snapshots/snap_t120.json",
+    "snapshots/snap_t300.json",
+    "snapshots/snap_t600.json",
+    "snapshots/snap_t1200.json",
+    "snapshots/snap_t2400.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-17T00:23:09",
+  "wall_s": 168.93
+}

@@ -1,0 +1,66 @@
+{
+  "name": "m1-fix1-shallows_s3",
+  "description": "step M1: shallows, head on oil only (bites as before), 10 min",
+  "condition": {
+    "name": "m1-fix1-shallows_s3",
+    "description": "step M1: shallows, head on oil only (bites as before), 10 min",
+    "query": {
+      "preset": "shallows",
+      "biteblock": 0,
+      "seed": 3
+    },
+    "duration": 600,
+    "sample_every": 20,
+    "snapshots": [
+      {
+        "t": 300,
+        "grid": true
+      },
+      {
+        "t": 600,
+        "grid": true
+      }
+    ],
+    "shots": [
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 600,
+        "panel": true,
+        "name": "panel"
+      }
+    ]
+  },
+  "url": "http://localhost:49846/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=shallows&biteblock=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "9e4078cc1c965de590e547dc78b96c5dbd31bc73",
+  "dirty": true,
+  "started": "2026-11-16T23:21:08",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.51",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 600.0,
+  "run_wall_s": 167.25,
+  "speed_reached": 3.59,
+  "samples": 31,
+  "shots": [
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t300.json",
+    "snapshots/snap_t600.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-16T23:24:35",
+  "wall_s": 207.5
+}

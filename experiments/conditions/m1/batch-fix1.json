@@ -1,0 +1,11 @@
+{
+ "batch": "m1-fix1",
+ "runs": [
+  "fix1-default.json",
+  "fix1-shallows.json",
+  "fix1-oxy-full.json"
+ ],
+ "seeds": [
+  3
+ ]
+}

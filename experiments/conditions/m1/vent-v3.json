@@ -1,0 +1,44 @@
+{
+ "name": "m1-vent-v3",
+ "description": "step M1 Task B pilot: the Deep vents preset in total darkness, vents 10 atoms/s, heat 2, sea level 1, 5 min",
+ "query": {
+  "preset": "vent",
+  "ventheat": 2,
+  "sealevel": 1
+ },
+ "duration": 300,
+ "sample_every": 10,
+ "snapshots": [
+  {
+   "t": 60,
+   "grid": true
+  },
+  {
+   "t": 120,
+   "grid": true
+  },
+  {
+   "t": 300,
+   "grid": true
+  }
+ ],
+ "shots": [
+  {
+   "t": 120
+  },
+  {
+   "t": 300
+  },
+  {
+   "t": 300,
+   "panel": true,
+   "name": "panel"
+  }
+ ],
+ "evals": [
+  {
+   "t": 0,
+   "js": "moire.matter.springs.forEach(s => { if (s.kind === 'heavy') s.rate = 10; }); return moire.matter.springs.map(s => s.kind + ' ' + s.rate)"
+  }
+ ]
+}

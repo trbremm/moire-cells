@@ -1,0 +1,155 @@
+{
+ "name": "m1-fix12-oxy-full",
+ "description": "step M1: oxy-full, both fixes (the M1 defaults), 10 min",
+ "query": {
+  "electrons": 1,
+  "light": "full"
+ },
+ "duration": 600,
+ "sample_every": 20,
+ "snapshots": [
+  {
+   "t": 300,
+   "grid": true
+  },
+  {
+   "t": 600,
+   "grid": true
+  }
+ ],
+ "shots": [
+  {
+   "t": 300
+  },
+  {
+   "t": 600
+  },
+  {
+   "t": 600,
+   "panel": true,
+   "name": "panel"
+  }
+ ],
+ "evals": [
+  {
+   "t": 0,
+   "js": "moire.matter.clearSprings(); moire.matter.addSpring(875, 328, 'light', 1e9); moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.map(s => s.kind + ' ' + s.life)"
+  },
+  {
+   "t": 20,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 40,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 60,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 80,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 100,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 120,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 140,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 160,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 180,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 200,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 220,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 240,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 260,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 280,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 300,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 320,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 340,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 360,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 380,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 400,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 420,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 440,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 460,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 480,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 500,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 520,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 540,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 560,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  },
+  {
+   "t": 580,
+   "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+  }
+ ]
+}

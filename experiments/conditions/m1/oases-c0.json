@@ -1,0 +1,32 @@
+{
+ "name": "m1-oases-c0",
+ "description": "step M1 Task C: the Oases preset, as shipped (bury 1/150 per s, currents 0.35 R/s, oases 1 atom/s), 20 min",
+ "query": {
+  "preset": "oases"
+ },
+ "duration": 1200,
+ "sample_every": 30,
+ "snapshots": [
+  {
+   "t": 600,
+   "grid": true
+  },
+  {
+   "t": 1200,
+   "grid": true
+  }
+ ],
+ "shots": [
+  {
+   "t": 600
+  },
+  {
+   "t": 1200
+  },
+  {
+   "t": 1200,
+   "panel": true,
+   "name": "panel"
+  }
+ ]
+}

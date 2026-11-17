@@ -1,0 +1,33 @@
+{
+ "name": "m1-fix1-oases",
+ "description": "step M1: oases, head on oil only (bites as before), 10 min",
+ "query": {
+  "preset": "oases",
+  "biteblock": 0
+ },
+ "duration": 600,
+ "sample_every": 20,
+ "snapshots": [
+  {
+   "t": 300,
+   "grid": true
+  },
+  {
+   "t": 600,
+   "grid": true
+  }
+ ],
+ "shots": [
+  {
+   "t": 300
+  },
+  {
+   "t": 600
+  },
+  {
+   "t": 600,
+   "panel": true,
+   "name": "panel"
+  }
+ ]
+}

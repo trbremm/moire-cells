@@ -1,0 +1,36 @@
+{
+ "name": "m1-vent-v0",
+ "description": "step M1 Task B pilot: the Deep vents preset in total darkness, as shipped (vents 40 atoms/s, heat 10 per atom, sea 0.02 per R2 per s toward 0.5), 5 min",
+ "query": {
+  "preset": "vent"
+ },
+ "duration": 300,
+ "sample_every": 10,
+ "snapshots": [
+  {
+   "t": 60,
+   "grid": true
+  },
+  {
+   "t": 120,
+   "grid": true
+  },
+  {
+   "t": 300,
+   "grid": true
+  }
+ ],
+ "shots": [
+  {
+   "t": 120
+  },
+  {
+   "t": 300
+  },
+  {
+   "t": 300,
+   "panel": true,
+   "name": "panel"
+  }
+ ]
+}

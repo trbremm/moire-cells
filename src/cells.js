@@ -49,6 +49,7 @@ import { Kin } from './kin.js';
 import { Grn } from './grn.js';
 import { Predators, STATS_P1, P1_WORDS, P1_CLEAR } from './predators.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
+import { dish } from './dish.js';      // the dish's own size and R
 import { cultureLayout } from './culture.js';   // app: how a new culture is spread
 
 export const CELL_URL = 'src/shaders/cell_common.wgsl';
@@ -488,6 +489,8 @@ export class Cells {
 
   /** The cells' radius: the reference's R, or smaller if `count` cells would not fit in the dish. */
   fitR(view) {
+    // (the dish's own R, src/dish.js: chosen with the dish, kept while the window changes; it is the old rule's for a dish from the window)
+    if (dish.R > 0) return dish.R;
     // a round blob packed at about 0.82 area fraction, diameter at most 0.8 x the shorter side
     const blob = 0.4 * Math.min(view.cssW, view.cssH);
     return Math.min(this.medium.R, blob * Math.sqrt(0.82 / this.start));   // (step C9: by the starting number, not the capacity)

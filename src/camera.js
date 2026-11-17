@@ -1,7 +1,10 @@
 // App: the VIEW CAMERA (zoom and pan). Only the drawing and the pointer change; the simulation runs in dish coordinates
 // (CSS px of the dish, 0..W x 0..H, as before) and never sees the camera.
 //
-//   screen = (dish - pan) x zoom          dish = screen / zoom + pan
+//   screen = (dish - pan) x zoom x fit    dish = screen / (zoom x fit) + pan
+//
+// fit: canvas CSS px per dish px (src/dish.js: the dish keeps its own size and the canvas is fitted inside the window; 1 when the dish is
+// the window, as before). The drawing gets it through view.dpr (device px per dish px), so only the pointer needs it here.
 //
 // zoom 1 (with pan 0) is the whole dish, as before; up to MAX_ZOOM. The pan is clamped so the view never leaves the dish.
 // Every drawing uniform gets the camera from here (see `cam` in the draw shaders): the full-screen passes map a pixel to the
@@ -12,15 +15,20 @@ export const MAX_ZOOM = 8;
 
 export const camera = {
   z: 1, x: 0, y: 0,      // zoom, and the dish point at the screen's top left corner (CSS px of the dish)
-  W: 1, H: 1,            // the dish (= the canvas, CSS px)
+  W: 1, H: 1,            // the dish (dish px; = the canvas's CSS px when fit is 1)
+  f: 1,                  // canvas CSS px per dish px
   moved: false,          // changed since the last frame took it (main.js clears it after drawing)
   listeners: [],
 
   /** The dish's size (on a resize): the pan is clamped again. */
-  setDish(W, H) { this.W = W; this.H = H; this.clamp(); },
+  setDish(W, H, f = 1) { this.W = W; this.H = H; this.f = f > 0 ? f : 1; this.clamp(); },
 
-  toDish(sx, sy) { return [sx / this.z + this.x, sy / this.z + this.y]; },
-  toScreen(dx, dy) { return [(dx - this.x) * this.z, (dy - this.y) * this.z]; },
+  /** The canvas's size (CSS px). */
+  get SW() { return this.W * this.f; },
+  get SH() { return this.H * this.f; },
+
+  toDish(sx, sy) { const s = this.z * this.f; return [sx / s + this.x, sy / s + this.y]; },
+  toScreen(dx, dy) { const s = this.z * this.f; return [(dx - this.x) * s, (dy - this.y) * s]; },
 
   clamp() {
     this.z = Math.max(1, Math.min(MAX_ZOOM, this.z));
@@ -36,7 +44,7 @@ export const camera = {
     const z = Math.max(1, Math.min(MAX_ZOOM, this.z * factor));
     if (z === this.z) return false;
     this.z = z;
-    this.x = dx - sx / z; this.y = dy - sy / z;
+    this.x = dx - sx / (z * this.f); this.y = dy - sy / (z * this.f);
     this.clamp();
     this.changed();
     return true;
@@ -45,7 +53,7 @@ export const camera = {
   /** Move the view by (sx, sy) screen CSS px (a drag: the dish follows the finger). */
   panBy(sx, sy) {
     const x = this.x, y = this.y;
-    this.x -= sx / this.z; this.y -= sy / this.z;
+    this.x -= sx / (this.z * this.f); this.y -= sy / (this.z * this.f);
     this.clamp();
     if (x !== this.x || y !== this.y) this.changed();
   },

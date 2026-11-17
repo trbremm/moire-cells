@@ -39,6 +39,7 @@ import { Electrons } from './electrons.js';
 import { Vents } from './vents.js';
 import { setShaderConst } from './gpu.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
+import { dish } from './dish.js';      // the dish: a scene's springs drip per area
 
 // ---------- step C12d, ELECTRONS: which table this page runs (fixed for the page: changing it would change the energy of
 // every molecule in the dish). ?electrons=0 gives the previous table (step C4 to C12c) exactly ----------
@@ -1222,7 +1223,9 @@ export class Matter {
       F[o] = s.x; F[o + 1] = s.y; F[o + 2] = rad; F[o + 3] = Math.max(0, 1 - (s.age + aged) / this.lifeOf(s));
       F[o + 4 + 19] = discPixels(s.x / H.px, s.y / H.px, Math.max(rad / H.px, 0.75), H.hw, H.hh);   // amt[19]: its disc's pixels
       // (step C12: a mix's shares are of the atoms, so a molecule of n atoms drips 1 / n as many units)
-      const rate = s.rate ?? p.rate;   // (app: a spring's own rate, e.g. a pipette's drop or a preset's slow vent)
+      // (app: a spring's own rate, e.g. a pipette's drop or a preset's slow vent; the dish: a scene's spring drips per area, x the dish's
+      // area over the reference dish's, src/dish.js)
+      const rate = (s.rate ?? p.rate) * (s.scene ? dish.supply : 1);
       const mix = this.oases ? this.oases.mixFor(s, K.mix) : K.mix;   // (step N1: with the nutrient scarce, trace only from the oases)
       for (const [atom, share] of Object.entries(mix)) F[o + 4 + CH[atom]] = rate * share / SUBSTANCES[CH[atom]].atoms.length * dt * ATOM_SCALE;
       F[o + 4 + 18] = this.vents.heatPerTick(s.kind, rate, dt);   // step C12f: a hot vent's heat per tick over its disc (amt[18])

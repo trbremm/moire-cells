@@ -51,8 +51,8 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   - *view* (the eye): first the **look** (step C6n: neon, halo, trails, hum, show the machinery, substances as dust or
     halftone, the lattice inside the cells; step C6b: the charge contours; step C6c: corner rounding; step C12: oil films
     drawn, polarity wash), then the entropy panel, the stats overlay (F),
-    the landscape, which substance is shown, colour by fate, lineage, strategy (step C6), charge (step C6b) or wall pattern
-    (step C10), and the other drawing switches;
+    the landscape, which substance is shown, colour by job (step F0; by fate until then), lineage, strategy (step C6), charge
+    (step C6b) or wall pattern (step C10), the job legend (step F0), and the other drawing switches;
   - *rules*: every rule that has a key, as a switch with a one-line explanation and its key, grouped as below
     (the loop, cell shape (step C6c: honeycomb shapes and their stiffness, panel only), field B, steps 6 to 8, biology, heat and light, chemistry, cells eat, engines, charge, membrane chemistry (step C6c, panel only), charge per side (step C6d, panel only: the dipoles' switches and six knobs with - and +), pumps (step C7, panel only: four switches and five knobs with - and +), catalysts (step C7b, panel only: two switches and four knobs), hard light (step C8, panel only: one switch and three knobs), division (step C9, panel only: the mode and five knobs), patterned walls (step C10, panel only: four switches and six knobs, the sixth, free base glue, since step C11), glue turns cells (step C11, panel only: two switches and two knobs), oils and water (step C12, panel only: four
     switches, what the oil tool drops, and four knobs)); settings with several values show the current one
@@ -130,12 +130,12 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
 - **F**: frame time and adapter overlay
 - **?**: the hint line shows all keys / the short line
 - **A**: ambient ripples on/off (random drops standing in for the cells' divisions and deaths)
-- **N**: new culture (a fresh blob of stem cells at the centre, the same founder genomes)
+- **N**: new culture (a fresh blob of cells at the centre, the same founder genomes)
 - **G**: new culture with fresh random founder genomes
 - **P**: contact push on/off (without it, cells slide over each other and the centre pull heaps them up)
-- **D**: differentiation on/off (off: every cell goes back to stem and stays there)
-- **H**: adhesion on/off (like sticks to like)
-- **B**: body traits on/off (size, motility and crawling from the genome and the fate; off: all alike, no crawling)
+- (**D** and **I**, differentiation and inherit fate, went with the fates in step F0: "Step F0: fates removed, colour by job")
+- **H**: adhesion on/off (like sticks to like: the glue genes, similar keys)
+- **B**: body traits on/off (size, motility and crawling from the genome; off: all alike, no crawling)
 - **T**: the life cycle on/off: births and deaths (step C9: by division, the count rising and falling, the default; or by the
   old turnover, a fixed count, where a dead cell's slot goes at once to a neighbour's daughter: rules panel, Division)
 - **M**: mutation on/off (off: daughters are exact copies of their parent)
@@ -148,10 +148,9 @@ small button (the arrow at its left end; the page remembers it; `?ui=0` starts f
   **Shift+6**: the lattice inside the cells (step C6n, "The neon look and the clean view" below; Shift + the digit key,
   on any keyboard layout)
 - **Shift+7**: the charge field (and the free atoms' drift in it) · **Shift+8**: cells' charge in field B from their
-  stock (off: per fate) · **Shift+9**: cells feel the charge field · **Shift+0**: the charge field's contour lines (step
+  stock (off: from the field genes, the default since C12g) · **Shift+9**: cells feel the charge field · **Shift+0**: the charge field's contour lines (step
   C6b, "Charge" below)
-- **I**: daughters inherit their parent's fate on/off (default off: they start as stem cells)
-- **V**: colour by fate, by lineage (the key's hue), by strategy (step C6: how the cell's engines make a living), or by
+- **V**: colour by job (step F0: what the cell does, from its genes as expressed; legend bottom right), by lineage (the key's hue), by strategy (step C6: how the cell's engines make a living), or by
   charge (step C6b: rose net +, blue net -, grey neutral), or by wall pattern (step C10: coral polar, mint two-ended, magenta
   sticky sides, grey uniform)
 - **[** / **]**: simulation speed 1× / 2× / 4× / 8× / 16× / 32× / MAX (step C3b: the last three are the timelapse)
@@ -177,19 +176,19 @@ The loop (step 4):
 Field B (step 5):
 - **Q**: cells feel field B on/off (it is still emitted and drawn)
 - **U**: B's sign rule: like repels like / like attracts like (default; `?bio=0` starts with like repels)
-- **Y**: what "like" means for B: the same sign of charge (default; charges by fate) / a similar key (lineage)
+- **Y**: what "like" means for B: the same sign of charge (default) / a similar key (lineage)
 - **J**: field B drawn on/off (blue rings; drawing only)
 
 Where the fields meet (step 6):
 - **4**: leak by deformation on/off (default off): strongly stretched cells leak part of their A into B (blue centre dot)
 - **5**: conversion on/off (default on): a cell that feels enough A converts and emits more B (blue outline; a
-  converted stem cell is filled blue)
+  converted undecided cell is filled blue)
 - **6**: what conversion does: boost B (default) / flip the sign of the cell's B charge
 - **7**: relay through B on/off (default on; needs 5): converted cells excite their neighbours, tire and rest, so
   conversion travels as waves
 
 Exclusion (step 7):
-- **8**: exclusion on/off (default off; on with `?bio=0`): cells of the same fate in the same state (the bar across each cell) keep a
+- **8**: exclusion on/off (default off; on with `?bio=0`): cells of the same founder line (step F0; the same fate until then) in the same state (the bar across each cell) keep a
   gap; other states may touch
 - **9**: state flip on/off (default on; acts only while 8 is on): a cell crowded by its own state turns to the state
   least represented around it
@@ -208,7 +207,7 @@ Until step C3 a fresh load started with the reference's sources, two nutrient (g
 gone (CLAUDE.md, "NO NUTRIENT, NO THREAT"): springs of atoms took their place (step C3 below), and food and harm are
 to emerge from the chemistry.
 
-Cells (step 3): a fixed number of cells, 2000 by default, starting as a packed blob of stem cells. They push
+Cells (step 3): a fixed number of cells, 2000 by default, starting as a packed blob of cells. They push
 each other apart where they overlap, drift slowly, jitter a little and stay off the dish edge. Since step 4
 they also emit into the field and feel it (below). Their radius is the reference's R (5 to 9 px), smaller when that many cells
 would not fit (about 2.9 px at 10 000 and 1.3 px at 50 000 on a 1280 × 800 window). Since step C9 the number changes: cells
@@ -216,9 +215,14 @@ divide and die, in buffers with room for 3 times the starting number (`?cap=N`);
 
 ## Genome and specialisation (step 3b)
 
+**Step F0 (2026-11-17): the fates described below are gone** (user: "I dont want the fates anymore"): no stem, epithelium,
+muscle, neuron or cartilage, no counters, no commitment, no same-fate glue or fate body traits, no keys D and I. The genes
+`threshold`, `output`, `response` and `relay` are no longer used; their words hold the cells' job scores. Cells are coloured by
+their JOB instead: "Step F0: fates removed, colour by job" below. The section is kept as the history of step 3b.
+
 Every cell carries a small random genome. Cells meet by touching; a cell recognises some neighbours and not
 others (SPECIFIC), adds up what it recognises over time (SUFFICIENT: only lasting contact counts), and
-commits to a fate when one of four counters passes its threshold. Cells die now and then and a neighbour
+committed to a fate when one of four counters passed its threshold (until step F0). Cells die now and then and a neighbour
 divides into the gap, copying its genome with small mistakes, so lineages compete, spread and drift.
 What it looks like after a minute or two at 8×: tissues of one fate gather into patches (cyan epithelium,
 amber cartilage, violet neuron, pink muscle when a lineage evolves it), stem cells end up in a loose rim
@@ -294,14 +298,14 @@ live-tunable numbers.
 
 ## The loop (step 4)
 
-Every cell is an emitter: its lattice (its key, its fate's period, and its stretch) beats against the
+Every cell is an emitter: its lattice (its key, its fate's period until step F0, and its stretch) beats against the
 medium's lattice, and that beat, times a power-law envelope (range r0 = 2.2 R), is its field. Every cell feels
 the field of its neighbours (within 3.6 R, found through the grid; until step C3 also the sources') on its membrane, moves
 along it, and is stretched by it, which changes its lattice, which changes what it emits and feels: the loop.
 Ported from the reference, with the changes marked:
 - **Membrane sensing**: 6 straight segments of the stretched outline; the field is averaged exactly along each
   (cos at the midpoint × sinc of half the phase change). Force = Σ segment × outward normal (area × gradient),
-  × 1.3 R / r, saturating (tanh) at 3 R/s. Weights: the reference's sign table (fate × emitter kind: like fates
+  × 1.3 R / r, saturating (tanh) at 3 R/s. Weights (until step F0, which put every pair at the stem cells' 0.15): the reference's sign table (fate × emitter kind: like fates
   attract, unlike repel a little; its nutrient and threat rows went in step C3) × tuning (a Gaussian in the difference
   between the two strained lattices) × a smooth taper near 3.6 R (new; the reference cut off hard).
   New: the cells' part has a gain of 10 (`sense`; the reference's 1 is too weak to matter against the contact
@@ -363,8 +367,9 @@ other. A cell's B lattice is its key and stretch as for A, with its own lever, 0
 than its reach, so each cell's B is a smooth bump (at lever 0.4 its rings make the summed force jitter, a gas).
 B reaches further than A: power-law envelope from r0 = 5 R (A: 2.2 R), cut at 10 R (A: 3.6 R), always pinned.
 
-Charges: each fate has a charge per field, how strongly it emits into that field and listens to it
-(`moire.cells.fields.chargeA`, all 1, and `chargeB`: stem 1, epithelium 1, muscle -1, neuron 0.5, cartilage -1).
+Charges: each fate had a charge per field, how strongly it emits into that field and listens to it
+(`moire.cells.fields.chargeA`, all 1, and `chargeB`: stem 1, epithelium 1, muscle -1, neuron 0.5, cartilage -1). Since step F0
+one charge for all (`chargeA` 1, `chargeB` 1); field B's sign comes from each cell's own genes since step C12g.
 Sign rule (U): like repels like. By charge (Y, default) the two charges multiply: same sign repels, opposite
 attracts. By lineage, two cells repel by how alike their keys are (Gaussian, width 0.15) times the size of their
 charges; unlike keys ignore each other.
@@ -462,7 +467,8 @@ at 4x speed.
 
 The brief's "Pauli exclusion", as a pattern rule, not physics: two cells of the same TYPE in the same STATE do not
 share a place; cells in different states may.
-- **Type = fate** (stem, epithelium, muscle, neuron, cartilage). It is the cell's "kind of particle", and it is what
+- **Type = founder line** since step F0 (the founder id each cell inherits, `Bio.rec.w`: its lineage). Until then:
+  **type = fate** (stem, epithelium, muscle, neuron, cartilage). It is the cell's "kind of particle", and it is what
   the biology already uses for "like" (adhesion, field A's sign table). Loop only (`?bio=0`) every cell is stem, so
   the state alone decides.
 - **State = the cell's lattice angle, cut into 2, 3 or 4 bins** (key 0), like spin up / down: the key angle's 60
@@ -1274,13 +1280,13 @@ edge around the battery's core, at a fixed place (slot 1 up, slot 2 lower right,
 proportion to its rate up to `partRate` (2): **harvester** a disc in its band's colour (visible 1 gold, visible 2 sky
 blue, hard pale violet; `ink` in `BANDS`, `src/light.js`), **storer** a ring in the battery's pale green, **burn** a
 diamond in the fuel's deeper green, **breathing swap** a triangle pointing out, faded red, **sediment** a square, dim warm
-grey. The body keeps its fate colour; the lattice dots dim to 45 % and keep a clear margin around each part; the core is a
+grey. The body keeps its fate colour (its job colour since step F0); the lattice dots dim to 45 % and keep a clear margin around each part; the core is a
 little smaller at full charge (0.36 of the radius instead of 0.55). The parts show while the engines run (Shift+O). A cell
 is about 13 px across at 2000 cells on a computer screen, so zoom in (pinch, or the browser's zoom) to read them.
 Since step C6n the inks are in `src/palette.js` (`band`, `core`, `burn`, `swap`, `sed`), and under the neon look the
 parts are small bright lamps, whiter at their centres; the lattice dots are off in the clean view (Shift+6).
 
-**Colour by strategy** (key V cycles fate → lineage → strategy; `?view=strategy`): harvester only = its band's colour,
+**Colour by strategy** (key V cycles fate (job since F0) → lineage → strategy; `?view=strategy`): harvester only = its band's colour,
 burn only = green, both = split down the middle (band colour left, green right, a crisp edge), the rest = dim grey; every
 body gets the same flat fill (`strategyFill`, 0.5). Starving cells still dim.
 
@@ -1335,7 +1341,7 @@ edges carry the fate's colour, with a tight coloured halo around it; the inside 
 tint and a soft glow just inside the tube (as a lit tube lights the wall behind it). Inside, the battery is a small
 **soft-lit disc with a bright rim** (its size is still the charge), and the engines are tiny bright **lamps** (the same
 shapes and colours as in C6, whiter at their centres). Fates in neon colours: stem warm white (peach), epithelium cyan,
-muscle hot pink, neuron violet, cartilage amber. In a packed tissue every cell stays a separate ring: the halo is about
+muscle hot pink, neuron violet, cartilage amber (since step F0 the jobs: "Step F0: fates removed, colour by job"). In a packed tissue every cell stays a separate ring: the halo is about
 a tube's width, and only bright light makes one (the dark insides do not), so the dish does not fog over. The
 substances are **material**, not a dot screen: fuel is green glow-dust, free atoms are fainter specks (red to grey-blue
 by their mix), trace is a rare small spark, sediment is a solid dark crust. The spot's outline is a quiet warm-white
@@ -1526,7 +1532,7 @@ a little (between -0.65 and +0.61 against 20 to 250 of each sign in a 660 s run)
 as the atoms do.
 
 **Switches** (group "Charge (step C6b)" in the rules panel; contours in the view panel's Look group): **Shift+7** charge
-field (and the drift of free atoms) · **Shift+8** cells' charge from their stock (off: per fate) · **Shift+9** cells feel
+field (and the drift of free atoms) · **Shift+8** cells' charge from their stock (off: from the field genes, the default since C12g) · **Shift+9** cells feel
 the charge field · **Shift+0** charge contours. Shift + the digit keys, by their place on the keyboard, as in step C6n.
 URL: `?charge=0`, `?qstock=0`, `?qfeel=0`, `?contours=1`, `?view=charge`. (Since step C12g the field and the stock charges are OFF by default: "Step C12g: ion flow", "The charge field off by default".)
 
@@ -2516,7 +2522,7 @@ every 5 s, the last 3 minutes, as block characters scaled from 0 to the largest;
 2000 cells (births = deaths 44.0/s)`. The F overlay adds the knobs, the totals per cause, the energy the divisions' cost
 turned into heat, the last `stats()` and the count every minute. The cells' line in the overlay now reads "cells 1298 alive
 of 6000 slots (started with 2000)". Counted on the GPU: the counters in `Stats.div` (the step), read back with the census
-every 4 frames (the live count is the census's sum of the fates); the divisions' cost in the heat's ledger (`LG_DIV`;
+every 4 frames (the live count is the census's sum of the fates; of the jobs since step F0); the divisions' cost in the heat's ledger (`LG_DIV`;
 `LEDGER_WORDS` 22 528).
 
 **A fix on the way.** A cell that died could leave a stale pump request behind (step C7's pumps across contact): its plan
@@ -5657,7 +5663,7 @@ numbers in `experiments/runs/app-preset-*`, condition `experiments/conditions/ap
   drag places up to 400 cells in one go.
 - The cells zoo groups by engine set and skin: mutation makes many small groups, only the ten largest are shown; a group's name is
   the census's habit, so "light + burn" covers both the gt-splitters and the photosynthesisers (their genes line tells them apart).
-  Portraits are coloured by fate, as the dish's default view.
+  Portraits are coloured by fate, as the dish's default view (by job since step F0, with the middle cell's job named in the row).
 - The presets' springs never dry up (C clears them). Oxygen world and Deep vents crash hard in their first minutes (see the
   pictures); the other presets keep hundreds to thousands of cells at 3 min.
 - New culture with another number of cells or a preset reloads the page (a few seconds of shader compiling); only "this dish as it
@@ -5744,7 +5750,7 @@ masses appear where crust piles up (`?electrons=0`, or a crust-rich scene).
 (backquote: the key left of 1, by its place on the keyboard, so it works on any layout; on a German keyboard that key is a dead
 key, ^, and still works). E from the harmonic look goes back to neon. URL: `?look=harmonic` (also `?look=neon`, `?look=flat`),
 `?blur=0`, `?grain=0`, `?scalebar=0`. Knobs live in `moire.neon.harmonic.params` (rim, rimBase, rimW, oilRim, inside, insideTint,
-bat, busy, parts, stretchFib, muscle, cartilage, wall, gap, crust, crustHalf, fibreLen, fibreW, swirl, swirlAngle, fuel, fuelHalf,
+bat, busy, parts, stretchFib, striations, matrix (step F0: muscle and cartilage until then), wall, gap, crust, crustHalf, fibreLen, fibreW, swirl, swirlAngle, fuel, fuelHalf,
 oil, oilFill, minerals, springs; blurMix, grainAmt, dark, rate, gain, shoulder).
 
 **How it is drawn.** `src/neon.js` still runs the frame; while the harmonic look is on it skips the ripple background, the
@@ -5945,6 +5951,136 @@ panel has **squeeze** (the dish x 0.8 across) and **stretch** (x 1.25) buttons; 
 - The press moves the cells' wall only: matter and water pass under it. The perfusion's through-flow is prescribed (see above).
 - Squeeze and stretch keep the capacity and the number of oases; the energy rounding blips for one sample at each squeeze.
 
+## Step F0: fates removed, colour by job
+
+User, 2026-11-17: "I dont want the fates anymore". The hand-written contact fates of Part B (stem, epithelium, muscle, neuron,
+cartilage) still ran by default beside the gene network (step T1b) and still coloured the cells. They are gone, with no switch.
+A cell's colour now says what it DOES, read from its genes as expressed.
+
+### What was removed
+
+- The fate choice (`cell_step.wgsl`): the four leaky counters, the contact and relay signals, commitment and release, the
+  "inherit fate" rule. `Cell.kind` stays in the record (always 0; the step writes 0, a snapshot from before has it cleared).
+- The fate body effects: the fate-typical size and motility factors, muscle's built-in stretch along its heading.
+- The fates in the loop: field A's per-fate sign table (EMW: like fates 0.5, stem 0.15, unlike -0.15, neurons -0.1). Every pair
+  now feels with the stem cells' weight 0.15 (`EMW_ALL`); which neighbours a cell feels and with which sign is genetic already
+  (receptor tuning by how alike the two lattices are, and the C13 sensing gain and sign genes). The fates' own lattice periods
+  (epithelium 0.86, muscle 1.16, cartilage 0.74) are gone: every cell at the medium's period times its key.
+- The per-fate charges of fields A and B (`cells.fields.chargeA`, `chargeB` are now one number each, 1; field B's sign has come
+  from each cell's own genes since step C12g, so only `?qgenes=0` with the stock off used the fixed charge).
+- The same-fate glue (`fateAdh` 0.5): glue is genetic since C10/C11 (a0, the wall pattern, as expressed) and stays as it was,
+  times the keys' likeness. The glue torque (C11) lost the same term.
+- Keys **D** (differentiation) and **I** (inherit fate) and their rules-panel switches, `genome.rules.diff` and `inherit`
+  (bits 1 and 16 of `Sim.rules` unused), the knobs `tau`, `release`, `fateAdh`. The genes `threshold`, `output`, `response` and
+  `relay` are no longer drawn into the genome (the random numbers are still drawn and dropped, so a seed's founders keep every
+  other gene) nor mutated (a big jump that lands on them changes nothing, so the other genes jump as often as before).
+- The fate census (now the job census), the `fate` view (now `job`; `?view=fate` still works), the harmonic look's neuron double
+  rim, muscle striations and cartilage matrix (reassigned below).
+
+### What replaced "same type"
+
+- **Step 7 exclusion** (off by default, on with `?bio=0`): cells of the same TYPE in the same state keep a gap. The type is now the
+  **founder line** (`Bio.rec.w`, the founder id each cell inherits: its lineage), so a lineage spreads its states as before and two
+  lineages meet as different types. Its census counts same-line pairs.
+- Field tuning by type and charges by fate: dropped (see above); nothing else used "same type".
+
+### Colour by job (`src/jobs.js`)
+
+Six JOB SCORES per cell, worked out by the step every tick from the cell's genes as expressed (each gene times its gene-network
+output, step T1b; std and blank founders have factor 1):
+
+| job | neon ink | what counts toward it |
+|---|---|---|
+| undecided | warm white (the old stem colour) | no job clearly ahead of the others, or little expressed |
+| light eater | lime | uphill engines with a pigment band (the slot's rate x the pigment output), x 2.5 (every harvester must also burn, so its burners would otherwise outvote its pigment) |
+| breather | hot pink | engines in which a free light taker (oxygen-like t) takes an electron: burning g + t, breathing t + gT, ... (C12d kind 2) |
+| fermenter | violet | the other downhill engines, without oxygen (C12d kind 1: fermenting bonds, swaps, the trade), except the gradient ones |
+| gradient eater | cyan | downhill engines that bond two free atoms other than oxygen (g + T, G + T: the vents' redox gradient) |
+| builder | amber | chain-making engines (form) + 3 x the crust wall gene x its output |
+| predator | red | 6 x the engulf gene x its output, + 4 while the cell wraps or digests a meal |
+
+A battery-paid uphill engine without a pigment (a storer) counts for no job. The engine table is read from `src/matter.js`
+(`ENGINES` kinds) and written into the shaders as constants (`JOB_ENG0..3`), so another chemistry only has to keep its kinds.
+
+The scores are LOW-PASSED in the cell (time constant 6 s, in the state words `Bio.acc` and `Bio.resp.xy` that held the fates'
+counters and response genes), and a daughter inherits her mother's, so colours change smoothly and never flicker; a new culture
+starts undecided and its colours come up over about ten seconds. The JOB is the highest score; how strongly it shows (0 = the
+undecided ink, 1 = the job's own) = smoothstep(0.1, 0.5, lead) x smoothstep(0.2, 0.8, size), the lead being (top - second) / top.
+The tube is that mix of inks; the inside's flat fill grows with the strength (undecided cells stay dark inside, as stem cells did).
+The census counts a cell for its job once the strength is at least 0.5, else as undecided (panel line `jobs:`, samples
+`census.job.0..6`).
+
+- **Legend**: bottom right above the scale bar, each job's colour named, with how many cells show it clearly; only while the cells
+  are coloured by job in the neon or flat look; View panel "job legend", `?legend=0`. On a phone it is smaller, without counts,
+  and hides while a panel is open; on very short screens it is hidden.
+- **Zoo**: portraits in their job's colour; each row names its middle cell's job.
+- **Harmonic look**: the orange striations are now a PREDATOR's (engulfing is contractile actomyosin work, as muscle's were), the
+  fibrous matrix a BUILDER's (collagen-like), each as strongly as the job shows; no neuron double rim (`harmonic.params.striations`,
+  `matrix`).
+- **Flat look** (E): the same meanings in faded inks.
+
+### Old snapshots and presets
+
+A snapshot saved before F0 (no `jobs` field) loads with every cell's kind cleared and the fates' genome words zeroed (the notes say
+so), so its cells start undecided and colour up within seconds. Settings with `genome.rules.diff`, `inherit`, `fateAdh` or per-fate
+charges are ignored (the snapshot loader only copies keys the page has).
+
+### What it looks like (pictures: `experiments/keep/f0/`, before = main at 58d1963, after = F0; seed 3)
+
+Each scene at the same moment before and after, whole dish and a x4 zoom, neon and harmonic:
+`default-s3-*` (300 s), `shallows-s3-*` (the Sunlit shallows, 300 s), `colonies-s3-*` (the Colonies preset, five wild founders,
+480 s); `-dish-neon`, `-zoom-neon`, `-dish-harm`, `-zoom-harm`, each `-before` and `-after`.
+
+- **Default scene**: before, an almost all warm-white (stem) colony with a few amber cartilage cells (census 507 stem, 20
+  cartilage); after, the same colony (490 cells against 529) in lime and pink patches: the lineages with pigments as light eaters,
+  the burners as breathers, a third still undecided (generalists with a pigment and a burner of about the same weight), a few
+  amber builders and red predators.
+- **Shallows**: before, warm white with cyan epithelium sheets and amber/violet patches; after, light eaters (lime), breathers (pink),
+  fermenters (violet) and builders (amber) round the crust springs, each lineage's patch in one colour (2783 cells against 3648 at
+  300 s, one seed; at 120 s and 180 s 660 / 738 against 788 / 972).
+- **Colonies** (wild founders with gene networks): the same numbers (2819 against 2807 at 480 s, within 6 % at every minute), now
+  lime, pink and many red predator patches (312 cells clearly predators) where before were cyan, violet and amber fate patches.
+- **Harmonic look**: unchanged apart from the orange striations (predators) and matrix (builders); no legend there.
+- Without the same-fate glue and the fate sign table the tissues hold together as before in these scenes (counts and spread alike);
+  nothing visibly looser at this scale.
+- **Busy**: a colony of seven inks is livelier than one of mostly warm white; undecided cells (warm white, dark insides) keep it
+  from being a confetti, and patches follow lineages.
+
+### Speed (headless Chrome, 1280 x 800, default scene, seed 3, MAX, three runs each, as P1's)
+
+Before (main 58d1963, GPU free): 2000 cells neon x6.45, x6.50, x6.43 (mean x6.46), harmonic x6.73, x6.83, x6.93 (x6.83); 10 000
+neon x1.40, x1.32, x1.38 (x1.37), harmonic x1.58, x1.68, x1.52 (x1.59). After: NOT YET MEASURED (the GPU was shared with another
+worker's batches when F0 was done; `experiments/conditions/f0/speed-after.json` is ready). Expected about the same: the step loses
+the fate counters and gains six multiply-adds and a few output factors per cell; the drawing reads two more vec4 of the genome.
+
+
+### Checked
+
+- Books (`experiments/conditions/f0/check.json`, 330 s at MAX, seed 5, whole dish lit, springs; resizes to 1000 x 700 at 60 s and back
+  at 120 s, 20 predators at 90 s, the three designed tissues at 100 s, wild genomes at 150 s, key M off and on, turnover mode and
+  back, a snapshot saved and loaded at 280 s): atoms and charge rounding 0 at every sample, the reload exact (energy rounding
+  0.004); console clean.
+- Old snapshots (`reload.json`): a C11 tissue-lab snapshot (fates in its genomes and rules) loads, its 40 cells start undecided and
+  show as fermenters by 40 s; a P1 colonies snapshot at 20 min (2904 cells with fates) loads, all undecided at once, then 1007 light
+  eaters, 454 breathers, 398 predators a minute on. The Tissue lab preset (60 cloned cells, no evolution) and the three designed
+  tissues (plant, filament, biofilm, 40 cells each in the default scene) place and run (26 of 180 alive at 120 s, against 31 on main).
+- Firefox (headed, `--browser firefox`): default scene 60 s, the colour view cycled through all eight views, a snapshot saved and
+  loaded (atoms and charge 0), the legend shown; console clean.
+- Phone size (Chrome 390 x 844, dpr 3): the legend small, without counts, above the scale bar; nothing overlaps the zoom buttons.
+
+
+### Known issues
+
+- The job is read from the genes as expressed, not from what the engines actually ran this tick (the eat pass keeps no per-cell
+  count): a harvester in the dark still shows lime, a breather without oxygen still pink. Founders without a gene network (std,
+  blank) keep their founder's job until mutation moves it; with a network the colour follows regulation.
+- The weights (pigment x 2.5, wall x 3, engulf x 6 and + 4 while eating) and the thresholds are a judgement, not derived: they
+  decide which of two jobs a generalist shows. Many founders run a pigment and a burner of about equal weight and stay undecided.
+- Gradient eaters are rare outside the Deep vents preset; fermenters rare in the default scene (their engines rank below the
+  founders' burners).
+- `experiments/tissue/make_conditions.py` still names the old fate genes (`resp0`, `threshold`) for its historic conditions; those
+  names are gone from `moire.genome` (rerunning those conditions needs editing).
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start
@@ -6110,7 +6246,7 @@ panel has **squeeze** (the dish x 0.8 across) and **stretch** (x 1.25) buttons; 
   field_common) and field B (struct `Fields`, charges, `cell_field_b`); `cell_grid.wgsl` rebuilds the neighbour grid every tick (a counting sort by grid cell) and
   works out every cell's beat; `cell_step.wgsl` moves the cells (step C6c: and their honeycomb outlines); `cell_field.wgsl` scatters the cells' fields
   (A into r, B into g) into their texture; `cell_draw.wgsl` draws them;
-  `cell_check.wgsl` is the `?check=1` test; `cell_census.wgsl` counts fates, key bins and founder lines for the overlay,
+  `cell_check.wgsl` is the `?check=1` test; `cell_census.wgsl` counts jobs (step F0; fates until then), key bins and founder lines for the overlay,
   and the step 6 counters and histograms
 - `src/heat.js` + `src/shaders/heat_common.wgsl`, `heat.wgsl`: the heat band (step C1): the heat grid and its
   spreading, the energy ledger and its read-back, the entropy panel's text. `heat_common.wgsl` (buffer layout, units,
@@ -6209,7 +6345,7 @@ A condition file (every key but `name` optional; the comments in brackets are no
 - `query`: URL options (README "Controls" and the steps' sections). All times are run times (s since the start).
 - `evals`: statements run in the page (`await` allowed; a `return` value is kept in `meta.json`). If an eval moves the
   clock (e.g. `moire.loadSnapshot`), the run's timeline moves with it; a stir moves it by a fraction of a second.
-- `shots`: `view` is `clean` (default: colour by fate, no machinery), `fate`, `lineage`, `strategy`, `charge`, `walls` (step C10) or
+- `shots`: `view` is `clean` (default: colour by job, no machinery), `job` (step F0; `fate` until then), `lineage`, `strategy`, `charge`, `walls` (step C10) or
   `machinery`; the panels are hidden unless `"panel": true`.
 - `clips`: a .webm of the dish from `t` to `until`, recorded while it runs at `speed` (default 8); events inside that span
   happen at its end; at least 2 s of real time is recorded (shorter recordings can come out empty).

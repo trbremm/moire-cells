@@ -5726,19 +5726,20 @@ column is the user's case in numbers: a 1920 x 1080 window made 5x smaller (1152
 - A window resize changes only the drawing: the canvas is fitted inside the window with the dish's shape (dark bands at the sides when
   the shapes differ), `view.dpr` = device px per dish px, the camera's `fit` = canvas CSS px per dish px for the pointer and the scale
   bar. Zoom 1 is still the whole dish. Nothing is drained, nothing moves, R and the grid stay.
-- PER AREA, in cell units (`dish.supply` = the dish's area / the reference dish's): the reference dish is the experiments' default
-  window (1280 x 800 px, 2000 cells, R 6.48 px, 24 390 R²), where every number is EXACTLY as before.
+- PER AREA, in cell units (`dish.supply` = the dish's area / the reference dish's): the reference dish is what the experiments' default
+  window (1280 x 800 px) gives the SAME STARTING NUMBER (2000 cells: R 6.48 px, 24 390 R²; a preset's 600 or 1200 cells: R 9 px, the
+  cap, 12 640 R²), so at that window every number is EXACTLY as before, for the default scene and for every preset.
 
 | amount | now |
 |---|---|
-| medium lattice R | 1.389 R (the reference's 9 px / 6.48 px): the moire beats keep their size in cell units on any screen (`?medium=x`) |
-| light | per R²: `power` 33 still reads "per 100 px² at the reference R" = 13.9 per R² (`?power=x`) |
-| clouds | 59 R, drifting 0.93 R/s |
-| capacity | 0.246 per R² (85 % of the dish packed with hexagons; `?cap=N` as before) |
+| medium lattice R | 9 px over the reference R: 1.389 R for 2000 cells (1 R for 1150 or fewer): the moire beats keep their size in cell units on any screen (`?medium=x`) |
+| light | per R²: `power` 33 still reads "per 100 px² at the reference R" = 13.9 per R² for 2000 cells (`?power=x`) |
+| clouds | 380 px at the reference R: 59 R for 2000 cells |
+| capacity | 3 x the starting number x A / A_ref (0.246 per R² for 2000 cells: 85 % of the dish packed with hexagons; `?cap=N` as before) |
 | springs a scene places (presets, the default scene, vents) | each drips x `dish.supply` (pipette drops and tapped springs are the hand's: not scaled) |
 | oases | count x `dish.supply` (each drips as before) |
 | everything already per R² or per s | unchanged |
-| eddies | follow the medium: 16 x 1.389 = 22 R everywhere |
+| eddies | follow the medium: 16 x 1.389 = 22 R for 2000 cells, on any screen |
 
 - Switches for comparison: `?dishfollow=1` the window IS the dish again, exactly as before (a resize sets a new R, a new medium, a new
   grid, drains the old one; supplies per px and per dish). `?perarea=0` a fixed dish with the old amounts (light per px², capacity 3 x

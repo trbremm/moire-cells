@@ -577,6 +577,16 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        T1's "inside" cannot act): diagnose the membrane material budget (supply: fusion, grazing, in-cell making; losses:
        bites, wear, division) and fix minimally, derived; plus retune the dark vent preset now the charge field is off
        (broader giver-taker zone: vent rate, sea level, heat).
+       AS BUILT (M1, 2026-11-17): src/whole.js, MEMBRANES line. Bottleneck = heavy linker L (cells hold none away from
+       springs; oil was fused and shed back). Fixes (derived): HEAD ON OIL in the cell (g/t + lL -> glL/tlL, the table's
+       own reaction, spark from the battery; ?oilsoap=0) and BITES THROUGH THE BLOCK (biting atoms are ions, an intact
+       bilayer keeps them off its chains; ?biteblock=0). Integrity 0.94 spot oxygen (99 % whole), 0.77 whole dish,
+       Oases 0.92, shallows 0.55; default scene stays holey (0.24) once its springs dry. Ion block now holds 41-52 % of
+       ion flow; channel genes moved beyond the neutral control in one lineage. OXYGEN (spot, one seed): the self-burn
+       loop nearly vanished (14 cells vs 290) and breathers on outside t doubled: needs a second seed. Dark vents: the
+       ring exists and founders now start on it (?ventring), but life dies by 4.5-7 min: an ECONOMY problem (upkeep
+       0.025/s vs income 0.006-0.023) -> engines should cost upkeep only when EXPRESSED (comes with T1b). Oases knobs do
+       not give the geography (colonies centre on mineral springs): next lever a SMELL for trace.
     3. T1a: an inside, kin channels, the self marker as a membrane landscape (Claude's reading), lineage-colour view,
        wild/blank founders   4. T1b: the gene regulatory network + reporter view   5. P1: engulf + kin sparing genes,
        hand-placed predator   6. T1c: designed tissues (plant, filament, biofilm) + random-colony experiments

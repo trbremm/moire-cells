@@ -67,7 +67,7 @@ export const PART_RECIPES = {
   enzyme: { carbon: 4, hands: '4 chain carbons', element: 'G (the heavy giver: catalysis moves electrons)', k: 1, charged: CARBON },
 };
 const ATOM_SCALE = 4096;
-const CBF = { ON: 1, EXCH: 2, ENG: 4, GRAZE: 8, DIS: 16, FLIP: 32, RESET: 64, SMELL: 128, GROW: 256, LIP: 512, TRANS: 1024, RED: 2048, ENZ: 4096, OXB: 8192 };
+const CBF = { ON: 1, EXCH: 2, ENG: 4, GRAZE: 8, DIS: 16, FLIP: 32, RESET: 64, SMELL: 128, GROW: 256, LIP: 512, TRANS: 1024, RED: 2048, ENZ: 4096, OXB: 8192, SHUT: 16384 };
 // the 64-bit event counters (LG_CBC.EV, cell_eat.wgsl CBE_*)
 const EV = ['ox', 'cond', 'red', 'hyd', 'dis', 'graze', 'gain', 'heat', 'paid', 'phUsed', 'phIdle', 'satWant', 'satLost', 'rise', 'built', 'buildPaid'];
 const EV_ENERGY = /^(gain|heat|paid|rise|buildPaid)$/;
@@ -119,6 +119,9 @@ export class CarbonCells {
       enzFound: 1,       // ... the founders' and placed cells' enzymes, as a share of their want (booked as carbon and G in)
       toolBody: true,    // cells placed by the tools start with a body and enzymes like a founder's (booked in) (?cbtool=0)
       hungry: 5,         // a HUNGRY cell (body short) grazes the tar under it as this many units of a grazing engine (C15b: 1) (?cbhungry=)
+      // ---- step C15d, THE CARBON ECONOMY ----
+      shuttle: true,     // the REDUCING SHUTTLE: the builder reduces a burnt hand with the g that oxidising another carbon in the stock frees
+                         // (the release pays the rise; only the two sparks from the battery: fat from sugar, as with NADPH) (?cbshut=0)
     };
     this.tot = Object.fromEntries(EV.map((k) => [k, 0]));
     this.hist = [];
@@ -162,7 +165,8 @@ export class CarbonCells {
       u[0] = (p.on ? CBF.ON : 0) | (this.rule('exchange') ? CBF.EXCH : 0) | (this.rule('engines') ? CBF.ENG : 0) | (this.rule('graze') ? CBF.GRAZE : 0) |
         (this.rule('dissolve') ? CBF.DIS : 0) | (flip ? CBF.FLIP : 0) | (reset ? CBF.RESET : 0) | (this.rule('smell') && E.rule('smell') ? CBF.SMELL : 0) |
         (this.rule('growth') ? CBF.GROW : 0) | (CB_LIP ? CBF.LIP : 0) | (this.rule('transport') ? CBF.TRANS : 0) |
-        (this.rule('reduce') ? CBF.RED : 0) | (this.rule('enzymes') ? CBF.ENZ : 0) | (this.rule('oxBite') ? CBF.OXB : 0);
+        (this.rule('reduce') ? CBF.RED : 0) | (this.rule('enzymes') ? CBF.ENZ : 0) | (this.rule('oxBite') ? CBF.OXB : 0) |
+        (this.rule('shuttle') ? CBF.SHUT : 0);
       u[1] = tickBase >>> 0; u[2] = ok ? Math.max(1, M.nSub || 1) : 1; u[3] = ok ? Cb.cur & 1 : 0;
       if (ok) {
         const LW = LEDGER_WORDS;   // (the heat buffer's grid starts behind the ledger)
@@ -351,7 +355,7 @@ export class CarbonCells {
     const lines = [`carbon in cells (step C15b) ${on(p.on)}: exchange ${on(p.exchange)} · engines ${on(p.engines)} · graze ${on(p.graze)} (k ${p.kGraze}/s per rate)` +
       ` · granules dissolve ${on(p.dissolve)} (${p.kDis}/s) · smell ${on(p.smell)} · growth needs carbon ${on(p.growth)} (body ${p.kBody}/R², build ${p.kBuild}/s, founders ${p.found})`,
       `carbon makes the cell (step C15c): membranes, walls, pigments, glue of carbon ${CB_LIP ? 'on' : 'off (?cblip=0)'} · transporter ${on(p.transport)} (${p.kTrans}/level, upkeep ${p.transUp}/s)` +
-      ` · reduce from the battery ${on(p.reduce)} · oxygen bites ${on(p.oxBite)} · enzymes ${on(p.enzymes)} (${p.kEnz} carbon per rate per R², life ${p.enzLife} s, founders ${p.enzFound}) · tools give a body ${on(p.toolBody)}`];
+      ` · reduce from the battery ${on(p.reduce)} · reducing shuttle ${on(p.shuttle)} (step C15d) · oxygen bites ${on(p.oxBite)} · enzymes ${on(p.enzymes)} (${p.kEnz} carbon per rate per R², life ${p.enzLife} s, founders ${p.enzFound}) · tools give a body ${on(p.toolBody)}`];
     const L = this.ledger;
     if (L) {
       const r = L.rate;

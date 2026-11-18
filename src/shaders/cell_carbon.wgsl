@@ -59,7 +59,9 @@ const CBF_LIP: u32 = 512u;     // membranes (bilayer, oil, wall), pigments and g
 const CBF_TRANS: u32 = 1024u;  // the carbon TRANSPORTER gene (Bio.relay.x) speeds the ladder through the membrane, at an upkeep
 const CBF_RED: u32 = 2048u;    // the lipid builder may REDUCE burnt hands from the battery (a storer's way: fat from sugar)
 const CBF_ENZ: u32 = 4096u;    // engines need ENZYMES (carbon + the heavy giver G), built, worn and rebuilt (T1b's upkeep becomes their turnover)
-const CBF_OXB: u32 = 8192u;    // OXYGEN DAMAGES MEMBRANES: free t oxidises the lipids' fuel hands (fat -> soap -> spoiled, into the mud)
+const CBF_OXB: u32 = 8192u;
+// step C15d, THE CARBON ECONOMY (src/carboncells.js; README "Step C15d: the carbon economy")
+const CBF_SHUT: u32 = 16384u;  // the REDUCING SHUTTLE: the builder reduces a hand with the g an oxidation of another carbon frees (cb_make2)    // OXYGEN DAMAGES MEMBRANES: free t oxidises the lipids' fuel hands (fat -> soap -> spoiled, into the mud)
 // the event counters (64-bit, LG_CBC_EV; src/carboncells.js EV)
 const CBE_OX: u32 = 0u;
 const CBE_COND: u32 = 1u;
@@ -788,15 +790,17 @@ fn cb_make2(nT: i32, n: i32, S: ptr<function, array<i32, 5>>, m: ptr<function, a
   let ox = CBP.e.x;
   let cd = CBP.e.y;
   let red = (CBP.cfg.x & CBF_RED) != 0u;
+  let shut = (CBP.cfg.x & CBF_SHUT) != 0u;
   let ds = array<i32, 7>(0, -1, -2, -3, 1, 2, 3);
   var left = n;
   var made = 0;
   var nOx = 0;
   var nRed = 0;
+  var nSh = 0;
   var why = 0u;
   for (var a = 0u; a < 7u; a++) {
     let d = ds[a];
-    if (left <= 0 || (d > 0 && !red)) { break; }
+    if (left <= 0 || (d > 0 && !red && !shut)) { break; }
     let s = nT + 1 + d;
     for (var j1 = 0; j1 <= 3; j1++) {
       let j2 = s - j1;
@@ -808,6 +812,39 @@ fn cb_make2(nT: i32, n: i32, S: ptr<function, array<i32, 5>>, m: ptr<function, a
       let cost = sp * (1 + ad) + max(d, 0) * ox;
       var ws = 0;   // (the waters split for their g)
       let ww = i32(CBP.u.z) + i32(CBP.u.w);
+      // step C15d (CBF_SHUT), THE REDUCING SHUTTLE: a pair too burnt is reduced with the g that OXIDISING another carbon of the stock frees
+      // (t + [c-g] -> [c-t] + g releases 2.75, then g + [c-t] -> [c-g] + t takes 2.75: the release pays the rise, and the free t or g that
+      // carries the electron comes back; as real cells make fat from sugar with the NADPH they win by burning more sugar to CO2). Both
+      // steps are the table's own reactions, so the battery pays only their two sparks; the donors are the ladder's fuel hands left over,
+      // the most burnt first (formic-like to CO2-like, then sugar-unit-like, ...). It needs a free g or t in the stock as the carrier
+      if (d > 0 && shut && (*m)[0] + (*m)[1] > 0) {
+        var DH = 0;
+        for (var q = 0u; q < 4u; q++) { DH += cbg(q) * max((*S)[q], 0); }
+        let cs = sp * (1 + 2 * d);
+        var xs = min(x, DH / (d + 8 - s));   // (the pair itself takes 8 - s fuel hands from the donors' pool)
+        if (max(*bat, 0) / cs < xs) { xs = max(*bat, 0) / cs; why |= CBL_BAT; }
+        if (xs > 0) {
+          (*S)[j1] -= xs;
+          (*S)[j2] -= xs;
+          var need = xs * d;
+          for (var pass = 0; pass < 4 && need > 0; pass++) {
+            for (var qq = 0u; qq < 4u; qq++) {
+              let q = 3u - qq;
+              let k = min(need, max((*S)[q], 0));
+              if (k > 0) { (*S)[q] -= k; (*S)[q + 1u] += k; need -= k; }
+            }
+          }
+          *bat -= xs * cs;
+          *heat += xs * (cs + cd);
+          (*m)[6] += xs;
+          nSh += xs * d - need;
+          left -= xs;
+          made += xs;
+          x = min(select(min((*S)[j1], (*S)[j2]), (*S)[j1] / 2, j1 == j2), left);
+          if (x <= 0) { continue; }
+        }
+        if (!red) { continue; }
+      }
       if (d <= 0) {
         let xb = max(*bat, 0) / cost;
         if (xb < x) { x = xb; why |= CBL_BAT; }
@@ -844,6 +881,7 @@ fn cb_make2(nT: i32, n: i32, S: ptr<function, array<i32, 5>>, m: ptr<function, a
   }
   if (nOx > 0) { atomicAdd(&wcbe2[CBE2_OX], nOx); }
   if (nRed > 0) { atomicAdd(&wcbe2[CBE2_RED], nRed); }
+  if (nSh > 0) { atomicAdd(&wcbe3[CBE3_SHUT], nSh); }
   if (left > 0) {
     if ((*S)[0] + (*S)[1] + (*S)[2] + (*S)[3] < 2 || why == 0u) { why |= CBL_C; }
     *lim |= why;

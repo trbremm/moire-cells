@@ -32,15 +32,39 @@ fn stir_psi(p: vec2f) -> f32 {
   return mix(a, b, sc.t.y);
 }
 
-fn psi_node(p: vec2f) -> f32 {
+// step G0b, OBSTACLES (src/obstacles.js): at the corner id, x = 0 when it touches a solid pixel (else 1), y = the prescribed eddies' fade:
+// 0 at a solid, rising smoothly to 1 at obs2.y from the nearest (sdS), as at the dish's rim. (1, 1) without obstacles
+fn obs_corner(id: vec2u) -> vec2f {
+  if ((W.obs.w & 1u) == 0u || W.obs.x == 0u) { return vec2f(1.0); }
+  var d = 1e9;
+  for (var k = 0u; k < 4u; k++) {
+    let x = i32(id.x) - 1 + i32(k & 1u);
+    let y = i32(id.y) - 1 + i32(k >> 1u);
+    if (x < 0 || y < 0 || x >= i32(W.hw) || y >= i32(W.hh)) { continue; }
+    let q = u32(y) * W.hw + u32(x);
+    if ((bitcast<u32>(hb[W.obs.x + q]) & 1u) != 0u) { return vec2f(0.0); }
+    d = min(d, bitcast<f32>(hb[W.obs.y + q]));
+  }
+  return vec2f(1.0, smoothstep(0.0, max(W.obs2.y, 1.0), d));
+}
+
+fn psi_node(p: vec2f, id: vec2u, ob: vec2f) -> f32 {
   let wd = max(W.dish.z, 1.0);
-  let win = smoothstep(0.0, wd, p.x) * smoothstep(0.0, wd, W.dish.x - p.x) * smoothstep(0.0, wd, p.y) * smoothstep(0.0, wd, W.dish.y - p.y);
-  if (win <= 0.0) { return through(p); }
+  let win = smoothstep(0.0, wd, p.x) * smoothstep(0.0, wd, W.dish.x - p.x) * smoothstep(0.0, wd, p.y) * smoothstep(0.0, wd, W.dish.y - p.y) * ob.y;
+  if (win <= 0.0) { return through_at(p, id); }
   let d = p - W.cen.xy;
   var beat = 0.0;
   for (var m = 0u; m < 3u; m++) { beat += cos(dot(W.q[m].xy, d) + W.q[m].z); }
   let gyre = sin(3.14159265 * p.x / W.dish.x) * sin(3.14159265 * p.y / W.dish.y);
-  return win * (W.cen.z * beat + W.cen.w * gyre) + through(p);
+  return win * (W.cen.z * beat + W.cen.w * gyre) + through_at(p, id);
+}
+
+// step G0b: the through-flow at corner id: SOLVED round the obstacles (src/obstacles.js: pressure-driven, x the pump's flux) when there are
+// obstacles, none when a wall blocks the channel, else the prescribed profile below
+fn through_at(p: vec2f, id: vec2u) -> f32 {
+  if (W.obs.z != 0u) { return W.obs2.x * bitcast<f32>(hb[W.obs.z + id.y * (W.hw + 1u) + id.x]); }
+  if ((W.obs.w & 2u) != 0u) { return 0.0; }
+  return through(p);
 }
 
 // PERFUSION (src/perfusion.js): a gentle THROUGH-FLOW from the inlet side to the outlet side, mean speed U (dish.w along x, q[0].w along
@@ -59,8 +83,10 @@ fn surface(@builtin(global_invocation_id) id: vec3u) {
   if (id.x > W.hw || id.y > W.hh) { return; }
   if ((W.flags & 2u) != 0u) {
     // (step G0: + the cells' stirred psi; 0 on the rim's corners, as the prescribed psi, so nothing flows through the wall)
-    var v = psi_node(vec2f(id.xy) * W.px);
-    if (id.x > 0u && id.y > 0u && id.x < W.hw && id.y < W.hh) { v += stir_psi(vec2f(id.xy) * W.px); }
+    // (step G0b: the eddies fade near obstacles; the stirred psi is 0 at a corner touching a solid, so each island stays a stream line)
+    let ob = obs_corner(id.xy);
+    var v = psi_node(vec2f(id.xy) * W.px, id.xy, ob);
+    if (id.x > 0u && id.y > 0u && id.x < W.hw && id.y < W.hh) { v += stir_psi(vec2f(id.xy) * W.px) * ob.x; }
     hb[W.cur + id.y * (W.hw + 1u) + id.x] = bitcast<i32>(v);
   }
   if ((W.flags & 1u) != 0u && id.x < W.hw && id.y < W.hh) {

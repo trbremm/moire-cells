@@ -6,7 +6,7 @@
 //   substrate every pixel's atoms and heat moved with the sample into the new grid (same pixel size, fewer or more pixels), split by
 //             overlap in WHOLE counts, so every atom stays (a squeeze piles them up per pixel, a stretch thins them); the charge field
 //             (worked out from the atoms) starts again from 0
-//   springs   moved with the sample (oases roam on from there)
+//   springs   moved with the sample (oases roam on from there); step G0b: the obstacles too (walls thinner or thicker with it)
 //   the rest  R, the medium lattice and every rule stay; the supplies that go per area (src/dish.js) follow the new area at once
 // Done as a snapshot of the whole state, transformed, and loaded back (src/snapshot.js): the books are exact across it (atoms and
 // charge rounding 0; nothing drained). The capacity (the cells' buffers) stays as it is.
@@ -14,6 +14,7 @@
 import { snapshot, loadSnapshot, pack, unpack } from './snapshot.js';
 import { CELL_FLOATS } from './cells.js';
 import { dish } from './dish.js';
+import { Obstacles } from './obstacles.js';
 
 /**
  * Move a block of whole counts (hw x hh pixels of px) into a new grid (nw x nh, same px) scaled by f about the centres (c, c'): each old
@@ -90,6 +91,8 @@ export async function scaleDish(M, ctl, f) {
     if (s.shape && s.shape.type === 'line') s.shape.len *= f;    // (a fissure or a seep stretches with the sample: its rate per R and per R^2
     if (s.shape && s.shape.type === 'patch') s.shape.r *= f;     // stays the spring's total, so its drip per length thins or thickens)
   }
+  // step G0b: the obstacles with the sample (walls, blocks and pillars moved and sized x f; the round dish's rim follows the dish)
+  if (S.obstacles) Obstacles.scaleSaved(S.obstacles, f, cx, cy, ncx, ncy);
   S.view = { cssW: W2, cssH: H2 };
   S.dish = { W: W2, H: H2, R: dish.R, mR: dish.mR, perArea: dish.perArea, start: dish.start };
   const from = dish.from;

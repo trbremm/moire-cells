@@ -19,7 +19,7 @@ struct WDraw {
   cam: vec4f,           // the camera (xy pan)
   step: vec4f,          // x psi between two streamlines (px^2 / s); y the line width (CSS px); z the net's threshold; w its top
   sgrid: vec4u,         // step G0: the stirred stream function on the stir grid: word offset in g (0: not drawn), width, height, spacing (f32 bits)
-  sstep: vec4f,         // ... x psi between two of its streamlines; y their brightness
+  sstep: vec4f,         // ... x psi between two of its streamlines; y their brightness; z (step G0b) the prescribed lines' offset (in steps)
   sInk: vec4f,          // ... their colour (a pink: the cells' own flow)
 };
 
@@ -61,7 +61,7 @@ fn fs(@builtin(position) fc: vec4f) -> @location(0) vec4f {
     let f = gp - b;
     let i = vec2i(b);
     let p = mix(mix(psi_px(i.x, i.y), psi_px(i.x + 1, i.y), f.x), mix(psi_px(i.x, i.y + 1), psi_px(i.x + 1, i.y + 1), f.x), f.y);
-    let v = p / max(D.step.x, 1e-6);
+    let v = p / max(D.step.x, 1e-6) + D.sstep.z;   // (step G0b: half a step off with obstacles, so no line lies on a still island's own value)
     let fw = max(fwidth(v), 1e-6);
     let d = abs(v - round(v)) / fw;      // device px to the nearest line
     let lw = D.step.y * D.dpr;

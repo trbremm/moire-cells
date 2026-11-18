@@ -25,6 +25,11 @@ struct WaterP {
   q: array<vec4f, 3>,   // the beat's wavevectors (radians per CSS px) and their phases now
   stir: vec4u,          // step G0 (src/stir.js): word offset in hb of the STIRRED stream function on the stir grid (0: none), its width and
                         // height (nodes), its spacing (CSS px, f32 bits)
+  obs: vec4u,           // step G0b (src/obstacles.js): word offsets in hb of the obstacles' MASK (u32 per pixel: bit 0 = water-solid; 0: no
+                        // obstacles) and of sdS (f32: the signed distance to the nearest solid, CSS px); of the SOLVED THROUGH-FLOW (f32 at
+                        // the corners, 0 at one side wall .. 1 at the other; 0: the prescribed profile); w bits: 1 the eddies fade near
+                        // solids, 2 the through-flow is blocked (a wall joins both side walls)
+  obs2: vec4f,          // x the pump's flux Q (CSS px^2 / s: the solved through-flow x Q); y the eddies' fade width (CSS px); zw spare
 };
 
 // step G0: where p (CSS px) sits on the stir grid: o the word of the node at its cell's lower corner (0 if p lies outside the grid, which reaches

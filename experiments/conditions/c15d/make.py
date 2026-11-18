@@ -166,3 +166,54 @@ dump({"batch": "c15d-ab5", "runs": [
     ab("ab5-all", "every fix incl. (g) wall recycling; default scene, seed 3, 10 min", {}),
     ab("ab5-all-colonies", "every fix incl. (g) wall recycling; colonies of wild founders, seed 3, 10 min", {}, scene="colonies"),
 ]}, "ab5.json")
+
+# ---------- pictures: from the watch runs' last snapshots, close-ups through the app's camera (x4), neon and harmonic ----------
+READ = ("const d = moire.gpu.device; const rb = async (buf, off, size) => { const b = d.createBuffer({size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); "
+        "const e = d.createCommandEncoder(); e.copyBufferToBuffer(buf, off, b, 0, size); d.queue.submit([e.finish()]); await b.mapAsync(GPUMapMode.READ); "
+        "const a = b.getMappedRange().slice(0); b.unmap(); b.destroy(); return a; }; window.__pk = window.__pk || {}; ")
+CELLS = ("const C = moire.cells, n = C.count, CF = C.cellBuf.size / 4 / n; const cf = new Float32Array(await rb(C.cellBuf, 0, n * CF * 4)), "
+         "cu = new Uint32Array(cf.buffer); const pts = []; ")
+# the densest spot of live cells weighted by a stock range (bilayer 32..50) or by the pigment (stock word 30)
+def pick_stock(label, w0, w1):
+    return (READ + CELLS + "const st = new Int32Array(await rb(moire.eat.stockBuf, 0, n * 64 * 4)); "
+            f"for (let i = 0; i < n; i++) {{ if (!(cu[i * CF + 9] & 1)) continue; let g = 0; for (let w = {w0}; w < {w1}; w++) g += Math.max(st[i * 64 + w], 0); "
+            "if (g > 0) pts.push([cf[i * CF], cf[i * CF + 1], g]); } let best = null, bv = 0; "
+            "for (const p of pts) { let v = 0; for (const q of pts) if ((p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 < 900) v += q[2]; if (v > bv) { bv = v; best = p; } } "
+            f"window.__pk.{label} = best ? [best[0], best[1]] : [640, 400]; return JSON.stringify({{{label}: window.__pk.{label}, v: bv / 4096, cells: pts.length}})")
+PICKS = {"memb": pick_stock("memb", 32, 50), "pig": pick_stock("pig", 30, 31)}
+
+
+def pictures(name, desc, snap, picks):
+    evals, shots, t = [], [{"t": 1, "name": "dish"}], 1.5
+    evals.append({"t": 1.2, "js": HARM_ON})
+    shots.append({"t": 1.3, "name": "dish_harmonic"})
+    evals.append({"t": 1.4, "js": HARM_ON})
+    for label in picks:
+        evals.append({"t": t, "js": PICKS[label]})
+        evals.append({"t": t + 0.1, "js": f"moire.camera.set(4, ...window.__pk['{label}']); return 'zoom {label}'"})
+        shots.append({"t": t + 0.3, "name": f"zoom_{label}"})
+        evals.append({"t": t + 0.4, "js": HARM_ON})
+        shots.append({"t": t + 0.6, "name": f"zoom_{label}_harmonic"})
+        evals.append({"t": t + 0.7, "js": HARM_ON})
+        evals.append({"t": t + 0.8, "js": "moire.camera.fit(); return 'unzoomed'"})
+        t += 1.5
+    return {"name": name, "description": desc, "query": {"snap": snap}, "dpr": 2, "duration": t + 0.5, "sample_every": 0, "stall": 300,
+            "shots": shots, "snapshots": [], "evals": evals}
+
+
+pics = {"batch": "c15d-pictures", "runs": []}
+for key, at in [("default", 1200), ("colonies", 900), ("shallows", 600)]:
+    pics["runs"].append(pictures(f"c15d-pics-{key}_s3", f"close-ups from the {at // 60}-min snapshot of c15d-w-{key}_s3: the most bilayer, the most pigment",
+                                 f"experiments/runs/c15d-w-{key}_s3/snapshots/snap_t{at}.json", ["memb", "pig"]))
+dump(pics, "pictures.json")
+
+# ---------- browsers: Firefox (headed) and a phone-size Chrome page, every fix on, books ----------
+dump({"batch": "c15d-browsers", "runs": [
+    run("c15d-firefox", "Firefox (headed): the default scene 40 s, every fix on", {"seed": 3}, 40, (20, 40), every=10),
+    {**run("c15d-reload-c15c", "a C15c snapshot (c15c-default_s3 at 20 min) loads and runs on 60 s without the C15d fixes (as it ran), books 0",
+           {"snap": "experiments/runs/c15c-default_s3/snapshots/snap_t1200.json"}, 60, (1, 60), every=30),
+     "evals": [{"t": 1, "js": "const p = moire.carbonCells.params, q = moire.carbon.params; return JSON.stringify({shuttle: p.shuttle, granFat: p.granFat, hunger: p.hunger, wallRecycle: p.wallRecycle, hydHeat: q.hydHeat})"},
+               {"t": 60, "js": PROBE}]},
+    {**run("c15d-phone", "phone size (390 x 844 at dpr 3, Chrome): the default scene 20 s", {"seed": 3}, 20, (20,), every=10), "size": "390x844", "dpr": 3,
+     "shots": [{"t": 20}, {"t": 20, "panel": True, "name": "panel"}]},
+]}, "browsers.json")

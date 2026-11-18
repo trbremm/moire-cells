@@ -8,7 +8,8 @@
     "seed": 3,
     "cbgrow": 0,
     "cbenz": 0,
-    "cblip": 0
+    "cblip": 0,
+    "cbpigfound": 0
    },
    "duration": 600,
    "sample_every": 30,
@@ -72,7 +73,8 @@
     "founders": "wild",
     "cbgrow": 0,
     "cbenz": 0,
-    "cblip": 0
+    "cblip": 0,
+    "cbpigfound": 0
    },
    "duration": 600,
    "sample_every": 30,

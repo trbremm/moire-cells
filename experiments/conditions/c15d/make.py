@@ -112,8 +112,8 @@ dump({"batch": "c15d-ab2", "runs": [
 # diag2: every part's carbon rule off at once (does carbon in the open dish alone hold the count down?), and the colonies' killers
 dump({"batch": "c15d-diag2", "runs": [
     ab("diag2-partsoff", "diagnosis: body, enzymes and carbon membranes off (?cbgrow=0&cbenz=0&cblip=0); default scene, seed 3, 10 min",
-       {"cbgrow": 0, "cbenz": 0, "cblip": 0}),
-    ab("diag2-col-partsoff", "diagnosis: the same, colonies of wild founders, seed 3, 10 min", {"cbgrow": 0, "cbenz": 0, "cblip": 0}, scene="colonies"),
+       {"cbgrow": 0, "cbenz": 0, "cblip": 0, "cbpigfound": 0}),
+    ab("diag2-col-partsoff", "diagnosis: the same, colonies of wild founders, seed 3, 10 min", {"cbgrow": 0, "cbenz": 0, "cblip": 0, "cbpigfound": 0}, scene="colonies"),
 ]}, "diag2.json")
 
 # ab3: + founders start with their pigment (f); the pigment is the gate (diag: 100x less pigment held than with ?carbon=0)

@@ -122,3 +122,17 @@ dump({"batch": "c15d-ab3", "runs": [
     ab("ab3-all-colonies", "all fixes (a)-(f); colonies of wild founders, seed 3, 10 min", {}, scene="colonies"),
     ab("ab3-pig-only", "fix (f) alone (founders' pigment); default scene, seed 3, 10 min", {**OFF2, "cbpigfound": 1}),
 ]}, "ab3.json")
+# ab3b: all on but fix (a) (the light + burn founders' REDUCE slot takes the g their burner lives on)
+dump({"batch": "c15d-ab3b", "runs": [
+    ab("ab3-nophoto", "all fixes but (a) (?cbphoto=0); default scene, seed 3, 10 min", {"cbphoto": 0}),
+]}, "ab3b.json")
+# diag3: with every fix on, which rule binds next? enzymes off; body off
+dump({"batch": "c15d-diag3", "runs": [
+    ab("diag3-noenz", "all fixes, enzymes OFF (?cbenz=0); default scene, seed 3, 10 min", {"cbenz": 0}),
+    ab("diag3-nobody", "all fixes, growth needs carbon OFF (?cbgrow=0); default scene, seed 3, 10 min", {"cbgrow": 0}),
+]}, "diag3.json")
+# ab4: + iron at the mineral spring (d): every fix on
+dump({"batch": "c15d-ab4", "runs": [
+    ab("ab4-all-colonies", "all fixes (a)-(f) + (d) G at the mineral spring; colonies of wild founders, seed 3, 10 min", {}, scene="colonies"),
+    ab("ab4-all", "all fixes (a)-(f) + (d); default scene, seed 3, 10 min", {}),
+]}, "ab4.json")

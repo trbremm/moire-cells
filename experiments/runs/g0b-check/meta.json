@@ -1,0 +1,211 @@
+{
+  "name": "g0b-check",
+  "description": "step G0b books check: 420 s at MAX (seed 5), whole dish lit, perfusion on; obstacles painted over the culture and its springs (matter pushed out), erased, undone, switched off and on, the through-flow's solve off and on, cleared, a round dish, pillars again, a squeeze 0.8 and a stretch 1.25, a resize, a snapshot saved and loaded: atoms and charge rounding must stay 0",
+  "condition": {
+    "name": "g0b-check",
+    "description": "step G0b books check: 420 s at MAX (seed 5), whole dish lit, perfusion on; obstacles painted over the culture and its springs (matter pushed out), erased, undone, switched off and on, the through-flow's solve off and on, cleared, a round dish, pillars again, a squeeze 0.8 and a stretch 1.25, a resize, a snapshot saved and loaded: atoms and charge rounding must stay 0",
+    "query": {
+      "seed": 5,
+      "light": "full",
+      "perfusion": 1
+    },
+    "duration": 420,
+    "sample_every": 10,
+    "stall": 300,
+    "snapshots": [],
+    "resizes": [
+      {
+        "t": 300,
+        "size": "1000x700"
+      },
+      {
+        "t": 330,
+        "size": "1280x800"
+      }
+    ],
+    "shots": [
+      {
+        "t": 40,
+        "name": "painted"
+      },
+      {
+        "t": 60,
+        "view": "machinery",
+        "name": "mach"
+      },
+      {
+        "t": 180,
+        "name": "round"
+      },
+      {
+        "t": 420,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "evals": [
+      {
+        "t": 20,
+        "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.line(0.5 * W, 0.05 * H, 0.5 * W, 0.95 * H, 2 * R); O.rect(0.55 * W, 0.3 * H, 30 * R, 20 * R, 'solid', R); O.pillars(0.15 * W, 0.2 * H, 0.35 * W, 0.8 * H, 2.5 * R, 9 * R); O.circle(0.6 * W, 0.7 * H, 8 * R, 'porous'); for (const s of moire.matter.springs) O.circle(s.x, s.y, 3 * R); return `painted ${O.shapes.length}`"
+      },
+      {
+        "t": 45,
+        "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+      },
+      {
+        "t": 70,
+        "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.erase(0.5 * W, 0.4 * H, 0.5 * W, 0.6 * H, 3 * R); return 'erased'"
+      },
+      {
+        "t": 90,
+        "js": "return moire.obstacles.undo()"
+      },
+      {
+        "t": 100,
+        "js": "moire.obstacles.params.on = false; return 'obstacles.on False'"
+      },
+      {
+        "t": 115,
+        "js": "moire.obstacles.params.on = true; return 'obstacles.on True'"
+      },
+      {
+        "t": 120,
+        "js": "moire.obstacles.params.flow = false; return 'obstacles.flow False'"
+      },
+      {
+        "t": 135,
+        "js": "moire.obstacles.params.flow = true; return 'obstacles.flow True'"
+      },
+      {
+        "t": 150,
+        "js": "moire.obstacles.clear(); return moire.obstacles.setRound(true)"
+      },
+      {
+        "t": 160,
+        "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.pillars(0.3 * W, 0.3 * H, 0.7 * W, 0.7 * H, 2 * R, 8 * R); return `pillars ${O.shapes.length}`"
+      },
+      {
+        "t": 200,
+        "js": "await moire.dish.scale(0.8); return 'squeezed'"
+      },
+      {
+        "t": 240,
+        "js": "await moire.dish.scale(1.25); return 'stretched'"
+      },
+      {
+        "t": 260,
+        "js": "moire.obstacles.setRound(false); const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.line(0.2 * W, 0.5 * H, 0.8 * W, 0.5 * H, 3 * R); return 'square, a wall'"
+      },
+      {
+        "t": 360,
+        "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return JSON.stringify({ exact: r.exact, notes: r.notes, rounding: r.rounding, shapes: (S.obstacles || {}).shapes.length })"
+      },
+      {
+        "t": 419,
+        "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+      }
+    ]
+  },
+  "url": "http://localhost:61061/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=5&light=full&perfusion=1",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "53a13ba619a3ee7b41f967b6112a9e83f2ea4f94",
+  "dirty": true,
+  "started": "2026-11-18T02:01:27",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 420.0,
+  "run_wall_s": 389.82,
+  "speed_reached": 1.08,
+  "samples": 43,
+  "shots": [
+    "shots/painted.png",
+    "shots/mach.png",
+    "shots/round.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 20.00000000000015,
+      "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.line(0.5 * W, 0.05 * H, 0.5 * W, 0.95 * H, 2 * R); O.rect(0.55 * W, 0.3 * H, 30 * R, 20 * R, 'solid', R); O.pillars(0.15 * W, 0.2 * H, 0.35 * W, 0.8 * H, 2.5 * R, 9 * R); O.circle(0.6 * W, 0.7 * H, 8 * R, 'porous'); for (const s of moire.matter.springs) O.circle(s.x, s.y, 3 * R); return `painted ${O.shapes.length}`",
+      "result": "painted 54"
+    },
+    {
+      "t": 44.99999999999873,
+      "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)",
+      "result": "{\"time\":44.99999999999873,\"alive\":1612,\"cellsInSolid\":0,\"matterInSolid\":7286,\"solid\":0.07417290312027154,\"porous\":0.008230074019547704,\"edge0-2R\":{\"share\":0.11776673618778882,\"all\":127.81274416181961,\"fuel\":18.885667158607518,\"trace\":27.96188905286917,\"cellsR2\":0.08924385797378245,\"cells\":257,\"allRel\":1.4332977337526263,\"fuelRel\":1.0442463474897763,\"traceRel\":31.979731310657588,\"cellsRel\":1.9526811802837878},\"edge2-6R\":{\"share\":0.14394961763382816,\"all\":81.38622159090909,\"fuel\":17.42002840909091,\"trace\":3.9387784090909093,\"cellsR2\":0.17670454545454545,\"cells\":622,\"allRel\":0.9126686679792382,\"fuelRel\":0.9632066946107596,\"traceRel\":4.504741256099854,\"cellsRel\":3.8663460793129105},\"open\":{\"share\":0.6558806690385638,\"all\":89.17389677801506,\"fuel\":18.085451966392842,\"trace\":0.8743628513085904,\"cellsR2\":0.04570324069022493,\"cells\":733,\"allRel\":1,\"fuelRel\":1,\"traceRel\":1,\"cellsRel\":1},\"dead\":{\"share\":0.011215392794340162,\"all\":365.84138559708293,\"fuel\":39.33454876937101,\"trace\":68.73928896991796,\"cellsR2\":0.15314494074749316,\"cells\":42,\"allRel\":4.102561386408735,\"fuelRel\":2.1749276071432524,\"traceRel\":78.61643351732208,\"cellsRel\":3.350855178640494},\"flow\":{\"sweeps\":670,\"converged\":true,\"islands\":48,\"last\":0.00001991332945305846}}"
+    },
+    {
+      "t": 69.99999999999731,
+      "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.erase(0.5 * W, 0.4 * H, 0.5 * W, 0.6 * H, 3 * R); return 'erased'",
+      "result": "erased"
+    },
+    {
+      "t": 89.99999999999618,
+      "js": "return moire.obstacles.undo()",
+      "result": "removed the last eraser stroke"
+    },
+    {
+      "t": 99.99999999999561,
+      "js": "moire.obstacles.params.on = false; return 'obstacles.on False'",
+      "result": "obstacles.on False"
+    },
+    {
+      "t": 114.99999999999476,
+      "js": "moire.obstacles.params.on = true; return 'obstacles.on True'",
+      "result": "obstacles.on True"
+    },
+    {
+      "t": 119.99999999999447,
+      "js": "moire.obstacles.params.flow = false; return 'obstacles.flow False'",
+      "result": "obstacles.flow False"
+    },
+    {
+      "t": 134.99999999999957,
+      "js": "moire.obstacles.params.flow = true; return 'obstacles.flow True'",
+      "result": "obstacles.flow True"
+    },
+    {
+      "t": 150.0000000000115,
+      "js": "moire.obstacles.clear(); return moire.obstacles.setRound(true)",
+      "result": "round dish: the outside of the circle is the rim"
+    },
+    {
+      "t": 160.00000000001947,
+      "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.pillars(0.3 * W, 0.3 * H, 0.7 * W, 0.7 * H, 2 * R, 8 * R); return `pillars ${O.shapes.length}`",
+      "result": "pillars 80"
+    },
+    {
+      "t": 200.00000000005102,
+      "js": "await moire.dish.scale(0.8); return 'squeezed'",
+      "result": "squeezed"
+    },
+    {
+      "t": 240.00000000006557,
+      "js": "await moire.dish.scale(1.25); return 'stretched'",
+      "result": "stretched"
+    },
+    {
+      "t": 260.00000000007265,
+      "js": "moire.obstacles.setRound(false); const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.line(0.2 * W, 0.5 * H, 0.8 * W, 0.5 * H, 3 * R); return 'square, a wall'",
+      "result": "square, a wall"
+    },
+    {
+      "t": 359.9999999999977,
+      "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return JSON.stringify({ exact: r.exact, notes: r.notes, rounding: r.rounding, shapes: (S.obstacles || {}).shapes.length })",
+      "result": "{\"exact\":true,\"notes\":[],\"rounding\":{\"energy\":0.0014495849609375,\"atoms\":0,\"charge\":0,\"snapshot\":{\"energy\":0.0014495849609375,\"atoms\":0,\"charge\":0}},\"shapes\":81}"
+    },
+    {
+      "t": 419.0000000000074,
+      "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)",
+      "result": "{\"time\":419.0000000000074,\"alive\":1381,\"cellsInSolid\":0,\"matterInSolid\":58,\"solid\":0.055299963194700034,\"porous\":0,\"edge0-2R\":{\"share\":0.12242874084979348,\"all\":487.7083089770355,\"fuel\":103.84576200417537,\"trace\":28.936116910229646,\"cellsR2\":0.2044258872651357,\"cells\":612,\"allRel\":0.9036394667189739,\"fuelRel\":1.7337785229781302,\"traceRel\":2.489165115916828,\"cellsRel\":8.173890476955195},\"edge2-6R\":{\"share\":0.07827260458839407,\"all\":613.3012016718914,\"fuel\":97.00117554858934,\"trace\":23.79819749216301,\"cellsR2\":0.16405433646812956,\"cells\":314,\"allRel\":1.136341457826156,\"fuelRel\":1.6195033059029749,\"traceRel\":2.0471870224663595,\"cellsRel\":6.559649545856442},\"open\":{\"share\":0.7439986913671124,\"all\":539.7155911614357,\"fuel\":59.895632935744516,\"trace\":11.624828230638158,\"cellsR2\":0.025009619084263177,\"cells\":455,\"allRel\":1,\"fuelRel\":1,\"traceRel\":1,\"cellsRel\":1},\"dead\":{\"share\":0.013014763014763014,\"all\":499.06677140612726,\"fuel\":105.69206598586017,\"trace\":26.720345640219954,\"cellsR2\":0.10683424980361352,\"cells\":34,\"allRel\":0.9246847405911796,\"fuelRel\":1.7646038751981408,\"traceRel\":2.298558319321774,\"cellsRel\":4.271726388301408},\"flow\":{\"sweeps\":525,\"converged\":true,\"islands\":61,\"last\":0.000019899228032915772}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T02:09:33",
+  "wall_s": 486.0
+}

@@ -1,0 +1,95 @@
+{
+  "name": "g0b-fronts_s3",
+  "description": "step G0b quick: fronts, 10 min",
+  "condition": {
+    "name": "g0b-fronts_s3",
+    "description": "step G0b quick: fronts, 10 min",
+    "query": {
+      "preset": "fronts",
+      "seed": 3
+    },
+    "duration": 600,
+    "sample_every": 30,
+    "stall": 300,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 300,
+        "name": "t300"
+      },
+      {
+        "t": 600,
+        "name": "end"
+      },
+      {
+        "t": 600,
+        "view": "machinery",
+        "name": "end_mach"
+      }
+    ],
+    "evals": [
+      {
+        "t": 0,
+        "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.rect(0.3 * W, 0.2 * H, 10 * R, 22 * R, 'solid', R); O.rect(0.5 * W, 0.55 * H, 10 * R, 22 * R, 'solid', R); O.circle(0.68 * W, 0.4 * H, 9 * R); return 'blocks'"
+      },
+      {
+        "t": 60,
+        "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+      },
+      {
+        "t": 300,
+        "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+      },
+      {
+        "t": 599,
+        "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+      }
+    ]
+  },
+  "url": "http://localhost:64940/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=fronts&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "96fdfa25bcbebad55a4feb8d4dc81871c0fcfecd",
+  "dirty": true,
+  "started": "2026-11-18T02:50:04",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 600.0,
+  "run_wall_s": 1876.16,
+  "speed_reached": 0.32,
+  "samples": 21,
+  "shots": [
+    "shots/t300.png",
+    "shots/end.png",
+    "shots/end_mach.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.rect(0.3 * W, 0.2 * H, 10 * R, 22 * R, 'solid', R); O.rect(0.5 * W, 0.55 * H, 10 * R, 22 * R, 'solid', R); O.circle(0.68 * W, 0.4 * H, 9 * R); return 'blocks'",
+      "result": "blocks"
+    },
+    {
+      "t": 59.999999999997875,
+      "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)",
+      "result": "{\"time\":59.999999999997875,\"alive\":1620,\"cellsInSolid\":0,\"matterInSolid\":0,\"solid\":0.014030870958581802,\"porous\":0,\"edge0-2R\":{\"share\":0.008113261125309319,\"all\":9.02625,\"fuel\":0.009375,\"trace\":5.415,\"cellsR2\":0.0225,\"cells\":9,\"allRel\":0.14737959223450808,\"fuelRel\":0.0006383886935611602,\"traceRel\":0.8092287586770983,\"cellsRel\":0.6801097053171044},\"edge2-6R\":{\"share\":0.020805443998215083,\"all\":24.99366317328784,\"fuel\":0.16621983914209115,\"trace\":18.698757007068,\"cellsR2\":0.04874482086278333,\"cells\":50,\"allRel\":0.40809371410339884,\"fuelRel\":0.011318705701745682,\"traceRel\":2.7943807796185283,\"cellsRel\":1.473414477898783},\"open\":{\"share\":0.9570504239178937,\"all\":61.244910934734925,\"fuel\":14.685410463181766,\"trace\":6.691556549290551,\"cellsR2\":0.033082897985567294,\"cells\":1561,\"allRel\":1,\"fuelRel\":1,\"traceRel\":1,\"cellsRel\":1}}"
+    },
+    {
+      "t": 300.0000000000558,
+      "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)",
+      "result": "{\"time\":300.0000000000558,\"alive\":4069,\"cellsInSolid\":0,\"matterInSolid\":1840,\"solid\":0.014030870958581802,\"porous\":0,\"edge0-2R\":{\"share\":0.008113261125309319,\"all\":394.973125,\"fuel\":23.975,\"trace\":189.014375,\"cellsR2\":0.065,\"cells\":26,\"allRel\":1.720190118964619,\"fuelRel\":0.3854202713805493,\"traceRel\":23.18904887247003,\"cellsRel\":0.7729315776209678},\"edge2-6R\":{\"share\":0.020805443998215083,\"all\":136.0177918596149,\"fuel\":26.416280770168168,\"trace\":31.319278576651232,\"cellsR2\":0.073117231294175,\"cells\":75,\"allRel\":0.5923857770330468,\"fuelRel\":0.424666114840584,\"traceRel\":3.8423759122260885,\"cellsRel\":0.8694556451612904},\"open\":{\"share\":0.9570504239178937,\"all\":229.61015799679978,\"fuel\":62.20482361792538,\"trace\":8.151018872723034,\"cellsR2\":0.0840954126884888,\"cells\":3968,\"allRel\":1,\"fuelRel\":1,\"traceRel\":1,\"cellsRel\":1}}"
+    },
+    {
+      "t": 598.9999999997839,
+      "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)",
+      "result": "{\"time\":598.9999999997839,\"alive\":7922,\"cellsInSolid\":0,\"matterInSolid\":293,\"solid\":0.014030870958581802,\"porous\":0,\"edge0-2R\":{\"share\":0.008113261125309319,\"all\":460.3775,\"fuel\":54.240625,\"trace\":64.41625,\"cellsR2\":0.2925,\"cells\":117,\"allRel\":1.2121712157187141,\"fuelRel\":0.5407448901284385,\"traceRel\":5.3085287173210824,\"cellsRel\":1.8372558905750798},\"edge2-6R\":{\"share\":0.020805443998215083,\"all\":215.05191323421886,\"fuel\":57.23226907141116,\"trace\":27.29003168413356,\"cellsR2\":0.2856446502559103,\"cells\":293,\"allRel\":0.5662304068025881,\"fuelRel\":0.5705696984653377,\"traceRel\":2.248965391369805,\"cellsRel\":1.79419595314164},\"open\":{\"share\":0.9570504239178937,\"all\":379.7957697972851,\"fuel\":100.30723542688807,\"trace\":12.134482722080344,\"cellsR2\":0.15920482361792537,\"cells\":7512,\"allRel\":1,\"fuelRel\":1,\"traceRel\":1,\"cellsRel\":1}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T03:22:42",
+  "wall_s": 1958.48
+}

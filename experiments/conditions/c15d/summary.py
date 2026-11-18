@@ -70,7 +70,7 @@ def main():
         print()
         print("Flow ledger (per minute; carbon units, fuel hands, energy):")
         print("| run | t | in springs (fuel) | open fix / burn / ->mud | cells take (fuel) / graze / breathe out / ->mud | in cells fix / burn | "
-              "built body / memb / wall / pig / enz | builder reduced / shuttled | batteries in / parts (memb, wall, red, pig, enz, trans) | "
+              "built body / memb / wall / pig / enz | builder reduced / shuttled / from granules | batteries in / parts (memb, wall, red, pig, enz, trans) | "
               "mud / cells / all |")
         print("|---|---|---|---|---|---|---|---|---|---|")
         for run, t, F, n in rows:
@@ -79,7 +79,7 @@ def main():
             g = lambda k: f(F.get(k))
             print(f"| {run} | {t} | {g('inSprings')} ({g('inSpringsFuel')}) | {g('openFix')} / {g('openBurn')} / {g('mudFormedOpen')} | "
                   f"{g('uptake')} ({g('uptakeFuel')}) / {g('grazed')} / {g('exhaled')} / {g('toMud')} | {g('cellFix')} / {g('cellBurn')} | "
-                  f"{g('builtBody')} / {g('builtLip')} / {g('builtWall')} / {g('builtPig')} / {g('builtEnz')} | {g('builderRed')} / {g('shuttle')} | "
+                  f"{g('builtBody')} / {g('builtLip')} / {g('builtWall')} / {g('builtPig')} / {g('builtEnz')} | {g('builderRed')} / {g('shuttle')} / {g('fromGran')} | "
                   f"{f((F.get('eIncome') or 0) + (F.get('eCarbonEng') or 0))} / {g('payLip')}, {g('payWall')}, {g('payRed')}, {g('payPig')}, {g('payEnz')}, {g('payTrans')} | "
                   f"{g('mud')} / {f((F.get('all') or 0) * (F.get('cellShare') or 0))} / {g('all')} |")
 

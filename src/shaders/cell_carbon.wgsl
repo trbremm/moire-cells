@@ -61,7 +61,9 @@ const CBF_RED: u32 = 2048u;    // the lipid builder may REDUCE burnt hands from 
 const CBF_ENZ: u32 = 4096u;    // engines need ENZYMES (carbon + the heavy giver G), built, worn and rebuilt (T1b's upkeep becomes their turnover)
 const CBF_OXB: u32 = 8192u;
 // step C15d, THE CARBON ECONOMY (src/carboncells.js; README "Step C15d: the carbon economy")
-const CBF_SHUT: u32 = 16384u;  // the REDUCING SHUTTLE: the builder reduces a hand with the g an oxidation of another carbon frees (cb_make2)    // OXYGEN DAMAGES MEMBRANES: free t oxidises the lipids' fuel hands (fat -> soap -> spoiled, into the mud)
+const CBF_SHUT: u32 = 16384u;  // the REDUCING SHUTTLE: the builder reduces a hand with the g an oxidation of another carbon frees (cb_make2)
+const CBF_GRAN: u32 = 32768u;  // FAT FROM GRANULES: the two-carbon builder also cuts its molecules out of the cell's granules (cb_make2)
+const CBF_HUNGER: u32 = 65536u; // HUNGER FOR EVERY PART: a cell whose parts were short of carbon grazes as a hungry one (not the body alone)    // OXYGEN DAMAGES MEMBRANES: free t oxidises the lipids' fuel hands (fat -> soap -> spoiled, into the mud)
 // the event counters (64-bit, LG_CBC_EV; src/carboncells.js EV)
 const CBE_OX: u32 = 0u;
 const CBE_COND: u32 = 1u;
@@ -140,7 +142,7 @@ const CBE3_PIG: u32 = 3u;     // the pigments' carbon and assembly
 const CBE3_ENZ: u32 = 4u;     // the enzymes: renewed in place and built
 const CBE3_TRANS: u32 = 5u;   // the transporter's upkeep
 const CBE3_SHUT: u32 = 6u;    // hands moved by the REDUCING SHUTTLE (step C15d fix c: one carbon's oxidation reduces another's hand)
-const CBE3_SPARE: u32 = 7u;
+const CBE3_GRAN: u32 = 7u;    // two-carbon molecules cut out of the granules (step C15d fix e1: fat from granules)
 var<workgroup> wcbe3: array<atomic<i32>, 8>;
 var<workgroup> wcbf: array<atomic<i32>, 16>;   // per channel: 0..7 taken in from the dish, 8..15 given back to it
 var<workgroup> wcbe: array<atomic<i32>, 16>;   // CBE_*
@@ -337,7 +339,9 @@ fn cb_plan(i: u32, idx: array<u32, 9>, areaPx: f32, Ao: f32, pkN: f32, room: f32
   // (step C15c: as CBP.u.y units: carbon now also makes its membrane, walls and enzymes, and the dish's carbon is mostly mud)
   if (on && (CBP.cfg.x & (CBF_GRAZE | CBF_GROW)) == (CBF_GRAZE | CBF_GROW)) {
     let body = 0.25 * f32(2 * cbSP[o + CB_BODY] + cbSP[o + CB_BODY + 1u] + cbSP[o + CB_BODY + 2u]);
-    if (body < cb_want(cells[i].r) * ATOM_SCALE) { gr += select(1.0, CBP.u.y, CBP.u.y > 0.0); }
+    // (step C15d, CBF_HUNGER: or any part was short of carbon since the last read-back: the cell's Liebig bit; carbon makes every part)
+    let partShort = (CBP.cfg.x & CBF_HUNGER) != 0u && (u32(cbSP[o + CB_LIM]) & CBL_C) != 0u;
+    if (body < cb_want(cells[i].r) * ATOM_SCALE || partShort) { gr += select(1.0, CBP.u.y, CBP.u.y > 0.0); }
   }
   // (step C15c: the mud lies on the FLOOR under the cell, so it is eaten with the whole underside, covered sides or not: T1a's inside
   // shields the membrane's sides from the water, not the floor)
@@ -783,7 +787,7 @@ fn cb_lim(i: u32, bits: u32) { if (bits != 0u) { atomicOr(&cbS[i * CW + CB_LIM],
  * above its floor (half full): the storer's way, fat from sugar is dear (CO2-like carbon only on this way: fixed). The
  * water goes to the stock, the freed atoms too. Returns the molecules made; lim gets the reason a shortfall stopped.
  */
-fn cb_make2(nT: i32, n: i32, S: ptr<function, array<i32, 5>>, m: ptr<function, array<i32, 18>>, bat: ptr<function, i32>,
+fn cb_make2(nT: i32, n: i32, S: ptr<function, array<i32, 5>>, gr: ptr<function, vec3i>, m: ptr<function, array<i32, 18>>, bat: ptr<function, i32>,
             heat: ptr<function, i32>, lim: ptr<function, u32>) -> i32 {
   if (n <= 0) { return 0; }
   let sp = max(CBP.e.z, 1);
@@ -882,6 +886,26 @@ fn cb_make2(nT: i32, n: i32, S: ptr<function, array<i32, 5>>, m: ptr<function, a
   if (nOx > 0) { atomicAdd(&wcbe2[CBE2_OX], nOx); }
   if (nRed > 0) { atomicAdd(&wcbe2[CBE2_RED], nRed); }
   if (nSh > 0) { atomicAdd(&wcbe3[CBE3_SHUT], nSh); }
+  // step C15d (CBF_GRAN), FAT FROM GRANULES: what the ladder could not give is cut out of the GRANULES as they are, as the wall's chain
+  // carbons already are (cb_make_chain: starch into cellulose): a piece = one backbone bond + 6 - nT fuel hands + nT burnt hands of the
+  // granules' hand counts, two carbons, regrouped with no bond made or broken (zero energy; the assembly spark from the battery). Only as
+  // far as the granules hold the fuel hands the target needs: the burnt hands left behind lose their backbones with the pieces, so those
+  // carbons come loose and DISSOLVE as CO2-like molecules that leave (C15b's dissolving): fat from mud keeps its fuel and breathes out the
+  // rest, as a real cell burns part of its food to make fat from the rest
+  if (left > 0 && (CBP.cfg.x & CBF_GRAN) != 0u) {
+    var x = min(left, (*gr).x);
+    if (6 - nT > 0) { x = min(x, (*gr).y / (6 - nT)); }
+    if (nT > 0) { x = min(x, (*gr).z / nT); }
+    if (max(*bat, 0) / sp < x) { x = max(*bat, 0) / sp; why |= CBL_BAT; }
+    if (x > 0) {
+      *gr -= vec3i(x, x * (6 - nT), x * nT);
+      *bat -= x * sp;
+      *heat += x * sp;
+      left -= x;
+      made += x;
+      atomicAdd(&wcbe3[CBE3_GRAN], x);
+    }
+  }
   if (left > 0) {
     if ((*S)[0] + (*S)[1] + (*S)[2] + (*S)[3] < 2 || why == 0u) { why |= CBL_C; }
     *lim |= why;

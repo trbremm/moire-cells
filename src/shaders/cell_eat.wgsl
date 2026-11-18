@@ -2514,10 +2514,10 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         var lim = 0u;
         let bB0 = bat;   // (step C15d: the flow ledger's battery spending on the bilayer, then the wall)
         let n1 = i32(round(f32(tS) * pG));
-        var got1 = cb_make2(1, n1, &S, &m, &bat, &heat, &lim);
-        let got2 = cb_make2(2, tS - got1, &S, &m, &bat, &heat, &lim);    // (the other head for what the preferred one could not make)
-        if (got1 + got2 < tS && got1 < n1) { got1 += cb_make2(1, tS - got1 - got2, &S, &m, &bat, &heat, &lim); }
-        let gotO = cb_make2(0, tO, &S, &m, &bat, &heat, &lim);
+        var got1 = cb_make2(1, n1, &S, &gr, &m, &bat, &heat, &lim);
+        let got2 = cb_make2(2, tS - got1, &S, &gr, &m, &bat, &heat, &lim);    // (the other head for what the preferred one could not make)
+        if (got1 + got2 < tS && got1 < n1) { got1 += cb_make2(1, tS - got1 - got2, &S, &gr, &m, &bat, &heat, &lim); }
+        let gotO = cb_make2(0, tO, &S, &gr, &m, &bat, &heat, &lim);
         let bB1 = bat;
         let gotWl = cb_make_chain(tWl, &S, &gr, &m, &bat, &heat, &lim);
         let gotWh = cb_make_cross(tWh, &S, &gr, &m, &bat, &heat, &lim);
@@ -2753,8 +2753,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
             if (nb > max(bat, 0) / cpu) { nb = max(bat, 0) / cpu; lim |= CBL_BAT; }
             if (nb > 0) {
               var S: array<i32, 5>;
-              let gr = cb_ld(i, &S);
-              nb = cb_make2(0, nb, &S, &m, &bat, &heat, &lim);
+              var gr = cb_ld(i, &S);
+              nb = cb_make2(0, nb, &S, &gr, &m, &bat, &heat, &lim);
               cb_st(i, &S, gr);
               if (c16 > 0 && nb > max(bat, 0) / c16) {   // (cannot pay the assembly: its carbon waits as granules)
                 let ok = max(bat, 0) / c16;

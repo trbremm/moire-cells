@@ -67,7 +67,7 @@ export const PART_RECIPES = {
   enzyme: { carbon: 4, hands: '4 chain carbons', element: 'G (the heavy giver: catalysis moves electrons)', k: 1, charged: CARBON },
 };
 const ATOM_SCALE = 4096;
-const CBF = { ON: 1, EXCH: 2, ENG: 4, GRAZE: 8, DIS: 16, FLIP: 32, RESET: 64, SMELL: 128, GROW: 256, LIP: 512, TRANS: 1024, RED: 2048, ENZ: 4096, OXB: 8192, SHUT: 16384 };
+const CBF = { ON: 1, EXCH: 2, ENG: 4, GRAZE: 8, DIS: 16, FLIP: 32, RESET: 64, SMELL: 128, GROW: 256, LIP: 512, TRANS: 1024, RED: 2048, ENZ: 4096, OXB: 8192, SHUT: 16384, GRAN: 32768, HUNGER: 65536 };
 // the 64-bit event counters (LG_CBC.EV, cell_eat.wgsl CBE_*)
 const EV = ['ox', 'cond', 'red', 'hyd', 'dis', 'graze', 'gain', 'heat', 'paid', 'phUsed', 'phIdle', 'satWant', 'satLost', 'rise', 'built', 'buildPaid'];
 const EV_ENERGY = /^(gain|heat|paid|rise|buildPaid)$/;
@@ -78,7 +78,7 @@ export const CB_RULES = ['exchange', 'engines', 'graze', 'dissolve', 'smell', 'g
 const EV2 = ['lipMade', 'wallMade', 'reduced', 'oxidised', 'bites', 'spoiled', 'pigMade', 'enzMade'];
 const CEN2 = ['membC', 'wallC', 'pigC', 'glueC', 'enzC', 'limC', 'limG', 'limTr', 'limAt', 'limBat', 'trans', 'enzWant', 'enzShort', 'limAny'];
 // step C15d: the third event block (LG_CBC.EV3, cell_carbon.wgsl CBE3_*): the batteries' spending on parts (energy), the shuttle's hands
-const EV3 = ['payLip', 'payWall', 'payRed', 'payPig', 'payEnz', 'payTrans', 'shuttle', 'spare3'];
+const EV3 = ['payLip', 'payWall', 'payRed', 'payPig', 'payEnz', 'payTrans', 'shuttle', 'fromGran'];
 const EV3_ENERGY = /^pay/;
 /** Carbon units in a per-channel array (5 ladder molecules, 3 tar hand counts). */
 const carbonIn = (a) => a[0] + a[1] + a[2] + a[3] + a[4] + (2 * a[5] + a[6] + a[7]) / 4;
@@ -122,6 +122,9 @@ export class CarbonCells {
       // ---- step C15d, THE CARBON ECONOMY ----
       shuttle: true,     // the REDUCING SHUTTLE: the builder reduces a burnt hand with the g that oxidising another carbon in the stock frees
                          // (the release pays the rise; only the two sparks from the battery: fat from sugar, as with NADPH) (?cbshut=0)
+      granFat: true,     // FAT FROM GRANULES: the two-carbon builder (soaps, oil, pigments) also cuts its molecules out of the granules as
+                         // they are, as far as they hold the fuel hands (zero energy, the assembly spark) (?cbgran=0)
+      hunger: true,      // HUNGER FOR EVERY PART: a cell whose parts were short of carbon grazes as a hungry one, not only for its body (?cbhunger=0)
     };
     this.tot = Object.fromEntries(EV.map((k) => [k, 0]));
     this.hist = [];
@@ -166,7 +169,7 @@ export class CarbonCells {
         (this.rule('dissolve') ? CBF.DIS : 0) | (flip ? CBF.FLIP : 0) | (reset ? CBF.RESET : 0) | (this.rule('smell') && E.rule('smell') ? CBF.SMELL : 0) |
         (this.rule('growth') ? CBF.GROW : 0) | (CB_LIP ? CBF.LIP : 0) | (this.rule('transport') ? CBF.TRANS : 0) |
         (this.rule('reduce') ? CBF.RED : 0) | (this.rule('enzymes') ? CBF.ENZ : 0) | (this.rule('oxBite') ? CBF.OXB : 0) |
-        (this.rule('shuttle') ? CBF.SHUT : 0);
+        (this.rule('shuttle') ? CBF.SHUT : 0) | (this.rule('granFat') ? CBF.GRAN : 0) | (this.rule('hunger') ? CBF.HUNGER : 0);
       u[1] = tickBase >>> 0; u[2] = ok ? Math.max(1, M.nSub || 1) : 1; u[3] = ok ? Cb.cur & 1 : 0;
       if (ok) {
         const LW = LEDGER_WORDS;   // (the heat buffer's grid starts behind the ledger)
@@ -282,7 +285,7 @@ export class CarbonCells {
       cellFix: de('ev', 'red'), cellBurn: de('ev', 'ox'), cellCond: de('ev', 'cond'), cellHyd: de('ev', 'hyd'), cellDis: de('ev', 'dis'),
       builtBody: de('ev', 'built'), builtLip: 2 * de('ev2', 'lipMade'), builtWall: de('ev2', 'wallMade'), builtPig: 2 * de('ev2', 'pigMade'),
       builtEnz: 4 * de('ev2', 'enzMade'), builderRed: de('ev2', 'reduced'), builderOx: de('ev2', 'oxidised'), bites: de('ev2', 'bites'),
-      spoiled: de('ev2', 'spoiled'), shuttle: de('ev3', 'shuttle'),
+      spoiled: de('ev2', 'spoiled'), shuttle: de('ev3', 'shuttle'), fromGran: 2 * de('ev3', 'fromGran'),
       // the batteries (energy per minute): income from the engines (the table's and the carbon ones), spending on parts
       eIncome: b.eat ? 60 * (b.eat.gain + b.eat.eGain) : 0, eCarbonEng: de('ev', 'gain'), eUpkeep: b.eat ? 60 * b.eat.upkeep : 0,
       payBody: de('ev', 'buildPaid'), payLip: de('ev3', 'payLip'), payWall: de('ev3', 'payWall'), payRed: de('ev3', 'payRed'),
@@ -333,7 +336,7 @@ export class CarbonCells {
     return `\n        FLOW per min: in springs ${f(F.inSprings)} (fuel hands ${f(F.inSpringsFuel)}) bodies ${f(F.inBodies)} · open: fix ${f(F.openFix)} burn ${f(F.openBurn)} → mud ${f(F.mudFormedOpen)}` +
       ` · cells take ${f(F.uptake)} (fuel ${f(F.uptakeFuel)}) graze ${f(F.grazed)}, breathe out ${f(F.exhaled)}, die into mud ${f(F.toMud)}` +
       ` · in cells: fix ${f(F.cellFix)} burn ${f(F.cellBurn)} · built body ${f(F.builtBody)} membrane ${f(F.builtLip)} wall ${f(F.builtWall)} pigment ${f(F.builtPig)} enzymes ${f(F.builtEnz)}` +
-      ` · builder reduced ${f(F.builderRed)} shuttled ${f(F.shuttle)} · batteries +${f(F.eIncome + F.eCarbonEng)} → parts ${f(F.payBody + F.payLip + F.payWall + F.payPig + F.payEnz + F.payTrans)}` +
+      ` · builder reduced ${f(F.builderRed)} shuttled ${f(F.shuttle)} cut from granules ${f(F.fromGran)} · batteries +${f(F.eIncome + F.eCarbonEng)} → parts ${f(F.payBody + F.payLip + F.payWall + F.payPig + F.payEnz + F.payTrans)}` +
       ` · MUD ${Math.round(100 * F.mudShare)}% of ${f(F.all)} carbons (cells ${Math.round(100 * F.cellShare)}%)`;
   }
 

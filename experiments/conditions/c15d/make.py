@@ -100,3 +100,11 @@ dump({"batch": "c15d-diag", "runs": [
     ab("diag-nobite", "diagnosis: oxygen bites OFF (?cbbite=0); default scene, seed 3, 10 min", {"cbbite": 0}),
     ab("diag-lip0", "diagnosis: C15b linker membranes (?cblip=0); default scene, seed 3, 10 min", {"cblip": 0}),
 ]}, "diag.json")
+
+# ab2: with fat from granules (e1) and hunger for every part (e2); all fixes on, and (e1)+(e2) alone
+OFF2 = {**OFF, "cbgran": 0, "cbhunger": 0}
+dump({"batch": "c15d-ab2", "runs": [
+    ab("ab2-all", "all fixes (a)-(e2); default scene, seed 3, 10 min", {}),
+    ab("ab2-all-colonies", "all fixes (a)-(e2); colonies of wild founders, seed 3, 10 min", {}, scene="colonies"),
+    ab("ab2-gran", "fixes (e1) fat from granules + (e2) hunger alone; default scene, seed 3, 10 min", {**OFF2, "cbgran": 1, "cbhunger": 1}),
+]}, "ab2.json")

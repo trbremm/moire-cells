@@ -50,6 +50,7 @@ import { Kin } from './kin.js';
 import { Grn } from './grn.js';
 import { Predators, STATS_P1, P1_WORDS, P1_CLEAR } from './predators.js';
 import { Glue, STATS_G0, G0_WORDS, G0_CLEAR } from './glue.js';
+import { Spindle, STATS_S1, S1_WORDS } from './spindle.js';
 import { Fidelity } from './fidelity.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 import { dish } from './dish.js';      // the dish's own size and R
@@ -82,7 +83,7 @@ const SLOT = 256;              // uniform slot stride (minUniformBufferOffsetAli
 const SLOTS = 320;             // ticks that can be encoded in one frame (main.js runs at most 256, plus warm-up)
 const BLOCK = 512;             // scan block (cell_grid.wgsl)
 const BRUTE_MAX = 20000;       // largest count the ?check brute force runs on
-const STATS_BYTES = 9408;      // struct Stats in cell_common.wgsl (step G0: + g0, 32 words; step P1: + p1, 64 words; step C13: + fg, 64 words; counters, events, census, step 6 census; step C6d: + dip;
+const STATS_BYTES = 9472;      // struct Stats in cell_common.wgsl (step S1: + s1, 16 words; step G0: + g0, 32 words; step P1: + p1, 64 words; step C13: + fg, 64 words; counters, events, census, step 6 census; step C6d: + dip;
                                // step C9: + div, claim; step C10: + wall; step C11: wall 24 -> 32 words)
 const STATS_EXTRA = 8192;      // byte offset of Stats.extra (step 6 census: STATS_X_* in cell_common.wgsl)
 const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder bitmap) in struct Stats
@@ -352,6 +353,7 @@ export class Cells {
     this.walls = new Walls(this);         // step C10: patterned walls, evolvable adhesion per side (src/walls.js)
     this.glue = new Glue(this);           // step G0: strong glue, junctions that break (src/glue.js)
     this.walls.glue = this.glue;
+    this.spindle = new Spindle(this);     // step S1: cell shape (src/spindle.js)
     this.stir = null;                     // step G0: the cells stir the water (src/stir.js; set by main.js)
     this.guides = new Guides(this);       // step C13: fields as genes and guides (src/guides.js)
     this.kin = new Kin(this);             // step T1a: an inside, kin channels, the self marker (src/kin.js)
@@ -542,7 +544,8 @@ export class Cells {
   gridSize() {
     const p = this.params;
     const x = this.excl.on ? this.excl.reach * 2.3 : 0;   // step 7: same-state pairs reach past contact
-    return Math.max(1, Math.max(p.range, p.cut, x) * this.R);
+    const sh = this.spindle ? this.spindle.range(this.genome.params.reach) : 0;   // step S1: the longest pair's contact
+    return Math.max(1, Math.max(p.range, p.cut, x, sh) * this.R);
   }
 
   /** Grid dimensions from the dish size and R; (re)allocates the grid buffers when they grow. */
@@ -669,9 +672,9 @@ export class Cells {
     u[o + 26] = this.heat.offsetAt(k);
     u[o + 27] = ((this.pumps && this.pumps.contactOn) || this.kin.needsNbr) && this.count <= 65535 ? 1 : 0;   // step C7: each side's touching neighbour (step T1a: and the inside, kin channels)
     const G = this.genome.params;
-    f[o + 28] = 0; f[o + 29] = 0; f[o + 30] = G.reach;   // (28, 29: the fates' tau and release until step F0)
+    f[o + 30] = G.reach;   // (28, 29: the fates' tau and release until step F0; step S1: the shape's bits and largest stretch)
     f[o + 31] = G.adhesion;
-    f[o + 32] = G.adhSigma; f[o + 33] = 0; f[o + 34] = this.genome.rules.body ? 1 : 0; f[o + 35] = G.adhBase;
+    f[o + 32] = G.adhSigma; f[o + 34] = this.genome.rules.body ? 1 : 0; f[o + 35] = G.adhBase;
     f[o + 36] = this.genome.rules.body ? G.crawl : 0; f[o + 37] = G.turnRate;
     f[o + 38] = G.turnover; f[o + 39] = G.unhappy; f[o + 40] = G.mutSize; f[o + 41] = G.mutJump;
     f[o + 42] = Math.max(0, G.engJump ?? 0);       // step C6: engine slot jumps per birth
@@ -686,6 +689,7 @@ export class Cells {
     const X = this.excl;
     f[o + 59] = X.on ? Math.max(0, X.hard) : 0; f[o + 60] = Math.max(0, X.reach); f[o + 61] = Math.max(0, X.pack);
     u[o + 62] = Math.max(1, Math.min(4, Math.round(X.states))); u[o + 63] = count ? 1 : 0;
+    this.spindle.writeSim(u, f, o);              // step S1: cell shape (words 28, 29, 33: the fates' until step F0)
   }
 
   /** Write the fields' uniform (struct Fields): the charges, field B's band, range and rules. */
@@ -806,6 +810,7 @@ export class Cells {
     encoder.clearBuffer(this.statsBuf, STATS_WALL, 4 * WALL_WORDS);   // step C10: the walls' census, on the last tick too
     encoder.clearBuffer(this.statsBuf, STATS_P1 + 4 * P1_CLEAR, 4 * (P1_WORDS - P1_CLEAR));   // step P1: the predators' census (its counters run on)
     encoder.clearBuffer(this.statsBuf, STATS_G0 + 4 * G0_CLEAR, 4 * (G0_WORDS - G0_CLEAR));   // step G0: the glue's census (its counters run on)
+    encoder.clearBuffer(this.statsBuf, STATS_S1, 4 * S1_WORDS);       // step S1: the shape's census
     encoder.clearBuffer(this.statsBuf, STATS_FG, 4 * FG_CLEAR);       // step C13: the field genes' and gates' census (the same; its
                                                                       // cumulative words after FG_CLEAR run on)
     for (let t = 0; t < ticks; t++) {
@@ -922,6 +927,7 @@ export class Cells {
       this.guides.apply(time, new Uint32Array(u.buffer, STATS_FG, FG_WORDS));      // step C13
       this.pred.applyStats(time, new Uint32Array(u.buffer, STATS_P1, P1_WORDS));   // step P1
       this.glue.apply(time, new Uint32Array(u.buffer, STATS_G0, G0_WORDS));      // step G0
+      this.spindle.apply(time, new Uint32Array(u.buffer, STATS_S1, S1_WORDS));   // step S1
       if (events.length && this.onEvents) this.onEvents(events);
       if (events.length) for (const t of this.eventTaps) t(events, time);
     } catch (e) {

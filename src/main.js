@@ -117,6 +117,9 @@
 //               ever engulfed); ?kinsparenull=1 kinship ignored (the sparing gene drifts without effect); knobs ?sizeratio= ?drive= ?holdbase=
 //               ?wallarm= ?stiffarm= ?wraptime= ?digesttime= ?startrate= ?batstart= ?wrapcost= ?startcost= ?wrapshare= ?batshare= ?predcensus=;
 //               ?predmark=1 the machinery's mark of engulf-capable cells; the founders' wild group 'engulf' (?founders=wild) draws the genes
+//   ?shape=0      step S1: cell shape off (today's round contacts exactly); ?shapenull=1 the elongation gene's NEUTRAL control (it drifts, cells
+//               ask to be round); ?shapegene=0 ?shapegrn=0 ?shapetorque=0 ?shapeexch=0 ?shapewrap=0 one part off; ?aspmax= the longest
+//               aspect (1.2..4, default 4); ?shapeturn= x the derived turning (rules panel, Cell shape)
 //   ?glueceil=0   step G0: the glue gene capped at 1 again (linear, as before G0); ?gluecost=0 glue above 1 costs per unit as below it;
 //               ?breaks=0 junctions never tear; ?gluenull=1 the glue's NEUTRAL control (the gene drifts, every effect at the founder's
 //               value); ?tearat=x a junction tears this share past the contact distance (0.05), ?heal=s a torn side heals after s on
@@ -451,6 +454,17 @@ async function boot() {
         if (params.has(q) && Number.isFinite(v) && v >= 0) GP[k] = v;
       }
     }
+    {   // step S1: cell shape
+      const SP = cells.spindle.params;
+      for (const [q, k] of [['shape', 'on'], ['shapenull', 'null'], ['shapegene', 'gene'], ['shapegrn', 'grn'], ['shapetorque', 'torque'],
+        ['shapeexch', 'exchange'], ['shapewrap', 'wrap']]) {
+        if (params.has(q)) SP[k] = flag(q);
+      }
+      for (const [q, k] of [['aspmax', 'aspectMax'], ['shapeturn', 'turn']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) SP[k] = v;
+      }
+    }
     {   // step C13: fields as genes and guides
       const GP = cells.guides.params;
       for (const [q, k] of [['fgenes', 'genes'], ['gateglue', 'glue'], ['gatepump', 'pump'], ['gateengine', 'engine'], ['gatediv', 'div'],
@@ -674,7 +688,7 @@ async function boot() {
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
-    kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, perfusion, glue: cells.glue, stir: water.stir, obstacles };
+    kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, perfusion, glue: cells.glue, stir: water.stir, obstacles, spindle: cells.spindle };
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.warfare = new Warfare(window.moire);     // step T1c: the chemical warfare census (lineage borders against interiors)
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
@@ -975,7 +989,8 @@ ${cells.kin.panelLine(compact)}
 ${cells.grn.panelLine(compact)}
 ${cells.pred.panelLine(compact)}
 ${cells.fidelity.panelLine(compact)}
-${cells.glue.panelLine(compact)}${ELECTRONS ? `
+${cells.glue.panelLine(compact)}
+${cells.spindle.panelLine(compact)}${ELECTRONS ? `
 ${matter.vents.panelLine(compact)}` : ''}
 ${cells.eat.pigments.panelLine(compact)}
 ${water.panelLine(compact)}
@@ -1068,6 +1083,7 @@ function drawOverlay() {
     ...cells.division.overlayLines(),
     ...cells.walls.overlayLines(),
     ...cells.glue.overlayLines(),
+    ...cells.spindle.overlayLines(),
     ...cells.guides.overlayLines(),
     ...matter.oil.overlayLines(),
     neon.overlayLine(),

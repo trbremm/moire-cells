@@ -73,6 +73,7 @@ export const RULE_GROUPS = [
   ['p1', 'Predators (step P1)'],
   ['g1', 'Error correction (step G1)'],
   ['g0', 'Strong glue (step G0)'],
+  ['s1', 'Cell shape (step S1)'],
   ['g0w', 'Stirred water (step G0)'],
   ['vents', 'Vents in the dark (step C12f)'],
   ['n1', 'Nutrient landscape (step N1)'],
@@ -824,6 +825,35 @@ export function makeActions(app) {
     g0knob('stirGain', 'stirring gain', STP, 'gain', 0.05, 20, 1.5, 2, 'how fast the water goes where cells push it (× their coverage-weighted push)', 'g0w'),
     g0knob('stirReach', 'viscous reach', STP, 'reach', 0.25, 20, 1.5, 2, 'R: how far a push moves the water round it (viscosity)', 'g0w'),
     g0knob('stirFade', 'swirls fade in', STP, 'fade', 0.1, 60, 1.5, 2, 's: how fast the stirred flow dies down when the push stops', 'g0w'),
+  );
+
+  // ---------- cell shape (step S1; panel only: no keys are free) ----------
+  const SHP = () => app.cells.spindle.params;
+  A.push(
+    { id: 'shapeOn', keys: [], label: 'real shapes (spindles)', group: 's1', type: 'toggle', get: () => SHP().on,
+      run: () => `cell shape ${flip(SHP(), 'on') ? 'on: contacts on the real shape (capsules), the elongation gene, long cells turned by off-centre forces' : 'off: round contacts, as before step S1'}`,
+      help: 'cells may grow long (an elongation gene, up to 4:1); contacts, turning, exchange and engulfing follow the real shape' },
+    { id: 'shapeGene', keys: [], label: 'elongation gene acts', group: 's1', type: 'toggle', get: () => SHP().gene,
+      run: () => `the elongation gene ${flip(SHP(), 'gene') ? 'acts: a cell grows long along its front as its gene asks' : 'does not act: only squeezing makes cells long'}`,
+      help: 'ln of the aspect a cell asks for (0 round .. ln 4), along its front' },
+    { id: 'shapeGrn', keys: [], label: 'shape from the gene network', group: 's1', type: 'toggle', get: () => SHP().grn,
+      run: () => `the gene network's SHAPE output ${flip(SHP(), 'grn') ? 'scales the elongation (the same DNA long here, round there)' : 'has no effect on the shape'}`,
+      help: 'the 18th output of the gene network multiplies the elongation gene' },
+    { id: 'shapeTorque', keys: [], label: 'long cells turn', group: 's1', type: 'toggle', get: () => SHP().torque,
+      run: () => `off-centre forces ${flip(SHP(), 'torque') ? 'turn long cells (rods side by side line up; walls and shear turn them)' : 'do not turn cells'}`,
+      help: 'a contact off a long cell’s centre (or an obstacle, the dish’s wall, the water’s shear) turns it' },
+    { id: 'shapeExch', keys: [], label: 'exchange by perimeter', group: 's1', type: 'toggle', get: () => SHP().exchange,
+      run: () => `the membrane's exchange ${flip(SHP(), 'exchange') ? 'grows with its real perimeter (a spindle trades faster for its volume)' : 'is a round cell’s whatever the shape'}`,
+      help: 'what crosses the membrane per s × the perimeter over a round cell’s of the same area' },
+    { id: 'shapeWrap', keys: [], label: 'engulf wraps the length', group: 's1', type: 'toggle', get: () => SHP().wrap,
+      run: () => `a predator ${flip(SHP(), 'wrap') ? 'must be at least as long as its prey to wrap it (filaments are safe from small grazers)' : 'needs only to be bigger in area'}`,
+      help: 'engulfing must wrap the prey’s long axis' },
+    { id: 'shapeNull', keys: [], label: 'elongation neutral control', group: 's1', type: 'toggle', get: () => SHP().null,
+      run: () => `the elongation gene ${flip(SHP(), 'null') ? 'drifts WITHOUT effect: every cell asks to be round (NEUTRAL CONTROL)' : 'acts'}`,
+      help: 'the neutral control: the gene drifts as usual without effect, to tell selection from noise' },
+    { id: 'aspectMax', keys: [], label: 'longest aspect', group: 's1', type: 'knob', get: () => Number(SHP().aspectMax).toFixed(2),
+      run: (k) => { const p = SHP(); p.aspectMax = Math.max(1.2, Math.min(4, +((Number(p.aspectMax) || 4) * (k === '-' ? 1 / 1.15 : 1.15)).toPrecision(3))); return `longest aspect ${p.aspectMax}:1`; },
+      help: 'the longest a cell may be, length over width (the neighbour grid grows with it)' },
   );
 
   // ---------- vents in the dark (step C12f; panel only: no keys are free) ----------

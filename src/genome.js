@@ -7,7 +7,9 @@
 //          it was made, inherited unchanged: the glue's neutral control acts with it), w founder id (a whole number, as a float)
 //   resp   step F0, state (inherited, not mutated): x y the JOB scores builder, predator (src/jobs.js); z w spare (the fates' response
 //          genes until then)
-//   relay  spare (the fates' relay genes until step F0)
+//   relay  x spare (the carbon branch's transporter gene); step S1: y the ELONGATION gene (ln of the aspect the cell asks for, 0 round ..
+//          ln 4; founders 0, wild founders anywhere; src/spindle.js), z w the gene network's 18th output (SHAPE): its gain and regulator
+//          (the fates' relay genes until step F0)
 //   body   x adhesion, y size factor, z motility factor, w spare
 //   acc    step F0, state (inherited): the JOB scores light eater, breather, fermenter, gradient eater, low-passed (the fates' four
 //          leaky accumulators until then)
@@ -289,7 +291,15 @@ export function blankGenes(g, o = 0) {
   g[o + 73] = 1; g[o + 74] = 0; g[o + 75] = 0;                                        // push 1, stretch tolerance 0, ion channels 0
   g[o + 80] = 0;                                                                      // no kin channels
 }
-export const WILD_GROUPS = ['body', 'membrane', 'pumps', 'walls', 'lipids', 'fields', 'gates', 'kin', 'grn', 'engulf'];
+export const WILD_GROUPS = ['body', 'membrane', 'pumps', 'walls', 'lipids', 'fields', 'gates', 'kin', 'grn', 'engulf', 'shape'];
+// step S1: WILD founders' shape genes (group 'shape'), from their own random stream (so a seed's other wild genes stay as they were): the
+// ELONGATION gene anywhere in 0..ln 4, and the gene network's 18th output (SHAPE) four times in ten from a random regulator at a gain in -3..3
+// (only with the group 'grn' too)
+export function wildS1(g, rng, o = 0, groups = WILD_GROUPS) {
+  const e = U(rng, 0, Math.log(4)), on = rng() < 0.4, r = Math.min(7, Math.floor(rng() * 8)), u = U(rng, -3, 3);
+  if (groups.includes('shape')) g[o + 13] = e;
+  if (groups.includes('shape') && groups.includes('grn')) { g[o + 14] = on ? u : 0; g[o + 15] = on ? r : 0; }
+}
 // step P1: WILD founders' predation genes (group 'engulf'), from their own random stream (so a seed's other wild genes stay as in step T1b):
 // the ENGULF gene and the KIN SPARING gene anywhere in 0..1, and the gene network's 17th output (ENGULF) four times in ten from a random
 // regulator at a gain in -3..3 (only with the group 'grn' too)
@@ -353,6 +363,7 @@ export class Genome {
     this.krng = makeRng(this.seed ^ 0x6b696e31);   // step T1a: the marker and kin genes' own stream
     this.xrng = makeRng(this.seed ^ 0x77696c64);   // step T1a: the wild founders' own stream
     this.erng = makeRng(this.seed ^ 0x656e6731);   // step P1: the wild founders' predation genes' own stream
+    this.srng = makeRng(this.seed ^ 0x73686170);   // step S1: the wild founders' shape genes' own stream
     this.founders = [];
     // live-tunable (moire.genome.params); the rule switches are keys
     this.params = {
@@ -414,7 +425,10 @@ export class Genome {
     for (const g of list) {
       t1Genes(g, this.krng);
       if (mode === 'blank') blankGenes(g);
-      else if (mode === 'wild') { wildGenes(g, this.xrng, 0, this.params.wildGroups); wildP1(g, this.erng, 0, this.params.wildGroups); }
+      else if (mode === 'wild') {
+        wildGenes(g, this.xrng, 0, this.params.wildGroups); wildP1(g, this.erng, 0, this.params.wildGroups);
+        wildS1(g, this.srng, 0, this.params.wildGroups);   // step S1
+      }
     }
     // step T1b: wild founders' markers turned a golden angle apart (no random number drawn), so in the lineage view any few surviving
     // founders show clearly different hues (their markers are strangers either way)

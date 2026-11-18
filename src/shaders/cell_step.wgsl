@@ -140,6 +140,19 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     c.flags &= ~CELL_HEX;
   }
   let hexShape = (c.flags & CELL_HEX) != 0u;
+  // step S1, CELL SHAPE (src/spindle.js): this cell's CAPSULE, its real extent for contacts (from its outline's stretch, as its neighbours
+  // see it in their lean copies), and the TORQUE of the off-centre forces on it (summed below: contacts, obstacles, the dish's wall, the
+  // water's shear), which turns a long cell (rods side by side align)
+  let shF = S.shapeF;
+  let shOn = (shF & SH_ON) != 0u;
+  let myAsk = select(0.0, shape_ask(bio, shF, S.eCap), shOn);   // the elongation it asks for (its gene x the network's SHAPE output)
+  let myK = capsule(c.r, cap_stretch(vec2f(c.e1, c.e2), myAsk), shOn);
+  let myReach = myK.z + 1.45 * myK.w;        // how far its contact can reach from its centre (along its axis)
+  var sTq = 0.0;
+  var nemN = 0u;                             // the census: touching pairs both longer than 1.5:1, the sum of cos 2 (their axes' angle)
+  var nemS = 0;
+  var noWrap = 0u;                           // ... prey that only their length saved
+  let myLong = 2.0 * length(vec2f(c.e1, c.e2)) > 0.405465;
   // step C10, patterned walls (src/walls.js): this cell's effective adhesion per side (the eat pass's, last tick) and the
   // orientation its sides are found by, both as its lean copy has them (what its neighbours see, so the two cells of a contact
   // find the same pair of sides), and per side the touching that matures its junctions
@@ -315,6 +328,26 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         let d = o.pos - c.pos;
         let R0 = c.r + o.r;
         let d2 = dot(d, d);
+        // step S1: the pair's CONTACT on their capsules: dk the vector between the closest points of their core segments, R0k the contact
+        // distance (their end radii's sum), sA where along this cell's axis the contact sits (its lever arm) and tB along the neighbour's.
+        // The fields below keep the centres' line (d, R0); off (or both round) dk = d, R0k = R0, as before
+        var dk = d;
+        var R0k = R0;
+        var sA = 0.0;
+        var tB = 0.0;
+        var oK = vec4f(1.0, 0.0, 0.0, o.r);
+        if (shOn) {
+          let far = myReach + 2.05 * o.r;        // (at most h + 1.45 rho of the neighbour at an aspect of 4: a cheap test first)
+          if (d2 < far * far) {
+            oK = capsule(o.r, cap_stretch(vec2f(o.e1, o.e2), shape_ask(bioPrev[beats[k].idx], shF, S.eCap)), true);
+            let st = seg_closest(d, myK.xy, myK.z, oK.xy, oK.z);
+            dk = d + st.y * oK.xy - st.x * myK.xy;
+            sA = st.x;
+            tB = st.y;
+          }
+          R0k = myK.w + oK.w;
+        }
+        let d2k = dot(dk, dk);
         // step P1: how far this pair is wrapped (one of them wrapping the other): their walls give way and their push softens
         var wrapP = 0.0;
         if (p1On) {
@@ -325,10 +358,12 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         // step C6c: contact flattens. The wall between the two cells is the line where their power distances |x - p|^2 - r^2
         // are equal (the midline, shifted toward the smaller cell; both cells find the same line, so they share a straight
         // wall): every corner of this cell must stay on its side of it
-        if (hexShape && d2 < 1.96 * R0 * R0 && d2 > 1e-6 && wrapP < 0.3) {
-          let dh = sqrt(d2);
-          let uh = d / dh;
-          let wall = 0.5 * dh + (c.r * c.r - o.r * o.r) / (2.0 * dh);
+        // (step S1: on the capsules, the power line between the two closest points, its distance from this cell's centre along uh)
+        if (hexShape && d2k < 1.96 * R0k * R0k && d2k > 1e-6 && wrapP < 0.3) {
+          let dh = sqrt(d2k);
+          let uh = dk / dh;
+          var wall = 0.5 * dh + (c.r * c.r - o.r * o.r) / (2.0 * dh);
+          if (shOn) { wall = max(sA * dot(myK.xy, uh) + 0.5 * dh + (myK.w * myK.w - oK.w * oK.w) / (2.0 * dh), 0.25 * myK.w); }
           // per corner: cu = uh . u (the corner's direction against the wall's normal), b = wall / cu its distance to the
           // wall along its direction (only for corners facing the wall, cu > 0.05)
           let cuA = uh.x * huX[0] + uh.y * huY[0];
@@ -355,7 +390,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           swB += wB;
           // ... and turns the hexagon so a side (its middle at theta + 30 + k x 60 degrees) faces the neighbour: a pull of
           // sin(6 delta), delta the neighbour's angle from the nearest side's middle (= -Im(u^6 e^{-6 i theta}))
-          let wt = clamp((1.2 * R0 - dh) / (0.3 * R0), 0.0, 1.0);
+          let wt = clamp((1.2 * R0k - dh) / (0.3 * R0k), 0.0, 1.0);
           if (wt > 0.0) {
             let u2 = vec2f(uh.x * uh.x - uh.y * uh.y, 2.0 * uh.x * uh.y);
             let u3 = vec2f(u2.x * uh.x - u2.y * uh.y, u2.x * uh.y + u2.y * uh.x);
@@ -434,34 +469,46 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           }
         }
         // step 7, exclusion: the distance below which this pair pushes apart (Rt) and how hard (kx)
-        var Rt = R0;
+        var Rt = R0k;
         var kx = 1.0;
         // (step F0: the same TYPE = the same founder line, Bio.rec.w; it was the same fate)
         if ((exclOn || S.xCount != 0u) && bioPrev[beats[k].idx].rec.w == bio.rec.w) {
           let os = cell_state(o.la, o.flags, S.states);
           let same = os == myState;
-          if (d2 < shell * shell * R0 * R0) { nState[min(os, 3u)]++; }
-          if (S.xCount != 0u && d2 < 2.56 * R0 * R0) {
+          if (d2k < shell * shell * R0k * R0k) { nState[min(os, 3u)]++; }
+          if (S.xCount != 0u && d2k < 2.56 * R0k * R0k) {
             xAll++;
             if (same) { xSame++; }
-            if (d2 < S.reach * S.reach * R0 * R0) { tAll++; if (same) { tSame++; } }
+            if (d2k < S.reach * S.reach * R0k * R0k) { tAll++; if (same) { tSame++; } }
           }
           if (exclOn) {
-            Rt = select(S.pack * R0, S.exclReach * R0, same);
+            Rt = select(S.pack * R0k, S.exclReach * R0k, same);
             kx = select(1.0, S.excl, same);
           }
         }
-        let reach = S.reach * R0;
-        if (d2 >= max(reach * reach, Rt * Rt)) { continue; }
-        let dist = sqrt(d2);
+        let reach = S.reach * R0k;
+        if (d2k >= max(reach * reach, Rt * Rt)) { continue; }
+        let dist = sqrt(d2k);
+        // step S1: the contact's direction, and where it sits seen from this cell's centre (vC) and from the neighbour's (vO): which side of
+        // each faces the other (round: along the centres' line, as before)
+        let uk = dk / max(dist, 1e-6);
+        let vC = select(d, sA * myK.xy + myK.w * uk, shOn);
+        let vO = select(-d, tB * oK.xy - oK.w * uk, shOn);
+        if (S.xCount != 0u && shOn && dist < reach && myLong && 2.0 * length(vec2f(o.e1, o.e2)) > 0.405465) {
+          let ea2 = vec2f(c.e1, c.e2);
+          let eb2 = vec2f(o.e1, o.e2);
+          nemN++;
+          nemS += i32(round(1000.0 * dot(ea2, eb2) / max(length(ea2) * length(eb2), 1e-9)));   // (a stretch holds 2 phi: cos 2 delta)
+        }
         // step C7: the touching neighbour across each side (nearest per side), for the pumps across contact
         if (nbrOn && dist < reach) {
-          let ux = d.x / max(dist, 1e-6);
-          let uy = d.y / max(dist, 1e-6);
+          let lv = max(length(vC), 1e-6);
+          let ux = select(d.x / max(dist, 1e-6), vC.x / lv, shOn);
+          let uy = select(d.y / max(dist, 1e-6), vC.y / lv, shOn);
           let ca = ux * nmxA + uy * nmyA;
           let cb = ux * nmxB + uy * nmyB;
           let cm = max(max(max(ca.x, ca.y), max(ca.z, ca.w)), max(cb.x, cb.y));
-          let dn = dist / R0;
+          let dn = dist / R0k;
           let oi = beats[k].idx;
           // (only the first side at the largest cos: a tie must not list a neighbour twice)
           var ia = ca >= vec4f(cm);
@@ -487,7 +534,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         let ob = bioPrev[beats[k].idx];
         // a parent in case this cell dies this tick: one touching neighbour, picked by weight (reservoir sampling: a
         // candidate of weight w replaces the pick with chance w / the weight seen so far; all weights 1 = uniform)
-        if (dist < R0) {
+        if (dist < R0k) {
           let wp = select(1.0, FL.bias + o.bat, biasOn);
           wParent += wp;
           if (rand01(c.seed ^ pcg(S.tick ^ 0x27d4eb2fu), k) * wParent < wp) { parent = k; }
@@ -501,13 +548,13 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
             var stick = sqrt(max(glue_gene(bio, g0F) * gofP(i, GRN_O_GLUE) * glue_gene(ob, g0F) * gofP(beats[k].idx, GRN_O_GLUE), 0.0)) * like;   // (step T1b: as expressed;
                                                                                                                                   //  step G0: the null's founder value)
             // The pull fades out below 0.85 x contact distance, so sticky cells touch without piling up.
-            let near = clamp((dist / R0 - 0.85) / 0.15, 0.0, 1.0);
+            let near = clamp((dist / R0k - 0.85) / 0.15, 0.0, 1.0);
             if (wallOn) {
               // step C10: the contact holds by the smaller of the two touching sides' effective adhesion (both must be sticky),
               // times the match (the keys' likeness): adhesion = molecules x how well they match
-              let ks = wall_side(myTh, d);
+              let ks = wall_side(myTh, vC);
               var mine = select(wB[ks & 1u], wA[ks & 3u], ks < 4u);
-              let ko = wall_side(wall_theta(o.flags, (o.wadh.y >> 16u) & 255u), -d);
+              let ko = wall_side(wall_theta(o.flags, (o.wadh.y >> 16u) & 255u), vO);
               var theirs = wall_get(o.wadh.x, o.wadh.y, ko);
               // step G0: a torn side holds nothing (this cell's, or the neighbour's side facing it, from its lean copy)
               if (tearOn) {
@@ -521,15 +568,15 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
               if (tearOn && hold > 0.0) {
                 let bit = 1u << ks;
                 if (dist < reach) { jnKeep |= bit; }
-                if (dist < R0) { jnMake |= bit; }
+                if (dist < R0k) { jnMake |= bit; }
                 let formed = (jn0 & (bit << JN_FORM_SHIFT)) != 0u;
-                if (formed && dist > R0 * (1.0 + FL.g0a.z) && dist < reach && dot(o.vel - c.vel, d) > 0.0) { jnTear |= bit; }
+                if (formed && dist > R0k * (1.0 + FL.g0a.z) && dist < reach && dot(o.vel - c.vel, dk) > 0.0) { jnTear |= bit; }
                 if (formed && S.xCount != 0u) {
                   // the census: its strength (the pull's peak, in adhesion units) and its load now (the pull it carries less the contact's
                   // push, as a share of that peak)
-                  let tc = clamp((reach - dist) / (reach - R0 + 1e-3), 0.0, 1.0);
-                  let nr = clamp((dist / R0 - 0.85) / 0.15, 0.0, 1.0);
-                  let push = max(R0 - dist, 0.0) / max(S.adhesion * S.R * hold, 1e-6);
+                  let tc = clamp((reach - dist) / (reach - R0k + 1e-3), 0.0, 1.0);
+                  let nr = clamp((dist / R0k - 0.85) / 0.15, 0.0, 1.0);
+                  let push = max(R0k - dist, 0.0) / max(S.adhesion * S.R * hold, 1e-6);
                   jnStr += hold;
                   jnLoad += clamp(tc * nr - push, -1.0, 1.0);
                   jnN++;
@@ -549,11 +596,12 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
               // turn of this cell changes nothing and gives no torque (no endless spinning); the neighbour works out its own torque
               // from the same wall the same way (each cell its own: no race)
               if (glueTurn) {
-                let a0 = atan2(d.y, d.x);
+                let a0 = atan2(vC.y, vC.x);
+                let aO = select(a0 + 3.14159265, atan2(vO.y, vO.x), shOn);   // (step S1: where the contact sits on the neighbour)
                 let thO = wall_theta(o.flags, (o.wadh.y >> 16u) & 255u);
-                let jp = wall_at_a(o.wadh.x, o.wadh.y, thO, a0 + 3.14159265 - 0.5235988);   // the neighbour's glue at the wall's + end
-                let jm = wall_at_a(o.wadh.x, o.wadh.y, thO, a0 + 3.14159265 + 0.5235988);   // ... - end
-                let jc = wall_at_a(o.wadh.x, o.wadh.y, thO, a0 + 3.14159265);               // ... middle
+                let jp = wall_at_a(o.wadh.x, o.wadh.y, thO, aO - 0.5235988);   // the neighbour's glue at the wall's + end
+                let jm = wall_at_a(o.wadh.x, o.wadh.y, thO, aO + 0.5235988);   // ... - end
+                let jc = wall_at_a(o.wadh.x, o.wadh.y, thO, aO);               // ... middle
                 let tp = myTh + TURN_DA;
                 let tn = myTh - TURN_DA;
                 let gUp = min(wall_at_a(mine0.x, mine0.y, tp, a0 + 0.5235988), jp) + 2.0 * min(wall_at_a(mine0.x, mine0.y, tp, a0), jc)
@@ -569,11 +617,14 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
                 wPairs++;
                 wGlue += u32(round(gl * 1000.0));
                 if (wall_mature(myMat, ks) > 0.5) { wMatP++; }
-                if (dot(d, wFront) > 0.866 * dist) { wFrontP++; }
+                if (dot(normalize(vC), wFront) > 0.866) { wFrontP++; }
               }
             }
             // (minus a baseline: unlike neighbours push off a little, which lets the tissue sort itself out)
-            f += d / dist * (touch * near * (stick - S.adhBase) * S.adhesion * S.R * S.stiffness);
+            // (step S1: along the contact's direction, at the contact: off a long cell's centre it turns it)
+            let fa = uk * (touch * near * (stick - S.adhBase) * S.adhesion * S.R * S.stiffness);
+            f += fa;
+            sTq += sA * (myK.x * fa.y - myK.y * fa.x);
             pairStick = stick;
           }
         }
@@ -588,7 +639,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           if (eng_mode(oe) == ENG_WRAP && eng_partner(oe) == i) {
             let pp = eng_prog(oe);
             if (byI == NBR_NONE || pp > byP) { byP = pp; byI = oi; }
-            if (dist > 1e-3) { f += d / dist * (FL.p1c.w * S.R * pp); }
+            if (dist > 1e-3) { let fw = uk * (FL.p1c.w * S.R * pp); f += fw; sTq += sA * (myK.x * fw.y - myK.y * fw.x); }
             if (eng_progN(oe) >= ENG_FULL && oi < capI) {
               capI = oi;
               capGlue = touch * max(pairStick, 0.0);
@@ -598,7 +649,10 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           if (seekOn && (myMode == ENG_IDLE || oi == myPart)) {
             var ok = false;
             var margin = 0.0;
-            if (c.r * c.r >= FL.p1.y * o.r * o.r) {
+            // (step S1: and, with SH_WRAP, at least as LONG as the prey's long axis: its arms must reach round both ends)
+            let longEnough = (shF & (SH_ON | SH_WRAP)) != (SH_ON | SH_WRAP) || myK.z + myK.w >= oK.z + oK.w;
+            if (S.xCount != 0u && !longEnough && c.r * c.r >= FL.p1.y * o.r * o.r) { noWrap++; }
+            if (c.r * c.r >= FL.p1.y * o.r * o.r && longEnough) {
               let hold = max(bitcast<f32>(o.eng.y) - touch * max(pairStick, 0.0), 0.0) + FL.p1.w;
               var kin = 0.0;
               if (mySpare > 0.0) { kin = kin_match_m(myMark, vec4f(ob.mark.xyz, ob.mark.w * gofP(oi, GRN_O_DISP)), 0.5 * R0 / S.R); }
@@ -610,20 +664,24 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           }
         }
 
-        comp += max(R0 - dist, 0.0) / R0;
-        if (dist >= max(R0, Rt) || S.stiffness <= 0.0) { continue; }
+        comp += max(R0k - dist, 0.0) / R0k;
+        if (dist >= max(R0k, Rt) || S.stiffness <= 0.0) { continue; }
         // soft contact push: an overlap spring (step 7: to Rt, kx times as hard)
         var u: vec2f;
         if (dist > 1e-3) {
-          u = d / dist;
+          u = uk;
         } else {
           // exactly on top of each other: push apart in a direction set by the pair
           let a = TAU * rand01(min(i, beats[k].idx) * 7919u + max(i, beats[k].idx), 17u);
           u = vec2f(cos(a), sin(a)) * select(-1.0, 1.0, i < beats[k].idx);
         }
-        if (dist < Rt) { f -= u * S.stiffness * kx * (Rt - dist) * (1.0 - FL.p1d.w * wrapP); }   // (step P1: softer while wrapped)
+        if (dist < Rt) {
+          let fp = u * S.stiffness * kx * (Rt - dist) * (1.0 - FL.p1d.w * wrapP);   // (step P1: softer while wrapped)
+          f -= fp;
+          sTq -= sA * (myK.x * fp.y - myK.y * fp.x);   // (step S1: at the contact)
+        }
         // contact squeezes the cell along the contact axis (passive deformation; by the real overlap)
-        let ov = max(R0 - dist, 0.0) / R0;
+        let ov = max(R0k - dist, 0.0) / R0k;
         C -= ov * vec2f(u.x * u.x - u.y * u.y, 2.0 * u.x * u.y);
       }
     }
@@ -658,12 +716,22 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let obF = bitcast<u32>(FL.ob0.x);
   let obOn = (obF & OB_ON) != 0u;
   var obs = vec3f(1e9, 0.0, 0.0);
-  if (obOn) {
-    obs = obs_at(c.pos);
-    let gm = length(obs.yz);
-    if (hexShape && (obF & OB_FLAT) != 0u && obs.x > 0.0 && obs.x < 1.4 * c.r && gm > 0.3) {
-      let uh = -obs.yz / gm;               // toward the edge
-      let wall = obs.x;
+  // step S1: a long cell (its core segment longer than a twentieth of its radius) samples the edges at its middle and both ends, each a disc
+  // of its end radius (weights 1/2, 1/4, 1/4 for the push; a round cell: its centre, its radius, weight 1, as before)
+  let capN = select(1, 3, shOn && myK.z > 0.05 * c.r);
+  let capR = select(c.r, myK.w, capN == 3);
+  var obsK = array<vec3f, 3>(vec3f(1e9, 0.0, 0.0), vec3f(1e9, 0.0, 0.0), vec3f(1e9, 0.0, 0.0));
+  var capOff = array<f32, 3>(0.0, myK.z, -myK.z);            // (var: naga refuses a dynamic index into a value array)
+  var capW = array<f32, 3>(0.5, 0.25, 0.25);
+  for (var q = 0; q < capN; q++) {
+    if (!obOn) { break; }
+    let ob = obs_at(c.pos + capOff[q] * myK.xy);
+    obsK[q] = ob;
+    if (q == 0) { obs = ob; }
+    let gm = length(ob.yz);
+    if (hexShape && (obF & OB_FLAT) != 0u && ob.x > 0.0 && ob.x < 1.4 * capR && gm > 0.3) {
+      let uh = -ob.yz / gm;                // toward the edge
+      let wall = ob.x + capOff[q] * dot(myK.xy, uh);   // (step S1: the edge's line, its distance from the centre along uh)
       let cuA = uh.x * huX[0] + uh.y * huY[0];
       let cuB = (uh.x * huX[1] + uh.y * huY[1]).xy;
       let bA = wall / max(cuA, vec4f(0.05));
@@ -920,18 +988,40 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     if (HP.curDrift > 0.0) {
       f += HP.curDrift * uW;
       if ((stF & ST_SPLIT) != 0u) { fStir = HP.curDrift * stir_vel(c.pos); }
+      // step S1: the water drags a long cell along its whole length, so where the flow differs from end to end (shear, eddies) it turns it:
+      // the drag's torque about the centre over the length, by two-point Gauss quadrature (at +-h / sqrt 3), each point half the body
+      if (capN == 3) {
+        let g = 0.57735027 * myK.z;
+        let du = water_vel(c.pos + g * myK.xy) - water_vel(c.pos - g * myK.xy);
+        sTq += 0.5 * HP.curDrift * g * (myK.x * du.y - myK.y * du.x);
+      }
     }
   }
 
-  // soft walls, 3 R in from the dish edge
+  // soft walls, 3 R in from the dish edge (step S1: a long cell's at its middle and both ends, weighted as above: off-centre they turn it)
   let mg = 3.0 * S.R;
-  if (c.pos.x < mg) { f.x += (mg - c.pos.x) * S.wall; } else if (c.pos.x > S.W - mg) { f.x -= (c.pos.x - S.W + mg) * S.wall; }
-  if (c.pos.y < mg) { f.y += (mg - c.pos.y) * S.wall; } else if (c.pos.y > S.H - mg) { f.y -= (c.pos.y - S.H + mg) * S.wall; }
-  // step G0b: the obstacles' contact push, a spring from the edge (ob0.z per s) while the centre is nearer than the cell's radius (booked as
-  // work, as the dish's wall)
-  if (obOn && obs.x < c.r) {
-    let gm = length(obs.yz);
-    if (gm > 1e-4) { f += (c.r - obs.x) * FL.ob0.z * obs.yz / gm; }
+  if (capN == 1) {
+    if (c.pos.x < mg) { f.x += (mg - c.pos.x) * S.wall; } else if (c.pos.x > S.W - mg) { f.x -= (c.pos.x - S.W + mg) * S.wall; }
+    if (c.pos.y < mg) { f.y += (mg - c.pos.y) * S.wall; } else if (c.pos.y > S.H - mg) { f.y -= (c.pos.y - S.H + mg) * S.wall; }
+    if (obOn && obs.x < c.r) {
+      let gm = length(obs.yz);
+      if (gm > 1e-4) { f += (c.r - obs.x) * FL.ob0.z * obs.yz / gm; }
+    }
+  }
+  for (var q = 0; q < capN; q++) {
+    if (capN == 1) { break; }
+    let pq = c.pos + capOff[q] * myK.xy;
+    var fw = vec2f(0.0);
+    if (pq.x < mg) { fw.x += (mg - pq.x) * S.wall; } else if (pq.x > S.W - mg) { fw.x -= (pq.x - S.W + mg) * S.wall; }
+    if (pq.y < mg) { fw.y += (mg - pq.y) * S.wall; } else if (pq.y > S.H - mg) { fw.y -= (pq.y - S.H + mg) * S.wall; }
+    // step G0b: the obstacles' contact push, a spring from the edge (ob0.z per s) while the centre is nearer than the cell's radius (booked as
+    // work, as the dish's wall)
+    if (obOn && obsK[q].x < capR) {
+      let gm = length(obsK[q].yz);
+      if (gm > 1e-4) { fw += (capR - obsK[q].x) * FL.ob0.z * obsK[q].yz / gm; }
+    }
+    f += capW[q] * fw;
+    sTq += capW[q] * capOff[q] * (myK.x * fw.y - myK.y * fw.x);
   }
 
   // stirring: the pointer drags cells within reach along with it
@@ -1045,10 +1135,12 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // step G0b: ... and never nearer an edge than ob0.w x the radius (the position alone is put back, at most half a radius a tick, so a cell
   // painted over walks out along the way out; nothing is booked: no velocity changes)
   if (obOn) {
-    let q = obs_at(c.pos);
-    let lim = FL.ob0.w * c.r;
-    let gm = length(q.yz);
-    if (q.x < lim && gm > 1e-4) { c.pos = clamp(c.pos + min(lim - q.x, 0.5 * c.r) * q.yz / gm, vec2f(0.0), vec2f(S.W, S.H)); }
+    for (var k = 0; k < capN; k++) {
+      let q = obs_at(c.pos + capOff[k] * myK.xy);
+      let lim = FL.ob0.w * capR;
+      let gm = length(q.yz);
+      if (q.x < lim && gm > 1e-4) { c.pos = clamp(c.pos + min(lim - q.x, 0.5 * capR) * q.yz / gm, vec2f(0.0), vec2f(S.W, S.H)); }
+    }
   }
   var eDeath = 0.0;          // the motion of a cell that dies this tick (its daughter starts at rest) becomes heat too
   // (step C12e: osmosis, the eat pass's Cell.osm: a cell swollen by its ions grows toward its rest size x sqrt(1 + swelling), a shrunk
@@ -1074,7 +1166,22 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     if (glueTurn) { wTurn = clamp(wTurn + gTurn, -TURN_MAX, TURN_MAX); }
   }
   var dFront = 0.0;                          // ... and how far the body (and so the front) turned
+  // step S1, CELL SHAPE: the TURN the off-centre forces give a long cell (contacts, obstacles, the dish's wall, the water's shear): their
+  // torque over the capsule's rotational drag (its second moment of area per area: as the motion has velocity = force, the turning rate is
+  // torque / that; r^2 / 2 for a disc, as C11's glue turning), overdamped, at most TURN_MAX. The body turns (outline, front, stretch)
+  var sTurn = 0.0;
+  if (shOn && (shF & SH_TORQUE) != 0u && myK.z > 0.0) {
+    sTurn = clamp(S.shapeTurn * sTq / max(cap_moment(myK), 1e-6), -TURN_MAX, TURN_MAX);
+  }
+  let sRot = 2.0 * sTurn * S.dt;             // (a stretch, a traceless tensor, turns by twice the angle)
+  let sRotCS = vec2f(cos(sRot), sin(sRot));
+  // ... and the ELONGATION the cell asks for: its gene (Bio.relay.y, ln of the aspect, 0 = round .. ln 4) x the gene network's 18th output
+  // (SHAPE), as a stretch of half that along its FRONT (C10/C11), so the glue's turning and the division along the front carry the spindle's
+  // axis; the neutral control asks for the founders' round shape (the gene drifts unseen)
+  let eG = myAsk;
+  let capE = select(0.5, max(0.5, eG), shOn);   // the largest stretch (0.5 as before; a spindle: what it asks for, up to 0.5 ln 4)
   var t = select(0.5 * C, vec2f(0.0), hexShape);
+  if (eG > 0.0) { t += eG * vec2f(cos(2.0 * c.front), sin(2.0 * c.front)); }
   t += dStretch;                             // step C6d: a polarised cell in a field stretches along it
   if (S.activeGain > 0.0) {
     let spd = length(c.vel);
@@ -1087,17 +1194,20 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   }
   if (!hexShape) {
     var e = vec2f(c.e1, c.e2);
+    if (sTurn != 0.0) { e = vec2f(e.x * sRotCS.x - e.y * sRotCS.y, e.x * sRotCS.y + e.y * sRotCS.x); dFront = sTurn * S.dt; }
     e += (t - e) * min(1.0, S.dt * S.shapeRate);
     let em = length(e);
-    if (em > 0.5) { e *= 0.5 / em; }
+    if (em > capE) { e *= capE / em; }
     c.e1 = e.x;
     c.e2 = e.y;
   } else {
     // step C6c, elastic honeycomb cells. The active stretch follows its target as the ellipse's did; the rest shape is the
     // hexagon on that stretch's ellipse at the rest area A0
-    var ea = c.ea + (t - c.ea) * min(1.0, S.dt * S.shapeRate);
+    var ea0 = c.ea;
+    if (sTurn != 0.0) { ea0 = vec2f(ea0.x * sRotCS.x - ea0.y * sRotCS.y, ea0.x * sRotCS.y + ea0.y * sRotCS.x); }   // (step S1: turned with the body)
+    var ea = ea0 + (t - ea0) * min(1.0, S.dt * S.shapeRate);
     let eam = length(ea);
-    if (eam > 0.5) { ea *= 0.5 / eam; }
+    if (eam > capE) { ea *= capE / eam; }
     c.ea = ea;
     let A0 = S.hexSize * 3.14159265 * c.r * c.r;
     let rest = hex_rest(ea, hu, A0);
@@ -1147,7 +1257,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       let sab = hu[ka].x * hu[kb].y - hu[ka].y * hu[kb].x;    // ... across both
       let lo = max(0.3 * c.r, 1.05 * rad[ka] * rad[kb] * sab / max(rad[ka] * sa + rad[kb] * sb, 1e-6));
       if (rad[k] < lo) { rad[k] = lo; rv[k] = max(rv[k], 0.0); }
-      if (rad[k] > 2.2 * c.r) { rad[k] = 2.2 * c.r; rv[k] = min(rv[k], 0.0); }
+      let rTop = select(2.2, max(2.2, 1.2 * exp(S.eCap)), shOn) * c.r;   // (step S1: a spindle's poles reach further)
+      if (rad[k] > rTop) { rad[k] = rTop; rv[k] = min(rv[k], 0.0); }
     }
     c.rad = rad;
     c.radV = rv;
@@ -1176,10 +1287,12 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       // fit the outline to its tile, so they turn the outline, not the body (and not the front)
       c.spin += (FL.hex.z * tq - S.hexTurnDamp * c.spin) * S.dt;
       dFront = (wTurn + FL.dip0.w * dTorque / max(S.hexTurnDamp, 1e-3)) * S.dt;
+      if (sTurn != 0.0) { dFront += sTurn * S.dt; }   // (step S1: the off-centre forces turn the body too)
       dTh = c.spin * S.dt + mean + dFront;
     } else {
       c.spin += (FL.hex.z * tq + FL.dip0.w * dTorque - S.hexTurnDamp * c.spin) * S.dt;   // (step C6d: + the field's torque)
       dTh = c.spin * S.dt + mean;
+      if (sTurn != 0.0) { dTh += sTurn * S.dt; }       // (step S1)
       dFront = dTh;
     }
     c.theta += dTh;
@@ -1199,7 +1312,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     let eps = 0.5 * acosh(max(0.5 * (M.x + M.z) / nrm, 1.0));
     let tl = vec2f(0.5 * (M.x - M.z), M.y);
     let tlm = length(tl);
-    let e = select(vec2f(0.0), tl * (min(eps, 0.5) / max(tlm, 1e-12)), tlm > 1e-9 * (M.x + M.z));
+    let e = select(vec2f(0.0), tl * (min(eps, capE) / max(tlm, 1e-12)), tlm > 1e-9 * (M.x + M.z));
     c.e1 = e.x;
     c.e2 = e.y;
   }
@@ -1208,10 +1321,11 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // gene w lets the charge dipole (step C6d) pull it round: toward the dipole's + end at wl0.y x w x |d| rad/s x sin of the angle
   // between them. So w = 0: the inherited orientation alone; w = 1 and a strong dipole: the front follows the dipole within a few
   // seconds; a weak or passing dipole barely moves it (the front is a persistent property of the cell)
-  if (wallOn) {
-    var fr = c.front + select(dFront, wTurn * S.dt, glueTurn && !hexShape);   // (an ellipse cell: the glue turns the front alone)
+  // (step S1: with the shape on the front also turns while the walls are off: it carries the spindle's axis)
+  if (wallOn || shOn) {
+    var fr = c.front + select(dFront, wTurn * S.dt + dFront, glueTurn && !hexShape);   // (an ellipse cell: the glue turns the front alone)
     if (!glueTurn) { fr += gTurn * S.dt; }     // step C13: the turn gate, without the glue's turning: the front alone
-    if ((wlF & WL_FRONT) != 0u && dipOn && myDm > 1e-3) {
+    if (wallOn && (wlF & WL_FRONT) != 0u && dipOn && myDm > 1e-3) {
       fr += FL.wl0.y * clamp(bio.wall.z, 0.0, 1.0) * min(myDm, 1.0) * sin(atan2(myD.y, myD.x) - fr) * S.dt;
     }
     c.front = fr - TAU * floor(fr / TAU);
@@ -1442,8 +1556,10 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           }
           let u = vec2f(cos(ang), sin(ang));
           let r0 = c.r;
-          let np = clamp(c.pos + u * (FL.dv2.z * r0), vec2f(0.0), vec2f(S.W, S.H));
-          c.pos = clamp(c.pos - u * (FL.dv2.z * r0), vec2f(0.0), vec2f(S.W, S.H));
+          // (step S1: a long mother split along her axis puts her daughters a quarter of her core apart further, each in her own half)
+          let off = FL.dv2.z * r0 + select(0.0, 0.5 * myK.z * abs(dot(u, myK.xy)), shOn);
+          let np = clamp(c.pos + u * off, vec2f(0.0), vec2f(S.W, S.H));
+          c.pos = clamp(c.pos - u * off, vec2f(0.0), vec2f(S.W, S.H));
           c.r = FL.dv2.y * r0;
           for (var q = 0; q < 6; q++) { c.rad[q] *= FL.dv2.y; c.radV[q] = 0.0; }
           c.bat *= 0.5;
@@ -1689,6 +1805,24 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     }
     if ((c.kind & JN_TORN) != 0u) { atomicAdd(&stats.g0[G0S_TORN], countOneBits(c.kind & JN_TORN)); }
   }
+  // step S1: the shape's census (the frame's last tick): the outlines' aspect, the long ones, the nematic order of touching long pairs, the
+  // elongation gene and as asked, the turning, the perimeter, prey saved by their length
+  if (S.xCount != 0u && !died && shOn) {
+    let la = 2.0 * length(vec2f(c.e1, c.e2));
+    atomicAdd(&stats.s1[S1S_N], 1u);
+    atomicAdd(&stats.s1[S1S_LA], u32(round(la * 1000.0)));
+    atomicAdd(&stats.s1[S1S_LA2], u32(round(la * la * 1000.0)));
+    if (la > 0.6931472) { atomicAdd(&stats.s1[S1S_LONG], 1u); }
+    if (nemN > 0u) { atomicAdd(&stats.s1[S1S_NPAIR], nemN); atomicAdd(&stats.s1[S1S_NEM], bitcast<u32>(nemS)); }
+    let g = clamp(bio.relay.y, 0.0, SH_LN_MAX);
+    atomicAdd(&stats.s1[S1S_GENE], u32(round(g * 1000.0)));
+    atomicAdd(&stats.s1[S1S_GENE2], u32(round(g * g * 1000.0)));
+    atomicAdd(&stats.s1[S1S_EXPR], u32(round(2.0 * eG * 1000.0)));
+    if (sTurn != 0.0) { atomicAdd(&stats.s1[S1S_TURN], u32(round(abs(sTurn) * 1000.0))); atomicAdd(&stats.s1[S1S_TURNN], 1u); }
+    if (noWrap > 0u) { atomicAdd(&stats.s1[S1S_NOWRAP], noWrap); }
+    atomicAdd(&stats.s1[S1S_PERIM], u32(round(min(perim_factor(mb), 10.0) * 1000.0)));
+    atomicAdd(&stats.s1[S1S_LEN], u32(round(2.0 * (myK.z + myK.w) / S.R * 1000.0)));
+  }
   // step C13: what each side felt (s_k = tanh(felt / ref)), for the eat pass's gates and the guides view, and the field genes the beat
   // needs (Cell.fg), from the genome (a newborn's from hers)
   let sRef = max(FL.fg0.y, 1e-3);
@@ -1800,6 +1934,14 @@ fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
         x = GLUE_LO * pow(GLUE_HI / GLUE_LO, rand01(bs, 103u));
       }
       nb.body.x = clamp(x, GLUE_LO, GLUE_HI);
+    }
+    // step S1: the ELONGATION gene (Bio.relay.y, ln of the aspect asked, 0..ln 4) drifts by small steps, now and then a jump anywhere (as one
+    // of mutate's 18 genes would); on and in the neutral control alike, untouched while the shape is off
+    if ((S.shapeF & SH_ON) != 0u) {
+      let sz = S.mutSize * msF;
+      var x = nudge(p.relay.y, sz * 0.05, 0.0, SH_LN_MAX, bs, 220u);
+      if (rand01(bs, 221u) < min(S.mutJump * msF, 1.0) / 18.0) { x = SH_LN_MAX * rand01(bs, 222u); }
+      nb.relay.y = x;
     }
   }
   // ... the gene itself drifts at today's size (not proofread by itself), on and in the neutral control

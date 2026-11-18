@@ -77,6 +77,13 @@ export const CB_RULES = ['exchange', 'engines', 'graze', 'dissolve', 'smell', 'g
 // step C15c: the second event block (LG_CBC.EV2, cell_carbon.wgsl CBE2_*) and census (LG_CBC.CEN2, CBY_*)
 const EV2 = ['lipMade', 'wallMade', 'reduced', 'oxidised', 'bites', 'spoiled', 'pigMade', 'enzMade'];
 const CEN2 = ['membC', 'wallC', 'pigC', 'glueC', 'enzC', 'limC', 'limG', 'limTr', 'limAt', 'limBat', 'trans', 'enzWant', 'enzShort', 'limAny'];
+// step C15d: the third event block (LG_CBC.EV3, cell_carbon.wgsl CBE3_*): the batteries' spending on parts (energy), the shuttle's hands
+const EV3 = ['payLip', 'payWall', 'payRed', 'payPig', 'payEnz', 'payTrans', 'shuttle', 'spare3'];
+const EV3_ENERGY = /^pay/;
+/** Carbon units in a per-channel array (5 ladder molecules, 3 tar hand counts). */
+const carbonIn = (a) => a[0] + a[1] + a[2] + a[3] + a[4] + (2 * a[5] + a[6] + a[7]) / 4;
+const ladderC = (a) => a[0] + a[1] + a[2] + a[3] + a[4];
+const tarC = (a) => (2 * a[5] + a[6] + a[7]) / 4;
 
 export class CarbonCells {
   constructor(eat) {
@@ -124,6 +131,9 @@ export class CarbonCells {
     this.hist2 = [];
     this.census2 = null;
     this.rate2 = null;
+    this.tot3 = Object.fromEntries(EV3.map((k) => [k, 0]));   // step C15d
+    this.flowHist = [];
+    this.flow = null;     // step C15d: THE FLOW LEDGER (flowLedger below): where carbon, reduced carbon and the batteries' energy go per minute
   }
 
   /** The GPU side (called by src/eat.js init): the carbon buffer (CW words per cell; 16 bytes without carbon) and its uniform. */
@@ -200,17 +210,84 @@ export class CarbonCells {
     while (H2.length > 2 && rec.time - H2[1][0] >= 2) H2.shift();
     const dt2 = rec.time - H2[0][0];
     this.rate2 = Object.fromEntries(EV2.map((k, j) => [k, dt2 > 0.05 ? (H2[H2.length - 1][1 + j] - H2[0][1 + j]) / dt2 : 0]));
+    const T3 = this.tot3;   // step C15d
+    EV3.forEach((k, j) => { const v = wide(LG_CBC.EV3 + 128 * j); T3[k] += EV3_ENERGY.test(k) ? v / HEAT_SCALE : v / ATOM_SCALE; });
     const held = [];
     for (let c = 0; c < 8; c++) held.push(wide(LG_CBC.STOCK + 128 * c) / ATOM_SCALE);
     const parts = C2.membC + C2.wallC + C2.pigC + C2.enzC;   // (step C15c: the parts' tar hands are in the books' tar too)
     const tarC = (2 * held[5] + held[6] + held[7]) / 4 - this.census.body - parts;   // (the books hold the bodies with the granules)
     this.ledger = { time: rec.time, rate, held, ladder: held.slice(0, 5), granules: held.slice(5), granC: tarC, census: C };
+    this.flowLedger(rec.time);
     const S = this.series, last = S[S.length - 1];
     if (last && rec.time < last[0]) S.length = 0;
     if (!S.length || rec.time - S[S.length - 1][0] >= 10) {
       S.push([rec.time, C.n, C.ox, C.cond, C.redLit, C.hyd, C.granule, tarC, rate.ox, rate.cond, rate.red, rate.graze]);
       if (S.length > 400) S.shift();
     }
+  }
+
+  /**
+   * Step C15d, THE FLOW LEDGER: from the running totals (the dish's carbon books in src/carbon.js, the cells' events here), the flows over
+   * the last minute (or what there is of it), in CARBON UNITS PER MINUTE (a unit = ATOM_SCALE counts: one ladder molecule's carbon, four
+   * tar hands' worth), REDUCED CARBON as FUEL HANDS per minute (a fuel hand c-g holds a giver: the reducing power fat and sugar are made
+   * of), and the batteries' ENERGY per minute. Words: MUD = the dish's tar; a GRANULE = tar inside a cell; PARTS = body, membrane, wall,
+   * pigment, glue, enzymes. Nothing here is new physics: every number is a difference of totals the books already keep exactly.
+   */
+  flowLedger(time) {
+    const Cb = this.eat.matter && this.eat.matter.carbon;
+    if (!CARBON || !Cb || !Cb.ledger) return;
+    const T = Cb.tot, E = this.eat.ledger;
+    const snap = { time, add: Array.from(T.add), lost: Array.from(T.lost), gone: Array.from(T.gone), cin: Array.from(T.cin), cout: Array.from(T.cout),
+      rx: Array.from(T.rx), ev: { ...this.tot }, ev2: { ...this.tot2 }, ev3: { ...this.tot3 }, dish: Array.from(Cb.dish),
+      eat: E && E.rate ? { gain: E.rate.gain || 0, eGain: (E.rate2 && E.rate2.eGain) || 0, upkeep: (E.rate2 && E.rate2.upkeep) || 0 } : null };
+    const H = this.flowHist;
+    if (H.length && time < H[H.length - 1].time) H.length = 0;
+    H.push(snap);
+    while (H.length > 2 && time - H[1].time >= 60) H.shift();
+    const a = H[0], b = snap, dt = b.time - a.time;
+    if (dt < 1) return;
+    const pm = 60 / dt;
+    const d = (k) => b[k].map((v, c) => (v - a[k][c]) * pm);
+    const de = (k, n) => (b[k][n] - a[k][n]) * pm;
+    const add = d('add'), cin = d('cin'), cout = d('cout'), lost = d('lost'), gone = d('gone');
+    const rx = (n) => (b.rx[n] - a.rx[n]) * pm;   // (RX_TYPES: oxidize, condense, reduce, hydrolyze, dissolve, settle, glow, warm)
+    const mudNow = tarC(b.dish), mudThen = tarC(a.dish);
+    const C2 = this.census2 || {}, C = this.census || {};
+    const held = Cb.cellsHeld;
+    const parts = { body: C.body || 0, memb: C2.membC || 0, wall: C2.wallC || 0, pig: C2.pigC || 0, glue: C2.glueC || 0, enz: C2.enzC || 0 };
+    const cellsC = carbonIn(held);
+    const gran = tarC(held) - parts.body - parts.memb - parts.wall - parts.pig - parts.enz;
+    const dishLad = ladderC(b.dish);
+    const all = dishLad + mudNow + cellsC;
+    const fuel5 = (x) => 4 * x[0] + 3 * x[1] + 2 * x[2] + x[3];
+    this.flow = {
+      window: dt,
+      // carbon IN (per minute): springs and seeps (the ladder; their fuel hands), bodies and enzymes of founders and placed cells (tar)
+      inSprings: ladderC(add), inSpringsFuel: fuel5(add), inBodies: tarC(add),
+      // the open dish: hands fixed by hard light, burnt by heat, condensations, hydrolyses (events = hands), molecules dissolving from mud
+      // and settling on it; MUD FORMED in the open (net: the mud's change minus what cells put in plus what they grazed)
+      openFix: rx(2), openBurn: rx(0), openCond: rx(1), openHyd: rx(3), openDis: rx(4), openSettle: rx(5),
+      mudFormedOpen: (mudNow - mudThen) * pm - tarC(cout) + tarC(cin),
+      // dish <-> cells: the ladder taken in, by kind (methane-like .. CO2-like) and its fuel hands; mud grazed; the ladder given back
+      // (exhaled: mostly CO2-like) and the tar (mud) cells put into the dish at deaths, bursts, oxygen's spoils, shed walls
+      uptake: ladderC(cin), uptakeKind: cin.slice(0, 5), uptakeFuel: fuel5(cin), grazed: tarC(cin), grazedFuel: cin[6],
+      exhaled: ladderC(cout), exhaledKind: cout.slice(0, 5), exhaledFuel: fuel5(cout), toMud: tarC(cout), toMudFuel: cout[6],
+      lostRim: carbonIn(lost) + carbonIn(gone),
+      // inside the cells: the engines' hands (fixed by light or battery, burnt, condensed into granules, hydrolysed), the granules
+      // dissolving; the carbon BUILT into each part (bodies in carbons; bilayer molecules and pigments are 2 carbons, enzymes 4)
+      cellFix: de('ev', 'red'), cellBurn: de('ev', 'ox'), cellCond: de('ev', 'cond'), cellHyd: de('ev', 'hyd'), cellDis: de('ev', 'dis'),
+      builtBody: de('ev', 'built'), builtLip: 2 * de('ev2', 'lipMade'), builtWall: de('ev2', 'wallMade'), builtPig: 2 * de('ev2', 'pigMade'),
+      builtEnz: 4 * de('ev2', 'enzMade'), builderRed: de('ev2', 'reduced'), builderOx: de('ev2', 'oxidised'), bites: de('ev2', 'bites'),
+      spoiled: de('ev2', 'spoiled'), shuttle: de('ev3', 'shuttle'),
+      // the batteries (energy per minute): income from the engines (the table's and the carbon ones), spending on parts
+      eIncome: b.eat ? 60 * (b.eat.gain + b.eat.eGain) : 0, eCarbonEng: de('ev', 'gain'), eUpkeep: b.eat ? 60 * b.eat.upkeep : 0,
+      payBody: de('ev', 'buildPaid'), payLip: de('ev3', 'payLip'), payWall: de('ev3', 'payWall'), payRed: de('ev3', 'payRed'),
+      payPig: de('ev3', 'payPig'), payEnz: de('ev3', 'payEnz'), payTrans: de('ev3', 'payTrans'),
+      // STOCKS now (carbon units): the dish's ladder by kind and its mud; the cells' ladder, granules and parts; the mud's share of all
+      dishLadder: b.dish.slice(0, 5), mud: mudNow, cellsLadder: ladderC(held), cellsLadderKind: held.slice(0, 5), granules: gran,
+      ...Object.fromEntries(Object.entries(parts).map(([k, v]) => [`in_${k}`, v])),
+      mudShare: all > 0 ? mudNow / all : 0, cellShare: all > 0 ? cellsC / all : 0, all,
+    };
   }
 
   /** For moire.sample(): the numbers of the last read-back. */
@@ -224,6 +301,7 @@ export class CarbonCells {
     for (const k of EV) out[`r_${k}`] = r[k];
     if (this.census2) for (const [k, v] of Object.entries(this.census2)) out[`p_${k}`] = v;   // step C15c: the parts, the Liebig limits
     if (this.rate2) for (const [k, v] of Object.entries(this.rate2)) out[`r2_${k}`] = v;
+    if (this.flow) for (const [k, v] of Object.entries(this.flow)) out[`f_${k}`] = v;   // step C15d: the flow ledger (per minute)
     return out;
   }
 
@@ -240,7 +318,19 @@ export class CarbonCells {
       ` · granules dissolve ${fmt(r.dis)} · tar grazed ${fmt(r.graze)} hands → batteries +${fmt(r.gain)}, heat ${fmt(r.heat)}` +
       `\n        cells with a carbon engine ${pc(C.any)}: oxidize ${C.ox} · condense ${C.cond} · reduce ${C.red} (by light ${C.redLit}) · hydrolyze ${C.hyd}` +
       ` · BODIES ${fmt(C.body)} of ${fmt(C.want)} carbons wanted, ${pc(C.short)} short (cannot divide) · built ${fmt(r.built)}/s` +
-      this.partsLine(pc);
+      this.partsLine(pc) + this.flowLine();
+  }
+
+  /** Step C15d: the FLOW line (carbon units per minute over the last minute; fuel hands = reduced carbon). */
+  flowLine() {
+    const F = this.flow;
+    if (!F) return '';
+    const f = (x) => fmt(x);
+    return `\n        FLOW per min: in springs ${f(F.inSprings)} (fuel hands ${f(F.inSpringsFuel)}) bodies ${f(F.inBodies)} · open: fix ${f(F.openFix)} burn ${f(F.openBurn)} → mud ${f(F.mudFormedOpen)}` +
+      ` · cells take ${f(F.uptake)} (fuel ${f(F.uptakeFuel)}) graze ${f(F.grazed)}, breathe out ${f(F.exhaled)}, die into mud ${f(F.toMud)}` +
+      ` · in cells: fix ${f(F.cellFix)} burn ${f(F.cellBurn)} · built body ${f(F.builtBody)} membrane ${f(F.builtLip)} wall ${f(F.builtWall)} pigment ${f(F.builtPig)} enzymes ${f(F.builtEnz)}` +
+      ` · builder reduced ${f(F.builderRed)} shuttled ${f(F.shuttle)} · batteries +${f(F.eIncome + F.eCarbonEng)} → parts ${f(F.payBody + F.payLip + F.payWall + F.payPig + F.payEnz + F.payTrans)}` +
+      ` · MUD ${Math.round(100 * F.mudShare)}% of ${f(F.all)} carbons (cells ${Math.round(100 * F.cellShare)}%)`;
   }
 
   /** Step C15c: the CARBON MAKES THE CELL part of the panel line (the parts' carbon, the Liebig limits, the oxygen bites). */

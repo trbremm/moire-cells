@@ -129,6 +129,17 @@ const CBE2_SPOIL: u32 = 5u;  // membrane molecules spoiled out into the mud
 const CBE2_PIG: u32 = 6u;    // pigment counts built (2 carbons each)
 const CBE2_ENZ: u32 = 7u;    // enzyme units built
 var<workgroup> wcbe2: array<atomic<i32>, 8>;
+// step C15d, THE CARBON ECONOMY's flow ledger (LG_CBC_EV3, 64-bit; src/carboncells.js EV3): what the batteries spend on the parts (heat
+// counts), so the ledger can say where a cell's energy goes besides its engines and crawling
+const CBE3_LIP: u32 = 0u;     // the bilayer's soaps and oil (the builder, a head on oil): sparks, rises, water splits
+const CBE3_WALL: u32 = 1u;    // the wall's chain carbons and cross-linked pairs
+const CBE3_RED: u32 = 2u;     // ... of all builds, the REDUCTIONS' share (the rise 2.75 and a water split for the g)
+const CBE3_PIG: u32 = 3u;     // the pigments' carbon and assembly
+const CBE3_ENZ: u32 = 4u;     // the enzymes: renewed in place and built
+const CBE3_TRANS: u32 = 5u;   // the transporter's upkeep
+const CBE3_SHUT: u32 = 6u;    // hands moved by the REDUCING SHUTTLE (step C15d fix c: one carbon's oxidation reduces another's hand)
+const CBE3_SPARE: u32 = 7u;
+var<workgroup> wcbe3: array<atomic<i32>, 8>;
 var<workgroup> wcbf: array<atomic<i32>, 16>;   // per channel: 0..7 taken in from the dish, 8..15 given back to it
 var<workgroup> wcbe: array<atomic<i32>, 16>;   // CBE_*
 
@@ -621,7 +632,7 @@ fn cb_cell(i: u32, b: Bio, ph: vec3i, phs: vec3i, m: ptr<function, array<i32, 18
   // step C15c: the TRANSPORTER's upkeep (per level per s, from the battery as heat; what an empty battery cannot pay is not paid)
   if (on && cb_bit(CBF_TRANS) && CBP.t.y > 0.0) {
     let pay = clamp(i32(floor(CBP.t.y * cb_trans(i) * EP.dt + u01(pcg(rs + 0x71374491u)))), 0, max(*bat, 0));
-    if (pay > 0) { *bat -= pay; *heat += pay; }
+    if (pay > 0) { *bat -= pay; *heat += pay; atomicAdd(&wcbe3[CBE3_TRANS], pay); }
   }
   for (var j = 0u; j < 5u; j++) { if (S[j] != S0[j]) { atomicStore(&cbS[o + j], S[j]); } }
   if (cc != t0.x) { atomicStore(&cbS[o + 5u], cc); }
@@ -693,6 +704,9 @@ fn cb_flush(li: u32, slot: u32) {
   } else if (li < 40u) {
     let v = atomicLoad(&wcbe2[li - 32u]);   // (step C15c)
     if (v != 0) { add64(LG_CBC_EV2 + 128u * (li - 32u) + slot, v); }
+  } else if (li < 48u) {
+    let v = atomicLoad(&wcbe3[li - 40u]);   // (step C15d)
+    if (v != 0) { add64(LG_CBC_EV3 + 128u * (li - 40u) + slot, v); }
   }
 }
 
@@ -793,6 +807,7 @@ fn cb_make2(nT: i32, n: i32, S: ptr<function, array<i32, 5>>, m: ptr<function, a
       let ad = abs(d);
       let cost = sp * (1 + ad) + max(d, 0) * ox;
       var ws = 0;   // (the waters split for their g)
+      let ww = i32(CBP.u.z) + i32(CBP.u.w);
       if (d <= 0) {
         let xb = max(*bat, 0) / cost;
         if (xb < x) { x = xb; why |= CBL_BAT; }
@@ -801,7 +816,6 @@ fn cb_make2(nT: i32, n: i32, S: ptr<function, array<i32, 5>>, m: ptr<function, a
         // a REDUCTION's g: the stock's free g first, then a WATER split for it (gt -> g + t: its bond 4.5 and its spark from the battery
         // too, the t freed into the stock: the storer's own small photosynthesis without light); the battery only above its floor (v.x)
         let avail = max(*bat - i32(CBP.v.x), 0);
-        let ww = i32(CBP.u.z) + i32(CBP.u.w);
         let g0 = max((*m)[0], 0);
         let w0 = max((*m)[6], 0);
         let xa = (g0 + w0) / d;
@@ -823,7 +837,7 @@ fn cb_make2(nT: i32, n: i32, S: ptr<function, array<i32, 5>>, m: ptr<function, a
       *heat += x * (sp * (1 + ad) + cd + max(-d, 0) * ox);
       (*m)[6] += x;
       if (d < 0) { (*m)[1] -= x * ad; (*m)[0] += x * ad; nOx += x * ad; }
-      if (d > 0) { (*m)[0] -= x * d; (*m)[1] += x * d; nRed += x * d; }
+      if (d > 0) { (*m)[0] -= x * d; (*m)[1] += x * d; nRed += x * d; atomicAdd(&wcbe3[CBE3_RED], x * d * ox + ws * ww); }
       left -= x;
       made += x;
     }
@@ -951,6 +965,7 @@ fn cb_trans(i: u32) -> f32 {
 fn cb_enzymes(i: u32, rates: vec3f, areaR2: f32, m: ptr<function, array<i32, 18>>, bat: ptr<function, i32>, heat: ptr<function, i32>, r: u32) -> f32 {
   if (!cb_bit(CBF_ENZ)) { return 1.0; }
   let o = i * CW;
+  let bat0 = *bat;
   var E = atomicLoad(&cbS[o + CB_ENZ]);
   let E0 = E;
   let want = CBP.t.z * (max(rates.x, 0.0) + max(rates.y, 0.0) + max(rates.z, 0.0)) * areaR2 * ATOM_SCALE / 4.0;   // (units)
@@ -980,6 +995,7 @@ fn cb_enzymes(i: u32, rates: vec3f, areaR2: f32, m: ptr<function, array<i32, 18>
     cb_lim(i, lim);
   }
   if (E != E0) { atomicStore(&cbS[o + CB_ENZ], E); }
+  if (bat0 > *bat) { atomicAdd(&wcbe3[CBE3_ENZ], bat0 - *bat); }
   if (want < 1.0) { return 1.0; }
   return clamp(f32(E) / want, 0.0, 1.0);
 }

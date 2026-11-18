@@ -79,7 +79,7 @@ export const CARBON_MIX = {
 // light caught per band, the light given off as fluorescence
 export const LG_CB = 32256;
 // step C15b (heat_common.wgsl LG_CBC_*): the carbon in the cells (snapshot), taken in, given back (per channel, 64-bit), events, census
-export const LG_CBC = { STOCK: 38400, IN: 39424, OUT: 40448, EV: 41472, CEN: 43520, CEN2: 43776, EV2: 44032 };   // (step C15c: CEN2, EV2)
+export const LG_CBC = { STOCK: 38400, IN: 39424, OUT: 40448, EV: 41472, CEN: 43520, CEN2: 43776, EV2: 44032, EV3: 45056 };   // (step C15c: CEN2, EV2; step C15d: EV3)
 const LGC = { ADD: LG_CB, LOST: LG_CB + 1024, GONE: LG_CB + 2048, DISH: LG_CB + 3072, RX: LG_CB + 4096, LIGHT: LG_CB + 5120, GLOW: LG_CB + 5632,
   HEAT: LG_CB + 5760, GT: LG_CB + 5888 };
 export const RX_TYPES = ['oxidize', 'condense', 'reduce', 'hydrolyze', 'dissolve', 'settle', 'glow', 'warm'];

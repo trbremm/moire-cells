@@ -2433,6 +2433,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           bat -= n * sp;
           heat += n * (sp + CBP.e.x);
           nHo += n;
+          atomicAdd(&wcbe3[CBE3_LIP], n * sp);
         }
         atomicAdd(&wm1[M1C_HEADON], nHo);
         if (nHo > 0) { atomicAdd(&wcbe2[CBE2_OX], nHo); }
@@ -2511,13 +2512,17 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         var S: array<i32, 5>;
         var gr = cb_ld(i, &S);
         var lim = 0u;
+        let bB0 = bat;   // (step C15d: the flow ledger's battery spending on the bilayer, then the wall)
         let n1 = i32(round(f32(tS) * pG));
         var got1 = cb_make2(1, n1, &S, &m, &bat, &heat, &lim);
         let got2 = cb_make2(2, tS - got1, &S, &m, &bat, &heat, &lim);    // (the other head for what the preferred one could not make)
         if (got1 + got2 < tS && got1 < n1) { got1 += cb_make2(1, tS - got1 - got2, &S, &m, &bat, &heat, &lim); }
         let gotO = cb_make2(0, tO, &S, &m, &bat, &heat, &lim);
+        let bB1 = bat;
         let gotWl = cb_make_chain(tWl, &S, &gr, &m, &bat, &heat, &lim);
         let gotWh = cb_make_cross(tWh, &S, &gr, &m, &bat, &heat, &lim);
+        if (bB0 > bB1) { atomicAdd(&wcbe3[CBE3_LIP], bB0 - bB1); }
+        if (bB1 > bat) { atomicAdd(&wcbe3[CBE3_WALL], bB1 - bat); }
         cb_st(i, &S, gr);
         cb_lim(i, lim);
         // into the sides, each up to what it asked (from the first side round; any rest to the last)
@@ -2742,6 +2747,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           if (cb_lip()) {
             // step C15c: a pigment = 2 carbons with fuel hands (an oil-like pair: its c-g bonds catch visible 1, cb_make2) + 1 trace
             var lim = 0u;
+            let bP0 = bat;   // (step C15d: the flow ledger)
             if (nb > max(m[N1_TRACE], 0)) { nb = max(m[N1_TRACE], 0); lim |= CBL_TR; }
             let cpu = max(c16, 0) + 2 * max(CBP.e.z, 1);
             if (nb > max(bat, 0) / cpu) { nb = max(bat, 0) / cpu; lim |= CBL_BAT; }
@@ -2755,8 +2761,9 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
                 cb_gran_add(i, CB_PIG_H, nb - ok);
                 nb = ok;
               }
-              if (nb > 0) { atomicAdd(&wcbe2[CBE2_PIG], nb); }
+              if (nb > 0) { atomicAdd(&wcbe2[CBE2_PIG], nb); atomicAdd(&wcbe3[CBE3_PIG], nb * max(c16, 0)); }
             }
+            if (bP0 > bat) { atomicAdd(&wcbe3[CBE3_PIG], bP0 - bat); }
             cb_lim(i, lim);
           } else {
             nb = min(nb, min(max(m[N1_TRACE], 0), max(m[MB_CH_L], 0) / 2));

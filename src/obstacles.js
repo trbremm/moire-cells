@@ -217,6 +217,23 @@ export class Obstacles {
     this.changed(s.box);
     return `removed the last ${s.kind === 'erase' ? 'eraser stroke' : s.type === 'stroke' ? 'wall' : s.type === 'rect' ? 'block' : 'pillar'}`;
   }
+  /** Point and patch springs that sit inside an obstacle (or outside a round dish) moved toward the dish's centre until free (a scene's). */
+  freeSprings(springs) {
+    if (!this.active || !this.W) return 0;
+    const R = this.R, cx = this.W / 2, cy = this.H / 2;
+    let moved = 0;
+    for (const s of springs) {
+      if (s.shape && s.shape.type === 'line') continue;
+      if (this.sdAt(s.x, s.y).s >= R) continue;
+      const d = Math.hypot(cx - s.x, cy - s.y) || 1, ux = (cx - s.x) / d, uy = (cy - s.y) / d;
+      for (let k = 1; k * R < d; k++) {
+        const x = s.x + ux * k * R, y = s.y + uy * k * R;
+        if (this.sdAt(x, y).s >= 1.5 * R) { s.x = x; s.y = y; moved++; break; }
+      }
+    }
+    return moved;
+  }
+
   /** The round dish on or off. */
   setRound(on) {
     this.round = !!on;
@@ -681,6 +698,15 @@ export class Obstacles {
       smean /= Math.max(1, sN);
     }
     const dead = { px: 0, all: 0, fuel: 0, trace: 0, cells: 0 };
+    // ENCLOSED (crevices, side chambers, narrow gaps): water pixels with more than 60 % solid in the square 5 R round them (a summed-area table)
+    const hh = this.hh, half = Math.max(1, Math.round(5 * R / px)), sat = new Float64Array((hw + 1) * (hh + 1));
+    for (let j = 0; j < hh; j++) for (let i = 0; i < hw; i++) sat[(j + 1) * (hw + 1) + i + 1] = (this.kind[j * hw + i] & 1) + sat[j * (hw + 1) + i + 1] + sat[(j + 1) * (hw + 1) + i] - sat[j * (hw + 1) + i];
+    const enclosedAt = (k) => {
+      const i = k % hw, j = (k - i) / hw, a = Math.max(0, i - half), b = Math.min(hw, i + half + 1), c = Math.max(0, j - half), d = Math.min(hh, j + half + 1);
+      const sum = sat[d * (hw + 1) + b] - sat[c * (hw + 1) + b] - sat[d * (hw + 1) + a] + sat[c * (hw + 1) + a];
+      return sum > 0.6 * (b - a) * (d - c);
+    };
+    const encl = { px: 0, all: 0, fuel: 0, trace: 0, cells: 0 };
     let inSolid = 0;
     for (let k = 0; k < n; k++) {
       let all = 0, fuel = 0;
@@ -691,6 +717,7 @@ export class Obstacles {
       const A = acc[z];
       A.px++; A.all += all; A.fuel += fuel; A.trace += tr;
       if (spd && spd[k] < 0.1 * smean) { dead.px++; dead.all += all; dead.fuel += fuel; dead.trace += tr; }
+      if (enclosedAt(k)) { encl.px++; encl.all += all; encl.fuel += fuel; encl.trace += tr; }
     }
     let alive = 0, inside = 0;
     for (let i = 0; i < cnt; i++) {
@@ -702,6 +729,7 @@ export class Obstacles {
       if (z < 0) { inside++; continue; }
       acc[z].cells++;
       if (spd && spd[k] < 0.1 * smean) dead.cells++;
+      if (enclosedAt(k)) encl.cells++;
     }
     const pxR2 = (px / R) ** 2;
     const per = (A) => ({ share: A.px / n, all: A.px ? A.all / A.px : 0, fuel: A.px ? A.fuel / A.px : 0, trace: A.px ? A.trace / A.px : 0, cellsR2: A.px ? A.cells / (A.px * pxR2) : 0, cells: A.cells });
@@ -710,6 +738,7 @@ export class Obstacles {
     const out = { time: M.time(), alive, cellsInSolid: inside, matterInSolid: inSolid, solid: this.solidShare, porous: this.porousShare };
     zones.forEach(([name], z) => { out[name] = rel(per(acc[z])); });
     if (spd) out.dead = rel(per(dead));
+    out.enclosed = rel(per(encl));
     if (F) out.flow = { sweeps: F.sweeps, converged: F.converged, islands: F.islands, last: F.last };
     this.census = out;
     return out;

@@ -1,0 +1,86 @@
+{
+  "name": "g0b-crevices_s7",
+  "description": "step G0b quick: crevices, 10 min",
+  "condition": {
+    "name": "g0b-crevices_s7",
+    "description": "step G0b quick: crevices, 10 min",
+    "query": {
+      "preset": "crevices",
+      "seed": 7
+    },
+    "duration": 600,
+    "sample_every": 30,
+    "stall": 300,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 300,
+        "name": "t300"
+      },
+      {
+        "t": 600,
+        "name": "end"
+      },
+      {
+        "t": 600,
+        "view": "machinery",
+        "name": "end_mach"
+      }
+    ],
+    "evals": [
+      {
+        "t": 60,
+        "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+      },
+      {
+        "t": 300,
+        "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+      },
+      {
+        "t": 599,
+        "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+      }
+    ]
+  },
+  "url": "http://localhost:52854/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=crevices&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "96fdfa25bcbebad55a4feb8d4dc81871c0fcfecd",
+  "dirty": true,
+  "started": "2026-11-18T03:25:50",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 600.0,
+  "run_wall_s": 1006.41,
+  "speed_reached": 0.6,
+  "samples": 21,
+  "shots": [
+    "shots/t300.png",
+    "shots/end.png",
+    "shots/end_mach.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 59.99999999999788,
+      "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)",
+      "result": "{\"time\":59.99999999999788,\"alive\":1553,\"cellsInSolid\":0,\"matterInSolid\":0,\"solid\":0.4037234695129432,\"porous\":0,\"edge0-2R\":{\"share\":0.053306342780026994,\"all\":30.666666666666668,\"fuel\":3.6394322976601456,\"trace\":0.67222861526659,\"cellsR2\":0.03068661296509398,\"cells\":40,\"allRel\":0.6052059810601952,\"fuelRel\":0.25461135495579723,\"traceRel\":2.1886181327430427,\"cellsRel\":0.2689460766914082},\"edge2-6R\":{\"share\":0.07237353289984869,\"all\":49.582003107783585,\"fuel\":9.12402881762961,\"trace\":2.2880350331967794,\"cellsR2\":0.11301031219098742,\"cells\":200,\"allRel\":0.9784997228405157,\"fuelRel\":0.6383087113355467,\"traceRel\":7.449303478430313,\"cellsRel\":0.9904540499145374},\"open\":{\"share\":0.4705966548071811,\"all\":50.67145339995655,\"fuel\":14.2940690853791,\"trace\":0.3071475124918531,\"cellsR2\":0.11409950032587443,\"cells\":1313,\"allRel\":1,\"fuelRel\":1,\"traceRel\":1,\"cellsRel\":1},\"enclosed\":{\"share\":0.019936204146730464,\"all\":4.694358974358974,\"fuel\":0.052307692307692305,\"trace\":0,\"cellsR2\":0.010256410256410256,\"cells\":5,\"allRel\":0.09264306940844526,\"fuelRel\":0.0036593983137521,\"traceRel\":0,\"cellsRel\":0.08989005409416681}}"
+    },
+    {
+      "t": 300.0000000000558,
+      "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)",
+      "result": "{\"time\":300.0000000000558,\"alive\":828,\"cellsInSolid\":0,\"matterInSolid\":0,\"solid\":0.4037234695129432,\"porous\":0,\"edge0-2R\":{\"share\":0.053306342780026994,\"all\":128.5709627924818,\"fuel\":32.68699654775604,\"trace\":3.255849635596471,\"cellsR2\":0.039892596854622174,\"cells\":52,\"allRel\":0.5159054733185612,\"fuelRel\":0.5588361286954558,\"traceRel\":1.269411813709178,\"cellsRel\":0.7286731084199439},\"edge2-6R\":{\"share\":0.07237353289984869,\"all\":198.9285209775392,\"fuel\":64.1623110608843,\"trace\":5.509817770871592,\"cellsR2\":0.08249752789942082,\"cells\":146,\"allRel\":0.7982231021877352,\"fuelRel\":1.096956628273629,\"traceRel\":2.1482035574556955,\"cellsRel\":1.506889368734262},\"open\":{\"share\":0.4705966548071811,\"all\":249.2141864001738,\"fuel\":58.49120139039756,\"trace\":2.5648490115142297,\"cellsR2\":0.05474690419291766,\"cells\":630,\"allRel\":1,\"fuelRel\":1,\"traceRel\":1,\"cellsRel\":1},\"enclosed\":{\"share\":0.019936204146730464,\"all\":51.62974358974359,\"fuel\":3.0871794871794873,\"trace\":0.8353846153846154,\"cellsR2\":0.0041025641025641026,\"cells\":2,\"allRel\":0.20717016288486692,\"fuelRel\":0.052780237262938255,\"traceRel\":0.32570518250172664,\"cellsRel\":0.07493691493691494}}"
+    },
+    {
+      "t": 598.9999999997839,
+      "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)",
+      "result": "{\"time\":598.9999999997839,\"alive\":2432,\"cellsInSolid\":0,\"matterInSolid\":0,\"solid\":0.4037234695129432,\"porous\":0,\"edge0-2R\":{\"share\":0.053306342780026994,\"all\":195.1187188339087,\"fuel\":71.64000767165324,\"trace\":4.958573072497123,\"cellsR2\":0.14192558496355964,\"cells\":185,\"allRel\":0.5953784334269989,\"fuelRel\":0.7664574226453832,\"traceRel\":1.2692724946171356,\"cellsRel\":0.8497443647076808},\"edge2-6R\":{\"share\":0.07237353289984869,\"all\":251.3548523802797,\"fuel\":110.70377171916937,\"trace\":8.639920892781467,\"cellsR2\":0.18364175731035456,\"cells\":325,\"allRel\":0.7669754041990889,\"fuelRel\":1.1843902632993581,\"traceRel\":2.2116068039212715,\"cellsRel\":1.0995096369661317},\"open\":{\"share\":0.4705966548071811,\"all\":327.7221811861829,\"fuel\":93.46899847925266,\"trace\":3.9066261134043017,\"cellsR2\":0.16702150771236152,\"cells\":1922,\"allRel\":1,\"fuelRel\":1,\"traceRel\":1,\"cellsRel\":1},\"enclosed\":{\"share\":0.019936204146730464,\"all\":137.87384615384616,\"fuel\":37.59025641025641,\"trace\":3.416923076923077,\"cellsR2\":0.09846153846153846,\"cells\":48,\"allRel\":0.42070343134790245,\"fuelRel\":0.4021681736388812,\"traceRel\":0.8746480921732003,\"cellsRel\":0.5895141279116305}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T03:44:01",
+  "wall_s": 1090.44
+}

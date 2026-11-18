@@ -6391,6 +6391,150 @@ between runs and say nothing about either build.
 - Merge note for the carbon branch: carbon's own spread (carbon.wgsl) needs the same mask (no flux at solid faces, solid pixels pushing
   out along the mask word's bits 2-4: `MatterP.obs.x`).
 
+## Step S1: cell shape
+
+User, 2026-11-17, after harmonic-generation images of fibroblasts: "shape could also be fundamental now"; "single cell organisms have no
+reason to form a static shape ... unless they collaborate more". Parts 1 and 2 of S1: a cell may grow LONG (a spindle), and its contacts
+use its real shape. The fibroblast loop (cells laying down oriented fibres and crawling along them) comes later with X1's proteins
+(`src/spindle.js`; shaders `cell_common.wgsl` "step S1", `cell_step.wgsl`, `cell_grn.wgsl`, `cell_eat.wgsl`).
+
+### The shape
+
+- An ELONGATION gene (Bio.relay.y): the natural log of the aspect (length over width) the cell asks for, 0 = round (the founders) up to
+  ln 4 = a 4:1 spindle. Mutation nudges it by small steps (0.05 per birth x the mutation size) and rarely redraws it anywhere; wild
+  founders (`?founders=wild`, group `shape`) draw it anywhere.
+- It becomes a stretch along the cell's FRONT (C10/C11), added to the active stretch the honeycomb's rest shape follows (C6c). So the
+  same elastic corners, the glue's turning and the division along the front carry the spindle's axis: a dividing spindle splits along
+  its front into two halves end to end (the daughters a quarter of her core further apart than a round mother's).
+- The outline keeps its SIX corners. A hexagon stretched 4:1 already reads as a spindle: two pointed poles and long straight flanks (or,
+  with the long axis through a side's middle, a blunt rod). Every per-side thing (integrity, lipids, glue, junctions, side charges, pumps,
+  neighbours, the field felt) stays as it was. The largest stretch rises from 0.5 to what the cell asks for (at most 0.5 ln 4, aspect 4);
+  a round-gened cell keeps the old cap.
+- The gene network's 18th output, SHAPE (gain Bio.relay.z, regulator relay.w), multiplies the gene (up to x4, as every output), so the
+  same DNA can be long in one place and round in another. Only while the shape is on, and only while the network's outputs act.
+
+### Contacts on the real shape: capsules
+
+- Each cell's extent for contact is a CAPSULE, the usual body of rod-bacteria simulations: a core segment along its long axis with round
+  ends, of the same area as its disc (pi rho^2 + 4 h rho = pi r^2). Its aspect is the OUTLINE's own (exp of twice the stretch worked out
+  from the honeycomb's second moment), but never longer than the elongation the cell asks for: the long body is held by the cell's own
+  frame (like a real cell's cytoskeleton), while squeezing only dents its soft outline, as before. (The first try took the outline alone:
+  a cell squeezed a little became a short capsule, pushed its neighbours off its ends, its corners followed into the room, and within
+  30 s every round-gened cell had run away to 2:1 with gaps between them. Now a round-gened cell is the old disc exactly.)
+- Two cells touch where their core segments come closest (closest points of two segments; nearly parallel ones meet in the middle of their
+  overlap, so the contact does not jump from end to end). Everything a contact did now happens there: the overlap spring, the glue, the
+  junctions forming and tearing, the side that faces the other (the walls' adhesion, the pumps' neighbour across each side), crowding,
+  the parent pick, the predators' hold, and the honeycomb's shared wall (the power line between the two closest points, so long cells
+  share straight walls with their neighbours too). The fields (A, B, A', the dipoles) still act between centres.
+- LINE CONTACTS: two rods lying side by side touch along a length, not at a point, so their spring and their glue are x (1 + that length
+  / the contact distance) (the overlap of one core's projection on the other, x cos^2 of their angle: 1 for crossed rods and for ends).
+  Without it a pressed bundle crushed its middle cells into thin slivers (one point spring per pair, half the contact distance of discs).
+- TORQUES: a contact sits off a long cell's centre, so its push and its glue TURN the cell: torque = lever arm x force, turning rate =
+  torque / the capsule's rotational drag (its second moment of area per area: r^2 / 2 for a disc, the same drag C11's glue turning uses;
+  the motion has velocity = force, so this is the matching rotation), at most 3 rad/s. The body turns: outline, front and stretch together.
+  Rods pressed side by side line up (nematic order). The obstacles (G0b) and the dish's soft wall push at the capsule's middle and both
+  ends (weights 1/2, 1/4, 1/4), so a spindle pressed against a wall lies down along it; the water drags it along its whole length (two
+  Gauss points at +-h/sqrt 3), so shear and eddies turn it too. Turning is not booked as energy (as C11's).
+- The neighbour grid's cell grows to the longest contact two of the longest cells can make (2 (h + 1.45 rho) at 4:1 = 3.9 R; field A's
+  3.6 R set it before). The grid and every pass see it automatically; `?aspmax=` lowers the top (and the grid with it).
+
+### Payoffs (derived, no bonus)
+
+- EXCHANGE by perimeter: what crosses the membrane per s (passive exchange, ions, fusion and grazing through the free sides) x the real
+  perimeter over a regular hexagon's of the same area. A spindle at 2.4:1 trades about 25 % faster for its volume, at 2.8:1 about 40 % (the census's perimeter factor).
+- ENGULFING must wrap the prey's LENGTH: a predator shorter than its prey's long axis cannot close round it, whatever its area (on top of
+  P1's area ratio). Filaments are safe from small grazers.
+- SENSING over the real outline: the membrane integrals (field A, the partner, the gates) already ran along the real six sides (C6c); a
+  spindle feels the field's gradient along its length, and its strained lattice projects a squeezed field (a stretched cell's lattice
+  squeezes the other way, the old k = F^-1 k0 rule, now up to 4:1).
+- FLOW: shear turns long cells (above); the drag on the water (G0's stirring) is by the footprint, which keeps its area.
+
+### Switches and knobs (rules panel group "Cell shape (step S1)"; `moire.spindle.params`)
+
+`?shape=0` today's round contacts and shapes exactly (the gene never mutates, the 18th output does not exist, every pass as before);
+`?shapenull=1` the elongation gene's NEUTRAL CONTROL (it drifts as on, every cell asks to be round); `?shapegene=0` (only passive shapes),
+`?shapegrn=0`, `?shapetorque=0`, `?shapeexch=0`, `?shapewrap=0` one part off; `?aspmax=` the longest aspect (1.2..4, default 4);
+`?shapeturn=` x the derived turning. Lab: `?genes=elongation:1.2` (every cell asks e^1.2 = 3.3:1), `moire.genome.setAll({elongation:
+1.1})`; the gene network's output `shape` in `moire.tissues` designs; `grnShapeGain`, `grnShapeReg` by name. Old snapshots load with the
+shape off (as they ran).
+
+### Census (the SHAPE panel line; `moire.sample()`'s `shape.*`)
+
+Aspect (as the outlines have it) geometric mean and spread, the share longer than 2:1, the long axis in R, the NEMATIC ORDER of touching
+pairs both longer than 1.5:1 (the mean of cos 2 x the angle between their axes: 0 random, 1 all parallel), the gene (mean of its ln) and
+as asked, the turning rate and the share turned, the perimeter factor, prey a predator could have wrapped but for its length.
+
+### The look
+
+- NEON: spindles are long thin neon tubes with pointed poles (or blunt rods), their dark insides and parts squeezed along with them (the
+  battery core an elongated oval). A dish of them reads like a sparse fibroblast culture: streams and whorls of parallel spindles, small
+  dark gaps where neighbours' angles disagree (rods do not tile like hexagons). Round-gened cells keep the packed honeycomb.
+- HARMONIC: green rims round each spindle, an orange fibrous streak along its length (the existing "stretched cell" streaks, now strong):
+  close to the user's fibroblast pictures (`experiments/keep/s1/lab-spindles-t240-x2.5-harm.jpg`, `default-wild-s3-t300-x3.5-harm.jpg`).
+- No new view or tint (the SHAPE line and the outlines say enough).
+
+### What it looks like (pictures: `experiments/keep/s1/`)
+
+- `lab-spindles-t240-x2.5-neon.jpg` / `-harm.jpg`: the tissue lab, 150 clones asking 3.3:1: a raft whose middle became one stream of
+  parallel spindles (a short palisade), whorls round it. `lab-spindles-t180-x3-neon-whorls.jpg`: the same at 180 s, patches swirling.
+- `default-wild-s3-t300-*`: the default scene with the founders' elongation drawn at random: a mix of rounded hexagons and spindles of
+  every length; the harmonic zoom is the fibroblast-like one.
+- `default-all-3to1-s3-t300-*`: every cell asked 3:1 at the start; by 300 s mutation had spread the lengths again.
+- `colonies-wild-s3-t300-*`: five wild colonies: a dish-wide mesh of spindles.
+- `chip-wild-s3-t300-*`, `chip-wild-s3-t600-neon.jpg`: the Chip: spindles behind a front of rounder cells at the pillars.
+- `predators-wild-s3-t600-neon.jpg` against `predators-wild-null-s3-t600-neon.jpg`: with 20 predators dropped, spindles against the
+  null's round cells.
+- `crevices-wild-s3-t300-*`, `default-shape-off-t30-neon.jpg` (`?shape=0`: the old honeycomb).
+
+### Results (quick runs, 10 min, seeds 3 and 7; the user: not final; EXPERIMENTS.md "Cell shape")
+
+- Founders with the elongation drawn at random, shape on against its neutral control: under PREDATORS (20 dropped at 2 min) the gene
+  ended higher than the null in both seeds (ln aspect +0.21, +0.45; outlines 2.3-2.5:1), and the colonies' other defence (glue +
+  armour, the prey's hold) stayed 2-4x lower than in the nulls, where the glued and walled survived: length may have replaced armour.
+  In the CHIP higher too, less (+0.24, +0.10); in the plain dish no difference (+0.07, -0.16). The founders' crash alone moves the mean
+  by about +-0.2, so: a hint under predators, not a result.
+- Nematic order stays low in evolving dishes (0.17-0.32): mixtures of long and short cells at every angle. In the lab's clone raft 0.42,
+  with a palisade-like stream in the middle; the torques matter little in a still raft (0.36 without), the packing aligns more.
+- The first build ran away (round-gened cells long and gappy within 30 s), fixed by holding the capsule to the elongation asked for;
+  the first lab raft crushed its middle cells into slivers, fixed by the line contacts.
+
+### Checked
+
+- Books (`experiments/conditions/s1/check.json`, 420 s at MAX, seed 5, whole dish lit): every cell asks 3:1, every S1 switch off and
+  on at runtime (null, gene, network output, torques, exchange, wrap, the whole shape), the largest aspect 4 -> 2.5 -> 4, obstacles
+  painted over the culture, a squeeze x0.8 and a stretch x1.25, a resize and back, a snapshot saved and loaded: atoms and charge
+  rounding 0 at every sample; energy rounding -0.02..+0.03 with the usual blips at the samples right after the squeeze and the stretch
+  (as in G0b's check); the reload exact; console clean. All twelve quick runs: atoms and charge 0 throughout.
+- `?shape=0` is the old code path: every new term is guarded or multiplies by exactly 1 or adds exactly 0; the default scene with it
+  is the old packed honeycomb (`default-shape-off-t30-neon.jpg`). With the shape on and founders round (gene 0) the contacts are the
+  old discs and the stretch cap the old 0.5; what differs: the exchange x the perimeter factor (about 1.02 for an irregular honeycomb),
+  the gene drifting up from 0 by mutation (a few hundredths of ln aspect in 10 minutes), the 18th output's mutation draws (the census
+  at 30 s: aspect 1.15, nobody longer than 2:1).
+- Firefox (headed, wild shape founders, 40 s, the shape switched off and on at runtime): runs, console clean. Phone (Chrome 390 x 844,
+  dpr 3): the compact SHAPE line fits one line.
+
+### Speed (headless Chrome, 1280 x 800, default scene, seed 3, MAX; GPU SHARED: another worker's two runs and my pictures ran on it)
+
+The GPU was busy the whole time, so absolute numbers say nothing (2000 cells ran at x0.6-0.9 against G0b's x6.1 on a quiet GPU).
+Side by side in the same spells: 2000 neon on x0.61, x0.64, x0.90 / off x0.59, x0.74, x0.93; every cell asking 3:1 x0.65; 10 000 neon on
+x0.24 / off x0.22; 2000 harmonic on x0.59 / off x0.72; 10 000 harmonic on x0.21 / off x0.23. Within the scatter: S1 costs at most about
+10 % here. Expected cost: the grid's cell grows from 3.6 R to 3.9 R (about 17 % more candidates in the 3 x 3 contact block, but field
+B's wider block, which dominates the loop, is unchanged), and a capsule and closest-point test per candidate within reach (a cheap
+distance test first). To be measured on a free GPU.
+
+### Known issues
+
+- Spindles leave small dark gaps between neighbours at different angles (the honeycomb's corners close a gap only up to 1.5 x their
+  rest place); aligned streams pack tight.
+- One contact point per pair (plus the line-contact stiffening): two long rods crossing in an X touch at one point only.
+- The outline keeps 6 corners: at 4:1 the flanks are straight lines, the poles single corners (no rounded rod ends in the outline; the
+  capsule is round-ended).
+- Turning is not booked as energy (as C11's glue turning); a rod's drag along and across its axis is the same (no slender-body
+  anisotropy), so swimmers do not glide along their axis yet (S2 flagella).
+- Crawling direction is the old random heading, not the long axis: spindles do not crawl lengthwise.
+- The fields still act between centres (a spindle emits from its centre; it SENSES along its real sides).
+- Speed not measured on a free GPU.
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start
@@ -6445,6 +6589,11 @@ between runs and say nothing about either build.
   dish), their signed distance fields and mask on the heat grid, the push-out directions, the pressure-driven through-flow's solver
   (CPU), the uploads, the drawing, the measure (`moire.obstacles.measure()`); the matter's mask in `matter.wgsl` spread, the cells' push
   in `cell_step.wgsl` (`obs_at`), the water's in `water.wgsl` (`obs_corner`, `through_at`) and `stir.wgsl`; the tool in `src/app.js`.
+- `src/spindle.js`: step S1, cell shape: the switches and knobs (`moire.spindle.params`), the shape bits and largest stretch in the Sim
+  uniform, the grid's reach for the longest pair, the census (Stats.s1), the SHAPE panel line; the capsules, closest points, line
+  contacts, rotational drag and perimeter factor in `cell_common.wgsl` ("step S1"), the contacts, torques, elongation and the gene's
+  mutation in `cell_step.wgsl`, the 18th output in `cell_grn.wgsl`, the exchange by perimeter and the inside on capsules in
+  `cell_eat.wgsl`.
 - `src/walls.js`: patterned walls (step C10): the switches and knobs, the census (from the cells' stats read-back,
   Stats.wall), the WALLS panel line, the overlay and `stats()` (where on the walls the contacts sit, the glue, the junctions); each
   side's pattern, linker want and upkeep are worked out in `cell_eat.wgsl` (Cell.wadh), the smaller side of each contact, the

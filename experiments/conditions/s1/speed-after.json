@@ -1,0 +1,130 @@
+{
+ "batch": "s1-speed",
+ "runs": [
+  {
+   "name": "s1-speed-2k-neon-on",
+   "description": "step G0 speed, after S1, shape on (founders round): default scene, 2000 cells, MAX, 150 s, neon",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "s1-speed-2k-neon-off",
+   "description": "step G0 speed, after S1, ?shape=0: default scene, 2000 cells, MAX, 150 s, neon",
+   "query": {
+    "seed": 3,
+    "shape": 0
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "s1-speed-2k-neon-spindles",
+   "description": "step G0 speed, after S1, every cell asks 3:1: default scene, 2000 cells, MAX, 150 s, neon",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "snapshots": [],
+   "shots": [],
+   "evals": [
+    {
+     "t": 0,
+     "js": "await moire.genome.setAll({elongation: 1.1}); return 'every cell asks 3:1'"
+    }
+   ]
+  },
+  {
+   "name": "s1-speed-10k-neon-on",
+   "description": "step G0 speed, after S1, shape on (founders round): default scene, 10000 cells, MAX, 60 s, neon",
+   "query": {
+    "seed": 3,
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "s1-speed-10k-neon-off",
+   "description": "step G0 speed, after S1, ?shape=0: default scene, 10000 cells, MAX, 60 s, neon",
+   "query": {
+    "seed": 3,
+    "cells": 10000,
+    "shape": 0
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "s1-speed-2k-harmonic-on",
+   "description": "step G0 speed, after S1, shape on (founders round): default scene, 2000 cells, MAX, 150 s, harmonic",
+   "query": {
+    "seed": 3,
+    "look": "harmonic"
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "s1-speed-2k-harmonic-off",
+   "description": "step G0 speed, after S1, ?shape=0: default scene, 2000 cells, MAX, 150 s, harmonic",
+   "query": {
+    "seed": 3,
+    "look": "harmonic",
+    "shape": 0
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "s1-speed-10k-harmonic-on",
+   "description": "step G0 speed, after S1, shape on (founders round): default scene, 10000 cells, MAX, 60 s, harmonic",
+   "query": {
+    "seed": 3,
+    "look": "harmonic",
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "s1-speed-10k-harmonic-off",
+   "description": "step G0 speed, after S1, ?shape=0: default scene, 10000 cells, MAX, 60 s, harmonic",
+   "query": {
+    "seed": 3,
+    "look": "harmonic",
+    "cells": 10000,
+    "shape": 0
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  }
+ ]
+}

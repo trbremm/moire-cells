@@ -1,0 +1,5 @@
+{"batch": "s1-ff", "runs": [
+ {"name": "s1-firefox", "description": "Firefox headed: wild shape founders, 30 s, then the shape off and on", "query": {"seed": 3, "founders": "wild", "wild": "shape"}, "duration": 40, "sample_every": 10, "stall": 200, "snapshots": [],
+  "shots": [{"t": 30, "name": "end"}],
+  "evals": [{"t": 29, "js": "return JSON.stringify(moire.spindle.census)"}, {"t": 31, "js": "moire.spindle.params.on = false; return 'off'"}, {"t": 35, "js": "moire.spindle.params.on = true; return 'on'"}]}
+]}

@@ -1,0 +1,276 @@
+{
+  "name": "s1-check",
+  "description": "step S1 books check: 420 s at MAX (seed 5), whole dish lit; every cell asks 3:1 at 2 s; every S1 switch toggled at runtime, obstacles painted over the culture, a squeeze 0.8 and a stretch 1.25, a resize, a snapshot saved and loaded: atoms and charge rounding must stay 0",
+  "condition": {
+    "name": "s1-check",
+    "description": "step S1 books check: 420 s at MAX (seed 5), whole dish lit; every cell asks 3:1 at 2 s; every S1 switch toggled at runtime, obstacles painted over the culture, a squeeze 0.8 and a stretch 1.25, a resize, a snapshot saved and loaded: atoms and charge rounding must stay 0",
+    "query": {
+      "seed": 5,
+      "light": "full"
+    },
+    "duration": 420,
+    "sample_every": 10,
+    "stall": 300,
+    "snapshots": [],
+    "resizes": [
+      {
+        "t": 300,
+        "size": "1000x700"
+      },
+      {
+        "t": 330,
+        "size": "1280x800"
+      }
+    ],
+    "shots": [
+      {
+        "t": 40,
+        "name": "spindles"
+      },
+      {
+        "t": 200,
+        "name": "squeezed"
+      },
+      {
+        "t": 420,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "evals": [
+      {
+        "t": 2,
+        "js": "await moire.genome.setAll({elongation: 1.1}); return 'every cell asks 3:1'"
+      },
+      {
+        "t": 30,
+        "js": "return JSON.stringify(moire.spindle.census)"
+      },
+      {
+        "t": 50,
+        "js": "moire.spindle.params.null = true; return 'spindle.null True'"
+      },
+      {
+        "t": 65,
+        "js": "moire.spindle.params.null = false; return 'spindle.null False'"
+      },
+      {
+        "t": 70,
+        "js": "moire.spindle.params.torque = false; return 'spindle.torque False'"
+      },
+      {
+        "t": 80,
+        "js": "moire.spindle.params.torque = true; return 'spindle.torque True'"
+      },
+      {
+        "t": 85,
+        "js": "moire.spindle.params.exchange = false; return 'spindle.exchange False'"
+      },
+      {
+        "t": 95,
+        "js": "moire.spindle.params.exchange = true; return 'spindle.exchange True'"
+      },
+      {
+        "t": 100,
+        "js": "moire.spindle.params.wrap = false; return 'spindle.wrap False'"
+      },
+      {
+        "t": 105,
+        "js": "moire.spindle.params.wrap = true; return 'spindle.wrap True'"
+      },
+      {
+        "t": 110,
+        "js": "moire.spindle.params.grn = false; return 'spindle.grn False'"
+      },
+      {
+        "t": 115,
+        "js": "moire.spindle.params.grn = true; return 'spindle.grn True'"
+      },
+      {
+        "t": 120,
+        "js": "moire.spindle.params.gene = false; return 'spindle.gene False'"
+      },
+      {
+        "t": 130,
+        "js": "moire.spindle.params.gene = true; return 'spindle.gene True'"
+      },
+      {
+        "t": 140,
+        "js": "moire.spindle.params.on = false; return 'spindle.on False'"
+      },
+      {
+        "t": 155,
+        "js": "moire.spindle.params.on = true; return 'spindle.on True'"
+      },
+      {
+        "t": 160,
+        "js": "moire.spindle.params.aspectMax = 2.5; return 'spindle.aspectMax 2.5'"
+      },
+      {
+        "t": 170,
+        "js": "moire.spindle.params.aspectMax = 4; return 'spindle.aspectMax 4'"
+      },
+      {
+        "t": 175,
+        "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.line(0.5 * W, 0.05 * H, 0.5 * W, 0.95 * H, 2 * R); O.pillars(0.15 * W, 0.2 * H, 0.35 * W, 0.8 * H, 2.5 * R, 9 * R); return `painted ${O.shapes.length}`"
+      },
+      {
+        "t": 190,
+        "js": "await moire.dish.scale(0.8); return 'squeezed'"
+      },
+      {
+        "t": 240,
+        "js": "await moire.dish.scale(1.25); return 'stretched'"
+      },
+      {
+        "t": 360,
+        "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return JSON.stringify({ exact: r.exact, notes: r.notes, rounding: r.rounding })"
+      },
+      {
+        "t": 419,
+        "js": "return JSON.stringify(moire.spindle.census)"
+      }
+    ]
+  },
+  "url": "http://localhost:59948/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=5&light=full",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "1ccc9d8725ab673a0c319e1caad6a5f4973ae000",
+  "dirty": true,
+  "started": "2026-11-18T05:37:06",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 420.0,
+  "run_wall_s": 503.24,
+  "speed_reached": 0.83,
+  "samples": 43,
+  "shots": [
+    "shots/spindles.png",
+    "shots/squeezed.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 2,
+      "js": "await moire.genome.setAll({elongation: 1.1}); return 'every cell asks 3:1'",
+      "result": "every cell asks 3:1"
+    },
+    {
+      "t": 29.999999999999588,
+      "js": "return JSON.stringify(moire.spindle.census)",
+      "result": "{\"time\":29.933333333332925,\"n\":1654,\"lnAspect\":0.8534020556227327,\"lnSd\":0.2564747485313645,\"aspect\":2.347620015536738,\"long\":0.727932285368803,\"pairs\":2559.5,\"nematic\":0.2428747802305138,\"gene\":1.1,\"geneSd\":0,\"geneAspect\":3.0041660239464334,\"asked\":1.1,\"turning\":0.8608675937122128,\"turned\":1,\"noWrap\":0,\"perim\":1.2542678355501815,\"length\":2.8179842805320434}"
+    },
+    {
+      "t": 49.99999999999845,
+      "js": "moire.spindle.params.null = true; return 'spindle.null True'",
+      "result": "spindle.null True"
+    },
+    {
+      "t": 64.9999999999976,
+      "js": "moire.spindle.params.null = false; return 'spindle.null False'",
+      "result": "spindle.null False"
+    },
+    {
+      "t": 69.99999999999731,
+      "js": "moire.spindle.params.torque = false; return 'spindle.torque False'",
+      "result": "spindle.torque False"
+    },
+    {
+      "t": 79.99999999999675,
+      "js": "moire.spindle.params.torque = true; return 'spindle.torque True'",
+      "result": "spindle.torque True"
+    },
+    {
+      "t": 84.99999999999646,
+      "js": "moire.spindle.params.exchange = false; return 'spindle.exchange False'",
+      "result": "spindle.exchange False"
+    },
+    {
+      "t": 94.9999999999959,
+      "js": "moire.spindle.params.exchange = true; return 'spindle.exchange True'",
+      "result": "spindle.exchange True"
+    },
+    {
+      "t": 99.99999999999561,
+      "js": "moire.spindle.params.wrap = false; return 'spindle.wrap False'",
+      "result": "spindle.wrap False"
+    },
+    {
+      "t": 104.99999999999532,
+      "js": "moire.spindle.params.wrap = true; return 'spindle.wrap True'",
+      "result": "spindle.wrap True"
+    },
+    {
+      "t": 109.99999999999504,
+      "js": "moire.spindle.params.grn = false; return 'spindle.grn False'",
+      "result": "spindle.grn False"
+    },
+    {
+      "t": 114.99999999999476,
+      "js": "moire.spindle.params.grn = true; return 'spindle.grn True'",
+      "result": "spindle.grn True"
+    },
+    {
+      "t": 119.99999999999447,
+      "js": "moire.spindle.params.gene = false; return 'spindle.gene False'",
+      "result": "spindle.gene False"
+    },
+    {
+      "t": 129.9999999999956,
+      "js": "moire.spindle.params.gene = true; return 'spindle.gene True'",
+      "result": "spindle.gene True"
+    },
+    {
+      "t": 140.0000000000016,
+      "js": "moire.spindle.params.on = false; return 'spindle.on False'",
+      "result": "spindle.on False"
+    },
+    {
+      "t": 155.00000000000247,
+      "js": "moire.spindle.params.on = true; return 'spindle.on True'",
+      "result": "spindle.on True"
+    },
+    {
+      "t": 160.0000000000029,
+      "js": "moire.spindle.params.aspectMax = 2.5; return 'spindle.aspectMax 2.5'",
+      "result": "spindle.aspectMax 2.5"
+    },
+    {
+      "t": 170.0000000000039,
+      "js": "moire.spindle.params.aspectMax = 4; return 'spindle.aspectMax 4'",
+      "result": "spindle.aspectMax 4"
+    },
+    {
+      "t": 175.00000000000477,
+      "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.line(0.5 * W, 0.05 * H, 0.5 * W, 0.95 * H, 2 * R); O.pillars(0.15 * W, 0.2 * H, 0.35 * W, 0.8 * H, 2.5 * R, 9 * R); return `painted ${O.shapes.length}`",
+      "result": "painted 46"
+    },
+    {
+      "t": 190.00000000000605,
+      "js": "await moire.dish.scale(0.8); return 'squeezed'",
+      "result": "squeezed"
+    },
+    {
+      "t": 240.0000000000087,
+      "js": "await moire.dish.scale(1.25); return 'stretched'",
+      "result": "stretched"
+    },
+    {
+      "t": 359.99999999999034,
+      "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return JSON.stringify({ exact: r.exact, notes: r.notes, rounding: r.rounding })",
+      "result": "{\"exact\":true,\"notes\":[],\"rounding\":{\"energy\":0.01214599609375,\"atoms\":0,\"charge\":0,\"snapshot\":{\"energy\":0.01214599609375,\"atoms\":0,\"charge\":0}}}"
+    },
+    {
+      "t": 418.9999999999367,
+      "js": "return JSON.stringify(moire.spindle.census)",
+      "result": "{\"time\":418.89999999993677,\"n\":703,\"lnAspect\":0.8922972972972972,\"lnSd\":0.3208015606945309,\"aspect\":2.440730298769357,\"long\":0.7297297297297297,\"pairs\":1295.5,\"nematic\":0.3089729834040911,\"gene\":0.9855405405405406,\"geneSd\":0.3121827427279983,\"geneAspect\":2.6792597415820136,\"asked\":0.98524893314367,\"turning\":1.1063022922636103,\"turned\":0.9928876244665719,\"noWrap\":37,\"perim\":1.3278790896159318,\"length\":3.014285917496444}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T05:47:09",
+  "wall_s": 602.25
+}

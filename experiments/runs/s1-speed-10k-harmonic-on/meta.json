@@ -1,0 +1,39 @@
+{
+  "name": "s1-speed-10k-harmonic-on",
+  "description": "step G0 speed, after S1, shape on (founders round): default scene, 10000 cells, MAX, 60 s, harmonic",
+  "condition": {
+    "name": "s1-speed-10k-harmonic-on",
+    "description": "step G0 speed, after S1, shape on (founders round): default scene, 10000 cells, MAX, 60 s, harmonic",
+    "query": {
+      "seed": 3,
+      "look": "harmonic",
+      "cells": 10000
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "snapshots": [],
+    "shots": [],
+    "evals": []
+  },
+  "url": "http://localhost:65120/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&look=harmonic&cells=10000",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "08132e9c0161a81a4a34e03dd1c82d9ba3d1be78",
+  "dirty": true,
+  "started": "2026-11-18T08:36:59",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 280.78,
+  "speed_reached": 0.21,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-18T08:43:07",
+  "wall_s": 367.47
+}

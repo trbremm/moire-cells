@@ -1,0 +1,59 @@
+{
+  "name": "s1-phone",
+  "description": "phone size 390 x 844 dpr 3, spindles, panel and zoom",
+  "condition": {
+    "name": "s1-phone",
+    "description": "phone size 390 x 844 dpr 3, spindles, panel and zoom",
+    "query": {
+      "seed": 3
+    },
+    "size": "390x844",
+    "dpr": 3,
+    "duration": 40,
+    "sample_every": 20,
+    "stall": 200,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 40,
+        "name": "end",
+        "panel": true
+      }
+    ],
+    "evals": [
+      {
+        "t": 2,
+        "js": "await moire.genome.setAll({elongation: 1.1}); return 'spindles'"
+      }
+    ]
+  },
+  "url": "http://localhost:53015/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "390x844",
+  "commit": "051dc308c5ab7449a69fe1c13f066b65a5bed954",
+  "dirty": true,
+  "started": "2026-11-18T05:50:44",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 40.0,
+  "run_wall_s": 59.79,
+  "speed_reached": 0.67,
+  "samples": 3,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 2,
+      "js": "await moire.genome.setAll({elongation: 1.1}); return 'spindles'",
+      "result": "spindles"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T05:53:19",
+  "wall_s": 154.82
+}

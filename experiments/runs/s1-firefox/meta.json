@@ -1,0 +1,75 @@
+{
+  "name": "s1-firefox",
+  "description": "Firefox headed: wild shape founders, 30 s, then the shape off and on",
+  "condition": {
+    "name": "s1-firefox",
+    "description": "Firefox headed: wild shape founders, 30 s, then the shape off and on",
+    "query": {
+      "seed": 3,
+      "founders": "wild",
+      "wild": "shape"
+    },
+    "duration": 40,
+    "sample_every": 10,
+    "stall": 200,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 30,
+        "name": "end"
+      }
+    ],
+    "evals": [
+      {
+        "t": 29,
+        "js": "return JSON.stringify(moire.spindle.census)"
+      },
+      {
+        "t": 31,
+        "js": "moire.spindle.params.on = false; return 'off'"
+      },
+      {
+        "t": 35,
+        "js": "moire.spindle.params.on = true; return 'on'"
+      }
+    ]
+  },
+  "url": "http://localhost:61200/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&founders=wild&wild=shape",
+  "browser": "firefox",
+  "size": "1280x800",
+  "commit": "08132e9c0161a81a4a34e03dd1c82d9ba3d1be78",
+  "dirty": true,
+  "started": "2026-11-18T06:03:39",
+  "status": "ok",
+  "adapter": "ANGLE (NVIDIA, NVIDIA GeForce GTX 980 Direct3D11 vs_5_0 ps_5_0), or similar  (WebGL's name; WebGPU hides it)",
+  "t_start": 0,
+  "sim_s": 40.0,
+  "run_wall_s": 116.15,
+  "speed_reached": 0.34,
+  "samples": 5,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 28.999999999999638,
+      "js": "return JSON.stringify(moire.spindle.census)",
+      "result": "{\"time\":28.899999999999643,\"n\":1642,\"lnAspect\":0.6106425091352009,\"lnSd\":0.35887989073806387,\"aspect\":1.8416142727310318,\"long\":0.37271619975639464,\"pairs\":1313,\"nematic\":0.13500761614623,\"gene\":0.6655237515225335,\"geneSd\":0.45451135542796534,\"geneAspect\":1.945509217956599,\"asked\":0.6655237515225335,\"turning\":0.6993434835566382,\"turned\":1,\"noWrap\":0,\"perim\":1.152756394640682,\"length\":2.572661997563946}"
+    },
+    {
+      "t": 30.999999999999524,
+      "js": "moire.spindle.params.on = false; return 'off'",
+      "result": "off"
+    },
+    {
+      "t": 34.9999999999993,
+      "js": "moire.spindle.params.on = true; return 'on'",
+      "result": "on"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T06:06:39",
+  "wall_s": 179.47
+}

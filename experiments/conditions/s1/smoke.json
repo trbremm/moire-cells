@@ -1,0 +1,5 @@
+{"name": "s1-smoke", "description": "step S1 smoke: default scene, every cell asks 3:1 at 2 s, 40 s",
+ "query": {"seed": 3}, "duration": 40, "sample_every": 10, "stall": 120, "snapshots": [],
+ "shots": [{"t": 1, "name": "start"}, {"t": 40, "name": "end"}, {"t": 40, "panel": true, "name": "panel"}],
+ "evals": [{"t": 2, "js": "await moire.genome.setAll({elongation: 1.1}); return 'elongated'"},
+           {"t": 39, "js": "return JSON.stringify(moire.spindle.census)"}]}

@@ -665,6 +665,19 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        solid faces, exact), optional shadows. Variants: POROUS walls (water and small atoms pass, cells do not: a filter /
        membrane insert). The dish rim itself can become a mask (round dish). Expected: crevices as refuges from predators and
        shear, matter piling in dead zones, colonies channelled along walls, fronts (D1) bending round blocks.
+       AS BUILT (G0b, 2026-11-18): src/obstacles.js + obstacles_draw.wgsl. Shapes (pen strokes, rounded blocks, pillars;
+       solid / POROUS = stops cells only / eraser) -> two signed distance fields per heat pixel -> mask word + a 'way out'
+       (heat blocks 5..9 behind the water's). Matter: no flux across solid faces, matter painted over walks out exactly.
+       Cells: contact push 14/s (booked), hard limit 0.45 R, honeycomb corners flatten on edges, never placed inside.
+       Water: moire eddies/gyre faded within 4 R of solids; stirred psi 0 on solids; PERFUSION now PRESSURE-DRIVEN (Darcy /
+       Hele-Shaw stream function, islands at zero net pressure, slow layer 4 % within 3 R of walls, CPU red-black SOR
+       <= 4 ms/frame; BLOCKED shown if a wall closes the channel; ?obsflow=0 old profile, ?obstacles=0). ROUND DISH
+       (?dish=round, New culture). Tool button cycles wall/block/pillar/erase; Dish panel row; moire.obstacles.*. Look: dark
+       fill, ice-blue tube edges (porous dotted aqua); harmonic faint grey rim. PRESETS: Chip (pillar array, side chamber,
+       blocks), CREVICES (rock face with cracks and caves), MAZE. RESULT (quick): dead zones STARVE (2-8 % of open water's
+       matter), cells pack 1.4-1.9x denser against walls and pillars; crevices fill only once the open water is full (not
+       refuges through the crash; predators/shear untested); fronts did not visibly bend. Speed ~ G0 (5 % at 10 000 with
+       485 pillars). Merge note: carbon's own spread pass (carbon.wgsl) needs the mask too.
     6a3. S1 SHAPE (user 2026-11-17, after seeing harmonic images of fibroblasts: "shape could also be fundamental now";
        "single cell organisms have no reason to form a static shape ... unless they collaborate more"). After G0b.
        (1) shape genes: spindle (two poles, aspect well beyond today's 0.5 stretch cap), maybe arms; COLLISIONS ON THE REAL

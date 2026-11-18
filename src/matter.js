@@ -40,7 +40,7 @@ import { Vents } from './vents.js';
 import { setShaderConst } from './gpu.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 import { dish } from './dish.js';      // the dish: a scene's springs drip per area
-import { Carbon, CARBON, CB_LIP, CNAMES, LADDER, LG_CB, describeCarbon, carbonEngines } from './carbon.js';   // step C15a: carbon in the open dish
+import { Carbon, CARBON, CB_LIP, CNAMES, LADDER, LG_CB, describeCarbon, carbonEngines, G_SPRING } from './carbon.js';   // step C15a: carbon in the open dish
 
 // ---------- step C12d, ELECTRONS: which table this page runs (fixed for the page: changing it would change the energy of
 // every molecule in the dish). ?electrons=0 gives the previous table (step C4 to C12c) exactly ----------
@@ -624,7 +624,8 @@ export function describe(s) {
 // (the fuel-like gT and GT and free heavy givers G, metal-like, which give easily: food without oxygen; a little trace). The kinds
 // keep their keys ('light', 'heavy'), so tools and saved conditions still drop them.
 export const SPRING_KINDS = {
-  light: ELECTRONS ? { label: 'mineral spring', mix: CB_LIP ? { gt: 0.6 } : { gt: 0.6, l: 0.2, L: 0.2 }, stroke: 1.25 }   // (step C15c: the linkers retire)
+  light: ELECTRONS ? { label: 'mineral spring', mix: CB_LIP ? (G_SPRING > 0 ? { gt: 0.6, G: G_SPRING } : { gt: 0.6 }) : { gt: 0.6, l: 0.2, L: 0.2 }, stroke: 1.25 }   // (step C15c: the linkers
+                                                                                     // retire; step C15d: a little iron-like G)
     : { label: 'light spring', mix: { g: 1 / 3, t: 1 / 3, l: 1 / 3 }, stroke: 1.25 },
   heavy: ELECTRONS ? { label: 'vent', mix: { G: 0.2, gT: 0.36, GT: 0.4, trace: 0.04 }, stroke: 2.25 }
     : { label: 'heavy spring', mix: { G: 0.32, T: 0.32, L: 0.32, trace: 0.04 }, stroke: 2.25 },

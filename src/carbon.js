@@ -55,6 +55,13 @@ export const CARBON = !(QS && QS.get('electrons') === '0') && !(QS && QS.get('ca
  */
 export const CB_LIP = CARBON && !(QS && QS.get('cblip') === '0');
 /** Step C15c: sugar-unit-like carbon at the mineral spring, molecules per atom of its rate (?cbsugar=; 0: CO2-like only, as C15b). */
+/**
+ * Step C15d (fix d), IRON AT THE MINERAL SPRING: while carbon makes the cell, every enzyme holds a heavy giver G (C15c), and only vents
+ * dripped any, so dishes far from a vent ran out (the shallows: 35-62 % of the cells short of G). A mineral spring that weathers rock carries
+ * a little dissolved metal: G_SPRING of its atoms are G, in the place of the retired linkers (per atom of its rate, so per area for D1's
+ * patches, booked as every spring's). ?cbgspring= (0: none, as C15c).
+ */
+export const G_SPRING = (() => { const v = QS && QS.has('cbgspring') ? Number(QS.get('cbgspring')) : 0.01; return CB_LIP && Number.isFinite(v) ? Math.max(0, Math.min(0.4, v)) : 0; })();
 const SUGAR = (() => { const v = QS && QS.has('cbsugar') ? Number(QS.get('cbsugar')) : 0.06; return Number.isFinite(v) ? Math.max(0, v) : 0.06; })();
 
 export const ATOM_SCALE = 4096;

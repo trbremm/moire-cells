@@ -1,0 +1,105 @@
+{
+ "name": "g0b-check",
+ "description": "step G0b books check: 420 s at MAX (seed 5), whole dish lit, perfusion on; obstacles painted over the culture and its springs (matter pushed out), erased, undone, switched off and on, the through-flow's solve off and on, cleared, a round dish, pillars again, a squeeze 0.8 and a stretch 1.25, a resize, a snapshot saved and loaded: atoms and charge rounding must stay 0",
+ "query": {
+  "seed": 5,
+  "light": "full",
+  "perfusion": 1
+ },
+ "duration": 420,
+ "sample_every": 10,
+ "stall": 300,
+ "snapshots": [],
+ "resizes": [
+  {
+   "t": 300,
+   "size": "1000x700"
+  },
+  {
+   "t": 330,
+   "size": "1280x800"
+  }
+ ],
+ "shots": [
+  {
+   "t": 40,
+   "name": "painted"
+  },
+  {
+   "t": 60,
+   "view": "machinery",
+   "name": "mach"
+  },
+  {
+   "t": 180,
+   "name": "round"
+  },
+  {
+   "t": 420,
+   "panel": true,
+   "name": "panel"
+  }
+ ],
+ "evals": [
+  {
+   "t": 20,
+   "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.line(0.5 * W, 0.05 * H, 0.5 * W, 0.95 * H, 2 * R); O.rect(0.55 * W, 0.3 * H, 30 * R, 20 * R, 'solid', R); O.pillars(0.15 * W, 0.2 * H, 0.35 * W, 0.8 * H, 2.5 * R, 9 * R); O.circle(0.6 * W, 0.7 * H, 8 * R, 'porous'); for (const s of moire.matter.springs) O.circle(s.x, s.y, 3 * R); return `painted ${O.shapes.length}`"
+  },
+  {
+   "t": 45,
+   "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+  },
+  {
+   "t": 70,
+   "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.erase(0.5 * W, 0.4 * H, 0.5 * W, 0.6 * H, 3 * R); return 'erased'"
+  },
+  {
+   "t": 90,
+   "js": "return moire.obstacles.undo()"
+  },
+  {
+   "t": 100,
+   "js": "moire.obstacles.params.on = false; return 'obstacles.on False'"
+  },
+  {
+   "t": 115,
+   "js": "moire.obstacles.params.on = true; return 'obstacles.on True'"
+  },
+  {
+   "t": 120,
+   "js": "moire.obstacles.params.flow = false; return 'obstacles.flow False'"
+  },
+  {
+   "t": 135,
+   "js": "moire.obstacles.params.flow = true; return 'obstacles.flow True'"
+  },
+  {
+   "t": 150,
+   "js": "moire.obstacles.clear(); return moire.obstacles.setRound(true)"
+  },
+  {
+   "t": 160,
+   "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.pillars(0.3 * W, 0.3 * H, 0.7 * W, 0.7 * H, 2 * R, 8 * R); return `pillars ${O.shapes.length}`"
+  },
+  {
+   "t": 200,
+   "js": "await moire.dish.scale(0.8); return 'squeezed'"
+  },
+  {
+   "t": 240,
+   "js": "await moire.dish.scale(1.25); return 'stretched'"
+  },
+  {
+   "t": 260,
+   "js": "moire.obstacles.setRound(false); const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.line(0.2 * W, 0.5 * H, 0.8 * W, 0.5 * H, 3 * R); return 'square, a wall'"
+  },
+  {
+   "t": 360,
+   "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return JSON.stringify({ exact: r.exact, notes: r.notes, rounding: r.rounding, shapes: (S.obstacles || {}).shapes.length })"
+  },
+  {
+   "t": 419,
+   "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+  }
+ ]
+}

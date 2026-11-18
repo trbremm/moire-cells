@@ -1,0 +1,133 @@
+{
+ "batch": "g0b-quick",
+ "runs": [
+  {
+   "name": "g0b-chip",
+   "description": "step G0b quick: chip, 10 min",
+   "query": {
+    "preset": "chip"
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 300,
+     "name": "t300"
+    },
+    {
+     "t": 600,
+     "name": "end"
+    },
+    {
+     "t": 600,
+     "view": "machinery",
+     "name": "end_mach"
+    }
+   ],
+   "evals": [
+    {
+     "t": 60,
+     "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+    },
+    {
+     "t": 300,
+     "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+    },
+    {
+     "t": 599,
+     "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+    }
+   ]
+  },
+  {
+   "name": "g0b-crevices",
+   "description": "step G0b quick: crevices, 10 min",
+   "query": {
+    "preset": "crevices"
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 300,
+     "name": "t300"
+    },
+    {
+     "t": 600,
+     "name": "end"
+    },
+    {
+     "t": 600,
+     "view": "machinery",
+     "name": "end_mach"
+    }
+   ],
+   "evals": [
+    {
+     "t": 60,
+     "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+    },
+    {
+     "t": 300,
+     "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+    },
+    {
+     "t": 599,
+     "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+    }
+   ]
+  },
+  {
+   "name": "g0b-fronts",
+   "description": "step G0b quick: fronts, 10 min",
+   "query": {
+    "preset": "fronts"
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 300,
+     "name": "t300"
+    },
+    {
+     "t": 600,
+     "name": "end"
+    },
+    {
+     "t": 600,
+     "view": "machinery",
+     "name": "end_mach"
+    }
+   ],
+   "evals": [
+    {
+     "t": 0,
+     "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.rect(0.3 * W, 0.2 * H, 10 * R, 22 * R, 'solid', R); O.rect(0.5 * W, 0.55 * H, 10 * R, 22 * R, 'solid', R); O.circle(0.68 * W, 0.4 * H, 9 * R); return 'blocks'"
+    },
+    {
+     "t": 60,
+     "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+    },
+    {
+     "t": 300,
+     "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+    },
+    {
+     "t": 599,
+     "js": "const m = await moire.obstacles.measure(); return JSON.stringify(m)"
+    }
+   ]
+  }
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

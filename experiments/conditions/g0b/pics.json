@@ -1,0 +1,258 @@
+{
+ "batch": "g0b-pics",
+ "seeds": [
+  3
+ ],
+ "runs": [
+  {
+   "name": "g0b-pics-chip",
+   "description": "step G0b pictures: chip, at 300 s: neon, the machinery view, a close zoom, harmonic",
+   "query": {
+    "preset": "chip"
+   },
+   "duration": 310,
+   "sample_every": 60,
+   "stall": 300,
+   "snapshots": [],
+   "dpr": 2,
+   "shots": [
+    {
+     "t": 300,
+     "name": "dish_neon"
+    },
+    {
+     "t": 302,
+     "view": "machinery",
+     "name": "dish_mach"
+    },
+    {
+     "t": 304,
+     "name": "zoom_neon"
+    },
+    {
+     "t": 306,
+     "name": "zoom_harm"
+    },
+    {
+     "t": 308,
+     "name": "dish_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 303,
+     "js": "moire.camera.set(3.5, 0.25 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 305,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    },
+    {
+     "t": 307,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  },
+  {
+   "name": "g0b-pics-crevices",
+   "description": "step G0b pictures: crevices, at 300 s: neon, the machinery view, a close zoom, harmonic",
+   "query": {
+    "preset": "crevices"
+   },
+   "duration": 310,
+   "sample_every": 60,
+   "stall": 300,
+   "snapshots": [],
+   "dpr": 2,
+   "shots": [
+    {
+     "t": 300,
+     "name": "dish_neon"
+    },
+    {
+     "t": 302,
+     "view": "machinery",
+     "name": "dish_mach"
+    },
+    {
+     "t": 304,
+     "name": "zoom_neon"
+    },
+    {
+     "t": 306,
+     "name": "zoom_harm"
+    },
+    {
+     "t": 308,
+     "name": "dish_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 303,
+     "js": "moire.camera.set(3.5, 0.42 * moire.dish.W, 0.68 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 305,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    },
+    {
+     "t": 307,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  },
+  {
+   "name": "g0b-pics-maze",
+   "description": "step G0b pictures: maze, at 300 s: neon, the machinery view, a close zoom, harmonic",
+   "query": {
+    "preset": "maze"
+   },
+   "duration": 310,
+   "sample_every": 60,
+   "stall": 300,
+   "snapshots": [],
+   "dpr": 2,
+   "shots": [
+    {
+     "t": 300,
+     "name": "dish_neon"
+    },
+    {
+     "t": 302,
+     "view": "machinery",
+     "name": "dish_mach"
+    },
+    {
+     "t": 304,
+     "name": "zoom_neon"
+    },
+    {
+     "t": 306,
+     "name": "zoom_harm"
+    },
+    {
+     "t": 308,
+     "name": "dish_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 303,
+     "js": "moire.camera.set(2.5, 0.5 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 305,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    },
+    {
+     "t": 307,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  },
+  {
+   "name": "g0b-pics-fronts",
+   "description": "step G0b pictures: fronts, at 300 s: neon, the machinery view, a close zoom, harmonic",
+   "query": {
+    "preset": "fronts"
+   },
+   "duration": 310,
+   "sample_every": 60,
+   "stall": 300,
+   "snapshots": [],
+   "dpr": 2,
+   "shots": [
+    {
+     "t": 300,
+     "name": "dish_neon"
+    },
+    {
+     "t": 302,
+     "view": "machinery",
+     "name": "dish_mach"
+    },
+    {
+     "t": 304,
+     "name": "zoom_neon"
+    },
+    {
+     "t": 306,
+     "name": "zoom_harm"
+    },
+    {
+     "t": 308,
+     "name": "dish_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 0,
+     "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.rect(0.3 * W, 0.2 * H, 10 * R, 22 * R, 'solid', R); O.rect(0.5 * W, 0.55 * H, 10 * R, 22 * R, 'solid', R); O.circle(0.68 * W, 0.4 * H, 9 * R); return 'blocks'"
+    },
+    {
+     "t": 303,
+     "js": "moire.camera.set(3, 0.5 * moire.dish.W, 0.6 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 305,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    },
+    {
+     "t": 307,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  },
+  {
+   "name": "g0b-pics-round",
+   "description": "step G0b pictures: round, at 300 s: neon, the machinery view, a close zoom, harmonic",
+   "query": {
+    "dish": "round",
+    "light": "full"
+   },
+   "duration": 310,
+   "sample_every": 60,
+   "stall": 300,
+   "snapshots": [],
+   "dpr": 2,
+   "shots": [
+    {
+     "t": 300,
+     "name": "dish_neon"
+    },
+    {
+     "t": 302,
+     "view": "machinery",
+     "name": "dish_mach"
+    },
+    {
+     "t": 304,
+     "name": "zoom_neon"
+    },
+    {
+     "t": 306,
+     "name": "zoom_harm"
+    },
+    {
+     "t": 308,
+     "name": "dish_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 303,
+     "js": "moire.camera.set(3, 0.5 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 305,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    },
+    {
+     "t": 307,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  }
+ ]
+}

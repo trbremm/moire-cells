@@ -136,3 +136,28 @@ dump({"batch": "c15d-ab4", "runs": [
     ab("ab4-all-colonies", "all fixes (a)-(f) + (d) G at the mineral spring; colonies of wild founders, seed 3, 10 min", {}, scene="colonies"),
     ab("ab4-all", "all fixes (a)-(f) + (d); default scene, seed 3, 10 min", {}),
 ]}, "ab4.json")
+
+# ---------- watch: the scenes the step must make viable, every fix on, against ?carbon=0 at the same seed ----------
+SCENES = {
+    "default": ("default scene (spotlight, mineral spring, vent, a lasting fuel seep)", {}, False),
+    "colonies": ("colonies preset (five wild founders' colonies, the whole dish lit)", dict(COLONIES), False),
+    "shallows": ("Sunlit shallows preset", {"preset": "shallows"}, False),
+    "oxy-spot": ("oxygen conditions (lasting mineral spring, a vent dripping 2 s in 20, spotlight)", {}, True),
+    "oxy-full": ("oxygen conditions, the whole dish lit", {"light": "full"}, True),
+}
+
+
+def watch(key, seed, dur, off=False):
+    desc, q, oxy = SCENES[key]
+    name = f"c15d-w-{key}{'-off' if off else ''}_s{seed}"
+    shots = [{"t": 300}, {"t": 600}, {"t": dur, "name": "end"}, {"t": dur, "panel": True, "name": "panel"}]
+    return run(name, f"{desc}, {'?carbon=0' if off else 'carbon economy (every C15d fix on)'}, seed {seed}, {dur // 60} min",
+               {"seed": seed, **({"carbon": 0} if off else {}), **q}, dur, tuple(range(60, dur + 1, 60)), shots, oxygen=oxy,
+               snap=not off, harmonic=not off)
+
+
+dump({"batch": "c15d-watch", "runs": [
+    watch("default", 3, 1200), watch("default", 7, 1200), watch("default", 7, 1200, off=True),
+    watch("colonies", 3, 1200), watch("colonies", 7, 1200), watch("colonies", 7, 1200, off=True),
+    watch("shallows", 3, 900), watch("oxy-spot", 3, 600), watch("oxy-full", 3, 600),
+]}, "watch.json")

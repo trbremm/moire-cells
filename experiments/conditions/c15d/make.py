@@ -108,3 +108,17 @@ dump({"batch": "c15d-ab2", "runs": [
     ab("ab2-all-colonies", "all fixes (a)-(e2); colonies of wild founders, seed 3, 10 min", {}, scene="colonies"),
     ab("ab2-gran", "fixes (e1) fat from granules + (e2) hunger alone; default scene, seed 3, 10 min", {**OFF2, "cbgran": 1, "cbhunger": 1}),
 ]}, "ab2.json")
+
+# diag2: every part's carbon rule off at once (does carbon in the open dish alone hold the count down?), and the colonies' killers
+dump({"batch": "c15d-diag2", "runs": [
+    ab("diag2-partsoff", "diagnosis: body, enzymes and carbon membranes off (?cbgrow=0&cbenz=0&cblip=0); default scene, seed 3, 10 min",
+       {"cbgrow": 0, "cbenz": 0, "cblip": 0}),
+    ab("diag2-col-partsoff", "diagnosis: the same, colonies of wild founders, seed 3, 10 min", {"cbgrow": 0, "cbenz": 0, "cblip": 0}, scene="colonies"),
+]}, "diag2.json")
+
+# ab3: + founders start with their pigment (f); the pigment is the gate (diag: 100x less pigment held than with ?carbon=0)
+dump({"batch": "c15d-ab3", "runs": [
+    ab("ab3-all", "all fixes (a)-(f); default scene, seed 3, 10 min", {}),
+    ab("ab3-all-colonies", "all fixes (a)-(f); colonies of wild founders, seed 3, 10 min", {}, scene="colonies"),
+    ab("ab3-pig-only", "fix (f) alone (founders' pigment); default scene, seed 3, 10 min", {**OFF2, "cbpigfound": 1}),
+]}, "ab3.json")

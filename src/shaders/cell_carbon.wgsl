@@ -827,7 +827,7 @@ fn cb_make2(nT: i32, n: i32, S: ptr<function, array<i32, 5>>, m: ptr<function, a
           (*S)[j1] -= xs;
           (*S)[j2] -= xs;
           var need = xs * d;
-          for (var pass = 0; pass < 4 && need > 0; pass++) {
+          for (var it = 0; it < 4 && need > 0; it++) {
             for (var qq = 0u; qq < 4u; qq++) {
               let q = 3u - qq;
               let k = min(need, max((*S)[q], 0));

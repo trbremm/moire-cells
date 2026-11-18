@@ -1088,7 +1088,7 @@ fn cb_found_enz(i: u32, r: f32, slot: u32) {
  */
 fn cb_found_pig(i: u32, r: f32, slot: u32) {
   if (!cb_lip() || CBP.v.y <= 0.0 || (n1_flags() & NLF_MATTER) == 0u) { return; }
-  let n = i32(round(EP.nl[0].y * 3.14159265 * r * r / max(EP.R * EP.R, 1e-6) * ATOM_SCALE * clamp(CBP.v.y, 0.0, 4.0)));
+  let n = i32(round(EP.nl[0].y * 3.14159265 * r * r / max(EP.R * EP.R, 1e-6) * clamp(CBP.v.y, 0.0, 4.0)));   // (nl[0].y: counts per R^2)
   if (n <= 0) { return; }
   atomicAdd(&stock[i * SW + W_PIG], n);
   for (var q = 0u; q < 3u; q++) {

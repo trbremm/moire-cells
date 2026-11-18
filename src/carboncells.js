@@ -93,7 +93,8 @@ export class CarbonCells {
       growth: true,      // GROWTH NEEDS CARBON: a body of carbon, built from the stock; division only with it full (?cbgrow=0)
       kGraze: 0.05,      // share of the tar under the cell taken per s, per unit of the grazing engines' expressed rate
       kDis: 0.2,         // per s: loose granule carbons leaving as molecules (the dish's: 0.02)
-      kBody: 0.05,       // the body's want: carbon units per R^2 of the cell's area (?cbbody=)
+      kBody: 0.05,       // the body's want: carbon units per R^2 of the cell's area (?cbbody=; step C15c: 0.025 while carbon makes the cell,
+                         // below: the membranes, walls, pigments, glue and enzymes are carbon now too, the body is the rest of the cell)
       kBuild: 0.5,       // share of the body's shortfall built per s (?cbbuild=)
       found: 1.35,       // the founders' body at a new culture, as a share of a radius-R cell's want (1.35: full for the biggest founder,
                          // size gene 1.15; ?cbfound=; booked as carbon and energy in)
@@ -117,6 +118,7 @@ export class CarbonCells {
     this.census = null;
     this.series = [];
     this.ledger = null;
+    if (CB_LIP) this.params.kBody = 0.025;   // step C15c: checked against what a grazing cell takes in (EXPERIMENTS.md)
     this.ab = new ArrayBuffer(128);   // struct CbCellP (80 until step C15c)
     this.tot2 = Object.fromEntries(EV2.map((k) => [k, 0]));   // step C15c
     this.hist2 = [];

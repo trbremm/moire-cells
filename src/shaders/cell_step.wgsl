@@ -335,6 +335,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         var R0k = R0;
         var sA = 0.0;
         var tB = 0.0;
+        var kLine = 1.0;                         // step S1: a LINE contact (rods side by side) is stiffer: x (1 + its length / the contact distance)
         var oK = vec4f(1.0, 0.0, 0.0, o.r);
         if (shOn) {
           let far = myReach + 2.05 * o.r;        // (at most h + 1.45 rho of the neighbour at an aspect of 4: a cheap test first)
@@ -344,6 +345,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
             dk = d + st.y * oK.xy - st.x * myK.xy;
             sA = st.x;
             tB = st.y;
+            kLine = 1.0 + st.z / max(myK.w + oK.w, 1e-3);
           }
           R0k = myK.w + oK.w;
         }
@@ -622,7 +624,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
             }
             // (minus a baseline: unlike neighbours push off a little, which lets the tissue sort itself out)
             // (step S1: along the contact's direction, at the contact: off a long cell's centre it turns it)
-            let fa = uk * (touch * near * (stick - S.adhBase) * S.adhesion * S.R * S.stiffness);
+            let fa = uk * (touch * near * (stick - S.adhBase) * S.adhesion * S.R * S.stiffness * kLine);   // (step S1: along a line contact's length)
             f += fa;
             sTq += sA * (myK.x * fa.y - myK.y * fa.x);
             pairStick = stick;
@@ -676,7 +678,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           u = vec2f(cos(a), sin(a)) * select(-1.0, 1.0, i < beats[k].idx);
         }
         if (dist < Rt) {
-          let fp = u * S.stiffness * kx * (Rt - dist) * (1.0 - FL.p1d.w * wrapP);   // (step P1: softer while wrapped)
+          let fp = u * S.stiffness * kx * (Rt - dist) * (1.0 - FL.p1d.w * wrapP) * kLine;   // (step P1: softer while wrapped; S1: x a line contact's length)
           f -= fp;
           sTq -= sA * (myK.x * fp.y - myK.y * fp.x);   // (step S1: at the contact)
         }

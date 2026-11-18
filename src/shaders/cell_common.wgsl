@@ -1558,9 +1558,11 @@ fn capsule(r: f32, e: vec2f, on: bool) -> vec4f {
   return vec4f(u, (A - 1.0) * rho, rho);
 }
 // the closest points of two core segments (a from its centre along ua, half-length ha; b the same; d = b's centre - a's): their places
-// along them (s on a, t on b). Nearly parallel segments meet in the middle of their overlap (no jumping from end to end)
-fn seg_closest(d: vec2f, ua: vec2f, ha: f32, ub: vec2f, hb: f32) -> vec2f {
-  if (ha <= 0.0 && hb <= 0.0) { return vec2f(0.0); }
+// along them (s on a, t on b), and z the LENGTH they lie along each other (the overlap of b's projection on a, x cos^2 of their angle: a
+// line contact for parallel rods side by side, 0 for crossed ones or two ends). Nearly parallel segments meet in the middle of their
+// overlap (no jumping from end to end)
+fn seg_closest(d: vec2f, ua: vec2f, ha: f32, ub: vec2f, hb: f32) -> vec3f {
+  if (ha <= 0.0 && hb <= 0.0) { return vec3f(0.0); }
   let b = dot(ua, ub);
   let c = dot(ua, d);
   let f = dot(ub, d);
@@ -1573,7 +1575,7 @@ fn seg_closest(d: vec2f, ua: vec2f, ha: f32, ub: vec2f, hb: f32) -> vec2f {
   var s = mix(sp, sg, smoothstep(1e-3, 1e-2, den));
   let t = clamp(s * b - f, -hb, hb);
   s = clamp(c + t * b, -ha, ha);
-  return vec2f(s, t);
+  return vec3f(s, t, max(hi - lo, 0.0) * b * b);
 }
 // the gap between two cells' capsules (x: the distance between their core segments) and their contact distance (y: the sum of their end
 // radii); off: the centres' distance and r_a + r_b, exactly as before

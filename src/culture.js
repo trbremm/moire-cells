@@ -3,8 +3,9 @@
 // light go, so every preset opens by URL (?preset=vent) and can be shared as a link.
 //
 // URL options (read by src/main.js before anything else; a preset's own options never override the URL's):
-//   ?preset=name        vent | fronts | chip | shallows | oxygen | slick | desert | oases | plumes | colonies | lab (PRESETS below; step N1: oases, plumes;
-//                       step T1b: colonies)
+//   ?preset=name        vent | fronts | chip | crevices | maze | shallows | oxygen | slick | desert | oases | plumes | colonies | lab (PRESETS below;
+//                       step N1: oases, plumes; step T1b: colonies; step G0b: crevices, maze, and the chip's walls and pillars: a preset's
+//                       `obstacles({ obs, W, H, R })` paints them before the culture is seeded; ?presetwalls=0 leaves them out)
 //   ?spread=clump|scatter|colonies|ring   how the founders are placed (default clump: the old blob at the centre); with any
 //                       spread but clump the pull to the dish centre is nearly off (squeeze 0.02), so the culture stays spread
 //   ?colonies=N         how many colonies (spread=colonies; default 5)
@@ -63,11 +64,89 @@ export const PRESETS = {
     },
   },
   // the microfluidic chip (the user, 2026-11-17: "maybe the microfluidics chip analogy is better"; src/perfusion.js)
+  // step G0b: with the chip's walls and pillars (src/obstacles.js); the through-flow is pressure-driven, solved round them
   chip: {
     label: 'Chip',
-    desc: 'A microfluidic channel. Fresh medium (minerals, linkers, some fuel and trace) flows in along the left wall, the water drifts slowly to the right, fastest down the middle, and leaves at the right wall with whatever it carries. Cells scattered along the channel, the whole dish lit: who thrives at the fresh inlet, who lives on what is left downstream?',
-    query: { dish: '396x124', perfusion: 1, light: 'full', spread: 'scatter', scarce: 0, oases: 0 },
+    desc: 'A microfluidic chip. Fresh medium (minerals, linkers, some fuel and trace) flows in along the left wall and is pushed to the right: it threads through an array of round pillars (fast in the gaps, still just behind each pillar), sweeps past a side chamber whose narrow neck keeps the water inside nearly still (a dead zone, a refuge), and leaves at the right wall with whatever it carries. Cells scattered along the channel, the whole dish lit: who thrives at the fresh inlet, who settles in the still places?',
+    query: { dish: '396x124', perfusion: 1, light: 'full', spread: 'scatter', scarce: 0, oases: 0, curspeed: 0, gyre: 0 },   // (step G0b: no lake eddies in a chip)
+    obstacles({ obs, W, H, R }) {
+      // the pillar array: round pillars 3 R in radius, centres 11 R apart (a staggered array), over the first third of the channel
+      obs.pillars(0.27 * W, 0.13 * H, 0.47 * W, 0.87 * H, 3 * R, 11 * R);
+      // the side chamber below the channel, 0.2 of its length, open to it through a neck 8 R wide in the middle of its roof
+      const x0 = 0.62 * W, x1 = 0.84 * W, y0 = 0.6 * H, w = 2 * R, neck = 8 * R, xm = (x0 + x1) / 2;
+      obs.path([[x0, H + w], [x0, y0], [xm - neck / 2, y0]], w);
+      obs.path([[xm + neck / 2, y0], [x1, y0], [x1, H + w]], w);
+      // a few blocks to flow round downstream (a dead zone behind each)
+      obs.rect(0.9 * W, 0.18 * H, 6 * R, 18 * R, 'solid', R);
+      obs.rect(0.55 * W, 0.12 * H, 12 * R, 5 * R, 'solid', R);
+    },
     scene() {},
+  },
+  // step G0b: a rock face with cracks (refuges from the shear of the currents, the predators, the light)
+  crevices: {
+    label: 'Crevices',
+    desc: 'A rock face fills the lower part of the dish, cut by narrow cracks that branch into it, with a few boulders in the open water above. The slow eddies and the basin\'s gyre sweep the open water but cannot reach into the cracks, where the water is still and whatever drips in stays. Mineral springs in the open, a vent seeping at the foot of the rock; cells scattered in the open: do they find the cracks, and does life in them differ from life in the stream?',
+    query: { light: 'full', spread: 'scatter', curspeed: 0.6, gyre: 0.4, scarce: 0, oases: 0 },   // (no roaming oases: they could rise inside the rock)
+    obstacles({ obs, W, H, R }) {
+      const top = 0.58 * H;
+      obs.rect(-2 * R, top, W + 4 * R, H - top + 4 * R, 'solid', 0);
+      // cracks (cut out of the rock): jagged lines from the face down into it, 2.6 R wide, some branching; fixed shapes (no random draw)
+      const cracks = [
+        [[0.08, 0], [0.1, 0.16], [0.07, 0.3], [0.11, 0.45]],
+        [[0.22, 0], [0.2, 0.12], [0.25, 0.25], [0.23, 0.36]], [[0.25, 0.25], [0.31, 0.33], [0.33, 0.42]],
+        [[0.4, 0], [0.43, 0.14], [0.41, 0.3], [0.45, 0.5]],
+        [[0.55, 0], [0.53, 0.1], [0.58, 0.2], [0.56, 0.32]], [[0.53, 0.1], [0.47, 0.2]],
+        [[0.7, 0], [0.73, 0.17], [0.7, 0.28], [0.74, 0.42], [0.79, 0.5]],
+        [[0.86, 0], [0.84, 0.13], [0.89, 0.24]], [[0.84, 0.13], [0.8, 0.22], [0.82, 0.3]],
+      ];
+      const depth = H - top;
+      for (const c of cracks) obs.path(c.map(([x, y]) => [x * W, top - (y === 0 ? 2 * R : 0) + y * depth]), 2.6 * R, 'erase');
+      // a pocket at the end of two cracks (a small cave)
+      obs.add({ type: 'circle', x: 0.45 * W, y: top + 0.5 * depth, r: 4 * R, kind: 'erase' });
+      obs.add({ type: 'circle', x: 0.11 * W, y: top + 0.45 * depth, r: 3.5 * R, kind: 'erase' });
+      // boulders in the open water
+      for (const [x, y, r] of [[0.16, 0.3, 4], [0.33, 0.18, 3], [0.62, 0.36, 5], [0.81, 0.22, 3.5], [0.48, 0.44, 2.5]]) obs.circle(x * W, y * H, r * R);
+    },
+    scene({ matter, W, H }) {
+      for (const [x, y] of [[0.2, 0.15], [0.5, 0.2], [0.85, 0.4]]) matter.addSpring(x * W, y * H, 'light', 1e9);
+      matter.addSpring(0.63 * W, 0.555 * H, 'heavy', 1e9, { rate: 4 });   // a slow vent at the foot of the rock
+    },
+  },
+  // step G0b: a maze of walls (corridors about 20 R wide), springs at three corners
+  maze: {
+    label: 'Maze',
+    desc: 'A labyrinth of thin walls, corridors about ten cells wide. Springs drip at three far corners and the culture starts in the middle: matter creeps along the corridors by itself (the currents cannot cross the walls), dead ends fill up, and colonies have to follow the corridors to reach the food.',
+    query: { light: 'full', spread: 'clump', cells: 600, curspeed: 0.25 },
+    obstacles({ obs, W, H, R }) {
+      // a fixed maze on a coarse grid of cells (the corridors), walls 1.5 R wide; drawn as a set of wall segments
+      const n = 7, m = Math.max(4, Math.round(n * H / W)), cw = W / n, ch = H / m, w = 1.5 * R;
+      // a fixed spanning tree (a simple deterministic generator: no random draw from the culture's stream)
+      let z = 12345;
+      const rnd = () => { z = (z * 1103515245 + 12345) & 0x7fffffff; return z / 0x7fffffff; };
+      const seen = new Uint8Array(n * m), open = new Set();
+      const stack = [[Math.floor(n / 2), Math.floor(m / 2)]];
+      seen[stack[0][1] * n + stack[0][0]] = 1;
+      while (stack.length) {
+        const [x, y] = stack[stack.length - 1];
+        const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => [x + dx, y + dy]).filter(([a, b]) => a >= 0 && b >= 0 && a < n && b < m && !seen[b * n + a]);
+        if (!nb.length) { stack.pop(); continue; }
+        const [a, b] = nb[Math.floor(rnd() * nb.length)];
+        seen[b * n + a] = 1;
+        open.add(`${Math.min(x, a)},${Math.min(y, b)},${a !== x ? 'v' : 'h'}`);
+        stack.push([a, b]);
+      }
+      for (let y = 0; y < m; y++) {
+        for (let x = 0; x < n; x++) {
+          if (x + 1 < n && !open.has(`${x},${y},v`)) obs.line((x + 1) * cw, y * ch - (y === 0 ? w : 0), (x + 1) * cw, (y + 1) * ch + (y === m - 1 ? w : 0), w);
+          if (y + 1 < m && !open.has(`${x},${y},h`)) obs.line(x * cw - (x === 0 ? w : 0), (y + 1) * ch, (x + 1) * cw + (x === n - 1 ? w : 0), (y + 1) * ch, w);
+        }
+      }
+    },
+    scene({ matter, W, H }) {
+      matter.addSpring(0.06 * W, 0.08 * H, 'light', 1e9, { rate: 30 });
+      matter.addSpring(0.94 * W, 0.92 * H, 'heavy', 1e9, { rate: 12 });
+      matter.addSpring(0.94 * W, 0.08 * H, 'light', 1e9, { rate: 30 });
+    },
   },
   shallows: {
     label: 'Sunlit shallows',
@@ -313,8 +392,10 @@ export function openCultureDialog(ctx) {
     diversity: DIVERSITY.includes(cur.get('diversity')) ? cur.get('diversity') : 'mixed',
     founders: FOUNDER_MODES.includes(cur.get('founders')) ? cur.get('founders') : C.genome.params.founderMode || 'std',   // (step T1a)
     newSeed: true,
-    dish: Object.keys(DISH_SIZES).find((k) => DISH_SIZES[k][1] && DISH_SIZES[k][1].join('x') === cur.get('dish')) || 'window',   // (the dish's size)
+    dish: Object.keys(DISH_SIZES).find((k) => DISH_SIZES[k][1] && DISH_SIZES[k][1].join('x') === String(cur.get('dish') || '').replace(/,?\s*round$/i, '')) || 'window',   // (the dish's size)
+    round: /round$/i.test(String(cur.get('dish') || '')) || cur.get('round') === '1',   // (step G0b: a round dish)
   };
+  const round0 = st.round;
   const dish0 = st.dish;
   const wrap = el('div', 'dlg-wrap');
   wrap.id = 'culture';
@@ -346,7 +427,12 @@ export function openCultureDialog(ctx) {
   const dsRow = el('div', 'rmain');
   const dsSeg = el('span', 'seg');
   for (const [k, [label]] of Object.entries(DISH_SIZES)) { const b = el('button', '', label); b.type = 'button'; b.dataset.dish = k; dsSeg.append(b); }
-  dsRow.append(el('span', 'lbl', 'size'), dsSeg);
+  const rdSeg = el('span', 'seg');
+  const rdBtn = el('button', '', 'round');
+  rdBtn.type = 'button'; rdBtn.dataset.round = '1';
+  rdBtn.title = 'a round dish: the outside of the circle is a solid rim (step G0b)';
+  rdSeg.append(rdBtn);
+  dsRow.append(el('span', 'lbl', 'size'), dsSeg, rdSeg);
   body.append(dsRow);
   const dsHelp = el('p', 'help', '');
   body.append(dsHelp);
@@ -429,10 +515,11 @@ export function openCultureDialog(ctx) {
     if (!st.newSeed) keep.set('seed', String(ctx.control.seed));
     const ds = DISH_SIZES[st.dish][1];
     if (ds && !(P && P.query.dish === ds.join('x'))) keep.set('dish', ds.join('x'));
+    if (st.round) keep.set('round', '1');   // (step G0b)
     u.search = keep.toString();
     return u.href;
   }
-  const inPlace = () => !st.preset && st.cells === C.start && st.dish === dish0;
+  const inPlace = () => !st.preset && st.cells === C.start && st.dish === dish0 && st.round === round0;
   function sync() {
     for (const b of envList.querySelectorAll('[data-env]')) b.setAttribute('aria-pressed', String(b.dataset.env === st.preset));
     for (const b of spSeg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.spread === st.spread));
@@ -443,7 +530,8 @@ export function openCultureDialog(ctx) {
     for (const b of fmSeg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.fm === st.founders));
     fmHelp.textContent = FOUNDER_HELP[st.founders];
     for (const b of dsSeg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.dish === st.dish));
-    dsHelp.textContent = DISH_SIZES[st.dish][2];
+    rdBtn.setAttribute('aria-pressed', String(!!st.round));
+    dsHelp.textContent = DISH_SIZES[st.dish][2] + (st.round ? '; round (the corners are a solid rim)' : '');
     link.textContent = inPlace() ? 'Starts here, now: the same dish, new cells (no reload).' : `Opens: ${url()}`;
     go.textContent = inPlace() ? 'start here' : 'open';
   }
@@ -466,6 +554,7 @@ export function openCultureDialog(ctx) {
     else if (b.dataset.div) st.diversity = b.dataset.div;
     else if (b.dataset.fm) st.founders = b.dataset.fm;
     else if (b.dataset.dish) st.dish = b.dataset.dish;
+    else if (b.dataset.round) st.round = !st.round;
     sync();
   });
   nIn.addEventListener('input', () => { st.cells = Math.max(1, Math.min(20000, Math.round(Number(nIn.value) || 1))); sync(); });

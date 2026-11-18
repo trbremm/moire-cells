@@ -158,8 +158,8 @@ def watch(key, seed, dur, off=False):
 
 dump({"batch": "c15d-watch", "runs": [
     watch("default", 3, 1200), watch("default", 7, 1200), watch("default", 7, 1200, off=True),
-    watch("colonies", 3, 1200), watch("colonies", 7, 1200), watch("colonies", 7, 1200, off=True),
-    watch("shallows", 3, 900), watch("oxy-spot", 3, 600), watch("oxy-full", 3, 600),
+    watch("colonies", 3, 900), watch("colonies", 7, 900), watch("colonies", 7, 900, off=True),
+    watch("shallows", 3, 600), watch("oxy-spot", 3, 600), watch("oxy-full", 3, 600),
 ]}, "watch.json")
 # ab5: + wall recycling (g)
 dump({"batch": "c15d-ab5", "runs": [

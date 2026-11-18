@@ -20,6 +20,10 @@
 //                    pauses for a moment (settle, as the genome edits of src/lab.js), so no division can take the slot meanwhile.
 //   pipette          a tool (the dropper): a tap drops a short spring of the substance picked in the molecules zoo (1.5 s, 40
 //                    atoms per s), booked as added like every spring; a drag drops more. Drops never push a real spring out.
+//   obstacles        step G0b (src/obstacles.js): a tool (the wall and pillars): WALL (a drag paints a pen line `width` R wide),
+//                    BLOCK (a drag spans a rectangle), PILLAR (a tap places a round pillar, a drag a row of them), ERASE (a drag cuts);
+//                    solid or POROUS (cells stopped, water and atoms pass). The tool's button again cycles the shape; the Dish panel
+//                    has the shapes, the kind, the width, undo, clear and the round dish. Touch works the same.
 //
 // createApp(ctx) is called by main.js before the toolbar is built (it hands the toolbar its extra panels), attach(ui) after.
 
@@ -42,7 +46,10 @@ const PIPETTE = { life: 1.5, rate: 40 };
 export const TOOL_ICONS = {
   cell: '<path d="M8.5 3.5l4.6 2.65v5.3L8.5 14.1l-4.6-2.65v-5.3z"/><circle cx="8.5" cy="8.8" r="1.3" fill="currentColor" stroke="none"/><path d="M15.5 12.5v5M13 15h5"/>',
   pipette: '<path d="M13.2 2.8l4 4-2 2-4-4z"/><path d="M12.2 7.8l-7 7-1.2 3.2 3.2-1.2 7-7"/><circle cx="4.2" cy="17.4" r="0.9" fill="currentColor" stroke="none"/>',
+  obstacle: '<rect x="2.8" y="3" width="6" height="14" rx="1"/><circle cx="14.2" cy="6.3" r="2.6"/><circle cx="14.2" cy="13.7" r="2.6"/>',   // step G0b
 };
+const OBS_SHAPES = ['wall', 'block', 'pillar', 'erase'];
+const OBS_WORD = { wall: 'wall: drag paints a wall', block: 'block: drag spans a block', pillar: 'pillar: tap places one, drag a row', erase: 'erase: drag cuts through' };
 
 const NS = 'http://www.w3.org/2000/svg';
 const UM_PER_R = 6;   // the scale bar's toy scale: a cell's radius is 6 micrometres (a cell 12 um across, as the CPU version's)
@@ -224,7 +231,58 @@ export function createApp(ctx) {
     r2.append(m2, h2);
     body.append(r2);
     if (D.follow) r2.style.display = 'none';
+    obstacleRow(body);
   };
+  // step G0b: the obstacle tool's choices (shape, kind, width), undo, clear, the round dish
+  function obstacleRow(body) {
+    const O = ctx.obstacles;
+    if (!O) return;
+    const r = document.createElement('div');
+    r.className = 'row t-do';
+    const m = document.createElement('div');
+    m.className = 'rmain';
+    const lbl = document.createElement('span');
+    lbl.className = 'lbl';
+    lbl.textContent = 'obstacles';
+    m.append(lbl);
+    const btns = [];
+    const mk = (text, title, run, on) => {
+      const b = document.createElement('button');
+      b.className = 'act'; b.type = 'button'; b.textContent = text; b.title = title;
+      b.addEventListener('click', () => { const t = run(); if (t) ctx.flash(t); sync(); });
+      btns.push([b, on]);
+      m.append(b);
+      return b;
+    };
+    for (const sh of OBS_SHAPES) mk(sh, OBS_WORD[sh], () => { ctx.app.setTool(toolIndex('obstacle')); O.params.shape = sh; if (A.ui) A.ui.refresh(); return `obstacles: ${obsText()}`; }, () => O.params.shape === sh);
+    mk('porous', 'porous: cells are stopped, water and atoms pass (a filter insert); off: solid', () => { O.params.kind = O.params.kind === 'porous' ? 'solid' : 'porous'; return `obstacles: ${O.params.kind}`; }, () => O.params.kind === 'porous');
+    mk('−', 'thinner walls, smaller pillars', () => { O.params.width = Math.max(0.5, O.params.width / 1.25); O.params.pillar = Math.max(0.5, O.params.pillar / 1.25); return `walls ${O.params.width.toFixed(1)} R wide, pillars ${O.params.pillar.toFixed(1)} R in radius`; });
+    mk('+', 'thicker walls, bigger pillars', () => { O.params.width = Math.min(20, O.params.width * 1.25); O.params.pillar = Math.min(20, O.params.pillar * 1.25); return `walls ${O.params.width.toFixed(1)} R wide, pillars ${O.params.pillar.toFixed(1)} R in radius`; });
+    mk('undo', 'remove the last shape painted', () => O.undo());
+    mk('clear', 'remove every obstacle', () => O.clear());
+    mk('round dish', 'the dish round (the outside of its circle a solid rim) or square', () => O.setRound(!O.round), () => O.round);
+    const h = document.createElement('p');
+    h.className = 'help';
+    h.textContent = 'the obstacle tool paints walls, blocks and pillars (or erases them): cells cannot enter, matter does not cross, the water flows round (with perfusion: a pressure-driven flow threads between them); porous ones stop only cells (moire.obstacles)';
+    function sync() { for (const [b, on] of btns) if (on) b.setAttribute('aria-pressed', on() ? 'true' : 'false'); }
+    sync();
+    r.append(m, h);
+    body.append(r);
+  }
+  const obsText = () => {
+    const O = ctx.obstacles, P = O.params;
+    const size = P.shape === 'pillar' ? `${P.pillar.toFixed(1)} R in radius` : P.shape === 'block' ? '' : `${P.width.toFixed(1)} R wide`;
+    return `${OBS_WORD[P.shape]}${P.shape !== 'erase' ? ` (${P.kind}${size ? `, ${size}` : ''})` : size ? ` (${size})` : ''}`;
+  };
+  /** The tool's flash (main.js setTool); its button again: the next shape. */
+  A.obstacleTool = (again) => {
+    const O = ctx.obstacles;
+    if (!O) return 'obstacles are not available';
+    if (again) O.params.shape = OBS_SHAPES[(OBS_SHAPES.indexOf(O.params.shape) + 1) % OBS_SHAPES.length];
+    if (A.ui) A.ui.refresh();
+    return `obstacles: ${obsText()} · the button again: the next shape · the Dish panel: kind, width, undo, clear`;
+  };
+  A.obstacleHint = () => (ctx.obstacles ? `${obsText()} · the button again: next shape` : 'drag: paint a wall');
   A.openCulture = () => openCultureDialog({ cells: ctx.cells, params: ctx.params, flash: ctx.flash, control: ctx.control, inPlace: ctx.inPlace });
   A.attach = (ui) => { A.ui = ui; };
 
@@ -245,6 +303,7 @@ export function createApp(ctx) {
   const toolNow = () => ctx.tools[ctx.app.tool] || {};
   A.dishDown = (x, y) => {
     const t = toolNow();
+    if (t.obstacle) return obsDown(x, y);
     if (!t.addCell && !t.pipette) return false;
     Object.assign(drag, { on: true, kind: t.addCell ? 'cell' : 'pip', x, y, pts: [[x, y]] });
     if (drag.kind === 'pip') drop(x, y);
@@ -252,6 +311,7 @@ export function createApp(ctx) {
   };
   A.dishMove = (x, y) => {
     if (!drag.on) return false;
+    if (drag.kind === 'obs') { obsMove(x, y); return true; }
     const R = ctx.cells.R, gap = drag.kind === 'cell' ? 2.1 * R : 3 * R;
     if (Math.hypot(x - drag.x, y - drag.y) >= gap) {
       drag.x = x; drag.y = y;
@@ -262,13 +322,62 @@ export function createApp(ctx) {
   A.dishUp = () => {
     if (!drag.on) return false;
     drag.on = false;
+    if (drag.kind === 'obs') { obsUp(); return true; }
     if (drag.kind === 'cell' && drag.pts.length) {
       const { g, label } = genomeNow();
       place(drag.pts, g, label);
     }
     return true;
   };
-  A.cancel = () => { drag.on = false; drag.pts = []; };
+  A.cancel = () => {
+    if (drag.on && drag.kind === 'obs' && ctx.obstacles) { ctx.obstacles.endStroke(); ctx.obstacles.prev = null; }
+    drag.on = false; drag.pts = [];
+  };
+
+  // ---------- step G0b: painting obstacles ----------
+  function obsDown(x, y) {
+    const O = ctx.obstacles;
+    if (!O) return false;
+    const P = O.params, R = ctx.cells.R;
+    Object.assign(drag, { on: true, kind: 'obs', x, y, x0: x, y0: y, pts: [[x, y]] });
+    if (P.shape === 'wall' || P.shape === 'erase') O.beginStroke(x, y, Math.max(0.5, P.width) * R, P.shape === 'erase' ? 'erase' : P.kind);
+    else if (P.shape === 'block') O.prev = { type: 'rect', x0: x, y0: y, x1: x, y1: y };
+    else O.prev = { type: 'circle', x, y, r: Math.max(0.5, P.pillar) * R };
+    return true;
+  }
+  function obsMove(x, y) {
+    const O = ctx.obstacles, P = O.params, R = ctx.cells.R;
+    if (P.shape === 'wall' || P.shape === 'erase') O.extendStroke(x, y);
+    else if (P.shape === 'block') { O.prev.x1 = x; O.prev.y1 = y; }
+    else {
+      // a row of pillars: one more every 2.6 radii along the drag
+      const r = Math.max(0.5, P.pillar) * R, gap = 2.6 * r;
+      const [lx, ly] = drag.pts[drag.pts.length - 1];
+      if (Math.hypot(x - lx, y - ly) >= gap) {
+        const a = Math.atan2(y - ly, x - lx), nx = lx + Math.cos(a) * gap, ny = ly + Math.sin(a) * gap;
+        if (drag.pts.length === 1) O.circle(lx, ly, r, P.kind);
+        drag.pts.push([nx, ny]);
+        O.circle(nx, ny, r, P.kind);
+      }
+      O.prev = { type: 'circle', x, y, r };
+    }
+  }
+  function obsUp() {
+    const O = ctx.obstacles, P = O.params, R = ctx.cells.R;
+    let text = '';
+    if (P.shape === 'wall' || P.shape === 'erase') { O.endStroke(); text = P.shape === 'erase' ? 'erased' : `a ${P.kind} wall`; }
+    else if (P.shape === 'block') {
+      const b = O.prev;
+      if (Math.abs(b.x1 - b.x0) > 0.5 * R && Math.abs(b.y1 - b.y0) > 0.5 * R) {
+        O.rect(Math.min(b.x0, b.x1), Math.min(b.y0, b.y1), Math.abs(b.x1 - b.x0), Math.abs(b.y1 - b.y0), P.kind, 0.3 * R);
+        text = `a ${P.kind} block`;
+      } else text = 'block: drag to span it';
+    } else if (drag.pts.length < 2) { O.circle(drag.x0, drag.y0, Math.max(0.5, P.pillar) * R, P.kind); text = `a ${P.kind} pillar`; }
+    else text = `${drag.pts.length} ${P.kind} pillars`;
+    O.prev = null;
+    ctx.background.impulse(drag.x0, drag.y0, 0.8);
+    if (text) ctx.flash(`${text} (undo in the Dish panel)`);
+  }
 
   function drop(x, y) {
     const s = SUBSTANCES[pick.sub];

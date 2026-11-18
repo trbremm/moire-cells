@@ -36,6 +36,8 @@ export const TOOLS = [
   // app (src/app.js): place cells (a genome picked in the cells zoo) and drop a substance (picked in the molecules zoo)
   { id: 'cell', name: 'add cells', label: 'place cells (pick a lineage in the cells zoo)', addCell: true },
   { id: 'pipette', name: 'pipette', label: 'drop a substance (pick one in the molecules zoo)', pipette: true },
+  // step G0b (src/obstacles.js): paint walls, blocks and pillars, or erase them (the Dish panel picks which; the button again cycles)
+  { id: 'obstacle', name: 'obstacles', label: 'paint walls, blocks, pillars (the Dish panel picks; the button again cycles)', obstacle: true },
 ];
 
 export const RULE_GROUPS = [
@@ -102,6 +104,7 @@ export function makeActions(app) {
         : t.id === 'spot' ? 'tap or drag: move the spotlight there (switches the light to spotlight)'
           : t.addCell ? 'tap: place a cell, drag: a line of cells (copies of the genome picked in the cells zoo; empty stock, the starter charge)'
             : t.pipette ? 'tap: drop the substance picked in the molecules zoo, drag: drop more (booked as added, like a spring)'
+              : t.obstacle ? 'drag: paint a wall (or a block, pillars, or erase: tap the button again or pick in the Dish panel); cells cannot enter, matter does not cross, water flows round'
               : `tap: ${t.label}; drag: stir`,
     })),
 

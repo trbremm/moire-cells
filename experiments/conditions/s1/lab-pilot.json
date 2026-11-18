@@ -1,0 +1,8 @@
+{"batch": "s1-labpilot", "runs": [
+ {"name": "s1-lab-spindle", "description": "tissue lab, 150 clones asking 3.3:1, 180 s", "query": {"preset": "lab", "cells": 150, "genes": "elongation:1.2"}, "duration": 180, "sample_every": 30, "stall": 120, "snapshots": [], "dpr": 2,
+  "shots": [{"t": 5, "name": "t5"}, {"t": 60, "name": "t60"}, {"t": 180, "name": "t180"}],
+  "evals": [{"t": 179, "js": "return JSON.stringify(moire.spindle.census)"}]},
+ {"name": "s1-lab-spindle-notorque", "description": "the same, torques off", "query": {"preset": "lab", "cells": 150, "genes": "elongation:1.2", "shapetorque": 0}, "duration": 180, "sample_every": 30, "stall": 120, "snapshots": [], "dpr": 2,
+  "shots": [{"t": 180, "name": "t180"}],
+  "evals": [{"t": 179, "js": "return JSON.stringify(moire.spindle.census)"}]}
+]}

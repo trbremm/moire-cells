@@ -1,0 +1,305 @@
+{
+ "batch": "s1-pics",
+ "seeds": [
+  3
+ ],
+ "runs": [
+  {
+   "name": "s1-pics-default",
+   "description": "step S1 pictures: default, at 300 s: neon, a close zoom (neon, harmonic), harmonic",
+   "query": {
+    "founders": "wild",
+    "wild": "shape"
+   },
+   "duration": 310,
+   "sample_every": 60,
+   "stall": 300,
+   "snapshots": [],
+   "dpr": 2,
+   "shots": [
+    {
+     "t": 300,
+     "name": "dish_neon"
+    },
+    {
+     "t": 304,
+     "name": "zoom_neon"
+    },
+    {
+     "t": 306,
+     "name": "zoom_harm"
+    },
+    {
+     "t": 308,
+     "name": "dish_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 299,
+     "js": "return JSON.stringify(moire.spindle.census)"
+    },
+    {
+     "t": 303,
+     "js": "moire.camera.set(3.5, 0.45 * moire.dish.W, 0.45 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 305,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    },
+    {
+     "t": 307,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  },
+  {
+   "name": "s1-pics-spindles",
+   "description": "step S1 pictures: spindles, at 300 s: neon, a close zoom (neon, harmonic), harmonic",
+   "query": {},
+   "duration": 310,
+   "sample_every": 60,
+   "stall": 300,
+   "snapshots": [],
+   "dpr": 2,
+   "shots": [
+    {
+     "t": 300,
+     "name": "dish_neon"
+    },
+    {
+     "t": 304,
+     "name": "zoom_neon"
+    },
+    {
+     "t": 306,
+     "name": "zoom_harm"
+    },
+    {
+     "t": 308,
+     "name": "dish_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 2,
+     "js": "await moire.genome.setAll({elongation: 1.1}); return 'every cell asks 3:1'"
+    },
+    {
+     "t": 299,
+     "js": "return JSON.stringify(moire.spindle.census)"
+    },
+    {
+     "t": 303,
+     "js": "moire.camera.set(3.5, 0.45 * moire.dish.W, 0.45 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 305,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    },
+    {
+     "t": 307,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  },
+  {
+   "name": "s1-pics-lab",
+   "description": "step S1 pictures: lab, at 240 s: neon, a close zoom (neon, harmonic), harmonic",
+   "query": {
+    "preset": "lab",
+    "cells": 150,
+    "genes": "elongation:1.2"
+   },
+   "duration": 250,
+   "sample_every": 60,
+   "stall": 300,
+   "snapshots": [],
+   "dpr": 2,
+   "shots": [
+    {
+     "t": 240,
+     "name": "dish_neon"
+    },
+    {
+     "t": 244,
+     "name": "zoom_neon"
+    },
+    {
+     "t": 246,
+     "name": "zoom_harm"
+    },
+    {
+     "t": 248,
+     "name": "dish_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 239,
+     "js": "return JSON.stringify(moire.spindle.census)"
+    },
+    {
+     "t": 243,
+     "js": "moire.camera.set(2.5, 0.5 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 245,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    },
+    {
+     "t": 247,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  },
+  {
+   "name": "s1-pics-chip",
+   "description": "step S1 pictures: chip, at 300 s: neon, a close zoom (neon, harmonic), harmonic",
+   "query": {
+    "preset": "chip",
+    "founders": "wild",
+    "wild": "shape"
+   },
+   "duration": 310,
+   "sample_every": 60,
+   "stall": 300,
+   "snapshots": [],
+   "dpr": 2,
+   "shots": [
+    {
+     "t": 300,
+     "name": "dish_neon"
+    },
+    {
+     "t": 304,
+     "name": "zoom_neon"
+    },
+    {
+     "t": 306,
+     "name": "zoom_harm"
+    },
+    {
+     "t": 308,
+     "name": "dish_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 299,
+     "js": "return JSON.stringify(moire.spindle.census)"
+    },
+    {
+     "t": 303,
+     "js": "moire.camera.set(3.5, 0.25 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 305,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    },
+    {
+     "t": 307,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  },
+  {
+   "name": "s1-pics-crevices",
+   "description": "step S1 pictures: crevices, at 300 s: neon, a close zoom (neon, harmonic), harmonic",
+   "query": {
+    "preset": "crevices",
+    "founders": "wild",
+    "wild": "shape"
+   },
+   "duration": 310,
+   "sample_every": 60,
+   "stall": 300,
+   "snapshots": [],
+   "dpr": 2,
+   "shots": [
+    {
+     "t": 300,
+     "name": "dish_neon"
+    },
+    {
+     "t": 304,
+     "name": "zoom_neon"
+    },
+    {
+     "t": 306,
+     "name": "zoom_harm"
+    },
+    {
+     "t": 308,
+     "name": "dish_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 299,
+     "js": "return JSON.stringify(moire.spindle.census)"
+    },
+    {
+     "t": 303,
+     "js": "moire.camera.set(3.5, 0.42 * moire.dish.W, 0.68 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 305,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    },
+    {
+     "t": 307,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  },
+  {
+   "name": "s1-pics-colonies",
+   "description": "step S1 pictures: colonies, at 300 s: neon, a close zoom (neon, harmonic), harmonic",
+   "query": {
+    "preset": "colonies"
+   },
+   "duration": 310,
+   "sample_every": 60,
+   "stall": 300,
+   "snapshots": [],
+   "dpr": 2,
+   "shots": [
+    {
+     "t": 300,
+     "name": "dish_neon"
+    },
+    {
+     "t": 304,
+     "name": "zoom_neon"
+    },
+    {
+     "t": 306,
+     "name": "zoom_harm"
+    },
+    {
+     "t": 308,
+     "name": "dish_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 299,
+     "js": "return JSON.stringify(moire.spindle.census)"
+    },
+    {
+     "t": 303,
+     "js": "moire.camera.set(2.5, 0.5 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 305,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    },
+    {
+     "t": 307,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  }
+ ]
+}

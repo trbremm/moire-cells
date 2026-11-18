@@ -1,0 +1,80 @@
+{
+  "name": "s1-smoke-spindle",
+  "description": "every cell asks 3:1 at 2 s, 40 s, zoom",
+  "condition": {
+    "name": "s1-smoke-spindle",
+    "description": "every cell asks 3:1 at 2 s, 40 s, zoom",
+    "query": {
+      "seed": 3
+    },
+    "duration": 42,
+    "sample_every": 10,
+    "stall": 120,
+    "snapshots": [],
+    "dpr": 2,
+    "shots": [
+      {
+        "t": 40,
+        "name": "end"
+      },
+      {
+        "t": 42,
+        "name": "zoom"
+      }
+    ],
+    "evals": [
+      {
+        "t": 2,
+        "js": "await moire.genome.setAll({elongation: 1.1}); return 'elongated'"
+      },
+      {
+        "t": 41,
+        "js": "moire.camera.set(3, 0.45 * moire.dish.W, 0.45 * moire.dish.H); return 'zoom'"
+      },
+      {
+        "t": 39,
+        "js": "return JSON.stringify(moire.spindle.census)"
+      }
+    ]
+  },
+  "url": "http://localhost:53346/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "1ccc9d8725ab673a0c319e1caad6a5f4973ae000",
+  "dirty": true,
+  "started": "2026-11-18T05:33:40",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 42.0,
+  "run_wall_s": 52.28,
+  "speed_reached": 0.8,
+  "samples": 6,
+  "shots": [
+    "shots/end.png",
+    "shots/zoom.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 2,
+      "js": "await moire.genome.setAll({elongation: 1.1}); return 'elongated'",
+      "result": "elongated"
+    },
+    {
+      "t": 38.999999999999076,
+      "js": "return JSON.stringify(moire.spindle.census)",
+      "result": "{\"time\":38.883333333332416,\"n\":1541,\"lnAspect\":0.8690376378974691,\"lnSd\":0.2525497397915662,\"aspect\":2.384614885930025,\"long\":0.7670343932511356,\"pairs\":2524,\"nematic\":0.2549025356576862,\"gene\":1.099818948734588,\"geneSd\":0.006581466056705773,\"geneAspect\":3.0036221651209396,\"asked\":1.099818948734588,\"turning\":0.9309357560025956,\"turned\":1,\"noWrap\":0,\"perim\":1.2563867618429592,\"length\":2.9172452952628167}"
+    },
+    {
+      "t": 40.99999999999896,
+      "js": "moire.camera.set(3, 0.45 * moire.dish.W, 0.45 * moire.dish.H); return 'zoom'",
+      "result": "zoom"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T05:35:57",
+  "wall_s": 136.66
+}

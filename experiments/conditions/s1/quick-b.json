@@ -1,0 +1,129 @@
+{
+ "batch": "s1-quick-b",
+ "runs": [
+  {
+   "name": "s1-q-pred-null",
+   "description": "step S1 quick: pred, wild shape founders, shape null, 10 min",
+   "query": {
+    "founders": "wild",
+    "wild": "shape",
+    "shapenull": 1
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 300,
+     "name": "t300"
+    },
+    {
+     "t": 600,
+     "name": "end"
+    }
+   ],
+   "evals": [
+    {
+     "t": 120,
+     "js": "return await moire.predators.place(20)"
+    },
+    {
+     "t": 60,
+     "js": "return JSON.stringify(moire.spindle.census)"
+    },
+    {
+     "t": 300,
+     "js": "return JSON.stringify(moire.spindle.census)"
+    },
+    {
+     "t": 599,
+     "js": "return JSON.stringify(moire.spindle.census)"
+    },
+    {
+     "t": 599,
+     "js": "const C = moire.predators.census; return JSON.stringify(C ? {genes: C.genes, now: C.now, total: C.total} : null)"
+    }
+   ]
+  },
+  {
+   "name": "s1-q-chip-null",
+   "description": "step S1 quick: chip, wild shape founders, shape null, 10 min",
+   "query": {
+    "founders": "wild",
+    "wild": "shape",
+    "preset": "chip",
+    "shapenull": 1
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 300,
+     "name": "t300"
+    },
+    {
+     "t": 600,
+     "name": "end"
+    }
+   ],
+   "evals": [
+    {
+     "t": 60,
+     "js": "return JSON.stringify(moire.spindle.census)"
+    },
+    {
+     "t": 300,
+     "js": "return JSON.stringify(moire.spindle.census)"
+    },
+    {
+     "t": 599,
+     "js": "return JSON.stringify(moire.spindle.census)"
+    }
+   ]
+  },
+  {
+   "name": "s1-q-default-null",
+   "description": "step S1 quick: default, wild shape founders, shape null, 10 min",
+   "query": {
+    "founders": "wild",
+    "wild": "shape",
+    "shapenull": 1
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 300,
+     "name": "t300"
+    },
+    {
+     "t": 600,
+     "name": "end"
+    }
+   ],
+   "evals": [
+    {
+     "t": 60,
+     "js": "return JSON.stringify(moire.spindle.census)"
+    },
+    {
+     "t": 300,
+     "js": "return JSON.stringify(moire.spindle.census)"
+    },
+    {
+     "t": 599,
+     "js": "return JSON.stringify(moire.spindle.census)"
+    }
+   ]
+  }
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

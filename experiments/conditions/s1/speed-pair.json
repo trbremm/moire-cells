@@ -1,0 +1,6 @@
+{"batch": "s1-speedpair", "runs": [
+ {"name": "s1-speedpair-2k-on", "description": "2000 neon, shape on (founders round), MAX 150 s", "query": {"seed": 3}, "duration": 150, "sample_every": 25, "snapshots": [], "shots": [], "evals": []},
+ {"name": "s1-speedpair-2k-off", "description": "2000 neon, ?shape=0", "query": {"seed": 3, "shape": 0}, "duration": 150, "sample_every": 25, "snapshots": [], "shots": [], "evals": []},
+ {"name": "s1-speedpair-2k-on-b", "description": "2000 neon, shape on again", "query": {"seed": 3}, "duration": 150, "sample_every": 25, "snapshots": [], "shots": [], "evals": []},
+ {"name": "s1-speedpair-2k-off-b", "description": "2000 neon, ?shape=0 again", "query": {"seed": 3, "shape": 0}, "duration": 150, "sample_every": 25, "snapshots": [], "shots": [], "evals": []}
+]}

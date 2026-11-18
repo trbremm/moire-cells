@@ -1,0 +1,81 @@
+{
+  "name": "s1-q-default-on_s3",
+  "description": "step S1 quick: default, wild shape founders, shape on, 10 min",
+  "condition": {
+    "name": "s1-q-default-on_s3",
+    "description": "step S1 quick: default, wild shape founders, shape on, 10 min",
+    "query": {
+      "founders": "wild",
+      "wild": "shape",
+      "seed": 3
+    },
+    "duration": 600,
+    "sample_every": 30,
+    "stall": 300,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 300,
+        "name": "t300"
+      },
+      {
+        "t": 600,
+        "name": "end"
+      }
+    ],
+    "evals": [
+      {
+        "t": 60,
+        "js": "return JSON.stringify(moire.spindle.census)"
+      },
+      {
+        "t": 300,
+        "js": "return JSON.stringify(moire.spindle.census)"
+      },
+      {
+        "t": 599,
+        "js": "return JSON.stringify(moire.spindle.census)"
+      }
+    ]
+  },
+  "url": "http://localhost:65347/index.html?speed=max&until=0&overlay=ghost&ui=0&founders=wild&wild=shape&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "08132e9c0161a81a4a34e03dd1c82d9ba3d1be78",
+  "dirty": true,
+  "started": "2026-11-18T07:30:04",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 600.0,
+  "run_wall_s": 843.23,
+  "speed_reached": 0.71,
+  "samples": 21,
+  "shots": [
+    "shots/t300.png",
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 59.999999999997875,
+      "js": "return JSON.stringify(moire.spindle.census)",
+      "result": "{\"time\":59.89999999999788,\"n\":1385,\"lnAspect\":0.604014440433213,\"lnSd\":0.34920505877875324,\"aspect\":1.8294482898329625,\"long\":0.35451263537906136,\"pairs\":1136,\"nematic\":0.1300281690140845,\"gene\":0.6578830324909747,\"geneSd\":0.4517099745633762,\"geneAspect\":1.9307007742713647,\"asked\":0.6578830324909747,\"turning\":0.7142830324909748,\"turned\":1,\"noWrap\":0,\"perim\":1.1552606498194946,\"length\":2.5567068592057764}"
+    },
+    {
+      "t": 300.0000000000558,
+      "js": "return JSON.stringify(moire.spindle.census)",
+      "result": "{\"time\":299.85000000005596,\"n\":534,\"lnAspect\":0.7506104868913858,\"lnSd\":0.3209997286722032,\"aspect\":2.118292811949032,\"long\":0.5580524344569289,\"pairs\":684,\"nematic\":0.263577485380117,\"gene\":0.8833876404494382,\"geneSd\":0.3413111745895175,\"geneAspect\":2.419080817289322,\"asked\":0.878185393258427,\"turning\":0.8236774193548386,\"turned\":0.9868913857677902,\"noWrap\":10,\"perim\":1.2049850187265918,\"length\":2.9517659176029962}"
+    },
+    {
+      "t": 598.999999999827,
+      "js": "return JSON.stringify(moire.spindle.census)",
+      "result": "{\"time\":598.4666666664933,\"n\":725,\"lnAspect\":0.7726593103448276,\"lnSd\":0.3745401831020872,\"aspect\":2.1655173861596233,\"long\":0.5903448275862069,\"pairs\":941,\"nematic\":0.2264984059511158,\"gene\":0.8845503448275862,\"geneSd\":0.44115326668492155,\"geneAspect\":2.4218951289358635,\"asked\":0.8843310344827586,\"turning\":0.9309248554913295,\"turned\":0.9544827586206897,\"noWrap\":31,\"perim\":1.2239503448275864,\"length\":3.0384662068965516}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T07:45:40",
+  "wall_s": 936.38
+}

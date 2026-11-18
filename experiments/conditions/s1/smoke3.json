@@ -1,0 +1,11 @@
+{"batch": "s1-smoke3", "runs": [
+ {"name": "s1-smoke-default", "description": "shape on, founders round, 30 s, zoom", "query": {"seed": 3}, "duration": 32, "sample_every": 10, "stall": 120, "snapshots": [], "dpr": 2,
+  "shots": [{"t": 30, "name": "end"}, {"t": 32, "name": "zoom"}],
+  "evals": [{"t": 31, "js": "moire.camera.set(3, 0.45 * moire.dish.W, 0.45 * moire.dish.H); return 'zoom'"},
+            {"t": 29, "js": "return JSON.stringify(moire.spindle.census)"}]},
+ {"name": "s1-smoke-spindle", "description": "every cell asks 3:1 at 2 s, 40 s, zoom", "query": {"seed": 3}, "duration": 42, "sample_every": 10, "stall": 120, "snapshots": [], "dpr": 2,
+  "shots": [{"t": 40, "name": "end"}, {"t": 42, "name": "zoom"}],
+  "evals": [{"t": 2, "js": "await moire.genome.setAll({elongation: 1.1}); return 'elongated'"},
+            {"t": 41, "js": "moire.camera.set(3, 0.45 * moire.dish.W, 0.45 * moire.dish.H); return 'zoom'"},
+            {"t": 39, "js": "return JSON.stringify(moire.spindle.census)"}]}
+]}

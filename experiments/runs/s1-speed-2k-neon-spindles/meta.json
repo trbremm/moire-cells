@@ -1,0 +1,48 @@
+{
+  "name": "s1-speed-2k-neon-spindles",
+  "description": "step G0 speed, after S1, every cell asks 3:1: default scene, 2000 cells, MAX, 150 s, neon",
+  "condition": {
+    "name": "s1-speed-2k-neon-spindles",
+    "description": "step G0 speed, after S1, every cell asks 3:1: default scene, 2000 cells, MAX, 150 s, neon",
+    "query": {
+      "seed": 3
+    },
+    "duration": 150,
+    "sample_every": 25,
+    "snapshots": [],
+    "shots": [],
+    "evals": [
+      {
+        "t": 0,
+        "js": "await moire.genome.setAll({elongation: 1.1}); return 'every cell asks 3:1'"
+      }
+    ]
+  },
+  "url": "http://localhost:65120/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "08132e9c0161a81a4a34e03dd1c82d9ba3d1be78",
+  "dirty": true,
+  "started": "2026-11-18T08:09:46",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 150.0,
+  "run_wall_s": 230.94,
+  "speed_reached": 0.65,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "await moire.genome.setAll({elongation: 1.1}); return 'every cell asks 3:1'",
+      "result": "every cell asks 3:1"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T08:14:52",
+  "wall_s": 305.55
+}

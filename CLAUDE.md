@@ -646,6 +646,18 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        crawling colonies leave swirls; dense moving tissue may give "bacterial turbulence" (collective vortices); fronts
        (D1 waves) drag the water. Own switches; streamlines in the machinery view. Build the water solver MASK-READY
        (psi held constant on solid pixels) for G0b.
+       AS BUILT (G0, 2026-11-18): src/glue.js, stir.js, shaders/stir.wgsl. Glue gene log 0.05..4 (stored plain: old meaning
+       kept), steps x e^(0.06 n), cost above 1 x a0 per unit (?gluecost=0 linear), side adhesion on a log code to 8; strong
+       glue stable (lab, all at 4, pressed). JUNCTIONS: per-side formed/torn bits in the old Cell.kind word; strength = glue's
+       peak pull; tears when pulled past 1.05 R0 while separating (covers every cause); torn side holds no glue, heals ~4 s;
+       ?breaks=0 ?gluenull=1 (founder value in Bio.rec.z). STIR: cells deposit wet x (v - water) on a ~1 R grid (2 new water
+       blocks), curl -> vorticity (viscosity 2 R, fade 3 s, 8 Jacobi) -> screened psi (12 R, 16 Jacobi), psi 0 at the rim
+       (free-slip), ADDED to the prescribed psi (transport exact); energy: stirred push paid from heat under the cell; mask
+       buffer ready. ?stir=0 + knobs; pink streamlines in machinery view. RESULT (quick): glue gene NO selection (3/8 above,
+       2/8 below null); held glue small 0.15-0.35; tears 0.02-0.1 per cell per s, 5-15 % of sides torn; stirred flow 0.03-0.19
+       R/s mean (peaks 0.4-0.9) vs prescribed 0.35-0.6: colonies wrap in one or two big loops, Fronts clusters carry their own
+       swirls; no bacterial turbulence. Speed: 2000 x6.41 neon / x6.84 harmonic, 10 000 x1.11 / x1.34 (G0 ~5-7 %, mostly the
+       stir; 10 000 is ~20 % slower than P1 overall after F0, D1, G1, G0). Not in snapshots: the stirred flow.
     6a2. G0b OBSTACLES (user 2026-11-17 asked; Claude: separate step right after G0, sharing its water solver): a solid
        mask on the substrate grid, painted with a tool (walls, blocks, pillars, channels) and in presets (e.g. a MICROFLUIDIC
        chip: channels and pillar arrays, a chamber with an inlet flow). Cells cannot enter (contact push from the mask), water

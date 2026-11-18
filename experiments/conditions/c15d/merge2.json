@@ -1,0 +1,29 @@
+{
+ "batch": "c15d-merge2",
+ "runs": [
+  {
+   "name": "c15d-merge-crevices2",
+   "description": "merge check: crevices, the carbon inside solids at 60 s",
+   "query": {
+    "seed": 3,
+    "preset": "crevices"
+   },
+   "duration": 60,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 60,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 60,
+     "js": "const H = moire.heat, M = moire.matter, Cb = M.carbon, O = moire.obstacles, d = moire.gpu.device, N = H.n; const buf = d.createBuffer({size: H.bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); const e = d.createCommandEncoder(); e.copyBufferToBuffer(H.buffer, 0, buf, 0, H.bytes); d.queue.submit([e.finish()]); await buf.mapAsync(GPUMapMode.READ); const w = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy(); const LW = 46080, mk = O.off('mask'), lb = (Cb.cur ? Cb.copyBase(1) : Cb.copyBase(0)), tb = Cb.tarBase(); let ins = 0, out = 0, nS = 0; for (let i = 0; i < N; i++) { const solid = (w[mk + i] & 1) !== 0; let c = 0; for (let j = 0; j < 5; j++) c += Math.max(w[LW + lb + j * N + i], 0); for (let j = 0; j < 3; j++) c += Math.max(w[LW + tb + j * N + i], 0) * (j ? 0.25 : 0.5); if (solid) { ins += c; nS++; } else out += c; } return JSON.stringify({solidPx: nS, carbonInSolid: ins / 4096, carbonInWater: out / 4096});"
+    }
+   ]
+  }
+ ]
+}

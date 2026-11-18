@@ -6081,6 +6081,156 @@ the fate counters and gains six multiply-adds and a few output factors per cell;
 - `experiments/tissue/make_conditions.py` still names the old fate genes (`resp0`, `threshold`) for its historic conditions; those
   names are gone from `moire.genome` (rerunning those conditions needs editing).
 
+## Step G0: strong glue and stirred water
+
+User, 2026-11-17: "yes! do both. Also, is the cells movement stirring the liquid too? if not, they should." Three parts, each
+with its own switch (rules panel groups "Strong glue (step G0)" and "Stirred water (step G0)").
+
+### (a) The glue's ceiling (`src/glue.js`, `cell_step.wgsl` daughter_genome, `cell_eat.wgsl` walls)
+
+- The adhesion gene (`Bio.body.x`, the walls' overall stickiness a0) now lives on a LOG SCALE from 0.05 to 4 (it was 0..1). It is
+  still stored as the value itself, so founders keep exactly the glue they had and old genomes and snapshots mean what they meant;
+  a founder below 0.05 is lifted to it at its first birth. A birth's small step MULTIPLIES it (x e^(0.06 n), the same 6 % the old
+  linear step was at 0.5, from the same random draw); its rare jump lands anywhere on the log scale.
+- The gene network's glue output can lift the expressed glue to 4 at most. The wall pattern (C10) tops at max(1, a0), so for a0 up to
+  1 every side is exactly as before.
+- COST, derived from the walls' cost (C10/C11: a side wants linkPer x its paid glue in linkers, and upkeep x that per s from the
+  battery; the first freeGlue 0.5 free): up to a0 = 1 unchanged; above it every unit costs a0 times as much (the adhesion molecules
+  stack in layers on layers, each layer as dear as the first). So the cost of a side grows as a0 x the glue it holds: a0 = 2 costs
+  4 x what a0 = 1 does for twice the hold, a0 = 4 costs 16 x. `?gluecost=0`: linear, as C10.
+- Each side's effective adhesion is still 8 bits, now on a log code (a = 0.5 (17^e - 1), top 8 = gene 4 x a full maturity of 2):
+  steps of 0.006 at 0 and 0.011 at 0.5 (the old linear code's were 0.012), coarse near the top.
+- Very strong glue is numerically stable: the glue's pull only acts between 0.85 and 1.15 x the contact distance, so even at 8 a glued
+  pair settles at about 0.86 x the contact distance (0.9 at glue 1); the steepest spring it makes (about 112 per s) is far below the
+  step's limit (about 1500 per s at 60 ticks per s and damping 0.85). The honeycomb's corners only see the walls between centres, not
+  the glue. Checked in the tissue lab with every cell at 4 and the wall pressing (below).
+
+### (b) Junctions that break
+
+- A side's JUNCTION FORMS when it presses a glued neighbour (pull above the base loss every pair pays) closer than the contact distance
+  R0, and stays formed while that side keeps touching one (`Cell.kind`, the fates' old word: bits 0..5 torn, 8..13 formed).
+- Its BREAKING STRENGTH is the glue's peak pull: (the smaller of the two sides' glue, which already carries the junction's maturity
+  factor, x the keys' likeness - the base loss) x adhesion x R x stiffness. The pull is largest at R0 and only weakens beyond (it fades
+  to 0 at the reach, 1.15 R0), so a pair pulled past R0 x 1.05 is held by less than whatever pulls it apart: crawling, the water's
+  drag, the press and the squeeze, a predator pulling its prey free (P1), a crowd pushing from divisions. Then the junction TEARS. Both
+  cells see the same distance; only a pair moving apart tears (an approaching neighbour never does).
+- A TORN side holds no glue (its neighbours read the bit from the lean copy; the eat pass asks and pays nothing for it), its junction's
+  maturity is gone, and it HEALS at random, on average after 4 s (`?heal=`), then glues and matures again. No integrity cost (the
+  junction tears, not the membrane). Needs the patterned walls (per side).
+- Look: a torn side's neon tube frays into short hot dashes (harmonic: the green rim broken) until it heals.
+- Census (`Stats.g0`): tears and heals (cumulative), the gene's geometric mean and spread, cells above 1, formed junctions, their mean
+  strength and load (the pull they carry less the contact's push, as a share of their strength: negative = pressed together), torn
+  sides. Panel line GLUE; samples `glue.*`.
+- NEUTRAL CONTROL `?gluenull=1`: the gene drifts as on, every effect (pull, pattern, cost) at the FOUNDER's value (`Bio.rec.z`, a spare
+  word: stamped when a founder is made, inherited unchanged).
+
+### (c) Cells stir the water (`src/stir.js`, `src/shaders/stir.wgsl`)
+
+Until now the currents were prescribed (N1: the medium's moire eddies and a gyre; D1's perfusion through-flow) and only dragged the
+cells. Now:
+
+- **The push.** Every tick each cell puts down its drag on the water: WET x (its driven velocity - the water's velocity there) x its
+  footprint's share of a node's area, on a coarse STIR GRID (nodes 2 heat pixels, about one R, apart; fixed point, atomic adds into
+  two blocks of the heat buffer, summed over the frame). It is the reaction of the drag the water puts on the cell (curDrift x u), so
+  WET = curDrift (0.3) by default: action = reaction. MY CHOICE for crawlers: the motor's traction pushes on the floor and is not
+  counted, but the body still moves through the water, so a crawling cell drags the water by the wet share of its drag; a cell that
+  drifts with the water drags nothing; the heat's random kicks (incoherent) are left out. So a colony stirs where its cells move
+  together, not where they jiggle.
+- **The flow** (once per frame, before the water's surface pass): the curl of the frame's mean push x the GAIN (4) is the vorticity it
+  makes; the vorticity relaxes toward it with VISCOSITY (reach 2 R) and DECAY (fades in 3 s), an implicit step solved by 8 Jacobi
+  passes; then the stream function, (lap - kappa^2) psi = -omega (a weak screening over 12 R: the dish floor's friction on a thin film),
+  16 Jacobi passes warm-started from the frame before; psi = 0 on the dish's rim (no flow through the wall; free slip along it). A
+  uniform push gives a uniform flow u = G x the push, so a crowd moving together at v drags the water at about G wet v / (1 + G wet),
+  half its speed.
+- **Coupling.** The stirred psi is ADDED to the prescribed psi at the heat pixels' corners (`water.wgsl`), so the substances' transport
+  (`matter.wgsl` spread, unchanged) stays divergence-free, flux-form and exact, and every cell drifts with the sum.
+- **Energy.** The water holds no energy of its own in the books (it is slow and syrupy: no inertia worth counting). The cells' work
+  against it stays drag heat, as before; what the STIRRED water's push does on a cell (its share of the forces' work) is taken from
+  the heat under that cell (the work in less it, the heat less it, the same whole counts), so the stirred flow's work comes out of the
+  heat the stirring cells' drag made, and braking a cell gives heat back. `?stirsplit=0` books it as work in, like the prescribed
+  currents.
+- **Look.** In the machinery view the stirred flow's own streamlines are drawn in pink over the prescribed currents' teal ones, spaced
+  by its own range (it is much weaker); panel line WATER adds "stirred x R/s (max y)".
+- **Mask-ready (for G0b).** A solid mask on the stir grid (all fluid today): psi is HELD on solid nodes (an island keeps its value, the
+  rim is 0), the curl and vorticity 0 there. G0b needs: paint the mask from the substrate's solid pixels (downsampled to the stir grid),
+  the cells' contact push from it, the matter's flux 0 at solid faces; and for a PRESSURE-DRIVEN perfusion, the through-flow as
+  boundary values instead of the prescribed profile: psi = 0 on one side wall and psi = Q (the flux) on the other, the obstacle islands'
+  psi each set by zero net pressure round it (iterated from the circulation), and the through-flow then threads round the pillars by
+  itself. Today's solver relaxes vorticity and psi but has no no-slip walls (a no-slip wall needs the wall vorticity or a biharmonic
+  solve; the screening and the viscous reach keep the flow near walls gentle).
+- Switches and knobs: `?stir=0`, `?stirsplit=0`, `?stirgain=`, `?stirwet=`, `?stirreach=`, `?stirfade=`, `?stirscreen=`; live in
+  `moire.stir.params` (also `cell`, `iters`, `psiIters`, `lines`).
+
+### Old snapshots
+
+A snapshot saved before G0 loads with the glue capped at 1, no tearing, no glue cost above 1 and no stirring (as it ran; the notes say
+so). The stir state is not saved (a reload starts from still stirred water and refills within seconds). The junction word (torn,
+formed) is saved with the cells.
+
+### What it looks like (pictures: `experiments/keep/g0/`, seed 3, at 300 s unless said)
+
+- **Stirred water** (machinery view: `*-dish-streamlines.jpg`): pink streamlines over the teal prescribed ones. A growing colony wraps
+  itself in one or two big loops of stirred water (the default scene: a pink ring round the whole colony), with small curls along its
+  ragged rim where cells crawl in and out; in Fronts each cluster sits in its own swirl and the swirls travel with the clusters
+  (`fronts-glue4-t240-streamlines.jpg`); in the Chip the stirring sits at the front of the tissue regrowing from the inlet. The stirred
+  flow is slower than the prescribed currents (0.35 to 0.6 R/s): mean 0.03 to 0.04 R/s in the default scene, 0.1 to 0.19 R/s in dense
+  Fronts, Chip and colony dishes, the fastest 0.4 to 0.9 R/s. No "bacterial turbulence" (many small vortices inside dense tissue):
+  crawling headings are uncorrelated, and inside a packed tissue the cells move with each other, so their pushes cancel.
+- **Torn junctions** (`default-s3-tear-neon-x8.jpg`, `-harm-x8.jpg`, x8 on a cell with a torn side): a snapped hot-coral tube with a
+  dark break in its middle (harmonic: a gap in the green rim). A few in every field of view of a dense tissue; subtle among the self
+  marker's stripes at that zoom.
+- **Strong glue by hand** (`lab-glue4-pressed-t180.jpg`, `fronts-glue4-t240-streamlines.jpg`): the lab's 60 clones at gene 4 stay one
+  cluster through the press; nothing jumps or explodes.
+- The default colony, Fronts, Chip and colonies (`*-dish-neon.jpg`, `*-dish-harm.jpg`) look as before at this scale: the tearing makes
+  the default colony's rim a little more ragged at a minute, not visibly different at three.
+
+### Results (quick runs; the user: not valid until more changes land; EXPERIMENTS.md "Strong glue and stirred water")
+
+- **Glue on against its neutral control**, 2 seeds, default scene and Fronts 20 min, Chip and colonies 10 min: NO consistent
+  difference (on above null in 3 of 8, below in 2, alike in 3). The gene now does wander far above the old ceiling (half the cells
+  above 1 in some dishes, on and null alike), swinging with whichever lineage wins. The glue junctions actually hold stays small (0.15 to
+  0.35 above the base loss, on and null alike): most of what a strong gene asks above the free 0.5 is not paid for, so strong genes mostly
+  cost.
+- **Tears**: 0.02 to 0.1 per cell per s (default 4 to 90 per s, dense Fronts and Chip 300 to 1600); 5 to 15 % of touching sides torn at
+  any moment.
+- **Very strong glue is stable**: every cell set to 4 (tissue lab pressed by the wall; Fronts): no runaway speeds (fastest 1.5 R/s), no
+  NaN, one cluster held; in Fronts the gene fell back to 2.95 within 300 s.
+
+### Checked
+
+- Books (`experiments/conditions/g0/check.json`, 400 s at MAX, seed 5, whole dish lit, perfusion on; every G0 switch off and on again,
+  a squeeze x0.8 and a stretch x1.25, the press, a resize and back, a snapshot saved and loaded): atoms and charge rounding 0 at every
+  sample; the energy rounding within -0.04..+0.003 (as with G0 off), blips at the samples right after the squeeze and the stretch (as
+  before G0), the reload exact. The Fronts preset (press) and the Chip (perfusion) runs: atoms rounding 0 throughout.
+- Firefox (headed): default scene, the GLUE and WATER lines filled, console clean. Phone (Chrome 390 x 844, dpr 3): works; the compact
+  GLUE line wraps to two lines.
+
+### Speed (headless Chrome, 1280 x 800, default scene, seed 3, MAX, two runs each, as F0's; GPU free of other runs)
+
+| | 2000 neon | 2000 harmonic | 10 000 neon | 10 000 harmonic |
+|---|---|---|---|---|
+| before G0 (main 23c6d9c: F0, D1, G1 in; one run each, same session) | x6.70 | - | x1.19 | x1.19 |
+| after G0, all on (two runs) | x6.41, x6.34 | x6.84, x6.89 | x1.11, x1.11 | x1.34, x1.29 |
+| after G0, 10 000 neon: `?stir=0` / `?breaks=0` / both off | | | x1.19 / x1.13 / x1.17 | |
+| F0's "before" (main 58d1963, before F0, D1, G1) | x6.46 | x6.83 | x1.37 | x1.59 |
+
+G0 costs about 5 % at 2000 cells and 7 % at 10 000 (neon), almost all of it the stirring (the eight atomic adds per cell per tick of
+its push, and its passes); the tearing costs nothing measurable. The harmonic numbers scatter more than the change (10 000 harmonic
+before G0 x1.19 in one run, after x1.29 and x1.34). Against F0's "before" the 10 000-cell runs are ~20 % slower, but most of that came
+with F0, D1 and G1 (the pre-G0 build at x1.19).
+
+### Known issues
+
+- The glue gene shows no selection yet (it hitch-hikes with lineages); strong glue's cost (x a0 per unit above 1) and short linkers keep
+  the held glue small. Whether strong glue pays will need pressures that pull tissues apart more (G0b obstacles and shear, S1 shape,
+  predators) and more seeds.
+- Tearing is a geometric rule (past R0 x 1.05 while separating), the quasi-static form of load > strength; the census's "load" is the
+  pull a junction carries less the contact's push as a share of its strength (mostly negative: packed tissue is pressed together).
+- The stirred flow is free-slip at the dish's rim (psi = 0 there; no wall vorticity), quasi-steady with a fade, and its state is not
+  saved in snapshots. A cell's own stirred water drags it a little too (a small self-push, paid from heat).
+- The stirred streamlines are spaced by the flow's own range (read back every 2 s), so they flicker a little when the range changes.
+- Torn sides need the patterned walls (per side); with `?walls=0` nothing tears.
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start
@@ -6125,6 +6275,12 @@ the fate counters and gains six multiply-adds and a few output factors per cell;
   stats read-back), the DIVISION and COUNT panel lines, the overlay and `stats()` (where the cells are: light, patches); the
   free-slot list is built by the grid (`cell_grid.wgsl`: the dead slots' bucket), the divisions and deaths are in
   `cell_step.wgsl`, the division's cost and the split in `cell_eat.wgsl` (split), the flash and the fading in `cell_draw.wgsl`
+- `src/glue.js`: step G0, strong glue and junctions that break: the switches and knobs (`moire.glue.params`), the census (Stats.g0),
+  the GLUE panel line; the log-scale gene's mutation in `cell_step.wgsl` daughter_genome, the junction word (Cell.kind) and tearing in
+  `cell_step.wgsl`, the cost above 1 and torn sides in `cell_eat.wgsl`, the log code of a side's adhesion in `cell_common.wgsl`.
+- `src/stir.js` + `src/shaders/stir.wgsl`: step G0, the cells stir the water: the stir grid, its vorticity and stream function passes
+  (once per frame, from `src/water.js`), the census; the cells' push and the stirred work paid from heat in `cell_step.wgsl`, the sum
+  with the prescribed psi in `water.wgsl`, the pink streamlines in `water_draw.wgsl`.
 - `src/walls.js`: patterned walls (step C10): the switches and knobs, the census (from the cells' stats read-back,
   Stats.wall), the WALLS panel line, the overlay and `stats()` (where on the walls the contacts sit, the glue, the junctions); each
   side's pattern, linker want and upkeep are worked out in `cell_eat.wgsl` (Cell.wadh), the smaller side of each contact, the

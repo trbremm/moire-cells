@@ -6577,6 +6577,315 @@ Cells alive at 5 / 10 / 15 / 20 minutes, carbon making the cell against `?carbon
 - Founders start with a TYPICAL founder's enzymes (the reset runs before the new genomes are written).
 - Speed: measured on a shared GPU only (the first 60 s side by side: x0.59 vs x0.63 and x1.47 vs x1.11 with `?carbon=0`: noise larger than
   the cost).
+## Step G0: strong glue and stirred water
+
+User, 2026-11-17: "yes! do both. Also, is the cells movement stirring the liquid too? if not, they should." Three parts, each
+with its own switch (rules panel groups "Strong glue (step G0)" and "Stirred water (step G0)").
+
+### (a) The glue's ceiling (`src/glue.js`, `cell_step.wgsl` daughter_genome, `cell_eat.wgsl` walls)
+
+- The adhesion gene (`Bio.body.x`, the walls' overall stickiness a0) now lives on a LOG SCALE from 0.05 to 4 (it was 0..1). It is
+  still stored as the value itself, so founders keep exactly the glue they had and old genomes and snapshots mean what they meant;
+  a founder below 0.05 is lifted to it at its first birth. A birth's small step MULTIPLIES it (x e^(0.06 n), the same 6 % the old
+  linear step was at 0.5, from the same random draw); its rare jump lands anywhere on the log scale.
+- The gene network's glue output can lift the expressed glue to 4 at most. The wall pattern (C10) tops at max(1, a0), so for a0 up to
+  1 every side is exactly as before.
+- COST, derived from the walls' cost (C10/C11: a side wants linkPer x its paid glue in linkers, and upkeep x that per s from the
+  battery; the first freeGlue 0.5 free): up to a0 = 1 unchanged; above it every unit costs a0 times as much (the adhesion molecules
+  stack in layers on layers, each layer as dear as the first). So the cost of a side grows as a0 x the glue it holds: a0 = 2 costs
+  4 x what a0 = 1 does for twice the hold, a0 = 4 costs 16 x. `?gluecost=0`: linear, as C10.
+- Each side's effective adhesion is still 8 bits, now on a log code (a = 0.5 (17^e - 1), top 8 = gene 4 x a full maturity of 2):
+  steps of 0.006 at 0 and 0.011 at 0.5 (the old linear code's were 0.012), coarse near the top.
+- Very strong glue is numerically stable: the glue's pull only acts between 0.85 and 1.15 x the contact distance, so even at 8 a glued
+  pair settles at about 0.86 x the contact distance (0.9 at glue 1); the steepest spring it makes (about 112 per s) is far below the
+  step's limit (about 1500 per s at 60 ticks per s and damping 0.85). The honeycomb's corners only see the walls between centres, not
+  the glue. Checked in the tissue lab with every cell at 4 and the wall pressing (below).
+
+### (b) Junctions that break
+
+- A side's JUNCTION FORMS when it presses a glued neighbour (pull above the base loss every pair pays) closer than the contact distance
+  R0, and stays formed while that side keeps touching one (`Cell.kind`, the fates' old word: bits 0..5 torn, 8..13 formed).
+- Its BREAKING STRENGTH is the glue's peak pull: (the smaller of the two sides' glue, which already carries the junction's maturity
+  factor, x the keys' likeness - the base loss) x adhesion x R x stiffness. The pull is largest at R0 and only weakens beyond (it fades
+  to 0 at the reach, 1.15 R0), so a pair pulled past R0 x 1.05 is held by less than whatever pulls it apart: crawling, the water's
+  drag, the press and the squeeze, a predator pulling its prey free (P1), a crowd pushing from divisions. Then the junction TEARS. Both
+  cells see the same distance; only a pair moving apart tears (an approaching neighbour never does).
+- A TORN side holds no glue (its neighbours read the bit from the lean copy; the eat pass asks and pays nothing for it), its junction's
+  maturity is gone, and it HEALS at random, on average after 4 s (`?heal=`), then glues and matures again. No integrity cost (the
+  junction tears, not the membrane). Needs the patterned walls (per side).
+- Look: a torn side's neon tube frays into short hot dashes (harmonic: the green rim broken) until it heals.
+- Census (`Stats.g0`): tears and heals (cumulative), the gene's geometric mean and spread, cells above 1, formed junctions, their mean
+  strength and load (the pull they carry less the contact's push, as a share of their strength: negative = pressed together), torn
+  sides. Panel line GLUE; samples `glue.*`.
+- NEUTRAL CONTROL `?gluenull=1`: the gene drifts as on, every effect (pull, pattern, cost) at the FOUNDER's value (`Bio.rec.z`, a spare
+  word: stamped when a founder is made, inherited unchanged).
+
+### (c) Cells stir the water (`src/stir.js`, `src/shaders/stir.wgsl`)
+
+Until now the currents were prescribed (N1: the medium's moire eddies and a gyre; D1's perfusion through-flow) and only dragged the
+cells. Now:
+
+- **The push.** Every tick each cell puts down its drag on the water: WET x (its driven velocity - the water's velocity there) x its
+  footprint's share of a node's area, on a coarse STIR GRID (nodes 2 heat pixels, about one R, apart; fixed point, atomic adds into
+  two blocks of the heat buffer, summed over the frame). It is the reaction of the drag the water puts on the cell (curDrift x u), so
+  WET = curDrift (0.3) by default: action = reaction. MY CHOICE for crawlers: the motor's traction pushes on the floor and is not
+  counted, but the body still moves through the water, so a crawling cell drags the water by the wet share of its drag; a cell that
+  drifts with the water drags nothing; the heat's random kicks (incoherent) are left out. So a colony stirs where its cells move
+  together, not where they jiggle.
+- **The flow** (once per frame, before the water's surface pass): the curl of the frame's mean push x the GAIN (4) is the vorticity it
+  makes; the vorticity relaxes toward it with VISCOSITY (reach 2 R) and DECAY (fades in 3 s), an implicit step solved by 8 Jacobi
+  passes; then the stream function, (lap - kappa^2) psi = -omega (a weak screening over 12 R: the dish floor's friction on a thin film),
+  16 Jacobi passes warm-started from the frame before; psi = 0 on the dish's rim (no flow through the wall; free slip along it). A
+  uniform push gives a uniform flow u = G x the push, so a crowd moving together at v drags the water at about G wet v / (1 + G wet),
+  half its speed.
+- **Coupling.** The stirred psi is ADDED to the prescribed psi at the heat pixels' corners (`water.wgsl`), so the substances' transport
+  (`matter.wgsl` spread, unchanged) stays divergence-free, flux-form and exact, and every cell drifts with the sum.
+- **Energy.** The water holds no energy of its own in the books (it is slow and syrupy: no inertia worth counting). The cells' work
+  against it stays drag heat, as before; what the STIRRED water's push does on a cell (its share of the forces' work) is taken from
+  the heat under that cell (the work in less it, the heat less it, the same whole counts), so the stirred flow's work comes out of the
+  heat the stirring cells' drag made, and braking a cell gives heat back. `?stirsplit=0` books it as work in, like the prescribed
+  currents.
+- **Look.** In the machinery view the stirred flow's own streamlines are drawn in pink over the prescribed currents' teal ones, spaced
+  by its own range (it is much weaker); panel line WATER adds "stirred x R/s (max y)".
+- **Mask-ready (for G0b).** A solid mask on the stir grid (all fluid today): psi is HELD on solid nodes (an island keeps its value, the
+  rim is 0), the curl and vorticity 0 there. G0b needs: paint the mask from the substrate's solid pixels (downsampled to the stir grid),
+  the cells' contact push from it, the matter's flux 0 at solid faces; and for a PRESSURE-DRIVEN perfusion, the through-flow as
+  boundary values instead of the prescribed profile: psi = 0 on one side wall and psi = Q (the flux) on the other, the obstacle islands'
+  psi each set by zero net pressure round it (iterated from the circulation), and the through-flow then threads round the pillars by
+  itself. Today's solver relaxes vorticity and psi but has no no-slip walls (a no-slip wall needs the wall vorticity or a biharmonic
+  solve; the screening and the viscous reach keep the flow near walls gentle).
+- Switches and knobs: `?stir=0`, `?stirsplit=0`, `?stirgain=`, `?stirwet=`, `?stirreach=`, `?stirfade=`, `?stirscreen=`; live in
+  `moire.stir.params` (also `cell`, `iters`, `psiIters`, `lines`).
+
+### Old snapshots
+
+A snapshot saved before G0 loads with the glue capped at 1, no tearing, no glue cost above 1 and no stirring (as it ran; the notes say
+so). The stir state is not saved (a reload starts from still stirred water and refills within seconds). The junction word (torn,
+formed) is saved with the cells.
+
+### What it looks like (pictures: `experiments/keep/g0/`, seed 3, at 300 s unless said)
+
+- **Stirred water** (machinery view: `*-dish-streamlines.jpg`): pink streamlines over the teal prescribed ones. A growing colony wraps
+  itself in one or two big loops of stirred water (the default scene: a pink ring round the whole colony), with small curls along its
+  ragged rim where cells crawl in and out; in Fronts each cluster sits in its own swirl and the swirls travel with the clusters
+  (`fronts-glue4-t240-streamlines.jpg`); in the Chip the stirring sits at the front of the tissue regrowing from the inlet. The stirred
+  flow is slower than the prescribed currents (0.35 to 0.6 R/s): mean 0.03 to 0.04 R/s in the default scene, 0.1 to 0.19 R/s in dense
+  Fronts, Chip and colony dishes, the fastest 0.4 to 0.9 R/s. No "bacterial turbulence" (many small vortices inside dense tissue):
+  crawling headings are uncorrelated, and inside a packed tissue the cells move with each other, so their pushes cancel.
+- **Torn junctions** (`default-s3-tear-neon-x8.jpg`, `-harm-x8.jpg`, x8 on a cell with a torn side): a snapped hot-coral tube with a
+  dark break in its middle (harmonic: a gap in the green rim). A few in every field of view of a dense tissue; subtle among the self
+  marker's stripes at that zoom.
+- **Strong glue by hand** (`lab-glue4-pressed-t180.jpg`, `fronts-glue4-t240-streamlines.jpg`): the lab's 60 clones at gene 4 stay one
+  cluster through the press; nothing jumps or explodes.
+- The default colony, Fronts, Chip and colonies (`*-dish-neon.jpg`, `*-dish-harm.jpg`) look as before at this scale: the tearing makes
+  the default colony's rim a little more ragged at a minute, not visibly different at three.
+
+### Results (quick runs; the user: not valid until more changes land; EXPERIMENTS.md "Strong glue and stirred water")
+
+- **Glue on against its neutral control**, 2 seeds, default scene and Fronts 20 min, Chip and colonies 10 min: NO consistent
+  difference (on above null in 3 of 8, below in 2, alike in 3). The gene now does wander far above the old ceiling (half the cells
+  above 1 in some dishes, on and null alike), swinging with whichever lineage wins. The glue junctions actually hold stays small (0.15 to
+  0.35 above the base loss, on and null alike): most of what a strong gene asks above the free 0.5 is not paid for, so strong genes mostly
+  cost.
+- **Tears**: 0.02 to 0.1 per cell per s (default 4 to 90 per s, dense Fronts and Chip 300 to 1600); 5 to 15 % of touching sides torn at
+  any moment.
+- **Very strong glue is stable**: every cell set to 4 (tissue lab pressed by the wall; Fronts): no runaway speeds (fastest 1.5 R/s), no
+  NaN, one cluster held; in Fronts the gene fell back to 2.95 within 300 s.
+
+### Checked
+
+- Books (`experiments/conditions/g0/check.json`, 400 s at MAX, seed 5, whole dish lit, perfusion on; every G0 switch off and on again,
+  a squeeze x0.8 and a stretch x1.25, the press, a resize and back, a snapshot saved and loaded): atoms and charge rounding 0 at every
+  sample; the energy rounding within -0.04..+0.003 (as with G0 off), blips at the samples right after the squeeze and the stretch (as
+  before G0), the reload exact. The Fronts preset (press) and the Chip (perfusion) runs: atoms rounding 0 throughout.
+- Firefox (headed): default scene, the GLUE and WATER lines filled, console clean. Phone (Chrome 390 x 844, dpr 3): works; the compact
+  GLUE line wraps to two lines.
+
+### Speed (headless Chrome, 1280 x 800, default scene, seed 3, MAX, two runs each, as F0's; GPU free of other runs)
+
+| | 2000 neon | 2000 harmonic | 10 000 neon | 10 000 harmonic |
+|---|---|---|---|---|
+| before G0 (main 23c6d9c: F0, D1, G1 in; one run each, same session) | x6.70 | - | x1.19 | x1.19 |
+| after G0, all on (two runs) | x6.41, x6.34 | x6.84, x6.89 | x1.11, x1.11 | x1.34, x1.29 |
+| after G0, 10 000 neon: `?stir=0` / `?breaks=0` / both off | | | x1.19 / x1.13 / x1.17 | |
+| F0's "before" (main 58d1963, before F0, D1, G1) | x6.46 | x6.83 | x1.37 | x1.59 |
+
+G0 costs about 5 % at 2000 cells and 7 % at 10 000 (neon), almost all of it the stirring (the eight atomic adds per cell per tick of
+its push, and its passes); the tearing costs nothing measurable. The harmonic numbers scatter more than the change (10 000 harmonic
+before G0 x1.19 in one run, after x1.29 and x1.34). Against F0's "before" the 10 000-cell runs are ~20 % slower, but most of that came
+with F0, D1 and G1 (the pre-G0 build at x1.19).
+
+### Known issues
+
+- The glue gene shows no selection yet (it hitch-hikes with lineages); strong glue's cost (x a0 per unit above 1) and short linkers keep
+  the held glue small. Whether strong glue pays will need pressures that pull tissues apart more (G0b obstacles and shear, S1 shape,
+  predators) and more seeds.
+- Tearing is a geometric rule (past R0 x 1.05 while separating), the quasi-static form of load > strength; the census's "load" is the
+  pull a junction carries less the contact's push as a share of its strength (mostly negative: packed tissue is pressed together).
+- The stirred flow is free-slip at the dish's rim (psi = 0 there; no wall vorticity), quasi-steady with a fade, and its state is not
+  saved in snapshots. A cell's own stirred water drags it a little too (a small self-push, paid from heat).
+- The stirred streamlines are spaced by the flow's own range (read back every 2 s), so they flicker a little when the range changes.
+- Torn sides need the patterned walls (per side); with `?walls=0` nothing tears.
+
+## Step G0b: obstacles
+
+User, 2026-11-17: "does it make sense to add obstacles ... walls, blocks, etc"; "maybe the microfluidics chip analogy is better". Walls,
+blocks and pillars that cells cannot enter, matter does not cross and water flows round; painted with a tool, by the console, or by a
+preset (`src/obstacles.js`, `src/shaders/obstacles_draw.wgsl`).
+
+### Shapes and the mask
+
+- Obstacles are kept as a list of SHAPES, in order: STROKES (a pen line with a width: walls, channels), RECTANGLES (blocks, corners
+  rounded) and CIRCLES (pillars), each SOLID (stops cells, water and matter), POROUS (stops cells only: water and atoms pass, like a
+  filter insert) or an ERASER (cuts a hole in what was painted before it: an opening, a crack). The shapes are what a snapshot saves and
+  what the squeeze scales; the mask is made from them again.
+- From the shapes the CPU works out two SIGNED DISTANCE FIELDS at the heat pixels' centres (CSS px, negative inside, kept to +-8 R):
+  sdA (what stops cells: solid and porous) and sdS (what stops water and matter: solid). A pixel's KIND follows (0 water, 1 solid, 2
+  porous, 3 the round dish's rim), and for every blocked pixel a WAY OUT (a step toward the nearest free pixel, from a breadth-first
+  search; one for matter, one for cells). Painting redoes only the box round the new shape (plus 8 R).
+- ROUND DISH (`?dish=round`, `?dish=WxH,round`, `?round=1`, the New culture dialog's "round", the Dish panel's "round dish"): the outside
+  of the dish's inscribed circle (1 R in from its shorter side) is a solid RIM. Matter beside it is lost to the rim's sink, as at the
+  square dish's edge; it is never erased.
+- On the GPU: three blocks behind the water's in the heat buffer (the mask word, sdA, sdS) plus two for the solved through-flow (below):
+  the water's blocks went from 5 to 10. Uploaded when something changes. With nothing painted every shader skips it all.
+
+### What the mask does
+
+- **Matter** (`matter.wgsl` spread): no flux across a face between a pixel and a SOLID one (porous pixels let matter through): both
+  pixels of the edge drop it, so the counts stay exact. Matter INSIDE a solid pixel (painted over, dripped by a spring under a wall,
+  put down by a cell's corner) is PUSHED OUT: each solid pixel gives everything it holds, every substep, to the neighbour its way out
+  points to, so painted-over matter walks out to the nearest water, one pixel per substep, in whole counts. MY CHOICE: painting over
+  matter is allowed (not forbidden); it is pushed out exactly. A spring painted over drips into the wall and its atoms come out at
+  the wall's edge. The sea never tops up a solid pixel. The rim sink, the oases' burying and the outlet act only on water pixels.
+- **Cells** (`cell_step.wgsl`): a CONTACT PUSH from the edge, a spring (14 per s, the dish wall's is 2) while the centre is nearer the
+  edge than the cell's radius (booked as work, as the dish's wall); a HARD LIMIT: the centre never comes nearer than 0.45 x its radius
+  (only the position is put back, at most half a radius a tick: no velocity changes, nothing booked); a cell deep inside (painted over)
+  walks out along the way out. The honeycomb's CORNERS FLATTEN against the edge exactly as against a neighbour's wall (the corners
+  facing it stop there and slide toward the tile's corners), so a tissue packed against a wall has a straight side there. New cultures
+  and the add-cell tool never place a cell inside an obstacle.
+- **Water** (`water.wgsl`, `stir.wgsl`): the prescribed moire EDDIES and GYRE fade smoothly to 0 within 4 R of a solid (MY CHOICE:
+  masked, not solved round them, like the dish's own window). The cells' STIRRED flow is 0 on solid nodes of its grid (G0 held them;
+  every island is now a stream line of it too). PERFUSION's through-flow is SOLVED round the obstacles (next).
+
+### The through-flow: pressure-driven
+
+The old through-flow was a prescribed channel profile. With obstacles it is now solved (`?obsflow=0`: the old profile):
+
+- MY CHOICE of physics: a thin chip, depth-averaged (Hele-Shaw / Darcy): the water moves down the pressure gradient, u = -K grad p, and
+  does not pile up, div u = 0. With u from a stream function psi, that is div((1/K) grad psi) = 0. Low Reynolds by construction: smooth
+  flow, no eddies, no vortex streets.
+- Boundary values: psi = 0 along one side wall and psi = Q along the other (Q = the pump's flux: the old mean speed x the channel's
+  width, so a narrowed channel runs faster, as a syringe pump at a set flow rate); the inlet and outlet edges are open (the water crosses
+  them straight); each obstacle ISLAND (a connected solid region) is a stream line whose value is set by zero net pressure round it (its
+  psi = the weighted mean of its neighbours, iterated with the rest). An island joined to a side wall takes that wall's value; a wall
+  joining both side walls BLOCKS the channel (no through-flow; the panel says so).
+- NO-SLIP, approximately: K falls smoothly to 0.04 within 3 R of every wall and side wall (the slow layer a no-slip wall makes in a
+  shallow channel), so the flow is fastest in the middle of each gap, still along the walls, plug-like in the open (wide) channel. Not
+  a full Stokes solve: no recirculating eddies in a side chamber, just still water.
+- Solved on the CPU (red-black over-relaxation, warm-started from the last solve, at most 4 ms a frame until it settles; the first
+  solve up to 0.4 s), uploaded as psi at the heat pixels' corners and scaled by Q in `water.wgsl`, so the substances, the cells and the
+  streamlines read it through the same psi block as before (transport divergence-free, flux form, exact). The Chip's mask (77 islands)
+  settles in about 700 sweeps.
+- The streamlines in the machinery view are drawn half a step off with obstacles (no line sits exactly on a still island's value).
+
+### The tool, the console, the presets
+
+- TOOL (the toolbar's wall-and-pillars button; its button again cycles the shape): WALL (a drag paints a wall, 2 R wide), BLOCK (a drag
+  spans a rectangle, dashed preview), PILLAR (a tap places one, a drag a row, 2.5 R in radius), ERASE (a drag cuts through). The Dish
+  panel's "obstacles" row: the shapes, porous on/off, thinner / thicker, undo, clear, round dish. Touch works the same (pointer events).
+- Console (dish px): `moire.obstacles.line(x1, y1, x2, y2, w, kind)`, `.path([[x, y], ...], w, kind)`, `.rect(x, y, w, h, kind, r)`,
+  `.circle(x, y, r, kind)`, `.pillars(x0, y0, x1, y1, r, gap, kind)` (a staggered array), `.erase(x1, y1, x2, y2, w)`, `.undo()`,
+  `.clear()`, `.setRound(on)`, `await .measure()`; knobs in `.params`.
+- PRESETS (a preset's `obstacles()` paints before the culture is seeded; `?presetwalls=0` leaves them out):
+  - **Chip** (upgraded): the D1 channel (396 x 124 R, perfusion) with a staggered array of round pillars over its first third, a side
+    chamber below the channel whose neck (8 R) leaves its water nearly still, and two blocks downstream. The lake's eddies and gyre are
+    off here (a chip has none), so the through-flow's profile shows.
+  - **Crevices** (new): a rock face fills the lower 42 % of the dish, cut by narrow branching cracks (2.6 R) ending in two small caves,
+    boulders in the open water; stronger eddies and gyre in the open; mineral springs in the open and a slow vent at the rock's foot.
+  - **Maze** (new): a fixed labyrinth of thin walls (corridors about 20 R), springs at three corners, the culture in the middle.
+- Switches: `?obstacles=0` (the mask ignored), `?obsflow=0` (the old prescribed profile); rules: `moire.obstacles.params` (`on`, `flow`,
+  `push`, `hard`, `flatten`, `slip`, `kmin`, `fade`, `solveMs`, `tube`, `glow`). Light: no shadows (not built).
+
+### The look
+
+Neon: a dark, cool fill (glass seen from above: what is under it is hidden) with a thin ICE-BLUE TUBE along every edge (a white-hot
+core; the neon halo adds its tight glow). Porous parts: a lighter fill dotted with pores and a DASHED pale-aqua edge. Harmonic: a
+near-black fill with a faint grey rim (as a glass interface shows in a multiphoton image; green stays the cells' membranes). Flat look:
+a pale steel edge. The block tool's preview: a thin dashed outline.
+### What it looks like (pictures: `experiments/keep/g0b/`)
+
+- **Chip** (`chip-s3-t300-*.jpg`, `chip-s3-t300-pillars-x3.5-neon.jpg` / `-harm.jpg`, `chip-s*-t600-neon.jpg`): a long dark channel
+  with a lattice of glassy ice-blue rings over its first third and a thin-walled chamber hanging off its floor. The tissue regrows from
+  the inlet as a packed front and arrives at the pillars at about 5 minutes (harmonic: a green honeycomb meeting a lattice of grey
+  circles); by 10 minutes it has threaded through, its leading edge ahead along the TOP of the channel, where the flow deflected over
+  the chamber brings the medium first. Machinery view (`chip-streamlines-x2.5-machinery.jpg`): the streamlines squeeze between the
+  pillars and arch up and over the chamber; none enter its neck.
+- **Crevices** (`crevices-s3-t300-*.jpg`, `crevices-s7-t600-*.jpg`): the lower part of the dish a dark slab of rock under a straight
+  ice-blue edge, cut by jagged cracks ending in two round caves, boulders in the open water. At 5 minutes the cracks are empty; at 10
+  minutes cells have filed into them one by one, single chains following each crack's bends to its end. Against the rock face the
+  cells' sides are flat (harmonic close-up `crevices-s3-t300-cracks-x3.5-harm.jpg`: green rims with straight bottoms on a grey line).
+- **Maze** (`maze-s3-t300-*.jpg`): a dish-wide labyrinth of thin glowing walls; the culture fills its own dead ends, packed flat
+  against the walls; oil and soap slicks at the corner springs.
+- **Round dish** (`round-s3-t300-*.jpg`): a petri dish: a thin ice-blue circle, the dark corners outside it.
+- **Fronts with blocks** (`fronts-blocks-s3-t*.jpg`): the press packs the tissue round the blocks like a crowd round stones.
+- **The tool** (`tool-painted-default.jpg`): a wall, a block, a row of pillars and a porous wall (dashed edge) painted over the default
+  colony; the cells are pushed out, the block's inside is empty. Phone (`phone-maze.jpg`): the Maze in portrait.
+
+### Results (quick runs, 10 min, seeds 3 and 7; the user: not final; EXPERIMENTS.md "Obstacles")
+
+- **Dead zones do not pile up matter, they starve.** In the perfused Chip the still places (9 % of the floor: the chamber, behind the
+  blocks) hold 2 to 8 % of the open water's matter and no cells at 5 and 10 minutes: in a chip matter arrives with the flow, and still
+  water only gets what spreads in.
+- **Colonies pack against walls and file into cracks.** Within 2 R of the Chip's pillars and walls the cells are 1.4 to 1.5 x as dense
+  as in the open at 10 minutes, the fuel 1.7 x; round the Fronts blocks 1.8 to 1.9 x. In Crevices the cracks fill only once the open
+  water is full (40 to 48 cells at 10 minutes, half the open's density; 1 or 2 at 5 minutes).
+- **Crevices are not refuges yet.** Through the founders' crash the cracks sheltered nobody (5 or 6 cells in them at 1 minute, 1 or 2
+  at 5); their water is poor (matter 9 to 49 % of the open's: nothing drips there). Shelter from predators and shear is untested: few
+  engulfers, and the strong glue's tearing comes from crowding, not from the currents.
+- **The flow shows the obstacles**: it threads the pillar array and arches over the side chamber, and the regrowing front follows it
+  (ahead where the flow brings the medium first). A front bending round the Fronts blocks with a shadow behind did not show in the
+  pictures (300, 600 s).
+
+### Checked
+
+- Books (`experiments/conditions/g0b/check.json`, 420 s at MAX, seed 5, whole dish lit, perfusion on): obstacles painted over the
+  culture and its springs (matter under them pushed out), a porous disc, an erase, an undo, the mask off and on, the solve off and on,
+  a clear, a round dish with pillars, a squeeze x0.8 and a stretch x1.25, a resize and back, a snapshot saved and loaded: atoms and
+  charge rounding 0 at every sample, energy rounding as before G0b (-0.03..+0.02, the usual blips right after the squeeze and the
+  stretch), the reload exact, no cell inside a solid. All six quick runs: atoms and charge 0 throughout.
+- Firefox (headed, Crevices): runs, console clean. Phone (Chrome 390 x 844): the tools wrap to two rows; the Maze in portrait.
+- The tool in Chrome by pointer events (mouse, and one drag as touch).
+
+### Speed (headless Chrome, 1280 x 800, default scene, seed 3, MAX; GPU SHARED: other workers' and the user's browsers ran on it)
+
+| | 2000 neon | 2000 harmonic | 10 000 neon | 10 000 harmonic |
+|---|---|---|---|---|
+| G0 (GPU free, from its README) | x6.41, x6.34 | x6.84, x6.89 | x1.11, x1.11 | x1.34, x1.29 |
+| G0b, nothing painted, quieter spell (`g0b-pair-*`, `g0b-free-*`) | x5.96, x6.17 | x6.63 | x1.11 | x0.63 (busy again) |
+| G0b, a field of round pillars painted (104 at 2000 cells, 485 at 10 000; same spells) | x6.09, x6.17 | | x1.06 | |
+| busy spell: G0b nothing painted / G0 (commit 53a13ba), run side by side | x1.37, x1.95 / x0.81, x1.44 | x0.73, x1.98 / x1.34, x2.3 | x0.27, x0.53 / x0.23, x0.68 | x0.33, x0.73 / x0.75, x0.41 |
+
+With nothing painted every obstacle pass is skipped (the shaders test one offset), so G0b runs as G0 within the scatter of a shared
+GPU (2000 neon x6.0..6.2 against G0's x6.3..6.4; 10 000 neon x1.11 both). A field of pillars costs nothing measurable at 2000 cells
+(pairs run back to back: x6.09 / x6.17 painted against x5.96 / x6.17 not) and about 5 % at 10 000 (x1.06 against x1.11: four extra reads
+per cell per tick for the push, five per pixel per substep for the matter's mask). The CPU flow solver runs only while perfusion flows
+round obstacles and only until it settles (the Chip: about 700 sweeps, under a second). The busy spell's numbers swing by 2 to 3 x
+between runs and say nothing about either build.
+
+### Known issues
+
+- The through-flow is depth-averaged (Darcy with a slow layer at the walls), not Stokes: no recirculating eddy in a cavity, and a wide
+  channel's profile is plug-like (the old Chip's was a full Poiseuille arch; the Chip now has no lake eddies either).
+- A wall joining both side walls blocks the perfusion (no through-flow; the panel says BLOCKED); a round dish with perfusion is always
+  blocked.
+- The eddies and the gyre are faded near solids, not solved round them; the stirred flow is 0 on solid nodes of its coarse grid (2 heat
+  pixels), so near a wall it is a little rougher than the rest.
+- Walls thinner than about 1 R: a cell pushed hard can in principle cross one (the hard limit puts it back on the nearer side); the
+  tool's walls are 2 R by default. Painting a whole dish solid leaves matter nowhere to go (it stays where it is).
+- A spring painted over drips into the wall and its atoms come out at the wall's edge; roaming oases may wander under a wall (the same).
+- Light: no shadows. Squeeze and stretch scale the obstacles with the sample (walls thinner or thicker).
+- Merge note for the carbon branch: carbon's own spread (carbon.wgsl) needs the same mask (no flux at solid faces, solid pixels pushing
+  out along the mask word's bits 2-4: `MatterP.obs.x`).
 
 ## Files
 
@@ -6622,6 +6931,16 @@ Cells alive at 5 / 10 / 15 / 20 minutes, carbon making the cell against `?carbon
   stats read-back), the DIVISION and COUNT panel lines, the overlay and `stats()` (where the cells are: light, patches); the
   free-slot list is built by the grid (`cell_grid.wgsl`: the dead slots' bucket), the divisions and deaths are in
   `cell_step.wgsl`, the division's cost and the split in `cell_eat.wgsl` (split), the flash and the fading in `cell_draw.wgsl`
+- `src/glue.js`: step G0, strong glue and junctions that break: the switches and knobs (`moire.glue.params`), the census (Stats.g0),
+  the GLUE panel line; the log-scale gene's mutation in `cell_step.wgsl` daughter_genome, the junction word (Cell.kind) and tearing in
+  `cell_step.wgsl`, the cost above 1 and torn sides in `cell_eat.wgsl`, the log code of a side's adhesion in `cell_common.wgsl`.
+- `src/stir.js` + `src/shaders/stir.wgsl`: step G0, the cells stir the water: the stir grid, its vorticity and stream function passes
+  (once per frame, from `src/water.js`), the census; the cells' push and the stirred work paid from heat in `cell_step.wgsl`, the sum
+  with the prescribed psi in `water.wgsl`, the pink streamlines in `water_draw.wgsl`.
+- `src/obstacles.js` + `src/shaders/obstacles_draw.wgsl`: step G0b, obstacles: the shapes (walls, blocks, pillars, erasers, the round
+  dish), their signed distance fields and mask on the heat grid, the push-out directions, the pressure-driven through-flow's solver
+  (CPU), the uploads, the drawing, the measure (`moire.obstacles.measure()`); the matter's mask in `matter.wgsl` spread, the cells' push
+  in `cell_step.wgsl` (`obs_at`), the water's in `water.wgsl` (`obs_corner`, `through_at`) and `stir.wgsl`; the tool in `src/app.js`.
 - `src/walls.js`: patterned walls (step C10): the switches and knobs, the census (from the cells' stats read-back,
   Stats.wall), the WALLS panel line, the overlay and `stats()` (where on the walls the contacts sit, the glue, the junctions); each
   side's pattern, linker want and upkeep are worked out in `cell_eat.wgsl` (Cell.wadh), the smaller side of each contact, the

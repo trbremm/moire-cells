@@ -1,0 +1,12 @@
+{"batch": "g0-strong", "runs": [
+ {"name": "g0-strong-lab", "description": "step G0 stability: the Tissue lab, every cell's glue set to 4 (the top) at 2 s, pressed by the wall from 60 s; 180 s",
+  "query": {"preset": "lab", "seed": 3}, "duration": 180, "sample_every": 10, "tissue": true, "stall": 300, "snapshots": [], "dpr": 2,
+  "evals": [{"t": 2, "js": "return JSON.stringify(await moire.genome.setAll(16, 4))"},
+            {"t": 60, "js": "Object.assign(moire.dish.press, { on: true, depth: 0.35, period: 60 }); return 'press'"},
+            {"t": 179, "js": "const { readBuffer } = await import('./src/snapshot.js'); const C = moire.cells, n = C.count, F = 92; const f = new Float32Array(await readBuffer(C.device, C.cellBuf, 0, n * F * 4)); let bad = 0, vmax = 0; for (let i = 0; i < n * F; i += F) { if (!Number.isFinite(f[i]) || !Number.isFinite(f[i+2])) bad++; vmax = Math.max(vmax, Math.hypot(f[i+2], f[i+3])); } return JSON.stringify({bad, vmaxR: vmax / C.R, glue: moire.glue.census})"}],
+  "shots": [{"t": 30, "name": "t30"}, {"t": 90, "name": "t90"}, {"t": 180, "name": "t180"}]},
+ {"name": "g0-strong-fronts", "description": "step G0: Fronts, every cell's glue at 4 from 2 s, 300 s (does strong glue hold against the press? tears)",
+  "query": {"preset": "fronts", "seed": 3}, "duration": 300, "sample_every": 10, "stall": 300, "snapshots": [],
+  "evals": [{"t": 2, "js": "return JSON.stringify(await moire.genome.setAll(16, 4))"}],
+  "shots": [{"t": 120, "name": "t120"}, {"t": 240, "name": "t240"}, {"t": 240, "view": "machinery", "name": "t240m"}, {"t": 300, "name": "t300"}]}
+]}

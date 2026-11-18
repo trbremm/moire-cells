@@ -1,0 +1,106 @@
+{
+  "name": "g0b-pics-fronts_s3",
+  "description": "step G0b pictures: fronts, at 300 s: neon, the machinery view, a close zoom, harmonic",
+  "condition": {
+    "name": "g0b-pics-fronts_s3",
+    "description": "step G0b pictures: fronts, at 300 s: neon, the machinery view, a close zoom, harmonic",
+    "query": {
+      "preset": "fronts",
+      "seed": 3
+    },
+    "duration": 310,
+    "sample_every": 60,
+    "stall": 300,
+    "snapshots": [],
+    "dpr": 2,
+    "shots": [
+      {
+        "t": 300,
+        "name": "dish_neon"
+      },
+      {
+        "t": 302,
+        "view": "machinery",
+        "name": "dish_mach"
+      },
+      {
+        "t": 304,
+        "name": "zoom_neon"
+      },
+      {
+        "t": 306,
+        "name": "zoom_harm"
+      },
+      {
+        "t": 308,
+        "name": "dish_harm"
+      }
+    ],
+    "evals": [
+      {
+        "t": 0,
+        "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.rect(0.3 * W, 0.2 * H, 10 * R, 22 * R, 'solid', R); O.rect(0.5 * W, 0.55 * H, 10 * R, 22 * R, 'solid', R); O.circle(0.68 * W, 0.4 * H, 9 * R); return 'blocks'"
+      },
+      {
+        "t": 303,
+        "js": "moire.camera.set(3, 0.5 * moire.dish.W, 0.6 * moire.dish.H); return 'zoom'"
+      },
+      {
+        "t": 305,
+        "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+      },
+      {
+        "t": 307,
+        "js": "moire.camera.fit(); return 'fit'"
+      }
+    ]
+  },
+  "url": "http://localhost:63443/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=fronts&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "96fdfa25bcbebad55a4feb8d4dc81871c0fcfecd",
+  "dirty": true,
+  "started": "2026-11-18T02:31:52",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 310.0,
+  "run_wall_s": 753.29,
+  "speed_reached": 0.41,
+  "samples": 7,
+  "shots": [
+    "shots/dish_neon.png",
+    "shots/dish_mach.png",
+    "shots/zoom_neon.png",
+    "shots/zoom_harm.png",
+    "shots/dish_harm.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.rect(0.3 * W, 0.2 * H, 10 * R, 22 * R, 'solid', R); O.rect(0.5 * W, 0.55 * H, 10 * R, 22 * R, 'solid', R); O.circle(0.68 * W, 0.4 * H, 9 * R); return 'blocks'",
+      "result": "blocks"
+    },
+    {
+      "t": 303.0000000000531,
+      "js": "moire.camera.set(3, 0.5 * moire.dish.W, 0.6 * moire.dish.H); return 'zoom'",
+      "result": "zoom"
+    },
+    {
+      "t": 305.0000000000513,
+      "js": "moire.control.action('harmonic'); return 'harmonic toggled'",
+      "result": "harmonic toggled"
+    },
+    {
+      "t": 307.00000000004945,
+      "js": "moire.camera.fit(); return 'fit'",
+      "result": "fit"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T02:45:52",
+  "wall_s": 840.15
+}

@@ -1,0 +1,6 @@
+{"batch": "g0-pilot", "runs": [
+ {"name": "g0-pilot-on", "description": "step G0 pilot: default scene, everything on, 180 s", "query": {"seed": 3}, "duration": 180, "sample_every": 10,
+  "shots": [{"t": 60}, {"t": 180}, {"t": 180, "view": "machinery", "name": "mach"}, {"t": 180, "panel": true, "name": "panel"}], "snapshots": []},
+ {"name": "g0-pilot-off", "description": "step G0 pilot: default scene, breaks=0 stir=0 glueceil=0 gluecost=0 (as F0), 180 s", "query": {"seed": 3, "breaks": 0, "stir": 0, "glueceil": 0, "gluecost": 0}, "duration": 180, "sample_every": 10,
+  "shots": [{"t": 60}, {"t": 180}, {"t": 180, "panel": true, "name": "panel"}], "snapshots": []}
+]}

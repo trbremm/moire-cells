@@ -89,7 +89,7 @@ const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder 
 const STATS_EVENTS = 64;
 const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_AW in cell_common.wgsl)
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
-const FIELDS_BYTES = 560;      // struct Fields in cell_common.wgsl (step G0: + g0a..g0c; step P1: + p1..p1d; step T1a: + t1; step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
+const FIELDS_BYTES = 576;      // struct Fields in cell_common.wgsl (step G0b: + ob0, 560 until then; step G0: + g0a..g0c; step P1: + p1..p1d; step T1a: + t1; step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
                                // step C9: + dv0..dv2; step C10: + wl0, wl1)
 const FIELD_FORMAT = 'rgba16float';
 const DRAW_BYTES = 1424;       // struct Draw in cell_draw.wgsl (step F0: + job[7], 1312 until then; step P1: + p1, p1Ink; step T1b: + grn, grnInk, grnInkH, 1232 until then; step T1a: + kin, 1216 until then; step H1: + harm, harm2, harm3, harm4, hInk[5] after cam, 1072 until then; app: + cam, 1056 until then; step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
@@ -612,7 +612,11 @@ export class Cells {
     const f = new Float32Array(ab), u = new Uint32Array(ab);
     for (let i = 0; i < n; i++) {
       const o = i * CELL_FLOATS;
-      [f[o], f[o + 1]] = place.at(i);
+      let at = place.at(i);
+      // step G0b: never inside an obstacle (another draw from the layout: only when there are obstacles, so the random stream is as before)
+      const O = this.obstacles;
+      if (O && O.active) for (let k = 0; k < 40 && O.blocked(at[0], at[1], 1.1 * R); k++) at = place.at(i);
+      [f[o], f[o + 1]] = at;
       f[o + 2] = 0; f[o + 3] = 0;
       f[o + 4] = R;
       f[o + 5] = keys[2 * i];                          // lattice angle = the key angle
@@ -730,6 +734,7 @@ export class Cells {
     this.pred.writeFields(u, f, 112);          // step P1: predators (Fields.p1, p1b, p1c, p1d)
     this.glue.writeFields(u, f, 128);          // step G0: strong glue, junctions that break (Fields.g0a)
     if (this.stir) this.stir.writeFields(u, f, 132); else { u.fill(0, 132, 140); }   // step G0: the cells stir the water (Fields.g0b, g0c)
+    if (this.obstacles) this.obstacles.writeFields(u, f, 140); else { u.fill(0, 140, 144); }   // step G0b: obstacles (Fields.ob0)
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 

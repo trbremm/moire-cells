@@ -651,7 +651,7 @@ if (CARBON) SPRING_KINDS.seep = { label: 'fuel seep (methane-like carbon)', mix:
 export const ATOM_SCALE = 4096;          // counts per atom-unit (ATOM_SCALE in matter.wgsl)
 const CB_BYTES = 624;                     // step C15a: struct CarbonP (carbon.wgsl)
 const MT_BYTES = 48;                      // struct MatterTick (32 until step C15a's carbon words)
-const MP_BYTES = 720;                     // struct MatterP (step N1: + n1, 704 until then; step C6b: + chg, cq; step C12: + the oil's, 400 until then; step C12f: + sea, 688 until then)
+const MP_BYTES = 736;                     // struct MatterP (step G0b: + obs, 720 until then; step N1: + n1, 704 until then; step C6b: + chg, cq; step C12: + the oil's, 400 until then; step C12f: + sea, 688 until then)
 const MT_SLOT = 256;                      // struct MatterTick slots, bound with a dynamic offset
 const MAX_TICKS = 320;                    // as SLOTS in cells.js
 const MAX_SUB = 4;                        // spreading substeps per tick at most
@@ -1138,6 +1138,7 @@ export class Matter {
     u[176] = 0; u[177] = 0; u[178] = 0; u[179] = 0;
     if (this.water) this.water.writeMatter(u, f, 176, dt / this.nSub);   // step N1: the caustic light, the currents (struct MatterP n1)
     if (this.oases) f[179] = this.oases.buryPerTick(dt);                 // step N1: trace settles into the floor
+    if (this.obstacles) this.obstacles.writeMatter(u, f, 180); else u.fill(0, 180, 184);   // step G0b: the obstacles' mask (struct MatterP obs)
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
 
     const T = new Uint32Array(this.tickAB), w = MT_SLOT / 4;

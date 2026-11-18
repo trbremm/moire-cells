@@ -1,0 +1,202 @@
+{
+ "batch": "g0-pics",
+ "runs": [
+  {
+   "name": "g0-pics-default",
+   "description": "step G0 pictures: default, at 300 s: neon, the stirred streamlines, a torn junction close up, harmonic",
+   "query": {},
+   "duration": 310,
+   "sample_every": 60,
+   "stall": 300,
+   "snapshots": [],
+   "dpr": 2,
+   "shots": [
+    {
+     "t": 300,
+     "name": "dish_neon"
+    },
+    {
+     "t": 302,
+     "view": "machinery",
+     "name": "dish_mach"
+    },
+    {
+     "t": 304,
+     "name": "tear_neon"
+    },
+    {
+     "t": 306,
+     "name": "tear_harm"
+    },
+    {
+     "t": 308,
+     "name": "dish_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 303,
+     "js": "const { readBuffer } = await import('./src/snapshot.js'); const C = moire.cells, n = C.count, F = 92; const ab = await readBuffer(C.device, C.cellBuf, 0, n * F * 4); const f = new Float32Array(ab), u = new Uint32Array(ab); let best = null, bn = -1; for (let i = 0; i < n; i++) { const o = i * F; if (!(u[o + 9] & 1) || !(u[o + 8] & 63)) continue; let k = 0; for (let j = 0; j < n; j += 2) { const q = j * F; if ((u[q + 9] & 1) && Math.hypot(f[q] - f[o], f[q + 1] - f[o + 1]) < 3 * C.R) k++; } if (k > bn) { bn = k; best = [f[o], f[o + 1]]; } } if (best) moire.camera.set(8, best[0], best[1]); return JSON.stringify({best, bn})"
+    },
+    {
+     "t": 305,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    },
+    {
+     "t": 307,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  },
+  {
+   "name": "g0-pics-fronts",
+   "description": "step G0 pictures: fronts, at 300 s: neon, the stirred streamlines, a torn junction close up, harmonic",
+   "query": {
+    "preset": "fronts"
+   },
+   "duration": 310,
+   "sample_every": 60,
+   "stall": 300,
+   "snapshots": [],
+   "dpr": 2,
+   "shots": [
+    {
+     "t": 300,
+     "name": "dish_neon"
+    },
+    {
+     "t": 302,
+     "view": "machinery",
+     "name": "dish_mach"
+    },
+    {
+     "t": 304,
+     "name": "tear_neon"
+    },
+    {
+     "t": 306,
+     "name": "tear_harm"
+    },
+    {
+     "t": 308,
+     "name": "dish_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 303,
+     "js": "const { readBuffer } = await import('./src/snapshot.js'); const C = moire.cells, n = C.count, F = 92; const ab = await readBuffer(C.device, C.cellBuf, 0, n * F * 4); const f = new Float32Array(ab), u = new Uint32Array(ab); let best = null, bn = -1; for (let i = 0; i < n; i++) { const o = i * F; if (!(u[o + 9] & 1) || !(u[o + 8] & 63)) continue; let k = 0; for (let j = 0; j < n; j += 2) { const q = j * F; if ((u[q + 9] & 1) && Math.hypot(f[q] - f[o], f[q + 1] - f[o + 1]) < 3 * C.R) k++; } if (k > bn) { bn = k; best = [f[o], f[o + 1]]; } } if (best) moire.camera.set(8, best[0], best[1]); return JSON.stringify({best, bn})"
+    },
+    {
+     "t": 305,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    },
+    {
+     "t": 307,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  },
+  {
+   "name": "g0-pics-chip",
+   "description": "step G0 pictures: chip, at 300 s: neon, the stirred streamlines, a torn junction close up, harmonic",
+   "query": {
+    "preset": "chip"
+   },
+   "duration": 310,
+   "sample_every": 60,
+   "stall": 300,
+   "snapshots": [],
+   "dpr": 2,
+   "shots": [
+    {
+     "t": 300,
+     "name": "dish_neon"
+    },
+    {
+     "t": 302,
+     "view": "machinery",
+     "name": "dish_mach"
+    },
+    {
+     "t": 304,
+     "name": "tear_neon"
+    },
+    {
+     "t": 306,
+     "name": "tear_harm"
+    },
+    {
+     "t": 308,
+     "name": "dish_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 303,
+     "js": "const { readBuffer } = await import('./src/snapshot.js'); const C = moire.cells, n = C.count, F = 92; const ab = await readBuffer(C.device, C.cellBuf, 0, n * F * 4); const f = new Float32Array(ab), u = new Uint32Array(ab); let best = null, bn = -1; for (let i = 0; i < n; i++) { const o = i * F; if (!(u[o + 9] & 1) || !(u[o + 8] & 63)) continue; let k = 0; for (let j = 0; j < n; j += 2) { const q = j * F; if ((u[q + 9] & 1) && Math.hypot(f[q] - f[o], f[q + 1] - f[o + 1]) < 3 * C.R) k++; } if (k > bn) { bn = k; best = [f[o], f[o + 1]]; } } if (best) moire.camera.set(8, best[0], best[1]); return JSON.stringify({best, bn})"
+    },
+    {
+     "t": 305,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    },
+    {
+     "t": 307,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  },
+  {
+   "name": "g0-pics-colonies",
+   "description": "step G0 pictures: colonies, at 300 s: neon, the stirred streamlines, a torn junction close up, harmonic",
+   "query": {
+    "preset": "colonies"
+   },
+   "duration": 310,
+   "sample_every": 60,
+   "stall": 300,
+   "snapshots": [],
+   "dpr": 2,
+   "shots": [
+    {
+     "t": 300,
+     "name": "dish_neon"
+    },
+    {
+     "t": 302,
+     "view": "machinery",
+     "name": "dish_mach"
+    },
+    {
+     "t": 304,
+     "name": "tear_neon"
+    },
+    {
+     "t": 306,
+     "name": "tear_harm"
+    },
+    {
+     "t": 308,
+     "name": "dish_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 303,
+     "js": "const { readBuffer } = await import('./src/snapshot.js'); const C = moire.cells, n = C.count, F = 92; const ab = await readBuffer(C.device, C.cellBuf, 0, n * F * 4); const f = new Float32Array(ab), u = new Uint32Array(ab); let best = null, bn = -1; for (let i = 0; i < n; i++) { const o = i * F; if (!(u[o + 9] & 1) || !(u[o + 8] & 63)) continue; let k = 0; for (let j = 0; j < n; j += 2) { const q = j * F; if ((u[q + 9] & 1) && Math.hypot(f[q] - f[o], f[q + 1] - f[o + 1]) < 3 * C.R) k++; } if (k > bn) { bn = k; best = [f[o], f[o + 1]]; } } if (best) moire.camera.set(8, best[0], best[1]); return JSON.stringify({best, bn})"
+    },
+    {
+     "t": 305,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    },
+    {
+     "t": 307,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  }
+ ],
+ "seeds": [
+  3
+ ]
+}

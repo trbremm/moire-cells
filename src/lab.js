@@ -121,6 +121,7 @@ function gather(M, ctl) {
   if (M.pigments && M.pigments.census) flatten(M.pigments.census, 'lightmatter', out);   // step N1: light needs matter
   if (M.glue && M.glue.census) flatten(M.glue.census, 'glue', out);       // step G0: the glue gene, junctions, tears
   if (M.stir && M.stir.census) flatten(M.stir.census, 'stir', out);       // step G0: the stirred water
+  if (M.obstacles && M.obstacles.census) flatten(M.obstacles.census, 'obs', out);   // step G0b: the obstacles' last measure (moire.obstacles.measure())
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;
   if (C.stats) flatten({ job: C.stats.job, births: C.stats.births, deaths: C.stats.deaths, heatDeaths: C.stats.heatDeaths,

@@ -1,0 +1,48 @@
+{
+ "batch": "g0-speed-parts",
+ "runs": [
+  {
+   "name": "g0-speed-10k-neon-nostir",
+   "description": "step G0 speed, after G0: default scene, 10000 cells, MAX, 60 s, neon (nostir)",
+   "query": {
+    "seed": 3,
+    "cells": 10000,
+    "stir": 0
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g0-speed-10k-neon-nobreaks",
+   "description": "step G0 speed, after G0: default scene, 10000 cells, MAX, 60 s, neon (nobreaks)",
+   "query": {
+    "seed": 3,
+    "cells": 10000,
+    "breaks": 0
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g0-speed-10k-neon-off",
+   "description": "step G0 speed, after G0: default scene, 10000 cells, MAX, 60 s, neon (off)",
+   "query": {
+    "seed": 3,
+    "cells": 10000,
+    "stir": 0,
+    "breaks": 0
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  }
+ ]
+}

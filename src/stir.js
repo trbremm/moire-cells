@@ -127,6 +127,18 @@ export class Stir {
     };
     this.ticks = 0;
     this.census = null;
+    this.maskVer = -1;
+  }
+
+  /** Step G0b: the obstacles' mask on the stir grid (src/obstacles.js), uploaded when it changed. */
+  syncMask() {
+    const O = this.obstacles;
+    const v = O && O.active ? O.version : -1;
+    const key = `${v}|${this.version}|${O ? O.gridVersion : -1}`;
+    if (key === this.maskVer) return;
+    this.maskVer = key;
+    const m = O && O.active && O.n ? O.stirMask(this.sw, this.sh, this.spacing) : new Uint32Array(this.n);
+    this.device.queue.writeBuffer(this.bufs.mask, 0, m);
   }
 
   /** The frame's passes (src/water.js compute, before the surface pass): the cells' push of the frame before -> the stirred psi in hb. */
@@ -135,6 +147,7 @@ export class Stir {
     const H = this.heat;
     if (!this.on || !H || !H.buffer || !this.pipes) return;
     this.size();
+    this.syncMask();   // step G0b: solid nodes from the obstacles
     const p = this.params, R = H.R, h = this.spacing * H.px, o = this.offsets();
     const ticks = this.ticks;
     this.ticks = 0;

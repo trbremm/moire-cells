@@ -377,6 +377,7 @@ export async function snapshot(M, ctl, opts = {}) {
       settings: captureSettings(M),
       founders: clone(M.genome.founders),
       springs: clone(M.matter.springs),
+      obstacles: M.obstacles ? M.obstacles.save() : null,   // step G0b: the obstacles' shapes (the mask is made from them again)
       books: captureBooks(M),
       js: { aQuant: C.aQuant ? clone(C.aQuant) : null },
       cells: { idx: await pack(new Uint32Array(idx)), rec: await pack(rec), bio: await pack(bio), stock: await pack(stock),
@@ -635,6 +636,7 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     // springs, time, the JS-side state
     M.matter.springs = clone(S.springs || []).map((s) => (sameView ? s : { ...s, x: s.x + dx, y: s.y + dy }));
     if (M.oases) M.oases.adopt();   // step N1: the snapshot's oases roam on (the page's own are gone with its springs)
+    if (M.obstacles) M.obstacles.load(S.obstacles || null);   // step G0b: its obstacles (none before G0b)
     ctl.setTime(S.time);
     C.tick = S.tick >>> 0;
     C.warm = 0;

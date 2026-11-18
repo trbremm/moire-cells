@@ -62,6 +62,31 @@ fn stir_vel(p: vec2f) -> vec2f {
   return vec2f(dy, -dx);
 }
 
+// step G0b, OBSTACLES (src/obstacles.js): at p (CSS px) the signed distance to the nearest edge that stops cells (sdA, bilinear between the
+// heat pixels' centres; < 0 inside) and its gradient (x, y: pointing away from the obstacle); deep inside (beyond the fields' reach, where the
+// gradient is 0) the pixel's way out (the mask word's cell bits) gives the direction instead
+fn obs_at(p: vec2f) -> vec3f {
+  let o = bitcast<u32>(FL.ob0.y);
+  let g = clamp(p / HP.px - 0.5, vec2f(0.0), vec2f(f32(HP.hw) - 1.001, f32(HP.hh) - 1.001));
+  let b = vec2u(floor(g));
+  let t = g - vec2f(b);
+  let w = HP.hw;
+  let i0 = o + b.y * w + b.x;
+  let d00 = bitcast<f32>(atomicLoad(&hb[i0]));
+  let d10 = bitcast<f32>(atomicLoad(&hb[i0 + 1u]));
+  let d01 = bitcast<f32>(atomicLoad(&hb[i0 + w]));
+  let d11 = bitcast<f32>(atomicLoad(&hb[i0 + w + 1u]));
+  let d = mix(mix(d00, d10, t.x), mix(d01, d11, t.x), t.y);
+  var gr = vec2f(mix(d10 - d00, d11 - d01, t.y), mix(d01 - d00, d11 - d10, t.x)) / HP.px;
+  if (d < 0.0 && dot(gr, gr) < 0.09) {
+    let q = vec2u(clamp(vec2i(floor(p / HP.px)), vec2i(0), vec2i(i32(HP.hw) - 1, i32(HP.hh) - 1)));
+    let wd = (bitcast<u32>(atomicLoad(&hb[o - HP.n + q.y * w + q.x])) >> 5u) & 7u;
+    // (1 left, 2 right, 3 up, 4 down; a select chain: naga, Firefox's compiler, refuses a dynamic index into a value array)
+    gr = select(select(select(select(vec2f(0.0), vec2f(0.0, 1.0), wd == 4u), vec2f(0.0, -1.0), wd == 3u), vec2f(1.0, 0.0), wd == 2u), vec2f(-1.0, 0.0), wd == 1u);
+  }
+  return vec3f(d, gr);
+}
+
 @compute @workgroup_size(128)
 fn step(@builtin(global_invocation_id) id: vec3u) {
   let j = id.x;
@@ -628,6 +653,38 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     c.mature = array<u32, 3>(0u, 0u, 0u);
   }
 
+  // step G0b, OBSTACLES: the nearest edge that stops cells (its distance and the way out); its edge is a WALL for the honeycomb's corners,
+  // as a neighbour's is (the corners facing it stop there and slide toward the tile's corners), so a cell pressed against it goes flat there
+  let obF = bitcast<u32>(FL.ob0.x);
+  let obOn = (obF & OB_ON) != 0u;
+  var obs = vec3f(1e9, 0.0, 0.0);
+  if (obOn) {
+    obs = obs_at(c.pos);
+    let gm = length(obs.yz);
+    if (hexShape && (obF & OB_FLAT) != 0u && obs.x > 0.0 && obs.x < 1.4 * c.r && gm > 0.3) {
+      let uh = -obs.yz / gm;               // toward the edge
+      let wall = obs.x;
+      let cuA = uh.x * huX[0] + uh.y * huY[0];
+      let cuB = (uh.x * huX[1] + uh.y * huY[1]).xy;
+      let bA = wall / max(cuA, vec4f(0.05));
+      let bB = wall / max(cuB, vec2f(0.05));
+      let okA = cuA > vec4f(0.05);
+      let okB = cuB > vec2f(0.05);
+      boundA = select(boundA, min(boundA, bA), okA);
+      boundB = select(boundB, min(boundB, bB), okB);
+      let xA = max(bA / c.r, vec4f(0.2));
+      let xB = max(bB / c.r, vec2f(0.2));
+      let x4A = (xA * xA) * (xA * xA);
+      let x4B = (xB * xB) * (xB * xB);
+      let wA = select(vec4f(0.0), 1.0 / (x4A * x4A * x4A), okA & (bA < vec4f(2.5 * c.r)));
+      let wB = select(vec2f(0.0), 1.0 / (x4B * x4B * x4B), okB & (bB < vec2f(2.5 * c.r)));
+      slideA -= wA * (uh.y * huX[0] - uh.x * huY[0]) / max(cuA, vec4f(0.05));
+      slideB -= wB * (uh.y * huX[1] - uh.x * huY[1]).xy / max(cuB, vec2f(0.05));
+      swA += wA;
+      swB += wB;
+    }
+  }
+
   // step 8: the field A and partner A' this cell feels from its neighbours: the mean over the membrane, and the gradient
   // (sum of segment mean x outward normal x length = area x gradient; the outline's area is 2.6 r^2)
   // step C6c: the six corners' walls and slides as arrays again, for the shape (below)
@@ -870,6 +927,12 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let mg = 3.0 * S.R;
   if (c.pos.x < mg) { f.x += (mg - c.pos.x) * S.wall; } else if (c.pos.x > S.W - mg) { f.x -= (c.pos.x - S.W + mg) * S.wall; }
   if (c.pos.y < mg) { f.y += (mg - c.pos.y) * S.wall; } else if (c.pos.y > S.H - mg) { f.y -= (c.pos.y - S.H + mg) * S.wall; }
+  // step G0b: the obstacles' contact push, a spring from the edge (ob0.z per s) while the centre is nearer than the cell's radius (booked as
+  // work, as the dish's wall)
+  if (obOn && obs.x < c.r) {
+    let gm = length(obs.yz);
+    if (gm > 1e-4) { f += (c.r - obs.x) * FL.ob0.z * obs.yz / gm; }
+  }
 
   // stirring: the pointer drags cells within reach along with it
   let p = c.pos - S.pointer;
@@ -979,6 +1042,14 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     c.pos += c.vel * S.dt + jit * S.jitter * S.R * mot;
   }
   c.pos = clamp(c.pos, vec2f(0.0), vec2f(S.W, S.H));
+  // step G0b: ... and never nearer an edge than ob0.w x the radius (the position alone is put back, at most half a radius a tick, so a cell
+  // painted over walks out along the way out; nothing is booked: no velocity changes)
+  if (obOn) {
+    let q = obs_at(c.pos);
+    let lim = FL.ob0.w * c.r;
+    let gm = length(q.yz);
+    if (q.x < lim && gm > 1e-4) { c.pos = clamp(c.pos + min(lim - q.x, 0.5 * c.r) * q.yz / gm, vec2f(0.0), vec2f(S.W, S.H)); }
+  }
   var eDeath = 0.0;          // the motion of a cell that dies this tick (its daughter starts at rest) becomes heat too
   // (step C12e: osmosis, the eat pass's Cell.osm: a cell swollen by its ions grows toward its rest size x sqrt(1 + swelling), a shrunk
   // one shrinks; smoothly, at the same rate. 0 while osmosis is off)

@@ -163,6 +163,9 @@
 //               old drained, supplies per px); ?medium=x the medium lattice's R in cell radii (default 9 px over the reference R: 1.389 for 2000 cells); ?perarea=0 a fixed
 //               dish with the old amounts (light per px^2, capacity 3 x the starting number, springs and oases per dish, medium 1.389 R);
 //               ?press=depth,period[,bottom] the right (bottom) wall presses the cells in to depth x the dish and lets go, every period s
+//   ?dish=round   step G0b (src/obstacles.js): a ROUND dish (the outside of the inscribed circle is a solid rim; also ?dish=WxH,round or
+//               ?round=1); ?obstacles=0 the obstacles ignored (the mask acts on nothing); ?obsflow=0 perfusion keeps its prescribed profile
+//               (not solved round the obstacles); console moire.obstacles.line / path / rect / circle / pillars / erase / undo / clear
 //   ?mut=0      start with mutation off (key M); ?life=0 with the life cycle off (key T: no births, no deaths)
 //   Experiments (src/lab.js, src/snapshot.js; README "Experiments: tools"): ?snap=<file> loads a snapshot at the start (its
 //               starting number and capacity, its settings); ?clone=1 copies the first live cell's genes to every cell
@@ -202,6 +205,7 @@ import { camera } from './camera.js';
 import { dish, parseDish, snapDish } from './dish.js';   // the dish: its own size, kept while the window changes
 import { scaleDish } from './squeeze.js';
 import { Perfusion, parseRecipe } from './perfusion.js';   // the microfluidic chip: inlet, through-flow, outlet
+import { Obstacles } from './obstacles.js';   // step G0b: walls, blocks, pillars; the round dish
 import { createApp } from './app.js';
 import { applyPreset, layoutFromParams, applyDiversity, PRESETS, SPREAD_SQUEEZE } from './culture.js';
 import { Tissues, useDesignFounder, DESIGNS } from './tissues.js';
@@ -265,6 +269,7 @@ let matter = null;
 let charge = null;     // step C6b: the screened charge field (src/charge.js)
 let water = null;      // step N1: the water: caustic light and currents (src/water.js)
 let oases = null;      // step N1: the scarce nutrient's springs (src/oases.js)
+let obstacles = null;  // step G0b: obstacles (src/obstacles.js)
 let perfusion = null;  // the microfluidic chip: inlet, through-flow, outlet (src/perfusion.js)
 let recorder = null;   // step C3b: the video recorder (Shift+V, the record button)
 let neon = null;       // step C6n: the drawing as a whole, and the neon look (src/neon.js)
@@ -326,7 +331,9 @@ async function boot() {
     }
   }
   // the DISH (src/dish.js): its own size, chosen now and kept while the window changes (?dishfollow=1: the window is the dish, as before)
-  const dishR = parseDish(params.get('dish'));
+  // (step G0b: ?dish=round, ?dish=WxH,round: a round dish, the rest is the size)
+  const dishQ = String(params.get('dish') || ''), roundDish = /(^|,)\s*round\s*$/i.test(dishQ) || (params.has('round') && flag('round'));
+  const dishR = parseDish(dishQ.replace(/,?\s*round\s*$/i, ''));
   if (params.has('perarea') && !flag('perarea')) dish.perArea = false;   // ?perarea=0: supplies per px / per dish as before (a comparison)
   let nCells = snap ? snap.start : Number(params.get('cells')) || defaultCells();
   {
@@ -367,6 +374,7 @@ async function boot() {
     matter = await Matter.create(gpu.device, LIGHT_FORMAT, medium);
     charge = await Charge.create(gpu.device, LIGHT_FORMAT);
     water = await Water.create(gpu.device, LIGHT_FORMAT);   // step N1
+    obstacles = await Obstacles.create(gpu.device, LIGHT_FORMAT);   // step G0b
     cells = await Cells.create(gpu.device, LIGHT_FORMAT, medium, nCells, SEED, nCap);
     const small = Math.min(window.innerWidth || 800, window.innerHeight || 800) < 600;
     neon = await Neon.create(gpu.device, gpu.format, params.has('cheap') ? flag('cheap') : TOUCH || small);
@@ -661,6 +669,17 @@ async function boot() {
       const r = parseRecipe(params.get('recipe'), matter.SUBSTANCES.map((x) => x.name));
       if (r) PP.recipe = r;
     }
+    // step G0b: the obstacles (src/obstacles.js): their blocks live in the heat buffer (the water's), the matter, the cells, the water and the
+    // stir read them
+    Object.assign(obstacles, { heat: cells.heat, water, stir: water.stir, cells, perfusion });
+    water.obstacles = obstacles; matter.obstacles = obstacles; cells.obstacles = obstacles; water.stir.obstacles = obstacles;
+    if (params.has('obstacles')) obstacles.params.on = flag('obstacles');
+    if (params.has('obsflow')) obstacles.params.flow = flag('obsflow');
+    if (!snap) {
+      obstacles.round = roundDish;
+      // a preset's own walls and pillars (before the culture is seeded, so no founder starts inside one)
+      if (PRESET && PRESETS[PRESET].obstacles && !(params.has('presetwalls') && !flag('presetwalls'))) PRESETS[PRESET].obstacles({ obs: obstacles, W: dish.W, H: dish.H, R: dish.R });
+    }
     // step N1: the scarce nutrient and its roaming springs (src/oases.js)
     oases = new Oases(matter, SEED);
     {
@@ -702,14 +721,15 @@ async function boot() {
   }
   // the medium first: it writes the lattice every field-reading layer uses; the light before the cells (its uniform is
   // read by the heat passes the cells run), and its tint is drawn under them (its outline over them: renderTop)
-  layers = [medium, oases, background, landscape, matter, charge, water, light, cells];   // (step C6b: the charge's contours over the substances; step N1: the water
+  layers = [obstacles, medium, oases, background, landscape, matter, charge, water, obstacles.drawLayer, light, cells];   // (step G0b: the obstacles'
+  // mask first, so every pass of the frame reads it; drawn over the water, under the light's tint and the cells)   // (step C6b: the charge's contours over the substances; step N1: the water
   // after the ripples stepped and before the cells' ticks, its caustic net under the light's tint)
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
   window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter, eat: cells.eat, neon, charge,
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
-    kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, perfusion, glue: cells.glue, stir: water.stir,
+    kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, perfusion, glue: cells.glue, stir: water.stir, obstacles,
     carbon: matter.carbon, carbonCells: cells.eat.carbon };
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.warfare = new Warfare(window.moire);     // step T1c: the chemical warfare census (lineage borders against interiors)
@@ -726,6 +746,7 @@ async function boot() {
   resize();
   if (!snap) {   // (a snapshot brings its own springs; app: a preset its own)
     if (PRESET) presetScene(); else defaultScene();
+    obstacles.freeSprings(matter.springs);   // (step G0b: a scene's spring that falls inside an obstacle or outside a round dish moves out)
     for (const s of matter.springs) if (s.kind !== 'oasis') s.scene = true;   // (the dish: a scene's springs drip per area, src/dish.js)
     perfusion.start(view.cssW, view.cssH, cells.R);   // (an inlet drips per R of its length: not scaled again)
   }
@@ -1144,7 +1165,8 @@ function hintLine() {
   if (TOUCH || hintQuiet) return '';   // touch only: the toolbar says it all; the line shows only the flashes
   const t = TOOLS[tool];
   const what = t.spot ? 'click or drag: move the light' : t.stir ? 'click or drag: stir' : t.addCell ? 'click: place a cell · drag: a line of cells'
-    : t.pipette ? 'click or drag: drop the substance' : `click: ${t.label} · drag: stir`;
+    : t.pipette ? 'click or drag: drop the substance' : t.obstacle ? (appUI ? appUI.obstacleHint() : 'drag: paint a wall')
+      : `click: ${t.label} · drag: stir`;
   // (app: the wheel zooms while the spotlight is off; Ctrl+wheel always; middle-drag or Space+drag pans)
   return `${what} · wheel: zoom · right-drag: move the light${light && light.modeIndex === 1 ? ' · Alt+wheel: tilt it' : ''} · Space+drag: pan · ?: all keys`;
 }
@@ -1210,6 +1232,7 @@ function speedText() {
 
 /** Keys 1 2 3 and the toolbar: what a tap / click and a drag on the dish do. */
 function setTool(i) {
+  const again = tool === i;
   tool = i;
   const t = TOOLS[i];
   let text;
@@ -1218,6 +1241,7 @@ function setTool(i) {
     text = 'tap or drag: move the spotlight there';
     if (light.params.mode !== 'spot') { light.params.mode = 'spot'; text += ' (the light is now a spotlight)'; }
   } else if (t.addCell || t.pipette) text = appUI ? appUI.toolText(t) : t.label;   // app: the add tools
+  else if (t.obstacle) text = appUI ? appUI.obstacleTool(again) : t.label;     // step G0b: again = the next shape
   else text = `click drops: ${t.label.replace(/^drop /, '')}`;
   return text;
 }
@@ -1442,7 +1466,7 @@ function setupInput() {
   window.addEventListener('blur', () => { spaceHeld = spaceUsed = false; });
   window.addEventListener('keydown', onKey);
   appUI = createApp({ app, params, flag, flash, cells, matter, light, background, control, get view() { return view; }, touch: TOUCH, tools: TOOLS,
-    inPlace: newCultureInPlace, preset: PRESET, dish });
+    inPlace: newCultureInPlace, preset: PRESET, dish, obstacles });
   ui = setupUI(Object.assign(app, {
     actions, runAction, touch: TOUCH,
     startFolded: params.has('ui') ? !flag('ui') : null,

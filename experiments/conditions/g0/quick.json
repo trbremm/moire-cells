@@ -1,0 +1,394 @@
+{
+ "batch": "g0-quick",
+ "runs": [
+  {
+   "name": "g0-default-on",
+   "description": "step G0 quick: default, glue on, 20 min",
+   "query": {},
+   "duration": 1200,
+   "sample_every": 30,
+   "stall": 300,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "end"
+    },
+    {
+     "t": 1200,
+     "view": "machinery",
+     "name": "end_mach"
+    }
+   ],
+   "evals": [
+    {
+     "t": 60,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 300,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 600,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 900,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 1199,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    }
+   ]
+  },
+  {
+   "name": "g0-default-null",
+   "description": "step G0 quick: default, glue null, 20 min",
+   "query": {
+    "gluenull": 1
+   },
+   "duration": 1200,
+   "sample_every": 30,
+   "stall": 300,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "end"
+    },
+    {
+     "t": 1200,
+     "view": "machinery",
+     "name": "end_mach"
+    }
+   ],
+   "evals": [
+    {
+     "t": 60,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 300,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 600,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 900,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 1199,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    }
+   ]
+  },
+  {
+   "name": "g0-fronts-on",
+   "description": "step G0 quick: fronts, glue on, 20 min",
+   "query": {
+    "preset": "fronts"
+   },
+   "duration": 1200,
+   "sample_every": 30,
+   "stall": 300,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "end"
+    },
+    {
+     "t": 1200,
+     "view": "machinery",
+     "name": "end_mach"
+    }
+   ],
+   "evals": [
+    {
+     "t": 60,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 300,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 600,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 900,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 1199,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    }
+   ]
+  },
+  {
+   "name": "g0-fronts-null",
+   "description": "step G0 quick: fronts, glue null, 20 min",
+   "query": {
+    "preset": "fronts",
+    "gluenull": 1
+   },
+   "duration": 1200,
+   "sample_every": 30,
+   "stall": 300,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "end"
+    },
+    {
+     "t": 1200,
+     "view": "machinery",
+     "name": "end_mach"
+    }
+   ],
+   "evals": [
+    {
+     "t": 60,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 300,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 600,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 900,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 1199,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    }
+   ]
+  },
+  {
+   "name": "g0-chip-on",
+   "description": "step G0 quick: chip, glue on, 20 min",
+   "query": {
+    "preset": "chip"
+   },
+   "duration": 1200,
+   "sample_every": 30,
+   "stall": 300,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "end"
+    },
+    {
+     "t": 1200,
+     "view": "machinery",
+     "name": "end_mach"
+    }
+   ],
+   "evals": [
+    {
+     "t": 60,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 300,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 600,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 900,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 1199,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    }
+   ]
+  },
+  {
+   "name": "g0-chip-null",
+   "description": "step G0 quick: chip, glue null, 20 min",
+   "query": {
+    "preset": "chip",
+    "gluenull": 1
+   },
+   "duration": 1200,
+   "sample_every": 30,
+   "stall": 300,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "end"
+    },
+    {
+     "t": 1200,
+     "view": "machinery",
+     "name": "end_mach"
+    }
+   ],
+   "evals": [
+    {
+     "t": 60,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 300,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 600,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 900,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 1199,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    }
+   ]
+  },
+  {
+   "name": "g0-colonies-on",
+   "description": "step G0 quick: colonies, glue on, 20 min",
+   "query": {
+    "preset": "colonies"
+   },
+   "duration": 1200,
+   "sample_every": 30,
+   "stall": 300,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "end"
+    },
+    {
+     "t": 1200,
+     "view": "machinery",
+     "name": "end_mach"
+    }
+   ],
+   "evals": [
+    {
+     "t": 60,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 300,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 600,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 900,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 1199,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    }
+   ]
+  },
+  {
+   "name": "g0-colonies-null",
+   "description": "step G0 quick: colonies, glue null, 20 min",
+   "query": {
+    "preset": "colonies",
+    "gluenull": 1
+   },
+   "duration": 1200,
+   "sample_every": 30,
+   "stall": 300,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "end"
+    },
+    {
+     "t": 1200,
+     "view": "machinery",
+     "name": "end_mach"
+    }
+   ],
+   "evals": [
+    {
+     "t": 60,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 300,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 600,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 900,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    },
+    {
+     "t": 1199,
+     "js": "const g = moire.glue.census, s = moire.stir.census; return JSON.stringify({glue: g, stir: s, alive: moire.cells.alive})"
+    }
+   ]
+  }
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

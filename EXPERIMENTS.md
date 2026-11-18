@@ -2531,3 +2531,158 @@ larger than the step's cost. A measurement on a free GPU is still to do.
 - The wild colonies' death: find the cause (gene by gene: membrane thickness, walls, oil share against the carbon a cell can get).
 - Channels, pumps, the gene network's expression, cilia and flagella are not yet charged in carbon.
 
+# Strong glue and stirred water (step G0, 2026-11-17)
+
+Quick runs only (the user: results are not valid until more changes land). Conditions in `experiments/conditions/g0/`
+(`make.py`), pictures in `experiments/keep/g0/`. Headless Chrome 1280 x 800; the GPU was shared the whole time with the carbon
+worker's runs (and two of mine at a time), so the Fronts and Chip runs went at x0.3 to x0.6.
+
+## 1. Glue gene: on against its neutral control (`quick.json`, `quick2.json`)
+
+Glue on (log scale to 4, dearer above 1, junctions tear) against `?gluenull=1` (the gene drifts, every effect at the founder's
+value). The gene's GEOMETRIC MEAN over the live cells (share above 1, the old ceiling, in brackets); default scene and Fronts 20 min,
+Chip and colonies 10 min (the 20-min Chip run of seed 3 read at 600 s too):
+
+| scene, seed | start | on | null |
+|---|---|---|---|
+| default s3, 1200 s | 0.48 | 0.99 (54 %) | 0.68 (19 %) |
+| default s7, 1200 s | 0.37 | 0.59 (8 %) | 0.16 (1 %) |
+| Fronts s3, 1200 s | 0.47 | 0.35 (15 %) | 0.53 (30 %) |
+| Fronts s7, 1200 s | 0.37 | 0.29 (9 %) | 0.27 (14 %) |
+| Chip s3, 600 s | 0.47 | 1.08 (57 %) | 0.98 (51 %) |
+| Chip s7, 600 s | 0.37 | 0.37 (11 %) | 0.39 (5 %) |
+| colonies s3, 600 s | 0.67 | 0.43 (17 %) | 0.92 (47 %) |
+| colonies s7, 600 s | 0.34 | 0.57 (28 %) | 0.59 (23 %) |
+
+- NULL RESULT: no consistent difference (on above null in 3 of 8, below in 2, alike in 3). The gene now does wander far above the old
+  ceiling (half the cells above 1 in some dishes, on AND null), but it swings with whichever lineage wins: in the default scene of
+  seed 3 the null was at 1.39 at 600 s and the on-run at 0.30, then they swapped. On the log scale a lineage's glue can drift by x2 to
+  x3 in 20 min by hitch-hiking; nothing yet pays for strong glue enough to beat that.
+- The glue that junctions actually HOLD stays small: mean strength (the pair's glue x likeness minus the base loss) 0.15 to 0.35 in
+  every run, on and null alike: most of the asked-for glue above the free 0.5 is not paid for (linkers short, battery upkeep x a0),
+  so strong genes mostly cost and hold little.
+- Strong glue imposed by hand (`strong.json`: every cell's gene set to 4 at 2 s): in Fronts the gene fell back to 2.95 by 300 s
+  (mutation can only go down from the top, and the cost bites); the tissue lab (60 clones, no food) held one cluster through the press,
+  stable (no runaway speeds: fastest cell 1.5 R/s, no NaN), but its junctions still tore 6 to 12 times a second: the clones cannot
+  pay for the glue they ask, so it is held at about 0.25.
+
+## 2. Junctions tearing
+
+- Tears per second: default scene 4 to 90 (a few hundred to a thousand cells: about 0.02 to 0.07 tears per cell per s), colonies 20 to
+  90, Fronts and Chip 300 to 1600 once they fill (5 000 to 11 000 cells: about 0.1 per cell per s). At any moment 5 to 15 % of the
+  touching sides are torn (healing in 4 s).
+- The default colony at 60 s looks a little looser with tearing (more single cells at its rim) but not visibly different at 3 min
+  (`g0-pilot-on` against `-off`); cell numbers the same through the founders' crash (1593 against 1587 at 60 s, 215 against 206 at
+  180 s).
+- Look (`default-s3-tear-*-x8.jpg`): a torn side shows as a snapped hot-coral tube with a dark break in its middle (harmonic: a gap in
+  the green rim). In a dense tissue at x8 there are a few in every field of view; they are subtle among the self marker's stripes.
+
+## 3. Stirred water
+
+- The stirred flow's speed (mean over the dish / fastest; R/s; the prescribed currents run at 0.35 to 0.6): default scene 0.03 to
+  0.04 / 0.4 to 0.6; colonies 0.12 to 0.15 / 0.4 to 0.5; Fronts and Chip 0.1 to 0.19 / 0.6 to 0.9 once they fill the strip. With the
+  first gain (1.5) the default scene gave 0.02 / 0.2; the gain is now 4.
+- Look (machinery view, pink streamlines over the teal prescribed ones): a growing colony wraps itself in one or two big loops of
+  stirred water (the default scene: a pink ring round the whole colony), with small curls along its ragged rim where cells crawl in and
+  out (`default-s3-dish-streamlines.jpg`); in Fronts each cluster sits in its own swirl and the swirls follow the clusters
+  (`fronts-glue4-t240-streamlines.jpg`); in the Chip the stirring sits at the front of the regrowing tissue (`chip-s3-dish-streamlines.jpg`).
+  No "bacterial turbulence" (many small vortices inside dense tissue): crawling headings are uncorrelated, and inside a packed tissue
+  the cells move with each other, so their pushes cancel.
+- Energy: the stirred water's push on cells, paid from the heat under them, was 3 to 10 energy units per s in the default scene (of
+  some 16 000 per s in); the books stayed exact.
+
+## 4. Checks
+
+- Books (`check.json`, 400 s at MAX, seed 5, whole dish lit, perfusion on; every G0 switch off and on again; a squeeze x0.8 and a
+  stretch x1.25; the press from 250 s; a resize to 1000 x 700 and back; a snapshot saved and loaded at 360 s): atoms and charge
+  rounding 0 at every sample; the energy line's rounding between -0.04 and +0.003 (the same size as with G0 off: the pilot off-run
+  -0.013..+0.007), with the usual blips at the samples right after the squeeze (-429) and the stretch (+28 072), back at -0.013 at the
+  next; the reload exact (energy -0.009, atoms 0, charge 0); console clean.
+- Firefox (headed): default scene 20 s, the GLUE and WATER lines filled, console clean. Phone (Chrome 390 x 844, dpr 3): the compact
+  GLUE line wraps to two lines; nothing else changed.
+- Speed (GPU free, default scene, seed 3, MAX): before G0 (main 23c6d9c, one run each) 2000 neon x6.70, 10 000 neon x1.19; after
+  2000 neon x6.41 / x6.34, harmonic x6.84 / x6.89, 10 000 neon x1.11 / x1.11, harmonic x1.34 / x1.29; 10 000 neon with `?stir=0`
+  x1.19, `?breaks=0` x1.13, both x1.17: the stirring costs about 7 % at 10 000 cells, the tearing nothing measurable.
+
+# Obstacles (step G0b, 2026-11-18)
+
+Quick runs only (the user: results are not final). Conditions in `experiments/conditions/g0b/` (`make.py`), pictures in
+`experiments/keep/g0b/`. Headless Chrome 1280 x 800; the GPU was shared the whole time (two of my runs at a time, plus other workers'),
+so the dishes ran at x0.3 to x0.7. Each quick run is 10 minutes, seeds 3 and 7. The measure (`moire.obstacles.measure()`, at 60, 300
+and 599 s) splits the water's floor into zones by the distance to the nearest edge (0-2 R, 2-6 R, open water beyond), the DEAD ZONES
+(where the solved through-flow is slower than a tenth of its mean) and the ENCLOSED water (more than 60 % solid in the square 5 R round
+it: cracks, caves, chambers), and gives the matter per pixel and the cells per R^2 in each, relative to the open water.
+
+## 1. Chip: the flow threads the pillars; still water stays empty
+
+- The solved through-flow (machinery view, `chip-streamlines-x2.5-machinery.jpg`): the streamlines squeeze between the pillars, rise
+  up and over the side chamber (the chamber is fixed to the bottom wall, so the whole lower half of the channel's flow has to pass
+  above it), and none enter the chamber's neck: the chamber is still water. The solve settled in about 700 sweeps (77 islands).
+- Life regrows from the inlet as a front, as in D1's Chip, and reaches the pillar array at about 300 s (`chip-s3-t300-pillars-x3.5-*.jpg`:
+  a packed honeycomb tissue arriving at a lattice of glassy rings; in the harmonic look a green honeycomb against grey circles). By 600 s
+  the front has passed through the array and its leading edge is ahead at the TOP of the channel: the flow, deflected over the side
+  chamber, brings fresh medium there first (`chip-s3-t600-neon.jpg`, `chip-s7-t600-neon.jpg`).
+- DEAD ZONES (9 % of the floor: the chamber, behind the blocks, the corners) do NOT pile up matter here: they hold 2 to 8 % of the open
+  water's matter at 300 and 600 s, and no cells (0 at 300 s, 0 and 2 at 600 s). In a perfused chip matter arrives with the flow; still
+  water only gets what spreads in, so the still places stay hungry, not rich.
+- Near the pillars and walls (0-2 R) at 600 s: cells 1.4x (s3) and 1.5x (s7) as dense as in the open, fuel 1.7x: the tissue packs
+  against the pillars and the matter sits between them.
+
+| Chip | t | cells | edge 0-2 R: matter / fuel / cells (x open) | dead zone: matter / cells per R^2 |
+|---|---|---|---|---|
+| s3 | 300 | 3147 | 0.36 / 0.23 / 0.11 | 0.02 / 0 |
+| s3 | 600 | 5612 | 0.70 / 1.72 / 1.39 | 0.03 / 0 |
+| s7 | 300 | 3465 | 0.39 / 0.26 / 0.08 | 0.02 / 0 |
+| s7 | 600 | 6345 | 0.71 / 1.71 / 1.51 | 0.03 / 0 (2 cells) |
+
+## 2. Crevices: the cracks are not refuges (yet); cells file into them late
+
+- The open water above the rock is swept by the eddies and the gyre; the cracks are still water (the eddies fade within 4 R of a solid).
+- Through the founders' crash (about 1560 cells at 60 s down to 330-450 at 2-4 min, as in every scene) the cracks did NOT shelter
+  anyone: 5-6 cells in the enclosed water at 60 s, 1-2 at 300 s. The enclosed water is poor: matter 9 % of the open's at 60 s, 21 % at
+  300 s, 42-49 % at 600 s (nothing drips there; it has to spread in).
+- As the colony regrows and fills the open water (2200-2400 cells at 600 s), cells CREEP INTO THE CRACKS in single file, chains of one
+  cell's width following each crack's bends to its end (`crevices-s7-t600-machinery.jpg`, `crevices-s7-t600-neon.jpg`): 40-48 cells,
+  half the open water's density (0.08-0.10 against 0.15-0.17 per R^2). Against the rock face the cells' honeycomb sides are flat
+  (`crevices-s3-t300-cracks-x3.5-harm.jpg`: green rims with straight bottoms along the grey rock edge).
+- Predators (P1) were few (6 to 181 cells coloured as engulfers in these dishes' pictures): no test of shelter from predation yet; shear from the currents: the
+  cracks are still, but nothing here was torn by shear to begin with (strong glue's tearing comes from crowding and crawling).
+
+| Crevices | t | cells | enclosed water: matter / fuel / cells (x open) | cells in it |
+|---|---|---|---|---|
+| s3 | 60 | 1565 | 0.09 / 0.01 / 0.10 | 6 |
+| s3 | 300 | 756 | 0.21 / 0.04 / 0.04 | 1 |
+| s3 | 600 | 2196 | 0.49 / 0.38 / 0.54 | 40 |
+| s7 | 60 | 1553 | 0.09 / 0.00 / 0.09 | 5 |
+| s7 | 300 | 828 | 0.21 / 0.05 / 0.07 | 2 |
+| s7 | 600 | 2432 | 0.42 / 0.40 / 0.59 | 48 |
+
+## 3. Fronts with three blocks in the strip
+
+- Two blocks and a round pillar in the Fronts strip (`quick.json`, painted at the start). At 300 s the clusters grow round the blocks
+  (`fronts-blocks-s3-t300-neon.jpg`); at 600 s the press has packed the tissue into the left half: the blocks sit inside the packed
+  column like stones in a crowd, the tissue pressed flat against them on every side (`fronts-blocks-s3-t600-neon.jpg`). Cells within
+  6 R of the blocks at 600 s: 1.8-1.9x the open's density (s3 0.29 against 0.16 per R^2, s7 0.28 against 0.15). A front bending round a
+  block, with a shadow behind it, did not show in these two runs at the 300 and 600 s pictures (the press's front passes the blocks
+  while the tissue is still patchy); a clip would be needed.
+
+## 4. Maze and round dish (pictures only)
+
+- Maze (`maze-s3-t300-*.jpg`): with the first version (no spring under the culture) every cell had died by 300 s, before reaching a
+  corner spring; with a spring under the culture that dries after four minutes, 340 cells live at 300 s, filling the culture's own
+  dead ends, sides flat against the walls. Matter from the corner springs spreads along the corridors (the eddies are faded near walls).
+- Round dish (`round-s3-t300-*.jpg`): the default scene in a petri dish: a thin ice-blue rim, the colony and its springs inside.
+
+## 5. Checks
+
+- Books (`check.json`, 420 s at MAX, seed 5, whole dish lit, perfusion on): obstacles painted at 20 s over the culture, its springs
+  (matter under them pushed out) and a porous disc; an erase, an undo, the mask off and on, the through-flow's solve off and on, a
+  clear and a round dish with pillars, a squeeze x0.8 and a stretch x1.25, back to square with a wall, a resize and back, a snapshot
+  saved and loaded at 360 s: ATOMS AND CHARGE ROUNDING 0 at every sample; the energy line's rounding -0.03..+0.02 with the usual blips
+  right after the squeeze (-247) and the stretch (+21 239), as before G0b; the reload exact (atoms 0, charge 0, energy 0.0014); no cell
+  inside a solid at either measure; console clean. The first try found a crash (the flow's warm start from a blocked channel), fixed.
+  Every quick run: atoms and charge rounding 0 throughout.
+- Firefox (headed, Crevices): runs, console clean, panel line filled. Phone (Chrome 390 x 844): the toolbar's ninth tool wrapped off
+  the edge at first (fixed: the tools wrap to a second row); the Maze in portrait, cells flat against the walls (`phone-maze.jpg`).
+- The tool (pointer events in Chrome; one drag as touch): a wall polyline, a block, a row of pillars (touch), an erase, a porous wall,
+  painted over the default colony: cells pushed out, the block empty (`tool-painted-default.jpg`).

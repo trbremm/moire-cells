@@ -1,0 +1,97 @@
+{
+  "name": "g0b-pics-crevices_s3",
+  "description": "step G0b pictures: crevices, at 300 s: neon, the machinery view, a close zoom, harmonic",
+  "condition": {
+    "name": "g0b-pics-crevices_s3",
+    "description": "step G0b pictures: crevices, at 300 s: neon, the machinery view, a close zoom, harmonic",
+    "query": {
+      "preset": "crevices",
+      "seed": 3
+    },
+    "duration": 310,
+    "sample_every": 60,
+    "stall": 300,
+    "snapshots": [],
+    "dpr": 2,
+    "shots": [
+      {
+        "t": 300,
+        "name": "dish_neon"
+      },
+      {
+        "t": 302,
+        "view": "machinery",
+        "name": "dish_mach"
+      },
+      {
+        "t": 304,
+        "name": "zoom_neon"
+      },
+      {
+        "t": 306,
+        "name": "zoom_harm"
+      },
+      {
+        "t": 308,
+        "name": "dish_harm"
+      }
+    ],
+    "evals": [
+      {
+        "t": 303,
+        "js": "moire.camera.set(3.5, 0.42 * moire.dish.W, 0.68 * moire.dish.H); return 'zoom'"
+      },
+      {
+        "t": 305,
+        "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+      },
+      {
+        "t": 307,
+        "js": "moire.camera.fit(); return 'fit'"
+      }
+    ]
+  },
+  "url": "http://localhost:63443/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=crevices&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "53a13ba619a3ee7b41f967b6112a9e83f2ea4f94",
+  "dirty": true,
+  "started": "2026-11-18T02:09:18",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 310.0,
+  "run_wall_s": 627.08,
+  "speed_reached": 0.49,
+  "samples": 7,
+  "shots": [
+    "shots/dish_neon.png",
+    "shots/dish_mach.png",
+    "shots/zoom_neon.png",
+    "shots/zoom_harm.png",
+    "shots/dish_harm.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 303.00000000005315,
+      "js": "moire.camera.set(3.5, 0.42 * moire.dish.W, 0.68 * moire.dish.H); return 'zoom'",
+      "result": "zoom"
+    },
+    {
+      "t": 305.00000000005133,
+      "js": "moire.control.action('harmonic'); return 'harmonic toggled'",
+      "result": "harmonic toggled"
+    },
+    {
+      "t": 307.00000000005014,
+      "js": "moire.camera.fit(); return 'fit'",
+      "result": "fit"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T02:21:13",
+  "wall_s": 715.34
+}

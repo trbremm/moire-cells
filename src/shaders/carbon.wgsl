@@ -58,7 +58,28 @@ fn carbon_spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invoca
     let hasU = id.y > 0u;
     let hasD = id.y + 1u < MP.hh;
     let nEdges = select(0, 1, hasL) + select(0, 1, hasR) + select(0, 1, hasU) + select(0, 1, hasD);
-    let rim = nEdges < 4;
+    // step G0b, OBSTACLES (the matter's rule in spread, the same mask): no flux across a face with a SOLID pixel; a solid pixel gives all its
+    // ladder, every substep, to the neighbour its way out points to, and takes what solid neighbours deeper in give it (exact); a pixel
+    // beside the round dish's rim is on the rim. (Its TAR, which does not move, see below.)
+    let mo = MP.obs.x;
+    var mw = 0u;
+    var sN = vec4<bool>(false);
+    var tN = vec4<bool>(false);
+    var rimO = false;
+    if (mo != 0u) {
+      mw = bitcast<u32>(mg[mo + i]);
+      if (hasL) { let q = bitcast<u32>(mg[mo + i - 1u]); sN.x = (q & 1u) != 0u; tN.x = ((q >> 2u) & 7u) == 2u; rimO = rimO || (q & 3u) == 3u; }
+      if (hasR) { let q = bitcast<u32>(mg[mo + i + 1u]); sN.y = (q & 1u) != 0u; tN.y = ((q >> 2u) & 7u) == 1u; rimO = rimO || (q & 3u) == 3u; }
+      if (hasU) { let q = bitcast<u32>(mg[mo + i - MP.hw]); sN.z = (q & 1u) != 0u; tN.z = ((q >> 2u) & 7u) == 4u; rimO = rimO || (q & 3u) == 3u; }
+      if (hasD) { let q = bitcast<u32>(mg[mo + i + MP.hw]); sN.w = (q & 1u) != 0u; tN.w = ((q >> 2u) & 7u) == 3u; rimO = rimO || (q & 3u) == 3u; }
+    }
+    let solidHere = (mw & 1u) != 0u;
+    let outHere = (mw >> 2u) & 7u;
+    let fL = hasL && !sN.x && !solidHere;
+    let fR = hasR && !sN.y && !solidHere;
+    let fU = hasU && !sN.z && !solidHere;
+    let fD = hasD && !sN.w && !solidHere;
+    let rim = nEdges < 4 || rimO;
     let salt = 0x3c6ef372u;
     let eL = mpcg((2u * (i - 1u)) ^ T.seed ^ salt);
     let eR = mpcg((2u * i) ^ T.seed ^ salt);
@@ -92,13 +113,15 @@ fn carbon_spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invoca
       let m = mg[s0 + i];
       var acc = m;
       let cs = (c + 40u) * 0x9e3779b9u;
-      if (k > 0.0) {
-        if (hasL) { acc -= edge_flow(mg[s0 + i - 1u], m, k, aE.x, u01(mpcg(eL + cs))); }
-        if (hasR) { acc += edge_flow(m, mg[s0 + i + 1u], k, aE.y, u01(mpcg(eR + cs))); }
-        if (hasU) { acc -= edge_flow(mg[s0 + i - MP.hw], m, k, aE.z, u01(mpcg(eU + cs))); }
-        if (hasD) { acc += edge_flow(m, mg[s0 + i + MP.hw], k, aE.w, u01(mpcg(eD + cs))); }
+      if (solidHere) {
+        if (outHere != 0u) { acc = 0; }        // (step G0b: all of it out, toward the water)
+      } else if (k > 0.0) {
+        if (fL) { acc -= edge_flow(mg[s0 + i - 1u], m, k, aE.x, u01(mpcg(eL + cs))); }
+        if (fR) { acc += edge_flow(m, mg[s0 + i + 1u], k, aE.y, u01(mpcg(eR + cs))); }
+        if (fU) { acc -= edge_flow(mg[s0 + i - MP.hw], m, k, aE.z, u01(mpcg(eU + cs))); }
+        if (fD) { acc += edge_flow(m, mg[s0 + i + MP.hw], k, aE.w, u01(mpcg(eD + cs))); }
       }
-      if (first && rim && m > 0 && esh > 0.0) {
+      if (first && rim && !solidHere && m > 0 && esh > 0.0) {
         let out = clamp(i32(floor(f32(m) * esh + u01(mpcg(eI + cs)))), 0, m - nEdges * (m >> 2u));
         acc -= out;
         if (out != 0) { atomicAdd(&cwl[c], out); }
@@ -113,7 +136,28 @@ fn carbon_spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invoca
         acc += add;
         if (add != 0) { atomicAdd(&cwa[c], add); }
       }
+      if (mo != 0u) {   // (step G0b: what the solid neighbours push out into this pixel)
+        if (tN.x) { acc += mg[s0 + i - 1u]; }
+        if (tN.y) { acc += mg[s0 + i + 1u]; }
+        if (tN.z) { acc += mg[s0 + i - MP.hw]; }
+        if (tN.w) { acc += mg[s0 + i + MP.hw]; }
+      }
       mg[T.cdst + c * MP.n + i] = acc;
+    }
+    // ... its TAR (one copy: it does not move): on the tick's first substep a WATER pixel takes the tar of every solid neighbour whose way
+    // out points to it (it writes only its own words); the solid pixel empties its tar in carbon_react, later in the same tick, on the same
+    // condition (its way out is water), so the move is exact. Tar deeper inside a solid stays buried (carbon_react skips solid pixels: mud
+    // under rock does not react)
+    if (first && mo != 0u && !solidHere && any(tN)) {
+      for (var w = 0u; w < 3u; w++) {
+        let o = T.ctar + w * MP.n;
+        var v = 0;
+        if (tN.x) { v += mg[o + i - 1u]; }
+        if (tN.y) { v += mg[o + i + 1u]; }
+        if (tN.z) { v += mg[o + i - MP.hw]; }
+        if (tN.w) { v += mg[o + i + MP.hw]; }
+        if (v != 0) { mg[o + i] += v; }
+      }
     }
   }
   workgroupBarrier();
@@ -188,12 +232,21 @@ fn carbon_react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocat
     var S0: array<i32, 5>;
     var stuff = 0;
     for (var j = 0u; j < 5u; j++) { S[j] = mg[lo + j * n + i]; S0[j] = S[j]; stuff += S[j]; }
+    // step G0b: nothing reacts inside a solid; one whose way out is water has handed its tar to that pixel (carbon_spread): it empties it
+    let mw = select(0u, bitcast<u32>(mg[MP.obs.x + i]), MP.obs.x != 0u);
+    if ((mw & 1u) != 0u) {
+      let oh = (mw >> 2u) & 7u;
+      var j = i;
+      if (oh == 1u && id.x > 0u) { j = i - 1u; } else if (oh == 2u && id.x + 1u < MP.hw) { j = i + 1u; }
+      else if (oh == 3u && id.y > 0u) { j = i - MP.hw; } else if (oh == 4u && id.y + 1u < MP.hh) { j = i + MP.hw; }
+      if (j != i && (bitcast<u32>(mg[MP.obs.x + j]) & 1u) == 0u) { for (var w = 0u; w < 3u; w++) { mg[T.ctar + w * n + i] = 0; } }
+    }
     var cc = mg[to + i];
     var cg = mg[to + n + i];
     var ct = mg[to + 2u * n + i];
     let tar0 = vec3i(cc, cg, ct);
     stuff += cc + cg + ct;
-    if (stuff > 0) {
+    if (stuff > 0 && (mw & 1u) == 0u) {
       let gc = CB.em.z;
       var g = mg[mo + i];
       var t = mg[mo + n + i];

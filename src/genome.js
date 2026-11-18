@@ -52,7 +52,7 @@
 // random. A seeded random generator (?seed=N) makes the start repeatable.
 
 import { ALL_ENGINES as ENGINES, engineIndex, ELECTRONS } from './matter.js';   // (step C15b: + the carbon engines)
-import { CARBON } from './carbon.js';
+import { CARBON, CB_LIP } from './carbon.js';
 import { fieldDefaults, founderGates, BIO_FG } from './guides.js';
 import { stampFounderGlue } from './glue.js';
 
@@ -190,9 +190,19 @@ function enginesE(g, rng, strategy) {
 // slot (an uphill one with any pigment band). Four numbers are always drawn.
 export const CARBON_FOUNDER = 1 / 3;
 const CE = (j) => (CARBON ? engineIndex(['t + [c-g] → [c-t] + g', '[c-g] + [c-t] → [c-c] + gt', 'g + [c-t] → [c-g] + t', 'gt + [c-c] → [c-g] + [c-t]'][j]) : -1);
+// Step C15d, FOUNDERS THAT PHOTOSYNTHESISE FIX CARBON (?cbphoto=0: as C15c): in a dish where carbon makes the cell (CB_LIP) the light
+// harvest IS carbon fixation, as in real photosynthesis. So a photosynthesiser (pigments) is ALWAYS a carbon fixer (the C15b set: REDUCE
+// with a visible 2 pigment, OXIDIZE to burn some of what it fixed, the g + t bond), and a light + burn founder (both), whose visible 2
+// pigment already splits water into g + t, uses its third slot to REDUCE carbon with that g (a second visible 2 pigment: two photons per
+// hand, the proposal's Z-scheme) instead of its odd fermenter: water + CO2-like carbon + light -> sugar-like carbon + free t (oxygen).
+// The same four draws (the seed's other genes unchanged); wild founders get it before their own random carbon engine.
+export const CB_PHOTO = { on: true };
 function founderCarbon(g, rng, strategy, wild, chance = CARBON_FOUNDER) {
   if (!CARBON || !ELECTRONS) return;
   const u = rng(), v = rng(), w = rng(), x = rng();
+  const photo = CB_LIP && CB_PHOTO.on;
+  if (photo && strategy === 'both') slot(g, 2, CE(2), 0.5 + 0.7 * v, 2);
+  if (photo && strategy === 'pigments' && !wild) chance = 1;
   if (wild) {
     if (u >= 0.5) return;
     const j = Math.min(3, Math.floor(v * 4)), k = Math.min(2, Math.floor(w * 3));

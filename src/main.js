@@ -213,6 +213,7 @@ import { createApp } from './app.js';
 import { applyPreset, layoutFromParams, applyDiversity, PRESETS, SPREAD_SQUEEZE } from './culture.js';
 import { Tissues, useDesignFounder, DESIGNS } from './tissues.js';
 import { Warfare } from './warfare.js';
+import { CB_PHOTO } from './genome.js';   // step C15d: founders that photosynthesise fix carbon (?cbphoto=0)
 
 window.__moireBooted = true;
 
@@ -404,6 +405,7 @@ async function boot() {
     }
     if (params.has('wild')) cells.genome.params.wildGroups = String(params.get('wild')).split(',').filter(Boolean);   // (step T1a: the wild groups)
     if (params.has('habit')) cells.genome.params.habit = params.get('habit');   // (step T1b: every founder one habit: burn, both, pigments, other)
+    if (params.has('cbphoto')) CB_PHOTO.on = flag('cbphoto');   // (step C15d: founders that photosynthesise fix carbon)
     if (params.has('cbfounder') && Number.isFinite(+params.get('cbfounder'))) cells.genome.params.cbFounder = Math.max(0, Math.min(1, +params.get('cbfounder')));   // (step C15b)
     if (params.get('bsign') === 'plus' || params.get('bsign') === 'mixed') cells.genome.params.bSign = params.get('bsign');   // the founders' B sign
     if (params.has('view')) {   // ?view=1 lineage, ?view=2 or ?view=strategy (step C6), ?view=3 or ?view=charge (step C6b)

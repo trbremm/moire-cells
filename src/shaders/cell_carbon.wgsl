@@ -35,7 +35,8 @@ struct CbCellP {
                 // z enzymes: carbon per unit of expressed engine rate per R^2 of the cell, w their turnover (share per s)
   u: vec4f,     // step C15c: x the founders' enzymes (share of the want), y a hungry cell's grazing (units of a grazing engine), z a water's
                 // bond (heat counts per count: split for a reduction's g), w its spark
-  v: vec4f,     // step C15c: x the battery's floor for the builder's reductions (heat counts), y z w spare
+  v: vec4f,     // step C15c: x the battery's floor for the builder's reductions (heat counts); step C15d: y the founders' PIGMENT (share of
+                // the want of a harvest rate of 1), z w spare
 };
 @group(0) @binding(11) var<storage, read_write> cbS: array<atomic<i32>>;
 @group(0) @binding(11) var<storage, read_write> cbSP: array<i32>;      // (the plan pass's plain view)
@@ -1076,6 +1077,26 @@ fn cb_found_enz(i: u32, r: f32, slot: u32) {
     add64(LG_CBC_IN + 128u * (5u + q) + slot, CB_ENZ_H[q] * n);
   }
   add64(lg_mc(LG_M_ADD, 3u) + slot, n);   // (its G atoms, booked as added)
+}
+
+/**
+ * Step C15d, FOUNDERS START WITH THEIR PIGMENT (CBP.v.y > 0, ?cbpigfound=): as a founder starts with its body and its enzymes, it starts with
+ * the antenna its light harvest needs (C15c's pigment: an oil-like carbon pair + a trace atom), CBP.v.y x the want of a harvest rate of 1
+ * (the reset runs before the genomes are written: a founder that does not harvest lets it wear into its granules, its trace into the
+ * dish). Without it a carbon dish's light eaters cannot start: a pigment is REDUCED carbon, which a cell can only make with light. Booked as
+ * carbon in (its hands, as tar) and trace in.
+ */
+fn cb_found_pig(i: u32, r: f32, slot: u32) {
+  if (!cb_lip() || CBP.v.y <= 0.0 || (n1_flags() & NLF_MATTER) == 0u) { return; }
+  let n = i32(round(EP.nl[0].y * 3.14159265 * r * r / max(EP.R * EP.R, 1e-6) * ATOM_SCALE * clamp(CBP.v.y, 0.0, 4.0)));
+  if (n <= 0) { return; }
+  atomicAdd(&stock[i * SW + W_PIG], n);
+  for (var q = 0u; q < 3u; q++) {
+    if (CB_PIG_H[q] == 0) { continue; }
+    add64(LG_CB_ADD_C + 128u * (5u + q) + slot, CB_PIG_H[q] * n);
+    add64(LG_CBC_IN + 128u * (5u + q) + slot, CB_PIG_H[q] * n);
+  }
+  add64(lg_mc(LG_M_ADD, N1_TRACE) + slot, n);   // (its trace atoms, booked as added)
 }
 
 /** The ledger pass: the parts' carbon (membranes, walls, pigment, glue, enzymes) into the cells' carbon books; the second census. */

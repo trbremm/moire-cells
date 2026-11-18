@@ -125,6 +125,8 @@ export class CarbonCells {
       granFat: true,     // FAT FROM GRANULES: the two-carbon builder (soaps, oil, pigments) also cuts its molecules out of the granules as
                          // they are, as far as they hold the fuel hands (zero energy, the assembly spark) (?cbgran=0)
       hunger: true,      // HUNGER FOR EVERY PART: a cell whose parts were short of carbon grazes as a hungry one, not only for its body (?cbhunger=0)
+      pigFound: 1,       // FOUNDERS START WITH THEIR PIGMENT: share of the want of a harvest rate of 1 (as bodies and enzymes; booked as carbon and
+                         // trace in; 0: none, as C15c) (?cbpigfound=)
     };
     this.tot = Object.fromEntries(EV.map((k) => [k, 0]));
     this.hist = [];
@@ -186,6 +188,7 @@ export class CarbonCells {
       const W = MX.SUBSTANCES[MX.CH.gt];   // (a water's bond and spark, for a reduction's g split from it)
       f[26] = Math.round(-16 * W.energy); f[27] = Math.round(16 * W.spark);
       f[28] = Math.max(0, Math.min(1, p.redFloor)) * E.batCounts;
+      f[29] = CB_LIP ? Math.max(0, p.pigFound) : 0;   // step C15d
     }
     this.device.queue.writeBuffer(this.ubuf, 0, this.ab);
   }

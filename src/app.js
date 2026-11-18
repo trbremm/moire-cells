@@ -30,7 +30,7 @@
 import { camera, MAX_ZOOM } from './camera.js';
 import { moleculePanel, cellPanel, summary } from './zoo.js';
 import { SUBSTANCES, CH, lgM } from './matter.js';
-import { CARBON, LG_CB, LG_CBC } from './carbon.js';   // step C15c: placed cells get a body
+import { CARBON, CB_LIP, LG_CB, LG_CBC } from './carbon.js';   // step C15c: placed cells get a body (step C15d: and a pigment)
 import { CW as CB_W } from './carboncells.js';
 import { CELL_FLOATS, CELL_BYTES } from './cells.js';
 import { BIO_FLOATS, founderGenome } from './genome.js';
@@ -436,6 +436,13 @@ export function createApp(ctx) {
       const nBody = giveBody && CC.growth ? Math.round(CC.kBody * Math.PI * CC.found * 4096) : 0;
       const rr = Math.max(bio[36], 0) + Math.max(bio[37], 0) + Math.max(bio[38], 0);   // (Bio.rate.xyz)
       const nEnz = giveBody && CC.enzymes ? Math.round(CC.kEnz * rr * Math.PI * 4096 / 4 * CC.enzFound) : 0;
+      // step C15d: and the PIGMENT its harvest slots want (?cbpigfound: x the want; an oil-like carbon pair + a trace atom per count, booked
+      // as carbon and trace in), as a founder's (cell_carbon.wgsl cb_found_pig; here from its own genes)
+      let hr = 0;
+      for (let k = 0; k < 3; k++) if (Math.floor(Math.round(bio[32 + k]) / 32) > 0) hr += Math.max(bio[36 + k], 0);
+      const PG = E.pigments && E.pigments.params;
+      const nPig = giveBody && CB_LIP && CC.pigFound > 0 && PG && PG.matter !== false ? Math.round((PG.want || 0) * Math.PI * hr * CC.pigFound * 4096) : 0;
+      if (nPig) stock[30] = nPig;   // (stock word W_PIG)
       const cbw = new Int32Array(CB_W);
       cbw[8] = cbw[9] = cbw[10] = nBody;   // (cellulose-like: per carbon one backbone bond, one fuel hand, one burnt hand)
       cbw[11] = nEnz;                      // (each unit 4 carbons as (4, 4, 4) hands + 1 G)
@@ -458,10 +465,11 @@ export function createApp(ctx) {
         if (nBody || nEnz) d.queue.writeBuffer(E.carbon.buf, slot * CB_W * 4, cbw);
       });
       // step C15c: the books for the bodies and enzymes (carbon in: the dish's ADD and the cells' IN per tar hand; the G atoms: matter ADD)
-      if (nBody || nEnz) {
-        const per = nBody + 4 * nEnz, k = free.length;
-        const words = [[LG_CB + 128 * 5, per], [LG_CB + 128 * 6, per], [LG_CB + 128 * 7, per],
-          [LG_CBC.IN + 128 * 5, per], [LG_CBC.IN + 128 * 6, per], [LG_CBC.IN + 128 * 7, per], [lgM('ADD', CH.G), nEnz]];
+      if (nBody || nEnz || nPig) {
+        const per = nBody + 4 * nEnz, k = free.length;   // (a pigment count: 1 backbone bond, 6 fuel hands: step C15d)
+        const words = [[LG_CB + 128 * 5, per + nPig], [LG_CB + 128 * 6, per + 6 * nPig], [LG_CB + 128 * 7, per],
+          [LG_CBC.IN + 128 * 5, per + nPig], [LG_CBC.IN + 128 * 6, per + 6 * nPig], [LG_CBC.IN + 128 * 7, per], [lgM('ADD', CH.G), nEnz],
+          [lgM('ADD', CH.trace), nPig]];
         for (const [w, x] of words) {
           if (!x) continue;
           const [lo, hi] = await Promise.all([readBuffer(d, C.heat.buffer, w * 4, 4), readBuffer(d, C.heat.buffer, (w + 64) * 4, 4)]);

@@ -3742,6 +3742,7 @@ fn reset(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
       add64(LG_K_START + slot, EP.starter);
       cb_found(i, EP.R, slot);   // step C15b: a founder's body (a full one for a cell of radius R)
       cb_found_enz(i, EP.R, slot);   // step C15c: and its enzymes (carbon + G)
+      cb_found_pig(i, EP.R, slot);   // step C15d: and its pigment (carbon + trace)
     }
   }
   flush_counters(li, slot);

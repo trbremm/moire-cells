@@ -111,7 +111,8 @@
 //               reduces only from the battery, as C15c), ?cbphoto=0 founders that photosynthesise do not fix carbon by default (C15c's
 //               chance 1/3 for photosynthesisers; light + burn founders keep their fermenter), ?cbhydheat=0 mud does not hydrolyse by heat
 //               (by hard light only), ?cbgran=0 no fat from granules (the two-carbon builder takes ladder molecules only), ?cbhunger=0 only a
-//               cell short of BODY carbon grazes as a hungry one
+//               cell short of BODY carbon grazes as a hungry one, ?cbpigfound=x founders start with x times the pigment a harvest rate of 1
+//               wants (1; 0 = none, as C15c)
 //   ?saturation=0 step C12e: no saturation (reactions inside cells do not slow as their products pile up); ?osmosis=0 no osmosis (no
 //               swelling: the stretch genes still drift, the NEUTRAL control), ?stretch=0 stretch opens no channels, ?tear=0 overstretch
 //               does not burst, ?tolcost=0 the stretch tolerance is free; ?satscale=x, ?kosm=x, ?kstretch=x, ?wtol=x knobs;
@@ -554,7 +555,7 @@ async function boot() {
         if (params.has(q)) CC[k] = flag(q);
       }
       for (const [q, k] of [['cbkgraze', 'kGraze'], ['cbkdis2', 'kDis'], ['cbbody', 'kBody'], ['cbbuild', 'kBuild'], ['cbfound', 'found'],
-        ['cbktrans', 'kTrans'], ['cbtransup', 'transUp'], ['cbenzk', 'kEnz'], ['cbenzlife', 'enzLife'], ['cbhungry', 'hungry'], ['cbredfloor', 'redFloor']]) {
+        ['cbktrans', 'kTrans'], ['cbtransup', 'transUp'], ['cbenzk', 'kEnz'], ['cbenzlife', 'enzLife'], ['cbhungry', 'hungry'], ['cbredfloor', 'redFloor'], ['cbpigfound', 'pigFound']]) {
         const v = Number(params.get(q));
         if (params.has(q) && Number.isFinite(v) && v >= 0) CC[k] = v;
       }

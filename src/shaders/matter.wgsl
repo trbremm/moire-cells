@@ -63,6 +63,10 @@ struct MatterP {
                                 // z: dt per substep / px^2 (f32 bits: a corner difference x z = the share of a pixel that crosses the
                                 // edge per substep); w: the share of the free TRACE in each pixel that settles into the floor per tick
                                 // (f32 bits; 0 = none; src/oases.js: buried, booked as lost)
+  // ---- step G0b, obstacles (src/obstacles.js) ----
+  obs: vec4u,                   // x: word offset in `mg` of the obstacles' MASK (u32 per pixel: bits 0-1 the kind, 0 water, 1 solid, 2 porous
+                                // (water and matter pass), 3 the round dish's rim; bits 2-4 a solid pixel's way out: 1 left, 2 right, 3 up,
+                                // 4 down; 0 = no obstacles); yzw spare
 };
 
 struct MatterTick {
@@ -222,7 +226,29 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     let hasU = id.y > 0u;
     let hasD = id.y + 1u < MP.hh;
     let nEdges = select(0, 1, hasL) + select(0, 1, hasR) + select(0, 1, hasU) + select(0, 1, hasD);
-    let rim = nEdges < 4;
+    // step G0b, OBSTACLES (src/obstacles.js): no flux across a face with a SOLID pixel (kinds 1 and 3; porous ones let matter through): both
+    // pixels of such an edge drop it (fL..fD: the edges that carry matter). A solid pixel gives ALL its matter, every substep, to the neighbour
+    // its way out points to (toward the nearest water: matter painted over, dripped or put down there leaves, whole counts), and takes what
+    // solid neighbours deeper in give it. A pixel beside the round dish's rim (kind 3) is on the rim (its sink)
+    let mo = MP.obs.x;
+    var mw = 0u;
+    var sN = vec4<bool>(false);       // L R U D: the neighbour is solid
+    var tN = vec4<bool>(false);       // ... and gives its matter to this pixel
+    var rimO = false;
+    if (mo != 0u) {
+      mw = bitcast<u32>(mg[mo + i]);
+      if (hasL) { let q = bitcast<u32>(mg[mo + i - 1u]); sN.x = (q & 1u) != 0u; tN.x = ((q >> 2u) & 7u) == 2u; rimO = rimO || (q & 3u) == 3u; }
+      if (hasR) { let q = bitcast<u32>(mg[mo + i + 1u]); sN.y = (q & 1u) != 0u; tN.y = ((q >> 2u) & 7u) == 1u; rimO = rimO || (q & 3u) == 3u; }
+      if (hasU) { let q = bitcast<u32>(mg[mo + i - MP.hw]); sN.z = (q & 1u) != 0u; tN.z = ((q >> 2u) & 7u) == 4u; rimO = rimO || (q & 3u) == 3u; }
+      if (hasD) { let q = bitcast<u32>(mg[mo + i + MP.hw]); sN.w = (q & 1u) != 0u; tN.w = ((q >> 2u) & 7u) == 3u; rimO = rimO || (q & 3u) == 3u; }
+    }
+    let solidHere = (mw & 1u) != 0u;
+    let outHere = (mw >> 2u) & 7u;
+    let fL = hasL && !sN.x && !solidHere;
+    let fR = hasR && !sN.y && !solidHere;
+    let fU = hasU && !sN.z && !solidHere;
+    let fD = hasD && !sN.w && !solidHere;
+    let rim = nEdges < 4 || rimO;
     // one random stream per edge (edge ids: 2 x its first pixel, + 1 for a vertical edge), the same from both sides
     let eL = mpcg((2u * (i - 1u)) ^ T.seed);
     let eR = mpcg((2u * i) ^ T.seed);
@@ -288,7 +314,9 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       let m = mg[s0 + i];
       let k = mp4(MP.k, c);
       var acc = m;
-      if (k > 0.0) {
+      if (solidHere) {
+        if (outHere != 0u) { acc = 0; }        // (step G0b: all of it out, toward the water)
+      } else if (k > 0.0) {
         let cs = c * 0x9e3779b9u;
         let zq = select(0.0, f32(charge_of(MP.chg.z, c)) * MP.cq.w, po != 0u);
         let chi = select(0.0, mp4(MP.chi, c), oilOn);
@@ -305,32 +333,32 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
           let skin = select(0.0, MP.ok.w, fl == 1u);
           let uC = oil_pull(G, chi, bet, cB);
           let rC = room(fl, cR, cF);
-          if (hasL) {
+          if (fL) {
             acc -= oil_edge(mg[s0 + i - 1u], m, k, zq, pL, pC, oil_pull(G, chi, bet, oB.x), uC, room(fl, oR.x, oF.x), rC,
                             oF.x, cF, skin, aE.x, u01(mpcg(eL + cs)));
           }
-          if (hasR) {
+          if (fR) {
             acc += oil_edge(m, mg[s0 + i + 1u], k, zq, pC, pR, uC, oil_pull(G, chi, bet, oB.y), rC, room(fl, oR.y, oF.y),
                             cF, oF.y, skin, aE.y, u01(mpcg(eR + cs)));
           }
-          if (hasU) {
+          if (fU) {
             acc -= oil_edge(mg[s0 + i - MP.hw], m, k, zq, pU, pC, oil_pull(G, chi, bet, oB.z), uC, room(fl, oR.z, oF.z), rC,
                             oF.z, cF, skin, aE.z, u01(mpcg(eU + cs)));
           }
-          if (hasD) {
+          if (fD) {
             acc += oil_edge(m, mg[s0 + i + MP.hw], k, zq, pC, pD, uC, oil_pull(G, chi, bet, oB.w), rC, room(fl, oR.w, oF.w),
                             cF, oF.w, skin, aE.w, u01(mpcg(eD + cs)));
           }
         } else if (zq != 0.0) {
-          if (hasL) { acc -= edge_flow_q(mg[s0 + i - 1u], m, pL, pC, k, zq, aE.x, u01(mpcg(eL + cs))); }
-          if (hasR) { acc += edge_flow_q(m, mg[s0 + i + 1u], pC, pR, k, zq, aE.y, u01(mpcg(eR + cs))); }
-          if (hasU) { acc -= edge_flow_q(mg[s0 + i - MP.hw], m, pU, pC, k, zq, aE.z, u01(mpcg(eU + cs))); }
-          if (hasD) { acc += edge_flow_q(m, mg[s0 + i + MP.hw], pC, pD, k, zq, aE.w, u01(mpcg(eD + cs))); }
+          if (fL) { acc -= edge_flow_q(mg[s0 + i - 1u], m, pL, pC, k, zq, aE.x, u01(mpcg(eL + cs))); }
+          if (fR) { acc += edge_flow_q(m, mg[s0 + i + 1u], pC, pR, k, zq, aE.y, u01(mpcg(eR + cs))); }
+          if (fU) { acc -= edge_flow_q(mg[s0 + i - MP.hw], m, pU, pC, k, zq, aE.z, u01(mpcg(eU + cs))); }
+          if (fD) { acc += edge_flow_q(m, mg[s0 + i + MP.hw], pC, pD, k, zq, aE.w, u01(mpcg(eD + cs))); }
         } else {
-          if (hasL) { acc -= edge_flow(mg[s0 + i - 1u], m, k, aE.x, u01(mpcg(eL + cs))); }
-          if (hasR) { acc += edge_flow(m, mg[s0 + i + 1u], k, aE.y, u01(mpcg(eR + cs))); }
-          if (hasU) { acc -= edge_flow(mg[s0 + i - MP.hw], m, k, aE.z, u01(mpcg(eU + cs))); }
-          if (hasD) { acc += edge_flow(m, mg[s0 + i + MP.hw], k, aE.w, u01(mpcg(eD + cs))); }
+          if (fL) { acc -= edge_flow(mg[s0 + i - 1u], m, k, aE.x, u01(mpcg(eL + cs))); }
+          if (fR) { acc += edge_flow(m, mg[s0 + i + 1u], k, aE.y, u01(mpcg(eR + cs))); }
+          if (fU) { acc -= edge_flow(mg[s0 + i - MP.hw], m, k, aE.z, u01(mpcg(eU + cs))); }
+          if (fD) { acc += edge_flow(m, mg[s0 + i + MP.hw], k, aE.w, u01(mpcg(eD + cs))); }
         }
         // step N1: trace SETTLES into the floor (src/oases.js: buried, like phosphate in sediment), booked as lost, so a plume fades
         // with distance and an old oasis's trace does not pile up for ever
@@ -354,7 +382,7 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       }
       // step C12f: the SEA tops its channel up toward its level, on a tick's first substep, everywhere (random rounding; never takes
       // anything out), booked as added (as a spring's)
-      if (first && MP.sea.x > 0.0 && c == u32(MP.sea.z)) {
+      if (first && MP.sea.x > 0.0 && c == u32(MP.sea.z) && !solidHere) {   // (step G0b: not into a solid pixel)
         let want = MP.sea.x * max(0.0, 1.0 - f32(max(m, 0)) / max(MP.sea.y, 1.0));
         let add = i32(floor(want + u01(mpcg(eI + c * 0x85ebca6bu + 0x6a09e667u))));
         if (add > 0) { acc += add; atomicAdd(&wadd[c], add); atomicAdd(&wsea, add); }
@@ -368,6 +396,13 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
         }
         acc += add;
         if (add != 0) { atomicAdd(&wadd[c], add); }
+      }
+      // step G0b: what the solid neighbours push out into this pixel (each gives all it holds to one neighbour: exact)
+      if (mo != 0u) {
+        if (tN.x) { acc += mg[s0 + i - 1u]; }
+        if (tN.y) { acc += mg[s0 + i + 1u]; }
+        if (tN.z) { acc += mg[s0 + i - MP.hw]; }
+        if (tN.w) { acc += mg[s0 + i + MP.hw]; }
       }
       mg[T.dst + c * MP.n + i] = acc;
     }

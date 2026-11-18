@@ -28,9 +28,10 @@ import { pal, LOOK } from './palette.js';
 import { camera } from './camera.js';
 import { readBuffer } from './snapshot.js';
 import { Stir } from './stir.js';
+import { OBS_BLOCKS } from './obstacles.js';
 
 const WATER_COMMON_URL = 'src/shaders/water_common.wgsl';
-const WP_BYTES = 256;     // struct WaterP
+const WP_BYTES = 288;     // struct WaterP (step G0b: + obs, obs2; 256 until then)
 const WD_BYTES = 144;     // struct WDraw (step G0: + the stirred streamlines, 112 until then)
 // the swell: directions (degrees from the wind), wavelengths (in R) and how fast each runs (R per s): a fixed set, so every dish's
 // light moves the same way
@@ -118,9 +119,10 @@ export class Water {
 
   /**
    * Blocks of n words this keeps in the heat buffer: the caustic block, then psi ((hw + 1) x (hh + 1) words fit in 2 blocks); step G0: then the
-   * cells' stirring (src/stir.js: its force splat, x and y, and its stream function on the coarse stir grid, 3 x sw x sh words in 2 blocks).
+   * cells' stirring (src/stir.js: its force splat, x and y, and its stream function on the coarse stir grid, 3 x sw x sh words in 2 blocks);
+   * step G0b: then the obstacles' (src/obstacles.js: the mask, sdA, sdS, and the solved through-flow at the corners in 2 blocks).
    */
-  get blocks() { return 5; }
+  get blocks() { return OBS_BLOCKS; }
   get causticsOn() { return !!(this.params.caustics && this.light && this.light.on && this.params.strength > 0); }
   get eddiesOn() { return !!(this.params.currents && (this.params.speed > 0 || this.params.gyre > 0)); }
   /** The water flows: the eddies and the gyre, or a perfusion's through-flow (src/perfusion.js), or both. */
@@ -238,6 +240,10 @@ export class Water {
     f[51] = thr[1];
     if (this.stir) this.stir.writeWater(u, f, 60);   // step G0: the stirred psi (struct WaterP stir)
     else u.fill(0, 60, 64);
+    // step G0b: the obstacles (struct WaterP obs, obs2): the eddies fade near them, the through-flow solved round them, x the pump's flux Q
+    // (the old profile's: U x the dish's height for a flow along x, -V x its width along y)
+    if (this.obstacles) { this.obstacles.writeWater(u, f, 64); f[68] = thr[0] * Hh - thr[1] * W; }
+    else u.fill(0, 64, 72);
     const eddies = this.eddiesOn;
     const A = eddies && qmag > 1e-9 ? Math.max(0, p.speed) * R / qmag : 0;     // |u| ~ A |q|: the eddies' speed
     const G = !eddies ? 0 : Math.max(0, p.gyre) * R * Math.min(W, Hh) / Math.PI * Math.cos(2 * Math.PI * t / Math.max(10, p.gyrePeriod));
@@ -288,12 +294,12 @@ export class Water {
     const li = [90, 200, 210];   // the streamlines: a faint teal (the water)
     f[12] = li[0] / 255; f[13] = li[1] / 255; f[14] = li[2] / 255; f[15] = 0;
     f.set(camera.vec(), 16);
-    f[20] = p.lineStep > 0 ? p.lineStep : Math.max(1e-3, (this.psiScale || 1) / 6); f[21] = Math.max(0.3, p.lineW);
+    f[20] = p.lineStep > 0 ? p.lineStep : Math.max(1e-3, (this.psiScale || 1) / (this.eddiesOn ? 6 : 14));   // (step G0b: a through-flow alone, 14 lines across) f[21] = Math.max(0.3, p.lineW);
     const top = Math.max(1.01, p.imax * this.norm);   // the brightest the light gets (x the mean)
     f[22] = 1 + (top - 1) * Math.max(0, p.netFrom); f[23] = 1 + (top - 1) * Math.max(p.netFrom + 0.02, p.netTo);
     // step G0: the stirred streamlines: the stir grid (offset, sw, sh, spacing) and their step, brightness and ink
     if (stirA > 0) St.writeWater(u, f, 24); else u.fill(0, 24, 28);
-    f[28] = stStep; f[29] = stirA; f[30] = 0; f[31] = 0;
+    f[28] = stStep; f[29] = stirA; f[30] = this.obstacles && this.obstacles.active ? 0.5 : 0; f[31] = 0;
     const pink = [255, 120, 190];
     f[32] = pink[0] / 255; f[33] = pink[1] / 255; f[34] = pink[2] / 255; f[35] = 0;
     this.device.queue.writeBuffer(this.dBuf, 0, this.dAB);
@@ -334,7 +340,8 @@ export class Water {
     const p = this.params, on = (x) => (x ? 'on' : 'off');
     const c = this.causticsOn ? `caustics ${p.focus >= 1 ? 'net' : 'dappled'} (focus ${p.focus})` : 'caustics off';
     const k = this.currentsOn ? `currents ${fmt(this.speedNow || 0)} R/s (eddies ${fmt(this.eddy || 0)} R)` : 'currents off';
-    const st = this.stir ? ` · ${this.stir.panelText()}` : '';   // step G0: the cells' own stirring
+    const st = (this.stir ? ` · ${this.stir.panelText()}` : '') +   // step G0: the cells' own stirring
+      (this.obstacles && this.obstacles.active ? ` · ${this.obstacles.panelText()}` : '');   // step G0b: the obstacles
     if (compact) return `WATER ${c} · ${k}${st}`;
     return `WATER  ${c} · ${k}${st} · cells drift ${p.drift} of it · gyre ${p.gyre} R/s, turning every ${p.gyrePeriod} s · rules: caustics ${on(p.caustics)}, currents ${on(p.currents)}`;
   }
@@ -343,6 +350,6 @@ export class Water {
     const p = this.params, on = (x) => (x ? 'on' : 'off');
     return [`water (step N1): caustics ${on(p.caustics)} (strength ${p.strength}, focus ${p.focus}, depth ${p.depth} R, wind ${p.wind}°, ripples ${p.ripples}, ` +
       `mean scale ${this.norm.toFixed(3)}) · currents ${on(p.currents)} (eddies ${p.speed} R/s at ${p.turn}° beat, ${fmt(this.eddy || 0)} R across; gyre ${p.gyre} R/s; cells drift ${p.drift})`,
-      ...(this.stir ? this.stir.overlayLines() : [])];
+      ...(this.stir ? this.stir.overlayLines() : []), ...(this.obstacles ? this.obstacles.overlayLines() : [])];
   }
 }

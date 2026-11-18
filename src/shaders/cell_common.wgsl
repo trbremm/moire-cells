@@ -1171,7 +1171,13 @@ struct Fields {
                     // spacing (CSS px); w the deposit's fixed point (counts per px/s of coverage-weighted force)
   g0c: vec4f,       // x the stir grid's width (nodes, u32); y its height (u32); z word offset in hb of its force splat (x block, then
                     // y block, u32; 0: none); w ... of its stream function (u32; 0: none)
+  // ---- step G0b, obstacles (src/obstacles.js) ----
+  ob0: vec4f,       // x bits OB_* (u32); y word offset in hb of sdA (f32 per heat pixel: the signed distance to the nearest edge that
+                    // stops cells, CSS px, < 0 inside; the obstacles' mask word per pixel sits one block before it); z the contact push
+                    // (1 / s); w the hard limit (the centre never nearer an edge than this x the cell's radius)
 };
+const OB_ON: u32 = 1u;           // step G0b: obstacles act on the cells
+const OB_FLAT: u32 = 2u;         // ... the honeycomb's corners flatten against their edges
 const ST_ON: u32 = 1u;           // step G0: the cells stir the water (deposit their drag's reaction)
 const ST_SPLIT: u32 = 2u;        // ... the stirred water's push on a cell is paid from the heat under it
 // step G1, ERROR CORRECTION (src/fidelity.js; README "Step G1"): the FIDELITY gene F (Bio.conv.w, a log factor, FID_LO..FID_HI; founders 0)

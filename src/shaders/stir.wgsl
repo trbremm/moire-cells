@@ -7,7 +7,8 @@
 //            / tau (L the viscous reach, tau the fading time; frame dt), by Jacobi passes from the frame before's vorticity
 //   psi      the stream function: (lap - kappa^2) psi = -omega (kappa a weak screening, the dish floor's friction on a thin film: it keeps
 //            the response local), Jacobi passes warm-started from the frame before's; psi = 0 on the dish's rim (no flow through the wall)
-//            and HELD on solid nodes (the mask, MASK-READY for step G0b's obstacles: a solid node keeps the value it has, all fluid today)
+//            and 0 on solid nodes (step G0b's obstacles, src/obstacles.js: so every island is a stream line of the stirred flow too; until
+//            G0b the mask was all fluid and solid nodes held their value)
 //   publish  psi into its block of hb (f32 bits), where the water's surface pass adds it to the prescribed psi (water.wgsl) and the cells
 //            read their own flow (cell_step.wgsl stir_vel)
 // A uniform push gives a uniform flow u = G F (the vorticity of a shear is G x the force's), so G is "how fast the water goes where the
@@ -71,7 +72,7 @@ fn psi(@builtin(global_invocation_id) id: vec3u) {
   if (id.x >= P.sw || id.y >= P.sh) { return; }
   let i = id.y * P.sw + id.x;
   if (rim(id.x, id.y)) { pout[i] = 0.0; return; }
-  if (mask[i] != 0u) { pout[i] = pin[i]; return; }
+  if (mask[i] != 0u) { pout[i] = 0.0; return; }   // (step G0b: 0 on a solid node, so the stirred flow adds no flux round an island)
   let nb = pin[i - 1u] + pin[i + 1u] + pin[i - P.sw] + pin[i + P.sw];
   pout[i] = (rhs[i] * P.h * P.h + nb) / (4.0 + P.k2);
 }

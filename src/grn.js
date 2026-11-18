@@ -36,7 +36,8 @@ import { BIO_FLOATS, BIO_GRN } from './genome.js';
 
 export const GRN_R = 8;
 export const OUTPUTS = ['pigment', 'engine 1', 'engine 2', 'engine 3', 'wall', 'thickness', 'stiffness', 'glue', 'pumps', 'channels',
-  'kin channels', 'display', 'division', 'motility', 'emit A', 'emit B', 'engulf'];   // (step P1: + engulf, its gain and regulator in gm.z, gm.w)
+  'kin channels', 'display', 'division', 'motility', 'emit A', 'emit B', 'engulf', 'shape'];   // (step P1: + engulf, its gain and regulator in gm.z, gm.w;
+                                                                                              //  step S1: + shape, the elongation gene's, in relay.z, relay.w)
 const NOUT = OUTPUTS.length;
 export const SENSES = ['contact', 'field A', 'A spread', 'field B', 'light', 'free t', 'battery', 'swelling', 'fuel', 'linkers', 'trace',
   'integrity', 'signal', 'heat', 'meal', 'prey'];   // (step P1: + a meal inside, prey near)
@@ -62,6 +63,7 @@ export function grnOf(g, o = 0) {
     reg.push((Math.max(0, Math.round(g[b + W_O + (q >> 2)])) >> (3 * (q & 3))) & 7);
   }
   u.push(g[b + W_M + 2]); reg.push(Math.max(0, Math.min(7, Math.round(g[b + W_M + 3]) || 0)));   // (step P1: the 17th output, ENGULF)
+  u.push(g[o + 14] || 0); reg.push(Math.max(0, Math.min(7, Math.round(g[o + 15]) || 0)));        // (step S1: the 18th, SHAPE, in relay.z, relay.w)
   return { x, bias, w, code, u, reg, bc: Math.round(g[b + W_M]) & 7, kw: g[b + W_M + 1] };
 }
 /**

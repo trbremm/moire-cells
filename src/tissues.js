@@ -67,6 +67,7 @@ export function wire(g, { regs, outputs = {}, broadcast = 0, kinWeight = 0 }) {
     const o = OUTPUTS.indexOf(name);
     if (o < 0) throw new Error(`tissues: unknown output ${name}`);
     if (o === 16) { g[b + 70] = u; g[b + 71] = r; continue; }   // (the 17th output, engulf, lives in gm.z, gm.w)
+    if (o === 17) { g[14] = u; g[15] = r; continue; }           // (step S1: the 18th, shape, in relay.z, relay.w)
     g[b + 48 + o] = u;
     regWords[o >> 2] += r * 8 ** (o & 3);
   }

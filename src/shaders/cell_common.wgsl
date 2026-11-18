@@ -342,12 +342,15 @@ struct Sim {
   flip: f32,        // step 7, rule 2: chance per s that a cell crowded by its own state flips (0 = off)
   heatCur: u32,     // step C1: word offset of the current heat copy in the heat buffer this tick (heat_common.wgsl)
   nbrOn: u32,       // step C7: 1 = the step records each side's touching neighbour (Cell.nbr) for the pumps across contact
-  tau: f32,         // (spare since step F0: the fates' accumulator time constant)
-  release: f32,     // (spare since step F0: the fates' release)
+  shapeF: u32,      // step S1, CELL SHAPE (src/spindle.js): the SH_* bits below (0 = today's round contacts exactly; the fates'
+                    // accumulator time constant until step F0)
+  eCap: f32,        // step S1: the largest stretch |e| a cell may take, 0.5 ln(the largest aspect) (0.5 while the shape is off; the fates' release
+                    // until step F0)
   reach: f32,       // neighbours within reach x (r_i + r_j) count as touching (signals, adhesion)
   adhesion: f32,    // adhesion pull at full stickiness, as the contact push of an overlap of adhesion x R
   adhSigma: f32,    // how alike two keys must be to stick (width of the Gaussian in the key difference)
-  fateAdh: f32,     // (spare since step F0: the same-fate glue)
+  shapeTurn: f32,   // step S1: how readily an off-centre force turns a long cell (x the torque / its rotational drag; 1 = derived)
+                    // (the same-fate glue until step F0)
   body: f32,        // 1 = body traits on (size and motility from the genome), 0 = all alike
   adhBase: f32,     // stickiness every pair loses: unlike neighbours (stick below this) push off a little
   crawl: f32,       // crawling speed, in units of R per s (times the motility factor)
@@ -507,6 +510,11 @@ fn grn_fac_engulf(b: Bio) -> f32 {
   let j = min(u32(max(b.gm.w, 0.0)), 7u);
   return grn_fac(b.gm.z, b.gx[j >> 2u][j & 3u]);
 }
+// step S1: the 18th output (SHAPE: the elongation gene Bio.relay.y) from a genome: its factor (gain relay.z, regulator relay.w)
+fn grn_fac_shape(b: Bio) -> f32 {
+  let j = min(u32(max(b.relay.w, 0.0)), 7u);
+  return grn_fac(b.relay.z, b.gx[j >> 2u][j & 3u]);
+}
 // ---------- step F0: the cell's JOB (src/jobs.js), what colours it since the fates went ----------
 // Six scores, read from the genes AS EXPRESSED (the step's job_targets) and low-passed in the cell (Bio.acc: light eater, breather,
 // fermenter, gradient eater; Bio.resp.xy: builder, predator; inherited by daughters). The job is the highest; its STRENGTH (0 = the
@@ -638,6 +646,8 @@ struct Stats {
   p1: array<atomic<u32>, 64>,
   // ---- step G0 (src/glue.js): G0S_* (0..7 cumulative, 8.. cleared every frame; the census words counted on its last tick) ----
   g0: array<atomic<u32>, 32>,
+  // ---- step S1 (src/spindle.js): S1S_* a census, cleared every frame, counted on its last tick ----
+  s1: array<atomic<u32>, 16>,
 };
 const G0S_TEARS: u32 = 0u;       // CUMULATIVE: sides torn (each tear counted by both cells of the pair)
 const G0S_HEALS: u32 = 1u;       // CUMULATIVE: torn sides healed
@@ -1489,6 +1499,113 @@ fn pcg(v: u32) -> u32 {
 }
 fn rand01(a: u32, b: u32) -> f32 {
   return f32(pcg(a ^ pcg(b)) >> 8u) / 16777216.0;
+}
+
+// ---------- step S1: CELL SHAPE (src/spindle.js; README "Step S1: cell shape") ----------
+// A cell's real extent for its contacts is a CAPSULE (the standard for rod bacteria): a core segment of half-length h along its long axis
+// u, with round ends of radius rho, of the same area as its disc (pi rho^2 + 4 h rho = pi r^2). Its aspect (length over width, (h + rho) /
+// rho) is the outline's own, exp(2 |e|), e the stretch worked out from the outline's second moment (an ellipse of that stretch has that
+// aspect), but never longer than the elongation the cell ASKS for (its gene, cap_stretch): the long body is held by the cell's own frame (as
+// a real cell's cytoskeleton), while squeezing only dents its soft honeycomb outline, as before. (A first try took the outline alone: a
+// slightly squeezed cell's capsule pushed its neighbours off its ends, its corners followed into the room, and every cell ran away to 2:1.)
+// A round cell (the founders: gene 0) is the old disc exactly.
+const SH_ON: u32 = 1u;        // (master) contacts on the capsules, the elongation gene, the payoffs below
+const SH_NULL: u32 = 2u;      // the elongation gene's NEUTRAL control: it drifts, every cell asks for the founders' round shape
+const SH_GRN: u32 = 4u;       // the gene network's 18th output (SHAPE) scales the elongation asked for
+const SH_TORQUE: u32 = 8u;    // off-centre forces (contacts, obstacles, the dish's wall, the water's shear) turn a long cell
+const SH_EXCH: u32 = 16u;     // the membrane's exchange with the dish x its real perimeter (over a round cell's of the same area)
+const SH_WRAP: u32 = 32u;     // engulfing must wrap the prey's LENGTH (a predator shorter than its prey's long axis cannot)
+const SH_GENE: u32 = 64u;     // the elongation gene acts (off: only passive deformation makes capsules)
+const SH_LN_MAX: f32 = 1.3862944;   // ln 4: the elongation gene's top (an aspect of 4); the knob S.eCap may cap lower
+const S1S_N: u32 = 0u;        // census: live cells
+const S1S_LA: u32 = 1u;       // ... sum of ln(aspect) as the outline has it x 1000
+const S1S_LA2: u32 = 2u;      // ... its square x 1000
+const S1S_LONG: u32 = 3u;     // ... cells longer than 2:1
+const S1S_NPAIR: u32 = 4u;    // ... touching pairs (from both sides) of cells both longer than 1.5:1
+const S1S_NEM: u32 = 5u;      // ... sum of cos 2 (the angle between their axes) x 1000 (i32): the nematic order, 0 random, 1 aligned
+const S1S_GENE: u32 = 6u;     // ... sum of the elongation gene (ln aspect asked) x 1000
+const S1S_GENE2: u32 = 7u;    // ... its square x 1000
+const S1S_EXPR: u32 = 8u;     // ... sum of the elongation as asked (x the gene network's output; 0 in the null) x 1000
+const S1S_TURN: u32 = 9u;     // ... sum of |the off-centre forces' turning rate| x 1000 (mrad / s)
+const S1S_TURNN: u32 = 10u;   // ... cells turned
+const S1S_NOWRAP: u32 = 11u;  // ... prey a predator could have wrapped but for its length (pairs, this tick)
+const S1S_PERIM: u32 = 12u;   // ... sum of the perimeter factor (real / a regular hexagon's of the same area) x 1000
+const S1S_LEN: u32 = 13u;     // ... sum of the long axis's length (2 (h + rho)) in R x 1000
+
+// the elongation a cell asks for (a stretch: half the ln of its aspect), from its genome: the gene Bio.relay.y x the gene network's 18th
+// output (with SH_GRN, which the page sets only while the network's outputs act), at most eCap; 0 off, in the null, with the gene off
+fn shape_ask(b: Bio, shF: u32, eCap: f32) -> f32 {
+  if ((shF & (SH_ON | SH_GENE)) != (SH_ON | SH_GENE) || (shF & SH_NULL) != 0u) { return 0.0; }
+  var la = clamp(b.relay.y, 0.0, SH_LN_MAX);
+  if ((shF & SH_GRN) != 0u && la > 0.0) { la *= grn_fac_shape(b); }
+  return min(0.5 * la, eCap);
+}
+// the stretch a capsule takes: the outline's, no longer than what the cell asks for
+fn cap_stretch(e: vec2f, ask: f32) -> vec2f {
+  let m = length(e);
+  return select(e * (ask / max(m, 1e-9)), e, m <= ask);
+}
+// the capsule of a cell of radius r and stretch e: x y its long axis (unit), z the half-length h of its core segment, w its end radius rho;
+// off (or round) the disc of radius r
+fn capsule(r: f32, e: vec2f, on: bool) -> vec4f {
+  let em = length(e);
+  if (!on || em < 1e-3) { return vec4f(1.0, 0.0, 0.0, r); }
+  let A = exp(2.0 * em);
+  let rho = r * sqrt(3.14159265 / (3.14159265 + 4.0 * (A - 1.0)));
+  // the axis: half the stretch's angle (cos 2 phi = e1 / |e|), without atan2
+  let c2 = clamp(e.x / em, -1.0, 1.0);
+  let u = vec2f(sqrt(max(0.5 * (1.0 + c2), 0.0)), select(-1.0, 1.0, e.y >= 0.0) * sqrt(max(0.5 * (1.0 - c2), 0.0)));
+  return vec4f(u, (A - 1.0) * rho, rho);
+}
+// the closest points of two core segments (a from its centre along ua, half-length ha; b the same; d = b's centre - a's): their places
+// along them (s on a, t on b). Nearly parallel segments meet in the middle of their overlap (no jumping from end to end)
+fn seg_closest(d: vec2f, ua: vec2f, ha: f32, ub: vec2f, hb: f32) -> vec2f {
+  if (ha <= 0.0 && hb <= 0.0) { return vec2f(0.0); }
+  let b = dot(ua, ub);
+  let c = dot(ua, d);
+  let f = dot(ub, d);
+  let den = 1.0 - b * b;
+  let sg = clamp((c - b * f) / max(den, 1e-6), -ha, ha);
+  let bh = hb * abs(b);
+  let lo = max(-ha, c - bh);
+  let hi = min(ha, c + bh);
+  let sp = select(clamp(c, -ha, ha), 0.5 * (lo + hi), lo <= hi);
+  var s = mix(sp, sg, smoothstep(1e-3, 1e-2, den));
+  let t = clamp(s * b - f, -hb, hb);
+  s = clamp(c + t * b, -ha, ha);
+  return vec2f(s, t);
+}
+// the gap between two cells' capsules (x: the distance between their core segments) and their contact distance (y: the sum of their end
+// radii); off: the centres' distance and r_a + r_b, exactly as before
+fn cap_pair(pa: vec2f, ra: f32, ea: vec2f, pb: vec2f, rb: f32, eb: vec2f, on: bool, askA: f32, askB: f32) -> vec2f {
+  if (!on) { return vec2f(distance(pb, pa), ra + rb); }
+  let a = capsule(ra, cap_stretch(ea, askA), true);
+  let b = capsule(rb, cap_stretch(eb, askB), true);
+  let d = pb - pa;
+  let st = seg_closest(d, a.xy, a.z, b.xy, b.z);
+  return vec2f(length(d + st.y * b.xy - st.x * a.xy), a.w + b.w);
+}
+// a capsule's rotational drag per unit area (its second moment of area about the centre / its area: r^2 / 2 for a disc)
+fn cap_moment(k: vec4f) -> f32 {
+  let h = k.z;
+  let p = k.w;
+  let aR = 4.0 * h * p;                         // the middle rectangle 2h x 2 rho
+  let aC = 3.14159265 * p * p;                  // the two half-discs
+  let jR = aR * (h * h + p * p) / 3.0;
+  let jC = aC * (h * h + 0.5 * p * p) + 2.6666667 * h * p * p * p;   // (parallel axis: the half-discs' centroids sit 4 rho / 3 pi out)
+  return (jR + jC) / max(aR + aC, 1e-9);
+}
+// a polygon's perimeter over a regular hexagon's of the same area (1 for a regular hexagon, more for a spindle)
+fn perim_factor(mb: Membrane) -> f32 {
+  var L = 0.0;
+  var A = 0.0;
+  for (var k = 0; k < 6; k++) {
+    let e = mb.edge[k];
+    let p = mb.mid[k] - 0.5 * e;
+    L += length(e);
+    A += 0.5 * (p.x * e.y - p.y * e.x);
+  }
+  return L / max(3.7224194 * sqrt(max(A, 1e-9)), 1e-9);
 }
 
 // ===== end of cell_common.wgsl =====

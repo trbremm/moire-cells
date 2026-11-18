@@ -63,6 +63,7 @@ const GRN_S_HEAT: u32 = 13u;     // the heat (the temperature over twice the tol
 const GRN_S_MEAL: u32 = 14u;     // step P1: a MEAL inside (digesting: the share of it still to digest, 1 .. 0; else 0)
 const GRN_S_PREY: u32 = 15u;     // step P1: PREY near (1 while a cell it could engulf touches it, or it is wrapping one)
 const GRN_NOUT: u32 = 17u;       // outputs (16 until step P1's ENGULF, whose gain and regulator live in Bio.gm.z, gm.w)
+const GRN_NOUT_S1: u32 = 18u;    // ... step S1: + SHAPE (the elongation gene, Bio.relay.y), its gain and regulator in Bio.relay.z, relay.w (while the shape is on)
 
 fn grn_rand(seed: u32, k: u32) -> f32 { return rand01(seed, k); }
 
@@ -98,18 +99,23 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
     let ms = fid_birth(mOn, hx, pfid, FL.hm) * S.mutSize;
     if (ms > 0.0) {
       let bs = pcg(c.seed ^ pcg(S.tick * 0x2545f491u + 0x67726e31u));
-      var u: array<f32, 17>;
-      var oreg: array<u32, 17>;
+      var u: array<f32, 18>;
+      var oreg: array<u32, 18>;
+      // (step S1: the 18th output only while the shape is on, so with it off a birth's random draws are exactly as before)
+      let nOut = select(GRN_NOUT, GRN_NOUT_S1, (S.shapeF & SH_ON) != 0u);
       for (var o = 0u; o < 16u; o++) { u[o] = bioW[i].gu[o >> 2u][o & 3u]; oreg[o] = grn_reg(bioW[i].go, o); }
       var gm = bioW[i].gm;
       u[16] = gm.z;                                              // step P1: the ENGULF output
       oreg[16] = min(u32(max(gm.w, 0.0)), 7u);
+      let rl = bioW[i].relay;
+      u[17] = rl.z;                                              // step S1: the SHAPE output
+      oreg[17] = min(u32(max(rl.w, 0.0)), 7u);
       // the small steps: weights and output gains in use, every bias
       for (var q = 0u; q < 24u; q++) {
         if (code[q] != 0u && code[q] < GRN_NSRC) { w[q] = clamp(w[q] + ms * GP.wStep * gauss(bs, 300u + q), -GRN_UMAX, GRN_UMAX); }
       }
       for (var r = 0u; r < GRN_R; r++) { bias[r] = clamp(bias[r] + ms * GP.wStep * gauss(bs, 330u + r), -GRN_UMAX, GRN_UMAX); }
-      for (var o = 0u; o < GRN_NOUT; o++) {
+      for (var o = 0u; o < nOut; o++) {
         if (u[o] != 0.0) { u[o] = clamp(u[o] + ms * GP.uStep * gauss(bs, 340u + o), -GRN_UMAX, GRN_UMAX); }
       }
       // REWIRE an input: another source (1..22), or cut (0) one time in seven; a new link starts at a random weight
@@ -123,7 +129,7 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
       }
       // an OUTPUT pointed at another regulator (switched on at a random gain if it was off), or switched off one time in five
       if (grn_rand(bs, 365u) < min(GP.orewire * ms, 1.0)) {
-        let o = min(u32(grn_rand(bs, 366u) * f32(GRN_NOUT)), GRN_NOUT - 1u);
+        let o = min(u32(grn_rand(bs, 366u) * f32(nOut)), nOut - 1u);
         if (grn_rand(bs, 367u) < 0.2) { u[o] = 0.0; }
         else {
           oreg[o] = min(u32(grn_rand(bs, 368u) * 8.0), 7u);
@@ -141,7 +147,7 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
           let r = (r0 + t) & 7u;
           if (r == a) { continue; }
           var used = 0.0;
-          for (var o = 0u; o < GRN_NOUT; o++) { if (oreg[o] == r && u[o] != 0.0) { used += 1.0; } }
+          for (var o = 0u; o < nOut; o++) { if (oreg[o] == r && u[o] != 0.0) { used += 1.0; } }
           for (var q = 0u; q < 24u; q++) { if (code[q] == r + 1u && w[q] != 0.0 && q / 3u != r) { used += 1.0; } }
           if (used < best) { best = used; bb = r; }
         }
@@ -149,7 +155,7 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
           bias[bb] = bias[a];
           x[bb] = x[a];
           for (var k = 0u; k < 3u; k++) { w[3u * bb + k] = w[3u * a + k]; code[3u * bb + k] = select(code[3u * a + k], bb + 1u, code[3u * a + k] == a + 1u); }
-          for (var o = 0u; o < GRN_NOUT; o++) { if (oreg[o] == a && grn_rand(bs, 380u + o) < 0.5) { oreg[o] = bb; } }
+          for (var o = 0u; o < nOut; o++) { if (oreg[o] == a && grn_rand(bs, 380u + o) < 0.5) { oreg[o] = bb; } }
         }
       }
       // the broadcast regulator now and then another; the kinship weighting drifts
@@ -168,6 +174,7 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
       gm.z = u[16];
       gm.w = f32(oreg[16]);
       bioW[i].gm = gm;
+      if (nOut > GRN_NOUT) { bioW[i].relay = vec4f(rl.xy, u[17], f32(oreg[17])); }
     }
   }
 
@@ -186,7 +193,12 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
       let j = cell_nbr(c, k);
       if (j >= S.count || j == i) { continue; }
       let cj = cells[j];
-      if ((cj.flags & CELL_ALIVE) == 0u || distance(cj.pos, c.pos) >= GP.press * (c.r + cj.r)) { continue; }
+      if ((cj.flags & CELL_ALIVE) == 0u) { continue; }
+      // (step S1: pressed against it on their capsules: their gap against their end radii; off, the centres against the radii as before)
+      let shOn = (S.shapeF & SH_ON) != 0u;
+      let gp = cap_pair(c.pos, c.r, vec2f(c.e1, c.e2), cj.pos, cj.r, vec2f(cj.e1, cj.e2), shOn,
+                        select(0.0, shape_ask(bioOld[i], S.shapeF, S.eCap), shOn), select(0.0, shape_ask(bioOld[j], S.shapeF, S.eCap), shOn));
+      if (gp.x >= GP.press * gp.y) { continue; }
       cov += 1.0;
       if (sigOn) {
         let bj = u32(max(bioOld[j].gm.x, 0.0)) & 7u;

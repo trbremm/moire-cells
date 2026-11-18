@@ -56,6 +56,9 @@ export const GENES = {
   grnBroadcast: 152, grnKinWeight: 153,
   // step G1: the FIDELITY gene (proofreading, src/fidelity.js): a log factor, copying errors x e^-fidelity (founders 0)
   fidelity: 31,
+  // step S1: the ELONGATION gene (ln of the aspect asked: 0 round .. ln 4 = 1.386 a 4:1 spindle) and the gene network's SHAPE output's gain
+  // and regulator (src/spindle.js)
+  elongation: 13, grnShapeGain: 14, grnShapeReg: 15,
 };
 // words 19..30 are the cell's state, not genes (heading, accumulators, felt fields, conversion)
 // (step T1b: and 84..91, the regulators' expression)
@@ -119,6 +122,7 @@ function gather(M, ctl) {
   if (M.pigments && M.pigments.census) flatten(M.pigments.census, 'lightmatter', out);   // step N1: light needs matter
   if (M.glue && M.glue.census) flatten(M.glue.census, 'glue', out);       // step G0: the glue gene, junctions, tears
   if (M.stir && M.stir.census) flatten(M.stir.census, 'stir', out);       // step G0: the stirred water
+  if (M.spindle && M.spindle.census) flatten(M.spindle.census, 'shape', out);   // step S1: cell shape
   if (M.obstacles && M.obstacles.census) flatten(M.obstacles.census, 'obs', out);   // step G0b: the obstacles' last measure (moire.obstacles.measure())
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;

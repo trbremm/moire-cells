@@ -6390,6 +6390,194 @@ tar grazed, what the batteries got and the heat; cells with each carbon engine. 
   fixed-count turnover mode does not gate births by carbon.
 - Speed not measured on a free GPU (the shared GPU's noise, +-15 %, hid carbon's cost).
 
+## Step C15c: carbon makes the cell
+
+Stage 3 of the carbon rebuild (`design/C15_carbon_proposal.md`, option R). The user (2026-11-17): "We should make carbon fundamental for all
+cells mechanisms", then "the organic chemistry becomes carbon + element needed for specialized work". Carbon is the cells' BUILDING
+MATERIAL (the battery stays the energy currency): the membranes, walls, pigments, glue and the engines' enzymes are now built from carbon,
+each with the element its job needs, read from the electron table (C12d), and the linkers l and L RETIRE. `?cblip=0` gives step C15b (carbon
+beside the linkers, with this step's fixes); `?carbon=0` the chemistry before C15a, exactly. Code: the C15c section of
+`src/shaders/cell_carbon.wgsl` (the recipes, oxygen's bites, enzymes, the books), its hooks in `cell_eat.wgsl` (the plan's bites, the
+builder, the glue, the pigments, the enzymes before the engines, deaths, digestion, the ledger), `src/carboncells.js` (switches, the panel's
+PARTS line, the census).
+
+Words: a HAND is one of carbon's four bonds; a FUEL HAND holds a giver g (energy still in it: c-g), a BURNT HAND a taker t (c-t, settled), a
+BACKBONE bond joins two carbons (c-c). The LADDER = the five one-carbon molecules, methane-like (four fuel hands) .. CO2-like (four burnt
+hands). TAR = dead carbon counted as hands (mud). A GRANULE = tar inside a cell. OXIDISE = a free t takes a fuel hand's place (2.75 released:
+burning); REDUCE = the reverse (2.75 paid: fixing); CONDENSE = a fuel hand and a burnt hand of two carbons join into a backbone and leave a
+water gt (0.75 released).
+
+### First, C15b's harshness (it emptied the oxygen dishes and made the default colony 3x smaller)
+
+- A carbon TRANSPORTER gene (Bio.relay.x, a spare word since F0; a log level, founders 1, drifting in small steps like C12g's ion channels;
+  the gene network's channel output sets how much is expressed): the ladder crosses the membrane at a neutral molecule's rate x (0.24, the
+  bilayer alone, as C15b + 1 x the level). It costs upkeep, 0.002 energy per s per level, from the battery. So at the founders' level carbon
+  gets in about five times faster than in C15b, and evolution can open or close the door. `?cbtrans=0` (C15b's rate), `?cbktrans=`, `?cbtransup=`.
+- A little SUGAR-UNIT-LIKE carbon at the mineral spring (0.06 molecules per atom of its rate, beside its 0.08 CO2-like): a lit dish can build
+  before it can fix (the proposal's question 3). `?cbsugar=0` (CO2-like only). The chip's medium brings sugar-unit- and CO2-like carbon too.
+- Cells placed by the tools (add cell, predators, designed tissues) start with a BODY and ENZYMES as a founder does, booked as carbon (and G)
+  in. `?cbtool=0`: none, as C15b.
+- A HUNGRY cell (its body short) grazes the mud under it as 5 units of a grazing engine (C15b: 1), with its whole UNDERSIDE: the mud lies on
+  the floor, and T1a's inside shields the sides from the water, not the floor. `?cbhungry=`.
+- The BODY's want is halved, 0.05 -> 0.025 carbon per R^2 of the cell: the membranes, walls, pigments, glue and enzymes are carbon now too, the
+  body is the rest of the cell. Checked against uptake on the default scene (EXPERIMENTS.md "Carbon makes the cell", section 1): a cell
+  takes in about 0.002 carbon per s (grazing and the transporter), a division at the old want needed ~0.16 for the body alone. `?cbbody=`.
+
+### The recipes: every part is carbon + the element its job needs
+
+| part | made of (per count) | the job's element, and why (derived from the electron table) | how it is built (the table's own reactions) |
+|---|---|---|---|
+| body (C15b) | carbon, cellulose-like hands | none: c-c backbones are the strong shared bonds | the body's builder (C15b) |
+| SOAP1, the bilayer | 2 carbons: c2 g5 t | a burnt hand t on one carbon: a polar HEAD on an oily TAIL carbon (the polarity rule: a bond is polar when its electron falls >= 1; c-t falls 3.5, c-g 0.75) | two ladder carbons condensed (+ a water) |
+| SOAP2, the bilayer | 2 carbons: c2 g4 t2 | two burnt hands on the head carbon (more polar; one oxidation from spoiling) | the same |
+| OIL, between the soap's tails | 2 carbons: c2 g6 | none: all fuel hands, water-shy (it stiffens the bilayer, as cholesterol) | the same |
+| WALL, a chain carbon | 1 carbon: one backbone bond, one fuel and one burnt hand (cellulose-like) | none: structure is carbon alone | granules as they are (starch into cellulose), or a sugar-unit-like molecule condensed, or a pair whose hands even out (formic- + methanol-like, methane- + CO2-like) |
+| WALL, a cross-linked pair | 2 carbons: three backbone bonds, one fuel, one burnt hand (stiffer) | none | two chain carbons condensed once more |
+| PIGMENT | 2 carbons: c2 g6 + 1 trace | its c-g bonds' gap (1.625) matches visible 1; TRACE at its heart, as magnesium in chlorophyll | an oil-like pair + a trace atom |
+| GLUE (the C10 walls' adhesion, G0's strong glue) | 1 sugar-unit-like molecule (cg2t2) per unit | its charged hands (two g, two t): sticky by charge, as a biofilm's sugars | taken from the stock as it is (the old weave's linker want, now carbon) |
+| ENZYMES (the engines) | 4 chain carbons + 1 G per unit | the HEAVY GIVER G: catalysis moves electrons, and G holds the loosest one in the table (metal-like, as iron in real enzymes); trace stays the cofactor (C7b) | chain carbons as for the wall + a free G from the stock |
+
+How a two-carbon part is made (`cb_make2`): two ladder carbons CONDENSE into it (the spark 0.5 from the battery, 0.75 released as heat, a
+water to the stock); a pair with j1 + j2 burnt hands gives j1 + j2 - 1, so the builder looks for the exact pair first (oil from methane- +
+methanol-like, soap1 from methane- + sugar-unit-like or two methanol-like, soap2 from ...); then a pair too rich in fuel hands, whose extra
+fuel hands it OXIDISES with free t from the stock (2.75 each as heat); then (`?cbred=0` off) a pair too burnt, whose extra burnt hands it
+REDUCES with free g from the stock, the battery paying 2.75 + the spark each: making fat from sugar is dear, as in real cells (it needs
+NADPH). CO2-like carbon is used only on that dear way (it is then being fixed by the battery). Every build that falls short notes WHY (no
+carbon of the right kind, no G, no trace, no free g or t, no battery): the LIEBIG census below.
+
+- The C12b membrane keeps its words and rules (6 sides x 5 kinds, what a side wants from the thickness gene, the oil share gene, the wall
+  gene, the stiffness from the make-up, the heat making it fluid, the wall cracking when jolted, shedding), with the kinds now carbon:
+  soap (glL, tlL) -> soap1, soap2 (the head gene's share now picks soap1 over soap2); oil (lL) -> carbon oil; crust walls (ll, LL) -> chain
+  carbons and cross-linked pairs (the old wall-row gene lip.z is now the CROSS-LINK share). The stiffness reads the carbon lipids per carbon
+  (the proposal's rule: a soap is a head carbon on a tail carbon, the oil two tail carbons): pure soap 1, each oil per soap adds 2.
+- The soap heads' booked charge does not act (only free ions act since C12g), so the heads charge nothing.
+- C12 FUSION (oil and soap from the dish) and C12b's CRUST GRAZING stop: the dish holds no carbon oil or soap (spilled lipids are mud), and
+  the cells graze tar into granules instead (C15b), which the wall builder uses as they are.
+- A side that sheds extra lipids keeps them as granules; a jolted wall's cracked pieces, a dead or burst cell's whole membrane, pigment and
+  enzymes go into the dish's TAR (mud) where it lay; the glue back into the dish as sugar-unit-like molecules.
+- PIGMENTS wear and bleach into the cell's granules (their trace into the dish, as N1); built from an oil-like pair + a trace atom + the old
+  assembly cost.
+- ENZYMES: a cell wants 0.01 carbon per unit of its engines' expressed rates per R^2 of its area (a typical founder, rates summing to 4: about
+  0.13 carbon, near its body's 0.16), in units of 4 chain carbons + 1 G. They wear (a mean life of 60 s) back into the granules and the
+  stock's G, and are rebuilt (half the shortfall per s) from chain carbons and a free G: T1b's upkeep of an expressed engine becomes this
+  TURNOVER (the old upkeep is off while enzymes are on). Every engine slot runs at the share of its enzymes the cell holds. Founders start
+  with a typical founder's enzymes; placed cells with their own; a birth splits them as the granules; a predator digests its meal's into its
+  own. `?cbenz=0` (engines need no enzymes: the T1b upkeep again), `?cbenzk=`, `?cbenzlife=`.
+
+### Oxygen damages membranes (replaces "light atoms bite light membranes")
+
+The same OXIDISE as breathing, uncontrolled: a FREE t outside a side takes a fuel hand of a lipid there (lipid peroxidation). Oil becomes
+soap1, soap1 becomes soap2 (they stay in the bilayer: FAT -> SOAP), and a bitten soap2 or wall piece SPOILS: it leaves into the dish's tar
+(-> MUD). The freed g goes into the dish, the 2.75 is heat at the cell. Only t bites (g, G, T cannot oxidise carbon: c-T would release 0.75,
+less than the c-g it breaks). The rate is the C12b bites' (x the concentration of t outside the side, x exp(-the carbon spark 0.5 /
+(theta x the temperature)), the wall covering the bilayer, a fluid bilayer more exposed than a packed one), and M1's BITE BLOCK still holds:
+t is a free ION, and an intact bilayer keeps ions away from its oily core, so it bites mostly where the side is already damaged. `?cbbite=0`
+(nothing bites).
+
+### The linkers retire
+
+- No spring drips l or L any more: the mineral spring drips water-like gt only (+ its carbon: CO2-like and sugar-unit-like); the Crust desert
+  preset's linker springs drip sugar-unit- and methanol-like carbon instead (it condenses into tar fields where it is warm); the chip's medium
+  brings sugar-unit- and CO2-like carbon instead of linkers. The pipette can still drop l, L and the oil tool the old linker oil and soap (the
+  Oil slick preset), which the cells no longer use (left as they are, see Known issues).
+- The 18-channel arrays stay as they are (channels 2 l, 5 L, 10 ll, 11 LL, 13 lL, 14 glL, 15 tlL simply stay empty in a carbon dish; the
+  table's linker reactions and the four linker engines find nothing to work on); `?carbon=0` and `?cblip=0` keep their old meaning exactly.
+- The gene network's "linkers" sense reads the cell's ladder fuel instead.
+- The C6c linker membrane (`?lipids=0`) needs the retired linkers: with carbon making the cell the lipid membrane is always on.
+
+### Look
+
+The drawing reads the same per-side numbers as in C12b (Cell.lip: stiffness, the wall's cross-linked share, the oil share, the wall's
+cover), so the membranes look as before, now made of carbon: the soap bilayer as a pearly drifting tube, oil as a deeper glossier one, the
+wall as amber bricks (chain carbons) turning brown where it is cross-linked, granules as amber dots (C15b). Harmonic: green rims (stronger
+the more lipid), orange wall and mud fibres, orange granule dots. In the dish the spilled membranes, walls and dead bodies are mud: flat
+amber-to-brown tar flecks (C15a's look). The molecules zoo has a card per part under the carbon ladder ("Carbon makes the cell"). Pictures:
+`experiments/keep/c15c/`.
+
+### Books
+
+- Every part's carbon is counted as TAR HANDS in the cells' carbon (the glue as sugar-unit-like molecules), by the hands it is made of:
+  soap1 (1 backbone, 5 fuel, 1 burnt), soap2 (1, 4, 2), oil (1, 6, 0), a wall chain carbon (1, 1, 1), a cross-linked pair (3, 1, 1), a
+  pigment (1, 6, 0), an enzyme unit (4, 4, 4). So the carbon, the atoms (c, g, t on the hands), the energy (minus the bonds) and the booked
+  charge come out of the tar's own accounting: every rounding stays 0. The enzymes' G atoms count with the cells' G.
+- What the builder does is the table's own reactions, booked as they happen: a condensation's 0.75 and every spark as heat at the cell, a
+  water into the stock; an oxidation's 2.75 as heat; a reduction's 2.75 from the battery into the bond; a water split's 4.5 from the battery.
+- A bite by oxygen takes the t from the dish and puts the g back into it; a spoiled molecule, a cracked wall piece, a dead cell's parts go
+  into the dish's tar and are booked as carbon given back (C15b's books); placed cells' bodies and enzymes as carbon (and G) in.
+- The ledger grew 43776 -> 45056 words (a second census and 8 event counters). Snapshots carry `cbLip`; one saved before C15c (with carbon)
+  reloads the page with `?cblip=0` by itself.
+
+### Switches and knobs (URL; rules panel "Carbon in cells")
+
+`?cblip=0` (step C15b's linker parts; fixed for the page), `?cbsugar=` (0.06), `?cbtrans=0`, `?cbktrans=` (1), `?cbtransup=` (0.0005),
+`?cbred=0`, `?cbredfloor=` (the battery share above which the builder may reduce), `?cbbite=0`, `?cbenz=0`, `?cbenzk=` (0.01),
+`?cbenzlife=` (60 s), `?cbhungry=` (5), `?cbtool=0`. Live: `moire.carbonCells.params`.
+
+### Panel
+
+The CARBON IN CELLS line gets a PARTS line: the carbon in membranes, walls, pigments, glue and enzymes (of what the enzymes want, the share
+of cells short), LIMITED BY: the share of cells that could not build a part this frame for want of carbon of the right kind, of G, of
+trace, of a free g or t, of battery (the LIEBIG census: which element stops which job), the parts made per s, the hands reduced and
+oxidised by the builder, OXYGEN BITES per s and how many of them spoiled a molecule into the mud, the mean transporter level.
+`moire.sample()`'s `cbcells.p_*` and `cbcells.r2_*`.
+
+### What it does (EXPERIMENTS.md "Carbon makes the cell"; seed 3, the GPU shared)
+
+Cells alive at 5 / 10 / 15 / 20 minutes, carbon making the cell against `?carbon=0` (and C15b's numbers where it had them):
+
+| scene | carbon makes the cell (C15c) | `?carbon=0` | C15b (body rule) |
+|---|---|---|---|
+| default | 153 / 153 / 246 / 289 | 412 / 827 / 753 / 1224 | 154 / 189 / 318 / 339 |
+| Sunlit shallows | 924 / 955 / 815 / 1069 | 3110 / 5873 at 9 min | - |
+| oxygen, spotlight | 157 / 122 | 94 / 400 | 21 / 2 |
+| oxygen, whole dish | 222 / 284 | 381 / 933 | 28 / 8 |
+| colonies (wild founders) | 144 / 0 | 1832 / 1841 at 7 min | - |
+| Deep vents, dim light | 0 by 5 min | (C15b: 18 / 0) | 2 / 0 |
+
+- The fixes did their job where C15b emptied the dish: the OXYGEN dishes now live (120-280 cells instead of 2-8), and the shallows hold
+  a thousand cells. But carbon still costs a colony a factor of 3-5 against `?carbon=0` almost everywhere, the default scene stays at C15b's
+  size, and two scenes die: the vents (they die with `?carbon=0` too) and the wild COLONIES (see Known issues).
+- LIEBIG, which element stops which job (the share of cells that could not build a part this frame): CARBON of the right kind 78-96 % in
+  every scene (mostly the membranes: fat needs reduced carbon, and the cells hold sugar-unit-like carbon); G 2-12 % in the default scene,
+  35-62 % in the shallows (no vent there: the ENZYMES run short, 90-96 % of the cells below half their want by 10 minutes; breathers take
+  over the dish); TRACE 40 % at the start (the pigments: as N1, light needs matter) then near 0 (no pigments left); free g or t 0-21 %;
+  BATTERY 2-22 %.
+- MEMBRANES: integrity 0.2-0.35 in the default scene (0.73 with `?carbon=0`), 0.38-0.63 in the shallows, 0.2-0.47 under oxygen: thinner,
+  holier membranes than M1 gave with linkers, because fat is scarce (above).
+- OXYGEN BITES: 0.001-0.4 oxidations per s in a dish, half or more of them spoiling a soap into the mud; in the wild colonies the bites
+  rose as membranes became whole (with 800 units of free t in the dish) and bursts followed (6 per s at 4 minutes).
+- MUD and GRAZING: the dead founders' bodies lie as flat amber flecks where the founders were (the default scene's left half), a brown tar
+  mound round the mineral spring, the seep's yellow blob; hungry cells graze the mud (1-1.5 hands per s), granules up to 35 carbons in
+  130 cells.
+- JOBS: breathers (hot pink) grow to the largest group in the shallows, the oxygen dish and late in the default scene; light eaters
+  (lime) shrink; a few builders (amber); predators (red) appear in the shallows' wild genes.
+- BOOKS: carbon, the dish's carbon energy, atoms and charge rounding 0 at every probe of every run; the dish's whole energy rounding at its
+  usual noise (at most 0.07 of millions in).
+
+### Known issues and what remains
+
+- THE WILD COLONIES DIE with carbon making the cell (1800+ cells with `?carbon=0`): they grow to 600 by 3.5 minutes, then crash (0 by 10
+  minutes). Not one cause: without oxygen's bites they decline more slowly (50 at 10 minutes), without enzymes they die alike (1 at 10
+  minutes); their enzymes run short of G and carbon (most cells below half their want), their membranes become whole and are then bitten
+  open under 800 units of free t. Not found yet; the wild genes (thick membranes, full walls, high oil) may ask for more carbon than any
+  cell can get. The Deep vents die as before.
+- HARSH IN THE DEFAULT SCENE: see the results above. Fat needs REDUCED carbon (methane- or methanol-like, or light's fixing); a dish whose
+  cells hold mostly sugar-unit-like carbon builds thin, holey membranes, which hold half the stock and leak, so the cells earn less, which
+  slows everything else. Ninety per cent of the carbon is mud.
+- Channels and pumps (C7, C12g) are not charged in carbon yet (the recipe would be carbon + a polar t lining, + G for a pump); the gene
+  network's expression is not charged (it would be cheap); cilia and flagella do not exist yet (S2).
+- The dish holds no carbon oil or soap: spilled lipids become mud at once, so the C12 oil slick, droplets and soap films happen in a carbon
+  dish only from the oil tool's old linker oil (the tool and the Oil slick preset still drop it; the cells no longer use it). Carbon lipids
+  as grid molecules (the proposal's tier 3 in the open dish, with C12's phase separation) are the next piece.
+- The four linker engines (l + l, L + L and their cracks) and the table's linker reactions are still in the genome's and the dish's tables:
+  they find nothing to work on in a carbon dish (a slot mutating onto one is wasted).
+- The pigment is one recipe for every band (its c-g bonds match visible 1; a visible 2 pigment would want a heavier pair).
+- Oxygen's bites are spread over the sides that hold the bitten kind (from a random first one), not on the exact side the plan found
+  exposed; the rate per side is right.
+- Founders start with a TYPICAL founder's enzymes (the reset runs before the new genomes are written).
+- Speed: measured on a shared GPU only (the first 60 s side by side: x0.59 vs x0.63 and x1.47 vs x1.11 with `?carbon=0`: noise larger than
+  the cost).
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start
@@ -6487,7 +6675,11 @@ tar grazed, what the batteries got and the heat; cells with each carbon engine. 
   the CARBON IN CELLS panel line, the overlay, `sample`. The shader is prepended to `cell_eat.wgsl` (its functions are called from the
   plan, eat, dump, split, ledger and reset passes: `cb_plan`, `cb_cell`, `cb_give_back`, `cb_split`, `cb_digest`, `cb_ledger`, `cb_flush`,
   `eng_at`); the carbon engines themselves are `carbonEngines()` in `src/carbon.js` (`ALL_ENGINES` in `src/matter.js`);
-  `experiments/conditions/c15b/`: `make.py` (the conditions), `summary.py` (the tables)
+  `experiments/conditions/c15b/`: `make.py` (the conditions), `summary.py` (the tables). Step C15c (carbon makes the cell): the section at the end of
+  `cell_carbon.wgsl` (`cb_lip`, the recipes `cb_make2`, `cb_make_chain`, `cb_make_cross`, oxygen's `cb_bites`, `cb_trans`, `cb_enzymes`,
+  `cb_found_enz`, `cb_ledger_parts`), its hooks in `cell_eat.wgsl` (marked "step C15c"), `PART_RECIPES` and the PARTS line in
+  `src/carboncells.js`, `CB_LIP` and the mineral spring's sugar in `src/carbon.js`, the placed cells' bodies in `src/app.js`, the zoo's parts
+  card in `src/zoo.js`; `experiments/conditions/c15c/`: `make.py`, `summary.py`, the tuning runs `ab*.json`
 - `src/vents.js`: vents in the dark (step C12f): the hot vent's mix (`HOT_MIX`, `OLD_MIX`; `SPRING_KINDS.heavy` follows it), its heat
   per tick (a spring's `amt[18]`), the sea's words (struct MatterP `sea`), the census (LG_VENT, LG_SEA; the gradient engines' E2_GRAD,
   E2_GRADE from `src/eat.js`), the VENTS panel line and the overlay. The rules themselves: `matter.wgsl` `spread` (the heat into the

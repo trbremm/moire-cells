@@ -1,0 +1,37 @@
+{
+  "name": "g0b-basespeed-2k-neon-r2",
+  "description": "step G0 speed, after G0b, nothing painted: default scene, 2000 cells, MAX, 150 s, neon",
+  "condition": {
+    "name": "g0b-basespeed-2k-neon-r2",
+    "description": "step G0 speed, after G0b, nothing painted: default scene, 2000 cells, MAX, 150 s, neon",
+    "query": {
+      "seed": 3
+    },
+    "duration": 150,
+    "sample_every": 25,
+    "snapshots": [],
+    "shots": [],
+    "evals": []
+  },
+  "url": "http://localhost:65167/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "53a13ba619a3ee7b41f967b6112a9e83f2ea4f94",
+  "dirty": false,
+  "started": "2026-11-18T04:34:47",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 150.0,
+  "run_wall_s": 104.42,
+  "speed_reached": 1.44,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-18T04:37:53",
+  "wall_s": 185.95
+}

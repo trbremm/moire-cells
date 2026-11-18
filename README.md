@@ -6231,6 +6231,166 @@ with F0, D1 and G1 (the pre-G0 build at x1.19).
 - The stirred streamlines are spaced by the flow's own range (read back every 2 s), so they flicker a little when the range changes.
 - Torn sides need the patterned walls (per side); with `?walls=0` nothing tears.
 
+## Step G0b: obstacles
+
+User, 2026-11-17: "does it make sense to add obstacles ... walls, blocks, etc"; "maybe the microfluidics chip analogy is better". Walls,
+blocks and pillars that cells cannot enter, matter does not cross and water flows round; painted with a tool, by the console, or by a
+preset (`src/obstacles.js`, `src/shaders/obstacles_draw.wgsl`).
+
+### Shapes and the mask
+
+- Obstacles are kept as a list of SHAPES, in order: STROKES (a pen line with a width: walls, channels), RECTANGLES (blocks, corners
+  rounded) and CIRCLES (pillars), each SOLID (stops cells, water and matter), POROUS (stops cells only: water and atoms pass, like a
+  filter insert) or an ERASER (cuts a hole in what was painted before it: an opening, a crack). The shapes are what a snapshot saves and
+  what the squeeze scales; the mask is made from them again.
+- From the shapes the CPU works out two SIGNED DISTANCE FIELDS at the heat pixels' centres (CSS px, negative inside, kept to +-8 R):
+  sdA (what stops cells: solid and porous) and sdS (what stops water and matter: solid). A pixel's KIND follows (0 water, 1 solid, 2
+  porous, 3 the round dish's rim), and for every blocked pixel a WAY OUT (a step toward the nearest free pixel, from a breadth-first
+  search; one for matter, one for cells). Painting redoes only the box round the new shape (plus 8 R).
+- ROUND DISH (`?dish=round`, `?dish=WxH,round`, `?round=1`, the New culture dialog's "round", the Dish panel's "round dish"): the outside
+  of the dish's inscribed circle (1 R in from its shorter side) is a solid RIM. Matter beside it is lost to the rim's sink, as at the
+  square dish's edge; it is never erased.
+- On the GPU: three blocks behind the water's in the heat buffer (the mask word, sdA, sdS) plus two for the solved through-flow (below):
+  the water's blocks went from 5 to 10. Uploaded when something changes. With nothing painted every shader skips it all.
+
+### What the mask does
+
+- **Matter** (`matter.wgsl` spread): no flux across a face between a pixel and a SOLID one (porous pixels let matter through): both
+  pixels of the edge drop it, so the counts stay exact. Matter INSIDE a solid pixel (painted over, dripped by a spring under a wall,
+  put down by a cell's corner) is PUSHED OUT: each solid pixel gives everything it holds, every substep, to the neighbour its way out
+  points to, so painted-over matter walks out to the nearest water, one pixel per substep, in whole counts. MY CHOICE: painting over
+  matter is allowed (not forbidden); it is pushed out exactly. A spring painted over drips into the wall and its atoms come out at
+  the wall's edge. The sea never tops up a solid pixel. The rim sink, the oases' burying and the outlet act only on water pixels.
+- **Cells** (`cell_step.wgsl`): a CONTACT PUSH from the edge, a spring (14 per s, the dish wall's is 2) while the centre is nearer the
+  edge than the cell's radius (booked as work, as the dish's wall); a HARD LIMIT: the centre never comes nearer than 0.45 x its radius
+  (only the position is put back, at most half a radius a tick: no velocity changes, nothing booked); a cell deep inside (painted over)
+  walks out along the way out. The honeycomb's CORNERS FLATTEN against the edge exactly as against a neighbour's wall (the corners
+  facing it stop there and slide toward the tile's corners), so a tissue packed against a wall has a straight side there. New cultures
+  and the add-cell tool never place a cell inside an obstacle.
+- **Water** (`water.wgsl`, `stir.wgsl`): the prescribed moire EDDIES and GYRE fade smoothly to 0 within 4 R of a solid (MY CHOICE:
+  masked, not solved round them, like the dish's own window). The cells' STIRRED flow is 0 on solid nodes of its grid (G0 held them;
+  every island is now a stream line of it too). PERFUSION's through-flow is SOLVED round the obstacles (next).
+
+### The through-flow: pressure-driven
+
+The old through-flow was a prescribed channel profile. With obstacles it is now solved (`?obsflow=0`: the old profile):
+
+- MY CHOICE of physics: a thin chip, depth-averaged (Hele-Shaw / Darcy): the water moves down the pressure gradient, u = -K grad p, and
+  does not pile up, div u = 0. With u from a stream function psi, that is div((1/K) grad psi) = 0. Low Reynolds by construction: smooth
+  flow, no eddies, no vortex streets.
+- Boundary values: psi = 0 along one side wall and psi = Q along the other (Q = the pump's flux: the old mean speed x the channel's
+  width, so a narrowed channel runs faster, as a syringe pump at a set flow rate); the inlet and outlet edges are open (the water crosses
+  them straight); each obstacle ISLAND (a connected solid region) is a stream line whose value is set by zero net pressure round it (its
+  psi = the weighted mean of its neighbours, iterated with the rest). An island joined to a side wall takes that wall's value; a wall
+  joining both side walls BLOCKS the channel (no through-flow; the panel says so).
+- NO-SLIP, approximately: K falls smoothly to 0.04 within 3 R of every wall and side wall (the slow layer a no-slip wall makes in a
+  shallow channel), so the flow is fastest in the middle of each gap, still along the walls, plug-like in the open (wide) channel. Not
+  a full Stokes solve: no recirculating eddies in a side chamber, just still water.
+- Solved on the CPU (red-black over-relaxation, warm-started from the last solve, at most 4 ms a frame until it settles; the first
+  solve up to 0.4 s), uploaded as psi at the heat pixels' corners and scaled by Q in `water.wgsl`, so the substances, the cells and the
+  streamlines read it through the same psi block as before (transport divergence-free, flux form, exact). The Chip's mask (77 islands)
+  settles in about 700 sweeps.
+- The streamlines in the machinery view are drawn half a step off with obstacles (no line sits exactly on a still island's value).
+
+### The tool, the console, the presets
+
+- TOOL (the toolbar's wall-and-pillars button; its button again cycles the shape): WALL (a drag paints a wall, 2 R wide), BLOCK (a drag
+  spans a rectangle, dashed preview), PILLAR (a tap places one, a drag a row, 2.5 R in radius), ERASE (a drag cuts through). The Dish
+  panel's "obstacles" row: the shapes, porous on/off, thinner / thicker, undo, clear, round dish. Touch works the same (pointer events).
+- Console (dish px): `moire.obstacles.line(x1, y1, x2, y2, w, kind)`, `.path([[x, y], ...], w, kind)`, `.rect(x, y, w, h, kind, r)`,
+  `.circle(x, y, r, kind)`, `.pillars(x0, y0, x1, y1, r, gap, kind)` (a staggered array), `.erase(x1, y1, x2, y2, w)`, `.undo()`,
+  `.clear()`, `.setRound(on)`, `await .measure()`; knobs in `.params`.
+- PRESETS (a preset's `obstacles()` paints before the culture is seeded; `?presetwalls=0` leaves them out):
+  - **Chip** (upgraded): the D1 channel (396 x 124 R, perfusion) with a staggered array of round pillars over its first third, a side
+    chamber below the channel whose neck (8 R) leaves its water nearly still, and two blocks downstream. The lake's eddies and gyre are
+    off here (a chip has none), so the through-flow's profile shows.
+  - **Crevices** (new): a rock face fills the lower 42 % of the dish, cut by narrow branching cracks (2.6 R) ending in two small caves,
+    boulders in the open water; stronger eddies and gyre in the open; mineral springs in the open and a slow vent at the rock's foot.
+  - **Maze** (new): a fixed labyrinth of thin walls (corridors about 20 R), springs at three corners, the culture in the middle.
+- Switches: `?obstacles=0` (the mask ignored), `?obsflow=0` (the old prescribed profile); rules: `moire.obstacles.params` (`on`, `flow`,
+  `push`, `hard`, `flatten`, `slip`, `kmin`, `fade`, `solveMs`, `tube`, `glow`). Light: no shadows (not built).
+
+### The look
+
+Neon: a dark, cool fill (glass seen from above: what is under it is hidden) with a thin ICE-BLUE TUBE along every edge (a white-hot
+core; the neon halo adds its tight glow). Porous parts: a lighter fill dotted with pores and a DASHED pale-aqua edge. Harmonic: a
+near-black fill with a faint grey rim (as a glass interface shows in a multiphoton image; green stays the cells' membranes). Flat look:
+a pale steel edge. The block tool's preview: a thin dashed outline.
+### What it looks like (pictures: `experiments/keep/g0b/`)
+
+- **Chip** (`chip-s3-t300-*.jpg`, `chip-s3-t300-pillars-x3.5-neon.jpg` / `-harm.jpg`, `chip-s*-t600-neon.jpg`): a long dark channel
+  with a lattice of glassy ice-blue rings over its first third and a thin-walled chamber hanging off its floor. The tissue regrows from
+  the inlet as a packed front and arrives at the pillars at about 5 minutes (harmonic: a green honeycomb meeting a lattice of grey
+  circles); by 10 minutes it has threaded through, its leading edge ahead along the TOP of the channel, where the flow deflected over
+  the chamber brings the medium first. Machinery view (`chip-streamlines-x2.5-machinery.jpg`): the streamlines squeeze between the
+  pillars and arch up and over the chamber; none enter its neck.
+- **Crevices** (`crevices-s3-t300-*.jpg`, `crevices-s7-t600-*.jpg`): the lower part of the dish a dark slab of rock under a straight
+  ice-blue edge, cut by jagged cracks ending in two round caves, boulders in the open water. At 5 minutes the cracks are empty; at 10
+  minutes cells have filed into them one by one, single chains following each crack's bends to its end. Against the rock face the
+  cells' sides are flat (harmonic close-up `crevices-s3-t300-cracks-x3.5-harm.jpg`: green rims with straight bottoms on a grey line).
+- **Maze** (`maze-s3-t300-*.jpg`): a dish-wide labyrinth of thin glowing walls; the culture fills its own dead ends, packed flat
+  against the walls; oil and soap slicks at the corner springs.
+- **Round dish** (`round-s3-t300-*.jpg`): a petri dish: a thin ice-blue circle, the dark corners outside it.
+- **Fronts with blocks** (`fronts-blocks-s3-t*.jpg`): the press packs the tissue round the blocks like a crowd round stones.
+- **The tool** (`tool-painted-default.jpg`): a wall, a block, a row of pillars and a porous wall (dashed edge) painted over the default
+  colony; the cells are pushed out, the block's inside is empty. Phone (`phone-maze.jpg`): the Maze in portrait.
+
+### Results (quick runs, 10 min, seeds 3 and 7; the user: not final; EXPERIMENTS.md "Obstacles")
+
+- **Dead zones do not pile up matter, they starve.** In the perfused Chip the still places (9 % of the floor: the chamber, behind the
+  blocks) hold 2 to 8 % of the open water's matter and no cells at 5 and 10 minutes: in a chip matter arrives with the flow, and still
+  water only gets what spreads in.
+- **Colonies pack against walls and file into cracks.** Within 2 R of the Chip's pillars and walls the cells are 1.4 to 1.5 x as dense
+  as in the open at 10 minutes, the fuel 1.7 x; round the Fronts blocks 1.8 to 1.9 x. In Crevices the cracks fill only once the open
+  water is full (40 to 48 cells at 10 minutes, half the open's density; 1 or 2 at 5 minutes).
+- **Crevices are not refuges yet.** Through the founders' crash the cracks sheltered nobody (5 or 6 cells in them at 1 minute, 1 or 2
+  at 5); their water is poor (matter 9 to 49 % of the open's: nothing drips there). Shelter from predators and shear is untested: few
+  engulfers, and the strong glue's tearing comes from crowding, not from the currents.
+- **The flow shows the obstacles**: it threads the pillar array and arches over the side chamber, and the regrowing front follows it
+  (ahead where the flow brings the medium first). A front bending round the Fronts blocks with a shadow behind did not show in the
+  pictures (300, 600 s).
+
+### Checked
+
+- Books (`experiments/conditions/g0b/check.json`, 420 s at MAX, seed 5, whole dish lit, perfusion on): obstacles painted over the
+  culture and its springs (matter under them pushed out), a porous disc, an erase, an undo, the mask off and on, the solve off and on,
+  a clear, a round dish with pillars, a squeeze x0.8 and a stretch x1.25, a resize and back, a snapshot saved and loaded: atoms and
+  charge rounding 0 at every sample, energy rounding as before G0b (-0.03..+0.02, the usual blips right after the squeeze and the
+  stretch), the reload exact, no cell inside a solid. All six quick runs: atoms and charge 0 throughout.
+- Firefox (headed, Crevices): runs, console clean. Phone (Chrome 390 x 844): the tools wrap to two rows; the Maze in portrait.
+- The tool in Chrome by pointer events (mouse, and one drag as touch).
+
+### Speed (headless Chrome, 1280 x 800, default scene, seed 3, MAX; GPU SHARED: other workers' and the user's browsers ran on it)
+
+| | 2000 neon | 2000 harmonic | 10 000 neon | 10 000 harmonic |
+|---|---|---|---|---|
+| G0 (GPU free, from its README) | x6.41, x6.34 | x6.84, x6.89 | x1.11, x1.11 | x1.34, x1.29 |
+| G0b, nothing painted, quieter spell (`g0b-pair-*`, `g0b-free-*`) | x5.96, x6.17 | x6.63 | x1.11 | x0.63 (busy again) |
+| G0b, a field of round pillars painted (104 at 2000 cells, 485 at 10 000; same spells) | x6.09, x6.17 | | x1.06 | |
+| busy spell: G0b nothing painted / G0 (commit 53a13ba), run side by side | x1.37, x1.95 / x0.81, x1.44 | x0.73, x1.98 / x1.34, x2.3 | x0.27, x0.53 / x0.23, x0.68 | x0.33, x0.73 / x0.75, x0.41 |
+
+With nothing painted every obstacle pass is skipped (the shaders test one offset), so G0b runs as G0 within the scatter of a shared
+GPU (2000 neon x6.0..6.2 against G0's x6.3..6.4; 10 000 neon x1.11 both). A field of pillars costs nothing measurable at 2000 cells
+(pairs run back to back: x6.09 / x6.17 painted against x5.96 / x6.17 not) and about 5 % at 10 000 (x1.06 against x1.11: four extra reads
+per cell per tick for the push, five per pixel per substep for the matter's mask). The CPU flow solver runs only while perfusion flows
+round obstacles and only until it settles (the Chip: about 700 sweeps, under a second). The busy spell's numbers swing by 2 to 3 x
+between runs and say nothing about either build.
+
+### Known issues
+
+- The through-flow is depth-averaged (Darcy with a slow layer at the walls), not Stokes: no recirculating eddy in a cavity, and a wide
+  channel's profile is plug-like (the old Chip's was a full Poiseuille arch; the Chip now has no lake eddies either).
+- A wall joining both side walls blocks the perfusion (no through-flow; the panel says BLOCKED); a round dish with perfusion is always
+  blocked.
+- The eddies and the gyre are faded near solids, not solved round them; the stirred flow is 0 on solid nodes of its coarse grid (2 heat
+  pixels), so near a wall it is a little rougher than the rest.
+- Walls thinner than about 1 R: a cell pushed hard can in principle cross one (the hard limit puts it back on the nearer side); the
+  tool's walls are 2 R by default. Painting a whole dish solid leaves matter nowhere to go (it stays where it is).
+- A spring painted over drips into the wall and its atoms come out at the wall's edge; roaming oases may wander under a wall (the same).
+- Light: no shadows. Squeeze and stretch scale the obstacles with the sample (walls thinner or thicker).
+- Merge note for the carbon branch: carbon's own spread (carbon.wgsl) needs the same mask (no flux at solid faces, solid pixels pushing
+  out along the mask word's bits 2-4: `MatterP.obs.x`).
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start
@@ -6281,6 +6441,10 @@ with F0, D1 and G1 (the pre-G0 build at x1.19).
 - `src/stir.js` + `src/shaders/stir.wgsl`: step G0, the cells stir the water: the stir grid, its vorticity and stream function passes
   (once per frame, from `src/water.js`), the census; the cells' push and the stirred work paid from heat in `cell_step.wgsl`, the sum
   with the prescribed psi in `water.wgsl`, the pink streamlines in `water_draw.wgsl`.
+- `src/obstacles.js` + `src/shaders/obstacles_draw.wgsl`: step G0b, obstacles: the shapes (walls, blocks, pillars, erasers, the round
+  dish), their signed distance fields and mask on the heat grid, the push-out directions, the pressure-driven through-flow's solver
+  (CPU), the uploads, the drawing, the measure (`moire.obstacles.measure()`); the matter's mask in `matter.wgsl` spread, the cells' push
+  in `cell_step.wgsl` (`obs_at`), the water's in `water.wgsl` (`obs_corner`, `through_at`) and `stir.wgsl`; the tool in `src/app.js`.
 - `src/walls.js`: patterned walls (step C10): the switches and knobs, the census (from the cells' stats read-back,
   Stats.wall), the WALLS panel line, the overlay and `stats()` (where on the walls the contacts sit, the glue, the junctions); each
   side's pattern, linker want and upkeep are worked out in `cell_eat.wgsl` (Cell.wadh), the smaller side of each contact, the

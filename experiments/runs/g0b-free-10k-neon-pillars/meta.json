@@ -1,0 +1,49 @@
+{
+  "name": "g0b-free-10k-neon-pillars",
+  "description": "step G0 speed, after G0b, a pillar field painted at the start: default scene, 10000 cells, MAX, 60 s, neon",
+  "condition": {
+    "name": "g0b-free-10k-neon-pillars",
+    "description": "step G0 speed, after G0b, a pillar field painted at the start: default scene, 10000 cells, MAX, 60 s, neon",
+    "query": {
+      "seed": 3,
+      "cells": 10000
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "snapshots": [],
+    "shots": [],
+    "evals": [
+      {
+        "t": 0,
+        "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.pillars(0.1 * W, 0.1 * H, 0.9 * W, 0.9 * H, 2 * R, 14 * R); return `pillars ${O.shapes.length}`"
+      }
+    ]
+  },
+  "url": "http://localhost:50020/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&cells=10000",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "4c35ee2d8cc3feaf3cf208b2014a8f8e06b5022d",
+  "dirty": true,
+  "started": "2026-11-18T04:56:33",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 56.8,
+  "speed_reached": 1.06,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "const O = moire.obstacles, W = moire.dish.W, H = moire.dish.H, R = moire.dish.R; O.pillars(0.1 * W, 0.1 * H, 0.9 * W, 0.9 * H, 2 * R, 14 * R); return `pillars ${O.shapes.length}`",
+      "result": "pillars 485"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T04:58:27",
+  "wall_s": 114.43
+}

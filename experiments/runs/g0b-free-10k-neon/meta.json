@@ -1,0 +1,38 @@
+{
+  "name": "g0b-free-10k-neon",
+  "description": "step G0 speed, after G0b, nothing painted: default scene, 10000 cells, MAX, 60 s, neon",
+  "condition": {
+    "name": "g0b-free-10k-neon",
+    "description": "step G0 speed, after G0b, nothing painted: default scene, 10000 cells, MAX, 60 s, neon",
+    "query": {
+      "seed": 3,
+      "cells": 10000
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "snapshots": [],
+    "shots": [],
+    "evals": []
+  },
+  "url": "http://localhost:50020/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&cells=10000",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "4c35ee2d8cc3feaf3cf208b2014a8f8e06b5022d",
+  "dirty": true,
+  "started": "2026-11-18T04:54:47",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 53.91,
+  "speed_reached": 1.11,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-18T04:56:32",
+  "wall_s": 105.68
+}

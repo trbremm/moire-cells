@@ -1,0 +1,38 @@
+{
+  "name": "g0b-basespeed-2k-harmonic-r2",
+  "description": "step G0 speed, after G0b, nothing painted: default scene, 2000 cells, MAX, 150 s, harmonic",
+  "condition": {
+    "name": "g0b-basespeed-2k-harmonic-r2",
+    "description": "step G0 speed, after G0b, nothing painted: default scene, 2000 cells, MAX, 150 s, harmonic",
+    "query": {
+      "seed": 3,
+      "look": "harmonic"
+    },
+    "duration": 150,
+    "sample_every": 25,
+    "snapshots": [],
+    "shots": [],
+    "evals": []
+  },
+  "url": "http://localhost:65167/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&look=harmonic",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "53a13ba619a3ee7b41f967b6112a9e83f2ea4f94",
+  "dirty": false,
+  "started": "2026-11-18T04:40:36",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 150.0,
+  "run_wall_s": 65.3,
+  "speed_reached": 2.3,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-18T04:42:48",
+  "wall_s": 132.48
+}

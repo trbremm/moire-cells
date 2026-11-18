@@ -1,0 +1,44 @@
+{
+ "batch": "c15c-ab6",
+ "runs": [
+  {
+   "name": "c15c-ab6-floor0",
+   "description": "A/B 6 600 s default seed 3: {'cbredfloor': 0}",
+   "query": {
+    "seed": 3,
+    "cbredfloor": 0
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 600,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": []
+  },
+  {
+   "name": "c15c-ab6-floor0-enz0",
+   "description": "A/B 6 600 s default seed 3: {'cbredfloor': 0, 'cbenz': 0}",
+   "query": {
+    "seed": 3,
+    "cbredfloor": 0,
+    "cbenz": 0
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 600,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": []
+  }
+ ]
+}

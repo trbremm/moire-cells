@@ -1,0 +1,57 @@
+{
+ "batch": "c15c-browsers",
+ "runs": [
+  {
+   "name": "c15c-firefox",
+   "description": "Firefox (headed): default scene 40 s, carbon makes the cell; console clean, books 0",
+   "query": {
+    "seed": 3
+   },
+   "duration": 40,
+   "sample_every": 20,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 40,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 40,
+     "js": "const L = moire.carbon && moire.carbon.ledger, C = moire.carbonCells && moire.carbonCells.ledger, H = moire.heat.ledger, CC = moire.carbonCells; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, ladder: L && L.ladder, tar: L && L.tar, dishC: L && L.dish.c, cellsC: L && L.cells.c, cells: C && {rate: C.rate, census: C.census, granC: C.granC, ladder: C.ladder}, parts: CC && CC.census2, rate2: CC && CC.rate2, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1]})"
+    }
+   ]
+  },
+  {
+   "name": "c15c-phone",
+   "description": "phone size 390x844 at dpr 3: the default scene 20 s, carbon makes the cell",
+   "query": {
+    "seed": 3
+   },
+   "size": "390x844",
+   "dpr": 3,
+   "duration": 20,
+   "sample_every": 10,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 20
+    },
+    {
+     "t": 20,
+     "panel": true,
+     "name": "panel"
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 20,
+     "js": "const L = moire.carbon && moire.carbon.ledger, C = moire.carbonCells && moire.carbonCells.ledger, H = moire.heat.ledger, CC = moire.carbonCells; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, ladder: L && L.ladder, tar: L && L.tar, dishC: L && L.dish.c, cellsC: L && L.cells.c, cells: C && {rate: C.rate, census: C.census, granC: C.granC, ladder: C.ladder}, parts: CC && CC.census2, rate2: CC && CC.rate2, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1]})"
+    }
+   ]
+  }
+ ]
+}

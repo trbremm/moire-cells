@@ -1,0 +1,46 @@
+{
+  "name": "c15c-ab4-enz0",
+  "description": "A/B 4 600 s default seed 3: {'cbenz': 0}",
+  "condition": {
+    "name": "c15c-ab4-enz0",
+    "description": "A/B 4 600 s default seed 3: {'cbenz': 0}",
+    "query": {
+      "seed": 3,
+      "cbenz": 0
+    },
+    "duration": 600,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 600,
+        "name": "end"
+      }
+    ],
+    "snapshots": [],
+    "evals": []
+  },
+  "url": "http://localhost:64187/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&cbenz=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-18T01:48:19",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 600.0,
+  "run_wall_s": 217.13,
+  "speed_reached": 2.76,
+  "samples": 21,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-18T01:53:06",
+  "wall_s": 287.19
+}

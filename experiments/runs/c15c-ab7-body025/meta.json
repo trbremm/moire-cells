@@ -1,0 +1,46 @@
+{
+  "name": "c15c-ab7-body025",
+  "description": "A/B 7 600 s default: {'cbbody': 0.025}",
+  "condition": {
+    "name": "c15c-ab7-body025",
+    "description": "A/B 7 600 s default: {'cbbody': 0.025}",
+    "query": {
+      "seed": 3,
+      "cbbody": 0.025
+    },
+    "duration": 600,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 600,
+        "name": "end"
+      }
+    ],
+    "snapshots": [],
+    "evals": []
+  },
+  "url": "http://localhost:50476/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&cbbody=0.025",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-18T02:20:19",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 600.0,
+  "run_wall_s": 961.51,
+  "speed_reached": 0.62,
+  "samples": 21,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-18T02:37:54",
+  "wall_s": 1055.01
+}

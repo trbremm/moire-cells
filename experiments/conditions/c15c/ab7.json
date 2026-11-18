@@ -1,0 +1,43 @@
+{
+ "batch": "c15c-ab7",
+ "runs": [
+  {
+   "name": "c15c-ab7-body025",
+   "description": "A/B 7 600 s default: {'cbbody': 0.025}",
+   "query": {
+    "seed": 3,
+    "cbbody": 0.025
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 600,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": []
+  },
+  {
+   "name": "c15c-ab7-body025-s7",
+   "description": "A/B 7 600 s default: {'cbbody': 0.025, 'seed': 7}",
+   "query": {
+    "seed": 7,
+    "cbbody": 0.025
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 600,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": []
+  }
+ ]
+}

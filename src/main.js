@@ -537,7 +537,7 @@ async function boot() {
     }
     if (CARBON) {   // step C15a: carbon in the open dish (?carbon= itself is read by src/carbon.js when it loads)
       const CP = matter.carbon.params;
-      for (const [q, k] of [['cbox', 'oxidize'], ['cbcond', 'condense'], ['cblight', 'light'], ['cbdis', 'dissolve'], ['cbspring', 'springs']]) {
+      for (const [q, k] of [['cbox', 'oxidize'], ['cbcond', 'condense'], ['cblight', 'light'], ['cbdis', 'dissolve'], ['cbspring', 'springs'], ['cbhydheat', 'hydHeat']]) {
         if (params.has(q)) CP[k] = flag(q);
       }
       for (const [q, k] of [['cbkox', 'kOx'], ['cbkcond', 'kCond'], ['cbkdis', 'kDis'], ['cbkset', 'kSet'], ['cbsurf', 'surf']]) {

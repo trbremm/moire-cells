@@ -24,7 +24,8 @@ const LG_CB_HEAT: u32 = 38016u;    // the heat carbon's reactions put down (heat
 const LG_CB_GT: u32 = 38144u;      // the water (gt) carbon's reactions made, net (counts; condense +, hydrolyze -)
 
 struct CarbonP {
-  cfg: vec4u,      // x rules: 1 oxidize, 2 condense, 4 photochemistry (reduce, hydrolyze), 8 dissolve and settle, 16 light on;
+  cfg: vec4u,      // x rules: 1 oxidize, 2 condense, 4 photochemistry (reduce, hydrolyze), 8 dissolve and settle, 16 light on, 32 (step
+                   // C15d) hydrolyze by heat;
                    // y what paint shows (0 nothing, 1 all, 2 one alone); z which (0..4 a ladder channel, 5 tar); w spare
   k: vec4f,        // x the ladder's spreading per substep; y the carbon spark (energy units); z kOx, w kCond (R^2 per s)
   k2: vec4f,       // x kDis (per s); y kSet (R^2 per s); z kAbs (depth per hand per R^2); w dark (warm depth per c-c bond per R^2)
@@ -329,6 +330,19 @@ fn carbon_react(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocat
           let nn = min(i32(floor(kc * f32(cg) * f32(ct) * sf * sf + u01(mpcg(rs + rk * 0x9e3779b9u)))), min(cg, ct));
           if (nn > 0) { cg -= nn; ct -= nn; cc += nn; gt += nn; heat += nn * CB.e.y; ev[1] += nn; }
         }
+      }
+
+      // step C15d, HYDROLYZE BY HEAT (rules 32; detailed balance: every reaction both ways): gt + [c-c] -> [c-g] + [c-t], CONDENSE run
+      // backwards by the warmth of the water: the same rate constant, the spark plus the rise 0.75 over theta x temperature, the rise
+      // taken from the pixel's heat (at most a quarter of it per tick). Cold mud stays mud (e^-12 below the condensation at T 2); under a
+      // warm colony (T 8-12) the backbones open, the loose carbons dissolve again as sugar-unit-like molecules (DISSOLVE below)
+      if ((rules & 32u) != 0u && gt > 0 && cc > 0) {
+        let fh = exp(-(CB.k.y * sc + f32(CB.e.y) / 16.0) / (CP.theta * temp));
+        let hp = max(mg[T.heat + i], 0);
+        rk += 1u;
+        var nn = i32(floor(CB.k.w * conc * fh * CP.dt * f32(gt) * f32(cc) * sf + u01(mpcg(rs + rk * 0x9e3779b9u))));
+        nn = min(nn, min(min(gt, cc), (hp / 4) / max(CB.e.y, 1)));
+        if (nn > 0) { gt -= nn; cc -= nn; cg += nn; ct += nn; heat -= nn * CB.e.y; ev[3] += nn; }
       }
 
       // DISSOLVE (loose tar carbons leave as ladder molecules) and SETTLE (molecules stick to tar): zero energy

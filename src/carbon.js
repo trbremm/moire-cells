@@ -227,6 +227,8 @@ export class Carbon {
       light: true,         // REDUCE and HYDROLYZE by hard light (photochemistry; also needs the electrons' photochemistry on)
       dissolve: true,      // loose tar carbons dissolve, ladder molecules settle on tar
       springs: true,       // springs and vents drip carbon (CARBON_MIX)
+      hydHeat: true,       // step C15d: HYDROLYZE BY HEAT, condensation's reverse by the water's warmth (detailed balance; ?cbhydheat=0: by
+                           // hard light only, as C15a)
       kOx: 5,              // R^2 per s, before the spark's factor (as the main table's bonds)
       kCond: 5,            // R^2 per s, before the spark's factor
       kDis: 0.02,          // per s: loose tar carbons dissolving
@@ -299,7 +301,8 @@ export class Carbon {
     this.live = frame.time - this.seen < 2;
     const chemOn = M.chem.on, lightOn = !!(M.light && M.light.on);
     const photo = chemOn && p.light && EP.photo;
-    u[0] = (chemOn && p.oxidize ? 1 : 0) | (chemOn && p.condense ? 2 : 0) | (photo ? 4 : 0) | (chemOn && p.dissolve ? 8 : 0) | (lightOn && chemOn ? 16 : 0);
+    u[0] = (chemOn && p.oxidize ? 1 : 0) | (chemOn && p.condense ? 2 : 0) | (photo ? 4 : 0) | (chemOn && p.dissolve ? 8 : 0) | (lightOn && chemOn ? 16 : 0) |
+      (chemOn && p.hydHeat ? 32 : 0);
     // what paint shows: all (the summary), one alone, nothing
     const j = CNAMES.indexOf(show);
     u[1] = show === 'off' ? 0 : show === 'summary' ? 1 : j >= 0 ? 2 : 0; u[2] = Math.max(0, j); u[3] = 0;
@@ -452,7 +455,7 @@ export class Carbon {
     const T = this.table, p = this.params, on = (x) => (x ? 'on' : 'off');
     const lines = [`carbon (step C15a): builder c pull ${BUILDER.pull} levels [${T.levels.join(' ')}] grip ${T.grip} · bonds c-g ${T.bonds.cg.rel} (gap ${T.bonds.cg.gap}), c-t ${T.bonds.ct.rel} (gap ${T.bonds.ct.gap}), c-c ${T.bonds.cc.rel} · spark ${T.spark}` +
       ` · ladder ${T.ladder.map((s) => `${s.name} ${s.energy}`).join(' · ')} · oxidize ${T.ox16 / 16}, condense ${T.cond16 / 16} · ${T.events} events checked`];
-    lines.push(`carbon rules: oxidize ${on(p.oxidize)} · condense ${on(p.condense)} · light (reduce, hydrolyze) ${on(p.light)} · dissolve/settle ${on(p.dissolve)} · springs ${on(p.springs)}` +
+    lines.push(`carbon rules: oxidize ${on(p.oxidize)} · condense ${on(p.condense)} · light (reduce, hydrolyze) ${on(p.light)} · dissolve/settle ${on(p.dissolve)} · hydrolyze by heat ${on(p.hydHeat)} (step C15d) · springs ${on(p.springs)}` +
       ` · k ox ${p.kOx}, cond ${p.kCond}, dissolve ${p.kDis}/s, settle ${p.kSet} · running ${this.live ? 'yes' : 'no'}`);
     const L = this.ledger;
     if (L) {

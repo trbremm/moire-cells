@@ -2134,3 +2134,76 @@ Not an experiment: the same scenes before (main 58d1963) and after removing the 
   lineages: each lineage's patch in the colour of what its genes run (pigment lineages lime, burners pink, wall builders amber at the
   crust springs, wild founders' engulfers red). A third to a half of the cells stay undecided (warm white): founders that carry a
   pigment and a burner of about equal weight.
+
+# Strong glue and stirred water (step G0, 2026-11-17)
+
+Quick runs only (the user: results are not valid until more changes land). Conditions in `experiments/conditions/g0/`
+(`make.py`), pictures in `experiments/keep/g0/`. Headless Chrome 1280 x 800; the GPU was shared the whole time with the carbon
+worker's runs (and two of mine at a time), so the Fronts and Chip runs went at x0.3 to x0.6.
+
+## 1. Glue gene: on against its neutral control (`quick.json`, `quick2.json`)
+
+Glue on (log scale to 4, dearer above 1, junctions tear) against `?gluenull=1` (the gene drifts, every effect at the founder's
+value). The gene's GEOMETRIC MEAN over the live cells (share above 1, the old ceiling, in brackets); default scene and Fronts 20 min,
+Chip and colonies 10 min (the 20-min Chip run of seed 3 read at 600 s too):
+
+| scene, seed | start | on | null |
+|---|---|---|---|
+| default s3, 1200 s | 0.48 | 0.99 (54 %) | 0.68 (19 %) |
+| default s7, 1200 s | 0.37 | 0.59 (8 %) | 0.16 (1 %) |
+| Fronts s3, 1200 s | 0.47 | 0.35 (15 %) | 0.53 (30 %) |
+| Fronts s7, 1200 s | 0.37 | 0.29 (9 %) | 0.27 (14 %) |
+| Chip s3, 600 s | 0.47 | 1.08 (57 %) | 0.98 (51 %) |
+| Chip s7, 600 s | 0.37 | 0.37 (11 %) | 0.39 (5 %) |
+| colonies s3, 600 s | 0.67 | 0.43 (17 %) | 0.92 (47 %) |
+| colonies s7, 600 s | 0.34 | 0.57 (28 %) | 0.59 (23 %) |
+
+- NULL RESULT: no consistent difference (on above null in 3 of 8, below in 2, alike in 3). The gene now does wander far above the old
+  ceiling (half the cells above 1 in some dishes, on AND null), but it swings with whichever lineage wins: in the default scene of
+  seed 3 the null was at 1.39 at 600 s and the on-run at 0.30, then they swapped. On the log scale a lineage's glue can drift by x2 to
+  x3 in 20 min by hitch-hiking; nothing yet pays for strong glue enough to beat that.
+- The glue that junctions actually HOLD stays small: mean strength (the pair's glue x likeness minus the base loss) 0.15 to 0.35 in
+  every run, on and null alike: most of the asked-for glue above the free 0.5 is not paid for (linkers short, battery upkeep x a0),
+  so strong genes mostly cost and hold little.
+- Strong glue imposed by hand (`strong.json`: every cell's gene set to 4 at 2 s): in Fronts the gene fell back to 2.95 by 300 s
+  (mutation can only go down from the top, and the cost bites); the tissue lab (60 clones, no food) held one cluster through the press,
+  stable (no runaway speeds: fastest cell 1.5 R/s, no NaN), but its junctions still tore 6 to 12 times a second: the clones cannot
+  pay for the glue they ask, so it is held at about 0.25.
+
+## 2. Junctions tearing
+
+- Tears per second: default scene 4 to 90 (a few hundred to a thousand cells: about 0.02 to 0.07 tears per cell per s), colonies 20 to
+  90, Fronts and Chip 300 to 1600 once they fill (5 000 to 11 000 cells: about 0.1 per cell per s). At any moment 5 to 15 % of the
+  touching sides are torn (healing in 4 s).
+- The default colony at 60 s looks a little looser with tearing (more single cells at its rim) but not visibly different at 3 min
+  (`g0-pilot-on` against `-off`); cell numbers the same through the founders' crash (1593 against 1587 at 60 s, 215 against 206 at
+  180 s).
+- Look (`default-s3-tear-*-x8.jpg`): a torn side shows as a snapped hot-coral tube with a dark break in its middle (harmonic: a gap in
+  the green rim). In a dense tissue at x8 there are a few in every field of view; they are subtle among the self marker's stripes.
+
+## 3. Stirred water
+
+- The stirred flow's speed (mean over the dish / fastest; R/s; the prescribed currents run at 0.35 to 0.6): default scene 0.03 to
+  0.04 / 0.4 to 0.6; colonies 0.12 to 0.15 / 0.4 to 0.5; Fronts and Chip 0.1 to 0.19 / 0.6 to 0.9 once they fill the strip. With the
+  first gain (1.5) the default scene gave 0.02 / 0.2; the gain is now 4.
+- Look (machinery view, pink streamlines over the teal prescribed ones): a growing colony wraps itself in one or two big loops of
+  stirred water (the default scene: a pink ring round the whole colony), with small curls along its ragged rim where cells crawl in and
+  out (`default-s3-dish-streamlines.jpg`); in Fronts each cluster sits in its own swirl and the swirls follow the clusters
+  (`fronts-glue4-t240-streamlines.jpg`); in the Chip the stirring sits at the front of the regrowing tissue (`chip-s3-dish-streamlines.jpg`).
+  No "bacterial turbulence" (many small vortices inside dense tissue): crawling headings are uncorrelated, and inside a packed tissue
+  the cells move with each other, so their pushes cancel.
+- Energy: the stirred water's push on cells, paid from the heat under them, was 3 to 10 energy units per s in the default scene (of
+  some 16 000 per s in); the books stayed exact.
+
+## 4. Checks
+
+- Books (`check.json`, 400 s at MAX, seed 5, whole dish lit, perfusion on; every G0 switch off and on again; a squeeze x0.8 and a
+  stretch x1.25; the press from 250 s; a resize to 1000 x 700 and back; a snapshot saved and loaded at 360 s): atoms and charge
+  rounding 0 at every sample; the energy line's rounding between -0.04 and +0.003 (the same size as with G0 off: the pilot off-run
+  -0.013..+0.007), with the usual blips at the samples right after the squeeze (-429) and the stretch (+28 072), back at -0.013 at the
+  next; the reload exact (energy -0.009, atoms 0, charge 0); console clean.
+- Firefox (headed): default scene 20 s, the GLUE and WATER lines filled, console clean. Phone (Chrome 390 x 844, dpr 3): the compact
+  GLUE line wraps to two lines; nothing else changed.
+- Speed (GPU free, default scene, seed 3, MAX): before G0 (main 23c6d9c, one run each) 2000 neon x6.70, 10 000 neon x1.19; after
+  2000 neon x6.41 / x6.34, harmonic x6.84 / x6.89, 10 000 neon x1.11 / x1.11, harmonic x1.34 / x1.29; 10 000 neon with `?stir=0`
+  x1.19, `?breaks=0` x1.13, both x1.17: the stirring costs about 7 % at 10 000 cells, the tearing nothing measurable.

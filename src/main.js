@@ -690,6 +690,7 @@ async function boot() {
   resize();
   if (!snap) {   // (a snapshot brings its own springs; app: a preset its own)
     if (PRESET) presetScene(); else defaultScene();
+    obstacles.freeSprings(matter.springs);   // (step G0b: a scene's spring that falls inside an obstacle or outside a round dish moves out)
     for (const s of matter.springs) if (s.kind !== 'oasis') s.scene = true;   // (the dish: a scene's springs drip per area, src/dish.js)
     perfusion.start(view.cssW, view.cssH, cells.R);   // (an inlet drips per R of its length: not scaled again)
   }

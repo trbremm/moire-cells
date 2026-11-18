@@ -115,7 +115,7 @@ export const PRESETS = {
   // step G0b: a maze of walls (corridors about 20 R wide), springs at three corners
   maze: {
     label: 'Maze',
-    desc: 'A labyrinth of thin walls, corridors about ten cells wide. Springs drip at three far corners and the culture starts in the middle: matter creeps along the corridors by itself (the currents cannot cross the walls), dead ends fill up, and colonies have to follow the corridors to reach the food.',
+    desc: 'A labyrinth of thin walls, corridors about ten cells wide. Springs drip at three far corners and the culture starts in the middle on a spring that dries after four minutes: matter creeps along the corridors by itself (the currents cannot cross the walls), dead ends fill up, and colonies have to follow the corridors to reach the food.',
     query: { light: 'full', spread: 'clump', cells: 600, curspeed: 0.25 },
     obstacles({ obs, W, H, R }) {
       // a fixed maze on a coarse grid of cells (the corridors), walls 1.5 R wide; drawn as a set of wall segments
@@ -143,6 +143,7 @@ export const PRESETS = {
       }
     },
     scene({ matter, W, H }) {
+      matter.addSpring(0.5 * W, 0.5 * H, 'light', 240);   // (a day's start under the culture, so it lives long enough to go looking)
       matter.addSpring(0.06 * W, 0.08 * H, 'light', 1e9, { rate: 30 });
       matter.addSpring(0.94 * W, 0.92 * H, 'heavy', 1e9, { rate: 12 });
       matter.addSpring(0.94 * W, 0.08 * H, 'light', 1e9, { rate: 30 });

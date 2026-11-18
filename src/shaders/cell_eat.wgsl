@@ -2626,7 +2626,11 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
             if (n0 <= 0 || (!cbl && (EP.mask & (1u << lk_ch(q))) == 0u)) { continue; }   // (step C15c: carbon lipids leave as tar)
             let a = min(i32(ceil(f32(n0) * EP.lp[0].w)), n0);
             lpm[q][k] -= a;
-            if (cbl) { cb_spill(cb_lk_hands(q), a, idx, true, 0u); } else { spread9(cur + lk_ch(q) * EP.n, idx, a); }   // (step C15c: as tar)
+            // (step C15c: as tar; step C15d, CBF_WALLREC: the pieces stay in the cell as granules, as a shed lipid does: the flow ledger found
+            // the walls cracking and rebuilt every few seconds, a third of the colony's carbon intake lost to the mud; real cells recycle
+            // most of their wall as it is remodelled)
+            if (cbl && cb_bit(CBF_WALLREC)) { cb_gran_add(i, cb_lk_hands(q), a); }
+            else if (cbl) { cb_spill(cb_lk_hands(q), a, idx, true, 0u); } else { spread9(cur + lk_ch(q) * EP.n, idx, a); }
             crk += a;
           }
         }

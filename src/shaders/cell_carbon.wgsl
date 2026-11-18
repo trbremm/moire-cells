@@ -64,7 +64,8 @@ const CBF_OXB: u32 = 8192u;
 // step C15d, THE CARBON ECONOMY (src/carboncells.js; README "Step C15d: the carbon economy")
 const CBF_SHUT: u32 = 16384u;  // the REDUCING SHUTTLE: the builder reduces a hand with the g an oxidation of another carbon frees (cb_make2)
 const CBF_GRAN: u32 = 32768u;  // FAT FROM GRANULES: the two-carbon builder also cuts its molecules out of the cell's granules (cb_make2)
-const CBF_HUNGER: u32 = 65536u; // HUNGER FOR EVERY PART: a cell whose parts were short of carbon grazes as a hungry one (not the body alone)    // OXYGEN DAMAGES MEMBRANES: free t oxidises the lipids' fuel hands (fat -> soap -> spoiled, into the mud)
+const CBF_HUNGER: u32 = 65536u; // HUNGER FOR EVERY PART: a cell whose parts were short of carbon grazes as a hungry one (not the body alone)
+const CBF_WALLREC: u32 = 131072u; // WALL RECYCLING: a jolted wall's cracked pieces stay in the cell as granules (as shed lipids do), not mud    // OXYGEN DAMAGES MEMBRANES: free t oxidises the lipids' fuel hands (fat -> soap -> spoiled, into the mud)
 // the event counters (64-bit, LG_CBC_EV; src/carboncells.js EV)
 const CBE_OX: u32 = 0u;
 const CBE_COND: u32 = 1u;

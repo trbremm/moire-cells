@@ -574,6 +574,13 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       if (M.carbon && !(S.settings && S.settings['carbon.params'])) M.carbon.params.surf = 0;   // (the tar reacted whole, as C15a)
       notes.push('saved before step C15b: the cells blind to carbon, all of the tar reacting (as it ran)');
     }
+    // step C15d: one saved before the carbon economy runs on without its fixes (as it ran; the mineral spring's G is fixed for the page:
+    // ?cbgspring=0 to match it exactly)
+    if (opts.settings !== false && CARBON && M.carbonCells && S.settings && S.settings['carbonCells.params'] && !('shuttle' in S.settings['carbonCells.params'])) {
+      Object.assign(M.carbonCells.params, { shuttle: false, granFat: false, hunger: false, wallRecycle: false });
+      if (M.carbon && !(S.settings['carbon.params'] && 'hydHeat' in S.settings['carbon.params'])) M.carbon.params.hydHeat = false;
+      notes.push('saved before step C15d: no reducing shuttle, no fat from granules, hunger for the body only, walls crack into the mud, mud hydrolyses by light only (as it ran)');
+    }
     if (opts.settings !== false && M.waste && !(S.settings && S.settings['waste.params'])) {
       Object.assign(M.waste.params, { saturation: false, osmosis: false });   // step C12e
       notes.push('saved before step C12e: saturation and osmosis off (as it ran)');

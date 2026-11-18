@@ -161,3 +161,8 @@ dump({"batch": "c15d-watch", "runs": [
     watch("colonies", 3, 1200), watch("colonies", 7, 1200), watch("colonies", 7, 1200, off=True),
     watch("shallows", 3, 900), watch("oxy-spot", 3, 600), watch("oxy-full", 3, 600),
 ]}, "watch.json")
+# ab5: + wall recycling (g)
+dump({"batch": "c15d-ab5", "runs": [
+    ab("ab5-all", "every fix incl. (g) wall recycling; default scene, seed 3, 10 min", {}),
+    ab("ab5-all-colonies", "every fix incl. (g) wall recycling; colonies of wild founders, seed 3, 10 min", {}, scene="colonies"),
+]}, "ab5.json")

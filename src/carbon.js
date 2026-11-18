@@ -48,6 +48,14 @@ import * as MX from './matter.js';   // (a cycle: matter.js imports this module;
 const QS = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
 /** Step C15a: carbon on (default) or off (?carbon=0: today's chemistry exactly; ?electrons=0 implies it). Fixed for the page. */
 export const CARBON = !(QS && QS.get('electrons') === '0') && !(QS && QS.get('carbon') === '0');
+/**
+ * Step C15c, CARBON MAKES THE CELL (option R, the rebuild's third stage): the cells build their membranes (bilayer, oil, wall), pigments
+ * and glue from carbon, and the linkers l, L retire (no spring drips them; their engines idle). Fixed for the page (the membrane's stock
+ * words change meaning): ?cblip=0 gives step C15b (carbon beside the linkers); old snapshots reload with their own setting.
+ */
+export const CB_LIP = CARBON && !(QS && QS.get('cblip') === '0');
+/** Step C15c: sugar-unit-like carbon at the mineral spring, molecules per atom of its rate (?cbsugar=; 0: CO2-like only, as C15b). */
+const SUGAR = (() => { const v = QS && QS.has('cbsugar') ? Number(QS.get('cbsugar')) : 0.06; return Number.isFinite(v) ? Math.max(0, v) : 0.06; })();
 
 export const ATOM_SCALE = 4096;
 export const LADDER = ['cg4', 'cg3t', 'cg2t2', 'cgt3', 'ct4'];   // channel j: 4 - j g-hands, j t-hands
@@ -62,7 +70,8 @@ export const BUILDER = { row: 1, group: 'builder', pull: 2, share: 1 / 2, crowd:
 
 /** The springs' carbon (molecules per atom of the spring's rate): mostly CO2-like; a little methane-like fuel seeps at vents. */
 export const CARBON_MIX = {
-  light: { ct4: 0.08 },                 // the mineral spring: CO2-like carbon
+  light: SUGAR > 0 ? { ct4: 0.08, cg2t2: SUGAR } : { ct4: 0.08 },   // the mineral spring: CO2-like carbon (step C15c: and a little
+                                        // sugar-unit-like carbon, so a lit dish can build before it can fix)
   heavy: { cg4: 0.025, ct4: 0.025 },    // the vent (and D1's fissures): a fuel seep with CO2-like carbon
 };
 
@@ -70,7 +79,7 @@ export const CARBON_MIX = {
 // light caught per band, the light given off as fluorescence
 export const LG_CB = 32256;
 // step C15b (heat_common.wgsl LG_CBC_*): the carbon in the cells (snapshot), taken in, given back (per channel, 64-bit), events, census
-export const LG_CBC = { STOCK: 38400, IN: 39424, OUT: 40448, EV: 41472, CEN: 43520 };
+export const LG_CBC = { STOCK: 38400, IN: 39424, OUT: 40448, EV: 41472, CEN: 43520, CEN2: 43776, EV2: 44032 };   // (step C15c: CEN2, EV2)
 const LGC = { ADD: LG_CB, LOST: LG_CB + 1024, GONE: LG_CB + 2048, DISH: LG_CB + 3072, RX: LG_CB + 4096, LIGHT: LG_CB + 5120, GLOW: LG_CB + 5632,
   HEAT: LG_CB + 5760, GT: LG_CB + 5888 };
 export const RX_TYPES = ['oxidize', 'condense', 'reduce', 'hydrolyze', 'dissolve', 'settle', 'glow', 'warm'];

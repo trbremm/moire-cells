@@ -31,7 +31,7 @@ import { CELL_FLOATS } from './cells.js';
 import { BIO_FLOATS } from './genome.js';
 import { LEDGER_WORDS } from './heat.js';
 import { NCH, SUBSTANCES, ELECTRONS } from './matter.js';
-import { CARBON, LADDER, TAR } from './carbon.js';   // step C15a
+import { CARBON, CB_LIP, LADDER, TAR } from './carbon.js';   // step C15a (step C15c: CB_LIP)
 import { CW as CB_W, CW_STOCK as CB_STOCK } from './carboncells.js';   // step C15b: the cells' carbon words
 // step C15a: the carbon's grid blocks in a snapshot (behind phi): the ladder's current copy, then the tar's hand counts
 const CARBON_BLOCKS = CARBON ? [...LADDER, ...TAR.map((h) => `tar.${h}`)] : [];
@@ -368,6 +368,7 @@ export async function snapshot(M, ctl, opts = {}) {
       url: location.href, query: location.search, seed: ctl.seed,
       electrons: ELECTRONS,   // step C12d: the chemistry's table it runs on (absent before step C12d: the old one)
       carbon: CARBON,         // step C15a: carbon in the dish (absent before step C15a: no carbon)
+      cbLip: CB_LIP,          // step C15c: the membranes, walls, pigments, glue are carbon (absent before: the linkers' (?cblip=0))
       jobs: 1,                // step F0: the cells carry job scores, no fates (absent before: fates, cleared on load)
       time: ctl.time(), tick: C.tick >>> 0,
       view: { cssW: v.cssW, cssH: v.cssH }, R: C.R, start: C.start, count: C.count, alive: m,
@@ -406,6 +407,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
   // step C15a: carbon is fixed for the page too (its blocks live in the grid): a snapshot from before carbon loads with ?carbon=0
   if (!!S.carbon !== CARBON) {
     throw new Error(`this snapshot was saved ${S.carbon ? 'with' : 'without'} carbon: open the page with ?carbon=${S.carbon ? 1 : 0} to load it`);
+  }
+  // step C15c: and the membranes' make-up (their stock words mean linker or carbon molecules)
+  if (!!S.cbLip !== CB_LIP) {
+    throw new Error(`this snapshot was saved ${S.cbLip ? 'with' : 'without'} carbon making the cell: open the page with ?cblip=${S.cbLip ? 1 : 0} to load it`);
   }
   const wasPaused = ctl.paused();
   const notes = [];

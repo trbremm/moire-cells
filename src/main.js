@@ -100,6 +100,12 @@
 //               open dish: tar thicker than this reacts only at its surface; 0 = all of it, as C15a); ?seep=0 the default scene without
 //               its lasting fuel seep; ?cbfounder=x the chance a std founder gets its carbon engines (1/3); GROWTH NEEDS CARBON: ?cbgrow=0
 //               off, ?cbbody=x the body's carbon per R^2 (0.05), ?cbbuild=x per s (0.5), ?cbfound=x the founders' body (share of the want, 1)
+//               Step C15c, carbon makes the cell (src/carboncells.js): ?cblip=0 step C15b (membranes, walls, pigments, glue of linkers; fixed
+//               for the page), ?cbsugar=x sugar-unit-like carbon at the mineral spring (0.06 per atom of its rate), ?cbtrans=0 no carbon
+//               TRANSPORTER (the ladder passes at a neutral molecule's rate, as C15b), ?cbktrans=x its rate per level (1), ?cbtransup=x its
+//               upkeep per level (energy per s), ?cbred=0 the lipid builder may not reduce burnt hands from the battery, ?cbbite=0 oxygen
+//               does not damage membranes, ?cbenz=0 engines need no enzymes (carbon + G), ?cbenzk=x enzyme carbon per unit of rate per R^2,
+//               ?cbenzlife=x their life (s), ?cbtool=0 cells placed by the tools start without a body
 //   ?saturation=0 step C12e: no saturation (reactions inside cells do not slow as their products pile up); ?osmosis=0 no osmosis (no
 //               swelling: the stretch genes still drift, the NEUTRAL control), ?stretch=0 stretch opens no channels, ?tear=0 overstretch
 //               does not burst, ?tolcost=0 the stretch tolerance is free; ?satscale=x, ?kosm=x, ?kstretch=x, ?wtol=x knobs;
@@ -181,7 +187,7 @@ import { Landscape } from './landscape.js';
 import { Cells, DEFAULT_CELLS, ANCHORS } from './cells.js';
 import { Light } from './light.js';
 import { Matter, SHOWS, ELECTRONS } from './matter.js';
-import { CARBON } from './carbon.js';   // step C15a: carbon in the open dish
+import { CARBON, CB_LIP } from './carbon.js';   // step C15a: carbon in the open dish
 import { makeActions, keyMaps, keysText, TOOLS, SQUEEZE_SOFT, SQUEEZE_HARD, VIEWS } from './actions.js';
 import { setupUI } from './ui.js';
 import { Recorder } from './record.js';
@@ -307,6 +313,13 @@ async function boot() {
     if (snap && !!snap.carbon !== CARBON) {
       const u = new URL(location.href);
       u.searchParams.set('carbon', snap.carbon ? '1' : '0');
+      location.replace(u.href);
+      return;
+    }
+    // step C15c: and with carbon making the cell or not (saved before step C15c: not)
+    if (snap && snap.carbon && !!snap.cbLip !== CB_LIP) {
+      const u = new URL(location.href);
+      u.searchParams.set('cblip', snap.cbLip ? '1' : '0');
       location.replace(u.href);
       return;
     }
@@ -520,10 +533,12 @@ async function boot() {
       if (params.has('cblook')) matter.carbon.look.on = flag('cblook');
       // step C15b: cells eat carbon (src/carboncells.js)
       const CC = cells.eat.carbon.params;
-      for (const [q, k] of [['cbcells', 'on'], ['cbexch', 'exchange'], ['cbeng', 'engines'], ['cbgraze', 'graze'], ['cbdis2', 'dissolve'], ['cbsmell', 'smell'], ['cbgrow', 'growth']]) {
+      for (const [q, k] of [['cbcells', 'on'], ['cbexch', 'exchange'], ['cbeng', 'engines'], ['cbgraze', 'graze'], ['cbdis2', 'dissolve'], ['cbsmell', 'smell'], ['cbgrow', 'growth'],
+        ['cbtrans', 'transport'], ['cbred', 'reduce'], ['cbbite', 'oxBite'], ['cbenz', 'enzymes'], ['cbtool', 'toolBody']]) {   // (step C15c: transport .. toolBody)
         if (params.has(q)) CC[k] = flag(q);
       }
-      for (const [q, k] of [['cbkgraze', 'kGraze'], ['cbkdis2', 'kDis'], ['cbbody', 'kBody'], ['cbbuild', 'kBuild'], ['cbfound', 'found']]) {
+      for (const [q, k] of [['cbkgraze', 'kGraze'], ['cbkdis2', 'kDis'], ['cbbody', 'kBody'], ['cbbuild', 'kBuild'], ['cbfound', 'found'],
+        ['cbktrans', 'kTrans'], ['cbtransup', 'transUp'], ['cbenzk', 'kEnz'], ['cbenzlife', 'enzLife']]) {
         const v = Number(params.get(q));
         if (params.has(q) && Number.isFinite(v) && v >= 0) CC[k] = v;
       }

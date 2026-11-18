@@ -25,7 +25,9 @@
 
 import { camera, MAX_ZOOM } from './camera.js';
 import { moleculePanel, cellPanel, summary } from './zoo.js';
-import { SUBSTANCES, CH } from './matter.js';
+import { SUBSTANCES, CH, lgM } from './matter.js';
+import { CARBON, LG_CB, LG_CBC } from './carbon.js';   // step C15c: placed cells get a body
+import { CW as CB_W } from './carboncells.js';
 import { CELL_FLOATS, CELL_BYTES } from './cells.js';
 import { BIO_FLOATS, founderGenome } from './genome.js';
 import { stampFounderGlue } from './glue.js';
@@ -318,6 +320,16 @@ export function createApp(ctx) {
       const rec = new ArrayBuffer(CELL_BYTES), f = new Float32Array(rec), u = new Uint32Array(rec);
       const stock = new Int32Array(SW);
       stock[BAT_WORD] = starter;
+      // step C15c: a placed cell starts with a BODY and ENZYMES as a founder of radius R does (cell_carbon.wgsl cb_found, cb_found_enz),
+      // booked as carbon (and the enzymes' G atoms) in; ?cbtool=0: none (as step C15b)
+      const CC = CARBON && E.carbon ? E.carbon.params : null;
+      const giveBody = !!(CC && CC.on && CC.toolBody);
+      const nBody = giveBody && CC.growth ? Math.round(CC.kBody * Math.PI * CC.found * 4096) : 0;
+      const rr = Math.max(bio[36], 0) + Math.max(bio[37], 0) + Math.max(bio[38], 0);   // (Bio.rate.xyz)
+      const nEnz = giveBody && CC.enzymes ? Math.round(CC.kEnz * rr * Math.PI * 4096 / 4 * CC.enzFound) : 0;
+      const cbw = new Int32Array(CB_W);
+      cbw[8] = cbw[9] = cbw[10] = nBody;   // (cellulose-like: per carbon one backbone bond, one fuel hand, one burnt hand)
+      cbw[11] = nEnz;                      // (each unit 4 carbons as (4, 4, 4) hands + 1 G)
       free.forEach((slot, j) => {
         const [x, y] = points[j];
         f.fill(0);
@@ -334,7 +346,21 @@ export function createApp(ctx) {
         d.queue.writeBuffer(C.cellBuf, slot * CELL_BYTES, rec);
         for (const b of C.bioBuf) d.queue.writeBuffer(b, slot * BIO_FLOATS * 4, bio);
         d.queue.writeBuffer(E.stockBuf, slot * SW * 4, stock);
+        if (nBody || nEnz) d.queue.writeBuffer(E.carbon.buf, slot * CB_W * 4, cbw);
       });
+      // step C15c: the books for the bodies and enzymes (carbon in: the dish's ADD and the cells' IN per tar hand; the G atoms: matter ADD)
+      if (nBody || nEnz) {
+        const per = nBody + 4 * nEnz, k = free.length;
+        const words = [[LG_CB + 128 * 5, per], [LG_CB + 128 * 6, per], [LG_CB + 128 * 7, per],
+          [LG_CBC.IN + 128 * 5, per], [LG_CBC.IN + 128 * 6, per], [LG_CBC.IN + 128 * 7, per], [lgM('ADD', CH.G), nEnz]];
+        for (const [w, x] of words) {
+          if (!x) continue;
+          const [lo, hi] = await Promise.all([readBuffer(d, C.heat.buffer, w * 4, 4), readBuffer(d, C.heat.buffer, (w + 64) * 4, 4)]);
+          const a = new Uint32Array(lo)[0], b = new Uint32Array(hi)[0], sum = a + x * k;
+          d.queue.writeBuffer(C.heat.buffer, w * 4, new Uint32Array([sum >>> 0]));
+          d.queue.writeBuffer(C.heat.buffer, (w + 64) * 4, new Uint32Array([(b + Math.floor(sum / 4294967296)) >>> 0]));
+        }
+      }
       // the books: the starter charges came in (as at a new culture: eat.start, "in"), into the first slot's 64-bit counter
       const add = free.length * starter, lo = led[0], sum = lo + add;
       const out = new Uint32Array([sum >>> 0]), carry = new Uint32Array([(led[64] + Math.floor(sum / 4294967296)) >>> 0]);
@@ -345,7 +371,7 @@ export function createApp(ctx) {
       await frames(2);
       C.alive += free.length;   // (until the census reads it back)
       for (const [x, y] of points.slice(0, free.length)) ctx.background.impulse(x, y, 1.2);
-      ctx.flash(`added ${free.length} cell${free.length > 1 ? 's' : ''}${free.length < points.length ? ` (only ${free.length} free slots)` : ''}${label ? `: ${label}` : ''}; each starts with an empty stock and the starter charge (booked as energy in)`);
+      ctx.flash(`added ${free.length} cell${free.length > 1 ? 's' : ''}${free.length < points.length ? ` (only ${free.length} free slots)` : ''}${label ? `: ${label}` : ''}; each starts with an empty stock and the starter charge${nBody ? ', a body and enzymes of carbon' : ''} (booked in)`);
       return free.length;
     } finally {
       ctl.setPaused(wasPaused);

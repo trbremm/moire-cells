@@ -408,7 +408,7 @@ struct Bio {
                     // (a whole number)
   resp: vec4f,      // step F0, state (inherited, not mutated): x y the JOB scores, low-passed: builder, predator (job_of); z w spare (the
                     // fates' response genes until then)
-  relay: vec4f,     // spare (the fates' relay genes until step F0)
+  relay: vec4f,     // x step C15c: the carbon TRANSPORTER gene (a log level; src/carboncells.js); y z w spare (the fates' relay genes until F0)
   body: vec4f,      // x adhesion, y size factor, z motility factor, w spare
   acc: vec4f,       // step F0, state (inherited): the JOB scores, low-passed: light eater, breather, fermenter, gradient eater (the
                     // fates' accumulators until then)
@@ -777,6 +777,9 @@ fn mutate(p: Bio, seed: u32, size: f32, jump: f32, engJump: f32, pumpJump: f32) 
   b.body.x = nudge(b.body.x, size * 0.03, 0.0, 1.0, seed, 16u);
   b.body.y = nudge(b.body.y, size * 0.02, 0.8, 1.25, seed, 17u);
   b.body.z = clamp(b.body.z * exp(size * 0.06 * gauss(seed, 18u)), 0.3, 3.0);
+  // step C15c: the carbon TRANSPORTER gene (relay.x, a log level; 0 = the founders' 1), small steps as the ion channels' level (with carbon only:
+  // without it the word stays as it was, so ?carbon=0 is unchanged)
+  if (CARBON_ON != 0u) { b.relay.x = nudge(b.relay.x, size * 0.06, -4.0, 2.0, seed, 190u); }
   // the occasional big jump: one gene redrawn over its whole range
   if (rand01(seed, 101u) < jump) {
     let g = min(u32(rand01(seed, 102u) * 18.0), 17u);

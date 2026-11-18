@@ -350,7 +350,7 @@ export class Eat {
     encoder.clearBuffer(this.heat.buffer, LIP_SNAP.E * 4, (LIP_SNAP.E_WORDS + LIP_SNAP.S_WORDS) * 4);   // step C12b: the lipids (snapshot)
     if (CARBON) {   // step C15b: the carbon in the cells, the census (snapshots)
       encoder.clearBuffer(this.heat.buffer, LG_CBC.STOCK * 4, 1024 * 4);
-      encoder.clearBuffer(this.heat.buffer, LG_CBC.CEN * 4, 256 * 4);
+      encoder.clearBuffer(this.heat.buffer, LG_CBC.CEN * 4, 512 * 4);   // (step C15c: and CEN2 behind it)
     }
     const pass = encoder.beginComputePass({ label: 'cell eat ledger' });
     pass.setPipeline(this.pipes.ledger);

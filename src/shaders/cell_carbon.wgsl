@@ -31,6 +31,9 @@ struct CbCellP {
                 // smell's weight per giver hand (what a free t releases from it, heat counts)
   g: vec4f,     // growth: x kBody (carbon units per R^2 of a cell's area), y kBuild (share of the shortfall per s), z the founders' body (share
                 // of the want), w spare
+  t: vec4f,     // step C15c: x the TRANSPORTER's membrane rate per level (over the light atoms'), y its upkeep per level (heat counts per s),
+                // z enzymes: carbon per unit of expressed engine rate per R^2 of the cell, w their turnover (share per s)
+  u: vec4f,     // step C15c: x the founders' enzymes (share of the want), y z w spare
 };
 @group(0) @binding(11) var<storage, read_write> cbS: array<atomic<i32>>;
 @group(0) @binding(11) var<storage, read_write> cbSP: array<i32>;      // (the plan pass's plain view)
@@ -49,6 +52,12 @@ const CBF_DIS: u32 = 16u;
 const CBF_FLIP: u32 = 32u;
 const CBF_RESET: u32 = 64u;
 const CBF_SMELL: u32 = 128u;
+// step C15c, CARBON MAKES THE CELL (src/carboncells.js; README "Step C15c: carbon makes the cell")
+const CBF_LIP: u32 = 512u;     // membranes (bilayer, oil, wall), pigments and glue are carbon (fixed for the page: CB_LIP)
+const CBF_TRANS: u32 = 1024u;  // the carbon TRANSPORTER gene (Bio.relay.x) speeds the ladder through the membrane, at an upkeep
+const CBF_RED: u32 = 2048u;    // the lipid builder may REDUCE burnt hands from the battery (a storer's way: fat from sugar)
+const CBF_ENZ: u32 = 4096u;    // engines need ENZYMES (carbon + the heavy giver G), built, worn and rebuilt (T1b's upkeep becomes their turnover)
+const CBF_OXB: u32 = 8192u;    // OXYGEN DAMAGES MEMBRANES: free t oxidises the lipids' fuel hands (fat -> soap -> spoiled, into the mud)
 // the event counters (64-bit, LG_CBC_EV; src/carboncells.js EV)
 const CBE_OX: u32 = 0u;
 const CBE_COND: u32 = 1u;
@@ -84,6 +93,40 @@ const CBZ_SHORT: u32 = 13u;    // cells whose body is below its want (they canno
 const CBZ_WANT: u32 = 14u;     // sum of the bodies' want x 1000
 const CBL_GONE: u32 = 34304u;   // the dish's carbon ledger: GONE per channel (carbon.wgsl LG_CB_GONE)
 const LG_CB_ADD_C: u32 = 32256u; // ... ADD per channel (carbon.wgsl LG_CB_ADD): the founders' bodies come in as tar hands
+// step C15c: the cell's carbon words 11 (ENZYMES: units, each 4 carbons as (4, 4, 4) hands + 1 G atom; kept in snapshots) and 20 (this
+// frame's LIEBIG bits: which element stopped a part being built; read and cleared by the ledger pass)
+const CB_ENZ: u32 = 11u;
+const CB_LIM: u32 = 20u;
+const CBL_C: u32 = 1u;       // short of buildable carbon (the ladder with a fuel hand, the granules)
+const CBL_G: u32 = 2u;       // short of the heavy giver G (enzymes)
+const CBL_TR: u32 = 4u;      // short of trace (pigments)
+const CBL_AT: u32 = 8u;      // short of free g or t (the builder's reducing or oxidising, a soap's head)
+const CBL_BAT: u32 = 16u;    // short of battery (the assembly's sparks, a reduction's rise)
+// the second census (LG_CBC_CEN2, 16 numbers x 16 slots; src/carboncells.js CEN2)
+const CBY_MEMB: u32 = 0u;    // the bilayers' carbon x 1000 (soap1, soap2, oil)
+const CBY_WALL: u32 = 1u;    // the walls' carbon x 1000
+const CBY_PIG: u32 = 2u;     // the pigments' carbon x 1000
+const CBY_GLUE: u32 = 3u;    // the glue's carbon x 1000
+const CBY_ENZ: u32 = 4u;     // the enzymes' carbon x 1000
+const CBY_LC: u32 = 5u;      // cells whose last build was stopped by carbon
+const CBY_LG: u32 = 6u;      // ... by G
+const CBY_LTR: u32 = 7u;     // ... by trace
+const CBY_LAT: u32 = 8u;     // ... by free g or t
+const CBY_LBAT: u32 = 9u;    // ... by the battery
+const CBY_TRANS: u32 = 10u;  // the transporter level, summed x 1000
+const CBY_EWANT: u32 = 11u;  // the enzymes wanted (carbon x 1000)
+const CBY_ESHORT: u32 = 12u; // cells whose enzymes are below half their want (engines slowed)
+const CBY_ANY: u32 = 13u;    // cells with any limit bit
+// the second event block (LG_CBC_EV2, 64-bit; src/carboncells.js EV2)
+const CBE2_LIP: u32 = 0u;    // bilayer molecules made (soap1, soap2, oil), counts
+const CBE2_WALL: u32 = 1u;   // wall carbons made
+const CBE2_RED: u32 = 2u;    // hands the builder reduced (battery-paid)
+const CBE2_OX: u32 = 3u;     // hands the builder oxidised (a head on oil, an over-reduced pair)
+const CBE2_BITE: u32 = 4u;   // oxygen bites on membranes (oxidations)
+const CBE2_SPOIL: u32 = 5u;  // membrane molecules spoiled out into the mud
+const CBE2_PIG: u32 = 6u;    // pigment counts built (2 carbons each)
+const CBE2_ENZ: u32 = 7u;    // enzyme units built
+var<workgroup> wcbe2: array<atomic<i32>, 8>;
 var<workgroup> wcbf: array<atomic<i32>, 16>;   // per channel: 0..7 taken in from the dish, 8..15 given back to it
 var<workgroup> wcbe: array<atomic<i32>, 16>;   // CBE_*
 
@@ -196,7 +239,7 @@ fn cb_atoms(i: u32) -> f32 {
 }
 
 /** A cell's carbon back to the dish at the pixels idx (death, burst, a meal's end, a reset); with no grid, booked as gone. */
-fn cb_give_back(i: u32, idx: array<u32, 9>, slot: u32) {
+fn cb_give_back(i: u32, idx: array<u32, 9>, slot: u32, gcur: u32) {   // (step C15c: gcur, the main grid's copy, for the enzymes' G)
   if (CARBON_ON == 0u) { return; }
   let cur = cb_cur();
   for (var w = 0u; w < 11u; w++) {
@@ -207,13 +250,19 @@ fn cb_give_back(i: u32, idx: array<u32, 9>, slot: u32) {
     if (cur != 0u) { spread9(select(CBP.off.z + (ch - 5u) * EP.n, cur + ch * EP.n, ch < 5u), idx, m); }
     else { add64(CBL_GONE + 128u * ch + slot, m); }   // (out of the cells and gone: both books see it)
   }
-  for (var w = 11u; w < CW; w++) { atomicStore(&cbS[i * CW + w], 0); }
+  // step C15c: the enzymes, as tar hands (their carbon) and their G atoms (into the dish's G, or booked gone)
+  let ne = atomicExchange(&cbS[i * CW + CB_ENZ], 0);
+  if (ne > 0) {
+    cb_spill(CB_ENZ_H, ne, idx, false, slot);
+    if (gcur != 0u && (EP.mask & 8u) != 0u) { spread9(gcur + 3u * EP.n, idx, ne); } else { add64(lg_mc(LG_M_GONE, 3u) + slot, ne); }
+  }
+  for (var w = 12u; w < CW; w++) { atomicStore(&cbS[i * CW + w], 0); }
 }
 
 /** A birth: the newborn i takes half its parent's ladder and the share sh of its granules. */
 fn cb_split(i: u32, pi: u32, sh: f32) {
   if (CARBON_ON == 0u) { return; }
-  for (var w = 0u; w < 11u; w++) {
+  for (var w = 0u; w < 12u; w++) {   // (step C15c: and the enzymes, word 11, by the same share as the granules)
     let h = atomicLoad(&cbS[pi * CW + w]);
     let want = select(i32(floor(f32(h) * sh)), h / 2, w < 5u);
     let got = take_cb(pi * CW + w, want);
@@ -224,11 +273,12 @@ fn cb_split(i: u32, pi: u32, sh: f32) {
 /** Digestion (P1): the host i takes the share dsh of its meal g's carbon (the rest spills with the meal at the end). */
 fn cb_digest(i: u32, g: u32, dsh: f32, r: u32) {
   if (CARBON_ON == 0u) { return; }
-  for (var w = 0u; w < 11u; w++) {
+  for (var w = 0u; w < 12u; w++) {
     let mv = atomicLoad(&cbS[g * CW + w]);
     if (mv <= 0) { continue; }
     let n = min(mv, i32(floor(f32(mv) * dsh + u01(pcg(r + w * 0x2f6b1e3du)))));
-    if (n > 0) { atomicSub(&cbS[g * CW + w], n); atomicAdd(&cbS[i * CW + select(w, w - 3u, w >= CB_BODY)], n); }   // (its body into the host's granules)
+    // (its body into the host's granules; step C15c: its enzymes into the host's enzymes)
+    if (n > 0) { atomicSub(&cbS[g * CW + w], n); atomicAdd(&cbS[i * CW + select(select(w, w - 3u, w >= CB_BODY), CB_ENZ, w == CB_ENZ)], n); }
   }
 }
 
@@ -242,7 +292,7 @@ fn cb_plan(i: u32, idx: array<u32, 9>, areaPx: f32, Ao: f32, pkN: f32, room: f32
   let cur = cb_cur();
   let lw = LEDGER_WORDS;
   let on = live && cur != 0u && (CBP.cfg.x & CBF_ON) != 0u;
-  let pk = pkN * CBP.k.x;
+  let pk = pkN * (CBP.k.x + CBP.t.x * cb_trans(i));   // (step C15c: + the TRANSPORTER's level)
   for (var j = 0u; j < 5u; j++) {
     var n = 0;
     if (on && (CBP.cfg.x & CBF_EXCH) != 0u && pk > 0.0) {
@@ -563,6 +613,11 @@ fn cb_cell(i: u32, b: Bio, ph: vec3i, phs: vec3i, m: ptr<function, array<i32, 18
   if (bg != b0.y) { atomicStore(&cbS[o + CB_BODY + 1u], bg); }
   if (bt != b0.z) { atomicStore(&cbS[o + CB_BODY + 2u], bt); }
 
+  // step C15c: the TRANSPORTER's upkeep (per level per s, from the battery as heat; what an empty battery cannot pay is not paid)
+  if (on && cb_bit(CBF_TRANS) && CBP.t.y > 0.0) {
+    let pay = clamp(i32(floor(CBP.t.y * cb_trans(i) * EP.dt + u01(pcg(rs + 0x71374491u)))), 0, max(*bat, 0));
+    if (pay > 0) { *bat -= pay; *heat += pay; }
+  }
   for (var j = 0u; j < 5u; j++) { if (S[j] != S0[j]) { atomicStore(&cbS[o + j], S[j]); } }
   if (cc != t0.x) { atomicStore(&cbS[o + 5u], cc); }
   if (cg != t0.y) { atomicStore(&cbS[o + 6u], cg); }
@@ -578,6 +633,7 @@ fn cb_cell(i: u32, b: Bio, ph: vec3i, phs: vec3i, m: ptr<function, array<i32, 18
 /** The ledger pass: every slot's carbon (the books count every slot: a free one holds none), and the census of the live cells. */
 fn cb_ledger(i: u32, live: bool) {
   if (CARBON_ON == 0u) { return; }
+  cb_ledger_parts(i, live);   // step C15c
   let slot = i & 63u;
   var lad = 0;
   var bh = vec3i(0);
@@ -629,6 +685,330 @@ fn cb_flush(li: u32, slot: u32) {
   } else if (li < 32u) {
     let v = atomicLoad(&wcbe[li - 16u]);
     if (v != 0) { add64(LG_CBC_EV + 128u * (li - 16u) + slot, v); }
+  } else if (li < 40u) {
+    let v = atomicLoad(&wcbe2[li - 32u]);   // (step C15c)
+    if (v != 0) { add64(LG_CBC_EV2 + 128u * (li - 32u) + slot, v); }
+  }
+}
+
+
+// ===== step C15c: CARBON MAKES THE CELL (src/carboncells.js; README "Step C15c: carbon makes the cell") =====
+// Every built part is carbon + the element its job needs (the user, 2026-11-17: "the organic chemistry becomes carbon + element needed for
+// specialized work"). With CBF_LIP the C12b membrane's five kinds (stock words 32..61) are CARBON molecules (the linkers retire):
+//   kind 0 (was soap glL)  SOAP1 c2 g5 t   a head carbon with one burnt hand (polar) on a tail carbon (oily): the bilayer
+//   kind 1 (was soap tlL)  SOAP2 c2 g4 t2  both burnt hands on the head carbon: the bilayer, one oxidation from spoiling
+//   kind 2 (was oil lL)    OIL   c2 g6     all fuel hands: water-shy, between the soap's tails (stiffens it)
+//   kind 3 (was crust ll)  WALL, a chain carbon (one backbone bond per carbon, one fuel and one burnt hand: cellulose-like)
+//   kind 4 (was crust LL)  WALL, a cross-linked pair (three backbone bonds, one fuel, one burnt hand: stiffer; the old wall-row gene
+//                          lip.z is now the cross-link share)
+// The PIGMENT (stock word 30) is 2 carbons with fuel hands (an oil-like pair: its c-g bonds catch visible 1) + 1 trace; the GLUE (the
+// C6c weave words 16..21) is sugar-unit-like molecules (cg2t2: carbon + charged hands) held in the side; ENZYMES (carbon word 11) are 4
+// carbons (cellulose-like) + 1 heavy giver G each. In the books every part's carbon counts as tar hands (or ladder, for the glue) in the
+// cells' carbon (so carbon, atoms, energy and charge stay exact by the tar's own accounting), and leaves the cell as tar (mud) at a death,
+// burst or bite.
+fn cb_lip() -> bool { return CARBON_ON != 0u && (CBP.cfg.x & (CBF_ON | CBF_LIP)) == (CBF_ON | CBF_LIP); }
+fn cb_bit(f: u32) -> bool { return CARBON_ON != 0u && (CBP.cfg.x & (CBF_ON | f)) == (CBF_ON | f); }
+/** A membrane kind's hands per count (cc backbone bonds, cg fuel hands, ct burnt hands): see above. */
+fn cb_lk_hands(q: u32) -> vec3i {
+  if (q == 0u) { return vec3i(1, 5, 1); }
+  if (q == 1u) { return vec3i(1, 4, 2); }
+  if (q == 2u) { return vec3i(1, 6, 0); }
+  if (q == 3u) { return vec3i(1, 1, 1); }
+  return vec3i(3, 1, 1);
+}
+const CB_PIG_H = vec3i(1, 6, 0);   // a pigment count's carbon (2 carbons)
+const CB_ENZ_H = vec3i(4, 4, 4);   // an enzyme unit's carbon (4 carbons)
+
+/** Hands (h per count, n counts) out of a cell into the dish's tar under it (wg: counted in the eat pass's workgroup, else in the ledger). */
+fn cb_spill(h: vec3i, n: i32, idx: array<u32, 9>, wg: bool, slot: u32) {
+  if (n <= 0) { return; }
+  let cur = cb_cur();
+  for (var w = 0u; w < 3u; w++) {
+    let v = h[w] * n;
+    if (v <= 0) { continue; }
+    if (cur != 0u) { spread9(CBP.off.z + w * EP.n, idx, v); } else { add64(CBL_GONE + 128u * (5u + w) + slot, v); }
+    if (wg) { atomicAdd(&wcbf[13u + w], v); } else { add64(LG_CBC_OUT + 128u * (5u + w) + slot, v); }
+  }
+}
+/** ... and a ladder molecule (channel j) out into the dish (the glue at a death). */
+fn cb_spill_lad(j: u32, n: i32, idx: array<u32, 9>, slot: u32) {
+  if (n <= 0) { return; }
+  let cur = cb_cur();
+  if (cur != 0u) { spread9(cur + j * EP.n, idx, n); } else { add64(CBL_GONE + 128u * j + slot, n); }
+  add64(LG_CBC_OUT + 128u * j + slot, n);
+}
+/** Hands into the cell's own granules (a part broken down, shed or worn: zero energy, the hands only move). */
+fn cb_gran_add(i: u32, h: vec3i, n: i32) {
+  if (n <= 0) { return; }
+  for (var w = 0u; w < 3u; w++) { if (h[w] != 0) { atomicAdd(&cbS[i * CW + 5u + w], h[w] * n); } }
+}
+/** The cell's ladder into S, its granules returned. */
+fn cb_ld(i: u32, S: ptr<function, array<i32, 5>>) -> vec3i {
+  for (var j = 0u; j < 5u; j++) { (*S)[j] = atomicLoad(&cbS[i * CW + j]); }
+  return vec3i(atomicLoad(&cbS[i * CW + 5u]), atomicLoad(&cbS[i * CW + 6u]), atomicLoad(&cbS[i * CW + 7u]));
+}
+fn cb_st(i: u32, S: ptr<function, array<i32, 5>>, g: vec3i) {
+  for (var j = 0u; j < 5u; j++) { atomicStore(&cbS[i * CW + j], (*S)[j]); }
+  for (var w = 0u; w < 3u; w++) { atomicStore(&cbS[i * CW + 5u + w], g[w]); }
+}
+fn cb_lim(i: u32, bits: u32) { if (bits != 0u) { atomicOr(&cbS[i * CW + CB_LIM], i32(bits)); } }
+
+/**
+ * Make n TWO-CARBON molecules with nT burnt hands (0 oil or pigment, 1 soap1, 2 soap2) from the ladder in S, by the table's own reactions:
+ * two ladder carbons CONDENSE ([c-g] + [c-t] -> [c-c] + gt, 0.75 as heat, the carbon spark from the battery), a pair j1 + j2 burnt hands
+ * giving j1 + j2 - 1. The exact pairs first; then a pair too REDUCED for the target, whose extra fuel hands are OXIDISED with free t from the
+ * stock (2.75 each as heat, a spark each); then (CBF_RED) a pair too BURNT, whose extra burnt hands are REDUCED with free g from the stock,
+ * the battery paying the rise (2.75) and a spark each: the storer's way, fat from sugar is dear (CO2-like carbon only on this way: fixed). The
+ * water goes to the stock, the freed atoms too. Returns the molecules made; lim gets the reason a shortfall stopped.
+ */
+fn cb_make2(nT: i32, n: i32, S: ptr<function, array<i32, 5>>, m: ptr<function, array<i32, 18>>, bat: ptr<function, i32>,
+            heat: ptr<function, i32>, lim: ptr<function, u32>) -> i32 {
+  if (n <= 0) { return 0; }
+  let sp = max(CBP.e.z, 1);
+  let ox = CBP.e.x;
+  let cd = CBP.e.y;
+  let red = (CBP.cfg.x & CBF_RED) != 0u;
+  let ds = array<i32, 7>(0, -1, -2, -3, 1, 2, 3);
+  var left = n;
+  var made = 0;
+  var nOx = 0;
+  var nRed = 0;
+  var why = 0u;
+  for (var a = 0u; a < 7u; a++) {
+    let d = ds[a];
+    if (left <= 0 || (d > 0 && !red)) { break; }
+    let s = nT + 1 + d;
+    for (var j1 = 0; j1 <= 3; j1++) {
+      let j2 = s - j1;
+      if (j2 < j1 || j2 > select(3, 4, d > 0) || left <= 0) { continue; }   // (CO2-like only where the battery reduces it: fixing)
+      var x = select(min((*S)[j1], (*S)[j2]), (*S)[j1] / 2, j1 == j2);
+      x = min(x, left);
+      if (x <= 0) { continue; }
+      let ad = abs(d);
+      let cost = sp * (1 + ad) + max(d, 0) * ox;
+      let xb = max(*bat, 0) / cost;
+      if (xb < x) { x = xb; why |= CBL_BAT; }
+      if (d < 0) { let xa = max((*m)[1], 0) / ad; if (xa < x) { x = xa; why |= CBL_AT; } }
+      if (d > 0) { let xa = max((*m)[0], 0) / d; if (xa < x) { x = xa; why |= CBL_AT; } }
+      if (x <= 0) { continue; }
+      (*S)[j1] -= x;
+      (*S)[j2] -= x;
+      *bat -= x * cost;
+      *heat += x * (sp * (1 + ad) + cd + max(-d, 0) * ox);
+      (*m)[6] += x;
+      if (d < 0) { (*m)[1] -= x * ad; (*m)[0] += x * ad; nOx += x * ad; }
+      if (d > 0) { (*m)[0] -= x * d; (*m)[1] += x * d; nRed += x * d; }
+      left -= x;
+      made += x;
+    }
+  }
+  if (nOx > 0) { atomicAdd(&wcbe2[CBE2_OX], nOx); }
+  if (nRed > 0) { atomicAdd(&wcbe2[CBE2_RED], nRed); }
+  if (left > 0) {
+    if ((*S)[0] + (*S)[1] + (*S)[2] + (*S)[3] < 2 || why == 0u) { why |= CBL_C; }
+    *lim |= why;
+  }
+  return made;
+}
+
+/**
+ * Make n chain carbons (hands 1, 1, 1 each: walls, enzymes): from the granules as they are (starch into cellulose: zero energy, the assembly
+ * spark from the battery), from sugar-unit-like molecules (cg2t2 -> a chain carbon + a water: a condensation, 0.75 as heat, a spark) or from
+ * a formic- + methanol-like or a methane- + CO2-like pair (two chain carbons + two waters). Returns the carbons made.
+ */
+fn cb_make_chain(n: i32, S: ptr<function, array<i32, 5>>, gr: ptr<function, vec3i>, m: ptr<function, array<i32, 18>>,
+                 bat: ptr<function, i32>, heat: ptr<function, i32>, lim: ptr<function, u32>) -> i32 {
+  if (n <= 0) { return 0; }
+  let sp = max(CBP.e.z, 1);
+  let cd = CBP.e.y;
+  var left = n;
+  var made = 0;
+  var why = 0u;
+  var x = min(min(left, (*gr).x), min((*gr).y, (*gr).z));
+  if (max(*bat, 0) / sp < x) { x = max(*bat, 0) / sp; why |= CBL_BAT; }
+  if (x > 0) { *gr -= vec3i(x); *bat -= x * sp; *heat += x * sp; left -= x; made += x; }
+  x = min(left, (*S)[2]);
+  if (max(*bat, 0) / sp < x) { x = max(*bat, 0) / sp; why |= CBL_BAT; }
+  if (x > 0) { (*S)[2] -= x; (*m)[6] += x; *bat -= x * sp; *heat += x * (sp + cd); left -= x; made += x; }
+  // pairs whose hands even out to one fuel and one burnt hand a carbon: formic- + methanol-like, methane- + CO2-like (two condensations:
+  // the CO2-like carbon is built with here only because the methane-like one brings the fuel hands it lacks)
+  for (var q = 0; q < 2; q++) {
+    let ja = select(0, 1, q == 0);
+    let jb = 4 - ja;
+    x = min(left / 2, min((*S)[ja], (*S)[jb]));
+    if (max(*bat, 0) / (2 * sp) < x) { x = max(*bat, 0) / (2 * sp); why |= CBL_BAT; }
+    if (x > 0) { (*S)[ja] -= x; (*S)[jb] -= x; (*m)[6] += 2 * x; *bat -= 2 * x * sp; *heat += 2 * x * (sp + cd); left -= 2 * x; made += 2 * x; }
+  }
+  if (left > 0) { *lim |= select(why, CBL_C, why == 0u); }
+  return made;
+}
+/** n cross-linked WALL pairs (hands 3, 1, 1): two chain carbons condensed once more (0.75 as heat, a spark). Returns the pairs made. */
+fn cb_make_cross(n: i32, S: ptr<function, array<i32, 5>>, gr: ptr<function, vec3i>, m: ptr<function, array<i32, 18>>,
+                 bat: ptr<function, i32>, heat: ptr<function, i32>, lim: ptr<function, u32>) -> i32 {
+  if (n <= 0) { return 0; }
+  let sp = max(CBP.e.z, 1);
+  let c2 = cb_make_chain(2 * n, S, gr, m, bat, heat, lim);
+  var x = c2 / 2;
+  if (c2 - 2 * x > 0) { *gr += vec3i(1, 1, 1) * (c2 - 2 * x); }   // (an odd chain carbon back into the granules as it is)
+  let xb = max(*bat, 0) / sp;
+  if (xb < x) { *gr += vec3i(2, 2, 2) * (x - xb); x = xb; *lim |= CBL_BAT; }
+  if (x <= 0) { return 0; }
+  (*m)[6] += x;
+  *bat -= x * sp;
+  *heat += x * (sp + CBP.e.y);
+  return x;
+}
+
+/**
+ * OXYGEN DAMAGES MEMBRANES (CBF_OXB; the eat pass): the plan's bites per kind are OXIDATIONS by free t taken from the dish under the cell
+ * (the table's OXIDIZE, t + [c-g] -> [c-t] + g, 2.75 as heat at the cell, uncontrolled): oil becomes soap1, soap1 soap2 (they stay in the
+ * bilayer: lipid peroxidation, fat -> soap), and a bitten soap2 or wall piece leaves SPOILED into the dish's tar (-> mud). The freed g into
+ * the dish (the stock while g does not move). Soap2 first, then soap1, then oil, so no molecule is bitten twice in a tick; the sides from a
+ * random first one round. Returns the bites done.
+ */
+fn cb_bites(want: array<i32, 5>, lpm: ptr<function, array<array<i32, 6>, 5>>, m: ptr<function, array<i32, 18>>, heat: ptr<function, i32>,
+            idx: array<u32, 9>, cur: u32, r: u32) -> i32 {
+  let tw = want[0] + want[1] + want[2] + want[3] + want[4];
+  if (tw <= 0 || cur == 0u || (EP.mask & 2u) == 0u) { return 0; }
+  let part = tw / 9;
+  var got = 0;
+  for (var z = 0; z < 9; z++) { got += take_hb(cur + EP.n + idx[z], select(part, tw - 8 * part, z == 4)); }
+  var left = got;
+  var done = 0;
+  var spoil = 0;
+  let k0 = pcg(r) % 6u;
+  let order = array<u32, 5>(1u, 0u, 2u, 3u, 4u);
+  for (var a = 0u; a < 5u; a++) {
+    let q = order[a];
+    var x = min(want[q], left);
+    for (var j = 0u; j < 6u; j++) {
+      if (x <= 0) { break; }
+      let k = (k0 + j) % 6u;
+      let b = min(x, (*lpm)[q][k]);
+      if (b <= 0) { continue; }
+      (*lpm)[q][k] -= b;
+      if (q == 2u) { (*lpm)[0][k] += b; }
+      else if (q == 0u) { (*lpm)[1][k] += b; }
+      else {
+        cb_spill(cb_lk_hands(q) + vec3i(0, -1, 1), b, idx, true, 0u);   // (one fuel hand burnt, then out as tar)
+        spoil += b;
+      }
+      x -= b;
+      left -= b;
+      done += b;
+    }
+  }
+  if (left > 0) { spread9(cur + EP.n, idx, left); }   // (the t that found nothing to bite, back where it was)
+  if (done > 0) {
+    if ((EP.mask & 1u) != 0u) { spread9(cur, idx, done); } else { (*m)[0] += done; }
+    *heat += done * CBP.e.x;
+    atomicAdd(&wcbe2[CBE2_BITE], done);
+    if (spoil > 0) { atomicAdd(&wcbe2[CBE2_SPOIL], spoil); }
+  }
+  return done;
+}
+
+/** The carbon TRANSPORTER's level for cell i (Bio.relay.x, a log factor: e^x, 0 = the founders' 1), as expressed (the channels' output). */
+fn cb_trans(i: u32) -> f32 {
+  if (!cb_bit(CBF_TRANS)) { return 0.0; }
+  return exp(clamp(bio[i].relay.x, -4.0, 2.0)) * select(1.0, gof(i, GRN_O_CHAN), grn_on());
+}
+
+/**
+ * ENZYMES (CBF_ENZ; the eat pass, before the engines): an engine runs only as far as its enzyme is there. A cell WANTS kEnz carbons per unit
+ * of its engines' expressed rates per R^2 of its area, as units of 4 cellulose-like carbons + 1 heavy giver G (catalysis moves electrons:
+ * the loosest one of the table, metal-like, as iron in real enzymes). The units WEAR (t.w per s: back into the granules and the stock's G,
+ * exact) and are REBUILT toward the want (kBuild of the shortfall per s) from chain carbons (cb_make_chain) + G from the stock, the assembly
+ * sparks from the battery: T1b's upkeep of an expressed engine becomes this turnover. Returns the share of the want held (the engines' factor).
+ */
+fn cb_enzymes(i: u32, rates: vec3f, areaR2: f32, m: ptr<function, array<i32, 18>>, bat: ptr<function, i32>, heat: ptr<function, i32>, r: u32) -> f32 {
+  if (!cb_bit(CBF_ENZ)) { return 1.0; }
+  let o = i * CW;
+  var E = atomicLoad(&cbS[o + CB_ENZ]);
+  let E0 = E;
+  let want = CBP.t.z * (max(rates.x, 0.0) + max(rates.y, 0.0) + max(rates.z, 0.0)) * areaR2 * ATOM_SCALE / 4.0;   // (units)
+  let nw = min(i32(floor(f32(E) * min(CBP.t.w * EP.dt, 1.0) + u01(pcg(r)))), E);
+  if (nw > 0) { E -= nw; cb_gran_add(i, CB_ENZ_H, nw); (*m)[3] += nw; }
+  if (f32(E) < want) {
+    var nb = i32(floor((want - f32(E)) * min(CBP.g.y * EP.dt, 1.0) + u01(pcg(r + 0x9e3779b9u))));
+    var lim = 0u;
+    if (nb > max((*m)[3], 0)) { nb = max((*m)[3], 0); lim |= CBL_G; }
+    if (nb > 0) {
+      var S: array<i32, 5>;
+      var gr = cb_ld(i, &S);
+      let c4 = cb_make_chain(4 * nb, &S, &gr, m, bat, heat, &lim);
+      let u = c4 / 4;
+      if (c4 - 4 * u > 0) { gr += vec3i(1, 1, 1) * (c4 - 4 * u); }
+      cb_st(i, &S, gr);
+      if (u > 0) { E += u; (*m)[3] -= u; atomicAdd(&wcbe2[CBE2_ENZ], u); }
+    }
+    cb_lim(i, lim);
+  }
+  if (E != E0) { atomicStore(&cbS[o + CB_ENZ], E); }
+  if (want < 1.0) { return 1.0; }
+  return clamp(f32(E) / want, 0.0, 1.0);
+}
+
+/**
+ * A reset: a founder's enzymes, those of a TYPICAL founder (engine rates summing to 4: the reset runs before the new genomes are written, so
+ * it cannot read its own; a founder with fewer engines lets the rest wear into its granules), x u.x, booked as carbon and G in.
+ */
+fn cb_found_enz(i: u32, r: f32, slot: u32) {
+  if (!cb_bit(CBF_ENZ)) { return; }
+  let n = i32(round(CBP.t.z * 4.0 * 3.14159265 * r * r / max(EP.R * EP.R, 1e-6) * ATOM_SCALE / 4.0 * clamp(CBP.u.x, 0.0, 4.0)));
+  if (n <= 0) { return; }
+  atomicAdd(&cbS[i * CW + CB_ENZ], n);
+  for (var q = 0u; q < 3u; q++) {
+    add64(LG_CB_ADD_C + 128u * (5u + q) + slot, CB_ENZ_H[q] * n);
+    add64(LG_CBC_IN + 128u * (5u + q) + slot, CB_ENZ_H[q] * n);
+  }
+  add64(lg_mc(LG_M_ADD, 3u) + slot, n);   // (its G atoms, booked as added)
+}
+
+/** The ledger pass: the parts' carbon (membranes, walls, pigment, glue, enzymes) into the cells' carbon books; the second census. */
+fn cb_ledger_parts(i: u32, live: bool) {
+  let slot = i & 63u;
+  let s16 = i & 15u;
+  var hm = vec3i(0);
+  var hw = vec3i(0);
+  var hp = vec3i(0);
+  var glue = 0;
+  if (cb_lip()) {
+    for (var q = 0u; q < 5u; q++) {
+      var n = 0;
+      for (var k = 0u; k < 6u; k++) { n += max(atomicLoad(&stock[i * SW + lpw(q, k)]), 0); }
+      if (q < 3u) { hm += cb_lk_hands(q) * n; } else { hw += cb_lk_hands(q) * n; }
+    }
+    hp = CB_PIG_H * max(atomicLoad(&stock[i * SW + W_PIG]), 0);
+    for (var k = 0u; k < 12u; k++) { glue += max(atomicLoad(&stock[i * SW + MB_L0 + k]), 0); }
+  }
+  let ne = max(atomicLoad(&cbS[i * CW + CB_ENZ]), 0);
+  let he = CB_ENZ_H * ne;
+  let h = hm + hw + hp + he;
+  for (var w = 0u; w < 3u; w++) { if (h[w] != 0) { add64(LG_CBC_STOCK + 128u * (5u + w) + slot, h[w]); } }
+  if (glue != 0) { add64(LG_CBC_STOCK + 128u * 2u + slot, glue); }
+  let lim = u32(atomicExchange(&cbS[i * CW + CB_LIM], 0));
+  if (!live) { return; }
+  let cK = 1000.0 / (4.0 * ATOM_SCALE);   // (hand counts -> carbons x 1000)
+  atomicAdd(&hb[LG_CBC_CEN2 + 16u * CBY_MEMB + s16], i32(round(f32(2 * hm.x + hm.y + hm.z) * cK)));
+  atomicAdd(&hb[LG_CBC_CEN2 + 16u * CBY_WALL + s16], i32(round(f32(2 * hw.x + hw.y + hw.z) * cK)));
+  atomicAdd(&hb[LG_CBC_CEN2 + 16u * CBY_PIG + s16], i32(round(f32(2 * hp.x + hp.y + hp.z) * cK)));
+  atomicAdd(&hb[LG_CBC_CEN2 + 16u * CBY_GLUE + s16], i32(round(f32(glue) * 1000.0 / ATOM_SCALE)));
+  atomicAdd(&hb[LG_CBC_CEN2 + 16u * CBY_ENZ + s16], i32(round(f32(4 * ne) * 1000.0 / ATOM_SCALE)));
+  if ((lim & CBL_C) != 0u) { atomicAdd(&hb[LG_CBC_CEN2 + 16u * CBY_LC + s16], 1); }
+  if ((lim & CBL_G) != 0u) { atomicAdd(&hb[LG_CBC_CEN2 + 16u * CBY_LG + s16], 1); }
+  if ((lim & CBL_TR) != 0u) { atomicAdd(&hb[LG_CBC_CEN2 + 16u * CBY_LTR + s16], 1); }
+  if ((lim & CBL_AT) != 0u) { atomicAdd(&hb[LG_CBC_CEN2 + 16u * CBY_LAT + s16], 1); }
+  if ((lim & CBL_BAT) != 0u) { atomicAdd(&hb[LG_CBC_CEN2 + 16u * CBY_LBAT + s16], 1); }
+  if (lim != 0u) { atomicAdd(&hb[LG_CBC_CEN2 + 16u * CBY_ANY + s16], 1); }
+  atomicAdd(&hb[LG_CBC_CEN2 + 16u * CBY_TRANS + s16], i32(round(cb_trans(i) * 1000.0)));
+  if (cb_bit(CBF_ENZ)) {
+    let b = bio[i];
+    let rr = max(b.rate.x, 0.0) + max(b.rate.y, 0.0) + max(b.rate.z, 0.0);
+    let r = cells[i].r;
+    let want = CBP.t.z * rr * 3.14159265 * r * r / max(EP.R * EP.R, 1e-6);   // (carbon units, at the genes' rates)
+    atomicAdd(&hb[LG_CBC_CEN2 + 16u * CBY_EWANT + s16], i32(round(want * 1000.0)));
+    if (f32(4 * ne) / ATOM_SCALE < 0.5 * want) { atomicAdd(&hb[LG_CBC_CEN2 + 16u * CBY_ESHORT + s16], 1); }
   }
 }
 

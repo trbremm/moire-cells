@@ -76,7 +76,7 @@ body.entropy-on #overlay { top: 116px; }
 }
 .ui > * { pointer-events: auto; }
 .bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.grp { display: flex; gap: 2px; }
+.grp { display: flex; flex-wrap: wrap; gap: 2px; }   /* (step G0b: a ninth tool; on a phone the tools wrap to a second row) */
 .ui button { font: inherit; color: var(--ink); touch-action: manipulation; cursor: pointer; }
 .btn {
   width: var(--s); height: var(--s); padding: 0; display: grid; place-items: center;
@@ -141,6 +141,7 @@ body.entropy-on #overlay { top: 116px; }
   min-width: 30px; height: 24px; padding: 0 7px; background: none; border: 1px solid var(--line); border-radius: 2px;
 }
 .ui .seg button[aria-pressed="true"] { border-color: var(--epi); color: var(--epi); }
+.ui .act[aria-pressed="true"] { border-color: var(--epi); color: var(--epi); }   /* step G0b: the obstacle shape picked */
 .knobs { display: inline-flex; align-items: center; gap: 6px; }
 .knobs .val { min-width: 3.2em; text-align: center; }
 .row.slider .rmain { gap: 10px; }

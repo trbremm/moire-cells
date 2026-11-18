@@ -217,8 +217,8 @@ dump({"batch": "c15d-browsers", "runs": [
     {**run("c15d-phone", "phone size (390 x 844 at dpr 3, Chrome): the default scene 20 s", {"seed": 3}, 20, (20,), every=10), "size": "390x844", "dpr": 3,
      "shots": [{"t": 20}, {"t": 20, "panel": True, "name": "panel"}]},
 ]}, "browsers.json")
-# watch2: the rest of the watch at 10 minutes (the shared GPU ran at x0.15-0.5: the 20-minute plan did not fit)
+# watch2: the rest of the watch, the default scene at 20 minutes (it regrows late), the others at 10 (the shared GPU ran at x0.15-0.7)
 dump({"batch": "c15d-watch2", "runs": [
-    watch("default", 7, 600), watch("colonies", 7, 600), watch("default", 7, 600, off=True), watch("colonies", 7, 600, off=True),
+    watch("default", 7, 1200), watch("colonies", 7, 600), watch("default", 7, 1200, off=True), watch("colonies", 7, 600, off=True),
     watch("shallows", 3, 600), watch("oxy-spot", 3, 600), watch("oxy-full", 3, 600),
 ]}, "watch2.json")

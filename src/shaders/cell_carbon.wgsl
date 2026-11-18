@@ -33,7 +33,9 @@ struct CbCellP {
                 // of the want), w spare
   t: vec4f,     // step C15c: x the TRANSPORTER's membrane rate per level (over the light atoms'), y its upkeep per level (heat counts per s),
                 // z enzymes: carbon per unit of expressed engine rate per R^2 of the cell, w their turnover (share per s)
-  u: vec4f,     // step C15c: x the founders' enzymes (share of the want), y z w spare
+  u: vec4f,     // step C15c: x the founders' enzymes (share of the want), y a hungry cell's grazing (units of a grazing engine), z a water's
+                // bond (heat counts per count: split for a reduction's g), w its spark
+  v: vec4f,     // step C15c: x the battery's floor for the builder's reductions (heat counts), y z w spare
 };
 @group(0) @binding(11) var<storage, read_write> cbS: array<atomic<i32>>;
 @group(0) @binding(11) var<storage, read_write> cbSP: array<i32>;      // (the plan pass's plain view)
@@ -319,11 +321,14 @@ fn cb_plan(i: u32, idx: array<u32, 9>, areaPx: f32, Ao: f32, pkN: f32, room: f32
     }
   }
   // ... and a HUNGRY cell (its body short of its want: GROWTH NEEDS CARBON) grazes as one unit of such an engine: mud is building material
+  // (step C15c: as CBP.u.y units: carbon now also makes its membrane, walls and enzymes, and the dish's carbon is mostly mud)
   if (on && (CBP.cfg.x & (CBF_GRAZE | CBF_GROW)) == (CBF_GRAZE | CBF_GROW)) {
     let body = 0.25 * f32(2 * cbSP[o + CB_BODY] + cbSP[o + CB_BODY + 1u] + cbSP[o + CB_BODY + 2u]);
-    if (body < cb_want(cells[i].r) * ATOM_SCALE) { gr += 1.0; }
+    if (body < cb_want(cells[i].r) * ATOM_SCALE) { gr += select(1.0, CBP.u.y, CBP.u.y > 0.0); }
   }
-  let kg = min(CBP.k.y * gr * EP.dt * freeS, 1.0) * room;
+  // (step C15c: the mud lies on the FLOOR under the cell, so it is eaten with the whole underside, covered sides or not: T1a's inside
+  // shields the membrane's sides from the water, not the floor)
+  let kg = min(CBP.k.y * gr * EP.dt * select(freeS, 1.0, cb_lip()), 1.0) * room;
   for (var w = 0u; w < 3u; w++) {
     var want = 0;
     if (kg > 0.0) {
@@ -757,8 +762,9 @@ fn cb_lim(i: u32, bits: u32) { if (bits != 0u) { atomicOr(&cbS[i * CW + CB_LIM],
  * Make n TWO-CARBON molecules with nT burnt hands (0 oil or pigment, 1 soap1, 2 soap2) from the ladder in S, by the table's own reactions:
  * two ladder carbons CONDENSE ([c-g] + [c-t] -> [c-c] + gt, 0.75 as heat, the carbon spark from the battery), a pair j1 + j2 burnt hands
  * giving j1 + j2 - 1. The exact pairs first; then a pair too REDUCED for the target, whose extra fuel hands are OXIDISED with free t from the
- * stock (2.75 each as heat, a spark each); then (CBF_RED) a pair too BURNT, whose extra burnt hands are REDUCED with free g from the stock,
- * the battery paying the rise (2.75) and a spark each: the storer's way, fat from sugar is dear (CO2-like carbon only on this way: fixed). The
+ * stock (2.75 each as heat, a spark each); then (CBF_RED) a pair too BURNT, whose extra burnt hands are REDUCED with a free g from the stock
+ * (or, without one, from a water split for it: 4.5 more, its t freed), the battery paying the rise (2.75) and a spark each, and only from
+ * above its floor (half full): the storer's way, fat from sugar is dear (CO2-like carbon only on this way: fixed). The
  * water goes to the stock, the freed atoms too. Returns the molecules made; lim gets the reason a shortfall stopped.
  */
 fn cb_make2(nT: i32, n: i32, S: ptr<function, array<i32, 5>>, m: ptr<function, array<i32, 18>>, bat: ptr<function, i32>,
@@ -786,10 +792,30 @@ fn cb_make2(nT: i32, n: i32, S: ptr<function, array<i32, 5>>, m: ptr<function, a
       if (x <= 0) { continue; }
       let ad = abs(d);
       let cost = sp * (1 + ad) + max(d, 0) * ox;
-      let xb = max(*bat, 0) / cost;
-      if (xb < x) { x = xb; why |= CBL_BAT; }
-      if (d < 0) { let xa = max((*m)[1], 0) / ad; if (xa < x) { x = xa; why |= CBL_AT; } }
-      if (d > 0) { let xa = max((*m)[0], 0) / d; if (xa < x) { x = xa; why |= CBL_AT; } }
+      var ws = 0;   // (the waters split for their g)
+      if (d <= 0) {
+        let xb = max(*bat, 0) / cost;
+        if (xb < x) { x = xb; why |= CBL_BAT; }
+        if (d < 0) { let xa = max((*m)[1], 0) / ad; if (xa < x) { x = xa; why |= CBL_AT; } }
+      } else {
+        // a REDUCTION's g: the stock's free g first, then a WATER split for it (gt -> g + t: its bond 4.5 and its spark from the battery
+        // too, the t freed into the stock: the storer's own small photosynthesis without light); the battery only above its floor (v.x)
+        let avail = max(*bat - i32(CBP.v.x), 0);
+        let ww = i32(CBP.u.z) + i32(CBP.u.w);
+        let g0 = max((*m)[0], 0);
+        let w0 = max((*m)[6], 0);
+        let xa = (g0 + w0) / d;
+        if (xa < x) { x = xa; why |= CBL_AT; }
+        let x1 = min(x, g0 / d);
+        if (x1 * cost >= avail) { x = avail / cost; why |= CBL_BAT; }
+        else {
+          let x2 = min(x - x1, (avail - x1 * cost) / (cost + d * ww));
+          if (x1 + x2 < x) { why |= CBL_BAT; }
+          x = x1 + max(x2, 0);
+        }
+        ws = max(x * d - g0, 0);
+        if (ws > 0) { *bat -= ws * ww; *heat += ws * i32(CBP.u.w); (*m)[6] -= ws; (*m)[0] += ws; (*m)[1] += ws; }
+      }
       if (x <= 0) { continue; }
       (*S)[j1] -= x;
       (*S)[j2] -= x;
@@ -917,9 +943,10 @@ fn cb_trans(i: u32) -> f32 {
 /**
  * ENZYMES (CBF_ENZ; the eat pass, before the engines): an engine runs only as far as its enzyme is there. A cell WANTS kEnz carbons per unit
  * of its engines' expressed rates per R^2 of its area, as units of 4 cellulose-like carbons + 1 heavy giver G (catalysis moves electrons:
- * the loosest one of the table, metal-like, as iron in real enzymes). The units WEAR (t.w per s: back into the granules and the stock's G,
- * exact) and are REBUILT toward the want (kBuild of the shortfall per s) from chain carbons (cb_make_chain) + G from the stock, the assembly
- * sparks from the battery: T1b's upkeep of an expressed engine becomes this turnover. Returns the share of the want held (the engines' factor).
+ * the loosest one of the table, metal-like, as iron in real enzymes). The units WEAR (t.w per s) and are RENEWED in place, the battery paying
+ * their assembly sparks again (T1b's upkeep of an expressed engine becomes this turnover); a worn unit the battery cannot renew falls apart
+ * into the granules and the stock's G (exact). Short of the want, new units are BUILT (kBuild of the shortfall per s) from chain carbons
+ * (cb_make_chain) + a free G from the stock. Returns the share of the want held (the engines' factor).
  */
 fn cb_enzymes(i: u32, rates: vec3f, areaR2: f32, m: ptr<function, array<i32, 18>>, bat: ptr<function, i32>, heat: ptr<function, i32>, r: u32) -> f32 {
   if (!cb_bit(CBF_ENZ)) { return 1.0; }
@@ -927,8 +954,16 @@ fn cb_enzymes(i: u32, rates: vec3f, areaR2: f32, m: ptr<function, array<i32, 18>
   var E = atomicLoad(&cbS[o + CB_ENZ]);
   let E0 = E;
   let want = CBP.t.z * (max(rates.x, 0.0) + max(rates.y, 0.0) + max(rates.z, 0.0)) * areaR2 * ATOM_SCALE / 4.0;   // (units)
+  // the worn units: RENEWED in place while the battery pays their assembly again (4 carbon sparks a unit, as heat: the turnover's cost);
+  // what it cannot pay falls apart into the granules and the stock's G
   let nw = min(i32(floor(f32(E) * min(CBP.t.w * EP.dt, 1.0) + u01(pcg(r)))), E);
-  if (nw > 0) { E -= nw; cb_gran_add(i, CB_ENZ_H, nw); (*m)[3] += nw; }
+  if (nw > 0) {
+    let c4 = 4 * max(CBP.e.z, 1);
+    let rn = min(nw, max(*bat, 0) / c4);
+    if (rn > 0) { *bat -= rn * c4; *heat += rn * c4; }
+    let br = nw - rn;
+    if (br > 0) { E -= br; cb_gran_add(i, CB_ENZ_H, br); (*m)[3] += br; }
+  }
   if (f32(E) < want) {
     var nb = i32(floor((want - f32(E)) * min(CBP.g.y * EP.dt, 1.0) + u01(pcg(r + 0x9e3779b9u))));
     var lim = 0u;

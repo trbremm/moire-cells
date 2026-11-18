@@ -16,7 +16,7 @@ import { pal } from './palette.js';
 import { BIO_FLOATS, strategyOf, founderGenome, HABITS, predatorGenome } from './genome.js';
 import { DESIGNS, DESIGN_NAMES, designGenome } from './tissues.js';
 import { CELL_FLOATS } from './cells.js';
-import { CARBON, LADDER, carbonTable, describeCarbon } from './carbon.js';   // step C15a: the builder c, its ladder, tar
+import { CARBON, CB_LIP, LADDER, carbonTable, describeCarbon } from './carbon.js';   // step C15a: the builder c, its ladder, tar
 import { JOBS, jobOf, jobInk } from './jobs.js';   // step F0: colour by job
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -268,7 +268,8 @@ function carbonRows(body, P, rows) {
   const T = carbonTable(), I = P.substances.carbon || { light: [176, 236, 150], heavy: [128, 140, 156] }, Tr = P.substances.tar || { light: [150, 104, 56] };
   body.append(el('h3', '', 'Carbon: the ladder, fuel to exhaust (step C15a)'));
   body.append(el('p', 'note', `One carbon with four hands. Each step down the ladder a taker (oxygen-like t) takes a giver's place: it releases ${T.ox16 / 16}. ` +
-    `Making fuel back from CO2-like carbon needs two photons per hand (water split, then the hand). The cells do not eat carbon yet.`));
+    `Making fuel back from CO2-like carbon needs two photons per hand (water split, then the hand). Cells eat it (step C15b)` +
+    (CB_LIP ? ' and build themselves from it (step C15c, below).' : '.')));
   T.ladder.forEach((s, j) => {
     const ink = I.light.map((v, k) => v + (I.heavy[k] - v) * (j / 4));
     const r = el('div', 'zrow');
@@ -306,6 +307,29 @@ function carbonRows(body, P, rows) {
   r.append(pic, main);
   body.append(r);
   rows.push({ carbon: 5, amt });
+  if (!CB_LIP) return;
+  // step C15c: what the cells build from carbon, each part with the element its job needs (src/carboncells.js PART_RECIPES)
+  body.append(el('h3', '', 'Carbon makes the cell: the parts (step C15c)'));
+  body.append(el('p', 'note', 'Every part is carbon + the element its job needs, read from the electron table. Hands: g fuel, t burnt, c-c a backbone.'));
+  for (const [nm, made, why] of [
+    ['soap1 c2 g5 t', 'two ladder carbons condensed (+ a water)', 'the bilayer: a polar head carbon (one burnt hand) on an oily tail'],
+    ['soap2 c2 g4 t2', 'the same', 'the bilayer, more polar; one bite of oxygen from spoiling into mud'],
+    ['oil c2 g6', 'methane- + methanol-like condensed', "between the soap's tails: stiffens the membrane"],
+    ['wall carbon', 'granules, sugar-unit-like carbon, or a pair that evens out', 'cellulose-like chains; cross-linked pairs are stiffer (brown)'],
+    ['pigment c2 g6 + trace', 'an oil-like pair + a trace atom', 'its c-g bonds catch visible 1; trace at its heart, as magnesium'],
+    ['glue cg2t2', 'sugar-unit-like carbon as it is', "sticky by its charged hands, as a biofilm's sugars"],
+    ['enzyme 4 c + G', 'four chain carbons + a heavy giver G', 'catalysis moves electrons: G holds the loosest one, as iron'],
+  ]) {
+    const row = el('div', 'zrow');
+    const main = el('div', 'zmain');
+    const head = el('div', 'zhead');
+    const b = el('b', '', nm);
+    b.style.color = rgb(Tr.light);
+    head.append(b, el('span', 'zwhat', why));
+    main.append(head, el('div', 'znums', `made from ${made}`));
+    row.append(el('div', 'zpic'), main);
+    body.append(row);
+  }
 }
 
 // ---------- the cells ----------

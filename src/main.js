@@ -105,7 +105,8 @@
 //               TRANSPORTER (the ladder passes at a neutral molecule's rate, as C15b), ?cbktrans=x its rate per level (1), ?cbtransup=x its
 //               upkeep per level (energy per s), ?cbred=0 the lipid builder may not reduce burnt hands from the battery, ?cbbite=0 oxygen
 //               does not damage membranes, ?cbenz=0 engines need no enzymes (carbon + G), ?cbenzk=x enzyme carbon per unit of rate per R^2,
-//               ?cbenzlife=x their life (s), ?cbtool=0 cells placed by the tools start without a body
+//               ?cbenzlife=x their life (s), ?cbtool=0 cells placed by the tools start without a body, ?cbhungry=x a hungry cell's
+//               grazing (units of a grazing engine: 5; C15b 1)
 //   ?saturation=0 step C12e: no saturation (reactions inside cells do not slow as their products pile up); ?osmosis=0 no osmosis (no
 //               swelling: the stretch genes still drift, the NEUTRAL control), ?stretch=0 stretch opens no channels, ?tear=0 overstretch
 //               does not burst, ?tolcost=0 the stretch tolerance is free; ?satscale=x, ?kosm=x, ?kstretch=x, ?wtol=x knobs;
@@ -538,7 +539,7 @@ async function boot() {
         if (params.has(q)) CC[k] = flag(q);
       }
       for (const [q, k] of [['cbkgraze', 'kGraze'], ['cbkdis2', 'kDis'], ['cbbody', 'kBody'], ['cbbuild', 'kBuild'], ['cbfound', 'found'],
-        ['cbktrans', 'kTrans'], ['cbtransup', 'transUp'], ['cbenzk', 'kEnz'], ['cbenzlife', 'enzLife']]) {
+        ['cbktrans', 'kTrans'], ['cbtransup', 'transUp'], ['cbenzk', 'kEnz'], ['cbenzlife', 'enzLife'], ['cbhungry', 'hungry'], ['cbredfloor', 'redFloor']]) {
         const v = Number(params.get(q));
         if (params.has(q) && Number.isFinite(v) && v >= 0) CC[k] = v;
       }

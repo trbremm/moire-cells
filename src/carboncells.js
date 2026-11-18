@@ -44,6 +44,7 @@
 
 import { fmt, HEAT_SCALE, LEDGER_WORDS } from './heat.js';
 import { CARBON, CB_LIP, LADDER, LG_CBC, carbonTable } from './carbon.js';
+import * as MX from './matter.js';
 
 export const CW = 24;          // carbon words per cell (cell_carbon.wgsl CW)
 export const CW_STOCK = 12;    // ... of them the stock (the ladder, the granules, the body, a spare: what a snapshot keeps; 8 before the body)
@@ -99,8 +100,9 @@ export class CarbonCells {
       // ---- step C15c, CARBON MAKES THE CELL (CB_LIP: the membranes, walls, pigments and glue are carbon; fixed for the page) ----
       transport: true,   // the carbon TRANSPORTER gene (Bio.relay.x, a log level; founders 1) speeds the ladder through the membrane (?cbtrans=0)
       kTrans: 1,         // ... the ladder's membrane rate per level (over the light atoms'; the bilayer alone passes 0.24 of it) (?cbktrans=)
-      transUp: 0.002,    // ... its upkeep, energy per s per level (?cbtransup=)
+      transUp: 0.0005,   // ... its upkeep, energy per s per level (?cbtransup=)
       reduce: true,      // the lipid builder may reduce burnt hands from the battery (fat from sugar, dear) (?cbred=0)
+      redFloor: 0.25,    // ... only from the battery above this share of it (?cbredfloor=)
       oxBite: true,      // OXYGEN DAMAGES MEMBRANES: free t oxidises the lipids (fat -> soap -> mud) (?cbbite=0)
       enzymes: true,     // engines need ENZYMES: 4 carbons + 1 G per unit, worn and rebuilt (replaces the engines' upkeep) (?cbenz=0)
       kEnz: 0.01,        // ... enzyme carbon per unit of expressed engine rate per R^2 of the cell (?cbenzk=; a typical founder's
@@ -108,13 +110,14 @@ export class CarbonCells {
       enzLife: 60,       // ... their mean life (s): the turnover (?cbenzlife=)
       enzFound: 1,       // ... the founders' and placed cells' enzymes, as a share of their want (booked as carbon and G in)
       toolBody: true,    // cells placed by the tools start with a body and enzymes like a founder's (booked in) (?cbtool=0)
+      hungry: 5,         // a HUNGRY cell (body short) grazes the tar under it as this many units of a grazing engine (C15b: 1) (?cbhungry=)
     };
     this.tot = Object.fromEntries(EV.map((k) => [k, 0]));
     this.hist = [];
     this.census = null;
     this.series = [];
     this.ledger = null;
-    this.ab = new ArrayBuffer(112);   // struct CbCellP (80 until step C15c)
+    this.ab = new ArrayBuffer(128);   // struct CbCellP (80 until step C15c)
     this.tot2 = Object.fromEntries(EV2.map((k) => [k, 0]));   // step C15c
     this.hist2 = [];
     this.census2 = null;
@@ -126,7 +129,7 @@ export class CarbonCells {
     const U = GPUBufferUsage;
     this.device = device;
     this.buf = device.createBuffer({ label: 'cell carbon', size: CARBON ? n * CW * 4 : 64, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
-    this.ubuf = device.createBuffer({ label: 'cell carbon params', size: 112, usage: U.UNIFORM | U.COPY_DST });
+    this.ubuf = device.createBuffer({ label: 'cell carbon params', size: 128, usage: U.UNIFORM | U.COPY_DST });
   }
 
   rule(k) { return CARBON && !!this.params.on && !!this.params[k]; }
@@ -160,7 +163,10 @@ export class CarbonCells {
       f[16] = Math.max(0, p.kBody); f[17] = Math.max(0, p.kBuild); f[18] = Math.max(0, p.found); f[19] = 0;
       // step C15c: the transporter (rate per level, upkeep in heat counts per s per level), the enzymes (carbon per rate per R^2, turnover per s)
       f[20] = Math.max(0, p.kTrans); f[21] = Math.max(0, p.transUp) * HEAT_SCALE; f[22] = Math.max(0, p.kEnz); f[23] = 1 / Math.max(1, p.enzLife);
-      f[24] = Math.max(0, p.enzFound);
+      f[24] = Math.max(0, p.enzFound); f[25] = CB_LIP ? Math.max(0, p.hungry) : 1;
+      const W = MX.SUBSTANCES[MX.CH.gt];   // (a water's bond and spark, for a reduction's g split from it)
+      f[26] = Math.round(-16 * W.energy); f[27] = Math.round(16 * W.spark);
+      f[28] = Math.max(0, Math.min(1, p.redFloor)) * E.batCounts;
     }
     this.device.queue.writeBuffer(this.ubuf, 0, this.ab);
   }

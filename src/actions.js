@@ -692,6 +692,17 @@ export function makeActions(app) {
     ccknob('cbBuild', 'body build rate', 'kBuild', 0.01, 10, 1.5, 2, 'share of the shortfall built per s'),
     ccknob('cbKgraze', 'graze rate', 'kGraze', 0.001, 5, 1.5, 3, 'share of the tar under the cell per s, per unit of the grazing engines’ rate'),
     ccknob('cbKdis2', 'granule dissolve rate', 'kDis', 0.001, 10, 1.5, 3, 'per s, of the granules’ loose carbons'),
+    // step C15c: carbon makes the cell
+    cctoggle('cbTrans', 'carbon transporter', 'transport', 'on: the transporter gene speeds the ladder through the membrane (an upkeep per level)', 'off: a neutral molecule’s rate (C15b)',
+      'a gene (a log level, founders 1): the ladder passes at 0.24 + kTrans x level of a light atom’s rate'),
+    cctoggle('cbRed', 'fat from sugar', 'reduce', 'on: the lipid builder may reduce burnt hands from the battery (above its floor)', 'off: only from carbon reduced enough',
+      'a reduction costs 2.75 + a spark from the battery, and a water split (4.5 more) when no free g is in the stock'),
+    cctoggle('cbBite', 'oxygen damages membranes', 'oxBite', 'on: free t oxidises the lipids (fat -> soap -> mud)', 'off: nothing bites',
+      'lipid peroxidation: the same oxidation as breathing, uncontrolled; the bite block (M1) still holds'),
+    cctoggle('cbEnz', 'engines need enzymes', 'enzymes', 'on: 4 carbons + 1 G per unit; worn and renewed (the turnover replaces the upkeep)', 'off: the engines’ upkeep (T1b)',
+      'an engine runs at the share of its enzymes the cell holds'),
+    ccknob('cbHungry', 'hungry grazing', 'hungry', 0, 50, 1.5, 2, 'a cell short of body carbon grazes the mud under it as this many units of a grazing engine'),
+    ccknob('cbRedFloor', 'reduction floor', 'redFloor', 0, 1, 1.5, 2, 'the builder reduces only from the battery above this share of it'),
   );
 
   // ---------- waste must leave (step C12e; panel only: no keys are free) ----------

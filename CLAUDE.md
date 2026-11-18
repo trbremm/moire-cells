@@ -769,6 +769,20 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        bursts, so 'inside-only stuff found outside' is a derived DAMP. Add ONE gene-network sense for it (kin-weighted by the
        spilled membrane's self marker: my kin died vs a stranger died); evolution decides the response (walls, pumps, glue,
        fleeing, faster division, suicide). Census: lineages wired to it vs a neutral control under predators / warfare.
+       AS BUILT (S1, 2026-11-18): src/spindle.js. Elongation gene Bio.relay.y = ln aspect 0..ln 4 (founders round), a
+       stretch along the front; outline stays 6 corners. CONTACTS ON CAPSULES (core segment + round ends, same area; closest
+       points; every contact effect at that point: spring, glue, junctions, facing side, neighbour lists, crowding, hold,
+       shared wall; fields still centre to centre); capsule never longer than asked (round genes = old discs exactly); LINE
+       CONTACTS (side-by-side rods push/glue by shared length). Torques from off-centre contacts, walls, obstacles, water
+       shear (cap 3 rad/s, not booked). Grid 3.6 -> 3.9 R at 4:1. GRN 18th output SHAPE (relay.z/w). Payoffs: exchange x
+       perimeter factor, a predator shorter than the prey's long axis cannot wrap it, division along the axis. ?shape=0
+       ?shapenull=1 + per-part switches; SHAPE line. Look: neon spindles in streams and whorls; harmonic green rims with
+       orange streaks (fibroblast-like; keep/s1/lab-spindles-t240-x2.5-harm.jpg, default-wild-s3-t300-x3.5-harm.jpg).
+       QUICK RESULT (2 seeds, 10 min): elongation above null under PREDATORS (0.96/1.14 vs 0.75/0.69; armour/hold 2-4x
+       lower: length may replace armour, yet predators ate more) and in the CHIP; no difference in a plain dish; nematic
+       order low in evolving dishes (0.17-0.32), lab raft 0.42 (packing does most of it). Speed: <= ~10 % (shared GPU).
+       Known: gaps between spindles at odd angles, one contact point per pair, crawling not along the axis, fields from
+       the centre. Merge note for carbon: cell_eat.wgsl cover_mask uses cap_pair, exchange x perim_factor.
     6a4. S2 FLAGELLA AND CILIA (user 2026-11-17 asked; after S1, needs G0's two-way water). Motors as PARTS (the user's
        body-plus-parts plan): FLAGELLUM = a swimmer's motor at the back (or front) along the cell's front; at low Reynolds a
        swimmer is force-free, so it stirs the water as a FORCE DIPOLE (pusher like E. coli / puller like algae), unlike a

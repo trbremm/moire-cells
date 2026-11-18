@@ -729,6 +729,18 @@ BUILD QUEUE (user 2026-11-16: "stop the glider hunt for now, we are changing a l
        oxygen dishes with the body rule empty (8 and 2 cells: uptake too slow); dark vents die either way; CO2-like build-up
        small, most carbon ends as tar. Look: dead founders leave flat amber tar flecks; granules = bright orange dots in cells
        (harmonic: starch-like, keep/c15b/zoom_granules_harmonic.jpg). Speed unread.
+       AS BUILT (C15c, 2026-11-18, branch carbon): transporter gene (Bio.relay.x, log, founders 1; ladder passes 0.24 + 1 x
+       level of a light atom's rate), sugar at the mineral spring (?cbsugar), tool-placed cells get body + enzymes, hungry
+       floor grazing, body want 0.025 per R^2. RECIPES: bilayer soap1 c2g5t / soap2 c2g4t2 (head = t), oil c2g6, wall chain
+       carbon (cellulose-like), pigment c2g6 + trace, glue = one sugar-unit (its g/t hands), ENZYME = 4 chain carbons + 1 G
+       (an engine runs only as far as its enzymes; renewed in place = T1b upkeep); fat from sugar by reduce from the battery.
+       Not yet in carbon: channels/pumps, GRN expression, motors. LINKERS RETIRED (springs drip none; channels left empty);
+       OXYGEN DAMAGES MEMBRANES (t oxidises lipids: oil -> soap1 -> soap2 -> mud), bite block still holds. ?cblip=0 = C15b.
+       RESULT (seed 3, shared GPU): NOT VIABLE ENOUGH: default 153..289 cells vs 412..1224 carbon off; shallows ~1000 vs
+       5873; oxygen dishes now live (122-284); wild colonies boom to ~600 at 3.5 min then die; dim vents die by 5 min.
+       LIEBIG: 78-96 % of cells short of REDUCED carbon (fat needs c-g hands, cells hold sugar-like); G short 35-62 % in the
+       vent-less shallows; trace early; membranes 0.16-0.35 integrity (0.73 carbon off); ~90 % of carbon is MUD. Look: green
+       rims, orange granules on orange mud fibres (keep/c15c/default_zoom_memb_harmonic.jpg).
        X1 SECRETED PROTEINS (user 2026-11-17: "or fibre/protein excretion", "or proteins even for that matter"): S1 part 3
        generalised. Cells BUILD polymers from their stock (linkers + charged atoms, battery paid, matter exact) and keep or
        SECRETE them; every property DERIVED from the polymer's short sequence (as C14 soup would, but made by life): long

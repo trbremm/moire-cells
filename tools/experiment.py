@@ -103,10 +103,11 @@ class Page:
 
     def status(self):
         return self.js("""(() => { const m = document.getElementById('msg');
+          const bd = document.body || { dataset: {} };   // (the page may not have its body yet: a run then failed at the start)
           return { t: window.moire && window.moire.time ? window.moire.time() : -1,
                    paused: !!(window.moire && window.moire.control && window.moire.control.paused()),
-                   stage: document.body.dataset.stage || '', lab: document.body.dataset.lab || '',
-                   labError: document.body.dataset.labError || '',
+                   stage: bd.dataset.stage || '', lab: bd.dataset.lab || '',
+                   labError: bd.dataset.labError || '',
                    msg: m && !m.hidden ? m.innerText : '' }; })()""", timeout=30)
 
 

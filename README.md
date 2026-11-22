@@ -12,7 +12,8 @@ push). Some views to try: `?bio=0` (the loop alone, with exclusion), `?cells=100
 of atoms (step C3). On a phone, tap the dish with the toolbar's tools; everything else is in its panels.
 Since the toy front (2026-11-22) a fresh load is a toy: a few big buttons, WORLDS and the terrain generators (try
 `?terrain=maze&seed=7`, or the dice); the developer toolbar is behind the gear (key D, `?dev=1`). See "The toy front: controls,
-worlds and terrain generators".
+worlds and terrain generators". Carbon is on by default since 2026-11-22 (`?carbon=0` the old chemistry): see "Carbon on by
+default, and the toy worlds".
 
 Locally:
 
@@ -192,7 +193,7 @@ Seeds that look good (each run 4 minutes above; the dice and "other seeds" give 
 - The worlds' pictures are made on the CPU, one per frame, when the sheet opens (40 to 200 ms each here; a slow phone may take a second
   or two to fill the sheet).
 - A world built in place keeps the page's heat and its time of day; the old atoms are washed out (booked as gone); the founders are always
-  12 of the light + burn habit (`?habit=` overrides; the New culture dialog in the developer mode still offers everything).
+  12 of the light + burn habit (photosynthesisers with carbon on, since the carbon merge; `?habit=` overrides; the New culture dialog in the developer mode still offers everything).
 - Undo removes only what was drawn by hand; there is no "clear my drawings" in the toy (the developer's Dish panel has clear).
 - Fixed on the way: the page's safety net (index.html) said "The page did not start" when the modules took more than 8 s to load and
   then STAYED over the running dish (seen twice here while the machine was busy; a phone on a slow connection could hit it). It now waits
@@ -206,6 +207,103 @@ Seeds that look good (each run 4 minutes above; the dice and "other seeds" give 
   `moire.toy`, the safety net's message taken away when the modules start late), `src/ui.js` (a panel can come first), `src/app.js` (the add-cell tool's tap places `cluster` cells: 7 in the toy),
   `src/obstacles.js` (`setShapes`, `shapeSd` exported), `src/culture.js` (the New culture dialog keeps `dev` and `entropy`), the safety net in `index.html` (15 s),
   `tools/experiment.py`, `tools/shot.py`
+
+## Carbon on by default, and the toy worlds
+
+The user, 2026-11-22: "Merge, carbon on by default." Carbon (steps C15a-C15e: carbon is the cells' body, every part paid in carbon) was
+already on by default on its branch; this merge brings it to the toy front (U1), which friends see. `?carbon=0` still gives the old
+chemistry exactly, and the worlds built with it are as before.
+
+### The merge
+
+- `main` (the toy front) merged into `carbon` with no conflicts. The toy's cells tool (a tap drops a hexagon of 7 cells) goes through the
+  add-cell tool's `place()`, which gives each placed cell its carbon body, enzymes and pigment (C15c/C15d), booked in. Checked in the
+  archipelago (seed 7): one tap, seven new cells, carbon, atoms and charge books 0 (`experiments/keep/c15merge/islands-s7-cells-tool-tap.jpg`).
+- FIXED ON THE WAY (a U1 bug, carbon on or off): every world opened by a LINK (`?terrain=...`) started with the energy books off by
+  +3.2e3 (the "rounding" line), constant from the first frame. The page seeds the open dish's culture first; the toy then seeded the world's
+  culture again before any frame had run, and the open dish's founders' batteries (2000 starter charges of 1.6), handed back as heat, never
+  reached the books. A world built later in place was always exact. Now the page's first world seeds its culture once a frame has run
+  (`src/toy.js`): rounding 0 in every run below (the open dish's culture shows for a frame or two before the world's founders appear).
+
+### The worlds with carbon: the founders changed (toy side only)
+
+The first tour (maze, seed 7) with carbon and the toy's founders as U1 made them (every founder "light + burn", `habit=both`) faded: 964 ->
+181 cells at 4 minutes, small cells scattered among amber mud flecks, against 459 in U1's table and 364 with `?carbon=0` in the same harness.
+The reason is in the founders' genes, not the world: with carbon a light + burn founder's third engine slot holds a carbon fixer (C15d)
+instead of the fermenter half of them carry with `?carbon=0`, so it lives on light alone, and its light is held down by its pigment (each
+pigment needs a trace atom: the parts "limited by trace" in 63-82 % of the cells). Tried on the maze, one at a time:
+
+| maze, seed 7 | cells at 60 / 120 / 240 s |
+|---|---|
+| light + burn founders (U1's choice) | 704 / 402 / 181 |
+| more sugar at the mineral springs (`?cbsugar=0.2`, x3.3) | 712 / 390 / - |
+| a methane seep beside each spring (as the open dish's vent has; 7 seeps) | 703 / 403 / - |
+| trace springs (`?oases=4`) | 713 / 429 / - (battery income x1.7) |
+| every founder a burner (`?habit=burn`) | 743 / 427 / 290 |
+| the usual spread of habits (`?habit=mix`) | 682 / 369 / 327 |
+| **every founder a photosynthesiser (`?habit=pigments`)** | **725 / 451 / 407** |
+| `?carbon=0` (light + burn, the same harness) | 729 / 212 / 364 |
+
+With carbon a photosynthesiser is a carbon fixer (C15d: light makes its sugar-like body carbon, it burns some of it and bonds the freed g
+with t); also best in the caves (188 against 185 for the usual spread at 4 minutes, 168 against 95 at 2) and the rings (216 against 178).
+So THE ONE CHANGE: with carbon a world's founders are photosynthesisers (`src/toy.js`, `toyHabit`); with `?carbon=0` they stay light +
+burn; `?habit=` still chooses. No sim rule, spring recipe, rate or switch changed. The open dish (a fresh load) is not a world: its
+founders are the usual spread, as before.
+
+### Every world with carbon (seed 7, 4 simulated minutes)
+
+Headless Chrome, 1280 x 800, each world opened by its link (`?terrain=<kind>&seed=7`), the GPU SHARED with five to seven other browsers
+the whole time (0.2-0.5x real time at MAX: 4 simulated minutes took 15-25 minutes), so no speeds. Cells alive at 1 / 60 / 120 / 180 / 240 s;
+U1's numbers (with `?carbon=0`, each world built in place over the open dish, so other founders) and `?carbon=0` in this harness where run.
+Books (carbon, atoms, charge) exactly 0 in every run, energy rounding at most 0.04 (of 1-6 M in).
+
+| world | carbon on | U1 (`?carbon=0`, in place) 1 s -> 240 s | `?carbon=0`, same harness |
+|---|---|---|---|
+| maze | 965 / 725 / 451 / 360 / 407 | 973 -> 459 | 966 / 729 / 212 / 284 / 364 |
+| thicket | 884 / 685 / 425 / 479 / 733 | 876 -> 1161 | |
+| caves | 184 / 171 / 168 / 172 / 188 | 197 -> 263 | |
+| delta | 369 / 399 / 506 / 780 / 1063 | 375 -> 1074 | |
+| forest | 910 / 692 / 465 / 457 / 553 | 907 -> 640 | |
+| hive | 951 / 718 / 424 / 323 / 325 (seed 12: 983 / 778 / 397 / 347 / 377) | 963 -> 844 | 953 / 832 / 345 / 309 / 484 |
+| rings | 419 / 335 / 273 / 234 / 216 | 416 -> 173 | |
+| spiral | 416 / 318 / 263 / 230 / 221 (seed 12: 404 / 334 / 260 / 279 / 312) | 410 -> 604 | 416 / 314 / 60 / 93 / 190 |
+| islands | 1007 / 802 / 635 / 796 / 1196 | 1009 -> 1235 | |
+| sieve | 1069 / 846 / 715 / 806 / 977 | 1075 -> 1313 | |
+| open dish (fresh load) | 1978 / 1645 / 381 / 180 / 167 | 2000 -> 279 (at 200 s) | 1977 / 1660 / 162 / 241 / 533 |
+
+What it looks like (`experiments/keep/c15merge/<world>-s7-t240.jpg`): no world dies out or empties. The delta's channels fill with a
+lime-and-pink tissue down to the sea (as in U1); the thicket's middle and the islands' sea overgrow; the sieve has a community in each
+chamber and oil droplets with iridescent rims in the oil chamber; the maze, hive, rings and spiral keep small groups of lime light eaters
+spread along the corridors, more scattered than with `?carbon=0` (which packs bright clusters at the springs: `maze-s7-t240-carbon0.jpg`;
+the old founders: `maze-s7-t240-oldfounders.jpg`). New with carbon everywhere: flat amber MUD flecks (the bodies of dead founders, C15b)
+and an amber-brown tar haze round the springs; the cells are SMALLER (a body must be full of carbon to grow and divide). Where U1's number
+is higher, the same harness with `?carbon=0` was close to carbon (hive 484 against 325-377, spiral 190 against 221): U1's founders came
+from another draw, and the founders' crash varies a lot between draws.
+
+The OPEN DISH (the fresh load a friend sees first) is C15e's default scene, unchanged: it crashes deeper than with `?carbon=0` and stays
+there at 4 minutes (167 against 533), one colony under the spotlight beside a field of amber mud (`open-s7-t240.jpg` against
+`open-s7-t240-carbon0.jpg`); C15e measured it growing from 5 minutes on (half of `?carbon=0` at 20 minutes).
+
+### Checked
+
+- Firefox (headed, the user's browser): `?terrain=caves&seed=12` with the toy's controls, no console errors (`firefox-caves-s12-t40.jpg`).
+- Phone size (Chrome, 390 x 844, touch): the maze, seed 7, at 60 s with the two-row bar (`phone-maze-s7-t60.jpg`).
+- The toy's first screen and the developer mode (key D: the old toolbar, the hint line, the job legend with counts): `first-look.jpg`,
+  `dev-mode.jpg`.
+- `?carbon=0`: the worlds and the open dish load and run (the table's last column), other books 0.
+- No console errors in any run above.
+
+### Known issues
+
+- The maze, hive, rings, spiral and the open dish hold fewer and smaller cells than U1's tour in the first minutes; the founders that die
+  leave amber mud flecks, which may look busy.
+- Two harness flakes under the heavy GPU load, both outside the simulation: "The page did not start" (U1's safety net, shown when the
+  modules took over 15 s to load) failed one run, and runs started while the page was still loading failed twice with `null.dataset`;
+  reruns passed.
+- One seed per world (and seed 12 for the hive and spiral); 4 minutes only.
+
+Conditions: `experiments/conditions/c15merge/` (`make.py` the probe, `table.py` the table). Runs: `experiments/runs/c15m-*`.
+Code: `src/toy.js` (the first world's culture after a frame; the photosynthesising founders with carbon).
 
 ## Controls (step C3b)
 

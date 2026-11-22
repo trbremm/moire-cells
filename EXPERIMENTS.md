@@ -2830,3 +2830,74 @@ it: cracks, caves, chambers), and gives the matter per pixel and the cells per R
   the edge at first (fixed: the tools wrap to a second row); the Maze in portrait, cells flat against the walls (`phone-maze.jpg`).
 - The tool (pointer events in Chrome; one drag as touch): a wall polyline, a block, a row of pillars (touch), an erase, a porous wall,
   painted over the default colony: cells pushed out, the block empty (`tool-painted-default.jpg`).
+
+# Cell shape (step S1, 2026-11-18)
+
+Quick runs only (the user: results are not final). Conditions in `experiments/conditions/s1/` (`make.py`), pictures in
+`experiments/keep/s1/`. Headless Chrome 1280 x 800; the GPU was shared the whole time (two of my runs at a time plus another worker's
+two), so the dishes ran at x0.35 to x0.9.
+
+## 1. First try: every cell ran long (fixed before the runs below)
+
+The first build took each cell's contact capsule straight from its outline's stretch. Within 30 s of the default scene the ROUND-gened
+founders (gene 0) were at 2.2:1 on average, 53 % longer than 2:1, with dark gaps between them (`s1-smoke-default`, the first
+`zoom.png`): a cell squeezed a little became a short capsule, pushed its neighbours off its ends, its corners followed into the room, and
+so on. Fixed by holding the capsule to the elongation the cell ASKS for (its gene): squeezing now only dents the soft outline, as before
+S1. After the fix, the same scene: aspect 1.15, nobody longer than 2:1, the old packed honeycomb (`s1-smoke-default` rerun).
+
+## 2. Spindles in the tissue lab: whorls and streams, not yet palisades
+
+`?preset=lab&cells=150&genes=elongation:1.2` (150 clones asking 3.3:1, no evolution, no springs), 180 s:
+- The first try had one point spring per pair, half a disc's contact distance: the cluster's pull crushed the middle cells into thin
+  slivers stacked in fans. With LINE CONTACTS (rods side by side push and glue along the length they share) the slivers are gone.
+- What it looks like: a round raft of dark-cored spindles, 2.8:1 on average (86 % longer than 2:1); in patches of five to ten they lie
+  side by side and curve round together in swirls (whorls), like a sparse fibroblast culture. Between patches whose angles disagree
+  there are small dark gaps (spindles do not tile like hexagons). Nematic order of touching long pairs 0.42 (0.37 before the line
+  contacts; 0.36 with the torques off as well: in a still raft the turning matters little, the packing does most of the aligning). At
+  240 s (pictures, `lab-spindles-t240-x2.5-*.jpg`) the middle of the raft had become one STREAM of parallel spindles running top to
+  bottom, a short palisade, with whorls round it at the rim; in the harmonic look a field of green-rimmed spindles with orange streaks
+  along each, much like the fibroblast pictures. No straight bundle longer than the raft.
+
+## 3. Is elongation selected? (10 min, seeds 3 and 7, shape on vs its neutral control)
+
+Founders with only the shape genes wild (`?founders=wild&wild=shape`: each founder's elongation anywhere 0..ln 4, the rest as usual),
+so selection has something to pick from at once. The null (`?shapenull=1`): the same genes drift, every cell stays round. The number is
+the mean elongation gene (ln of the aspect asked; 0.69 = 2:1, 1.1 = 3:1) at 600 s; both seeds start at 0.67 (seed 3) and 0.84 (seed 7).
+
+| condition | seed 3 on | seed 3 null | seed 7 on | seed 7 null |
+|---|---|---|---|---|
+| default scene + 20 hand-made predators dropped at 2 min | 0.96 | 0.75 | 1.14 | 0.69 |
+| Chip (flow through a pillar array) | 0.81 | 0.57 | 0.96 | 0.86 |
+| default scene alone | 0.88 | 0.81 | 0.82 | 0.98 |
+
+- Every dish goes through the founders' crash (2000 cells down to 130-600 by 2 min), which moves the mean by +-0.2 by luck alone (the
+  nulls: 0.57 to 0.98). Against that:
+- UNDER PREDATORS the gene ended higher than its null in both seeds (+0.21, +0.45); the outlines at 2.3-2.5:1, 63-73 % longer than
+  2:1. The census found 15 to 59 touching pairs at a time where a predator was big enough but too short to wrap its prey. The predators did not starve:
+  with spindles the meals were MORE (981 and 468 in all against 675 and 158 in the nulls), but they ate the round ones, and the
+  colonies' other defence fell: the prey's hold (glue to neighbours + armour) 0.22 and 0.42 against 0.86 and 1.85 in the nulls, where
+  the survivors were the glued and walled ones. A hint that length replaced armour; two seeds, not a result.
+- In the CHIP the gene ended higher in both seeds too, but less (+0.24, +0.10); cells with some engulf gene had appeared there by drift,
+  and from 300 s on the census found 105-250 touching pairs at a time where a predator was big enough but too short. The spindles in the
+  flow did not visibly line up with it (nematic 0.30-0.32, as in the plain dish). In the pictures the growing front at the pillars is
+  made of ROUNDER cells, the spindles behind it (`chip-wild-s3-t300-x3.5-harm.jpg`).
+- In the plain dish: no difference (+0.07, -0.16).
+- Nematic order in the evolving dishes stays low, 0.17-0.32: the colonies are mixtures of long and short cells at all angles.
+
+- Wild COLONIES (preset `colonies`: wild founders, now also with the shape genes and the network's SHAPE output), 300 s, one seed, no
+  null: the dish fills with a mesh of spindles from five homes (`colonies-wild-s3-t300-*.jpg`), aspect 2.5:1, 76 % longer than 2:1, the
+  gene up from ~0.69 (the wild draw's mean) to 1.20, and 249 cells read as predators.
+
+## 4. Checks
+
+- Books (`check.json`, 420 s at MAX, seed 5, whole dish lit; every cell asks 3:1 at 2 s; every S1 switch off and on at runtime (null,
+  gene, network output, torques, exchange, wrap, the whole shape), the largest aspect 4 -> 2.5 -> 4, obstacles painted over the culture,
+  a squeeze x0.8 and a stretch x1.25, a resize to 1000 x 700 and back, a snapshot saved and loaded): atoms and charge rounding 0 at
+  every sample; the energy line's rounding -0.02..+0.03 with the usual blips at the samples right after the squeeze (-191) and the
+  stretch (+17 642), back at +0.02 at the next (G0b's check had the same, -247 and +21 239); the reload exact (energy 0.012, atoms 0,
+  charge 0); console clean. All twelve quick runs: atoms and charge 0 throughout.
+- Firefox (headed, wild shape founders, 40 s, the shape switched off and on at runtime): runs, the SHAPE line filled, console clean.
+- Phone (Chrome 390 x 844, dpr 3, spindles): the compact SHAPE line fits one line; nothing else changed.
+- Speed: the GPU was busy throughout (another worker's runs), so only side-by-side spells say anything: 2000 neon on x0.61 / x0.64 /
+  x0.90 against off x0.59 / x0.74 / x0.93; 10 000 neon x0.24 / x0.22; 2000 harmonic x0.59 / x0.72; 10 000 harmonic x0.21 / x0.23; every
+  cell asking 3:1 x0.65. Within the scatter, at most about 10 %. Not measured on a free GPU.

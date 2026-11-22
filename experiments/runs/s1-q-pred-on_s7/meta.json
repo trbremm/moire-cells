@@ -1,0 +1,99 @@
+{
+  "name": "s1-q-pred-on_s7",
+  "description": "step S1 quick: pred, wild shape founders, shape on, 10 min",
+  "condition": {
+    "name": "s1-q-pred-on_s7",
+    "description": "step S1 quick: pred, wild shape founders, shape on, 10 min",
+    "query": {
+      "founders": "wild",
+      "wild": "shape",
+      "seed": 7
+    },
+    "duration": 600,
+    "sample_every": 30,
+    "stall": 300,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 300,
+        "name": "t300"
+      },
+      {
+        "t": 600,
+        "name": "end"
+      }
+    ],
+    "evals": [
+      {
+        "t": 120,
+        "js": "return await moire.predators.place(20)"
+      },
+      {
+        "t": 60,
+        "js": "return JSON.stringify(moire.spindle.census)"
+      },
+      {
+        "t": 300,
+        "js": "return JSON.stringify(moire.spindle.census)"
+      },
+      {
+        "t": 599,
+        "js": "return JSON.stringify(moire.spindle.census)"
+      },
+      {
+        "t": 599,
+        "js": "const C = moire.predators.census; return JSON.stringify(C ? {genes: C.genes, now: C.now, total: C.total} : null)"
+      }
+    ]
+  },
+  "url": "http://localhost:65347/index.html?speed=max&until=0&overlay=ghost&ui=0&founders=wild&wild=shape&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "08132e9c0161a81a4a34e03dd1c82d9ba3d1be78",
+  "dirty": true,
+  "started": "2026-11-18T06:14:55",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 600.0,
+  "run_wall_s": 947.45,
+  "speed_reached": 0.63,
+  "samples": 21,
+  "shots": [
+    "shots/t300.png",
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 59.99999999999818,
+      "js": "return JSON.stringify(moire.spindle.census)",
+      "result": "{\"time\":59.91666666666485,\"n\":1390,\"lnAspect\":0.7153892086330935,\"lnSd\":0.32475603398576774,\"aspect\":2.044982452213169,\"long\":0.539568345323741,\"pairs\":1617,\"nematic\":0.1519678416821274,\"gene\":0.8295820143884891,\"geneSd\":0.3749093100413147,\"geneAspect\":2.292360366335354,\"asked\":0.8295820143884891,\"turning\":0.7971438848920863,\"turned\":1,\"noWrap\":2,\"perim\":1.1845187050359711,\"length\":2.7140856115107916}"
+    },
+    {
+      "t": 119.99999999999477,
+      "js": "return await moire.predators.place(20)",
+      "result": 20
+    },
+    {
+      "t": 300.00000000005616,
+      "js": "return JSON.stringify(moire.spindle.census)",
+      "result": "{\"time\":299.90000000005625,\"n\":566,\"lnAspect\":0.891916961130742,\"lnSd\":0.31156455778845776,\"aspect\":2.4398021772742022,\"long\":0.7279151943462897,\"pairs\":851,\"nematic\":0.2731186839012926,\"gene\":1.1332349823321555,\"geneSd\":0.2521939657751741,\"geneAspect\":3.105687109884095,\"asked\":1.1328886925795054,\"turning\":1.0212259786476867,\"turned\":0.9929328621908127,\"noWrap\":21,\"perim\":1.277326855123675,\"length\":2.8736236749116606}"
+    },
+    {
+      "t": 598.9999999997842,
+      "js": "return JSON.stringify(moire.spindle.census)",
+      "result": "{\"time\":598.8999999997843,\"n\":652,\"lnAspect\":0.9068389570552148,\"lnSd\":0.3284311683555298,\"aspect\":2.476481882014711,\"long\":0.7331288343558282,\"pairs\":1086,\"nematic\":0.2887605893186004,\"gene\":1.1425092024539878,\"geneSd\":0.2865749052092366,\"geneAspect\":3.134623911497567,\"asked\":1.1469125766871167,\"turning\":1.0777175925925926,\"turned\":0.9938650306748467,\"noWrap\":18,\"perim\":1.2827960122699387,\"length\":3.3528680981595094}"
+    },
+    {
+      "t": 598.9999999997842,
+      "js": "const C = moire.predators.census; return JSON.stringify(C ? {genes: C.genes, now: C.now, total: C.total} : null)",
+      "result": "{\"genes\":{\"engulf\":0.17060461538461538,\"engulfSd\":0.17348527929638405,\"spare\":0.20381692307692306,\"spareSd\":0.18635834056522624,\"carriers\":0.26153846153846155,\"sparers\":0.08235294117647059,\"carrierSpare\":0.22380588235294116,\"expressed\":0.1702492307692308,\"glue\":0.5949276923076923},\"now\":{\"wrapping\":8,\"digesting\":7,\"wrapped\":7,\"preyNear\":27,\"hold\":0.42146153846153844,\"armour\":0.41598},\"total\":{\"start\":4742,\"lost\":1693,\"held\":2528,\"poor\":15,\"eaten\":468,\"kin\":133,\"alone\":467,\"hold\":45392,\"area\":1179434,\"kinSum\":112206}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T06:32:09",
+  "wall_s": 1034.31
+}

@@ -607,7 +607,11 @@ fn cover_mask(c: Cell, i: u32) -> u32 {
     if (j >= S.count || j == i) { continue; }
     let fj = cells[j].flags;
     if ((fj & CELL_ALIVE) == 0u || (cell_burst(fj) != 0u && (mb_flags() & MBF_BURST) != 0u)) { continue; }
-    if (distance(cells[j].pos, c.pos) < EP.t1[0].z * (c.r + cells[j].r)) { m |= 1u << k; }
+    // (step S1: on their capsules: their gap against their end radii; off, the centres against the radii as before)
+    let shOn = (S.shapeF & SH_ON) != 0u;
+    let gp = cap_pair(c.pos, c.r, vec2f(c.e1, c.e2), cells[j].pos, cells[j].r, vec2f(cells[j].e1, cells[j].e2), shOn,
+                      select(0.0, shape_ask(bio[i], S.shapeF, S.eCap), shOn), select(0.0, shape_ask(bio[j], S.shapeF, S.eCap), shOn));
+    if (gp.x < EP.t1[0].z * gp.y) { m |= 1u << k; }
   }
   return m;
 }
@@ -1143,6 +1147,9 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     for (var k = 0u; k < 6u; k++) { if ((covm & (1u << k)) != 0u) { cl += lenK[k]; covW[k] = clamp(EP.t1[0].y, 0.0, 1.0); } }
     freeS = 1.0 - clamp(EP.t1[0].y, 0.0, 1.0) * cl / max(perim, 1e-6);
   }
+  // step S1: the exchange through the membrane x its real PERIMETER over a round cell's of the same area (a spindle's longer membrane
+  // trades faster for its volume; 1 for a regular hexagon)
+  if ((S.shapeF & (SH_ON | SH_EXCH)) == (SH_ON | SH_EXCH)) { freeS *= perim_factor(mbd); }
   flux[fo + 39u] = bitcast<i32>(freeS);
   flux[fo + 46u] = i32(covm);
   if (dpOn) {

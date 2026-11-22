@@ -1,0 +1,5 @@
+{"batch": "s1-phone", "runs": [
+ {"name": "s1-phone", "description": "phone size 390 x 844 dpr 3, spindles, panel and zoom", "query": {"seed": 3}, "size": "390x844", "dpr": 3, "duration": 40, "sample_every": 20, "stall": 200, "snapshots": [],
+  "shots": [{"t": 40, "name": "end", "panel": true}],
+  "evals": [{"t": 2, "js": "await moire.genome.setAll({elongation: 1.1}); return 'spindles'"}]}
+]}

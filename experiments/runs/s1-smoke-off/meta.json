@@ -1,0 +1,45 @@
+{
+  "name": "s1-smoke-off",
+  "description": "shape off",
+  "condition": {
+    "name": "s1-smoke-off",
+    "description": "shape off",
+    "query": {
+      "seed": 3,
+      "shape": 0
+    },
+    "duration": 30,
+    "sample_every": 10,
+    "stall": 120,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 30,
+        "name": "end"
+      }
+    ]
+  },
+  "url": "http://localhost:59239/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&shape=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "1ccc9d8725ab673a0c319e1caad6a5f4973ae000",
+  "dirty": true,
+  "started": "2026-11-18T05:25:55",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 30.0,
+  "run_wall_s": 35.24,
+  "speed_reached": 0.85,
+  "samples": 4,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-18T05:27:48",
+  "wall_s": 112.9
+}

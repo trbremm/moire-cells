@@ -1,0 +1,102 @@
+{
+  "name": "s1-pics-lab_s3",
+  "description": "step S1 pictures: lab, at 240 s: neon, a close zoom (neon, harmonic), harmonic",
+  "condition": {
+    "name": "s1-pics-lab_s3",
+    "description": "step S1 pictures: lab, at 240 s: neon, a close zoom (neon, harmonic), harmonic",
+    "query": {
+      "preset": "lab",
+      "cells": 150,
+      "genes": "elongation:1.2",
+      "seed": 3
+    },
+    "duration": 250,
+    "sample_every": 60,
+    "stall": 300,
+    "snapshots": [],
+    "dpr": 2,
+    "shots": [
+      {
+        "t": 240,
+        "name": "dish_neon"
+      },
+      {
+        "t": 244,
+        "name": "zoom_neon"
+      },
+      {
+        "t": 246,
+        "name": "zoom_harm"
+      },
+      {
+        "t": 248,
+        "name": "dish_harm"
+      }
+    ],
+    "evals": [
+      {
+        "t": 239,
+        "js": "return JSON.stringify(moire.spindle.census)"
+      },
+      {
+        "t": 243,
+        "js": "moire.camera.set(2.5, 0.5 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'"
+      },
+      {
+        "t": 245,
+        "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+      },
+      {
+        "t": 247,
+        "js": "moire.camera.fit(); return 'fit'"
+      }
+    ]
+  },
+  "url": "http://localhost:65119/index.html?speed=max&until=0&overlay=ghost&ui=0&preset=lab&cells=150&genes=elongation:1.2&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "08132e9c0161a81a4a34e03dd1c82d9ba3d1be78",
+  "dirty": true,
+  "started": "2026-11-18T08:24:15",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 250.0,
+  "run_wall_s": 426.16,
+  "speed_reached": 0.59,
+  "samples": 6,
+  "shots": [
+    "shots/dish_neon.png",
+    "shots/zoom_neon.png",
+    "shots/zoom_harm.png",
+    "shots/dish_harm.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 239.00000000008234,
+      "js": "return JSON.stringify(moire.spindle.census)",
+      "result": "{\"time\":238.88333333341558,\"n\":150,\"lnAspect\":1.0403866666666666,\"lnSd\":0.2712113268693301,\"aspect\":2.8303111897907276,\"long\":0.8733333333333333,\"pairs\":316,\"nematic\":0.4226993670886076,\"gene\":1.2,\"geneSd\":0,\"geneAspect\":3.3201169227365472,\"asked\":1.2,\"turning\":1.5234333333333332,\"turned\":1,\"noWrap\":0,\"perim\":1.4207533333333333,\"length\":3.0487}"
+    },
+    {
+      "t": 243.00000000008552,
+      "js": "moire.camera.set(2.5, 0.5 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'",
+      "result": "zoom"
+    },
+    {
+      "t": 245.0000000000871,
+      "js": "moire.control.action('harmonic'); return 'harmonic toggled'",
+      "result": "harmonic toggled"
+    },
+    {
+      "t": 247.0000000000887,
+      "js": "moire.camera.fit(); return 'fit'",
+      "result": "fit"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T08:32:51",
+  "wall_s": 515.54
+}

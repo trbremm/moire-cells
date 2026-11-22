@@ -1,0 +1,8 @@
+{"batch": "s1-smoke2", "runs": [
+ {"name": "s1-smoke-off", "description": "shape off", "query": {"seed": 3, "shape": 0}, "duration": 30, "sample_every": 10, "stall": 120, "snapshots": [],
+  "shots": [{"t": 30, "name": "end"}]},
+ {"name": "s1-smoke-default", "description": "shape on, founders round, 30 s, zoom", "query": {"seed": 3}, "duration": 32, "sample_every": 10, "stall": 120, "snapshots": [], "dpr": 2,
+  "shots": [{"t": 30, "name": "end"}, {"t": 32, "name": "zoom"}],
+  "evals": [{"t": 31, "js": "moire.camera.set(3, 0.45 * moire.dish.W, 0.45 * moire.dish.H); return 'zoom'"},
+            {"t": 29, "js": "return JSON.stringify(moire.spindle.census)"}]}
+]}

@@ -1,0 +1,100 @@
+{
+  "name": "s1-q-pred-null_s7",
+  "description": "step S1 quick: pred, wild shape founders, shape null, 10 min",
+  "condition": {
+    "name": "s1-q-pred-null_s7",
+    "description": "step S1 quick: pred, wild shape founders, shape null, 10 min",
+    "query": {
+      "founders": "wild",
+      "wild": "shape",
+      "shapenull": 1,
+      "seed": 7
+    },
+    "duration": 600,
+    "sample_every": 30,
+    "stall": 300,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 300,
+        "name": "t300"
+      },
+      {
+        "t": 600,
+        "name": "end"
+      }
+    ],
+    "evals": [
+      {
+        "t": 120,
+        "js": "return await moire.predators.place(20)"
+      },
+      {
+        "t": 60,
+        "js": "return JSON.stringify(moire.spindle.census)"
+      },
+      {
+        "t": 300,
+        "js": "return JSON.stringify(moire.spindle.census)"
+      },
+      {
+        "t": 599,
+        "js": "return JSON.stringify(moire.spindle.census)"
+      },
+      {
+        "t": 599,
+        "js": "const C = moire.predators.census; return JSON.stringify(C ? {genes: C.genes, now: C.now, total: C.total} : null)"
+      }
+    ]
+  },
+  "url": "http://localhost:65350/index.html?speed=max&until=0&overlay=ghost&ui=0&founders=wild&wild=shape&shapenull=1&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "08132e9c0161a81a4a34e03dd1c82d9ba3d1be78",
+  "dirty": true,
+  "started": "2026-11-18T06:14:43",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 600.0,
+  "run_wall_s": 895.9,
+  "speed_reached": 0.67,
+  "samples": 21,
+  "shots": [
+    "shots/t300.png",
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 59.999999999998735,
+      "js": "return JSON.stringify(moire.spindle.census)",
+      "result": "{\"time\":59.86666666666541,\"n\":1656,\"lnAspect\":0.1356213768115942,\"lnSd\":0.07889228042198859,\"aspect\":1.145248193972958,\"long\":0,\"pairs\":1,\"nematic\":-0.973,\"gene\":0.835,\"geneSd\":0.3699698055312499,\"geneAspect\":2.3048140482870125,\"asked\":0,\"turning\":0,\"turned\":0,\"noWrap\":0,\"perim\":1.0262185990338164,\"length\":2.0285235507246377}"
+    },
+    {
+      "t": 119.99999999999532,
+      "js": "return await moire.predators.place(20)",
+      "result": 20
+    },
+    {
+      "t": 300.0000000000567,
+      "js": "return JSON.stringify(moire.spindle.census)",
+      "result": "{\"time\":299.9166666667234,\"n\":385,\"lnAspect\":0.15817922077922078,\"lnSd\":0.09489630203360165,\"aspect\":1.171376110835786,\"long\":0,\"pairs\":0,\"nematic\":0,\"gene\":0.8631324675324675,\"geneSd\":0.33754230997577395,\"geneAspect\":2.3705748240516225,\"asked\":0,\"turning\":0,\"turned\":0,\"noWrap\":0,\"perim\":1.030225974025974,\"length\":2.1253012987012987}"
+    },
+    {
+      "t": 598.9999999997848,
+      "js": "return JSON.stringify(moire.spindle.census)",
+      "result": "{\"time\":598.9333333331182,\"n\":687,\"lnAspect\":0.13707423580786027,\"lnSd\":0.08151333567120879,\"aspect\":1.146913287394618,\"long\":0,\"pairs\":0,\"nematic\":0,\"gene\":0.6863871906841339,\"geneSd\":0.37893110412050185,\"geneAspect\":1.986525614913822,\"asked\":0,\"turning\":0,\"turned\":0,\"noWrap\":0,\"perim\":1.0219694323144104,\"length\":2.170646288209607}"
+    },
+    {
+      "t": 598.9999999997848,
+      "js": "const C = moire.predators.census; return JSON.stringify(C ? {genes: C.genes, now: C.now, total: C.total} : null)",
+      "result": "{\"genes\":{\"engulf\":0.16760844250363902,\"engulfSd\":0.16031896277992772,\"spare\":0.23098835516739447,\"spareSd\":0.24019245348586507,\"carriers\":0.26346433770014555,\"sparers\":0.20441988950276244,\"carrierSpare\":0.3010994475138122,\"expressed\":0.16638573508005822,\"glue\":0.31794905385735084},\"now\":{\"wrapping\":2,\"digesting\":3,\"wrapped\":2,\"preyNear\":19,\"hold\":1.8474978165938865,\"armour\":1.2393435225618632},\"total\":{\"start\":1486,\"lost\":276,\"held\":1044,\"poor\":1,\"eaten\":158,\"kin\":68,\"alone\":96,\"hold\":47166,\"area\":412136,\"kinSum\":59306}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T06:31:04",
+  "wall_s": 981.0
+}

@@ -180,6 +180,7 @@ export function settingObjects(M) {
     ...(M.stir ? { 'stir.params': M.stir.params } : {}),              // step G0: the cells stir the water
     ...(CARBON && M.carbon ? { 'carbon.params': M.carbon.params } : {}),                // step C15a: carbon in the open dish
     ...(CARBON && M.carbonCells ? { 'carbonCells.params': M.carbonCells.params } : {}),  // step C15b: cells eat carbon
+    ...(M.spindle ? { 'spindle.params': M.spindle.params } : {}),     // step S1: cell shape
   };
 }
 const SCALARS = [['neon.on', (M) => M.neon, 'on'], ['background.heatOn', (M) => M.background, 'heatOn'], ['background.ambient', (M) => M.background, 'ambient']];
@@ -569,6 +570,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     if (opts.settings !== false && M.glue && !(S.settings && S.settings['glue.params'])) {
       Object.assign(M.glue.params, { ceiling: false, cost: false, tear: false, null: false });   // step G0
       notes.push('saved before step G0: the glue gene capped at 1, no junctions tearing (as it ran)');
+    }
+    if (opts.settings !== false && M.spindle && !(S.settings && S.settings['spindle.params'])) {
+      M.spindle.params.on = false;   // step S1
+      notes.push('saved before step S1: round contacts, no elongation (as it ran)');
     }
     if (opts.settings !== false && M.stir && !(S.settings && S.settings['stir.params'])) {
       M.stir.params.on = false;   // step G0

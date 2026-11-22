@@ -37,6 +37,7 @@ struct CbCellP {
                 // bond (heat counts per count: split for a reduction's g), w its spark
   v: vec4f,     // step C15c: x the battery's floor for the builder's reductions (heat counts); step C15d: y the founders' PIGMENT (share of
                 // the want of a harvest rate of 1), z w spare
+  w: vec4i,     // step C15e: x GT's bond, y its spark, z Gt's bond, w its spark (heat counts: an enzyme's G split from them, cb_g_split)
 };
 @group(0) @binding(11) var<storage, read_write> cbS: array<atomic<i32>>;
 @group(0) @binding(11) var<storage, read_write> cbSP: array<i32>;      // (the plan pass's plain view)
@@ -69,6 +70,7 @@ const CBF_HUNGER: u32 = 65536u; // HUNGER FOR EVERY PART: a cell whose parts wer
 const CBF_ENZANY: u32 = 262144u; // AN ENZYME'S SCAFFOLD FROM ANY CARBON: a unit is 4 burnt chain carbons (4, 0, 8) + 1 G (fixed for the page)
 const CBF_GRANRED: u32 = 524288u; // THE GRANULES' BURNT HANDS REDUCED: a builder short of fuel hands reduces granule hands from the battery (cb_gran_red)
 const CBF_GRANHYD: u32 = 1048576u; // THE GRANULES DIGESTED: a builder short of hands opens granule backbones with a water (cb_gran_hyd)
+const CBF_GSPLIT: u32 = 2097152u; // AN ENZYME'S G FROM ITS COMPOUNDS: the builder splits GT, then rust Gt, in the stock for a free G (cb_g_split)
 const CBF_WALLREC: u32 = 131072u; // WALL RECYCLING: a jolted wall's cracked pieces stay in the cell as granules (as shed lipids do), not mud    // OXYGEN DAMAGES MEMBRANES: free t oxidises the lipids' fuel hands (fat -> soap -> spoiled, into the mud)
 // the event counters (64-bit, LG_CBC_EV; src/carboncells.js EV)
 const CBE_OX: u32 = 0u;
@@ -1147,6 +1149,7 @@ fn cb_enzymes(i: u32, rates: vec3f, areaR2: f32, m: ptr<function, array<i32, 18>
   if (f32(E) < want) {
     var nb = i32(floor((want - f32(E)) * min(CBP.g.y * EP.dt, 1.0) + u01(pcg(r + 0x9e3779b9u))));
     var lim = 0u;
+    if (nb > max((*m)[3], 0)) { cb_g_split(nb - max((*m)[3], 0), m, bat, heat); }   // (step C15e: G from its compounds)
     if (nb > max((*m)[3], 0)) { nb = max((*m)[3], 0); lim |= CBL_G; }
     if (nb > 0) {
       var S: array<i32, 5>;
@@ -1165,6 +1168,32 @@ fn cb_enzymes(i: u32, rates: vec3f, areaR2: f32, m: ptr<function, array<i32, 18>
   if (bat0 > *bat) { atomicAdd(&wcbe3[CBE3_ENZ], bat0 - *bat); }
   if (want < 1.0) { return 1.0; }
   return clamp(f32(E) / want, 0.0, 1.0);
+}
+
+/**
+ * Step C15e (CBF_GSPLIT), AN ENZYME'S G FROM ITS COMPOUNDS: in a dish with free t and T most of the heavy giver sits bound, as GT (fuel) and
+ * as rust Gt (the most settled compound), and those, neutral, cross the membrane while the free G ion is held back. An enzyme builder short
+ * of free G splits up to k of them in its stock by the table's reverse reactions (GT -> G + T first, the cheaper; then Gt -> G + t), the
+ * bond and its spark from the battery (the bond's energy stays in the free atoms, the spark is heat), as real cells reduce iron(III) to take
+ * it up. Returns the G freed.
+ */
+fn cb_g_split(k: i32, m: ptr<function, array<i32, 18>>, bat: ptr<function, i32>, heat: ptr<function, i32>) -> i32 {
+  if (k <= 0 || (CBP.cfg.x & CBF_GSPLIT) == 0u) { return 0; }
+  var left = k;
+  for (var q = 0u; q < 2u; q++) {
+    let ch = select(8u, 9u, q == 0u);         // (GT, then rust Gt)
+    let fr = select(1u, 4u, q == 0u);         // (the taker it frees: T, t)
+    let bond = select(CBP.w.z, CBP.w.x, q == 0u);
+    let spk = select(CBP.w.w, CBP.w.y, q == 0u);
+    let cost = max(bond + spk, 1);
+    let x = min(min(left, max((*m)[ch], 0)), max(*bat, 0) / cost);
+    if (x <= 0) { continue; }
+    (*m)[ch] -= x; (*m)[3] += x; (*m)[fr] += x;
+    *bat -= x * cost;
+    *heat += x * spk;
+    left -= x;
+  }
+  return k - left;
 }
 
 /**

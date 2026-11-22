@@ -95,3 +95,9 @@ dump({"batch": "c15e-ab3", "runs": [
     ab("ab3-granhyd", "fixes (h) (j) + (l) granule digestion (every C15d fix on); default scene, seed 3, 10 min", {}),
     ab("ab3-granhyd-colonies", "fixes (h) (j) + (l); colonies of wild founders, seed 3, 10 min", {}, scene="colonies"),
 ]}, "ab3.json")
+
+# ---------- ab4: + fix (m) an enzyme's G from its compounds (GT, rust Gt) ----------
+dump({"batch": "c15e-ab4", "runs": [
+    ab("ab4-gsplit", "fixes (h) (j) (l) + (m) G from GT and rust (every C15d fix on); default scene, seed 3, 10 min", {}),
+    ab("ab4-gsplit-colonies", "fixes (h) (j) (l) + (m); colonies of wild founders, seed 3, 10 min", {}, scene="colonies"),
+]}, "ab4.json")

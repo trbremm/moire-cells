@@ -2675,6 +2675,212 @@ In words:
   scaffold that may be burnt carbon (its job comes from its G, not from fuel), G uptake for enzymes, more light fixing per pigment, mud as
   better food, and the deeper founders' crash with the fixes on.
 
+# Carbon life viable
+
+Step C15e (README "Step C15e: carbon life viable"): fixes derived from the chemistry already there, each its own switch, to make a dish
+where carbon is the cells' body big enough to watch: (h) an enzyme's scaffold from any carbon `?cbenzany=0`, (j) the granules' burnt hands
+reduced `?cbgranred=0`, (l) the granules digested (spare backbones hydrolysed) `?cbgranhyd=0`, (m) an enzyme's G from its compounds (GT,
+rust) `?cbgsplit=0`, and (i) the body from any built carbon `?cbbodyany=1` (tried, off by default). Goal set by the coordinator: the
+default scene at least half of `?carbon=0` at 10 and 20 minutes (seeds 3 and 7), the wild colonies alive at 20 minutes, the sunlit shallows
+much closer to `?carbon=0`.
+
+Words: as in "The carbon economy" above (fuel hand, burnt hand, mud, granule, Liebig). A BACKBONE is a carbon-carbon bond. READY = the
+cells that could divide now (battery at least 0.6 full and the body full).
+
+Conditions: `experiments/conditions/c15e/` (`make.py` writes the batch files: smoke, diag, diag2, gran, ab1-ab5, watch, offcheck, merge;
+`watchtable.py` the watch table; the probe tables come from `experiments/conditions/c15d/summary.py`). The GPU was shared with another
+worker's runs, and up to eight of ours ran at once: runs went at x0.1 to x0.5 of real time. Runs: `experiments/runs/c15e-*`.
+
+## 1. What held the dish down (`diag.json`, `gran.json`, the READY and DISH probes)
+
+Three new probes (`experiments/conditions/c15e/make.py`) beside C15d's flow ledger: READY (how many cells have the battery to divide, the
+body, both), DISH (every substance in the dish and in the cells) and `gran.json` (the cells' granules hand by hand).
+
+- THE BATTERY, NOT THE BODY, is what keeps cells from dividing: in the default scene at 5-10 minutes only 3-10 % of the cells have their
+  battery 0.6 full (the battery sits at 0.25-0.35 on average), while half to two thirds have their body. Switching the body rule off made it
+  worse (95 cells at 10 minutes against 151), because the body's hunger is what drives grazing.
+- The batteries are low because the ENGINES RUN AT HALF SPEED: an engine runs only as far as its enzymes (C15c), and the enzymes held 40-55 %
+  of their want. Compared with `?carbon=0` at 10 minutes a carbon light eater earned about a third from light (pigment x 1.5 less, enzymes
+  x 2 less), and light eaters, 63 % of the cells with `?carbon=0`, stayed a third or less.
+- The enzymes were short for want of HANDS, not carbon: a cell's granules (grazed mud) are OVER-CONDENSED, about 1.5 backbone bonds per
+  carbon and few hands (a 576-cell colony held 295 backbone bonds, 118 fuel hands and only 49 burnt hands in its granules), because the
+  open dish's condensation keeps knitting the mud.
+- In the wild colonies most of the dish's G sat BOUND, as rust Gt (827 units at 5 minutes) and GT (192) against 122 free G, and the cells
+  held 85 units of rust against 6 of free G: the neutral compounds cross the membrane, the free G ion is held back by the bilayer (C12g). A
+  third to a half of the colony's cells could not build enzymes for want of G.
+
+The readiness probe over the A/B runs (default scene, seed 3; cells with the battery 0.6 full / with the body full / both, of all):
+
+| run | 5 min | 8 min | 10 min |
+|---|---|---|---|
+| `c15e-ab1-enzany` | 16 / 139 / 7 of 193 | 7 / 123 / 3 of 173 | 7 / 87 / 1 of 151 |
+| `c15e-ab3-granhyd` | 3 / 96 / 0 of 151 | 30 / 131 / 10 of 218 | 31 / 111 / 2 of 240 |
+| `c15e-ab5-bodyany-off` | - | 23 / 163 / 4 of 285 | 42 / 175 / 6 of 343 |
+| `c15e-w-default_s3` (watch) | - | - | 42 / 80 / 5 of 217; at 20 min 148 / 221 / 18 of 590 |
+
+`?carbon=0` regrows from about 150 cells at 3 minutes with 27-80 cells ready at a time; the carbon dishes have 0-18.
+
+
+## 2. The fixes one at a time (default scene seed 3 and the wild colonies seed 3, 10 minutes; `ab1.json` .. `ab5.json`, `diag2.json`)
+
+THE FIXES ONE AT A TIME (default scene, seed 3; cells alive at 2 / 5 / 10 minutes, `?carbon=0`: 145 / 412 / 827; at 10 minutes the
+membranes' integrity, the enzymes' carbon of their want, the pigment's carbon, the share of cells LIMITED BY carbon / G / trace, the energy
+into batteries per cell per s):
+
+| run | what is on | cells at 2 / 5 / 10 min | integrity | enzymes (carbon) of their want | pigment (carbons) | limited C / G / trace | energy in per cell per s |
+|---|---|---|---|---|---|---|---|
+| `c15d-ab5-all` | C15d (every C15d fix) | 563 / 154 / 140 | 0.85 | 11.7 of 21.7 | 2.6 | 55 / 23 / 12 % | 0.079 |
+| `c15e-ab1-enzany` | + (h) | 610 / 193 / 151 | 0.79 | 13.3 of 30.8 | 3.6 | 69 / 11 / 11 % | 0.067 |
+| `c15e-ab2-granred` | + (h) (j) | 611 / 163 / 209 | 0.85 | 15.1 of 35.5 | 4.5 | 74 / 9 / 15 % | 0.095 |
+| `c15e-ab3-granhyd` | + (h) (j) (l) | 500 / 151 / 240 | 0.92 | 26.8 of 45.1 | 6.0 | 39 / 24 / 25 % | 0.068 |
+| `c15e-ab5-bodyany-off` | + (h) (j) (l) (m): the default now | 525 / 134 / 344 | 0.93 | 35.8 of 47.5 | 9.5 | 38 / 0 / 18 % | 0.087 |
+| `c15e-ab5-bodyany` | + (h) (j) (l) (m) (i) | 526 / 149 / 240 | 0.88 | 31.8 of 41.9 | 7.1 | 42 / 0 / 17 % | 0.097 |
+| `c15e-diag-nobody` | (h), the body rule off (`?cbgrow=0`) | 586 / 158 / 95 | 0.53 | 4.1 of 12.6 | 0.3 | 79 / 5 / 7 % | 0.048 |
+
+THE WILD COLONIES (seed 3; cells at 2 / 5 / 10 minutes; `?carbon=0`: 1832 at 5 minutes; the share of cells short of G at 5 minutes):
+
+| run | what is on | cells at 2 / 5 / 10 min | short of G at 5 min |
+|---|---|---|---|
+| `c15d-ab5-all-colonies` | C15d | 574 / 390 / 34 | 31 % |
+| `c15e-ab1-enzany-colonies` | + (h) | 622 / 375 / 62 | 44 % |
+| `c15e-ab2-granred-colonies` | + (h) (j) | 573 / 413 / 82 | 39 % |
+| `c15e-ab3-granhyd-colonies` | + (h) (j) (l) | 539 / 316 / 40 | 36 % |
+| `c15e-ab4-gsplit-colonies` | + (h) (j) (l) (m) | 518 / 382 / 143 | 1 % |
+| `c15e-diag2-colonies-nobite` | + (h) (j) (l) (m), oxygen does not bite (`?cbbite=0`) | 547 / 607 / 235 | 2 % |
+
+In words:
+
+- Each fix moved the default scene's count at 10 minutes up a little (140 -> 151 -> 209 -> 240 -> 344), one seed each: the runs' own noise
+  is large (two runs of the same build differ by a quarter or more), so read the column as a trend, not as each fix's exact worth.
+- (h) alone gave the enzymes more carbon only where burnt hands were spare: the granules hold few burnt hands, so (h) needed (l).
+- (j) runs only above the battery's floor, and the batteries sit near it: the builder reduced 1-3 hands a minute in the whole colony.
+- (l) made the membranes whole (0.92) and doubled the enzymes' carbon; it also made the founders' crash deeper (500 against 611 cells at 2
+  minutes: hydrolysis is paid from batteries that are already low in the crash).
+- (m) took the share of cells short of G from a third to 0-2 % (in the default scene and in the colonies alike) and gave the largest
+  single step (240 -> 344 in the default scene, 40 -> 143 in the colonies at 10 minutes).
+- (i) made the dish smaller and stays off.
+- The wild colonies, even with every fix and without oxygen's bites, still lose most of their cells between 5 and 10 minutes: the cells'
+  carbon ends in the mud (97-99 % of all carbon by 10 minutes).
+
+The oxygen A/B on the merged code (`oxy.json`, the oxygen conditions with the spotlight, seed 3; cells alive at 2 / 4 / 6 / 8 / 10 minutes):
+
+| run | what is on | cells |
+|---|---|---|
+| `c15e-w-oxy-spot-m_s3` | every fix | 533 / 70 / 50 / 50 / 48 |
+| `c15e-w-oxy-spot-m-nogsplit_s3` | without (m) | 498 / 57 / 49 / 23 / 14 |
+| `c15e-w-oxy-spot-m-nogran_s3` | without (j) and (l) | 597 / 124 / 100 / 85 / 113 |
+| `c15e-w-oxy-spot-m-c15d_s3` | every C15e fix off (C15d) | 560 / 130 / 97 / 77 / 77 |
+
+So in this dish (h) + (m) help and the granule fixes (j) + (l) hurt: they spend the batteries the founders' crash has emptied on more
+membrane and pigment, and the next limit there is trace (no oasis brings it).
+
+
+## 3. Watching the scenes, every fix on (`watch.json`)
+
+WATCHING THE SCENES (every fix on, (i) off; cells alive at 5 / 10 / 15 / 20 minutes, - = not run that long; the `?carbon=0` runs are
+C15c's and C15d's, the same code path; `experiments/conditions/c15e/watch.json`, table by `watchtable.py`):
+
+| scene | seed | carbon life viable (C15e) | C15d | `?carbon=0` |
+|---|---|---|---|---|
+| default | 3 | 129 / 217 / 380 / 593 | 153 / 124 / 362 / 573 | 411 / 831 / 753 / 1224 |
+| default | 7 | 151 / 285 / 421 / 607 | 180 / 154 / 321 / 435 | 432 / 796 / 553 / 1128 |
+| colonies (wild) | 3 | 374 / 125 / 102 / 611 | 346 / 38 / 3 / - | 1832 / - / - / - |
+| colonies (wild) | 7 | 169 / 12 / 0 / 0 | 147 / 7 / - / - | 1339 / 2722 / - / - |
+| Sunlit shallows | 3 | 606 / 1195 / - / - | 790 / 869 / - / - | 3110 / 5933 / - / - |
+| oxygen, spotlight | 3 | 61 / 28 / - / - | 104 / 120 / - / - | 94 / 400 / - / - |
+| oxygen, whole dish | 3 | 87 / 300 / - / - | 236 / 243 / - / - | 381 / 933 / - / - |
+
+At the last probe (the share of living cells limited by carbon / G / trace / free g or t / battery; jobs undecided / light / breathe /
+ferment / gradient / build / predator):
+
+| scene | seed | t | alive | limited | integrity | jobs | carbon in cells | mud's share |
+|---|---|---|---|---|---|---|---|---|
+| default | 3 | 20 min | 593 | 45 / 0 / 8 / 0 / 3 % | 0.91 | 225/55/123/0/1/153/36 | 335 | 78 % |
+| default | 7 | 20 min | 607 | 48 / 0 / 1 / 0 / 6 % | 0.89 | 214/7/184/0/0/129/73 | 304 | 79 % |
+| colonies (wild) | 3 | 20 min | 611 | 59 / 0 / 6 / 0 / 3 % | 0.86 | 247/279/18/0/0/1/66 | 292 | 96 % |
+| Sunlit shallows | 3 | 10 min | 1195 | 65 / 1 / 16 / 0 / 2 % | 0.80 | 418/361/334/55/2/9/16 | 522 | 79 % |
+| oxygen, spotlight | 3 | 10 min | 28 | 14 / 0 / 32 / 0 / 0 % | 0.93 | 13/3/11/1/0/0/0 | 34 | 88 % |
+| oxygen, whole dish | 3 | 10 min | 300 | 39 / 3 / 69 / 1 / 3 % | 0.92 | 112/67/120/0/0/0/1 | 262 | 72 % |
+
+THE GOAL, plainly:
+
+- Default scene: at 20 minutes 593 and 607 cells, 48 % and 54 % of `?carbon=0` (C15d: 47 %, 39 %): half, just. At 10 minutes 217 and
+  285, 26 % and 36 % (C15d: 15 %, 19 %): NOT half. The colony still sits near 150 cells from 3 to 8 minutes after the founders' crash and
+  only then regrows; `?carbon=0` regrows from 3 minutes.
+- Wild colonies: seed 3 ALIVE at 20 minutes (611 cells, regrown from 102 at 15 minutes), seed 7 dead by 15 minutes. Half met.
+- Sunlit shallows: 1195 cells at 10 minutes against 869 (C15d) and 5933 (`?carbon=0`): closer (20 % of `?carbon=0`), not much closer.
+- Oxygen dishes (not in the goal): the whole dish lit does a little better than C15d at 10 minutes (300 against 243); the spotlit one
+  does much WORSE (28 against 120). An A/B on the merged code (`oxy.json`; cells at 4 / 10 minutes) pins it on the granule fixes: every fix
+  70 / 48, without (m) 57 / 14, without (j) and (l) 124 / 113, with every C15e fix off 130 / 77. Building more membrane and pigment
+  from granules is paid from batteries that the founders' crash has already emptied, and in this dish trace (the pigments' centre, with no
+  oasis to bring it) is the next limit (32 % of the cells).
+
+WHAT IT LOOKS LIKE (pictures in `experiments/keep/c15e/`):
+
+- DEFAULT SCENE at 20 minutes (`default-s7-20min_neon.jpg`): one round colony in the spotlight as before, but now with AMBER BUILDERS
+  (129-153 cells: wall-building jobs, F0's colour) mixed through hot pink breathers, red predators at its edge, and the field of amber mud
+  flecks (the dead founders) on its left. Close up (`default_zoom_*`) the rims are solid and many cells wear thick doubled rims (walls).
+- WILD COLONIES at 20 minutes, seed 3 (`colonies-s3-20min_neon.jpg`): after the crash the dish regrows as lime LIGHT EATERS (279 of
+  611) in loose rings round four of the five springs, with a red predator patch on the left and pale undecided cells between; the fifth
+  spring sits in a bare brown mud patch.
+- SUNLIT SHALLOWS: as in C15d, small mixed clusters all over the dish, now about 1200 cells.
+
+## 4. Pictures (`experiments/keep/c15e/`)
+
+- `default-s7-20min_neon.jpg` / `_harmonic.jpg`, `default-s3-20min_neon.jpg`: the default scene at 20 minutes: the round colony in the
+  spotlight, amber builders mixed through hot pink breathers, red predators at the edge, the field of amber mud flecks on the left.
+- `default_zoom_memb_*` (x4, where the bilayers hold the most carbon): harmonic: a green honeycomb of closed rims, many cells with a thick
+  orange-red WALL rim outside the green bilayer, orange granule dots, striped (stretched) cells, orange mud fibres between: the best
+  picture of the step. `default_zoom_pig_*` (x4, where the pigment is): neon: thick dotted amber brick rims (walls) round green battery
+  cores, a few hot pink and red rims, the seep's brown mud under them.
+- `colonies-s3-20min_neon.jpg` / `_harmonic.jpg`: the wild colonies regrown at 20 minutes: lime light eaters in loose rings round four
+  springs, a red predator patch on the left, a bare brown mud patch round the fifth spring. `colonies_zoom_*`: green rims without walls,
+  violet glowing ghosts (meals being digested inside predators) in dark rings.
+- `shallows-s3-10min_neon.jpg`: about 1200 cells in small clusters of lime, hot pink and violet all over the shallows, brown mud round the
+  springs.
+- `merge-spindles-carbon_neon.jpg`: after the merge with S1, every cell asked 3:1 at 2 s: a carbon colony of neon spindles at 90 s.
+
+
+## 5. Checks
+
+- BOOKS: carbon, the dish's carbon energy, atoms and charge rounding 0 at every probe of every run of this step (the smoke after each
+  fix, the A/B runs, the watch, the merge checks); the whole energy rounding at its usual noise. One bug was caught by the books on the way:
+  a WGSL `select` runs both of its arguments, so the first build of (h) ran both enzyme builders and lost carbon, atoms and charge (fixed with
+  an `if` before the commit).
+- `?carbon=0`: everything new sits behind the carbon switch (compiled out, CARBON_ON 0). The first 2 minutes of the default scene, seed 7,
+  match C15d's `?carbon=0` run within the runs' own noise (1977 / 1795 / 1658 / 447 / 119 cells at 0 / 30 / 60 / 90 / 120 s against
+  1977 / 1793 / 1648 / 454 / 120; GPU runs are not bit-for-bit repeatable). (h) is fixed for the page and kept in snapshots: a C15d
+  snapshot reloads the page with `?cbenzany=0`.
+- AFTER THE MERGE WITH MAIN (step S1, below): carbon on with every cell asking 3:1 (`c15e-merge-spindles`): spindles form (mean aspect
+  2.3 at 60 s, 71 % long), books 0, no console error; the same with `?carbon=0` (`c15e-merge-off`): aspect 2.3, atoms and charge 0;
+  FIREFOX (headed, wild founders with shape genes, carbon on, 40 s): no console error, books 0 (a first try ran out of GPU memory while
+  eight other runs were open); PHONE size (390 x 844 at device px 3, Chrome, 20 s): the page lays out as before, roundings 0.
+- SPEED: the first 60 s of the default scene side by side, every C15e fix on and off (`speed.json`): x0.26 both on the shared GPU.
+
+
+## 6. What next
+
+- THE GOAL IS ONLY PARTLY MET. The default scene reaches half of `?carbon=0` at 20 minutes (48 % and 54 %) but not at 10 (26 % and 36 %);
+  one wild colony of two lives through 20 minutes; the shallows are at a fifth of `?carbon=0`. What the probes say holds it down now:
+  - at 10 minutes the BATTERY: only 15-20 % of the cells have the 0.6 a division needs (`?carbon=0`'s cells earn more per cell from light:
+    light eaters stay rare in carbon dishes);
+  - at 20 minutes the BODY of the battery-rich cells: of 148-173 cells with the battery, only 8-18 also have their body; their granules
+    are empty (86-95) or burnt-heavy (52-83 cells with less than a quarter of their hands fuel: what (i) would let them build with, though
+    at 10 minutes (i) did not help);
+  - the WALLS: jolted walls crack and are rebuilt all the time (C12b), 150-220 carbons a minute in the default colony, the largest part
+    the batteries pay for (155-245 energy a minute, about a tenth of the income).
+  The levers on file, none tried here: (i) again for late colonies; a wall that is not rebuilt at every jolt (C12b's crack rule); and the
+  one that is not derived: the parts' recipes (a membrane or pigment with fewer fuel hands).
+- THE OXYGEN SPOTLIGHT DISH IS SMALLER than in C15d (28 against 120 cells at 10 minutes): the granule fixes (j) and (l) cost it (above);
+  their switches restore it. The oxygen dish lit whole does a little better.
+- (l) deepens the founders' crash (about 500 against 600 cells at 2 minutes): digestion is paid from batteries that are already low.
+- The runs' own noise is large: the default scene with exactly the build of the watch gave 344 cells at 10 minutes in the A/B and 217 in
+  the watch (seed 3). One seed per A/B row; the trend over the rows is more trustworthy than any single step.
+- The wild colonies crash in heat and oxygen near 4-9 minutes (bursts of 3-5 cells a second while the dish warms to 9-12): without
+  oxygen's bites they still lose most cells (235 at 10 minutes), and most of their carbon ends in mud (96-99 %).
+- The watch ran before the merge with S1; the merge checks ran after it, and the oxygen A/B and the pictures (snapshots from the watch,
+  reloaded) after the merge too.
+
 # Strong glue and stirred water (step G0, 2026-11-17)
 
 Quick runs only (the user: results are not valid until more changes land). Conditions in `experiments/conditions/g0/`

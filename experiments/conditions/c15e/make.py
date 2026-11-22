@@ -142,3 +142,44 @@ dump({"batch": "c15e-watch", "runs": [
     watch("default", 3, 1200), watch("default", 7, 1200), watch("colonies", 3, 1200), watch("colonies", 7, 1200),
     watch("shallows", 3, 600), watch("oxy-spot", 3, 600), watch("oxy-full", 3, 600),
 ]}, "watch.json")
+
+# ---------- the merge with main (step S1 cell shape): carbon on with every cell asking 3:1, ?carbon=0 alike, Firefox ----------
+SPIN = "await moire.genome.setAll({elongation: 1.1}); return 'every cell asks 3:1'"
+CENSUS = "return JSON.stringify(moire.spindle.census)"
+
+
+def merge_run(name, desc, q, dur, spin=True, probe=True):
+    r = run(name, desc, q, dur, tuple(t for t in (30, 60, dur) if t <= dur) if probe else (), shots=[{"t": dur, "name": "end"}], every=15)
+    if spin:
+        r["evals"] = [{"t": 2, "js": SPIN}] + r["evals"] + [{"t": min(60, dur), "js": CENSUS}, {"t": dur, "js": CENSUS}]
+    return r
+
+
+dump({"batch": "c15e-merge", "runs": [
+    merge_run("c15e-merge-spindles", "merge check (S1 + carbon): default scene seed 3, every cell asks 3:1 at 2 s, 90 s, books", {"seed": 3}, 90),
+    merge_run("c15e-merge-off", "merge check: ?carbon=0, default scene seed 3, every cell asks 3:1 at 2 s, 90 s", {"seed": 3, "carbon": 0}, 90, probe=False),
+    merge_run("c15e-merge-firefox", "merge check in Firefox (headed): wild founders with shape genes, carbon on, 40 s, books",
+              {"seed": 3, "founders": "wild", "wild": "shape"}, 40, spin=False),
+]}, "merge.json")
+
+# ---------- oxy: which fix makes the oxygen dishes smaller (after the merge with S1: every pair on the same code) ----------
+dump({"batch": "c15e-oxy", "runs": [
+    watch("oxy-spot", 3, 600, tag="-m"),
+    watch("oxy-spot", 3, 600, extra={"cbgsplit": 0}, tag="-m-nogsplit"),
+    watch("oxy-spot", 3, 600, extra={"cbgranhyd": 0, "cbgranred": 0}, tag="-m-nogran"),
+    watch("oxy-spot", 3, 600, extra={"cbgsplit": 0, "cbgranhyd": 0, "cbgranred": 0, "cbenzany": 0}, tag="-m-c15d"),
+]}, "oxy.json")
+
+# ---------- phone size (Chrome 390 x 844 at device px 3), carbon on, after the merge ----------
+_ph = run("c15e-merge-phone", "phone size (390 x 844 at dpr 3, Chrome): the default scene 20 s, every fix on, after the merge", {"seed": 3}, 20, (20,),
+          shots=[{"t": 20}, {"t": 20, "panel": True, "name": "panel"}], every=10)
+_ph["size"] = "390x844"
+_ph["dpr"] = 3
+dump({"batch": "c15e-phone", "runs": [_ph]}, "phone.json")
+
+# ---------- speed: the first 60 s side by side, every C15e fix on against all off (the GPU is shared: a rough look only) ----------
+dump({"batch": "c15e-speed", "runs": [
+    run("c15e-speed-on", "speed: default scene seed 3, 60 s, every fix on", {"seed": 3}, 60, (), every=30),
+    run("c15e-speed-off", "speed: default scene seed 3, 60 s, the C15e fixes off (C15d)", {"seed": 3, "cbenzany": 0, "cbgranred": 0, "cbgranhyd": 0,
+        "cbgsplit": 0}, 60, (), every=30),
+]}, "speed.json")

@@ -1,0 +1,158 @@
+{
+ "name": "c15d-w-colonies-off_s7",
+ "description": "colonies preset (five wild founders' colonies, the whole dish lit), ?carbon=0, seed 7, 10 min",
+ "condition": {
+  "name": "c15d-w-colonies-off_s7",
+  "description": "colonies preset (five wild founders' colonies, the whole dish lit), ?carbon=0, seed 7, 10 min",
+  "query": {
+   "seed": 7,
+   "carbon": 0,
+   "preset": "colonies",
+   "founders": "wild"
+  },
+  "duration": 600,
+  "sample_every": 30,
+  "stall": 300,
+  "shots": [
+   {
+    "t": 300
+   },
+   {
+    "t": 600
+   },
+   {
+    "t": 600,
+    "name": "end"
+   },
+   {
+    "t": 600,
+    "panel": true,
+    "name": "panel"
+   }
+  ],
+  "snapshots": [],
+  "evals": [
+   {
+    "t": 60,
+    "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})"
+   },
+   {
+    "t": 120,
+    "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})"
+   },
+   {
+    "t": 180,
+    "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})"
+   },
+   {
+    "t": 240,
+    "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})"
+   },
+   {
+    "t": 300,
+    "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})"
+   },
+   {
+    "t": 360,
+    "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})"
+   },
+   {
+    "t": 420,
+    "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})"
+   },
+   {
+    "t": 480,
+    "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})"
+   },
+   {
+    "t": 540,
+    "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})"
+   },
+   {
+    "t": 600,
+    "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})"
+   }
+  ]
+ },
+ "url": "http://localhost:60227/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=7&carbon=0&preset=colonies&founders=wild",
+ "browser": "chrome",
+ "size": "1280x800",
+ "commit": "",
+ "dirty": false,
+ "started": "2026-11-18T09:18:48",
+ "status": "ok",
+ "browser_version": "Chrome/157.0.8103.79",
+ "adapter": "nvidia turing",
+ "t_start": 0,
+ "sim_s": 600.0,
+ "run_wall_s": 242.37,
+ "speed_reached": 2.48,
+ "samples": 21,
+ "shots": [
+  "shots/t300.png",
+  "shots/t600.png",
+  "shots/end.png",
+  "shots/panel.png"
+ ],
+ "snapshots": [],
+ "clips": [],
+ "evals": [
+  {
+   "t": 60.00000000000004,
+   "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})",
+   "result": "{\"t\":60.00000000000004,\"alive\":524,\"job\":[167,0,107,0,0,119,131],\"flow\":null,\"parts\":null,\"census\":null,\"memb\":{\"integ\":0.33564312977099237},\"cRound\":null,\"eRound\":null,\"atoms\":0,\"charge\":0,\"energy\":0.004486083984375,\"eIn\":2032869.4791412354,\"freeT\":140.28515625,\"freeG\":64.21533203125}"
+  },
+  {
+   "t": 120.00000000000068,
+   "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})",
+   "result": "{\"t\":120.00000000000068,\"alive\":294,\"job\":[110,5,10,0,0,34,135],\"flow\":null,\"parts\":null,\"census\":null,\"memb\":{\"integ\":0.8438203389830509},\"cRound\":null,\"eRound\":null,\"atoms\":0,\"charge\":0,\"energy\":0.0087127685546875,\"eIn\":3429619.8538970947,\"freeT\":346.94970703125,\"freeG\":145.22216796875}"
+  },
+  {
+   "t": 180.00000000000185,
+   "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})",
+   "result": "{\"t\":180.00000000000185,\"alive\":373,\"job\":[107,4,27,0,0,14,221],\"flow\":null,\"parts\":null,\"census\":null,\"memb\":{\"integ\":0.9581604278074866},\"cRound\":null,\"eRound\":null,\"atoms\":0,\"charge\":0,\"energy\":0.0032196044921875,\"eIn\":4005186.4917907715,\"freeT\":519.038818359375,\"freeG\":260.026611328125}"
+  },
+  {
+   "t": 240.00000000000352,
+   "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})",
+   "result": "{\"t\":240.00000000000352,\"alive\":819,\"job\":[251,8,107,0,0,2,451],\"flow\":null,\"parts\":null,\"census\":null,\"memb\":{\"integ\":0.8687777777777778},\"cRound\":null,\"eRound\":null,\"atoms\":0,\"charge\":0,\"energy\":-0.00201416015625,\"eIn\":5449523.675933838,\"freeT\":327.8310546875,\"freeG\":161.563232421875}"
+  },
+  {
+   "t": 299.9999999999999,
+   "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})",
+   "result": "{\"t\":299.9999999999999,\"alive\":1339,\"job\":[494,11,222,0,0,0,612],\"flow\":null,\"parts\":null,\"census\":null,\"memb\":{\"integ\":0.7395481702763256},\"cRound\":null,\"eRound\":null,\"atoms\":0,\"charge\":0,\"energy\":-0.02337646484375,\"eIn\":8278485.3720703125,\"freeT\":243.604248046875,\"freeG\":135.203369140625}"
+  },
+  {
+   "t": 359.9999999999995,
+   "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})",
+   "result": "{\"t\":359.9999999999995,\"alive\":1613,\"job\":[634,23,335,3,0,0,618],\"flow\":null,\"parts\":null,\"census\":null,\"memb\":{\"integ\":0.7701451612903225},\"cRound\":null,\"eRound\":null,\"atoms\":0,\"charge\":0,\"energy\":-0.026336669921875,\"eIn\":10702295.616912842,\"freeT\":153.380126953125,\"freeG\":125.923095703125}"
+  },
+  {
+   "t": 419.99999999997084,
+   "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})",
+   "result": "{\"t\":419.99999999997084,\"alive\":1588,\"job\":[664,22,363,2,0,0,537],\"flow\":null,\"parts\":null,\"census\":null,\"memb\":{\"integ\":0.8742984886649874},\"cRound\":null,\"eRound\":null,\"atoms\":0,\"charge\":0,\"energy\":-0.0628814697265625,\"eIn\":11797199.829849243,\"freeT\":131.986572265625,\"freeG\":163.77978515625}"
+  },
+  {
+   "t": 479.99999999993867,
+   "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})",
+   "result": "{\"t\":479.99999999993867,\"alive\":2213,\"job\":[1016,71,505,0,0,2,619],\"flow\":null,\"parts\":null,\"census\":null,\"memb\":{\"integ\":0.7592733845458653},\"cRound\":null,\"eRound\":null,\"atoms\":0,\"charge\":0,\"energy\":-0.033294677734375,\"eIn\":14201508.169403076,\"freeT\":188.12353515625,\"freeG\":125.038330078125}"
+  },
+  {
+   "t": 539.9999999999012,
+   "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})",
+   "result": "{\"t\":539.9999999999012,\"alive\":2475,\"job\":[1160,116,557,0,1,0,641],\"flow\":null,\"parts\":null,\"census\":null,\"memb\":{\"integ\":0.735363196125908},\"cRound\":null,\"eRound\":null,\"atoms\":0,\"charge\":0,\"energy\":-0.00225830078125,\"eIn\":18471903.765090942,\"freeT\":190.893310546875,\"freeG\":120.958984375}"
+  },
+  {
+   "t": 599.9999999998505,
+   "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})",
+   "result": "{\"t\":599.9999999998505,\"alive\":2722,\"job\":[1242,227,631,7,0,3,612],\"flow\":null,\"parts\":null,\"census\":null,\"memb\":{\"integ\":0.7752946362968405},\"cRound\":null,\"eRound\":null,\"atoms\":0,\"charge\":0,\"energy\":-0.0195159912109375,\"eIn\":21868641.111816406,\"freeT\":143.533935546875,\"freeG\":103.743896484375}"
+  }
+ ],
+ "console_errors": [],
+ "ended": "2026-11-18T09:24:03",
+ "wall_s": 314.6,
+ "snapshot": {
+  "head": "5163fd9",
+  "srcDirty": false
+ }
+}

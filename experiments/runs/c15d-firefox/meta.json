@@ -1,0 +1,64 @@
+{
+  "name": "c15d-firefox",
+  "description": "Firefox (headed): the default scene 40 s, every fix on",
+  "condition": {
+    "name": "c15d-firefox",
+    "description": "Firefox (headed): the default scene 40 s, every fix on",
+    "query": {
+      "seed": 3
+    },
+    "duration": 40,
+    "sample_every": 10,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 40,
+        "name": "end"
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 20,
+        "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})"
+      },
+      {
+        "t": 40,
+        "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})"
+      }
+    ]
+  },
+  "url": "http://localhost:62893/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "firefox",
+  "size": "1280x800",
+  "commit": "5163fd97dab8e2702fa385ab1c59a64fa000ad0f",
+  "dirty": true,
+  "started": "2026-11-22T15:45:29",
+  "status": "ok",
+  "adapter": "ANGLE (NVIDIA, NVIDIA GeForce GTX 980 Direct3D11 vs_5_0 ps_5_0), or similar  (WebGL's name; WebGPU hides it)",
+  "t_start": 0,
+  "sim_s": 40.0,
+  "run_wall_s": 78.51,
+  "speed_reached": 0.51,
+  "samples": 5,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 20.00000000000015,
+      "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})",
+      "result": "{\"t\":20.00000000000015,\"alive\":1842,\"job\":[924,466,293,0,0,159,0],\"flow\":{\"window\":20.00000000000015,\"inSprings\":86.45361328124936,\"inSpringsFuel\":151.78710937499886,\"inBodies\":0,\"openFix\":7.813476562499942,\"openBurn\":4.368164062499968,\"openCond\":109.57763671874919,\"openHyd\":26.8923339843748,\"openDis\":2.5437011718749813,\"openSettle\":2.172363281249984,\"mudFormedOpen\":68.55029296874952,\"uptake\":21.958740234374837,\"uptakeKind\":[11.664550781249913,0.3237304687499976,1.3688964843749898,0.5888671874999957,8.012695312499941],\"uptakeFuel\":50.956054687499616,\"grazed\":12.098144531249911,\"grazedFuel\":14.479248046874893,\"exhaled\":8.33129882812494,\"exhaledKind\":[6.881835937499949,0.0541992187499996,0.003662109374999973,0.019042968749999858,1.3725585937499898],\"exhaledFuel\":27.716308593749797,\"toMud\":121.81072998046784,\"toMudFuel\":172.94311523437372,\"lostRim\":0,\"cellFix\":8.09619140624994,\"cellBurn\":0.24902343749999817,\"cellCond\":0.010253906249999924,\"cellHyd\":0,\"cellDis\":9.24462890624993,\"builtBody\":0.05493164062499959,\"builtLip\":1818.9858398437366,\"builtWall\":6.166992187499955,\"builtPig\":3.9829101562499707,\"builtEnz\":0.08496093749999938,\"builderRed\":3.763183593749972,\"builderOx\":4.283203124999968,\"bites\":0.5493164062499959,\"spoiled\":0.12377929687499908,\"shuttle\":3.0842285156249774,\"fromGran\":1812.9155273437366,\"eIncome\":300.6426701780396,\"eCarbonEng\":0.5193786621093711,\"eUpkeep\":353.63639456328855,\"payBody\":0.027465820312499795,\"payLip\":474.8670043945277,\"payWall\":3.9675292968749707,\"payRed\":13.017150878906154,\"payPig\":8.965576171874934,\"payEnz\":121.9163818359366,\"payTrans\":57.425720214843324,\"dishLadder\":[4.761962890625,0.278076171875,0.26025390625,0.221435546875,1.8837890625],\"mud\":59.42095947265625,\"cellsLadder\":3.95703125,\"cellsLadderKind\":{\"0\":3.078125,\"1\":0.005615234375,\"2\":0.044189453125,\"3\":0.00927734375,\"4\":0.81982421875},\"granules\":8.291112792968761,\"in_body\":195.27,\"in_memb\":16.721,\"in_wall\":0.281,\"in_pig\":95.195,\"in_glue\":0.038,\"in_enz\":232.12,\"mudShare\":0.09604759281431455,\"cellShare\":0.8919821841661412,\"all\":618.66162109375},\"parts\":{\"membC\":16.721,\"wallC\":0.281,\"pigC\":95.195,\"glueC\":0.038,\"enzC\":232.12,\"limC\":1201,\"limG\":188,\"limTr\":449,\"limAt\":1291,\"limBat\":8,\"trans\":1842,\"enzWant\":239.188,\"enzShort\":0,\"limAny\":1839},\"census\":{\"n\":1842,\"ox\":334,\"cond\":159,\"red\":786,\"redLit\":786,\"hyd\":0,\"granule\":3,\"granC\":8.442,\"ladder\":3.723,\"any\":945,\"oxOnly\":0,\"litOnly\":0,\"body\":195.27,\"short\":0,\"want\":148.077},\"memb\":{\"integ\":0.026135722041259503},\"cRound\":0,\"eRound\":0,\"atoms\":0,\"charge\":0,\"energy\":0.0277557373046875,\"eIn\":392238.8240814209,\"freeT\":9.363037109375,\"freeG\":14.14697265625}"
+    },
+    {
+      "t": 39.99999999999901,
+      "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})",
+      "result": "{\"t\":39.99999999999901,\"alive\":1711,\"job\":[863,437,260,0,0,151,0],\"flow\":{\"window\":39.98333333333235,\"inSprings\":86.44605336859323,\"inSpringsFuel\":151.70530038558107,\"inBodies\":0,\"openFix\":19.205145698729112,\"openBurn\":12.580925646102854,\"openCond\":164.62254780638173,\"openHyd\":67.28230675542059,\"openDis\":4.254946722592852,\"openSettle\":4.059674929658291,\"mudFormedOpen\":68.43855024229015,\"uptake\":19.3659793142981,\"uptakeKind\":[11.529462145685986,0.6711780950396165,1.021788049708237,0.7638680830554586,5.379682940808803],\"uptakeFuel\":50.93882705033473,\"grazed\":19.87073674903655,\"grazedFuel\":21.995737156107253,\"exhaled\":10.594502266569666,\"exhaledKind\":[8.693075239683417,0.06704453678616255,0.014288179970821529,0.020516360983743733,1.7995779491455217],\"exhaledFuel\":35.02252729001754,\"toMud\":119.8522760948602,\"toMudFuel\":168.98923542361817,\"lostRim\":0,\"cellFix\":7.509354483639202,\"cellBurn\":0.6257490100041838,\"cellCond\":0.013921816381826106,\"cellHyd\":0,\"cellDis\":10.713570432993178,\"builtBody\":0.053489083993331875,\"builtLip\":1794.440798900628,\"builtWall\":7.393949953105643,\"builtPig\":3.9743122134223574,\"builtEnz\":0.05861817423926781,\"builderRed\":2.760183279491523,\"builderOx\":5.966597410379472,\"bites\":1.0972589490412943,\"spoiled\":0.3517090454356069,\"shuttle\":2.2615624348687513,\"fromGran\":1788.340845143854,\"eIncome\":519.2048620005419,\"eCarbonEng\":1.2984383548484064,\"eUpkeep\":329.0540351242503,\"payBody\":0.026744541996665937,\"payLip\":464.22388316096396,\"payWall\":4.763642565912998,\"payRed\":9.000087927261582,\"payPig\":8.953559751459162,\"payEnz\":117.81795067606585,\"payTrans\":55.26816847921797,\"dishLadder\":[8.622314453125,0.743896484375,0.53466796875,0.488037109375,1.74609375],\"mud\":112.2332763671875,\"cellsLadder\":5.690673828125,\"cellsLadderKind\":{\"0\":5.225341796875,\"1\":0.015625,\"2\":0.09033203125,\"3\":0.013427734375,\"4\":0.345947265625},\"granules\":15.25347949218758,\"in_body\":181.295,\"in_memb\":30.313,\"in_wall\":0.768,\"in_pig\":74.264,\"in_glue\":0.072,\"in_enz\":215.498,\"mudShare\":0.1733465135369842,\"cellShare\":0.8079107240426598,\"all\":647.450439453125},\"parts\":{\"membC\":30.313,\"wallC\":0.768,\"pigC\":74.264,\"glueC\":0.072,\"enzC\":215.498,\"limC\":1092,\"limG\":91,\"limTr\":464,\"limAt\":1229,\"limBat\":9,\"trans\":1711.013,\"enzWant\":221.203,\"enzShort\":1,\"limAny\":1707},\"census\":{\"n\":1711,\"ox\":320,\"cond\":151,\"red\":738,\"redLit\":738,\"hyd\":0,\"granule\":14,\"granC\":15.251,\"ladder\":5.48,\"any\":889,\"oxOnly\":0,\"litOnly\":0,\"body\":181.295,\"short\":0,\"want\":137.388},\"memb\":{\"integ\":0.06732612507305669},\"cRound\":0,\"eRound\":0,\"atoms\":0,\"charge\":0,\"energy\":0.04107666015625,\"eIn\":697873.0377960205,\"freeT\":30.818115234375,\"freeG\":27.385498046875}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-22T15:47:36",
+  "wall_s": 127.23
+}

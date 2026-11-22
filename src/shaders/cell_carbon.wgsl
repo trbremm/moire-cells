@@ -67,6 +67,7 @@ const CBF_GRAN: u32 = 32768u;  // FAT FROM GRANULES: the two-carbon builder also
 const CBF_HUNGER: u32 = 65536u; // HUNGER FOR EVERY PART: a cell whose parts were short of carbon grazes as a hungry one (not the body alone)
 // step C15e, CARBON LIFE VIABLE (src/carboncells.js; README "Step C15e: carbon life viable")
 const CBF_ENZANY: u32 = 262144u; // AN ENZYME'S SCAFFOLD FROM ANY CARBON: a unit is 4 burnt chain carbons (4, 0, 8) + 1 G (fixed for the page)
+const CBF_GRANRED: u32 = 524288u; // THE GRANULES' BURNT HANDS REDUCED: a builder short of fuel hands reduces granule hands from the battery (cb_gran_red)
 const CBF_WALLREC: u32 = 131072u; // WALL RECYCLING: a jolted wall's cracked pieces stay in the cell as granules (as shed lipids do), not mud    // OXYGEN DAMAGES MEMBRANES: free t oxidises the lipids' fuel hands (fat -> soap -> spoiled, into the mud)
 // the event counters (64-bit, LG_CBC_EV; src/carboncells.js EV)
 const CBE_OX: u32 = 0u;
@@ -785,6 +786,43 @@ fn cb_st(i: u32, S: ptr<function, array<i32, 5>>, g: vec3i) {
 fn cb_lim(i: u32, bits: u32) { if (bits != 0u) { atomicOr(&cbS[i * CW + CB_LIM], i32(bits)); } }
 
 /**
+ * Step C15e (CBF_GRANRED), THE GRANULES' BURNT HANDS REDUCED: up to k burnt hands on the granules become fuel hands by the table's own REDUCE
+ * (g + [c-t] -> [c-g] + t), exactly as the builder already reduces a ladder molecule's (C15c's CBF_RED, the storer's way: fat from sugar is
+ * dear): the battery pays the rise (2.75) and a spark per hand, only from above its floor (v.x); the g from the stock's free g, else from a
+ * WATER split for it (gt -> g + t: its bond and spark from the battery too); the t freed into the stock. Returns the hands reduced.
+ */
+fn cb_gran_red(k: i32, gr: ptr<function, vec3i>, m: ptr<function, array<i32, 18>>, bat: ptr<function, i32>, heat: ptr<function, i32>,
+               why: ptr<function, u32>) -> i32 {
+  if (k <= 0 || (CBP.cfg.x & CBF_GRANRED) == 0u) { return 0; }
+  let sp = max(CBP.e.z, 1);
+  let cost = sp + CBP.e.x;
+  let ww = i32(CBP.u.z) + i32(CBP.u.w);
+  let avail = max(*bat - i32(CBP.v.x), 0);
+  let g0 = max((*m)[0], 0);
+  let w0 = max((*m)[6], 0);
+  var x = min(min(k, (*gr).z), g0 + w0);
+  if (x < k) { *why |= CBL_AT; }
+  let x1 = min(x, g0);
+  if (x1 * cost >= avail) { x = avail / cost; *why |= CBL_BAT; }
+  else {
+    let x2 = min(x - x1, (avail - x1 * cost) / (cost + ww));
+    if (x1 + x2 < x) { *why |= CBL_BAT; }
+    x = x1 + max(x2, 0);
+  }
+  if (x <= 0) { return 0; }
+  let ws = max(x - g0, 0);
+  if (ws > 0) { *bat -= ws * ww; *heat += ws * i32(CBP.u.w); (*m)[6] -= ws; (*m)[0] += ws; (*m)[1] += ws; }
+  *gr += vec3i(0, x, -x);
+  (*m)[0] -= x;
+  (*m)[1] += x;
+  *bat -= x * cost;
+  *heat += x * sp;
+  atomicAdd(&wcbe2[CBE2_RED], x);
+  atomicAdd(&wcbe3[CBE3_RED], x * CBP.e.x + ws * ww);
+  return x;
+}
+
+/**
  * Make n TWO-CARBON molecules with nT burnt hands (0 oil or pigment, 1 soap1, 2 soap2) from the ladder in S, by the table's own reactions:
  * two ladder carbons CONDENSE ([c-g] + [c-t] -> [c-c] + gt, 0.75 as heat, the carbon spark from the battery), a pair j1 + j2 burnt hands
  * giving j1 + j2 - 1. The exact pairs first; then a pair too REDUCED for the target, whose extra fuel hands are OXIDISED with free t from the
@@ -899,6 +937,9 @@ fn cb_make2(nT: i32, n: i32, S: ptr<function, array<i32, 5>>, gr: ptr<function, 
   // carbons come loose and DISSOLVE as CO2-like molecules that leave (C15b's dissolving): fat from mud keeps its fuel and breathes out the
   // rest, as a real cell burns part of its food to make fat from the rest
   if (left > 0 && (CBP.cfg.x & CBF_GRAN) != 0u) {
+    // (step C15e, CBF_GRANRED: the granules' burnt hands the pieces lack in fuel hands are reduced first, from the battery)
+    let xw = min(left, (*gr).x);
+    cb_gran_red(min(xw * (6 - nT) - (*gr).y, (*gr).z - xw * nT), gr, m, bat, heat, &why);
     var x = min(left, (*gr).x);
     if (6 - nT > 0) { x = min(x, (*gr).y / (6 - nT)); }
     if (nT > 0) { x = min(x, (*gr).z / nT); }
@@ -932,6 +973,8 @@ fn cb_make_chain(n: i32, S: ptr<function, array<i32, 5>>, gr: ptr<function, vec3
   var left = n;
   var made = 0;
   var why = 0u;
+  let xw = min(left, (*gr).x);   // (step C15e, CBF_GRANRED: the fuel hands the chain carbons lack reduced first, from the battery)
+  cb_gran_red(min(xw - (*gr).y, (*gr).z - xw), gr, m, bat, heat, &why);
   var x = min(min(left, (*gr).x), min((*gr).y, (*gr).z));
   if (max(*bat, 0) / sp < x) { x = max(*bat, 0) / sp; why |= CBL_BAT; }
   if (x > 0) { *gr -= vec3i(x); *bat -= x * sp; *heat += x * sp; left -= x; made += x; }

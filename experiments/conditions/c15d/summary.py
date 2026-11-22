@@ -19,7 +19,7 @@ def probes(run):
     out = []
     for e in m.get("evals", []):
         r = e.get("result")
-        if isinstance(r, str) and r.startswith("{") and '"alive"' in r:
+        if isinstance(r, str) and r.startswith("{") and '"alive"' in r and '"t":' in r:
             out.append(json.loads(r))
     return out
 

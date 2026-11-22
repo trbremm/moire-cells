@@ -1,0 +1,90 @@
+{
+  "name": "g2-lit-on_s3",
+  "description": "default scene, whole dish lit (?light=full): duplication on, 20 min",
+  "condition": {
+    "name": "g2-lit-on_s3",
+    "description": "default scene, whole dish lit (?light=full): duplication on, 20 min",
+    "query": {
+      "light": "full",
+      "seed": 3
+    },
+    "duration": 1203,
+    "sample_every": 30,
+    "stall": 200,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 1200.5,
+        "name": "end"
+      },
+      {
+        "t": 1201,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "evals": [
+      {
+        "t": 300,
+        "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})"
+      },
+      {
+        "t": 600,
+        "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})"
+      },
+      {
+        "t": 900,
+        "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})"
+      },
+      {
+        "t": 1200,
+        "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})"
+      }
+    ]
+  },
+  "url": "http://localhost:55145/index.html?speed=max&until=0&overlay=ghost&ui=0&light=full&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "30e24b23c6404a5f9a58dd0d7348326ce19f4cd3",
+  "dirty": false,
+  "started": "2026-11-22T17:48:15",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1203.0,
+  "run_wall_s": 6588.3,
+  "speed_reached": 0.18,
+  "samples": 42,
+  "shots": [
+    "shots/end.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 300.0000000000558,
+      "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})",
+      "result": "{\"t\":285.1500000000693,\"n\":516,\"working\":2.7073643410852712,\"acting\":2.7073643410852712,\"withCopy\":0.26356589147286824,\"engCopy\":0.2596899224806202,\"pumpCopy\":0.005813953488372093,\"copies\":{\"eng\":167,\"pump\":3,\"perCell\":0.32945736434108525},\"fate\":{\"dosage\":148,\"newfn\":19,\"alone\":3,\"dosageShare\":0.8705882352941177,\"newShare\":0.11176470588235295,\"aloneShare\":0.01764705882352941},\"battery\":{\"copy\":0.3079374537748449,\"none\":0.3281725933677272},\"lineDups\":0.45930232558139533,\"fam\":{\"n\":10,\"all\":18,\"branched\":2,\"inCell\":4,\"top\":[{\"id\":81,\"cells\":213,\"slots\":318,\"copies\":108,\"cellsBranched\":19,\"jobs\":[[\"gt \u2192 g + t@2\",285],[\"gt + GT \u2192 gT + Gt@2\",9],[\"gt \u2192 g + t@3\",6],[\"ll \u2192 l + l@2\",4]]},{\"id\":82,\"cells\":213,\"slots\":226,\"copies\":13,\"cellsBranched\":0,\"jobs\":[[\"g + t \u2192 gt\",220],[\"G + t \u2192 Gt\",2],[\"gt + GT \u2192 gT + Gt@bat\",1],[\"ll \u2192 l + l@bat\",1]]},{\"id\":83,\"cells\":204,\"slots\":211,\"copies\":10,\"cellsBranched\":1,\"jobs\":[[\"g + T \u2192 gT\",191],[\"L + L \u2192 LL\",9],[\"Gt + T \u2192 GT + t@bat\",4],[\"gt + T \u2192 gT + t@bat\",2]]},{\"id\":17,\"cells\":168,\"slots\":175,\"copies\":7,\"cellsBranched\":1,\"jobs\":[[\"gt \u2192 g + t@2\",169],[\"gt \u2192 g + t@3\",1],[\"gT \u2192 g + T@2\",1],[\"t + gT \u2192 gt + T\",1]]},{\"id\":18,\"cells\":168,\"slots\":181,\"copies\":13,\"cellsBranched\":1,\"jobs\":[[\"g + t \u2192 gt\",176],[\"l + l \u2192 ll\",1],[\"L + L \u2192 LL\",1],[\"gt + GT \u2192 gT + Gt@bat\",1]]},{\"id\":146,\"cells\":127,\"slots\":142,\"copies\":15,\"cellsBranched\":0,\"jobs\":[[\"g + t \u2192 gt\",142]]}]},\"pfam\":{\"n\":8,\"branched\":1,\"top\":[{\"id\":1713028,\"cells\":18,\"slots\":18,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"Gt out\",12],[\"Gt in\",6]]},{\"id\":1665991,\"cells\":17,\"slots\":19,\"copies\":2,\"cellsBranched\":0,\"jobs\":[[\"gT out\",17],[\"gt out\",2]]},{\"id\":1672826,\"cells\":11,\"slots\":11,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"T in\",11]]},{\"id\":1144014,\"cells\":9,\"slots\":9,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"l out\",9]]},{\"id\":1916634,\"cells\":5,\"slots\":5,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"gt in\",5]]},{\"id\":1395101,\"cells\":3,\"slots\":3,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"Gt out\",3]]}]},\"rates\":{\"time\":299.9666666667225,\"eng\":0.4983388704323469,\"pump\":0.049833887043234694,\"del\":0.19933554817293878,\"full\":0.049833887043234694,\"fresh\":0.647840531562051,\"tot\":{\"eng\":70,\"pump\":4,\"del\":24,\"full\":2,\"fresh\":60}}}"
+    },
+    {
+      "t": 599.999999999783,
+      "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})",
+      "result": "{\"t\":585.4833333331295,\"n\":1227,\"working\":3.2917685411572943,\"acting\":3.2917685411572943,\"withCopy\":0.4767726161369193,\"engCopy\":0.47351263243683783,\"pumpCopy\":0.02526487367563162,\"copies\":{\"eng\":758,\"pump\":31,\"perCell\":0.6430317848410758},\"fate\":{\"dosage\":588,\"newfn\":158,\"alone\":43,\"dosageShare\":0.7452471482889734,\"newShare\":0.2002534854245881,\"aloneShare\":0.05449936628643853},\"battery\":{\"copy\":0.32929193219567976,\"none\":0.3565694921855986},\"lineDups\":1.189079054604727,\"fam\":{\"n\":9,\"all\":16,\"branched\":4,\"inCell\":5,\"top\":[{\"id\":82,\"cells\":931,\"slots\":1077,\"copies\":157,\"cellsBranched\":20,\"jobs\":[[\"g + t \u2192 gt\",1043],[\"g + T \u2192 gT\",11],[\"L + L \u2192 LL\",4],[\"t + GT \u2192 Gt + T\",4]]},{\"id\":81,\"cells\":927,\"slots\":1352,\"copies\":453,\"cellsBranched\":137,\"jobs\":[[\"gt \u2192 g + t@2\",1147],[\"gt \u2192 g + t@3\",61],[\"gt \u2192 g + t@1\",22],[\"ll \u2192 l + l@2\",17]]},{\"id\":83,\"cells\":884,\"slots\":961,\"copies\":79,\"cellsBranched\":6,\"jobs\":[[\"g + T \u2192 gT\",474],[\"L + L \u2192 LL\",389],[\"g + t \u2192 gt\",46],[\"LL \u2192 L + L@bat\",8]]},{\"id\":18,\"cells\":225,\"slots\":250,\"copies\":25,\"cellsBranched\":0,\"jobs\":[[\"g + t \u2192 gt\",249],[\"G + T \u2192 GT\",1]]},{\"id\":17,\"cells\":214,\"slots\":234,\"copies\":20,\"cellsBranched\":0,\"jobs\":[[\"gt \u2192 g + t@2\",223],[\"LL \u2192 L + L@2\",3],[\"l + l \u2192 ll\",2],[\"Gt \u2192 G + t@2\",2]]},{\"id\":145,\"cells\":63,\"slots\":81,\"copies\":18,\"cellsBranched\":3,\"jobs\":[[\"gt \u2192 g + t@2\",77],[\"L + L \u2192 LL\",2],[\"gt + T \u2192 gT + t@2\",1],[\"gt \u2192 g + t@3\",1]]}]},\"pfam\":{\"n\":25,\"branched\":3,\"top\":[{\"id\":1144014,\"cells\":383,\"slots\":408,\"copies\":26,\"cellsBranched\":6,\"jobs\":[[\"l out\",357],[\"l in\",35],[\"trace out\",4],[\"g out\",2]]},{\"id\":1785404,\"cells\":61,\"slots\":65,\"copies\":4,\"cellsBranched\":0,\"jobs\":[[\"trace in\",29],[\"T in\",18],[\"T out\",17],[\"trace out\",1]]},{\"id\":1690327,\"cells\":23,\"slots\":23,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"l out\",16],[\"GT out\",5],[\"l in\",1],[\"L out\",1]]},{\"id\":1123667,\"cells\":15,\"slots\":15,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"trace out\",14],[\"trace in\",1]]},{\"id\":1900899,\"cells\":12,\"slots\":12,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"trace out\",12]]},{\"id\":1555363,\"cells\":11,\"slots\":11,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"trace out\",11]]}]},\"rates\":{\"time\":599.999999999783,\"eng\":1.3466334164600777,\"pump\":0,\"del\":0.6982543640904106,\"full\":0.19950124688297446,\"fresh\":0.6982543640904106,\"tot\":{\"eng\":366,\"pump\":31,\"del\":199,\"full\":73,\"fresh\":265}}}"
+    },
+    {
+      "t": 899.9999999995101,
+      "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})",
+      "result": "{\"t\":885.8166666661897,\"n\":1788,\"working\":3.2695749440715884,\"acting\":3.2695749440715884,\"withCopy\":0.5246085011185683,\"engCopy\":0.5106263982102909,\"pumpCopy\":0.036353467561521254,\"copies\":{\"eng\":1197,\"pump\":66,\"perCell\":0.7063758389261745},\"fate\":{\"dosage\":940,\"newfn\":257,\"alone\":66,\"dosageShare\":0.7442596991290578,\"newShare\":0.2034837688044339,\"aloneShare\":0.052256532066508314},\"battery\":{\"copy\":0.27423645946771097,\"none\":0.29227853214039523},\"lineDups\":1.1308724832214765,\"fam\":{\"n\":13,\"all\":25,\"branched\":5,\"inCell\":6,\"top\":[{\"id\":82,\"cells\":1141,\"slots\":1350,\"copies\":245,\"cellsBranched\":12,\"jobs\":[[\"g + t \u2192 gt\",1332],[\"t + GT \u2192 Gt + T\",3],[\"GT \u2192 G + T@bat\",3],[\"L + L \u2192 LL\",2]]},{\"id\":81,\"cells\":1119,\"slots\":1757,\"copies\":650,\"cellsBranched\":219,\"jobs\":[[\"gt \u2192 g + t@2\",1490],[\"gt \u2192 g + t@3\",62],[\"Gt + g \u2192 gt + G@2\",30],[\"gt + GT \u2192 gT + Gt@2\",29]]},{\"id\":83,\"cells\":1051,\"slots\":1137,\"copies\":104,\"cellsBranched\":6,\"jobs\":[[\"L + L \u2192 LL\",674],[\"g + T \u2192 gT\",372],[\"G + T \u2192 GT\",19],[\"G + t \u2192 Gt\",10]]},{\"id\":18,\"cells\":604,\"slots\":661,\"copies\":57,\"cellsBranched\":3,\"jobs\":[[\"g + t \u2192 gt\",657],[\"t + gT \u2192 gt + T\",2],[\"GT + g \u2192 gT + G@bat\",1],[\"ll \u2192 l + l@bat\",1]]},{\"id\":17,\"cells\":595,\"slots\":695,\"copies\":103,\"cellsBranched\":7,\"jobs\":[[\"gt \u2192 g + t@2\",675],[\"gt + GT \u2192 gT + Gt@2\",4],[\"gt \u2192 g + t@3\",4],[\"GT + g \u2192 gT + G@2\",2]]},{\"id\":2052483,\"cells\":79,\"slots\":85,\"copies\":6,\"cellsBranched\":0,\"jobs\":[[\"G + gT \u2192 GT + g\",82],[\"l + l \u2192 ll\",2],[\"ll \u2192 l + l@1\",1]]}]},\"pfam\":{\"n\":38,\"branched\":4,\"top\":[{\"id\":1144014,\"cells\":567,\"slots\":622,\"copies\":57,\"cellsBranched\":10,\"jobs\":[[\"l out\",501],[\"l in\",88],[\"Gt out\",8],[\"L out\",6]]},{\"id\":2096199,\"cells\":94,\"slots\":95,\"copies\":1,\"cellsBranched\":0,\"jobs\":[[\"trace in\",88],[\"trace out\",2],[\"l in\",2],[\"G in\",1]]},{\"id\":1785404,\"cells\":70,\"slots\":70,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"trace in\",46],[\"T in\",12],[\"T out\",6],[\"Gt out\",3]]},{\"id\":1395101,\"cells\":31,\"slots\":31,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"Gt out\",24],[\"gT out\",3],[\"G out\",2],[\"GT out\",1]]},{\"id\":1352450,\"cells\":18,\"slots\":18,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"trace in\",15],[\"L in\",1],[\"GT in\",1],[\"l in\",1]]},{\"id\":1558257,\"cells\":16,\"slots\":16,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"t in\",14],[\"gt in\",2]]}]},\"rates\":{\"time\":899.9499999995102,\"eng\":0.1998334721067596,\"pump\":0,\"del\":0.1998334721067596,\"full\":0.0499583680266899,\"fresh\":0.3497085761868293,\"tot\":{\"eng\":865,\"pump\":93,\"del\":529,\"full\":168,\"fresh\":662}}}"
+    },
+    {
+      "t": 1199.9999999992374,
+      "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})",
+      "result": "{\"t\":1186.14999999925,\"n\":2858,\"working\":3.4121763470958713,\"acting\":3.4121763470958713,\"withCopy\":0.6284114765570329,\"engCopy\":0.6049685094471658,\"pumpCopy\":0.099370188943317,\"copies\":{\"eng\":2265,\"pump\":285,\"perCell\":0.8922323303009098},\"fate\":{\"dosage\":1735,\"newfn\":602,\"alone\":213,\"dosageShare\":0.6803921568627451,\"newShare\":0.23607843137254902,\"aloneShare\":0.08352941176470588},\"battery\":{\"copy\":0.47013009417561485,\"none\":0.4675239627644167},\"lineDups\":1.355143456962911,\"fam\":{\"n\":22,\"all\":39,\"branched\":8,\"inCell\":6,\"top\":[{\"id\":82,\"cells\":1631,\"slots\":1939,\"copies\":428,\"cellsBranched\":25,\"jobs\":[[\"g + t \u2192 gt\",1905],[\"GT + g \u2192 gT + G@bat\",8],[\"gt + GT \u2192 gT + Gt@3\",5],[\"G + t \u2192 Gt\",5]]},{\"id\":81,\"cells\":1608,\"slots\":2564,\"copies\":981,\"cellsBranched\":400,\"jobs\":[[\"gt \u2192 g + t@2\",2089],[\"Gt + g \u2192 gt + G@2\",121],[\"gt \u2192 g + t@3\",59],[\"t + GT \u2192 Gt + T\",49]]},{\"id\":83,\"cells\":1430,\"slots\":1528,\"copies\":110,\"cellsBranched\":9,\"jobs\":[[\"L + L \u2192 LL\",1047],[\"g + T \u2192 gT\",332],[\"GT \u2192 G + T@bat\",30],[\"gt + T \u2192 gT + t@bat\",18]]},{\"id\":18,\"cells\":1211,\"slots\":1682,\"copies\":477,\"cellsBranched\":59,\"jobs\":[[\"g + t \u2192 gt\",1615],[\"gt + GT \u2192 gT + Gt@bat\",14],[\"t + gT \u2192 gt + T\",13],[\"gt + T \u2192 gT + t@bat\",12]]},{\"id\":17,\"cells\":1208,\"slots\":1433,\"copies\":233,\"cellsBranched\":31,\"jobs\":[[\"gt \u2192 g + t@2\",1381],[\"gt \u2192 g + t@3\",7],[\"gt + GT \u2192 gT + Gt@2\",6],[\"gt \u2192 g + t@1\",5]]},{\"id\":2052483,\"cells\":317,\"slots\":337,\"copies\":20,\"cellsBranched\":13,\"jobs\":[[\"G + gT \u2192 GT + g\",298],[\"GT + g \u2192 gT + G@3\",11],[\"g + t \u2192 gt\",11],[\"l + l \u2192 ll\",9]]}]},\"pfam\":{\"n\":42,\"branched\":8,\"top\":[{\"id\":1144014,\"cells\":933,\"slots\":1115,\"copies\":234,\"cellsBranched\":73,\"jobs\":[[\"l out\",847],[\"l in\",167],[\"GT out\",28],[\"trace out\",20]]},{\"id\":2096199,\"cells\":660,\"slots\":694,\"copies\":34,\"cellsBranched\":3,\"jobs\":[[\"trace in\",665],[\"trace out\",10],[\"GT in\",4],[\"gT in\",4]]},{\"id\":1785404,\"cells\":114,\"slots\":114,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"trace in\",106],[\"Gt out\",5],[\"Gt in\",2],[\"T in\",1]]},{\"id\":2067185,\"cells\":75,\"slots\":75,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"gt out\",65],[\"L out\",7],[\"Gt out\",2],[\"gt in\",1]]},{\"id\":1615155,\"cells\":67,\"slots\":67,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"GT in\",67]]},{\"id\":1395101,\"cells\":63,\"slots\":63,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"Gt out\",48],[\"Gt in\",5],[\"GT out\",4],[\"gT out\",3]]}]},\"rates\":{\"time\":1199.9499999992374,\"eng\":1.5461346633430522,\"pump\":0.39900249376594893,\"del\":1.7456359102260266,\"full\":0.44887780548669254,\"fresh\":1.0972568578563595,\"tot\":{\"eng\":1222,\"pump\":174,\"del\":923,\"full\":287,\"fresh\":1002}}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-22T19:40:22",
+  "wall_s": 6727.68
+}

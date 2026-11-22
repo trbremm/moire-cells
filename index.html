@@ -368,6 +368,7 @@ body.toy-mode.toy-chrome #overlay { top: 92px; }
 .toy-line { flex-basis: 100%; font-size: 11.5px; line-height: 1.4; color: var(--ink); opacity: 0.85; max-height: 5em; overflow: hidden;
   transition: opacity 0.8s, max-height 0.8s; }
 .toy-cap:not(.fresh):not(:hover):not(:focus-visible) .toy-line { opacity: 0; max-height: 0; }
+.toy-cap:not(.fresh):not(:hover):not(:focus-visible) { background: transparent; transition: background 0.8s; }
 .toy-toast {
   position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + var(--toy-h, 60px) + 12px);
   margin: 0; padding: 5px 12px; width: max-content; max-width: calc(100% - 40px); box-sizing: border-box; text-align: center;

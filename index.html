@@ -489,6 +489,7 @@ body.toy-mode .joblegend .jrow { grid-template-columns: 8px auto; }
     if (!m.hidden) return;
     document.getElementById('msgbox').innerHTML = html;
     m.className = 'error'; m.hidden = false;
+    m.dataset.net = '1';   // (the safety net's own message: src/main.js takes it away if the modules do start after all)
   }
   var how = '<p>Run a local server in the project folder:</p><pre>python -m http.server</pre>' +
     '<p>then open <a href="http://localhost:8000">http://localhost:8000</a> in Chrome or Edge.</p>' +
@@ -499,7 +500,7 @@ body.toy-mode .joblegend .jrow { grid-template-columns: 8px auto; }
   }
   setTimeout(function () {
     if (!window.__moireBooted) show('<h2>The page did not start</h2><p>The JavaScript modules did not load or crashed early.</p>' + how);
-  }, 8000);
+  }, 15000);
 })();
 </script>
 <script type="module" src="src/main.js"></script>

@@ -201,6 +201,7 @@ import { Tissues, useDesignFounder, DESIGNS } from './tissues.js';
 import { Warfare } from './warfare.js';
 
 window.__moireBooted = true;
+{ const m = document.getElementById('msg'); if (m && m.dataset.net) { m.hidden = true; delete m.dataset.net; } }   // (a slow start: the safety net's message goes)
 
 const TICK = 1 / 60;
 const MAX_TICKS = 4;        // 1x to 8x: at most this many ticks per frame per 1x of speed (as before step C3b)

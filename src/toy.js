@@ -397,7 +397,8 @@ export function createToy(ctx) {
     // with carbon (the default since the merge): every founder a PHOTOSYNTHESISER, which with carbon is a carbon fixer (genome.js
     // founderCarbon: light makes its sugar-like body carbon, it burns some of it, and bonds the freed g with t). The light + burn founders
     // ('both', as with ?carbon=0) lose their fermenter to the carbon engine there and live on light alone: a maze held 181 cells at 4
-    // minutes against 407 photosynthesisers (?carbon=0: 364), caves 101 (the usual spread) against 175; ?habit= still chooses
+    // minutes against 407 photosynthesisers (?carbon=0: 364; the usual spread of habits 327), rings 216 (the usual spread 168 at 3.5
+    // minutes); ?habit= still chooses
     const toyHabit = CARBON ? 'pigments' : 'both';
     const G = C.genome.params;
     const seedNow = () => {

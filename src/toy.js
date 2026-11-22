@@ -21,6 +21,7 @@ import { camera } from './camera.js';
 import { dish } from './dish.js';
 import { springInk } from './matter.js';
 import { keysText } from './actions.js';
+import { CARBON } from './carbon.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const ICON = {
@@ -393,10 +394,15 @@ export function createToy(ctx) {
     C.layout = P.get('toyspread') === 'homes' ? { spread: 'colonies', colonies: centres.length, diversity: 'mixed', centres: () => centres, ring: null }
       : { spread: 'scatter', colonies: 5, diversity: 'mixed', centres: null, ring: null };
     if (!P.has('squeeze')) C.params.squeeze = SPREAD_SQUEEZE;
+    // with carbon (the default since the merge): every founder a PHOTOSYNTHESISER, which with carbon is a carbon fixer (genome.js
+    // founderCarbon: light makes its sugar-like body carbon, it burns some of it, and bonds the freed g with t). The light + burn founders
+    // ('both', as with ?carbon=0) lose their fermenter to the carbon engine there and live on light alone: a maze held 181 cells at 4
+    // minutes against 407 photosynthesisers (?carbon=0: 364), caves 101 (the usual spread) against 175; ?habit= still chooses
+    const toyHabit = CARBON ? 'pigments' : 'both';
     const G = C.genome.params;
     const seedNow = () => {
       const habit0 = G.habit;
-      if (!P.has('habit')) G.habit = 'both';
+      if (!P.has('habit')) G.habit = toyHabit;
       C.seed(true);
       G.habit = habit0;
     };

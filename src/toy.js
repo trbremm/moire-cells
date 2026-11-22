@@ -393,10 +393,20 @@ export function createToy(ctx) {
     C.layout = P.get('toyspread') === 'homes' ? { spread: 'colonies', colonies: centres.length, diversity: 'mixed', centres: () => centres, ring: null }
       : { spread: 'scatter', colonies: 5, diversity: 'mixed', centres: null, ring: null };
     if (!P.has('squeeze')) C.params.squeeze = SPREAD_SQUEEZE;
-    const G = C.genome.params, habit0 = G.habit;
-    if (!P.has('habit')) G.habit = 'both';
-    C.seed(true);
-    G.habit = habit0;
+    const G = C.genome.params;
+    const seedNow = () => {
+      const habit0 = G.habit;
+      if (!P.has('habit')) G.habit = 'both';
+      C.seed(true);
+      G.habit = habit0;
+    };
+    // (the page's first world: its culture replaces the open dish's only once a frame has run. Seeded again before any frame, the open
+    // dish's founders' batteries, handed back as heat, never reached the books: the energy rounding stood at +3.2e3 from the start in
+    // every world opened by a link, carbon on or off; a world built later was exact)
+    if (boot && !(C.tick > 0)) {
+      const wait = () => { if (C.tick > 0) seedNow(); else requestAnimationFrame(wait); };
+      requestAnimationFrame(wait);
+    } else seedNow();
     if (!boot) {
       // the old world's atoms washed out (booked as gone), once the old cells' stock is back in the dish
       requestAnimationFrame(() => requestAnimationFrame(() => M.wash()));

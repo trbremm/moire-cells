@@ -6535,6 +6535,157 @@ distance test first). To be measured on a free GPU.
 - The fields still act between centres (a spindle emits from its centre; it SENSES along its real sides).
 - Speed not measured on a free GPU.
 
+## Step G2: gene duplication
+
+BUILD QUEUE item 6c (2026-11-22): GENE DUPLICATION for engines and pumps. In real genomes most new genes start as an accidental COPY of an
+old one: for a while the cell holds two of the same gene. Either both stay alike and the cell simply makes twice as much of that enzyme
+("dosage"), or one copy keeps the old job while the other, freed from duty, drifts and now and then lands on a new job
+("neofunctionalisation": the way whole families of related enzymes arose). Or the spare copy decays and is lost again. Here the same three
+outcomes can happen to the cells' engines (step C6) and pumps (step C7); nothing says which is better: a copy costs what any engine or pump
+costs, and selection decides. Code: `src/dup.js` (switches, knobs, counters, census, panel line), `dup_birth` in `cell_step.wgsl`, the
+`DUP_*` / `FAM_*` helpers in `cell_common.wgsl`, the five-slot engine section in `cell_eat.wgsl`. Every piece has its switch (rules panel
+group "Gene duplication (step G2)", URL options below).
+
+### The silent slots
+
+- ENGINES: the genome now has FIVE engine slots: the three of step C6 and two SILENT ones (genome words 156..159, `Bio.dx`: two codes and
+  two rates, read like the old three). A silent slot (rate 0) does nothing, costs nothing and does not drift. Only a duplication fills one.
+- PUMPS: the pump plumbing has two slots, and its requests travel to the neighbours packed two to a word, so a third pump slot would mean
+  rebuilding that exchange. Instead a pump copy goes into the cell's EMPTY pump slot: most cells use one pump slot or none (founders: two
+  thirds none, a third one), so most cells have a silent pump slot already. A cell whose two pump slots both work cannot copy a pump.
+- FAMILIES: every working slot carries a FAMILY id (words 160..166, `Bio.df`, `Bio.dg.xyz`), like a gene's name in a gene tree. It is
+  inherited, and a copy keeps its original's. A founder's slots are named after the founder (1 + 16 x founder + slot; pumps + 8); a slot
+  that ordinary mutation starts from empty (the old C6 / C7 jumps still do) gets a fresh random id. So "the same family running two
+  different reactions" means one ancestral gene that has branched. Word 167 counts the duplications in the cell's line since its founder.
+- The genome grows from 156 to 168 floats (624 to 672 bytes a cell). Old genomes read 0 in the new words: silent slots, no family (named at
+  their next birth, from their founder).
+
+### What happens at a birth
+
+All of it at the birth's copying (`daughter_genome` -> `dup_birth`), after the old mutation:
+
+- DUPLICATION, with chance `rate` (0.02) x the birth's COPYING SCALE (key M x the fidelity gene's e^-F, plus hard light's extra: exactly the
+  scale every copying error uses since step G1: careful lineages duplicate less, hard light makes more copies, key M off makes none). One WORKING slot
+  is picked at random among all the cell's working engine and pump slots, and copied over the first silent slot of its kind: its reaction
+  and pigment band (or its substance and direction), its RATE, its family (marked "copy") and, for an engine, the gene-network output it
+  follows. So straight after a duplication the cell runs that reaction twice at the same rate: DOSAGE x 2, and pays UPKEEP x 2. With no
+  silent slot of that kind left nothing happens (counted as "no room").
+- DRIFT: from the next birth on a copy mutates like any slot: its rate by the same small steps, and now and then (at the chance one of the
+  three old slots has) a jump to another reaction or another pigment band. A pump copy drifts by the pumps' ordinary jumps (another
+  substance, the other direction, or empty). Meanwhile the ORIGINAL keeps the cell alive.
+- DELETION, with chance `del` (0.02) x the same scale: one of the cell's copies (at random) is lost back to silence, so gene count is no
+  one-way ratchet: copies that do nothing settle at a balance between copying and loss (the neutral control shows where), and selection
+  shows as a difference from it.
+- The old three engine slots and the pumps mutate exactly as before (the same random draws), so the old slots' story is unchanged.
+
+### How a copy acts
+
+- The eat pass runs five engine slots instead of three. Each copy's rate goes through the same C13 engine gate, the same T1b gene-network
+  factor (the output of the slot it was copied from: a duplicated gene keeps its regulation), the same cofactor, pigment, saturation,
+  battery and spark rules. Upkeep (T1b: only for what is expressed) follows the expressed rate, so a copy the network keeps silent costs
+  nothing, and a copy running full speed costs as much as its original.
+- A harvesting copy builds and wants pigment like its original (step N1) and shades the body from hard light like any hard pigment (C8).
+- The job colour (step F0) counts the copies, so a cell whose copy has drifted into breathing can turn pink.
+- Pump copies pump; their upkeep, cost and voltage as any pump's.
+
+### The switches (rules panel "Gene duplication (step G2)"; URL)
+
+- `?dup=0`: off. No duplications, no deletions, the silent slots stay silent. Exactly as before G2 (the extra slots are zero, every sum adds
+  0, the old random draws are untouched; the families are still named but nothing reads them). Copies in a loaded genome have no effect.
+- `?dupnull=1`: the NEUTRAL CONTROL. Duplications, drift and deletions happen exactly as when on, but the copies have NO effect: they run
+  nothing, pump nothing, cost nothing, are not drawn and not in the job colour. The yardstick for "did selection keep the copies?".
+- Knobs: `?duprate=` (0.02 a birth), `?dupdel=` (0.02 a birth), `?dupcensus=` (s between the census's read-backs, 15).
+- Old snapshots (genomes of 156 words) load with duplication off, "as they ran" (the note says so).
+
+### The census and the panel line
+
+ENGINE COPIES (COPIES on a phone; ENGINES is step C6's strategies line): working engine slots per cell (the old ones plus filled copies; in the control also how many of them act), the share of cells
+holding a COPY (engine, pump), each copy's FATE: DOSAGE (a relative of the same family in the cell runs the same reaction), NEW FUNCTION
+(its family's other slot in the cell runs a different one), ALONE (its relatives are gone: the copy carries the family on its own); the
+engine FAMILIES (with at least 3 working slots in the dish), how many have BRANCHED (2 or more reactions each run by at least 3 slots) and
+how many run two reactions inside one cell; duplications and losses per s; the mean battery of cells with and without a copy. The overlay
+adds counts, events per s, the biggest families with their reactions, and a series. `moire.dup.census`, `moire.dup.now()` (a fresh
+read-back), `moire.sample()`'s `dup.*`. The cells zoo names a duplicate engine ("... (a duplicate)").
+
+### The look
+
+Engines are drawn as parts round the battery core (step C6: up, lower right, lower left). The two duplicate slots, while the copies act,
+are two more parts in the gaps, UPPER RIGHT and UPPER LEFT, a little smaller (0.8 x): the same shape and colour code (a disc in its
+pigment's band colour for a harvester, a diamond for a burner, a triangle for a swap, a square for a chain maker). A cell with dosage shows
+two identical marks; one with a new function, two different ones. In the harmonic look the copies add violet granules at those places.
+The zoo's portraits spread the parts evenly round the core. Pump copies show as pump notches, as any pump. In the neutral control the
+copies are not drawn.
+
+### What it looks like (pictures: `experiments/keep/g2/`, duplication x10 so copies are common, seed 3, 300 s)
+
+- `default-dup0.2-s3-t300-x10-neon-crop.jpg`: the spotlight colony up close. Most cells carry four or five little lamps round their green
+  battery core instead of two or three. Two identical red triangles side by side are dosage (the same engine twice); two different marks
+  where there used to be one are a copy that found another job.
+- `default-dup0.2-s3-t300-x5-neon.jpg`, `default-dup0.2-s3-t300-x5-harm.jpg` (round cells with five violet granules where they had
+  three), `colonies-dup0.2-s3-t300-x5-neon.jpg` / `-harm.jpg` (the wild Colonies: pink breather spindles with three to five parts each).
+
+### Results (quick runs; the user: not valid until more changes land; EXPERIMENTS.md "Gene duplication")
+
+20 minutes, seeds 3 and 7, the default scene (spotlight), the Colonies preset (wild founders) and the default scene with the whole dish lit;
+duplication on against its neutral control (and off for the first two). The GPU was shared throughout (x0.2 to x0.6). In plain words:
+
+- **Working copies are kept more than inert ones: 6 of 6 pairs.** Copies per cell at 20 min ON / NULL: spotlight 1.81 / 1.21 and
+  1.05 / 0.95, Colonies 0.61 / 0.32 and 0.90 / 0.44, lit 0.90 / 0.59 and 1.16 / 0.75 (the same order over the last 10 minutes). Not by
+  more copying (the duplications made were equal or fewer ON): the copies that act are carried by the lineages that win. A consistent
+  hint from two seeds per scene, not a result; hitch-hiking on a lineage that won for another reason cannot be told apart yet.
+- **Dosage or new function? Dosage by numbers, new function by difference.** 60 .. 90 % of copies are still two of the same engine (most
+  often the burner g + t -> gt and the visible-2 pigment splitting gt: the C12d self-burn loop at double strength; among pumps the trace IN
+  pump). But copies that drifted into a different reaction next to their original are 2 .. 3 x as many ON as in the null in 5 of 6 pairs
+  (e.g. 614 / 193, 632 / 215, 605 / 193), although drift is free in the null: some new jobs seem to pay their upkeep. They are a mixed bag
+  (chain makers, fermenters, battery-paid crust crackers, other pigment bands); none takes over a dish.
+- **Families branch either way.** Families running two or more reactions dish-wide: ON 3 .. 8, NULL 1 .. 7, OFF 2 .. 5: ordinary mutation
+  already branches genes across cells; duplication adds two reactions of one family inside one cell. No clear difference in 20 minutes.
+- **No cost, no visible gain** to the dish: cell counts on / null / off within the seeds' scatter, batteries of cells with and without
+  copies alike (one pair lower with copies).
+- The Oxygen preset died in the founders' crash before any copy (both seeds; known since C12e with photolysis off), so the whole-dish-lit
+  scene stands in for it.
+
+### Checked
+
+- **Books** (`experiments/conditions/g2/check.json`, seed 5, the whole dish lit, 420 s at MAX, duplication 0.3 and loss 0.1 a birth, the
+  null / off / on toggled at runtime, a resize with G (wild founders), key M off and on, turnover mode and back, a snapshot saved and loaded
+  at 300 s with copies spread): atoms and charge rounding exactly 0 at every sample; the energy line's rounding within -0.002 .. +0.114
+  (stepping up at the resize and new founders, flat after; G1's check -0.01 .. +0.05); the reload exact. Atoms and charge 0 in every act run.
+- **Off is the old behaviour by construction**: with `?dup=0` the duplicate slots stay 0, every five-slot sum adds exactly 0.0 to the old
+  three, the old slots' random draws and order are untouched (G2's draws use their own stream numbers, 230..247), and the family words are
+  written but never read by the simulation. (A bit-for-bit replay is not possible: the GPU's atomics and MAX's frame pacing differ run to
+  run.)
+- **Old snapshots**: a snapshot saved on the branch's base commit (genomes of 156 words) loads exact, duplication off "as it ran", 60 s,
+  no copies, atoms and charge 0.
+- **Firefox** (headed, default scene, duplication 0.2): runs, no console messages. **Phone** (Chrome 390 x 844, dpr 3): the rules panel
+  shows the group; the short line ("COPIES 5% · same 98% new 0% · fam 29 br 0 · +1.17 −0.05/s") fits one line.
+
+### Speed
+
+Not measurable here: the GPU was shared with another worker's three to five runs the whole time, and the same runs scattered x4
+(headless Chrome, 1280 x 800, default scene, seed 3, MAX, neon; on = duplication on, off = `?dup=0`, which still runs the five-slot code
+with two empty slots): 2000 cells on x0.64 / x0.88, off x0.77 / x3.16; 10 000 cells on x0.22 / x0.66, off x0.27 / x0.67
+(`experiments/runs/g2-speed-*`). What G2 adds: 48 bytes more genome a cell (672 instead of 624), five instead of three passes of the eat
+pass's engine loops (two exit at once while their slot is silent), and a few operations at births only. I expect a few per cent at most;
+to be measured on a free GPU.
+
+### Known issues
+
+- Pumps have no new silent slot: a pump copy needs the cell's second pump slot empty (the pump exchange packs exactly two slots into the
+  words the neighbours read). Cells running two pumps cannot copy a pump; a pump copy blocks the de novo start of a pump there, even in
+  the null (where it does nothing), which the null control therefore carries too.
+- Deletion only removes COPIES (the duplicate engine slots and pump copies); an original slot is lost only by the old C6 / C7 jumps. A copy
+  that kept the old job while its original drifted away is still a "copy" and can be deleted.
+- The census's "new function" counts a copy whose family member in the same cell runs another reaction, also when it is the ORIGINAL that
+  drifted; "alone" copies have outlived their original.
+- The strategies census (ENGINES line, C6) and the pumps' census (C7) count the old engine slots only / every pump slot, copies of the null
+  included; the job colour, the parts, the upkeep and the eat pass count copies only while they act.
+- The duplicate engine parts can touch the old ones at the largest part sizes (they sit 60 degrees apart).
+- Old genomes' slots get their family at their next birth, from their founder: cells that never give birth stay unnamed (the census names
+  them the same way).
+- Merging with the carbon branch: it edits the same three-slot loops of the eat pass's engine section (carbon engines, enzymes); those edits
+  must be redone on the five-slot version (`sc[k]`, `sr[k]`, `nph` / `nsat` now arrays of 5).
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start
@@ -6674,6 +6825,13 @@ distance test first). To be measured on a free GPU.
   1..6), the census read-back every 15 s (`now()`), the FIDELITY panel line and overlay. The shader side: `fid_m`, `fid_birth`, `FID_*`,
   `FDC_*` in `cell_common.wgsl`; `daughter_genome` in `cell_step.wgsl` (the scale, the gene's own drift, the marker clock, the counters);
   the network's mutation in `cell_grn.wgsl`; proofreading's cost in `cell_eat.wgsl` `split`. The gene is genome word 31 (`Bio.conv.w`)
+- `src/dup.js`: gene duplication (step G2): the switches and knobs (`moire.dup.params`: on, null, rate, del, censusEvery, minCells,
+  partSize), the step's words (`Fields.g2`), the eat pass's (`EatP.g2`), the draw's (`Draw.spare5[0]`), the counters (the step C9 ledger
+  block `LG_DIV`, rows 8..12), the census read-back every 15 s (`now()`, `where(n)`), the ENGINE COPIES panel line and overlay;
+  `slotsOf` / `slotName` for any genome. The shader side: `DUP_*`, `FAM_*`, `DPC_*` and `dup_pump_live` in `cell_common.wgsl`;
+  `dup_birth` (families, drift, deletion, duplication) and the five-slot `job_targets` in `cell_step.wgsl`; the five-slot engine section,
+  upkeep and hard-light shade and `bio_pump` in `cell_eat.wgsl`; the parts in `cell_draw.wgsl`. Genome words 156..167 (`Bio.dx`, `df`,
+  `dg`; `nameFamilies`, `famOf`, `BIO_G2` in `src/genome.js`)
 - `src/whole.js`: whole membranes (step M1): the switches (`moire.whole.params`: head on oil, bites through the block), the eat uniform's
   words (struct EatP `m1`), the membrane budget's counters and census (LG_M1: a snapshot from the ledger pass, counters from the eat,
   dump, split and reset passes), the MEMBRANES panel line and the overlay. The rules are in `cell_eat.wgsl` (the "step M1" blocks: the

@@ -1,0 +1,39 @@
+{
+  "name": "g2-speed-10k-off-r1",
+  "description": "step G2 speed: default scene, 10000 cells, MAX, 60 s, neon, duplication off",
+  "condition": {
+    "name": "g2-speed-10k-off-r1",
+    "description": "step G2 speed: default scene, 10000 cells, MAX, 60 s, neon, duplication off",
+    "query": {
+      "seed": 3,
+      "cells": 10000,
+      "dup": 0
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "snapshots": [],
+    "shots": [],
+    "evals": []
+  },
+  "url": "http://localhost:57262/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&cells=10000&dup=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "30b6d45ce3c9e570a1a3330f6e9b78801dd3f455",
+  "dirty": true,
+  "started": "2026-11-22T23:19:45",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 225.0,
+  "speed_reached": 0.27,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-22T23:25:01",
+  "wall_s": 316.27
+}

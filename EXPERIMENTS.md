@@ -2361,3 +2361,85 @@ the mean elongation gene (ln of the aspect asked; 0.69 = 2:1, 1.1 = 3:1) at 600 
 - Speed: the GPU was busy throughout (another worker's runs), so only side-by-side spells say anything: 2000 neon on x0.61 / x0.64 /
   x0.90 against off x0.59 / x0.74 / x0.93; 10 000 neon x0.24 / x0.22; 2000 harmonic x0.59 / x0.72; 10 000 harmonic x0.21 / x0.23; every
   cell asking 3:1 x0.65. Within the scatter, at most about 10 %. Not measured on a free GPU.
+
+# Gene duplication (step G2, 2026-11-22)
+
+Step G2 (BUILD QUEUE 6c; README "Step G2: gene duplication"): two SILENT engine slots in the genome, and pump copies into the empty pump
+slot. A rare copying accident at birth (0.02 a birth, x the copying scale: key M, the fidelity gene, hard light) copies a working engine or
+pump into a silent slot: the cell runs that reaction twice ("dosage") and pays its upkeep twice; from then on the copy drifts by ordinary
+mutation and may land on a new reaction ("new function") while the original keeps the cell alive; a rare loss (0.02 a birth) silences a
+copy again. Every slot carries a family id, so copies and their originals can be traced. QUICK CHECKS only (the user: experiments are not
+valid until more changes land). Conditions `experiments/conditions/g2/` (`make.py`; `summary.py` prints the table), runs
+`experiments/runs/g2-*`. Headless Chrome, GTX 1650, at MAX, the GPU SHARED the whole time (another worker's three to five carbon runs and
+tours, plus my own runs side by side): x0.2 to x0.6.
+
+Words: a COPY is a filled duplicate slot (an engine in one of the two new slots, or a pump marked as a copy). Its FATE: DOSAGE = a relative
+of the same family in the cell runs the same reaction; NEW FUNCTION = its relatives in the cell run another; ALONE = no relative left in
+the cell. NULL = `?dupnull=1`, the neutral control: copies are made, drift and are lost exactly as when on, but do nothing and cost
+nothing. OFF = `?dup=0`, as before G2.
+
+## 1. Do copies spread above the null? (20 min, seeds 3 and 7)
+
+Copies per cell at 20 min (in brackets: the mean over 10..20 min), cells holding any copy, and the copies' fates (counts):
+
+| scene, seed | copies / cell ON | NULL | holding a copy ON / NULL | ON: dosage / new / alone | NULL: dosage / new / alone | cells ON / NULL / OFF |
+|---|---|---|---|---|---|---|
+| default (spotlight), 3 | 1.81 (1.50) | 1.21 (0.71) | 96 % / 72 % | 1 414 / 336 / 27 | 807 / 117 / 113 | 982 / 865 / 955 |
+| default (spotlight), 7 | 1.05 (0.96) | 0.95 (0.67) | 68 % / 75 % | 759 / 157 / 9 | 703 / 128 / 40 | 893 / 932 / 906 |
+| Colonies (wild), 3 | 0.61 (0.50) | 0.32 (0.32) | 47 % / 28 % | 1 079 / 614 / 86 | 743 / 193 / 11 | 2 927 / 2 961 / 2 953 |
+| Colonies (wild), 7 | 0.90 (0.72) | 0.44 (0.42) | 61 % / 37 % | 1 671 / 632 / 131 | 1 020 / 215 / 25 | 2 724 / 2 896 / 2 880 |
+| whole dish lit, 3 | 0.90 (0.73) | 0.59 (0.58) | 63 % / 42 % | 1 773 / 605 / 214 | 1 424 / 193 / 69 | 2 910 / 2 909 / - |
+| whole dish lit, 7 | 1.16 (1.18) | 0.75 (0.75) | 78 % / 56 % | 3 296 / 271 / 77 | 1 448 / 308 / 8 | 3 186 / 2 378 / - |
+
+In plain words:
+
+- **Copies that work are kept more than copies that do nothing: 6 of 6 pairs, at the end and over 10..20 min alike.** On, a cell holds
+  0.6 to 1.8 copies at 20 minutes; in its null 0.3 to 1.2. The gap is clear in the Colonies (about x2) and the lit dish (x1.5), small in
+  the spotlight seed 7 (1.05 against 0.95; over 10..20 min 0.96 against 0.67). It is not more copying: the duplications made in 20 min
+  are about equal or FEWER on than in the null (spotlight 498 / 835 and 678 / 965; Colonies 2 295 / 2 269 and 1 734 / 1 503; lit
+  1 403 / 1 516 and 1 058 / 1 269), so the copies on are KEPT (carried by the lineages that win), not made more often. Two seeds per scene:
+  a consistent hint, not a result; a copy can also hitch-hike on a lineage that won for another reason.
+- **The null is not empty.** With equal chances to copy and to lose, inert copies build up to 0.3 .. 1.2 a cell in 20 minutes (the dishes
+  have tens of thousands of births). That is the yardstick; ON sits above it.
+- **Dosage wins by numbers, new functions are where ON differs most.** Most copies are still plain dosage, two of the same engine, ON and
+  NULL alike (60 .. 90 % of copies). But copies that have drifted into a NEW reaction next to their original are 2 to 3 times as many ON
+  in five of six pairs (Colonies 614 / 193 and 632 / 215, lit 605 / 193, spotlight 336 / 117 and 157 / 128); only the lit dish seed 7 has
+  fewer (271 / 308). In the null drift costs nothing, so mere noise would give the null MORE new functions; that ON has more suggests
+  some new functions pay their upkeep. Which ones: most dosage copies are of the dish's two main engines (the burner g + t -> gt and the
+  visible-2 pigment that splits gt: the C12d "self-burn loop" at double strength) and of the trace IN pump (the scarce vitamin, step N1).
+  The new functions next to them are mixed: chain makers (L + L -> LL), fermenters (g + T -> gT, gT + Gt -> gt + GT), battery-paid crust
+  crackers (ll -> l + l, LL -> L + L: storers), other pigment bands. No one new reaction takes over a dish.
+- **Families branch with or without duplication.** Engine families (an original gene and all its descendants) with two or more reactions,
+  each run by at least 3 slots: ON 3 .. 8, NULL 1 .. 7, OFF 2 .. 5. Ordinary mutation already branches families across cells (a slot jumps
+  to another reaction in some descendants); duplication adds branching INSIDE one cell (2 .. 6 families ON, 2 .. 7 in the null, 0 off, by
+  construction). No clear difference in 20 minutes.
+- **No cost to the dish, no visible gain.** Cell counts on, null and off are within the seeds' scatter (table). The mean battery of cells
+  with a copy and without is the same within 0.05 in five pairs; in the spotlight seed 7 cells with copies hold LESS (0.37 against 0.52).
+- **Pump copies are rarer** (1 .. 19 % of cells): a pump copy needs the cell's second pump slot empty, and most pumps in the dish are trace
+  IN. On, the Colonies seed 3 and the spotlight seed 3 hold about twice as many as their nulls (17 % / 9 %, 19 % / 2 %).
+
+## 2. The Oxygen preset
+
+The Oxygen preset (spotlight, photolysis off) died in the founders' crash in both seeds (seed 3 by 210 s, before the first copy; seed 7
+had 0 cells at its 300 s sample; known since C12e: with photolysis off seed 3 dies). The batch was stopped (seed 3's run is kept). Replaced by the default scene with the WHOLE DISH LIT (table
+above).
+
+## 3. Pictures (duplication x10, 0.2 a birth, so copies are common; 300 s, seed 3; `experiments/keep/g2/`)
+
+- `default-dup0.2-s3-t300-x5-neon.jpg`, `default-dup0.2-s3-t300-x10-neon-crop.jpg`: the spotlight colony at x5 and a crop at x10. Most cells
+  carry four or five engine parts round their green battery core instead of two or three: the two extra ones sit in the upper gaps,
+  slightly smaller. Pairs of identical red triangles or cyan discs = dosage; different marks of one family = a copy with a new job.
+- `default-dup0.2-s3-t300-x5-harm.jpg`: the same in the harmonic look: round cells show five violet granules where they had three.
+- `colonies-dup0.2-s3-t300-x5-neon.jpg` / `-harm.jpg`: the wild Colonies, pink breather spindles with three to five parts each.
+
+## 4. Checks
+
+- Books (`check.json`, 420 s at MAX, seed 5, the whole dish lit; duplication 0.3 and loss 0.1 a birth; the null, off and on toggled at
+  runtime; a resize with G (wild founders) and back; key M off and on; turnover mode and back; a snapshot saved and loaded at 300 s with
+  copies in about half the cells): atoms and charge rounding exactly 0 at every sample; the energy line's rounding -0.002 .. +0.114 (G1's
+  check -0.01 .. +0.05, S1's -0.02 .. +0.03; it steps up at the resize and the wild founders, flat after); the reload exact (energy 0.105,
+  atoms 0, charge 0); console clean. Every act run: atoms and charge 0 throughout.
+- Old snapshot: a snapshot saved on the branch's base commit (genomes of 156 words, `experiments/runs/g2-pre`) loads ("exact"), duplication
+  off as it ran, and runs 60 s with no copies, atoms and charge 0.
+- Firefox (headed, the default scene, duplication 0.2, 60 s): runs, no console messages.
+- Phone (Chrome 390 x 844, dpr 3): the rules panel shows the new group; the short panel line was cut down to one line (COPIES ...).

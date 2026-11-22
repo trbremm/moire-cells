@@ -651,6 +651,8 @@ struct Stats {
 };
 const G0S_TEARS: u32 = 0u;       // CUMULATIVE: sides torn (each tear counted by both cells of the pair)
 const G0S_HEALS: u32 = 1u;       // CUMULATIVE: torn sides healed
+const G0S_BAD: u32 = 2u;         // CUMULATIVE: the portable guard (cell_step.wgsl): cells whose numbers came out NaN or infinite, put back
+const G0S_FAST: u32 = 3u;        // CUMULATIVE: ... cell-ticks faster than 30 R / s (only counted)
 const G0S_CLEAR: u32 = 8u;       // the first word cleared every frame
 const G0S_WORK: u32 = 8u;        // every tick: the stirred water's work on the cells, heat counts (i32), taken from the heat under them
 const G0S_TICKS: u32 = 9u;       // ... the ticks counted

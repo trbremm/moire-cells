@@ -97,6 +97,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var c = cells[i];                  // (step C6c: from its own slot, whole; the same as its sorted copy, which has no outline)
   var bio = bioPrev[i];
   if ((c.flags & CELL_ALIVE) == 0u) { return; }   // (never: the grid sorted it among the live cells)
+  let pos0 = c.pos;                  // (the portable guard, at the end: where a cell whose numbers broke is put back)
 
   // step P1, PREDATORS (src/predators.js): this cell's engulfing (Cell.eng) and what it needs to choose a prey or go on wrapping one. A
   // touching cell can be engulfed when it is SMALLER (area ratio p1.y), when this cell's DRIVE (p1.z x its engulf gene as expressed x (1 -
@@ -1859,9 +1860,31 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let ja = min(1.0, S.dt / JOB_TAU);
   bio.acc += (jt[0] - bio.acc) * ja;
   bio.resp = vec4f(bio.resp.xy + (jt[1].xy - bio.resp.xy) * ja, 0.0, 0.0);
+  // PORTABLE GUARD (the user's phone, 2026-11-22; src/gpu.js patchTanh): a cell whose position, velocity or size came out NaN or infinite
+  // (a GPU whose maths overflows where the desktop's saturates) is put back where it was at the start of the tick, at rest, its outline
+  // round, and counted (G0S_BAD), instead of being clamped onto the dish's edge or through a wall and spreading NaN to its neighbours'
+  // fields. Finite cells are untouched. Cells faster than 30 R / s are only counted (G0S_FAST). ?gpuguard=0: no guard (as before)
+  if (GPU_GUARD != 0u) {
+    var ok = fin_f(c.pos.x) && fin_f(c.pos.y) && fin_f(c.vel.x) && fin_f(c.vel.y) && fin_f(c.r) && c.r > 0.0;
+    for (var q = 0; q < 6; q++) { ok = ok && fin_f(c.rad[q]) && fin_f(c.radV[q]); }
+    if (!ok) {
+      c.pos = select(S.centre, pos0, fin_f(pos0.x) && fin_f(pos0.y));
+      c.vel = vec2f(0.0);
+      if (!(fin_f(c.r) && c.r > 0.0)) { c.r = S.R; }
+      for (var q = 0; q < 6; q++) { c.rad[q] = c.r; c.radV[q] = 0.0; }
+      atomicAdd(&stats.g0[G0S_BAD], 1u);
+    } else if (dot(c.vel, c.vel) > 900.0 * S.R * S.R) {
+      atomicAdd(&stats.g0[G0S_FAST], 1u);
+    }
+  }
   cells[i] = c;
   bioNext[i] = bio;
 }
+
+// the portable guard: on by default (src/gpu.js setShaderConst; ?gpuguard=0 sets 0)
+const GPU_GUARD: u32 = 1u;
+// finite (not NaN, not infinite), from the bits: a compiler may assume no NaN and drop a test like x != x
+fn fin_f(x: f32) -> bool { return (bitcast<u32>(x) & 0x7f800000u) != 0x7f800000u; }
 
 // step F0: the job scores a genome asks for now (its genes x the gene network's outputs; the targets of the low-pass): [0] light eater,
 // breather, fermenter, gradient eater; [1].xy builder, predator. eating: the cell wraps or digests a meal now

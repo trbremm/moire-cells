@@ -18,6 +18,10 @@
 //   ?ripple=1   drop a ripple every 0.7 s at varying spots
 //   ?debug=1    copy console warnings and errors into the overlay
 //   ?nogpu=1    pretend WebGPU is missing (to see the fallback message)
+//   ?tanh=raw   the shaders' own tanh (before 2026-11-22; default safe: tanh of the input clamped to +-15, the same result where a GPU does
+//               it right, finite where one overflows to NaN); ?tanh=naive every tanh as (e^2x - 1) / (e^2x + 1), what such a GPU does (a test;
+//               src/gpu.js patchTanh). ?gpuguard=0 no guard in the cells' step (default: a cell whose numbers come out NaN or infinite is put
+//               back where it was and counted; the overlay's "gpu maths" line). gpucheck.html: the GPU's maths against the expected values
 //   ?cells=N    number of cells (default 2000; on a phone or small touch screen fewer, see defaultCells)
 //   ?check=1    compare the cells' neighbour grid with brute force every 2 s (console)
 //   ?seed=N     seed of the random start (cells, genomes); default random
@@ -173,7 +177,7 @@
 // Mouse: left tap drops (keys 1 2 3: a ripple, a light spring, a heavy spring; step C12's oil tool, no key: an oil spring), left drag stirs; step C2's spotlight: right-drag moves it, the wheel tilts it,
 // Shift+wheel turns the direction the light comes from.
 
-import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown } from './gpu.js';
+import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown, tanhMode, gpuGuard } from './gpu.js';
 import { Background } from './background.js';
 import { Medium } from './field.js';
 import { Landscape } from './landscape.js';
@@ -1051,6 +1055,13 @@ function autoRipple() {
   nextAutoRipple = simTime + 0.7;
 }
 
+/** The portable maths (src/gpu.js): the tanh used, and the guard's counts (cell_step.wgsl G0S_BAD, G0S_FAST; cumulative since the start). */
+function guardLine() {
+  const g = cells.glue && cells.glue.census;
+  const bad = g ? g.bad >>> 0 : 0, fast = g ? g.fast >>> 0 : 0;
+  return `gpu maths: tanh ${tanhMode()} · guard ${gpuGuard() ? `on: <b>${bad}</b> cells put back after NaN/infinity` : 'off'} · ${fast} cell-ticks faster than 30 R/s`;
+}
+
 function drawOverlay() {
   const i = gpu.info;
   const lines = [
@@ -1058,6 +1069,7 @@ function drawOverlay() {
     `cpu encode ${stats.cpuMs.toFixed(2)} ms · gpu done after ~${stats.gpuMs.toFixed(1)} ms`,
     `adapter  <b>${esc(adapterName(i))}</b>${i.isFallbackAdapter ? '  (software fallback)' : ''}`,
     `vendor ${esc(i.vendor || '?')} · arch ${esc(i.architecture || '?')}${i.device ? ' · device ' + esc(i.device) : ''}`,
+    guardLine(),
     `canvas ${view.pxW}×${view.pxH} (dpr ${view.dpr.toFixed(2)}) · ${gpu.format}`,
     dish.line(),
     perfusion.overlayLine(),

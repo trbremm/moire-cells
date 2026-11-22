@@ -68,6 +68,7 @@ const CBF_HUNGER: u32 = 65536u; // HUNGER FOR EVERY PART: a cell whose parts wer
 // step C15e, CARBON LIFE VIABLE (src/carboncells.js; README "Step C15e: carbon life viable")
 const CBF_ENZANY: u32 = 262144u; // AN ENZYME'S SCAFFOLD FROM ANY CARBON: a unit is 4 burnt chain carbons (4, 0, 8) + 1 G (fixed for the page)
 const CBF_GRANRED: u32 = 524288u; // THE GRANULES' BURNT HANDS REDUCED: a builder short of fuel hands reduces granule hands from the battery (cb_gran_red)
+const CBF_GRANHYD: u32 = 1048576u; // THE GRANULES DIGESTED: a builder short of hands opens granule backbones with a water (cb_gran_hyd)
 const CBF_WALLREC: u32 = 131072u; // WALL RECYCLING: a jolted wall's cracked pieces stay in the cell as granules (as shed lipids do), not mud    // OXYGEN DAMAGES MEMBRANES: free t oxidises the lipids' fuel hands (fat -> soap -> spoiled, into the mud)
 // the event counters (64-bit, LG_CBC_EV; src/carboncells.js EV)
 const CBE_OX: u32 = 0u;
@@ -786,6 +787,29 @@ fn cb_st(i: u32, S: ptr<function, array<i32, 5>>, g: vec3i) {
 fn cb_lim(i: u32, bits: u32) { if (bits != 0u) { atomicOr(&cbS[i * CW + CB_LIM], i32(bits)); } }
 
 /**
+ * Step C15e (CBF_GRANHYD), THE GRANULES DIGESTED: grazed mud is over-condensed (about 1.5 backbone bonds per carbon, few hands: the open
+ * dish's condensing), so the builders that cut pieces from it ran out of HANDS long before carbon. Up to k backbones are opened by the
+ * table's own HYDROLYZE ([c-c] + gt -> [c-g] + [c-t], the reverse of the condensation that made the mud: a water from the stock, the rise
+ * 0.75 and a spark from the battery), as real cells digest starch: one fuel hand and one burnt hand per bond. Returns the bonds opened.
+ */
+fn cb_gran_hyd(k: i32, gr: ptr<function, vec3i>, m: ptr<function, array<i32, 18>>, bat: ptr<function, i32>, heat: ptr<function, i32>,
+               why: ptr<function, u32>) -> i32 {
+  if (k <= 0 || (CBP.cfg.x & CBF_GRANHYD) == 0u) { return 0; }
+  let sp = max(CBP.e.z, 1);
+  let cost = sp + CBP.e.y;
+  var x = min(k, (*gr).x);
+  if (x > max((*m)[6], 0)) { x = max((*m)[6], 0); *why |= CBL_AT; }
+  if (x * cost > max(*bat, 0)) { x = max(*bat, 0) / cost; *why |= CBL_BAT; }
+  if (x <= 0) { return 0; }
+  *gr += vec3i(-x, x, x);
+  (*m)[6] -= x;
+  *bat -= x * cost;
+  *heat += x * sp;
+  atomicAdd(&wcbe[CBE_HYD], x);
+  return x;
+}
+
+/**
  * Step C15e (CBF_GRANRED), THE GRANULES' BURNT HANDS REDUCED: up to k burnt hands on the granules become fuel hands by the table's own REDUCE
  * (g + [c-t] -> [c-g] + t), exactly as the builder already reduces a ladder molecule's (C15c's CBF_RED, the storer's way: fat from sugar is
  * dear): the battery pays the rise (2.75) and a spark per hand, only from above its floor (v.x); the g from the stock's free g, else from a
@@ -800,8 +824,8 @@ fn cb_gran_red(k: i32, gr: ptr<function, vec3i>, m: ptr<function, array<i32, 18>
   let avail = max(*bat - i32(CBP.v.x), 0);
   let g0 = max((*m)[0], 0);
   let w0 = max((*m)[6], 0);
-  var x = min(min(k, (*gr).z), g0 + w0);
-  if (x < k) { *why |= CBL_AT; }
+  var x = min(k, (*gr).z);
+  if (g0 + w0 < x) { x = g0 + w0; *why |= CBL_AT; }
   let x1 = min(x, g0);
   if (x1 * cost >= avail) { x = avail / cost; *why |= CBL_BAT; }
   else {
@@ -937,7 +961,13 @@ fn cb_make2(nT: i32, n: i32, S: ptr<function, array<i32, 5>>, gr: ptr<function, 
   // carbons come loose and DISSOLVE as CO2-like molecules that leave (C15b's dissolving): fat from mud keeps its fuel and breathes out the
   // rest, as a real cell burns part of its food to make fat from the rest
   if (left > 0 && (CBP.cfg.x & CBF_GRAN) != 0u) {
-    // (step C15e, CBF_GRANRED: the granules' burnt hands the pieces lack in fuel hands are reduced first, from the battery)
+    // (step C15e, CBF_GRANHYD: backbones beyond what the pieces need are opened for their hands first: h bonds so that the pieces' backbones
+    // and fuel hands come out even, no more than the pieces wanted need)
+    let fT = 6 - nT;
+    let hOpt = (fT * (*gr).x - (*gr).y) / (fT + 1);
+    let hNeed = max(left * fT - (*gr).y, left * nT - (*gr).z);
+    cb_gran_hyd(min(hOpt, hNeed), gr, m, bat, heat, &why);
+    // (step C15e, CBF_GRANRED: the granules' burnt hands the pieces still lack in fuel hands are reduced, from the battery)
     let xw = min(left, (*gr).x);
     cb_gran_red(min(xw * (6 - nT) - (*gr).y, (*gr).z - xw * nT), gr, m, bat, heat, &why);
     var x = min(left, (*gr).x);
@@ -973,6 +1003,7 @@ fn cb_make_chain(n: i32, S: ptr<function, array<i32, 5>>, gr: ptr<function, vec3
   var left = n;
   var made = 0;
   var why = 0u;
+  cb_gran_hyd(min(((*gr).x - min((*gr).y, (*gr).z)) / 2, max(left - (*gr).y, left - (*gr).z)), gr, m, bat, heat, &why);   // (step C15e)
   let xw = min(left, (*gr).x);   // (step C15e, CBF_GRANRED: the fuel hands the chain carbons lack reduced first, from the battery)
   cb_gran_red(min(xw - (*gr).y, (*gr).z - xw), gr, m, bat, heat, &why);
   var x = min(min(left, (*gr).x), min((*gr).y, (*gr).z));
@@ -1006,6 +1037,7 @@ fn cb_make_burnt(n: i32, S: ptr<function, array<i32, 5>>, gr: ptr<function, vec3
   var left = n;
   var made = 0;
   var why = 0u;
+  cb_gran_hyd(min((2 * (*gr).x - (*gr).z) / 3, 2 * left - (*gr).z), gr, m, bat, heat, &why);   // (step C15e, CBF_GRANHYD: hands from spare backbones)
   var x = min(min(left, (*gr).x), (*gr).z / 2);
   if (max(*bat, 0) / sp < x) { x = max(*bat, 0) / sp; why |= CBL_BAT; }
   if (x > 0) { *gr -= vec3i(x, 0, 2 * x); *bat -= x * sp; *heat += x * sp; left -= x; made += x; }

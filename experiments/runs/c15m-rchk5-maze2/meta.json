@@ -1,0 +1,78 @@
+{
+  "name": "c15m-rchk5-maze2",
+  "description": "maze boot, reseed at 0.5",
+  "condition": {
+    "name": "c15m-rchk5-maze2",
+    "description": "maze boot, reseed at 0.5",
+    "query": {
+      "terrain": "maze",
+      "seed": 7,
+      "carbon": 0
+    },
+    "duration": 1.5,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 0.3,
+        "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, start:E.start, back:E.tot.batBack, heat:H.heat, out:H.out})"
+      },
+      {
+        "t": 0.5,
+        "js": "moire.cells.seed(true); return 1"
+      },
+      {
+        "t": 1.0,
+        "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, start:E.start, back:E.tot.batBack, heat:H.heat, out:H.out})"
+      },
+      {
+        "t": 1.5,
+        "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, start:E.start, back:E.tot.batBack, heat:H.heat, out:H.out})"
+      }
+    ]
+  },
+  "url": "http://localhost:59934/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&terrain=maze&seed=7&carbon=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "cbdc504b6df41145929522bc160469cb689c1a11",
+  "dirty": false,
+  "started": "2026-11-22T21:33:21",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1.5,
+  "run_wall_s": 3.77,
+  "speed_reached": 0.4,
+  "samples": 2,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.3,
+      "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, start:E.start, back:E.tot.batBack, heat:H.heat, out:H.out})",
+      "result": "{\"r\":3200.009994506836,\"start\":4780.8182373046875,\"back\":3218.5047760009766,\"heat\":65076.29914855957,\"out\":61151.783630371094}"
+    },
+    {
+      "t": 0.5,
+      "js": "moire.cells.seed(true); return 1",
+      "result": 1
+    },
+    {
+      "t": 0.9999999999999999,
+      "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, start:E.start, back:E.tot.batBack, heat:H.heat, out:H.out})",
+      "result": "{\"r\":3200.0092163085938,\"start\":4780.8182373046875,\"back\":3221.542205810547,\"heat\":67546.6724395752,\"out\":71050.37432861328}"
+    },
+    {
+      "t": 1.4999999999999998,
+      "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, start:E.start, back:E.tot.batBack, heat:H.heat, out:H.out})",
+      "result": "{\"r\":3200.003631591797,\"start\":6361.624267578125,\"back\":4706.521026611328,\"heat\":82599.26420593262,\"out\":211480.5835571289}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-22T21:34:53",
+  "wall_s": 91.51
+}

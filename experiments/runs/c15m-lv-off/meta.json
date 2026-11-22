@@ -1,0 +1,76 @@
+{
+  "name": "c15m-lv-off",
+  "description": "maze s7 carbon=0, 120 s",
+  "condition": {
+    "name": "c15m-lv-off",
+    "description": "maze s7 carbon=0, 120 s",
+    "query": {
+      "terrain": "maze",
+      "seed": 7,
+      "carbon": 0
+    },
+    "duration": 120,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 120,
+        "name": "t120"
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 1,
+        "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, springs: moire.matter.springs.length})"
+      },
+      {
+        "t": 60,
+        "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, springs: moire.matter.springs.length})"
+      },
+      {
+        "t": 120,
+        "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, springs: moire.matter.springs.length})"
+      }
+    ]
+  },
+  "url": "http://localhost:63412/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&terrain=maze&seed=7&carbon=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "7ab6d355fefcd3b310b754f911392c725db04218",
+  "dirty": false,
+  "started": "2026-11-22T21:59:49",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 120.0,
+  "run_wall_s": 540.45,
+  "speed_reached": 0.22,
+  "samples": 5,
+  "shots": [
+    "shots/t120.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.9999999999999999,
+      "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, springs: moire.matter.springs.length})",
+      "result": "{\"t\":0.9999999999999999,\"alive\":963,\"job\":[719,244,0,0,0,0,0],\"cRound\":null,\"atoms\":0,\"charge\":0,\"energy\":-0.00732421875,\"springs\":9}"
+    },
+    {
+      "t": 59.999999999997875,
+      "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, springs: moire.matter.springs.length})",
+      "result": "{\"t\":59.999999999997875,\"alive\":744,\"job\":[548,192,4,0,0,0,0],\"cRound\":null,\"atoms\":0,\"charge\":0,\"energy\":-0.0098876953125,\"springs\":9}"
+    },
+    {
+      "t": 119.99999999999447,
+      "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, springs: moire.matter.springs.length})",
+      "result": "{\"t\":119.99999999999447,\"alive\":263,\"job\":[134,68,58,0,0,0,3],\"cRound\":null,\"atoms\":0,\"charge\":0,\"energy\":-0.0053558349609375,\"springs\":9}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-22T22:10:53",
+  "wall_s": 664.61
+}

@@ -1,0 +1,46 @@
+{
+ "batch": "c15m-lv3-rings-pigments",
+ "runs": [
+  {
+   "name": "c15m-lv3-rings-pigments",
+   "description": "rings s7, founders ?habit=pigments",
+   "query": {
+    "terrain": "rings",
+    "seed": 7,
+    "habit": "pigments"
+   },
+   "duration": 240,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 240,
+     "name": "t240"
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 1,
+     "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+    },
+    {
+     "t": 60,
+     "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+    },
+    {
+     "t": 120,
+     "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+    },
+    {
+     "t": 180,
+     "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+    },
+    {
+     "t": 240,
+     "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,41 @@
+{
+ "batch": "c15m-lv-seeps",
+ "runs": [
+  {
+   "name": "c15m-lv-seeps",
+   "description": "maze s7, methane seeps (0.3/s each) beside the richest springs up to 16 springs",
+   "query": {
+    "terrain": "maze",
+    "seed": 7
+   },
+   "duration": 120,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 120,
+     "name": "t120"
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 0,
+     "js": "const M = moire.matter, R = moire.cells.R; M.params.maxSprings = 16; const src = M.springs.filter((s) => s.kind === 'light' || s.kind === 'heavy').sort((a, b) => (b.rate || 0) - (a.rate || 0)); let n = 0; for (const s of src) { if (M.springs.length >= 16) break; M.addPatch(s.x + 2.5 * R, s.y, 'seep', 2.5, 0.3 / (Math.PI * 6.25), 1e9); M.springs[M.springs.length - 1].scene = true; n++; } return n"
+    },
+    {
+     "t": 1,
+     "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, springs: moire.matter.springs.length})"
+    },
+    {
+     "t": 60,
+     "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, springs: moire.matter.springs.length})"
+    },
+    {
+     "t": 120,
+     "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, springs: moire.matter.springs.length})"
+    }
+   ]
+  }
+ ]
+}

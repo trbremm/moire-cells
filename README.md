@@ -10,6 +10,9 @@ Online: **https://trbremm.github.io/moire-cells/** (GitHub Pages, published from
 push). Some views to try: `?bio=0` (the loop alone, with exclusion), `?cells=10000&bio=0&excl=0&seed=3&change=1&side=1&partner=1`
 (step 8's curling waves); pick a spring in the toolbar (or press 2 or 3) and tap into the empty dish to drop a spring
 of atoms (step C3). On a phone, tap the dish with the toolbar's tools; everything else is in its panels.
+Since the toy front (2026-11-22) a fresh load is a toy: a few big buttons, WORLDS and the terrain generators (try
+`?terrain=maze&seed=7`, or the dice); the developer toolbar is behind the gear (key D, `?dev=1`). See "The toy front: controls,
+worlds and terrain generators".
 
 Locally:
 
@@ -30,7 +33,184 @@ Without WebGPU the page shows a message and links to the CPU version.
 picked the AMD Vega instead of the GTX 1650. To change it: Windows Settings > System > Display > Graphics,
 choose the browser, set "High performance", restart the browser.
 
+## The toy front: controls, worlds and terrain generators
+
+The user, 2026-11-22: "I love the complex terrain with obstacles. Clean up the UI controls and go for something more toylike with focus
+on generating interesting mazes and topologies. Don't have the entropy panel opening by default. Shove the development stuff into one
+hidden panel. I want to be able to show this to friends." Nothing here changes a rule of the simulation: the toy is the page around it,
+and the worlds use only what the dish already offers (the step G0b obstacles, springs, light, currents, perfusion). Code: `src/toy.js`
+(the front), `src/terrain.js` (the generators), the styles in `index.html`.
+
+### What a friend sees
+
+A fresh load (no URL options) shows only the dish and:
+
+- **top left**, the world's name in neon capitals (OPEN DISH, MAZE seed 4821, ...) with one line about it, which fades after a few
+  seconds (a hover or a tap on the name brings it back; the tap opens the worlds);
+- **top right**, three small buttons: **neon / harmonic** (the look, step H1), **share** (copies this world's link), **dev** (the gear:
+  the developer mode, below);
+- **bottom**, one bar of big buttons (a row on a computer, two rows on a phone), each an icon with a short word:
+  - **pause / play** (Space), **speed** (1×, 4×, 16×, MAX, then 1× again: a timelapse; the button shows the speed), **undo** (the last
+    wall, block or pillar you drew; a world's own walls stay), **worlds** (the sheet below), **new** (the dice, in hot pink: a new world of
+    the same kind with a new seed, built at once; from the open dish or a classic dish: a random kind);
+  - the tools, one lit at a time: **touch** (the default: a tap drops a ripple, a drag stirs the water and pushes cells), **wall** (drag;
+    tap wall again: a POROUS wall, dashed, that stops only cells), **block** (drag a rectangle), **pillar** (tap, or drag a row), **erase**
+    (drag across walls to cut a way), **cells** (a tap drops a small hexagon of seven cells, a drag a line; copies of the largest living
+    group), **food** (a tap places a spring: minerals; tap food again for a vent, then oil), **light** (drag the spotlight; tap light again:
+    the whole dish lit);
+- the zoom buttons at the right edge (as before; the wheel, two fingers), the scale bar, and the job legend (the colours named, without
+  the counts; hidden on a phone);
+- a short friendly line just above the bar after each tap ("Wall: drag to draw one ...", "Link copied: send it to a friend").
+
+No entropy panel, no stats, no line of key hints, no diagnostic text.
+
+### Where the developer controls went: ONE place, the developer mode
+
+The gear (top right) or the key **D** switches to the developer mode and back. It is the page as it was before the toy: the whole old
+toolbar (bottom left: every tool, playback, record, and the panels light, view, rules, dish, molecules, cells), the hint line with the key
+hints, and every key. One new panel comes first in that toolbar, **Developer**: back to the toy, the entropy panel (Shift+E), the stats
+overlay with the frame time and the graphics card (F), the machinery view (Shift+4), the key list (?), this world's seed and shapes, and
+"check the open water" (below). Everything else stays where it was: every rule switch and knob (rules), every view mode (view), new
+culture, presets, obstacles and squeeze (dish), the zoos, save and load the state (rules, "Save and load the state"). Nothing was removed.
+Every key works in both modes (D is new; it was free since step F0).
+
+- `?dev=1` starts in the developer mode; `?entropy=1` opens the entropy panel (it starts CLOSED now; before, `?entropy=0` closed it);
+  `?ui=0` hides every control, toy and developer alike (clean pictures).
+- The entropy panel and the F overlay moved a little down so the corner buttons stay free.
+
+### Worlds
+
+The **worlds** button (or a tap on the world's name) opens a sheet:
+
+- **Generate a world**: a card for each terrain generator with a PICTURE of the world it will build (its walls as the dish draws them,
+  springs as dots in their inks) and its seed. A tap builds exactly that world, here and now. "other
+  seeds" (the dice in the sheet's head) shows another seed for every card. Below: **or by seed**: a kind and a number, "build".
+- **Classic dishes**: the open dish and the presets (Chip, Crevices, First maze, Fronts, Deep vents, Sunlit shallows, Oxygen world, Oil
+  slick, Crust desert, Oases, Plumes, Colonies, Tissue lab), each with one line in plain words. They open as a fresh page, as before.
+
+A generated world is built IN PLACE (no reload, no shader compile): the obstacles (one raster of all shapes, `obstacles.setShapes`), the
+old springs and oases out, the world's springs in (per area, as a preset's), the whole dish lit (unless the URL says `?light=`), the
+currents and perfusion as the world asks, the old atoms washed out (booked as gone, as Shift+C), and a fresh culture: the usual 12
+founders, every one of the "light + burn" habit (as the Colonies preset's: a founder that cannot eat here only dies), SCATTERED over the
+open water, as many as cover 15 % of it (about 990 cells in a maze on a 1280 x 800 screen, 200 in the caves). MY CHOICE after a test:
+the first version put two packed colonies at each of the world's homes; they starved (a maze from 840 cells to 29 in 200 s; 432 to 29
+with poorer springs), while scattered founders found every spring (247 of 840 left at 200 s, bright clusters round each spring, the rest
+dark and dying), as the open dish's own crash (2000 to 279 at 200 s, same page) and the old Maze preset's (587 to 120 at 180 s, back to
+342 at 310 s). The address bar follows the world (`history.replaceState`), so a reload or a shared link rebuilds it.
+
+### The terrain generators (`src/terrain.js`)
+
+Each turns a SEED into a world for the dish: obstacle shapes (strokes, rounded blocks, round pillars; solid, porous or erase, in order),
+a round dish or not, springs, the colonies' homes and their number, light, currents, perfusion. Sizes are in cell radii, so a seed gives
+the same world for the same dish size in R on any screen. Each has its own random stream (the simulation's is never touched).
+Long walls are kept as pieces of at most 16 segments (a spiral in one piece took 1.25 s to rasterise). A terrain's springs drip richer
+than a tapped one (minerals 16 atoms per s, vents 5, at least 10 and 4: at 6 a maze starved), and the first two "homes" (the places a
+terrain marks as the start: a maze's corner, the clearing) get a lasting mineral spring and a slow vent if the terrain gave them none.
+
+Pictures (`experiments/keep/ui/<kind>-s7-t1.jpg` just built, `-t240.jpg` after 4 minutes of simulation; seed 7, 1280 x 800, headless
+Chrome on a shared GPU; numbers = live cells at 1 s and at 240 s):
+
+| kind | `?terrain=` | what it is (the card's line) | how it is made | at 4 minutes |
+|---|---|---|---|---|
+| **Maze** | `maze` | A winding labyrinth. Food drips at one corner, richest in the far one; life gathers there and creeps along the corridors. | recursive backtracker on a grid of 15-21 R cells (long winding corridors), a few extra openings for loops (0-5 %), walls 1.6 R as long straight strokes (collinear pieces merged: 26-38 shapes); the start on the free side of the screen (left of a wide dish, top of a tall one), a vent and a mineral spring at the far end, small springs in dead ends | 973 -> 459: bright clusters in the dead ends with springs, creeping along the corridors, the rest dark |
+| **Thicket** | `thicket` | A tangle of short dead ends grown from the middle, with small springs hidden in the nooks. | randomised Prim's algorithm from the centre (many short dead ends), 11-14 R, walls 1.4 R, five springs in dead ends | 876 -> 1161: the middle overgrown, a pink-and-lime tissue filling the nooks |
+| **Caves** | `caves` | Chambers hollowed out of rock, joined by twisting tunnels. Food in the deepest cave. | the whole dish solid, then 5-14 round chambers (6-12 R) and tunnels (a minimum spanning tree plus one or two loops, jagged, 4.5-7 R wide) cut out; stalagmites back in the big chambers | 197 -> 263: colonies in the chambers with food, the tunnels glittering with matter |
+| **River delta** | `delta` | Fresh water flows in from the left and splits into channels on its way to the sea. The flow carries food downstream. | rock with a lake at the inlet side and a sea at the outlet side, a branching river carved between (3-5 levels, channels 9-11 R narrowing to 4.2, wobbling, sometimes a cross channel), stepping stones in the sea; PERFUSION on (the pressure-driven flow of step G0b threads the channels); on a tall dish the river flows down | 375 -> 1074: the channels lined with cells, the sea's shore colonised downstream |
+| **Pillar forest** | `forest` | Pillars, sparse at one side and thick as reeds at the other, with springs in the clearing and deep in the thicket. | dart throwing with a density gradient in a random direction: big pillars (up to 5 R) far apart on one side, reeds (1 R) 2.6 R apart on the other; a clearing; up to 520 pillars | 907 -> 640: flower-like colonies round the springs, the reeds nearly empty |
+| **Honeycomb** | `hive` | Six-sided chambers with doorways between them, like a hive. Each door is a choice. | hexagonal chambers (13-17 R), every wall a stroke, doors (5.4 R) on a random spanning tree plus 12 % extra; the hive's rim open to a moat round it | 963 -> 844 |
+| **Labyrinth** | `rings` | A round labyrinth of rings and gates. The richest food is in the middle; the way in goes all round each ring. | a round dish; rings 10-13 R apart, one gate in each, set from the outside in so each gate lies half to nearly a whole turn from the one outside it, and one spoke beside each gate forcing the long way round | 416 -> 173: life at the rim's springs and in the centre room |
+| **Spiral** | `spiral` | One long corridor winding into the centre (sometimes two), with a few short cuts. | a round dish; an Archimedean spiral wall (one arm, or two interleaved: two corridors), 12-15 R corridors, 0-2 holes cut through | 410 -> 604: a full centre and a crowd at the entrance |
+| **Archipelago** | `islands` | Islands in a slowly turning sea. The current sweeps food from shore to shore. | 5-18 islands, each a cluster of overlapping discs, at least 27 R apart, small rocks between; stronger eddies and gyre (0.55, 0.6 R/s) | 1009 -> 1235: the sea filling, swept into streaks between the islands |
+| **Filter walls** | `sieve` | Porous walls split the dish: water and atoms pass, cells cannot. Each chamber its own colony and its own food. | 3 or 4 chambers split by wavy POROUS walls (sometimes one solid with a narrow door); each chamber its own food: minerals, a vent, oil and soap | 1075 -> 1313: a different community in each chamber, oil droplets with iridescent rims in the oil chamber |
+
+Also kept: `first-look.jpg` (a fresh load: the open dish with the toy's controls), `worlds-sheet.jpg` (the sheet with its pictures),
+`spiral-s7-t150-harmonic.jpg` (a world in the harmonic look; this one built in place over the open dish at 15 s, its founders from
+that page's stream: 410 -> 74 at 150 s, where the tour's spiral grew to 604: the founders' crash varies a lot from draw to draw),
+`dev-mode.jpg` (the developer mode with its Developer panel and the entropy panel), `phone-maze-s7-t90.jpg`, `phone-worlds.jpg`,
+`phone-wall-tool.jpg`, `phone-pillar-tool.jpg` (390 x 844, touch; 360 cells alive at 90 s in the phone's maze).
+
+### Links
+
+`?terrain=<kind>&seed=<N>&dish=<W>x<H>` (kinds: maze, thicket, caves, delta, forest, hive, rings, spiral, islands, sieve; the dish in
+cell radii, one decimal). The **share** button copies this world's link: the terrain, its seed and the dish's size, plus `look=harmonic`
+when that look is on and any other option of the page (a chemistry switch, a rule); for a classic dish `?preset=<name>&seed=<N>`, for the
+open dish `?seed=<N>`. The seed is the simulation's seed too, so opening the link always starts the same way (the same walls,
+springs and founders; a world first built in place on the sharer's page had other founders, from that page's stream). On a phone a computer's (wide)
+world is shown whole, smaller (zoom in with two fingers); a phone's own worlds are drawn for its tall dish (the delta then flows down).
+
+Seeds that look good (each run 4 minutes above; the dice and "other seeds" give endless more):
+- `?terrain=delta&seed=7` (four mouths and a cross channel: cells ride the flow to the sea)
+- `?terrain=rings&seed=7` (three rings, the centre room full of food)
+- `?terrain=spiral&seed=7` (one long corridor)
+- `?terrain=sieve&seed=7` (four chambers, oil droplets in one)
+- `?terrain=caves&seed=7`, `?terrain=caves&seed=12` (the Firefox check), `?terrain=thicket&seed=7`, `?terrain=maze&seed=7`
+- add `&look=harmonic` for the microscope look.
+
+### For the experiment tools
+
+- `tools/experiment.py` now adds `entropy=1` (the panel's text is still read into `panel.txt`) and hides the toy's controls in its
+  pictures (`#toy`, `#toy-corner`) as it hides the old toolbar; it passed `ui=0` before and still does. Conditions and `moire.*` are
+  unchanged.
+- `tools/shot.py` adds `entropy=1` unless the query names `entropy=`, so it prints the panel as before. Its pictures show the toy front
+  now (`dev=1` for the old toolbar; `entropy=0` for a clean toy picture).
+- Console: `moire.toy.build(kind, seed)` (a world in place), `moire.toy.check()` (the open water: share of the dish, share reachable
+  from the colonies' homes, springs reached, shapes), `moire.toy.link()`, `moire.toy.setDev(on)`.
+
+### Checked
+
+- **Connected open water**: `reach()` over every kind at seeds 1, 7, 42, 1234 on a 1280 x 800 and a 390 x 760 dish (80 worlds, Node):
+  every open place reachable from the colonies' homes (100 %) and every spring reached (the filter walls by design keep each colony in
+  its own chamber: from every chamber's home together, 100 %). Two fixes came from it: the honeycomb's doors were widened (4.6 -> 5.4 R;
+  a diagonal door was too tight in one seed) and the river delta turns on a tall dish (on a phone it had squeezed into two vertical
+  strips).
+- **Each kind built in place and run for 4 minutes** (the table above), one after another in ONE page per browser (so building over an
+  old world, clearing its springs, perfusion on and off, the round dish on and off were all exercised): all ten keep a living culture;
+  building takes 0.1 to 0.8 s of the main thread (the mask's raster; the caves' full rock is the slowest), nothing per frame afterwards;
+  12 to 520 shapes.
+- **Founders**: packed colonies at homes against scattered founders, maze seed 7, 200 s: 29 (432 at the start), 29 and 32 (840, without
+  and with oases) against 247 scattered (840); the open dish in the same harness 2000 -> 279.
+- **Phone** (Chrome, 390 x 844, touch): the bar in two rows (actions above, tools below), the zoom row above it, the scale bar above
+  that, no job legend; the worlds sheet as a bottom sheet with two cards a row; a terrain built for the tall dish.
+- **Firefox** (headed, the user's browser): `?terrain=caves&seed=12` runs, the toy's controls as in Chrome; no console errors.
+- **Console**: no errors in Chrome (desktop, phone) or Firefox over all the runs above.
+- **The developer mode**: the gear and D switch; the old toolbar with every panel, the Developer panel first; the entropy panel opens
+  from it (and with Shift+E, `?entropy=1`); `tools/shot.py` and `tools/experiment.py` still get the panel's text.
+- **Speed**: the toy adds no per-frame work (its buttons refresh every 0.4 s, as the old toolbar's); a world's build is a one-off.
+  Frame rates were not compared against main: the GPU was shared with two other workers' runs the whole time (240 s of simulation took
+  12 to 15 minutes of wall time at MAX), so any number would be noise.
+
+### Known issues
+
+- A world's culture starts with the founders' crash, as every culture does: in the first minutes many founders die (the dark ones)
+  and life gathers at the springs; a friend who looks only at the first minute sees a dying dish. MAX speed helps. How hard the crash is
+  varies a lot from one founder draw to the next (a spiral: 74 or 604 left); the dice gives another draw. A world built in place starts
+  in the morning (as a fresh page does).
+- The corners of the screen hold the controls (the name, the corner buttons, the bar, the job legend on a wide screen): part of a world
+  can hide behind them (the maze starts on the free side; other kinds may put food behind the bar).
+- A shared link carries the dish's size: on a phone a computer's world is shown whole and small (zoom with two fingers); a world made on
+  the phone is tall. The culture of a shared link is the same at the start (the same seed); it then differs as it runs.
+- The worlds' pictures are made on the CPU, one per frame, when the sheet opens (40 to 200 ms each here; a slow phone may take a second
+  or two to fill the sheet).
+- A world built in place keeps the page's heat and its time of day; the old atoms are washed out (booked as gone); the founders are always
+  12 of the light + burn habit (`?habit=` overrides; the New culture dialog in the developer mode still offers everything).
+- Undo removes only what was drawn by hand; there is no "clear my drawings" in the toy (the developer's Dish panel has clear).
+- Fixed on the way: the page's safety net (index.html) said "The page did not start" when the modules took more than 8 s to load and
+  then STAYED over the running dish (seen twice here while the machine was busy; a phone on a slow connection could hit it). It now waits
+  15 s and goes away by itself once the modules do start (src/main.js).
+
+### Files
+
+- new: `src/toy.js` (the toy front: bar, caption, corner buttons, worlds sheet and its pictures, the Developer panel, building a world in
+  place, links), `src/terrain.js` (the generators, `makeWorld`, `reach`)
+- changed: `index.html` (the toy's styles), `src/main.js` (creates the toy before the toolbar, `?entropy` default, no key hints in the toy,
+  `moire.toy`), `src/ui.js` (a panel can come first), `src/app.js` (the add-cell tool's tap places `cluster` cells: 7 in the toy),
+  `src/obstacles.js` (`setShapes`, `shapeSd` exported), `src/culture.js` (the New culture dialog keeps `dev` and `entropy`),
+  `tools/experiment.py`, `tools/shot.py`
+
 ## Controls (step C3b)
+
+(Since the toy front, 2026-11-22, this toolbar and everything below is the DEVELOPER MODE: the gear at the top right or the key D,
+`?dev=1`; a fresh load shows the toy's few big buttons instead. See "The toy front: controls, worlds and terrain generators".)
 
 Everything can be done with a finger or the mouse, through the **toolbar** at the bottom left; the keys (below) still
 work and do exactly the same (one table of actions, `src/actions.js`, drives both). The toolbar folds away to one
@@ -288,7 +468,7 @@ neighbour grid and by brute force, and check the sort; result in the console and
 `?excl=0|1`, `?flip=0|1`, `?states=2..4`, `?squeeze=0|1` (step 7, keys 8 9 0 and `\`), `?partner=0|1`, `?change=0|1`, `?clock=0|1`,
 `?side=0|1` (step 8, keys Z , ' .), `?seed=N` (repeatable start: positions, genomes; the run itself drifts apart after a while, because the
 GPU's neighbour order varies), `?speed=1|2|4|8`, `?founders=N`, `?view=1` (lineage colours),
-`?heat=0`, `?entropy=0`, `?simmer=0` (step C1, Shift+H E R), `?light=spot|full|off`, `?spot=x,y,r`, `?tilt=`, `?az=`, `?day=0`,
+`?heat=0`, `?entropy=0` (since the toy front the panel starts closed: `?entropy=1` opens it), `?simmer=0` (step C1, Shift+H E R), `?light=spot|full|off`, `?spot=x,y,r`, `?tilt=`, `?az=`, `?day=0`,
 `?hour=`, `?clouds=0` (step C2, see "Light"), `?show=summary|off|<substance>` (step C3, e.g. `?show=G`), `?chem=0` (step C4),
 `?eat=0`, `?springs=0` (step C5, see "Cells eat"), `?engines=0`, `?burners=1`, `?view=strategy` (step C6, see "Engines in the
 genome").
@@ -670,7 +850,7 @@ Keys (Part C uses Shift + a letter; every plain letter is taken):
 - **Shift+E**: entropy panel shown/hidden
 - **Shift+R**: ripples simmer with heat on/off
 
-URL options: `?heat=0` (kicks off at the start), `?entropy=0` (panel hidden), `?simmer=0` (ripples not driven by
+URL options: `?heat=0` (kicks off at the start), `?entropy=0` (panel hidden; since the toy front it starts hidden, `?entropy=1` shows it), `?simmer=0` (ripples not driven by
 heat). `tools/shot.py --key shift+h` presses Shift + a letter, and the tool prints the entropy panel.
 
 Live-tunable in `moire.heat.params`: `kicks`, `spread` (12 R²/s; a warm patch spreads over about sqrt(spread / leak)

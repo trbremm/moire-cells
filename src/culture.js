@@ -505,7 +505,7 @@ export function openCultureDialog(ctx) {
   function url() {
     const u = new URL(location.href);
     const keep = new URLSearchParams();
-    for (const k of ['electrons', 'exshare', 'ui']) if (u.searchParams.has(k)) keep.set(k, u.searchParams.get(k));   // (the table is fixed per page)
+    for (const k of ['electrons', 'exshare', 'ui', 'dev', 'entropy']) if (u.searchParams.has(k)) keep.set(k, u.searchParams.get(k));   // (the table is fixed per page)
     if (st.preset) keep.set('preset', st.preset);
     const P = st.preset ? PRESETS[st.preset] : null;
     const presetCells = P && P.query.cells;

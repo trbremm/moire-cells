@@ -67,7 +67,9 @@ export function setupUI(app) {
   const extra = app.extraPanels || [];
   for (const p of extra) EXTRA_ICONS[`panel-${p.id}`] = p.icon;
   Object.assign(EXTRA_ICONS, app.toolIcons || {});
-  const panelList = [...PANELS, ...extra.map((p) => ({ id: p.id, icon: `panel-${p.id}`, title: p.title }))];
+  const entry = (p) => ({ id: p.id, icon: `panel-${p.id}`, title: p.title });
+  // (the toy front's Developer panel, src/toy.js, comes first: `first: true`)
+  const panelList = [...extra.filter((p) => p.first).map(entry), ...PANELS, ...extra.filter((p) => !p.first).map(entry)];
   const root = el('div', 'ui');
   root.id = 'ui';
   const panel = el('section', 'panel');

@@ -2,7 +2,7 @@
 
 Python standard library only; drives the browser as tools/shot.py does (its own static server on a free port, a throwaway
 profile, Chrome/Edge over the DevTools protocol, Firefox over WebDriver BiDi). For each condition:
-  1. opens index.html?speed=max&until=0&overlay=ghost&ui=0&<the condition's URL options>: the page starts paused at t = 0
+  1. opens index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&<the condition's URL options>: the page starts paused at t = 0
      (after its warm-up), or right after its snapshot (?snap=) has loaded;
   2. walks through the condition's events in simulation time, pausing EXACTLY at each (moire.control.runUntil): console
      evals, samples (moire.sample(): every number of the entropy panel and the ledgers behind it, flat; with "tissue": true
@@ -65,8 +65,8 @@ import shot  # noqa: E402  (the browser drivers and the static server)
 
 REPO = shot.REPO
 TICK = 1 / 60
-BASE_QUERY = {"speed": "max", "until": "0", "overlay": "ghost", "ui": "0"}
-HIDE_UI_CSS = "#ui, #hint, #overlay, #rec, #msg[hidden] { visibility: hidden !important; }"
+BASE_QUERY = {"speed": "max", "until": "0", "overlay": "ghost", "ui": "0", "entropy": "1"}   # (entropy: the panel starts closed since the toy front)
+HIDE_UI_CSS = "#ui, #hint, #overlay, #rec, #toy, #toy-corner, #msg[hidden] { visibility: hidden !important; }"
 HIDE_PANEL_CSS = "#entropy { visibility: hidden !important; }"
 
 

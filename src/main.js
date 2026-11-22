@@ -35,7 +35,10 @@
 //   ?partner=0|1 step 8, rule a: the partner A' felt as a phase current (key Z); ?change=0|1 rule b (key ,);
 //               ?clock=0|1 its mode (key '); ?side=0|1 rule c, sideways push (key .)
 //   ?heat=0     step C1: start with the kicks from heat off (the old constant jitter; Shift+H)
-//   ?entropy=0  step C1: start with the entropy panel hidden (Shift+E)
+//   ?entropy=1  step C1: start with the entropy panel shown (Shift+E; since the toy front it starts hidden)
+//   ?dev=1      the toy front (src/toy.js): start in the developer mode (the old toolbar, every panel, the hint line; key D or the gear)
+//   ?terrain=name  the toy front: a generated world (src/terrain.js: maze, thicket, caves, delta, forest, hive, rings, spiral, islands,
+//               sieve) from ?seed=N (its own random stream), on the dish ?dish=WxH; ?ui=0 hides every control (pictures)
 //   ?simmer=0   step C1: start with the ripples not driven by heat (Shift+R)
 //   ?light=spot|full|off   step C2: the light's mode (Shift+L); ?spot=x,y,r the spot's centre and radius (shares of the
 //               dish's width, height and shorter side, or CSS px if any is above 2); ?tilt=deg (0..70); ?az=deg (the
@@ -222,12 +225,14 @@ import { scaleDish } from './squeeze.js';
 import { Perfusion, parseRecipe } from './perfusion.js';   // the microfluidic chip: inlet, through-flow, outlet
 import { Obstacles } from './obstacles.js';   // step G0b: walls, blocks, pillars; the round dish
 import { createApp } from './app.js';
+import { createToy } from './toy.js';   // the toy front: a few big buttons, worlds, terrain generators; the developer mode (src/toy.js)
 import { applyPreset, layoutFromParams, applyDiversity, PRESETS, SPREAD_SQUEEZE } from './culture.js';
 import { Tissues, useDesignFounder, DESIGNS } from './tissues.js';
 import { Warfare } from './warfare.js';
 import { CB_PHOTO } from './genome.js';   // step C15d: founders that photosynthesise fix carbon (?cbphoto=0)
 
 window.__moireBooted = true;
+{ const m = document.getElementById('msg'); if (m && m.dataset.net) { m.hidden = true; delete m.dataset.net; } }   // (a slow start: the safety net's message goes)
 
 const TICK = 1 / 60;
 const MAX_TICKS = 4;        // 1x to 8x: at most this many ticks per frame per 1x of speed (as before step C3b)
@@ -792,7 +797,7 @@ async function boot() {
   window.addEventListener('resize', resize);
   setupInput();
   if (flag('overlay')) overlayEl.hidden = false;
-  showEntropy(!params.has('entropy') || flag('entropy'));
+  showEntropy(flag('entropy'));   // (the toy front: closed unless ?entropy=1; Shift+E, the Developer panel)
   if (params.get('overlay') === 'ghost') overlayEl.style.opacity = '0';   // kept up to date but invisible (for tools/shot.py)
   window.moire.adapter = () => adapterName(gpu.info);
   window.moire.control = control;
@@ -1199,6 +1204,7 @@ const TOUCH = !!(window.matchMedia && !window.matchMedia('(any-pointer: fine)').
 let hintQuiet = false;   // step C6n: the short hint goes quiet 8 s after the start (a calm screen); flashes and ? still show
 function hintLine() {
   if (allKeys) return fullHint();
+  if (document.body.classList.contains('toy-mode')) return '';   // (the toy front: no key hints; the developer mode shows them)
   if (TOUCH || hintQuiet) return '';   // touch only: the toolbar says it all; the line shows only the flashes
   const t = TOOLS[tool];
   const what = t.spot ? 'click or drag: move the light' : t.stir ? 'click or drag: stir' : t.addCell ? 'click: place a cell · drag: a line of cells'
@@ -1504,16 +1510,21 @@ function setupInput() {
   window.addEventListener('keydown', onKey);
   appUI = createApp({ app, params, flag, flash, cells, matter, light, background, control, get view() { return view; }, touch: TOUCH, tools: TOOLS,
     inPlace: newCultureInPlace, preset: PRESET, dish, obstacles });
+  toy = createToy({ app, actions, runAction, tools: TOOLS, cells, matter, light, obstacles, water, oases, perfusion, background, params, flag,
+    control, preset: PRESET, appUI, get view() { return view; }, flash, showEntropy, touch: TOUCH });
   ui = setupUI(Object.assign(app, {
     actions, runAction, touch: TOUCH,
     startFolded: params.has('ui') ? !flag('ui') : null,
-    extraPanels: appUI.panels, dishExtra: appUI.dishExtra, toolIcons: appUI.toolIcons,
+    extraPanels: [toy.devPanel, ...appUI.panels], dishExtra: appUI.dishExtra, toolIcons: appUI.toolIcons,
   }));
   appUI.attach(ui);
+  toy.attach(ui);
+  window.moire.toy = toy;   // the toy front: moire.toy.build(name, seed), .check(), .link(), .setDev(on)
   window.moire.app = appUI;
   window.moire.camera = camera;   // app: the view camera (moire.camera.set(zoom, x, y), .fit())
 }
 let appUI = null;          // app: zoom buttons, scale bar, zoos, add tools, new culture (src/app.js)
+let toy = null;            // the toy front (src/toy.js)
 let spaceHeld = false;     // app: Space is down (a left drag then pans)
 let spaceUsed = false;     // ... and a drag used it (its release does not pause)
 

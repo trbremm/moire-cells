@@ -77,7 +77,7 @@ const ZOOM_ICONS = {
 
 /** ctx: { app (main.js's view of the page), params, flag, flash, cells, matter, light, background, control, view (getter), touch } */
 export function createApp(ctx) {
-  const A = { ctx, ui: null };
+  const A = { ctx, ui: null, cluster: 1 };   // (cluster: cells a tap of the add-cell tool places; the toy sets 7)
 
   // ---------- zoom buttons ----------
   const box = el('div', 'zoombox');
@@ -330,7 +330,10 @@ export function createApp(ctx) {
     if (drag.kind === 'obs') { obsUp(); return true; }
     if (drag.kind === 'cell' && drag.pts.length) {
       const { g, label } = genomeNow();
-      place(drag.pts, g, label);
+      // (the toy front, src/toy.js: a tap drops a small group, a hexagon of `cluster` cells, so it shows at a glance)
+      const R = ctx.cells.R, [x0, y0] = drag.pts[0], k = drag.pts.length === 1 ? Math.max(1, Math.min(7, A.cluster || 1)) : 1;
+      const pts = k > 1 ? [[x0, y0], ...Array.from({ length: k - 1 }, (_, j) => [x0 + 2.1 * R * Math.cos(j * Math.PI / 3), y0 + 2.1 * R * Math.sin(j * Math.PI / 3)])] : drag.pts;
+      place(pts, g, label);
     }
     return true;
   };

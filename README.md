@@ -203,8 +203,8 @@ Seeds that look good (each run 4 minutes above; the dice and "other seeds" give 
 - new: `src/toy.js` (the toy front: bar, caption, corner buttons, worlds sheet and its pictures, the Developer panel, building a world in
   place, links), `src/terrain.js` (the generators, `makeWorld`, `reach`)
 - changed: `index.html` (the toy's styles), `src/main.js` (creates the toy before the toolbar, `?entropy` default, no key hints in the toy,
-  `moire.toy`), `src/ui.js` (a panel can come first), `src/app.js` (the add-cell tool's tap places `cluster` cells: 7 in the toy),
-  `src/obstacles.js` (`setShapes`, `shapeSd` exported), `src/culture.js` (the New culture dialog keeps `dev` and `entropy`),
+  `moire.toy`, the safety net's message taken away when the modules start late), `src/ui.js` (a panel can come first), `src/app.js` (the add-cell tool's tap places `cluster` cells: 7 in the toy),
+  `src/obstacles.js` (`setShapes`, `shapeSd` exported), `src/culture.js` (the New culture dialog keeps `dev` and `entropy`), the safety net in `index.html` (15 s),
   `tools/experiment.py`, `tools/shot.py`
 
 ## Controls (step C3b)

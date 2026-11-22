@@ -30,7 +30,7 @@
 import { camera, MAX_ZOOM } from './camera.js';
 import { moleculePanel, cellPanel, summary } from './zoo.js';
 import { SUBSTANCES, CH, lgM } from './matter.js';
-import { CARBON, CB_LIP, LG_CB, LG_CBC } from './carbon.js';   // step C15c: placed cells get a body (step C15d: and a pigment)
+import { CARBON, CB_LIP, ENZ_H, LG_CB, LG_CBC } from './carbon.js';   // step C15c: placed cells get a body (step C15d: and a pigment)
 import { CW as CB_W } from './carboncells.js';
 import { CELL_FLOATS, CELL_BYTES } from './cells.js';
 import { BIO_FLOATS, founderGenome } from './genome.js';
@@ -445,7 +445,7 @@ export function createApp(ctx) {
       if (nPig) stock[30] = nPig;   // (stock word W_PIG)
       const cbw = new Int32Array(CB_W);
       cbw[8] = cbw[9] = cbw[10] = nBody;   // (cellulose-like: per carbon one backbone bond, one fuel hand, one burnt hand)
-      cbw[11] = nEnz;                      // (each unit 4 carbons as (4, 4, 4) hands + 1 G)
+      cbw[11] = nEnz;                      // (each unit 4 carbons as ENZ_H hands + 1 G: (4, 4, 4), step C15e (4, 0, 8))
       free.forEach((slot, j) => {
         const [x, y] = points[j];
         f.fill(0);
@@ -466,9 +466,10 @@ export function createApp(ctx) {
       });
       // step C15c: the books for the bodies and enzymes (carbon in: the dish's ADD and the cells' IN per tar hand; the G atoms: matter ADD)
       if (nBody || nEnz || nPig) {
-        const per = nBody + 4 * nEnz, k = free.length;   // (a pigment count: 1 backbone bond, 6 fuel hands: step C15d)
-        const words = [[LG_CB + 128 * 5, per + nPig], [LG_CB + 128 * 6, per + 6 * nPig], [LG_CB + 128 * 7, per],
-          [LG_CBC.IN + 128 * 5, per + nPig], [LG_CBC.IN + 128 * 6, per + 6 * nPig], [LG_CBC.IN + 128 * 7, per], [lgM('ADD', CH.G), nEnz],
+        const k = free.length;   // (a pigment count: 1 backbone bond, 6 fuel hands: step C15d; an enzyme unit ENZ_H: step C15e)
+        const hc = nBody + ENZ_H[0] * nEnz + nPig, hg = nBody + ENZ_H[1] * nEnz + 6 * nPig, ht = nBody + ENZ_H[2] * nEnz;
+        const words = [[LG_CB + 128 * 5, hc], [LG_CB + 128 * 6, hg], [LG_CB + 128 * 7, ht],
+          [LG_CBC.IN + 128 * 5, hc], [LG_CBC.IN + 128 * 6, hg], [LG_CBC.IN + 128 * 7, ht], [lgM('ADD', CH.G), nEnz],
           [lgM('ADD', CH.trace), nPig]];
         for (const [w, x] of words) {
           if (!x) continue;

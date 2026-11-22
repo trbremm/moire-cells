@@ -65,6 +65,8 @@ const CBF_OXB: u32 = 8192u;
 const CBF_SHUT: u32 = 16384u;  // the REDUCING SHUTTLE: the builder reduces a hand with the g an oxidation of another carbon frees (cb_make2)
 const CBF_GRAN: u32 = 32768u;  // FAT FROM GRANULES: the two-carbon builder also cuts its molecules out of the cell's granules (cb_make2)
 const CBF_HUNGER: u32 = 65536u; // HUNGER FOR EVERY PART: a cell whose parts were short of carbon grazes as a hungry one (not the body alone)
+// step C15e, CARBON LIFE VIABLE (src/carboncells.js; README "Step C15e: carbon life viable")
+const CBF_ENZANY: u32 = 262144u; // AN ENZYME'S SCAFFOLD FROM ANY CARBON: a unit is 4 burnt chain carbons (4, 0, 8) + 1 G (fixed for the page)
 const CBF_WALLREC: u32 = 131072u; // WALL RECYCLING: a jolted wall's cracked pieces stay in the cell as granules (as shed lipids do), not mud    // OXYGEN DAMAGES MEMBRANES: free t oxidises the lipids' fuel hands (fat -> soap -> spoiled, into the mud)
 // the event counters (64-bit, LG_CBC_EV; src/carboncells.js EV)
 const CBE_OX: u32 = 0u;
@@ -272,7 +274,7 @@ fn cb_give_back(i: u32, idx: array<u32, 9>, slot: u32, gcur: u32) {   // (step C
   // step C15c: the enzymes, as tar hands (their carbon) and their G atoms (into the dish's G, or booked gone)
   let ne = atomicExchange(&cbS[i * CW + CB_ENZ], 0);
   if (ne > 0) {
-    cb_spill(CB_ENZ_H, ne, idx, false, slot);
+    cb_spill(cb_enz_h(), ne, idx, false, slot);
     if (gcur != 0u && (EP.mask & 8u) != 0u) { spread9(gcur + 3u * EP.n, idx, ne); } else { add64(lg_mc(LG_M_GONE, 3u) + slot, ne); }
   }
   for (var w = 12u; w < CW; w++) { atomicStore(&cbS[i * CW + w], 0); }
@@ -745,6 +747,8 @@ fn cb_lk_hands(q: u32) -> vec3i {
 }
 const CB_PIG_H = vec3i(1, 6, 0);   // a pigment count's carbon (2 carbons)
 const CB_ENZ_H = vec3i(4, 4, 4);   // an enzyme unit's carbon (4 carbons)
+/** An enzyme unit's hands: C15c's cellulose-like (4, 4, 4), or (step C15e, CBF_ENZANY, fixed for the page) a burnt frame (4, 0, 8). */
+fn cb_enz_h() -> vec3i { return select(CB_ENZ_H, vec3i(4, 0, 8), CARBON_ON != 0u && (CBP.cfg.x & CBF_ENZANY) != 0u); }
 
 /** Hands (h per count, n counts) out of a cell into the dish's tar under it (wg: counted in the eat pass's workgroup, else in the ledger). */
 fn cb_spill(h: vec3i, n: i32, idx: array<u32, 9>, wg: bool, slot: u32) {
@@ -946,6 +950,28 @@ fn cb_make_chain(n: i32, S: ptr<function, array<i32, 5>>, gr: ptr<function, vec3
   if (left > 0) { *lim |= select(why, CBL_C, why == 0u); }
   return made;
 }
+/**
+ * Step C15e (CBF_ENZANY): make n BURNT chain carbons (hands 1, 0, 2 each: an enzyme's frame) from the granules' burnt carbons as they are
+ * (a backbone bond and two burnt hands cut out, regrouped with no bond made or broken: zero energy, the assembly spark from the battery),
+ * then from formic-like molecules (cgt3 -> a burnt chain carbon + a water: a condensation, 0.75 as heat, a spark). Returns the carbons made.
+ */
+fn cb_make_burnt(n: i32, S: ptr<function, array<i32, 5>>, gr: ptr<function, vec3i>, m: ptr<function, array<i32, 18>>,
+                 bat: ptr<function, i32>, heat: ptr<function, i32>, lim: ptr<function, u32>) -> i32 {
+  if (n <= 0) { return 0; }
+  let sp = max(CBP.e.z, 1);
+  let cd = CBP.e.y;
+  var left = n;
+  var made = 0;
+  var why = 0u;
+  var x = min(min(left, (*gr).x), (*gr).z / 2);
+  if (max(*bat, 0) / sp < x) { x = max(*bat, 0) / sp; why |= CBL_BAT; }
+  if (x > 0) { *gr -= vec3i(x, 0, 2 * x); *bat -= x * sp; *heat += x * sp; left -= x; made += x; }
+  x = min(left, (*S)[3]);
+  if (max(*bat, 0) / sp < x) { x = max(*bat, 0) / sp; why |= CBL_BAT; }
+  if (x > 0) { (*S)[3] -= x; (*m)[6] += x; *bat -= x * sp; *heat += x * (sp + cd); left -= x; made += x; }
+  if (left > 0) { *lim |= select(why, CBL_C, why == 0u); }
+  return made;
+}
 /** n cross-linked WALL pairs (hands 3, 1, 1): two chain carbons condensed once more (0.75 as heat, a spark). Returns the pairs made. */
 fn cb_make_cross(n: i32, S: ptr<function, array<i32, 5>>, gr: ptr<function, vec3i>, m: ptr<function, array<i32, 18>>,
                  bat: ptr<function, i32>, heat: ptr<function, i32>, lim: ptr<function, u32>) -> i32 {
@@ -1041,7 +1067,7 @@ fn cb_enzymes(i: u32, rates: vec3f, areaR2: f32, m: ptr<function, array<i32, 18>
     let rn = min(nw, max(*bat, 0) / c4);
     if (rn > 0) { *bat -= rn * c4; *heat += rn * c4; }
     let br = nw - rn;
-    if (br > 0) { E -= br; cb_gran_add(i, CB_ENZ_H, br); (*m)[3] += br; }
+    if (br > 0) { E -= br; cb_gran_add(i, cb_enz_h(), br); (*m)[3] += br; }
   }
   if (f32(E) < want) {
     var nb = i32(floor((want - f32(E)) * min(CBP.g.y * EP.dt, 1.0) + u01(pcg(r + 0x9e3779b9u))));
@@ -1050,9 +1076,11 @@ fn cb_enzymes(i: u32, rates: vec3f, areaR2: f32, m: ptr<function, array<i32, 18>
     if (nb > 0) {
       var S: array<i32, 5>;
       var gr = cb_ld(i, &S);
-      let c4 = cb_make_chain(4 * nb, &S, &gr, m, bat, heat, &lim);
+      let any = (CBP.cfg.x & CBF_ENZANY) != 0u;
+      var c4 = 0;   // (an if, not a select: WGSL's select runs both builders)
+      if (any) { c4 = cb_make_burnt(4 * nb, &S, &gr, m, bat, heat, &lim); } else { c4 = cb_make_chain(4 * nb, &S, &gr, m, bat, heat, &lim); }
       let u = c4 / 4;
-      if (c4 - 4 * u > 0) { gr += vec3i(1, 1, 1) * (c4 - 4 * u); }
+      if (c4 - 4 * u > 0) { gr += select(vec3i(1, 1, 1), vec3i(1, 0, 2), any) * (c4 - 4 * u); }
       cb_st(i, &S, gr);
       if (u > 0) { E += u; (*m)[3] -= u; atomicAdd(&wcbe2[CBE2_ENZ], u); }
     }
@@ -1074,8 +1102,8 @@ fn cb_found_enz(i: u32, r: f32, slot: u32) {
   if (n <= 0) { return; }
   atomicAdd(&cbS[i * CW + CB_ENZ], n);
   for (var q = 0u; q < 3u; q++) {
-    add64(LG_CB_ADD_C + 128u * (5u + q) + slot, CB_ENZ_H[q] * n);
-    add64(LG_CBC_IN + 128u * (5u + q) + slot, CB_ENZ_H[q] * n);
+    add64(LG_CB_ADD_C + 128u * (5u + q) + slot, cb_enz_h()[q] * n);
+    add64(LG_CBC_IN + 128u * (5u + q) + slot, cb_enz_h()[q] * n);
   }
   add64(lg_mc(LG_M_ADD, 3u) + slot, n);   // (its G atoms, booked as added)
 }
@@ -1118,7 +1146,7 @@ fn cb_ledger_parts(i: u32, live: bool) {
     for (var k = 0u; k < 12u; k++) { glue += max(atomicLoad(&stock[i * SW + MB_L0 + k]), 0); }
   }
   let ne = max(atomicLoad(&cbS[i * CW + CB_ENZ]), 0);
-  let he = CB_ENZ_H * ne;
+  let he = cb_enz_h() * ne;
   let h = hm + hw + hp + he;
   for (var w = 0u; w < 3u; w++) { if (h[w] != 0) { add64(LG_CBC_STOCK + 128u * (5u + w) + slot, h[w]); } }
   if (glue != 0) { add64(LG_CBC_STOCK + 128u * 2u + slot, glue); }

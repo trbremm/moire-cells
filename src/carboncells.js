@@ -43,7 +43,7 @@
 // (src/charge.js), and the dish's own carbon energy book counts what crossed the membranes (taken in, given back) per channel.
 
 import { fmt, HEAT_SCALE, LEDGER_WORDS } from './heat.js';
-import { CARBON, CB_LIP, LADDER, LG_CBC, carbonTable } from './carbon.js';
+import { CARBON, CB_LIP, CB_ENZANY, LADDER, LG_CBC, carbonTable } from './carbon.js';
 import * as MX from './matter.js';
 
 export const CW = 24;          // carbon words per cell (cell_carbon.wgsl CW)
@@ -64,10 +64,10 @@ export const PART_RECIPES = {
   wallX: { carbon: 2, hands: 'a cross-linked pair (3 backbone bonds, 1 fuel, 1 burnt hand)', element: null, charged: CB_LIP },
   pigment: { carbon: 2, hands: 'c2 g6 (its c-g bonds catch visible 1)', element: 'trace (the centre, as magnesium)', k: 1, charged: CB_LIP },
   glue: { carbon: 1, hands: 'cg2t2 (sugar-unit-like: charged hands)', element: 'g, t on its hands', charged: CB_LIP },
-  enzyme: { carbon: 4, hands: '4 chain carbons', element: 'G (the heavy giver: catalysis moves electrons)', k: 1, charged: CARBON },
+  enzyme: { carbon: 4, hands: CB_ENZANY ? '4 burnt chain carbons (1 backbone bond, 2 burnt hands each: any carbon; step C15e)' : '4 chain carbons', element: 'G (the heavy giver: catalysis moves electrons)', k: 1, charged: CARBON },
 };
 const ATOM_SCALE = 4096;
-const CBF = { ON: 1, EXCH: 2, ENG: 4, GRAZE: 8, DIS: 16, FLIP: 32, RESET: 64, SMELL: 128, GROW: 256, LIP: 512, TRANS: 1024, RED: 2048, ENZ: 4096, OXB: 8192, SHUT: 16384, GRAN: 32768, HUNGER: 65536, WALLREC: 131072 };
+const CBF = { ON: 1, EXCH: 2, ENG: 4, GRAZE: 8, DIS: 16, FLIP: 32, RESET: 64, SMELL: 128, GROW: 256, LIP: 512, TRANS: 1024, RED: 2048, ENZ: 4096, OXB: 8192, SHUT: 16384, GRAN: 32768, HUNGER: 65536, WALLREC: 131072, ENZANY: 262144 };
 // the 64-bit event counters (LG_CBC.EV, cell_eat.wgsl CBE_*)
 const EV = ['ox', 'cond', 'red', 'hyd', 'dis', 'graze', 'gain', 'heat', 'paid', 'phUsed', 'phIdle', 'satWant', 'satLost', 'rise', 'built', 'buildPaid'];
 const EV_ENERGY = /^(gain|heat|paid|rise|buildPaid)$/;
@@ -173,7 +173,7 @@ export class CarbonCells {
         (this.rule('growth') ? CBF.GROW : 0) | (CB_LIP ? CBF.LIP : 0) | (this.rule('transport') ? CBF.TRANS : 0) |
         (this.rule('reduce') ? CBF.RED : 0) | (this.rule('enzymes') ? CBF.ENZ : 0) | (this.rule('oxBite') ? CBF.OXB : 0) |
         (this.rule('shuttle') ? CBF.SHUT : 0) | (this.rule('granFat') ? CBF.GRAN : 0) | (this.rule('hunger') ? CBF.HUNGER : 0) |
-        (this.rule('wallRecycle') ? CBF.WALLREC : 0);
+        (this.rule('wallRecycle') ? CBF.WALLREC : 0) | (CB_ENZANY ? CBF.ENZANY : 0);
       u[1] = tickBase >>> 0; u[2] = ok ? Math.max(1, M.nSub || 1) : 1; u[3] = ok ? Cb.cur & 1 : 0;
       if (ok) {
         const LW = LEDGER_WORDS;   // (the heat buffer's grid starts behind the ledger)

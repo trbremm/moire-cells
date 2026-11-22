@@ -16,7 +16,7 @@ import { pal } from './palette.js';
 import { BIO_FLOATS, strategyOf, founderGenome, HABITS, predatorGenome } from './genome.js';
 import { DESIGNS, DESIGN_NAMES, designGenome } from './tissues.js';
 import { CELL_FLOATS } from './cells.js';
-import { CARBON, CB_LIP, LADDER, carbonTable, describeCarbon } from './carbon.js';   // step C15a: the builder c, its ladder, tar
+import { CARBON, CB_LIP, CB_ENZANY, LADDER, carbonTable, describeCarbon } from './carbon.js';   // step C15a: the builder c, its ladder, tar
 import { JOBS, jobOf, jobInk } from './jobs.js';   // step F0: colour by job
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -318,7 +318,7 @@ function carbonRows(body, P, rows) {
     ['wall carbon', 'granules, sugar-unit-like carbon, or a pair that evens out', 'cellulose-like chains; cross-linked pairs are stiffer (brown)'],
     ['pigment c2 g6 + trace', 'an oil-like pair + a trace atom', 'its c-g bonds catch visible 1; trace at its heart, as magnesium'],
     ['glue cg2t2', 'sugar-unit-like carbon as it is', "sticky by its charged hands, as a biofilm's sugars"],
-    ['enzyme 4 c + G', 'four chain carbons + a heavy giver G', 'catalysis moves electrons: G holds the loosest one, as iron'],
+    ['enzyme 4 c + G', CB_ENZANY ? 'four burnt chain carbons (a frame of any carbon) + a heavy giver G' : 'four chain carbons + a heavy giver G', 'catalysis moves electrons: G holds the loosest one, as iron'],
   ]) {
     const row = el('div', 'zrow');
     const main = el('div', 'zmain');

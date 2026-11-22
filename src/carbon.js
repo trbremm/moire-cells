@@ -54,6 +54,16 @@ export const CARBON = !(QS && QS.get('electrons') === '0') && !(QS && QS.get('ca
  * words change meaning): ?cblip=0 gives step C15b (carbon beside the linkers); old snapshots reload with their own setting.
  */
 export const CB_LIP = CARBON && !(QS && QS.get('cblip') === '0');
+/**
+ * Step C15e (fix h), AN ENZYME'S SCAFFOLD FROM ANY CARBON: an enzyme's job (catalysis: moving electrons) is its heavy giver G; its carbon is
+ * only the frame that holds it, so the frame need not hold fuel (real proteins are not fuel either). With it an enzyme unit is 4 BURNT
+ * chain carbons (per carbon one backbone bond and two burnt hands: hands (4, 0, 8)) + 1 G, cut from the granules' burnt carbons as they are
+ * or condensed from formic-like molecules, instead of C15c's 4 cellulose-like ones (4, 4, 4), which took a fuel hand each from the
+ * membranes and pigments. Fixed for the page (the enzymes' words mean other hands): ?cbenzany=0 gives C15d; snapshots carry it.
+ */
+export const CB_ENZANY = CB_LIP && !(QS && QS.get('cbenzany') === '0');
+/** An enzyme unit's tar hands (backbone bonds, fuel hands, burnt hands). */
+export const ENZ_H = CB_ENZANY ? [4, 0, 8] : [4, 4, 4];
 /** Step C15c: sugar-unit-like carbon at the mineral spring, molecules per atom of its rate (?cbsugar=; 0: CO2-like only, as C15b). */
 /**
  * Step C15d (fix d), IRON AT THE MINERAL SPRING: while carbon makes the cell, every enzyme holds a heavy giver G (C15c), and only vents

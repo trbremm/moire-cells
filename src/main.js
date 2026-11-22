@@ -198,7 +198,7 @@ import { Landscape } from './landscape.js';
 import { Cells, DEFAULT_CELLS, ANCHORS } from './cells.js';
 import { Light } from './light.js';
 import { Matter, SHOWS, ELECTRONS } from './matter.js';
-import { CARBON, CB_LIP } from './carbon.js';   // step C15a: carbon in the open dish
+import { CARBON, CB_LIP, CB_ENZANY } from './carbon.js';   // step C15a: carbon in the open dish
 import { makeActions, keyMaps, keysText, TOOLS, SQUEEZE_SOFT, SQUEEZE_HARD, VIEWS } from './actions.js';
 import { setupUI } from './ui.js';
 import { Recorder } from './record.js';
@@ -334,6 +334,13 @@ async function boot() {
     if (snap && snap.carbon && !!snap.cbLip !== CB_LIP) {
       const u = new URL(location.href);
       u.searchParams.set('cblip', snap.cbLip ? '1' : '0');
+      location.replace(u.href);
+      return;
+    }
+    // step C15e: and with the enzymes' scaffold as it was saved (saved before step C15e: cellulose-like)
+    if (snap && snap.carbon && snap.cbLip && !!snap.cbEnzAny !== CB_ENZANY) {
+      const u = new URL(location.href);
+      u.searchParams.set('cbenzany', snap.cbEnzAny ? '1' : '0');
       location.replace(u.href);
       return;
     }

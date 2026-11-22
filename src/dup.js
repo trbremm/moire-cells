@@ -154,6 +154,24 @@ export class Dup {
   /** The census now (a fresh read-back; for the console and the experiments' evals). */
   now() { return this.read(this.lastAt); }
 
+  /** Cells holding copies, for looking at them (moire.dup.where(n)): [{ slot, x, y (dish CSS px), slots: [names of the working slots, a copy marked *] }]. */
+  async where(n = 10, kind = 'any') {
+    const C = this.cells, d = C.device, N = C.count;
+    const [bioAB, cellAB] = await Promise.all([readBuffer(d, C.bioBuf[C.bioCur], 0, N * BIO_FLOATS * 4), readBuffer(d, C.cellBuf, 0, N * CELL_FLOATS * 4)]);
+    const g = new Float32Array(bioAB), f = new Float32Array(cellAB), u = new Uint32Array(cellAB), out = [];
+    for (let i = 0; i < N && out.length < n; i++) {
+      if (!(u[i * CELL_FLOATS + C_FLAGS] & 1)) continue;
+      const S = slotsOf(g, i * BIO_FLOATS).filter((sl) => sl.rate > 0);
+      const cps = S.filter((sl) => (sl.pump ? sl.fam.copy : sl.k >= 3));
+      if (!cps.length) continue;
+      const newfn = cps.some((cp) => S.some((sl) => sl !== cp && sl.pump === cp.pump && sl.fam.id === cp.fam.id && jobKey(sl) !== jobKey(cp)));
+      if (kind === 'new' && !newfn) continue;
+      out.push({ slot: i, x: f[i * CELL_FLOATS], y: f[i * CELL_FLOATS + 1], newfn,
+        slots: S.map((sl) => `${slotName(sl)}${(sl.pump ? sl.fam.copy : sl.k >= 3) ? '*' : ''} #${sl.fam.id}`) });
+    }
+    return out;
+  }
+
   analyse(g, f, u, n, time) {
     const CF = CELL_FLOATS, B = BIO_FLOATS, P = this.params, acts = this.acts;
     let m = 0, work = 0, act = 0, withCopy = 0, engCopies = 0, pumpCopies = 0, cellsEngCopy = 0, cellsPumpCopy = 0, dupsLine = 0;

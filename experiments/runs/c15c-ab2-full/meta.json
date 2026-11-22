@@ -1,0 +1,45 @@
+{
+  "name": "c15c-ab2-full",
+  "description": "A/B 2 (renewed enzymes, transporter upkeep 0.0005, hungry grazing 5) 360 s default seed 3: {}",
+  "condition": {
+    "name": "c15c-ab2-full",
+    "description": "A/B 2 (renewed enzymes, transporter upkeep 0.0005, hungry grazing 5) 360 s default seed 3: {}",
+    "query": {
+      "seed": 3
+    },
+    "duration": 360,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 360,
+        "name": "end"
+      }
+    ],
+    "snapshots": [],
+    "evals": []
+  },
+  "url": "http://localhost:51667/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-18T01:36:04",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 360.0,
+  "run_wall_s": 120.68,
+  "speed_reached": 2.98,
+  "samples": 13,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-18T01:39:17",
+  "wall_s": 192.86
+}

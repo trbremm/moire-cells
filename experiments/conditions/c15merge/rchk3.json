@@ -1,0 +1,65 @@
+{
+ "batch": "c15m-rchk3",
+ "runs": [
+  {
+   "name": "c15m-rchk3-st0",
+   "description": "maze s7 carbon=0 boot, starter 0",
+   "query": {
+    "terrain": "maze",
+    "seed": 7,
+    "carbon": 0,
+    "starter": 0
+   },
+   "duration": 1,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 0.02,
+     "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, inn:H.in, bat:H.bat, start:E.start, tot:E.tot})"
+    }
+   ]
+  },
+  {
+   "name": "c15m-rchk3-open",
+   "description": "open s7 carbon=0, eat probe",
+   "query": {
+    "seed": 7,
+    "carbon": 0
+   },
+   "duration": 1,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 0.02,
+     "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, inn:H.in, bat:H.bat, start:E.start, tot:E.tot})"
+    }
+   ]
+  },
+  {
+   "name": "c15m-rchk3-maze",
+   "description": "maze s7 carbon=0, eat probe",
+   "query": {
+    "terrain": "maze",
+    "seed": 7,
+    "carbon": 0
+   },
+   "duration": 1,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 0.02,
+     "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, inn:H.in, bat:H.bat, start:E.start, tot:E.tot})"
+    }
+   ]
+  }
+ ]
+}

@@ -113,6 +113,8 @@ function gather(M, ctl) {
   if (M.electrons && M.electrons.census) flatten({ ...M.electrons.census, tot: undefined }, 'electrons', out);   // step C12d
   if (M.waste && M.waste.census) flatten(M.waste.census, 'waste', out);   // step C12e
   if (M.vents && M.vents.census) flatten(M.vents.census, 'vents', out);   // step C12f
+  if (M.carbon && M.carbon.census) flatten(M.carbon.census, 'carbon', out);   // step C15a: carbon in the open dish
+  if (M.carbonCells && M.carbonCells.sample) flatten(M.carbonCells.sample, 'cbcells', out);   // step C15b: cells eat carbon
   if (M.ions && M.ions.census) flatten(M.ions.census, 'ions', out);   // step C12g
   if (M.whole && M.whole.census) flatten(M.whole.census, 'whole', out);   // step M1
   if (M.kin && M.kin.census) flatten(M.kin.census, 'kin', out);         // step T1a

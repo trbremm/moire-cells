@@ -411,7 +411,7 @@ struct Bio {
                     // (a whole number)
   resp: vec4f,      // step F0, state (inherited, not mutated): x y the JOB scores, low-passed: builder, predator (job_of); z w spare (the
                     // fates' response genes until then)
-  relay: vec4f,     // spare (the fates' relay genes until step F0)
+  relay: vec4f,     // x step C15c: the carbon TRANSPORTER gene (a log level; src/carboncells.js); y z w spare (the fates' relay genes until F0)
   body: vec4f,      // x adhesion, y size factor, z motility factor, w spare
   acc: vec4f,       // step F0, state (inherited): the JOB scores, low-passed: light eater, breather, fermenter, gradient eater (the
                     // fates' accumulators until then)
@@ -588,7 +588,9 @@ fn memb_stiff(m: vec4f, tRef: f32) -> f32 {
   return clamp((0.7 + clamp(m.x, 0.0, 1.0)) / 0.8 * sqrt(max(m.y, 1e-4) / max(tRef, 1e-4)) * m.z, 0.25, 4.0);
 }
 const ENG_RATE_MAX: f32 = 6.0;     // largest rate of an engine slot
-const ENG_COUNT: u32 = 20u;        // engines in ENGINES (src/matter.js)
+const ENG_COUNT: u32 = 20u;        // engines in ENGINES (src/matter.js; step C15b: + the carbon engines, ALL_ENGINES)
+const ENG_MAIN: u32 = 20u;         // step C15b: the table's own engines (EatP.eng); indices from here on are carbon engines
+const CARBON_ON: u32 = 0u;         // step C15b: 1 with carbon (src/matter.js sets it): the cells' carbon code runs
 fn eng_index(code: f32) -> u32 { return min(u32(round(max(code, 0.0))) & 31u, ENG_COUNT - 1u); }
 // the slot's band: 1..3 a pigment for that light band (visible 1, visible 2, hard), 0 none (an uphill engine is then a storer)
 fn eng_band(code: f32) -> u32 { return min(u32(round(max(code, 0.0))) >> 5u, 3u); }
@@ -787,6 +789,9 @@ fn mutate(p: Bio, seed: u32, size: f32, jump: f32, engJump: f32, pumpJump: f32) 
   b.body.x = nudge(b.body.x, size * 0.03, 0.0, 1.0, seed, 16u);
   b.body.y = nudge(b.body.y, size * 0.02, 0.8, 1.25, seed, 17u);
   b.body.z = clamp(b.body.z * exp(size * 0.06 * gauss(seed, 18u)), 0.3, 3.0);
+  // step C15c: the carbon TRANSPORTER gene (relay.x, a log level; 0 = the founders' 1), small steps as the ion channels' level (with carbon only:
+  // without it the word stays as it was, so ?carbon=0 is unchanged)
+  if (CARBON_ON != 0u) { b.relay.x = nudge(b.relay.x, size * 0.06, -4.0, 2.0, seed, 190u); }
   // the occasional big jump: one gene redrawn over its whole range
   if (rand01(seed, 101u) < jump) {
     let g = min(u32(rand01(seed, 102u) * 18.0), 17u);

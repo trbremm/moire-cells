@@ -1,0 +1,63 @@
+{
+  "name": "c15c-phone",
+  "description": "phone size 390x844 at dpr 3: the default scene 20 s, carbon makes the cell",
+  "condition": {
+    "name": "c15c-phone",
+    "description": "phone size 390x844 at dpr 3: the default scene 20 s, carbon makes the cell",
+    "query": {
+      "seed": 3
+    },
+    "size": "390x844",
+    "dpr": 3,
+    "duration": 20,
+    "sample_every": 10,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 20
+      },
+      {
+        "t": 20,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 20,
+        "js": "const L = moire.carbon && moire.carbon.ledger, C = moire.carbonCells && moire.carbonCells.ledger, H = moire.heat.ledger, CC = moire.carbonCells; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, ladder: L && L.ladder, tar: L && L.tar, dishC: L && L.dish.c, cellsC: L && L.cells.c, cells: C && {rate: C.rate, census: C.census, granC: C.granC, ladder: C.ladder}, parts: CC && CC.census2, rate2: CC && CC.rate2, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1]})"
+      }
+    ]
+  },
+  "url": "http://localhost:53699/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "390x844",
+  "commit": "a430ace49a8598b0f7fa4de7aff9d817d65714ca",
+  "dirty": true,
+  "started": "2026-11-18T04:41:18",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 20.0,
+  "run_wall_s": 6.89,
+  "speed_reached": 2.9,
+  "samples": 3,
+  "shots": [
+    "shots/t20.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 20.000000000000046,
+      "js": "const L = moire.carbon && moire.carbon.ledger, C = moire.carbonCells && moire.carbonCells.ledger, H = moire.heat.ledger, CC = moire.carbonCells; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, ladder: L && L.ladder, tar: L && L.tar, dishC: L && L.dish.c, cellsC: L && L.cells.c, cells: C && {rate: C.rate, census: C.census, granC: C.granC, ladder: C.ladder}, parts: CC && CC.census2, rate2: CC && CC.rate2, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1]})",
+      "result": "{\"t\":20.000000000000046,\"alive\":699,\"job\":[346,200,104,0,0,49,0],\"ladder\":[2.840087890625,0.153564453125,0.1123046875,0.2001953125,1.9921875],\"tar\":[55.77197265625,24.8056640625,40.4052734375],\"dishC\":49.487060546875,\"cellsC\":165.88134765625,\"cells\":{\"rate\":{\"ox\":0.003543976814516111,\"cond\":0,\"red\":0,\"hyd\":0,\"dis\":0.0027170488911290184,\"graze\":0.29403194304435337,\"gain\":0.007309452179939479,\"heat\":0.0024364840599798263,\"paid\":0,\"phUsed\":0,\"phIdle\":0,\"satWant\":0,\"satLost\":0,\"rise\":0,\"built\":0.00307144657258063,\"buildPaid\":0.001535723286290315},\"census\":{\"n\":699,\"ox\":65,\"cond\":49,\"red\":65,\"redLit\":65,\"hyd\":0,\"granule\":2,\"granC\":0.506,\"ladder\":1.666,\"any\":114,\"oxOnly\":0,\"litOnly\":0,\"body\":74.1,\"short\":1,\"want\":55.993},\"granC\":0.4696406250000109,\"ladder\":[0.976318359375,0.004150390625,0.021240234375,0.0068359375,0.691162109375]},\"parts\":{\"membC\":1.516,\"wallC\":0.02,\"pigC\":0,\"glueC\":0.017,\"enzC\":88.076,\"limC\":695,\"limG\":90,\"limTr\":307,\"limAt\":18,\"limBat\":3,\"trans\":699,\"enzWant\":87.575,\"enzShort\":0,\"limAny\":699},\"rate2\":{\"lipMade\":0.04654422883064493,\"wallMade\":0.02799741683467728,\"reduced\":0.020673198084677314,\"oxidised\":0.05434097782258037,\"bites\":0.014175907258064445,\"spoiled\":0.009686869959677371,\"pigMade\":0,\"enzMade\":0.00023626512096774075},\"memb\":{\"integ\":0.00965379113018598},\"cRound\":0,\"eRound\":0,\"atoms\":0,\"charge\":0,\"energy\":-0.002899169921875,\"eIn\":250067.8159942627,\"freeT\":12.900390625}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T04:42:47",
+  "wall_s": 89.03
+}

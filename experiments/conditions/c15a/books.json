@@ -1,0 +1,45 @@
+{
+ "batch": "c15a-books",
+ "runs": [
+  {
+   "name": "c15a-books",
+   "description": "books: 20 min default scene, whole dish lit, a wash (Shift+C) at 600 s",
+   "query": {
+    "seed": 7,
+    "light": "full"
+   },
+   "duration": 1200,
+   "sample_every": 60,
+   "stall": 200,
+   "shots": [
+    {
+     "t": 1200
+    }
+   ],
+   "snapshots": [
+    {
+     "t": 900,
+     "grid": true
+    }
+   ],
+   "evals": [
+    {
+     "t": 590,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})"
+    },
+    {
+     "t": 600,
+     "js": "moire.matter.wash(); return 'washed'"
+    },
+    {
+     "t": 660,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})"
+    },
+    {
+     "t": 1200,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,60 @@
+{
+ "batch": "c15m-rchk2",
+ "runs": [
+  {
+   "name": "c15m-rchk2-inplace",
+   "description": "open s7 carbon=0, maze built in place at 1 s",
+   "query": {
+    "seed": 7,
+    "carbon": 0
+   },
+   "duration": 4,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 0.5,
+     "js": "const H=moire.heat.ledger; return JSON.stringify(H)"
+    },
+    {
+     "t": 1,
+     "js": "moire.toy.build('maze',7); return 1"
+    },
+    {
+     "t": 2,
+     "js": "const H=moire.heat.ledger; return JSON.stringify(H)"
+    },
+    {
+     "t": 4,
+     "js": "const H=moire.heat.ledger; return JSON.stringify(H)"
+    }
+   ]
+  },
+  {
+   "name": "c15m-rchk2-boot",
+   "description": "maze s7 carbon=0 boot, ledger",
+   "query": {
+    "terrain": "maze",
+    "seed": 7,
+    "carbon": 0
+   },
+   "duration": 2,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 0.02,
+     "js": "const H=moire.heat.ledger; return JSON.stringify(H)"
+    },
+    {
+     "t": 1,
+     "js": "const H=moire.heat.ledger; return JSON.stringify(H)"
+    }
+   ]
+  }
+ ]
+}

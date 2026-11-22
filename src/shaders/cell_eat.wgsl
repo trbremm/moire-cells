@@ -427,10 +427,14 @@ fn lk_of(v: vec4f, k: u32) -> f32 { return select(select(select(v.w, v.z, k == 3
 // fluidity), relative to pure soap's (1 for pure soap; oil adds tails and no heads: stiffer), x 2 / (1 + T / Tref) (heat fluidises
 // it: 2 when cold, 1 at Tref, falling as 1 / T when hot)
 fn lip_kb(S: f32, O: f32, T: f32) -> f32 {
-  let head = S * EP.lp[1].x + O * EP.lp[1].z;
-  let tail = S * EP.lp[1].y + O * EP.lp[1].w;
+  var head = S * EP.lp[1].x + O * EP.lp[1].z;
+  var tail = S * EP.lp[1].y + O * EP.lp[1].w;
+  var rf = EP.lp[1].y / max(EP.lp[1].x, 1e-6);
+  // step C15c, carbon lipids, read per carbon (the proposal's polarity rule): a soap is a head carbon on a tail carbon (head 1/2, tail
+  // 1/2), the oil two tail carbons (tail 1): pure soap 1, each oil per soap adds 2
+  if (cb_lip()) { head = 0.5 * S; tail = 0.5 * S + O; rf = 1.0; }
   if (head <= 0.0) { return 0.0; }
-  let rho = (tail / head) / max(EP.lp[1].y / max(EP.lp[1].x, 1e-6), 1e-6);
+  let rho = (tail / head) / max(rf, 1e-6);
   var hf = 1.0;
   if ((lp_flags() & LPF_HEAT) != 0u) { hf = 2.0 / (1.0 + max(T, 0.0) / EP.lp[0].y); }
   return rho * hf;
@@ -707,6 +711,11 @@ const N1_CELLS: u32 = 13u;       // snapshot: cells holding pigment
 const N1_SHED: u32 = 14u;        // trace counts a worn or bleached pigment put into the dish (NLF_SHED)
 var<workgroup> wn1: array<atomic<i32>, 16>;   // (12 until the trace shed; 12, 13 stay 0: the ledger pass writes those)
 fn n1_flags() -> u32 { return bitcast<u32>(EP.nl[0].x); }
+// a broken pigment's carbon part (n counts): its two l back into the stock; step C15c (cb_lip): its two carbons into the granules
+fn n1_back(i: u32, n: i32, m: ptr<function, array<i32, 18>>) {
+  if (n <= 0) { return; }
+  if (cb_lip()) { cb_gran_add(i, CB_PIG_H, n); } else { (*m)[MB_CH_L] += 2 * n; }
+}
 // a broken pigment's trace (n counts): with NLF_SHED into the dish under the cell (while trace moves in the dish), else back into the
 // stock; returns what stays in the stock
 fn n1_shed(n: i32, cur: u32, idx: array<u32, 9>) -> i32 {
@@ -830,6 +839,7 @@ fn give_back(i: u32, p: vec2f, cur: u32, slot: u32) {
   for (var k = 0u; k < 12u; k++) {
     let m = atomicExchange(&stock[i * SW + MB_L0 + k], 0);
     if (m <= 0) { continue; }
+    if (cb_lip()) { cb_spill_lad(2u, m, idx, slot); continue; }   // (step C15c: the glue is sugar-unit-like carbon)
     let c = select(MB_CH_H, MB_CH_L, k < 6u);
     if (cur != 0u && (EP.mask & (1u << c)) != 0u) {
       spread9(cur + c * EP.n, idx, m);
@@ -845,6 +855,7 @@ fn give_back(i: u32, p: vec2f, cur: u32, slot: u32) {
     let m = atomicExchange(&stock[i * SW + LP0 + w], 0);
     if (m <= 0) { continue; }
     if (w < 18u) { atomicAdd(&wm1[M1C_SPILL], m); }   // (step M1: the bilayer's molecules, soap and oil)
+    if (cb_lip()) { cb_spill(cb_lk_hands(w / 6u), m, idx, false, slot); continue; }   // (step C15c: carbon lipids into the mud)
     let c = lk_ch(w / 6u);
     let na = i32(ep_f(EP.natoms, c));
     if (cur != 0u && (EP.mask & (1u << c)) != 0u) {
@@ -859,6 +870,7 @@ fn give_back(i: u32, p: vec2f, cur: u32, slot: u32) {
   let pgv = atomicExchange(&stock[i * SW + W_PIG], 0);
   if (pgv > 0) {
     for (var q = 0u; q < 2u; q++) {
+      if (q == 1u && cb_lip()) { cb_spill(CB_PIG_H, pgv, idx, false, slot); continue; }   // (step C15c: its carbon as tar)
       let c = select(N1_TRACE, MB_CH_L, q == 1u);
       let mm = select(pgv, 2 * pgv, q == 1u);
       if (cur != 0u && (EP.mask & (1u << c)) != 0u) { spread9(cur + c * EP.n, idx, mm); back += mm; }
@@ -874,10 +886,12 @@ fn give_back(i: u32, p: vec2f, cur: u32, slot: u32) {
   atomicAdd(&wev[EV_DUMP], back);
   atomicAdd(&wev[EV_GONE], gone);
   atomicAdd(&wev[EV_BATBACK], max(b, 0));
+  cb_give_back(i, idx, slot, cur);   // step C15b: and its carbon (cell_carbon.wgsl)
 }
 
 fn flush_counters(li: u32, slot: u32) {
   workgroupBarrier();
+  cb_flush(li, slot);   // step C15b
   if (li < 16u) {
     let v = atomicLoad(&wev[li]);
     if (v != 0) { add64(LG_K_EV + 128u * li + slot, v); }
@@ -1021,6 +1035,7 @@ fn split(@builtin(global_invocation_id) id: vec3u) {
       if (got > 0) { atomicAdd(&stock[i * SW + LP0 + w], got); if (w < 18u) { gotB += got; } }
     }
     if (gotB > 0) { atomicAdd(&hb[LG_M1 + 256u + 16u * M1C_SPLIT + (i & 15u)], gotB); }   // (step M1: the bilayer the newborn took)
+    cb_split(i, pi, sh);   // step C15b: half the parent's ladder, the same share of its granules
   }
   cells[i].flags = c.flags & ~CELL_BORN;
 }
@@ -1069,7 +1084,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   let lipOn = membOn && (lp_flags() & LPF_ON) != 0u;
   var lpm: array<array<i32, 6>, 5>;
   var headQ = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);   // the soap heads' charge per side (atom-units)
-  let headsOn = (lp_flags() & LPF_HEADS) != 0u;
+  let headsOn = (lp_flags() & LPF_HEADS) != 0u && !cb_lip();   // (step C15c: carbon soaps' booked charge does not act)
   for (var k = 0u; k < 6u; k++) {
     ml[k] = stockP[fo + MB_L0 + k];
     mh[k] = stockP[fo + MB_H0 + k];
@@ -1082,6 +1097,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     else { integ += min(f32(ml[k] + mh[k]) / want, 1.0); }
   }
   integ /= 6.0;
+  if (CARBON_ON != 0u) { atomsIn += cb_atoms(i); }   // step C15b: the cell's carbon takes room too
   // a stock needs a closed membrane to hold it: the capacity x (hold + (1 - hold) x mean integrity)
   let capM = select(cap, cap * (EP.mb4.x + (1.0 - EP.mb4.x) * integ), membOn);
   let room = clamp(1.0 - atomsIn / max(capM, 1.0), 0.0, 1.0);
@@ -1197,6 +1213,10 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
       }
     }
     flux[fo + flux_w(k)] = n;
+  }
+  // step C15b: the ladder's exchange (a neutral molecule's rate) and the tar to graze (cell_carbon.wgsl)
+  if (CARBON_ON != 0u) {
+    cb_plan(i, idx, areaPx, Ao, select(ep_f(EP.perm, 0u), pgene * ep_f(EP.ratio, 0u), permG) * leak * freeS, room, freeS, eatOn, rs);
   }
   flux[fo + 44u] = i32(floor(blk.x + u01(pcg(rs + 0x1f83d9abu))));   // step C12g: the ions held back (counts, + and -)
   flux[fo + 45u] = i32(floor(blk.y + u01(pcg(rs + 0x5be0cd19u))));
@@ -1432,7 +1452,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   var bl = 0;
   var bh = 0;
   var bx = vec2f(0.0);   // step C12c: bites by excited atoms (g*, t*), rounded below
-  if (membOn && (mbf & MBF_BITE) != 0u && cur != 0u && (c.flags & CELL_ALIVE) != 0u && !husk) {
+  if (membOn && (mbf & MBF_BITE) != 0u && cur != 0u && (c.flags & CELL_ALIVE) != 0u && !husk && !cb_lip()) {   // (step C15c: the glue is not bitten)
     let mbn = membrane(c);
     let tmp = max(f32(hsum) / 9.0 * HP.tempScale, 1e-4);
     let fL = exp(-EP.mb2.z / (EP.mb1.w * tmp));
@@ -1478,15 +1498,19 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
   var lb = array<i32, 5>(0, 0, 0, 0, 0);
   var lbB = 0;
   var lbW = 0;
-  if (lipOn && (mbf & MBF_BITE) != 0u && cur != 0u && (c.flags & CELL_ALIVE) != 0u && !husk) {
+  // Step C15c (cb_lip: the lipids are carbon): OXYGEN DAMAGES MEMBRANES instead: only free t bites (it OXIDISES a lipid's fuel hand: the
+  // eat pass takes it from the dish, cell_carbon.wgsl cb_bites), every kind alike, x exp(-the carbon spark / (theta x temperature)); the
+  // stock is not touched here (the eat pass knows whether the t was there). With CBF_OXB off nothing bites
+  let cbl = cb_lip();
+  if (lipOn && (mbf & MBF_BITE) != 0u && cur != 0u && (c.flags & CELL_ALIVE) != 0u && !husk && (!cbl || cb_bit(CBF_OXB))) {
     let mbn = membrane(c);
     let tmp = max(f32(hsum) / 9.0 * HP.tempScale, 1e-4);
     let conc = EP.R * EP.R / (ATOM_SCALE * HP.px * HP.px);
-    let mL = (EP.mask & 0x30003u) != 0u;
-    let mH = (EP.mask & 24u) != 0u;
+    let mL = select((EP.mask & 0x30003u) != 0u, (EP.mask & 2u) != 0u, cbl);
+    let mH = (EP.mask & 24u) != 0u && !cbl;
     for (var k = 0u; k < 6u; k++) {
       var lam = 0.0;
-      for (var q = 0u; q < 5u; q++) { lam += f32(lpm[q][k]) * (lk_of(EP.lp[6], q) + lk_of(EP.lp[7], q)); }
+      for (var q = 0u; q < 5u; q++) { lam += f32(lpm[q][k]) * select(lk_of(EP.lp[6], q) + lk_of(EP.lp[7], q), 1.0, cbl); }
       if (lam <= 0.0) { continue; }
       let e = mbn.edge[k];
       let len = length(e);
@@ -1498,7 +1522,8 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
       var ch = 0.0;
       var gx = 0.0;   // step C12c: the excited light atoms there (part of cl)
       var tx = 0.0;
-      if (mL) {
+      if (mL && cbl) { cl = f32(max(mg[base + EP.n + pi], 0)); }   // (step C15c: free t, oxygen, alone)
+      else if (mL) {
         gx = f32(max(mg[base + EXC0 * EP.n + pi], 0));
         tx = f32(max(mg[base + (EXC0 + 1u) * EP.n + pi], 0));
         cl = f32(max(mg[base + pi], 0) + max(mg[base + EP.n + pi], 0)) + gx + tx;
@@ -1518,11 +1543,12 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
       let x0 = EP.mb0.y * len / EP.R * ATOM_SCALE * EP.dt * conc / lam * (1.0 - covW[k]);   // (step T1a: a covered side is not bitten)
       for (var q = 0u; q < 5u; q++) {
         let n0 = lpm[q][k];
-        if (n0 <= 0 || (EP.mask & (1u << lk_ch(q))) == 0u) { continue; }
-        let x = x0 * select(expB, 1.0, q >= LK_CL) * exp(-lk_of(EP.lp[2], q) / (EP.mb1.w * tmp)) * f32(n0) *
-                (cl * lk_of(EP.lp[6], q) + ch * lk_of(EP.lp[7], q));
+        if (n0 <= 0 || (!cbl && (EP.mask & (1u << lk_ch(q))) == 0u)) { continue; }   // (step C15c: carbon lipids leave as tar)
+        let x = x0 * select(expB, 1.0, q >= LK_CL) * exp(-select(lk_of(EP.lp[2], q), f32(CBP.e.z) / 16.0, cbl) / (EP.mb1.w * tmp)) * f32(n0) *
+                select(cl * lk_of(EP.lp[6], q) + ch * lk_of(EP.lp[7], q), cl, cbl);
         let n = min(i32(floor(x + u01(pcg(rs + k * 0x2545f491u + q * 0x9e3779b1u + 0x7a3c5b1du)))), n0);
-        if (n > 0) {
+        if (n > 0 && cbl) { lb[q] += n; if (q >= LK_CL) { lbW += n; } else { lbB += n; } }   // (step C15c: the eat pass oxidises)
+        else if (n > 0) {
           lpm[q][k] = n0 - n;
           stockP[fo + lpw(q, k)] = n0 - n;
           lb[q] += n;
@@ -1568,6 +1594,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
         if ((EP.mask & (1u << f)) != 0u) { v += ep_f(EP.smellW, f) * f32(mg[cur - lw + f * EP.n + pi]); }   // (step C12d: smellW)
       }
       if (wTr > 0.0) { v += wTr * f32(mg[cur - lw + TRACE_CH * EP.n + pi]); }   // (step T1a: the trace)
+      if (CARBON_ON != 0u) { v += cb_smell(pi); }   // (step C15b: the ladder's fuel)
       gr += v * cp;
       rr += dot(cp, cp);
     }
@@ -1742,14 +1769,14 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           let n = min(min(mv, i32(floor(f32(mv) * dsh + u01(pcg(rr + 40u + k))))), i32(floor(roomA)));
           if (n <= 0) { continue; }
           atomicSub(&stock[go + w], n);
-          m[select(MB_CH_H, MB_CH_L, k < 6u)] += n;
+          if (cb_lip()) { atomicAdd(&cbS[i * CW + 2u], n); } else { m[select(MB_CH_H, MB_CH_L, k < 6u)] += n; }   // (step C15c: glue carbon)
           roomA -= f32(n);
           movedA += n;
         }
         let pv = atomicLoad(&stock[go + W_PIG]);
         if (pv > 0) {
           let n = min(min(pv, i32(floor(f32(pv) * dsh + u01(pcg(rr + 99u))))), i32(floor(roomA / 3.0)));
-          if (n > 0) { atomicSub(&stock[go + W_PIG], n); m[N1_TRACE] += n; m[MB_CH_L] += 2 * n; roomA -= 3.0 * f32(n); movedA += 3 * n; }
+          if (n > 0) { atomicSub(&stock[go + W_PIG], n); m[N1_TRACE] += n; n1_back(i, n, &m); roomA -= 3.0 * f32(n); movedA += 3 * n; }
         }
         if (movedA > 0) { atomicAdd(&wt1[P1C_ATOMS], movedA); }
         var movedL = 0;
@@ -1763,6 +1790,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           movedL += n;
         }
         if (movedL > 0) { atomicAdd(&wt1[P1C_LIPID], movedL); }
+        cb_digest(i, g, dsh, pcg(rr + 97u));   // step C15b: and the meal's carbon
         let gbt = atomicLoad(&stock[go + BAT]);
         if (gbt > 0) {
           let n = min(gbt, i32(floor(f32(gbt) * dsh + u01(pcg(rr + 98u)))));
@@ -2108,8 +2136,13 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         if (wCost && membOn) { wX[k] = memb_want(c.r, EP.wl0.w * aPay[k] * wCf); }
       }
     }
+    // step C15c (cb_lip): the glue is woven from the stock's SUGAR-UNIT-LIKE carbon (cg2t2: a carbon with charged hands, sticky by charge,
+    // as a biofilm's sugars): lent to the weave as its "light linker" (the linkers are retired), all of it in one row (mix 0), given back after
+    let cbl = cb_lip();
+    let lend0 = m[MB_CH_L];
+    if (cbl) { m[MB_CH_L] = atomicLoad(&cbS[i * CW + 2u]); }
     if (membOn) {
-      let mix = clamp(select(gm.x, bio[i].lip.z, lipOn), 0.0, 1.0);
+      let mix = select(clamp(select(gm.x, bio[i].lip.z, lipOn), 0.0, 1.0), 0.0, cbl);
       var wl: array<f32, 6>;
       var wh: array<f32, 6>;
       var nl: array<i32, 6>;
@@ -2163,6 +2196,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       if (sl[k] != sl0[k]) { atomicStore(&stock[o + MB_L0 + k], sl[k]); }
       if (sh[k] != sh0[k]) { atomicStore(&stock[o + MB_H0 + k], sh[k]); }
     }
+    if (cbl) { atomicStore(&cbS[i * CW + 2u], m[MB_CH_L]); m[MB_CH_L] = lend0; }   // (step C15c: the sugar-unit-like carbon back)
     // ---- step C10: what each side's adhesion really is. With the cost on: as far as its extra linkers are there (what the
     // side holds beyond its membrane's want, over what its adhesion wants; the membrane itself fills first), and the battery
     // pays an UPKEEP for the glue it holds, upkeep x adhesion x the side's length (R) per s, as heat; what it cannot pay, it
@@ -2221,9 +2255,14 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     let lpm0 = lpm;
     var heads0 = 0;
     for (var k = 0u; k < 6u; k++) { heads0 += lpm[LK_GP][k] - lpm[LK_TM][k]; }
-    for (var q = 0u; q < 5u; q++) {
-      let n = flux[fo + 32u + q];
-      if (n > 0) { spread9(cur + lk_ch(q) * EP.n, idx, n); }   // (the plan bites only kinds whose channel is moving)
+    if (cbl) {   // step C15c: OXYGEN DAMAGES MEMBRANES (cell_carbon.wgsl cb_bites: the bites are oxidations by free t from the dish)
+      cb_bites(array<i32, 5>(flux[fo + 32u], flux[fo + 33u], flux[fo + 34u], flux[fo + 35u], flux[fo + 36u]), &lpm, &m, &heat, idx, cur,
+               pcg(rs + 0x5f356495u));
+    } else {
+      for (var q = 0u; q < 5u; q++) {
+        let n = flux[fo + 32u + q];
+        if (n > 0) { spread9(cur + lk_ch(q) * EP.n, idx, n); }   // (the plan bites only kinds whose channel is moving)
+      }
     }
     atomicAdd(&wlp[LC_BITE_B], flux[fo + 37u]);
     atomicAdd(&wlp[LC_BITE_W], flux[fo + 38u]);
@@ -2241,8 +2280,9 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     let pG = clamp(0.5 + 0.5 * gl.y, 0.0, 1.0);                            // the head gene: the share of + heads (glL)
     let m1Heads = (m1_flags() & M1F_OILSOAP) != 0u && m[0] + m[1] > 0;     // step M1: heads in the stock (oil may wait for one)
     if (lipOn && cur != 0u) {
-      // fusion: the soap and oil under the cell join the bilayer as they are (the C12 switch "membrane fusion")
-      if (CP.fuse.x > 0.0) {
+      // fusion: the soap and oil under the cell join the bilayer as they are (the C12 switch "membrane fusion"; step C15c: not while the
+      // lipids are carbon: the dish holds no carbon oil or soap, its spilled lipids are mud)
+      if (CP.fuse.x > 0.0 && !cbl) {
         var shS = 0.0;
         var shO = 0.0;
         for (var k = 0u; k < 6u; k++) {
@@ -2304,7 +2344,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       // and one L) the rest is CRACKED back into linkers in the stock by the table's reverse reaction, uphill: the battery pays the
       // chain's bond energy (into the linkers' chemical energy) and its spark (as heat). Grazed crust the battery cannot crack
       // waits in the stock as crust and is expelled with the sediment below (crust never stays in a stock)
-      if ((lp_flags() & LPF_GRAZE) != 0u) {
+      if ((lp_flags() & LPF_GRAZE) != 0u && !cbl) {   // (step C15c: the cells graze tar into granules instead: cell_carbon.wgsl)
         let cl = i32(EP.lp[3].z + EP.lp[4].z);                // cracking one ll: its spark + its bond energy (0.25 + 0.5)
         let ch2 = i32(EP.lp[3].w + EP.lp[4].w);               // ... one LL (0.5 + 1)
         var shB = 0.0;                                        // bilayer molecules short (soap and oil)
@@ -2375,7 +2415,38 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       // stock on that oil, at the bilayer's reseal rate (below), at most as much as keeps the oil within the tails of the soap it makes
       // (x <= (oil - cap soap) / (1 + cap)); the head the gene prefers first. The battery pays the head bond's spark and, if the head bond is
       // uphill (the old table), the rise; the spark and any release are heat (the table's own numbers: soap's build minus oil's)
-      if ((m1_flags() & M1F_OILSOAP) != 0u) {
+      // step C15c (cb_lip): a HEAD ON OIL is an OXIDATION: oil + t (the stock's) -> soap1 + g, downhill (2.75 as heat), the carbon spark
+      // from the battery; the same reseal rate and limits
+      if ((m1_flags() & M1F_OILSOAP) != 0u && cbl) {
+        let capO = EP.lp[5].y;
+        let sp = max(CBP.e.z, 1);
+        var nHo = 0;
+        var why = 0u;
+        for (var k = 0u; k < 6u; k++) {
+          let S = lpm[LK_GP][k] + lpm[LK_TM][k];
+          let O = lpm[LK_OIL][k];
+          let xs = max(wS - f32(S), 0.0);
+          let xo = max((f32(O) - capO * f32(S)) / (1.0 + capO), 0.0);
+          let x = min(xs, xo);
+          if (x <= 0.0) { continue; }
+          let kb = EP.mb0.z * EP.dt * 2.0 / (1.0 + lip_kb(f32(S), min(f32(O), capO * f32(S)), tmpL));
+          var n = min(i32(floor(kb * x + u01(pcg(rs + k * 0x6c8e9cf5u + 0x1b56c4e9u)))), i32(floor(xo)));
+          if (n > max(m[1], 0)) { n = max(m[1], 0); why |= CBL_AT; }
+          if (n > max(bat, 0) / sp) { n = max(bat, 0) / sp; why |= CBL_BAT; }
+          if (n <= 0) { continue; }
+          lpm[LK_OIL][k] -= n;
+          lpm[LK_GP][k] += n;
+          m[1] -= n; m[0] += n;
+          bat -= n * sp;
+          heat += n * (sp + CBP.e.x);
+          nHo += n;
+          atomicAdd(&wcbe3[CBE3_LIP], n * sp);
+        }
+        atomicAdd(&wm1[M1C_HEADON], nHo);
+        if (nHo > 0) { atomicAdd(&wcbe2[CBE2_OX], nHo); }
+        cb_lim(i, why);
+      }
+      if ((m1_flags() & M1F_OILSOAP) != 0u && !cbl) {
         let spHd = max(i32(EP.lp[3].x) - i32(EP.lp[3].y), 0);
         let dHd = vec2i(i32(EP.lp[4].x) - i32(EP.lp[4].y), i32(EP.lp[8].y) - i32(EP.lp[4].y));   // heat counts released (g, t head; < 0 uphill)
         let capO = EP.lp[5].y;
@@ -2440,6 +2511,51 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       let spH = i32(EP.lp[3].w);
       var paid = 0;
       var made = 0;
+      // step C15c (cb_lip): the BUILDER makes them from CARBON (cell_carbon.wgsl): soap1 (the head gene's share pG) and soap2 and the oil as
+      // two-carbon molecules from ladder pairs (cb_make2: condensing, oxidising extra fuel hands, reducing extra burnt hands from the
+      // battery), the wall's chain carbons from granules or sugar-unit-like carbon (cb_make_chain), its cross-linked pairs (lip.z's share)
+      // one condensation more (cb_make_cross); what a part could not get is noted for the Liebig census
+      if (cbl) {
+        var S: array<i32, 5>;
+        var gr = cb_ld(i, &S);
+        var lim = 0u;
+        let bB0 = bat;   // (step C15d: the flow ledger's battery spending on the bilayer, then the wall)
+        let n1 = i32(round(f32(tS) * pG));
+        var got1 = cb_make2(1, n1, &S, &gr, &m, &bat, &heat, &lim);
+        let got2 = cb_make2(2, tS - got1, &S, &gr, &m, &bat, &heat, &lim);    // (the other head for what the preferred one could not make)
+        if (got1 + got2 < tS && got1 < n1) { got1 += cb_make2(1, tS - got1 - got2, &S, &gr, &m, &bat, &heat, &lim); }
+        let gotO = cb_make2(0, tO, &S, &gr, &m, &bat, &heat, &lim);
+        let bB1 = bat;
+        let gotWl = cb_make_chain(tWl, &S, &gr, &m, &bat, &heat, &lim);
+        let gotWh = cb_make_cross(tWh, &S, &gr, &m, &bat, &heat, &lim);
+        if (bB0 > bB1) { atomicAdd(&wcbe3[CBE3_LIP], bB0 - bB1); }
+        if (bB1 > bat) { atomicAdd(&wcbe3[CBE3_WALL], bB1 - bat); }
+        cb_st(i, &S, gr);
+        cb_lim(i, lim);
+        // into the sides, each up to what it asked (from the first side round; any rest to the last)
+        var a1 = got1;
+        var a2 = got2;
+        var aO = gotO;
+        var aL = gotWl;
+        var aH = gotWh;
+        for (var k = 0u; k < 6u; k++) {
+          var need = rS[k];
+          if (k == 5u) { need = a1 + a2; }
+          let x1 = min(need, a1); lpm[LK_GP][k] += x1; a1 -= x1; need -= x1;
+          let x2 = min(need, a2); lpm[LK_TM][k] += x2; a2 -= x2;
+          let xo = select(min(rO[k], aO), aO, k == 5u); lpm[LK_OIL][k] += xo; aO -= xo;
+          let xl = select(min(rWl[k], aL), aL, k == 5u); lpm[LK_CL][k] += xl; aL -= xl;
+          let xh = select(min(rWh[k], aH), aH, k == 5u); lpm[LK_CH][k] += xh; aH -= xh;
+        }
+        atomicAdd(&wm1[M1C_MADE_S], got1 + got2);
+        atomicAdd(&wm1[M1C_MADE_O], gotO);
+        atomicAdd(&wlp[LC_SOAP], got1 + got2);
+        atomicAdd(&wlp[LC_OIL], gotO);
+        atomicAdd(&wlp[LC_WALL], gotWl + gotWh);
+        if (got1 + got2 + gotO > 0) { atomicAdd(&wcbe2[CBE2_LIP], got1 + got2 + gotO); }
+        if (gotWl + gotWh > 0) { atomicAdd(&wcbe2[CBE2_WALL], gotWl + 2 * gotWh); }
+        tS = 0; tO = 0; tWl = 0; tWh = 0;   // (the linker builder below has nothing left to do)
+      }
       // soap first (the bilayer itself): heads, l, L and the sparks
       if (tS > 0) {
         let can = min(min(m[0] + m[1], min(m[MB_CH_L], m[MB_CH_H])), max(bat, 0) / max(spS, 1));
@@ -2514,10 +2630,14 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           if (dev <= EP.lp[0].z) { continue; }
           for (var q = LK_CL; q <= LK_CH; q++) {
             let n0 = lpm[q][k];
-            if (n0 <= 0 || (EP.mask & (1u << lk_ch(q))) == 0u) { continue; }
+            if (n0 <= 0 || (!cbl && (EP.mask & (1u << lk_ch(q))) == 0u)) { continue; }   // (step C15c: carbon lipids leave as tar)
             let a = min(i32(ceil(f32(n0) * EP.lp[0].w)), n0);
             lpm[q][k] -= a;
-            spread9(cur + lk_ch(q) * EP.n, idx, a);
+            // (step C15c: as tar; step C15d, CBF_WALLREC: the pieces stay in the cell as granules, as a shed lipid does: the flow ledger found
+            // the walls cracking and rebuilt every few seconds, a third of the colony's carbon intake lost to the mud; real cells recycle
+            // most of their wall as it is remodelled)
+            if (cbl && cb_bit(CBF_WALLREC)) { cb_gran_add(i, cb_lk_hands(q), a); }
+            else if (cbl) { cb_spill(cb_lk_hands(q), a, idx, true, 0u); } else { spread9(cur + lk_ch(q) * EP.n, idx, a); }
             crk += a;
           }
         }
@@ -2546,10 +2666,10 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           }
           var x = f32(lpm[q][k]) - lim - 1.0;
           if (q <= LK_TM) { x = select(-1.0, xs, q == qs); }
-          if (x <= 0.0 || lpm[q][k] <= 0 || (EP.mask & (1u << lk_ch(q))) == 0u) { continue; }
+          if (x <= 0.0 || lpm[q][k] <= 0 || (!cbl && (EP.mask & (1u << lk_ch(q))) == 0u)) { continue; }
           let a = min(i32(ceil(ks * x)), lpm[q][k]);
           lpm[q][k] -= a;
-          spread9(cur + lk_ch(q) * EP.n, idx, a);
+          if (cbl) { cb_gran_add(i, cb_lk_hands(q), a); } else { spread9(cur + lk_ch(q) * EP.n, idx, a); }   // (step C15c: kept, as granules)
           shd += a;
           if (q <= LK_TM) { atomicAdd(&wm1[M1C_SHED_S], a); } else if (q == LK_OIL) { atomicAdd(&wm1[M1C_SHED_O], a); }   // (step M1)
         }
@@ -2583,7 +2703,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       lipL[k] = pack4x8unorm(vec4f(kk / LIP_KMAX, select(0.0, f32(lpm[LK_CH][k]) / max(W, 1.0), W > 0.0),
                                    select(0.0, Oe / max(S + Oe, 1.0), S + Oe > 0.0), cover));
     }
-    if ((lp_flags() & LPF_HEADS) == 0u) { heads0 = 0; heads1 = 0; }
+    if ((lp_flags() & LPF_HEADS) == 0u || cbl) { heads0 = 0; heads1 = 0; }   // (step C15c: carbon soaps' booked charge does not act)
     cells[i].lip = lipL;
 
     // the temperature under the cell (its 3 x 3 pixels' mean, from the plan pass), for the sparks of the reactions inside
@@ -2605,13 +2725,21 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       var ef = vec3f(gof(i, GRN_O_ENG0), gof(i, GRN_O_ENG0 + 1u), gof(i, GRN_O_ENG0 + 2u));
       let pf = gof(i, GRN_O_PIG);
       for (var k = 0u; k < 3u; k++) {
-        if (EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) > 0u) { ef[k] *= pf; }
+        if (eng_at(b.eng[k]).kind == 0u && eng_band(b.eng[k]) > 0u) { ef[k] *= pf; }
       }
       b.rate = vec4f(b.rate.xyz * ef, b.rate.w);
+    }
+    // step C15c, ENZYMES (cell_carbon.wgsl cb_enzymes; CBF_ENZ): the engines run only as far as their enzymes (carbon + G) are there; the
+    // enzymes wear and are rebuilt (T1b's upkeep of an expressed engine becomes their turnover: the upkeep below is off then)
+    if (cb_bit(CBF_ENZ) && (EP.flags & EF_ENG) != 0u) {
+      let fe = cb_enzymes(i, b.rate.xyz, areaR2, &m, &bat, &heat, pcg(rs + 0x4a7484aau));
+      b.rate = vec4f(b.rate.xyz * fe, b.rate.w);
     }
     var fpg = 1.0;                                // step N1: the share of the wanted pigment the cell holds (1: light needs no matter)
     var pg = atomicLoad(&stock[o + W_PIG]);       // ... the pigment it holds (counts)
     let pg0 = pg;
+    var cbPh = vec3i(0);                          // step C15b: the photons a carbon slot's pigment caught (its engine runs below)
+    var cbPs = vec3i(0);                          // ... of them, those it can use (saturation)
     if ((EP.flags & EF_ENG) != 0u) {
       // ---- step N1 block: LIGHT NEEDS MATTER. The pigment wears out into its atoms, then is built toward what the harvest slots
       // want (one trace and two l from the stock per count, the assembly paid from the battery as heat) ----
@@ -2619,24 +2747,47 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       if ((n1f & NLF_MATTER) != 0u) {
         var hRate = 0.0;
         for (var k = 0u; k < 3u; k++) {
-          if (b.rate[k] > 0.0 && EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) > 0u) { hRate += b.rate[k]; }
+          if (b.rate[k] > 0.0 && eng_at(b.eng[k]).kind == 0u && eng_band(b.eng[k]) > 0u) { hRate += b.rate[k]; }
         }
         let pw = EP.nl[0].y * areaR2 * hRate;
         let nw = min(i32(floor(f32(pg) * EP.nl[1].x + u01(pcg(rs + 0x2a4c3e1fu)))), pg);
-        if (nw > 0) { pg -= nw; m[N1_TRACE] += n1_shed(nw, cur, idx); m[MB_CH_L] += 2 * nw; atomicAdd(&wn1[N1_WEAR], nw); }
+        if (nw > 0) { pg -= nw; m[N1_TRACE] += n1_shed(nw, cur, idx); n1_back(i, nw, &m); atomicAdd(&wn1[N1_WEAR], nw); }
         let c16 = i32(EP.nl[0].w);
         if (f32(pg) < pw) {
           var nb = i32(floor((pw - f32(pg)) * EP.nl[0].z + u01(pcg(rs + 0x5be0cd19u))));
-          nb = min(nb, min(max(m[N1_TRACE], 0), max(m[MB_CH_L], 0) / 2));
-          if (c16 > 0) { nb = min(nb, max(bat, 0) / c16); }
+          if (cb_lip()) {
+            // step C15c: a pigment = 2 carbons with fuel hands (an oil-like pair: its c-g bonds catch visible 1, cb_make2) + 1 trace
+            var lim = 0u;
+            let bP0 = bat;   // (step C15d: the flow ledger)
+            if (nb > max(m[N1_TRACE], 0)) { nb = max(m[N1_TRACE], 0); lim |= CBL_TR; }
+            let cpu = max(c16, 0) + 2 * max(CBP.e.z, 1);
+            if (nb > max(bat, 0) / cpu) { nb = max(bat, 0) / cpu; lim |= CBL_BAT; }
+            if (nb > 0) {
+              var S: array<i32, 5>;
+              var gr = cb_ld(i, &S);
+              nb = cb_make2(0, nb, &S, &gr, &m, &bat, &heat, &lim);
+              cb_st(i, &S, gr);
+              if (c16 > 0 && nb > max(bat, 0) / c16) {   // (cannot pay the assembly: its carbon waits as granules)
+                let ok = max(bat, 0) / c16;
+                cb_gran_add(i, CB_PIG_H, nb - ok);
+                nb = ok;
+              }
+              if (nb > 0) { atomicAdd(&wcbe2[CBE2_PIG], nb); atomicAdd(&wcbe3[CBE3_PIG], nb * max(c16, 0)); }
+            }
+            if (bP0 > bat) { atomicAdd(&wcbe3[CBE3_PIG], bP0 - bat); }
+            cb_lim(i, lim);
+          } else {
+            nb = min(nb, min(max(m[N1_TRACE], 0), max(m[MB_CH_L], 0) / 2));
+            if (c16 > 0) { nb = min(nb, max(bat, 0) / c16); }
+          }
           if (nb > 0) {
-            pg += nb; m[N1_TRACE] -= nb; m[MB_CH_L] -= 2 * nb; bat -= nb * c16; heat += nb * c16;
+            pg += nb; m[N1_TRACE] -= nb; if (!cb_lip()) { m[MB_CH_L] -= 2 * nb; } bat -= nb * c16; heat += nb * c16;
             atomicAdd(&wn1[N1_BUILT], nb); atomicAdd(&wn1[N1_BUILDE], nb * c16);
           }
         }
         fpg = select(0.0, clamp(f32(pg) / pw, 0.0, 1.0), pw > 0.5);
       } else if (pg > 0) {
-        m[N1_TRACE] += pg; m[MB_CH_L] += 2 * pg; atomicAdd(&wn1[N1_WEAR], pg); pg = 0;   // (the rule off: what was built falls apart)
+        m[N1_TRACE] += pg; n1_back(i, pg, &m); atomicAdd(&wn1[N1_WEAR], pg); pg = 0;   // (the rule off: what was built falls apart)
       }
       // ---- end of the step N1 block ----
       // pigments: each harvest slot's pigment catches its band of the light falling on the cell, in whole photons (one
@@ -2648,7 +2799,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         let s = light_factor(LP, c.pos) * caustic_at(c.pos);   // (step N1: x the caustic light)
         var tb = vec4f(0.0);
         for (var k = 0u; k < 3u; k++) {
-          if (b.rate[k] > 0.0 && EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) > 0u) { tb[eng_band(b.eng[k])] += EP.pigK * b.rate[k] * fpg; }
+          if (b.rate[k] > 0.0 && eng_at(b.eng[k]).kind == 0u && eng_band(b.eng[k]) > 0u) { tb[eng_band(b.eng[k])] += EP.pigK * b.rate[k] * fpg; }
         }
         if (s > 0.0 && any(tb > vec4f(0.0))) {
           let apx = areaPx / (HP.px * HP.px);                  // the cell's area in heat pixels
@@ -2656,7 +2807,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           let caught = LP.power * s * apx * (1.0 - exp(-tot)) / max(tot, vec4f(1e-9));   // x a depth = what it catches
           for (var k = 0u; k < 3u; k++) {
             let band = eng_band(b.eng[k]);
-            if (b.rate[k] <= 0.0 || EP.eng[eng_index(b.eng[k])].kind != 0u || band == 0u) { continue; }
+            if (b.rate[k] <= 0.0 || eng_at(b.eng[k]).kind != 0u || band == 0u) { continue; }
             let ph16 = EP.photon16[band];
             let n = i32(floor(caught[band] * EP.pigK * b.rate[k] * fpg / f32(ph16) + u01(pcg(rs + k * 0x2f6b1e3du + 0x13579bdfu))));
             nph[k] = n;
@@ -2674,7 +2825,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
             atomicAdd(&wn1[N1_ISAT], n - nu1);
             if ((n1_flags() & NLF_INHIB) != 0u && n > nu1 && pg > 0) {
               let nb = min(i32(floor(f32(n - nu1) * EP.nl[1].z + u01(pcg(rs + k * 0x27d4eb2fu + 0x165667b1u)))), pg);
-              if (nb > 0) { pg -= nb; m[N1_TRACE] += n1_shed(nb, cur, idx); m[MB_CH_L] += 2 * nb; atomicAdd(&wn1[N1_INHIB], nb); }
+              if (nb > 0) { pg -= nb; m[N1_TRACE] += n1_shed(nb, cur, idx); n1_back(i, nb, &m); atomicAdd(&wn1[N1_INHIB], nb); }
             }
             // ---- end of the step N1 block ----
           }
@@ -2698,6 +2849,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       for (var k = 0u; k < 3u; k++) {
         let rk = b.rate[k] * cof;
         if (rk <= 0.0) { continue; }
+        if (eng_index(b.eng[k]) >= ENG_MAIN) { cbPh[k] = nph[k]; cbPs[k] = nsat[k]; continue; }   // step C15b: a carbon engine (its section, below)
         let E = EP.eng[eng_index(b.eng[k])];
         let sp16 = max(i32(ceil(E.spark * sparkScale * 16.0)), 1);
         // what it works on: one reactant, two different ones (the scarcer), or a pair of the same (half of it)
@@ -2922,11 +3074,18 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       if (nf > 0) { heat += nf * ex16; atomicAdd(&wxn[XN_FADE_CELL], nf); atomicAdd(&wxe[XE_FADE], nf * ex16); }
     }
 
+    // ---- step C15b: CELLS EAT CARBON (cell_carbon.wgsl): the ladder's exchange, grazing tar, the carbon engines, granules dissolving ----
+    var cbo: CbOut;
+    if (CARBON_ON != 0u) {
+      cbo = cb_cell(i, b, cbPh, cbPs, &m, &bat, &heat, idx, lnCap, temp, satOn, sparkScale, cofactor(f32(max(m[CP.trace], 0)) * concIn),
+                    pcg(rs + 0x08c3a5e9u));
+    }
+
     // ---- step C6, upkeep: per s, upEng x the engines' rates (while they run) and upTol x tolerance / tolRef (while it is
     // a gene), paid from the battery as heat (what an empty battery cannot pay is not paid)
     if ((EP.flags & EF_UPKEEP) != 0u) {
       var cost = 0.0;
-      if ((EP.flags & EF_ENG) != 0u) { cost += EP.upEng * (max(b.rate.x, 0.0) + max(b.rate.y, 0.0) + max(b.rate.z, 0.0)); }
+      if ((EP.flags & EF_ENG) != 0u && !cb_bit(CBF_ENZ)) { cost += EP.upEng * (max(b.rate.x, 0.0) + max(b.rate.y, 0.0) + max(b.rate.z, 0.0)); }
       if ((EP.flags & EF_TOLG) != 0u) { cost += EP.upTol * b.eng.w / max(EP.tolRef, 1e-3); }
       // step C7: the pumps' upkeep (per unit of rate, as the engines')
       var pcu = 0.0;
@@ -2998,6 +3157,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     if (heat != 0) { atomicAdd(&hb[LEDGER_WORDS + idx[4]], heat); }
     var fill = 3.0 * f32(max(pg, 0));                        // (step N1: the pigment's three atoms take room too)
     for (var j = 0u; j < NCELL; j++) { let k = cell_ch(j); fill += f32(m[k]) * ep_f(EP.natoms, k); }
+    fill += cbo.atoms;                                        // (step C15b: and its carbon)
     cells[i].bat = clamp(f32(bat) / f32(batMax), 0.0, 1.0);
     cells[i].fill = clamp(fill / max(cap, 1.0), 0.0, 1.0);
     // step T1b: what the gene network senses of the cell's inside and its light (src/grn.js; Cell.sns0, sns1)
@@ -3007,8 +3167,9 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       let tol = select(EP.tol, bio[i].eng.w, (EP.flags & EF_TOLG) != 0u);
       let tmp = bitcast<f32>(flux[fo + 15u]) / max(2.0 * tol, 1e-3);
       cells[i].sns0 = pack4x8unorm(vec4f(ls, grn_amount(m[1] + m[17], cap, GRN_REF_T), grn_amount(m[6] + m[7] + m[8] + m[9], cap, GRN_REF_FUEL),
-                                         grn_amount(m[2] + m[5], cap, GRN_REF_LINK)));
-      cells[i].sns1 = pack4x8unorm(vec4f(tr, clamp(tmp, 0.0, 1.0), 0.0, 0.0));
+                                         grn_amount(select(m[2] + m[5], i32(cbo.fuel), cb_lip()), cap, GRN_REF_LINK)));   // (step C15c: carbon fuel)
+      // (step C15b: z the granules, for the drawing; w the BODY's share of its want, which the step's division reads: 1 without carbon)
+      cells[i].sns1 = pack4x8unorm(vec4f(tr, clamp(tmp, 0.0, 1.0), grn_amount(i32(cbo.gran), cap, 0.05), select(1.0, cbo.ready, CARBON_ON != 0u)));
     }
 
     // ---- step C6b: the cell's charge, the net charge of its stock (givers minus takers; fuel and sediment are neutral);
@@ -3086,7 +3247,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           var th = 0.0;
           if ((EP.flags & EF_ENG) != 0u && (EP.flags & EF_PIG) != 0u) {
             for (var k = 0u; k < 3u; k++) {
-              if (b.rate[k] > 0.0 && EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) == 3u) { th += EP.pigK * b.rate[k] * fpg; }
+              if (b.rate[k] > 0.0 && eng_at(b.eng[k]).kind == 0u && eng_band(b.eng[k]) == 3u) { th += EP.pigK * b.rate[k] * fpg; }
             }
           }
           let tot = LP.tauMed.w + LP.tauCell.w + th;
@@ -3228,7 +3389,8 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     for (var q = 0u; q < 5u; q++) { for (var k = 0u; k < 6u; k++) { lk[q] += max(atomicLoad(&stock[i * SW + lpw(q, k)]), 0); } }
     var le = 0;
     for (var q = 0u; q < 5u; q++) { le -= lk[q] * ep_i(EP.e16, lk_ch(q)); }
-    if (le != 0) { atomicAdd(&wle, le); }
+    let cbl0 = cb_lip();   // step C15c: the carbon parts count in the cells' carbon (cb_ledger_parts), not as linkers
+    if (le != 0 && !cbl0) { atomicAdd(&wle, le); }
     for (var q = 0u; q < 5u; q++) { if (lk[q] != 0) { atomicAdd(&wlps[q], lk[q]); } }
     let lAtoms = lk[LK_GP] + lk[LK_TM] + lk[LK_OIL];
     // step N1: the pigment counts as its atoms with the cells' trace and l
@@ -3237,11 +3399,14 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     for (var k = 0u; k <= BAT; k++) {
       var v = max(atomicLoad(&stock[i * SW + k]), 0);
       if (k == N1_TRACE) { v += pgv; }
-      if (k == MB_CH_L) { v += 2 * pgv; }
-      if (k == MB_CH_L) { v += ml + lAtoms + 2 * lk[LK_CL]; }
-      if (k == MB_CH_H) { v += mh + lAtoms + 2 * lk[LK_CH]; }
-      if (k == 0u) { v += lk[LK_GP]; }
-      if (k == 1u) { v += lk[LK_TM]; }
+      if (!cbl0) {
+        if (k == MB_CH_L) { v += 2 * pgv; }
+        if (k == MB_CH_L) { v += ml + lAtoms + 2 * lk[LK_CL]; }
+        if (k == MB_CH_H) { v += mh + lAtoms + 2 * lk[LK_CH]; }
+        if (k == 0u) { v += lk[LK_GP]; }
+        if (k == 1u) { v += lk[LK_TM]; }
+      }
+      if (k == 3u && CARBON_ON != 0u) { v += max(atomicLoad(&cbS[i * CW + CB_ENZ]), 0); }   // (step C15c: the enzymes' G)
       if (k == BAT) { v += evc; }
       if (v == 0) { continue; }
       atomicAdd(&wlo[k], u32(v) & 0xffffu);
@@ -3255,6 +3420,7 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       atomicAdd(&whi[14u + j], u32(v) >> 16u);
     }
   }
+  if (i < S.count) { cb_ledger(i, (cells[i].flags & CELL_ALIVE) != 0u); }   // step C15b: the cells' carbon, its census
   // step C9: the census counts the live cells only (the books above count every slot: a free one holds nothing)
   if (i < S.count && (cells[i].flags & CELL_ALIVE) != 0u) {
     let c = cells[i];
@@ -3278,7 +3444,7 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     var br = false;
     for (var k = 0u; k < 3u; k++) {
       if (b.rate[k] <= 0.0) { continue; }
-      let E = EP.eng[eng_index(b.eng[k])];
+      let E = eng_at(b.eng[k]);
       if (E.kind == 0u) {
         let band = eng_band(b.eng[k]);
         atomicAdd(&wcen[pb + band], 1);
@@ -3422,7 +3588,7 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     if (tim < -one) { atomicAdd(&wws[WZ_EXP], 1); }
     var brt = false;
     for (var k = 0u; k < 3u; k++) {
-      let E = EP.eng[eng_index(b.eng[k])];
+      let E = eng_at(b.eng[k]);
       brt = brt || (b.rate[k] > 0.0 && E.kind != 0u && (E.ch.x == 1u || E.ch.y == 1u));
     }
     if (brt) {
@@ -3585,6 +3751,9 @@ fn reset(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
     if (i < EP.dv.x) {   // step C9: only the slots the new culture fills (the rest stay free)
       atomicStore(&stock[i * SW + BAT], EP.starter);
       add64(LG_K_START + slot, EP.starter);
+      cb_found(i, EP.R, slot);   // step C15b: a founder's body (a full one for a cell of radius R)
+      cb_found_enz(i, EP.R, slot);   // step C15c: and its enzymes (carbon + G)
+      cb_found_pig(i, EP.R, slot);   // step C15d: and its pigment (carbon + trace)
     }
   }
   flush_counters(li, slot);

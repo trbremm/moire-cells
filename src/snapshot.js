@@ -31,6 +31,10 @@ import { CELL_FLOATS } from './cells.js';
 import { BIO_FLOATS } from './genome.js';
 import { LEDGER_WORDS } from './heat.js';
 import { NCH, SUBSTANCES, ELECTRONS } from './matter.js';
+import { CARBON, CB_LIP, CB_ENZANY, LADDER, TAR } from './carbon.js';   // step C15a (step C15c: CB_LIP; C15e: CB_ENZANY)
+import { CW as CB_W, CW_STOCK as CB_STOCK } from './carboncells.js';   // step C15b: the cells' carbon words
+// step C15a: the carbon's grid blocks in a snapshot (behind phi): the ladder's current copy, then the tar's hand counts
+const CARBON_BLOCKS = CARBON ? [...LADDER, ...TAR.map((h) => `tar.${h}`)] : [];
 import { fieldDefaults } from './guides.js';
 import { dish, snapDish } from './dish.js';
 
@@ -174,6 +178,8 @@ export function settingObjects(M) {
     ...(M.oases ? { 'oases.params': M.oases.params } : {}),           // step N1: the scarce nutrient's springs
     ...(M.glue ? { 'glue.params': M.glue.params } : {}),              // step G0: strong glue, junctions that break
     ...(M.stir ? { 'stir.params': M.stir.params } : {}),              // step G0: the cells stir the water
+    ...(CARBON && M.carbon ? { 'carbon.params': M.carbon.params } : {}),                // step C15a: carbon in the open dish
+    ...(CARBON && M.carbonCells ? { 'carbonCells.params': M.carbonCells.params } : {}),  // step C15b: cells eat carbon
     ...(M.spindle ? { 'spindle.params': M.spindle.params } : {}),     // step S1: cell shape
   };
 }
@@ -220,6 +226,7 @@ function captureBooks(M) {
     electrons: M.electrons ? clone(M.electrons.tot) : null,   // step C12d
     vents: M.vents ? clone(M.vents.tot) : null,   // step C12f
     pigments: M.pigments ? clone(M.pigments.tot) : null,   // step N1
+    carbon: CARBON ? cloneCarbon(M.matter.carbon.tot) : null,   // step C15a
     excitedE16: M.excited ? M.excited.table.e16 : null,   // (the energy one excited count holds: ?exshare=)
     division: { costTot: M.division.costTot || 0 },
     rounding: {
@@ -245,6 +252,17 @@ function restoreBooks(M, B) {
   if (M.vents) { for (const k of Object.keys(M.vents.tot)) M.vents.tot[k] = (B.vents && B.vents[k]) || 0; }   // (step C12f)
   if (M.pigments) { for (const k of Object.keys(M.pigments.tot)) M.pigments.tot[k] = (B.pigments && B.pigments[k]) || 0; }   // (step N1)
   if (!(H.tot.vent >= 0)) H.tot.vent = 0;
+  if (CARBON) {   // step C15a
+    const CT = M.matter.carbon.tot, BC = B.carbon || {};
+    for (const k of ['add', 'lost', 'gone', 'rx', 'light', 'cin', 'cout']) { CT[k].fill(0); if (BC[k]) CT[k].set(BC[k].slice(0, CT[k].length)); }   // (step C15b: + cin, cout)
+    CT.glow = BC.glow || 0; CT.heat = BC.heat || 0; CT.gt = BC.gt || 0;
+  }
+}
+
+/** Step C15a: the carbon's totals as plain numbers. */
+function cloneCarbon(T) {
+  return { add: Array.from(T.add), lost: Array.from(T.lost), gone: Array.from(T.gone), rx: Array.from(T.rx), light: Array.from(T.light), glow: T.glow, heat: T.heat, gt: T.gt,
+    cin: Array.from(T.cin), cout: Array.from(T.cout) };   // (step C15b: carbon taken into cells, given back)
 }
 
 /** Every rate history and time series starts again (their windows would span the jump in time). */
@@ -264,17 +282,24 @@ function gridOffsets(M) {
     n, delta: LEDGER_WORDS, heat: H.offset(H.cur), heatCopies: [H.offset(0), H.offset(1)],
     matter: LEDGER_WORDS + Mt.copyBase(Mt.cur), matterCopies: [LEDGER_WORDS + Mt.copyBase(0), LEDGER_WORDS + Mt.copyBase(1)],
     phi: H.chargeOffset,
+    // step C15a: the carbon ladder (current copy, both copies) and the tar
+    ...(CARBON ? { carbon: LEDGER_WORDS + Mt.carbon.copyBase(Mt.carbon.cur), carbonCopies: [0, 1].map((k) => LEDGER_WORDS + Mt.carbon.copyBase(k)),
+      tar: LEDGER_WORDS + Mt.carbon.tarBase() } : {}),
   };
 }
 
 export async function readGrid(M) {   // (step T1c: also the warfare census)
   const d = M.gpu.device, H = M.heat, o = gridOffsets(M), n = o.n;
-  const staging = d.createBuffer({ size: (3 + NCH) * n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+  const staging = d.createBuffer({ size: (3 + NCH + CARBON_BLOCKS.length) * n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
   const e = d.createCommandEncoder({ label: 'lab grid read-back' });
   e.copyBufferToBuffer(H.buffer, o.delta * 4, staging, 0, n * 4);
   e.copyBufferToBuffer(H.buffer, o.heat * 4, staging, n * 4, n * 4);
   e.copyBufferToBuffer(H.buffer, o.matter * 4, staging, 2 * n * 4, NCH * n * 4);
   e.copyBufferToBuffer(H.buffer, o.phi * 4, staging, (2 + NCH) * n * 4, n * 4);
+  if (CARBON) {   // step C15a: the ladder's 5 blocks, then the tar's 3
+    e.copyBufferToBuffer(H.buffer, o.carbon * 4, staging, (3 + NCH) * n * 4, 5 * n * 4);
+    e.copyBufferToBuffer(H.buffer, o.tar * 4, staging, (8 + NCH) * n * 4, 3 * n * 4);
+  }
   d.queue.submit([e.finish()]);
   await staging.mapAsync(GPUMapMode.READ);
   const out = new Int32Array(staging.getMappedRange().slice(0));
@@ -293,6 +318,14 @@ function writeGrid(M, w, names) {
   SUBSTANCES.forEach((s, c) => { const k = at(s.name); if (k >= 0) subs.set(block(k), c * n); });
   for (const c of o.matterCopies) q.writeBuffer(H.buffer, c * 4, subs);
   q.writeBuffer(H.buffer, o.phi * 4, block(at('phi')));
+  if (CARBON) {   // step C15a: the ladder (both copies) and the tar; blocks the snapshot does not have stay empty
+    const lad = new Int32Array(5 * n), tar = new Int32Array(3 * n);
+    LADDER.forEach((nm, j) => { const k = at(nm); if (k >= 0) lad.set(block(k), j * n); });
+    TAR.forEach((h, j) => { const k = at(`tar.${h}`); if (k >= 0) tar.set(block(k), j * n); });
+    for (const c of o.carbonCopies) q.writeBuffer(H.buffer, c * 4, lad);
+    q.writeBuffer(H.buffer, o.tar * 4, tar);
+    M.matter.carbon.cur = 0;
+  }
   H.cur = 0; M.matter.cur = 0;
   M.charge.phiLive = true;
 }
@@ -309,11 +342,13 @@ export async function snapshot(M, ctl, opts = {}) {
     if (!(await settle(M, ctl, true))) throw new Error('snapshot: the page did not settle (read-backs still in flight)');
     const C = M.cells, d = M.gpu.device, n = C.count;
     const SW = C.eat.stockBuf.size / 4 / n;
-    const [cellAB, bioAB, stockAB, statsAB] = await Promise.all([
+    const CB = CARBON ? C.eat.carbon : null;   // step C15b: the cells' carbon (its own buffer, CW words a cell)
+    const [cellAB, bioAB, stockAB, statsAB, cbAB] = await Promise.all([
       readBuffer(d, C.cellBuf, 0, n * CELL_FLOATS * 4),
       readBuffer(d, C.bioBuf[C.bioCur], 0, n * BIO_FLOATS * 4),
       readBuffer(d, C.eat.stockBuf, 0, C.eat.stockBuf.size),
       readBuffer(d, C.statsBuf, 0, C.statsBuf.size),
+      CB ? readBuffer(d, CB.buf, 0, n * CB_W * 4) : null,
     ]);
     const cu = new Uint32Array(cellAB), bu = new Uint32Array(bioAB), su = new Uint32Array(stockAB);
     const idx = [];
@@ -321,16 +356,21 @@ export async function snapshot(M, ctl, opts = {}) {
     for (let i = 0; i < n; i++) if ((cu[i * CELL_FLOATS + 9] & 1) || ((cu[i * CELL_FLOATS + 89] >>> 24) & 3) === 2) idx.push(i);
     const m = idx.length;
     const rec = new Uint32Array(m * CELL_FLOATS), bio = new Uint32Array(m * BIO_FLOATS), stock = new Uint32Array(m * SW);
+    const cbu = cbAB ? new Uint32Array(cbAB) : null, cstock = cbu ? new Uint32Array(m * CB_STOCK) : null;
     idx.forEach((i, k) => {
       rec.set(cu.subarray(i * CELL_FLOATS, (i + 1) * CELL_FLOATS), k * CELL_FLOATS);
       bio.set(bu.subarray(i * BIO_FLOATS, (i + 1) * BIO_FLOATS), k * BIO_FLOATS);
       stock.set(su.subarray(i * SW, (i + 1) * SW), k * SW);
+      if (cstock) cstock.set(cbu.subarray(i * CB_W, i * CB_W + CB_STOCK), k * CB_STOCK);   // (step C15b: the ladder and granules)
     });
     const H = M.heat, v = ctl.view();
     const out = {
       format: SNAP_FORMAT, version: SNAP_VERSION, created: new Date().toISOString(), note: opts.note || '',
       url: location.href, query: location.search, seed: ctl.seed,
       electrons: ELECTRONS,   // step C12d: the chemistry's table it runs on (absent before step C12d: the old one)
+      carbon: CARBON,         // step C15a: carbon in the dish (absent before step C15a: no carbon)
+      cbLip: CB_LIP,          // step C15c: the membranes, walls, pigments, glue are carbon (absent before: the linkers' (?cblip=0))
+      cbEnzAny: CB_ENZANY,    // step C15e: the enzymes' scaffold is burnt carbon (absent before: cellulose-like (?cbenzany=0))
       jobs: 1,                // step F0: the cells carry job scores, no fates (absent before: fates, cleared on load)
       time: ctl.time(), tick: C.tick >>> 0,
       view: { cssW: v.cssW, cssH: v.cssH }, R: C.R, start: C.start, count: C.count, alive: m,
@@ -342,9 +382,10 @@ export async function snapshot(M, ctl, opts = {}) {
       obstacles: M.obstacles ? M.obstacles.save() : null,   // step G0b: the obstacles' shapes (the mask is made from them again)
       books: captureBooks(M),
       js: { aQuant: C.aQuant ? clone(C.aQuant) : null },
-      cells: { idx: await pack(new Uint32Array(idx)), rec: await pack(rec), bio: await pack(bio), stock: await pack(stock) },
+      cells: { idx: await pack(new Uint32Array(idx)), rec: await pack(rec), bio: await pack(bio), stock: await pack(stock),
+        ...(cstock ? { carbon: await pack(cstock), carbonWords: CB_STOCK } : {}) },   // (step C15b: the cells' carbon, CB_STOCK words a cell; absent before)
       stats: await pack(new Uint32Array(statsAB)),
-      grid: grid ? { hw: H.hw, hh: H.hh, px: H.px, blocks: ['delta', 'heat', ...SUBSTANCES.map((s) => s.name), 'phi'], data: await pack(await readGrid(M)) } : null,
+      grid: grid ? { hw: H.hw, hh: H.hh, px: H.px, blocks: ['delta', 'heat', ...SUBSTANCES.map((s) => s.name), 'phi', ...CARBON_BLOCKS], data: await pack(await readGrid(M)) } : null,
       measures: opts.measures || null,
     };
     return out;
@@ -365,6 +406,18 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
   // needs a page started with its ?electrons= (?snap= does that by itself: main.js reloads the page)
   if (!!S.electrons !== ELECTRONS) {
     throw new Error(`this snapshot runs on the ${S.electrons ? 'electrons table' : 'old (step C4) table'}: open the page with ?electrons=${S.electrons ? 1 : 0} to load it`);
+  }
+  // step C15a: carbon is fixed for the page too (its blocks live in the grid): a snapshot from before carbon loads with ?carbon=0
+  if (!!S.carbon !== CARBON) {
+    throw new Error(`this snapshot was saved ${S.carbon ? 'with' : 'without'} carbon: open the page with ?carbon=${S.carbon ? 1 : 0} to load it`);
+  }
+  // step C15c: and the membranes' make-up (their stock words mean linker or carbon molecules)
+  if (!!S.cbLip !== CB_LIP) {
+    throw new Error(`this snapshot was saved ${S.cbLip ? 'with' : 'without'} carbon making the cell: open the page with ?cblip=${S.cbLip ? 1 : 0} to load it`);
+  }
+  // step C15e: and the enzymes' scaffold (their carbon word means other hands)
+  if (S.carbon && S.cbLip && !!S.cbEnzAny !== CB_ENZANY) {
+    throw new Error(`this snapshot was saved ${S.cbEnzAny ? 'with' : 'without'} enzymes of any carbon: open the page with ?cbenzany=${S.cbEnzAny ? 1 : 0} to load it`);
   }
   const wasPaused = ctl.paused();
   const notes = [];
@@ -526,6 +579,18 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       M.stir.params.on = false;   // step G0
       notes.push('saved before step G0: the cells do not stir the water (as it ran)');
     }
+    if (opts.settings !== false && CARBON && M.carbonCells && !(S.settings && S.settings['carbonCells.params'])) {
+      M.carbonCells.params.on = false;   // step C15b
+      if (M.carbon && !(S.settings && S.settings['carbon.params'])) M.carbon.params.surf = 0;   // (the tar reacted whole, as C15a)
+      notes.push('saved before step C15b: the cells blind to carbon, all of the tar reacting (as it ran)');
+    }
+    // step C15d: one saved before the carbon economy runs on without its fixes (as it ran; the mineral spring's G is fixed for the page:
+    // ?cbgspring=0 to match it exactly)
+    if (opts.settings !== false && CARBON && M.carbonCells && S.settings && S.settings['carbonCells.params'] && !('shuttle' in S.settings['carbonCells.params'])) {
+      Object.assign(M.carbonCells.params, { shuttle: false, granFat: false, hunger: false, wallRecycle: false });
+      if (M.carbon && !(S.settings['carbon.params'] && 'hydHeat' in S.settings['carbon.params'])) M.carbon.params.hydHeat = false;
+      notes.push('saved before step C15d: no reducing shuttle, no fat from granules, hunger for the body only, walls crack into the mud, mud hydrolyses by light only (as it ran)');
+    }
     if (opts.settings !== false && M.waste && !(S.settings && S.settings['waste.params'])) {
       Object.assign(M.waste.params, { saturation: false, osmosis: false });   // step C12e
       notes.push('saved before step C12e: saturation and osmosis off (as it ran)');
@@ -539,6 +604,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     if (!sameSlots) notes.push('slots packed (the capacity is smaller than the snapshot\'s slot numbers)');
     const cu = new Uint32Array(n * CELL_FLOATS), cf = new Float32Array(cu.buffer);
     const bu = new Uint32Array(n * BIO_FLOATS), su = new Uint32Array(n * SW);
+    // step C15b: the cells' carbon (a snapshot from before C15b: none, every cell's carbon empty)
+    const CBC = CARBON ? C.eat.carbon : null, cbs = CBC && S.cells.carbon ? await unpack(S.cells.carbon) : null;
+    const cbo = CBC ? new Uint32Array(n * CB_W) : null;
+    if (CBC && !cbs) notes.push('saved before step C15b: the cells hold no carbon');
     const dx = (v.cssW - S.view.cssW) / 2, dy = (v.cssH - S.view.cssH) / 2;
     // (step P1: packed slots renumber the engulfing partners, Cell.eng's bits 16..31 and Cell.engBy's 0..15, by the same map)
     const newOf = new Map();
@@ -548,6 +617,7 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       cu.set(rec.subarray(k * CELL_FLOATS, (k + 1) * CELL_FLOATS), o);
       bu.set(bio.subarray(k * BIO_FLOATS, (k + 1) * BIO_FLOATS), i * BIO_FLOATS);
       su.set(stock.subarray(k * SW, (k + 1) * SW), i * SW);
+      if (cbs) { const cw = S.cells.carbonWords || 8; cbo.set(cbs.subarray(k * cw, (k + 1) * cw), i * CB_W); }   // (8: saved before the body)
       if (!sameView) { cf[o] += dx; cf[o + 1] += dy; }
       if (!sameSlots) {
         cu[o + 60] = cu[o + 61] = cu[o + 62] = 0xffffffff;
@@ -571,6 +641,7 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     q.writeBuffer(C.cellBuf, 0, cu);
     for (const b of C.bioBuf) q.writeBuffer(b, 0, bu);
     q.writeBuffer(C.eat.stockBuf, 0, su);
+    if (cbo) q.writeBuffer(CBC.buf, 0, cbo);   // step C15b
     const stats = await unpack(S.stats);
     if (stats.byteLength === C.statsBuf.size) q.writeBuffer(C.statsBuf, 0, stats);
     else if (stats.byteLength < C.statsBuf.size && stats.byteLength >= C.statsBuf.size - 512) q.writeBuffer(C.statsBuf, 0, stats);   // (step C10

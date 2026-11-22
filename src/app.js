@@ -29,7 +29,9 @@
 
 import { camera, MAX_ZOOM } from './camera.js';
 import { moleculePanel, cellPanel, summary } from './zoo.js';
-import { SUBSTANCES, CH } from './matter.js';
+import { SUBSTANCES, CH, lgM } from './matter.js';
+import { CARBON, CB_LIP, ENZ_H, LG_CB, LG_CBC } from './carbon.js';   // step C15c: placed cells get a body (step C15d: and a pigment)
+import { CW as CB_W } from './carboncells.js';
 import { CELL_FLOATS, CELL_BYTES } from './cells.js';
 import { BIO_FLOATS, founderGenome } from './genome.js';
 import { stampFounderGlue } from './glue.js';
@@ -167,6 +169,9 @@ export function createApp(ctx) {
 
   // ---------- the zoos and the add tools ----------
   const pick = { genome: null, label: '', sub: CH.gT ?? 0 };   // what the add-cell tool places, what the pipette drops
+  // (step C15a: the pipette's substance is a channel number, or a carbon ladder molecule's name: five atoms each)
+  const subName = (x) => (typeof x === 'string' ? x : SUBSTANCES[x].name);
+  const subAtoms = (x) => (typeof x === 'string' ? 5 : SUBSTANCES[x].atoms.length);
   const toolIndex = (id) => ctx.tools.findIndex((t) => t.id === id);
   const cellsZoo = cellPanel(ctx, (g, label) => {
     pick.genome = g.slice(); pick.label = label;
@@ -177,7 +182,7 @@ export function createApp(ctx) {
   const molZoo = moleculePanel(ctx, (c) => {
     pick.sub = c;
     ctx.app.setTool(toolIndex('pipette'));
-    ctx.flash(`pipette: ${SUBSTANCES[c].name}. Tap or drag on the dish to drop it (booked as added)`);
+    ctx.flash(`pipette: ${subName(c)}. Tap or drag on the dish to drop it (booked as added)`);
     if (A.ui) A.ui.refresh();
   });
   A.panels = [molZoo, cellsZoo];
@@ -296,7 +301,7 @@ export function createApp(ctx) {
   }
   /** The flash for the tool buttons (main.js setTool). */
   A.toolText = (t) => (t.addCell ? `add cells: ${genomeNow().label}; tap places one, a drag a line (pick another in the cells zoo)`
-    : `pipette: ${SUBSTANCES[pick.sub].name}; tap drops it, a drag drops more (pick another in the molecules zoo)`);
+    : `pipette: ${subName(pick.sub)}; tap drops it, a drag drops more (pick another in the molecules zoo)`);
 
   // the pointer (dish coordinates), while one of the two tools is active
   const drag = { on: false, kind: '', x: 0, y: 0, pts: [] };
@@ -383,10 +388,10 @@ export function createApp(ctx) {
   }
 
   function drop(x, y) {
-    const s = SUBSTANCES[pick.sub];
-    const ok = ctx.matter.addSpring(x, y, `drop:${s.name}`, PIPETTE.life, { drop: true, rate: PIPETTE.rate });
+    const name = subName(pick.sub);
+    const ok = ctx.matter.addSpring(x, y, `drop:${name}`, PIPETTE.life, { drop: true, rate: PIPETTE.rate });
     ctx.background.impulse(x, y, 1.5);
-    ctx.flash(ok ? `pipette: ${s.name} (${(PIPETTE.life * PIPETTE.rate / s.atoms.length).toFixed(0)} units over ${PIPETTE.life} s, booked as added)`
+    ctx.flash(ok ? `pipette: ${name} (${(PIPETTE.life * PIPETTE.rate / subAtoms(pick.sub)).toFixed(0)} units over ${PIPETTE.life} s, booked as added)`
       : 'pipette: the dish holds as many springs as it can; wait for one to dry up');
   }
 
@@ -427,6 +432,23 @@ export function createApp(ctx) {
       const rec = new ArrayBuffer(CELL_BYTES), f = new Float32Array(rec), u = new Uint32Array(rec);
       const stock = new Int32Array(SW);
       stock[BAT_WORD] = starter;
+      // step C15c: a placed cell starts with a BODY and ENZYMES as a founder of radius R does (cell_carbon.wgsl cb_found, cb_found_enz),
+      // booked as carbon (and the enzymes' G atoms) in; ?cbtool=0: none (as step C15b)
+      const CC = CARBON && E.carbon ? E.carbon.params : null;
+      const giveBody = !!(CC && CC.on && CC.toolBody);
+      const nBody = giveBody && CC.growth ? Math.round(CC.kBody * Math.PI * CC.found * 4096) : 0;
+      const rr = Math.max(bio[36], 0) + Math.max(bio[37], 0) + Math.max(bio[38], 0);   // (Bio.rate.xyz)
+      const nEnz = giveBody && CC.enzymes ? Math.round(CC.kEnz * rr * Math.PI * 4096 / 4 * CC.enzFound) : 0;
+      // step C15d: and the PIGMENT its harvest slots want (?cbpigfound: x the want; an oil-like carbon pair + a trace atom per count, booked
+      // as carbon and trace in), as a founder's (cell_carbon.wgsl cb_found_pig; here from its own genes)
+      let hr = 0;
+      for (let k = 0; k < 3; k++) if (Math.floor(Math.round(bio[32 + k]) / 32) > 0) hr += Math.max(bio[36 + k], 0);
+      const PG = E.pigments && E.pigments.params;
+      const nPig = giveBody && CB_LIP && CC.pigFound > 0 && PG && PG.matter !== false ? Math.round((PG.want || 0) * Math.PI * hr * CC.pigFound * 4096) : 0;
+      if (nPig) stock[30] = nPig;   // (stock word W_PIG)
+      const cbw = new Int32Array(CB_W);
+      cbw[8] = cbw[9] = cbw[10] = nBody;   // (cellulose-like: per carbon one backbone bond, one fuel hand, one burnt hand)
+      cbw[11] = nEnz;                      // (each unit 4 carbons as ENZ_H hands + 1 G: (4, 4, 4), step C15e (4, 0, 8))
       free.forEach((slot, j) => {
         const [x, y] = points[j];
         f.fill(0);
@@ -443,7 +465,23 @@ export function createApp(ctx) {
         d.queue.writeBuffer(C.cellBuf, slot * CELL_BYTES, rec);
         for (const b of C.bioBuf) d.queue.writeBuffer(b, slot * BIO_FLOATS * 4, bio);
         d.queue.writeBuffer(E.stockBuf, slot * SW * 4, stock);
+        if (nBody || nEnz) d.queue.writeBuffer(E.carbon.buf, slot * CB_W * 4, cbw);
       });
+      // step C15c: the books for the bodies and enzymes (carbon in: the dish's ADD and the cells' IN per tar hand; the G atoms: matter ADD)
+      if (nBody || nEnz || nPig) {
+        const k = free.length;   // (a pigment count: 1 backbone bond, 6 fuel hands: step C15d; an enzyme unit ENZ_H: step C15e)
+        const hc = nBody + ENZ_H[0] * nEnz + nPig, hg = nBody + ENZ_H[1] * nEnz + 6 * nPig, ht = nBody + ENZ_H[2] * nEnz;
+        const words = [[LG_CB + 128 * 5, hc], [LG_CB + 128 * 6, hg], [LG_CB + 128 * 7, ht],
+          [LG_CBC.IN + 128 * 5, hc], [LG_CBC.IN + 128 * 6, hg], [LG_CBC.IN + 128 * 7, ht], [lgM('ADD', CH.G), nEnz],
+          [lgM('ADD', CH.trace), nPig]];
+        for (const [w, x] of words) {
+          if (!x) continue;
+          const [lo, hi] = await Promise.all([readBuffer(d, C.heat.buffer, w * 4, 4), readBuffer(d, C.heat.buffer, (w + 64) * 4, 4)]);
+          const a = new Uint32Array(lo)[0], b = new Uint32Array(hi)[0], sum = a + x * k;
+          d.queue.writeBuffer(C.heat.buffer, w * 4, new Uint32Array([sum >>> 0]));
+          d.queue.writeBuffer(C.heat.buffer, (w + 64) * 4, new Uint32Array([(b + Math.floor(sum / 4294967296)) >>> 0]));
+        }
+      }
       // the books: the starter charges came in (as at a new culture: eat.start, "in"), into the first slot's 64-bit counter
       const add = free.length * starter, lo = led[0], sum = lo + add;
       const out = new Uint32Array([sum >>> 0]), carry = new Uint32Array([(led[64] + Math.floor(sum / 4294967296)) >>> 0]);
@@ -454,7 +492,7 @@ export function createApp(ctx) {
       await frames(2);
       C.alive += free.length;   // (until the census reads it back)
       for (const [x, y] of points.slice(0, free.length)) ctx.background.impulse(x, y, 1.2);
-      ctx.flash(`added ${free.length} cell${free.length > 1 ? 's' : ''}${free.length < points.length ? ` (only ${free.length} free slots)` : ''}${label ? `: ${label}` : ''}; each starts with an empty stock and the starter charge (booked as energy in)`);
+      ctx.flash(`added ${free.length} cell${free.length > 1 ? 's' : ''}${free.length < points.length ? ` (only ${free.length} free slots)` : ''}${label ? `: ${label}` : ''}; each starts with an empty stock and the starter charge${nBody ? ', a body and enzymes of carbon' : ''} (booked in)`);
       return free.length;
     } finally {
       ctl.setPaused(wasPaused);

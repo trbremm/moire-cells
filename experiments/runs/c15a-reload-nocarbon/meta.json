@@ -1,0 +1,65 @@
+{
+  "name": "c15a-reload-nocarbon",
+  "description": "that snapshot loads (the page reloads itself with ?carbon=0) and runs 60 s",
+  "condition": {
+    "name": "c15a-reload-nocarbon",
+    "description": "that snapshot loads (the page reloads itself with ?carbon=0) and runs 60 s",
+    "query": {
+      "snap": "experiments/runs/c15a-nocarbon-snap/snapshots/snap_t30.json"
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "shots": [],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 1,
+        "js": "return JSON.stringify({search: location.search, carbon: moire.carbon.on})"
+      }
+    ]
+  },
+  "url": "http://localhost:50973/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/runs/c15a-nocarbon-snap/snapshots/snap_t30.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "00aabbc72a914c7eb17173f14074aa9c10962be4",
+  "dirty": true,
+  "started": "2026-11-17T19:50:12",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": true,
+    "notes": [],
+    "rebased": null,
+    "rounding": {
+      "energy": 0.0095367431640625,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": 0.0095367431640625,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 1756,
+    "time": 29.99999999999958
+  },
+  "t_start": 29.99999999999958,
+  "sim_s": 60.0,
+  "run_wall_s": 82.02,
+  "speed_reached": 0.73,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 1.0,
+      "js": "return JSON.stringify({search: location.search, carbon: moire.carbon.on})",
+      "result": "{\"search\":\"?speed=max&until=0&overlay=ghost&ui=0&snap=experiments%2Fruns%2Fc15a-nocarbon-snap%2Fsnapshots%2Fsnap_t30.json&carbon=0\",\"carbon\":false}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T19:52:51",
+  "wall_s": 158.61
+}

@@ -1,0 +1,50 @@
+{
+  "name": "c15b-smoke-off",
+  "description": "smoke: ?carbon=0 30 s",
+  "condition": {
+    "name": "c15b-smoke-off",
+    "description": "smoke: ?carbon=0 30 s",
+    "query": {
+      "seed": 3,
+      "carbon": 0
+    },
+    "duration": 30,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 30,
+        "js": "return JSON.stringify({atoms: moire.matter.ledger.rounding, energy: moire.heat.ledger.rounding, job: moire.cells.stats && moire.cells.stats.job})"
+      }
+    ]
+  },
+  "url": "http://localhost:58798/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&carbon=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "234de42006b7fcd2bab65090f9108dd159889186",
+  "dirty": true,
+  "started": "2026-11-17T20:32:59",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 30.0,
+  "run_wall_s": 28.27,
+  "speed_reached": 1.06,
+  "samples": 2,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 29.999999999999588,
+      "js": "return JSON.stringify({atoms: moire.matter.ledger.rounding, energy: moire.heat.ledger.rounding, job: moire.cells.stats && moire.cells.stats.job})",
+      "result": "{\"atoms\":0,\"energy\":-0.00799560546875,\"job\":[1019,475,273,0,0,0,0]}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T20:34:43",
+  "wall_s": 103.81
+}

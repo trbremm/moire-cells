@@ -1,0 +1,90 @@
+{
+  "name": "c15a-books",
+  "description": "books: 20 min default scene, whole dish lit, a wash (Shift+C) at 600 s",
+  "condition": {
+    "name": "c15a-books",
+    "description": "books: 20 min default scene, whole dish lit, a wash (Shift+C) at 600 s",
+    "query": {
+      "seed": 7,
+      "light": "full"
+    },
+    "duration": 1200,
+    "sample_every": 60,
+    "stall": 200,
+    "shots": [
+      {
+        "t": 1200
+      }
+    ],
+    "snapshots": [
+      {
+        "t": 900,
+        "grid": true
+      }
+    ],
+    "evals": [
+      {
+        "t": 590,
+        "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})"
+      },
+      {
+        "t": 600,
+        "js": "moire.matter.wash(); return 'washed'"
+      },
+      {
+        "t": 660,
+        "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})"
+      },
+      {
+        "t": 1200,
+        "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})"
+      }
+    ]
+  },
+  "url": "http://localhost:52170/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=7&light=full",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "00aabbc72a914c7eb17173f14074aa9c10962be4",
+  "dirty": true,
+  "started": "2026-11-17T19:25:19",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1200.0,
+  "run_wall_s": 1252.11,
+  "speed_reached": 0.96,
+  "samples": 21,
+  "shots": [
+    "shots/t1200.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t900.json"
+  ],
+  "clips": [],
+  "evals": [
+    {
+      "t": 589.9999999999854,
+      "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})",
+      "result": "{\"t\":589.9999999999854,\"ladder\":[9.2822265625,2.7509765625,1.00537109375,0.69189453125,18.28466796875],\"tar\":[359.60693359375,60.367431640625,512.672607421875],\"carbon\":355.07861328125,\"rx\":{\"oxidize\":0.9158250762203451,\"condense\":3.048065929880821,\"reduce\":1.2651248094523702,\"hydrolyze\":2.993521341466137,\"dissolve\":0.7006240472567348,\"settle\":0.5528296493907467,\"glow\":35.471012766800555,\"warm\":3193.6841415806484},\"rounding\":0,\"eRounding\":0,\"atoms\":0,\"charge\":0}"
+    },
+    {
+      "t": 599.9999999999764,
+      "js": "moire.matter.wash(); return 'washed'",
+      "result": "washed"
+    },
+    {
+      "t": 659.9999999999218,
+      "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})",
+      "result": "{\"t\":659.9999999999218,\"ladder\":[0.001220703125,0.03369140625,0.313232421875,2.592529296875,23.96142578125],\"tar\":[0.7900390625,0.305419921875,5.394775390625],\"carbon\":28.72216796875,\"rx\":{\"oxidize\":0.007204149590170486,\"condense\":0.04958856301234018,\"reduce\":0.2270507812502065,\"hydrolyze\":0.014648437500013323,\"dissolve\":0.012006915983617477,\"settle\":0.00804463370902371,\"glow\":1.3941230148578254,\"warm\":10.058313588636198},\"rounding\":0,\"eRounding\":0,\"atoms\":0,\"charge\":0}"
+    },
+    {
+      "t": 1199.999999999478,
+      "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})",
+      "result": "{\"t\":1199.999999999478,\"ladder\":[1.546875,2.246826171875,3.268798828125,5.201416015625,34.20458984375],\"tar\":[173.380859375,42.21142578125,576.92822265625],\"carbon\":287.94384765625,\"rx\":{\"oxidize\":1.6980081353321228,\"condense\":4.648155023248029,\"reduce\":2.282129713328522,\"hydrolyze\":3.338633135333615,\"dissolve\":0.94004229080664,\"settle\":0.5795212422525932,\"glow\":34.428670583709,\"warm\":3556.534454096726},\"rounding\":0,\"eRounding\":0,\"atoms\":0,\"charge\":0}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T19:47:24",
+  "wall_s": 1324.41
+}

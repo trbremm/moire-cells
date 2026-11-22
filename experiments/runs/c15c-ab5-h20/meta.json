@@ -1,0 +1,46 @@
+{
+  "name": "c15c-ab5-h20",
+  "description": "A/B 5 (floor grazing, soap head fallback, reduce floor 0.25) 600 s default seed 3: {'cbhungry': 20}",
+  "condition": {
+    "name": "c15c-ab5-h20",
+    "description": "A/B 5 (floor grazing, soap head fallback, reduce floor 0.25) 600 s default seed 3: {'cbhungry': 20}",
+    "query": {
+      "seed": 3,
+      "cbhungry": 20
+    },
+    "duration": 600,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 600,
+        "name": "end"
+      }
+    ],
+    "snapshots": [],
+    "evals": []
+  },
+  "url": "http://localhost:51517/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&cbhungry=20",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-18T01:56:12",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 600.0,
+  "run_wall_s": 554.58,
+  "speed_reached": 1.08,
+  "samples": 21,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-18T02:06:52",
+  "wall_s": 640.57
+}

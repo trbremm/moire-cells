@@ -1,0 +1,56 @@
+{
+ "batch": "c15b-browsers",
+ "runs": [
+  {
+   "name": "c15b-firefox",
+   "description": "Firefox (headed): the default scene 30 s, books, console",
+   "query": {
+    "seed": 3
+   },
+   "duration": 30,
+   "sample_every": 10,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 30
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 30,
+     "js": "const L = moire.carbon.ledger, CC = moire.carbonCells.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: moire.heat.ledger.rounding, body: CC && CC.census.body, adapter: moire.gpu.adapterName || null})"
+    }
+   ]
+  },
+  {
+   "name": "c15b-phone",
+   "description": "phone size 390x844 at dpr 3: the default scene 20 s",
+   "query": {
+    "seed": 3
+   },
+   "size": "390x844",
+   "dpr": 3,
+   "duration": 20,
+   "sample_every": 10,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 20
+    },
+    {
+     "t": 20,
+     "panel": true,
+     "name": "panel"
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 20,
+     "js": "const L = moire.carbon.ledger, CC = moire.carbonCells.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: moire.heat.ledger.rounding, body: CC && CC.census.body, adapter: moire.gpu.adapterName || null})"
+    }
+   ]
+  }
+ ]
+}

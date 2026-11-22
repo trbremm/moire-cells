@@ -188,7 +188,9 @@ export const PRESETS = {
     query: { light: 'full', spread: 'ring', cells: 1200 },
     scene({ matter, W, H }) {
       const pts = [[0.2, 0.25, 'l'], [0.4, 0.2, 'L'], [0.62, 0.3, 'l'], [0.8, 0.22, 'L'], [0.28, 0.7, 'L'], [0.5, 0.82, 'l'], [0.72, 0.72, 'L'], [0.85, 0.55, 'l']];
-      for (const [x, y, a] of pts) matter.addSpring(x * W, y * H, `drop:${a}`, 1e9, { rate: 14 });
+      // (step C15c: with carbon making the cell the linkers are retired: sugar-unit- and methanol-like carbon springs instead, which
+      // condense into tar fields where it is warm)
+      for (const [x, y, a] of pts) matter.addSpring(x * W, y * H, `drop:${CB_LIP ? (a === 'l' ? 'cg2t2' : 'cg3t') : a}`, 1e9, { rate: 14 });
       // food: a vent at the edge and three mineral springs on the ring (without them the ring starves within 3 min)
       matter.addSpring(0.06 * W, 0.5 * H, 'heavy', 1e9);
       for (const a of [-30, 90, 210]) {

@@ -35,7 +35,7 @@ const LIGHT_COMMON_URL = 'src/shaders/light_common.wgsl';
 
 export const HEAT_COMMON_URL = 'src/shaders/heat_common.wgsl';
 export const HEAT_SCALE = 65536;          // counts per energy unit (HEAT_SCALE in heat_common.wgsl)
-export const LEDGER_WORDS = 32256;              // LEDGER_WORDS in heat_common.wgsl (31488 until step T1a; 30976 until step M1; 30464 on branch landscape: N1 alone; 28928 until step N1 merged; 28416 until step C12g; 28288 until step C12f; 27776 until step C12e; words 3072 on: step C3's matter ledger;
+export const LEDGER_WORDS = 46080;              // LEDGER_WORDS in heat_common.wgsl (45056 until step C15d; 43776 until step C15c; 38400 until step C15b; 32256 until step C15a; 31488 until step T1a; 30976 until step M1; 30464 on branch landscape: N1 alone; 28928 until step N1 merged; 28416 until step C12g; 28288 until step C12f; 27776 until step C12e; words 3072 on: step C3's matter ledger;
                                                 // 10240 on: step C4's chemistry; 11520 on: step C5, cells eat; 15872 on:
                                                 // step C6, engines; 19136 on: step C6b, charge; 19712 on: step C6c, the
                                                 // membrane chemistry; 20224 on: step C7, the pumps; 21760 on: step C7b,

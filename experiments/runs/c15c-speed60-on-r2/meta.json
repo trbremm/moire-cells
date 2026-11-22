@@ -1,0 +1,37 @@
+{
+  "name": "c15c-speed60-on-r2",
+  "description": "speed, default scene, the first 60 s (2000 cells, before the crash), carbon makes the cell on",
+  "condition": {
+    "name": "c15c-speed60-on-r2",
+    "description": "speed, default scene, the first 60 s (2000 cells, before the crash), carbon makes the cell on",
+    "query": {
+      "seed": 3
+    },
+    "duration": 60,
+    "sample_every": 20,
+    "shots": [],
+    "snapshots": [],
+    "evals": []
+  },
+  "url": "http://localhost:52185/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "a430ace49a8598b0f7fa4de7aff9d817d65714ca",
+  "dirty": true,
+  "started": "2026-11-18T04:46:10",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 40.8,
+  "speed_reached": 1.47,
+  "samples": 4,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-18T04:48:18",
+  "wall_s": 128.47
+}

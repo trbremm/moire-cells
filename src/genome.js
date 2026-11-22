@@ -53,7 +53,8 @@
 // Seeding: `founders` random genomes (0 = every cell its own), each cell a copy of one of them, scattered at
 // random. A seeded random generator (?seed=N) makes the start repeatable.
 
-import { ENGINES, engineIndex, ELECTRONS } from './matter.js';
+import { ALL_ENGINES as ENGINES, engineIndex, ELECTRONS } from './matter.js';   // (step C15b: + the carbon engines)
+import { CARBON, CB_LIP } from './carbon.js';
 import { fieldDefaults, founderGates, BIO_FG } from './guides.js';
 import { stampFounderGlue } from './glue.js';
 
@@ -168,6 +169,12 @@ function enginesE(g, rng, strategy) {
     slot(g, 0, E('gt + T → gT + t'), U(rng, 0.8, 2), 2);
     slot(g, 1, E('Gt + T → GT + t'), U(rng, 0.5, 1.5), 2);
     slot(g, 2, E('g + t → gt'), U(rng, 0.3, 0.8), 0);
+  } else if (strategy === 'carbon' && CARBON) {
+    // step C15b: a carbon eater (?habit=carbon, the add-cell tool): breathing on carbon (OXIDIZE), bonding the freed g with t, storing
+    // a little as granules (CONDENSE)
+    slot(g, 0, CE(0), U(rng, 1.5, 3), 0);
+    slot(g, 1, E('g + t → gt'), U(rng, 1.5, 3), 0);
+    slot(g, 2, CE(1), U(rng, 0.3, 0.8), 0);
   } else {
     slot(g, 0, E('l + l → ll'), U(rng, 1, 2.5), 0);
     slot(g, 1, E('t + gT → gt + T'), U(rng, 1, 2.5), 0);
@@ -175,6 +182,39 @@ function enginesE(g, rng, strategy) {
   }
   g[35] = U(rng, 10, 20);
   g[39] = logU(rng, 1.5, 6);
+}
+
+// Step C15b: CARBON ENGINES FOR THE FOUNDERS (with carbon on; from their own random stream, so a seed's other genes stay as they were).
+// A std founder gets carbon engines with chance CARBON_FOUNDER: an eater (burn) a weak BREATHER ON CARBON (OXIDIZE) in its free third slot,
+// a chain maker (other) a STORER (CONDENSE: granules) in its third; a photosynthesiser (pigments) becomes a CARBON FIXER: REDUCE with a
+// visible 2 pigment, OXIDIZE to burn what it fixed (a harvester must burn: light never charges the battery) and the g + t bond (the freed
+// g with the freed t). A light + burn founder (both) keeps its three. A WILD founder draws, with chance 1/2, any one of the four into any
+// slot (an uphill one with any pigment band). Four numbers are always drawn.
+export const CARBON_FOUNDER = 1 / 3;
+const CE = (j) => (CARBON ? engineIndex(['t + [c-g] → [c-t] + g', '[c-g] + [c-t] → [c-c] + gt', 'g + [c-t] → [c-g] + t', 'gt + [c-c] → [c-g] + [c-t]'][j]) : -1);
+// Step C15d, FOUNDERS THAT PHOTOSYNTHESISE FIX CARBON (?cbphoto=0: as C15c): in a dish where carbon makes the cell (CB_LIP) the light
+// harvest IS carbon fixation, as in real photosynthesis. So a photosynthesiser (pigments) is ALWAYS a carbon fixer (the C15b set: REDUCE
+// with a visible 2 pigment, OXIDIZE to burn some of what it fixed, the g + t bond), and a light + burn founder (both), whose visible 2
+// pigment already splits water into g + t, uses its third slot to REDUCE carbon with that g (a second visible 2 pigment: two photons per
+// hand, the proposal's Z-scheme) instead of its odd fermenter: water + CO2-like carbon + light -> sugar-like carbon + free t (oxygen).
+// The same four draws (the seed's other genes unchanged); wild founders get it before their own random carbon engine.
+export const CB_PHOTO = { on: true };
+function founderCarbon(g, rng, strategy, wild, chance = CARBON_FOUNDER) {
+  if (!CARBON || !ELECTRONS) return;
+  const u = rng(), v = rng(), w = rng(), x = rng();
+  const photo = CB_LIP && CB_PHOTO.on;
+  if (photo && strategy === 'both') slot(g, 2, CE(2), 0.5 + 0.7 * v, 2);
+  if (photo && strategy === 'pigments' && !wild) chance = 1;
+  if (wild) {
+    if (u >= 0.5) return;
+    const j = Math.min(3, Math.floor(v * 4)), k = Math.min(2, Math.floor(w * 3));
+    slot(g, k, CE(j), 0.3 + 1.2 * x, j >= 2 ? Math.min(3, Math.floor(x * 4)) : 0);
+    return;
+  }
+  if (u >= chance) return;
+  if (strategy === 'burn') slot(g, 2, CE(0), 0.3 + 0.6 * v, 0);
+  else if (strategy === 'other') slot(g, 2, CE(1), 0.3 + 0.5 * v, 0);
+  else if (strategy === 'pigments') { slot(g, 0, CE(2), 0.8 + 1.2 * v, 2); slot(g, 1, CE(0), 1 + w, 0); slot(g, 2, E('g + t → gt'), 0.3 + 0.5 * x, 0); }
 }
 
 /** Fill the engine genes (slots, tolerance, permeability) of genome g for a strategy. */
@@ -363,6 +403,7 @@ export class Genome {
     this.krng = makeRng(this.seed ^ 0x6b696e31);   // step T1a: the marker and kin genes' own stream
     this.xrng = makeRng(this.seed ^ 0x77696c64);   // step T1a: the wild founders' own stream
     this.erng = makeRng(this.seed ^ 0x656e6731);   // step P1: the wild founders' predation genes' own stream
+    this.crng = makeRng(this.seed ^ 0x63617262);   // step C15b: the founders' carbon engines' own stream
     this.srng = makeRng(this.seed ^ 0x73686170);   // step S1: the wild founders' shape genes' own stream
     this.founders = [];
     // live-tunable (moire.genome.params); the rule switches are keys
@@ -371,6 +412,7 @@ export class Genome {
       founderMode: 'std', // step T1a: 'std' today's founders, 'blank' the new abilities at 0, 'wild' every gene over its whole range
                         // (FOUNDER_MODES above; ?founders=wild|blank; acts on the next founders drawn: G, N, a new culture)
       wildGroups: WILD_GROUPS.slice(),   // step T1a: the gene groups wild founders draw over their whole range (?wild=fields,gates,...)
+      cbFounder: CARBON_FOUNDER,   // step C15b: the chance a std founder gets its carbon engines (?cbfounder=)
       habit: null,      // step T1b: every founder's engines of this habit ('burn', 'both', 'pigments', 'other'; ?habit=); null: the usual spread
       bSign: 'mixed',   // the founders' field-B SENSING SIGN (the sign of the senseB gene, which with the C12g default is also the sign of
                         // their B charge): 'mixed' (default) each founder + or - at random from its own stream, both signs present
@@ -407,7 +449,9 @@ export class Genome {
     for (let k = 0; k < n; k++) {
       const g = randomGenome(this.rng, k, this.mrng, this.prng, this.wrng, this.drng, this.lrng, this.grng, this.irng);
       // step C6: a spread of engine sets over the founders (step T1b: or every founder one habit, ?habit=; the Colonies preset's 'both')
-      engines(g, this.rng, HABITS.includes(this.params.habit) ? this.params.habit : STRATEGIES[k % STRATEGIES.length]);
+      const habit = HABITS.includes(this.params.habit) ? this.params.habit : STRATEGIES[k % STRATEGIES.length];
+      engines(g, this.rng, habit);
+      founderCarbon(g, this.crng, habit, this.params.founderMode === 'wild', this.params.cbFounder ?? CARBON_FOUNDER);   // step C15b (its own stream)
       membrane(g, this.mrng, k % 4 === 3);                         // step C6c: mostly light thin membranes, a few heavy
       lipids(g, this.lrng, k % 4 === 1);                           // step C12b: a few founders build a crust wall
       this.founders.push(g);
@@ -487,12 +531,12 @@ export class Genome {
  */
 export function founderGenome(strategy, rng = Math.random, founder = 0, bSign = 'mixed', t1 = true) {
   const g = randomGenome(rng, founder);
-  engines(g, rng, STRATEGIES.includes(strategy) ? strategy : 'burn');
+  engines(g, rng, STRATEGIES.includes(strategy) || (strategy === 'carbon' && CARBON) ? strategy : 'burn');
   if (bSign === 'mixed') g[BIO_FG + 6] = rng() < 0.5 ? -1 : 1;   // the field-B sign (drawn last, so the other genes stay as they were)
   if (t1) t1Genes(g, rng);                                       // step T1a: a marker of its own (after, for the same reason)
   return g;
 }
-export const HABITS = ['burn', 'both', 'pigments', 'other'];
+export const HABITS = ['burn', 'both', 'pigments', 'other', ...(CARBON && ELECTRONS ? ['carbon'] : [])];   // (step C15b: + carbon eaters)
 
 /**
  * Step P1: a HAND-MADE PREDATOR (the add-cell tool's founder "predator", moire.predators.genome()): a big cell (size gene at its top, 1.25)

@@ -1,0 +1,261 @@
+{
+ "batch": "c15a-pictures",
+ "runs": [
+  {
+   "name": "c15a-pics-vent",
+   "description": "Deep vents, dark, 10 min: close-ups of two fissures",
+   "query": {
+    "seed": 3,
+    "preset": "vent"
+   },
+   "dpr": 2,
+   "duration": 604.0,
+   "sample_every": 60,
+   "stall": 200,
+   "shots": [
+    {
+     "t": 600
+    },
+    {
+     "t": 600.7,
+     "name": "zoom_fissure_top"
+    },
+    {
+     "t": 601.0,
+     "name": "zoom_fissure_top_harmonic"
+    },
+    {
+     "t": 601.3,
+     "name": "zoom_fissure_top_tar"
+    },
+    {
+     "t": 602.2,
+     "name": "zoom_fissure_right"
+    },
+    {
+     "t": 602.5,
+     "name": "zoom_fissure_right_harmonic"
+    },
+    {
+     "t": 602.8,
+     "name": "zoom_fissure_right_tar"
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 1,
+     "js": "window.__sp = {}; for (const q of moire.matter.springs) if (!window.__sp[q.kind]) window.__sp[q.kind] = [q.x, q.y]; return JSON.stringify(window.__sp)"
+    },
+    {
+     "t": 599,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})"
+    },
+    {
+     "t": 600.5,
+     "js": "moire.camera.set(4, 640, 184); return 'zoom fissure_top'"
+    },
+    {
+     "t": 600.8,
+     "js": "moire.control.action('harmonic')"
+    },
+    {
+     "t": 601.1,
+     "js": "moire.control.action('harmonic')"
+    },
+    {
+     "t": 601.2,
+     "js": "moire.matter.params.show = 24"
+    },
+    {
+     "t": 601.4,
+     "js": "moire.matter.params.show = 0"
+    },
+    {
+     "t": 602.0,
+     "js": "moire.camera.set(4, 827, 508); return 'zoom fissure_right'"
+    },
+    {
+     "t": 602.3,
+     "js": "moire.control.action('harmonic')"
+    },
+    {
+     "t": 602.6,
+     "js": "moire.control.action('harmonic')"
+    },
+    {
+     "t": 602.7,
+     "js": "moire.matter.params.show = 24"
+    },
+    {
+     "t": 602.9,
+     "js": "moire.matter.params.show = 0"
+    },
+    {
+     "t": 603.5,
+     "js": "moire.camera.fit(); return 'unzoomed'"
+    }
+   ]
+  },
+  {
+   "name": "c15a-pics-default",
+   "description": "default scene with ONE cell (the substrate alone), whole dish lit, 10 min: close-ups of the vent and the mineral spring",
+   "query": {
+    "seed": 3,
+    "light": "full",
+    "cells": 1
+   },
+   "dpr": 2,
+   "duration": 604.0,
+   "sample_every": 60,
+   "stall": 200,
+   "shots": [
+    {
+     "t": 600
+    },
+    {
+     "t": 600.7,
+     "name": "zoom_vent"
+    },
+    {
+     "t": 601.0,
+     "name": "zoom_vent_harmonic"
+    },
+    {
+     "t": 601.3,
+     "name": "zoom_vent_tar"
+    },
+    {
+     "t": 602.2,
+     "name": "zoom_spring"
+    },
+    {
+     "t": 602.5,
+     "name": "zoom_spring_harmonic"
+    },
+    {
+     "t": 602.8,
+     "name": "zoom_spring_tar"
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 1,
+     "js": "window.__sp = {}; for (const q of moire.matter.springs) if (!window.__sp[q.kind]) window.__sp[q.kind] = [q.x, q.y]; return JSON.stringify(window.__sp)"
+    },
+    {
+     "t": 599,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})"
+    },
+    {
+     "t": 600.5,
+     "js": "moire.camera.set(4, ...window.__sp['heavy']); return 'zoom vent'"
+    },
+    {
+     "t": 600.8,
+     "js": "moire.control.action('harmonic')"
+    },
+    {
+     "t": 601.1,
+     "js": "moire.control.action('harmonic')"
+    },
+    {
+     "t": 601.2,
+     "js": "moire.matter.params.show = 24"
+    },
+    {
+     "t": 601.4,
+     "js": "moire.matter.params.show = 0"
+    },
+    {
+     "t": 602.0,
+     "js": "moire.camera.set(4, ...window.__sp['light']); return 'zoom spring'"
+    },
+    {
+     "t": 602.3,
+     "js": "moire.control.action('harmonic')"
+    },
+    {
+     "t": 602.6,
+     "js": "moire.control.action('harmonic')"
+    },
+    {
+     "t": 602.7,
+     "js": "moire.matter.params.show = 24"
+    },
+    {
+     "t": 602.9,
+     "js": "moire.matter.params.show = 0"
+    },
+    {
+     "t": 603.5,
+     "js": "moire.camera.fit(); return 'unzoomed'"
+    }
+   ]
+  },
+  {
+   "name": "c15a-pics-colony",
+   "description": "default scene, spotlight, 10 min: close-up of the colony round the springs (the warm place)",
+   "query": {
+    "seed": 3
+   },
+   "dpr": 2,
+   "duration": 602.5,
+   "sample_every": 60,
+   "stall": 200,
+   "shots": [
+    {
+     "t": 600
+    },
+    {
+     "t": 600.7,
+     "name": "zoom_vent"
+    },
+    {
+     "t": 601.0,
+     "name": "zoom_vent_harmonic"
+    },
+    {
+     "t": 601.3,
+     "name": "zoom_vent_tar"
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 1,
+     "js": "window.__sp = {}; for (const q of moire.matter.springs) if (!window.__sp[q.kind]) window.__sp[q.kind] = [q.x, q.y]; return JSON.stringify(window.__sp)"
+    },
+    {
+     "t": 599,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})"
+    },
+    {
+     "t": 600.5,
+     "js": "moire.camera.set(4, ...window.__sp['heavy']); return 'zoom vent'"
+    },
+    {
+     "t": 600.8,
+     "js": "moire.control.action('harmonic')"
+    },
+    {
+     "t": 601.1,
+     "js": "moire.control.action('harmonic')"
+    },
+    {
+     "t": 601.2,
+     "js": "moire.matter.params.show = 24"
+    },
+    {
+     "t": 601.4,
+     "js": "moire.matter.params.show = 0"
+    },
+    {
+     "t": 602.0,
+     "js": "moire.camera.fit(); return 'unzoomed'"
+    }
+   ]
+  }
+ ]
+}

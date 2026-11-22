@@ -1,0 +1,158 @@
+{
+ "batch": "c15b-surf",
+ "runs": [
+  {
+   "name": "c15b-surf-default-0",
+   "description": "the substrate alone (one cell), default, whole dish lit, tar surface size 0, 5 min",
+   "query": {
+    "seed": 3,
+    "cells": 1,
+    "cbsurf": 0,
+    "light": "full"
+   },
+   "duration": 300,
+   "sample_every": 60,
+   "stall": 300,
+   "shots": [],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 150,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, dishC: L.dish.c, add: L.add.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding})"
+    },
+    {
+     "t": 300,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, dishC: L.dish.c, add: L.add.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding})"
+    }
+   ]
+  },
+  {
+   "name": "c15b-surf-default-1",
+   "description": "the substrate alone (one cell), default, whole dish lit, tar surface size 1, 5 min",
+   "query": {
+    "seed": 3,
+    "cells": 1,
+    "cbsurf": 1,
+    "light": "full"
+   },
+   "duration": 300,
+   "sample_every": 60,
+   "stall": 300,
+   "shots": [],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 150,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, dishC: L.dish.c, add: L.add.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding})"
+    },
+    {
+     "t": 300,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, dishC: L.dish.c, add: L.add.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding})"
+    }
+   ]
+  },
+  {
+   "name": "c15b-surf-default-0.1",
+   "description": "the substrate alone (one cell), default, whole dish lit, tar surface size 0.1, 5 min",
+   "query": {
+    "seed": 3,
+    "cells": 1,
+    "cbsurf": 0.1,
+    "light": "full"
+   },
+   "duration": 300,
+   "sample_every": 60,
+   "stall": 300,
+   "shots": [],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 150,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, dishC: L.dish.c, add: L.add.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding})"
+    },
+    {
+     "t": 300,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, dishC: L.dish.c, add: L.add.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding})"
+    }
+   ]
+  },
+  {
+   "name": "c15b-surf-vent-0",
+   "description": "the substrate alone (one cell), vent, whole dish lit, tar surface size 0, 5 min",
+   "query": {
+    "seed": 3,
+    "cells": 1,
+    "cbsurf": 0,
+    "preset": "vent",
+    "light": "full"
+   },
+   "duration": 300,
+   "sample_every": 60,
+   "stall": 300,
+   "shots": [],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 150,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, dishC: L.dish.c, add: L.add.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding})"
+    },
+    {
+     "t": 300,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, dishC: L.dish.c, add: L.add.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding})"
+    }
+   ]
+  },
+  {
+   "name": "c15b-surf-vent-1",
+   "description": "the substrate alone (one cell), vent, whole dish lit, tar surface size 1, 5 min",
+   "query": {
+    "seed": 3,
+    "cells": 1,
+    "cbsurf": 1,
+    "preset": "vent",
+    "light": "full"
+   },
+   "duration": 300,
+   "sample_every": 60,
+   "stall": 300,
+   "shots": [],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 150,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, dishC: L.dish.c, add: L.add.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding})"
+    },
+    {
+     "t": 300,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, dishC: L.dish.c, add: L.add.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding})"
+    }
+   ]
+  },
+  {
+   "name": "c15b-surf-vent-0.1",
+   "description": "the substrate alone (one cell), vent, whole dish lit, tar surface size 0.1, 5 min",
+   "query": {
+    "seed": 3,
+    "cells": 1,
+    "cbsurf": 0.1,
+    "preset": "vent",
+    "light": "full"
+   },
+   "duration": 300,
+   "sample_every": 60,
+   "stall": 300,
+   "shots": [],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 150,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, dishC: L.dish.c, add: L.add.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding})"
+    },
+    {
+     "t": 300,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, dishC: L.dish.c, add: L.add.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding})"
+    }
+   ]
+  }
+ ]
+}

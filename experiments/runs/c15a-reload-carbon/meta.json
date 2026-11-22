@@ -1,0 +1,80 @@
+{
+  "name": "c15a-reload-carbon",
+  "description": "the books run's snapshot at 900 s (with carbon) loads and runs 120 s",
+  "condition": {
+    "name": "c15a-reload-carbon",
+    "description": "the books run's snapshot at 900 s (with carbon) loads and runs 120 s",
+    "query": {
+      "snap": "experiments/runs/c15a-books/snapshots/snap_t900.json"
+    },
+    "duration": 120,
+    "sample_every": 20,
+    "shots": [
+      {
+        "t": 1
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 1,
+        "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})"
+      },
+      {
+        "t": 119,
+        "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})"
+      }
+    ]
+  },
+  "url": "http://localhost:50973/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/runs/c15a-books/snapshots/snap_t900.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "00aabbc72a914c7eb17173f14074aa9c10962be4",
+  "dirty": true,
+  "started": "2026-11-17T19:52:51",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": true,
+    "notes": [],
+    "rebased": null,
+    "rounding": {
+      "energy": 0.016357421875,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": 0.016357421875,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 1496,
+    "time": 899.9999999997035
+  },
+  "t_start": 899.9999999997035,
+  "sim_s": 120.0,
+  "run_wall_s": 190.79,
+  "speed_reached": 0.63,
+  "samples": 7,
+  "shots": [
+    "shots/t1.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.9999999999998863,
+      "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})",
+      "result": "{\"t\":900.9999999997034,\"ladder\":[0.94921875,1.224609375,2.34423828125,5.83447265625,38.7392578125],\"tar\":[58.29931640625,27.54150390625,235.67626953125],\"carbon\":144.0458984375,\"rx\":{\"oxidize\":0.7536345526938307,\"condense\":2.0577083921601727,\"reduce\":1.2324885788047035,\"hydrolyze\":1.5933680036411892,\"dissolve\":0.34541839070727753,\"settle\":0.2420705287585507,\"glow\":24.24976274855334,\"warm\":1546.1674819338862},\"rounding\":0,\"eRounding\":0,\"atoms\":0,\"charge\":0}"
+    },
+    {
+      "t": 118.99999999990268,
+      "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})",
+      "result": "{\"t\":1018.9999999996062,\"ladder\":[0.627197265625,0.709716796875,0.67919921875,0.95654296875,17.568115234375],\"tar\":[134.454833984375,36.248291015625,416.748291015625],\"carbon\":201.017333984375,\"rx\":{\"oxidize\":2.587295160063329,\"condense\":6.030987995432314,\"reduce\":3.10130049542965,\"hydrolyze\":5.425638338419569,\"dissolve\":0.6542968750005951,\"settle\":0.3064262576222299,\"glow\":40.19543159302436,\"warm\":5629.1358612856075},\"rounding\":0,\"eRounding\":0,\"atoms\":0,\"charge\":0}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T19:57:31",
+  "wall_s": 279.52
+}

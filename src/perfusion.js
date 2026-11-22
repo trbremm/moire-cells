@@ -17,9 +17,13 @@
 // ?recipe=gt:0.4,l:0.2,... (shares of atoms).
 
 import { SPRING_KINDS } from './matter.js';
+import { CB_LIP, CARBON_MIX } from './carbon.js';
 
-export const MEDIUM_RECIPE = { gt: 0.35, l: 0.2, L: 0.15, gT: 0.15, GT: 0.1, trace: 0.05 };   // minerals, linkers, some fuel, a little trace
+// (step C15c: with carbon making the cell, the linkers are retired: the medium brings sugar-unit-like and CO2-like carbon instead)
+export const MEDIUM_RECIPE = CB_LIP ? { gt: 0.5, gT: 0.25, GT: 0.17, trace: 0.08 }
+  : { gt: 0.35, l: 0.2, L: 0.15, gT: 0.15, GT: 0.1, trace: 0.05 };   // minerals, linkers, some fuel, a little trace
 SPRING_KINDS.medium = { label: 'inlet (fresh medium)', mix: { ...MEDIUM_RECIPE }, stroke: 1.5 };
+if (CB_LIP) CARBON_MIX.medium = { cg2t2: 0.06, ct4: 0.06 };
 
 const SIDES = { right: 1, left: 2, down: 3, up: 4 };   // where the water GOES (the outlet's side, matter.wgsl chg.w)
 

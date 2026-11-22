@@ -35,7 +35,7 @@
 
 const HEAT_SCALE: f32 = 65536.0;   // counts per energy unit
 const HEAT_V0: f32 = 10.0;         // CSS px / s: the speed whose motion energy is 0.5 units
-const LEDGER_WORDS: u32 = 32256u;   // (31488 until step T1a; 30976 until step M1; 28928 until step N1 merged; 28416 until step C12g; 28288 until step C12f; 27776 until step C12e; 25600 until step C12c; 19200 until step C6b, 19712 until step C6c, 20224 until step C7, 21760 until C7b,
+const LEDGER_WORDS: u32 = 46080u;   // (45056 until step C15d; 43776 until step C15c; 38400 until step C15b; 32256 until step C15a; 31488 until step T1a; 30976 until step M1; 28928 until step N1 merged; 28416 until step C12g; 28288 until step C12f; 27776 until step C12e; 25600 until step C12c; 19200 until step C6b, 19712 until step C6c, 20224 until step C7, 21760 until C7b,
                                     // 22016 until C8, 22272 until C9, 22528 until C12)
 const LG_WORK: u32 = 0u;     // 256 slots: work done on the cells by the forces (fields, contact, crawling, stirring)
 const LG_BASE: u32 = 256u;   // 64: the base warmth put into the dish
@@ -139,6 +139,20 @@ const LG_M1: u32 = 30976u;
 // step T1a, tissues 1 (src/kin.js, cell_eat.wgsl), words 31488 .. 32255: 32 snapshot numbers x 16 slots (i32; the ledger pass: T1Z_*), then
 // 16 counters x 16 slots (i32) since the last read-back (the eat pass: T1C_*)
 const LG_T1: u32 = 31488u;
+// step C15a, carbon in the open dish (src/carbon.js, carbon.wgsl), words 32256 .. 38399: the carbon's 8 channels' ADD, LOST, GONE, DISH
+// (64-bit, 64 slots, 128 words each: 1024 words per region), 8 reaction types' events, light caught per band, the light it gave off
+const LG_CB: u32 = 32256u;
+// step C15b, cells eat carbon (src/carboncells.js, cell_eat.wgsl), words 38400 .. 43775: the carbon the cells hold per channel (5 ladder
+// molecules, 3 granule hand counts; a snapshot, 64-bit, 64 slots, 128 words each), what they took in from the dish and gave back per channel
+// (64-bit counters since the last read-back), 16 event counters (64-bit), then a census of 16 numbers x 16 slots (i32, the ledger pass)
+const LG_CBC_STOCK: u32 = 38400u;
+const LG_CBC_IN: u32 = 39424u;
+const LG_CBC_OUT: u32 = 40448u;
+const LG_CBC_EV: u32 = 41472u;
+const LG_CBC_CEN: u32 = 43520u;
+const LG_CBC_CEN2: u32 = 43776u;  // step C15c: a second census (16 numbers x 16 slots, i32: the parts' carbon, the Liebig limits)
+const LG_CBC_EV2: u32 = 44032u;   // step C15c: 8 more 64-bit event counters (128 words each)
+const LG_CBC_EV3: u32 = 45056u;   // step C15d: 8 more (the batteries' spending on parts, the redox shuttle; src/carboncells.js EV3)
 const XN_MADE_OPEN: u32 = 0u;    // excited atoms made by light in the open (the uphill swaps)
 const XN_MADE_CELL: u32 = 1u;    // ... made by the cells' harvesting uphill swaps (a pigment's photon)
 const XN_FADE_OPEN: u32 = 2u;    // ... faded to ground by themselves in the open

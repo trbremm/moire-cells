@@ -1,0 +1,55 @@
+{
+ "batch": "c15c-speed",
+ "runs": [
+  {
+   "name": "c15c-speed60-on-r1",
+   "description": "speed, default scene, the first 60 s (2000 cells, before the crash), carbon makes the cell on",
+   "query": {
+    "seed": 3
+   },
+   "duration": 60,
+   "sample_every": 20,
+   "shots": [],
+   "snapshots": [],
+   "evals": []
+  },
+  {
+   "name": "c15c-speed60-off-r1",
+   "description": "speed, default scene, the first 60 s (2000 cells, before the crash), carbon makes the cell off (?carbon=0)",
+   "query": {
+    "seed": 3,
+    "carbon": 0
+   },
+   "duration": 60,
+   "sample_every": 20,
+   "shots": [],
+   "snapshots": [],
+   "evals": []
+  },
+  {
+   "name": "c15c-speed60-on-r2",
+   "description": "speed, default scene, the first 60 s (2000 cells, before the crash), carbon makes the cell on",
+   "query": {
+    "seed": 3
+   },
+   "duration": 60,
+   "sample_every": 20,
+   "shots": [],
+   "snapshots": [],
+   "evals": []
+  },
+  {
+   "name": "c15c-speed60-off-r2",
+   "description": "speed, default scene, the first 60 s (2000 cells, before the crash), carbon makes the cell off (?carbon=0)",
+   "query": {
+    "seed": 3,
+    "carbon": 0
+   },
+   "duration": 60,
+   "sample_every": 20,
+   "shots": [],
+   "snapshots": [],
+   "evals": []
+  }
+ ]
+}

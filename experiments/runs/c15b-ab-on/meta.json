@@ -1,0 +1,66 @@
+{
+  "name": "c15b-ab-on",
+  "description": "",
+  "condition": {
+    "name": "c15b-ab-on",
+    "query": {
+      "seed": 3
+    },
+    "duration": 90,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 30,
+        "js": "const H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, eRound: H.rounding, eIn: H.in, atoms: moire.matter.ledger.rounding, cb: moire.carbon.ledger ? [moire.carbon.ledger.rounding, moire.carbon.ledger.eRounding] : null, job: moire.cells.stats && moire.cells.stats.job})"
+      },
+      {
+        "t": 60,
+        "js": "const H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, eRound: H.rounding, eIn: H.in, atoms: moire.matter.ledger.rounding, cb: moire.carbon.ledger ? [moire.carbon.ledger.rounding, moire.carbon.ledger.eRounding] : null, job: moire.cells.stats && moire.cells.stats.job})"
+      },
+      {
+        "t": 90,
+        "js": "const H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, eRound: H.rounding, eIn: H.in, atoms: moire.matter.ledger.rounding, cb: moire.carbon.ledger ? [moire.carbon.ledger.rounding, moire.carbon.ledger.eRounding] : null, job: moire.cells.stats && moire.cells.stats.job})"
+      }
+    ]
+  },
+  "url": "http://localhost:56577/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "234de42006b7fcd2bab65090f9108dd159889186",
+  "dirty": true,
+  "started": "2026-11-17T20:44:55",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 90.0,
+  "run_wall_s": 127.68,
+  "speed_reached": 0.7,
+  "samples": 4,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 29.99999999999958,
+      "js": "const H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, eRound: H.rounding, eIn: H.in, atoms: moire.matter.ledger.rounding, cb: moire.carbon.ledger ? [moire.carbon.ledger.rounding, moire.carbon.ledger.eRounding] : null, job: moire.cells.stats && moire.cells.stats.job})",
+      "result": "{\"t\":29.99999999999958,\"alive\":1768,\"eRound\":0.0167236328125,\"eIn\":536064.5426330566,\"atoms\":0,\"cb\":[0,0],\"job\":[871,469,274,0,0,154,0]}"
+    },
+    {
+      "t": 59.999999999997875,
+      "js": "const H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, eRound: H.rounding, eIn: H.in, atoms: moire.matter.ledger.rounding, cb: moire.carbon.ledger ? [moire.carbon.ledger.rounding, moire.carbon.ledger.eRounding] : null, job: moire.cells.stats && moire.cells.stats.job})",
+      "result": "{\"t\":59.999999999997875,\"alive\":1585,\"eRound\":0.018646240234375,\"eIn\":976765.7102355957,\"atoms\":0,\"cb\":[0,0],\"job\":[779,434,226,0,0,146,0]}"
+    },
+    {
+      "t": 89.99999999999618,
+      "js": "const H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, eRound: H.rounding, eIn: H.in, atoms: moire.matter.ledger.rounding, cb: moire.carbon.ledger ? [moire.carbon.ledger.rounding, moire.carbon.ledger.eRounding] : null, job: moire.cells.stats && moire.cells.stats.job})",
+      "result": "{\"t\":89.99999999999618,\"alive\":693,\"eRound\":0.0198822021484375,\"eIn\":1348260.156036377,\"atoms\":0,\"cb\":[0,0],\"job\":[182,401,109,0,0,1,0]}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T20:48:17",
+  "wall_s": 201.52
+}

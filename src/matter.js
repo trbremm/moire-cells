@@ -40,6 +40,7 @@ import { Vents } from './vents.js';
 import { setShaderConst } from './gpu.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 import { dish } from './dish.js';      // the dish: a scene's springs drip per area
+import { Carbon, CARBON, CB_LIP, CNAMES, LADDER, LG_CB, describeCarbon, carbonEngines, G_SPRING } from './carbon.js';   // step C15a: carbon in the open dish
 
 // ---------- step C12d, ELECTRONS: which table this page runs (fixed for the page: changing it would change the energy of
 // every molecule in the dish). ?electrons=0 gives the previous table (step C4 to C12c) exactly ----------
@@ -533,7 +534,12 @@ SUBSTANCES.forEach((s, c) => { if (c >= EXC0 && s.charge !== SUBSTANCES[c - EXC0
 // meaning: keep it (a slot holds the index + 32 x its band, 0 to 3).
 export const ENGINE_KINDS = ELECTRONS ? ['harvest', 'ferment', 'breathe', 'form'] : ['harvest', 'burn', 'swap', 'form'];
 export const ENGINES = ELECTRONS ? deriveEnginesE() : deriveEngines();
-setShaderConst('ENG_COUNT', ENGINES.length);   // (cell_common.wgsl: the engines a slot can name)
+// Step C15b: the carbon engines (src/carbon.js carbonEngines), appended behind the table's (a slot naming one of them runs in the cell's
+// carbon section, cell_eat.wgsl; indices ENG_MAIN .. ENG_COUNT - 1). Without carbon, ALL_ENGINES is ENGINES and nothing changes.
+export const ALL_ENGINES = CARBON ? [...ENGINES, ...carbonEngines()] : ENGINES;
+setShaderConst('ENG_COUNT', ALL_ENGINES.length);   // (cell_common.wgsl: the engines a slot can name)
+setShaderConst('ENG_MAIN', ENGINES.length);        // step C15b: the table's own (EatP.eng holds these)
+setShaderConst('CARBON_ON', CARBON ? 1 : 0);       // step C15b: the cells' carbon code is compiled in
 
 // Step C12d (electrons): every reaction of the table except the open dish's oil and heads, both ways (22): UPHILL (kind 0:
 // splits, uphill swaps, the uphill trade, cracks: a pigment's photon or the battery pays) then DOWNHILL: BREATHE (kind 2: a free
@@ -580,7 +586,7 @@ function deriveEngines() {
   return out;
 }
 /** An engine's index by its reaction's name (as in REACTIONS, e.g. 'gt → g + t'). */
-export function engineIndex(name) { return ENGINES.findIndex((e) => e.name === name); }
+export function engineIndex(name) { return ALL_ENGINES.findIndex((e) => e.name === name); }   // (step C15b: and the carbon engines)
 
 /**
  * Step C5: every channel the cells' insides can make from the channels in `active`: their burner (fuel -> its atoms, as
@@ -618,7 +624,8 @@ export function describe(s) {
 // (the fuel-like gT and GT and free heavy givers G, metal-like, which give easily: food without oxygen; a little trace). The kinds
 // keep their keys ('light', 'heavy'), so tools and saved conditions still drop them.
 export const SPRING_KINDS = {
-  light: ELECTRONS ? { label: 'mineral spring', mix: { gt: 0.6, l: 0.2, L: 0.2 }, stroke: 1.25 }
+  light: ELECTRONS ? { label: 'mineral spring', mix: CB_LIP ? (G_SPRING > 0 ? { gt: 0.6, G: G_SPRING } : { gt: 0.6 }) : { gt: 0.6, l: 0.2, L: 0.2 }, stroke: 1.25 }   // (step C15c: the linkers
+                                                                                     // retire; step C15d: a little iron-like G)
     : { label: 'light spring', mix: { g: 1 / 3, t: 1 / 3, l: 1 / 3 }, stroke: 1.25 },
   heavy: ELECTRONS ? { label: 'vent', mix: { G: 0.2, gT: 0.36, GT: 0.4, trace: 0.04 }, stroke: 2.25 }
     : { label: 'heavy spring', mix: { G: 0.32, T: 0.32, L: 0.32, trace: 0.04 }, stroke: 2.25 },
@@ -637,8 +644,14 @@ export const OIL_SPRINGS = ['oil', 'emulsion', 'soap'];   // step C12: what the 
 for (const s of SUBSTANCES) {
   if (!s.excited) SPRING_KINDS[`drop:${s.name}`] = { label: `${s.name} (pipette)`, mix: { [s.name]: 1 }, stroke: 1, drop: true };
 }
+// step C15a: and the carbon ladder's molecules (five atoms each: a fifth of the drop's atoms per s as molecules; src/carbon.js)
+if (CARBON) for (const name of LADDER) SPRING_KINDS[`drop:${name}`] = { label: `${name} (pipette)`, mix: {}, carbon: { [name]: 0.2 }, stroke: 1, drop: true };
+// step C15b: a lasting FUEL SEEP (methane-like carbon only, no atoms; its rate is molecules per s): the default scene's, by its vent
+if (CARBON) SPRING_KINDS.seep = { label: 'fuel seep (methane-like carbon)', mix: {}, carbon: { cg4: 1 }, stroke: 1.5, inkAs: 'gT' };
 
 export const ATOM_SCALE = 4096;          // counts per atom-unit (ATOM_SCALE in matter.wgsl)
+const CB_BYTES = 624;                     // step C15a: struct CarbonP (carbon.wgsl)
+const MT_BYTES = 48;                      // struct MatterTick (32 until step C15a's carbon words)
 const MP_BYTES = 736;                     // struct MatterP (step G0b: + obs, 720 until then; step N1: + n1, 704 until then; step C6b: + chg, cq; step C12: + the oil's, 400 until then; step C12f: + sea, 688 until then)
 const MT_SLOT = 256;                      // struct MatterTick slots, bound with a dynamic offset
 const MAX_TICKS = 320;                    // as SLOTS in cells.js
@@ -649,7 +662,7 @@ const MT_WASH = MT_LEDGER + 2;            // slot: Shift+C
 const MT_SLOTS = MT_LEDGER + 3;
 export const MAX_SPRINGS = 16;            // the springs uniform's capacity
 const SPRING_FLOATS = 32;                 // struct Spring: pos (4), amt (20: 18 channels, [19] its disc's pixels), ink (4), seg (4: a line's or patch's shape)
-const DRAW_BYTES = 464;                   // struct DrawP in matter_draw.wgsl (224 until step C12, 336 until step C12c, 368 until C12d, 448 until the app's cam)
+const DRAW_BYTES = 560;                   // struct DrawP in matter_draw.wgsl (224 until step C12, 336 until step C12c, 368 until C12d, 448 until the app's cam, 464 until step C15a)
 const K_MAX = 0.2;
 const LG_M = { ADD: 3072, LOST: 4736, GONE: 6400, DISH: 8064, ORDER: 9728 };   // heat_common.wgsl
 const LG_C = { LIGHT: 10240, RX: 10752 };
@@ -676,7 +689,7 @@ const SED_MASK = SUBSTANCES.reduce((m, s, c) => (s.kind === 'sediment' ? m | (1 
 const ORDER_SLOTS = 256;
 
 // what Shift+S shows: the summary, each substance alone, nothing
-export const SHOWS = ['summary', ...SUBSTANCES.map((s) => s.name), 'off'];
+export const SHOWS = ['summary', ...SUBSTANCES.map((s) => s.name), ...(CARBON ? CNAMES : []), 'off'];   // (step C15a: + the carbon's)
 
 export class Matter {
   constructor(device, format, medium) {
@@ -685,7 +698,9 @@ export class Matter {
     this.medium = medium;
     this.heat = null;
     this.landscape = null;    // key L hides the whole landscape, this included (set by main.js)
-    this.blocks = 2 * NCH + 4;   // blocks of n words in the heat buffer (step C12: + the oil's rho, film, obar, a scratch)
+    this.carbon = new Carbon(this);   // step C15a: carbon in the open dish (src/carbon.js; ?carbon=0: none)
+    // blocks of n words in the heat buffer (step C12: + the oil's rho, film, obar, a scratch; step C15a: + the carbon's 13)
+    this.blocks = 2 * NCH + 4 + this.carbon.blocks;
     this.oil = new Oil(this);    // step C12: oils and water (src/oil.js)
     this.excited = new Excited(this, EXCITED);   // step C12c: excited waste (src/excited.js)
     this.electrons = new Electrons(this);         // step C12d: electrons (src/electrons.js): absorption by gap, excited states
@@ -790,8 +805,15 @@ export class Matter {
     const lres = await fetch(LIGHT_COMMON_URL, { cache: 'no-cache' });
     if (!lres.ok) throw new Error(`Could not load shader ${LIGHT_COMMON_URL}: HTTP ${lres.status}`);
     const lightC = (await lres.text()).replace(/\s*$/, '\n\n');
+    // step C15a: with carbon on, carbon.wgsl is appended to matter.wgsl (it shares its bindings and helpers)
+    let suffix = null;
+    if (CARBON) {
+      const cres = await fetch('src/shaders/carbon.wgsl', { cache: 'no-cache' });
+      if (!cres.ok) throw new Error('Could not load shader src/shaders/carbon.wgsl');
+      suffix = { name: 'src/shaders/carbon.wgsl', text: await cres.text() };
+    }
     const [mod, drawMod] = await Promise.all([
-      loadShader(d, 'src/shaders/matter.wgsl', { prefixes: [{ name: HEAT_COMMON_URL, text: common }, { name: LIGHT_COMMON_URL, text: lightC }] }),
+      loadShader(d, 'src/shaders/matter.wgsl', { prefixes: [{ name: HEAT_COMMON_URL, text: common }, { name: LIGHT_COMMON_URL, text: lightC }], suffix }),
       loadShader(d, 'src/shaders/matter_draw.wgsl', { prefixes: [{ name: 'src/shaders/field_common.wgsl', text: field }] }),
     ]);
     const C = GPUShaderStage.COMPUTE, U = GPUBufferUsage;
@@ -799,12 +821,13 @@ export class Matter {
       label: 'matter',
       entries: [
         { binding: 0, visibility: C, buffer: { type: 'uniform' } },
-        { binding: 1, visibility: C, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: 32 } },
+        { binding: 1, visibility: C, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: MT_BYTES } },
         { binding: 2, visibility: C, buffer: { type: 'storage' } },
         { binding: 3, visibility: C, buffer: { type: 'uniform' } },
         { binding: 4, visibility: C, buffer: { type: 'storage' } },
         { binding: 5, visibility: C, buffer: { type: 'uniform' } },   // step C4: the light (light_common.wgsl)
         { binding: 6, visibility: C, buffer: { type: 'uniform' } },   // step C4: the chemistry (struct ChemP)
+        { binding: 7, visibility: C, buffer: { type: 'uniform' } },   // step C15a: the carbon (struct CarbonP; unused with carbon off)
       ],
     });
     this.texBgl = d.createBindGroupLayout({
@@ -823,6 +846,25 @@ export class Matter {
       this.pipes[e] = d.createComputePipeline({ label: `matter ${e}`, layout, compute: { module: mod, entryPoint: e } });
     }
     this.pipes.paint = d.createComputePipeline({ label: 'matter paint', layout: paintLayout, compute: { module: mod, entryPoint: 'paint' } });
+    // step C15a: the carbon's passes (carbon.wgsl) and its uniform (written every frame; zeros with carbon off)
+    this.carbonBuf = d.createBuffer({ label: 'carbon params', size: CB_BYTES, usage: U.UNIFORM | U.COPY_DST });
+    this.carbonAB = new ArrayBuffer(CB_BYTES);
+    if (CARBON) {
+      for (const e of ['carbon_spread', 'carbon_react', 'carbon_count']) {
+        this.pipes[e] = d.createComputePipeline({ label: `matter ${e}`, layout, compute: { module: mod, entryPoint: e } });
+      }
+      this.cTexBgl = d.createBindGroupLayout({
+        label: 'carbon paint',
+        entries: [
+          { binding: 4, visibility: C, storageTexture: { access: 'write-only', format: 'rgba16float' } },
+          { binding: 5, visibility: C, storageTexture: { access: 'write-only', format: 'rgba16float' } },
+        ],
+      });
+      this.pipes.carbon_paint = d.createComputePipeline({
+        label: 'carbon paint', layout: d.createPipelineLayout({ label: 'carbon paint', bindGroupLayouts: [this.bgl, this.cTexBgl] }),
+        compute: { module: mod, entryPoint: 'carbon_paint' },
+      });
+    }
     this.paramBuf = d.createBuffer({ label: 'matter params', size: MP_BYTES, usage: U.UNIFORM | U.COPY_DST });
     this.paramAB = new ArrayBuffer(MP_BYTES);
     this.tickBuf = d.createBuffer({ label: 'matter tick params', size: MT_SLOTS * MT_SLOT, usage: U.UNIFORM | U.COPY_DST });
@@ -868,12 +910,13 @@ export class Matter {
       label: 'matter', layout: this.bgl,
       entries: [
         { binding: 0, resource: { buffer: this.paramBuf } },
-        { binding: 1, resource: { buffer: this.tickBuf, size: 32 } },
+        { binding: 1, resource: { buffer: this.tickBuf, size: MT_BYTES } },
         { binding: 2, resource: { buffer, offset: 0, size: LEDGER_WORDS * 4 } },   // the ledger, atomic
         { binding: 3, resource: { buffer: this.springBuf } },
         { binding: 4, resource: { buffer, offset: LEDGER_WORDS * 4 } },   // ... the grid blocks behind it, plain (matter.wgsl)
         { binding: 5, resource: { buffer: this.light.buffer } },
         { binding: 6, resource: { buffer: this.chemBuf } },
+        { binding: 7, resource: { buffer: this.carbonBuf } },   // step C15a
       ],
     });
   }
@@ -965,12 +1008,15 @@ export class Matter {
     const d = this.device, n = this.heat.n;
     const T = new Uint32Array(this.tickAB), o = MT_WASH * MT_SLOT / 4;
     T[o] = this.copyBase(this.cur); T[o + 1] = 0; T[o + 2] = 0; T[o + 4] = n; T[o + 5] = LG_M.GONE;
+    if (CARBON) this.carbon.writeSlot(T, o, this.carbon.cur, this.carbon.cur, n);   // step C15a: its carbon too
+    this.carbon.dish.fill(0);
     d.queue.writeBuffer(this.tickBuf, MT_WASH * MT_SLOT, this.tickAB, MT_WASH * MT_SLOT, MT_SLOT);
     const e = d.createCommandEncoder({ label: 'matter wash' });
     const pass = e.beginComputePass({ label: 'matter wash' });
     pass.setPipeline(this.pipes.count);
     pass.setBindGroup(0, this.bg, [MT_WASH * MT_SLOT]);
     pass.dispatchWorkgroups(ORDER_SLOTS);
+    if (CARBON) { pass.setPipeline(this.pipes.carbon_count); pass.dispatchWorkgroups(ORDER_SLOTS); }
     pass.end();
     e.clearBuffer(this.heat.buffer, (LEDGER_WORDS + this.copyBase(0)) * 4, this.blocks * n * 4);
     d.queue.submit([e.finish()]);
@@ -982,11 +1028,13 @@ export class Matter {
     if (this.bufVersion < 0) return;
     const T = new Uint32Array(this.tickAB), o = MT_DRAIN * MT_SLOT / 4;
     T[o] = this.copyBase(this.cur, n); T[o + 1] = 0; T[o + 2] = 0; T[o + 4] = n; T[o + 5] = LG_M.GONE;
+    if (CARBON) this.carbon.writeSlot(T, o, this.carbon.cur, this.carbon.cur, n);   // step C15a: its carbon leaves too
     this.device.queue.writeBuffer(this.tickBuf, MT_DRAIN * MT_SLOT, this.tickAB, MT_DRAIN * MT_SLOT, MT_SLOT);
     const pass = encoder.beginComputePass({ label: 'matter drain' });
     pass.setPipeline(this.pipes.count);
     pass.setBindGroup(0, this.makeBG(buffer), [MT_DRAIN * MT_SLOT]);
     pass.dispatchWorkgroups(ORDER_SLOTS);
+    if (CARBON) { pass.setPipeline(this.pipes.carbon_count); pass.dispatchWorkgroups(ORDER_SLOTS); }
     pass.end();
   }
 
@@ -1003,6 +1051,7 @@ export class Matter {
     if (this.bufVersion !== H.version) {
       this.bufVersion = H.version;
       this.cur = 0;
+      this.carbon.cur = 0;   // step C15a
       if (this.charge) this.charge.phiLive = false;   // step C6b: a new grid starts with phi = 0
       this.bg = this.makeBG(H.buffer);
       this.makeTextures();
@@ -1027,6 +1076,9 @@ export class Matter {
     for (let c = 0; c < NCH; c++) if (this.dish[c] > 0 || (held && held[c] > 0)) this.seen[c] = frame.time;
     for (const sp of order) for (const a of Object.keys(SPRING_KINDS[sp.kind].mix)) this.seen[CH[a]] = frame.time;
     if (this.vents.seaOn) this.seen[CH.T] = frame.time;   // step C12f: the sea tops T up everywhere
+    // step C15a: where carbon is (or a spring drips it), its reactions take and give g, t and gt: those channels move
+    this.carbonRun = this.carbon.writeParams(this.device, this.carbonBuf, this.carbonAB, frame, this.showName);
+    if (this.carbonRun) for (const nm of ['g', 't', 'gt']) this.seen[CH[nm]] = frame.time;
     for (const s of this.springs) s.age += ticks * dt;
     this.springs = this.springs.filter((s) => s.age < this.lifeOf(s));
     let active = 0;
@@ -1057,10 +1109,11 @@ export class Matter {
     // spreading per substep, per channel
     const kTot = SUBSTANCES.map((s) => Math.max(0, s.spread * p.spreadGain) * dt / (a * a));
     this.nSub = Math.max(1, Math.min(MAX_SUB, Math.ceil(Math.max(...kTot) / K_MAX)));
+    this.carbon.flush(this.device, this.carbonBuf, this.carbonAB, this.nSub);   // step C15a: the carbon's uniform
     const f = new Float32Array(this.paramAB), u = new Uint32Array(this.paramAB);
     u[0] = H.hw; u[1] = H.hh; u[2] = H.n; u[3] = this.copyBase(0);
     const show = this.showName;
-    u[4] = show === 'off' ? 0 : show === 'summary' ? 1 : 2; u[5] = Math.max(0, CH[show] ?? 0); u[6] = this.nSub; u[7] = active;
+    u[4] = show === 'off' ? 0 : show === 'summary' ? 1 : 2; u[5] = CH[show] ?? NONE; u[6] = this.nSub; u[7] = active;   // (step C15a: a carbon alone: no channel)
     f[8] = H.px; f[9] = 1 / (ATOM_SCALE * a * a); f[10] = 1 - Math.exp(-Math.max(0, p.edge) * dt);
     u[11] = H.pigOn ? H.pigOffset - LEDGER_WORDS : 0;   // step C6: the cells' pigments (their depth takes its share of the light)
     SUBSTANCES.forEach((s, c) => {
@@ -1100,6 +1153,7 @@ export class Matter {
         T[o] = this.copyBase(c); T[o + 1] = this.copyBase(c ^ 1); T[o + 2] = s === 0 ? 1 : 0;
         T[o + 3] = Math.imul(seed0 + t * 131 + s * 7, 2654435761) >>> 0; T[o + 4] = nt; T[o + 5] = 0;
         T[o + 6] = heatWord;
+        if (CARBON) { const k = this.carbon.cur ^ ((t * this.nSub + s) & 1); this.carbon.writeSlot(T, o, k, k ^ 1, H.n); }   // step C15a
       }
     }
     const last = (ticks - 1) * MAX_SUB + MAX_SUB;
@@ -1125,14 +1179,21 @@ export class Matter {
       pass.setPipeline(this.pipes.oil_blur_y);
       pass.dispatchWorkgroups(Math.ceil(H.hw / 8), Math.ceil(H.hh / 8));
     }
-    pass.setPipeline(this.pipes.spread);
     for (let s = 0; s < this.nSub; s++) {
       pass.setBindGroup(0, this.bg, [(t * MAX_SUB + s) * MT_SLOT]);
+      pass.setPipeline(this.pipes.spread);
       pass.dispatchWorkgroups(Math.ceil(H.hw / 16), Math.ceil(H.hh / 4));
+      if (this.carbonRun) { pass.setPipeline(this.pipes.carbon_spread); pass.dispatchWorkgroups(Math.ceil(H.hw / 16), Math.ceil(H.hh / 4)); }   // step C15a
     }
     if (this.react) {
       // the tick's last substep's slot: its dst is the copy after this tick's spreading
       pass.setPipeline(this.pipes.react);
+      pass.setBindGroup(0, this.bg, [(t * MAX_SUB + this.nSub - 1) * MT_SLOT]);
+      pass.dispatchWorkgroups(Math.ceil(H.hw / 8), Math.ceil(H.hh / 8));
+    }
+    if (this.carbonRun) {
+      // step C15a: the carbon's reactions, after the main table's, in the copies the tick's spreading and reactions left
+      pass.setPipeline(this.pipes.carbon_react);
       pass.setBindGroup(0, this.bg, [(t * MAX_SUB + this.nSub - 1) * MT_SLOT]);
       pass.dispatchWorkgroups(Math.ceil(H.hw / 8), Math.ceil(H.hh / 8));
     }
@@ -1153,6 +1214,7 @@ export class Matter {
     const H = this.heat;
     if (!this.ticks) return;
     if (this.active) this.cur ^= (this.ticks * this.nSub) & 1;
+    if (this.active && this.carbonRun) this.carbon.cur ^= (this.ticks * this.nSub) & 1;   // step C15a
     // step C6b: with no matter anywhere there is nothing to solve: phi is cleared once (else it would stay as it was)
     if (!this.active && this.charge && this.charge.phiLive) {
       encoder.clearBuffer(H.buffer, H.chargeOffset * 4, H.n * 4);
@@ -1165,6 +1227,11 @@ export class Matter {
       pass.setBindGroup(0, this.bg, [MT_LEDGER * MT_SLOT]);
       pass.setBindGroup(1, this.texBG);
       pass.dispatchWorkgroups(Math.ceil(H.hw / 8), Math.ceil(H.hh / 8));
+      if (CARBON && this.cTexBG) {   // step C15a: the carbon's two textures
+        pass.setPipeline(this.pipes.carbon_paint);
+        pass.setBindGroup(1, this.cTexBG);
+        pass.dispatchWorkgroups(Math.ceil(H.hw / 8), Math.ceil(H.hh / 8));
+      }
       pass.end();
     }
   }
@@ -1173,6 +1240,7 @@ export class Matter {
   writeLedgerSlot() {
     const T = new Uint32Array(this.tickAB), L = MT_LEDGER * MT_SLOT / 4;
     T[L] = this.copyBase(this.cur); T[L + 1] = 0; T[L + 2] = 1; T[L + 3] = this.seed0 >>> 0; T[L + 4] = this.heat.n; T[L + 5] = LG_M.DISH;
+    if (CARBON) this.carbon.writeSlot(T, L, this.carbon.cur, this.carbon.cur, this.heat.n);   // step C15a
     this.device.queue.writeBuffer(this.tickBuf, MT_LEDGER * MT_SLOT, this.tickAB, MT_LEDGER * MT_SLOT, MT_SLOT);
   }
 
@@ -1255,6 +1323,7 @@ export class Matter {
       const mix = this.oases ? this.oases.mixFor(s, K.mix) : K.mix;   // (step N1: with the nutrient scarce, trace only from the oases)
       for (const [atom, share] of Object.entries(mix)) F[o + 4 + CH[atom]] = rate * share / SUBSTANCES[CH[atom]].atoms.length * dt * ATOM_SCALE;
       F[o + 4 + 18] = this.vents.heatPerTick(s.kind, rate, dt);   // step C12f: a hot vent's heat per tick over its disc (amt[18])
+      this.carbon.writeSpring(k, s, s.kind, rate, dt);              // step C15a: its carbon (CARBON_MIX, src/carbon.js)
       const ink = springInk(s.kind, pal().substances);
       F[o + 24] = ink[0] / 255; F[o + 25] = ink[1] / 255; F[o + 26] = ink[2] / 255; F[o + 27] = K.stroke;
     }
@@ -1275,6 +1344,17 @@ export class Matter {
       entries: [{ binding: 0, resource: this.tex[0].createView() }, { binding: 1, resource: this.tex[1].createView() },
         { binding: 2, resource: this.tex[2].createView() }, { binding: 3, resource: this.tex[3].createView() }],   // (C12c: excited)
     });
+    // step C15a: the carbon's two textures (the ladder, the tar; carbon.wgsl carbon_paint), 1 x 1 and empty with carbon off
+    if (this.cTex) for (const t of this.cTex) t.destroy();
+    const cs = CARBON ? [H.hw, H.hh] : [1, 1];
+    this.cTex = [0, 1].map((k) => this.device.createTexture({
+      label: `carbon shown ${k}`, size: cs, format: 'rgba16float',
+      usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
+    }));
+    this.cTexBG = CARBON ? this.device.createBindGroup({
+      label: 'carbon paint', layout: this.cTexBgl,
+      entries: [{ binding: 4, resource: this.cTex[0].createView() }, { binding: 5, resource: this.cTex[1].createView() }],
+    }) : null;
     this.drawBG = null;
   }
 
@@ -1287,10 +1367,12 @@ export class Matter {
     encoder.clearBuffer(this.heat.buffer, lgM('DISH', NCH_CELL) * 4, 3 * 128 * 4);
     encoder.clearBuffer(this.heat.buffer, lgM('DISH', EXC0) * 4, 2 * 128 * 4);   // step C12c: the excited atoms' DISH snapshot
     encoder.clearBuffer(this.heat.buffer, LG_OIL_SNAP * 4, 256 * 4);
+    if (CARBON) encoder.clearBuffer(this.heat.buffer, (LG_CB + 3072) * 4, 1024 * 4);   // step C15a: the carbon's DISH snapshot
     const pass = encoder.beginComputePass({ label: 'matter ledger' });
     pass.setPipeline(this.pipes.count);
     pass.setBindGroup(0, this.bg, [MT_LEDGER * MT_SLOT]);
     pass.dispatchWorkgroups(ORDER_SLOTS);
+    if (CARBON) { pass.setPipeline(this.pipes.carbon_count); pass.dispatchWorkgroups(ORDER_SLOTS); }
     pass.end();
     this.ledgerPixels = this.heat.n;
   }
@@ -1311,6 +1393,9 @@ export class Matter {
     // step C5: the atoms inside the cells (src/eat.js reads them from the same read-back, just before)
     const EL = this.eat && this.eat.ledger && this.eat.ledger.time === rec.time ? this.eat.ledger : null;
     const cells = EL ? EL.atoms : 0;
+    // step C15a: the carbon's books (src/carbon.js): its molecules' atoms (c, and the g and t on their hands) join the atoms ledger,
+    // their chemical energy the energy's, the light it caught the light's
+    const CL = this.carbon.apply(rec, w);
     this.snapTime = rec.time;
     // ORDER: H = ln M - S / M over (pixel, substance), with M and S in counts of atoms
     const f = new Float32Array(w.buffer, LG_M.ORDER * 4, ORDER_SLOTS);
@@ -1356,7 +1441,16 @@ export class Matter {
     // step C5: the cells' chemical energy (their stock) and their batteries are stored energy too; the starter charges
     // came in
     chem.cells = EL ? EL.chem : 0; chem.bat = EL ? EL.bat : 0; chem.start = this.eat ? this.eat.start : 0;
-    this.ledger = { time: rec.time, add, lost, gone, dish, cells, rounding: add - (dish + cells + lost + gone), rateAdd: rate(1), rateLost: rate(2), order, entropy: Hn, chem };
+    if (CL) {
+      chem.light += CL.light; chem.dish += CL.dish.e; chem.out += CL.out.e; chem.added += CL.add.e;
+      chem.lightRate = chem.lightRate.map((x, b) => x + CL.lightRate[b]);
+      chem.cells += CL.cells.e;   // step C15b: the carbon in the cells (their ladder molecules and granules) is stored energy too
+    }
+    const cA = CL ? CL.add.atoms : 0, cD = CL ? CL.dish.atoms : 0, cL = CL ? CL.lost.atoms : 0, cG = CL ? CL.washed.atoms : 0;
+    const cC = CL ? CL.cells.atoms : 0;   // step C15b: ... and its atoms are in the cells
+    this.ledger = { time: rec.time, add: add + cA, lost: lost + cL, gone: gone + cG, dish: dish + cD, cells: cells + cC,
+      rounding: (add + cA) - (dish + cD + cells + cC + lost + cL + gone + cG), rateAdd: rate(1), rateLost: rate(2), order, entropy: Hn, chem,
+      carbonAtoms: cD };
     this.oil.apply(rec, w, (this.heat.px / this.heat.R) ** 2);   // step C12: the oil's census
     if (!ELECTRONS) this.excited.apply(rec, w);                   // step C12c: the excited haze's census (folded into C12d's)
     this.electrons.apply(rec, w);                                 // step C12d: the excited states, fluorescence
@@ -1410,6 +1504,8 @@ export class Matter {
           { binding: 5, resource: { buffer: this.springBuf } },
           { binding: 6, resource: this.tex[2].createView() },   // step C12: the oil's
           { binding: 7, resource: this.tex[3].createView() },   // step C12c: the excited atoms
+          { binding: 9, resource: this.cTex[0].createView() },   // step C15a: the carbon ladder
+          { binding: 10, resource: this.cTex[1].createView() },  // step C15a: the tar
         ],
       });
       // step H1: the harmonic pipeline's own (its automatic layout holds only what fs_harm reads: no free atoms' texture)
@@ -1424,6 +1520,8 @@ export class Matter {
           { binding: 6, resource: this.tex[2].createView() },
           { binding: 7, resource: this.tex[3].createView() },
           { binding: 8, resource: { buffer: this.harmU } },
+          { binding: 9, resource: this.cTex[0].createView() },
+          { binding: 10, resource: this.cTex[1].createView() },
         ],
       });
     }
@@ -1447,6 +1545,7 @@ export class Matter {
     this.excited.writeDraw(f, 84);   // step C12c: the excited haze's sparkle
     this.electrons.writeDraw(f, 92, P, H);   // step C12d: the minerals and the fluorescence glow
     f[0] = this.view.dpr * camera.z; f.set(camera.vec(), 112);   // app: the view camera
+    this.writeCarbonDraw(f, 116, P);   // step C15a
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     const HM = frame.look && frame.look.harmonic;   // step H1: the harmonic look
     if (HM) {
@@ -1462,6 +1561,16 @@ export class Matter {
     pass.draw(3);
   }
 
+  /** Step C15a: the carbon's drawing words (struct DrawP cb, cbFuel, cbSlate, tarL, tarH, tarG, from float o). */
+  writeCarbonDraw(f, o, P) {
+    f.fill(0, o, o + 24);
+    if (!CARBON) return;
+    const L = this.carbon.look, I = P.substances, C = I.carbon || FLAT.substances.carbon, Tr = I.tar || FLAT.substances.tar;
+    f[o] = L.on && this.showName !== 'off' ? 1 : 0; f[o + 1] = Math.max(0, L.dust); f[o + 2] = Math.max(0, Math.min(1, L.tarAlpha)); f[o + 3] = Math.max(0, L.sheen);
+    const put = (k, rgb, w = 1) => { for (let j = 0; j < 3; j++) f[o + 4 * k + j] = rgb[j] / 255; f[o + 4 * k + 3] = w; };
+    put(1, C.light, Math.max(1e-4, L.step)); put(2, C.heavy); put(3, Tr.light); put(4, Tr.heavy); put(5, Tr.sheen || [120, 220, 120]);
+  }
+
   /** Shift+S: the next view (summary, each substance alone, off); returns its description. */
   cycleShow() {
     const p = this.params;
@@ -1472,7 +1581,8 @@ export class Matter {
   showText() {
     const name = this.showName;
     if (name === 'off') return 'substances not drawn';
-    if (name === 'summary') return `substances: summary (free atoms red to grey dots, fuels green${ELECTRONS ? ', minerals slate and rust' : ''}, sediment flat, trace diamonds)`;
+    if (name === 'summary') return `substances: summary (free atoms red to grey dots, fuels green${ELECTRONS ? ', minerals slate and rust' : ''}, sediment flat, trace diamonds${CARBON ? ', carbon dust green to slate, tar amber' : ''})`;
+    if (CNAMES.includes(name)) return `${describeCarbon(name)} alone`;   // step C15a
     const s = SUBSTANCES[CH[name]], amt = this.dish[CH[name]];
     return `${describe(s)} alone${amt > 0 ? '' : ' (none in the dish' + (s.kind === 'fuel' || s.kind === 'sediment' ? ': made by the chemistry of C4)' : ')')}`;
   }
@@ -1523,6 +1633,12 @@ export class Matter {
       });
       lines.push(`atoms ledger: added ${fmt(L.add)} = in dish ${fmt(L.dish)} + in cells ${fmt(L.cells)} + lost at the edge ${fmt(L.lost)} + washed / resized / gone ${fmt(L.gone)}` +
         ` · rounding ${L.rounding === 0 ? '0' : L.rounding.toExponential(2)} · per s +${fmt(L.rateAdd)} −${fmt(L.rateLost)}`);
+      const CL = this.carbon.ledger;   // step C15a: the atoms held in carbon molecules (c, and g and t on their hands)
+      if (CL) {
+        el.c = { add: CL.add.c, dish: CL.dish.c, out: CL.out.c };
+        el.g.add += CL.add.g; el.g.dish += CL.dish.g; el.g.out += CL.out.g;
+        el.t.add += CL.add.t; el.t.dish += CL.dish.t; el.t.out += CL.out.t;
+      }
       lines.push('per element (added / in dish / out): ' + Object.entries(el).filter(([, v]) => v.add > 0)
         .map(([a, v]) => `${a} ${fmt(v.add)} / ${fmt(v.dish)} / ${fmt(v.out)}`).join(' · '));
       lines.push(`order ${L.order == null ? '–' : L.order.toFixed(3)} (entropy ${L.entropy == null ? '–' : L.entropy.toFixed(3)} of the evenly smeared dish)` +
@@ -1565,6 +1681,8 @@ function discPixels(cx, cy, r, w, h) {
 export function springInk(kind, inks = INKS) {
   const mix = SPRING_KINDS[kind].mix, ink = [0, 0, 0];
   if (mix.trace >= 0.5) return inks.trace.light.slice();   // (step N1: a nutrient spring, an oasis, in trace's silver)
+  const as = SPRING_KINDS[kind].inkAs;   // (step C15b: a seep of carbon only, in its fuel's ink)
+  if (as) { const s = SUBSTANCES[CH[as]]; return inkOf(s.func, s.heavy, inks).slice(); }
   let tot = 0;
   for (const [a, share] of Object.entries(mix)) {
     if (a === 'trace') continue;

@@ -1,0 +1,66 @@
+{
+  "name": "c15e-gran-c15d",
+  "description": "the granules' hands and the stock in the C15d default scene at 20 min (snapshot)",
+  "condition": {
+    "name": "c15e-gran-c15d",
+    "description": "the granules' hands and the stock in the C15d default scene at 20 min (snapshot)",
+    "query": {
+      "snap": "experiments/runs/c15d-w-default_s3/snapshots/snap_t1200.json"
+    },
+    "duration": 2,
+    "sample_every": 0,
+    "stall": 300,
+    "shots": [],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 1,
+        "js": "const d = moire.gpu.device; const rb = async (buf, size) => { const b = d.createBuffer({size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); const e = d.createCommandEncoder(); e.copyBufferToBuffer(buf, 0, b, 0, size); d.queue.submit([e.finish()]); await b.mapAsync(GPUMapMode.READ); const a = b.getMappedRange().slice(0); b.unmap(); b.destroy(); return a; }; const C = moire.cells, n = C.count, CF = C.cellBuf.size / 4 / n; const cu = new Uint32Array(await rb(C.cellBuf, n * CF * 4)); const cb = new Int32Array(await rb(moire.eat.carbon.buf, n * 24 * 4)); const st = new Int32Array(await rb(moire.eat.stockBuf, n * 64 * 4)); const S = new Array(24).fill(0), M = new Array(20).fill(0); let a = 0, noBack = 0, noFuel = 0; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; a++; for (let w = 0; w < 24; w++) S[w] += cb[i * 24 + w]; for (let w = 0; w < 20; w++) M[w] += st[i * 64 + w]; if (cb[i * 24 + 5] < 4096) noBack++; if (cb[i * 24 + 6] < 4096) noFuel++; } return JSON.stringify({gran: {alive: a, words: S.map((x) => Math.round(x / 4096 * 100) / 100), stock: M.map((x) => Math.round(x / 4096 * 100) / 100), noBack, noFuel}})"
+      }
+    ]
+  },
+  "url": "http://localhost:49602/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/runs/c15d-w-default_s3/snapshots/snap_t1200.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "643ebeedd155d69d185d4b829ae17b40c033d197",
+  "dirty": false,
+  "started": "2026-11-22T16:29:18",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": true,
+    "notes": [],
+    "rebased": null,
+    "rounding": {
+      "energy": -0.0244140625,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": -0.0244140625,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 578,
+    "time": 1199.9999999992879
+  },
+  "t_start": 1199.9999999992879,
+  "sim_s": 2.0,
+  "run_wall_s": 0.28,
+  "speed_reached": 7.27,
+  "samples": 2,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 1.0000000000004547,
+      "js": "const d = moire.gpu.device; const rb = async (buf, size) => { const b = d.createBuffer({size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); const e = d.createCommandEncoder(); e.copyBufferToBuffer(buf, 0, b, 0, size); d.queue.submit([e.finish()]); await b.mapAsync(GPUMapMode.READ); const a = b.getMappedRange().slice(0); b.unmap(); b.destroy(); return a; }; const C = moire.cells, n = C.count, CF = C.cellBuf.size / 4 / n; const cu = new Uint32Array(await rb(C.cellBuf, n * CF * 4)); const cb = new Int32Array(await rb(moire.eat.carbon.buf, n * 24 * 4)); const st = new Int32Array(await rb(moire.eat.stockBuf, n * 64 * 4)); const S = new Array(24).fill(0), M = new Array(20).fill(0); let a = 0, noBack = 0, noFuel = 0; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; a++; for (let w = 0; w < 24; w++) S[w] += cb[i * 24 + w]; for (let w = 0; w < 20; w++) M[w] += st[i * 64 + w]; if (cb[i * 24 + 5] < 4096) noBack++; if (cb[i * 24 + 6] < 4096) noFuel++; } return JSON.stringify({gran: {alive: a, words: S.map((x) => Math.round(x / 4096 * 100) / 100), stock: M.map((x) => Math.round(x / 4096 * 100) / 100), noBack, noFuel}})",
+      "result": "{\"gran\":{\"alive\":576,\"words\":[1.32,0.79,0.32,0.16,0.85,294.9,117.8,48.93,65.44,72.43,18.72,8.36,0.03,0.02,0.02,0.01,0.01,0.14,0.1,0.07,0,0,0,0],\"stock\":[111.31,36.75,18.58,7.03,32.7,0,480.96,14.24,59.92,5.52,0,0,23.58,15703.92,0.16,0.83,0.18,0.17,0.15,0.12],\"noBack\":483,\"noFuel\":547}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-22T16:31:04",
+  "wall_s": 106.3
+}

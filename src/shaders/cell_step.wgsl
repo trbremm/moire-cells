@@ -1528,7 +1528,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       } else {
         c.engBy = 0u;
       }
-    } else if (c.bat >= FL.dv0.y && c.r >= FL.dv2.x * S.R * size * swell && bt == 0u) {   // (step C12e: at its own swelling)
+    } else if (c.bat >= FL.dv0.y && c.r >= FL.dv2.x * S.R * size * swell && bt == 0u &&   // (step C12e: at its own swelling)
+               (CARBON_ON == 0u || unpack4x8unorm(c.sns1).w >= 0.995)) {   // step C15b: GROWTH NEEDS CARBON: its body full for its size
       if (S.xCount != 0u) {
         atomicAdd(&stats.div[DV_READY], 1u);
         if (comp > FL.dv0.z) { atomicAdd(&stats.div[DV_CROWDED], 1u); }

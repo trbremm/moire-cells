@@ -45,6 +45,7 @@ import { fmt, HEAT_SCALE } from './heat.js';
 import { SUBSTANCES, CH, CHEM, ATOMS } from './matter.js';
 import { CELL_FLOATS } from './cells.js';
 import { BIO_FLOATS } from './genome.js';
+import { CB_LIP } from './carbon.js';   // step C15c
 
 const LG_LIP_E = 22528, LG_LIP_S = 22656, LG_LIP_C = 22912;   // heat_common.wgsl
 const LG_LIP_G = 25360;                                        // the supply fix (2026-11-16): the grazing counters
@@ -112,7 +113,8 @@ export class Lipids {
   }
 
   /** Whether a sub-rule acts (cells eat, the membrane chemistry and the master on, and its own). */
-  rule(k) { const M = this.eat.membrane; return !!(M.rule('on') && this.params.on && (k === 'on' || this.params[k])); }
+  // (step C15c: with carbon making the cell (CB_LIP) the lipid membrane is always the one: the C6c linker weave needs the retired linkers)
+  rule(k) { const M = this.eat.membrane; return !!(M.rule('on') && (this.params.on || CB_LIP) && (k === 'on' || this.params[k])); }
   /** Whether the lipid membranes are what the cells are wrapped in now. */
   get active() { return this.rule('on'); }
 

@@ -1,0 +1,68 @@
+{
+  "name": "c15m-rchk5-open0",
+  "description": "open s7 carbon=0, maze in place at t 0",
+  "condition": {
+    "name": "c15m-rchk5-open0",
+    "description": "open s7 carbon=0, maze in place at t 0",
+    "query": {
+      "seed": 7,
+      "carbon": 0
+    },
+    "duration": 1,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 0,
+        "js": "moire.toy.build('maze',7); return 1"
+      },
+      {
+        "t": 0.5,
+        "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, start:E.start, back:E.tot.batBack, heat:H.heat, out:H.out})"
+      },
+      {
+        "t": 1,
+        "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, start:E.start, back:E.tot.batBack, heat:H.heat, out:H.out})"
+      }
+    ]
+  },
+  "url": "http://localhost:59934/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=7&carbon=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "cbdc504b6df41145929522bc160469cb689c1a11",
+  "dirty": false,
+  "started": "2026-11-22T21:32:00",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1.0,
+  "run_wall_s": 1.03,
+  "speed_reached": 0.97,
+  "samples": 2,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.toy.build('maze',7); return 1",
+      "result": 1
+    },
+    {
+      "t": 0.5,
+      "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, start:E.start, back:E.tot.batBack, heat:H.heat, out:H.out})",
+      "result": "{\"r\":0.0066986083984375,\"start\":4780.8182373046875,\"back\":2995.9730834960938,\"heat\":72780.78096008301,\"out\":133123.37913513184}"
+    },
+    {
+      "t": 0.9999999999999999,
+      "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, start:E.start, back:E.tot.batBack, heat:H.heat, out:H.out})",
+      "result": "{\"r\":0.005584716796875,\"start\":4780.8182373046875,\"back\":3002.0145416259766,\"heat\":74250.68768310547,\"out\":145322.31021118164}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-22T21:33:21",
+  "wall_s": 81.19
+}

@@ -1,0 +1,47 @@
+{
+ "batch": "c15m-tool-cells",
+ "runs": [
+  {
+   "name": "c15m-tool-cells",
+   "description": "islands s7: the toy's cells tool, one tap (7 cells with carbon bodies), books",
+   "query": {
+    "terrain": "islands",
+    "seed": 7
+   },
+   "duration": 4,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 1.5,
+     "name": "tap",
+     "crop": [
+      0,
+      0,
+      1280,
+      800
+     ]
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 0.5,
+     "js": "const L = moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({alive: moire.cells.alive, cAdd: L && L.add && L.add.c})"
+    },
+    {
+     "t": 1,
+     "js": "const b = [...document.querySelectorAll('#toy button')].find((e) => /cells/.test(e.textContent)); b.click(); const before = moire.cells.alive; const C = moire.cells, R = C.R; let x = 0, y = 0; for (let k = 0; k < 400; k++) { x = 100 + Math.random() * 1080; y = 100 + Math.random() * 600; if (!moire.obstacles.blocked(x, y, 4 * R)) break; } moire.app.dishDown(x, y); moire.app.dishUp(); window.__tap = {before, x, y, cluster: moire.app.cluster}; return JSON.stringify(window.__tap)"
+    },
+    {
+     "t": 1.5,
+     "js": "const L = moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({tap: window.__tap, alive: moire.cells.alive, hint: (document.getElementById('toy-toast') || document.querySelector('.toy-toast') || {}).textContent, cAdd: L && L.add && L.add.c, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+    },
+    {
+     "t": 4,
+     "js": "const L = moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({tap: window.__tap, alive: moire.cells.alive, hint: (document.getElementById('toy-toast') || document.querySelector('.toy-toast') || {}).textContent, cAdd: L && L.add && L.add.c, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+    }
+   ]
+  }
+ ]
+}

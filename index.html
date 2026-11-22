@@ -250,6 +250,7 @@ body.recording #overlay { margin-top: 30px; }
 /* app: the zoos (src/zoo.js), in the panels' style */
 .pbody .note.zfirst { margin-top: 8px; }
 .ptable { display: grid; grid-template-columns: 3.4em repeat(3, 1fr); gap: 3px; margin: 4px 0 2px; }
+.ptable.p4 { grid-template-columns: 3.4em repeat(4, 1fr); }   /* step C15a: + the builder column */
 .ptable .ph { font-size: 10px; color: var(--dim); letter-spacing: 0.06em; align-self: end; text-align: center; }
 .ptable .prow { align-self: center; text-align: left; }
 .ui .pcell {
@@ -260,6 +261,7 @@ body.recording #overlay { margin-top: 30px; }
 .pcell b { font-size: 15px; font-weight: 600; line-height: 1.1; }
 .pcell small { font-size: 9.5px; color: var(--dim); }
 .ui .pcell.ptrace { grid-column: span 3; flex-direction: row; justify-content: center; gap: 10px; }
+.ptable.p4 .pcell.ptrace { grid-column: span 4; }
 .zrow { display: flex; align-items: center; gap: 9px; padding: 6px 0; border-top: 1px solid rgba(217, 221, 230, 0.07); }
 .pbody h3 + .zrow { border-top: 0; }
 .zpic { flex: none; width: 54px; display: flex; justify-content: center; }

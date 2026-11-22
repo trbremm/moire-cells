@@ -25,7 +25,7 @@
 // the counters (the heat ledger's step C9 block, LG_DIV rows 8..12: duplications of engines and of pumps, deletions, no room, fresh families),
 // a CENSUS every censusEvery s (a read-back of the cells and genomes: working slots per cell, cells holding a copy, each copy's fate: DOSAGE
 // (a relative in the cell runs the same reaction), NEW FUNCTION (its family's other slot in the cell runs another), ALONE (its relatives lost);
-// the families and how many have branched), the ENGINES panel line and overlay lines, and moire.dup.census() for the console.
+// the families and how many have branched), the ENGINE COPIES panel line and overlay lines, and moire.dup.census() for the console.
 
 import { CELL_FLOATS } from './cells.js';
 import { BIO_FLOATS, BIO_G2, famOf } from './genome.js';
@@ -239,22 +239,23 @@ export class Dup {
     };
   }
 
-  /** The entropy panel's ENGINES line. */
+  /** The entropy panel's ENGINE COPIES line (COPIES on a phone). */
   panelLine(compact = false) {
     const p = this.params, C = this.census, R = this.rates;
     const ctl = !p.on && !p.null ? ' (no duplication)' : p.null ? ' · NULL' : '';
-    if (!C || !C.n) return `ENGINES${ctl}  …`;
+    const L = compact ? 'COPIES' : 'ENGINE COPIES';   // (ENGINES is step C6's strategies line)
+    if (!C || !C.n) return `${L}${ctl}  …`;
     const pc = (x) => (x == null ? '-' : `${Math.round(100 * x)}%`), f2 = (x) => (x == null ? '-' : x.toFixed(2));
     const F = C.families;
     const ev = R ? `dup ${(R.eng + R.pump).toFixed(2)}/s, lost ${R.del.toFixed(2)}/s` : '';
     if (!p.on && !p.null) {
-      return compact ? `ENGINES${ctl} ${f2(C.working)}/cell · families ${F.n}, branched ${F.branched}`
-        : `ENGINES${ctl}  working slots ${f2(C.working)} a cell · engine families ${F.n} (branched into 2+ reactions: ${F.branched}) · fresh slots ${R ? R.fresh.toFixed(2) : '-'}/s`;
+      return compact ? `${L}${ctl} ${f2(C.working)}/cell · families ${F.n}, branched ${F.branched}`
+        : `${L}${ctl}  working slots ${f2(C.working)} a cell · engine families ${F.n} (branched into 2+ reactions: ${F.branched}) · fresh slots ${R ? R.fresh.toFixed(2) : '-'}/s`;
     }
     if (compact) {
-      return `ENGINES${ctl} ${f2(C.working)}/cell · copies ${pc(C.withCopy)} (same ${pc(C.fate.dosageShare)} new ${pc(C.fate.newShare)}) · fam ${F.n} br ${F.branched} · ${ev}`;
+      return `${L}${ctl} ${pc(C.withCopy)} · same ${pc(C.fate.dosageShare)} new ${pc(C.fate.newShare)} · fam ${F.n} br ${F.branched} · +${R ? (R.eng + R.pump).toFixed(2) : '-'} −${R ? R.del.toFixed(2) : '-'}/s`;   // (short: a phone)
     }
-    return `ENGINES${ctl}  working slots ${f2(C.working)} a cell${C.acts ? '' : ` (${f2(C.acting)} act)`} · cells with a copy ${pc(C.withCopy)} (engine ${pc(C.engCopy)}, pump ${pc(C.pumpCopy)})` +
+    return `${L}${ctl}  working slots ${f2(C.working)} a cell${C.acts ? '' : ` (${f2(C.acting)} act)`} · cells with a copy ${pc(C.withCopy)} (engine ${pc(C.engCopy)}, pump ${pc(C.pumpCopy)})` +
       ` · copies: dosage ${pc(C.fate.dosageShare)}, new function ${pc(C.fate.newShare)}, alone ${pc(C.fate.aloneShare)}` +
       ` · engine families ${F.n}, branched ${F.branched} (in one cell ${F.inCell}) · ${ev}${R && R.full > 0.005 ? `, no room ${R.full.toFixed(2)}/s` : ''}` +
       ` · battery with a copy ${f2(C.battery.copy)}, without ${f2(C.battery.none)}`;

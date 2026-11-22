@@ -1,0 +1,44 @@
+{
+  "name": "g2-pre",
+  "description": "a pre-G2 snapshot (base commit b583fce): default scene, seed 3, 120 s",
+  "condition": {
+    "name": "g2-pre",
+    "description": "a pre-G2 snapshot (base commit b583fce): default scene, seed 3, 120 s",
+    "query": {
+      "seed": 3
+    },
+    "duration": 121,
+    "sample_every": 60,
+    "stall": 200,
+    "snapshots": [
+      {
+        "t": 120
+      }
+    ],
+    "shots": [],
+    "evals": []
+  },
+  "url": "http://localhost:65316/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-22T16:15:40",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 121.0,
+  "run_wall_s": 251.74,
+  "speed_reached": 0.48,
+  "samples": 4,
+  "shots": [],
+  "snapshots": [
+    "snapshots/snap_t120.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-22T16:22:00",
+  "wall_s": 380.65
+}

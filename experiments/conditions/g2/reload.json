@@ -1,0 +1,22 @@
+{
+ "name": "g2-reload-pre",
+ "description": "a snapshot from before G2 (genomes of 156 words) loads and runs 60 s",
+ "query": {
+  "snap": "experiments/runs/g2-pre/snapshots/snap_t120.json"
+ },
+ "duration": 60,
+ "sample_every": 10,
+ "stall": 200,
+ "snapshots": [],
+ "shots": [],
+ "evals": [
+  {
+   "t": 1,
+   "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})"
+  },
+  {
+   "t": 59,
+   "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})"
+  }
+ ]
+}

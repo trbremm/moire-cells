@@ -1,0 +1,90 @@
+{
+ "batch": "g2-lit",
+ "runs": [
+  {
+   "name": "g2-lit-on",
+   "description": "default scene, whole dish lit (?light=full): duplication on, 20 min",
+   "query": {
+    "light": "full"
+   },
+   "duration": 1203,
+   "sample_every": 30,
+   "stall": 200,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 1200.5,
+     "name": "end"
+    },
+    {
+     "t": 1201,
+     "panel": true,
+     "name": "panel"
+    }
+   ],
+   "evals": [
+    {
+     "t": 300,
+     "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})"
+    },
+    {
+     "t": 600,
+     "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})"
+    },
+    {
+     "t": 900,
+     "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})"
+    },
+    {
+     "t": 1200,
+     "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})"
+    }
+   ]
+  },
+  {
+   "name": "g2-lit-null",
+   "description": "default scene, whole dish lit (?light=full): duplication null, 20 min",
+   "query": {
+    "light": "full",
+    "dupnull": 1
+   },
+   "duration": 1203,
+   "sample_every": 30,
+   "stall": 200,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 1200.5,
+     "name": "end"
+    },
+    {
+     "t": 1201,
+     "panel": true,
+     "name": "panel"
+    }
+   ],
+   "evals": [
+    {
+     "t": 300,
+     "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})"
+    },
+    {
+     "t": 600,
+     "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})"
+    },
+    {
+     "t": 900,
+     "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})"
+    },
+    {
+     "t": 1200,
+     "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})"
+    }
+   ]
+  }
+ ],
+ "seeds": [
+  3,
+  7
+ ]
+}

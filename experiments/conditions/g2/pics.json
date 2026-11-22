@@ -1,0 +1,157 @@
+{
+ "batch": "g2-pics",
+ "runs": [
+  {
+   "name": "g2-pics-def-neon",
+   "description": "pictures: def, neon, duplication 0.2 a birth (x10), 300 s",
+   "query": {
+    "seed": 3,
+    "duprate": 0.2
+   },
+   "duration": 302,
+   "sample_every": 60,
+   "stall": 200,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 298,
+     "name": "wide"
+    },
+    {
+     "t": 300,
+     "name": "zoom"
+    },
+    {
+     "t": 300.5,
+     "panel": true,
+     "name": "zoom_panel"
+    }
+   ],
+   "evals": [
+    {
+     "t": 299,
+     "js": "const w = (await moire.dup.where(40, 'new')).concat(await moire.dup.where(40)); if (!w.length) return 'none'; const c = w[0]; moire.camera.set(5, c.x, c.y); return JSON.stringify(w.slice(0, 6))"
+    },
+    {
+     "t": 301.5,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  },
+  {
+   "name": "g2-pics-def-harm",
+   "description": "pictures: def, harm, duplication 0.2 a birth (x10), 300 s",
+   "query": {
+    "seed": 3,
+    "duprate": 0.2,
+    "look": "harmonic"
+   },
+   "duration": 302,
+   "sample_every": 60,
+   "stall": 200,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 298,
+     "name": "wide"
+    },
+    {
+     "t": 300,
+     "name": "zoom"
+    },
+    {
+     "t": 300.5,
+     "panel": true,
+     "name": "zoom_panel"
+    }
+   ],
+   "evals": [
+    {
+     "t": 299,
+     "js": "const w = (await moire.dup.where(40, 'new')).concat(await moire.dup.where(40)); if (!w.length) return 'none'; const c = w[0]; moire.camera.set(5, c.x, c.y); return JSON.stringify(w.slice(0, 6))"
+    },
+    {
+     "t": 301.5,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  },
+  {
+   "name": "g2-pics-col-neon",
+   "description": "pictures: col, neon, duplication 0.2 a birth (x10), 300 s",
+   "query": {
+    "seed": 3,
+    "duprate": 0.2,
+    "preset": "colonies"
+   },
+   "duration": 302,
+   "sample_every": 60,
+   "stall": 200,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 298,
+     "name": "wide"
+    },
+    {
+     "t": 300,
+     "name": "zoom"
+    },
+    {
+     "t": 300.5,
+     "panel": true,
+     "name": "zoom_panel"
+    }
+   ],
+   "evals": [
+    {
+     "t": 299,
+     "js": "const w = (await moire.dup.where(40, 'new')).concat(await moire.dup.where(40)); if (!w.length) return 'none'; const c = w[0]; moire.camera.set(5, c.x, c.y); return JSON.stringify(w.slice(0, 6))"
+    },
+    {
+     "t": 301.5,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  },
+  {
+   "name": "g2-pics-col-harm",
+   "description": "pictures: col, harm, duplication 0.2 a birth (x10), 300 s",
+   "query": {
+    "seed": 3,
+    "duprate": 0.2,
+    "preset": "colonies",
+    "look": "harmonic"
+   },
+   "duration": 302,
+   "sample_every": 60,
+   "stall": 200,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 298,
+     "name": "wide"
+    },
+    {
+     "t": 300,
+     "name": "zoom"
+    },
+    {
+     "t": 300.5,
+     "panel": true,
+     "name": "zoom_panel"
+    }
+   ],
+   "evals": [
+    {
+     "t": 299,
+     "js": "const w = (await moire.dup.where(40, 'new')).concat(await moire.dup.where(40)); if (!w.length) return 'none'; const c = w[0]; moire.camera.set(5, c.x, c.y); return JSON.stringify(w.slice(0, 6))"
+    },
+    {
+     "t": 301.5,
+     "js": "moire.camera.fit(); return 'fit'"
+    }
+   ]
+  }
+ ]
+}

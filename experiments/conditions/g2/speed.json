@@ -1,0 +1,109 @@
+{
+ "batch": "g2-speed",
+ "runs": [
+  {
+   "name": "g2-speed-2k-on-r1",
+   "description": "step G2 speed: default scene, 2000 cells, MAX, 150 s, neon, duplication on",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g2-speed-10k-on-r1",
+   "description": "step G2 speed: default scene, 10000 cells, MAX, 60 s, neon, duplication on",
+   "query": {
+    "seed": 3,
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g2-speed-2k-off-r1",
+   "description": "step G2 speed: default scene, 2000 cells, MAX, 150 s, neon, duplication off",
+   "query": {
+    "seed": 3,
+    "dup": 0
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g2-speed-10k-off-r1",
+   "description": "step G2 speed: default scene, 10000 cells, MAX, 60 s, neon, duplication off",
+   "query": {
+    "seed": 3,
+    "cells": 10000,
+    "dup": 0
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g2-speed-2k-on-r2",
+   "description": "step G2 speed: default scene, 2000 cells, MAX, 150 s, neon, duplication on",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g2-speed-10k-on-r2",
+   "description": "step G2 speed: default scene, 10000 cells, MAX, 60 s, neon, duplication on",
+   "query": {
+    "seed": 3,
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g2-speed-2k-off-r2",
+   "description": "step G2 speed: default scene, 2000 cells, MAX, 150 s, neon, duplication off",
+   "query": {
+    "seed": 3,
+    "dup": 0
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  },
+  {
+   "name": "g2-speed-10k-off-r2",
+   "description": "step G2 speed: default scene, 10000 cells, MAX, 60 s, neon, duplication off",
+   "query": {
+    "seed": 3,
+    "cells": 10000,
+    "dup": 0
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "snapshots": [],
+   "shots": [],
+   "evals": []
+  }
+ ]
+}

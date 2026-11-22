@@ -1,0 +1,34 @@
+{
+ "name": "g2-smoke",
+ "description": "step G2 smoke: default scene, duplication 0.2 a birth (x10), 240 s",
+ "query": {
+  "seed": 3,
+  "duprate": 0.2,
+  "dupcensus": 10
+ },
+ "duration": 240,
+ "sample_every": 20,
+ "stall": 200,
+ "snapshots": [],
+ "shots": [
+  {
+   "t": 238,
+   "panel": true,
+   "name": "panel"
+  }
+ ],
+ "evals": [
+  {
+   "t": 60,
+   "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})"
+  },
+  {
+   "t": 120,
+   "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})"
+  },
+  {
+   "t": 239,
+   "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, battery: c.battery, lineDups: c.lineDups, fam: {n: c.families.n, all: c.families.all, branched: c.families.branched, inCell: c.families.inCell, top: c.families.top}, pfam: {n: c.pumpFamilies.n, branched: c.pumpFamilies.branched, top: c.pumpFamilies.top}, rates: c.rates})"
+  }
+ ]
+}

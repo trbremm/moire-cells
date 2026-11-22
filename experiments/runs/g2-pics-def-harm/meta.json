@@ -1,0 +1,78 @@
+{
+  "name": "g2-pics-def-harm",
+  "description": "pictures: def, harm, duplication 0.2 a birth (x10), 300 s",
+  "condition": {
+    "name": "g2-pics-def-harm",
+    "description": "pictures: def, harm, duplication 0.2 a birth (x10), 300 s",
+    "query": {
+      "seed": 3,
+      "duprate": 0.2,
+      "look": "harmonic"
+    },
+    "duration": 302,
+    "sample_every": 60,
+    "stall": 200,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 298,
+        "name": "wide"
+      },
+      {
+        "t": 300,
+        "name": "zoom"
+      },
+      {
+        "t": 300.5,
+        "panel": true,
+        "name": "zoom_panel"
+      }
+    ],
+    "evals": [
+      {
+        "t": 299,
+        "js": "const w = (await moire.dup.where(40, 'new')).concat(await moire.dup.where(40)); if (!w.length) return 'none'; const c = w[0]; moire.camera.set(5, c.x, c.y); return JSON.stringify(w.slice(0, 6))"
+      },
+      {
+        "t": 301.5,
+        "js": "moire.camera.fit(); return 'fit'"
+      }
+    ]
+  },
+  "url": "http://localhost:55463/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&duprate=0.2&look=harmonic",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "4d3e4c402040ad4e745bb4373b4ece1b28f3d6fa",
+  "dirty": false,
+  "started": "2026-11-22T16:47:26",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 302.0,
+  "run_wall_s": 843.5,
+  "speed_reached": 0.36,
+  "samples": 7,
+  "shots": [
+    "shots/wide.png",
+    "shots/zoom.png",
+    "shots/zoom_panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 299.00000000005673,
+      "js": "const w = (await moire.dup.where(40, 'new')).concat(await moire.dup.where(40)); if (!w.length) return 'none'; const c = w[0]; moire.camera.set(5, c.x, c.y); return JSON.stringify(w.slice(0, 6))",
+      "result": "[{\"slot\":416,\"x\":852.31298828125,\"y\":226.40704345703125,\"newfn\":true,\"slots\":[\"gt \u2192 g + t (band 2) #17\",\"g + t \u2192 gt #18\",\"gt \u2192 g + t (battery)* #18\",\"t + gT \u2192 gt + T* #18\"]},{\"slot\":1792,\"x\":670.6669311523438,\"y\":306.2867431640625,\"newfn\":true,\"slots\":[\"gt \u2192 g + t (band 2) #145\",\"ll \u2192 l + l (battery) #146\",\"Gt \u2192 G + t (band 1) #1704568\",\"g + t \u2192 gt* #146\",\"g + t \u2192 gt* #146\"]},{\"slot\":1869,\"x\":851.4227905273438,\"y\":266.019775390625,\"newfn\":true,\"slots\":[\"gt \u2192 g + t (band 2) #17\",\"g + t \u2192 gt #18\",\"g + t \u2192 gt* #18\",\"t + gT \u2192 gt + T* #18\",\"pump T in #1081943\",\"pump Gt out #1386211\"]},{\"slot\":1874,\"x\":855.0859985351562,\"y\":283.642578125,\"newfn\":true,\"slots\":[\"gt \u2192 g + t (band 2) #17\",\"g + t \u2192 gt #18\",\"g + t \u2192 gt* #18\",\"t + gT \u2192 gt + T* #18\",\"pump T in #1081943\",\"pump Gt out #1386211\"]},{\"slot\":1875,\"x\":842.092529296875,\"y\":271.87640380859375,\"newfn\":true,\"slots\":[\"gt \u2192 g + t (band 2) #17\",\"g + T \u2192 gT #18\",\"g + t \u2192 gt* #18\",\"g + t \u2192 gt* #18\"]},{\"slot\":1876,\"x\":641.2609252929688,\"y\":368.5736083984375,\"newfn\":true,\"slots\":[\"gt \u2192 g + t (band 2) #145\",\"ll \u2192 l + l (battery) #146\",\"Gt \u2192 G + t (band 1) #1704568\",\"g + t \u2192 gt* #146\",\"g + t \u2192 gt* #146\"]}]"
+    },
+    {
+      "t": 301.50000000005446,
+      "js": "moire.camera.fit(); return 'fit'",
+      "result": "fit"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-22T17:03:24",
+  "wall_s": 958.46
+}

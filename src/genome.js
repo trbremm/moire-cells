@@ -44,6 +44,11 @@
 //          gi[2] (124..131) the input codes (a + 32 b + 1024 c; a source 0 none, 1..8 a regulator, 9..22 a sense), gu[4] (132..147) the 16
 //          output gains, go (148..151) each output's regulator (four to a word, 3 bits each), gm (152..155) x the broadcast regulator, y the
 //          contact signal's kinship weighting, z w spare. Every weight and gain 0 (std, blank founders, old genomes): no network, as before
+//   dx     step G2, GENE DUPLICATION (src/dup.js), words 156..167: dx (156..159) the two SILENT engine slots 3, 4: x y their codes (as eng),
+//          z w their rates (0 = silent); df (160..163) the FAMILY words of engine slots 0..3, dg (164..167) x engine slot 4's, y z pump slots
+//          0 and 1's, w the duplications in the line since its founder. A family word = id x 8 + bits (0..1 the gene-network output the slot
+//          follows, 4 a copy made by duplication); 0 = an empty slot or one not named yet (named at the next birth: founders' slots
+//          1 + 16 x founder + slot, pumps + 8; a slot started from empty by mutation a fresh id). Old genomes: all 0, the slots silent
 //   lip    step C12b, genes of the LIPID MEMBRANE (src/lipids.js): x WALL, the crust wall wanted as a share of a full wall (0..1);
 //          y HEAD, which head the soap the cell makes carries (-1 all t: tlL, -; 1 all g: glL, +); z the wall's ROW (its heavy
 //          share, LL of ll + LL); w spare. With the lipid membranes on, memb.x (the C6c mix) is the bilayer's OIL share (oil
@@ -57,9 +62,10 @@ import { ENGINES, engineIndex, ELECTRONS } from './matter.js';
 import { fieldDefaults, founderGates, BIO_FG } from './guides.js';
 import { stampFounderGlue } from './glue.js';
 
-export const BIO_FLOATS = 156;  // (40 until step C6c's membrane genes, 44 until step C7's pumps, 48 until step C10's walls, 52 until step C12b's lipids,
+export const BIO_FLOATS = 168;  // (156 until step G2's duplicate slots and families; 40 until step C6c's membrane genes, 44 until step C7's pumps, 48 until step C10's walls, 52 until step C12b's lipids,
                                 //  56 until step C13's field genes and gates, 76 until step T1a's marker and kin channels, 84 until step T1b's gene network)
 export const BIO_GRN = 84;      // step T1b: the gene network's first word (Bio.gx)
+export const BIO_G2 = 156;      // step G2: the duplicate slots' first word (Bio.dx; Bio.df at 160, Bio.dg at 164)
 export const BIO_T1 = 76;       // step T1a: the first marker word (Bio.mark; Bio.kin at 80)
 export const BIO_BYTES = BIO_FLOATS * 4;
 
@@ -254,7 +260,7 @@ export const FOUNDER_MODES = ['std', 'blank', 'wild'];
 // Step T1b: NO NETWORK (std and blank founders): every weight, gain and code 0, the expression at 0.5 (where a regulator with no input sits),
 // broadcasting regulator 0, no kinship weighting. Its outputs are all exp(0) = 1: the cell behaves exactly as before the network
 export function grnDefaults(g, o = 0) {
-  for (let k = BIO_GRN; k < BIO_FLOATS; k++) g[o + k] = 0;
+  for (let k = BIO_GRN; k < BIO_G2; k++) g[o + k] = 0;   // (step G2: the network's words end where the duplicate slots begin)
   for (let r = 0; r < 8; r++) g[o + BIO_GRN + r] = 0.5;
 }
 // ... WILD founders (group 'grn'): a random SPARSE network: each regulator a bias in -2..2 and each of its three inputs a source (any regulator
@@ -333,7 +339,7 @@ export function wildGenes(g, rng, o = 0, groups = WILD_GROUPS) {
   // step T1b: the gene network (drawn last, so the earlier groups' draws stay as they were; drawn whether kept or not)
   const net = new Array(BIO_FLOATS).fill(0);
   wildGrn(net, rng, 0);
-  if (on('grn')) for (let k = BIO_GRN; k < BIO_FLOATS; k++) g[o + k] = net[k];
+  if (on('grn')) for (let k = BIO_GRN; k < BIO_G2; k++) g[o + k] = net[k];
 }
 
 /** The strategy a genome's engines amount to: 'harvest', 'burn', 'both' or 'other' (as the census and the view). */
@@ -475,11 +481,33 @@ export class Genome {
       for (let k = 20; k < 31; k++) f[o + k] = 0;   // accumulators and step 6 state start empty (32..47: step C6's, C6c's and C7's genes;
                                                     //  step G1: word 31 is the fidelity gene, the founder's: 0)
       stampFounderGlue(f, o);                       // step G0: the founder's glue (Bio.rec.z), what the glue's neutral control acts with
+      nameFamilies(f, o);                           // step G2: the working slots' family ids (the founder's)
       keys[2 * i] = g[0]; keys[2 * i + 1] = g[1];
     }
     return keys;
   }
 }
+
+/**
+ * Step G2: name the working engine and pump slots of genome g (at word o) that have no FAMILY yet, as the step names them at a birth
+ * (cell_step.wgsl dup_birth: 1 + 16 x founder + slot, pumps + 8; x 8 + the gene-network output an engine slot follows, its own for 0..2);
+ * empty slots get none. Founders and hand-made genomes, so the dish's first cells already carry their families.
+ */
+export function nameFamilies(g, o = 0) {
+  const fnd = Math.min(65535, Math.max(0, Math.round(g[o + 7] || 0)));
+  const fam = (k) => ((1 + 16 * fnd + k) % FAM_NEW) * 8;
+  for (let k = 0; k < 5; k++) {
+    const rate = k < 3 ? g[o + 36 + k] : g[o + BIO_G2 + 2 + (k - 3)], w = k < 4 ? o + BIO_G2 + 4 + k : o + BIO_G2 + 8;
+    if (!(rate > 0)) g[w] = 0; else if (!(g[w] >= 0.5)) g[w] = fam(k) + Math.min(k, 2);
+  }
+  for (let k = 0; k < 2; k++) {
+    const w = o + BIO_G2 + 9 + k;
+    if (!(g[o + 46 + k] > 0)) g[w] = 0; else if (!(g[w] >= 0.5)) g[w] = fam(8 + k);
+  }
+}
+export const FAM_NEW = 1048576;   // fresh family ids lie in FAM_NEW .. 2 FAM_NEW - 1 (cell_common.wgsl FAM_NEW)
+/** Step G2: a family word's parts: { id, reg (the gene-network output an engine slot follows), copy (made by duplication) }. */
+export function famOf(w) { const v = Math.round(w || 0); return { id: Math.floor(v / 8), reg: v & 3, copy: (v & 4) !== 0 }; }
 
 /**
  * App (the add-cell tool, the new culture's diversity): one founder genome of a habit, as a fresh culture's founders get them:

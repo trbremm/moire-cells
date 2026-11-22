@@ -29,7 +29,7 @@
 // makes the culture's founder the design (with ?spread=, ?cells=: a clump is a tissue, scatter the same cells loose; ?grnnull=1 the same
 // genome with its network nulled).
 
-import { BIO_FLOATS, BIO_GRN, founderGenome, makeRng } from './genome.js';
+import { BIO_FLOATS, BIO_GRN, BIO_G2, founderGenome, makeRng } from './genome.js';
 import { engineIndex } from './matter.js';
 import { grnOf, SENSES, OUTPUTS } from './grn.js';
 import { CELL_FLOATS } from './cells.js';
@@ -53,7 +53,7 @@ function src(name) {
  */
 export function wire(g, { regs, outputs = {}, broadcast = 0, kinWeight = 0 }) {
   const b = BIO_GRN;
-  for (let k = b; k < BIO_FLOATS; k++) g[k] = 0;
+  for (let k = b; k < BIO_G2; k++) g[k] = 0;   // (step G2: up to the duplicate slots)
   for (let r = 0; r < 8; r++) {
     const R = regs[r] || { bias: 0, inputs: [] };
     g[b + r] = R.x0 ?? 0.5;

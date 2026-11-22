@@ -398,7 +398,7 @@ struct Sim {
 };
 
 // ---------- the genome ----------
-// Every cell carries a Bio record (304 bytes since step C13, 224 since C12b, 208 since step C10, 192 since C7; keep in step with BIO_* in src/genome.js): its genome plus its
+// Every cell carries a Bio record (672 bytes since step G2, 624 since T1b, 304 since step C13, 224 since C12b, 208 since step C10, 192 since C7; keep in step with BIO_* in src/genome.js): its genome plus its
 // small mutable state. Bio is double-buffered: each tick reads last tick's copy of every cell (bioPrev) and
 // writes the new one (bioNext), so a newborn copies its parent's genome race-free.
 //
@@ -478,6 +478,13 @@ struct Bio {
   gm: vec4f,            // x the regulator the cell BROADCASTS to touching neighbours (0..7; the contact signal), y how far the contact signal
                         // is weighted by KINSHIP (0..1: 0 every neighbour alike, 1 kin only); step P1: z the 17th output's gain (ENGULF), w its
                         // regulator (0..7)
+  // ---- step G2: GENE DUPLICATION for engines and pumps (src/dup.js; README "Step G2"). Words 156..167 ----
+  dx: vec4f,            // the two SILENT engine slots 3 and 4 (filled only by a duplication): x y their codes (as eng.xyz), z w their rates
+                        // (0 = silent: no effect, no cost, no drift)
+  df: vec4f,            // the FAMILY words of engine slots 0..3 (id x 8 + bits: FAM_REG the gene-network output the slot follows, FAM_COPY a
+                        // copy made by duplication; 0 = an empty slot, or one not named yet)
+  dg: vec4f,            // x engine slot 4's family word; y z pump slots 0 and 1's (FAM_COPY: a pump copy, made into the empty pump slot);
+                        // w the duplications in the cell's line since its founder (inherited, + 1 at each)
 };
 // step T1b: the gene network's outputs (Bio.gu, Bio.go): each output multiplies an existing gene (its base level) by exp(u x) (at most
 // GRN_FMAX); a cell switches an engine off by expressing a regulator its output reads with a strongly negative gain
@@ -582,6 +589,37 @@ const PUMP_RATE_MAX: f32 = 6.0;
 const PUMP_NCH: u32 = 11u;
 fn pump_ch(code: f32) -> u32 { return min(u32(round(max(code, 0.0))) & 15u, 12u); }
 fn pump_out(code: f32) -> bool { return (u32(round(max(code, 0.0))) & PUMP_OUT) != 0u; }
+// ---------- step G2: GENE DUPLICATION (src/dup.js; README "Step G2: gene duplication") ----------
+// The genome has five engine slots: the three of step C6 and two SILENT ones (Bio.dx), which only a DUPLICATION fills. A rare duplication at
+// a birth copies a working engine slot over a silent one (code, rate and family: the copy runs the same reaction at the same rate, dosage x 2,
+// and pays the same upkeep), or a working pump slot over the cell's empty pump slot (the pump plumbing has two slots; most cells use at most
+// one). From the next birth on a copy drifts by ordinary mutation (rate steps, jumps to another reaction or band; pumps: another substance or
+// direction) while the original keeps the cell alive: dosage, or a new function. A copy is LOST back to silence at a rare deletion. Every
+// slot carries a FAMILY id, inherited (copies keep their original's), named at a slot's first start (founders: 1 + 16 x founder + slot;
+// a slot that starts from empty by mutation: a fresh id), so the census can tell lineages of genes apart. While the copies do not act (off,
+// the neutral control) the silent engine slots and pump copies have no effect and cost nothing (they still fill, drift and vanish in the
+// control). Chances x the birth's copying scale (key M, the fidelity gene, hard light), as every copying error.
+const DUP_ACT: u32 = 1u;          // Fields.g2.x, EatP.g2.x: the copies act (run, cost, are expressed and drawn); off and the control: not
+const DUP_COPY: u32 = 2u;         // ... duplications, deletions and the copies' drift happen at births (on and the neutral control)
+const FAM_REG: u32 = 3u;          // a family word's bits 0..1: which of engine slots 0..2's gene-network outputs the slot follows
+const FAM_COPY: u32 = 4u;         // ... bit 2: the slot holds a copy (a duplication made it)
+const FAM_NEW: u32 = 1048576u;    // fresh family ids (a slot started from empty by mutation) lie in FAM_NEW .. 2 FAM_NEW - 1
+fn fam_bits(w: f32) -> u32 { return u32(round(max(w, 0.0))) & 7u; }
+fn fam_reg(w: f32) -> u32 { return min(fam_bits(w) & FAM_REG, 2u); }
+fn fam_copy(w: f32) -> bool { return (fam_bits(w) & FAM_COPY) != 0u; }
+fn fam_word(id: u32, bits: u32) -> f32 { return f32(id * 8u + (bits & 7u)); }
+// a founder's slot's family id (engine slots 0..4: + k; pump slots: + 8 + k)
+fn fam_founder(founder: f32, k: u32) -> u32 { return (1u + 16u * min(u32(round(max(founder, 0.0))), 65535u) + k) & (FAM_NEW - 1u); }
+// a pump slot's family factor while the copies do not act: a copy has no effect
+fn dup_pump_live(dg: vec4f, act: bool) -> vec2f {
+  return select(vec2f(1.0), vec2f(select(1.0, 0.0, fam_copy(dg.y)), select(1.0, 0.0, fam_copy(dg.z))), !act);
+}
+// the step's G2 counters in the heat ledger's step C9 block (LG_DIV rows 8..12, 16 slots), since the last read-back (src/dup.js)
+const DPC_ENG: u32 = 8u;          // engine duplications (a working slot copied over a silent one)
+const DPC_PUMP: u32 = 9u;         // pump duplications (into the empty pump slot)
+const DPC_DEL: u32 = 10u;         // deletions (a copy lost back to silence)
+const DPC_FULL: u32 = 11u;        // duplications asked with no silent slot left for that kind (nothing happens)
+const DPC_NEW: u32 = 12u;         // slots started from empty by ordinary mutation (a fresh family)
 // step C6c: the honeycomb stiffness a membrane's material gives (genetic elasticity): heavy and thick = stiff, light and thin
 // = soft; 1 for the founders' usual light thin membrane (mix 0.1, thickness tRef)
 fn memb_stiff(m: vec4f, tRef: f32) -> f32 {
@@ -1184,7 +1222,9 @@ struct Fields {
   // ---- step G0b, obstacles (src/obstacles.js) ----
   ob0: vec4f,       // x bits OB_* (u32); y word offset in hb of sdA (f32 per heat pixel: the signed distance to the nearest edge that
                     // stops cells, CSS px, < 0 inside; the obstacles' mask word per pixel sits one block before it); z the contact push
-                    // (1 / s); w the hard limit (the centre never nearer an edge than this x the cell's radius)
+                    // (1 / s); w the hard limit (the centre never nearer an edge than this x the cell's radius)  // ---- step G2, gene duplication (src/dup.js) ----
+  g2: vec4f,        // x bits DUP_* (u32); y the chance per birth of a duplication (x the copying's scale: key M, fidelity, hard light);
+                    // z ... of a deletion (a copy lost back to silence); w spare
 };
 const OB_ON: u32 = 1u;           // step G0b: obstacles act on the cells
 const OB_FLAT: u32 = 2u;         // ... the honeycomb's corners flatten against their edges

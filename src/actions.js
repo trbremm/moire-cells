@@ -72,6 +72,7 @@ export const RULE_GROUPS = [
   ['t1b', 'Gene network (step T1b)'],
   ['p1', 'Predators (step P1)'],
   ['g1', 'Error correction (step G1)'],
+  ['g2', 'Gene duplication (step G2)'],
   ['g0', 'Strong glue (step G0)'],
   ['s1', 'Cell shape (step S1)'],
   ['g0w', 'Stirred water (step G0)'],
@@ -797,6 +798,21 @@ export function makeActions(app) {
       help: 'the neutral control: the gene drifts as usual, without effect or cost, to tell selection from noise' },
     fdknob('fidCost', 'proofreading cost', 'cost', 0, 10, 1.25, 3, 'energy units a birth costs the parent at e^F − 1 = 1 (as heat); F = 1 costs 1.7 × this, F = 2 6.4 ×'),
     fdknob('fidBeyond', 'hard light beyond repair', 'beyond', 0, 1, 1.25, 2, 'the share of hard light’s extra mutation proofreading cannot catch (the rest is caught like any copying error)'),
+  );
+
+  // ---------- gene duplication for engines and pumps (step G2; panel only: no keys are free) ----------
+  const DUPP = () => app.cells.dup.params;
+  const dpknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'g2', type: 'knob', get: () => DUPP()[key].toFixed(digits),
+    run: (k) => { const p = DUPP(); p[key] = Math.max(lo, Math.min(hi, +(Math.max(p[key], 1e-4) * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    { id: 'dup', keys: [], label: 'gene duplication', group: 'g2', type: 'toggle', get: () => DUPP().on,
+      run: () => `gene duplication ${flip(DUPP(), 'on') ? 'on: now and then a birth copies a working engine or pump into a silent slot (dosage x 2, or the copy drifts into a new job); copies cost like any engine' : 'off: the silent slots stay silent (as before step G2); copies already made have no effect'}`,
+      help: 'a rare copying accident at birth doubles an engine or a pump; the copy may later drift into a new reaction while the original keeps the cell alive' },
+    { id: 'dupnull', keys: [], label: 'duplication neutral control', group: 'g2', type: 'toggle', get: () => DUPP().null,
+      run: () => `the copies ${flip(DUPP(), 'null') ? 'have NO effect and cost nothing (NEUTRAL CONTROL: they are still made, drift and vanish)' : 'act'}`,
+      help: 'the neutral control: duplications, drift and losses happen as usual, but the copies do nothing, to tell selection from noise' },
+    dpknob('dupRate', 'duplication chance', 'rate', 0, 1, 1.5, 4, 'the chance per birth of one duplication (x the copying scale: key M, fidelity, hard light)'),
+    dpknob('dupDel', 'loss chance', 'del', 0, 1, 1.5, 4, 'the chance per birth that one copy is lost back to silence (same scale)'),
   );
 
   // ---------- strong glue, junctions that break, stirred water (step G0; panel only: no keys are free) ----------

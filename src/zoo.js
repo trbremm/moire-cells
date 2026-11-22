@@ -13,7 +13,8 @@
 import { SUBSTANCES, ATOMS, ELECTRONS, ENGINES, ENGINE_KINDS, atomLevels, CH, describe, makingBand } from './matter.js';
 import { BANDS } from './light.js';
 import { pal } from './palette.js';
-import { BIO_FLOATS, strategyOf, founderGenome, HABITS, predatorGenome } from './genome.js';
+import { BIO_FLOATS, BIO_G2, strategyOf, founderGenome, HABITS, predatorGenome } from './genome.js';
+import { DUP_STATE } from './dup.js';
 import { DESIGNS, DESIGN_NAMES, designGenome } from './tissues.js';
 import { CELL_FLOATS } from './cells.js';
 import { JOBS, jobOf, jobInk } from './jobs.js';   // step F0: colour by job
@@ -228,14 +229,15 @@ const KIND_WORD = ELECTRONS ? { 0: 'harvest', 1: 'ferment', 2: 'breathe', 3: 'ch
 const HABIT_NAME = { harvest: 'light harvesters', burn: ELECTRONS ? 'eaters' : 'burners', both: 'light + burn', other: 'others' };
 const HABIT_FOUNDER = { burn: ELECTRONS ? 'eater' : 'burner', both: 'light + burn', pigments: 'photosynthesiser', other: 'chain maker / breather' };
 
-/** The active engine slots of genome g (at float o): [{ e (ENGINES entry), band, rate, k }]. */
-export function enginesOf(g, o = 0) {
+/** The active engine slots of genome g (at float o): [{ e (ENGINES entry), band, rate, k, copy }] (step G2: + the duplicate slots 3, 4 while the
+ * copies act; copy = true for those). */
+export function enginesOf(g, o = 0, copies = DUP_STATE.acts) {
   const out = [];
-  for (let k = 0; k < 3; k++) {
-    const rate = g[o + 36 + k];
+  for (let k = 0; k < (copies && g.length >= o + BIO_G2 + 4 ? 5 : 3); k++) {
+    const rate = k < 3 ? g[o + 36 + k] : g[o + BIO_G2 + 2 + (k - 3)];
     if (!(rate > 0.1)) continue;
-    const code = Math.round(g[o + 32 + k]), e = ENGINES[Math.min(ENGINES.length - 1, code & 31)];
-    out.push({ e, band: code >> 5, rate, k });
+    const code = Math.round(k < 3 ? g[o + 32 + k] : g[o + BIO_G2 + (k - 3)]), e = ENGINES[Math.min(ENGINES.length - 1, code & 31)];
+    out.push({ e, band: code >> 5, rate, k, copy: k >= 3 });
   }
   return out;
 }
@@ -243,10 +245,11 @@ export function enginesOf(g, o = 0) {
 /** A genome's habits in plain words. */
 export function summary(g, o = 0, lipidsOn = true) {
   const parts = [];
-  for (const { e, band, rate } of enginesOf(g, o)) {
+  for (const { e, band, rate, copy } of enginesOf(g, o)) {
     const speed = rate > 2 ? 'fast' : rate < 0.6 ? 'slowly' : '';
-    if (e.kind === 0) parts.push(band > 0 ? `${BAND_WORD[band]} pigment drives ${e.name}` : `stores energy as ${e.name} (battery-paid)`);
-    else parts.push(`${KIND_WORD[e.kind]}s ${e.name}${speed ? ` ${speed}` : ''}`);
+    const cp = copy ? ' (a duplicate)' : '';   // step G2
+    if (e.kind === 0) parts.push(band > 0 ? `${BAND_WORD[band]} pigment drives ${e.name}${cp}` : `stores energy as ${e.name} (battery-paid)${cp}`);
+    else parts.push(`${KIND_WORD[e.kind]}s ${e.name}${speed ? ` ${speed}` : ''}${cp}`);
   }
   if (!parts.length) parts.push('no running engine');
   const skin = [];
@@ -337,8 +340,9 @@ export function drawPortrait(cx, S, f, g, i, P = pal(), R0 = 6) {
   }
   // the engines as parts round the core: harvest in its pigment's band colour (a triangle), the others by kind
   const eng = enginesOf(g, b);
-  eng.forEach(({ e, band, rate }, j) => {
-    const a = theta + 0.6 + j * 2 * Math.PI / 3, d = 0.5 * r * sc, s = Math.min(0.24, 0.1 + 0.05 * rate) * r * sc;
+  eng.forEach(({ e, band, rate, copy }, j) => {
+    // (step G2: the parts spread evenly round the core, a duplicate a little smaller)
+    const a = theta + 0.6 + j * 2 * Math.PI / Math.max(3, eng.length), d = 0.5 * r * sc, s = Math.min(0.24, 0.1 + 0.05 * rate) * r * sc * (copy ? 0.8 : 1);
     const x = c0 + Math.cos(a) * d, y = c0 + Math.sin(a) * d;
     const ink = e.kind === 0 ? (P.band[band] || P.band[1]) : e.kind === 1 ? P.burn : e.kind === 2 ? P.swap : P.sed;
     cx.fillStyle = rgb(ink);

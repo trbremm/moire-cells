@@ -1869,14 +1869,19 @@ fn job_targets(b: Bio, eating: bool) -> array<vec4f, 2> {
   let act = (bitcast<u32>(FL.t1.z) & GRN_ACT) != 0u;
   var s = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
   let pig = select(1.0, gofB(b, GRN_O_PIG), act);
-  for (var k = 0u; k < 3u; k++) {
-    let r = b.rate[k];
+  // (step G2: + the two duplicate slots while the copies act, each through the output of the slot it was copied from)
+  let dAct = (bitcast<u32>(FL.g2.x) & DUP_ACT) != 0u;
+  let sc = array<f32, 5>(b.eng.x, b.eng.y, b.eng.z, b.dx.x, b.dx.y);
+  let sr = array<f32, 5>(b.rate.x, b.rate.y, b.rate.z, select(0.0, b.dx.z, dAct), select(0.0, b.dx.w, dAct));
+  let so = array<u32, 5>(0u, 1u, 2u, fam_reg(b.df.w), fam_reg(b.dg.x));
+  for (var k = 0u; k < 5u; k++) {
+    let r = sr[k];
     if (r <= 0.0) { continue; }
-    let e = eng_index(b.eng[k]);
+    let e = eng_index(sc[k]);
     let cl = job_class(e);
-    var x = r * select(1.0, gofB(b, GRN_O_ENG0 + k), act);
+    var x = r * select(1.0, gofB(b, GRN_O_ENG0 + so[k]), act);
     if (cl == 1u) {
-      if (eng_band(b.eng[k]) == 0u) { continue; }   // (a battery-paid uphill engine: a storer, no job of its own)
+      if (eng_band(sc[k]) == 0u) { continue; }   // (a battery-paid uphill engine: a storer, no job of its own)
       x *= pig * JOB_W_LIGHT;
     }
     if (cl >= 1u && cl <= 5u) { s[cl - 1u] += x; }
@@ -1966,6 +1971,9 @@ fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
     }
     if (jumped) { atomicAdd(&hb[LG_HL + 16u * select(HL_JUMP_CLEAN, HL_JUMP_HIT, lit) + (i & 15u)], 1); }
   }
+  // step G2: gene duplication (after the C8 census above, so its slot jumps count mutation alone): the families kept in order, and with
+  // duplication on (or its neutral control) the copies' drift, a rare deletion and a rare duplication, x the copying scale msF
+  nb = dup_birth(nb, p, bs, msF, i);
   // step T1a: the self MARKER drifts at every birth, a molecular clock (small Gaussian steps of its angle, period and phase; never a jump),
   // so marker distance grows with the time since a common ancestor
   // (step T1c, ?clockhard=0: the clock ticks only with mutation itself (key M), not with hard light's extra dose, so a lineage under hard
@@ -1983,6 +1991,118 @@ fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
   nb.env = vec4f(0.0);                      // a newborn has felt nothing yet and is not converted (step C9: nor starving)
   nb.conv = vec4f(0.0, 0.0, 0.0, fid);      // (step G1: w is the fidelity gene, inherited)
   nb.body.w = TAU * rand01(bs, 200u);
+  return nb;
+}
+
+// step G2: a birth's GENE DUPLICATION (cell_common.wgsl DUP_*, FAM_*; src/dup.js). nb0: the daughter's genome after mutate; p: the parent's;
+// bs: the birth's random stream; msF: the copying scale (mutate's: key M x the fidelity gene, + hard light's); i: the slot counting it.
+// ALWAYS (no effect on behaviour): every slot's FAMILY word kept in order: an empty slot has none; a working slot not named yet gets its
+// founder's id (old genomes, hand-made ones); one this birth's ordinary mutation started from empty, a fresh id. With DUP_COPY (on and the
+// neutral control): the two duplicate engine slots drift as the others (their rate's small steps; now and then, at the chance one of the three
+// old slots has, a jump to another reaction or pigment band, never to empty); a rare DELETION silences one copy (a duplicate engine slot or a
+// pump copy); a rare DUPLICATION copies a working slot (any engine or pump slot, at random) into a silent one of its kind: its code, rate and
+// family (with the gene-network output it follows), marked as a copy. (A pump copy then drifts by mutate's ordinary pump jumps.)
+fn dup_birth(nb0: Bio, p: Bio, bs: u32, msF: f32, i: u32) -> Bio {
+  var nb = nb0;
+  let bits = bitcast<u32>(FL.g2.x);
+  var ce = array<f32, 5>(nb.eng.x, nb.eng.y, nb.eng.z, nb.dx.x, nb.dx.y);
+  var re = array<f32, 5>(nb.rate.x, nb.rate.y, nb.rate.z, nb.dx.z, nb.dx.w);
+  var fe = array<f32, 5>(nb.df.x, nb.df.y, nb.df.z, nb.df.w, nb.dg.x);
+  let pe = array<f32, 5>(p.rate.x, p.rate.y, p.rate.z, p.dx.z, p.dx.w);
+  var rp = nb.pump.zw;
+  var fp = nb.dg.yz;
+  let pp = p.pump.zw;
+  var nNew = 0;
+  // the families
+  for (var k = 0u; k < 5u; k++) {
+    if (re[k] <= 0.0) { fe[k] = 0.0; continue; }
+    if (fe[k] >= 0.5) { continue; }
+    var id = fam_founder(p.rec.w, k);
+    if (k < 3u && pe[k] <= 0.0) { id = FAM_NEW + (pcg(bs ^ (0x5f3759dfu + 0x9e3779b9u * k)) & (FAM_NEW - 1u)); nNew++; }
+    fe[k] = fam_word(id, min(k, 2u));
+  }
+  for (var k = 0u; k < 2u; k++) {
+    if (rp[k] <= 0.0) { fp[k] = 0.0; continue; }
+    if (fp[k] >= 0.5) { continue; }
+    var id = fam_founder(p.rec.w, 8u + k);
+    if (pp[k] <= 0.0) { id = FAM_NEW + (pcg(bs ^ (0x2c1b3c6du + 0x9e3779b9u * k)) & (FAM_NEW - 1u)); nNew++; }
+    fp[k] = fam_word(id, 0u);
+  }
+  if (nNew > 0) { atomicAdd(&hb[LG_DIV + 16u * DPC_NEW + (i & 15u)], nNew); }
+  if ((bits & DUP_COPY) != 0u && msF > 0.0) {
+    let sz = S.mutSize * msF;
+    // the copies' drift (the duplicate engine slots 3, 4; a silent one stays silent)
+    let jz = min(S.engJump * msF, 1.0) / 3.0;
+    for (var k = 3u; k < 5u; k++) {
+      if (re[k] <= 0.0) { continue; }
+      re[k] = clamp(re[k] * exp(sz * 0.1 * gauss(bs, 230u + k)), 0.02, ENG_RATE_MAX);
+      if (rand01(bs, 234u + k) < jz) {
+        let e = eng_index(ce[k]);
+        let band = eng_band(ce[k]);
+        let v = rand01(bs, 240u + k);
+        if (rand01(bs, 237u + k) < 0.6) { ce[k] = f32(min(u32(v * f32(ENG_COUNT)), ENG_COUNT - 1u) + 32u * band); }
+        else { ce[k] = f32(e + 32u * min(u32(v * 4.0), 3u)); }
+      }
+    }
+    // DELETION: one of the copies (a duplicate engine slot or a pump copy), at random, back to silence
+    if (rand01(bs, 244u) < min(FL.g2.z * msF, 1.0)) {
+      let c3 = re[3] > 0.0;
+      let c4 = re[4] > 0.0;
+      let q0 = rp.x > 0.0 && fam_copy(fp.x);
+      let q1 = rp.y > 0.0 && fam_copy(fp.y);
+      let n = select(0, 1, c3) + select(0, 1, c4) + select(0, 1, q0) + select(0, 1, q1);
+      if (n > 0) {
+        var j = min(i32(rand01(bs, 245u) * f32(n)), n - 1);
+        if (c3) { if (j == 0) { re[3] = 0.0; fe[3] = 0.0; } j -= 1; }
+        if (c4) { if (j == 0) { re[4] = 0.0; fe[4] = 0.0; } j -= 1; }
+        if (q0) { if (j == 0) { rp.x = 0.0; fp.x = 0.0; } j -= 1; }
+        if (q1) { if (j == 0) { rp.y = 0.0; fp.y = 0.0; } }
+        atomicAdd(&hb[LG_DIV + 16u * DPC_DEL + (i & 15u)], 1);
+      }
+    }
+    // DUPLICATION: a working slot (any engine or pump slot, at random) copied into a silent slot of its kind
+    if (rand01(bs, 246u) < min(FL.g2.y * msF, 1.0)) {
+      var ne = 0u;
+      for (var k = 0u; k < 5u; k++) { if (re[k] > 0.0) { ne++; } }
+      let n = ne + select(0u, 1u, rp.x > 0.0) + select(0u, 1u, rp.y > 0.0);
+      if (n > 0u) {
+        let j = min(u32(rand01(bs, 247u) * f32(n)), n - 1u);
+        if (j < ne) {
+          var src = 0u;
+          var seen = 0u;
+          for (var k = 0u; k < 5u; k++) { if (re[k] > 0.0) { if (seen == j) { src = k; } seen++; } }
+          let t = select(select(5u, 4u, re[4] <= 0.0), 3u, re[3] <= 0.0);   // the first silent duplicate slot (5: none)
+          if (t < 5u) {
+            ce[t] = ce[src];
+            re[t] = re[src];
+            fe[t] = fam_word(u32(round(max(fe[src], 0.0))) / 8u, fam_reg(fe[src]) | FAM_COPY);
+            nb.dg.w += 1.0;
+            atomicAdd(&hb[LG_DIV + 16u * DPC_ENG + (i & 15u)], 1);
+          } else {
+            atomicAdd(&hb[LG_DIV + 16u * DPC_FULL + (i & 15u)], 1);
+          }
+        } else {
+          let s1 = (j - ne == 1u) || rp.x <= 0.0;   // the source pump slot (the second working one, or the only one)
+          let src = select(0u, 1u, s1);
+          let t = 1u - src;
+          if (rp[t] <= 0.0) {
+            let pc = select(nb.pump.x, nb.pump.y, s1);
+            if (t == 0u) { nb.pump.x = pc; } else { nb.pump.y = pc; }
+            rp[t] = rp[src];
+            fp[t] = fam_word(u32(round(max(fp[src], 0.0))) / 8u, FAM_COPY);
+            nb.dg.w += 1.0;
+            atomicAdd(&hb[LG_DIV + 16u * DPC_PUMP + (i & 15u)], 1);
+          } else {
+            atomicAdd(&hb[LG_DIV + 16u * DPC_FULL + (i & 15u)], 1);
+          }
+        }
+      }
+    }
+  }
+  nb.dx = vec4f(ce[3], ce[4], re[3], re[4]);
+  nb.df = vec4f(fe[0], fe[1], fe[2], fe[3]);
+  nb.dg = vec4f(fe[4], fp.x, fp.y, nb.dg.w);
+  nb.pump = vec4f(nb.pump.xy, rp);
   return nb;
 }
 

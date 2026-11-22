@@ -59,7 +59,8 @@ struct Draw {
   inkSwap: vec4f,   // a swap engine; w: the battery's core radius at full charge while parts are drawn (share of r)
   inkOther: vec4f,  // strategy view: the body of a cell that neither harvests nor burns; w: every body's fill there
   // ---- step C6n: the neon look ----
-  spare5: array<vec4f, 5>, // (the fates' inks until step F0: the jobs' are job[] at the end)
+  spare5: array<vec4f, 5>, // (the fates' inks until step F0: the jobs' are job[] at the end); step G2: [0] x 1 = the copies act (draw the duplicate
+                           // engine slots as parts, the pump copies' notches), y the duplicate parts' size (x an engine part's)
   neon: vec4f,      // x: 1 = the neon look; y: the tube's width (CSS px); z: how white its centre line is (0..1); w: the inner
                     // glow's reach (share of r)
   neon2: vec4f,     // x: the inner glow's brightness; y: the battery core's lit rim (share of its radius); z: how white the
@@ -563,20 +564,24 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   var partA = 0.0;
   if (partsOn) {
     let hmax = D.ink2.w * c.r;
-    for (var k = 0u; k < 3u; k++) {
-      let rk = g.rate[k];
+    // (step G2: + the two duplicate slots while the copies act, a little smaller, between: upper right, upper left)
+    let pc = array<f32, 5>(g.eng.x, g.eng.y, g.eng.z, g.dx.x, g.dx.y);
+    let pr = array<f32, 5>(g.rate.x, g.rate.y, g.rate.z, select(0.0, g.dx.z, D.spare5[0].x > 0.5), select(0.0, g.dx.w, D.spare5[0].x > 0.5));
+    for (var k = 0u; k < 5u; k++) {
+      let rk = pr[k];
       if (rk <= 0.0) { continue; }
-      let e = eng_index(g.eng[k]);
+      let e = eng_index(pc[k]);
       let kind = part_kind(e);
-      let h = hmax * sqrt(clamp(rk / max(D.inkSed.w, 1e-3), 0.12, 1.0));
+      let h = hmax * sqrt(clamp(rk / max(D.inkSed.w, 1e-3), 0.12, 1.0)) * select(1.0, D.spare5[0].y, k >= 3u);
       if (h * D.dpr < 0.6) { continue; }
-      let th = -1.5707963 + f32(k) * 2.0943951;               // up, lower right, lower left (screen y down)
+      let th = select(-1.5707963 + f32(k) * 2.0943951, -0.5235988 - f32(k - 3u) * 2.0943951, k >= 3u);   // up, lower right, lower left (screen y
+                                                                                                     // down); step G2's: upper right, upper left
       let ax = vec2f(cos(th), sin(th));
       let p = lp - ax * (D.ink3.w * c.r);
       let q = vec2f(p.x * ax.x + p.y * ax.y, p.y * ax.x - p.x * ax.y);   // along the outward axis, across
       var dd2 = length(q) - h;                                  // harvest: a disc in its band's colour
-      var ink = band_ink(eng_band(g.eng[k]));
-      if (kind == 0u && eng_band(g.eng[k]) == 0u) { dd2 = abs(length(q) - 0.7 * h) - 0.3 * h; ink = D.coreInk.rgb; }   // storer: a ring, battery green
+      var ink = band_ink(eng_band(pc[k]));
+      if (kind == 0u && eng_band(pc[k]) == 0u) { dd2 = abs(length(q) - 0.7 * h) - 0.3 * h; ink = D.coreInk.rgb; }   // storer: a ring, battery green
       if (kind == 1u) { dd2 = (abs(q.x) + abs(q.y)) * 0.7071068 - 0.86 * h; ink = D.inkBurn.rgb; }        // burn: a diamond
       else if (kind == 2u) {                                                                                // swap: a triangle
         dd2 = max(abs(q.y) * 0.8660254 + q.x * 0.5, -q.x) - 0.62 * h;
@@ -738,8 +743,8 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   if (D.pump.x > 0.5) {
     let slot = side & 1u;
     let code = select(g.pump.x, g.pump.y, slot == 1u);
-    let rate = select(g.pump.z, g.pump.w, slot == 1u);
-    if (rate >= 0.05) {
+    let rate = select(g.pump.z, g.pump.w, slot == 1u) * select(1.0, 0.0, D.spare5[0].x < 0.5 && fam_copy(select(g.dg.y, g.dg.z, slot == 1u)));   // (step G2:
+    if (rate >= 0.05) {                                                                                                        //  an idle copy: none)
       var mid = (f32(side) + 0.5) * P3 * c.r;                       // an ellipse cell: the side's middle along the arc
       if (in.hh1.w > 0.5) {
         let tmv = array<f32, 6>(in.tm0.x, in.tm0.y, in.tm0.z, in.tm0.w, in.tm1.x, in.tm1.y);
@@ -922,11 +927,12 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
   vio += D.harm2.w * act * (0.5 + 0.5 * hm_noise(pw / max(0.3 * c.r, 0.8) + sh));
   if (D.ink1.w > 0.0) {
     let hmax = D.ink2.w * c.r;
-    for (var k = 0u; k < 3u; k++) {
-      let rk = g.rate[k];
+    let hr = array<f32, 5>(g.rate.x, g.rate.y, g.rate.z, select(0.0, g.dx.z, D.spare5[0].x > 0.5), select(0.0, g.dx.w, D.spare5[0].x > 0.5));
+    for (var k = 0u; k < 5u; k++) {   // (step G2: + the copies' granules, as their parts)
+      let rk = hr[k];
       if (rk <= 0.0) { continue; }
-      let h = hmax * sqrt(clamp(rk / max(D.inkSed.w, 1e-3), 0.12, 1.0));
-      let a3 = -1.5707963 + f32(k) * 2.0943951;
+      let h = hmax * sqrt(clamp(rk / max(D.inkSed.w, 1e-3), 0.12, 1.0)) * select(1.0, D.spare5[0].y, k >= 3u);
+      let a3 = select(-1.5707963 + f32(k) * 2.0943951, -0.5235988 - f32(k - 3u) * 2.0943951, k >= 3u);
       let p = lp - vec2f(cos(a3), sin(a3)) * (D.ink3.w * c.r);
       vio += D.harm3.x * exp(-(p.x * p.x + p.y * p.y) / max(0.45 * h * h, 0.2));
     }

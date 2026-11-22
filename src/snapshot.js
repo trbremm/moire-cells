@@ -168,6 +168,7 @@ export function settingObjects(M) {
     ...(M.grn ? { 'grn.params': M.grn.params, 'grn.look': M.grn.look } : {}),   // step T1b
     ...(M.predators ? { 'predators.params': M.predators.params, 'predators.look': M.predators.look } : {}),   // step P1
     ...(M.fidelity ? { 'fidelity.params': M.fidelity.params } : {}),   // step G1 (old snapshots: the gene 0 everywhere, the founders' value)
+    ...(M.dup ? { 'dup.params': M.dup.params } : {}),                 // step G2 (old snapshots: duplication off, as they ran)
     ...(M.pigments ? { 'pigments.params': M.pigments.params } : {}),   // step N1: light needs matter
     ...(M.water ? { 'water.params': M.water.params } : {}),           // step N1: caustic light, currents
     ...(M.perfusion ? { 'perfusion.params': M.perfusion.params } : {}),   // perfusion (src/perfusion.js)
@@ -392,7 +393,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     const oldT1b = S.layout.cellWords === 88 && S.layout.bioWords === 84;
     // step P1: one from before the predators (cells of 88 words) loads with the engulfing words 0 (no wraps, no ghosts) and with engulfing OFF
     const oldP1 = S.layout.cellWords === 88 && S.layout.bioWords === 156;
-    const widen = oldC10 || oldC12 || oldC13 || oldC12e || oldT1 || oldT1b || oldP1;
+    // step G2: one from before gene duplication (genomes of 156 words) loads with the duplicate slots silent and no families (named at the next
+    // births, by founder), and with duplication OFF, so it runs on as it was saved
+    const oldG2 = S.layout.cellWords === CELL_FLOATS && S.layout.bioWords === 156;
+    const widen = oldC10 || oldC12 || oldC13 || oldC12e || oldT1 || oldT1b || oldP1 || oldG2;
     if (!widen && (S.layout.cellWords !== CELL_FLOATS || S.layout.bioWords !== BIO_FLOATS)) {
       throw new Error(`snapshot layout (cell ${S.layout.cellWords}, bio ${S.layout.bioWords} words) does not match this page (${CELL_FLOATS}, ${BIO_FLOATS})`);
     }
@@ -521,6 +525,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     if (opts.settings !== false && M.spindle && !(S.settings && S.settings['spindle.params'])) {
       M.spindle.params.on = false;   // step S1
       notes.push('saved before step S1: round contacts, no elongation (as it ran)');
+    }
+    if (opts.settings !== false && M.dup && !(S.settings && S.settings['dup.params'])) {
+      Object.assign(M.dup.params, { on: false, null: false });   // step G2
+      notes.push('saved before step G2: no gene duplication (as it ran)');
     }
     if (opts.settings !== false && M.stir && !(S.settings && S.settings['stir.params'])) {
       M.stir.params.on = false;   // step G0

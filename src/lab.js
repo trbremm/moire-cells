@@ -59,6 +59,9 @@ export const GENES = {
   // step S1: the ELONGATION gene (ln of the aspect asked: 0 round .. ln 4 = 1.386 a 4:1 spindle) and the gene network's SHAPE output's gain
   // and regulator (src/spindle.js)
   elongation: 13, grnShapeGain: 14, grnShapeReg: 15,
+  // step G2: the two duplicate engine slots (codes, rates; rate 0 = silent), the families (id x 8 + bits) of engine slots 0..4 and pump
+  // slots 0, 1, the line's duplications so far (src/dup.js)
+  eng3: 156, eng4: 157, rate3: 158, rate4: 159, fam0: 160, fam1: 161, fam2: 162, fam3: 163, fam4: 164, famPump0: 165, famPump1: 166, dups: 167,
 };
 // words 19..30 are the cell's state, not genes (heading, accumulators, felt fields, conversion)
 // (step T1b: and 84..91, the regulators' expression)
@@ -119,6 +122,8 @@ function gather(M, ctl) {
   if (M.grn && M.grn.census) flatten(M.grn.census, 'grn', out);         // step T1b: the gene network's census (cell types)
   if (M.predators && M.predators.census) flatten(M.predators.census, 'pred', out);   // step P1: predation, the genes, the clusters
   if (M.fidelity) flatten(M.fidelity.census || (M.fidelity.copy ? { copy: M.fidelity.copy } : null), 'fid', out);   // step G1: error correction
+  if (M.dup) flatten(M.dup.census ? { ...M.dup.census, families: { ...M.dup.census.families, top: undefined }, pumpFamilies: { ...M.dup.census.pumpFamilies, top: undefined } }
+    : (M.dup.rates ? { rates: M.dup.rates } : null), 'dup', out);   // step G2: gene duplication (the families' top lists left out)
   if (M.pigments && M.pigments.census) flatten(M.pigments.census, 'lightmatter', out);   // step N1: light needs matter
   if (M.glue && M.glue.census) flatten(M.glue.census, 'glue', out);       // step G0: the glue gene, junctions, tears
   if (M.stir && M.stir.census) flatten(M.stir.census, 'stir', out);       // step G0: the stirred water

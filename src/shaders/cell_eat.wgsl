@@ -241,6 +241,8 @@ struct EatP {
   p1: array<vec4f, 2>,     // [0] x spare; y the share of the host's bilayer that wraps the meal (x the prey's perimeter over the host's);
                            //     z the share of the meal's battery that goes to the host's (the rest heat); w the digestion's time (s)
                            // [1] spare
+  // ---- step G2, gene duplication (src/dup.js) ----
+  g2: vec4f,               // x DUP_* bits (u32: the copies act); y z w spare
 };
 // ---- step C12g, MEMBRANES MODULATE ION FLOW (src/ions.js). The lipid BILAYER blocks free ions (charged atoms: g t G T and the excited
 // g* t*), derived from its make-up: per side the intact share (its integrity: soap + the oil between its tails over what the thickness
@@ -662,7 +664,10 @@ fn gof(i: u32, o: u32) -> f32 {
 // the membrane's genes as expressed: the thickness and the stiffness gene x their outputs
 fn bio_memb(i: u32) -> vec4f { let m = bio[i].memb; return vec4f(m.x, m.y * gof(i, GRN_O_THICK), m.z * gof(i, GRN_O_STIFF), m.w); }
 // ... the pump slots' rates, the marker (its display), the kin channels' opening, the ion channels' level (a log factor)
-fn bio_pump(i: u32) -> vec4f { let p = bio[i].pump; return vec4f(p.xy, p.zw * gof(i, GRN_O_PUMP)); }
+fn bio_pump(i: u32) -> vec4f { let p = bio[i].pump; return vec4f(p.xy, p.zw * gof(i, GRN_O_PUMP) * dup_pump_live(bio[i].dg, dup_act())); }   // (step G2: a pump
+// copy has no effect while the copies do not act)
+// step G2: the copies act (EatP.g2.x DUP_ACT: duplication on, not its neutral control)
+fn dup_act() -> bool { return (bitcast<u32>(EP.g2.x) & DUP_ACT) != 0u; }
 fn bio_mark(i: u32) -> vec4f { let m = bio[i].mark; return vec4f(m.xyz, m.w * gof(i, GRN_O_DISP)); }
 fn bio_kin_open(i: u32) -> f32 { return clamp(bio[i].kin.x * gof(i, GRN_O_KIN), 0.0, 1.0); }
 fn bio_chan(i: u32) -> f32 { return bio[i].gate2.w + log(gof(i, GRN_O_CHAN)); }
@@ -2596,18 +2601,27 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
 
     // ---- step C6: the engines from the genome ----
     var b = bio[i];
+    // step G2: the engine SLOTS, the genome's three and its two duplicate slots (Bio.dx: silent at rate 0; no effect while the copies do not
+    // act: off and the neutral control). sc the codes, sr the rates as expressed below; everything from here to the upkeep reads these
+    let dupOn = dup_act();
+    var sc = array<f32, 5>(b.eng.x, b.eng.y, b.eng.z, b.dx.x, b.dx.y);
+    var sr = array<f32, 5>(b.rate.x, b.rate.y, b.rate.z, select(0.0, b.dx.z, dupOn), select(0.0, b.dx.w, dupOn));
     // step C13, the engine gate: the engine slots' rates x (1 + g s), s the field A the cell's sides felt (their mean)
-    if ((fg_bits() & FG_ENGINE) != 0u) { b.rate = vec4f(b.rate.xyz * gate_factor(b.gate.z, cell_felt_mean(c)), b.rate.w); }
+    if ((fg_bits() & FG_ENGINE) != 0u) {
+      let gfe = gate_factor(b.gate.z, cell_felt_mean(c));
+      for (var k = 0u; k < 5u; k++) { sr[k] *= gfe; }
+    }
     // step T1b, the gene network: each slot's rate as EXPRESSED (its output x the gene), a harvest slot's also x the pigment output; the
     // pigment it builds and wants, the photons it catches and the upkeep below all follow the expressed rate (an engine expressed near 0
-    // costs nothing)
+    // costs nothing). (Step G2: a duplicate slot through the output of the slot it was copied from, its family's FAM_REG bits)
     if (grn_on()) {
-      var ef = vec3f(gof(i, GRN_O_ENG0), gof(i, GRN_O_ENG0 + 1u), gof(i, GRN_O_ENG0 + 2u));
+      var ef = array<f32, 5>(gof(i, GRN_O_ENG0), gof(i, GRN_O_ENG0 + 1u), gof(i, GRN_O_ENG0 + 2u), 1.0, 1.0);
+      if (dupOn) { ef[3] = gof(i, GRN_O_ENG0 + fam_reg(b.df.w)); ef[4] = gof(i, GRN_O_ENG0 + fam_reg(b.dg.x)); }
       let pf = gof(i, GRN_O_PIG);
-      for (var k = 0u; k < 3u; k++) {
-        if (EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) > 0u) { ef[k] *= pf; }
+      for (var k = 0u; k < 5u; k++) {
+        if (EP.eng[eng_index(sc[k])].kind == 0u && eng_band(sc[k]) > 0u) { ef[k] *= pf; }
+        sr[k] *= ef[k];
       }
-      b.rate = vec4f(b.rate.xyz * ef, b.rate.w);
     }
     var fpg = 1.0;                                // step N1: the share of the wanted pigment the cell holds (1: light needs no matter)
     var pg = atomicLoad(&stock[o + W_PIG]);       // ... the pigment it holds (counts)
@@ -2618,8 +2632,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       let n1f = n1_flags();
       if ((n1f & NLF_MATTER) != 0u) {
         var hRate = 0.0;
-        for (var k = 0u; k < 3u; k++) {
-          if (b.rate[k] > 0.0 && EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) > 0u) { hRate += b.rate[k]; }
+        for (var k = 0u; k < 5u; k++) {
+          if (sr[k] > 0.0 && EP.eng[eng_index(sc[k])].kind == 0u && eng_band(sc[k]) > 0u) { hRate += sr[k]; }
         }
         let pw = EP.nl[0].y * areaR2 * hRate;
         let nw = min(i32(floor(f32(pg) * EP.nl[1].x + u01(pcg(rs + 0x2a4c3e1fu)))), pg);
@@ -2642,23 +2656,23 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       // pigments: each harvest slot's pigment catches its band of the light falling on the cell, in whole photons (one
       // photon = one event's worth); its optical depth is pigK x the slot's rate, and it shares the band with what else
       // catches it there (the medium, the cell's body) by depth, as the dish's absorption does
-      var nph = vec3i(0);
-      var nsat = vec3i(0);                        // step N1: the photons the slot can use (saturation)
+      var nph = array<i32, 5>(0, 0, 0, 0, 0);
+      var nsat = array<i32, 5>(0, 0, 0, 0, 0);    // step N1: the photons the slot can use (saturation)
       if ((EP.flags & EF_PIG) != 0u && LP.mode != LIGHT_OFF) {
         let s = light_factor(LP, c.pos) * caustic_at(c.pos);   // (step N1: x the caustic light)
         var tb = vec4f(0.0);
-        for (var k = 0u; k < 3u; k++) {
-          if (b.rate[k] > 0.0 && EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) > 0u) { tb[eng_band(b.eng[k])] += EP.pigK * b.rate[k] * fpg; }
+        for (var k = 0u; k < 5u; k++) {
+          if (sr[k] > 0.0 && EP.eng[eng_index(sc[k])].kind == 0u && eng_band(sc[k]) > 0u) { tb[eng_band(sc[k])] += EP.pigK * sr[k] * fpg; }
         }
         if (s > 0.0 && any(tb > vec4f(0.0))) {
           let apx = areaPx / (HP.px * HP.px);                  // the cell's area in heat pixels
           let tot = tb + LP.tauMed + LP.tauCell;
           let caught = LP.power * s * apx * (1.0 - exp(-tot)) / max(tot, vec4f(1e-9));   // x a depth = what it catches
-          for (var k = 0u; k < 3u; k++) {
-            let band = eng_band(b.eng[k]);
-            if (b.rate[k] <= 0.0 || EP.eng[eng_index(b.eng[k])].kind != 0u || band == 0u) { continue; }
+          for (var k = 0u; k < 5u; k++) {
+            let band = eng_band(sc[k]);
+            if (sr[k] <= 0.0 || EP.eng[eng_index(sc[k])].kind != 0u || band == 0u) { continue; }
             let ph16 = EP.photon16[band];
-            let n = i32(floor(caught[band] * EP.pigK * b.rate[k] * fpg / f32(ph16) + u01(pcg(rs + k * 0x2f6b1e3du + 0x13579bdfu))));
+            let n = i32(floor(caught[band] * EP.pigK * sr[k] * fpg / f32(ph16) + u01(pcg(rs + k * 0x2f6b1e3du + 0x13579bdfu))));
             nph[k] = n;
             atomicAdd(&wev2[E2_PIG + band], n * ph16);
             // ---- step N1 block: photosynthesis SATURATES (the light s, a share of the full noon light: Isat tanh(s / Isat) / s of the
@@ -2695,10 +2709,10 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       // step C7b, trace as cofactor: every engine runs at cof of its rate (a pigment's engine uses only that share of the
       // photons it caught; the rest are photons with nothing to work on: heat)
       let cof = cofactor(f32(max(m[CP.trace], 0)) * concIn);
-      for (var k = 0u; k < 3u; k++) {
-        let rk = b.rate[k] * cof;
+      for (var k = 0u; k < 5u; k++) {
+        let rk = sr[k] * cof;
         if (rk <= 0.0) { continue; }
-        let E = EP.eng[eng_index(b.eng[k])];
+        let E = EP.eng[eng_index(sc[k])];
         let sp16 = max(i32(ceil(E.spark * sparkScale * 16.0)), 1);
         // what it works on: one reactant, two different ones (the scarcer), or a pair of the same (half of it)
         // (step C12c: a light giver or taker is taken from the pool of ground and excited ones)
@@ -2713,7 +2727,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           // harvester runs its battery down unless the cell also burns or breathes); the rest of each photon, and photons
           // with nothing to work on, heat. Without one (band 0, a STORER): rate x what it works on per s, the battery
           // pays the whole difference and the spark (battery energy banked in the stock as fuel)
-          let band = eng_band(b.eng[k]);
+          let band = eng_band(sc[k]);
           var np = nph[k];
           var ph16 = 0;
           if (band == 0u) {
@@ -2926,7 +2940,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     // a gene), paid from the battery as heat (what an empty battery cannot pay is not paid)
     if ((EP.flags & EF_UPKEEP) != 0u) {
       var cost = 0.0;
-      if ((EP.flags & EF_ENG) != 0u) { cost += EP.upEng * (max(b.rate.x, 0.0) + max(b.rate.y, 0.0) + max(b.rate.z, 0.0)); }
+      if ((EP.flags & EF_ENG) != 0u) { cost += EP.upEng * (max(sr[0], 0.0) + max(sr[1], 0.0) + max(sr[2], 0.0) + max(sr[3], 0.0) + max(sr[4], 0.0)); }   // (step G2: + the copies)
       if ((EP.flags & EF_TOLG) != 0u) { cost += EP.upTol * b.eng.w / max(EP.tolRef, 1e-3); }
       // step C7: the pumps' upkeep (per unit of rate, as the engines')
       var pcu = 0.0;
@@ -3085,8 +3099,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         if (lf > 0.0) {
           var th = 0.0;
           if ((EP.flags & EF_ENG) != 0u && (EP.flags & EF_PIG) != 0u) {
-            for (var k = 0u; k < 3u; k++) {
-              if (b.rate[k] > 0.0 && EP.eng[eng_index(b.eng[k])].kind == 0u && eng_band(b.eng[k]) == 3u) { th += EP.pigK * b.rate[k] * fpg; }
+            for (var k = 0u; k < 5u; k++) {   // (step G2: + the copies)
+              if (sr[k] > 0.0 && EP.eng[eng_index(sc[k])].kind == 0u && eng_band(sc[k]) == 3u) { th += EP.pigK * sr[k] * fpg; }
             }
           }
           let tot = LP.tauMed.w + LP.tauCell.w + th;

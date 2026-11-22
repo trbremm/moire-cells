@@ -52,6 +52,7 @@ import { Predators, STATS_P1, P1_WORDS, P1_CLEAR } from './predators.js';
 import { Glue, STATS_G0, G0_WORDS, G0_CLEAR } from './glue.js';
 import { Spindle, STATS_S1, S1_WORDS } from './spindle.js';
 import { Fidelity } from './fidelity.js';
+import { Dup } from './dup.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 import { dish } from './dish.js';      // the dish's own size and R
 import { cultureLayout } from './culture.js';   // app: how a new culture is spread
@@ -90,7 +91,7 @@ const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder 
 const STATS_EVENTS = 64;
 const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_AW in cell_common.wgsl)
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
-const FIELDS_BYTES = 576;      // struct Fields in cell_common.wgsl (step G0b: + ob0, 560 until then; step G0: + g0a..g0c; step P1: + p1..p1d; step T1a: + t1; step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
+const FIELDS_BYTES = 592;      // struct Fields in cell_common.wgsl (step G2: + g2, 576 until then; step G0b: + ob0, 560 until then; step G0: + g0a..g0c; step P1: + p1..p1d; step T1a: + t1; step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
                                // step C9: + dv0..dv2; step C10: + wl0, wl1)
 const FIELD_FORMAT = 'rgba16float';
 const DRAW_BYTES = 1424;       // struct Draw in cell_draw.wgsl (step F0: + job[7], 1312 until then; step P1: + p1, p1Ink; step T1b: + grn, grnInk, grnInkH, 1232 until then; step T1a: + kin, 1216 until then; step H1: + harm, harm2, harm3, harm4, hInk[5] after cam, 1072 until then; app: + cam, 1056 until then; step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
@@ -360,6 +361,7 @@ export class Cells {
     this.grn = new Grn(this);             // step T1b: the gene regulatory network, the reporter view (src/grn.js)
     this.pred = new Predators(this);      // step P1: predators, engulfing and kin sparing (src/predators.js)
     this.fidelity = new Fidelity(this);   // step G1: error correction, the fidelity gene (src/fidelity.js)
+    this.dup = new Dup(this);             // step G2: gene duplication for engines and pumps (src/dup.js)
   }
 
   static async create(device, format, medium, count, seed, cap = 0) {
@@ -739,6 +741,7 @@ export class Cells {
     this.glue.writeFields(u, f, 128);          // step G0: strong glue, junctions that break (Fields.g0a)
     if (this.stir) this.stir.writeFields(u, f, 132); else { u.fill(0, 132, 140); }   // step G0: the cells stir the water (Fields.g0b, g0c)
     if (this.obstacles) this.obstacles.writeFields(u, f, 140); else { u.fill(0, 140, 144); }   // step G0b: obstacles (Fields.ob0)
+    this.dup.writeFields(u, f, 144);           // step G2: gene duplication (Fields.g2)
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -782,6 +785,7 @@ export class Cells {
     this.grn.maybeCensus(frame.time);
     this.pred.maybeCensus(frame.time);   // step P1: the clusters' census (a read-back every few s)
     this.fidelity.maybeCensus(frame.time);   // step G1: the fidelity census (a read-back every few s)
+    this.dup.maybeCensus(frame.time);        // step G2: the engines' census (a read-back every few s)
     if (this.gridSize() !== this.grid.cs) this.sizeGrid();   // params.cut or range changed
     // after a reset, the warm-up ticks run first (all in this frame, at the current time)
     const warm = Math.min(this.warm, SLOTS - frame.ticks);
@@ -1390,7 +1394,8 @@ export class Cells {
     this.drawU32[51] = kinds(0); this.drawU32[35] = kinds(16);   // the engines' kinds, 2 bits each
     a[55] = Math.max(1e-3, L.partRate); a[59] = L.coreParts; a[63] = neon ? L.nStrategyFill : L.strategyFill;
     if (a[39] > 0) a[8] *= L.partDots;
-    // step C6n: the neon look and the hum (words 64..83 spare: the fates' inks until step F0)
+    // step C6n: the neon look and the hum (words 64..83 spare: the fates' inks until step F0; step G2: 64, 65 the copies' parts)
+    this.dup.writeDraw(a, 64);
     a[84] = neon ? 1 : 0; a[85] = L.tube; a[86] = L.white; a[87] = L.innerReach;
     a[88] = L.innerGlow; a[89] = L.coreRim; a[90] = L.partWhite; a[91] = L.coreDim;
     a[92] = hum ? L.humDepth : 0; a[93] = L.humRate; a[94] = (frame.now || 0) % 3600; a[95] = hum ? 1 : 0;

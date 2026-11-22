@@ -131,6 +131,10 @@
 //               control (the gene drifts, no effect, no cost); ?fidcost=x proofreading's cost (energy units a birth at e^F - 1 = 1, 0.1),
 //               ?fidbeyond=x the share of hard light's extra mutation proofreading cannot catch (0.5), ?fidcensus=s the census's interval
 //               (rules panel, Error correction)
+//   ?dup=0        step G2: no gene duplication (the two silent engine slots stay silent, no pump copies: exactly as before G2); ?dupnull=1
+//               its NEUTRAL control (copies are made, drift and are lost as when on, but have no effect and cost nothing); ?duprate=x the
+//               chance per birth of a duplication (0.02), ?dupdel=x of a copy's loss (0.02), both x the copying scale; ?dupcensus=s the
+//               census's interval (rules panel, Gene duplication)
 //   ?grn=0        step T1b: the gene network frozen, without effect (as before T1b); ?grnnull=1 its NEUTRAL control (it runs and mutates,
 //               its outputs have no effect); ?grnsignal=0 no contact signal; ?grnkin=0 the signal not weighted by kinship; ?grnmut=0 the
 //               network copied exactly at births; ?grntau=x the expression's time constant (s); ?reporter=i the regulator the reporter
@@ -583,6 +587,16 @@ async function boot() {
         if (params.has(q) && Number.isFinite(v) && v >= 0) FP[k] = k === 'beyond' ? Math.min(1, v) : v;
       }
     }
+    {   // step G2: gene duplication for engines and pumps
+      const DP = cells.dup.params;
+      for (const [q, k] of [['dup', 'on'], ['dupnull', 'null']]) {
+        if (params.has(q)) DP[k] = flag(q);
+      }
+      for (const [q, k] of [['duprate', 'rate'], ['dupdel', 'del'], ['dupcensus', 'censusEvery']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) DP[k] = k === 'censusEvery' ? v : Math.min(1, v);
+      }
+    }
     {   // step C12f: vents in the dark
       const VP = matter.vents.params;
       if (params.has('hotvent')) VP.hot = flag('hotvent');
@@ -688,7 +702,7 @@ async function boot() {
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
-    kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, perfusion, glue: cells.glue, stir: water.stir, obstacles, spindle: cells.spindle };
+    kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, dup: cells.dup, perfusion, glue: cells.glue, stir: water.stir, obstacles, spindle: cells.spindle };
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.warfare = new Warfare(window.moire);     // step T1c: the chemical warfare census (lineage borders against interiors)
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
@@ -989,6 +1003,7 @@ ${cells.kin.panelLine(compact)}
 ${cells.grn.panelLine(compact)}
 ${cells.pred.panelLine(compact)}
 ${cells.fidelity.panelLine(compact)}
+${cells.dup.panelLine(compact)}
 ${cells.glue.panelLine(compact)}
 ${cells.spindle.panelLine(compact)}${ELECTRONS ? `
 ${matter.vents.panelLine(compact)}` : ''}
@@ -1072,6 +1087,7 @@ function drawOverlay() {
     ...cells.grn.overlayLines(),
     ...cells.pred.overlayLines(),
     ...cells.fidelity.overlayLines(),
+    ...cells.dup.overlayLines(),
     ...cells.eat.pigments.overlayLines(),
     ...water.overlayLines(),
     ...oases.overlayLines(),

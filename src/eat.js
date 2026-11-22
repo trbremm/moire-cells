@@ -57,13 +57,14 @@ import { KW } from './kin.js';
 export const SW = 64;               // stock words per cell (cell_eat.wgsl; 16 until step C6c's membranes, words 16..27; step C7:
                                     // 14 the pumped charge across the membrane, 15 the voltage's energy; 32 until step C12b's
                                     // lipid membrane, words 32..61)
-const EP_BYTES = 1920;              // struct EatP (step P1: + p1[2], 1888 until then; step T1a: + t1[2], 1856 until then; step M1: + m1[2], 1824 until then) (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat; step C8: + hl;
+const EP_BYTES = 1936;              // struct EatP (step G2: + g2, 1920 until then; step P1: + p1[2], 1888 until then; step T1a: + t1[2], 1856 until then; step M1: + m1[2], 1824 until then) (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat; step C8: + hl;
                                     // step C9: + dv; step C10: + wl0, wl1; step C12b: + lp[9]; step C12d: + smellW; step C12e: + ws[2], ws2;
                                     // step C12g: + io[2] (1792); step N1: + nl[2] (1824; N1 alone had nl at 440, merged after io))
 const EP_NL = 448;                  // ... its words nl (step N1)
 const EP_M1 = 456;                  // ... its words m1 (step M1)
 const EP_T1 = 464;                  // ... its words t1 (step T1a)
 const EP_P1 = 472;                  // ... its words p1 (step P1)
+const EP_G2 = 480;                  // ... its words g2 (step G2)
 const EP_WS = 428;                  // ... its words ws (step C12e)
 const EP_IO = 440;                  // ... its words io (step C12g)
 const EP_SMELL = 412;               // ... its words smellW (step C12d)
@@ -286,6 +287,7 @@ export class Eat {
     // step C9: a reset fills the first `start` slots (they get the starter charge); a division's cost (heat counts)
     u[EP_DV] = this.cells.start; u[EP_DV + 1] = this.cells.division.costCounts;
     this.cells.fidelity.writeEat(u, EP_DV + 2);   // step G1: proofreading's cost, the bits (EatP.dv.z, dv.w)
+    this.cells.dup.writeEat(u, EP_G2);            // step G2: the copies act (EatP.g2)
     this.cells.walls.writeEat(u, f, EP_WL, dt);   // step C10: the walls' pattern, maturity, linker cost and upkeep
     this.cells.guides.writeEat(u, EP_WL + 6);     // step C13: the gates' bits (EatP wl1.z)
     this.lipids.write(u, f, EP_LP);               // step C12b: the lipid membranes
@@ -428,6 +430,7 @@ export class Eat {
     for (let k = 0; k < 16; k++) dc += w[LG_DIV + k];
     this.cells.division.applyLedger(rec.time, dc / HEAT_SCALE);
     this.cells.fidelity.apply(rec, w);   // step G1: births, their mutation scale, proofreading's cost (the C9 block's words 1..6)
+    this.cells.dup.apply(rec, w);        // step G2: duplications, deletions (the C9 block's rows 8..12)
   }
 
   /**

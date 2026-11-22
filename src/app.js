@@ -31,7 +31,7 @@ import { camera, MAX_ZOOM } from './camera.js';
 import { moleculePanel, cellPanel, summary } from './zoo.js';
 import { SUBSTANCES, CH } from './matter.js';
 import { CELL_FLOATS, CELL_BYTES } from './cells.js';
-import { BIO_FLOATS, founderGenome } from './genome.js';
+import { BIO_FLOATS, founderGenome, nameFamilies } from './genome.js';
 import { stampFounderGlue } from './glue.js';
 import { SW } from './eat.js';
 import { KIND } from './field.js';
@@ -421,6 +421,7 @@ export function createApp(ctx) {
       for (let k = 0; k < BIO_FLOATS; k++) bio[k] = genome[k] ?? 0;
       for (let k = 20; k < 31; k++) bio[k] = 0;   // the accumulators and the step 6 state start empty (as genome.fill; step G1: 31 the fidelity gene)
       stampFounderGlue(bio);                      // step G0: a founder's own glue as its founder value (a living cell's copy keeps its own)
+      nameFamilies(bio);                          // step G2: its working slots' families (its founder id's)
       const rec = new ArrayBuffer(CELL_BYTES), f = new Float32Array(rec), u = new Uint32Array(rec);
       const stock = new Int32Array(SW);
       stock[BAT_WORD] = starter;

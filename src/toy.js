@@ -89,7 +89,7 @@ const TOOLSET = [
 const FOODS = [['light', 'minerals', 'a mineral spring (water-like minerals and linkers for membranes)'],
   ['heavy', 'vent', 'a vent (fuel-rich, with metals and trace)'], ['oil', 'oil', 'an oil spring (droplets; cells can take oil into their skins)']];
 const TOY_SPEEDS = [1, 4, 16, 0];   // 0 = MAX
-const TOY_CELLS = 1.8;              // x a terrain's own number of founder cells (for the reference dish's area)
+const TOY_COVER = 0.15;             // the founders cover this share of a world's open water (scattered)
 const TIPS = {
   touch: 'Touch: tap for a ripple, drag to stir the water',
   wall: 'Wall: drag to draw one (tap wall again: porous, only cells are stopped)',
@@ -337,7 +337,7 @@ export function createToy(ctx) {
   function newSeed() { return 1 + Math.floor(Math.random() * 9999); }
   function worldText() {
     const W = T.world;
-    if (W.type === 'terrain') return `${TERRAINS[W.name].label}, seed ${W.seed}: ${T.built ? `${T.built.shapes.length} shapes, ${T.built.springs.length} springs, ${T.built.homes.length} colonies` : ''}`;
+    if (W.type === 'terrain') return `${TERRAINS[W.name].label}, seed ${W.seed}: ${T.built ? `${T.built.shapes.length} shapes, ${T.built.springs.length} springs, open water ${(100 * T.built.open).toFixed(0)} %, ${ctx.cells.start} founders` : ''}`;
     if (W.type === 'preset') return `${PRESETS[W.name].label} (a preset), seed ${W.seed}`;
     return `the open dish, seed ${W.seed}`;
   }
@@ -359,7 +359,9 @@ export function createToy(ctx) {
     if (!P.has('oases')) ctx.oases.params.count = 0;
     if (!P.has('scarce')) ctx.oases.params.scarce = false;
     ctx.oases.start();
+    const oasisSprings = M.springs.filter((sp) => sp.kind === 'oasis');
     M.clearSprings();
+    for (const sp of oasisSprings) M.springs.push(sp);   // (oases asked for by the URL stay: ?oases=N)
     O.setShapes(w.shapes, w.round);
     T.baseShapes = O.shapes.length;
     // light, currents, perfusion
@@ -378,13 +380,16 @@ export function createToy(ctx) {
     }
     O.freeSprings(M.springs);
     if (PP.on) ctx.perfusion.start(W, H, R);
-    // the culture: a few colonies at the world's homes, each one founder's, a number of cells for the dish's area
-    const area = Math.max(0.35, Math.min(2, dish.supply || 1));
-    // (two colonies at each home, each its own founder, so the founders' crash leaves someone; every founder catches light and burns, as the
-    // Colonies preset's: a founder that cannot eat here would only die)
-    C.start = Math.max(20, Math.min(C.count, Math.round((Number(P.get('cells')) || TOY_CELLS * w.cells * area))));
+    // the culture
+    // the founders SCATTERED over the open water (a cell in an obstacle is drawn again), as many as cover TOY_COVER of it; every founder
+    // catches light and burns (as the Colonies preset's). Tried first: two colonies at each of the world's homes: packed colonies
+    // starved (a maze from 840 cells to 29 in 200 s), scattered founders found every spring (247 left, bright clusters round the food)
+    const cover = Number(P.get('toycover')) > 0 ? Number(P.get('toycover')) : TOY_COVER;   // (?toycover=x: the knob)
+    const nOpen = cover * w.open * W * H / (Math.PI * R * R);
+    C.start = Math.max(40, Math.min(C.count, Math.round(Number(P.get('cells')) || nOpen)));
     const centres = w.homes.flatMap(([x, y]) => [[x - 1.5 * R, y - 1.5 * R], [x + 1.5 * R, y + 1.5 * R]]);
-    C.layout = { spread: 'colonies', colonies: centres.length, diversity: 'mixed', centres: () => centres, ring: null };
+    C.layout = P.get('toyspread') === 'homes' ? { spread: 'colonies', colonies: centres.length, diversity: 'mixed', centres: () => centres, ring: null }
+      : { spread: 'scatter', colonies: 5, diversity: 'mixed', centres: null, ring: null };
     if (!P.has('squeeze')) C.params.squeeze = SPREAD_SQUEEZE;
     const G = C.genome.params, habit0 = G.habit;
     if (!P.has('habit')) G.habit = 'both';
@@ -551,7 +556,7 @@ export function createToy(ctx) {
     document.body.classList.remove('toy-sheet-open');
   }
 
-  /** A card's picture: the world's walls as the dish draws them (a dark fill, an ice-blue tube on the edge), springs and homes as dots. */
+  /** A card's picture: the world's walls as the dish draws them (a dark fill, an ice-blue tube on the edge), the springs as dots in their inks. */
   function thumb(cv, name, seed) {
     const v = ctx.view, W = v.cssW, H = v.cssH, R = ctx.cells.R;
     const w = makeWorld(name, seed, W, H, R);
@@ -588,10 +593,9 @@ export function createToy(ctx) {
       }
     }
     g.putImageData(img, 0, 0);
-    // springs (their inks) and homes (warm white)
+    // the springs (their inks)
     const dot = (x, y, r, c, glow) => { g.beginPath(); g.arc(x / sc, y / sc, r, 0, 2 * Math.PI); g.fillStyle = c; g.shadowColor = c; g.shadowBlur = glow; g.fill(); g.shadowBlur = 0; };
     for (const s of w.springs) { const c = springInk(s.kind); dot(s.x, s.y, 2 * dpr, `rgb(${c.map((q) => Math.round(Math.min(255, q * 1.15))).join(',')})`, 6 * dpr); }
-    for (const [x, y] of w.homes) dot(x, y, 2.2 * dpr, 'rgb(255,236,210)', 7 * dpr);
     if (w.perfusion) { g.fillStyle = 'rgba(140,217,255,0.55)'; g.fillRect(0, 0, 1.5 * dpr, ph); }
   }
 

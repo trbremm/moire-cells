@@ -150,7 +150,8 @@ function gridMazeWorld(S, style, pitchR, wallR, braid) {
   const { W, H, R } = S;
   const pitch = pitchR * R;
   const nx = clampI(W / pitch, 3, 40), ny = clampI(H / pitch, 3, 40), cw = W / nx, ch = H / ny;
-  const corner = S.pick([[0, 0], [nx - 1, 0], [0, ny - 1], [nx - 1, ny - 1]]);
+  // (the start in a corner the toy's buttons leave free: the left side of a wide dish, the top of a tall one)
+  const corner = S.pick(W >= H ? [[0, 0], [0, ny - 1]] : [[0, 0], [nx - 1, 0]]);
   const start = style === 'prim' ? [Math.floor(nx / 2), Math.floor(ny / 2)] : corner;
   const open = gridMaze(nx, ny, start, S.rnd, style);
   // braiding: a few extra openings make loops (a maze with more than one way round)
@@ -176,14 +177,14 @@ function gridMazeWorld(S, style, pitchR, wallR, braid) {
     const [, i, j] = ends.splice(Math.floor(S.rnd() * ends.length), 1)[0];
     S.spring(...at(i, j), k % 2 ? 'heavy' : 'light', k % 2 ? 3 : 6);
   }
-  return { cells: style === 'prim' ? 300 : 240 };
+  return {};
 }
 
 // ---------- the generators ----------
 export const TERRAINS = {
   maze: {
     label: 'Maze',
-    line: 'A winding labyrinth. The colony starts in one corner; the richest food drips in the far one.',
+    line: 'A winding labyrinth. Food drips at one corner, richest in the far one; life gathers there and creeps along the corridors.',
     make(S) { return gridMazeWorld(S, 'backtrack', S.r(15, 21), 1.6, S.r(0, 0.05)); },
   },
   thicket: {
@@ -256,7 +257,7 @@ export const TERRAINS = {
       S.spring(ch[far].x, ch[far].y, 'heavy', 8);
       S.spring(ch[far].x + 0.4 * ch[far].r, ch[far].y, 'light');
       for (let i = 1; i < ch.length; i++) if (i !== far && i !== second && S.rnd() < 0.4) S.spring(ch[i].x, ch[i].y, S.rnd() < 0.5 ? 'light' : 'heavy', 3);
-      return { cells: 260, light: { power: 0.8 } };
+      return { light: { power: 0.8 } };
     },
   },
   delta: {
@@ -298,12 +299,12 @@ export const TERRAINS = {
       for (let k = 0; k < 3; k++) S.circle(S.r(x1 + 5 * R, W - 5 * R), S.r(0.15, 0.85) * H, S.r(2, 4) * R);
       S.home(0.07 * W, y0 - 6 * R); S.home(0.07 * W, y0 + 6 * R);
       S.spring(0.05 * W, y0, 'light');
-      return { cells: 220, perfusion: { dir: 'right', speed: 0.4 }, water: { speed: 0, gyre: 0 } };
+      return { perfusion: { dir: 'right', speed: 0.4 }, water: { speed: 0, gyre: 0 } };
     },
   },
   forest: {
     label: 'Pillar forest',
-    line: 'Pillars, sparse at one side and thick as reeds at the other. Life starts in the clearing.',
+    line: 'Pillars, sparse at one side and thick as reeds at the other, with springs in the clearing and deep in the thicket.',
     make(S) {
       const { W, H, R } = S;
       const a = S.r(0, TAU), ux = Math.cos(a), uy = Math.sin(a);
@@ -335,7 +336,7 @@ export const TERRAINS = {
       S.spring(...deep, 'heavy', 8);
       S.spring(...S.free(deep[0] - uy * 8 * R, deep[1] + ux * 8 * R, 1.5 * R), 'light');
       S.spring(...S.free(W / 2, H / 2, 2 * R), 'light', 4);
-      return { cells: 260 };
+      return {};
     },
   },
   hive: {
@@ -387,12 +388,12 @@ export const TERRAINS = {
       const far = [...list].sort((a, b) => Math.hypot(b.x - start.x, b.y - start.y) - Math.hypot(a.x - start.x, a.y - start.y));
       S.spring(far[0].x, far[0].y, 'heavy', 8);
       for (let k = 1; k < Math.min(4, far.length); k++) { const h = far[Math.floor(S.rnd() * Math.min(far.length, 12))]; S.spring(h.x, h.y, k === 2 ? 'heavy' : 'light', 4); }
-      return { cells: 260 };
+      return {};
     },
   },
   rings: {
     label: 'Labyrinth',
-    line: 'A round labyrinth of rings and gates. The food is in the middle; the cells start outside.',
+    line: 'A round labyrinth of rings and gates. The richest food is in the middle; the way in goes all round each ring.',
     make(S) {
       const { W, H, R } = S;
       S.round = true;
@@ -422,7 +423,7 @@ export const TERRAINS = {
       const ro = (rings[K - 1].r + rD) / 2;
       for (let k = 0; k < 3; k++) { const a = rings[K - 1].gate + Math.PI + (k - 1) * 0.6; S.home(cx + Math.cos(a) * ro, cy + Math.sin(a) * ro); }
       { const a = rings[K - 1].gate + Math.PI; S.spring(cx + Math.cos(a) * ro, cy + Math.sin(a) * ro, 'light'); }
-      return { cells: 220 };
+      return {};
     },
   },
   spiral: {
@@ -453,7 +454,7 @@ export const TERRAINS = {
       S.home(cx + Math.cos(ae) * re, cy + Math.sin(ae) * re);
       S.home(cx + Math.cos(ae + dir * 0.5) * re, cy + Math.sin(ae + dir * 0.5) * re);
       S.spring(cx + Math.cos(ae + dir * 0.25) * re, cy + Math.sin(ae + dir * 0.25) * re, 'light');
-      return { cells: 200 };
+      return {};
     },
   },
   islands: {
@@ -482,7 +483,7 @@ export const TERRAINS = {
         S.spring(...at, k === 2 ? 'heavy' : 'light', k === 2 ? 6 : null);
         if (k < 3) S.home(at[0] + Math.cos(a) * 5 * R, at[1] + Math.sin(a) * 5 * R);
       });
-      return { cells: 260, water: { speed: 0.55, gyre: 0.6 } };
+      return { water: { speed: 0.55, gyre: 0.6 } };
     },
   },
   sieve: {
@@ -508,7 +509,7 @@ export const TERRAINS = {
         S.spring(...P(u, 0.5 * M), kind, rate);
         if (kind !== 'light') S.spring(...P(u + 0.12 * L / k, 0.2 * M), 'light', 3);
       }
-      return { cells: 300 };
+      return {};
     },
   },
 };
@@ -516,7 +517,7 @@ export const TERRAIN_NAMES = Object.keys(TERRAINS);
 
 /**
  * The world for terrain `name` and `seed` on a dish of W x H px with cells of radius R:
- *   { name, seed, label, line, shapes, round, springs: [{ x, y, kind, rate, life }], homes: [[x, y]], cells, light: { power },
+ *   { name, seed, label, line, shapes, round, springs: [{ x, y, kind, rate, life }], homes: [[x, y]], open (share), light: { power },
  *     water: { speed, gyre } | null, perfusion: { dir, speed } | null }
  * Homes and springs are moved into open water if a shape covers them.
  */
@@ -539,11 +540,31 @@ export function makeWorld(name, seed, W, H, R) {
     if (o.perfusion) o.perfusion = { ...o.perfusion, dir: { right: 'down', left: 'up', down: 'right', up: 'left' }[o.perfusion.dir || 'right'] };
   }
   const homes = S.homes.map(([x, y]) => S.free(x, y, 3 * R));
-  const springs = S.springs.map((s) => { const [x, y] = S.free(s.x, s.y, 1.5 * R); return { ...s, x, y }; });
+  // every home has food to start on: a lasting mineral spring and a slow vent within reach (as the open dish's pair beside its colony)
+  for (const [x, y] of homes.slice(0, 2)) {
+    const near = (kind) => S.springs.some((s) => s.kind === kind && Math.hypot(s.x - x, s.y - y) < 16 * R);
+    if (!near('light')) S.spring(x + 3 * R, y, 'light');
+    if (!near('heavy')) S.spring(x - 3 * R, y, 'heavy', 3);
+  }
+  // rates: a terrain's springs drip richer than a tapped one (6 atoms per s): the colonies' food must reach along corridors (a maze of
+  // springs at 6 starved to a few dozen cells in 3 minutes)
+  const RATE = { light: 16, heavy: 5, emulsion: 8, oil: 8, soap: 8 }, FLOOR = { light: 10, heavy: 4 };
+  const springs = S.springs.map((s) => {
+    const [x, y] = S.free(s.x, s.y, 1.5 * R);
+    return { ...s, x, y, rate: Math.max(FLOOR[s.kind] || 0, s.rate != null ? s.rate : RATE[s.kind] || 6) };
+  });
   return {
     name, seed: seed >>> 0, label: T.label, line: T.line, shapes: S.shapes, round: S.round, springs, homes,
-    cells: o.cells || 250, light: o.light || {}, water: o.water || null, perfusion: o.perfusion || null, sketch: S,
+    open: openShare(S), light: o.light || {}, water: o.water || null, perfusion: o.perfusion || null, sketch: S,
   };
+}
+
+/** The share of the dish a cell's centre may sit in (a coarse grid, 3 R): the toy scatters its founders by it. */
+function openShare(S) {
+  const d = 3 * S.R, gw = Math.max(1, Math.floor(S.W / d)), gh = Math.max(1, Math.floor(S.H / d));
+  let n = 0;
+  for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) if (S.sd((i + 0.5) * S.W / gw, (j + 0.5) * S.H / gh) > S.R) n++;
+  return n / (gw * gh);
 }
 
 /**

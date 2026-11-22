@@ -426,6 +426,10 @@ def main():
                     "so --dpr 2 with --clip x,y,w,h,2 gives a sharp zoom)")
     ap.add_argument("--wait", type=int, default=2500, help="ms to let the page run after it is ready")
     ap.add_argument("--ready-timeout", type=int, default=30000, help="ms to wait for the page to start")
+    ap.add_argument("--bare", action="store_true", help="open the page with NO query at all, as a friend's fresh load (since "
+                    "2026-11-23 that builds a generated world; --query and the added entropy=1 are ignored)")
+    ap.add_argument("--cpu-throttle", type=float, default=0, help="Chrome: slow the page's CPU down this many times (e.g. 4: "
+                    "a mid-range phone's main thread; DevTools' CPU throttling)")
     ap.add_argument("--port", type=int, default=0, help="use an already running server on this port")
     ap.add_argument("--key", action="append", default=[], help="press a key after start (repeatable)")
     ap.add_argument("--click", action="append", default=[], help="click at x,y (CSS px; repeatable)")
@@ -463,7 +467,9 @@ def main():
         port = server.server_address[1]
         threading.Thread(target=server.serve_forever, daemon=True).start()
     # (the toy front, 2026-11-22: the entropy panel starts closed; the shots keep it as before unless the query says entropy=)
-    if args.page == "index.html" and "entropy=" not in args.query:
+    if args.bare:
+        args.query = ""
+    elif args.page == "index.html" and "entropy=" not in args.query:
         args.query = f"{args.query}&entropy=1" if args.query else "entropy=1"
     url = f"http://localhost:{port}/{args.page}" + (f"?{args.query}" if args.query else "")
 
@@ -479,6 +485,8 @@ def main():
             driver = Firefox(exe, profile, w, h, args.extra, prefs, args.headed)
         else:
             driver = Chrome(exe, profile, w, h, args.extra, args.dpr, args.mobile)
+            if args.cpu_throttle > 1:
+                driver.rpc.call("Emulation.setCPUThrottlingRate", {"rate": args.cpu_throttle})
         driver.navigate(url)
 
         t0, state = time.time(), {}

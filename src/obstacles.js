@@ -47,8 +47,8 @@ export const OBS_BLOCKS = 10;
 const KINDS = ['solid', 'porous', 'erase'];
 export const OB_BITS = { ON: 1 };   // Fields.ob0.x (cell_common.wgsl)
 
-/** The signed distance (CSS px, < 0 inside) from (x, y) to one shape. */
-function shapeSd(s, x, y) {
+/** The signed distance (CSS px, < 0 inside) from (x, y) to one shape. (Exported for the toy's terrain generators, src/terrain.js.) */
+export function shapeSd(s, x, y) {
   if (s.type === 'circle') return Math.hypot(x - s.x, y - s.y) - s.r;
   if (s.type === 'rect') {
     const cx = (s.x0 + s.x1) / 2, cy = (s.y0 + s.y1) / 2, r = Math.max(0, s.r || 0);
@@ -204,6 +204,17 @@ export class Obstacles {
   }
   /** Cut a line (an opening, a crack) w wide. */
   erase(x1, y1, x2, y2, w) { return this.line(x1, y1, x2, y2, w, 'erase'); }
+  /**
+   * Replace every shape at once (the toy's terrain generators, src/terrain.js): one raster of the whole grid instead of one per shape;
+   * round: the round dish on or off (unchanged when not given).
+   */
+  setShapes(list, round) {
+    this.shapes = list.map((sh) => { const s = { ...sh, kind: KINDS.includes(sh.kind) ? sh.kind : 'solid' }; s.box = shapeBox(s); return s; });
+    if (round != null) this.round = !!round;
+    this.live = null; this.prev = null;
+    this.changed(null);
+    return this.shapes.length;
+  }
   /** Remove every shape (the round dish stays as it is). */
   clear() {
     this.shapes = [];

@@ -368,6 +368,8 @@ export function createToy(ctx) {
     const L = ctx.light.params;
     if (!P.has('light')) L.mode = 'full';
     if (!P.has('power')) L.power = base.power * (w.light.power || 1);
+    // a new world starts in the morning, as a fresh page does (so its founders never meet the night first)
+    if (!P.has('hour')) L.dayStart = (((0.35 - ctx.control.time() / Math.max(1, L.dayPeriod)) % 1) + 1) % 1;
     if (!P.has('curspeed')) WP.speed = w.water && w.water.speed != null ? w.water.speed : base.speed;
     if (!P.has('gyre')) WP.gyre = w.water && w.water.gyre != null ? w.water.gyre : base.gyre;
     const PP = ctx.perfusion.params;
@@ -457,7 +459,7 @@ export function createToy(ctx) {
     capLine.textContent = line;
     cap.classList.add('fresh');
     clearTimeout(capT);
-    capT = setTimeout(() => cap.classList.remove('fresh'), 9000);
+    capT = setTimeout(() => cap.classList.remove("fresh"), 12000);
   }
 
   // ---------- the worlds sheet ----------
@@ -567,7 +569,7 @@ export function createToy(ctx) {
     cv.style.height = `${chh}px`;
     const g = cv.getContext('2d');
     const img = g.createImageData(pw, ph), px = img.data;
-    const sc = W / pw, C = 2.5 * sc;   // dish px per picture px; the field kept to +- C
+    const sc = W / pw, C = (3 * dpr + 1) * sc;   // dish px per picture px; the field kept to +- C (beyond the halo's reach)
     const sh = w.shapes.map((s) => ({ s, b: boxOf(s) }));
     const rD = Math.min(W, H) / 2 - R;
     for (let j = 0; j < ph; j++) {

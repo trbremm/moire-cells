@@ -1,0 +1,45 @@
+{
+  "name": "c15e-speed-on",
+  "description": "speed: default scene seed 3, 60 s, every fix on",
+  "condition": {
+    "name": "c15e-speed-on",
+    "description": "speed: default scene seed 3, 60 s, every fix on",
+    "query": {
+      "seed": 3
+    },
+    "duration": 60,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 60,
+        "name": "end"
+      }
+    ],
+    "snapshots": [],
+    "evals": []
+  },
+  "url": "http://localhost:60452/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "a3cd7ae597d8f720ce7be397c4e7a4a24d981a57",
+  "dirty": true,
+  "started": "2026-11-22T19:54:52",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 231.84,
+  "speed_reached": 0.26,
+  "samples": 3,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-22T20:00:33",
+  "wall_s": 341.08
+}

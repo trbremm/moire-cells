@@ -1,0 +1,75 @@
+{
+  "name": "c15e-merge-off",
+  "description": "merge check: ?carbon=0, default scene seed 3, every cell asks 3:1 at 2 s, 90 s",
+  "condition": {
+    "name": "c15e-merge-off",
+    "description": "merge check: ?carbon=0, default scene seed 3, every cell asks 3:1 at 2 s, 90 s",
+    "query": {
+      "seed": 3,
+      "carbon": 0
+    },
+    "duration": 90,
+    "sample_every": 15,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 90,
+        "name": "end"
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 2,
+        "js": "await moire.genome.setAll({elongation: 1.1}); return 'every cell asks 3:1'"
+      },
+      {
+        "t": 60,
+        "js": "return JSON.stringify(moire.spindle.census)"
+      },
+      {
+        "t": 90,
+        "js": "return JSON.stringify(moire.spindle.census)"
+      }
+    ]
+  },
+  "url": "http://localhost:57540/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&carbon=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "a3cd7ae597d8f720ce7be397c4e7a4a24d981a57",
+  "dirty": true,
+  "started": "2026-11-22T18:24:51",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 90.0,
+  "run_wall_s": 475.02,
+  "speed_reached": 0.19,
+  "samples": 7,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 1.9999999999999993,
+      "js": "await moire.genome.setAll({elongation: 1.1}); return 'every cell asks 3:1'",
+      "result": "every cell asks 3:1"
+    },
+    {
+      "t": 59.999999999997875,
+      "js": "return JSON.stringify(moire.spindle.census)",
+      "result": "{\"time\":59.83333333333122,\"n\":1367,\"lnAspect\":0.8484089246525238,\"lnSd\":0.260601885365913,\"aspect\":2.335927257360385,\"long\":0.7139722019019751,\"pairs\":2161,\"nematic\":0.2068283202221194,\"gene\":1.1001821506949525,\"geneSd\":0.019450284466316466,\"geneAspect\":3.0047132847158995,\"asked\":1.1001821506949525,\"turning\":0.9229334308705195,\"turned\":1,\"noWrap\":0,\"perim\":1.231807607900512,\"length\":2.89002852962692}"
+    },
+    {
+      "t": 89.99999999999618,
+      "js": "return JSON.stringify(moire.spindle.census)",
+      "result": "{\"time\":89.86666666666285,\"n\":585,\"lnAspect\":0.7414290598290598,\"lnSd\":0.22799207253418327,\"aspect\":2.098932872934595,\"long\":0.5914529914529915,\"pairs\":296.5,\"nematic\":0.18825463743676224,\"gene\":1.0981606837606837,\"geneSd\":0.08147382669998746,\"geneAspect\":2.998645491152164,\"asked\":1.0981606837606837,\"turning\":0.37448717948717947,\"turned\":1,\"noWrap\":1,\"perim\":1.1874324786324786,\"length\":2.6800923076923078}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-22T18:34:53",
+  "wall_s": 601.79
+}

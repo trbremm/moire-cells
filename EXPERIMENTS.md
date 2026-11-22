@@ -2531,6 +2531,150 @@ larger than the step's cost. A measurement on a free GPU is still to do.
 - The wild colonies' death: find the cause (gene by gene: membrane thickness, walls, oil share against the carbon a cell can get).
 - Channels, pumps, the gene network's expression, cilia and flagella are not yet charged in carbon.
 
+# The carbon economy
+
+Step C15d (README "Step C15d: the carbon economy"): a FLOW LEDGER that shows where carbon and energy go each minute, then fixes derived from
+the chemistry already there, one at a time, each with its own switch: (a) founders that photosynthesise fix carbon `?cbphoto=0`, (b) mud
+hydrolyses by heat `?cbhydheat=0`, (c) the reducing shuttle `?cbshut=0`, (d) a little iron-like G at the mineral spring `?cbgspring=0`, (e1)
+fat from granules `?cbgran=0`, (e2) hunger for every part `?cbhunger=0`, (f) founders start with their pigment `?cbpigfound=0`, (g) wall
+recycling `?cbwallrec=0`. All are on by default; `?carbon=0` is unchanged.
+
+Words used below: a FUEL HAND is a carbon hand holding a giver g (c-g, energy still in it: "reduced" carbon, what fat and pigments are made
+of); a BURNT HAND holds a taker t (c-t, "oxidised"). MUD = dead carbon on the floor; a GRANULE = carbon stored in a cell. INTEGRITY = how
+whole the membranes are (0: all holes, 1: whole). LIEBIG = the law of the minimum (growth stops at the scarcest ingredient). The job colours
+(F0): lime light eater, hot pink breather, violet fermenter, amber builder, red predator, warm white undecided.
+
+Conditions: `experiments/conditions/c15d/` (`make.py` writes the batch files; `summary.py` prints the tables from the runs' probes, `--flow`
+the flow ledger; `watchtable.py` the watch table). The GPU was shared with another worker's runs the whole time: runs went at x0.3 to x2 of
+real time. Runs: `experiments/runs/c15d-*`. Pictures: `experiments/keep/c15d/`.
+
+## 1. The ledger on C15c as it stood (`c15d-base-default`, `c15d-base-colonies`; `base.json`)
+
+The default scene, seed 3, per minute (`summary.py c15d-base-default --flow`):
+
+| t | springs drip (fuel hands) | the open dish: fixes / burns / makes mud | cells take from the water / graze mud / give back to the mud | built: body / membrane / wall / pigment / enzymes | mud / cells / all carbon |
+|---|---|---|---|---|---|
+| 5 min | 68.7 (116) | 403 / 433 / 76 | 3.7 / 21.6 / 33.3 | 3.6 / 2.2 / 10.1 / 0.0 / 1.9 | 783 / 48 / 878 |
+| 10 min | 68.3 (115) | 360 / 334 / 57 | 4.7 / 20.2 / 30.6 | 3.6 / 2.6 / 5.4 / 0.0 / 2.8 | 1088 / 66 / 1220 |
+
+In words: the springs drip about 68 carbons a minute; the open dish turns 57-76 of them into MUD before any cell takes them (hard light fixes
+and heat burns 300-400 hands a minute, which nearly cancel); the cells take only 4-5 carbons a minute out of the water and live by grazing
+mud (20-22 a minute), giving back as much when they die: a closed loop. Mud is 89 % of all carbon, and mostly burnt (at 10 minutes 551 fuel
+hands against 1064 burnt hands). Not one cell built a pigment worth the name (0.1 carbons of pigment in the whole colony; `?carbon=0` holds
+about ten pigment units): a carbon pigment is reduced carbon, which a cell can only make with light, which needs a pigment. The light (nine
+tenths of a lit dish's income since N1) was unusable; batteries took in a quarter to a fifth of `?carbon=0`'s energy per cell.
+
+## 2. The fixes one at a time (default scene seed 3 and wild colonies seed 3, 10 minutes; `ab1.json` .. `ab5.json`, `diag*.json`)
+
+Cells alive at 2 / 5 / 10 minutes (`?carbon=0` at this seed: 145 / 412 / 827), membrane integrity and the parts' carbon at 10 minutes, the
+share of cells LIMITED BY carbon / G / trace at 10 minutes:
+
+| run | what is on | default 2 / 5 / 10 min | integrity | carbon in membrane / wall / pigment / enzymes | limited C / G / trace | colonies 2 / 5 / 10 min |
+|---|---|---|---|---|---|---|
+| `base` | nothing (C15c) | 849 / 158 / 156 | 0.27 | 9.6 / 0.9 / 0.1 / 11.7 | 88 / 26 / 0 % | 456 / 168 / 0 |
+| `ab1-photo` | (a) | 841 / 159 / 138 | 0.36 | 10.8 / 1.1 / 0.2 / 15.1 | 88 / 12 / 4 % | |
+| `ab1-hyd` | (b) | 845 / 167 / 130 | 0.31 | 11.0 / 1.1 / 0.1 / 12.6 | 82 / 2 / 3 % | |
+| `ab1-shut` | (c) | 840 / 155 / 152 | 0.27 | 9.1 / 0.7 / 0.1 / 10.8 | 97 / 12 / 2 % | |
+| `ab1-all` | (a) (b) (c) | 842 / 167 / 103 | 0.42 | 9.4 / 1.1 / 0.1 / 9.4 | 85 / 9 / 2 % | 470 / 178 / 1 |
+| `ab2-gran` | (e1) alone | 823 / 123 / 69 | 0.89 | 16.8 / 1.3 / 0.8 / 7.1 | 48 / 7 / 19 % | |
+| `ab2-all` | + (e1) (e2) | 827 / 103 / 112 | 0.81 | 28.8 / 2.9 / 0.7 / 10.2 | 65 / 12 / 10 % | 452 / 253 / 18 |
+| `ab3-pig-only` | (f) alone | 876 / 182 / 92 | 0.44 | 10.2 / 0.6 / 0.4 / 7.8 | 76 / 2 / 11 % | |
+| `ab3-nophoto` | all but (a) | 582 / 138 / 91 | 0.82 | 19.1 / 2.2 / 1.5 / 5.0 | 71 / 3 / 18 % | |
+| `ab3-all` | + (f) | 586 / 155 / 108 | 0.84 | 18.7 / 4.0 / 3.7 / 8.6 | 61 / 8 / 19 % | 597 / 375 / 37 |
+| `ab4-all` | + (d) | 601 / 150 / 134 | 0.84 | 20.5 / 3.5 / 3.0 / 12.4 | 59 / 13 / 23 % | 588 / 381 / 67 |
+| `ab5-all` | + (g): every fix | 563 / 154 / 140 | 0.85 | 26.2 / 2.3 / 2.6 / 11.7 | 55 / 23 / 12 % | 574 / 390 / 34 |
+| `diag3-noenz` | every fix, enzymes off | 96 / 155 / 232 | 0.62 | 22.0 / 2.2 / 7.2 / 0 | 85 / 0 / 26 % | |
+| `diag2-partsoff` | body, enzymes, carbon membranes, founders' pigment off | 208 / 558 / 781 | 0.63 | - | 0 / 0 / 0 % | |
+| `diag-lip0` | C15c with C15b's linker membranes | 859 / 181 / 168 | 0.85 | - / - / - / 16.0 | 19 / 21 / 0 % | |
+| `diag-nobite` | C15c without oxygen bites | 846 / 175 / 154 | 0.42 | 13.1 / 1.3 / 0.2 / 12.1 | 85 / 6 / 4 % | |
+| `diag-nobody` | C15c without the body rule | 838 / 153 / 120 | 0.38 | 12.3 / 0.3 / 0.1 / 6.0 | 96 / 2 / 1 % | |
+| `diag-noenz` | C15c without enzymes | 73 / 102 / 157 | 0.20 | 7.5 / 0.9 / 0.2 / 0 | 89 / 0 / 2 % | |
+
+In words:
+
+- (a), (b), (c) alone or together change nothing that shows: they act on carbon the cells do not have (no ladder molecules for the shuttle
+  to burn, no pigment for the fixers).
+- FAT FROM GRANULES (e1) with HUNGER (e2) makes the MEMBRANES WHOLE (0.27 -> 0.8-0.9, as whole as with `?carbon=0`), all from grazed mud.
+  Alone it costs cells: the fuel hands go to membranes, and the colony shrinks to 69.
+- FOUNDERS' PIGMENT (f) gives the LIGHT back (pigment x25, energy per cell x2.5) and the wild colonies live twice as long (375-390 cells at
+  5 minutes instead of 168-253). It also makes the founders' crash deeper (586 instead of 842 at 2 minutes; not explained).
+- Every fix on, the default scene at 10 minutes is no bigger (140). Switching every part's carbon off gives `?carbon=0`-like growth (781),
+  switching only the enzymes off gives 232 and climbing: the PARTS' price in reduced carbon holds the colony down, and with the membranes and
+  pigments now fed, the ENZYMES are the next limit (about half their want).
+- Without enzymes the founders crash far deeper (73-96 cells at 2 minutes): enzymes (renewed in place, so the engines run only as far as they
+  are paid) slow the founders' burn-out.
+
+## 3. Watching the scenes, every fix on (`watch.json`, `watch2.json`)
+
+Cells alive at 5 / 10 / 15 / 20 minutes (- = not run that long, or died out):
+
+| scene | seed | carbon economy (C15d) | ?carbon=0 | C15c |
+|---|---|---|---|---|
+| default | 3 | 153 / 124 / 362 / 573 | 411 / 831 / 753 / 1224 | 153 / 153 / 246 / 289 |
+| default | 7 | 180 / 154 / 321 / 435 | 432 / 796 / 553 / 1128 | - |
+| colonies (wild) | 3 | 346 / 38 / 3 / - | 1832 / - / - / - | 144 / 0 / - / - |
+| colonies (wild) | 7 | 147 / 7 / - / - | 1339 / 2722 / - / - | - |
+| Sunlit shallows | 3 | 790 / 869 / - / - | 3110 / 5933 / - / - | 924 / 955 / 815 / 1069 |
+| oxygen, spotlight | 3 | 104 / 120 / - / - | 94 / 400 / - / - | 157 / 122 / - / - |
+| oxygen, whole dish | 3 | 236 / 243 / - / - | 381 / 933 / - / - | 222 / 284 / - / - |
+
+At the last probe (share of living cells limited by carbon / G / trace / free g or t / battery; jobs undecided / light / breathe / ferment /
+gradient / build / predator):
+
+| scene | seed | t | alive | limited | integrity | jobs | carbon in cells | mud's share |
+|---|---|---|---|---|---|---|---|---|
+| default | 3 | 20 min | 573 | 71 / 12 / 3 / 0 / 4 % | 0.82 | 192/22/157/1/1/23/177 | 322 | 80 % |
+| default | 7 | 20 min | 435 | 76 / 23 / 3 / 0 / 4 % | 0.80 | 76/78/261/0/1/15/4 | 258 | 84 % |
+| colonies (wild) | 3 | 15 min | 3 | 67 / 33 / 0 / 0 / 0 % | 0.93 | 1/0/1/0/0/0/1 | 1 | 98 % |
+| colonies (wild) | 7 | 10 min | 7 | - | 0.95 | 0/3/0/0/0/0/4 | 1 | 99 % |
+| Sunlit shallows | 3 | 10 min | 869 | 67 / 45 / 9 / 0 / 1 % | 0.73 | 347/234/211/36/0/10/31 | 470 | 81 % |
+| oxygen, spotlight | 3 | 10 min | 120 | 70 / 14 / 20 / 0 / 1 % | 0.73 | 61/13/41/3/1/1/0 | 102 | 83 % |
+| oxygen, whole dish | 3 | 10 min | 243 | 69 / 23 / 44 / 0 / 2 % | 0.78 | 119/58/56/2/0/4/4 | 328 | 66 % |
+
+In words:
+
+- DEFAULT SCENE: the founders' crash (1587 -> 150 by 5 minutes), a flat stretch near 150 cells to 10 minutes, then REGROWTH from about
+  11 minutes to 573 (seed 3) and 435 (seed 7) at 20 minutes: 40-47 % of `?carbon=0`, twice C15c. At 10 minutes only 15-19 % of `?carbon=0`.
+  Late in the run the energy into batteries climbs (2400 a minute at 20 minutes against 360-520 at 5-10) and so do the enzymes (33 carbons
+  against 12). Seed 3 evolved PREDATORS (177 of 573, red), seed 7 BREATHERS (261 of 435, hot pink).
+- WILD COLONIES: hold about 600 cells for four minutes, then die (3 cells at 15 minutes, 7 at 10): G short in a third to two thirds of the
+  cells as the engines' income falls.
+- SUNLIT SHALLOWS: steady near 800-1150 cells, small mixed clusters of light eaters and breathers all over the dish; G limits 45 %.
+- OXYGEN DISHES: alive, steady, small.
+- In every scene about 70 % of the cells are short of carbon of the right kind (fuel hands); mud holds 66-84 % of all carbon (98-99 % in the
+  dying colonies).
+
+## 4. Pictures (`experiments/keep/c15d/`)
+
+- `default-s3-20min_neon.jpg` / `_harmonic.jpg`: the default scene at 20 minutes: one round colony in the spotlight, red predators and hot
+  pink breathers mixed, a field of flat amber mud flecks (the dead founders) on its left, the seep's yellow blob; harmonic: a green
+  honeycomb of closed rims on orange mud.
+- `default_zoom_memb_neon.jpg` / `_harmonic.jpg` (x4, where the bilayers hold the most carbon): SOLID neon rims (C15c's were dashed and
+  broken), green battery cores, amber granule dots; harmonic: closed green rims round dark blue insides, striped (stretched) cells, bright
+  orange granules over orange mud fibres: the best picture of the step.
+- `default_zoom_pig_neon.jpg` / `_harmonic.jpg` (x4, where the pigment is): thick doubled rims (walls outside the bilayer) in red, pink and
+  amber, a yellow seep blob below.
+- `shallows-s3-10min_neon.jpg`: small clusters all over the shallows, lime and hot pink, brown mud patches round the springs.
+- `colonies-s3-5min_neon.jpg`: the five wild colonies at 5 minutes, brown mud round each spring, cells thinning out between them.
+
+## 5. Checks
+
+- Books: every probe of every run above: carbon rounding 0, the dish's carbon energy 0, atoms 0, charge 0.
+- `?carbon=0` runs as before (the fixes live behind the carbon switch; the ledger grew by 1024 words, which changes nothing else).
+- Firefox (headed, `browsers.json`, `c15d-firefox`): the default scene 40 s, every fix on, no console error, carbon / atoms / charge rounding
+  0, the whole energy rounding 0.03-0.04 (its usual noise). Phone size (390 x 844 at device px 3, Chrome, `c15d-phone`): the page lays out
+  as before (the panel over the colony, legend, zoom buttons, scale bar), 20 s, roundings 0. A C15c snapshot (`c15d-reload-c15c`, the
+  default scene at 20 minutes) loads with the C15d fixes off (as it ran: shuttle, granule fat, hunger, wall recycling, heat hydrolysis all
+  false) and runs on 60 s with every rounding 0.
+- Speed: not measured (the GPU was shared the whole time; the step adds the shuttle and the granule cut in the builder, one heat-hydrolysis
+  term per carbon pixel, eight 64-bit counters).
+
+## 6. What next
+
+- Every part is paid in REDUCED carbon (fuel hands), whose only real supply is burnt mud plus what light fixes. Levers on file: an enzyme
+  scaffold that may be burnt carbon (its job comes from its G, not from fuel), G uptake for enzymes, more light fixing per pigment, mud as
+  better food, and the deeper founders' crash with the fixes on.
+
 # Strong glue and stirred water (step G0, 2026-11-17)
 
 Quick runs only (the user: results are not valid until more changes land). Conditions in `experiments/conditions/g0/`

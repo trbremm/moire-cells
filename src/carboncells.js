@@ -67,7 +67,7 @@ export const PART_RECIPES = {
   enzyme: { carbon: 4, hands: CB_ENZANY ? '4 burnt chain carbons (1 backbone bond, 2 burnt hands each: any carbon; step C15e)' : '4 chain carbons', element: 'G (the heavy giver: catalysis moves electrons)', k: 1, charged: CARBON },
 };
 const ATOM_SCALE = 4096;
-const CBF = { ON: 1, EXCH: 2, ENG: 4, GRAZE: 8, DIS: 16, FLIP: 32, RESET: 64, SMELL: 128, GROW: 256, LIP: 512, TRANS: 1024, RED: 2048, ENZ: 4096, OXB: 8192, SHUT: 16384, GRAN: 32768, HUNGER: 65536, WALLREC: 131072, ENZANY: 262144, GRANRED: 524288, GRANHYD: 1048576, GSPLIT: 2097152 };
+const CBF = { ON: 1, EXCH: 2, ENG: 4, GRAZE: 8, DIS: 16, FLIP: 32, RESET: 64, SMELL: 128, GROW: 256, LIP: 512, TRANS: 1024, RED: 2048, ENZ: 4096, OXB: 8192, SHUT: 16384, GRAN: 32768, HUNGER: 65536, WALLREC: 131072, ENZANY: 262144, GRANRED: 524288, GRANHYD: 1048576, GSPLIT: 2097152, BODYANY: 4194304 };
 // the 64-bit event counters (LG_CBC.EV, cell_eat.wgsl CBE_*)
 const EV = ['ox', 'cond', 'red', 'hyd', 'dis', 'graze', 'gain', 'heat', 'paid', 'phUsed', 'phIdle', 'satWant', 'satLost', 'rise', 'built', 'buildPaid'];
 const EV_ENERGY = /^(gain|heat|paid|rise|buildPaid)$/;
@@ -127,6 +127,8 @@ export class CarbonCells {
       hunger: true,      // HUNGER FOR EVERY PART: a cell whose parts were short of carbon grazes as a hungry one, not only for its body (?cbhunger=0)
       wallRecycle: true, // WALL RECYCLING: a jolted wall's cracked pieces stay in the cell as granules (as shed lipids), not mud (?cbwallrec=0)
       // ---- step C15e, CARBON LIFE VIABLE ----
+      bodyAny: true,     // THE BODY FROM ANY BUILT CARBON: the body takes granule carbons whatever their hands (they sit on backbones: built
+                         // material; C15b's rule, granules only while a quarter of their hands are fuel, kept burnt mud out) (?cbbodyany=0)
       gSplit: true,      // AN ENZYME'S G FROM ITS COMPOUNDS: the enzyme builder short of free G splits GT, then rust Gt, in its stock (the
                          // table's reverse reactions, the bond and spark from the battery) (?cbgsplit=0)
       granHyd: true,     // THE GRANULES DIGESTED: a builder short of hands opens spare granule backbones with a water from the stock (the table's
@@ -181,7 +183,8 @@ export class CarbonCells {
         (this.rule('reduce') ? CBF.RED : 0) | (this.rule('enzymes') ? CBF.ENZ : 0) | (this.rule('oxBite') ? CBF.OXB : 0) |
         (this.rule('shuttle') ? CBF.SHUT : 0) | (this.rule('granFat') ? CBF.GRAN : 0) | (this.rule('hunger') ? CBF.HUNGER : 0) |
         (this.rule('wallRecycle') ? CBF.WALLREC : 0) | (CB_ENZANY ? CBF.ENZANY : 0) | (CB_LIP && this.rule('granRed') ? CBF.GRANRED : 0) |
-        (CB_LIP && this.rule('granHyd') ? CBF.GRANHYD : 0) | (this.rule('gSplit') ? CBF.GSPLIT : 0);
+        (CB_LIP && this.rule('granHyd') ? CBF.GRANHYD : 0) | (this.rule('gSplit') ? CBF.GSPLIT : 0) |
+        (this.rule('bodyAny') ? CBF.BODYANY : 0);
       u[1] = tickBase >>> 0; u[2] = ok ? Math.max(1, M.nSub || 1) : 1; u[3] = ok ? Cb.cur & 1 : 0;
       if (ok) {
         const LW = LEDGER_WORDS;   // (the heat buffer's grid starts behind the ledger)

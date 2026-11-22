@@ -71,6 +71,7 @@ const CBF_ENZANY: u32 = 262144u; // AN ENZYME'S SCAFFOLD FROM ANY CARBON: a unit
 const CBF_GRANRED: u32 = 524288u; // THE GRANULES' BURNT HANDS REDUCED: a builder short of fuel hands reduces granule hands from the battery (cb_gran_red)
 const CBF_GRANHYD: u32 = 1048576u; // THE GRANULES DIGESTED: a builder short of hands opens granule backbones with a water (cb_gran_hyd)
 const CBF_GSPLIT: u32 = 2097152u; // AN ENZYME'S G FROM ITS COMPOUNDS: the builder splits GT, then rust Gt, in the stock for a free G (cb_g_split)
+const CBF_BODYANY: u32 = 4194304u; // THE BODY FROM ANY BUILT CARBON: the body takes granule carbons whatever their hands (cb_build)
 const CBF_WALLREC: u32 = 131072u; // WALL RECYCLING: a jolted wall's cracked pieces stay in the cell as granules (as shed lipids do), not mud    // OXYGEN DAMAGES MEMBRANES: free t oxidises the lipids' fuel hands (fat -> soap -> spoiled, into the mud)
 // the event counters (64-bit, LG_CBC_EV; src/carboncells.js EV)
 const CBE_OX: u32 = 0u;
@@ -213,7 +214,9 @@ fn cb_build(n: i32, S: ptr<function, array<i32, 5>>, gc: ptr<function, i32>, gg:
   }
   // the granules: about x carbons as the same share of each hand count, in whole carbons (hand units in fours)
   let C4 = 2 * *gc + *gg + *gt;
-  if (left > 0 && C4 >= 4 && 4 * *gg >= *gg + *gt) {
+  // (step C15e, CBF_BODYANY: a granule carbon already sits on backbones, it is built material, so the body takes it whatever its hands; the
+  // quarter rule kept burnt carbon out, but it is the CO2-like ladder molecule, with no backbone, that must be fixed first)
+  if (left > 0 && C4 >= 4 && (4 * *gg >= *gg + *gt || (CBP.cfg.x & CBF_BODYANY) != 0u)) {
     let f = min(f32(4 * left) / f32(C4), 1.0);
     var dc = min(i32(floor(f32(*gc) * f + r)), *gc);
     var dg = min(i32(floor(f32(*gg) * f + r)), *gg);

@@ -21,17 +21,19 @@ PROBE = ("const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells,
          "charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], "
          "freeG: moire.matter.dish[3]})")
 # READY: who could divide: alive cells with the battery at divAt (0.6), with the body full (>= 0.995 of its want), both; and grown (r >= 0.9 R)
-READY = ("const d = moire.gpu.device; const rb = async (buf, size) => { const b = d.createBuffer({size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); "
+READY = ("if (moire.eat.carbon.buf.size < moire.cells.count * 96) return JSON.stringify({ready: null}); const d = moire.gpu.device; const rb = async (buf, size) => { const b = d.createBuffer({size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); "
          "const e = d.createCommandEncoder(); e.copyBufferToBuffer(buf, 0, b, 0, size); d.queue.submit([e.finish()]); await b.mapAsync(GPUMapMode.READ); "
          "const a = b.getMappedRange().slice(0); b.unmap(); b.destroy(); return a; }; const C = moire.cells, n = C.count, CF = C.cellBuf.size / 4 / n; "
          "const cf = new Float32Array(await rb(C.cellBuf, n * CF * 4)), cu = new Uint32Array(cf.buffer); const CC = moire.eat.carbon; "
          "const cb = new Int32Array(await rb(CC.buf, n * 24 * 4)); const kB = CC.params.kBody, R = C.R; "
-         "let alive = 0, bat = 0, body = 0, both = 0, grown = 0, all3 = 0, batSum = 0; const hb = [0,0,0,0,0]; "
+         "let alive = 0, bat = 0, body = 0, both = 0, grown = 0, all3 = 0, batSum = 0, bsEmpty = 0, bsBurnt = 0; const hb = [0,0,0,0,0], bsGr = [0,0,0]; "
          "for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; alive++; const b = cf[i * CF + 16], r = cf[i * CF + 4]; "
          "const want = kB * Math.PI * (r / R) ** 2 * 4096, have = 0.25 * (2 * cb[i * 24 + 8] + cb[i * 24 + 9] + cb[i * 24 + 10]); "
          "const okB = b >= 0.6, okC = !CC.params.growth || have >= 0.995 * want, okR = r >= 0.9 * R; batSum += b; hb[Math.min(4, Math.floor(b * 5))]++; "
-         "if (okB) bat++; if (okC) body++; if (okB && okC) both++; if (okR) grown++; if (okB && okC && okR) all3++; } "
-         "return JSON.stringify({ready: {alive, bat, body, both, grown, all3, batMean: batSum / Math.max(alive, 1), batHist: hb}})")
+         "if (okB) bat++; if (okC) body++; if (okB && okC) both++; if (okR) grown++; if (okB && okC && okR) all3++; "
+         "if (okB && !okC) { const c = cb[i * 24 + 5], g = cb[i * 24 + 6], t = cb[i * 24 + 7]; bsGr[0] += c; bsGr[1] += g; bsGr[2] += t; if (2 * c + g + t < 4096 * want / 4096 * 0.5) bsEmpty++; if (4 * g < g + t) bsBurnt++; } } "
+         "return JSON.stringify({ready: {alive, bat, body, both, grown, all3, batMean: batSum / Math.max(alive, 1), batHist: hb, "
+         "batNoBody: {gran: bsGr.map((x) => Math.round(x / 4096 * 100) / 100), empty: bsEmpty, burnt: bsBurnt}}})")
 # DISH: every substance in the dish and in the cells (units), to see where G, t and the rest sit
 DISH = ("const M = moire.matter; return JSON.stringify({dishM: Array.from(M.dish || []).map((x) => Math.round(x * 10) / 10), "
         "cellsM: Array.from((moire.eat && moire.eat.ledger && (moire.eat.ledger.held || moire.eat.ledger.stock)) || []).map((x) => Math.round(x * 10) / 10)})")
@@ -101,3 +103,31 @@ dump({"batch": "c15e-ab4", "runs": [
     ab("ab4-gsplit", "fixes (h) (j) (l) + (m) G from GT and rust (every C15d fix on); default scene, seed 3, 10 min", {}),
     ab("ab4-gsplit-colonies", "fixes (h) (j) (l) + (m); colonies of wild founders, seed 3, 10 min", {}, scene="colonies"),
 ]}, "ab4.json")
+
+# ---------- watch: the scenes the step must make viable, every fix on (?carbon=0 references: step C15d's runs, the same code path) ----------
+SCENES = {
+    "default": ("default scene (spotlight, mineral spring, vent, a lasting fuel seep)", {}, False),
+    "colonies": ("colonies preset (five wild founders' colonies, the whole dish lit)", dict(COLONIES), False),
+    "shallows": ("Sunlit shallows preset", {"preset": "shallows"}, False),
+    "oxy-spot": ("oxygen conditions (lasting mineral spring, a vent dripping 2 s in 20, spotlight)", {}, True),
+    "oxy-full": ("oxygen conditions, the whole dish lit", {"light": "full"}, True),
+}
+
+
+def watch(key, seed, dur, off=False, extra=None, tag=""):
+    desc, q, oxy = SCENES[key]
+    name = f"c15e-w-{key}{'-off' if off else ''}{tag}_s{seed}"
+    shots = [{"t": 300}, {"t": 600}, {"t": dur, "name": "end"}, {"t": dur, "panel": True, "name": "panel"}]
+    return run(name, f"{desc}, {'?carbon=0' if off else 'carbon life viable (every C15d and C15e fix on)'}, seed {seed}, {dur // 60} min",
+               {"seed": seed, **({"carbon": 0} if off else {}), **q, **(extra or {})}, dur, tuple(range(60, dur + 1, 60)), shots, oxygen=oxy,
+               snap=not off, harmonic=not off)
+
+
+# ?carbon=0 unchanged: the first 2 minutes of the default scene, seed 7, against step C15d's c15d-w-default-off_s7
+dump({"batch": "c15e-offcheck", "runs": [watch("default", 7, 120, off=True, tag="-check")]}, "offcheck.json")
+
+# ---------- ab5: + fix (i) the body from any built carbon ----------
+dump({"batch": "c15e-ab5", "runs": [
+    ab("ab5-bodyany", "fixes (h) (j) (l) (m) + (i) body from any granule carbon (every C15d fix on); default scene, seed 3, 10 min", {}),
+    ab("ab5-bodyany-off", "fixes (h) (j) (l) (m), (i) OFF (?cbbodyany=0): the same build as ab5 without (i); default scene, seed 3, 10 min", {"cbbodyany": 0}),
+]}, "ab5.json")

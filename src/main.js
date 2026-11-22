@@ -117,8 +117,8 @@
 //               Step C15e, carbon life viable (src/carboncells.js, src/carbon.js): ?cbenzany=0 an enzyme's frame is 4 cellulose-like carbons
 //               (as C15d; fixed for the page, snapshots carry it), ?cbgranred=0 builders do not reduce the granules' burnt hands, ?cbgranhyd=0
 //               builders do not open (hydrolyse) the granules' spare backbones for their hands, ?cbgsplit=0 the enzyme builder takes
-//               only free G (does not split GT or rust Gt in its stock for it), ?cbbodyany=0 the body takes granules only while a
-//               quarter of their hands are fuel (C15b's rule)
+//               only free G (does not split GT or rust Gt in its stock for it), ?cbbodyany=1 the body takes granule carbons
+//               whatever their hands (off by default: C15b's rule, granules only while a quarter of their hands are fuel)
 //   ?saturation=0 step C12e: no saturation (reactions inside cells do not slow as their products pile up); ?osmosis=0 no osmosis (no
 //               swelling: the stretch genes still drift, the NEUTRAL control), ?stretch=0 stretch opens no channels, ?tear=0 overstretch
 //               does not burst, ?tolcost=0 the stretch tolerance is free; ?satscale=x, ?kosm=x, ?kstretch=x, ?wtol=x knobs;

@@ -127,8 +127,10 @@ export class CarbonCells {
       hunger: true,      // HUNGER FOR EVERY PART: a cell whose parts were short of carbon grazes as a hungry one, not only for its body (?cbhunger=0)
       wallRecycle: true, // WALL RECYCLING: a jolted wall's cracked pieces stay in the cell as granules (as shed lipids), not mud (?cbwallrec=0)
       // ---- step C15e, CARBON LIFE VIABLE ----
-      bodyAny: true,     // THE BODY FROM ANY BUILT CARBON: the body takes granule carbons whatever their hands (they sit on backbones: built
-                         // material; C15b's rule, granules only while a quarter of their hands are fuel, kept burnt mud out) (?cbbodyany=0)
+      bodyAny: false,    // THE BODY FROM ANY BUILT CARBON: the body takes granule carbons whatever their hands (they sit on backbones: built
+                         // material; C15b's rule, granules only while a quarter of their hands are fuel, kept burnt mud out) (?cbbodyany=1;
+                         // OFF by default: the A/B found no gain, 240 against 344 cells at 10 minutes; the battery-rich cells short of body had
+                         // EMPTY granules, not burnt ones)
       gSplit: true,      // AN ENZYME'S G FROM ITS COMPOUNDS: the enzyme builder short of free G splits GT, then rust Gt, in its stock (the
                          // table's reverse reactions, the bond and spark from the battery) (?cbgsplit=0)
       granHyd: true,     // THE GRANULES DIGESTED: a builder short of hands opens spare granule backbones with a water from the stock (the table's

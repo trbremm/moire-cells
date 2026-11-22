@@ -1,0 +1,94 @@
+{
+  "name": "g2m-dup02-s3",
+  "description": "merge: seed 3, duprate 0.2, carbon on (5 min): copies incl. carbon engines",
+  "condition": {
+    "name": "g2m-dup02-s3",
+    "description": "merge: seed 3, duprate 0.2, carbon on (5 min): copies incl. carbon engines",
+    "query": {
+      "seed": 3,
+      "duprate": 0.2
+    },
+    "duration": 300,
+    "sample_every": 10,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 300,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 1,
+        "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, heatIn: H.in})"
+      },
+      {
+        "t": 120,
+        "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, heatIn: H.in})"
+      },
+      {
+        "t": 150,
+        "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, fam: {n: c.families.n, branched: c.families.branched, top: c.families.top}, rates: c.rates})"
+      },
+      {
+        "t": 299,
+        "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, fam: {n: c.families.n, branched: c.families.branched, top: c.families.top}, rates: c.rates})"
+      },
+      {
+        "t": 300,
+        "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, heatIn: H.in})"
+      }
+    ]
+  },
+  "url": "http://localhost:55214/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3&duprate=0.2",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "cf5d3720fdad9e2ed29c0afeb132ad14193a094d",
+  "dirty": true,
+  "started": "2026-11-23T00:01:01",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 300.0,
+  "run_wall_s": 76.03,
+  "speed_reached": 3.95,
+  "samples": 31,
+  "shots": [
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.9999999999999999,
+      "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, heatIn: H.in})",
+      "result": "{\"t\":0.9999999999999999,\"alive\":1976,\"cRound\":0,\"atoms\":0,\"charge\":0,\"energy\":0.00244140625,\"heatIn\":78298.25648498535}"
+    },
+    {
+      "t": 119.99999999999726,
+      "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, heatIn: H.in})",
+      "result": "{\"t\":119.99999999999726,\"alive\":526,\"cRound\":0,\"atoms\":0,\"charge\":0,\"energy\":0.005462646484375,\"heatIn\":1606722.0803527832}"
+    },
+    {
+      "t": 149.99999999999926,
+      "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, fam: {n: c.families.n, branched: c.families.branched, top: c.families.top}, rates: c.rates})",
+      "result": "{\"t\":135.2999999999987,\"n\":185,\"working\":2.8162162162162163,\"acting\":2.8162162162162163,\"withCopy\":0.14594594594594595,\"engCopy\":0.14054054054054055,\"pumpCopy\":0.010810810810810811,\"copies\":{\"eng\":31,\"pump\":2,\"perCell\":0.1783783783783784},\"fate\":{\"dosage\":31,\"newfn\":1,\"alone\":1,\"dosageShare\":0.9393939393939394,\"newShare\":0.030303030303030304,\"aloneShare\":0.030303030303030304},\"fam\":{\"n\":25,\"branched\":0,\"top\":[{\"id\":129,\"cells\":40,\"slots\":40,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"g + [c-t] \u2192 [c-g] + t@2\",40]]},{\"id\":130,\"cells\":40,\"slots\":40,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"t + [c-g] \u2192 [c-t] + g\",40]]},{\"id\":131,\"cells\":40,\"slots\":41,\"copies\":1,\"cellsBranched\":0,\"jobs\":[[\"g + t \u2192 gt\",41]]},{\"id\":145,\"cells\":33,\"slots\":34,\"copies\":1,\"cellsBranched\":0,\"jobs\":[[\"gt \u2192 g + t@2\",34]]},{\"id\":146,\"cells\":33,\"slots\":43,\"copies\":10,\"cellsBranched\":0,\"jobs\":[[\"g + t \u2192 gt\",43]]},{\"id\":147,\"cells\":31,\"slots\":35,\"copies\":5,\"cellsBranched\":0,\"jobs\":[[\"g + [c-t] \u2192 [c-g] + t@2\",34],[\"g + [c-t] \u2192 [c-g] + t@1\",1]]}]},\"rates\":{\"time\":149.94999999999925,\"eng\":0.09991673605327978,\"pump\":0,\"del\":0,\"full\":0,\"fresh\":0,\"tot\":{\"eng\":29,\"pump\":1,\"del\":1,\"full\":0,\"fresh\":3}}}"
+    },
+    {
+      "t": 299.0000000000068,
+      "js": "const c = await moire.dup.now(); return JSON.stringify({t: c.time, n: c.n, working: c.working, acting: c.acting, withCopy: c.withCopy, engCopy: c.engCopy, pumpCopy: c.pumpCopy, copies: c.copies, fate: c.fate, fam: {n: c.families.n, branched: c.families.branched, top: c.families.top}, rates: c.rates})",
+      "result": "{\"t\":285.63333333334094,\"n\":138,\"working\":3.753623188405797,\"acting\":3.753623188405797,\"withCopy\":0.6231884057971014,\"engCopy\":0.6159420289855072,\"pumpCopy\":0.057971014492753624,\"copies\":{\"eng\":138,\"pump\":8,\"perCell\":1.0579710144927537},\"fate\":{\"dosage\":140,\"newfn\":4,\"alone\":2,\"dosageShare\":0.958904109589041,\"newShare\":0.0273972602739726,\"aloneShare\":0.0136986301369863},\"fam\":{\"n\":23,\"branched\":0,\"top\":[{\"id\":145,\"cells\":44,\"slots\":47,\"copies\":3,\"cellsBranched\":0,\"jobs\":[[\"gt \u2192 g + t@2\",47]]},{\"id\":146,\"cells\":44,\"slots\":98,\"copies\":54,\"cellsBranched\":1,\"jobs\":[[\"g + t \u2192 gt\",97],[\"G + t \u2192 Gt\",1]]},{\"id\":147,\"cells\":39,\"slots\":45,\"copies\":6,\"cellsBranched\":0,\"jobs\":[[\"g + [c-t] \u2192 [c-g] + t@2\",43],[\"LL \u2192 L + L@2\",2]]},{\"id\":17,\"cells\":24,\"slots\":46,\"copies\":22,\"cellsBranched\":0,\"jobs\":[[\"gt \u2192 g + t@2\",46]]},{\"id\":18,\"cells\":24,\"slots\":38,\"copies\":15,\"cellsBranched\":0,\"jobs\":[[\"g + t \u2192 gt\",38]]},{\"id\":19,\"cells\":24,\"slots\":25,\"copies\":1,\"cellsBranched\":0,\"jobs\":[[\"g + [c-t] \u2192 [c-g] + t@2\",25]]}]},\"rates\":{\"time\":299.0000000000068,\"eng\":0.19834710743803088,\"pump\":0.09917355371901544,\"del\":0.04958677685950772,\"full\":0.29752066115704634,\"fresh\":0,\"tot\":{\"eng\":75,\"pump\":8,\"del\":5,\"full\":20,\"fresh\":13}}}"
+    },
+    {
+      "t": 300.00000000000705,
+      "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, heatIn: H.in})",
+      "result": "{\"t\":300.00000000000705,\"alive\":138,\"cRound\":0,\"atoms\":0,\"charge\":0,\"energy\":-0.0118408203125,\"heatIn\":3276060.8591766357}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T00:03:25",
+  "wall_s": 144.94
+}

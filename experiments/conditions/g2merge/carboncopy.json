@@ -1,0 +1,53 @@
+{
+ "name": "g2m-carboncopy-s3",
+ "description": "merge: carbon engines moved into copy slot 3 at t 20 (turnover-free, duplication on; then the neutral control 40..60, then on again): carbon engines in copy slots must run, stop under the null, run again",
+ "query": {
+  "seed": 3,
+  "duprate": 0
+ },
+ "duration": 80,
+ "sample_every": 10,
+ "stall": 300,
+ "shots": [
+  {
+   "t": 30,
+   "name": "t30",
+   "view": "clean"
+  }
+ ],
+ "snapshots": [],
+ "evals": [
+  {
+   "t": 15,
+   "js": "const r = moire.carbonCells.ledger.rate; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, ox: r.ox, red: r.red, cond: r.cond, hyd: r.hyd, dupOn: moire.dup.params.on, nul: moire.dup.params.null})"
+  },
+  {
+   "t": 20,
+   "js": "const { ENGINES } = await import('./src/matter.js'); const { readBuffer } = await import('./src/snapshot.js'); const { BIO_FLOATS } = await import('./src/genome.js');\nconst C = moire.cells, d = moire.gpu.device, n = C.count, EM = ENGINES.length;\nconst f = new Float32Array(await readBuffer(d, C.bioBuf[C.bioCur], 0, n * BIO_FLOATS * 4)); let moved = 0;\nfor (let i = 0; i < n; i++) { const o = i * BIO_FLOATS;\n  for (let k = 0; k < 3; k++) { const code = Math.round(f[o + 32 + k]); if ((code & 31) >= EM && f[o + 36 + k] > 0 && !(f[o + 158] > 0)) {\n    f[o + 156] = code; f[o + 158] = f[o + 36 + k]; f[o + 36 + k] = 0; f[o + 163] = Math.floor(Math.round(f[o + 160 + k]) / 8) * 8 + (k | 4); moved++; } } }\nfor (const b of C.bioBuf) d.queue.writeBuffer(b, 0, f); return 'moved ' + moved + ' carbon slots into copy slot 3';"
+  },
+  {
+   "t": 38,
+   "js": "const r = moire.carbonCells.ledger.rate; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, ox: r.ox, red: r.red, cond: r.cond, hyd: r.hyd, dupOn: moire.dup.params.on, nul: moire.dup.params.null})"
+  },
+  {
+   "t": 40,
+   "js": "moire.dup.params.null = true; return 'null'"
+  },
+  {
+   "t": 58,
+   "js": "const r = moire.carbonCells.ledger.rate; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, ox: r.ox, red: r.red, cond: r.cond, hyd: r.hyd, dupOn: moire.dup.params.on, nul: moire.dup.params.null})"
+  },
+  {
+   "t": 60,
+   "js": "moire.dup.params.null = false; return 'on'"
+  },
+  {
+   "t": 78,
+   "js": "const r = moire.carbonCells.ledger.rate; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, ox: r.ox, red: r.red, cond: r.cond, hyd: r.hyd, dupOn: moire.dup.params.on, nul: moire.dup.params.null})"
+  },
+  {
+   "t": 79,
+   "js": "const c = await moire.dup.now(); return JSON.stringify({n: c.n, engCopy: c.engCopy, copies: c.copies, top: c.families.top.slice(0,4)})"
+  }
+ ]
+}

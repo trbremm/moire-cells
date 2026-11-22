@@ -1,0 +1,121 @@
+{
+  "name": "g2m-carboncopy-s3",
+  "description": "merge: carbon engines moved into copy slot 3 at t 20 (turnover-free, duplication on; then the neutral control 40..60, then on again): carbon engines in copy slots must run, stop under the null, run again",
+  "condition": {
+    "name": "g2m-carboncopy-s3",
+    "description": "merge: carbon engines moved into copy slot 3 at t 20 (turnover-free, duplication on; then the neutral control 40..60, then on again): carbon engines in copy slots must run, stop under the null, run again",
+    "query": {
+      "seed": 3,
+      "duprate": 0
+    },
+    "duration": 80,
+    "sample_every": 10,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 30,
+        "name": "t30",
+        "view": "clean"
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 15,
+        "js": "const r = moire.carbonCells.ledger.rate; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, ox: r.ox, red: r.red, cond: r.cond, hyd: r.hyd, dupOn: moire.dup.params.on, nul: moire.dup.params.null})"
+      },
+      {
+        "t": 20,
+        "js": "const { ENGINES } = await import('./src/matter.js'); const { readBuffer } = await import('./src/snapshot.js'); const { BIO_FLOATS } = await import('./src/genome.js');\nconst C = moire.cells, d = moire.gpu.device, n = C.count, EM = ENGINES.length;\nconst f = new Float32Array(await readBuffer(d, C.bioBuf[C.bioCur], 0, n * BIO_FLOATS * 4)); let moved = 0;\nfor (let i = 0; i < n; i++) { const o = i * BIO_FLOATS;\n  for (let k = 0; k < 3; k++) { const code = Math.round(f[o + 32 + k]); if ((code & 31) >= EM && f[o + 36 + k] > 0 && !(f[o + 158] > 0)) {\n    f[o + 156] = code; f[o + 158] = f[o + 36 + k]; f[o + 36 + k] = 0; f[o + 163] = Math.floor(Math.round(f[o + 160 + k]) / 8) * 8 + (k | 4); moved++; } } }\nfor (const b of C.bioBuf) d.queue.writeBuffer(b, 0, f); return 'moved ' + moved + ' carbon slots into copy slot 3';"
+      },
+      {
+        "t": 38,
+        "js": "const r = moire.carbonCells.ledger.rate; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, ox: r.ox, red: r.red, cond: r.cond, hyd: r.hyd, dupOn: moire.dup.params.on, nul: moire.dup.params.null})"
+      },
+      {
+        "t": 40,
+        "js": "moire.dup.params.null = true; return 'null'"
+      },
+      {
+        "t": 58,
+        "js": "const r = moire.carbonCells.ledger.rate; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, ox: r.ox, red: r.red, cond: r.cond, hyd: r.hyd, dupOn: moire.dup.params.on, nul: moire.dup.params.null})"
+      },
+      {
+        "t": 60,
+        "js": "moire.dup.params.null = false; return 'on'"
+      },
+      {
+        "t": 78,
+        "js": "const r = moire.carbonCells.ledger.rate; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, ox: r.ox, red: r.red, cond: r.cond, hyd: r.hyd, dupOn: moire.dup.params.on, nul: moire.dup.params.null})"
+      },
+      {
+        "t": 79,
+        "js": "const c = await moire.dup.now(); return JSON.stringify({n: c.n, engCopy: c.engCopy, copies: c.copies, top: c.families.top.slice(0,4)})"
+      }
+    ]
+  },
+  "url": "http://localhost:64636/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3&duprate=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "cf5d3720fdad9e2ed29c0afeb132ad14193a094d",
+  "dirty": true,
+  "started": "2026-11-23T00:04:09",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 80.0,
+  "run_wall_s": 27.54,
+  "speed_reached": 2.9,
+  "samples": 9,
+  "shots": [
+    "shots/t30.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 15.000000000000105,
+      "js": "const r = moire.carbonCells.ledger.rate; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, ox: r.ox, red: r.red, cond: r.cond, hyd: r.hyd, dupOn: moire.dup.params.on, nul: moire.dup.params.null})",
+      "result": "{\"t\":15.000000000000105,\"alive\":1877,\"ox\":0.00646972656249977,\"red\":0.1492919921874947,\"cond\":0.0013427734374999523,\"hyd\":0.25708007812499084,\"dupOn\":true,\"nul\":false}"
+    },
+    {
+      "t": 20.000000000000117,
+      "js": "const { ENGINES } = await import('./src/matter.js'); const { readBuffer } = await import('./src/snapshot.js'); const { BIO_FLOATS } = await import('./src/genome.js');\nconst C = moire.cells, d = moire.gpu.device, n = C.count, EM = ENGINES.length;\nconst f = new Float32Array(await readBuffer(d, C.bioBuf[C.bioCur], 0, n * BIO_FLOATS * 4)); let moved = 0;\nfor (let i = 0; i < n; i++) { const o = i * BIO_FLOATS;\n  for (let k = 0; k < 3; k++) { const code = Math.round(f[o + 32 + k]); if ((code & 31) >= EM && f[o + 36 + k] > 0 && !(f[o + 158] > 0)) {\n    f[o + 156] = code; f[o + 158] = f[o + 36 + k]; f[o + 36 + k] = 0; f[o + 163] = Math.floor(Math.round(f[o + 160 + k]) / 8) * 8 + (k | 4); moved++; } } }\nfor (const b of C.bioBuf) d.queue.writeBuffer(b, 0, f); return 'moved ' + moved + ' carbon slots into copy slot 3';",
+      "result": "moved 1018 carbon slots into copy slot 3"
+    },
+    {
+      "t": 37.99999999999989,
+      "js": "const r = moire.carbonCells.ledger.rate; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, ox: r.ox, red: r.red, cond: r.cond, hyd: r.hyd, dupOn: moire.dup.params.on, nul: moire.dup.params.null})",
+      "result": "{\"t\":37.99999999999989,\"alive\":1712,\"ox\":0.08086413871951287,\"red\":0.2878477515243926,\"cond\":0.008217416158536654,\"hyd\":0.5903439405487854,\"dupOn\":true,\"nul\":false}"
+    },
+    {
+      "t": 39.999999999999915,
+      "js": "moire.dup.params.null = true; return 'null'",
+      "result": "null"
+    },
+    {
+      "t": 57.999999999999424,
+      "js": "const r = moire.carbonCells.ledger.rate; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, ox: r.ox, red: r.red, cond: r.cond, hyd: r.hyd, dupOn: moire.dup.params.on, nul: moire.dup.params.null})",
+      "result": "{\"t\":57.999999999999424,\"alive\":1599,\"ox\":0.015229724702381818,\"red\":0,\"cond\":0,\"hyd\":0.5002557663690761,\"dupOn\":true,\"nul\":true}"
+    },
+    {
+      "t": 59.99999999999931,
+      "js": "moire.dup.params.null = false; return 'on'",
+      "result": "on"
+    },
+    {
+      "t": 77.99999999999876,
+      "js": "const r = moire.carbonCells.ledger.rate; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, ox: r.ox, red: r.red, cond: r.cond, hyd: r.hyd, dupOn: moire.dup.params.on, nul: moire.dup.params.null})",
+      "result": "{\"t\":77.99999999999876,\"alive\":1271,\"ox\":0.11514632428279344,\"red\":0.3303102587090352,\"cond\":0.001801037397541086,\"hyd\":0.5712890625000325,\"dupOn\":true,\"nul\":false}"
+    },
+    {
+      "t": 78.9999999999987,
+      "js": "const c = await moire.dup.now(); return JSON.stringify({n: c.n, engCopy: c.engCopy, copies: c.copies, top: c.families.top.slice(0,4)})",
+      "result": "{\"n\":1255,\"engCopy\":0.549800796812749,\"copies\":{\"eng\":690,\"pump\":0,\"perCell\":0.549800796812749},\"top\":[{\"id\":50,\"cells\":145,\"slots\":145,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"t + [c-g] \u2192 [c-t] + g\",145]]},{\"id\":51,\"cells\":145,\"slots\":145,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"g + t \u2192 gt\",145]]},{\"id\":49,\"cells\":145,\"slots\":145,\"copies\":145,\"cellsBranched\":0,\"jobs\":[[\"g + [c-t] \u2192 [c-g] + t@2\",145]]},{\"id\":130,\"cells\":145,\"slots\":145,\"copies\":0,\"cellsBranched\":0,\"jobs\":[[\"t + [c-g] \u2192 [c-t] + g\",145]]}]}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T00:05:45",
+  "wall_s": 96.43
+}

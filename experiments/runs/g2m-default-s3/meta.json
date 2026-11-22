@@ -1,0 +1,75 @@
+{
+  "name": "g2m-default-s3",
+  "description": "merge: default scene seed 3, carbon on, duplication on (5 min): books, counts",
+  "condition": {
+    "name": "g2m-default-s3",
+    "description": "merge: default scene seed 3, carbon on, duplication on (5 min): books, counts",
+    "query": {
+      "seed": 3
+    },
+    "duration": 300,
+    "sample_every": 10,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 300,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 1,
+        "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, heatIn: H.in})"
+      },
+      {
+        "t": 120,
+        "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, heatIn: H.in})"
+      },
+      {
+        "t": 300,
+        "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, heatIn: H.in})"
+      }
+    ]
+  },
+  "url": "http://localhost:55214/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "cf5d3720fdad9e2ed29c0afeb132ad14193a094d",
+  "dirty": true,
+  "started": "2026-11-22T23:49:32",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 300.0,
+  "run_wall_s": 216.37,
+  "speed_reached": 1.39,
+  "samples": 31,
+  "shots": [
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.9999999999999999,
+      "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, heatIn: H.in})",
+      "result": "{\"t\":0.9999999999999999,\"alive\":1974,\"cRound\":0,\"atoms\":0,\"charge\":0,\"energy\":-0.0003509521484375,\"heatIn\":80681.88981628418}"
+    },
+    {
+      "t": 119.99999999999429,
+      "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, heatIn: H.in})",
+      "result": "{\"t\":119.99999999999429,\"alive\":540,\"cRound\":0,\"atoms\":0,\"charge\":0,\"energy\":-0.0076751708984375,\"heatIn\":1608564.8529052734}"
+    },
+    {
+      "t": 300.0000000000291,
+      "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, heatIn: H.in})",
+      "result": "{\"t\":300.0000000000291,\"alive\":146,\"cRound\":0,\"atoms\":0,\"charge\":0,\"energy\":0.011260986328125,\"heatIn\":3288067.57522583}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-22T23:54:28",
+  "wall_s": 296.43
+}

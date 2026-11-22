@@ -29,7 +29,7 @@
 
 import { CELL_FLOATS } from './cells.js';
 import { BIO_FLOATS, BIO_G2, famOf } from './genome.js';
-import { ENGINES, SUBSTANCES } from './matter.js';
+import { ALL_ENGINES as ENGINES, SUBSTANCES } from './matter.js';   // (merge with carbon: copies of the carbon engines named too)
 import { readBuffer } from './snapshot.js';
 
 const LG_DIV = 22272;          // heat_common.wgsl: step C9's block, 16 numbers x 16 slots; G2's counters at rows 8..12 (DPC_* in cell_common.wgsl)

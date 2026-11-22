@@ -1,0 +1,113 @@
+{
+  "name": "c15b-default_s3",
+  "description": "default scene (spotlight, mineral spring, vent, a lasting fuel seep), carbon on, seed 3, 20 min",
+  "condition": {
+    "name": "c15b-default_s3",
+    "description": "default scene (spotlight, mineral spring, vent, a lasting fuel seep), carbon on, seed 3, 20 min",
+    "query": {
+      "seed": 3
+    },
+    "duration": 1202.5,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 300
+      },
+      {
+        "t": 1200
+      },
+      {
+        "t": 1200,
+        "panel": true,
+        "name": "panel"
+      },
+      {
+        "t": 1202,
+        "name": "harmonic"
+      }
+    ],
+    "snapshots": [
+      {
+        "t": 1200,
+        "grid": true
+      }
+    ],
+    "evals": [
+      {
+        "t": 300,
+        "js": "const L = moire.carbon.ledger, C = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, ladder: L && L.ladder, tar: L && L.tar, dishC: L && L.dish.c, cellsC: L && L.cells.c, rx: L && L.rx, cells: C && {rate: C.rate, census: C.census, granC: C.granC, ladder: C.ladder}, rounding: L && L.rounding, eRounding: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], engines: moire.eat.census && moire.eat.census.all.map(c => c.n)})"
+      },
+      {
+        "t": 600,
+        "js": "const L = moire.carbon.ledger, C = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, ladder: L && L.ladder, tar: L && L.tar, dishC: L && L.dish.c, cellsC: L && L.cells.c, rx: L && L.rx, cells: C && {rate: C.rate, census: C.census, granC: C.granC, ladder: C.ladder}, rounding: L && L.rounding, eRounding: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], engines: moire.eat.census && moire.eat.census.all.map(c => c.n)})"
+      },
+      {
+        "t": 900,
+        "js": "const L = moire.carbon.ledger, C = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, ladder: L && L.ladder, tar: L && L.tar, dishC: L && L.dish.c, cellsC: L && L.cells.c, rx: L && L.rx, cells: C && {rate: C.rate, census: C.census, granC: C.granC, ladder: C.ladder}, rounding: L && L.rounding, eRounding: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], engines: moire.eat.census && moire.eat.census.all.map(c => c.n)})"
+      },
+      {
+        "t": 1200,
+        "js": "const L = moire.carbon.ledger, C = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, ladder: L && L.ladder, tar: L && L.tar, dishC: L && L.dish.c, cellsC: L && L.cells.c, rx: L && L.rx, cells: C && {rate: C.rate, census: C.census, granC: C.granC, ladder: C.ladder}, rounding: L && L.rounding, eRounding: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], engines: moire.eat.census && moire.eat.census.all.map(c => c.n)})"
+      },
+      {
+        "t": 1201,
+        "js": "moire.control.action('harmonic')"
+      }
+    ]
+  },
+  "url": "http://localhost:51517/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "cf39e2c633f7c13a5eba333bc1843e0b12fb2e2e",
+  "dirty": true,
+  "started": "2026-11-17T23:10:58",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1202.5,
+  "run_wall_s": 2204.83,
+  "speed_reached": 0.55,
+  "samples": 42,
+  "shots": [
+    "shots/t300.png",
+    "shots/t1200.png",
+    "shots/panel.png",
+    "shots/harmonic.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t1200.json"
+  ],
+  "clips": [],
+  "evals": [
+    {
+      "t": 300.0000000000558,
+      "js": "const L = moire.carbon.ledger, C = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, ladder: L && L.ladder, tar: L && L.tar, dishC: L && L.dish.c, cellsC: L && L.cells.c, rx: L && L.rx, cells: C && {rate: C.rate, census: C.census, granC: C.granC, ladder: C.ladder}, rounding: L && L.rounding, eRounding: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], engines: moire.eat.census && moire.eat.census.all.map(c => c.n)})",
+      "result": "{\"t\":300.0000000000558,\"alive\":154,\"job\":[59,54,36,2,1,1,1],\"ladder\":[20.352294921875,9.726806640625,12.15185546875,7.860595703125,8.996826171875],\"tar\":[773.8076171875,483.9453125,500.5869140625],\"dishC\":692.125244140625,\"cellsC\":38.057861328125,\"rx\":{\"oxidize\":7.389470880688539,\"condense\":12.24403570507312,\"reduce\":7.351094395667843,\"hydrolyze\":11.155329932861385,\"dissolve\":0.7217684659097473,\"settle\":0.47105016787232923,\"glow\":147.00639204558826,\"warm\":12411.921447260773},\"cells\":{\"rate\":{\"ox\":0.18171326188033055,\"cond\":0,\"red\":0.19103499483488448,\"hyd\":0,\"dis\":0.03365508780994796,\"graze\":0.5439291709715691,\"gain\":0.3747836026281818,\"heat\":2.64451964827849,\"paid\":0.09551749741744224,\"phUsed\":0.19103499483488448,\"phIdle\":0.7921051782031997,\"satWant\":0.3818278667358845,\"satLost\":0.009442794421496191,\"rise\":0.5253462357959323,\"built\":0.0635572701446859,\"buildPaid\":0.03149868043003898},\"census\":{\"n\":154,\"ox\":8,\"cond\":0,\"red\":8,\"redLit\":8,\"hyd\":0,\"granule\":94,\"granC\":16.459,\"ladder\":1.352,\"any\":8,\"oxOnly\":0,\"litOnly\":0,\"body\":19.849,\"short\":101,\"want\":22.356},\"granC\":16.836546875,\"ladder\":[0.047607421875,0.107666015625,0.1611328125,0.106689453125,0.94921875]},\"rounding\":0,\"eRounding\":0,\"atoms\":0,\"charge\":0,\"energy\":0.0137176513671875,\"eIn\":3266196.7765808105,\"freeT\":289.712158203125,\"engines\":[0,31,123,0]}"
+    },
+    {
+      "t": 599.999999999783,
+      "js": "const L = moire.carbon.ledger, C = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, ladder: L && L.ladder, tar: L && L.tar, dishC: L && L.dish.c, cellsC: L && L.cells.c, rx: L && L.rx, cells: C && {rate: C.rate, census: C.census, granC: C.granC, ladder: C.ladder}, rounding: L && L.rounding, eRounding: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], engines: moire.eat.census && moire.eat.census.all.map(c => c.n)})",
+      "result": "{\"t\":599.999999999783,\"alive\":189,\"job\":[71,49,53,4,6,6,0],\"ladder\":[32.59375,13.14599609375,15.482177734375,9.236328125,11.363037109375],\"tar\":[1016.473388671875,536.275390625,717.036865234375],\"dishC\":903.3860473632812,\"cellsC\":60.55731201171875,\"rx\":{\"oxidize\":1.9292712602476563,\"condense\":4.57679623463531,\"reduce\":3.2542344390398448,\"hydrolyze\":5.610951908304283,\"dissolve\":0.9143266521524709,\"settle\":0.8353211449802679,\"glow\":63.52318935712744,\"warm\":4718.716300593431},\"cells\":{\"rate\":{\"ox\":0.05715292008201919,\"cond\":0,\"red\":0.0423844134221697,\"hyd\":0,\"dis\":0.041303790983644124,\"graze\":1.235871862193747,\"gain\":0.11787789766916458,\"heat\":0.17049820696736817,\"paid\":0.02119220671108485,\"phUsed\":0.0423844134221697,\"phIdle\":0.033139088114784235,\"satWant\":0.11478611680338309,\"satLost\":0,\"rise\":0.11655713691096667,\"built\":0.1727795210042555,\"buildPaid\":0.08533165103107146},\"census\":{\"n\":189,\"ox\":8,\"cond\":0,\"red\":7,\"redLit\":7,\"hyd\":0,\"granule\":142,\"granC\":31.688,\"ladder\":2.232,\"any\":8,\"oxOnly\":0,\"litOnly\":0,\"body\":26.635,\"short\":129,\"want\":29.823},\"granC\":31.68451904296875,\"ladder\":[0.41943359375,0.33056640625,0.310546875,0.259033203125,0.918212890625]},\"rounding\":0,\"eRounding\":0,\"atoms\":0,\"charge\":0,\"energy\":0.021270751953125,\"eIn\":6433441.76008606,\"freeT\":495.521728515625,\"engines\":[1,38,150,0]}"
+    },
+    {
+      "t": 899.9999999995101,
+      "js": "const L = moire.carbon.ledger, C = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, ladder: L && L.ladder, tar: L && L.tar, dishC: L && L.dish.c, cellsC: L && L.cells.c, rx: L && L.rx, cells: C && {rate: C.rate, census: C.census, granC: C.granC, ladder: C.ladder}, rounding: L && L.rounding, eRounding: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], engines: moire.eat.census && moire.eat.census.all.map(c => c.n)})",
+      "result": "{\"t\":899.9999999995101,\"alive\":318,\"job\":[112,28,136,5,4,28,5],\"ladder\":[35.0986328125,14.904541015625,18.763916015625,11.73291015625,16.94189453125],\"tar\":[1180.6416015625,634.014892578125,978.593505859375],\"dishC\":1090.914794921875,\"cellsC\":105.415771484375,\"rx\":{\"oxidize\":0.8434352401867176,\"condense\":3.773122740189382,\"reduce\":1.659752711778369,\"hydrolyze\":3.1518352918417096,\"dissolve\":1.183617962294465,\"settle\":1.2331321022738488,\"glow\":46.601158961819245,\"warm\":2780.880439697777},\"cells\":{\"rate\":{\"ox\":0.0007263688016535532,\"cond\":0,\"red\":0,\"hyd\":0,\"dis\":0.06658380681824237,\"graze\":1.6164127066130403,\"gain\":0.0014981356534104534,\"heat\":0.0004993785511368178,\"paid\":0,\"phUsed\":0,\"phIdle\":0,\"satWant\":0.04394531250003997,\"satLost\":0,\"rise\":0,\"built\":0.6264930914261896,\"buildPaid\":0.31194513494346554},\"census\":{\"n\":319,\"ox\":5,\"cond\":1,\"red\":0,\"redLit\":0,\"hyd\":0,\"granule\":171,\"granC\":50.767,\"ladder\":4.158,\"any\":6,\"oxOnly\":0,\"litOnly\":0,\"body\":50.017,\"short\":233,\"want\":56.278},\"granC\":51.197599609375,\"ladder\":[0.929443359375,0.6328125,0.48876953125,0.34130859375,1.808837890625]},\"rounding\":0,\"eRounding\":0,\"atoms\":0,\"charge\":0,\"energy\":0.0161895751953125,\"eIn\":9314282.418899536,\"freeT\":538.08154296875,\"engines\":[0,115,204,0]}"
+    },
+    {
+      "t": 1199.9999999992374,
+      "js": "const L = moire.carbon.ledger, C = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, ladder: L && L.ladder, tar: L && L.tar, dishC: L && L.dish.c, cellsC: L && L.cells.c, rx: L && L.rx, cells: C && {rate: C.rate, census: C.census, granC: C.granC, ladder: C.ladder}, rounding: L && L.rounding, eRounding: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], engines: moire.eat.census && moire.eat.census.all.map(c => c.n)})",
+      "result": "{\"t\":1199.9999999992374,\"alive\":339,\"job\":[157,6,82,2,20,60,12],\"ladder\":[26.67822265625,13.93310546875,17.643798828125,8.78369140625,11.99853515625],\"tar\":[1564.928955078125,556.0478515625,1155.063232421875],\"dishC\":1289.2796020507812,\"cellsC\":140.74432373046875,\"rx\":{\"oxidize\":6.325624047261851,\"condense\":16.165801257636655,\"reduce\":5.603563262200218,\"hydrolyze\":14.050947980195707,\"dissolve\":0.9732278963423485,\"settle\":1.1690167682937462,\"glow\":97.44116806411301,\"warm\":10643.00614520785},\"cells\":{\"rate\":{\"ox\":0,\"cond\":0.003215510670734632,\"red\":0,\"hyd\":0,\"dis\":0.10587366615863288,\"graze\":2.8322694359781857,\"gain\":0.0018087247522882305,\"heat\":0.0006029082507627435,\"paid\":0,\"phUsed\":0,\"phIdle\":0,\"satWant\":1.2417825838425929,\"satLost\":1.2126048018303712,\"rise\":0,\"built\":0.5873666158541927,\"buildPaid\":0.2925965844133759},\"census\":{\"n\":339,\"ox\":0,\"cond\":7,\"red\":0,\"redLit\":0,\"hyd\":0,\"granule\":204,\"granC\":77.614,\"ladder\":4.695,\"any\":7,\"oxOnly\":0,\"litOnly\":0,\"body\":57.116,\"short\":264,\"want\":66.918},\"granC\":78.89443701171875,\"ladder\":[0.48291015625,0.41748046875,0.39306640625,0.23486328125,3.20556640625]},\"rounding\":0,\"eRounding\":0,\"atoms\":0,\"charge\":0,\"energy\":0.0075225830078125,\"eIn\":12658652.724884033,\"freeT\":488.006103515625,\"engines\":[1,127,211,0]}"
+    },
+    {
+      "t": 1200.9999999992365,
+      "js": "moire.control.action('harmonic')",
+      "result": null
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T23:49:14",
+  "wall_s": 2295.75
+}

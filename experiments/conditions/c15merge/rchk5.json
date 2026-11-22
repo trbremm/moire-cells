@@ -1,0 +1,64 @@
+{
+ "batch": "c15m-rchk5",
+ "runs": [
+  {
+   "name": "c15m-rchk5-open0",
+   "description": "open s7 carbon=0, maze in place at t 0",
+   "query": {
+    "seed": 7,
+    "carbon": 0
+   },
+   "duration": 1,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.toy.build('maze',7); return 1"
+    },
+    {
+     "t": 0.5,
+     "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, start:E.start, back:E.tot.batBack, heat:H.heat, out:H.out})"
+    },
+    {
+     "t": 1,
+     "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, start:E.start, back:E.tot.batBack, heat:H.heat, out:H.out})"
+    }
+   ]
+  },
+  {
+   "name": "c15m-rchk5-maze2",
+   "description": "maze boot, reseed at 0.5",
+   "query": {
+    "terrain": "maze",
+    "seed": 7,
+    "carbon": 0
+   },
+   "duration": 1.5,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 0.3,
+     "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, start:E.start, back:E.tot.batBack, heat:H.heat, out:H.out})"
+    },
+    {
+     "t": 0.5,
+     "js": "moire.cells.seed(true); return 1"
+    },
+    {
+     "t": 1.0,
+     "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, start:E.start, back:E.tot.batBack, heat:H.heat, out:H.out})"
+    },
+    {
+     "t": 1.5,
+     "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, start:E.start, back:E.tot.batBack, heat:H.heat, out:H.out})"
+    }
+   ]
+  }
+ ]
+}

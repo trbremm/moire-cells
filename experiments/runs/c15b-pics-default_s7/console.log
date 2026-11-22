@@ -1,0 +1,2 @@
+log.warning: The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127
+console.log: snapshot loaded: 212 cells at t 600.0 s, exact

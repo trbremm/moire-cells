@@ -19,7 +19,7 @@
 //
 // The engine table is read from src/matter.js (ENGINES: kind 0 uphill, 1 ferment, 2 breathe, 3 form; the old table ?electrons=0:
 // 1 burn, 2 swap), so a new chemistry only needs its kinds kept; its classes are written into the shaders as constants.
-import { ENGINES, SUBSTANCES } from './matter.js';
+import { ALL_ENGINES as ENGINES, SUBSTANCES } from './matter.js';   // (step C15b: and the carbon engines: OXIDIZE breathe, CONDENSE build, REDUCE light)
 import { setShaderConst } from './gpu.js';
 
 export const JOBS = [

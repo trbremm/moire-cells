@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPU maths check</title>
+<link rel="icon" href="data:,">
+<style>
+  :root { --bg: #05070b; --fg: #d8e6f0; --dim: #7f93a3; --ok: #6be3a0; --bad: #ff5c8a; --info: #8fb8ff; }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font: 14px/1.4 ui-monospace, Menlo, Consolas, monospace; }
+  h1 { font-size: 17px; margin: 0 0 4px; color: #7ff6ff; }
+  p { margin: 4px 0 12px; color: var(--dim); max-width: 60em; }
+  table { border-collapse: collapse; width: 100%; max-width: 60em; }
+  td, th { padding: 3px 6px; border-bottom: 1px solid #1c2633; text-align: left; vertical-align: top; word-break: break-all; }
+  th { color: var(--dim); font-weight: normal; }
+  .ok { color: var(--ok); } .bad { color: var(--bad); font-weight: bold; } .info { color: var(--info); }
+  #sum { font-size: 16px; margin: 10px 0; }
+</style>
+</head>
+<body>
+<h1>GPU maths check (Moiré cells)</h1>
+<p>Runs a few maths functions on this device's GPU through WebGPU and compares them with the expected values. Red rows are where this GPU
+differs in a way that matters to the simulation (for example tanh of a large number giving NaN instead of 1). Blue rows are allowed to differ
+between GPUs; they are shown for information. Please send a screenshot of the whole page.</p>
+<div id="adapter">asking for the GPU…</div>
+<div id="sum"></div>
+<table id="t"><thead><tr><th>test</th><th>input</th><th>expected</th><th>this GPU</th><th></th></tr></thead><tbody></tbody></table>
+<script type="module">
+// The inputs come from a buffer, never literals, so the shader compiler cannot work them out in advance (it would use the CPU's maths).
+const NAN = new Float32Array(new Uint32Array([0x7fc00000]).buffer)[0];
+const T = [];   // [name, input, expected (number | null for info), kind: 'tanh' etc. (the shader's switch), tolerance]
+for (const x of [0.5, 5, 9, 10, 15, 20, 30, 40, 44, 45, 50, 60, 80, 89, 100, 1000, -45, -100]) T.push(['tanh', x, Math.tanh(x), 0]);
+for (const x of [10, 50, 80, 88]) T.push(['exp', x, Math.exp(x), 1]);
+T.push(['exp', 89, Infinity, 1]);
+for (const x of [10, 50, 100]) T.push(['sinh', x, Math.sinh(x), 2]);
+// (sin, cos: WGSL asks for accuracy only inside [-pi, pi]; the simulation's arguments stay below about 1000, the larger ones are information)
+for (const x of [3, 100, 1000, 10000, 100000]) T.push(['sin', x, Math.sin(x), 3, x > 1000]);
+for (const x of [3, 100, 1000, 10000, 100000]) T.push(['cos', x, Math.cos(x), 4, x > 1000]);
+T.push(['pow(x, 0.5)', 2, Math.SQRT2, 5]);
+T.push(['pow(x, 2)', 0, 0, 6]);
+T.push(['1 / x', 0, Infinity, 7]);
+T.push(['x * 1 (subnormal kept?)', 1e-40, null, 8]);
+T.push(['clamp(x, 0, 1) (NaN in)', NAN, null, 9]);
+T.push(['max(x, 0) (NaN in)', NAN, null, 10]);
+T.push(['min(x, 1) (NaN in)', NAN, null, 11]);
+T.push(['normalize(vec2(x, x)).x', 0, null, 12]);
+T.push(['atan2(x, x)', 0, null, 13]);
+T.push(['i32(x) (NaN in)', NAN, null, 14]);
+T.push(['i32(x) (huge)', 1e20, 2147483520, 14]);
+T.push(['tanh(clamp(x, -15, 15)) (the fix)', 100, 1, 15]);
+T.push(['tanh(clamp(x, -15, 15)) (the fix)', -1000, -1, 15]);
+T.push(['workgroup memory starts at 0', 0, 0, 16]);
+T.push(['inverseSqrt(x)', 0, Infinity, 17]);
+T.push(['log(x)', 0, -Infinity, 18]);
+
+const WGSL = /* wgsl */`
+@group(0) @binding(0) var<storage, read> inp: array<vec2f>;   // x: input, y: kind
+@group(0) @binding(1) var<storage, read_write> outp: array<f32>;
+var<workgroup> wg: array<f32, 64>;
+@compute @workgroup_size(64)
+fn main(@builtin(local_invocation_id) l: vec3u) {
+  let i = l.x;
+  // (read the workgroup memory before anyone writes it: WGSL says it starts at zero)
+  let w0 = wg[i];
+  workgroupBarrier();
+  wg[i] = 1.0;
+  if (i >= arrayLength(&inp)) { return; }
+  let x = inp[i].x;
+  let k = u32(inp[i].y);
+  var r = 0.0;
+  switch k {
+    case 0u: { r = tanh(x); }
+    case 1u: { r = exp(x); }
+    case 2u: { r = sinh(x); }
+    case 3u: { r = sin(x); }
+    case 4u: { r = cos(x); }
+    case 5u: { r = pow(x, 0.5); }
+    case 6u: { r = pow(x, 2.0); }
+    case 7u: { r = 1.0 / x; }
+    case 8u: { r = x * inp[0].y + x * (1.0 - inp[0].y); }
+    case 9u: { r = clamp(x, 0.0, 1.0); }
+    case 10u: { r = max(x, 0.0); }
+    case 11u: { r = min(x, 1.0); }
+    case 12u: { r = normalize(vec2f(x, x)).x; }
+    case 13u: { r = atan2(x, x); }
+    case 14u: { r = f32(i32(x)); }
+    case 15u: { r = tanh(clamp(x, -15.0, 15.0)); }
+    case 16u: { r = w0; }
+    case 17u: { r = inverseSqrt(x); }
+    case 18u: { r = log(x); }
+    default: { r = -12345.0; }
+  }
+  outp[i] = r;
+}`;
+
+const $ = (s) => document.querySelector(s);
+const fmt = (v) => (v === null ? '–' : Number.isNaN(v) ? 'NaN' : !Number.isFinite(v) ? (v > 0 ? '+inf' : '-inf') : Math.abs(v) >= 1e6 || (Math.abs(v) < 1e-4 && v !== 0) ? v.toExponential(6) : String(+v.toPrecision(7)));
+function same(a, b, k) {
+  if (Number.isNaN(b)) return Number.isNaN(a);
+  if (!Number.isFinite(b)) return a === b;
+  if (Number.isNaN(a) || !Number.isFinite(a)) return false;
+  const tol = k === 3 || k === 4 ? 2e-3 : 1e-4;   // (sin, cos: WGSL asks 2^-11 only inside [-pi, pi])
+  return Math.abs(a - b) <= tol * Math.max(1, Math.abs(b));
+}
+async function run() {
+  if (!navigator.gpu) { $('#adapter').textContent = 'No WebGPU in this browser.'; return; }
+  const adapter = await navigator.gpu.requestAdapter();
+  if (!adapter) { $('#adapter').textContent = 'WebGPU is present but gave no adapter.'; return; }
+  const info = adapter.info || {};
+  $('#adapter').textContent = `adapter: ${[info.vendor, info.architecture, info.device, info.description].filter(Boolean).join(' · ') || '(no details)'} · ${navigator.userAgent}`;
+  const device = await adapter.requestDevice();
+  const n = T.length;
+  const inp = new Float32Array(2 * n);
+  T.forEach((t, i) => { inp[2 * i] = t[1]; inp[2 * i + 1] = t[3]; });
+  inp[1] = 0;   // (kind of row 0 is 0; case 8 reads it as a 0 that the compiler cannot know)
+  const U = GPUBufferUsage;
+  const bIn = device.createBuffer({ size: inp.byteLength, usage: U.STORAGE | U.COPY_DST });
+  device.queue.writeBuffer(bIn, 0, inp);
+  const bOut = device.createBuffer({ size: 4 * n, usage: U.STORAGE | U.COPY_SRC });
+  const bRead = device.createBuffer({ size: 4 * n, usage: U.MAP_READ | U.COPY_DST });
+  const module = device.createShaderModule({ code: WGSL });
+  const pipe = device.createComputePipeline({ layout: 'auto', compute: { module, entryPoint: 'main' } });
+  const bg = device.createBindGroup({ layout: pipe.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: bIn } }, { binding: 1, resource: { buffer: bOut } }] });
+  const e = device.createCommandEncoder();
+  const p = e.beginComputePass(); p.setPipeline(pipe); p.setBindGroup(0, bg); p.dispatchWorkgroups(1); p.end();
+  e.copyBufferToBuffer(bOut, 0, bRead, 0, 4 * n);
+  device.queue.submit([e.finish()]);
+  await bRead.mapAsync(GPUMapMode.READ);
+  const out = new Float32Array(bRead.getMappedRange().slice(0));
+  const tb = $('#t tbody');
+  let bad = 0;
+  T.forEach(([name, x, want, k, infoOnly], i) => {
+    const got = out[i];
+    const exp = want === null ? null : Math.fround(want);
+    const ok = exp === null || infoOnly ? null : same(got, exp, k);
+    if (ok === false) bad++;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${name}</td><td>${fmt(x)}</td><td>${fmt(exp)}</td><td>${fmt(got)}</td><td class="${ok === null ? 'info' : ok ? 'ok' : 'bad'}">${ok === null ? 'info' : ok ? 'ok' : 'DIFFERS'}</td>`;
+    tb.appendChild(tr);
+  });
+  $('#sum').innerHTML = bad ? `<span class="bad">${bad} result(s) differ from the expected value</span>` : '<span class="ok">every checked result as expected</span>';
+}
+run().catch((err) => { $('#adapter').textContent = `error: ${err && err.message ? err.message : err}`; });
+</script>
+</body>
+</html>

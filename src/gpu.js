@@ -149,10 +149,36 @@ const SHADER_CONSTS = new Map();
 export function setShaderConst(name, value) { SHADER_CONSTS.set(name, value); }
 function patchConsts(code) {
   for (const [name, v] of SHADER_CONSTS) code = code.replace(new RegExp(`const ${name}: u32 = [0-9]+u;`, 'g'), `const ${name}: u32 = ${v >>> 0}u;`);
-  return code;
+  return patchTanh(code);
 }
 
-export async function loadShader(device, url, { prefix = '', prefixName = 'prefix', prefixes = null } = {}) {
+// PORTABLE TANH (the user's phone, 2026-11-22: "some cells are super fast and even clip through walls, and some others are not mobile", on
+// the phone only). WGSL's tanh is only as accurate as (e^2x - 1) / (e^2x + 1) (the spec's own error bound), and some GPUs and drivers
+// compute it just so: past |x| ~ 44, e^2x overflows to infinity and tanh gives NaN (inf / inf) instead of 1. The shaders use tanh for every
+// saturating response (pushes, smell, gates), often of large arguments (a steep gradient over a small saturation), so on such a GPU a cell
+// gets a NaN force: its velocity and position turn NaN, the clamps put it on the dish's edge or let it through walls, and it never moves
+// again or flies. So every tanh(x) in the shaders becomes tanh_p(x) = tanh(clamp(x, -15, 15)): the same result on a GPU that does it
+// right (tanh(15) is 1 in f32), finite everywhere. ?tanh=raw: the shaders' own tanh (the old behaviour); ?tanh=naive: every tanh computed
+// as (e^2x - 1) / (e^2x + 1), to see on a desktop what such a GPU does (a test).
+const TANH_MODE = (() => {
+  try { const m = new URLSearchParams(globalThis.location ? location.search : '').get('tanh'); return m === 'raw' || m === 'naive' ? m : 'safe'; } catch { return 'safe'; }
+})();
+export function tanhMode() { return TANH_MODE; }
+// ... and the cells' step puts back a cell whose numbers still came out NaN or infinite (cell_step.wgsl GPU_GUARD; ?gpuguard=0: off)
+const GPU_GUARD = (() => {
+  try { return new URLSearchParams(globalThis.location ? location.search : '').get('gpuguard') !== '0'; } catch { return true; }
+})();
+SHADER_CONSTS.set('GPU_GUARD', GPU_GUARD ? 1 : 0);
+export function gpuGuard() { return GPU_GUARD; }
+function patchTanh(code) {
+  if (TANH_MODE === 'raw' || !/\btanh\s*\(/.test(code)) return code;
+  const body = TANH_MODE === 'naive'
+    ? 'let e = exp(2.0 * x); return (e - 1.0) / (e + 1.0);'
+    : 'return tanh(clamp(x, -15.0, 15.0));';
+  return code.replace(/\btanh\s*\(/g, 'tanh_p(') + `\n// (src/gpu.js patchTanh, ?tanh=${TANH_MODE})\nfn tanh_p(x: f32) -> f32 { ${body} }\n`;
+}
+
+export async function loadShader(device, url, { prefix = '', prefixName = 'prefix', prefixes = null, suffix = null } = {}) {
   const res = await fetch(url, { cache: 'no-cache' });
   if (!res.ok) throw new Error(`Could not load shader ${url}: HTTP ${res.status}`);
   const parts = prefixes || (prefix ? [{ name: prefixName, text: prefix }] : []);
@@ -161,12 +187,17 @@ export async function loadShader(device, url, { prefix = '', prefixName = 'prefi
   let line = 1;
   for (const p of parts) { spans.push({ name: p.name, from: line }); line += p.text.split('\n').length - 1; }
   const bodyFrom = line;
-  const code = patchConsts(parts.map((p) => p.text).join('') + (await res.text()));
+  // step C15a: a suffix, { name, text }: a file appended after the body (carbon.wgsl after matter.wgsl)
+  let body = await res.text();
+  let sufFrom = Infinity;
+  if (suffix) { body = body.replace(/\s*$/, '\n\n'); sufFrom = bodyFrom + body.split('\n').length - 1; body += suffix.text; }
+  const code = patchConsts(parts.map((p) => p.text).join('') + body);
   const module = device.createShaderModule({ label: url, code });
   const ci = await module.getCompilationInfo();
   const errors = ci.messages.filter((m) => m.type === 'error');
   // "file:line" of a message, in a prefix or in the file itself
   const where = (m) => {
+    if (m.lineNum >= sufFrom) return `${suffix.name}:${m.lineNum - sufFrom + 1}:${m.linePos}`;
     if (m.lineNum >= bodyFrom) return `${url}:${m.lineNum - bodyFrom + 1}:${m.linePos}`;
     let sp = spans[0];
     for (const s of spans) if (m.lineNum >= s.from) sp = s;

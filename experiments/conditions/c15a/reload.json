@@ -1,0 +1,65 @@
+{
+ "batch": "c15a-reload",
+ "runs": [
+  {
+   "name": "c15a-nocarbon-snap",
+   "description": "save a snapshot WITHOUT carbon (as every snapshot from before C15a)",
+   "query": {
+    "seed": 3,
+    "carbon": 0
+   },
+   "duration": 30,
+   "sample_every": 10,
+   "shots": [],
+   "snapshots": [
+    {
+     "t": 30,
+     "grid": true
+    }
+   ],
+   "evals": []
+  },
+  {
+   "name": "c15a-reload-nocarbon",
+   "description": "that snapshot loads (the page reloads itself with ?carbon=0) and runs 60 s",
+   "query": {
+    "snap": "experiments/runs/c15a-nocarbon-snap/snapshots/snap_t30.json"
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "shots": [],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 1,
+     "js": "return JSON.stringify({search: location.search, carbon: moire.carbon.on})"
+    }
+   ]
+  },
+  {
+   "name": "c15a-reload-carbon",
+   "description": "the books run's snapshot at 900 s (with carbon) loads and runs 120 s",
+   "query": {
+    "snap": "experiments/runs/c15a-books/snapshots/snap_t900.json"
+   },
+   "duration": 120,
+   "sample_every": 20,
+   "shots": [
+    {
+     "t": 1
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 1,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})"
+    },
+    {
+     "t": 119,
+     "js": "const L = moire.carbon.ledger; return JSON.stringify({t: moire.time(), ladder: L.ladder, tar: L.tar, carbon: L.dish.c, rx: L.rx, rounding: L.rounding, eRounding: L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null})"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,23 @@
+{
+ "batch": "c15e-gran",
+ "runs": [
+  {
+   "name": "c15e-gran-c15d",
+   "description": "the granules' hands and the stock in the C15d default scene at 20 min (snapshot)",
+   "query": {
+    "snap": "experiments/runs/c15d-w-default_s3/snapshots/snap_t1200.json"
+   },
+   "duration": 2,
+   "sample_every": 0,
+   "stall": 300,
+   "shots": [],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 1,
+     "js": "const d = moire.gpu.device; const rb = async (buf, size) => { const b = d.createBuffer({size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); const e = d.createCommandEncoder(); e.copyBufferToBuffer(buf, 0, b, 0, size); d.queue.submit([e.finish()]); await b.mapAsync(GPUMapMode.READ); const a = b.getMappedRange().slice(0); b.unmap(); b.destroy(); return a; }; const C = moire.cells, n = C.count, CF = C.cellBuf.size / 4 / n; const cu = new Uint32Array(await rb(C.cellBuf, n * CF * 4)); const cb = new Int32Array(await rb(moire.eat.carbon.buf, n * 24 * 4)); const st = new Int32Array(await rb(moire.eat.stockBuf, n * 64 * 4)); const S = new Array(24).fill(0), M = new Array(20).fill(0); let a = 0, noBack = 0, noFuel = 0; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; a++; for (let w = 0; w < 24; w++) S[w] += cb[i * 24 + w]; for (let w = 0; w < 20; w++) M[w] += st[i * 64 + w]; if (cb[i * 24 + 5] < 4096) noBack++; if (cb[i * 24 + 6] < 4096) noFuel++; } return JSON.stringify({gran: {alive: a, words: S.map((x) => Math.round(x / 4096 * 100) / 100), stock: M.map((x) => Math.round(x / 4096 * 100) / 100), noBack, noFuel}})"
+    }
+   ]
+  }
+ ]
+}

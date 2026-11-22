@@ -1,0 +1,51 @@
+{
+  "name": "c15m-rchk3-maze",
+  "description": "maze s7 carbon=0, eat probe",
+  "condition": {
+    "name": "c15m-rchk3-maze",
+    "description": "maze s7 carbon=0, eat probe",
+    "query": {
+      "terrain": "maze",
+      "seed": 7,
+      "carbon": 0
+    },
+    "duration": 1,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 0.02,
+        "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, inn:H.in, bat:H.bat, start:E.start, tot:E.tot})"
+      }
+    ]
+  },
+  "url": "http://localhost:52648/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&terrain=maze&seed=7&carbon=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "cbdc504b6df41145929522bc160469cb689c1a11",
+  "dirty": true,
+  "started": "2026-11-22T21:35:51",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1.0,
+  "run_wall_s": 0.96,
+  "speed_reached": 1.05,
+  "samples": 2,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.016666666666666666,
+      "js": "const H=moire.heat.ledger, E=moire.eat; return JSON.stringify({r:H.rounding, inn:H.in, bat:H.bat, start:E.start, tot:E.tot})",
+      "result": "{\"r\":-0.0042724609375,\"inn\":307130.3979034424,\"bat\":1453.6062774658203,\"start\":4780.8182373046875,\"tot\":{\"burned\":0,\"gain\":0,\"bheat\":0,\"inBurn\":0,\"inSwap\":0,\"inForm\":0,\"uptake\":0,\"release\":0,\"expel\":0,\"paid\":166.53375244140625,\"dump\":0,\"batBack\":2995.94482421875,\"gone\":0,\"inHeat\":0}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-22T21:37:16",
+  "wall_s": 85.6
+}

@@ -82,6 +82,7 @@ export class Glue {
       formed: jn / 2, strength: jn ? w[21] / 1000 / jm : 0, load: jn ? s[22] / 1000 / jm : 0, torn: w[23],
       tears: tears / 2, heals, tearRate: rate,
       stirWork: ticks ? work / 65536 / (ticks / 60) : 0,   // the stirred water's work on the cells per s (energy units; taken from heat)
+      bad: w[2], fast: w[3],   // the portable guard (cell_step.wgsl G0S_BAD, G0S_FAST; src/gpu.js): cells put back after NaN / infinity; too-fast cell-ticks
     };
     const S = this.series, last = S[S.length - 1];
     if (last && time < last[0]) S.length = 0;

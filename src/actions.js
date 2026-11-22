@@ -19,6 +19,7 @@
 // page and comparing the state and the flash after each press).
 
 import { ELECTRONS } from './matter.js';
+import { CARBON } from './carbon.js';   // step C15a
 import { JOBS } from './jobs.js';
 const JOB_WORD = ['warm white', 'lime', 'pink', 'violet', 'cyan', 'amber', 'red'];   // step F0: the jobs' neon inks in words (src/palette.js)
 
@@ -65,6 +66,8 @@ export const RULE_GROUPS = [
   ['lipids', 'Lipid membranes (step C12b)'],
   ['excited', 'Excited waste (step C12c)'],
   ['electrons', 'Electrons (step C12d)'],
+  ['carbon', 'Carbon (step C15a)'],
+  ['cbcells', 'Carbon in cells (step C15b)'],
   ['waste', 'Waste must leave (step C12e)'],
   ['ions', 'Ion flow (step C12g)'],
   ['whole', 'Whole membranes (step M1)'],
@@ -630,6 +633,81 @@ export function makeActions(app) {
     eknob('elKabs', 'absorption depth', 'kAbs', 0.01, 50, 1.5, 2, 'optical depth of a substance for a band its gap matches, per unit per R²'),
     eknob('elYrx', 'share that reacts', 'yRx', 0, 1, 1.25, 2, 'share of the excitations that react, where a reaction is open to them'),
     eknob('elYfl', 'share that glows', 'yFl', 0, 1, 1.25, 2, 'share of the rest that fluoresces (the others turn into heat)'),
+  );
+
+  // ---------- carbon (step C15a; panel only: no keys are free) ----------
+  const CBP = () => app.matter.carbon.params;
+  const cbknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'carbon', type: 'knob', get: () => CBP()[key].toFixed(digits),
+    run: (k) => { const p = CBP(); p[key] = Math.max(lo, Math.min(hi, +(p[key] * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  const cbtoggle = (id, label, key, onText, offText, help) => ({ id, keys: [], label, group: 'carbon', type: 'toggle', get: () => CARBON && CBP()[key],
+    run: () => (CARBON ? `${label} ${flip(CBP(), key) ? onText : offText}` : 'carbon is off (?carbon=0)'), help });
+  A.push(
+    { id: 'carbon', keys: [], label: 'carbon (reloads)', group: 'carbon', type: 'toggle', get: () => CARBON,
+      run: () => {
+        const u = new URL(location.href);
+        u.searchParams.set('carbon', CARBON ? '0' : '1');
+        if (!CARBON) u.searchParams.delete('electrons');
+        setTimeout(() => location.assign(u.href), 600);
+        return `reloading ${CARBON ? 'without carbon (the chemistry as before C15a)' : 'with carbon (the builder atom c, its ladder from methane-like to CO2-like, tar)'}: carbon is fixed for the page`;
+      },
+      help: 'the builder atom c (four hands): a ladder of one-carbon molecules from methane-like fuel to CO2-like exhaust, and tar (dead carbon, mud); in the open dish only (the cells ignore it for now). Switching reloads the page (a fresh dish)' },
+    cbtoggle('cbOx', 'oxidizing', 'oxidize', 'on: a free taker (oxygen-like t) takes a giver off a carbon hand, by heat (fuel burns where it is hot)', 'off',
+      't + [c-g] -> [c-t] + g releases 2.75; its spark (0.5) makes it slow in the cool dish, fast near hot vents'),
+    cbtoggle('cbCond', 'condensing (tar forms)', 'condense', 'on: a fuel hand and a burnt hand join two carbons and leave water: tar', 'off',
+      '[c-g] + [c-t] -> [c-c] + gt releases 0.75: where fuel and burnt carbon meet, dead carbon (tar, mud) slowly builds up'),
+    cbtoggle('cbLight', 'hard light fixes carbon', 'light', 'on: hard light caught by a burnt hand puts a giver back on it (where free g is), and splits backbones with water', 'off',
+      'REDUCE g + [c-t] -> [c-g] + t and HYDROLYZE gt + [c-c] -> [c-g] + [c-t], by hard light (one photon per hand: making fuel from CO2-like carbon is hard)'),
+    cbtoggle('cbDis', 'tar dissolves / takes in', 'dissolve', 'on: loose tar carbons leave as molecules, molecules stick to tar', 'off',
+      'zero energy: a tar carbon with no backbone bond leaves as a ladder molecule; a ladder molecule sticks where tar is'),
+    cbtoggle('cbSpring', 'springs drip carbon', 'springs', 'on: mineral springs drip CO2-like carbon, vents a little methane-like fuel with it', 'off: no new carbon',
+      'per atom a spring drips: 0.08 CO2-like molecules at a mineral spring; 0.025 methane-like and 0.025 CO2-like at a vent (a fuel seep)'),
+    { id: 'cbLook', keys: [], label: 'carbon drawn', group: 'carbon', type: 'toggle', get: () => CARBON && app.matter.carbon.look.on,
+      run: () => (CARBON ? `carbon ${flip(app.matter.carbon.look, 'on') ? 'drawn: dust green (fuel) to slate (burnt), tar as amber patches' : 'not drawn'}` : 'carbon is off'),
+      help: 'the ladder as dust shaded fuel green to slate, tar as flat amber patches with a waxy green sheen where it holds fuel' },
+    cbknob('cbKox', 'oxidize rate', 'kOx', 0.01, 500, 1.5, 2, 'R² per s, before the spark’s factor exp(−0.5 / (theta T))'),
+    cbknob('cbKcond', 'condense rate', 'kCond', 0.01, 500, 1.5, 2, 'R² per s, before the spark’s factor'),
+    cbknob('cbKdis', 'dissolve rate', 'kDis', 0.001, 5, 1.5, 3, 'per s, of the loose tar carbons'),
+    cbknob('cbKset', 'settle rate', 'kSet', 0.001, 5, 1.5, 3, 'R² per s, x the tar’s carbons per R²'),
+    { id: 'cbSurf', keys: [], label: 'tar surface size (C15b)', group: 'carbon', type: 'knob', get: () => CBP().surf.toFixed(2),
+      run: (k) => { const p = CBP(); p.surf = k === '-' ? +(p.surf / 1.5).toPrecision(3) : +Math.max(0.05, p.surf * 1.5).toPrecision(3); if (p.surf < 0.05) p.surf = 0; return `tar surface size ${p.surf}`; },
+      help: 'carbons per R²: thicker tar is a lump that reacts only at its surface ((size / tar)^(1/3) of its hands); 0: all of it (as C15a)' },
+  );
+
+  // ---------- carbon in cells (step C15b; panel only) ----------
+  const CCP = () => app.cells.eat.carbon.params;
+  const cctoggle = (id, label, key, onText, offText, help) => ({ id, keys: [], label, group: 'cbcells', type: 'toggle', get: () => CARBON && CCP()[key],
+    run: () => (CARBON ? `${label} ${flip(CCP(), key) ? onText : offText}` : 'carbon is off (?carbon=0)'), help });
+  const ccknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'cbcells', type: 'knob', get: () => CCP()[key].toFixed(digits),
+    run: (k) => { const p = CCP(); p[key] = Math.max(lo, Math.min(hi, +(p[key] * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    cctoggle('cbCells', 'cells eat carbon', 'on', 'on: the cells take part in carbon (exchange, engines, grazing, granules)', 'off: the cells are blind to carbon (as C15a)',
+      'the carbon ladder crosses membranes, four carbon engines can sit in the genome, cells graze tar and keep granules'),
+    cctoggle('cbExch', 'carbon through membranes', 'exchange', 'on: the ladder molecules cross by concentration (neutral: no ion block)', 'off',
+      'CO2-like carbon made inside leaves by itself, down its gradient; fuel carbon comes in where the dish holds more'),
+    cctoggle('cbEng', 'carbon engines', 'engines', 'on: oxidize (breathe on carbon), condense (store), reduce (fix, by light), hydrolyze (digest)', 'off: idle',
+      'the carbon engines in the genome slots run, as every engine (spark from the battery; light pays only the rise)'),
+    cctoggle('cbGraze', 'cells graze tar', 'graze', 'on: cells with an oxidizing or hydrolyzing engine take in the tar under them', 'off',
+      'mud eaters: tar into granules, at kGraze x those engines’ rate per s'),
+    cctoggle('cbDis2', 'granules dissolve', 'dissolve', 'on: loose granule carbons leave as ladder molecules', 'off',
+      'a granule carbon with no backbone bond leaves as a molecule the engines can use (or CO2-like carbon that can leave)'),
+    cctoggle('cbSmell', 'smell carbon fuel', 'smell', 'on: the corners smell the ladder’s fuel', 'off', 'each molecule weighted by what a free t releases from it'),
+    cctoggle('cbGrow', 'growth needs carbon', 'growth', 'on: a cell’s body is carbon; it divides only with its body full', 'off: carbon does not limit division',
+      'the body wants kBody carbons per R² of the cell, built from fuel carbon in the stock (never CO2-like), the spark per carbon from the battery'),
+    ccknob('cbBody', 'body carbon', 'kBody', 0.001, 2, 1.5, 3, 'carbon units per R² of a cell’s area'),
+    ccknob('cbBuild', 'body build rate', 'kBuild', 0.01, 10, 1.5, 2, 'share of the shortfall built per s'),
+    ccknob('cbKgraze', 'graze rate', 'kGraze', 0.001, 5, 1.5, 3, 'share of the tar under the cell per s, per unit of the grazing engines’ rate'),
+    ccknob('cbKdis2', 'granule dissolve rate', 'kDis', 0.001, 10, 1.5, 3, 'per s, of the granules’ loose carbons'),
+    // step C15c: carbon makes the cell
+    cctoggle('cbTrans', 'carbon transporter', 'transport', 'on: the transporter gene speeds the ladder through the membrane (an upkeep per level)', 'off: a neutral molecule’s rate (C15b)',
+      'a gene (a log level, founders 1): the ladder passes at 0.24 + kTrans x level of a light atom’s rate'),
+    cctoggle('cbRed', 'fat from sugar', 'reduce', 'on: the lipid builder may reduce burnt hands from the battery (above its floor)', 'off: only from carbon reduced enough',
+      'a reduction costs 2.75 + a spark from the battery, and a water split (4.5 more) when no free g is in the stock'),
+    cctoggle('cbBite', 'oxygen damages membranes', 'oxBite', 'on: free t oxidises the lipids (fat -> soap -> mud)', 'off: nothing bites',
+      'lipid peroxidation: the same oxidation as breathing, uncontrolled; the bite block (M1) still holds'),
+    cctoggle('cbEnz', 'engines need enzymes', 'enzymes', 'on: 4 carbons + 1 G per unit; worn and renewed (the turnover replaces the upkeep)', 'off: the engines’ upkeep (T1b)',
+      'an engine runs at the share of its enzymes the cell holds'),
+    ccknob('cbHungry', 'hungry grazing', 'hungry', 0, 50, 1.5, 2, 'a cell short of body carbon grazes the mud under it as this many units of a grazing engine'),
+    ccknob('cbRedFloor', 'reduction floor', 'redFloor', 0, 1, 1.5, 2, 'the builder reduces only from the battery above this share of it'),
   );
 
   // ---------- waste must leave (step C12e; panel only: no keys are free) ----------

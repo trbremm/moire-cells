@@ -78,6 +78,12 @@ struct MatterTick {
   region: u32,                  // count: ledger region (LG_M_DISH or LG_M_GONE)
   heat: u32,                    // step C4: word offset (in `mg`) of the heat copy current in this tick
   _p1: u32,
+  // step C15a, carbon (src/carbon.js, carbon.wgsl; 0 when carbon is off): word offsets (in `mg`) of the ladder's copy to read and to
+  // write in this substep (the ledger slots: the current copy), and of the tar's hand counts
+  csrc: u32,
+  cdst: u32,
+  ctar: u32,
+  _p2: u32,
 };
 
 struct Spring {

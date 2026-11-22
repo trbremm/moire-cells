@@ -1,0 +1,375 @@
+{
+  "name": "c15b-oxy-full_s3",
+  "description": "oxygen conditions, the whole dish lit, carbon on, seed 3, 10 min",
+  "condition": {
+    "name": "c15b-oxy-full_s3",
+    "description": "oxygen conditions, the whole dish lit, carbon on, seed 3, 10 min",
+    "query": {
+      "seed": 3,
+      "light": "full"
+    },
+    "duration": 602.5,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 300
+      },
+      {
+        "t": 600
+      },
+      {
+        "t": 600,
+        "panel": true,
+        "name": "panel"
+      },
+      {
+        "t": 602,
+        "name": "harmonic"
+      }
+    ],
+    "snapshots": [
+      {
+        "t": 600,
+        "grid": true
+      }
+    ],
+    "evals": [
+      {
+        "t": 0,
+        "js": "moire.matter.clearSprings(); moire.matter.addSpring(875, 328, 'light', 1e9); moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 20,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 40,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 60,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 80,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 100,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 120,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 140,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 160,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 180,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 200,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 220,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 240,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 260,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 280,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 300,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 320,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 340,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 360,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 380,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 400,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 420,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 440,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 460,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 480,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 500,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 520,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 540,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 560,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 580,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 600,
+        "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+      },
+      {
+        "t": 300,
+        "js": "const L = moire.carbon.ledger, C = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, ladder: L && L.ladder, tar: L && L.tar, dishC: L && L.dish.c, cellsC: L && L.cells.c, rx: L && L.rx, cells: C && {rate: C.rate, census: C.census, granC: C.granC, ladder: C.ladder}, rounding: L && L.rounding, eRounding: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], engines: moire.eat.census && moire.eat.census.all.map(c => c.n)})"
+      },
+      {
+        "t": 600,
+        "js": "const L = moire.carbon.ledger, C = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, ladder: L && L.ladder, tar: L && L.tar, dishC: L && L.dish.c, cellsC: L && L.cells.c, rx: L && L.rx, cells: C && {rate: C.rate, census: C.census, granC: C.granC, ladder: C.ladder}, rounding: L && L.rounding, eRounding: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], engines: moire.eat.census && moire.eat.census.all.map(c => c.n)})"
+      },
+      {
+        "t": 601,
+        "js": "moire.control.action('harmonic')"
+      }
+    ]
+  },
+  "url": "http://localhost:51517/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&light=full",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "cf39e2c633f7c13a5eba333bc1843e0b12fb2e2e",
+  "dirty": true,
+  "started": "2026-11-17T23:49:14",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 602.5,
+  "run_wall_s": 795.82,
+  "speed_reached": 0.76,
+  "samples": 22,
+  "shots": [
+    "shots/t300.png",
+    "shots/t600.png",
+    "shots/panel.png",
+    "shots/harmonic.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t600.json"
+  ],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.matter.clearSprings(); moire.matter.addSpring(875, 328, 'light', 1e9); moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 2
+    },
+    {
+      "t": 20.00000000000015,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 39.99999999999901,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 59.999999999997875,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 79.99999999999675,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 99.99999999999561,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 119.99999999999447,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 140.00000000000355,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 160.00000000001947,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 180.00000000003539,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 200.0000000000513,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 220.00000000006722,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 240.00000000008313,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 260.0000000000922,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 280.000000000074,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 300.0000000000558,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 300.0000000000558,
+      "js": "const L = moire.carbon.ledger, C = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, ladder: L && L.ladder, tar: L && L.tar, dishC: L && L.dish.c, cellsC: L && L.cells.c, rx: L && L.rx, cells: C && {rate: C.rate, census: C.census, granC: C.granC, ladder: C.ladder}, rounding: L && L.rounding, eRounding: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], engines: moire.eat.census && moire.eat.census.all.map(c => c.n)})",
+      "result": "{\"t\":300.0000000000558,\"alive\":28,\"job\":[5,20,3,0,0,0,0],\"ladder\":[14.617431640625,6.860107421875,3.068603515625,1.670166015625,8.009521484375],\"tar\":[657.530029296875,384.812255859375,444.6396484375],\"dishC\":570.3538208007812,\"cellsC\":6.75726318359375,\"rx\":{\"oxidize\":8.865306416503964,\"condense\":11.187203829415912,\"reduce\":9.1950163294141,\"hydrolyze\":10.028896644476335,\"dissolve\":0.6661436987710977,\"settle\":0.2884061219264918,\"glow\":212.1030113347216,\"warm\":44421.084144507615},\"cells\":{\"rate\":{\"ox\":0.009725601946730156,\"cond\":0,\"red\":0,\"hyd\":0,\"dis\":0.0016809682377064469,\"graze\":0.08356813524597764,\"gain\":0.02005905401513095,\"heat\":0.006686351338376983,\"paid\":0,\"phUsed\":0,\"phIdle\":0,\"satWant\":0,\"satLost\":0,\"rise\":0,\"built\":0.013687884221323925,\"buildPaid\":0.006843942110661963},\"census\":{\"n\":28,\"ox\":2,\"cond\":0,\"red\":2,\"redLit\":2,\"hyd\":0,\"granule\":3,\"granC\":1.175,\"ladder\":0.117,\"any\":2,\"oxOnly\":0,\"litOnly\":0,\"body\":5.46,\"short\":7,\"want\":4.419},\"granC\":1.17812255859375,\"ladder\":[0.01318359375,0.027587890625,0.02734375,0.019775390625,0.03125]},\"rounding\":0,\"eRounding\":0,\"atoms\":0,\"charge\":0,\"energy\":0.0016937255859375,\"eIn\":10352936.515914917,\"freeT\":667.998779296875,\"engines\":[0,5,23,0]}"
+    },
+    {
+      "t": 320.00000000003763,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 340.00000000001944,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 360.00000000000125,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 379.99999999998306,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 399.99999999996487,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 419.9999999999467,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 4
+    },
+    {
+      "t": 439.9999999999285,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 459.9999999999103,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 3
+    },
+    {
+      "t": 479.9999999998921,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 499.9999999998822,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 519.9999999998736,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 539.9999999998646,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 559.9999999998548,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 579.9999999998447,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 599.9999999998337,
+      "js": "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length",
+      "result": 5
+    },
+    {
+      "t": 599.9999999998337,
+      "js": "const L = moire.carbon.ledger, C = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, ladder: L && L.ladder, tar: L && L.tar, dishC: L && L.dish.c, cellsC: L && L.cells.c, rx: L && L.rx, cells: C && {rate: C.rate, census: C.census, granC: C.granC, ladder: C.ladder}, rounding: L && L.rounding, eRounding: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], engines: moire.eat.census && moire.eat.census.all.map(c => c.n)})",
+      "result": "{\"t\":599.9999999998337,\"alive\":8,\"job\":[4,2,2,0,0,0,0],\"ladder\":[38.298583984375,10.205078125,3.670654296875,2.127685546875,11.41259765625],\"tar\":[725.28125,514.655517578125,680.18798828125],\"dishC\":727.0661010742188,\"cellsC\":2.20709228515625,\"rx\":{\"oxidize\":1.7188690929893682,\"condense\":3.31673971036887,\"reduce\":4.587223704272465,\"hydrolyze\":5.332269435980459,\"dissolve\":1.327410442074378,\"settle\":0.6388147865859468,\"glow\":138.84301162360188,\"warm\":17728.520507828624},\"cells\":{\"rate\":{\"ox\":0,\"cond\":0,\"red\":0,\"hyd\":0,\"dis\":0.0007145579268299181,\"graze\":0.01214748475610861,\"gain\":0,\"heat\":0,\"paid\":0,\"phUsed\":0,\"phIdle\":0,\"satWant\":0,\"satLost\":0,\"rise\":0,\"built\":0.0035727896341495907,\"buildPaid\":0.0017863948170747954},\"census\":{\"n\":8,\"ox\":0,\"cond\":0,\"red\":0,\"redLit\":0,\"hyd\":0,\"granule\":7,\"granC\":0.843,\"ladder\":0.07,\"any\":0,\"oxOnly\":0,\"litOnly\":0,\"body\":1.295,\"short\":2,\"want\":1.267},\"granC\":0.8425122070312501,\"ladder\":[0.027099609375,0.02490234375,0.014404296875,0.003173828125,0]},\"rounding\":0,\"eRounding\":0,\"atoms\":0,\"charge\":0,\"energy\":0.0110626220703125,\"eIn\":20384079.123077393,\"freeT\":1149.879638671875,\"engines\":[0,2,6,0]}"
+    },
+    {
+      "t": 600.9999999998328,
+      "js": "moire.control.action('harmonic')",
+      "result": null
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T00:03:58",
+  "wall_s": 883.55
+}

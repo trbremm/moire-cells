@@ -1,0 +1,224 @@
+"""Step C15d conditions: the carbon economy (README "Step C15d: the carbon economy"; EXPERIMENTS.md "The carbon economy").
+
+python experiments/conditions/c15d/make.py   -> the batch files in this folder
+
+smoke     the default scene 90 s: the flow ledger and the books
+ab        the fixes one at a time and together, default scene seed 3, 10 minutes (the tuning runs)
+watch     the scenes the step must make viable, all fixes on, against ?carbon=0 at the same seed
+pictures  close-ups from the watch runs' snapshots (neon and harmonic)
+"""
+import json
+import os
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+HARM_ON = "moire.control.action('harmonic')"
+# a probe: the flow ledger, the Liebig census, the parts, the books (EXPERIMENTS.md tables come from these via summary.py)
+PROBE = ("const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; "
+         "return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, "
+         "flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, "
+         "memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, "
+         "cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, "
+         "charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], "
+         "freeG: moire.matter.dish[3]})")
+SPOT_VENT = "moire.matter.addSpring(875, 472, 'heavy', 2.0); return moire.matter.springs.length"
+
+
+def run(name, desc, query, dur, probes, shots=None, oxygen=False, snap=False, harmonic=False, every=30):
+    evals = []
+    if oxygen:   # the oxygen conditions (step M1's): a lasting mineral spring and a vent dripping 2 s every 20 s (no free-atom spring)
+        evals.append({"t": 0, "js": "moire.matter.clearSprings(); moire.matter.addSpring(875, 328, 'light', 1e9); " + SPOT_VENT})
+        evals += [{"t": t, "js": SPOT_VENT} for t in range(20, dur, 20)]
+    evals += [{"t": t, "js": PROBE} for t in probes]
+    sh = shots if shots is not None else [{"t": dur, "name": "end"}]
+    if harmonic:
+        evals.append({"t": dur + 1, "js": HARM_ON})
+        sh = sh + [{"t": dur + 2, "name": "harmonic"}]
+    return {"name": name, "description": desc, "query": query, "duration": dur + (2.5 if harmonic else 0), "sample_every": every, "stall": 300,
+            "shots": sh, "snapshots": [{"t": dur, "grid": True}] if snap else [], "evals": evals}
+
+
+def dump(obj, fname):
+    json.dump(obj, open(os.path.join(HERE, fname), "w"), indent=1)
+    print("wrote", fname)
+
+
+smoke = {"batch": "c15d-smoke", "runs": [
+    run("c15d-smoke", "smoke: default scene 90 s, the flow ledger", {"seed": 3}, 90, (30, 60, 90), every=15),
+]}
+dump(smoke, "smoke.json")
+
+# ---------- the tuning runs: each fix alone and together (default scene seed 3 and the wild colonies, 10 minutes) ----------
+PROBES10 = tuple(range(60, 601, 60))
+COLONIES = {"preset": "colonies", "founders": "wild"}
+
+
+def ab(name, desc, q, dur=600, scene=None):
+    base = dict(COLONIES) if scene == "colonies" else {}
+    return run(f"c15d-{name}", desc, {"seed": 3, **base, **q}, dur, PROBES10 if dur == 600 else tuple(range(60, dur + 1, 60)),
+               shots=[{"t": dur, "name": "end"}])
+
+
+dump({"batch": "c15d-base", "runs": [
+    ab("base-default", "baseline (C15c as committed): default scene, seed 3, 10 min", {}),
+    ab("base-colonies", "baseline (C15c as committed): colonies of wild founders, seed 3, 10 min", {}, scene="colonies"),
+]}, "base.json")
+
+# ---------- the merge with main (G0b obstacles): carbon's spread keeps the obstacles' mask; books with carbon on ----------
+dump({"batch": "c15d-merge", "runs": [
+    run("c15d-merge-default", "merge check: default scene, carbon on, 60 s", {"seed": 3}, 60, (30, 60), every=15),
+    run("c15d-merge-chip", "merge check: ?preset=chip, carbon on, 90 s", {"seed": 3, "preset": "chip"}, 90, (30, 60, 90), every=15),
+    run("c15d-merge-crevices", "merge check: ?preset=crevices, carbon on, 90 s", {"seed": 3, "preset": "crevices"}, 90, (30, 60, 90), every=15),
+]}, "merge.json")
+# the carbon inside solid pixels (should be ~0: pushed out; only tar buried before the wall was there may stay)
+SOLIDC = ("const H = moire.heat, M = moire.matter, Cb = M.carbon, O = moire.obstacles, d = moire.gpu.device, N = H.n; "
+          "const buf = d.createBuffer({size: H.bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); const e = d.createCommandEncoder(); "
+          "e.copyBufferToBuffer(H.buffer, 0, buf, 0, H.bytes); d.queue.submit([e.finish()]); await buf.mapAsync(GPUMapMode.READ); "
+          "const w = new Int32Array(buf.getMappedRange().slice(0)); buf.unmap(); buf.destroy(); "
+          "const LW = 46080, mk = O.off('mask'), lb = (Cb.cur ? Cb.copyBase(1) : Cb.copyBase(0)), tb = Cb.tarBase(); "
+          "let ins = 0, out = 0, nS = 0; for (let i = 0; i < N; i++) { const solid = (w[mk + i] & 1) !== 0; let c = 0; "
+          "for (let j = 0; j < 5; j++) c += Math.max(w[LW + lb + j * N + i], 0); for (let j = 0; j < 3; j++) c += Math.max(w[LW + tb + j * N + i], 0) * (j ? 0.25 : 0.5); "
+          "if (solid) { ins += c; nS++; } else out += c; } return JSON.stringify({solidPx: nS, carbonInSolid: ins / 4096, carbonInWater: out / 4096});")
+dump({"batch": "c15d-merge2", "runs": [
+    {**run("c15d-merge-crevices2", "merge check: crevices, the carbon inside solids at 60 s", {"seed": 3, "preset": "crevices"}, 60, (60,), every=30),
+     "evals": [{"t": 60, "js": SOLIDC}]},
+]}, "merge2.json")
+
+# the fixes, each alone (the others off) and all together; ?cbphoto, ?cbshut, ?cbhydheat
+OFF = {"cbphoto": 0, "cbshut": 0, "cbhydheat": 0}
+dump({"batch": "c15d-ab1", "runs": [
+    ab("ab1-photo", "fix (a) alone: founders that photosynthesise fix carbon; default scene, seed 3, 10 min", {**OFF, "cbphoto": 1}),
+    ab("ab1-shut", "fix (c) alone: the reducing shuttle; default scene, seed 3, 10 min", {**OFF, "cbshut": 1}),
+    ab("ab1-hyd", "fix (b) alone: mud hydrolyses by heat; default scene, seed 3, 10 min", {**OFF, "cbhydheat": 1}),
+    ab("ab1-all", "fixes (a) (b) (c) together; default scene, seed 3, 10 min", {}),
+    ab("ab1-all-colonies", "fixes (a) (b) (c) together; colonies of wild founders, seed 3, 10 min", {}, scene="colonies"),
+]}, "ab1.json")
+
+# diagnosis after ab1 (the fixes (a)-(c) barely moved the default scene): which rule holds the count down? one rule off or eased at a time
+dump({"batch": "c15d-diag", "runs": [
+    ab("diag-nobody", "diagnosis: growth needs carbon OFF (?cbgrow=0); default scene, seed 3, 10 min", {"cbgrow": 0}),
+    ab("diag-noenz", "diagnosis: enzymes OFF (?cbenz=0); default scene, seed 3, 10 min", {"cbenz": 0}),
+    ab("diag-nobite", "diagnosis: oxygen bites OFF (?cbbite=0); default scene, seed 3, 10 min", {"cbbite": 0}),
+    ab("diag-lip0", "diagnosis: C15b linker membranes (?cblip=0); default scene, seed 3, 10 min", {"cblip": 0}),
+]}, "diag.json")
+
+# ab2: with fat from granules (e1) and hunger for every part (e2); all fixes on, and (e1)+(e2) alone
+OFF2 = {**OFF, "cbgran": 0, "cbhunger": 0}
+dump({"batch": "c15d-ab2", "runs": [
+    ab("ab2-all", "all fixes (a)-(e2); default scene, seed 3, 10 min", {}),
+    ab("ab2-all-colonies", "all fixes (a)-(e2); colonies of wild founders, seed 3, 10 min", {}, scene="colonies"),
+    ab("ab2-gran", "fixes (e1) fat from granules + (e2) hunger alone; default scene, seed 3, 10 min", {**OFF2, "cbgran": 1, "cbhunger": 1}),
+]}, "ab2.json")
+
+# diag2: every part's carbon rule off at once (does carbon in the open dish alone hold the count down?), and the colonies' killers
+dump({"batch": "c15d-diag2", "runs": [
+    ab("diag2-partsoff", "diagnosis: body, enzymes and carbon membranes off (?cbgrow=0&cbenz=0&cblip=0); default scene, seed 3, 10 min",
+       {"cbgrow": 0, "cbenz": 0, "cblip": 0, "cbpigfound": 0}),
+    ab("diag2-col-partsoff", "diagnosis: the same, colonies of wild founders, seed 3, 10 min", {"cbgrow": 0, "cbenz": 0, "cblip": 0, "cbpigfound": 0}, scene="colonies"),
+]}, "diag2.json")
+
+# ab3: + founders start with their pigment (f); the pigment is the gate (diag: 100x less pigment held than with ?carbon=0)
+dump({"batch": "c15d-ab3", "runs": [
+    ab("ab3-all", "all fixes (a)-(f); default scene, seed 3, 10 min", {}),
+    ab("ab3-all-colonies", "all fixes (a)-(f); colonies of wild founders, seed 3, 10 min", {}, scene="colonies"),
+    ab("ab3-pig-only", "fix (f) alone (founders' pigment); default scene, seed 3, 10 min", {**OFF2, "cbpigfound": 1}),
+]}, "ab3.json")
+# ab3b: all on but fix (a) (the light + burn founders' REDUCE slot takes the g their burner lives on)
+dump({"batch": "c15d-ab3b", "runs": [
+    ab("ab3-nophoto", "all fixes but (a) (?cbphoto=0); default scene, seed 3, 10 min", {"cbphoto": 0}),
+]}, "ab3b.json")
+# diag3: with every fix on, which rule binds next? enzymes off; body off
+dump({"batch": "c15d-diag3", "runs": [
+    ab("diag3-noenz", "all fixes, enzymes OFF (?cbenz=0); default scene, seed 3, 10 min", {"cbenz": 0}),
+    ab("diag3-nobody", "all fixes, growth needs carbon OFF (?cbgrow=0); default scene, seed 3, 10 min", {"cbgrow": 0}),
+]}, "diag3.json")
+# ab4: + iron at the mineral spring (d): every fix on
+dump({"batch": "c15d-ab4", "runs": [
+    ab("ab4-all-colonies", "all fixes (a)-(f) + (d) G at the mineral spring; colonies of wild founders, seed 3, 10 min", {}, scene="colonies"),
+    ab("ab4-all", "all fixes (a)-(f) + (d); default scene, seed 3, 10 min", {}),
+]}, "ab4.json")
+
+# ---------- watch: the scenes the step must make viable, every fix on, against ?carbon=0 at the same seed ----------
+SCENES = {
+    "default": ("default scene (spotlight, mineral spring, vent, a lasting fuel seep)", {}, False),
+    "colonies": ("colonies preset (five wild founders' colonies, the whole dish lit)", dict(COLONIES), False),
+    "shallows": ("Sunlit shallows preset", {"preset": "shallows"}, False),
+    "oxy-spot": ("oxygen conditions (lasting mineral spring, a vent dripping 2 s in 20, spotlight)", {}, True),
+    "oxy-full": ("oxygen conditions, the whole dish lit", {"light": "full"}, True),
+}
+
+
+def watch(key, seed, dur, off=False):
+    desc, q, oxy = SCENES[key]
+    name = f"c15d-w-{key}{'-off' if off else ''}_s{seed}"
+    shots = [{"t": 300}, {"t": 600}, {"t": dur, "name": "end"}, {"t": dur, "panel": True, "name": "panel"}]
+    return run(name, f"{desc}, {'?carbon=0' if off else 'carbon economy (every C15d fix on)'}, seed {seed}, {dur // 60} min",
+               {"seed": seed, **({"carbon": 0} if off else {}), **q}, dur, tuple(range(60, dur + 1, 60)), shots, oxygen=oxy,
+               snap=not off, harmonic=not off)
+
+
+dump({"batch": "c15d-watch", "runs": [
+    watch("default", 3, 1200), watch("default", 7, 1200), watch("default", 7, 1200, off=True),
+    watch("colonies", 3, 900), watch("colonies", 7, 900), watch("colonies", 7, 900, off=True),
+    watch("shallows", 3, 600), watch("oxy-spot", 3, 600), watch("oxy-full", 3, 600),
+]}, "watch.json")
+# ab5: + wall recycling (g)
+dump({"batch": "c15d-ab5", "runs": [
+    ab("ab5-all", "every fix incl. (g) wall recycling; default scene, seed 3, 10 min", {}),
+    ab("ab5-all-colonies", "every fix incl. (g) wall recycling; colonies of wild founders, seed 3, 10 min", {}, scene="colonies"),
+]}, "ab5.json")
+
+# ---------- pictures: from the watch runs' last snapshots, close-ups through the app's camera (x4), neon and harmonic ----------
+READ = ("const d = moire.gpu.device; const rb = async (buf, off, size) => { const b = d.createBuffer({size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); "
+        "const e = d.createCommandEncoder(); e.copyBufferToBuffer(buf, off, b, 0, size); d.queue.submit([e.finish()]); await b.mapAsync(GPUMapMode.READ); "
+        "const a = b.getMappedRange().slice(0); b.unmap(); b.destroy(); return a; }; window.__pk = window.__pk || {}; ")
+CELLS = ("const C = moire.cells, n = C.count, CF = C.cellBuf.size / 4 / n; const cf = new Float32Array(await rb(C.cellBuf, 0, n * CF * 4)), "
+         "cu = new Uint32Array(cf.buffer); const pts = []; ")
+# the densest spot of live cells weighted by a stock range (bilayer 32..50) or by the pigment (stock word 30)
+def pick_stock(label, w0, w1):
+    return (READ + CELLS + "const st = new Int32Array(await rb(moire.eat.stockBuf, 0, n * 64 * 4)); "
+            f"for (let i = 0; i < n; i++) {{ if (!(cu[i * CF + 9] & 1)) continue; let g = 0; for (let w = {w0}; w < {w1}; w++) g += Math.max(st[i * 64 + w], 0); "
+            "if (g > 0) pts.push([cf[i * CF], cf[i * CF + 1], g]); } let best = null, bv = 0; "
+            "for (const p of pts) { let v = 0; for (const q of pts) if ((p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 < 900) v += q[2]; if (v > bv) { bv = v; best = p; } } "
+            f"window.__pk.{label} = best ? [best[0], best[1]] : [640, 400]; return JSON.stringify({{{label}: window.__pk.{label}, v: bv / 4096, cells: pts.length}})")
+PICKS = {"memb": pick_stock("memb", 32, 50), "pig": pick_stock("pig", 30, 31)}
+
+
+def pictures(name, desc, snap, picks):
+    evals, shots, t = [], [{"t": 1, "name": "dish"}], 1.5
+    evals.append({"t": 1.2, "js": HARM_ON})
+    shots.append({"t": 1.3, "name": "dish_harmonic"})
+    evals.append({"t": 1.4, "js": HARM_ON})
+    for label in picks:
+        evals.append({"t": t, "js": PICKS[label]})
+        evals.append({"t": t + 0.1, "js": f"moire.camera.set(4, ...window.__pk['{label}']); return 'zoom {label}'"})
+        shots.append({"t": t + 0.3, "name": f"zoom_{label}"})
+        evals.append({"t": t + 0.4, "js": HARM_ON})
+        shots.append({"t": t + 0.6, "name": f"zoom_{label}_harmonic"})
+        evals.append({"t": t + 0.7, "js": HARM_ON})
+        evals.append({"t": t + 0.8, "js": "moire.camera.fit(); return 'unzoomed'"})
+        t += 1.5
+    return {"name": name, "description": desc, "query": {"snap": snap}, "dpr": 2, "duration": t + 0.5, "sample_every": 0, "stall": 300,
+            "shots": shots, "snapshots": [], "evals": evals}
+
+
+pics = {"batch": "c15d-pictures", "runs": []}
+for key, at in [("default", 1200), ("colonies", 900), ("shallows", 600)]:
+    pics["runs"].append(pictures(f"c15d-pics-{key}_s3", f"close-ups from the {at // 60}-min snapshot of c15d-w-{key}_s3: the most bilayer, the most pigment",
+                                 f"experiments/runs/c15d-w-{key}_s3/snapshots/snap_t{at}.json", ["memb", "pig"]))
+dump(pics, "pictures.json")
+
+# ---------- browsers: Firefox (headed) and a phone-size Chrome page, every fix on, books ----------
+dump({"batch": "c15d-browsers", "runs": [
+    run("c15d-firefox", "Firefox (headed): the default scene 40 s, every fix on", {"seed": 3}, 40, (20, 40), every=10),
+    {**run("c15d-reload-c15c", "a C15c snapshot (c15c-default_s3 at 20 min) loads and runs on 60 s without the C15d fixes (as it ran), books 0",
+           {"snap": "experiments/runs/c15c-default_s3/snapshots/snap_t1200.json"}, 60, (1, 60), every=30),
+     "evals": [{"t": 1, "js": "const p = moire.carbonCells.params, q = moire.carbon.params; return JSON.stringify({shuttle: p.shuttle, granFat: p.granFat, hunger: p.hunger, wallRecycle: p.wallRecycle, hydHeat: q.hydHeat})"},
+               {"t": 60, "js": PROBE}]},
+    {**run("c15d-phone", "phone size (390 x 844 at dpr 3, Chrome): the default scene 20 s", {"seed": 3}, 20, (20,), every=10), "size": "390x844", "dpr": 3,
+     "shots": [{"t": 20}, {"t": 20, "panel": True, "name": "panel"}]},
+]}, "browsers.json")
+# watch2: the rest of the watch, the default scene at 20 minutes (it regrows late), the others at 10 (the shared GPU ran at x0.15-0.7)
+dump({"batch": "c15d-watch2", "runs": [
+    watch("default", 7, 1200), watch("colonies", 7, 600), watch("default", 7, 1200, off=True), watch("colonies", 7, 600, off=True),
+    watch("shallows", 3, 600), watch("oxy-spot", 3, 600), watch("oxy-full", 3, 600),
+]}, "watch2.json")

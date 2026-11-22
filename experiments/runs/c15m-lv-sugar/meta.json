@@ -1,0 +1,76 @@
+{
+  "name": "c15m-lv-sugar",
+  "description": "maze s7, ?cbsugar=0.2 (x3.3 sugar at mineral springs)",
+  "condition": {
+    "name": "c15m-lv-sugar",
+    "description": "maze s7, ?cbsugar=0.2 (x3.3 sugar at mineral springs)",
+    "query": {
+      "terrain": "maze",
+      "seed": 7,
+      "cbsugar": 0.2
+    },
+    "duration": 120,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 120,
+        "name": "t120"
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 1,
+        "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, springs: moire.matter.springs.length})"
+      },
+      {
+        "t": 60,
+        "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, springs: moire.matter.springs.length})"
+      },
+      {
+        "t": 120,
+        "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, springs: moire.matter.springs.length})"
+      }
+    ]
+  },
+  "url": "http://localhost:55130/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&terrain=maze&seed=7&cbsugar=0.2",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "7ab6d355fefcd3b310b754f911392c725db04218",
+  "dirty": false,
+  "started": "2026-11-22T22:00:09",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 120.0,
+  "run_wall_s": 673.2,
+  "speed_reached": 0.18,
+  "samples": 5,
+  "shots": [
+    "shots/t120.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.9999999999999999,
+      "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, springs: moire.matter.springs.length})",
+      "result": "{\"t\":0.9999999999999999,\"alive\":966,\"job\":[0,966,0,0,0,0,0],\"cRound\":0,\"atoms\":0,\"charge\":0,\"energy\":0.004547119140625,\"springs\":9}"
+    },
+    {
+      "t": 59.999999999997875,
+      "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, springs: moire.matter.springs.length})",
+      "result": "{\"t\":59.999999999997875,\"alive\":712,\"job\":[8,704,0,0,0,0,0],\"cRound\":0,\"atoms\":0,\"charge\":0,\"energy\":0.00384521484375,\"springs\":9}"
+    },
+    {
+      "t": 119.99999999999447,
+      "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, springs: moire.matter.springs.length})",
+      "result": "{\"t\":119.99999999999447,\"alive\":390,\"job\":[16,374,0,0,0,0,0],\"cRound\":0,\"atoms\":0,\"charge\":0,\"energy\":0.001251220703125,\"springs\":9}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-22T22:13:50",
+  "wall_s": 820.2
+}

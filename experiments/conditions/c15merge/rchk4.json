@@ -1,0 +1,44 @@
+{
+ "batch": "c15m-rchk4",
+ "runs": [
+  {
+   "name": "c15m-rchk4-maze",
+   "description": "probe",
+   "query": {
+    "terrain": "maze",
+    "seed": 7,
+    "carbon": 0
+   },
+   "duration": 1,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 0.02,
+     "js": "const H=moire.heat; return JSON.stringify({R:moire.cells.R, v:H.version, hw:H.hw, hh:H.hh, px:H.px, start:moire.cells.start})"
+    }
+   ]
+  },
+  {
+   "name": "c15m-rchk4-open",
+   "description": "probe",
+   "query": {
+    "seed": 7,
+    "carbon": 0
+   },
+   "duration": 1,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 0.02,
+     "js": "const H=moire.heat; return JSON.stringify({R:moire.cells.R, v:H.version, hw:H.hw, hh:H.hh, px:H.px, start:moire.cells.start})"
+    }
+   ]
+  }
+ ]
+}

@@ -18,6 +18,10 @@
 //   ?ripple=1   drop a ripple every 0.7 s at varying spots
 //   ?debug=1    copy console warnings and errors into the overlay
 //   ?nogpu=1    pretend WebGPU is missing (to see the fallback message)
+//   ?tanh=raw   the shaders' own tanh (before 2026-11-22; default safe: tanh of the input clamped to +-15, the same result where a GPU does
+//               it right, finite where one overflows to NaN); ?tanh=naive every tanh as (e^2x - 1) / (e^2x + 1), what such a GPU does (a test;
+//               src/gpu.js patchTanh). ?gpuguard=0 no guard in the cells' step (default: a cell whose numbers come out NaN or infinite is put
+//               back where it was and counted; the overlay's "gpu maths" line). gpucheck.html: the GPU's maths against the expected values
 //   ?cells=N    number of cells (default 2000; on a phone or small touch screen fewer, see defaultCells)
 //   ?check=1    compare the cells' neighbour grid with brute force every 2 s (console)
 //   ?seed=N     seed of the random start (cells, genomes); default random
@@ -35,7 +39,10 @@
 //   ?partner=0|1 step 8, rule a: the partner A' felt as a phase current (key Z); ?change=0|1 rule b (key ,);
 //               ?clock=0|1 its mode (key '); ?side=0|1 rule c, sideways push (key .)
 //   ?heat=0     step C1: start with the kicks from heat off (the old constant jitter; Shift+H)
-//   ?entropy=0  step C1: start with the entropy panel hidden (Shift+E)
+//   ?entropy=1  step C1: start with the entropy panel shown (Shift+E; since the toy front it starts hidden)
+//   ?dev=1      the toy front (src/toy.js): start in the developer mode (the old toolbar, every panel, the hint line; key D or the gear)
+//   ?terrain=name  the toy front: a generated world (src/terrain.js: maze, thicket, caves, delta, forest, hive, rings, spiral, islands,
+//               sieve) from ?seed=N (its own random stream), on the dish ?dish=WxH; ?ui=0 hides every control (pictures)
 //   ?simmer=0   step C1: start with the ripples not driven by heat (Shift+R)
 //   ?light=spot|full|off   step C2: the light's mode (Shift+L); ?spot=x,y,r the spot's centre and radius (shares of the
 //               dish's width, height and shorter side, or CSS px if any is above 2); ?tilt=deg (0..70); ?az=deg (the
@@ -90,6 +97,35 @@
 //               ?fluor=0 no fluorescence, ?photo=0 excited states do not react (no photochemistry in the open), ?glow=0 the glow
 //               not drawn; ?kabs=x a matching gap's optical depth, ?yrx=x the share that reacts, ?yfl=x the share of the rest that
 //               fluoresces (rules panel, Electrons; view panel)
+//   ?carbon=0     step C15a: no carbon (today's chemistry exactly: no carbon channels written or drawn; fixed for the page; old snapshots
+//               load this way by themselves). With carbon on: ?cbox=0 no oxidizing by heat, ?cbcond=0 no condensing (no tar forming),
+//               ?cblight=0 no reducing / hydrolyzing by hard light, ?cbdis=0 tar neither dissolves nor takes molecules in, ?cbspring=0
+//               springs drip no carbon; ?cbkox=x, ?cbkcond=x, ?cbkdis=x, ?cbkset=x the rates; ?cblook=0 carbon not drawn (rules
+//               panel, Carbon). Step C15b, cells eat carbon (src/carboncells.js): ?cbcells=0 the cells blind to carbon (as C15a), ?cbexch=0
+//               no ladder through the membrane, ?cbeng=0 the carbon engines idle, ?cbgraze=0 no tar grazing, ?cbdis2=0 granules keep their
+//               loose carbons, ?cbsmell=0 no smell for carbon fuel; ?cbkgraze=x, ?cbkdis2=x; ?cbsurf=x the tar's surface size (C15b, the
+//               open dish: tar thicker than this reacts only at its surface; 0 = all of it, as C15a); ?seep=0 the default scene without
+//               its lasting fuel seep; ?cbfounder=x the chance a std founder gets its carbon engines (1/3); GROWTH NEEDS CARBON: ?cbgrow=0
+//               off, ?cbbody=x the body's carbon per R^2 (0.05), ?cbbuild=x per s (0.5), ?cbfound=x the founders' body (share of the want, 1)
+//               Step C15c, carbon makes the cell (src/carboncells.js): ?cblip=0 step C15b (membranes, walls, pigments, glue of linkers; fixed
+//               for the page), ?cbsugar=x sugar-unit-like carbon at the mineral spring (0.06 per atom of its rate), ?cbtrans=0 no carbon
+//               TRANSPORTER (the ladder passes at a neutral molecule's rate, as C15b), ?cbktrans=x its rate per level (1), ?cbtransup=x its
+//               upkeep per level (energy per s), ?cbred=0 the lipid builder may not reduce burnt hands from the battery, ?cbbite=0 oxygen
+//               does not damage membranes, ?cbenz=0 engines need no enzymes (carbon + G), ?cbenzk=x enzyme carbon per unit of rate per R^2,
+//               ?cbenzlife=x their life (s), ?cbtool=0 cells placed by the tools start without a body, ?cbhungry=x a hungry cell's
+//               grazing (units of a grazing engine: 5; C15b 1)
+//               Step C15d, the carbon economy (src/carboncells.js, src/carbon.js, src/genome.js): ?cbshut=0 no reducing shuttle (the builder
+//               reduces only from the battery, as C15c), ?cbphoto=0 founders that photosynthesise do not fix carbon by default (C15c's
+//               chance 1/3 for photosynthesisers; light + burn founders keep their fermenter), ?cbhydheat=0 mud does not hydrolyse by heat
+//               (by hard light only), ?cbgran=0 no fat from granules (the two-carbon builder takes ladder molecules only), ?cbhunger=0 only a
+//               cell short of BODY carbon grazes as a hungry one, ?cbpigfound=x founders start with x times the pigment a harvest rate of 1
+//               wants (1; 0 = none, as C15c), ?cbwallrec=0 a jolted wall's cracked pieces go into the mud (as C15c), not the cell's
+//               granules, ?cbgspring=x the share of a mineral spring's atoms that are G (0.01; 0 = none, as C15c)
+//               Step C15e, carbon life viable (src/carboncells.js, src/carbon.js): ?cbenzany=0 an enzyme's frame is 4 cellulose-like carbons
+//               (as C15d; fixed for the page, snapshots carry it), ?cbgranred=0 builders do not reduce the granules' burnt hands, ?cbgranhyd=0
+//               builders do not open (hydrolyse) the granules' spare backbones for their hands, ?cbgsplit=0 the enzyme builder takes
+//               only free G (does not split GT or rust Gt in its stock for it), ?cbbodyany=1 the body takes granule carbons
+//               whatever their hands (off by default: C15b's rule, granules only while a quarter of their hands are fuel)
 //   ?saturation=0 step C12e: no saturation (reactions inside cells do not slow as their products pile up); ?osmosis=0 no osmosis (no
 //               swelling: the stretch genes still drift, the NEUTRAL control), ?stretch=0 stretch opens no channels, ?tear=0 overstretch
 //               does not burst, ?tolcost=0 the stretch tolerance is free; ?satscale=x, ?kosm=x, ?kstretch=x, ?wtol=x knobs;
@@ -174,13 +210,14 @@
 // Mouse: left tap drops (keys 1 2 3: a ripple, a light spring, a heavy spring; step C12's oil tool, no key: an oil spring), left drag stirs; step C2's spotlight: right-drag moves it, the wheel tilts it,
 // Shift+wheel turns the direction the light comes from.
 
-import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown } from './gpu.js';
+import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown, tanhMode, gpuGuard } from './gpu.js';
 import { Background } from './background.js';
 import { Medium } from './field.js';
 import { Landscape } from './landscape.js';
 import { Cells, DEFAULT_CELLS, ANCHORS } from './cells.js';
 import { Light } from './light.js';
 import { Matter, SHOWS, ELECTRONS } from './matter.js';
+import { CARBON, CB_LIP, CB_ENZANY } from './carbon.js';   // step C15a: carbon in the open dish
 import { makeActions, keyMaps, keysText, TOOLS, SQUEEZE_SOFT, SQUEEZE_HARD, VIEWS } from './actions.js';
 import { setupUI } from './ui.js';
 import { Recorder } from './record.js';
@@ -196,11 +233,14 @@ import { scaleDish } from './squeeze.js';
 import { Perfusion, parseRecipe } from './perfusion.js';   // the microfluidic chip: inlet, through-flow, outlet
 import { Obstacles } from './obstacles.js';   // step G0b: walls, blocks, pillars; the round dish
 import { createApp } from './app.js';
+import { createToy } from './toy.js';   // the toy front: a few big buttons, worlds, terrain generators; the developer mode (src/toy.js)
 import { applyPreset, layoutFromParams, applyDiversity, PRESETS, SPREAD_SQUEEZE } from './culture.js';
 import { Tissues, useDesignFounder, DESIGNS } from './tissues.js';
 import { Warfare } from './warfare.js';
+import { CB_PHOTO } from './genome.js';   // step C15d: founders that photosynthesise fix carbon (?cbphoto=0)
 
 window.__moireBooted = true;
+{ const m = document.getElementById('msg'); if (m && m.dataset.net) { m.hidden = true; delete m.dataset.net; } }   // (a slow start: the safety net's message goes)
 
 const TICK = 1 / 60;
 const MAX_TICKS = 4;        // 1x to 8x: at most this many ticks per frame per 1x of speed (as before step C3b)
@@ -304,6 +344,27 @@ async function boot() {
       location.replace(u.href);
       return;
     }
+    // step C15a: and with or without carbon as it was saved (saved before step C15a: without)
+    if (snap && !!snap.carbon !== CARBON) {
+      const u = new URL(location.href);
+      u.searchParams.set('carbon', snap.carbon ? '1' : '0');
+      location.replace(u.href);
+      return;
+    }
+    // step C15c: and with carbon making the cell or not (saved before step C15c: not)
+    if (snap && snap.carbon && !!snap.cbLip !== CB_LIP) {
+      const u = new URL(location.href);
+      u.searchParams.set('cblip', snap.cbLip ? '1' : '0');
+      location.replace(u.href);
+      return;
+    }
+    // step C15e: and with the enzymes' scaffold as it was saved (saved before step C15e: cellulose-like)
+    if (snap && snap.carbon && snap.cbLip && !!snap.cbEnzAny !== CB_ENZANY) {
+      const u = new URL(location.href);
+      u.searchParams.set('cbenzany', snap.cbEnzAny ? '1' : '0');
+      location.replace(u.href);
+      return;
+    }
   }
   // the DISH (src/dish.js): its own size, chosen now and kept while the window changes (?dishfollow=1: the window is the dish, as before)
   // (step G0b: ?dish=round, ?dish=WxH,round: a round dish, the rest is the size)
@@ -376,6 +437,8 @@ async function boot() {
     }
     if (params.has('wild')) cells.genome.params.wildGroups = String(params.get('wild')).split(',').filter(Boolean);   // (step T1a: the wild groups)
     if (params.has('habit')) cells.genome.params.habit = params.get('habit');   // (step T1b: every founder one habit: burn, both, pigments, other)
+    if (params.has('cbphoto')) CB_PHOTO.on = flag('cbphoto');   // (step C15d: founders that photosynthesise fix carbon)
+    if (params.has('cbfounder') && Number.isFinite(+params.get('cbfounder'))) cells.genome.params.cbFounder = Math.max(0, Math.min(1, +params.get('cbfounder')));   // (step C15b)
     if (params.get('bsign') === 'plus' || params.get('bsign') === 'mixed') cells.genome.params.bSign = params.get('bsign');   // the founders' B sign
     if (params.has('view')) {   // ?view=1 lineage, ?view=2 or ?view=strategy (step C6), ?view=3 or ?view=charge (step C6b)
       const v = params.get('view') === 'fate' ? 'job' : params.get('view');   // (step F0: ?view=job; the old ?view=fate means it too)
@@ -514,6 +577,28 @@ async function boot() {
         if (params.has(q) && Number.isFinite(v) && v >= 0) EP[k] = v;
       }
       if (params.has('photolysis')) EP.photolysis = flag('photolysis');   // step C12e
+    }
+    if (CARBON) {   // step C15a: carbon in the open dish (?carbon= itself is read by src/carbon.js when it loads)
+      const CP = matter.carbon.params;
+      for (const [q, k] of [['cbox', 'oxidize'], ['cbcond', 'condense'], ['cblight', 'light'], ['cbdis', 'dissolve'], ['cbspring', 'springs'], ['cbhydheat', 'hydHeat']]) {
+        if (params.has(q)) CP[k] = flag(q);
+      }
+      for (const [q, k] of [['cbkox', 'kOx'], ['cbkcond', 'kCond'], ['cbkdis', 'kDis'], ['cbkset', 'kSet'], ['cbsurf', 'surf']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) CP[k] = v;
+      }
+      if (params.has('cblook')) matter.carbon.look.on = flag('cblook');
+      // step C15b: cells eat carbon (src/carboncells.js)
+      const CC = cells.eat.carbon.params;
+      for (const [q, k] of [['cbcells', 'on'], ['cbexch', 'exchange'], ['cbeng', 'engines'], ['cbgraze', 'graze'], ['cbdis2', 'dissolve'], ['cbsmell', 'smell'], ['cbgrow', 'growth'],
+        ['cbtrans', 'transport'], ['cbred', 'reduce'], ['cbbite', 'oxBite'], ['cbenz', 'enzymes'], ['cbtool', 'toolBody'], ['cbshut', 'shuttle'], ['cbgran', 'granFat'], ['cbhunger', 'hunger'], ['cbwallrec', 'wallRecycle'], ['cbgranred', 'granRed'], ['cbgranhyd', 'granHyd'], ['cbgsplit', 'gSplit'], ['cbbodyany', 'bodyAny']]) {   // (step C15c: transport .. toolBody; C15d: shuttle)
+        if (params.has(q)) CC[k] = flag(q);
+      }
+      for (const [q, k] of [['cbkgraze', 'kGraze'], ['cbkdis2', 'kDis'], ['cbbody', 'kBody'], ['cbbuild', 'kBuild'], ['cbfound', 'found'],
+        ['cbktrans', 'kTrans'], ['cbtransup', 'transUp'], ['cbenzk', 'kEnz'], ['cbenzlife', 'enzLife'], ['cbhungry', 'hungry'], ['cbredfloor', 'redFloor'], ['cbpigfound', 'pigFound']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) CC[k] = v;
+      }
     }
     {   // step C12e: waste must leave
       const WP = cells.eat.waste.params;
@@ -702,7 +787,8 @@ async function boot() {
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
-    kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, dup: cells.dup, perfusion, glue: cells.glue, stir: water.stir, obstacles, spindle: cells.spindle };
+    kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, dup: cells.dup, perfusion, glue: cells.glue, stir: water.stir, obstacles,
+    spindle: cells.spindle, carbon: matter.carbon, carbonCells: cells.eat.carbon };
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.warfare = new Warfare(window.moire);     // step T1c: the chemical warfare census (lineage borders against interiors)
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
@@ -729,7 +815,7 @@ async function boot() {
   window.addEventListener('resize', resize);
   setupInput();
   if (flag('overlay')) overlayEl.hidden = false;
-  showEntropy(!params.has('entropy') || flag('entropy'));
+  showEntropy(flag('entropy'));   // (the toy front: closed unless ?entropy=1; Shift+E, the Developer panel)
   if (params.get('overlay') === 'ghost') overlayEl.style.opacity = '0';   // kept up to date but invisible (for tools/shot.py)
   window.moire.adapter = () => adapterName(gpu.info);
   window.moire.control = control;
@@ -790,7 +876,7 @@ function defaultCells() {
  * and the spotlight centred on the rim between them, so it lights both springs and the edge of the culture. The springs
  * drip for a whole day (SCENE.life, 240 s). ?springs=0: the old empty start (and the spot where it was).
  */
-const SCENE = { life: 240, rim: 0.72, gap: 0.01, apart: 0.09 };
+const SCENE = { life: 240, rim: 0.72, gap: 0.01, apart: 0.09, seep: 0.3, seepR: 2.5 };   // (step C15b: the fuel seep, molecules per s, R)
 function defaultScene() {
   if (params.has('springs') && !flag('springs')) return;
   const W = view.cssW, H = view.cssH, m = Math.min(W, H);
@@ -801,6 +887,11 @@ function defaultScene() {
   // (step T1a: the mineral spring lasts, ?lasting=0 as before: step M1 found the colony's membranes starve of linkers once it dries)
   matter.addSpring(cx - perp[0] * s, cy - perp[1] * s, 'light', !params.has('lasting') || flag('lasting') ? 1e9 : SCENE.life);
   matter.addSpring(cx + perp[0] * s, cy + perp[1] * s, 'heavy', SCENE.life);
+  // step C15b: a LASTING FUEL SEEP beside the vent (methane-like carbon only, SCENE.seep molecules per s over a patch SCENE.seepR across;
+  // per area, as the scene's springs: x the dish's supply), so carbon life can start once the vent has dried (?seep=0: none)
+  if (CARBON && !(params.has('seep') && !flag('seep'))) {
+    matter.addPatch(cx + perp[0] * s + ax[0] * 0.035 * m, cy + perp[1] * s + ax[1] * 0.035 * m, 'seep', SCENE.seepR, SCENE.seep / (Math.PI * SCENE.seepR ** 2), 1e9);
+  }
   if (!params.has('spot')) light.moveTo(W / 2 + ax[0] * rim, H / 2 + ax[1] * rim);
   // step N1: the oases (the scarce nutrient's springs): the first beside the culture, in the spot's edge on the springs' side (a lasting
   // one: it stays put and never dries, only pulses), the others anywhere, roaming (src/oases.js)
@@ -1006,7 +1097,9 @@ ${cells.fidelity.panelLine(compact)}
 ${cells.dup.panelLine(compact)}
 ${cells.glue.panelLine(compact)}
 ${cells.spindle.panelLine(compact)}${ELECTRONS ? `
-${matter.vents.panelLine(compact)}` : ''}
+${matter.vents.panelLine(compact)}` : ''}${CARBON ? `
+${matter.carbon.panelLine(compact)}
+${cells.eat.carbon.panelLine(compact)}` : ''}
 ${cells.eat.pigments.panelLine(compact)}
 ${water.panelLine(compact)}
 ${oases.panelLine(compact)}`;
@@ -1061,6 +1154,13 @@ function autoRipple() {
   nextAutoRipple = simTime + 0.7;
 }
 
+/** The portable maths (src/gpu.js): the tanh used, and the guard's counts (cell_step.wgsl G0S_BAD, G0S_FAST; cumulative since the start). */
+function guardLine() {
+  const g = cells.glue && cells.glue.census;
+  const bad = g ? g.bad >>> 0 : 0, fast = g ? g.fast >>> 0 : 0;
+  return `gpu maths: tanh ${tanhMode()} · guard ${gpuGuard() ? `on: <b>${bad}</b> cells put back after NaN/infinity` : 'off'} · ${fast} cell-ticks faster than 30 R/s`;
+}
+
 function drawOverlay() {
   const i = gpu.info;
   const lines = [
@@ -1068,6 +1168,7 @@ function drawOverlay() {
     `cpu encode ${stats.cpuMs.toFixed(2)} ms · gpu done after ~${stats.gpuMs.toFixed(1)} ms`,
     `adapter  <b>${esc(adapterName(i))}</b>${i.isFallbackAdapter ? '  (software fallback)' : ''}`,
     `vendor ${esc(i.vendor || '?')} · arch ${esc(i.architecture || '?')}${i.device ? ' · device ' + esc(i.device) : ''}`,
+    guardLine(),
     `canvas ${view.pxW}×${view.pxH} (dpr ${view.dpr.toFixed(2)}) · ${gpu.format}`,
     dish.line(),
     perfusion.overlayLine(),
@@ -1092,6 +1193,8 @@ function drawOverlay() {
     ...water.overlayLines(),
     ...oases.overlayLines(),
     ...matter.vents.overlayLines(),
+    ...matter.carbon.overlayLines(),
+    ...cells.eat.carbon.overlayLines(),
     ...cells.dipole.overlayLines(),
     ...cells.eat.pumps.overlayLines(),
     ...cells.eat.catalysts.overlayLines(),
@@ -1129,6 +1232,7 @@ const TOUCH = !!(window.matchMedia && !window.matchMedia('(any-pointer: fine)').
 let hintQuiet = false;   // step C6n: the short hint goes quiet 8 s after the start (a calm screen); flashes and ? still show
 function hintLine() {
   if (allKeys) return fullHint();
+  if (document.body.classList.contains('toy-mode')) return '';   // (the toy front: no key hints; the developer mode shows them)
   if (TOUCH || hintQuiet) return '';   // touch only: the toolbar says it all; the line shows only the flashes
   const t = TOOLS[tool];
   const what = t.spot ? 'click or drag: move the light' : t.stir ? 'click or drag: stir' : t.addCell ? 'click: place a cell · drag: a line of cells'
@@ -1434,16 +1538,21 @@ function setupInput() {
   window.addEventListener('keydown', onKey);
   appUI = createApp({ app, params, flag, flash, cells, matter, light, background, control, get view() { return view; }, touch: TOUCH, tools: TOOLS,
     inPlace: newCultureInPlace, preset: PRESET, dish, obstacles });
+  toy = createToy({ app, actions, runAction, tools: TOOLS, cells, matter, light, obstacles, water, oases, perfusion, background, params, flag,
+    control, preset: PRESET, appUI, get view() { return view; }, flash, showEntropy, touch: TOUCH });
   ui = setupUI(Object.assign(app, {
     actions, runAction, touch: TOUCH,
     startFolded: params.has('ui') ? !flag('ui') : null,
-    extraPanels: appUI.panels, dishExtra: appUI.dishExtra, toolIcons: appUI.toolIcons,
+    extraPanels: [toy.devPanel, ...appUI.panels], dishExtra: appUI.dishExtra, toolIcons: appUI.toolIcons,
   }));
   appUI.attach(ui);
+  toy.attach(ui);
+  window.moire.toy = toy;   // the toy front: moire.toy.build(name, seed), .check(), .link(), .setDev(on)
   window.moire.app = appUI;
   window.moire.camera = camera;   // app: the view camera (moire.camera.set(zoom, x, y), .fit())
 }
 let appUI = null;          // app: zoom buttons, scale bar, zoos, add tools, new culture (src/app.js)
+let toy = null;            // the toy front (src/toy.js)
 let spaceHeld = false;     // app: Space is down (a left drag then pans)
 let spaceUsed = false;     // ... and a drag used it (its release does not pause)
 

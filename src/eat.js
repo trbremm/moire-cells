@@ -53,6 +53,8 @@ import { Ions } from './ions.js';
 import { Pigments } from './pigments.js';
 import { Whole } from './whole.js';
 import { KW } from './kin.js';
+import { CarbonCells } from './carboncells.js';   // step C15b: cells eat carbon
+import { CARBON, LG_CBC } from './carbon.js';
 
 export const SW = 64;               // stock words per cell (cell_eat.wgsl; 16 until step C6c's membranes, words 16..27; step C7:
                                     // 14 the pumped charge across the membrane, 15 the voltage's energy; 32 until step C12b's
@@ -153,6 +155,7 @@ export class Eat {
     this.ions = new Ions(this);           // step C12g: ion flow (src/ions.js)
     this.pigments = new Pigments(this);   // step N1: light needs matter (src/pigments.js)
     this.whole = new Whole(this);         // step M1: whole membranes (src/whole.js)
+    this.carbon = new CarbonCells(this);  // step C15b: cells eat carbon (src/carboncells.js; inert with ?carbon=0)
   }
 
   static async create(device, cells) {
@@ -163,7 +166,7 @@ export class Eat {
 
   async init() {
     const d = this.device;
-    const mod = await loadFieldShader(d, 'src/shaders/cell_eat.wgsl', [HEAT_COMMON_URL, LIGHT_COMMON_URL, 'src/shaders/cell_common.wgsl']);
+    const mod = await loadFieldShader(d, 'src/shaders/cell_eat.wgsl', [HEAT_COMMON_URL, LIGHT_COMMON_URL, 'src/shaders/cell_common.wgsl', 'src/shaders/cell_carbon.wgsl']);   // (step C15b: + the carbon section)
     const C = GPUShaderStage.COMPUTE;
     this.bgl = d.createBindGroupLayout({
       label: 'cell eat',
@@ -178,14 +181,16 @@ export class Eat {
         { binding: 8, visibility: C, buffer: { type: 'uniform' } },             // step C6: the light
         { binding: 9, visibility: C, buffer: { type: 'storage' } },
         { binding: 10, visibility: C, buffer: { type: 'read-only-storage' } },  // step C6: the genomes
+        { binding: 11, visibility: C, buffer: { type: 'storage' } },            // step C15b: the cells' carbon (a stub without carbon)
+        { binding: 12, visibility: C, buffer: { type: 'uniform' } },            // ... its uniform (struct CbCellP)
       ],
     });
     // the plan pass: plain views (the stock, the heat buffer's grid part), no atomics (cell_eat.wgsl)
     this.bglP = d.createBindGroupLayout({
       label: 'cell eat plan',
-      entries: [0, 1, 2, 4, 6, 7, 9, 10].map((binding) => ({ binding, visibility: C,
+      entries: [0, 1, 2, 4, 6, 7, 9, 10, 11, 12].map((binding) => ({ binding, visibility: C,   // (step C15b: + 11, 12, the cells' carbon)
         buffer: binding === 0 ? { type: 'uniform', hasDynamicOffset: true, minBindingSize: 256 }
-          : binding === 4 || binding === 6 ? { type: 'uniform' } : binding === 10 ? { type: 'read-only-storage' } : { type: 'storage' } })),
+          : binding === 4 || binding === 6 || binding === 12 ? { type: 'uniform' } : binding === 10 ? { type: 'read-only-storage' } : { type: 'storage' } })),
     });
     const layout = d.createPipelineLayout({ label: 'cell eat', bindGroupLayouts: [this.bgl] });
     const layoutP = d.createPipelineLayout({ label: 'cell eat plan', bindGroupLayouts: [this.bglP] });
@@ -199,6 +204,7 @@ export class Eat {
     this.fluxBuf = d.createBuffer({ label: 'cell flux', size: n * (SW + KW) * 4, usage: U.STORAGE });   // (step T1a: + the kin channels' KW words a cell)
     this.paramBuf = d.createBuffer({ label: 'cell eat params', size: EP_BYTES, usage: U.UNIFORM | U.COPY_DST });
     this.paramAB = new ArrayBuffer(EP_BYTES);
+    this.carbon.init(d, n);   // step C15b
   }
 
   get heat() { return this.cells.heat; }
@@ -214,12 +220,14 @@ export class Eat {
     this.bgs = this.cells.bioBuf.map((bio) => this.device.createBindGroup({
       label: 'cell eat', layout: this.bgl,
       entries: [b(0, this.cells.simBuf, 256), b(1, this.cells.cellBuf), b(2, this.stockBuf), b(3, H.buffer),
-        b(4, this.paramBuf), b(5, M.chemBuf), b(6, H.paramBuf), b(8, H.light.buffer), b(9, this.fluxBuf), b(10, bio)],
+        b(4, this.paramBuf), b(5, M.chemBuf), b(6, H.paramBuf), b(8, H.light.buffer), b(9, this.fluxBuf), b(10, bio),
+        b(11, this.carbon.buf), b(12, this.carbon.ubuf)],
     }));
     this.bgPs = this.cells.bioBuf.map((bio) => this.device.createBindGroup({
       label: 'cell eat plan', layout: this.bglP,
       entries: [b(0, this.cells.simBuf, 256), b(1, this.cells.cellBuf), b(2, this.stockBuf), b(4, this.paramBuf),
-        b(6, H.paramBuf), { binding: 7, resource: { buffer: H.buffer, offset: LEDGER_WORDS * 4 } }, b(9, this.fluxBuf), b(10, bio)],
+        b(6, H.paramBuf), { binding: 7, resource: { buffer: H.buffer, offset: LEDGER_WORDS * 4 } }, b(9, this.fluxBuf), b(10, bio),
+        b(11, this.carbon.buf), b(12, this.carbon.ubuf)],
     }));
     return this.bgs;
   }
@@ -313,6 +321,7 @@ export class Eat {
     if (!this.ready) return;
     // (the heat copy current after the frame's `ticks` ticks, warm-up included: the ledger's temperatures)
     this.writeParams(frame.tickDt, M ? M.active || 0 : 0, 0, this.heat.offsetAt(ticks));
+    this.carbon.write(this.cells.tick + (M ? M.warm || 0 : 0));   // step C15b (the cells' tick of the matter's tick 0)
   }
 
   /** Tick t's eating (Sim slot t), after the cells' step. */
@@ -341,6 +350,10 @@ export class Eat {
     encoder.clearBuffer(this.heat.buffer, LG_CAT * 4, CAT_SNAP_WORDS * 4); // step C7b: the catalysts' census (snapshot)
     encoder.clearBuffer(this.heat.buffer, LG_HL * 4, HL_SNAP_WORDS * 4);   // step C8: the hard light census (snapshot)
     encoder.clearBuffer(this.heat.buffer, LIP_SNAP.E * 4, (LIP_SNAP.E_WORDS + LIP_SNAP.S_WORDS) * 4);   // step C12b: the lipids (snapshot)
+    if (CARBON) {   // step C15b: the carbon in the cells, the census (snapshots)
+      encoder.clearBuffer(this.heat.buffer, LG_CBC.STOCK * 4, 1024 * 4);
+      encoder.clearBuffer(this.heat.buffer, LG_CBC.CEN * 4, 512 * 4);   // (step C15c: and CEN2 behind it)
+    }
     const pass = encoder.beginComputePass({ label: 'cell eat ledger' });
     pass.setPipeline(this.pipes.ledger);
     pass.setBindGroup(0, this.bg, [0]);
@@ -361,6 +374,7 @@ export class Eat {
     const cur = M && M.bufVersion === this.heat.version ? M.copyAt(0, true) : 0;
     const mask = cur ? (M.active || 0) : 0;
     this.writeParams(1 / 60, mask, cur);
+    this.carbon.write(0, true);   // step C15b: the carbon goes back into the copy current now
     if (M && mask) M.touch(mask);
     const e = this.device.createCommandEncoder({ label: 'cell eat reset' });
     const pass = e.beginComputePass({ label: 'cell eat reset' });
@@ -421,6 +435,7 @@ export class Eat {
     this.whole.apply(rec, w);      // step M1
     this.cells.kin.apply(rec, w);  // step T1a
     this.cells.pred.apply(rec, w); // step P1 (the eat pass's counters in the T1a block)
+    this.carbon.apply(rec, w);     // step C15b
     this.ledger = { time: rec.time, stock, held, atoms, chem, bat, start: this.start, full: cnt[0], empty: cnt[1], stuffed: cnt[2], n: cnt[3], hot: cnt[4], rate, rate2 };
     this.catalysts.apply(rec, w);  // step C7b (after the ledger: it reads the trace in the cells)
     this.pigments.apply(rec, w);   // step N1 (after the ledger: it reads the batteries' income)

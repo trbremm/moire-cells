@@ -1,0 +1,90 @@
+{
+  "name": "c15m-tool-cells",
+  "description": "islands s7: the toy's cells tool, one tap (7 cells with carbon bodies), books",
+  "condition": {
+    "name": "c15m-tool-cells",
+    "description": "islands s7: the toy's cells tool, one tap (7 cells with carbon bodies), books",
+    "query": {
+      "terrain": "islands",
+      "seed": 7
+    },
+    "duration": 4,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 1.5,
+        "name": "tap",
+        "crop": [
+          0,
+          0,
+          1280,
+          800
+        ]
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 0.5,
+        "js": "const L = moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({alive: moire.cells.alive, cAdd: L && L.add && L.add.c})"
+      },
+      {
+        "t": 1,
+        "js": "const b = [...document.querySelectorAll('#toy button')].find((e) => /cells/.test(e.textContent)); b.click(); const before = moire.cells.alive; const C = moire.cells, R = C.R; let x = 0, y = 0; for (let k = 0; k < 400; k++) { x = 100 + Math.random() * 1080; y = 100 + Math.random() * 600; if (!moire.obstacles.blocked(x, y, 4 * R)) break; } moire.app.dishDown(x, y); moire.app.dishUp(); window.__tap = {before, x, y, cluster: moire.app.cluster}; return JSON.stringify(window.__tap)"
+      },
+      {
+        "t": 1.5,
+        "js": "const L = moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({tap: window.__tap, alive: moire.cells.alive, hint: (document.getElementById('toy-toast') || document.querySelector('.toy-toast') || {}).textContent, cAdd: L && L.add && L.add.c, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+      },
+      {
+        "t": 4,
+        "js": "const L = moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({tap: window.__tap, alive: moire.cells.alive, hint: (document.getElementById('toy-toast') || document.querySelector('.toy-toast') || {}).textContent, cAdd: L && L.add && L.add.c, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+      }
+    ]
+  },
+  "url": "http://localhost:60340/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&terrain=islands&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "900f6871fbdddd1669afbd9f910fcb64b8dd726f",
+  "dirty": false,
+  "started": "2026-11-22T23:30:36",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 4.0,
+  "run_wall_s": 3.05,
+  "speed_reached": 1.31,
+  "samples": 2,
+  "shots": [
+    "shots/tap.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.5,
+      "js": "const L = moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({alive: moire.cells.alive, cAdd: L && L.add && L.add.c})",
+      "result": "{\"alive\":1008,\"cAdd\":893.318359375}"
+    },
+    {
+      "t": 0.9999999999999999,
+      "js": "const b = [...document.querySelectorAll('#toy button')].find((e) => /cells/.test(e.textContent)); b.click(); const before = moire.cells.alive; const C = moire.cells, R = C.R; let x = 0, y = 0; for (let k = 0; k < 400; k++) { x = 100 + Math.random() * 1080; y = 100 + Math.random() * 600; if (!moire.obstacles.blocked(x, y, 4 * R)) break; } moire.app.dishDown(x, y); moire.app.dishUp(); window.__tap = {before, x, y, cluster: moire.app.cluster}; return JSON.stringify(window.__tap)",
+      "result": "{\"before\":1007,\"x\":364.4133827803784,\"y\":495.6066953442356,\"cluster\":7}"
+    },
+    {
+      "t": 1.4999999999999996,
+      "js": "const L = moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({tap: window.__tap, alive: moire.cells.alive, hint: (document.getElementById('toy-toast') || document.querySelector('.toy-toast') || {}).textContent, cAdd: L && L.add && L.add.c, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})",
+      "result": "{\"tap\":{\"before\":1007,\"x\":364.4133827803784,\"y\":495.6066953442356,\"cluster\":7},\"alive\":1003,\"hint\":\"Cells: tap to drop a small group, drag for a line\",\"cAdd\":902.02392578125,\"cRound\":0,\"atoms\":0,\"charge\":0,\"energy\":0.0029754638671875}"
+    },
+    {
+      "t": 3.999999999999995,
+      "js": "const L = moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({tap: window.__tap, alive: moire.cells.alive, hint: (document.getElementById('toy-toast') || document.querySelector('.toy-toast') || {}).textContent, cAdd: L && L.add && L.add.c, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})",
+      "result": "{\"tap\":{\"before\":1007,\"x\":364.4133827803784,\"y\":495.6066953442356,\"cluster\":7},\"alive\":990,\"hint\":\"Cells: tap to drop a small group, drag for a line\",\"cAdd\":932.9638671875,\"cRound\":0,\"atoms\":0,\"charge\":0,\"energy\":0.0036468505859375}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-22T23:31:46",
+  "wall_s": 69.97
+}

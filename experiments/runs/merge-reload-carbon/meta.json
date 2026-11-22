@@ -1,0 +1,86 @@
+{
+  "name": "merge-reload-carbon",
+  "description": "C15a carbon snapshot (900 s) loads",
+  "condition": {
+    "name": "merge-reload-carbon",
+    "description": "C15a carbon snapshot (900 s) loads",
+    "query": {
+      "snap": "experiments/runs/c15a-books/snapshots/snap_t900.json"
+    },
+    "duration": 30,
+    "sample_every": 10,
+    "stall": 200,
+    "shots": [
+      {
+        "t": 30,
+        "name": "end"
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 1,
+        "js": "const L = moire.carbon.ledger; const s = moire.cells.stats; return JSON.stringify({t: moire.time(), on: moire.carbon.on, ladder: L && L.ladder, tar: L && L.tar, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, job: s && s.job, alive: moire.cells.alive})"
+      },
+      {
+        "t": 30,
+        "js": "const L = moire.carbon.ledger; const s = moire.cells.stats; return JSON.stringify({t: moire.time(), on: moire.carbon.on, ladder: L && L.ladder, tar: L && L.tar, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, job: s && s.job, alive: moire.cells.alive})"
+      }
+    ]
+  },
+  "url": "http://localhost:60600/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/runs/c15a-books/snapshots/snap_t900.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "3566b9eb22b0971dfe8a6d7ecdcdab75cfbe0a93",
+  "dirty": true,
+  "started": "2026-11-17T20:15:06",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": true,
+    "notes": [
+      "saved before step G0: the glue gene capped at 1, no junctions tearing (as it ran)",
+      "saved before step G0: the cells do not stir the water (as it ran)",
+      "saved before step F0: the fates ignored (every cell undecided until its job shows)"
+    ],
+    "rebased": null,
+    "rounding": {
+      "energy": 0.016357421875,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": 0.016357421875,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 1496,
+    "time": 899.9999999997035
+  },
+  "t_start": 899.9999999997035,
+  "sim_s": 30.0,
+  "run_wall_s": 42.78,
+  "speed_reached": 0.7,
+  "samples": 4,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.9999999999998863,
+      "js": "const L = moire.carbon.ledger; const s = moire.cells.stats; return JSON.stringify({t: moire.time(), on: moire.carbon.on, ladder: L && L.ladder, tar: L && L.tar, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, job: s && s.job, alive: moire.cells.alive})",
+      "result": "{\"t\":900.9999999997034,\"on\":true,\"ladder\":[0.949951171875,1.224609375,2.346435546875,5.839599609375,38.74072265625],\"tar\":[58.299072265625,27.527587890625,235.644775390625],\"cRound\":0,\"eRound\":0,\"atoms\":0,\"charge\":0,\"job\":[1488,0,0,0,0,0,0],\"alive\":1488}"
+    },
+    {
+      "t": 29.99999999997806,
+      "js": "const L = moire.carbon.ledger; const s = moire.cells.stats; return JSON.stringify({t: moire.time(), on: moire.carbon.on, ladder: L && L.ladder, tar: L && L.tar, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, job: s && s.job, alive: moire.cells.alive})",
+      "result": "{\"t\":929.9999999996816,\"on\":true,\"ladder\":[1.283935546875,1.965087890625,3.9736328125,8.162109375,35.139404296875],\"tar\":[65.570068359375,29.6044921875,270.45263671875],\"cRound\":0,\"eRound\":0,\"atoms\":0,\"charge\":0,\"job\":[371,792,243,0,0,22,30],\"alive\":1458}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T20:17:01",
+  "wall_s": 114.49
+}

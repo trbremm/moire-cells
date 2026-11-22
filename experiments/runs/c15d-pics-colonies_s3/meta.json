@@ -1,0 +1,198 @@
+{
+  "name": "c15d-pics-colonies_s3",
+  "description": "close-ups from the 15-min snapshot of c15d-w-colonies_s3: the most bilayer, the most pigment",
+  "condition": {
+    "name": "c15d-pics-colonies_s3",
+    "description": "close-ups from the 15-min snapshot of c15d-w-colonies_s3: the most bilayer, the most pigment",
+    "query": {
+      "snap": "experiments/runs/c15d-w-colonies_s3/snapshots/snap_t900.json"
+    },
+    "dpr": 2,
+    "duration": 5.0,
+    "sample_every": 0,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 1,
+        "name": "dish"
+      },
+      {
+        "t": 1.3,
+        "name": "dish_harmonic"
+      },
+      {
+        "t": 1.8,
+        "name": "zoom_memb"
+      },
+      {
+        "t": 2.1,
+        "name": "zoom_memb_harmonic"
+      },
+      {
+        "t": 3.3,
+        "name": "zoom_pig"
+      },
+      {
+        "t": 3.6,
+        "name": "zoom_pig_harmonic"
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 1.2,
+        "js": "moire.control.action('harmonic')"
+      },
+      {
+        "t": 1.4,
+        "js": "moire.control.action('harmonic')"
+      },
+      {
+        "t": 1.5,
+        "js": "const d = moire.gpu.device; const rb = async (buf, off, size) => { const b = d.createBuffer({size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); const e = d.createCommandEncoder(); e.copyBufferToBuffer(buf, off, b, 0, size); d.queue.submit([e.finish()]); await b.mapAsync(GPUMapMode.READ); const a = b.getMappedRange().slice(0); b.unmap(); b.destroy(); return a; }; window.__pk = window.__pk || {}; const C = moire.cells, n = C.count, CF = C.cellBuf.size / 4 / n; const cf = new Float32Array(await rb(C.cellBuf, 0, n * CF * 4)), cu = new Uint32Array(cf.buffer); const pts = []; const st = new Int32Array(await rb(moire.eat.stockBuf, 0, n * 64 * 4)); for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; let g = 0; for (let w = 32; w < 50; w++) g += Math.max(st[i * 64 + w], 0); if (g > 0) pts.push([cf[i * CF], cf[i * CF + 1], g]); } let best = null, bv = 0; for (const p of pts) { let v = 0; for (const q of pts) if ((p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 < 900) v += q[2]; if (v > bv) { bv = v; best = p; } } window.__pk.memb = best ? [best[0], best[1]] : [640, 400]; return JSON.stringify({memb: window.__pk.memb, v: bv / 4096, cells: pts.length})"
+      },
+      {
+        "t": 1.6,
+        "js": "moire.camera.set(4, ...window.__pk['memb']); return 'zoom memb'"
+      },
+      {
+        "t": 1.9,
+        "js": "moire.control.action('harmonic')"
+      },
+      {
+        "t": 2.2,
+        "js": "moire.control.action('harmonic')"
+      },
+      {
+        "t": 2.3,
+        "js": "moire.camera.fit(); return 'unzoomed'"
+      },
+      {
+        "t": 3.0,
+        "js": "const d = moire.gpu.device; const rb = async (buf, off, size) => { const b = d.createBuffer({size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); const e = d.createCommandEncoder(); e.copyBufferToBuffer(buf, off, b, 0, size); d.queue.submit([e.finish()]); await b.mapAsync(GPUMapMode.READ); const a = b.getMappedRange().slice(0); b.unmap(); b.destroy(); return a; }; window.__pk = window.__pk || {}; const C = moire.cells, n = C.count, CF = C.cellBuf.size / 4 / n; const cf = new Float32Array(await rb(C.cellBuf, 0, n * CF * 4)), cu = new Uint32Array(cf.buffer); const pts = []; const st = new Int32Array(await rb(moire.eat.stockBuf, 0, n * 64 * 4)); for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; let g = 0; for (let w = 30; w < 31; w++) g += Math.max(st[i * 64 + w], 0); if (g > 0) pts.push([cf[i * CF], cf[i * CF + 1], g]); } let best = null, bv = 0; for (const p of pts) { let v = 0; for (const q of pts) if ((p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 < 900) v += q[2]; if (v > bv) { bv = v; best = p; } } window.__pk.pig = best ? [best[0], best[1]] : [640, 400]; return JSON.stringify({pig: window.__pk.pig, v: bv / 4096, cells: pts.length})"
+      },
+      {
+        "t": 3.1,
+        "js": "moire.camera.set(4, ...window.__pk['pig']); return 'zoom pig'"
+      },
+      {
+        "t": 3.4,
+        "js": "moire.control.action('harmonic')"
+      },
+      {
+        "t": 3.7,
+        "js": "moire.control.action('harmonic')"
+      },
+      {
+        "t": 3.8,
+        "js": "moire.camera.fit(); return 'unzoomed'"
+      }
+    ]
+  },
+  "url": "http://localhost:61775/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/runs/c15d-w-colonies_s3/snapshots/snap_t900.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "5163fd97dab8e2702fa385ab1c59a64fa000ad0f",
+  "dirty": true,
+  "started": "2026-11-18T09:33:37",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": true,
+    "notes": [],
+    "rebased": null,
+    "rounding": {
+      "energy": 0.02508544921875,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": 0.02508544921875,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 3,
+    "time": 899.99999999959
+  },
+  "t_start": 899.99999999959,
+  "sim_s": 5.0,
+  "run_wall_s": 0.86,
+  "speed_reached": 5.82,
+  "samples": 2,
+  "shots": [
+    "shots/dish.png",
+    "shots/dish_harmonic.png",
+    "shots/zoom_memb.png",
+    "shots/zoom_memb_harmonic.png",
+    "shots/zoom_pig.png",
+    "shots/zoom_pig_harmonic.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 1.1999999999999318,
+      "js": "moire.control.action('harmonic')",
+      "result": null
+    },
+    {
+      "t": 1.3999999999999773,
+      "js": "moire.control.action('harmonic')",
+      "result": null
+    },
+    {
+      "t": 1.5,
+      "js": "const d = moire.gpu.device; const rb = async (buf, off, size) => { const b = d.createBuffer({size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); const e = d.createCommandEncoder(); e.copyBufferToBuffer(buf, off, b, 0, size); d.queue.submit([e.finish()]); await b.mapAsync(GPUMapMode.READ); const a = b.getMappedRange().slice(0); b.unmap(); b.destroy(); return a; }; window.__pk = window.__pk || {}; const C = moire.cells, n = C.count, CF = C.cellBuf.size / 4 / n; const cf = new Float32Array(await rb(C.cellBuf, 0, n * CF * 4)), cu = new Uint32Array(cf.buffer); const pts = []; const st = new Int32Array(await rb(moire.eat.stockBuf, 0, n * 64 * 4)); for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; let g = 0; for (let w = 32; w < 50; w++) g += Math.max(st[i * 64 + w], 0); if (g > 0) pts.push([cf[i * CF], cf[i * CF + 1], g]); } let best = null, bv = 0; for (const p of pts) { let v = 0; for (const q of pts) if ((p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 < 900) v += q[2]; if (v > bv) { bv = v; best = p; } } window.__pk.memb = best ? [best[0], best[1]] : [640, 400]; return JSON.stringify({memb: window.__pk.memb, v: bv / 4096, cells: pts.length})",
+      "result": "{\"memb\":[848.13134765625,669.220703125],\"v\":0.0380859375,\"cells\":3}"
+    },
+    {
+      "t": 1.6000000000000227,
+      "js": "moire.camera.set(4, ...window.__pk['memb']); return 'zoom memb'",
+      "result": "zoom memb"
+    },
+    {
+      "t": 1.900000000000091,
+      "js": "moire.control.action('harmonic')",
+      "result": null
+    },
+    {
+      "t": 2.200000000000159,
+      "js": "moire.control.action('harmonic')",
+      "result": null
+    },
+    {
+      "t": 2.300000000000182,
+      "js": "moire.camera.fit(); return 'unzoomed'",
+      "result": "unzoomed"
+    },
+    {
+      "t": 3.0000000000002274,
+      "js": "const d = moire.gpu.device; const rb = async (buf, off, size) => { const b = d.createBuffer({size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); const e = d.createCommandEncoder(); e.copyBufferToBuffer(buf, off, b, 0, size); d.queue.submit([e.finish()]); await b.mapAsync(GPUMapMode.READ); const a = b.getMappedRange().slice(0); b.unmap(); b.destroy(); return a; }; window.__pk = window.__pk || {}; const C = moire.cells, n = C.count, CF = C.cellBuf.size / 4 / n; const cf = new Float32Array(await rb(C.cellBuf, 0, n * CF * 4)), cu = new Uint32Array(cf.buffer); const pts = []; const st = new Int32Array(await rb(moire.eat.stockBuf, 0, n * 64 * 4)); for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; let g = 0; for (let w = 30; w < 31; w++) g += Math.max(st[i * 64 + w], 0); if (g > 0) pts.push([cf[i * CF], cf[i * CF + 1], g]); } let best = null, bv = 0; for (const p of pts) { let v = 0; for (const q of pts) if ((p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 < 900) v += q[2]; if (v > bv) { bv = v; best = p; } } window.__pk.pig = best ? [best[0], best[1]] : [640, 400]; return JSON.stringify({pig: window.__pk.pig, v: bv / 4096, cells: pts.length})",
+      "result": "{\"pig\":[897.3389892578125,568.70703125],\"v\":0.012939453125,\"cells\":3}"
+    },
+    {
+      "t": 3.10000000000025,
+      "js": "moire.camera.set(4, ...window.__pk['pig']); return 'zoom pig'",
+      "result": "zoom pig"
+    },
+    {
+      "t": 3.4000000000003183,
+      "js": "moire.control.action('harmonic')",
+      "result": null
+    },
+    {
+      "t": 3.7000000000003865,
+      "js": "moire.control.action('harmonic')",
+      "result": null
+    },
+    {
+      "t": 3.8000000000004093,
+      "js": "moire.camera.fit(); return 'unzoomed'",
+      "result": "unzoomed"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-18T09:34:48",
+  "wall_s": 70.34
+}

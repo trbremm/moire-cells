@@ -1,0 +1,42 @@
+{
+ "batch": "c15c-ab5",
+ "runs": [
+  {
+   "name": "c15c-ab5-full",
+   "description": "A/B 5 (floor grazing, soap head fallback, reduce floor 0.25) 600 s default seed 3: {}",
+   "query": {
+    "seed": 3
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 600,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": []
+  },
+  {
+   "name": "c15c-ab5-h20",
+   "description": "A/B 5 (floor grazing, soap head fallback, reduce floor 0.25) 600 s default seed 3: {'cbhungry': 20}",
+   "query": {
+    "seed": 3,
+    "cbhungry": 20
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 600,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": []
+  }
+ ]
+}

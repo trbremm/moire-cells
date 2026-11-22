@@ -1,0 +1,49 @@
+{
+  "name": "c15m-rchk-open",
+  "description": "open s7 carbon on, 5 s",
+  "condition": {
+    "name": "c15m-rchk-open",
+    "description": "open s7 carbon on, 5 s",
+    "query": {
+      "seed": 7
+    },
+    "duration": 5,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 1,
+        "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+      }
+    ]
+  },
+  "url": "http://localhost:52057/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "cbdc504b6df41145929522bc160469cb689c1a11",
+  "dirty": false,
+  "started": "2026-11-22T21:15:30",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 5.0,
+  "run_wall_s": 9.09,
+  "speed_reached": 0.55,
+  "samples": 2,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.9999999999999999,
+      "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})",
+      "result": "{\"t\":0.9999999999999999,\"alive\":1977,\"job\":[823,821,333,0,0,0,0],\"cRound\":0,\"atoms\":0,\"charge\":0,\"energy\":0.0076904296875}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-22T21:17:02",
+  "wall_s": 92.3
+}

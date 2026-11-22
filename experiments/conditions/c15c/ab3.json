@@ -1,0 +1,42 @@
+{
+ "batch": "c15c-ab3",
+ "runs": [
+  {
+   "name": "c15c-ab3-full",
+   "description": "A/B 3 (+ reductions from water above half battery) 600 s default seed 3: {}",
+   "query": {
+    "seed": 3
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 600,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": []
+  },
+  {
+   "name": "c15c-ab3-nored",
+   "description": "A/B 3 (+ reductions from water above half battery) 600 s default seed 3: {'cbred': 0}",
+   "query": {
+    "seed": 3,
+    "cbred": 0
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 600,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": []
+  }
+ ]
+}

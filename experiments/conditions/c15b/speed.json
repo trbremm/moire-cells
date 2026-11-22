@@ -1,0 +1,55 @@
+{
+ "batch": "c15b-speed",
+ "runs": [
+  {
+   "name": "c15b-speed-2k-on-r1",
+   "description": "speed, default scene, 2000 cells, carbon on, 150 s",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "shots": [],
+   "snapshots": [],
+   "evals": []
+  },
+  {
+   "name": "c15b-speed-2k-off-r1",
+   "description": "speed, default scene, 2000 cells, carbon off, 150 s",
+   "query": {
+    "seed": 3,
+    "carbon": 0
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "shots": [],
+   "snapshots": [],
+   "evals": []
+  },
+  {
+   "name": "c15b-speed-2k-on-r2",
+   "description": "speed, default scene, 2000 cells, carbon on, 150 s",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "shots": [],
+   "snapshots": [],
+   "evals": []
+  },
+  {
+   "name": "c15b-speed-2k-off-r2",
+   "description": "speed, default scene, 2000 cells, carbon off, 150 s",
+   "query": {
+    "seed": 3,
+    "carbon": 0
+   },
+   "duration": 150,
+   "sample_every": 25,
+   "shots": [],
+   "snapshots": [],
+   "evals": []
+  }
+ ]
+}

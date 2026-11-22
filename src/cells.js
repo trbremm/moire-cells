@@ -39,7 +39,7 @@ import { loadFieldShader, KIND } from './field.js';
 import { Genome, BIO_BYTES } from './genome.js';
 import { Heat, HEAT_COMMON_URL } from './heat.js';
 import { Eat } from './eat.js';
-import { ENGINES, SUBSTANCES } from './matter.js';
+import { ALL_ENGINES as ENGINES, SUBSTANCES } from './matter.js';   // (step C15b: the parts' kinds include the carbon engines)
 import { JOBS } from './jobs.js';   // step F0: colour by job (also writes the engines' job classes into the shaders)
 import { pal } from './palette.js';
 import { Dipole, STATS_DIP, DIP_WORDS } from './dipole.js';

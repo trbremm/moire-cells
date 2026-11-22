@@ -45,6 +45,12 @@
 // the band each emits (visible 1 gold, visible 2 sky blue), as many as the share of the light re-emitted there says (at most one of
 // each colour per grid square, at hashed places, so nothing flickers), each a small bright core in a soft halo. Steady: an excited
 // state lives far shorter than a frame. Not busy: only where light falls on something whose gap it matches.
+// Step C15a, CARBON (src/carbon.js; two more textures from carbon.wgsl's carbon_paint: texE the ladder per R^2, its burnt share, its
+// sky-blue glow; texF tar's carbons and hands): the LADDER as dust like the fuel's, shaded by how burnt it is, fuel green (methane-
+// like) through yellow-green to a dim slate (CO2-like); TAR as flat hard-edged patches like the crust, amber where fresh, dull brown
+// where burnt, with a faint waxy green sheen where it still holds fuel hands; the c-t hands' fluorescence joins the sky-blue glow.
+// Halftone: the ladder's dots take the down triangles where there is no trace or mineral. Harmonic: tar joins the orange fibres
+// (brighter where its backbone share is high), the ladder's fuel the violet haze; CO2-like carbon is clear.
 
 struct DrawP {
   dpr: f32,
@@ -93,6 +99,13 @@ struct DrawP {
   glow1: vec4f,       // rgb visible 1's colour (gold); w a light's core radius (CSS px)
   glow2: vec4f,       // rgb visible 2's colour (sky blue); w the halo's strength
   cam: vec4f,         // app: the camera (xy pan, z zoom; dpr above is already x zoom)
+  // step C15a, carbon (src/carbon.js look; all 0 with carbon off)
+  cb: vec4f,          // x 1 = drawn; y the ladder dust's brightness (share of the fuel's); z tar's opacity; w tar's green sheen
+  cbFuel: vec4f,      // rgb the ladder's fuel end (methane-like); w tar per R^2 (carbons) where a patch starts
+  cbSlate: vec4f,     // rgb its burnt end (CO2-like)
+  tarL: vec4f,        // rgb tar where fresh (amber)
+  tarH: vec4f,        // rgb tar where burnt (dull brown)
+  tarG: vec4f,        // rgb tar's waxy sheen (fuel hands)
 };
 
 struct Spring {
@@ -119,6 +132,8 @@ fn spring_d(p: vec2f, s: Spring) -> f32 {
 @group(0) @binding(5) var<uniform> SP: Springs;
 @group(0) @binding(6) var texC: texture_2d<f32>;   // step C12: oil share, film share, polar, apolar
 @group(0) @binding(7) var texD: texture_2d<f32>;   // step C12c: the excited atoms (x)
+@group(0) @binding(9) var texE: texture_2d<f32>;   // step C15a: the ladder per R^2, of it burnt hands / 4, its visible 2 glow
+@group(0) @binding(10) var texF: texture_2d<f32>;  // step C15a: tar's carbons, fuel hands, burnt hands, c-c bonds per R^2
 
 struct VSOut { @builtin(position) pos: vec4f, };
 
@@ -208,6 +223,18 @@ fn dust(x: vec2f, under: vec4f) -> vec4f {
         }
       }
     }
+    // step C15a: the carbon ladder, dust shaded fuel green -> slate by how burnt it is
+    if (D.cb.x > 0.5) {
+      let ve = textureSampleLevel(texE, samp, uv_of(centre), 0.0);
+      let cl = cover(ve.x);
+      if (cl > 0.0) {
+        let h = hash3(g, 13.0);
+        if (h.z < cl) {
+          let ink = mix(D.cbFuel.rgb, D.cbSlate.rgb, clamp(ve.y / max(ve.x, 1e-6), 0.0, 1.0)) * D.level * D.cb.y;
+          res = over(speck(x, (g + h.xy) * cs, mix(D.dust.y, D.dust.z, cl) * 0.85, ink), res);
+        }
+      }
+    }
     // trace: rare small sparks
     let ct = cover(va.w);
     if (ct > 0.0) {
@@ -258,7 +285,8 @@ fn glow(x: vec2f, under: vec4f) -> vec4f {
   let base = floor(x / cs - 0.5);
   for (var k = 0; k < 4; k++) {
     let g = base + vec2f(f32(k & 1), f32(k >> 1));
-    let v = textureSampleLevel(texD, samp, uv_of((g + 0.5) * cs), 0.0);
+    var v = textureSampleLevel(texD, samp, uv_of((g + 0.5) * cs), 0.0);
+    if (D.cb.x > 0.5) { v.w += textureSampleLevel(texE, samp, uv_of((g + 0.5) * cs), 0.0).z; }   // step C15a: carbon's sky blue
     for (var j = 0; j < 2; j++) {
       let e = select(v.w, v.x, j == 0) * D.el.y * D.el.z;
       let cv = e / (e + 1.0);
@@ -333,6 +361,20 @@ fn oil_layer(x: vec2f, oc: vec4f, gO: vec2f, gF: vec2f) -> vec4f {
   return res;
 }
 
+// step C15a: tar, flat hard-edged patches as the crust's (a patch from cbFuel.w carbons per R^2, a lighter core from 4 x), amber where
+// fresh, dull brown where burnt, with a waxy green sheen where it holds fuel hands
+fn tar_layer(x: vec2f, under: vec4f) -> vec4f {
+  let tf = textureSampleLevel(texF, samp, uv_of(x), 0.0);
+  let lv = tf.x / max(D.cbFuel.w, 1e-4);
+  if (lv < 1.0) { return under; }
+  let core = lv >= 4.0;
+  let hands = max(tf.y + tf.z, 1e-6);
+  let burnt = clamp(tf.z / hands, 0.0, 1.0);
+  let ink = mix(D.tarL.rgb, D.tarH.rgb, burnt) * select(1.0, 1.35, core) + D.tarG.rgb * D.cb.w * (1.0 - burnt) * 0.6;
+  let al = D.cb.z * select(0.8, 1.0, core);
+  return over(vec4f(ink * al, al), under);
+}
+
 @fragment
 fn fs(in: VSOut) -> @location(0) vec4f {
   let x = in.pos.xy / D.dpr + D.cam.xy;              // CSS px of the dish (app: through the camera)
@@ -355,6 +397,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     let al = D.sedAlpha * select(0.8, 1.0, core);
     res = vec4f(ink * al, al);
   }
+  if (D.cb.x > 0.5) { res = tar_layer(x, res); }   // step C15a
   if (D.oil.x > 0.5) { res = over(oil_layer(x, oc, gO, gF), res); }   // step C12
   if (D.style > 0.5) {
     // step C6n: dust, and the springs' markers over it
@@ -437,12 +480,23 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       let q = abs(u - cC);
       let r = D.traceDot * rmax * 1.25 * sqrt(cov);
       res = over(vec4f(D.trace.rgb * D.level, 1.0) * disc((q.x + q.y) * 0.7071, r * 0.7071), res);
-    } else if (D.el.x > 0.5) {
-      let vd = textureSampleLevel(texD, samp, uv_of(wC), 0.0);
-      let cm = cover(vd.y);
-      if (cm > 0.0) {
-        let ink = mix(D.minL.rgb, D.minH.rgb, clamp(vd.z / max(vd.y, 1e-6), 0.0, 1.0)) * D.level;
-        res = over(vec4f(ink, 1.0) * disc(length(u - cC), rmax * sqrt(cm)), res);
+    } else {
+      var cm = 0.0;
+      if (D.el.x > 0.5) {
+        let vd = textureSampleLevel(texD, samp, uv_of(wC), 0.0);
+        cm = cover(vd.y);
+        if (cm > 0.0) {
+          let ink = mix(D.minL.rgb, D.minH.rgb, clamp(vd.z / max(vd.y, 1e-6), 0.0, 1.0)) * D.level;
+          res = over(vec4f(ink, 1.0) * disc(length(u - cC), rmax * sqrt(cm)), res);
+        }
+      }
+      if (cm <= 0.0 && D.cb.x > 0.5) {   // step C15a: the carbon ladder
+        let ve = textureSampleLevel(texE, samp, uv_of(wC), 0.0);
+        let cl = cover(ve.x);
+        if (cl > 0.0) {
+          let ink = mix(D.cbFuel.rgb, D.cbSlate.rgb, clamp(ve.y / max(ve.x, 1e-6), 0.0, 1.0)) * D.level;
+          res = over(vec4f(ink, 1.0) * disc(length(u - cC), rmax * sqrt(cl)), res);
+        }
       }
     }
   }
@@ -492,7 +546,14 @@ fn hm_fibres(x: vec2f, t: vec2f, len: f32, w: f32) -> f32 {
   let n = 0.62 * hm_noise(vec2f(q.x / len, q.y / w)) + 0.38 * hm_noise(vec2f(q.x / (0.45 * len), q.y / (0.5 * w)) + vec2f(7.3, 2.9));
   return smoothstep(0.4, 0.85, n);
 }
-fn hm_sed(x: vec2f) -> f32 { return textureSampleLevel(texB, samp, uv_of(x), 0.0).z; }
+fn hm_sed(x: vec2f) -> f32 { return textureSampleLevel(texB, samp, uv_of(x), 0.0).z + hm_tar(x); }
+// step C15a: tar as fibre (SHG): its carbons, brighter where its backbone (c-c) share is high
+fn hm_tar(x: vec2f) -> f32 {
+  if (D.cb.x < 0.5) { return 0.0; }
+  let tf = textureSampleLevel(texF, samp, uv_of(x), 0.0);
+  let bb = clamp(2.0 * tf.w / max(2.0 * tf.w + tf.y + tf.z, 1e-6), 0.0, 1.0);
+  return tf.x * (0.4 + 0.6 * bb);
+}
 
 // the strands' direction at x (a unit vector; fibres have no head, so directions are added in doubled-angle form)
 fn hm_dir(x: vec2f, sed: f32) -> vec2f {
@@ -568,7 +629,13 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
   let gF = vec2f(dpdx(oc.y), dpdy(oc.y));
   let G = H.ink[0].rgb;
   var rgb = vec3f(0.0);
-  let sb = textureSampleLevel(texB, samp, uv_of(x), 0.0);
+  var sb = textureSampleLevel(texB, samp, uv_of(x), 0.0);
+  if (D.cb.x > 0.5) {
+    // step C15a: tar joins the crust (orange fibres); the ladder's fuel hands join the fuel (violet), as light fuel
+    sb.z += hm_tar(x);
+    let ve = textureSampleLevel(texE, samp, uv_of(x), 0.0);
+    sb.x += max(ve.x - ve.y, 0.0);
+  }
   // ORANGE: the crust
   if (sb.z > 0.02 * H.hm.y && H.hm.x > 0.0) {
     let dens = sb.z / (sb.z + H.hm.y);

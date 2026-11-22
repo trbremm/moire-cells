@@ -1,0 +1,38 @@
+{
+  "name": "c15b-speed60-off-r2",
+  "description": "speed over the first 60 s (2000 cells, before the founders' crash), off",
+  "condition": {
+    "name": "c15b-speed60-off-r2",
+    "description": "speed over the first 60 s (2000 cells, before the founders' crash), off",
+    "query": {
+      "seed": 3,
+      "carbon": 0
+    },
+    "duration": 60,
+    "sample_every": 20,
+    "shots": [],
+    "snapshots": [],
+    "evals": []
+  },
+  "url": "http://localhost:64769/index.html?speed=max&until=0&overlay=ghost&ui=0&seed=3&carbon=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "cf39e2c633f7c13a5eba333bc1843e0b12fb2e2e",
+  "dirty": true,
+  "started": "2026-11-18T00:38:13",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 94.31,
+  "speed_reached": 0.64,
+  "samples": 4,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-18T00:41:15",
+  "wall_s": 182.03
+}

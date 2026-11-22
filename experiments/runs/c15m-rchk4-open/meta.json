@@ -1,0 +1,50 @@
+{
+  "name": "c15m-rchk4-open",
+  "description": "probe",
+  "condition": {
+    "name": "c15m-rchk4-open",
+    "description": "probe",
+    "query": {
+      "seed": 7,
+      "carbon": 0
+    },
+    "duration": 1,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 0.02,
+        "js": "const H=moire.heat; return JSON.stringify({R:moire.cells.R, v:H.version, hw:H.hw, hh:H.hh, px:H.px, start:moire.cells.start})"
+      }
+    ]
+  },
+  "url": "http://localhost:64726/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=7&carbon=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "cbdc504b6df41145929522bc160469cb689c1a11",
+  "dirty": false,
+  "started": "2026-11-22T21:29:33",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1.0,
+  "run_wall_s": 0.68,
+  "speed_reached": 1.47,
+  "samples": 2,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.016666666666666666,
+      "js": "const H=moire.heat; return JSON.stringify({R:moire.cells.R, v:H.version, hw:H.hw, hh:H.hh, px:H.px, start:moire.cells.start})",
+      "result": "{\"R\":6.4795061540213075,\"v\":1,\"hw\":396,\"hh\":247,\"px\":3.2397530770106537,\"start\":2000}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-22T21:31:06",
+  "wall_s": 93.03
+}

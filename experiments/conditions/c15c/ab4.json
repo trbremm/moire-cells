@@ -1,0 +1,43 @@
+{
+ "batch": "c15c-ab4",
+ "runs": [
+  {
+   "name": "c15c-ab4-enz0",
+   "description": "A/B 4 600 s default seed 3: {'cbenz': 0}",
+   "query": {
+    "seed": 3,
+    "cbenz": 0
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 600,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": []
+  },
+  {
+   "name": "c15c-ab4-lip0",
+   "description": "A/B 4 600 s default seed 3: {'cblip': 0}",
+   "query": {
+    "seed": 3,
+    "cblip": 0
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 600,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": []
+  }
+ ]
+}

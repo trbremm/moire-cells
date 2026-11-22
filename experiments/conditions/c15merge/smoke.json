@@ -1,0 +1,33 @@
+{
+ "batch": "c15m-smoke",
+ "runs": [
+  {
+   "name": "c15m-smoke-maze",
+   "description": "maze seed 7, 20 s",
+   "query": {
+    "terrain": "maze",
+    "seed": 7
+   },
+   "duration": 20,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 1,
+     "name": "t1"
+    },
+    {
+     "t": 20,
+     "name": "t20"
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 1,
+     "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+    }
+   ]
+  }
+ ]
+}

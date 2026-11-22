@@ -1,0 +1,104 @@
+{
+  "name": "merge-reload-old",
+  "description": "old C11 tissue snapshot (fates, no carbon flag) loads: F0 clears fates, carbon off",
+  "condition": {
+    "name": "merge-reload-old",
+    "description": "old C11 tissue snapshot (fates, no carbon flag) loads: F0 clears fates, carbon off",
+    "query": {
+      "snap": "experiments/tissue/configs/c11-end-lb-t1/snapshot.json"
+    },
+    "duration": 30,
+    "sample_every": 10,
+    "stall": 200,
+    "shots": [
+      {
+        "t": 30,
+        "name": "end"
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 1,
+        "js": "return JSON.stringify({search: location.search, carbon: moire.carbon.on, job: moire.cells.stats && moire.cells.stats.job, alive: moire.cells.alive})"
+      },
+      {
+        "t": 30,
+        "js": "const L = moire.carbon.ledger; const s = moire.cells.stats; return JSON.stringify({t: moire.time(), on: moire.carbon.on, ladder: L && L.ladder, tar: L && L.tar, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, job: s && s.job, alive: moire.cells.alive})"
+      }
+    ]
+  },
+  "url": "http://localhost:60600/index.html?speed=max&until=0&overlay=ghost&ui=0&snap=experiments/tissue/configs/c11-end-lb-t1/snapshot.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "3566b9eb22b0971dfe8a6d7ecdcdab75cfbe0a93",
+  "dirty": true,
+  "started": "2026-11-17T20:17:01",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.79",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": false,
+    "notes": [
+      "no grid in the snapshot (cells only): the page's grid kept",
+      "saved before step C12b: lipid membranes off (as it ran)",
+      "saved before step C12c: excited waste off (as it ran)",
+      "saved before step C13: field genes, gates and the push gene off (as it ran)",
+      "saved before step C12f: the vent as in step C12d (no heat), no sea (as it ran)",
+      "saved before step C12g: the bilayer passes ions as before, channel genes off (as it ran)",
+      "saved before step M1: no head on oil inside cells, bites as before (as it ran)",
+      "saved before step T1a: no inside, no kin channels, no marker clock, no smell for trace (as it ran)",
+      "saved before step T1b: no gene network (as it ran)",
+      "saved before step P1: no engulfing (as it ran)",
+      "saved before step N1: pigments free, no saturation (as it ran)",
+      "saved before step N1: no caustic light, no currents (as it ran)",
+      "saved before step N1: trace from every spring, no oases (as it ran)",
+      "saved before step G0: the glue gene capped at 1, no junctions tearing (as it ran)",
+      "saved before step G0: the cells do not stir the water (as it ran)",
+      "saved before step C12e: saturation and osmosis off (as it ran)",
+      "saved before step F0: the fates ignored (every cell undecided until its job shows)",
+      "stats buffer size differs: counters start from the page's"
+    ],
+    "rebased": {
+      "atoms": {},
+      "energy": 9006.412673950195
+    },
+    "rounding": {
+      "energy": 0,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": -0.0001220703125,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 40,
+    "time": 119.99999999999447
+  },
+  "t_start": 119.99999999999447,
+  "sim_s": 30.0,
+  "run_wall_s": 9.37,
+  "speed_reached": 3.2,
+  "samples": 4,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 1.0000000000000284,
+      "js": "return JSON.stringify({search: location.search, carbon: moire.carbon.on, job: moire.cells.stats && moire.cells.stats.job, alive: moire.cells.alive})",
+      "result": "{\"search\":\"?speed=max&until=0&overlay=ghost&ui=0&snap=experiments%2Ftissue%2Fconfigs%2Fc11-end-lb-t1%2Fsnapshot.json&electrons=0\",\"carbon\":false,\"job\":[40,0,0,0,0,0,0],\"alive\":40}"
+    },
+    {
+      "t": 30.00000000000263,
+      "js": "const L = moire.carbon.ledger; const s = moire.cells.stats; return JSON.stringify({t: moire.time(), on: moire.carbon.on, ladder: L && L.ladder, tar: L && L.tar, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, job: s && s.job, alive: moire.cells.alive})",
+      "result": "{\"t\":149.9999999999971,\"on\":false,\"ladder\":null,\"tar\":null,\"cRound\":null,\"eRound\":null,\"atoms\":0,\"charge\":0,\"job\":[0,0,0,40,0,0,0],\"alive\":40}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-17T20:18:17",
+  "wall_s": 76.08
+}

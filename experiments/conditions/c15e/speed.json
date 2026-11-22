@@ -1,0 +1,45 @@
+{
+ "batch": "c15e-speed",
+ "runs": [
+  {
+   "name": "c15e-speed-on",
+   "description": "speed: default scene seed 3, 60 s, every fix on",
+   "query": {
+    "seed": 3
+   },
+   "duration": 60,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 60,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": []
+  },
+  {
+   "name": "c15e-speed-off",
+   "description": "speed: default scene seed 3, 60 s, the C15e fixes off (C15d)",
+   "query": {
+    "seed": 3,
+    "cbenzany": 0,
+    "cbgranred": 0,
+    "cbgranhyd": 0,
+    "cbgsplit": 0
+   },
+   "duration": 60,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 60,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": []
+  }
+ ]
+}

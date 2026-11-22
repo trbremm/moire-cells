@@ -1,0 +1,34 @@
+{
+ "batch": "c15b-grow-smoke",
+ "runs": [
+  {
+   "name": "c15b-grow-smoke",
+   "query": {
+    "seed": 3
+   },
+   "duration": 120,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 120
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 2,
+     "js": "const L = moire.carbon.ledger, CC = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, cells: L && L.cells.c, add: L && L.add.c, cc: CC && {census: CC.census, built: CC.rate.built}, div: moire.division.census})"
+    },
+    {
+     "t": 60,
+     "js": "const L = moire.carbon.ledger, CC = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, cells: L && L.cells.c, add: L && L.add.c, cc: CC && {census: CC.census, built: CC.rate.built}, div: moire.division.census})"
+    },
+    {
+     "t": 120,
+     "js": "const L = moire.carbon.ledger, CC = moire.carbonCells.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, cells: L && L.cells.c, add: L && L.add.c, cc: CC && {census: CC.census, built: CC.rate.built}, div: moire.division.census})"
+    }
+   ]
+  }
+ ]
+}

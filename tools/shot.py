@@ -462,6 +462,9 @@ def main():
         server = Server(("127.0.0.1", 0), functools.partial(QuietHandler, directory=REPO))
         port = server.server_address[1]
         threading.Thread(target=server.serve_forever, daemon=True).start()
+    # (the toy front, 2026-11-22: the entropy panel starts closed; the shots keep it as before unless the query says entropy=)
+    if args.page == "index.html" and "entropy=" not in args.query:
+        args.query = f"{args.query}&entropy=1" if args.query else "entropy=1"
     url = f"http://localhost:{port}/{args.page}" + (f"?{args.query}" if args.query else "")
 
     exe = next((p for p in BROWSERS[args.browser] if os.path.exists(p)), None)

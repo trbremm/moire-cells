@@ -131,3 +131,14 @@ dump({"batch": "c15e-ab5", "runs": [
     ab("ab5-bodyany", "fixes (h) (j) (l) (m) + (i) body from any granule carbon (every C15d fix on); default scene, seed 3, 10 min", {}),
     ab("ab5-bodyany-off", "fixes (h) (j) (l) (m), (i) OFF (?cbbodyany=0): the same build as ab5 without (i); default scene, seed 3, 10 min", {"cbbodyany": 0}),
 ]}, "ab5.json")
+
+# ---------- diag2: what kills the wild colonies with every fix on: oxygen's bites on the carbon membranes? ----------
+dump({"batch": "c15e-diag2", "runs": [
+    ab("diag2-colonies-nobite", "every fix on, oxygen does not damage membranes (?cbbite=0); colonies of wild founders, seed 3, 10 min", {"cbbite": 0},
+       scene="colonies"),
+]}, "diag2.json")
+
+dump({"batch": "c15e-watch", "runs": [
+    watch("default", 3, 1200), watch("default", 7, 1200), watch("colonies", 3, 1200), watch("colonies", 7, 1200),
+    watch("shallows", 3, 600), watch("oxy-spot", 3, 600), watch("oxy-full", 3, 600),
+]}, "watch.json")

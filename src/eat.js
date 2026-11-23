@@ -110,6 +110,8 @@ export class Eat {
       permGene: true,     // Shift+J: ... the permeability is each cell's gene (off: `perm` for all)
       inside: true,       // Shift+I: the table's heat-driven reactions inside cells
       pay: true,          // Shift+W: the battery pays for crawling (and gates it)
+      crawlWork: true,    // step C15g: ... by the WORK the crawl does (its force . the motion it achieves: a cell held in a packed clump
+                          // pays little), not by the speed it would crawl at freely (?crawlwork=0: as before)
       heat: true,         // Shift+X: heat damage
       bias: true,         // Shift+G: energy-biased turnover
       smell: true,        // Shift+N: smell (chemotaxis up the fuel gradient)

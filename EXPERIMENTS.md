@@ -3435,3 +3435,111 @@ In plain words:
 - Speed: not measured (the GPU was shared by up to ten pages of two workers the whole time; numbers would mean nothing). What S2 adds:
   12 floats of genome and 2 words of Cell a cell, a few operations per neighbour in the step, one instanced draw (12 segments x 2 + 18
   hairs per cell, collapsed where a cell has no motor).
+
+# Carbon life, round 4 (step C15g, 2026-11-23)
+
+Step C15g (README "Step C15g: carbon life, round 4"). Goal (coordinator, unchanged from C15f): with carbon on, the default open dish at
+>= half of `?carbon=0` at 10 minutes on seeds 3 AND 7; both wild-colony seeds (`?preset=colonies&founders=wild`) alive at 20 minutes; the
+oxygen spot dish no worse; the fresh-load worlds at least as lively. Rerun the `?carbon=0` references, main's colonies and whole-dish oxygen.
+
+Levers (each a switch, all on by default): (r) idle photons pay the builders' reductions `?cbidlered=0`, (s) crawling paid by the work it
+does `?crawlwork=0` (acts with `?carbon=0` too), (t) founders start with a bilayer `?cbmembfound=0`. Follow-ups built and left off:
+`?cbidlehyd=1` (idle photons digest spare granule backbones), `?cbidlewater=1` (idle photons split a water for the g; not measured),
+`?cbsmellmud=1` (hungry cells smell the mud).
+
+Conditions: `experiments/conditions/c15g/` (`make.py` writes base-main, base-off, fl-main, fl-w, smoke, crash, ab1, ab2, ab3, rep, watch,
+pictures, snapsrc, checks, firefox, speed, speed-main; `table.py watch|crash|ab|fl`). Main c2e49a1 (= C15f + S2) ran from an export of that
+commit (`git archive`; its `meta.json` has no commit). Runs: `experiments/runs/c15g-*`. The GPU ran 5-7 of this step's pages at once (x0.2-0.35
+each) and, from the middle of the step, another worker's runs (`experiments/conditions/n2/`).
+
+## 1. The references, rerun (main c2e49a1; cells alive at 5 / 10 / 20 min)
+
+| scene | seed | main, carbon on | `?carbon=0` |
+|---|---|---|---|
+| default | 3 | 204 / 438 / 536 | 445 / 706 / 1151 |
+| default | 7 | 204 / 261 / 587 | 357 / 629 / 858 |
+| colonies (wild) | 3 | 590 / 121 / dead | 2074 / 2832 / 2961 |
+| colonies (wild) | 7 | 431 / 29 / dead | 939 / 1876 / 2341 |
+| Sunlit shallows | 3 | 772 / 1536 / - | 3452 / 5877 / - |
+| oxygen, spotlight | 3 | 106 / 102 / - | 139 / 330 / - |
+| oxygen, whole dish | 3 | 169 / 91 / - | 349 / 992 / - |
+
+`?carbon=0` on today's code is lower than C15f's references from C15c/C15d (831 / 796 at 10 minutes in the default scene).
+
+## 2. The founders' crash (default scene, 2 min, every 10 s; `crash.json`, `table.py crash`)
+
+| run | cells at 0 / 30 / 60 / 90 / 120 s | batteries | crawl paid per s at 30 s |
+|---|---|---|---|
+| every lever on, seed 3 | 1979 / 1767 / 1585 / 1429 / 1195 | 3033 / 1860 / 1165 / 689 / 352 | 11.5 |
+| ... seed 7 | 1977 / 1794 / 1654 / 1528 / 1261 | 3022 / 1813 / 1108 / 611 / 283 | 12.2 |
+| every lever off (main's path), seed 3 | 1980 / 1764 / 1580 / 1276 / 828 | 2998 / 1407 / 763 / 422 / 258 | 15.1 |
+| ... seed 7 | 1979 / 1796 / 1659 / 1347 / 570 | 2989 / 1324 / 665 / 309 / 210 | 15.3 |
+| all but (r) | 1979 / 1761 / 1580 / 1431 / 1191 | | 11.5 |
+| all but (s) | 1979 / 1765 / 1584 / 1282 / 798 | | 15.1 |
+| all but (t) (its run stopped after 120 s) | 1980 / 1772 / 1599 / 1443 / 1223 | | 11.2 |
+| `?carbon=0`, crawl by work | 1980 / 1764 / 1592 / 1008 / 273 | | 6.4 (upkeep 25.9) |
+| `?carbon=0`, old crawl | 1980 / 1768 / 1588 / 686 / 161 | | 6.5 (upkeep 26.0) |
+
+Only (s) acts in the crash. The first midnight is at 156 s (the day starts at 0.35 of 240 s): by 3-4 minutes every variant is down to
+230-290 cells. Delayed, not shallower.
+
+## 3. Each lever against its switch at 10 minutes (`ab1.json`; one run a side)
+
+| | seed 3 on / off | seed 7 on / off |
+|---|---|---|
+| (r) `?cbidlered` | 446 / 390 | 408 / 342 |
+| (s) `?crawlwork` | 446 / 405 | 408 / 404 |
+| (t) `?cbmembfound` | 446 / 357 | 408 / 463 |
+| `?carbon=0`: crawl by work (the old crawl: section 1) | 644 (706) | 651 (629) |
+| `?cbidlehyd=1` (ab2) / `?cbsmellmud=1` (ab3), seed 3 | 445 / 420 against 446 | - |
+
+Ledgers at 10 minutes: idle photons reduce 40-90 burnt hands a minute (the battery-paid builders 5-14), of 1250-1430 idle photons offered;
+40 % of the cells hold no burnt hand at all; free g is everywhere. The idle digestion opened 13 bonds a minute.
+
+## 4. Repeats (`rep.json` + the watch + ab1; default scene, cells at 10 min)
+
+| seed | every lever on | mean | every lever off (first: main itself) | mean | `?carbon=0` (old crawl, crawl by work) |
+|---|---|---|---|---|---|
+| 3 | 446, 325, 560, 470 | 450 | 438, 376, 149 | 321 | 706, 644 |
+| 7 | 408, 336, 435, 353 | 383 | 261, 347, 321 | 310 | 629, 651 |
+
+THE SAME SETTINGS AND SEED SPREAD FROM 149 TO 438 (off) and 325 TO 560 (on): every one-run comparison in sections 3 and 5 is a hint only.
+
+## 5. The watch (every lever on; `watch.json`; 5 / 10 / 20 min)
+
+| scene | seed | C15g | / `?carbon=0` at 10 |
+|---|---|---|---|
+| default | 3 | 263 / 325 / 552 | 46 % |
+| default | 7 | 205 / 336 / 534 | 53 % |
+| colonies (wild) | 3 | 1052 / 444 / 271 | 16 % |
+| colonies (wild) | 7 | 485 / 30 / dead (13 min) | 2 % |
+| Sunlit shallows | 3 | 1300 / 2140 / - | 36 % |
+| oxygen, spotlight | 3 | 196 / 217 / - | 66 % |
+| oxygen, whole dish | 3 | 381 / 658 / - | 66 % |
+
+Fresh-load worlds (`fl-w.json` against `fl-main.json`, 30 s / 2 / 4 min): all 14 (5 worlds x seeds 3 and 12 on the desktop, 4 on the phone)
+hold more cells at 2 and 4 minutes, mostly 1.5-2x (delta seed 3: 381 / 754 / 1642 against 346 / 374 / 787). Table in the README.
+
+## 6. What was seen
+
+- WHERE CARBON GOES (flow ledger, default scene, 10 min): mud holds 72-76 % of all carbon; the dead put 200-240 fuel hands a minute into
+  the mud, grazing brings back 130-150; half the cells are short of carbon itself. A birth needs a battery 0.6 full and a full body at
+  once: of ~450 cells about 80 have the battery, 200 the body, 7-26 both.
+- WILD COLONIES, seed 7: a PREDATOR TAKEOVER. Job census at 1 / 3 / 4 minutes: predators 141 -> 379 -> 636 of 697 cells, light eaters
+  118 -> 24 -> 15; then births stop and the dish empties, leaving 4400 carbons of mud (`colonies-s7-5min_neon.jpg`: the dish speckled with
+  small red-rimmed predators). Main the same (335 of 431 predators at 5 min). With `?carbon=0` predators also hold half the dish (880 of
+  1876) but the prey keep up. In a carbon dish a meal is a whole body of the scarce element.
+- WILD COLONIES, seed 3: no takeover (few predators); the colonies crash at each night (156, 396, 636, 876 s) and regrow by day; alive at
+  20 minutes (271; main dead).
+- Pictures `experiments/keep/c15g/`: default s3/s7 at 10 min (neon), main s7 at 10 min, default s3 at 20 min, close-ups of the default
+  colony at 20 min (seed 3 neon and harmonic, seed 7 harmonic: green honeycomb of closed bilayer rims, green cilia hairs, orange striations, gold granules, red
+  wall rims), colonies s3 at 20 min and s7 at 5 min, shallows and whole-dish oxygen at 10 min, delta and islands worlds at 4 min (and main's
+  delta), Firefox and phone checks.
+
+## 7. Checks
+
+Books: carbon, atoms, charge rounding 0 at every probe of every `c15g-*` run; energy rounding at most 0.13. A snapshot made on main c2e49a1
+(`c15g-snapsrc`, seed 7 at 180 s) loads exact with the three levers off and runs 30 s with the books at 0 (`c15g-snap-c15f`). Firefox
+headed (`c15g-firefox`, 40 s): no console error, books 0. Phone (Chrome 390 x 844 dpr 3, islands seed 3, 30 s): no console error, books 0.
+Speed (first 60 s of the default scene, one other worker's page running): levers on x2.56 / x2.61, levers off on the same tree x2.79
+(about 7 % for the levers); main from the export x1.10 / x1.09 (the export setup, not the code: not used as a reference).

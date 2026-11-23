@@ -33,7 +33,7 @@ import { SUBSTANCES, CH, lgM } from './matter.js';
 import { CARBON, CB_LIP, ENZ_H, LG_CB, LG_CBC } from './carbon.js';   // step C15c: placed cells get a body (step C15d: and a pigment)
 import { CW as CB_W } from './carboncells.js';
 import { CELL_FLOATS, CELL_BYTES } from './cells.js';
-import { BIO_FLOATS, founderGenome, nameFamilies } from './genome.js';
+import { BIO_FLOATS, founderGenome, nameFamilies, MEMB_THIN } from './genome.js';
 import { stampFounderGlue } from './glue.js';
 import { SW } from './eat.js';
 import { KIND } from './field.js';
@@ -447,6 +447,12 @@ export function createApp(ctx) {
       const PG = E.pigments && E.pigments.params;
       const nPig = giveBody && CB_LIP && CC.pigFound > 0 && PG && PG.matter !== false ? Math.round((PG.want || 0) * Math.PI * hr * CC.pigFound * 4096) : 0;
       if (nPig) stock[30] = nPig;   // (stock word W_PIG)
+      // step C15g: and its BILAYER (?cbmembfound: x a typical founder's whole one; half soap1 c2g5t, half soap2 c2g4t2 per side, stock words
+      // 32 + 6 kind + side), as a founder's (cell_carbon.wgsl cb_found_memb)
+      const lipOn = !!(E.lipids && E.lipids.active && E.membrane && E.membrane.rule('on'));
+      const nMemb = giveBody && CB_LIP && lipOn && CC.membFound > 0 ? Math.round(CC.membFound * MEMB_THIN * Math.max(0.1, E.membrane.params.sideLen) * 4096) : 0;
+      const nM1 = Math.floor(nMemb / 2), nM2 = nMemb - nM1;
+      for (let k = 0; k < 6 && nMemb; k++) { stock[32 + k] = nM1; stock[38 + k] = nM2; }
       const cbw = new Int32Array(CB_W);
       cbw[8] = cbw[9] = cbw[10] = nBody;   // (cellulose-like: per carbon one backbone bond, one fuel hand, one burnt hand)
       cbw[11] = nEnz;                      // (each unit 4 carbons as ENZ_H hands + 1 G: (4, 4, 4), step C15e (4, 0, 8))
@@ -469,9 +475,11 @@ export function createApp(ctx) {
         if (nBody || nEnz) d.queue.writeBuffer(E.carbon.buf, slot * CB_W * 4, cbw);
       });
       // step C15c: the books for the bodies and enzymes (carbon in: the dish's ADD and the cells' IN per tar hand; the G atoms: matter ADD)
-      if (nBody || nEnz || nPig) {
-        const k = free.length;   // (a pigment count: 1 backbone bond, 6 fuel hands: step C15d; an enzyme unit ENZ_H: step C15e)
-        const hc = nBody + ENZ_H[0] * nEnz + nPig, hg = nBody + ENZ_H[1] * nEnz + 6 * nPig, ht = nBody + ENZ_H[2] * nEnz;
+      if (nBody || nEnz || nPig || nMemb) {
+        const k = free.length;   // (a pigment count: 1 backbone bond, 6 fuel hands: step C15d; an enzyme unit ENZ_H: step C15e; soap1 (1, 5, 1),
+        // soap2 (1, 4, 2) on each of the 6 sides: step C15g)
+        const hc = nBody + ENZ_H[0] * nEnz + nPig + 6 * (nM1 + nM2), hg = nBody + ENZ_H[1] * nEnz + 6 * nPig + 6 * (5 * nM1 + 4 * nM2),
+          ht = nBody + ENZ_H[2] * nEnz + 6 * (nM1 + 2 * nM2);
         const words = [[LG_CB + 128 * 5, hc], [LG_CB + 128 * 6, hg], [LG_CB + 128 * 7, ht],
           [LG_CBC.IN + 128 * 5, hc], [LG_CBC.IN + 128 * 6, hg], [LG_CBC.IN + 128 * 7, ht], [lgM('ADD', CH.G), nEnz],
           [lgM('ADD', CH.trace), nPig]];

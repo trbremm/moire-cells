@@ -1111,11 +1111,16 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // step C5: the battery gates the motor (full speed from FL.crawlFull of the battery, none when it is empty) and pays
   // for it: crawlCost x the work of crawling at that speed against the drag (its motion energy x (1 - damping^2) per
   // tick), paid by the eat pass after this step (Cell.pay)
+  // step C15g (EAT_WORK, ?crawlwork=0 = as before): the crawl is paid by the WORK IT DOES, the motor's force times the motion it achieves
+  // this tick (force . velocity after the forces, below: a cell crawling freely moves at its motor's speed and pays exactly the old
+  // price; one pressed in a packed clump, held by its neighbours' push, moves little and pays little; motion against the motor costs
+  // nothing). The same crawlCost factor
   let payOn = (FL.eat & EAT_PAY) != 0u;
+  let workOn = payOn && (FL.eat & EAT_WORK) != 0u;
   let gate = select(1.0, clamp(c.bat / max(FL.crawlFull, 1e-3), 0.0, 1.0), payOn);
   let fMotor = motor * S.R * mot * gate;
   f += fMotor;
-  c.pay = select(0, heat_counts(FL.crawlCost * heat_ke(fMotor) * (1.0 - S.damping * S.damping)), payOn);
+  c.pay = select(0, heat_counts(FL.crawlCost * heat_ke(fMotor) * (1.0 - S.damping * S.damping)), payOn && !workOn);
   // step S2, MOTORS. The FLAGELLUM thrusts the cell along its front (pusher or puller alike: the sign says where its motor sits and how it
   // stirs the water), at mo0.y R / s x its thrust as acted x the battery's gate; its front STEERS toward the crawling intention (the
   // heading's slow wander and the smell: the senses a crawler already steers by), and a motor set off the axis (the placement gene) turns
@@ -1201,6 +1206,9 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let v0 = c.vel;
   let v1 = v0 * S.damping;
   let v2 = v1 + f * (1.0 - S.damping);
+  if (workOn) {   // (step C15g: the crawl's price from the work it did: 0.5 max(fMotor . v2, 0) / V0^2 per unit of (1 - damping^2), as heat_ke)
+    c.pay += heat_counts(FL.crawlCost * 0.5 * max(dot(fMotor, v2), 0.0) / (HEAT_V0 * HEAT_V0) * (1.0 - S.damping * S.damping));
+  }
   var v3 = v2;
   if (kicks) {
     // mean kick energy grab x heat; per axis the kick is Gaussian with sigma = HEAT_V0 sqrt(energy) (x motility)

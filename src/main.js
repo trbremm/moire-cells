@@ -131,6 +131,10 @@
 //               from two chain carbons only (as C15e), not cut out of the granules as they are first; ?cboilheld=0 the builder makes a
 //               side's oil for the soap it wants (as C15e), not only for the soap it holds; ?cbspoilkeep=0 a lipid or wall piece spoiled by
 //               oxygen leaves as mud (as C15e), not kept in the cell as granules
+//               Step C15g, carbon life round 4: ?cbidlered=0 the pigments' idle photons go to heat (as C15f), not into the builders'
+//               reductions (the table's REDUCE on the cell's own burnt hands, one photon a hand); ?cbmembfound=x founders (and placed cells)
+//               start with x times a typical founder's whole bilayer (1; 0 = none, as C15f); ?crawlwork=0 the crawl is paid by the speed it
+//               would crawl at freely (as C15f), not by the work it does (force . motion; this one acts with ?carbon=0 too)
 //   ?saturation=0 step C12e: no saturation (reactions inside cells do not slow as their products pile up); ?osmosis=0 no osmosis (no
 //               swelling: the stretch genes still drift, the NEUTRAL control), ?stretch=0 stretch opens no channels, ?tear=0 overstretch
 //               does not burst, ?tolcost=0 the stretch tolerance is free; ?satscale=x, ?kosm=x, ?kstretch=x, ?wtol=x knobs;
@@ -620,11 +624,11 @@ async function boot() {
       // step C15b: cells eat carbon (src/carboncells.js)
       const CC = cells.eat.carbon.params;
       for (const [q, k] of [['cbcells', 'on'], ['cbexch', 'exchange'], ['cbeng', 'engines'], ['cbgraze', 'graze'], ['cbdis2', 'dissolve'], ['cbsmell', 'smell'], ['cbgrow', 'growth'],
-        ['cbtrans', 'transport'], ['cbred', 'reduce'], ['cbbite', 'oxBite'], ['cbenz', 'enzymes'], ['cbtool', 'toolBody'], ['cbshut', 'shuttle'], ['cbgran', 'granFat'], ['cbhunger', 'hunger'], ['cbwallrec', 'wallRecycle'], ['cbgranred', 'granRed'], ['cbgranhyd', 'granHyd'], ['cbgsplit', 'gSplit'], ['cbbodyany', 'bodyAny'], ['cbhydfloor', 'hydFloor'], ['cbwallcut', 'wallCut'], ['cboilheld', 'oilHeld'], ['cbspoilkeep', 'spoilKeep']]) {   // (step C15c: transport .. toolBody; C15d: shuttle)
+        ['cbtrans', 'transport'], ['cbred', 'reduce'], ['cbbite', 'oxBite'], ['cbenz', 'enzymes'], ['cbtool', 'toolBody'], ['cbshut', 'shuttle'], ['cbgran', 'granFat'], ['cbhunger', 'hunger'], ['cbwallrec', 'wallRecycle'], ['cbgranred', 'granRed'], ['cbgranhyd', 'granHyd'], ['cbgsplit', 'gSplit'], ['cbbodyany', 'bodyAny'], ['cbhydfloor', 'hydFloor'], ['cbwallcut', 'wallCut'], ['cboilheld', 'oilHeld'], ['cbspoilkeep', 'spoilKeep'], ['cbidlered', 'idleRed'], ['cbidlewater', 'idleWater'], ['cbidlehyd', 'idleHyd'], ['cbsmellmud', 'smellMud']]) {   // (step C15c: transport .. toolBody; C15d: shuttle)
         if (params.has(q)) CC[k] = flag(q);
       }
       for (const [q, k] of [['cbkgraze', 'kGraze'], ['cbkdis2', 'kDis'], ['cbbody', 'kBody'], ['cbbuild', 'kBuild'], ['cbfound', 'found'],
-        ['cbktrans', 'kTrans'], ['cbtransup', 'transUp'], ['cbenzk', 'kEnz'], ['cbenzlife', 'enzLife'], ['cbhungry', 'hungry'], ['cbredfloor', 'redFloor'], ['cbpigfound', 'pigFound']]) {
+        ['cbktrans', 'kTrans'], ['cbtransup', 'transUp'], ['cbenzk', 'kEnz'], ['cbenzlife', 'enzLife'], ['cbhungry', 'hungry'], ['cbredfloor', 'redFloor'], ['cbpigfound', 'pigFound'], ['cbmembfound', 'membFound']]) {
         const v = Number(params.get(q));
         if (params.has(q) && Number.isFinite(v) && v >= 0) CC[k] = v;
       }
@@ -717,6 +721,7 @@ async function boot() {
       if (params.has('sea')) VP.sea = flag('sea');
       const st = Number(params.get('starter'));   // (the starter charge, a share of the battery: any scene; the Deep vents preset fills it)
       if (params.has('starter') && Number.isFinite(st) && st >= 0) cells.eat.params.starter = Math.min(1, st);
+      if (params.has('crawlwork')) cells.eat.params.crawlWork = flag('crawlwork');   // step C15g: the crawl paid by the work it does
       for (const [q, k] of [['ventheat', 'heat'], ['searate', 'seaRate'], ['sealevel', 'seaLevel']]) {
         const v = Number(params.get(q));
         if (params.has(q) && Number.isFinite(v) && v >= 0) VP[k] = v;

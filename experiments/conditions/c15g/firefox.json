@@ -1,0 +1,56 @@
+{
+ "batch": "c15g-firefox",
+ "runs": [
+  {
+   "name": "c15g-firefox",
+   "description": "Firefox (headed): the default scene 40 s, every C15g lever on, books",
+   "query": {
+    "seed": 3
+   },
+   "duration": 40,
+   "sample_every": 10,
+   "stall": 400,
+   "shots": [
+    {
+     "t": 40,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 20,
+     "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})"
+    },
+    {
+     "t": 40,
+     "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})"
+    },
+    {
+     "t": 20,
+     "js": "if (!moire.eat.carbon || !moire.eat.carbon.buf || moire.eat.carbon.buf.size < moire.cells.count * 96) return JSON.stringify({ready: null}); const d = moire.gpu.device; const rb = async (buf, size) => { const b = d.createBuffer({size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); const e = d.createCommandEncoder(); e.copyBufferToBuffer(buf, 0, b, 0, size); d.queue.submit([e.finish()]); await b.mapAsync(GPUMapMode.READ); const a = b.getMappedRange().slice(0); b.unmap(); b.destroy(); return a; }; const C = moire.cells, n = C.count, CF = C.cellBuf.size / 4 / n; const cf = new Float32Array(await rb(C.cellBuf, n * CF * 4)), cu = new Uint32Array(cf.buffer); const CC = moire.eat.carbon; const cb = new Int32Array(await rb(CC.buf, n * 24 * 4)); const kB = CC.params.kBody, R = C.R; let alive = 0, bat = 0, body = 0, both = 0, grown = 0, all3 = 0, batSum = 0, bsEmpty = 0, bsBurnt = 0; const hb = [0,0,0,0,0], bsGr = [0,0,0]; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; alive++; const b = cf[i * CF + 16], r = cf[i * CF + 4]; const want = kB * Math.PI * (r / R) ** 2 * 4096, have = 0.25 * (2 * cb[i * 24 + 8] + cb[i * 24 + 9] + cb[i * 24 + 10]); const okB = b >= 0.6, okC = !CC.params.growth || have >= 0.995 * want, okR = r >= 0.9 * R; batSum += b; hb[Math.min(4, Math.floor(b * 5))]++; if (okB) bat++; if (okC) body++; if (okB && okC) both++; if (okR) grown++; if (okB && okC && okR) all3++; if (okB && !okC) { const c = cb[i * 24 + 5], g = cb[i * 24 + 6], t = cb[i * 24 + 7]; bsGr[0] += c; bsGr[1] += g; bsGr[2] += t; if (2 * c + g + t < 4096 * want / 4096 * 0.5) bsEmpty++; if (4 * g < g + t) bsBurnt++; } } return JSON.stringify({ready: {alive, bat, body, both, grown, all3, batMean: batSum / Math.max(alive, 1), batHist: hb, batNoBody: {gran: bsGr.map((x) => Math.round(x / 4096 * 100) / 100), empty: bsEmpty, burnt: bsBurnt}}})"
+    },
+    {
+     "t": 40,
+     "js": "if (!moire.eat.carbon || !moire.eat.carbon.buf || moire.eat.carbon.buf.size < moire.cells.count * 96) return JSON.stringify({ready: null}); const d = moire.gpu.device; const rb = async (buf, size) => { const b = d.createBuffer({size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); const e = d.createCommandEncoder(); e.copyBufferToBuffer(buf, 0, b, 0, size); d.queue.submit([e.finish()]); await b.mapAsync(GPUMapMode.READ); const a = b.getMappedRange().slice(0); b.unmap(); b.destroy(); return a; }; const C = moire.cells, n = C.count, CF = C.cellBuf.size / 4 / n; const cf = new Float32Array(await rb(C.cellBuf, n * CF * 4)), cu = new Uint32Array(cf.buffer); const CC = moire.eat.carbon; const cb = new Int32Array(await rb(CC.buf, n * 24 * 4)); const kB = CC.params.kBody, R = C.R; let alive = 0, bat = 0, body = 0, both = 0, grown = 0, all3 = 0, batSum = 0, bsEmpty = 0, bsBurnt = 0; const hb = [0,0,0,0,0], bsGr = [0,0,0]; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; alive++; const b = cf[i * CF + 16], r = cf[i * CF + 4]; const want = kB * Math.PI * (r / R) ** 2 * 4096, have = 0.25 * (2 * cb[i * 24 + 8] + cb[i * 24 + 9] + cb[i * 24 + 10]); const okB = b >= 0.6, okC = !CC.params.growth || have >= 0.995 * want, okR = r >= 0.9 * R; batSum += b; hb[Math.min(4, Math.floor(b * 5))]++; if (okB) bat++; if (okC) body++; if (okB && okC) both++; if (okR) grown++; if (okB && okC && okR) all3++; if (okB && !okC) { const c = cb[i * 24 + 5], g = cb[i * 24 + 6], t = cb[i * 24 + 7]; bsGr[0] += c; bsGr[1] += g; bsGr[2] += t; if (2 * c + g + t < 4096 * want / 4096 * 0.5) bsEmpty++; if (4 * g < g + t) bsBurnt++; } } return JSON.stringify({ready: {alive, bat, body, both, grown, all3, batMean: batSum / Math.max(alive, 1), batHist: hb, batNoBody: {gran: bsGr.map((x) => Math.round(x / 4096 * 100) / 100), empty: bsEmpty, burnt: bsBurnt}}})"
+    },
+    {
+     "t": 20,
+     "js": "const M = moire.matter; return JSON.stringify({dishM: Array.from(M.dish || []).map((x) => Math.round(x * 10) / 10), cellsM: Array.from((moire.eat && moire.eat.ledger && (moire.eat.ledger.held || moire.eat.ledger.stock)) || []).map((x) => Math.round(x * 10) / 10)})"
+    },
+    {
+     "t": 40,
+     "js": "const M = moire.matter; return JSON.stringify({dishM: Array.from(M.dish || []).map((x) => Math.round(x * 10) / 10), cellsM: Array.from((moire.eat && moire.eat.ledger && (moire.eat.ledger.held || moire.eat.ledger.stock)) || []).map((x) => Math.round(x * 10) / 10)})"
+    },
+    {
+     "t": 20,
+     "js": "if (!moire.eat.carbon || !moire.eat.carbon.buf) return JSON.stringify({stocks: null}); const d = moire.gpu.device; const rb = async (buf, size) => { const b = d.createBuffer({size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); const e = d.createCommandEncoder(); e.copyBufferToBuffer(buf, 0, b, 0, size); d.queue.submit([e.finish()]); await b.mapAsync(GPUMapMode.READ); const a = b.getMappedRange().slice(0); b.unmap(); b.destroy(); return a; }; const C = moire.cells, n = C.count, CF = C.cellBuf.size / 4 / n, E = moire.eat; const cu = new Uint32Array(await rb(C.cellBuf, n * CF * 4)); const st = new Int32Array(await rb(E.stockBuf, n * 64 * 4)); const cb = new Int32Array(await rb(E.carbon.buf, n * 24 * 4)); let alive = 0, g = 0, t = 0, w = 0, g0 = 0, T = 0, G = 0, T0 = 0; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; alive++; const o = i * 64, c = i * 24; g += st[o]; t += st[o + 1]; w += st[o + 6]; if (st[o] <= 0) g0++; const bt = cb[c + 1] + 2 * cb[c + 2] + 3 * cb[c + 3] + 4 * cb[c + 4] + cb[c + 7]; T += bt; if (bt <= 0) T0++; G += 4 * cb[c] + 3 * cb[c + 1] + 2 * cb[c + 2] + cb[c + 3] + cb[c + 6]; } const u = (x) => Math.round(x / 4096 * 100) / 100; return JSON.stringify({stocks: {alive, g: u(g), t: u(t), water: u(w), noG: g0, burnt: u(T), noBurnt: T0, fuel: u(G)}})"
+    },
+    {
+     "t": 40,
+     "js": "if (!moire.eat.carbon || !moire.eat.carbon.buf) return JSON.stringify({stocks: null}); const d = moire.gpu.device; const rb = async (buf, size) => { const b = d.createBuffer({size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); const e = d.createCommandEncoder(); e.copyBufferToBuffer(buf, 0, b, 0, size); d.queue.submit([e.finish()]); await b.mapAsync(GPUMapMode.READ); const a = b.getMappedRange().slice(0); b.unmap(); b.destroy(); return a; }; const C = moire.cells, n = C.count, CF = C.cellBuf.size / 4 / n, E = moire.eat; const cu = new Uint32Array(await rb(C.cellBuf, n * CF * 4)); const st = new Int32Array(await rb(E.stockBuf, n * 64 * 4)); const cb = new Int32Array(await rb(E.carbon.buf, n * 24 * 4)); let alive = 0, g = 0, t = 0, w = 0, g0 = 0, T = 0, G = 0, T0 = 0; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; alive++; const o = i * 64, c = i * 24; g += st[o]; t += st[o + 1]; w += st[o + 6]; if (st[o] <= 0) g0++; const bt = cb[c + 1] + 2 * cb[c + 2] + 3 * cb[c + 3] + 4 * cb[c + 4] + cb[c + 7]; T += bt; if (bt <= 0) T0++; G += 4 * cb[c] + 3 * cb[c + 1] + 2 * cb[c + 2] + cb[c + 3] + cb[c + 6]; } const u = (x) => Math.round(x / 4096 * 100) / 100; return JSON.stringify({stocks: {alive, g: u(g), t: u(t), water: u(w), noG: g0, burnt: u(T), noBurnt: T0, fuel: u(G)}})"
+    }
+   ]
+  }
+ ]
+}

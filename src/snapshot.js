@@ -617,6 +617,13 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       Object.assign(M.carbonCells.params, { hydFloor: false, wallCut: false, oilHeld: false, spoilKeep: false });
       notes.push('saved before step C15f: digestion down to an empty battery, wall pairs built from chain carbons, oil for the soap wanted, spoiled pieces into the mud (as it ran)');
     }
+    // step C15g: one saved before carbon life round 4 runs on without its three levers (as it ran): idle photons to heat, crawling paid by
+    // its free-running speed (any chemistry); founders' bilayers act only at a new culture
+    if (opts.settings !== false && S.settings && S.settings['eat.params'] && !('crawlWork' in S.settings['eat.params'])) {
+      M.eat.params.crawlWork = false;
+      if (CARBON && M.carbonCells) Object.assign(M.carbonCells.params, { idleRed: false, membFound: 0 });
+      notes.push('saved before step C15g: the crawl paid by its free-running speed, idle photons to heat (as it ran)');
+    }
     if (opts.settings !== false && M.waste && !(S.settings && S.settings['waste.params'])) {
       Object.assign(M.waste.params, { saturation: false, osmosis: false });   // step C12e
       notes.push('saved before step C12e: saturation and osmosis off (as it ran)');

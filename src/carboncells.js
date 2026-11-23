@@ -67,7 +67,7 @@ export const PART_RECIPES = {
   enzyme: { carbon: 4, hands: CB_ENZANY ? '4 burnt chain carbons (1 backbone bond, 2 burnt hands each: any carbon; step C15e)' : '4 chain carbons', element: 'G (the heavy giver: catalysis moves electrons)', k: 1, charged: CARBON },
 };
 const ATOM_SCALE = 4096;
-const CBF = { ON: 1, EXCH: 2, ENG: 4, GRAZE: 8, DIS: 16, FLIP: 32, RESET: 64, SMELL: 128, GROW: 256, LIP: 512, TRANS: 1024, RED: 2048, ENZ: 4096, OXB: 8192, SHUT: 16384, GRAN: 32768, HUNGER: 65536, WALLREC: 131072, ENZANY: 262144, GRANRED: 524288, GRANHYD: 1048576, GSPLIT: 2097152, BODYANY: 4194304 };
+const CBF = { ON: 1, EXCH: 2, ENG: 4, GRAZE: 8, DIS: 16, FLIP: 32, RESET: 64, SMELL: 128, GROW: 256, LIP: 512, TRANS: 1024, RED: 2048, ENZ: 4096, OXB: 8192, SHUT: 16384, GRAN: 32768, HUNGER: 65536, WALLREC: 131072, ENZANY: 262144, GRANRED: 524288, GRANHYD: 1048576, GSPLIT: 2097152, BODYANY: 4194304, HYDFLOOR: 8388608, WALLCUT: 16777216, OILHELD: 33554432, SPOILKEEP: 67108864 };
 // the 64-bit event counters (LG_CBC.EV, cell_eat.wgsl CBE_*)
 const EV = ['ox', 'cond', 'red', 'hyd', 'dis', 'graze', 'gain', 'heat', 'paid', 'phUsed', 'phIdle', 'satWant', 'satLost', 'rise', 'built', 'buildPaid'];
 const EV_ENERGY = /^(gain|heat|paid|rise|buildPaid)$/;
@@ -137,6 +137,15 @@ export class CarbonCells {
                          // HYDROLYZE, the reverse of the mud's condensation; the rise 0.75 and a spark from the battery) (?cbgranhyd=0)
       granRed: true,     // THE GRANULES' BURNT HANDS REDUCED: a builder short of fuel hands reduces granule hands from the battery above its
                          // floor (the table's REDUCE, as the ladder's under ?cbred; the g from the stock or a water split) (?cbgranred=0)
+      // ---- step C15f, CARBON LIFE, ROUND 3 ----
+      hydFloor: true,    // THE GRANULES DIGESTED ONLY FROM ABOVE THE BATTERY'S FLOOR (redFloor), as the builder's reductions: (l) is an uphill
+                         // investment; C15e paid it down to an empty battery (the oxygen spot dish's regression, the deeper founders' crash) (?cbhydfloor=0)
+      wallCut: true,     // A WALL'S CROSS-LINKED PAIRS CUT OUT OF THE GRANULES AS THEY ARE (3 backbone bonds + a fuel and a burnt hand: what a cracked
+                         // wall's pairs are, and about what mud is), the assembly spark only, as the chain carbons and lipids (C15d (e1)) (?cbwallcut=0)
+      oilHeld: true,     // OIL ONLY FOR THE SOAP HELD: the builder makes a side's oil for the soap it holds, not the soap it wants (oil sits between
+                         // the soap's tails; the shed rule returned the rest at once: a futile make-and-shed cycle while soap was short) (?cboilheld=0)
+      spoilKeep: true,   // SPOILED PIECES KEPT: a lipid or wall piece oxygen spoils stays in the cell as granules (burnt-heavier hands), as a cracked
+                         // wall's pieces and shed lipids do, instead of leaving as mud (?cbspoilkeep=0)
       pigFound: 1,       // FOUNDERS START WITH THEIR PIGMENT: share of the want of a harvest rate of 1 (as bodies and enzymes; booked as carbon and
                          // trace in; 0: none, as C15c) (?cbpigfound=)
     };
@@ -186,7 +195,9 @@ export class CarbonCells {
         (this.rule('shuttle') ? CBF.SHUT : 0) | (this.rule('granFat') ? CBF.GRAN : 0) | (this.rule('hunger') ? CBF.HUNGER : 0) |
         (this.rule('wallRecycle') ? CBF.WALLREC : 0) | (CB_ENZANY ? CBF.ENZANY : 0) | (CB_LIP && this.rule('granRed') ? CBF.GRANRED : 0) |
         (CB_LIP && this.rule('granHyd') ? CBF.GRANHYD : 0) | (this.rule('gSplit') ? CBF.GSPLIT : 0) |
-        (this.rule('bodyAny') ? CBF.BODYANY : 0);
+        (this.rule('bodyAny') ? CBF.BODYANY : 0) | (this.rule('hydFloor') ? CBF.HYDFLOOR : 0) |
+        (CB_LIP && this.rule('wallCut') ? CBF.WALLCUT : 0) | (CB_LIP && this.rule('oilHeld') ? CBF.OILHELD : 0) |
+        (CB_LIP && this.rule('spoilKeep') ? CBF.SPOILKEEP : 0);
       u[1] = tickBase >>> 0; u[2] = ok ? Math.max(1, M.nSub || 1) : 1; u[3] = ok ? Cb.cur & 1 : 0;
       if (ok) {
         const LW = LEDGER_WORDS;   // (the heat buffer's grid starts behind the ledger)

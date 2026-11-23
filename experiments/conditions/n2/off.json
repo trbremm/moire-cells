@@ -1,0 +1,38 @@
+{
+ "batch": "n2-off-n2",
+ "runs": [
+  {
+   "name": "n2-off-default-n2",
+   "query": {
+    "seed": 3,
+    "n2": 0
+   },
+   "duration": 182,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 180,
+     "name": "end"
+    }
+   ]
+  },
+  {
+   "name": "n2-off-delta-n2",
+   "query": {
+    "terrain": "delta",
+    "seed": 7,
+    "n2": 0
+   },
+   "duration": 182,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 180,
+     "name": "end"
+    }
+   ]
+  }
+ ]
+}

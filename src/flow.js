@@ -244,6 +244,7 @@ export class Flow {
       const near2 = (this.params.near * R) ** 2;
       let N = 0, mot = 0, flag = 0, cil = 0, chemo = 0, chemo2 = 0, sm = 0, feel = 0, align = 0, nAlign = 0, speed = 0, nearN = 0, step = 0, nStep = 0;
       const seen = new Set(), gms = [];
+      let pAlign = 0, nPAlign = 0;
       for (let i = 0; i < n; i++) {
         const o = i * CELL_FLOATS;
         if (!(u[o + C_FLAGS] & 1)) continue;
@@ -263,12 +264,15 @@ export class Flow {
         seen.add(i);
         const seed = u[o + C_SEED], P = this.paths.get(i);
         if (P && P.seed === seed) {
-          const dd = Math.hypot(x - P.x, y - P.y) / R;
+          const dx = x - P.x, dy = y - P.y, dd = Math.hypot(dx, dy) / R;
           P.path += dd; step += dd; nStep++;
-          P.x = x; P.y = y;
+          // did it go where it smelled food at the last census? (the cosine between that smell and the way it went since)
+          const pm = Math.hypot(P.sx, P.sy);
+          if (pm > 0.2 * half && dd > 0.05) { pAlign += (dx * P.sx + dy * P.sy) / (pm * dd * R); nPAlign++; }
+          P.x = x; P.y = y; P.sx = sx; P.sy = sy;
         } else {
           if (P) this.lives.push([P.path, Math.hypot(P.x - P.x0, P.y - P.y0) / R, time - P.born]);
-          this.paths.set(i, { seed, x, y, x0: x, y0: y, path: 0, born: time });
+          this.paths.set(i, { seed, x, y, x0: x, y0: y, path: 0, born: time, sx, sy });
         }
       }
       for (const [i, P] of this.paths) if (!seen.has(i)) { this.lives.push([P.path, Math.hypot(P.x - P.x0, P.y - P.y0) / R, time - P.born]); this.paths.delete(i); }
@@ -280,7 +284,7 @@ export class Flow {
         time, n: N, springs: springs.length,
         motility: N ? mot / N : 0, flagellum: N ? flag / N : 0, cilia: N ? cil / N : 0,
         chemo: N ? chemo / N : 0, chemoSd: N ? Math.sqrt(Math.max(0, chemo2 / N - (chemo / N) ** 2)) : 0, chemoFactor: N ? Math.exp(chemo / N) : 1,
-        smell: N ? sm / N : 0, smellRel: med(gms), feel: N ? feel / N : 0, align: nAlign ? align / nAlign : 0, speed: N ? speed / N : 0,
+        smell: N ? sm / N : 0, smellRel: med(gms), feel: N ? feel / N : 0, align: nAlign ? align / nAlign : 0, alignPath: nPAlign ? pAlign / nPAlign : 0, speed: N ? speed / N : 0,
         // R per s actually travelled between two censuses (the path, not the jitter within)
         travel: nStep && dtc > 0 ? step / nStep / dtc : 0,
         lifePath: med(L.map((x) => x[0])), lifeDisp: med(L.map((x) => x[1])), lifeAge: med(L.map((x) => x[2])), lives: L.length,

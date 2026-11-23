@@ -1,0 +1,169 @@
+{
+ "batch": "n2-look",
+ "runs": [
+  {
+   "name": "n2-look-currents_s3",
+   "description": "the currents world",
+   "query": {
+    "terrain": "currents",
+    "seed": 3
+   },
+   "duration": 602,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 120,
+     "name": "t120"
+    },
+    {
+     "t": 300,
+     "name": "t300"
+    },
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 600,
+     "view": "machinery",
+     "name": "t600-mach"
+    },
+    {
+     "t": 600,
+     "crop": [
+      400,
+      250,
+      480,
+      300
+     ],
+     "scale": 2.5,
+     "name": "t600-zoom"
+    }
+   ],
+   "evals": [
+    {
+     "t": 600,
+     "js": "return JSON.stringify({flow: moire.flow.census, diag: await moire.flow.diagnose()})"
+    }
+   ]
+  },
+  {
+   "name": "n2-look-default_s3",
+   "description": "default scene with N2",
+   "query": {
+    "seed": 3
+   },
+   "duration": 602,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 300,
+     "name": "t300"
+    },
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 600,
+     "view": "machinery",
+     "name": "t600-mach"
+    }
+   ],
+   "evals": [
+    {
+     "t": 600,
+     "js": "return JSON.stringify({flow: moire.flow.census, diag: await moire.flow.diagnose()})"
+    }
+   ]
+  },
+  {
+   "name": "n2-look-default-off_s3",
+   "description": "default scene N2 off (main)",
+   "query": {
+    "seed": 3,
+    "n2": 0
+   },
+   "duration": 602,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 300,
+     "name": "t300"
+    },
+    {
+     "t": 600,
+     "name": "t600"
+    }
+   ],
+   "evals": [
+    {
+     "t": 600,
+     "js": "return JSON.stringify({flow: moire.flow.census, diag: await moire.flow.diagnose()})"
+    }
+   ]
+  },
+  {
+   "name": "n2-look-desert_s3",
+   "description": "crust desert with scour",
+   "query": {
+    "preset": "desert",
+    "seed": 3
+   },
+   "duration": 602,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 120,
+     "name": "t120"
+    },
+    {
+     "t": 300,
+     "name": "t300"
+    },
+    {
+     "t": 600,
+     "name": "t600"
+    }
+   ],
+   "evals": [
+    {
+     "t": 600,
+     "js": "return JSON.stringify({flow: moire.flow.census, diag: await moire.flow.diagnose()})"
+    }
+   ]
+  },
+  {
+   "name": "n2-look-desert-off_s3",
+   "description": "crust desert N2 off",
+   "query": {
+    "preset": "desert",
+    "seed": 3,
+    "n2": 0
+   },
+   "duration": 602,
+   "sample_every": 30,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 300,
+     "name": "t300"
+    },
+    {
+     "t": 600,
+     "name": "t600"
+    }
+   ],
+   "evals": [
+    {
+     "t": 600,
+     "js": "return JSON.stringify({flow: moire.flow.census, diag: await moire.flow.diagnose()})"
+    }
+   ]
+  }
+ ]
+}

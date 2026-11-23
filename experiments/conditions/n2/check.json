@@ -1,0 +1,126 @@
+{
+ "batch": "n2-check",
+ "runs": [
+  {
+   "name": "n2-check",
+   "description": "step N2 books: 360 s at MAX, seed 5, whole dish lit, the currents world (tar, obstacles, patchy springs), every N2 switch toggled at runtime, a resize, a snapshot saved and loaded",
+   "query": {
+    "seed": 5,
+    "light": "full",
+    "terrain": "currents"
+   },
+   "duration": 360,
+   "sample_every": 10,
+   "stall": 400,
+   "resizes": [
+    {
+     "t": 200,
+     "size": "1000x700"
+    },
+    {
+     "t": 220,
+     "size": "1280x800"
+    }
+   ],
+   "shots": [
+    {
+     "t": 360,
+     "panel": true,
+     "name": "panel"
+    }
+   ],
+   "evals": [
+    {
+     "t": 5,
+     "js": "await moire.genome.setAll({chemo: 1}); return 'genes set'"
+    },
+    {
+     "t": 50,
+     "js": "moire.flow.params.heat = false; return 'off heat'"
+    },
+    {
+     "t": 60,
+     "js": "moire.flow.params.heat = true; return 'on heat'"
+    },
+    {
+     "t": 70,
+     "js": "moire.flow.params.gusts = false; return 'off gusts'"
+    },
+    {
+     "t": 80,
+     "js": "moire.flow.params.gusts = true; return 'on gusts'"
+    },
+    {
+     "t": 90,
+     "js": "moire.flow.params.scour = false; return 'off scour'"
+    },
+    {
+     "t": 100,
+     "js": "moire.flow.params.scour = true; return 'on scour'"
+    },
+    {
+     "t": 110,
+     "js": "moire.flow.params.patchy = false; return 'off patchy'"
+    },
+    {
+     "t": 120,
+     "js": "moire.flow.params.patchy = true; return 'on patchy'"
+    },
+    {
+     "t": 130,
+     "js": "moire.flow.params.chemo = false; return 'off chemo'"
+    },
+    {
+     "t": 140,
+     "js": "moire.flow.params.chemo = true; return 'on chemo'"
+    },
+    {
+     "t": 150,
+     "js": "moire.flow.params.on = false; return 'off on'"
+    },
+    {
+     "t": 160,
+     "js": "moire.flow.params.on = true; return 'on on'"
+    },
+    {
+     "t": 165,
+     "js": "moire.flow.params.chemoNull = true; return 'chemo null'"
+    },
+    {
+     "t": 175,
+     "js": "moire.flow.params.chemoNull = false; return 'chemo act'"
+    },
+    {
+     "t": 300,
+     "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return JSON.stringify({ exact: r.exact, notes: r.notes, rounding: r.rounding })"
+    },
+    {
+     "t": 340,
+     "js": "return JSON.stringify({flow: moire.flow.census, ledger: moire.matter.ledger.rounding, heat: moire.heat.ledger && moire.heat.ledger.rounding})"
+    }
+   ]
+  },
+  {
+   "name": "n2-oldsnap",
+   "description": "an old snapshot (tissue lab, before N2) loads with N2 off",
+   "query": {
+    "snap": "experiments/tissue/configs/tt-same/snapshot.json"
+   },
+   "duration": 30,
+   "sample_every": 10,
+   "stall": 300,
+   "shots": [
+    {
+     "t": 30,
+     "name": "end"
+    }
+   ],
+   "evals": [
+    {
+     "t": 1,
+     "js": "return JSON.stringify({on: moire.flow.params.on, notes: moire.lab.loaded && moire.lab.loaded.notes.filter(n => n.includes('N2'))})"
+    }
+   ]
+  }
+ ]
+}

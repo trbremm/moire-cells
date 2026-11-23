@@ -162,6 +162,9 @@
 //               (the genes drift, nothing acts, nothing is paid); ?mogrn=0 ?mowater=0 ?modipole=0 ?mopump=0 ?mocouple=0 ?mosteer=0 ?motorque=0
 //               one part off; knobs ?swim= ?steer= ?arm= ?dipole= ?swimdrift= ?ciliapush= ?beathz= ?couple= ?lag= ?swimcost= ?ciliaup=
 //               ?flagwant= ?ciliawant= ?mocensus=; ?modraw=0 the motors not drawn (src/motors.js; rules panel, Flagella and cilia)
+//   ?n2=0         step N2: substances flow as in step N1 (every part off); ?heatflow=0 ?gusts=0 ?scour=0 ?patchy=0 ?chemo=0 one part off;
+//               ?chemonull=1 the chemotaxis gene's NEUTRAL control; knobs ?flowx= ?gust= ?sweep= ?tide= ?tideperiod= ?scourspeed= ?carry=
+//               ?springlife= ?springgap= ?flowcensus= (src/flow.js; rules panel, Substances that flow); ?terrain=currents the world for it
 //   ?shape=0      step S1: cell shape off (today's round contacts exactly); ?shapenull=1 the elongation gene's NEUTRAL control (it drifts, cells
 //               ask to be round); ?shapegene=0 ?shapegrn=0 ?shapetorque=0 ?shapeexch=0 ?shapewrap=0 one part off; ?aspmax= the longest
 //               aspect (1.2..4, default 4); ?shapeturn= x the derived turning (rules panel, Cell shape)

@@ -112,6 +112,7 @@ export function createToy(ctx) {
   const toolIndex = (id) => ctx.tools.findIndex((t) => t.id === id);
   const chrome = !(P.has('ui') && !ctx.flag('ui'));   // ?ui=0: no chrome at all (pictures, the experiment tools)
   const base = { power: ctx.light.params.power, speed: ctx.water.params.speed, gyre: ctx.water.params.gyre };
+  const baseFlow = ctx.flow ? { ...ctx.flow.params } : null;   // step N2: a world may ask for its own currents (terrain.js `flow`)
   let foodK = 0;
 
   // ---------- the world now ----------
@@ -375,6 +376,12 @@ export function createToy(ctx) {
     if (!P.has('hour')) L.dayStart = (((0.35 - ctx.control.time() / Math.max(1, L.dayPeriod)) % 1) + 1) % 1;
     if (!P.has('curspeed')) WP.speed = w.water && w.water.speed != null ? w.water.speed : base.speed;
     if (!P.has('gyre')) WP.gyre = w.water && w.water.gyre != null ? w.water.gyre : base.gyre;
+    if (baseFlow) {   // step N2: the world's own flow knobs (strength, sweep, tide, scour speed, spring life), else the page's
+      const FP = ctx.flow.params, wf = w.flow || {};
+      for (const [k, q] of [['strength', 'flowx'], ['sweep', 'sweep'], ['tide', 'tide'], ['scourSpeed', 'scourspeed'], ['life', 'springlife']]) {
+        if (!P.has(q)) FP[k] = wf[k] != null ? wf[k] : baseFlow[k];
+      }
+    }
     const PP = ctx.perfusion.params;
     if (!P.has('perfusion')) PP.on = !!w.perfusion;
     if (w.perfusion) { PP.dir = w.perfusion.dir || 'right'; if (w.perfusion.speed != null) PP.speed = w.perfusion.speed; }

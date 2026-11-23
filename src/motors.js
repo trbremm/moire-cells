@@ -247,7 +247,8 @@ export class Motors {
     a[4] = cam[0]; a[5] = cam[1]; a[6] = cam[2] || zoom; a[7] = 0;
     const NS = Math.max(2, Math.min(16, Math.round(cheap ? Math.min(5, L.segs) : L.segs)));
     const HPS = Math.max(1, Math.min(4, Math.round(cheap ? 1 : L.hairs)));
-    a[8] = harmonic ? 2 : neon ? 1 : 0; a[9] = time % 3600; a[10] = Math.max(0.3, L.tube) / Math.sqrt(Math.max(1, zoom));   // (CSS px of the dish: on screen it widens with sqrt(zoom), as the rims) a[11] = L.bright;
+    a[8] = harmonic ? 2 : neon ? 1 : 0; a[9] = time % 3600; a[10] = Math.max(0.3, L.tube) / Math.sqrt(Math.max(1, zoom));   // (CSS px of the dish: on screen it widens with sqrt(zoom), as the rims)
+    a[11] = L.bright;
     a[12] = NS; a[13] = HPS; a[14] = L.length; a[15] = L.hair;
     a[16] = L.amp; a[17] = L.waves; a[18] = L.beats; a[19] = L.swing;
     const hi = palette && palette.harm ? palette.harm.green : [70, 255, 60];   // (the harmonic look: thin green filaments, as the interfaces)

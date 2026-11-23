@@ -3189,3 +3189,107 @@ above).
   off as it ran, and runs 60 s with no copies, atoms and charge 0.
 - Firefox (headed, the default scene, duplication 0.2, 60 s): runs, no console messages.
 - Phone (Chrome 390 x 844, dpr 3): the rules panel shows the new group; the short panel line was cut down to one line (COPIES ...).
+
+# Flagella and cilia (step S2, 2026-11-23)
+
+Step S2 (BUILD QUEUE 6a4; README "Step S2: flagella and cilia"): a FLAGELLUM gene (thrust, pusher/puller sign, placement) and CILIA
+(beat on the free sides, phase coupling with a lag: metachronal waves), both built as enzyme-like motor proteins and paid from the
+battery; neutral controls `?flagellanull=1&cilianull=1` (the genes drift, nothing acts, nothing is paid). Conditions
+`experiments/conditions/s2/` (`make.py`; `summary.py` prints the act table), runs `experiments/runs/s2-*`, pictures
+`experiments/keep/s2/`. Headless Chrome, GTX 1650, at MAX, the GPU heavily SHARED the whole time (another worker's three to seven carbon
+runs plus my own four to six side by side): x0.1 to x0.4; pages often failed the 15 s start watchdog and were retried.
+
+## 1. The look in the tissue lab (hand-set genes, no evolution, 120 s, seed 3)
+
+The lab has no food, so its batteries emptied within ~40 s and stopped every motor (the battery gates motors as it gates crawling): the
+lab runs set `moire.eat.params.pay = false` (the battery neither pays nor gates). Two bugs found here, both fixed before the pictures:
+every flagellum and hair was drawn at brightness 0 (the value sat inside a code comment), and the cilia's lag (below).
+
+- `lab-pushers-few-s3-t122-x2.5-neon.jpg`, `-harm.jpg`, `lab-pushers-x5-neon-8seg.jpg` (x5, before the 12-segment change): 12 PUSHERS,
+  each trailing one long thin neon tail with a sine wave running down it, sperm-like; they swim 1.2-1.9 R/s, steer slowly, and often
+  pair up side by side. Harmonic: thin green filaments.
+- `lab-pullers-s3-t122-x2.5-neon.jpg`, `-harm.jpg`: 400 PULLERS, two short whips splayed from the front pole like Chlamydomonas; they
+  gather in pairs and small rafts.
+- `lab-pushers-400-s3-t60-x1.5-neon.jpg`, `pushers-400-s3-t90-x5-neon.jpg`, `strip-pushers-s3-t90-x5-12frames-0.1s.jpg` (12 frames
+  0.1 s apart): 400 pushers started packed in a disc; within a minute they spread over the dish in clusters of 3 to 10 that swim
+  together; the tails visibly wave from frame to frame.
+- `lab-cilia-sheet-s3-t122-x2.5-neon.jpg`, `-harm.jpg`, `cilia-edge-s3-t90-x6-neon.jpg`, `strip-cilia-edge-s3-t90-x6-12frames-0.1s.jpg`:
+  a sticky sheet of 150 ciliated cells: a fringe of short bright hairs on the outer edge only (inner sides touch neighbours), like a
+  ciliated epithelium; in the strip the hairs lean in fans that shift along the edge from frame to frame.
+- `lab-cilia-loose-s3-t122-x2.5-neon.jpg`: 12 non-sticky ciliated cells still gather into one small raft fringed with hairs (the lab's
+  fields pull cells together; the cilia's swim, half of 2 R/s x the motor proteins' share ~0.5, does not beat that).
+- Tilted cilia (stroke turned 0.8 x 90 degrees): no visible spinning; the cells raft up as above (turning 1.4 deg/s).
+
+## 2. The metachronal wave: a fix and its yardstick (lab sheet, 150 cells, coupling 1)
+
+| lag rule | wave | sync | whole edge in step |
+|---|---|---|---|
+| coupling off (`?mocouple=0`: free-running phases) | 0.44 | 0.40 | 0.22 |
+| lag along each cell's OWN stroke (as first built) | 0.68 | 0.63 | 0.02 |
+| lag along the two cells' MEAN stroke (now) | 0.85 | 0.83 | 0.67 |
+
+Wave = |mean of e^i(phi_j - phi_i - lag)| over touching beating neighbours, sync the same without the lag. With the first rule two
+neighbours whose fronts differ each wanted the other AHEAD of itself (lag_ij and lag_ji did not cancel), so no pattern could satisfy every
+pair: the edge stayed only a little above free-running. With the mean stroke lag_ji = -lag_ij exactly and the edge locks. In a lab sheet the
+fronts point every way, so the mean stroke is short and the edge mostly beats IN STEP with a small lead along it (wave just above sync); a
+true travelling wave of ~6 R needs neighbours whose fronts agree (daughters inherit theirs, so grown tissue may). The act runs below used
+the FIRST rule (they started before the fix); the seed-2 runs use the new one.
+
+## 3. Do dense pushers stir collective swirls? (3000 pushers over the whole dish, lab, fed, 75 s)
+
+| | stirred water, mean R/s | p90 | max |
+|---|---|---|---|
+| force dipole (arm 1.5 R, default) | 0.14 | 0.26 | 0.80 |
+| no dipole (`?modipole=0`: a plain push, as a crawler) | 0.23 | 0.43 | 1.14 |
+| dipole, arm 3 R | 0.19 | 0.35 | 0.96 |
+
+No. Being force-free HALVES the stirring (the motor's push behind cancels most of the body's drag ahead, as it should: a dipole's flow
+fades fast), and the swimmers (1.9 R/s) outrun their own stirred water ten times over. The crowd forms meandering clumps and piles along
+the dish's edges (pushers do gather at walls), but no vortices (`swarm-3000-pushers-s3-t60-neon.jpg`). Pushers and pullers stir alike in
+the lab (0.059 and 0.059 R/s). Bacterial turbulence would need cells that turn much more strongly with the flow, or a denser, aligned
+crowd; not tuned (the default arm kept).
+
+## 4. Do motors spread above the null? (20 min, motors on vs `?flagellanull=1&cilianull=1`)
+
+Gene means (+- spread) at 20 min (in brackets 10 min); carriers = cells with the gene >= 0.1:
+
+| world, seed | flagellum ON | NULL | cilia ON | NULL | coupling ON / NULL | cells ON / NULL |
+|---|---|---|---|---|---|---|
+| delta, 7 | 0.16 +-0.18 (0.14) | 0.40 +-0.30 (0.19) | 0.24 +-0.25 (0.18) | 0.22 +-0.18 (0.13) | +0.29 / -0.20 | 932 / 940 |
+| islands, 12 | 0.36 +-0.30 (0.14) | 0.39 +-0.27 (0.28) | 0.48 +-0.35 (0.11) | 0.33 +-0.27 (0.18) | +0.28 / +0.04 | 1850 / 1657 |
+| Colonies (wild founders), 3 | 0.28 (0.31) | 0.03 (0.18) | 0.73 (0.66) | 0.32 (0.40) | -0.90 / +0.01 | 20 / 1 (crashed) |
+
+In plain words:
+
+- **The flagellum does NOT spread above its null.** Delta: below it (0.16 against 0.40); islands: level (0.36 against 0.39). The null
+  is not empty: a gene that starts at 0 and can only be nudged up from there drifts UP by itself (0 -> 0.4 in 20 minutes over thousands of
+  births), and on stays at or under that. Swimming is paid (a full swimmer pays ~3.75 crawlers) and the motor proteins take G and carbon
+  from the enzyme pool; in these crowded dishes a swimmer mostly bumps into neighbours (swimmers average 0.4-0.55 R/s, crawling's speed).
+- **Cilia are above the null in islands** (0.48 against 0.33, carriers 1458 against 1236, the gap opening only after 15 min) and level in the
+  delta (0.24 against 0.22). In the Colonies both dishes crashed (20 cells left on, 1 in the null), so nothing can be read there.
+- **Where:** among ciliated cells, loners carry a little more of both genes than cells in tissue (islands at 20 min: flagellum 0.38 against
+  0.34, cilia 0.56 against 0.51; delta at 10 min cilia 0.25 against 0.21); small. Open water vs near walls could not be read in these runs:
+  the census compared the wrong thing and counted every cell as in open water (fixed after them; the seed-2 runs have it).
+- **Coupling** drifted positive with the motors on (+0.29, +0.28) and not in the null (-0.20, +0.04): a hint that beating with neighbours
+  pays, from two dishes. Pusher vs puller: the pusher share falls on AND in the null (drift).
+- **Look of the evolved dishes** (`act-islands-on-s12-t1200-neon.jpg`, `act-colonies-on-s3-t600-neon.jpg`): the islands' pink breathers
+  show short tails and fringes here and there; the wild Colonies are scattered spindles each with a tail or hairs, swimming between
+  the dying colonies.
+- Cut short: one seed per world (seed-2 runs: delta and islands with seed 2 and the new lag rule were still running when this was written). These are hints, not results.
+
+## 5. Checks
+
+- Off equals main: `?flagella=0&cilia=0` against an export of main d5076f5, 180 s: open world seed 3, the same start and the same founders'
+  crash (1980 -> 133 cells off, 140 main); delta seed 7, 370 -> 712 off, 735 main. The counts drift apart a little from the first seconds, in both
+  directions; within what I take for run-to-run noise (no main-vs-main replicate was run).
+- Books (`check.json`, 360 s at MAX, seed 5, the whole dish lit, every cell given motors at 5 s; null, dipole, water, pump, coupling,
+  flagella and cilia toggled at runtime; a resize and back; a snapshot saved and loaded at 240 s): atoms, charge and carbon rounding
+  exactly 0 at every sample; the energy line's rounding -0.003 .. +0.025; the reload exact; console clean. The dish crashes from 1986 to
+  ~130 cells by 160 s and regrows to 211, as earlier checks' dishes do (G2: 1986 -> 82 -> 149), a little sooner (1545 at 60 s; motors
+  given to every cell at once). Every S2 run: atoms, charge and carbon 0 throughout, energy within +-0.11.
+- Phone size (Chrome 390 x 844): the delta world (one world, tall), motors given at 20 s, 60 s: runs, console clean.
+- Firefox headed: the lab, 150 cells with flagella and cilia, 40 s: runs at x0.4, draws the tails and hairs, console clean (the first try died with
+  the GPU out of memory while ten pages shared the 4 GB card).
+- Speed: not measured (the GPU was shared by up to ten pages of two workers the whole time; numbers would mean nothing). What S2 adds:
+  12 floats of genome and 2 words of Cell a cell, a few operations per neighbour in the step, one instanced draw (12 segments x 2 + 18
+  hairs per cell, collapsed where a cell has no motor).

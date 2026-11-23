@@ -1,0 +1,35 @@
+{
+  "name": "c15g-speed-main",
+  "description": "speed: default scene seed 3, 60 s, main c2e49a1 (from its export)",
+  "condition": {
+    "name": "c15g-speed-main",
+    "description": "speed: default scene seed 3, 60 s, main c2e49a1 (from its export)",
+    "query": {
+      "seed": 3
+    },
+    "duration": 60,
+    "sample_every": 30,
+    "shots": []
+  },
+  "url": "http://localhost:53117/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-23T13:21:47",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 54.4,
+  "speed_reached": 1.1,
+  "samples": 3,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-23T13:23:59",
+  "wall_s": 131.92
+}

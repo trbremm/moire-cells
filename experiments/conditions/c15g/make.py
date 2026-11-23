@@ -185,7 +185,9 @@ if __name__ == "__main__":
     # speed: the default scene, seed 3 (2000 founders), 60 s, on a free GPU, C15g then main (from the export) then C15g again
     sp = lambda name, what: {"name": name, "description": f"speed: default scene seed 3, 60 s, {what}", "query": {"seed": 3}, "duration": 60,
                              "sample_every": 30, "shots": []}
-    dump({"batch": "c15g-speed", "runs": [sp("c15g-speed-g", "every C15g lever on"), sp("c15g-speed-g2", "every C15g lever on, again")]}, "speed.json")
+    spn = sp("c15g-speed-none", "every C15g lever off (main's code path, on this tree)")
+    spn["query"] = {"seed": 3, **NONE}
+    dump({"batch": "c15g-speed", "runs": [sp("c15g-speed-g", "every C15g lever on"), sp("c15g-speed-g2", "every C15g lever on, again"), spn]}, "speed.json")
     dump({"batch": "c15g-speed-main", "runs": [sp("c15g-speed-main", "main c2e49a1 (from its export)")]}, "speed-main.json")
 
     # ---------- ab2: the two follow-ups the ab1 numbers pointed to (both off by default until measured): idle photons also DIGEST the
@@ -199,3 +201,22 @@ if __name__ == "__main__":
     # ---------- ab3: hungry cells smell the mud (?cbsmellmud=1) with every C15g lever on, default scene seeds 3 and 7, 10 min ----------
     dump({"batch": "c15g-ab3", "runs": [watch("default", s, 600, "ab3-mud", "every C15g lever on + ?cbsmellmud=1", extra={"cbsmellmud": 1})
                                         for s in (3, 7)]}, "ab3.json")
+
+    # ---------- pictures: close-ups from the watch's last snapshots (step C15e's picture run, the same evals) ----------
+    pics = json.load(open(os.path.join(HERE, "..", "c15e", "pictures.json")))
+    runs = []
+    for key, run_, t in (("default", "c15g-w-default_s3", 1200), ("default7", "c15g-w-default_s7", 1200), ("colonies", "c15g-w-colonies_s3", 1200)):
+        r = json.loads(json.dumps(pics["runs"][0]))
+        r["name"] = f"c15g-pics-{key}"
+        r["description"] = f"close-ups from the last snapshot of {run_} (every C15g lever on): the most bilayer, the most pigment"
+        r["query"] = {"snap": f"experiments/runs/{run_}/snapshots/snap_t{t}.json"}
+        runs.append(r)
+    dump({"batch": "c15g-pictures", "runs": runs}, "pictures.json")
+
+    # ---------- rep: repeats (the same seed differs by a quarter between runs): every lever on vs every lever off (main's path), 10 min ----------
+    rep = []
+    for k in (2, 3):
+        for s in (3, 7):
+            rep.append(watch("default", s, 600, f"rep{k}-all", f"every C15g lever on (repeat {k})"))
+            rep.append(watch("default", s, 600, f"rep{k}-none", f"every C15g lever off: main's code path (repeat {k})", extra=NONE))
+    dump({"batch": "c15g-rep", "runs": rep}, "rep.json")

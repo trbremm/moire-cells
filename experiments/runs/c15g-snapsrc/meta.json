@@ -1,0 +1,81 @@
+{
+  "name": "c15g-snapsrc",
+  "description": "a snapshot made on main c2e49a1 (C15f): default scene seed 7, 180 s (run from the export)",
+  "condition": {
+    "name": "c15g-snapsrc",
+    "description": "a snapshot made on main c2e49a1 (C15f): default scene seed 7, 180 s (run from the export)",
+    "query": {
+      "seed": 7
+    },
+    "duration": 180,
+    "sample_every": 30,
+    "stall": 400,
+    "shots": [
+      {
+        "t": 180,
+        "name": "end"
+      }
+    ],
+    "snapshots": [
+      {
+        "t": 180,
+        "grid": true
+      }
+    ],
+    "evals": [
+      {
+        "t": 180,
+        "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})"
+      },
+      {
+        "t": 180,
+        "js": "if (!moire.eat.carbon || !moire.eat.carbon.buf || moire.eat.carbon.buf.size < moire.cells.count * 96) return JSON.stringify({ready: null}); const d = moire.gpu.device; const rb = async (buf, size) => { const b = d.createBuffer({size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); const e = d.createCommandEncoder(); e.copyBufferToBuffer(buf, 0, b, 0, size); d.queue.submit([e.finish()]); await b.mapAsync(GPUMapMode.READ); const a = b.getMappedRange().slice(0); b.unmap(); b.destroy(); return a; }; const C = moire.cells, n = C.count, CF = C.cellBuf.size / 4 / n; const cf = new Float32Array(await rb(C.cellBuf, n * CF * 4)), cu = new Uint32Array(cf.buffer); const CC = moire.eat.carbon; const cb = new Int32Array(await rb(CC.buf, n * 24 * 4)); const kB = CC.params.kBody, R = C.R; let alive = 0, bat = 0, body = 0, both = 0, grown = 0, all3 = 0, batSum = 0, bsEmpty = 0, bsBurnt = 0; const hb = [0,0,0,0,0], bsGr = [0,0,0]; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; alive++; const b = cf[i * CF + 16], r = cf[i * CF + 4]; const want = kB * Math.PI * (r / R) ** 2 * 4096, have = 0.25 * (2 * cb[i * 24 + 8] + cb[i * 24 + 9] + cb[i * 24 + 10]); const okB = b >= 0.6, okC = !CC.params.growth || have >= 0.995 * want, okR = r >= 0.9 * R; batSum += b; hb[Math.min(4, Math.floor(b * 5))]++; if (okB) bat++; if (okC) body++; if (okB && okC) both++; if (okR) grown++; if (okB && okC && okR) all3++; if (okB && !okC) { const c = cb[i * 24 + 5], g = cb[i * 24 + 6], t = cb[i * 24 + 7]; bsGr[0] += c; bsGr[1] += g; bsGr[2] += t; if (2 * c + g + t < 4096 * want / 4096 * 0.5) bsEmpty++; if (4 * g < g + t) bsBurnt++; } } return JSON.stringify({ready: {alive, bat, body, both, grown, all3, batMean: batSum / Math.max(alive, 1), batHist: hb, batNoBody: {gran: bsGr.map((x) => Math.round(x / 4096 * 100) / 100), empty: bsEmpty, burnt: bsBurnt}}})"
+      },
+      {
+        "t": 180,
+        "js": "const M = moire.matter; return JSON.stringify({dishM: Array.from(M.dish || []).map((x) => Math.round(x * 10) / 10), cellsM: Array.from((moire.eat && moire.eat.ledger && (moire.eat.ledger.held || moire.eat.ledger.stock)) || []).map((x) => Math.round(x * 10) / 10)})"
+      }
+    ]
+  },
+  "url": "http://localhost:63203/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-23T10:40:23",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 180.0,
+  "run_wall_s": 522.72,
+  "speed_reached": 0.34,
+  "samples": 7,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [
+    "snapshots/snap_t180.json"
+  ],
+  "clips": [],
+  "evals": [
+    {
+      "t": 180.00000000003539,
+      "js": "const L = moire.carbon && moire.carbon.ledger, CC = moire.carbonCells, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, job: moire.cells.stats && moire.cells.stats.job, flow: CC && CC.flow, parts: CC && CC.census2, census: CC && CC.census, memb: moire.membrane && moire.membrane.census && {integ: moire.membrane.census.integ}, cRound: L && L.rounding, eRound: L && L.eRounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding, eIn: H.in, freeT: moire.matter.dish[1], freeG: moire.matter.dish[3]})",
+      "result": "{\"t\":180.00000000003539,\"alive\":224,\"job\":[105,89,29,1,0,0,0],\"flow\":{\"window\":60.01666666670748,\"inSprings\":86.37957012803068,\"inSpringsFuel\":151.0454452755152,\"inBodies\":0,\"openFix\":54.25104354689452,\"openBurn\":7.275566899814548,\"openCond\":49.16749470629814,\"openHyd\":34.716674838562895,\"openDis\":41.91657916200982,\"openSettle\":51.54061480314463,\"mudFormedOpen\":27.113074059270645,\"uptake\":23.583292835307482,\"uptakeKind\":[5.807468845455646,2.492227636418744,5.193869758396913,5.088186224309231,5.001540370726952],\"uptakeFuel\":46.182484032181875,\"grazed\":41.885276821948054,\"grazedFuel\":33.84631113750822,\"exhaled\":13.536767130648947,\"exhaledKind\":[4.36719509337387,1.089297026866796,2.1768855439446457,2.158091936266236,3.745297530197398],\"exhaledFuel\":27.248534478251397,\"toMud\":168.5293581642842,\"toMudFuel\":165.35592326772982,\"lostRim\":0,\"cellFix\":28.645119194301543,\"cellBurn\":11.676199970486367,\"cellCond\":0.003417019577892706,\"cellHyd\":6.482574284916447,\"cellDis\":3.770192958550616,\"builtBody\":1.4800576228815263,\"builtLip\":25.603727697150045,\"builtWall\":28.583856914726468,\"builtPig\":4.786756282973696,\"builtEnz\":4.4391965773366096,\"builderRed\":3.0811753679512512,\"builderOx\":1.6565222767969852,\"bites\":0.033193904470957714,\"spoiled\":0.019037680505402218,\"shuttle\":2.261334742083994,\"fromGran\":20.295631855720718,\"eIncome\":422.45910644497627,\"eCarbonEng\":24.084084512640697,\"eUpkeep\":43.37493896480923,\"payBody\":0.7280844974698256,\"payLip\":22.076631274283795,\"payWall\":13.151193082207802,\"payRed\":9.065658031183089,\"payPig\":14.290036892954044,\"payEnz\":27.46353212972827,\"payTrans\":9.748207691867156,\"dishLadder\":[41.067626953125,8.326416015625,15.96484375,12.520263671875,11.603271484375],\"mud\":642.0465698242188,\"cellsLadder\":2.987060546875,\"cellsLadderKind\":{\"0\":1.245361328125,\"1\":0.1787109375,\"2\":0.61083984375,\"3\":0.294189453125,\"4\":0.657958984375},\"granules\":22.14596142578125,\"in_body\":21.84,\"in_memb\":33.232,\"in_wall\":3.147,\"in_pig\":5.906,\"in_glue\":0.33,\"in_enz\":28.077,\"mudShare\":0.7563597460645791,\"cellShare\":0.13822593499411984,\"all\":848.864013671875},\"parts\":{\"membC\":33.232,\"wallC\":3.147,\"pigC\":5.906,\"glueC\":0.33,\"enzC\":28.077,\"limC\":45,\"limG\":0,\"limTr\":57,\"limAt\":0,\"limBat\":61,\"trans\":226.946,\"enzWant\":25.931,\"enzShort\":10,\"limAny\":109},\"census\":{\"n\":224,\"ox\":23,\"cond\":1,\"red\":95,\"redLit\":95,\"hyd\":0,\"granule\":133,\"granC\":22.179,\"ladder\":2.641,\"any\":97,\"oxOnly\":0,\"litOnly\":0,\"body\":21.84,\"short\":25,\"want\":15.378},\"memb\":{\"integ\":0.9519776785714286},\"cRound\":0,\"eRound\":0,\"atoms\":0,\"charge\":0,\"energy\":0.0590362548828125,\"eIn\":1886283.6395568848,\"freeT\":241.88623046875,\"freeG\":302.947265625}"
+    },
+    {
+      "t": 180.00000000003539,
+      "js": "if (!moire.eat.carbon || !moire.eat.carbon.buf || moire.eat.carbon.buf.size < moire.cells.count * 96) return JSON.stringify({ready: null}); const d = moire.gpu.device; const rb = async (buf, size) => { const b = d.createBuffer({size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); const e = d.createCommandEncoder(); e.copyBufferToBuffer(buf, 0, b, 0, size); d.queue.submit([e.finish()]); await b.mapAsync(GPUMapMode.READ); const a = b.getMappedRange().slice(0); b.unmap(); b.destroy(); return a; }; const C = moire.cells, n = C.count, CF = C.cellBuf.size / 4 / n; const cf = new Float32Array(await rb(C.cellBuf, n * CF * 4)), cu = new Uint32Array(cf.buffer); const CC = moire.eat.carbon; const cb = new Int32Array(await rb(CC.buf, n * 24 * 4)); const kB = CC.params.kBody, R = C.R; let alive = 0, bat = 0, body = 0, both = 0, grown = 0, all3 = 0, batSum = 0, bsEmpty = 0, bsBurnt = 0; const hb = [0,0,0,0,0], bsGr = [0,0,0]; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; alive++; const b = cf[i * CF + 16], r = cf[i * CF + 4]; const want = kB * Math.PI * (r / R) ** 2 * 4096, have = 0.25 * (2 * cb[i * 24 + 8] + cb[i * 24 + 9] + cb[i * 24 + 10]); const okB = b >= 0.6, okC = !CC.params.growth || have >= 0.995 * want, okR = r >= 0.9 * R; batSum += b; hb[Math.min(4, Math.floor(b * 5))]++; if (okB) bat++; if (okC) body++; if (okB && okC) both++; if (okR) grown++; if (okB && okC && okR) all3++; if (okB && !okC) { const c = cb[i * 24 + 5], g = cb[i * 24 + 6], t = cb[i * 24 + 7]; bsGr[0] += c; bsGr[1] += g; bsGr[2] += t; if (2 * c + g + t < 4096 * want / 4096 * 0.5) bsEmpty++; if (4 * g < g + t) bsBurnt++; } } return JSON.stringify({ready: {alive, bat, body, both, grown, all3, batMean: batSum / Math.max(alive, 1), batHist: hb, batNoBody: {gran: bsGr.map((x) => Math.round(x / 4096 * 100) / 100), empty: bsEmpty, burnt: bsBurnt}}})",
+      "result": "{\"ready\":{\"alive\":224,\"bat\":3,\"body\":202,\"both\":1,\"grown\":122,\"all3\":1,\"batMean\":0.18195642743791854,\"batHist\":[143,61,17,3,0],\"batNoBody\":{\"gran\":[0,0,0],\"empty\":2,\"burnt\":2}}}"
+    },
+    {
+      "t": 180.00000000003539,
+      "js": "const M = moire.matter; return JSON.stringify({dishM: Array.from(M.dish || []).map((x) => Math.round(x * 10) / 10), cellsM: Array.from((moire.eat && moire.eat.ledger && (moire.eat.ledger.held || moire.eat.ledger.stock)) || []).map((x) => Math.round(x * 10) / 10)})",
+      "result": "{\"dishM\":[323.1,242.1,161,302.9,291.8,0,248,30.1,97.7,78.9,112.4,0,270.7,0,0,0,0,0],\"cellsM\":[13.5,16.8,3.6,14.7,11.5,0,53.5,3.8,17.5,11.4,1.5,0.8,14.5,1.6,9.4,5.7,0,0]}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T10:50:55",
+  "wall_s": 632.21
+}

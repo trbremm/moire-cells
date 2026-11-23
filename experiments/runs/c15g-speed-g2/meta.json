@@ -1,0 +1,35 @@
+{
+  "name": "c15g-speed-g2",
+  "description": "speed: default scene seed 3, 60 s, every C15g lever on, again",
+  "condition": {
+    "name": "c15g-speed-g2",
+    "description": "speed: default scene seed 3, 60 s, every C15g lever on, again",
+    "query": {
+      "seed": 3
+    },
+    "duration": 60,
+    "sample_every": 30,
+    "shots": []
+  },
+  "url": "http://localhost:59659/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "311074dcef664321b7595feb4354270ac916c923",
+  "dirty": true,
+  "started": "2026-11-23T13:24:00",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 22.96,
+  "speed_reached": 2.61,
+  "samples": 3,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-23T13:25:48",
+  "wall_s": 107.99
+}

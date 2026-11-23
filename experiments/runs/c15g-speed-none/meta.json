@@ -1,0 +1,38 @@
+{
+  "name": "c15g-speed-none",
+  "description": "speed: default scene seed 3, 60 s, every C15g lever off (main's code path, on this tree)",
+  "condition": {
+    "name": "c15g-speed-none",
+    "description": "speed: default scene seed 3, 60 s, every C15g lever off (main's code path, on this tree)",
+    "query": {
+      "seed": 3,
+      "cbidlered": 0,
+      "crawlwork": 0,
+      "cbmembfound": 0
+    },
+    "duration": 60,
+    "sample_every": 30,
+    "shots": []
+  },
+  "url": "http://localhost:53686/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3&cbidlered=0&crawlwork=0&cbmembfound=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "311074dcef664321b7595feb4354270ac916c923",
+  "dirty": true,
+  "started": "2026-11-23T13:28:22",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 21.51,
+  "speed_reached": 2.79,
+  "samples": 3,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-23T13:30:04",
+  "wall_s": 101.82
+}

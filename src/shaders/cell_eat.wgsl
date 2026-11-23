@@ -2261,7 +2261,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     var heads0 = 0;
     for (var k = 0u; k < 6u; k++) { heads0 += lpm[LK_GP][k] - lpm[LK_TM][k]; }
     if (cbl) {   // step C15c: OXYGEN DAMAGES MEMBRANES (cell_carbon.wgsl cb_bites: the bites are oxidations by free t from the dish)
-      cb_bites(array<i32, 5>(flux[fo + 32u], flux[fo + 33u], flux[fo + 34u], flux[fo + 35u], flux[fo + 36u]), &lpm, &m, &heat, idx, cur,
+      cb_bites(i, array<i32, 5>(flux[fo + 32u], flux[fo + 33u], flux[fo + 34u], flux[fo + 35u], flux[fo + 36u]), &lpm, &m, &heat, idx, cur,
                pcg(rs + 0x5f356495u));
     } else {
       for (var q = 0u; q < 5u; q++) {
@@ -2529,7 +2529,21 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         var got1 = cb_make2(1, n1, &S, &gr, &m, &bat, &heat, &lim);
         let got2 = cb_make2(2, tS - got1, &S, &gr, &m, &bat, &heat, &lim);    // (the other head for what the preferred one could not make)
         if (got1 + got2 < tS && got1 < n1) { got1 += cb_make2(1, tS - got1 - got2, &S, &gr, &m, &bat, &heat, &lim); }
-        let gotO = cb_make2(0, tO, &S, &gr, &m, &bat, &heat, &lim);
+        // step C15f (CBF_OILHELD): oil sits between the soap's tails, so a side takes only as much oil as the soap it HOLDS carries (the shed
+        // rule below lets the rest go at once): the builder asked oil for the soap the side WANTS, made it (six fuel hands and a spark each)
+        // and the shed rule put it straight back into the granules, about as fast as it was made while the soap was short (C15e: 13 oil
+        // molecules a second made and 13 shed in the founders' first minute). Now oil only for the soap held after this tick's soap
+        var tOx = tO;
+        if (cb_bit(CBF_OILHELD)) {
+          let fS = f32(got1 + got2) / f32(max(tS, 1));
+          tOx = 0;
+          for (var k = 0u; k < 6u; k++) {
+            let Sk = f32(lpm[LK_GP][k] + lpm[LK_TM][k]) + floor(f32(rS[k]) * fS);
+            rO[k] = min(rO[k], max(i32(floor(EP.lp[5].y * Sk)) - lpm[LK_OIL][k], 0));
+            tOx += rO[k];
+          }
+        }
+        let gotO = cb_make2(0, tOx, &S, &gr, &m, &bat, &heat, &lim);
         let bB1 = bat;
         let gotWl = cb_make_chain(tWl, &S, &gr, &m, &bat, &heat, &lim);
         let gotWh = cb_make_cross(tWh, &S, &gr, &m, &bat, &heat, &lim);

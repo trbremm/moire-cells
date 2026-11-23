@@ -1,0 +1,35 @@
+{
+  "name": "c15f-speed-fix2",
+  "description": "speed: the same as c15f-speed-fix, again, after the main run",
+  "condition": {
+    "name": "c15f-speed-fix2",
+    "description": "speed: the same as c15f-speed-fix, again, after the main run",
+    "query": {
+      "seed": 3
+    },
+    "duration": 60,
+    "sample_every": 30,
+    "shots": []
+  },
+  "url": "http://localhost:59021/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "264153d32759a1301c4cb1d5a65ee314818ec6fd",
+  "dirty": false,
+  "started": "2026-11-23T05:46:38",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 76.47,
+  "speed_reached": 0.78,
+  "samples": 3,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-23T05:49:26",
+  "wall_s": 167.79
+}

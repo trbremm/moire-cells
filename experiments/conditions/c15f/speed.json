@@ -1,0 +1,35 @@
+{
+ "batch": "c15f-speed",
+ "runs": [
+  {
+   "name": "c15f-speed-fix",
+   "description": "speed: default scene seed 3, 60 s, every C15f fix on (GPU shared with another worker)",
+   "query": {
+    "seed": 3
+   },
+   "duration": 60,
+   "sample_every": 30,
+   "shots": []
+  },
+  {
+   "name": "c15f-speed-main",
+   "description": "speed: default scene seed 3, 60 s, main d5076f5 (from its export; GPU shared)",
+   "query": {
+    "seed": 3
+   },
+   "duration": 60,
+   "sample_every": 30,
+   "shots": []
+  },
+  {
+   "name": "c15f-speed-fix2",
+   "description": "speed: the same as c15f-speed-fix, again, after the main run",
+   "query": {
+    "seed": 3
+   },
+   "duration": 60,
+   "sample_every": 30,
+   "shots": []
+  }
+ ]
+}

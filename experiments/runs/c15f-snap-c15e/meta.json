@@ -1,0 +1,95 @@
+{
+  "name": "c15f-snap-c15e",
+  "description": "a C15e snapshot (c15e-w-default_s7 at 20 min) loads and runs on 30 s with the C15f fixes, books",
+  "condition": {
+    "name": "c15f-snap-c15e",
+    "description": "a C15e snapshot (c15e-w-default_s7 at 20 min) loads and runs on 30 s with the C15f fixes, books",
+    "query": {
+      "snap": "experiments/runs/c15e-w-default_s7/snapshots/snap_t1200.json"
+    },
+    "duration": 30,
+    "sample_every": 10,
+    "stall": 400,
+    "shots": [
+      {
+        "t": 30,
+        "name": "end"
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 1,
+        "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+      },
+      {
+        "t": 15,
+        "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+      },
+      {
+        "t": 30,
+        "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+      }
+    ]
+  },
+  "url": "http://localhost:54191/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&snap=experiments/runs/c15e-w-default_s7/snapshots/snap_t1200.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "264153d32759a1301c4cb1d5a65ee314818ec6fd",
+  "dirty": false,
+  "started": "2026-11-23T05:37:27",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": true,
+    "notes": [
+      "saved before step S1: round contacts, no elongation (as it ran)",
+      "saved before step G2: no gene duplication (as it ran)",
+      "saved before step C15f: digestion down to an empty battery, wall pairs built from chain carbons, oil for the soap wanted, spoiled pieces into the mud (as it ran)"
+    ],
+    "rebased": null,
+    "rounding": {
+      "energy": 0.111236572265625,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": 0.111236572265625,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 611,
+    "time": 1199.9999999992374
+  },
+  "t_start": 1199.9999999992374,
+  "sim_s": 30.0,
+  "run_wall_s": 94.72,
+  "speed_reached": 0.32,
+  "samples": 4,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0.9999999999993179,
+      "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})",
+      "result": "{\"t\":1200.9999999992367,\"alive\":607,\"cRound\":0,\"atoms\":0,\"charge\":0,\"energy\":0.1115875244140625}"
+    },
+    {
+      "t": 14.999999999986585,
+      "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})",
+      "result": "{\"t\":1214.999999999224,\"alive\":615,\"cRound\":0,\"atoms\":0,\"charge\":0,\"energy\":0.1077423095703125}"
+    },
+    {
+      "t": 29.999999999972943,
+      "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})",
+      "result": "{\"t\":1229.9999999992103,\"alive\":620,\"cRound\":0,\"atoms\":0,\"charge\":0,\"energy\":0.1033477783203125}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T05:40:37",
+  "wall_s": 190.02
+}

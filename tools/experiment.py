@@ -216,7 +216,9 @@ def run_condition(cond, out_dir, port, args):
         t0 = time.time()
         while True:
             st = page.status()
-            if st["msg"]:
+            # (the safety net's "The page did not start" shows after 15 s of slow module loading and goes away by itself when the
+            # modules do start, src/main.js; on a busy GPU/CPU that is common: wait for it until the ready timeout)
+            if st["msg"] and not ("did not start" in st["msg"] and time.time() - t0 < args.ready_timeout):
                 raise RunFailed("page message: " + st["msg"][:500])
             if st["stage"].startswith("running-10") and st["lab"] in ("", "ready", "failed"):
                 break

@@ -1,0 +1,1 @@
+{"name": "c15f-speedprobe", "description": "speed probe: default scene seed 3, 60 s, main as it is (GPU shared with another worker)", "query": {"seed": 3}, "duration": 60, "sample_every": 30, "shots": []}

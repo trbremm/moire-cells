@@ -126,6 +126,11 @@
 //               builders do not open (hydrolyse) the granules' spare backbones for their hands, ?cbgsplit=0 the enzyme builder takes
 //               only free G (does not split GT or rust Gt in its stock for it), ?cbbodyany=1 the body takes granule carbons
 //               whatever their hands (off by default: C15b's rule, granules only while a quarter of their hands are fuel)
+//               Step C15f, carbon life round 3 (src/carboncells.js): ?cbhydfloor=0 the granules' digestion (C15e (l)) pays down to an empty
+//               battery (as C15e), not only from above the builder's floor (?cbredfloor); ?cbwallcut=0 a wall's cross-linked pairs are built
+//               from two chain carbons only (as C15e), not cut out of the granules as they are first; ?cboilheld=0 the builder makes a
+//               side's oil for the soap it wants (as C15e), not only for the soap it holds; ?cbspoilkeep=0 a lipid or wall piece spoiled by
+//               oxygen leaves as mud (as C15e), not kept in the cell as granules
 //   ?saturation=0 step C12e: no saturation (reactions inside cells do not slow as their products pile up); ?osmosis=0 no osmosis (no
 //               swelling: the stretch genes still drift, the NEUTRAL control), ?stretch=0 stretch opens no channels, ?tear=0 overstretch
 //               does not burst, ?tolcost=0 the stretch tolerance is free; ?satscale=x, ?kosm=x, ?kstretch=x, ?wtol=x knobs;
@@ -591,7 +596,7 @@ async function boot() {
       // step C15b: cells eat carbon (src/carboncells.js)
       const CC = cells.eat.carbon.params;
       for (const [q, k] of [['cbcells', 'on'], ['cbexch', 'exchange'], ['cbeng', 'engines'], ['cbgraze', 'graze'], ['cbdis2', 'dissolve'], ['cbsmell', 'smell'], ['cbgrow', 'growth'],
-        ['cbtrans', 'transport'], ['cbred', 'reduce'], ['cbbite', 'oxBite'], ['cbenz', 'enzymes'], ['cbtool', 'toolBody'], ['cbshut', 'shuttle'], ['cbgran', 'granFat'], ['cbhunger', 'hunger'], ['cbwallrec', 'wallRecycle'], ['cbgranred', 'granRed'], ['cbgranhyd', 'granHyd'], ['cbgsplit', 'gSplit'], ['cbbodyany', 'bodyAny']]) {   // (step C15c: transport .. toolBody; C15d: shuttle)
+        ['cbtrans', 'transport'], ['cbred', 'reduce'], ['cbbite', 'oxBite'], ['cbenz', 'enzymes'], ['cbtool', 'toolBody'], ['cbshut', 'shuttle'], ['cbgran', 'granFat'], ['cbhunger', 'hunger'], ['cbwallrec', 'wallRecycle'], ['cbgranred', 'granRed'], ['cbgranhyd', 'granHyd'], ['cbgsplit', 'gSplit'], ['cbbodyany', 'bodyAny'], ['cbhydfloor', 'hydFloor'], ['cbwallcut', 'wallCut'], ['cboilheld', 'oilHeld'], ['cbspoilkeep', 'spoilKeep']]) {   // (step C15c: transport .. toolBody; C15d: shuttle)
         if (params.has(q)) CC[k] = flag(q);
       }
       for (const [q, k] of [['cbkgraze', 'kGraze'], ['cbkdis2', 'kDis'], ['cbbody', 'kBody'], ['cbbuild', 'kBuild'], ['cbfound', 'found'],

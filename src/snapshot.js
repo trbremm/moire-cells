@@ -599,6 +599,11 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       if (M.carbon && !(S.settings['carbon.params'] && 'hydHeat' in S.settings['carbon.params'])) M.carbon.params.hydHeat = false;
       notes.push('saved before step C15d: no reducing shuttle, no fat from granules, hunger for the body only, walls crack into the mud, mud hydrolyses by light only (as it ran)');
     }
+    // step C15f: one saved before carbon life round 3 runs on without its four fixes (as it ran)
+    if (opts.settings !== false && CARBON && M.carbonCells && S.settings && S.settings['carbonCells.params'] && !('hydFloor' in S.settings['carbonCells.params'])) {
+      Object.assign(M.carbonCells.params, { hydFloor: false, wallCut: false, oilHeld: false, spoilKeep: false });
+      notes.push('saved before step C15f: digestion down to an empty battery, wall pairs built from chain carbons, oil for the soap wanted, spoiled pieces into the mud (as it ran)');
+    }
     if (opts.settings !== false && M.waste && !(S.settings && S.settings['waste.params'])) {
       Object.assign(M.waste.params, { saturation: false, osmosis: false });   // step C12e
       notes.push('saved before step C12e: saturation and osmosis off (as it ran)');

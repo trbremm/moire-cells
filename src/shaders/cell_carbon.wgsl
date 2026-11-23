@@ -71,6 +71,10 @@ const CBF_ENZANY: u32 = 262144u; // AN ENZYME'S SCAFFOLD FROM ANY CARBON: a unit
 const CBF_GRANRED: u32 = 524288u; // THE GRANULES' BURNT HANDS REDUCED: a builder short of fuel hands reduces granule hands from the battery (cb_gran_red)
 const CBF_GRANHYD: u32 = 1048576u; // THE GRANULES DIGESTED: a builder short of hands opens granule backbones with a water (cb_gran_hyd)
 const CBF_GSPLIT: u32 = 2097152u; // AN ENZYME'S G FROM ITS COMPOUNDS: the builder splits GT, then rust Gt, in the stock for a free G (cb_g_split)
+const CBF_HYDFLOOR: u32 = 8388608u; // step C15f: THE GRANULES DIGESTED ONLY FROM ABOVE THE BATTERY'S FLOOR, as every uphill builder reaction (cb_gran_hyd)
+const CBF_WALLCUT: u32 = 16777216u; // step C15f: a WALL's cross-linked pairs cut out of the granules as they are (cb_make_cross)
+const CBF_OILHELD: u32 = 33554432u; // step C15f: the builder makes oil only for the soap a side holds (cell_eat.wgsl, the lipid builder)
+const CBF_SPOILKEEP: u32 = 67108864u; // step C15f: a lipid or wall piece spoiled by oxygen stays in the cell as granules (cb_bites)
 const CBF_BODYANY: u32 = 4194304u; // THE BODY FROM ANY BUILT CARBON: the body takes granule carbons whatever their hands (cb_build)
 const CBF_WALLREC: u32 = 131072u; // WALL RECYCLING: a jolted wall's cracked pieces stay in the cell as granules (as shed lipids do), not mud    // OXYGEN DAMAGES MEMBRANES: free t oxidises the lipids' fuel hands (fat -> soap -> spoiled, into the mud)
 // the event counters (64-bit, LG_CBC_EV; src/carboncells.js EV)
@@ -814,9 +818,12 @@ fn cb_gran_hyd(k: i32, gr: ptr<function, vec3i>, m: ptr<function, array<i32, 18>
   if (k <= 0 || (CBP.cfg.x & CBF_GRANHYD) == 0u) { return 0; }
   let sp = max(CBP.e.z, 1);
   let cost = sp + CBP.e.y;
+  // (step C15f, CBF_HYDFLOOR: digestion is an uphill investment paid from the battery, as the builder's reductions (C15c) and (j): only
+  // from above the battery's floor, v.x; C15e paid it down to empty, in the founders' crash and in the oxygen dish's thin batteries)
+  let avail = select(max(*bat, 0), max(*bat - i32(CBP.v.x), 0), (CBP.cfg.x & CBF_HYDFLOOR) != 0u);
   var x = min(k, (*gr).x);
   if (x > max((*m)[6], 0)) { x = max((*m)[6], 0); *why |= CBL_AT; }
-  if (x * cost > max(*bat, 0)) { x = max(*bat, 0) / cost; *why |= CBL_BAT; }
+  if (x * cost > avail) { x = avail / cost; *why |= CBL_BAT; }
   if (x <= 0) { return 0; }
   *gr += vec3i(-x, x, x);
   (*m)[6] -= x;
@@ -1069,16 +1076,28 @@ fn cb_make_cross(n: i32, S: ptr<function, array<i32, 5>>, gr: ptr<function, vec3
                  bat: ptr<function, i32>, heat: ptr<function, i32>, lim: ptr<function, u32>) -> i32 {
   if (n <= 0) { return 0; }
   let sp = max(CBP.e.z, 1);
-  let c2 = cb_make_chain(2 * n, S, gr, m, bat, heat, lim);
+  // step C15f (CBF_WALLCUT): a cross-linked pair is three backbone bonds and a fuel and a burnt hand on two carbons, and the granules hold
+  // such pieces as they are (a cracked wall's pairs go back into them whole with ?cbwallrec; grazed mud is condensed about as far, 1.5
+  // bonds a carbon): as the chain carbons, soaps and oils already are (C15d (e1)), the pair is cut out with no bond made or broken (zero
+  // energy, the assembly spark), before any is built from chain carbons (C15e: opening a backbone, two cuts and a condensation again)
+  var made = 0;
+  var left = n;
+  if ((CBP.cfg.x & CBF_WALLCUT) != 0u) {
+    var x0 = min(min(left, (*gr).x / 3), min((*gr).y, (*gr).z));
+    if (max(*bat, 0) / sp < x0) { x0 = max(*bat, 0) / sp; *lim |= CBL_BAT; }
+    if (x0 > 0) { *gr -= vec3i(3 * x0, x0, x0); *bat -= x0 * sp; *heat += x0 * sp; made = x0; left -= x0; }
+    if (left <= 0) { return made; }
+  }
+  let c2 = cb_make_chain(2 * left, S, gr, m, bat, heat, lim);
   var x = c2 / 2;
   if (c2 - 2 * x > 0) { *gr += vec3i(1, 1, 1) * (c2 - 2 * x); }   // (an odd chain carbon back into the granules as it is)
   let xb = max(*bat, 0) / sp;
   if (xb < x) { *gr += vec3i(2, 2, 2) * (x - xb); x = xb; *lim |= CBL_BAT; }
-  if (x <= 0) { return 0; }
+  if (x <= 0) { return made; }
   (*m)[6] += x;
   *bat -= x * sp;
   *heat += x * (sp + CBP.e.y);
-  return x;
+  return made + x;
 }
 
 /**
@@ -1088,7 +1107,7 @@ fn cb_make_cross(n: i32, S: ptr<function, array<i32, 5>>, gr: ptr<function, vec3
  * the dish (the stock while g does not move). Soap2 first, then soap1, then oil, so no molecule is bitten twice in a tick; the sides from a
  * random first one round. Returns the bites done.
  */
-fn cb_bites(want: array<i32, 5>, lpm: ptr<function, array<array<i32, 6>, 5>>, m: ptr<function, array<i32, 18>>, heat: ptr<function, i32>,
+fn cb_bites(i: u32, want: array<i32, 5>, lpm: ptr<function, array<array<i32, 6>, 5>>, m: ptr<function, array<i32, 18>>, heat: ptr<function, i32>,
             idx: array<u32, 9>, cur: u32, r: u32) -> i32 {
   let tw = want[0] + want[1] + want[2] + want[3] + want[4];
   if (tw <= 0 || cur == 0u || (EP.mask & 2u) == 0u) { return 0; }
@@ -1112,7 +1131,10 @@ fn cb_bites(want: array<i32, 5>, lpm: ptr<function, array<array<i32, 6>, 5>>, m:
       if (q == 2u) { (*lpm)[0][k] += b; }
       else if (q == 0u) { (*lpm)[1][k] += b; }
       else {
-        cb_spill(cb_lk_hands(q) + vec3i(0, -1, 1), b, idx, true, 0u);   // (one fuel hand burnt, then out as tar)
+        // (one fuel hand burnt, then out as tar; step C15f, CBF_SPOILKEEP: kept in the cell as granules, as a cracked wall's pieces (C15d (g))
+        // and shed lipids are: the cell takes its damaged membrane back in and recycles the carbon)
+        if (cb_bit(CBF_SPOILKEEP)) { cb_gran_add(i, cb_lk_hands(q) + vec3i(0, -1, 1), b); }
+        else { cb_spill(cb_lk_hands(q) + vec3i(0, -1, 1), b, idx, true, 0u); }
         spoil += b;
       }
       x -= b;

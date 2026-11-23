@@ -1,0 +1,263 @@
+{
+  "name": "s2-check",
+  "description": "step S2 books check: 360 s at MAX (seed 5), whole dish lit; motors given to every cell; every motor switch toggled at runtime, a resize, a snapshot saved and loaded: rounding must stay 0",
+  "condition": {
+    "name": "s2-check",
+    "description": "step S2 books check: 360 s at MAX (seed 5), whole dish lit; motors given to every cell; every motor switch toggled at runtime, a resize, a snapshot saved and loaded: rounding must stay 0",
+    "query": {
+      "seed": 5,
+      "light": "full",
+      "world": "open"
+    },
+    "duration": 360,
+    "sample_every": 10,
+    "stall": 400,
+    "snapshots": [],
+    "resizes": [
+      {
+        "t": 200,
+        "size": "1000x700"
+      },
+      {
+        "t": 220,
+        "size": "1280x800"
+      }
+    ],
+    "shots": [
+      {
+        "t": 40,
+        "name": "motors"
+      },
+      {
+        "t": 360,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "evals": [
+      {
+        "t": 5,
+        "js": "await moire.genome.setAll({flagellum: 0.6, flagSign: 0.5, cilia: 0.5, ciliaCouple: 0.5}); return 'genes set'"
+      },
+      {
+        "t": 40,
+        "js": "return JSON.stringify(moire.motors.census)"
+      },
+      {
+        "t": 50,
+        "js": "moire.motors.params.flagellaNull = true; return 'motors flagellaNull'"
+      },
+      {
+        "t": 60,
+        "js": "moire.motors.params.flagellaNull = false; return 'motors flagellaNull'"
+      },
+      {
+        "t": 65,
+        "js": "moire.motors.params.ciliaNull = true; return 'motors ciliaNull'"
+      },
+      {
+        "t": 75,
+        "js": "moire.motors.params.ciliaNull = false; return 'motors ciliaNull'"
+      },
+      {
+        "t": 80,
+        "js": "moire.motors.params.dipole = false; return 'motors dipole'"
+      },
+      {
+        "t": 90,
+        "js": "moire.motors.params.dipole = true; return 'motors dipole'"
+      },
+      {
+        "t": 95,
+        "js": "moire.motors.params.water = false; return 'motors water'"
+      },
+      {
+        "t": 105,
+        "js": "moire.motors.params.water = true; return 'motors water'"
+      },
+      {
+        "t": 110,
+        "js": "moire.motors.params.pump = false; return 'motors pump'"
+      },
+      {
+        "t": 115,
+        "js": "moire.motors.params.pump = true; return 'motors pump'"
+      },
+      {
+        "t": 120,
+        "js": "moire.motors.params.couple = false; return 'motors couple'"
+      },
+      {
+        "t": 125,
+        "js": "moire.motors.params.couple = true; return 'motors couple'"
+      },
+      {
+        "t": 130,
+        "js": "moire.motors.params.flagella = false; return 'motors flagella'"
+      },
+      {
+        "t": 140,
+        "js": "moire.motors.params.cilia = false; return 'motors cilia'"
+      },
+      {
+        "t": 150,
+        "js": "moire.motors.params.flagella = true; return 'motors flagella'"
+      },
+      {
+        "t": 160,
+        "js": "moire.motors.params.cilia = true; return 'motors cilia'"
+      },
+      {
+        "t": 170,
+        "js": "await moire.genome.setAll({flagSign: -0.5, ciliaTilt: 0.7, flagPlace: 0.3}); return 'genes set'"
+      },
+      {
+        "t": 240,
+        "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return JSON.stringify({ exact: r.exact, notes: r.notes, rounding: r.rounding })"
+      },
+      {
+        "t": 300,
+        "js": "return JSON.stringify(moire.motors.census)"
+      },
+      {
+        "t": 358,
+        "js": "return JSON.stringify(moire.motors.census)"
+      }
+    ]
+  },
+  "url": "http://localhost:52529/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=5&light=full&world=open",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "6e92925254716ebc7e81ec78016c2b2853d4edfb",
+  "dirty": true,
+  "started": "2026-11-23T03:51:32",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 360.0,
+  "run_wall_s": 2111.7,
+  "speed_reached": 0.17,
+  "samples": 37,
+  "shots": [
+    "shots/motors.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 4.999999999999989,
+      "js": "await moire.genome.setAll({flagellum: 0.6, flagSign: 0.5, cilia: 0.5, ciliaCouple: 0.5}); return 'genes set'",
+      "result": "genes set"
+    },
+    {
+      "t": 39.99999999999901,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":39.916666666665684,\"n\":1711,\"carriers\":1711,\"flagGene\":0.6,\"flagSd\":7.450580596923828e-9,\"flagExpr\":0.460739918176505,\"swimmers\":1711,\"speed\":0.46144593804792516,\"relSpeed\":0.8527562828755114,\"turning\":0.17457159555815313,\"open\":32,\"pushers\":1711,\"pusherShare\":1,\"sign\":0.5,\"placement\":0.025599649327878435,\"ciliaCarriers\":1711,\"ciliaGene\":0.5,\"ciliaSd\":0,\"ciliaExpr\":0.38395850379894797,\"beating\":1195,\"freeSides\":2.078661087866109,\"waveN\":1163,\"wave\":0.49744711951848664,\"sync\":0.5457110920034394,\"globalSync\":0.032042999178090295,\"coupling\":0.5,\"tilt\":0,\"motorShare\":0.7679140853302163,\"payPerTick\":0.761962890625}"
+    },
+    {
+      "t": 49.999999999998444,
+      "js": "moire.motors.params.flagellaNull = true; return 'motors flagellaNull'",
+      "result": "motors flagellaNull"
+    },
+    {
+      "t": 59.999999999997875,
+      "js": "moire.motors.params.flagellaNull = false; return 'motors flagellaNull'",
+      "result": "motors flagellaNull"
+    },
+    {
+      "t": 64.9999999999976,
+      "js": "moire.motors.params.ciliaNull = true; return 'motors ciliaNull'",
+      "result": "motors ciliaNull"
+    },
+    {
+      "t": 74.99999999999703,
+      "js": "moire.motors.params.ciliaNull = false; return 'motors ciliaNull'",
+      "result": "motors ciliaNull"
+    },
+    {
+      "t": 79.99999999999675,
+      "js": "moire.motors.params.dipole = false; return 'motors dipole'",
+      "result": "motors dipole"
+    },
+    {
+      "t": 89.99999999999618,
+      "js": "moire.motors.params.dipole = true; return 'motors dipole'",
+      "result": "motors dipole"
+    },
+    {
+      "t": 94.9999999999959,
+      "js": "moire.motors.params.water = false; return 'motors water'",
+      "result": "motors water"
+    },
+    {
+      "t": 104.99999999999532,
+      "js": "moire.motors.params.water = true; return 'motors water'",
+      "result": "motors water"
+    },
+    {
+      "t": 109.99999999999504,
+      "js": "moire.motors.params.pump = false; return 'motors pump'",
+      "result": "motors pump"
+    },
+    {
+      "t": 114.99999999999476,
+      "js": "moire.motors.params.pump = true; return 'motors pump'",
+      "result": "motors pump"
+    },
+    {
+      "t": 119.99999999999447,
+      "js": "moire.motors.params.couple = false; return 'motors couple'",
+      "result": "motors couple"
+    },
+    {
+      "t": 124.99999999999419,
+      "js": "moire.motors.params.couple = true; return 'motors couple'",
+      "result": "motors couple"
+    },
+    {
+      "t": 129.9999999999956,
+      "js": "moire.motors.params.flagella = false; return 'motors flagella'",
+      "result": "motors flagella"
+    },
+    {
+      "t": 140.00000000000355,
+      "js": "moire.motors.params.cilia = false; return 'motors cilia'",
+      "result": "motors cilia"
+    },
+    {
+      "t": 150.0000000000115,
+      "js": "moire.motors.params.flagella = true; return 'motors flagella'",
+      "result": "motors flagella"
+    },
+    {
+      "t": 160.00000000001947,
+      "js": "moire.motors.params.cilia = true; return 'motors cilia'",
+      "result": "motors cilia"
+    },
+    {
+      "t": 170.00000000002743,
+      "js": "await moire.genome.setAll({flagSign: -0.5, ciliaTilt: 0.7, flagPlace: 0.3}); return 'genes set'",
+      "result": "genes set"
+    },
+    {
+      "t": 240.00000000008313,
+      "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return JSON.stringify({ exact: r.exact, notes: r.notes, rounding: r.rounding })",
+      "result": "{\"exact\":true,\"notes\":[],\"rounding\":{\"energy\":0.0182037353515625,\"atoms\":0,\"charge\":0,\"snapshot\":{\"energy\":0.0182037353515625,\"atoms\":0,\"charge\":0}}}"
+    },
+    {
+      "t": 300.0000000000558,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":299.8666666667226,\"n\":173,\"carriers\":171,\"flagGene\":0.5987803468208093,\"flagSd\":0.11103669791682716,\"flagExpr\":0.5374335260115607,\"swimmers\":171,\"speed\":1.2154619883040936,\"relSpeed\":1.57033918128655,\"turning\":2.0463801169590643,\"open\":27,\"pushers\":1,\"pusherShare\":0.005847953216374269,\"sign\":-0.5079884393063584,\"placement\":0.2911965317919075,\"ciliaCarriers\":173,\"ciliaGene\":0.5143179190751446,\"ciliaSd\":0.09714224462337376,\"ciliaExpr\":0.464635838150289,\"beating\":173,\"freeSides\":4.219653179190751,\"waveN\":146,\"wave\":0.7375068493150685,\"sync\":0.8101164383561644,\"globalSync\":0.18864989775228772,\"coupling\":0.4805086705202312,\"tilt\":0.7056184971098266,\"motorShare\":0.8934797687861272,\"payPerTick\":0.552001953125}"
+    },
+    {
+      "t": 358.00000000000307,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":357.8833333333365,\"n\":211,\"carriers\":208,\"flagGene\":0.5910047393364929,\"flagSd\":0.14552612500203352,\"flagExpr\":0.5263222748815166,\"swimmers\":208,\"speed\":1.279326923076923,\"relSpeed\":1.3862163461538464,\"turning\":1.8957596153846152,\"open\":22,\"pushers\":3,\"pusherShare\":0.014423076923076924,\"sign\":-0.5075118483412322,\"placement\":0.29444075829383887,\"ciliaCarriers\":211,\"ciliaGene\":0.5358341232227488,\"ciliaSd\":0.12886780386706503,\"ciliaExpr\":0.4797298578199052,\"beating\":211,\"freeSides\":4.033175355450237,\"waveN\":189,\"wave\":0.6638518518518519,\"sync\":0.7476825396825397,\"globalSync\":0.1169006688599796,\"coupling\":0.44428436018957346,\"tilt\":0.7033838862559241,\"motorShare\":0.8846066350710899,\"payPerTick\":0.720947265625}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T04:30:40",
+  "wall_s": 2348.08
+}

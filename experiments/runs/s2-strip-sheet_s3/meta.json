@@ -84,19 +84,19 @@
       }
     ]
   },
-  "url": "http://localhost:53177/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&preset=lab&cells=150&genes=cilia:1,ciliaCouple:1,ciliaTilt:0,adhesion:1.5&seed=3",
+  "url": "http://localhost:59619/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&preset=lab&cells=150&genes=cilia:1,ciliaCouple:1,ciliaTilt:0,adhesion:1.5&seed=3",
   "browser": "chrome",
   "size": "1280x800",
-  "commit": "6e92925254716ebc7e81ec78016c2b2853d4edfb",
+  "commit": "2129e0c932ef2ea60c4bc829f0f2e8a7ef86ca9b",
   "dirty": true,
-  "started": "2026-11-23T03:40:07",
+  "started": "2026-11-23T04:19:59",
   "status": "ok",
   "browser_version": "Chrome/157.0.8103.80",
   "adapter": "nvidia turing",
   "t_start": 0,
   "sim_s": 92.0,
-  "run_wall_s": 426.4,
-  "speed_reached": 0.22,
+  "run_wall_s": 505.32,
+  "speed_reached": 0.18,
   "samples": 5,
   "shots": [
     "shots/f00.png",
@@ -129,10 +129,10 @@
     {
       "t": 89.4999999999962,
       "js": "return JSON.stringify(moire.motors.census)",
-      "result": "{\"time\":89.36666666666288,\"n\":150,\"carriers\":0,\"flagGene\":0,\"flagSd\":0,\"flagExpr\":0,\"swimmers\":0,\"speed\":0,\"relSpeed\":0,\"turning\":0,\"open\":0,\"pushers\":0,\"pusherShare\":0,\"sign\":0.469,\"placement\":0.031000000000000003,\"ciliaCarriers\":150,\"ciliaGene\":1,\"ciliaSd\":0,\"ciliaExpr\":0.8527866666666667,\"beating\":58,\"freeSides\":2.0344827586206895,\"waveN\":58,\"wave\":0.6762241379310344,\"sync\":0.6345172413793103,\"globalSync\":0.02309758675000913,\"coupling\":1,\"tilt\":0,\"motorShare\":0.8527866666666667,\"payPerTick\":0.01416015625}"
+      "result": "{\"time\":89.36666666666288,\"n\":150,\"carriers\":0,\"flagGene\":0,\"flagSd\":0,\"flagExpr\":0,\"swimmers\":0,\"speed\":0,\"relSpeed\":0,\"turning\":0,\"open\":0,\"pushers\":0,\"pusherShare\":0,\"sign\":0.469,\"placement\":0.031000000000000003,\"ciliaCarriers\":150,\"ciliaGene\":1,\"ciliaSd\":0,\"ciliaExpr\":0.8573466666666667,\"beating\":49,\"freeSides\":2.122448979591837,\"waveN\":49,\"wave\":0.8475102040816326,\"sync\":0.8271224489795919,\"globalSync\":0.6675809441193408,\"coupling\":1,\"tilt\":0,\"motorShare\":0.8573466666666667,\"payPerTick\":0.01171875}"
     }
   ],
   "console_errors": [],
-  "ended": "2026-11-23T03:50:18",
-  "wall_s": 610.36
+  "ended": "2026-11-23T04:31:24",
+  "wall_s": 685.14
 }

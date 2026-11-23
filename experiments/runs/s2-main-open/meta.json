@@ -1,0 +1,46 @@
+{
+  "name": "s2-main-open",
+  "description": "main d5076f5, open, 180 s: must match main",
+  "condition": {
+    "name": "s2-main-open",
+    "description": "main d5076f5, open, 180 s: must match main",
+    "query": {
+      "seed": 3,
+      "world": "open"
+    },
+    "duration": 180,
+    "sample_every": 10,
+    "stall": 400,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 180,
+        "name": "end",
+        "panel": true
+      }
+    ]
+  },
+  "url": "http://localhost:49306/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3&world=open",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-23T04:03:11",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 180.0,
+  "run_wall_s": 1046.7,
+  "speed_reached": 0.17,
+  "samples": 19,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-23T04:22:49",
+  "wall_s": 1178.19
+}

@@ -522,10 +522,16 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         // step S2: the sides that touch (the cilia beat on the free ones), and the touching ciliated neighbours' beat phases
         if (moF != 0u && dist < reach) {
           moTouch |= 1u << wall_side(myTh, vC);
-          if (ciliaA > 0.0 && (moF & MO_COUPLE) != 0u) {
+          if (ciliaA > 0.0) {   // (gathered with the coupling off too: the census's wave and sync then show what free-running phases score)
             let mix_ = beats[k].idx;
             if (bioPrev[mix_].mo.w > 0.0) {
-              let lagK = FL.mo2.y * dot(d, moStroke) / S.R;
+              // (the lag along the two cells' MEAN stroke, both fronts as the lean copies hold them: lag_ji = -lag_ij exactly, so a
+              // travelling wave can satisfy every pair; along this cell's own stroke alone, neighbours with different fronts each wanted
+              // the other ahead and the sheet's edge stayed frustrated, wave order ~ that of random phases)
+              let fI = wall_dq8((mine0.y >> 24u) & 255u);
+              let fO = wall_dq8((o.wadh.y >> 24u) & 255u);
+              let sMean = -0.5 * (vec2f(cos(fI), sin(fI)) + vec2f(cos(fO), sin(fO)));
+              let lagK = FL.mo2.y * dot(d, sMean) / S.R;
               let dph = bioPrev[mix_].mc.z - moPhi;
               cpS += sin(dph - lagK);
               cpC += cos(dph - lagK);

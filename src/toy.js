@@ -353,6 +353,7 @@ export function createToy(ctx) {
   /** The world in the dish now: obstacles, springs, light, currents, perfusion and a fresh culture. boot: the page's first one. */
   function applyWorld(name, seed, boot) {
     const v = ctx.view, W = v.cssW, H = v.cssH, C = ctx.cells, R = C.R, M = ctx.matter, O = ctx.obstacles, WP = ctx.water.params;
+    const t0 = performance.now();
     const w = makeWorld(name, seed, W, H, R);
     T.built = w;
     T.world = { type: 'terrain', name, seed: w.seed };
@@ -365,6 +366,7 @@ export function createToy(ctx) {
     for (const sp of oasisSprings) M.springs.push(sp);   // (oases asked for by the URL stay: ?oases=N)
     O.setShapes(w.shapes, w.round);
     T.baseShapes = O.shapes.length;
+    T.buildMs = performance.now() - t0;   // (the world's CPU work: making it and rasterising its walls; moire.toy.buildMs)
     // light, currents, perfusion
     const L = ctx.light.params;
     if (!P.has('light')) L.mode = 'full';
@@ -410,13 +412,21 @@ export function createToy(ctx) {
     // (the page's first world: its culture replaces the open dish's only once a frame has run. Seeded again before any frame, the open
     // dish's founders' batteries, handed back as heat, never reached the books: the energy rounding stood at +3.2e3 from the start in
     // every world opened by a link, carbon on or off; a world built later was exact)
+    // the old world's atoms washed out (booked as gone), once the old cells' stock is back in the dish
+    const washSoon = () => requestAnimationFrame(() => requestAnimationFrame(() => M.wash()));
+    // (?toywash=1: the page's first world washed too. The page's first culture, the open dish's ~2000 founders in one clump, leaves its
+    // carbon bodies as tar where it stood, and walls built over the clump push that tar into the open water: the river delta's channels
+    // start under an amber crust. Washed out, the start looks clean, but that tar is the founders' first FOOD (cells graze it into body
+    // carbon): washed worlds grew less (seed 3 at 4 minutes, washed against kept: a phone's delta 77 against 277, thicket 130 against 185,
+    // islands 280 against 365; a computer's delta 790 against 856, thicket 256 against 456), so a fresh load and every link keep it;
+    // README "A fresh load opens a generated world")
+    const bootWash = boot && ctx.flag('toywash');
     if (boot && !(C.tick > 0)) {
-      const wait = () => { if (C.tick > 0) seedNow(); else requestAnimationFrame(wait); };
+      const wait = () => { if (C.tick > 0) { seedNow(); if (bootWash) washSoon(); } else requestAnimationFrame(wait); };
       requestAnimationFrame(wait);
-    } else seedNow();
+    } else { seedNow(); if (bootWash) washSoon(); }
     if (!boot) {
-      // the old world's atoms washed out (booked as gone), once the old cells' stock is back in the dish
-      requestAnimationFrame(() => requestAnimationFrame(() => M.wash()));
+      washSoon();
       ctx.background.impulse(W / 2, H / 2, 2);
     }
     camera.fit();
@@ -430,7 +440,7 @@ export function createToy(ctx) {
   T.check = () => (T.built ? reach(T.built, ctx.view.cssW, ctx.view.cssH, ctx.cells.R) : null);
 
   // ---------- links ----------
-  const OWN = ['terrain', 'seed', 'dish', 'preset', 'look', 'ui', 'dev', 'entropy', 'overlay', 'zoom', 'speed', 'paused', 'until', 'cells', 'round', 'snap'];
+  const OWN = ['terrain', 'seed', 'dish', 'preset', 'world', 'look', 'ui', 'dev', 'entropy', 'overlay', 'zoom', 'speed', 'paused', 'until', 'cells', 'round', 'snap'];
   function linkFor(W, withDish = true) {
     const u = new URL(location.href);
     const q = new URLSearchParams();
@@ -561,6 +571,7 @@ export function createToy(ctx) {
       else if (b.dataset.preset != null) {
         const q = new URLSearchParams();
         if (b.dataset.preset) q.set('preset', b.dataset.preset);
+        else q.set('world', 'open');   // (the plain open dish: a link with no option at all opens a generated world, index.html)
         if (A.neon.harmonic.on) q.set('look', 'harmonic');
         if (P.has('dev')) q.set('dev', P.get('dev'));
         const u = new URL(location.href); u.search = q.toString(); u.hash = '';
@@ -638,7 +649,17 @@ export function createToy(ctx) {
     st.setProperty('--toy-h', `${chrome && !T.dev ? bar.offsetHeight : 0}px`);
   }
   T.refresh = refresh;
-  setInterval(refresh, 400);
+  // a FRESH LOAD (index.html: no URL options, a generated world picked at random): after about a minute many founders die (the founders'
+  // crash, every culture has it) and the dish thins out before the survivors grow; one friendly line explains it as it begins
+  const fresh = typeof window !== 'undefined' && window.__moireFresh && T.world.type === 'terrain';
+  let freshSaid = !fresh || !chrome;
+  setInterval(() => {
+    refresh();
+    if (!freshSaid && ctx.control.time() > 50 && !sheet) {
+      freshSaid = true;
+      say('Many of the first cells die now; the survivors find the food and grow back. The speed button makes a timelapse', 9000);
+    }
+  }, 400);
   if (window.ResizeObserver) new ResizeObserver(refresh).observe(bar);
 
   // ---------- start ----------

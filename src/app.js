@@ -10,7 +10,7 @@
 //                    bar" (?scalebar=0)
 //   job legend       step F0: bottom right, above the scale bar, the jobs' colours named (src/jobs.js), with how many cells show each
 //                    clearly, as a bar chart of their shares (bar + percent; the count on hover); only while the cells are coloured by job in the neon or flat look; the View panel's "job legend"
-//                    (?legend=0) hides it
+//                    (?legend=0) hides it; its header folds it to one thin stacked bar of the shares (remembered per viewer)
 //   zoos             two toolbar panels, molecules and cells (src/zoo.js)
 //   add cells        a tool (the cell icon): a tap places one cell, a drag a line of them, each a copy of the genome picked in
 //                    the cells zoo (a lineage living now, or a founder habit). BOOKS: a placed cell starts as a new culture's
@@ -136,6 +136,27 @@ export function createApp(ctx) {
   // ---------- step F0: the job legend ----------
   const legend = el('div', 'joblegend');
   legend.setAttribute('aria-label', 'Colour by job');
+  // collapsible: the header folds the rows away, leaving one thin stacked bar of the shares (remembered per viewer)
+  const head = el('button', 'jhead');
+  head.type = 'button';
+  const headName = el('span', 'jhname', 'cell jobs');
+  const caret = el('span', 'jcaret', '');
+  const strip = el('span', 'jstrip');   // (shown only when folded)
+  head.append(headName, strip, caret);
+  legend.append(head);
+  const stripSegs = JOBS.map(() => { const sg = el('span', 'jseg'); strip.append(sg); return sg; });
+  let folded = false;
+  try { folded = localStorage.getItem('moire.legendFolded') === '1'; } catch (e) { /* storage blocked */ }
+  function setFolded(f) {
+    folded = f;
+    legend.classList.toggle('folded', f);
+    caret.textContent = f ? '▸' : '▾';
+    head.title = f ? 'show the cell jobs' : 'fold the cell jobs away';
+    head.setAttribute('aria-expanded', f ? 'false' : 'true');
+    try { localStorage.setItem('moire.legendFolded', f ? '1' : '0'); } catch (e) { /* storage blocked */ }
+  }
+  head.addEventListener('click', (e) => { e.stopPropagation(); setFolded(!folded); });
+  setFolded(folded);
   const rows = JOBS.map((J) => {
     const r = el('div', 'jrow');
     const dot = el('span', 'jdot');
@@ -173,6 +194,10 @@ export function createApp(ctx) {
       r.fill.style.boxShadow = P.name === 'flat' || share <= 0 ? 'none' : `0 0 4px rgba(${rgb}, 0.8)`;
       r.n.textContent = total > 0 ? `${Math.round(100 * share)}%` : '';
       r.r.title = `${r.help} (${counts[k]} cells)`;
+      const sg = stripSegs[k];
+      sg.style.flexGrow = String(share);
+      sg.style.background = `rgb(${rgb})`;
+      sg.title = `${JOBS[k].label} ${Math.round(100 * share)}%`;
     });
   }
   setInterval(updateLegend, 500);

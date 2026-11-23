@@ -232,6 +232,15 @@ body.recording #overlay { margin-top: 30px; }
 .joblegend .jbar { position: relative; height: 5px; border-radius: 3px; background: rgba(217, 221, 230, 0.08); overflow: visible; }
 .joblegend .jfill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 3px; transition: width 0.4s ease-out; }
 .joblegend .jn { text-align: right; color: var(--dim); }
+.joblegend .jhead { all: unset; display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--dim); font-size: 9px;
+  letter-spacing: 0.12em; text-transform: uppercase; padding: 1px 0 2px; }
+.joblegend .jhead:hover, .joblegend .jhead:focus-visible { color: var(--ink); }
+.joblegend .jhname { flex: 1 1 auto; }
+.joblegend .jcaret { font-size: 10px; }
+.joblegend .jstrip { display: none; width: 64px; height: 5px; border-radius: 3px; overflow: hidden; background: rgba(217, 221, 230, 0.08); }
+.joblegend .jseg { flex: 0 1 0; height: 100%; transition: flex-grow 0.4s ease-out; }
+.joblegend.folded .jrow { display: none; }
+.joblegend.folded .jstrip { display: flex; }
 /* step H1: under the harmonic look the bar sits on the black as a microscope's does (no panel behind it) */
 .scalebar.scope { background: none; color: #e8e8e8; opacity: 1; letter-spacing: 0.02em; }
 .scalebar.scope .sline { background: #e8e8e8; }

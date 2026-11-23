@@ -2782,6 +2782,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     let pg0 = pg;
     var cbPh = array<i32, 5>(0, 0, 0, 0, 0);      // step C15b: the photons a carbon slot's pigment caught (its engine runs below; step G2: 5 slots)
     var cbPs = array<i32, 5>(0, 0, 0, 0, 0);      // ... of them, those it can use (saturation)
+    var idleP = vec4i(0);                         // step C15g: the table's harvest slots' IDLE photons per band (cb_cell's idle reductions)
     if ((EP.flags & EF_ENG) != 0u) {
       // ---- step N1 block: LIGHT NEEDS MATTER. The pigment wears out into its atoms, then is built toward what the harvest slots
       // want (one trace and two l from the stock per count, the assembly paid from the battery as heat) ----
@@ -2885,6 +2886,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         }
       }
       let cap = i32(EP.engMax);
+      idleP = vec4i(0);
       // step C7b, trace as cofactor: every engine runs at cof of its rate (a pigment's engine uses only that share of the
       // photons it caught; the rest are photons with nothing to work on: heat)
       let cof = cofactor(f32(max(m[CP.trace], 0)) * concIn);
@@ -2971,6 +2973,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           atomicAdd(&wev2[E2_DEFICIT], n * c16);
           atomicAdd(&wev2[E2_HEAT], hh);
           atomicAdd(&wev2[E2_IDLE], (np - n) * ph16);
+          if (band != 0u) { idleP[band] += np - n; }   // (step C15g: the idle photons, for the builders' reductions: cb_cell)
         } else {
           // burn, swap, form: rate x what it works on per s (the fuel; the scarcer of an atom and a fuel; pairs of
           // linkers), at most engMax per tick; the spark from the battery first (an empty one starts nothing), the energy
@@ -3120,7 +3123,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     var cbo: CbOut;
     if (CARBON_ON != 0u) {
       cbo = cb_cell(i, sc, sr, cbPh, cbPs, &m, &bat, &heat, idx, lnCap, temp, satOn, sparkScale, cofactor(f32(max(m[CP.trace], 0)) * concIn),
-                    pcg(rs + 0x08c3a5e9u));
+                    pcg(rs + 0x08c3a5e9u), idleP);
     }
 
     // ---- step C6, upkeep: per s, upEng x the engines' rates (while they run) and upTol x tolerance / tolRef (while it is
@@ -3796,6 +3799,7 @@ fn reset(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_ind
       cb_found(i, EP.R, slot);   // step C15b: a founder's body (a full one for a cell of radius R)
       cb_found_enz(i, EP.R, slot);   // step C15c: and its enzymes (carbon + G)
       cb_found_pig(i, EP.R, slot);   // step C15d: and its pigment (carbon + trace)
+      cb_found_memb(i, slot);        // step C15g: and its bilayer (carbon)
     }
   }
   flush_counters(li, slot);

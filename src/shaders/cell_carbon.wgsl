@@ -36,7 +36,7 @@ struct CbCellP {
   u: vec4f,     // step C15c: x the founders' enzymes (share of the want), y a hungry cell's grazing (units of a grazing engine), z a water's
                 // bond (heat counts per count: split for a reduction's g), w its spark
   v: vec4f,     // step C15c: x the battery's floor for the builder's reductions (heat counts); step C15d: y the founders' PIGMENT (share of
-                // the want of a harvest rate of 1), z w spare
+                // the want of a harvest rate of 1); step C15g: z the founders' BILAYER (soap counts per side), w spare
   w: vec4i,     // step C15e: x GT's bond, y its spark, z Gt's bond, w its spark (heat counts: an enzyme's G split from them, cb_g_split)
 };
 @group(0) @binding(11) var<storage, read_write> cbS: array<atomic<i32>>;
@@ -75,6 +75,7 @@ const CBF_HYDFLOOR: u32 = 8388608u; // step C15f: THE GRANULES DIGESTED ONLY FRO
 const CBF_WALLCUT: u32 = 16777216u; // step C15f: a WALL's cross-linked pairs cut out of the granules as they are (cb_make_cross)
 const CBF_OILHELD: u32 = 33554432u; // step C15f: the builder makes oil only for the soap a side holds (cell_eat.wgsl, the lipid builder)
 const CBF_SPOILKEEP: u32 = 67108864u; // step C15f: a lipid or wall piece spoiled by oxygen stays in the cell as granules (cb_bites)
+const CBF_IDLERED: u32 = 134217728u; // step C15g: a pigmented cell's IDLE photons drive the REDUCE reaction on its own carbon (cb_idle_red)
 const CBF_BODYANY: u32 = 4194304u; // THE BODY FROM ANY BUILT CARBON: the body takes granule carbons whatever their hands (cb_build)
 const CBF_WALLREC: u32 = 131072u; // WALL RECYCLING: a jolted wall's cracked pieces stay in the cell as granules (as shed lipids do), not mud    // OXYGEN DAMAGES MEMBRANES: free t oxidises the lipids' fuel hands (fat -> soap -> spoiled, into the mud)
 // the event counters (64-bit, LG_CBC_EV; src/carboncells.js EV)
@@ -157,6 +158,13 @@ const CBE3_TRANS: u32 = 5u;   // the transporter's upkeep
 const CBE3_SHUT: u32 = 6u;    // hands moved by the REDUCING SHUTTLE (step C15d fix c: one carbon's oxidation reduces another's hand)
 const CBE3_GRAN: u32 = 7u;    // two-carbon molecules cut out of the granules (step C15d fix e1: fat from granules)
 var<workgroup> wcbe3: array<atomic<i32>, 8>;
+// step C15g (LG_CBC_EV4, 64-bit; src/carboncells.js EV4): the IDLE PHOTONS' reductions (cb_idle_red)
+const CBE4_RED: u32 = 0u;     // burnt hands reduced to fuel hands by idle photons
+const CBE4_RISE: u32 = 1u;    // heat counts the photons stored in those bonds (2.75 a hand)
+const CBE4_PAID: u32 = 2u;    // heat counts the batteries paid for them (the sparks; a weak photon's difference)
+const CBE4_LEFT: u32 = 3u;    // idle photons still unused after them (heat, as before)
+const CBE4_OFFER: u32 = 4u;   // idle photons on offer to them (caught by the pigments with nothing to make)
+var<workgroup> wcbe4: array<atomic<i32>, 8>;
 var<workgroup> wcbf: array<atomic<i32>, 16>;   // per channel: 0..7 taken in from the dish, 8..15 given back to it
 var<workgroup> wcbe: array<atomic<i32>, 16>;   // CBE_*
 
@@ -430,7 +438,7 @@ struct CbOut { gran: f32, fuel: f32, atoms: f32, ready: f32 };   // (ready: the 
  * loose carbons dissolving. m, bat, heat: the cell's main stock, battery and heat (the eat pass stores them).
  */
 fn cb_cell(i: u32, sc: array<f32, 5>, sr: array<f32, 5>, ph: array<i32, 5>, phs: array<i32, 5>, m: ptr<function, array<i32, 18>>, bat: ptr<function, i32>, heat: ptr<function, i32>, idx: array<u32, 9>,
-           lnCap: f32, temp: f32, satOn: bool, sparkScale: f32, cof: f32, rs: u32) -> CbOut {
+           lnCap: f32, temp: f32, satOn: bool, sparkScale: f32, cof: f32, rs: u32, idle0: vec4i) -> CbOut {
   let o = i * CW;
   var S: array<i32, 5>;
   var S0: array<i32, 5>;
@@ -476,6 +484,7 @@ fn cb_cell(i: u32, sc: array<f32, 5>, sr: array<f32, 5>, ph: array<i32, 5>, phs:
 
   // ---- the carbon engines (the slots naming one), as every engine: downhill ones fill the battery, uphill ones take light or battery
   let engOn = on && (CBP.cfg.x & CBF_ENG) != 0u;
+  var idle = idle0;   // (step C15g: the idle photons per band, the table's harvest slots' (eat pass) and the carbon slots' below)
   if ((EP.flags & EF_ENG) != 0u) {
     let capE = i32(EP.engMax);
     let batMax = max(EP.batMax, 1);
@@ -486,7 +495,7 @@ fn cb_cell(i: u32, sc: array<f32, 5>, sr: array<f32, 5>, ph: array<i32, 5>, phs:
       let j = e - ENG_MAIN;
       let band = eng_band(sc[k]);
       if (!engOn) {   // (idle: the photons its pigment caught are heat, as any idle photon)
-        if (band != 0u && ph[k] > 0) { *heat += ph[k] * EP.photon16[band]; atomicAdd(&wcbe[CBE_HEAT], ph[k] * EP.photon16[band]); atomicAdd(&wcbe[CBE_PHI], ph[k]); }
+        if (band != 0u && ph[k] > 0) { *heat += ph[k] * EP.photon16[band]; atomicAdd(&wcbe[CBE_HEAT], ph[k] * EP.photon16[band]); atomicAdd(&wcbe[CBE_PHI], ph[k]); idle[band] += ph[k]; }
         continue;
       }
       let rk = sr[k] * cof;
@@ -605,8 +614,12 @@ fn cb_cell(i: u32, sc: array<f32, 5>, sr: array<f32, 5>, ph: array<i32, 5>, phs:
         atomicAdd(&wcbe[CBE_PAID], done * c16);
         atomicAdd(&wcbe[CBE_RISE], done * g16);
         atomicAdd(&wcbe[CBE_HEAT], hh);
-        if (band != 0u) { atomicAdd(&wcbe[CBE_PHU], done); atomicAdd(&wcbe[CBE_PHI], np - done); }
+        if (band != 0u) { atomicAdd(&wcbe[CBE_PHU], done); atomicAdd(&wcbe[CBE_PHI], np - done); idle[band] += np - done; }
       }
+    }
+    // step C15g (CBF_IDLERED): the IDLE photons drive the builder's reductions
+    if (cb_bit(CBF_IDLERED) && any(idle > vec4i(0))) {
+      cb_idle_red(idle, &S, &ct, &cg, m, bat, heat, lnCap, temp, satOn, sparkScale, rs);
     }
   }
 
@@ -740,6 +753,9 @@ fn cb_flush(li: u32, slot: u32) {
   } else if (li < 48u) {
     let v = atomicLoad(&wcbe3[li - 40u]);   // (step C15d)
     if (v != 0) { add64(LG_CBC_EV3 + 128u * (li - 40u) + slot, v); }
+  } else if (li < 56u) {
+    let v = atomicLoad(&wcbe4[li - 48u]);   // (step C15g)
+    if (v != 0) { add64(LG_CBC_EV4 + 128u * (li - 48u) + slot, v); }
   }
 }
 
@@ -1270,6 +1286,90 @@ fn cb_found_pig(i: u32, r: f32, slot: u32) {
     add64(LG_CBC_IN + 128u * (5u + q) + slot, CB_PIG_H[q] * n);
   }
   add64(lg_mc(LG_M_ADD, N1_TRACE) + slot, n);   // (its trace atoms, booked as added)
+}
+
+/**
+ * Step C15g (CBF_IDLERED), IDLE PHOTONS PAY THE BUILDERS' REDUCTIONS: a pigment catches more photons than its harvest engine can use (past
+ * saturation, N1; or nothing to work on, no cofactor, the engine's top speed, a battery that cannot pay the spark): 16-38 % of those caught
+ * went to heat (C15f). Here they run the table's own REDUCE, g + [c-t] -> [c-g] + t (the rise 2.75), on the cell's own burnt hands (its
+ * ladder molecules and granules, by their burnt hands, as the REDUCE engine allocates), the reduction the builder otherwise pays from the
+ * battery (C15c's CBF_RED, C15e's CBF_GRANRED): light paying an uphill reaction is the symmetry rule, and light still never charges the
+ * battery (the photon's energy goes into the bond; the rest of it is heat). One photon per hand, strongest band first; the g from the
+ * stock's free g (no water is split for it); the spark (and a weak photon's difference: visible 1 holds 2 of the 2.75) from the battery
+ * above the builder's floor (CBP.v.x); at most engMax hands a tick; C12e's saturation as the REDUCE engine's (fuel hands and free t piling
+ * up slow it). The idle photons' energy is already in heat (the engines put it there), so a reduction takes its rise back out of heat.
+ */
+fn cb_idle_red(idle: vec4i, S: ptr<function, array<i32, 5>>, ct: ptr<function, i32>, cg: ptr<function, i32>, m: ptr<function, array<i32, 18>>,
+               bat: ptr<function, i32>, heat: ptr<function, i32>, lnCap: f32, temp: f32, satOn: bool, sparkScale: f32, rs: u32) {
+  let g16 = CBP.e.x;
+  let sp16 = max(i32(ceil(f32(CBP.e.z) / 16.0 * sparkScale * 16.0)), 1);
+  var cap = i32(EP.engMax);
+  var left = 0;
+  for (var b = 1u; b < 4u; b++) { left += max(idle[b], 0); }
+  atomicAdd(&wcbe4[CBE4_OFFER], left);
+  for (var bb = 0u; bb < 3u; bb++) {
+    let band = 3u - bb;
+    let np = max(idle[band], 0);
+    if (np <= 0 || cap <= 0) { continue; }
+    let ph16 = EP.photon16[band];
+    let T = cbt(1u) * (*S)[1] + cbt(2u) * (*S)[2] + cbt(3u) * (*S)[3] + cbt(4u) * (*S)[4] + *ct;
+    let a = min(max((*m)[0], 0), T);
+    if (a <= 0) { break; }
+    let c16 = sp16 + max(g16 - ph16, 0);
+    let avail = max(*bat - i32(CBP.v.x), 0);
+    var n = min(min(np, a), cap);
+    n = max(min(n, avail / c16), 0);
+    if (n > 0 && satOn) {
+      let G = cbg(0u) * (*S)[0] + cbg(1u) * (*S)[1] + cbg(2u) * (*S)[2] + cbg(3u) * (*S)[3] + *cg;
+      let lq = lnc(G) + lnc((*m)[1]) - lnc(T) - lnc((*m)[0]);
+      let fs = sat_f(lq, 0.0, lnCap, f32(max(ph16, g16) - g16 + sp16) / 16.0, temp);
+      let n1 = clamp(i32(floor(f32(n) * fs + u01(pcg(rs + band * 0x7f4a7c15u + 0x2b992ddfu)))), 0, n);
+      atomicAdd(&wcbe[CBE_SATW], n);
+      atomicAdd(&wcbe[CBE_SATL], n - n1);
+      n = n1;
+    }
+    if (n <= 0) { continue; }
+    let al = cb_alloc(array<i32, 6>(0, (*S)[1], 2 * (*S)[2], 3 * (*S)[3], 4 * (*S)[4], *ct), array<i32, 6>(0, (*S)[1], (*S)[2], (*S)[3], (*S)[4], *ct), n,
+                      u01(pcg(rs + band * 0x6d2b79f5u + 0x1b873593u)));
+    for (var q = 1u; q < 5u; q++) { (*S)[q] -= al[q]; (*S)[q - 1u] += al[q]; }
+    *ct -= al[5]; *cg += al[5];
+    let done = cb_sum(al);
+    if (done <= 0) { continue; }
+    (*m)[0] -= done; (*m)[1] += done;
+    *bat -= done * c16;
+    *heat += done * (c16 - g16);   // (the photons were heat already: their rise goes into the bonds instead, the spark is heat)
+    cap -= done;
+    left -= done;
+    atomicAdd(&wcbe4[CBE4_RED], done);
+    atomicAdd(&wcbe4[CBE4_RISE], done * g16);
+    atomicAdd(&wcbe4[CBE4_PAID], done * c16);
+  }
+  atomicAdd(&wcbe4[CBE4_LEFT], left);
+}
+
+/**
+ * Step C15g, FOUNDERS START WITH THEIR BILAYER (CBP.v.z > 0, ?cbmembfound=): as a founder starts with its body, enzymes and pigment, it
+ * starts with the soap of a whole bilayer, CBP.v.z counts per side (src/carboncells.js: x the want of a typical founder's thin membrane at
+ * radius R), half soap1 and half soap2 (the head gene's mean), no oil (the builder adds it for the soap held) and no wall. A founder had to
+ * build it from scratch in its first minute, from reduced carbon it did not yet have (C15f: the carbon lipids alone made the crash deeper,
+ * 513 against 861 cells at 2 minutes). Booked as carbon in (its hands, as tar, as the pigment's).
+ */
+fn cb_found_memb(i: u32, slot: u32) {
+  if (!cb_lip() || CBP.v.z <= 0.0 || (mb_flags() & MBF_ON) == 0u || (lp_flags() & LPF_ON) == 0u) { return; }
+  let n = i32(round(CBP.v.z));
+  if (n <= 0) { return; }
+  let n1 = n / 2;
+  let n2 = n - n1;
+  for (var k = 0u; k < 6u; k++) {
+    atomicAdd(&stock[i * SW + lpw(0u, k)], n1);
+    atomicAdd(&stock[i * SW + lpw(1u, k)], n2);
+  }
+  let h = (cb_lk_hands(0u) * n1 + cb_lk_hands(1u) * n2) * 6;
+  for (var q = 0u; q < 3u; q++) {
+    if (h[q] == 0) { continue; }
+    add64(LG_CB_ADD_C + 128u * (5u + q) + slot, h[q]);
+    add64(LG_CBC_IN + 128u * (5u + q) + slot, h[q]);
+  }
 }
 
 /** The ledger pass: the parts' carbon (membranes, walls, pigment, glue, enzymes) into the cells' carbon books; the second census. */

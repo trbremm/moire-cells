@@ -45,6 +45,7 @@
 import { fmt, HEAT_SCALE, LEDGER_WORDS } from './heat.js';
 import { CARBON, CB_LIP, CB_ENZANY, LADDER, LG_CBC, carbonTable } from './carbon.js';
 import * as MX from './matter.js';
+import { MEMB_THIN } from './genome.js';
 
 export const CW = 24;          // carbon words per cell (cell_carbon.wgsl CW)
 export const CW_STOCK = 12;    // ... of them the stock (the ladder, the granules, the body, a spare: what a snapshot keeps; 8 before the body)
@@ -67,7 +68,7 @@ export const PART_RECIPES = {
   enzyme: { carbon: 4, hands: CB_ENZANY ? '4 burnt chain carbons (1 backbone bond, 2 burnt hands each: any carbon; step C15e)' : '4 chain carbons', element: 'G (the heavy giver: catalysis moves electrons)', k: 1, charged: CARBON },
 };
 const ATOM_SCALE = 4096;
-const CBF = { ON: 1, EXCH: 2, ENG: 4, GRAZE: 8, DIS: 16, FLIP: 32, RESET: 64, SMELL: 128, GROW: 256, LIP: 512, TRANS: 1024, RED: 2048, ENZ: 4096, OXB: 8192, SHUT: 16384, GRAN: 32768, HUNGER: 65536, WALLREC: 131072, ENZANY: 262144, GRANRED: 524288, GRANHYD: 1048576, GSPLIT: 2097152, BODYANY: 4194304, HYDFLOOR: 8388608, WALLCUT: 16777216, OILHELD: 33554432, SPOILKEEP: 67108864 };
+const CBF = { ON: 1, EXCH: 2, ENG: 4, GRAZE: 8, DIS: 16, FLIP: 32, RESET: 64, SMELL: 128, GROW: 256, LIP: 512, TRANS: 1024, RED: 2048, ENZ: 4096, OXB: 8192, SHUT: 16384, GRAN: 32768, HUNGER: 65536, WALLREC: 131072, ENZANY: 262144, GRANRED: 524288, GRANHYD: 1048576, GSPLIT: 2097152, BODYANY: 4194304, HYDFLOOR: 8388608, WALLCUT: 16777216, OILHELD: 33554432, SPOILKEEP: 67108864, IDLERED: 134217728 };
 // the 64-bit event counters (LG_CBC.EV, cell_eat.wgsl CBE_*)
 const EV = ['ox', 'cond', 'red', 'hyd', 'dis', 'graze', 'gain', 'heat', 'paid', 'phUsed', 'phIdle', 'satWant', 'satLost', 'rise', 'built', 'buildPaid'];
 const EV_ENERGY = /^(gain|heat|paid|rise|buildPaid)$/;
@@ -80,6 +81,9 @@ const CEN2 = ['membC', 'wallC', 'pigC', 'glueC', 'enzC', 'limC', 'limG', 'limTr'
 // step C15d: the third event block (LG_CBC.EV3, cell_carbon.wgsl CBE3_*): the batteries' spending on parts (energy), the shuttle's hands
 const EV3 = ['payLip', 'payWall', 'payRed', 'payPig', 'payEnz', 'payTrans', 'shuttle', 'fromGran'];
 const EV3_ENERGY = /^pay/;
+// step C15g: the fourth (LG_CBC.EV4, cell_carbon.wgsl CBE4_*): the idle photons' reductions (hands; energy in heat counts; photons)
+const EV4 = ['idleRed', 'idleRise', 'idlePaid', 'idleLeft', 'idleOffer'];
+const EV4_ENERGY = /^(idleRise|idlePaid)$/;
 /** Carbon units in a per-channel array (5 ladder molecules, 3 tar hand counts). */
 const carbonIn = (a) => a[0] + a[1] + a[2] + a[3] + a[4] + (2 * a[5] + a[6] + a[7]) / 4;
 const ladderC = (a) => a[0] + a[1] + a[2] + a[3] + a[4];
@@ -148,6 +152,12 @@ export class CarbonCells {
                          // wall's pieces and shed lipids do, instead of leaving as mud (?cbspoilkeep=0)
       pigFound: 1,       // FOUNDERS START WITH THEIR PIGMENT: share of the want of a harvest rate of 1 (as bodies and enzymes; booked as carbon and
                          // trace in; 0: none, as C15c) (?cbpigfound=)
+      // ---- step C15g, CARBON LIFE, ROUND 4 ----
+      idleRed: true,     // IDLE PHOTONS PAY THE BUILDERS' REDUCTIONS: the photons a cell's pigments catch with nothing to make (past saturation, ...)
+                         // run the table's REDUCE on its own burnt hands, one photon a hand, the spark from the battery (?cbidlered=0)
+      membFound: 1,      // FOUNDERS START WITH THEIR BILAYER: share of a typical founder's whole bilayer (the soap a thin membrane, thickness
+                         // MEMB_THIN, wants at radius R; half soap1, half soap2), as bodies, enzymes and pigment (booked as carbon in; 0: none, as
+                         // C15f) (?cbmembfound=)
     };
     this.tot = Object.fromEntries(EV.map((k) => [k, 0]));
     this.hist = [];
@@ -161,6 +171,7 @@ export class CarbonCells {
     this.census2 = null;
     this.rate2 = null;
     this.tot3 = Object.fromEntries(EV3.map((k) => [k, 0]));   // step C15d
+    this.tot4 = Object.fromEntries(EV4.map((k) => [k, 0]));   // step C15g
     this.flowHist = [];
     this.flow = null;     // step C15d: THE FLOW LEDGER (flowLedger below): where carbon, reduced carbon and the batteries' energy go per minute
   }
@@ -197,7 +208,7 @@ export class CarbonCells {
         (CB_LIP && this.rule('granHyd') ? CBF.GRANHYD : 0) | (this.rule('gSplit') ? CBF.GSPLIT : 0) |
         (this.rule('bodyAny') ? CBF.BODYANY : 0) | (this.rule('hydFloor') ? CBF.HYDFLOOR : 0) |
         (CB_LIP && this.rule('wallCut') ? CBF.WALLCUT : 0) | (CB_LIP && this.rule('oilHeld') ? CBF.OILHELD : 0) |
-        (CB_LIP && this.rule('spoilKeep') ? CBF.SPOILKEEP : 0);
+        (CB_LIP && this.rule('spoilKeep') ? CBF.SPOILKEEP : 0) | (this.rule('idleRed') ? CBF.IDLERED : 0);
       u[1] = tickBase >>> 0; u[2] = ok ? Math.max(1, M.nSub || 1) : 1; u[3] = ok ? Cb.cur & 1 : 0;
       if (ok) {
         const LW = LEDGER_WORDS;   // (the heat buffer's grid starts behind the ledger)
@@ -215,6 +226,9 @@ export class CarbonCells {
       f[26] = Math.round(-16 * W.energy); f[27] = Math.round(16 * W.spark);
       f[28] = Math.max(0, Math.min(1, p.redFloor)) * E.batCounts;
       f[29] = CB_LIP ? Math.max(0, p.pigFound) : 0;   // step C15d
+      // step C15g: the founders' bilayer, soap counts per side (memb_want at radius R and the founders' usual thickness, x the share)
+      const MP = E.membrane && E.membrane.params;
+      f[30] = CB_LIP && MP ? Math.round(Math.max(0, p.membFound) * MEMB_THIN * Math.max(0.1, MP.sideLen) * ATOM_SCALE) : 0;
       // step C15e: GT's and rust Gt's bonds and sparks (heat counts), for an enzyme's G split from them
       const GT = MX.SUBSTANCES[MX.CH.GT], Gt = MX.SUBSTANCES[MX.CH.Gt];
       i[32] = Math.round(-16 * GT.energy); i[33] = Math.round(16 * GT.spark); i[34] = Math.round(-16 * Gt.energy); i[35] = Math.round(16 * Gt.spark);
@@ -251,6 +265,8 @@ export class CarbonCells {
     this.rate2 = Object.fromEntries(EV2.map((k, j) => [k, dt2 > 0.05 ? (H2[H2.length - 1][1 + j] - H2[0][1 + j]) / dt2 : 0]));
     const T3 = this.tot3;   // step C15d
     EV3.forEach((k, j) => { const v = wide(LG_CBC.EV3 + 128 * j); T3[k] += EV3_ENERGY.test(k) ? v / HEAT_SCALE : v / ATOM_SCALE; });
+    const T4 = this.tot4;   // step C15g
+    EV4.forEach((k, j) => { const v = wide(LG_CBC.EV4 + 128 * j); T4[k] += EV4_ENERGY.test(k) ? v / HEAT_SCALE : v / ATOM_SCALE; });
     const held = [];
     for (let c = 0; c < 8; c++) held.push(wide(LG_CBC.STOCK + 128 * c) / ATOM_SCALE);
     const parts = C2.membC + C2.wallC + C2.pigC + C2.enzC;   // (step C15c: the parts' tar hands are in the books' tar too)
@@ -277,7 +293,7 @@ export class CarbonCells {
     if (!CARBON || !Cb || !Cb.ledger) return;
     const T = Cb.tot, E = this.eat.ledger;
     const snap = { time, add: Array.from(T.add), lost: Array.from(T.lost), gone: Array.from(T.gone), cin: Array.from(T.cin), cout: Array.from(T.cout),
-      rx: Array.from(T.rx), ev: { ...this.tot }, ev2: { ...this.tot2 }, ev3: { ...this.tot3 }, dish: Array.from(Cb.dish),
+      rx: Array.from(T.rx), ev: { ...this.tot }, ev2: { ...this.tot2 }, ev3: { ...this.tot3 }, ev4: { ...this.tot4 }, dish: Array.from(Cb.dish),
       eat: E && E.rate ? { gain: E.rate.gain || 0, eGain: (E.rate2 && E.rate2.eGain) || 0, upkeep: (E.rate2 && E.rate2.upkeep) || 0 } : null };
     const H = this.flowHist;
     if (H.length && time < H[H.length - 1].time) H.length = 0;
@@ -318,6 +334,9 @@ export class CarbonCells {
       builtBody: de('ev', 'built'), builtLip: 2 * de('ev2', 'lipMade'), builtWall: de('ev2', 'wallMade'), builtPig: 2 * de('ev2', 'pigMade'),
       builtEnz: 4 * de('ev2', 'enzMade'), builderRed: de('ev2', 'reduced'), builderOx: de('ev2', 'oxidised'), bites: de('ev2', 'bites'),
       spoiled: de('ev2', 'spoiled'), shuttle: de('ev3', 'shuttle'), fromGran: 2 * de('ev3', 'fromGran'),
+      // step C15g: the idle photons' reductions (hands), the energy they stored and the batteries paid for them, the idle photons offered and left
+      idleRed: de('ev4', 'idleRed'), idleRise: de('ev4', 'idleRise'), idlePaid: de('ev4', 'idlePaid'),
+      idleOffer: de('ev4', 'idleOffer'), idleLeft: de('ev4', 'idleLeft'),
       // the batteries (energy per minute): income from the engines (the table's and the carbon ones), spending on parts
       eIncome: b.eat ? 60 * (b.eat.gain + b.eat.eGain) : 0, eCarbonEng: de('ev', 'gain'), eUpkeep: b.eat ? 60 * b.eat.upkeep : 0,
       payBody: de('ev', 'buildPaid'), payLip: de('ev3', 'payLip'), payWall: de('ev3', 'payWall'), payRed: de('ev3', 'payRed'),

@@ -227,8 +227,10 @@ body.recording #overlay { margin-top: 30px; }
   color: var(--ink); font-size: 10px; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; opacity: 0.85;
 }
 .joblegend[hidden] { display: none; }
-.joblegend .jrow { display: grid; grid-template-columns: 8px auto 3.2em; align-items: center; gap: 6px; cursor: default; }
+.joblegend .jrow { display: grid; grid-template-columns: 8px auto 64px 2.6em; align-items: center; gap: 6px; cursor: default; }
 .joblegend .jdot { width: 7px; height: 7px; border-radius: 50%; }
+.joblegend .jbar { position: relative; height: 5px; border-radius: 3px; background: rgba(217, 221, 230, 0.08); overflow: visible; }
+.joblegend .jfill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 3px; transition: width 0.4s ease-out; }
 .joblegend .jn { text-align: right; color: var(--dim); }
 /* step H1: under the harmonic look the bar sits on the black as a microscope's does (no panel behind it) */
 .scalebar.scope { background: none; color: #e8e8e8; opacity: 1; letter-spacing: 0.02em; }
@@ -242,7 +244,7 @@ body.recording #overlay { margin-top: 30px; }
   body.panel-open .zoombox, body.panel-open .scalebar, body.panel-open .joblegend { display: none; }
   .joblegend { right: 10px; bottom: calc(max(10px, env(safe-area-inset-bottom, 0px)) + var(--bar-h, 48px) + 100px); font-size: 9px; padding: 3px 6px 4px; }
   .joblegend .jn { display: none; }
-  .joblegend .jrow { grid-template-columns: 7px auto; }
+  .joblegend .jrow { grid-template-columns: 7px auto 40px; }
 }
 @media (max-height: 499px) { .joblegend { display: none; } }
 @media (max-height: 499px) { .zoombox { top: 50%; bottom: auto; transform: translateY(-50%); right: max(10px, env(safe-area-inset-right, 0px)); } }
@@ -410,9 +412,7 @@ select.toy-input option { background: #05080d; }
 .toy-row:hover, .toy-row[aria-current="true"] { border-color: var(--neon); }
 .toy-row b { font-size: 12px; font-weight: 600; }
 .toy-row span { font-size: 10.5px; line-height: 1.35; color: var(--dim); }
-/* the job legend in the toy: the colours named, no counts */
-body.toy-mode .joblegend .jn { display: none; }
-body.toy-mode .joblegend .jrow { grid-template-columns: 8px auto; }
+/* the job legend in the toy: the colours named, a bar chart of their shares (percent shown; counts on hover) */
 /* the scale bar and the job legend keep clear of the toy's bar where the window is narrow */
 @media (max-width: 1240px) {
   body.toy-mode .scalebar { bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + var(--toy-h, 60px) + 12px); }

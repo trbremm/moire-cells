@@ -9,7 +9,7 @@
 //                    harmonic look shows it on the black, without the panel behind it); hidden by the View panel's "scale
 //                    bar" (?scalebar=0)
 //   job legend       step F0: bottom right, above the scale bar, the jobs' colours named (src/jobs.js), with how many cells show each
-//                    clearly; only while the cells are coloured by job in the neon or flat look; the View panel's "job legend"
+//                    clearly, as a bar chart of their shares (bar + percent; the count on hover); only while the cells are coloured by job in the neon or flat look; the View panel's "job legend"
 //                    (?legend=0) hides it
 //   zoos             two toolbar panels, molecules and cells (src/zoo.js)
 //   add cells        a tool (the cell icon): a tap places one cell, a drag a line of them, each a copy of the genome picked in
@@ -140,11 +140,14 @@ export function createApp(ctx) {
     const r = el('div', 'jrow');
     const dot = el('span', 'jdot');
     const name = el('span', 'jname', J.label);
+    const bar = el('span', 'jbar');   // (a bar chart: each job's share of the dish)
+    const fill = el('span', 'jfill');
+    bar.append(fill);
     const n = el('span', 'jn', '');
     r.title = J.help;
-    r.append(dot, name, n);
+    r.append(dot, name, bar, n);
     legend.append(r);
-    return { dot, n };
+    return { r, dot, fill, n, help: J.help };
   });
   document.body.append(legend);
   let legendKey = '';
@@ -157,11 +160,19 @@ export function createApp(ctx) {
     const key = `${P.name}|${st ? st.job.join(',') : ''}`;
     if (key === legendKey) return;
     legendKey = key;
+    const counts = st && st.job ? rows.map((_, k) => st.job[k] || 0) : rows.map(() => 0);
+    const total = counts.reduce((a, b) => a + b, 0);
     rows.forEach((r, k) => {
       const c = P.job[k] || P.job[0];
-      r.dot.style.background = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
-      r.dot.style.boxShadow = P.name === 'flat' ? 'none' : `0 0 5px rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.85)`;
-      r.n.textContent = st && st.job ? String(st.job[k] || 0) : '';
+      const rgb = `${c[0]}, ${c[1]}, ${c[2]}`;
+      r.dot.style.background = `rgb(${rgb})`;
+      r.dot.style.boxShadow = P.name === 'flat' ? 'none' : `0 0 5px rgba(${rgb}, 0.85)`;
+      const share = total > 0 ? counts[k] / total : 0;
+      r.fill.style.width = `${(100 * share).toFixed(1)}%`;
+      r.fill.style.background = `rgb(${rgb})`;
+      r.fill.style.boxShadow = P.name === 'flat' || share <= 0 ? 'none' : `0 0 4px rgba(${rgb}, 0.8)`;
+      r.n.textContent = total > 0 ? `${Math.round(100 * share)}%` : '';
+      r.r.title = `${r.help} (${counts[k]} cells)`;
     });
   }
   setInterval(updateLegend, 500);

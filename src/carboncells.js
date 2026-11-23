@@ -68,7 +68,7 @@ export const PART_RECIPES = {
   enzyme: { carbon: 4, hands: CB_ENZANY ? '4 burnt chain carbons (1 backbone bond, 2 burnt hands each: any carbon; step C15e)' : '4 chain carbons', element: 'G (the heavy giver: catalysis moves electrons)', k: 1, charged: CARBON },
 };
 const ATOM_SCALE = 4096;
-const CBF = { ON: 1, EXCH: 2, ENG: 4, GRAZE: 8, DIS: 16, FLIP: 32, RESET: 64, SMELL: 128, GROW: 256, LIP: 512, TRANS: 1024, RED: 2048, ENZ: 4096, OXB: 8192, SHUT: 16384, GRAN: 32768, HUNGER: 65536, WALLREC: 131072, ENZANY: 262144, GRANRED: 524288, GRANHYD: 1048576, GSPLIT: 2097152, BODYANY: 4194304, HYDFLOOR: 8388608, WALLCUT: 16777216, OILHELD: 33554432, SPOILKEEP: 67108864, IDLERED: 134217728 };
+const CBF = { ON: 1, EXCH: 2, ENG: 4, GRAZE: 8, DIS: 16, FLIP: 32, RESET: 64, SMELL: 128, GROW: 256, LIP: 512, TRANS: 1024, RED: 2048, ENZ: 4096, OXB: 8192, SHUT: 16384, GRAN: 32768, HUNGER: 65536, WALLREC: 131072, ENZANY: 262144, GRANRED: 524288, GRANHYD: 1048576, GSPLIT: 2097152, BODYANY: 4194304, HYDFLOOR: 8388608, WALLCUT: 16777216, OILHELD: 33554432, SPOILKEEP: 67108864, IDLERED: 134217728, IDLEWATER: 268435456, IDLEHYD: 536870912 };
 // the 64-bit event counters (LG_CBC.EV, cell_eat.wgsl CBE_*)
 const EV = ['ox', 'cond', 'red', 'hyd', 'dis', 'graze', 'gain', 'heat', 'paid', 'phUsed', 'phIdle', 'satWant', 'satLost', 'rise', 'built', 'buildPaid'];
 const EV_ENERGY = /^(gain|heat|paid|rise|buildPaid)$/;
@@ -82,7 +82,7 @@ const CEN2 = ['membC', 'wallC', 'pigC', 'glueC', 'enzC', 'limC', 'limG', 'limTr'
 const EV3 = ['payLip', 'payWall', 'payRed', 'payPig', 'payEnz', 'payTrans', 'shuttle', 'fromGran'];
 const EV3_ENERGY = /^pay/;
 // step C15g: the fourth (LG_CBC.EV4, cell_carbon.wgsl CBE4_*): the idle photons' reductions (hands; energy in heat counts; photons)
-const EV4 = ['idleRed', 'idleRise', 'idlePaid', 'idleLeft', 'idleOffer'];
+const EV4 = ['idleRed', 'idleRise', 'idlePaid', 'idleLeft', 'idleOffer', 'idleWater', 'idleHyd'];
 const EV4_ENERGY = /^(idleRise|idlePaid)$/;
 /** Carbon units in a per-channel array (5 ladder molecules, 3 tar hand counts). */
 const carbonIn = (a) => a[0] + a[1] + a[2] + a[3] + a[4] + (2 * a[5] + a[6] + a[7]) / 4;
@@ -155,6 +155,8 @@ export class CarbonCells {
       // ---- step C15g, CARBON LIFE, ROUND 4 ----
       idleRed: true,     // IDLE PHOTONS PAY THE BUILDERS' REDUCTIONS: the photons a cell's pigments catch with nothing to make (past saturation, ...)
                          // run the table's REDUCE on its own burnt hands, one photon a hand, the spark from the battery (?cbidlered=0)
+      idleHyd: false,    // ... and first DIGEST: idle photons open the granules' spare backbones (the table's HYDROLYZE, one photon a bond) (?cbidlehyd=1)
+      idleWater: false,  // ... and short of free g, a second idle photon splits a water for it (two photons a hand: photosynthesis) (?cbidlewater=1)
       membFound: 1,      // FOUNDERS START WITH THEIR BILAYER: share of a typical founder's whole bilayer (the soap a thin membrane, thickness
                          // MEMB_THIN, wants at radius R; half soap1, half soap2), as bodies, enzymes and pigment (booked as carbon in; 0: none, as
                          // C15f) (?cbmembfound=)
@@ -208,7 +210,8 @@ export class CarbonCells {
         (CB_LIP && this.rule('granHyd') ? CBF.GRANHYD : 0) | (this.rule('gSplit') ? CBF.GSPLIT : 0) |
         (this.rule('bodyAny') ? CBF.BODYANY : 0) | (this.rule('hydFloor') ? CBF.HYDFLOOR : 0) |
         (CB_LIP && this.rule('wallCut') ? CBF.WALLCUT : 0) | (CB_LIP && this.rule('oilHeld') ? CBF.OILHELD : 0) |
-        (CB_LIP && this.rule('spoilKeep') ? CBF.SPOILKEEP : 0) | (this.rule('idleRed') ? CBF.IDLERED : 0);
+        (CB_LIP && this.rule('spoilKeep') ? CBF.SPOILKEEP : 0) | (this.rule('idleRed') ? CBF.IDLERED : 0) |
+        (this.rule('idleRed') && this.rule('idleWater') ? CBF.IDLEWATER : 0) | (this.rule('idleHyd') ? CBF.IDLEHYD : 0);
       u[1] = tickBase >>> 0; u[2] = ok ? Math.max(1, M.nSub || 1) : 1; u[3] = ok ? Cb.cur & 1 : 0;
       if (ok) {
         const LW = LEDGER_WORDS;   // (the heat buffer's grid starts behind the ledger)
@@ -336,7 +339,7 @@ export class CarbonCells {
       spoiled: de('ev2', 'spoiled'), shuttle: de('ev3', 'shuttle'), fromGran: 2 * de('ev3', 'fromGran'),
       // step C15g: the idle photons' reductions (hands), the energy they stored and the batteries paid for them, the idle photons offered and left
       idleRed: de('ev4', 'idleRed'), idleRise: de('ev4', 'idleRise'), idlePaid: de('ev4', 'idlePaid'),
-      idleOffer: de('ev4', 'idleOffer'), idleLeft: de('ev4', 'idleLeft'),
+      idleOffer: de('ev4', 'idleOffer'), idleLeft: de('ev4', 'idleLeft'), idleWater: de('ev4', 'idleWater'), idleHyd: de('ev4', 'idleHyd'),
       // the batteries (energy per minute): income from the engines (the table's and the carbon ones), spending on parts
       eIncome: b.eat ? 60 * (b.eat.gain + b.eat.eGain) : 0, eCarbonEng: de('ev', 'gain'), eUpkeep: b.eat ? 60 * b.eat.upkeep : 0,
       payBody: de('ev', 'buildPaid'), payLip: de('ev3', 'payLip'), payWall: de('ev3', 'payWall'), payRed: de('ev3', 'payRed'),

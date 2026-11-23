@@ -75,6 +75,8 @@ const CBF_HYDFLOOR: u32 = 8388608u; // step C15f: THE GRANULES DIGESTED ONLY FRO
 const CBF_WALLCUT: u32 = 16777216u; // step C15f: a WALL's cross-linked pairs cut out of the granules as they are (cb_make_cross)
 const CBF_OILHELD: u32 = 33554432u; // step C15f: the builder makes oil only for the soap a side holds (cell_eat.wgsl, the lipid builder)
 const CBF_SPOILKEEP: u32 = 67108864u; // step C15f: a lipid or wall piece spoiled by oxygen stays in the cell as granules (cb_bites)
+const CBF_IDLEHYD: u32 = 536870912u; // step C15g: idle photons first DIGEST over-condensed granules (HYDROLYZE spare backbones, cb_idle_red)
+const CBF_IDLEWATER: u32 = 268435456u; // step C15g: ... and, short of free g, a second idle photon splits a water for it (cb_idle_red)
 const CBF_IDLERED: u32 = 134217728u; // step C15g: a pigmented cell's IDLE photons drive the REDUCE reaction on its own carbon (cb_idle_red)
 const CBF_BODYANY: u32 = 4194304u; // THE BODY FROM ANY BUILT CARBON: the body takes granule carbons whatever their hands (cb_build)
 const CBF_WALLREC: u32 = 131072u; // WALL RECYCLING: a jolted wall's cracked pieces stay in the cell as granules (as shed lipids do), not mud    // OXYGEN DAMAGES MEMBRANES: free t oxidises the lipids' fuel hands (fat -> soap -> spoiled, into the mud)
@@ -164,6 +166,8 @@ const CBE4_RISE: u32 = 1u;    // heat counts the photons stored in those bonds (
 const CBE4_PAID: u32 = 2u;    // heat counts the batteries paid for them (the sparks; a weak photon's difference)
 const CBE4_LEFT: u32 = 3u;    // idle photons still unused after them (heat, as before)
 const CBE4_OFFER: u32 = 4u;   // idle photons on offer to them (caught by the pigments with nothing to make)
+const CBE4_WATER: u32 = 5u;   // waters split by idle photons for the g (CBF_IDLEWATER)
+const CBE4_HYD: u32 = 6u;     // granule backbones opened by idle photons (CBF_IDLEHYD)
 var<workgroup> wcbe4: array<atomic<i32>, 8>;
 var<workgroup> wcbf: array<atomic<i32>, 16>;   // per channel: 0..7 taken in from the dish, 8..15 given back to it
 var<workgroup> wcbe: array<atomic<i32>, 16>;   // CBE_*
@@ -618,8 +622,8 @@ fn cb_cell(i: u32, sc: array<f32, 5>, sr: array<f32, 5>, ph: array<i32, 5>, phs:
       }
     }
     // step C15g (CBF_IDLERED): the IDLE photons drive the builder's reductions
-    if (cb_bit(CBF_IDLERED) && any(idle > vec4i(0))) {
-      cb_idle_red(idle, &S, &ct, &cg, m, bat, heat, lnCap, temp, satOn, sparkScale, rs);
+    if ((cb_bit(CBF_IDLERED) || cb_bit(CBF_IDLEHYD)) && any(idle > vec4i(0))) {
+      cb_idle_red(idle, &S, &cc, &ct, &cg, m, bat, heat, lnCap, temp, satOn, sparkScale, rs);
     }
   }
 
@@ -1299,25 +1303,76 @@ fn cb_found_pig(i: u32, r: f32, slot: u32) {
  * above the builder's floor (CBP.v.x); at most engMax hands a tick; C12e's saturation as the REDUCE engine's (fuel hands and free t piling
  * up slow it). The idle photons' energy is already in heat (the engines put it there), so a reduction takes its rise back out of heat.
  */
-fn cb_idle_red(idle: vec4i, S: ptr<function, array<i32, 5>>, ct: ptr<function, i32>, cg: ptr<function, i32>, m: ptr<function, array<i32, 18>>,
+fn cb_idle_red(idle0: vec4i, S: ptr<function, array<i32, 5>>, cc: ptr<function, i32>, ct: ptr<function, i32>, cg: ptr<function, i32>, m: ptr<function, array<i32, 18>>,
                bat: ptr<function, i32>, heat: ptr<function, i32>, lnCap: f32, temp: f32, satOn: bool, sparkScale: f32, rs: u32) {
   let g16 = CBP.e.x;
   let sp16 = max(i32(ceil(f32(CBP.e.z) / 16.0 * sparkScale * 16.0)), 1);
   var cap = i32(EP.engMax);
+  var idle = idle0;
   var left = 0;
   for (var b = 1u; b < 4u; b++) { left += max(idle[b], 0); }
   atomicAdd(&wcbe4[CBE4_OFFER], left);
+  // (CBF_IDLEHYD) first the granules' SPARE backbones are opened by the table's HYDROLYZE ([c-c] + gt -> [c-g] + [c-t], the rise 0.75, CBP.e.y),
+  // one idle photon a bond (any band holds the rise; the rest of it heat), the spark from the battery above the floor, a water from the stock:
+  // light-driven digestion, as the HYDROLYZE engine's photon path. SPARE: beyond one backbone per carbon (a chain carbon, what every builder
+  // cuts: wall chains, enzyme frames, the two-carbon molecules hold fewer), i.e. while 2 cc > cg + ct, (2 cc - cg - ct) / 4 bonds. Grazed mud
+  // is over-condensed (about 1.5 backbones a carbon), so its hands, which every part needs, were only opened from the battery (C15e (l)),
+  // which the poorest cells, below the floor, could not pay: no hands, no enzymes, no income
+  if ((CBP.cfg.x & CBF_IDLEHYD) != 0u) {
+    let gh = CBP.e.y;
+    let spare = max(2 * (*cc) - (*cg) - (*ct), 0) / 4;
+    var want = min(min(spare, max((*m)[6], 0)), cap);
+    for (var bb = 0u; bb < 3u && want > 0; bb++) {
+      let band = 3u - bb;
+      let ph16 = EP.photon16[band];
+      let c16 = sp16 + max(gh - ph16, 0);
+      let x = max(min(min(want, max(idle[band], 0)), max(*bat - i32(CBP.v.x), 0) / c16), 0);
+      if (x <= 0) { continue; }
+      *cc -= x; *cg += x; *ct += x;
+      (*m)[6] -= x;
+      *bat -= x * c16;
+      *heat += x * (c16 - gh);   // (the photons were heat already: the rise goes into the hands)
+      idle[band] -= x;
+      want -= x;
+      cap -= x;
+      left -= x;
+      atomicAdd(&wcbe4[CBE4_HYD], x);
+      atomicAdd(&wcbe4[CBE4_RISE], x * gh);
+      atomicAdd(&wcbe4[CBE4_PAID], x * c16);
+    }
+  }
   for (var bb = 0u; bb < 3u; bb++) {
     let band = 3u - bb;
     let np = max(idle[band], 0);
-    if (np <= 0 || cap <= 0) { continue; }
+    if (np <= 0 || cap <= 0 || (CBP.cfg.x & CBF_IDLERED) == 0u) { continue; }
     let ph16 = EP.photon16[band];
     let T = cbt(1u) * (*S)[1] + cbt(2u) * (*S)[2] + cbt(3u) * (*S)[3] + cbt(4u) * (*S)[4] + *ct;
+    var npR = np;
+    // (CBF_IDLEWATER: short of free g, the pigment's own reaction first: a water split by a second idle photon, gt -> g + t, its bond 4.5
+    // (CBP.u.z) taken from the photon as far as it holds it, the rest and the spark (CBP.u.w) from the battery above the floor; the g
+    // then reduced by the first photon, the t left in the stock: two photons a hand, a water in and two free t out, as photosynthesis)
+    if ((CBP.cfg.x & CBF_IDLEWATER) != 0u) {
+      let short = min(min(T, cap), np / 2) - max((*m)[0], 0);
+      let wb = i32(CBP.u.z);
+      let ws = i32(CBP.u.w);
+      let cw = ws + max(wb - ph16, 0);
+      let x = max(min(min(short, max((*m)[6], 0)), max(*bat - i32(CBP.v.x), 0) / max(cw + sp16 + max(g16 - ph16, 0), 1)), 0);
+      if (x > 0) {
+        (*m)[6] -= x; (*m)[0] += x; (*m)[1] += x;
+        *bat -= x * cw;
+        *heat += x * (cw - wb);   // (the photon was heat already: the bond's energy goes into the free atoms instead)
+        npR -= x;
+        atomicAdd(&wcbe4[CBE4_WATER], x);
+        atomicAdd(&wcbe4[CBE4_RISE], x * wb);
+        atomicAdd(&wcbe4[CBE4_PAID], x * cw);
+        left -= x;
+      }
+    }
     let a = min(max((*m)[0], 0), T);
     if (a <= 0) { break; }
     let c16 = sp16 + max(g16 - ph16, 0);
     let avail = max(*bat - i32(CBP.v.x), 0);
-    var n = min(min(np, a), cap);
+    var n = min(min(npR, a), cap);
     n = max(min(n, avail / c16), 0);
     if (n > 0 && satOn) {
       let G = cbg(0u) * (*S)[0] + cbg(1u) * (*S)[1] + cbg(2u) * (*S)[2] + cbg(3u) * (*S)[3] + *cg;

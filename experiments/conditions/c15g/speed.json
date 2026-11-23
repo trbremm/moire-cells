@@ -1,0 +1,25 @@
+{
+ "batch": "c15g-speed",
+ "runs": [
+  {
+   "name": "c15g-speed-g",
+   "description": "speed: default scene seed 3, 60 s, every C15g lever on",
+   "query": {
+    "seed": 3
+   },
+   "duration": 60,
+   "sample_every": 30,
+   "shots": []
+  },
+  {
+   "name": "c15g-speed-g2",
+   "description": "speed: default scene seed 3, 60 s, every C15g lever on, again",
+   "query": {
+    "seed": 3
+   },
+   "duration": 60,
+   "sample_every": 30,
+   "shots": []
+  }
+ ]
+}

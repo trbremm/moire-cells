@@ -1,0 +1,69 @@
+{
+ "batch": "c15g-checks",
+ "runs": [
+  {
+   "name": "c15g-phone",
+   "description": "phone size (390 x 844 at dpr 3, Chrome): a fresh-load world (islands, seed 3) 30 s, every C15g lever on",
+   "query": {
+    "terrain": "islands",
+    "seed": 3
+   },
+   "duration": 30,
+   "sample_every": 10,
+   "stall": 400,
+   "shots": [
+    {
+     "t": 30
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 10,
+     "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+    },
+    {
+     "t": 30,
+     "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+    }
+   ],
+   "size": "390x844",
+   "dpr": 3
+  },
+  {
+   "name": "c15g-snap-c15f",
+   "description": "the C15f snapshot (c15g-snapsrc at 180 s) loads and runs on 30 s on C15g (its levers off as it ran), books",
+   "query": {
+    "snap": "experiments/runs/c15g-snapsrc/snapshots/snap_t180.json"
+   },
+   "duration": 30,
+   "sample_every": 10,
+   "stall": 400,
+   "shots": [
+    {
+     "t": 30,
+     "name": "end"
+    }
+   ],
+   "snapshots": [],
+   "evals": [
+    {
+     "t": 1,
+     "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+    },
+    {
+     "t": 15,
+     "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+    },
+    {
+     "t": 30,
+     "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+    },
+    {
+     "t": 2,
+     "js": "return JSON.stringify({levers: {crawlWork: moire.eat.params.crawlWork, idleRed: moire.carbonCells.params.idleRed, membFound: moire.carbonCells.params.membFound}})"
+    }
+   ]
+  }
+ ]
+}

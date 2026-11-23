@@ -38,6 +38,16 @@ READY = ("if (!moire.eat.carbon || !moire.eat.carbon.buf || moire.eat.carbon.buf
          "if (okB && !okC) { const c = cb[i * 24 + 5], g = cb[i * 24 + 6], t = cb[i * 24 + 7]; bsGr[0] += c; bsGr[1] += g; bsGr[2] += t; if (2 * c + g + t < 4096 * want / 4096 * 0.5) bsEmpty++; if (4 * g < g + t) bsBurnt++; } } "
          "return JSON.stringify({ready: {alive, bat, body, both, grown, all3, batMean: batSum / Math.max(alive, 1), batHist: hb, "
          "batNoBody: {gran: bsGr.map((x) => Math.round(x / 4096 * 100) / 100), empty: bsEmpty, burnt: bsBurnt}}})")
+# STOCKS (step C15g): what the idle photons' reductions need, summed over the live cells (units): free g, free t, water gt in the stocks, the
+# cells with no free g; the burnt hands (ladder and granules) and the fuel hands
+STOCKS = ("if (!moire.eat.carbon || !moire.eat.carbon.buf) return JSON.stringify({stocks: null}); const d = moire.gpu.device; const rb = async (buf, size) => { const b = d.createBuffer({size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}); "
+          "const e = d.createCommandEncoder(); e.copyBufferToBuffer(buf, 0, b, 0, size); d.queue.submit([e.finish()]); await b.mapAsync(GPUMapMode.READ); "
+          "const a = b.getMappedRange().slice(0); b.unmap(); b.destroy(); return a; }; const C = moire.cells, n = C.count, CF = C.cellBuf.size / 4 / n, E = moire.eat; "
+          "const cu = new Uint32Array(await rb(C.cellBuf, n * CF * 4)); const st = new Int32Array(await rb(E.stockBuf, n * 64 * 4)); const cb = new Int32Array(await rb(E.carbon.buf, n * 24 * 4)); "
+          "let alive = 0, g = 0, t = 0, w = 0, g0 = 0, T = 0, G = 0, T0 = 0; for (let i = 0; i < n; i++) { if (!(cu[i * CF + 9] & 1)) continue; alive++; const o = i * 64, c = i * 24; "
+          "g += st[o]; t += st[o + 1]; w += st[o + 6]; if (st[o] <= 0) g0++; const bt = cb[c + 1] + 2 * cb[c + 2] + 3 * cb[c + 3] + 4 * cb[c + 4] + cb[c + 7]; "
+          "T += bt; if (bt <= 0) T0++; G += 4 * cb[c] + 3 * cb[c + 1] + 2 * cb[c + 2] + cb[c + 3] + cb[c + 6]; } const u = (x) => Math.round(x / 4096 * 100) / 100; "
+          "return JSON.stringify({stocks: {alive, g: u(g), t: u(t), water: u(w), noG: g0, burnt: u(T), noBurnt: T0, fuel: u(G)}})")
 # DISH: every substance in the dish and in the cells (units)
 DISH = ("const M = moire.matter; return JSON.stringify({dishM: Array.from(M.dish || []).map((x) => Math.round(x * 10) / 10), "
         "cellsM: Array.from((moire.eat && moire.eat.ledger && (moire.eat.ledger.held || moire.eat.ledger.stock)) || []).map((x) => Math.round(x * 10) / 10)})")
@@ -57,6 +67,7 @@ def run(name, desc, query, dur, probes, shots=None, oxygen=False, snap=False, ha
     evals += [{"t": t, "js": PROBE} for t in probes]
     evals += [{"t": t, "js": READY} for t in probes]
     evals += [{"t": t, "js": DISH} for t in probes]
+    evals += [{"t": t, "js": STOCKS} for t in probes]
     if spend:
         evals += [{"t": t, "js": SPEND} for t in sorted(set([10, 20, 30, 45, 60, 90, 120, 180, 240] + list(probes))) if t <= dur]
     sh = shots if shots is not None else [{"t": dur, "name": "end"}]
@@ -149,3 +160,38 @@ if __name__ == "__main__":
             ab.append(watch("default", s, 600, f"ab1-{tag}", f"every C15g lever on but {what}", extra=q))
         ab.append(watch("default", s, 600, "ab1-offwork", "?carbon=0 with lever (s): the crawl paid by its work", extra={"carbon": 0}))
     dump({"batch": "c15g-ab1", "runs": ab}, "ab1.json")
+
+    # ---------- the end: the watch with every C15g lever on (pictures, snapshots), and the fresh-load worlds ----------
+    dump({"batch": "c15g-watch", "runs": [watch(k, s, d, "w", "every C15g lever on", pictures=True) for k, s, d in WATCH]}, "watch.json")
+    dump(fl_batch("w", "every C15g lever on"), "fl-w.json")
+
+    # ---------- checks: a C15f-era snapshot (made on main c2e49a1 from its export), loading with the C15g levers off; Firefox; phone ----------
+    src = run("c15g-snapsrc", "a snapshot made on main c2e49a1 (C15f): default scene seed 7, 180 s (run from the export)", {"seed": 7}, 180, (180,),
+              shots=[{"t": 180, "name": "end"}], snap=True, every=30)
+    dump({"batch": "c15g-snapsrc", "runs": [src]}, "snapsrc.json")
+    snap = run("c15g-snap-c15f", "the C15f snapshot (c15g-snapsrc at 180 s) loads and runs on 30 s on C15g (its levers off as it ran), books",
+               {"snap": "experiments/runs/c15g-snapsrc/snapshots/snap_t180.json"}, 30, (), shots=[{"t": 30, "name": "end"}], every=10)
+    snap["evals"] = [{"t": t, "js": FL_PROBE} for t in (1, 15, 30)] + [{"t": 2, "js": "return JSON.stringify({levers: {crawlWork: moire.eat.params.crawlWork, "
+                                                                        "idleRed: moire.carbonCells.params.idleRed, membFound: moire.carbonCells.params.membFound}})"}]
+    ff = run("c15g-firefox", "Firefox (headed): the default scene 40 s, every C15g lever on, books", {"seed": 3}, 40, (20, 40),
+             shots=[{"t": 40, "name": "end"}], every=10)
+    ph = run("c15g-phone", "phone size (390 x 844 at dpr 3, Chrome): a fresh-load world (islands, seed 3) 30 s, every C15g lever on",
+             {"terrain": "islands", "seed": 3}, 30, (), shots=[{"t": 30}], every=10)
+    ph["size"] = "390x844"
+    ph["dpr"] = 3
+    ph["evals"] = [{"t": t, "js": FL_PROBE} for t in (10, 30)]
+    dump({"batch": "c15g-firefox", "runs": [ff]}, "firefox.json")
+    dump({"batch": "c15g-checks", "runs": [ph, snap]}, "checks.json")
+    # speed: the default scene, seed 3 (2000 founders), 60 s, on a free GPU, C15g then main (from the export) then C15g again
+    sp = lambda name, what: {"name": name, "description": f"speed: default scene seed 3, 60 s, {what}", "query": {"seed": 3}, "duration": 60,
+                             "sample_every": 30, "shots": []}
+    dump({"batch": "c15g-speed", "runs": [sp("c15g-speed-g", "every C15g lever on"), sp("c15g-speed-g2", "every C15g lever on, again")]}, "speed.json")
+    dump({"batch": "c15g-speed-main", "runs": [sp("c15g-speed-main", "main c2e49a1 (from its export)")]}, "speed-main.json")
+
+    # ---------- ab2: the two follow-ups the ab1 numbers pointed to (both off by default until measured): idle photons also DIGEST the
+    # granules' spare backbones (?cbidlehyd=1), and split a water for the g (?cbidlewater=1); default scene seeds 3 and 7, 10 min ----------
+    ab2 = []
+    for s in (3, 7):
+        ab2.append(watch("default", s, 600, "ab2-hyd", "every C15g lever on + ?cbidlehyd=1", extra={"cbidlehyd": 1}))
+        ab2.append(watch("default", s, 600, "ab2-hydwater", "every C15g lever on + ?cbidlehyd=1&cbidlewater=1", extra={"cbidlehyd": 1, "cbidlewater": 1}))
+    dump({"batch": "c15g-ab2", "runs": ab2}, "ab2.json")

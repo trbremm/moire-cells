@@ -619,7 +619,7 @@ async function boot() {
       // step C15b: cells eat carbon (src/carboncells.js)
       const CC = cells.eat.carbon.params;
       for (const [q, k] of [['cbcells', 'on'], ['cbexch', 'exchange'], ['cbeng', 'engines'], ['cbgraze', 'graze'], ['cbdis2', 'dissolve'], ['cbsmell', 'smell'], ['cbgrow', 'growth'],
-        ['cbtrans', 'transport'], ['cbred', 'reduce'], ['cbbite', 'oxBite'], ['cbenz', 'enzymes'], ['cbtool', 'toolBody'], ['cbshut', 'shuttle'], ['cbgran', 'granFat'], ['cbhunger', 'hunger'], ['cbwallrec', 'wallRecycle'], ['cbgranred', 'granRed'], ['cbgranhyd', 'granHyd'], ['cbgsplit', 'gSplit'], ['cbbodyany', 'bodyAny'], ['cbhydfloor', 'hydFloor'], ['cbwallcut', 'wallCut'], ['cboilheld', 'oilHeld'], ['cbspoilkeep', 'spoilKeep'], ['cbidlered', 'idleRed']]) {   // (step C15c: transport .. toolBody; C15d: shuttle)
+        ['cbtrans', 'transport'], ['cbred', 'reduce'], ['cbbite', 'oxBite'], ['cbenz', 'enzymes'], ['cbtool', 'toolBody'], ['cbshut', 'shuttle'], ['cbgran', 'granFat'], ['cbhunger', 'hunger'], ['cbwallrec', 'wallRecycle'], ['cbgranred', 'granRed'], ['cbgranhyd', 'granHyd'], ['cbgsplit', 'gSplit'], ['cbbodyany', 'bodyAny'], ['cbhydfloor', 'hydFloor'], ['cbwallcut', 'wallCut'], ['cboilheld', 'oilHeld'], ['cbspoilkeep', 'spoilKeep'], ['cbidlered', 'idleRed'], ['cbidlewater', 'idleWater'], ['cbidlehyd', 'idleHyd']]) {   // (step C15c: transport .. toolBody; C15d: shuttle)
         if (params.has(q)) CC[k] = flag(q);
       }
       for (const [q, k] of [['cbkgraze', 'kGraze'], ['cbkdis2', 'kDis'], ['cbbody', 'kBody'], ['cbbuild', 'kBuild'], ['cbfound', 'found'],

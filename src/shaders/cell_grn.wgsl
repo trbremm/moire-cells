@@ -64,6 +64,7 @@ const GRN_S_MEAL: u32 = 14u;     // step P1: a MEAL inside (digesting: the share
 const GRN_S_PREY: u32 = 15u;     // step P1: PREY near (1 while a cell it could engulf touches it, or it is wrapping one)
 const GRN_NOUT: u32 = 17u;       // outputs (16 until step P1's ENGULF, whose gain and regulator live in Bio.gm.z, gm.w)
 const GRN_NOUT_S1: u32 = 18u;    // ... step S1: + SHAPE (the elongation gene, Bio.relay.y), its gain and regulator in Bio.relay.z, relay.w (while the shape is on)
+const GRN_NOUT_S2: u32 = 20u;    // ... step S2: + FLAGELLUM and CILIA (Bio.mo.x, mo.w), their gains and regulators in Bio.mg (while either motor is on)
 
 fn grn_rand(seed: u32, k: u32) -> f32 { return rand01(seed, k); }
 
@@ -99,10 +100,12 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
     let ms = fid_birth(mOn, hx, pfid, FL.hm) * S.mutSize;
     if (ms > 0.0) {
       let bs = pcg(c.seed ^ pcg(S.tick * 0x2545f491u + 0x67726e31u));
-      var u: array<f32, 18>;
-      var oreg: array<u32, 18>;
+      var u: array<f32, 20>;
+      var oreg: array<u32, 20>;
       // (step S1: the 18th output only while the shape is on, so with it off a birth's random draws are exactly as before)
-      let nOut = select(GRN_NOUT, GRN_NOUT_S1, (S.shapeF & SH_ON) != 0u);
+      // (step S2: the 19th and 20th only while a motor is on; then the 18th's words drift too, without effect while the shape is off)
+      let moOn = (bitcast<u32>(FL.mo0.x) & (MO_FLAG | MO_CIL)) != 0u;
+      let nOut = select(select(GRN_NOUT, GRN_NOUT_S1, (S.shapeF & SH_ON) != 0u), GRN_NOUT_S2, moOn);
       for (var o = 0u; o < 16u; o++) { u[o] = bioW[i].gu[o >> 2u][o & 3u]; oreg[o] = grn_reg(bioW[i].go, o); }
       var gm = bioW[i].gm;
       u[16] = gm.z;                                              // step P1: the ENGULF output
@@ -110,6 +113,11 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
       let rl = bioW[i].relay;
       u[17] = rl.z;                                              // step S1: the SHAPE output
       oreg[17] = min(u32(max(rl.w, 0.0)), 7u);
+      let mgw = bioW[i].mg;
+      u[18] = mgw.x;                                             // step S2: the FLAGELLUM output
+      oreg[18] = min(u32(max(mgw.y, 0.0)), 7u);
+      u[19] = mgw.z;                                             // ... the CILIA output
+      oreg[19] = min(u32(max(mgw.w, 0.0)), 7u);
       // the small steps: weights and output gains in use, every bias
       for (var q = 0u; q < 24u; q++) {
         if (code[q] != 0u && code[q] < GRN_NSRC) { w[q] = clamp(w[q] + ms * GP.wStep * gauss(bs, 300u + q), -GRN_UMAX, GRN_UMAX); }
@@ -175,6 +183,7 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
       gm.w = f32(oreg[16]);
       bioW[i].gm = gm;
       if (nOut > GRN_NOUT) { bioW[i].relay = vec4f(rl.xy, u[17], f32(oreg[17])); }
+      if (nOut > GRN_NOUT_S1) { bioW[i].mg = vec4f(u[18], f32(oreg[18]), u[19], f32(oreg[19])); }
     }
   }
 

@@ -53,6 +53,7 @@ import { Glue, STATS_G0, G0_WORDS, G0_CLEAR } from './glue.js';
 import { Spindle, STATS_S1, S1_WORDS } from './spindle.js';
 import { Fidelity } from './fidelity.js';
 import { Dup } from './dup.js';
+import { Motors, STATS_S2, S2_WORDS } from './motors.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 import { dish } from './dish.js';      // the dish's own size and R
 import { cultureLayout } from './culture.js';   // app: how a new culture is spread
@@ -69,8 +70,9 @@ export const CELL_URL = 'src/shaders/cell_common.wgsl';
 // step C13, fields as genes and guides (src/guides.js): fg[4] (78: the field genes the beat needs, f16 deltas), felt[2] (82: what each side felt)
 // step C12e, osmosis on the ions (src/waste.js): osm (84: the swelling), osmP (85: the osmotic pressure); step T1b:
 // sns0, sns1 (86, 87: the senses the eat pass hands the gene network, 4 x 8 bits each; spare until T1b); step P1, predators (src/predators.js):
-// eng (88: what it engulfs, how far), engBy (89: who wraps it, or the host of the meal its dead slot holds), hold (90), engPay (91)
-export const CELL_FLOATS = 92;
+// eng (88: what it engulfs, how far), engBy (89: who wraps it, or the host of the meal its dead slot holds), hold (90), engPay (91); step S2,
+// flagella and cilia (src/motors.js): motE (92: the motors' share of their motor proteins), motW (93: what the motors did, the free sides)
+export const CELL_FLOATS = 94;
 export const CELL_BYTES = CELL_FLOATS * 4;
 const CELL_CORE_BYTES = 120;   // step C6c: struct CellCore (the grid's sorted copy: Cell without the outline and per-side slots;
                                // step C6d: + the dipole, 104 until then; step C10: + the walls, 112 until then)
@@ -84,14 +86,14 @@ const SLOT = 256;              // uniform slot stride (minUniformBufferOffsetAli
 const SLOTS = 320;             // ticks that can be encoded in one frame (main.js runs at most 256, plus warm-up)
 const BLOCK = 512;             // scan block (cell_grid.wgsl)
 const BRUTE_MAX = 20000;       // largest count the ?check brute force runs on
-const STATS_BYTES = 9472;      // struct Stats in cell_common.wgsl (step S1: + s1, 16 words; step G0: + g0, 32 words; step P1: + p1, 64 words; step C13: + fg, 64 words; counters, events, census, step 6 census; step C6d: + dip;
+const STATS_BYTES = 9600;      // struct Stats in cell_common.wgsl (step S2: + s2, 32 words; step S1: + s1, 16 words; step G0: + g0, 32 words; step P1: + p1, 64 words; step C13: + fg, 64 words; counters, events, census, step 6 census; step C6d: + dip;
                                // step C9: + div, claim; step C10: + wall; step C11: wall 24 -> 32 words)
 const STATS_EXTRA = 8192;      // byte offset of Stats.extra (step 6 census: STATS_X_* in cell_common.wgsl)
 const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder bitmap) in struct Stats
 const STATS_EVENTS = 64;
 const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_AW in cell_common.wgsl)
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
-const FIELDS_BYTES = 592;      // struct Fields in cell_common.wgsl (step G2: + g2, 576 until then; step G0b: + ob0, 560 until then; step G0: + g0a..g0c; step P1: + p1..p1d; step T1a: + t1; step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
+const FIELDS_BYTES = 640;      // struct Fields in cell_common.wgsl (step S2: + mo0..mo2, 592 until then; step G2: + g2, 576 until then; step G0b: + ob0, 560 until then; step G0: + g0a..g0c; step P1: + p1..p1d; step T1a: + t1; step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
                                // step C9: + dv0..dv2; step C10: + wl0, wl1)
 const FIELD_FORMAT = 'rgba16float';
 const DRAW_BYTES = 1424;       // struct Draw in cell_draw.wgsl (step F0: + job[7], 1312 until then; step P1: + p1, p1Ink; step T1b: + grn, grnInk, grnInkH, 1232 until then; step T1a: + kin, 1216 until then; step H1: + harm, harm2, harm3, harm4, hInk[5] after cam, 1072 until then; app: + cam, 1056 until then; step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
@@ -362,6 +364,7 @@ export class Cells {
     this.pred = new Predators(this);      // step P1: predators, engulfing and kin sparing (src/predators.js)
     this.fidelity = new Fidelity(this);   // step G1: error correction, the fidelity gene (src/fidelity.js)
     this.dup = new Dup(this);             // step G2: gene duplication for engines and pumps (src/dup.js)
+    this.motors = new Motors(this);       // step S2: flagella and cilia (src/motors.js)
   }
 
   static async create(device, format, medium, count, seed, cap = 0) {
@@ -474,6 +477,7 @@ export class Cells {
     // step C5: the stock and battery of every cell, and the pass that eats (src/eat.js)
     this.eat = await Eat.create(d, this);
     this.heat.eat = this.eat;
+    await this.motors.init(d, this.format, pre);   // step S2: the flagella's and cilia's drawing (src/motors.js)
 
     this.drawU = d.createBuffer({ label: 'cell draw params', size: DRAW_BYTES, usage: U.UNIFORM | U.COPY_DST });
     this.drawAB = new ArrayBuffer(DRAW_BYTES);
@@ -498,6 +502,7 @@ export class Cells {
     this.drawBGs = this.bioBuf.map((bio) => d.createBindGroup({ layout: this.drawPipe.getBindGroupLayout(0), entries: drawEntries(bio) }));
     // step H1: the harmonic pipeline's own (an automatic layout belongs to its pipeline)
     this.harmBGs = this.bioBuf.map((bio) => d.createBindGroup({ layout: this.harmPipe.getBindGroupLayout(0), entries: drawEntries(bio) }));
+    this.motors.bgs = null;   // step S2: the motors' drawing binds to these buffers (again)
   }
 
   /** The cells' radius: the reference's R, or smaller if `count` cells would not fit in the dish. */
@@ -742,6 +747,7 @@ export class Cells {
     if (this.stir) this.stir.writeFields(u, f, 132); else { u.fill(0, 132, 140); }   // step G0: the cells stir the water (Fields.g0b, g0c)
     if (this.obstacles) this.obstacles.writeFields(u, f, 140); else { u.fill(0, 140, 144); }   // step G0b: obstacles (Fields.ob0)
     this.dup.writeFields(u, f, 144);           // step G2: gene duplication (Fields.g2)
+    this.motors.writeFields(u, f, 148);        // step S2: flagella and cilia (Fields.mo0..mo2)
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -786,6 +792,7 @@ export class Cells {
     this.pred.maybeCensus(frame.time);   // step P1: the clusters' census (a read-back every few s)
     this.fidelity.maybeCensus(frame.time);   // step G1: the fidelity census (a read-back every few s)
     this.dup.maybeCensus(frame.time);        // step G2: the engines' census (a read-back every few s)
+    this.motors.maybeCensus(frame.time);     // step S2: where the motors are (a read-back every few s)
     if (this.gridSize() !== this.grid.cs) this.sizeGrid();   // params.cut or range changed
     // after a reset, the warm-up ticks run first (all in this frame, at the current time)
     const warm = Math.min(this.warm, SLOTS - frame.ticks);
@@ -815,6 +822,7 @@ export class Cells {
     encoder.clearBuffer(this.statsBuf, STATS_P1 + 4 * P1_CLEAR, 4 * (P1_WORDS - P1_CLEAR));   // step P1: the predators' census (its counters run on)
     encoder.clearBuffer(this.statsBuf, STATS_G0 + 4 * G0_CLEAR, 4 * (G0_WORDS - G0_CLEAR));   // step G0: the glue's census (its counters run on)
     encoder.clearBuffer(this.statsBuf, STATS_S1, 4 * S1_WORDS);       // step S1: the shape's census
+    encoder.clearBuffer(this.statsBuf, STATS_S2, 4 * S2_WORDS);       // step S2: the motors' census
     encoder.clearBuffer(this.statsBuf, STATS_FG, 4 * FG_CLEAR);       // step C13: the field genes' and gates' census (the same; its
                                                                       // cumulative words after FG_CLEAR run on)
     for (let t = 0; t < ticks; t++) {
@@ -932,6 +940,7 @@ export class Cells {
       this.pred.applyStats(time, new Uint32Array(u.buffer, STATS_P1, P1_WORDS));   // step P1
       this.glue.apply(time, new Uint32Array(u.buffer, STATS_G0, G0_WORDS));      // step G0
       this.spindle.apply(time, new Uint32Array(u.buffer, STATS_S1, S1_WORDS));   // step S1
+      this.motors.apply(time, new Uint32Array(u.buffer, STATS_S2, S2_WORDS));    // step S2
       if (events.length && this.onEvents) this.onEvents(events);
       if (events.length) for (const t of this.eventTaps) t(events, time);
     } catch (e) {
@@ -1430,6 +1439,8 @@ export class Cells {
     this.pred.writeDraw(a, 320);               // step P1: the wraps' arms, the phagosomes
     P.job.forEach((ink, j) => { for (let k = 0; k < 3; k++) a[328 + 4 * j + k] = ink[k] / 255; });   // step F0: the jobs' inks
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
+    // step S2: the flagella and cilia first (src/motors.js; a body then covers its flagellum's root)
+    this.motors.render(pass, { view: v, cam: camera.vec(), zoom: camera.z, neon, harmonic: !!HM, time: frame.time || 0, palette: P, cheap: !!look.cheap });
     pass.setPipeline(HM ? this.harmPipe : this.drawPipe);
     pass.setBindGroup(0, (HM ? this.harmBGs : this.drawBGs)[this.bioCur]);
     pass.draw(6, this.count);

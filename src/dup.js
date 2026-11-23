@@ -102,7 +102,7 @@ export class Dup {
     u[o] = this.bits; f[o + 1] = Math.max(0, Math.min(1, p.rate)); f[o + 2] = Math.max(0, Math.min(1, p.del)); f[o + 3] = 0;
   }
   /** The eat pass's words (struct EatP g2, from word o): the bits. */
-  writeEat(u, o) { u[o] = this.bits; u[o + 1] = 0; u[o + 2] = 0; u[o + 3] = 0; }
+  writeEat(u, o) { u[o] = this.bits; }   // (step S2: y z w are the motors', src/motors.js writeEat)
   /** The draw's words (struct Draw spare5[0], from word o): 1 = the copies act (drawn as parts), their parts' size. */
   writeDraw(a, o) { a[o] = this.acts ? 1 : 0; a[o + 1] = Math.max(0.2, this.params.partSize); }
 

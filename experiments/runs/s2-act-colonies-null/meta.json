@@ -1,0 +1,133 @@
+{
+  "name": "s2-act-colonies-null",
+  "description": "step S2 act: colonies, motors null, 20 min",
+  "condition": {
+    "name": "s2-act-colonies-null",
+    "description": "step S2 act: colonies, motors null, 20 min",
+    "query": {
+      "preset": "colonies",
+      "seed": 3,
+      "flagellanull": 1,
+      "cilianull": 1
+    },
+    "duration": 1203,
+    "sample_every": 30,
+    "stall": 400,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 600,
+        "name": "t600"
+      },
+      {
+        "t": 1200,
+        "name": "end"
+      },
+      {
+        "t": 1201,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "evals": [
+      {
+        "t": 300,
+        "js": "return JSON.stringify(moire.motors.census)"
+      },
+      {
+        "t": 600,
+        "js": "return JSON.stringify(moire.motors.census)"
+      },
+      {
+        "t": 900,
+        "js": "return JSON.stringify(moire.motors.census)"
+      },
+      {
+        "t": 1200,
+        "js": "return JSON.stringify(moire.motors.census)"
+      },
+      {
+        "t": 301,
+        "js": "return JSON.stringify(await moire.motors.now())"
+      },
+      {
+        "t": 601,
+        "js": "return JSON.stringify(await moire.motors.now())"
+      },
+      {
+        "t": 901,
+        "js": "return JSON.stringify(await moire.motors.now())"
+      },
+      {
+        "t": 1201,
+        "js": "return JSON.stringify(await moire.motors.now())"
+      }
+    ]
+  },
+  "url": "http://localhost:52869/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&preset=colonies&seed=3&flagellanull=1&cilianull=1",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "2129e0c932ef2ea60c4bc829f0f2e8a7ef86ca9b",
+  "dirty": false,
+  "started": "2026-11-23T04:00:23",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1203.0,
+  "run_wall_s": 4915.18,
+  "speed_reached": 0.24,
+  "samples": 42,
+  "shots": [
+    "shots/t600.png",
+    "shots/end.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 300.0000000000558,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":299.88333333338926,\"n\":384,\"carriers\":185,\"flagGene\":0.188296875,\"flagSd\":0.23556783212463675,\"flagExpr\":0,\"swimmers\":0,\"speed\":0,\"relSpeed\":0,\"turning\":0,\"open\":0,\"pushers\":146,\"pusherShare\":0.7891891891891892,\"sign\":0.3774895833333333,\"placement\":0.16734635416666666,\"ciliaCarriers\":330,\"ciliaGene\":0.47353125,\"ciliaSd\":0.26207789288702726,\"ciliaExpr\":0,\"beating\":0,\"freeSides\":0,\"waveN\":0,\"wave\":0,\"sync\":0,\"globalSync\":0,\"coupling\":0.1993515625,\"tilt\":0.3978854166666667,\"motorShare\":0.6443245382585753,\"payPerTick\":0}"
+    },
+    {
+      "t": 301.0000000000549,
+      "js": "return JSON.stringify(await moire.motors.now())",
+      "result": "{\"time\":300.23333333338894,\"open\":{\"n\":0},\"wall\":{\"n\":0},\"alone\":{\"n\":0},\"tissue\":{\"n\":0},\"all\":{\"n\":384,\"flagGene\":0.18696127624086026,\"ciliaGene\":0.47581441664806334,\"swimShare\":0,\"beatShare\":0,\"speed\":0.8513599257316833},\"walls\":false}"
+    },
+    {
+      "t": 599.999999999783,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":599.8999999997831,\"n\":50,\"carriers\":29,\"flagGene\":0.18258,\"flagSd\":0.17379454421816584,\"flagExpr\":0,\"swimmers\":0,\"speed\":0,\"relSpeed\":0,\"turning\":0,\"open\":0,\"pushers\":20,\"pusherShare\":0.6896551724137931,\"sign\":0.2413,\"placement\":0.14672000000000002,\"ciliaCarriers\":43,\"ciliaGene\":0.39498,\"ciliaSd\":0.22461255441314942,\"ciliaExpr\":0,\"beating\":0,\"freeSides\":0,\"waveN\":0,\"wave\":0,\"sync\":0,\"globalSync\":0,\"coupling\":0.07628,\"tilt\":0.41206000000000004,\"motorShare\":0.5559166666666667,\"payPerTick\":0}"
+    },
+    {
+      "t": 600.9999999997821,
+      "js": "return JSON.stringify(await moire.motors.now())",
+      "result": "{\"time\":600.7333333331156,\"open\":{\"n\":0},\"wall\":{\"n\":0},\"alone\":{\"n\":0},\"tissue\":{\"n\":0},\"all\":{\"n\":50,\"flagGene\":0.1891616527363658,\"ciliaGene\":0.39517609268426895,\"swimShare\":0,\"beatShare\":0,\"speed\":0.7736774639568942},\"walls\":false}"
+    },
+    {
+      "t": 899.9999999995101,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":899.8499999995103,\"n\":2,\"carriers\":1,\"flagGene\":0.1105,\"flagSd\":0.08538003279455918,\"flagExpr\":0,\"swimmers\":0,\"speed\":0,\"relSpeed\":0,\"turning\":0,\"open\":0,\"pushers\":1,\"pusherShare\":1,\"sign\":0.3335,\"placement\":0.273,\"ciliaCarriers\":2,\"ciliaGene\":0.4625,\"ciliaSd\":0.14523687548277803,\"ciliaExpr\":0,\"beating\":0,\"freeSides\":0,\"waveN\":0,\"wave\":0,\"sync\":0,\"globalSync\":0,\"coupling\":0.2785,\"tilt\":0.1415,\"motorShare\":0.526,\"payPerTick\":0}"
+    },
+    {
+      "t": 900.9999999995092,
+      "js": "return JSON.stringify(await moire.motors.now())",
+      "result": "{\"time\":891.2166666661848,\"open\":{\"n\":0},\"wall\":{\"n\":0},\"alone\":{\"n\":0},\"tissue\":{\"n\":0},\"all\":{\"n\":2,\"flagGene\":0.11032655090093613,\"ciliaGene\":0.4627459943294525,\"swimShare\":0,\"beatShare\":0,\"speed\":1.767535533447297},\"walls\":false}"
+    },
+    {
+      "t": 1199.9999999992374,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":1199.9166666659041,\"n\":1,\"carriers\":0,\"flagGene\":0.027,\"flagSd\":0.01646207763315433,\"flagExpr\":0,\"swimmers\":0,\"speed\":0,\"relSpeed\":0,\"turning\":0,\"open\":0,\"pushers\":0,\"pusherShare\":0,\"sign\":0.012,\"placement\":0.176,\"ciliaCarriers\":1,\"ciliaGene\":0.318,\"ciliaSd\":0,\"ciliaExpr\":0,\"beating\":0,\"freeSides\":0,\"waveN\":0,\"wave\":0,\"sync\":0,\"globalSync\":0,\"coupling\":0.012,\"tilt\":0.02,\"motorShare\":1,\"payPerTick\":0}"
+    },
+    {
+      "t": 1200.9999999992365,
+      "js": "return JSON.stringify(await moire.motors.now())",
+      "result": "{\"time\":1191.7166666659116,\"open\":{\"n\":0},\"wall\":{\"n\":0},\"alone\":{\"n\":0},\"tissue\":{\"n\":0},\"all\":{\"n\":1,\"flagGene\":0.02683122456073761,\"ciliaGene\":0.3184431195259094,\"swimShare\":0,\"beatShare\":0,\"speed\":2.6935631619594433},\"walls\":false}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T05:24:57",
+  "wall_s": 5073.24
+}

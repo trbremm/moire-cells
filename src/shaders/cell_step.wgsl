@@ -154,6 +154,22 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var nemS = 0;
   var noWrap = 0u;                           // ... prey that only their length saved
   let myLong = 2.0 * length(vec2f(c.e1, c.e2)) > 0.405465;
+  // step S2, FLAGELLA AND CILIA (src/motors.js): this cell's motors as they act (its genes x the gene network's outputs x its motor proteins'
+  // share, Cell.motE from the eat pass), its cilia's beat phase (Bio.mc.z) and their stroke (straight back along the front: a free cell swims
+  // forward), and what the neighbour loop gathers for them: the sides touching a neighbour (the cilia beat on the others) and the beating
+  // neighbours' phases against this cell's, less the LAG a beat's push takes through the water to reach them (the metachronal wave's)
+  let moF = bitcast<u32>(FL.mo0.x);
+  let moAct = motor_act(bio, moF, (bitcast<u32>(FL.t1.z) & GRN_ACT) != 0u) * clamp(c.motE, 0.0, 1.0);
+  let flagA = moAct.x;
+  let ciliaA = moAct.y;
+  let moPhi = bio.mc.z;
+  let moStroke = -vec2f(cos(c.front), sin(c.front));
+  var moTouch = 0u;
+  var cpS = 0.0;            // the beating neighbours: sum of sin(phi_j - phi_i - lag), cos (the local wave), and without the lag (sync)
+  var cpC = 0.0;
+  var cyS = 0.0;
+  var cyC = 0.0;
+  var cpN = 0.0;
   // step C10, patterned walls (src/walls.js): this cell's effective adhesion per side (the eat pass's, last tick) and the
   // orientation its sides are found by, both as its lean copy has them (what its neighbours see, so the two cells of a contact
   // find the same pair of sides), and per side the touching that matures its junctions
@@ -502,6 +518,28 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           let eb2 = vec2f(o.e1, o.e2);
           nemN++;
           nemS += i32(round(1000.0 * dot(ea2, eb2) / max(length(ea2) * length(eb2), 1e-9)));   // (a stretch holds 2 phi: cos 2 delta)
+        }
+        // step S2: the sides that touch (the cilia beat on the free ones), and the touching ciliated neighbours' beat phases
+        if (moF != 0u && dist < reach) {
+          moTouch |= 1u << wall_side(myTh, vC);
+          if (ciliaA > 0.0) {   // (gathered with the coupling off too: the census's wave and sync then show what free-running phases score)
+            let mix_ = beats[k].idx;
+            if (bioPrev[mix_].mo.w > 0.0) {
+              // (the lag along the two cells' MEAN stroke, both fronts as the lean copies hold them: lag_ji = -lag_ij exactly, so a
+              // travelling wave can satisfy every pair; along this cell's own stroke alone, neighbours with different fronts each wanted
+              // the other ahead and the sheet's edge stayed frustrated, wave order ~ that of random phases)
+              let fI = wall_dq8((mine0.y >> 24u) & 255u);
+              let fO = wall_dq8((o.wadh.y >> 24u) & 255u);
+              let sMean = -0.5 * (vec2f(cos(fI), sin(fI)) + vec2f(cos(fO), sin(fO)));
+              let lagK = FL.mo2.y * dot(d, sMean) / S.R;
+              let dph = bioPrev[mix_].mc.z - moPhi;
+              cpS += sin(dph - lagK);
+              cpC += cos(dph - lagK);
+              cyS += sin(dph);
+              cyC += cos(dph);
+              cpN += 1.0;
+            }
+          }
         }
         // step C7: the touching neighbour across each side (nearest per side), for the pumps across contact
         if (nbrOn && dist < reach) {
@@ -986,17 +1024,28 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var uW = vec2f(0.0);       // step G0: the water's velocity here (prescribed + stirred), and the stirred part's push (its work is paid from heat)
   var fStir = vec2f(0.0);
   let stF = bitcast<u32>(FL.g0b.x);
+  // step S2: a SWIMMER is free in the water (it pushes on the water, not the floor): it drifts with it by more than a crawler's share,
+  // mo1.y of the way to wholly, by its thrust (MO_WATER), and turns with half the water's vorticity (as a small body in a flow does)
+  let swimW = (moF & MO_WATER) != 0u && flagA > 0.0;
+  let curD = select(HP.curDrift, mix(HP.curDrift, 1.0, clamp(FL.mo1.y * flagA, 0.0, 1.0)), swimW);
+  var moTurn = 0.0;         // the motors' turn of the body (rad / s): steering, an off-axis thrust, tilted cilia, the water's vorticity
   if (HP.cur != 0u) {
     uW = water_vel(c.pos);
-    if (HP.curDrift > 0.0) {
-      f += HP.curDrift * uW;
-      if ((stF & ST_SPLIT) != 0u) { fStir = HP.curDrift * stir_vel(c.pos); }
+    if (swimW) {
+      let hq = 0.5 * S.R;
+      let vort = (water_vel(c.pos + vec2f(hq, 0.0)).y - water_vel(c.pos - vec2f(hq, 0.0)).y
+                - water_vel(c.pos + vec2f(0.0, hq)).x + water_vel(c.pos - vec2f(0.0, hq)).x) / (2.0 * hq);
+      moTurn += 0.5 * curD * vort;
+    }
+    if (curD > 0.0) {
+      f += curD * uW;
+      if ((stF & ST_SPLIT) != 0u) { fStir = curD * stir_vel(c.pos); }
       // step S1: the water drags a long cell along its whole length, so where the flow differs from end to end (shear, eddies) it turns it:
       // the drag's torque about the centre over the length, by two-point Gauss quadrature (at +-h / sqrt 3), each point half the body
       if (capN == 3) {
         let g = 0.57735027 * myK.z;
         let du = water_vel(c.pos + g * myK.xy) - water_vel(c.pos - g * myK.xy);
-        sTq += 0.5 * HP.curDrift * g * (myK.x * du.y - myK.y * du.x);
+        sTq += 0.5 * curD * g * (myK.x * du.y - myK.y * du.x);
       }
     }
   }
@@ -1062,6 +1111,71 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let fMotor = motor * S.R * mot * gate;
   f += fMotor;
   c.pay = select(0, heat_counts(FL.crawlCost * heat_ke(fMotor) * (1.0 - S.damping * S.damping)), payOn);
+  // step S2, MOTORS. The FLAGELLUM thrusts the cell along its front (pusher or puller alike: the sign says where its motor sits and how it
+  // stirs the water), at mo0.y R / s x its thrust as acted x the battery's gate; its front STEERS toward the crawling intention (the
+  // heading's slow wander and the smell: the senses a crawler already steers by), and a motor set off the axis (the placement gene) turns
+  // it (r x F over the rotational drag: curved runs). The CILIA beat on the FREE sides (touching no neighbour): each pushes the water along
+  // the surface, straight back along the front (or tilted round the body by the tilt gene), x (1 + cos phase), and the cell the other way
+  // (a free cell swims, a cell held in a tissue pumps the water past it). Their beat's phase runs at mo1.w Hz (each cell 0.9..1.1 x) and,
+  // with the coupling gene, follows the touching ciliated neighbours' phases less the lag (Kuramoto-like: sin of the difference), so a sheet's
+  // edge can settle into a METACHRONAL wave. Costs: the swim pays mo2.z x crawlCost per unit of its work (as crawling), the cilia an upkeep
+  // per beat (mo2.w per s at beat 1 on six free sides); both from the battery as heat (Cell.pay); the work itself is booked as every force's
+  var fSwim = vec2f(0.0);
+  var fCil = vec2f(0.0);
+  var cilF = array<vec2f, 6>(vec2f(0.0), vec2f(0.0), vec2f(0.0), vec2f(0.0), vec2f(0.0), vec2f(0.0));   // each side's push on the water (px / s)
+  var moPay = 0.0;
+  let moFree = select(0u, ~moTouch & 63u, ciliaA > 0.0);
+  var moPhiN = moPhi;
+  var swimV = 0.0;
+  if (moF != 0u) {
+    let ef = -moStroke;
+    if (flagA > 0.0) {
+      swimV = flagA * FL.mo0.y * gate;
+      fSwim = swimV * S.R * ef;
+      if ((moF & MO_STEER) != 0u && dot(motor, motor) > 1e-8) {
+        let md = normalize(motor);
+        moTurn += FL.mo0.z * flagA * (ef.x * md.y - ef.y * md.x);
+      }
+      if ((moF & MO_TORQUE) != 0u) {
+        let pl = clamp(bio.mo.z, -1.0, 1.0) * 1.5707963;
+        let mm = select(0.5 * c.r * c.r, cap_moment(myK), shOn && myK.z > 0.0);
+        moTurn -= c.r * swimV * S.R * sin(pl) / max(mm, 1e-6);
+      }
+      moPay += FL.mo2.z * FL.crawlCost * heat_ke(fSwim) * (1.0 - S.damping * S.damping);
+    }
+    if (ciliaA > 0.0) {
+      let beat = 1.0 + cos(moPhi);
+      let amp = ciliaA * FL.mo1.z * S.R * beat * gate / 6.0;
+      let tl = clamp(bio.mc.y, -1.0, 1.0) * 1.5707963;
+      let ct = cos(tl);
+      let st = sin(tl);
+      var tq = 0.0;
+      var nf = 0.0;
+      for (var k = 0u; k < 6u; k++) {
+        if (((moFree >> k) & 1u) == 0u) { continue; }
+        let mk = mb.mid[k];
+        let um = mk / max(length(mk), 1e-6);
+        let tg = vec2f(-um.y, um.x);
+        let fk = amp * (ct * dot(moStroke, tg) * tg + st * tg);
+        cilF[k] = fk;
+        fCil -= fk;
+        tq -= mk.x * fk.y - mk.y * fk.x;
+        nf += 1.0;
+      }
+      if ((moF & MO_TORQUE) != 0u) {
+        let mm = select(0.5 * c.r * c.r, cap_moment(myK), shOn && myK.z > 0.0);
+        moTurn += tq / max(mm, 1e-6);
+      }
+      moPay += FL.mo2.w * ciliaA * ciliaA * gate * (nf / 6.0) * S.dt;
+      // the beat's phase: its own frequency, and the coupling toward the touching neighbours' (less the lag)
+      var om = TAU * FL.mo1.w * (0.9 + 0.2 * f32(pcg(c.seed ^ 0x6d6f7431u) & 1023u) / 1023.0);
+      if ((moF & MO_COUPLE) != 0u && cpN > 0.0) { om += FL.mo2.x * clamp(bio.mc.x, -1.0, 1.0) * cpS / cpN; }
+      moPhiN = moPhi + om * S.dt;
+      moPhiN -= TAU * floor(moPhiN / TAU);
+    }
+    f += fSwim + fCil;
+    if (payOn) { c.pay += heat_counts(moPay); }
+  }
   // viscous, nearly overdamped motion, in three parts whose energies the heat band books (step C1; energy 0.5 (v/10)^2):
   //   drag   v1 = damping x v0: the motion it takes (L) becomes heat under the cell
   //   force  v2 = v1 + (1 - damping) f: the work the forces do (W: fields, contact, crawling, stirring) comes in
@@ -1107,7 +1221,9 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     let vm = length(vr);
     let lim = 10.0 * S.R;
     let vc = select(vr, vr * (lim / vm), vm > lim);
-    let m = FL.g0b.y * vc * (3.14159265 * c.r * c.r / (FL.g0b.z * FL.g0b.z)) * FL.g0b.w;
+    let wetS = select(FL.g0b.y, mix(FL.g0b.y, 1.0, clamp(FL.mo1.y * flagA, 0.0, 1.0)), swimW);   // (step S2: a swimmer's own share)
+    let cov = (3.14159265 * c.r * c.r / (FL.g0b.z * FL.g0b.z)) * FL.g0b.w;
+    let m = wetS * vc * cov;
     let gp = clamp(c.pos / FL.g0b.z, vec2f(0.0), vec2f(f32(sw - 1u), f32(sh - 1u)) - 1e-3);
     let gb = vec2u(floor(gp));
     let gt = gp - vec2f(gb);
@@ -1119,6 +1235,19 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       let mq = vec2i(round(m * wq[q]));
       if (mq.x != 0) { atomicAdd(&hb[so + o0 + oq[q]], mq.x); }
       if (mq.y != 0) { atomicAdd(&hb[so + n + o0 + oq[q]], mq.y); }
+    }
+    // step S2: the motors push the water the other way (a swimmer is FORCE-FREE: its motor pushes the water back as hard as its body drags it
+    // forward, so it stirs as a force DIPOLE: a PUSHER's motor behind it pushes the water out along its axis, a PULLER's in front draws it in),
+    // and each beating side's cilia push the water along the surface (a tissue edge pumps it past itself)
+    if (flagA > 0.0 && (moF & MO_DIPOLE) != 0u) {
+      let sg = select(-1.0, 1.0, bio.mo.y >= 0.0);
+      stir_put(c.pos + sg * FL.mo0.w * S.R * moStroke, -FL.mo1.x * wetS * fSwim * cov, sw, sh, so);
+    }
+    if (ciliaA > 0.0 && (moF & MO_PUMP) != 0u) {
+      for (var k = 0u; k < 6u; k++) {
+        if (((moFree >> k) & 1u) == 0u) { continue; }
+        stir_put(c.pos + mb.mid[k], FL.g0b.y * cilF[k] * cov, sw, sh, so);
+      }
     }
   }
   // ... and what the STIRRED water's push did on the cell this tick (its share of the forces' work) is taken from the heat under it: the
@@ -1176,6 +1305,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   if (shOn && (shF & SH_TORQUE) != 0u && myK.z > 0.0) {
     sTurn = clamp(S.shapeTurn * sTq / max(cap_moment(myK), 1e-6), -TURN_MAX, TURN_MAX);
   }
+  if (moTurn != 0.0) { sTurn = clamp(sTurn + moTurn, -TURN_MAX, TURN_MAX); }   // step S2: the motors' turn (steering, placement, tilt, vorticity)
   let sRot = 2.0 * sTurn * S.dt;             // (a stretch, a traceless tensor, turns by twice the angle)
   let sRotCS = vec2f(cos(sRot), sin(sRot));
   // ... and the ELONGATION the cell asks for: its gene (Bio.relay.y, ln of the aspect, 0 = round .. ln 4) x the gene network's 18th output
@@ -1856,6 +1986,14 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   }
   // step C7: the neighbours across the sides, 16 bits each (none while the pumps across contact are off)
   c.nbr = array<u32, 3>(nbIA.x | (nbIA.y << 16u), nbIA.z | (nbIA.w << 16u), nbIB.x | (nbIB.y << 16u));
+  // step S2: what the motors did (the drawing, the census), the beat's phase on, the census (the frame's last tick)
+  if (moF != 0u) {
+    c.motW = u32(round(clamp(flagA * select(1.0, gate, flagA > 0.0), 0.0, 1.0) * 255.0)) | (u32(round(clamp(ciliaA * gate, 0.0, 1.0) * 255.0)) << 8u) | (moFree << 16u);
+    bio.mc.z = moPhiN;
+    if (S.xCount != 0u) { motor_census(bio, c, flagA, ciliaA, swimV, moFree, moTouch, cpN, cpS, cpC, cyS, cyC, moTurn, uW, curD, moPay); }
+  } else {
+    c.motW = 0u;
+  }
   // step F0: the JOB scores follow what the genes ask for now, as expressed, through a low-pass (cell_common.wgsl job_of, src/jobs.js)
   let jt = job_targets(bio, eng_mode(c.eng) != ENG_IDLE);
   let ja = min(1.0, S.dt / JOB_TAU);
@@ -1973,6 +2111,27 @@ fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
       var x = nudge(p.relay.y, sz * 0.05, 0.0, SH_LN_MAX, bs, 220u);
       if (rand01(bs, 221u) < min(S.mutJump * msF, 1.0) / 18.0) { x = SH_LN_MAX * rand01(bs, 222u); }
       nb.relay.y = x;
+    }
+    // step S2: the MOTOR genes (Bio.mo, mc.xy) drift by small steps, now and then one jumps anywhere (as one of mutate's 18 genes would); on and in
+    // their neutral control alike, untouched while that motor is off (the phase, mc.z, is state: inherited as it is)
+    let mf = bitcast<u32>(FL.mo0.x);
+    let sz = S.mutSize * msF;
+    let jp = min(S.mutJump * msF, 1.0) / 18.0;
+    if ((mf & MO_FLAG) != 0u) {
+      var fl = vec3f(nudge(p.mo.x, sz * 0.03, 0.0, 1.0, bs, 230u), nudge(p.mo.y, sz * 0.05, -1.0, 1.0, bs, 231u), nudge(p.mo.z, sz * 0.03, -1.0, 1.0, bs, 232u));
+      if (rand01(bs, 233u) < jp) { fl.x = rand01(bs, 234u); }
+      if (rand01(bs, 235u) < jp) { fl.y = 2.0 * rand01(bs, 236u) - 1.0; }
+      if (rand01(bs, 237u) < jp) { fl.z = 2.0 * rand01(bs, 238u) - 1.0; }
+      nb.mo = vec4f(fl, nb.mo.w);
+    }
+    if ((mf & MO_CIL) != 0u) {
+      var cw = nudge(p.mo.w, sz * 0.03, 0.0, 1.0, bs, 240u);
+      var ck = vec2f(nudge(p.mc.x, sz * 0.04, -1.0, 1.0, bs, 241u), nudge(p.mc.y, sz * 0.03, -1.0, 1.0, bs, 242u));
+      if (rand01(bs, 243u) < jp) { cw = rand01(bs, 244u); }
+      if (rand01(bs, 245u) < jp) { ck.x = 2.0 * rand01(bs, 246u) - 1.0; }
+      if (rand01(bs, 247u) < jp) { ck.y = 2.0 * rand01(bs, 248u) - 1.0; }
+      nb.mo.w = cw;
+      nb.mc = vec4f(ck, nb.mc.zw);
     }
   }
   // ... the gene itself drifts at today's size (not proofread by itself), on and in the neutral control
@@ -2183,4 +2342,67 @@ fn fg_census(b: Bio, sk: array<f32, 6>, gStr: f32, fgF: u32, me: CellBeat) {
   for (var k = 0u; k < 7u; k++) { if (per >= edges[k]) { bin = k + 1u; } }
   atomicAdd(&stats.fg[FGS_PH + bin], 1u);
   atomicAdd(&stats.fg[FGS_PSUM], u32(round(per * 1000.0)));
+}
+
+// step S2: put a push m (coverage-weighted px / s, x the fixed point) on the stir grid at p (bilinear, as the body's drag above)
+fn stir_put(p: vec2f, m: vec2f, sw: u32, sh: u32, so: u32) {
+  let gp = clamp(p / FL.g0b.z, vec2f(0.0), vec2f(f32(sw - 1u), f32(sh - 1u)) - 1e-3);
+  let gb = vec2u(floor(gp));
+  let gt = gp - vec2f(gb);
+  let n = sw * sh;
+  let wq = array<f32, 4>((1.0 - gt.x) * (1.0 - gt.y), gt.x * (1.0 - gt.y), (1.0 - gt.x) * gt.y, gt.x * gt.y);
+  let oq = array<u32, 4>(0u, 1u, sw, sw + 1u);
+  let o0 = gb.y * sw + gb.x;
+  for (var q = 0; q < 4; q++) {
+    let mq = vec2i(round(clamp(m * wq[q], vec2f(-1.0e9), vec2f(1.0e9))));
+    if (mq.x != 0) { atomicAdd(&hb[so + o0 + oq[q]], mq.x); }
+    if (mq.y != 0) { atomicAdd(&hb[so + n + o0 + oq[q]], mq.y); }
+  }
+}
+
+// step S2: the motors' census (Stats.s2, cell_common.wgsl S2S_*; the frame's last tick)
+fn motor_census(b: Bio, c: Cell, flagA: f32, ciliaA: f32, swimV: f32, free: u32, touch: u32, cpN: f32, cpS: f32, cpC: f32, cyS: f32, cyC: f32,
+                turn: f32, uW: vec2f, curD: f32, pay: f32) {
+  atomicAdd(&stats.s2[S2S_N], 1u);
+  let fg = clamp(b.mo.x, 0.0, 1.0);
+  let cg = clamp(b.mo.w, 0.0, 1.0);
+  atomicAdd(&stats.s2[S2S_FG], u32(round(fg * 1000.0)));
+  atomicAdd(&stats.s2[S2S_FG2], u32(round(fg * fg * 1000.0)));
+  atomicAdd(&stats.s2[S2S_CG], u32(round(cg * 1000.0)));
+  atomicAdd(&stats.s2[S2S_CG2], u32(round(cg * cg * 1000.0)));
+  atomicAdd(&stats.s2[S2S_K], bitcast<u32>(i32(round(clamp(b.mc.x, -1.0, 1.0) * 1000.0))));
+  atomicAdd(&stats.s2[S2S_SIGN], bitcast<u32>(i32(round(clamp(b.mo.y, -1.0, 1.0) * 1000.0))));
+  atomicAdd(&stats.s2[S2S_PLACE], u32(round(abs(clamp(b.mo.z, -1.0, 1.0)) * 1000.0)));
+  atomicAdd(&stats.s2[S2S_TILT], u32(round(abs(clamp(b.mc.y, -1.0, 1.0)) * 1000.0)));
+  atomicAdd(&stats.s2[S2S_CFG], u32(round(flagA * 1000.0)));
+  atomicAdd(&stats.s2[S2S_CCG], u32(round(ciliaA * 1000.0)));
+  atomicAdd(&stats.s2[S2S_PAY], bitcast<u32>(heat_counts(pay)));
+  if (fg >= 0.1) {
+    atomicAdd(&stats.s2[S2S_FC], 1u);
+    if (b.mo.y >= 0.0) { atomicAdd(&stats.s2[S2S_PUSH], 1u); }
+  }
+  if (cg >= 0.1) { atomicAdd(&stats.s2[S2S_CC], 1u); }
+  if (fg >= 0.1 || cg >= 0.1) {
+    atomicAdd(&stats.s2[S2S_MC], 1u);
+    atomicAdd(&stats.s2[S2S_MOTE], u32(round(clamp(c.motE, 0.0, 1.0) * 1000.0)));
+  }
+  if (flagA >= 0.05) {
+    atomicAdd(&stats.s2[S2S_SWIM], 1u);
+    atomicAdd(&stats.s2[S2S_SPEED], u32(round(min(swimV, 100.0) * 1000.0)));
+    atomicAdd(&stats.s2[S2S_SPIN], u32(round(min(abs(turn), 10.0) * 1000.0)));
+    atomicAdd(&stats.s2[S2S_RELV], u32(round(min(length(c.vel - curD * uW) / S.R, 100.0) * 1000.0)));
+    if (touch == 0u) { atomicAdd(&stats.s2[S2S_OPEN], 1u); }
+  }
+  let nf = countOneBits(free);
+  if (ciliaA >= 0.05 && nf > 0u) {
+    atomicAdd(&stats.s2[S2S_BEAT], 1u);
+    atomicAdd(&stats.s2[S2S_FREE], nf);
+    atomicAdd(&stats.s2[S2S_COS], bitcast<u32>(i32(round(cos(b.mc.z) * 1000.0))));
+    atomicAdd(&stats.s2[S2S_SIN], bitcast<u32>(i32(round(sin(b.mc.z) * 1000.0))));
+    if (cpN > 0.0) {
+      atomicAdd(&stats.s2[S2S_WN], 1u);
+      atomicAdd(&stats.s2[S2S_WAVE], u32(round(clamp(length(vec2f(cpS, cpC)) / cpN, 0.0, 1.0) * 1000.0)));
+      atomicAdd(&stats.s2[S2S_SYNC], u32(round(clamp(length(vec2f(cyS, cyC)) / cpN, 0.0, 1.0) * 1000.0)));
+    }
+  }
 }

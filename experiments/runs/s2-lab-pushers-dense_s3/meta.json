@@ -1,0 +1,162 @@
+{
+  "name": "s2-lab-pushers-dense_s3",
+  "description": "step S2 lab: 400 pushers, a dense suspension (a central disc)",
+  "condition": {
+    "name": "s2-lab-pushers-dense_s3",
+    "description": "step S2 lab: 400 pushers, a dense suspension (a central disc)",
+    "query": {
+      "preset": "lab",
+      "cells": 400,
+      "genes": "flagellum:1,flagSign:1,flagPlace:0",
+      "spread": "scatter",
+      "spreadr": 0.4,
+      "zoom": 1.5,
+      "seed": 3
+    },
+    "duration": 126,
+    "sample_every": 10,
+    "stall": 400,
+    "dpr": 1,
+    "shots": [
+      {
+        "t": 60,
+        "name": "t60"
+      },
+      {
+        "t": 120,
+        "name": "t120"
+      },
+      {
+        "t": 100.0,
+        "name": "strip00"
+      },
+      {
+        "t": 100.5,
+        "name": "strip01"
+      },
+      {
+        "t": 101.0,
+        "name": "strip02"
+      },
+      {
+        "t": 101.5,
+        "name": "strip03"
+      },
+      {
+        "t": 102.0,
+        "name": "strip04"
+      },
+      {
+        "t": 102.5,
+        "name": "strip05"
+      },
+      {
+        "t": 103.0,
+        "name": "strip06"
+      },
+      {
+        "t": 103.5,
+        "name": "strip07"
+      },
+      {
+        "t": 122,
+        "name": "zoom"
+      },
+      {
+        "t": 124,
+        "name": "zoom_harm"
+      }
+    ],
+    "evals": [
+      {
+        "t": 0,
+        "js": "moire.eat.params.pay = false; return 'battery pays nothing, gates nothing'"
+      },
+      {
+        "t": 50,
+        "js": "return JSON.stringify(moire.motors.census)"
+      },
+      {
+        "t": 119,
+        "js": "return JSON.stringify(moire.motors.census)"
+      },
+      {
+        "t": 119,
+        "js": "return JSON.stringify(moire.stir.census)"
+      },
+      {
+        "t": 121,
+        "js": "moire.camera.set(2.5, 0.5 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'"
+      },
+      {
+        "t": 123,
+        "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+      }
+    ]
+  },
+  "url": "http://localhost:49533/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&preset=lab&cells=400&genes=flagellum:1,flagSign:1,flagPlace:0&spread=scatter&spreadr=0.4&zoom=1.5&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "6e92925254716ebc7e81ec78016c2b2853d4edfb",
+  "dirty": false,
+  "started": "2026-11-23T03:03:24",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 126.0,
+  "run_wall_s": 469.68,
+  "speed_reached": 0.27,
+  "samples": 14,
+  "shots": [
+    "shots/t60.png",
+    "shots/strip00.png",
+    "shots/strip01.png",
+    "shots/strip02.png",
+    "shots/strip03.png",
+    "shots/strip04.png",
+    "shots/strip05.png",
+    "shots/strip06.png",
+    "shots/strip07.png",
+    "shots/t120.png",
+    "shots/zoom.png",
+    "shots/zoom_harm.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.eat.params.pay = false; return 'battery pays nothing, gates nothing'",
+      "result": "battery pays nothing, gates nothing"
+    },
+    {
+      "t": 49.999999999998444,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":49.84999999999845,\"n\":400,\"carriers\":400,\"flagGene\":1,\"flagSd\":0,\"flagExpr\":0.62899,\"swimmers\":400,\"speed\":1.8871924999999998,\"relSpeed\":1.7837200000000002,\"turning\":0.2363025,\"open\":114,\"pushers\":400,\"pusherShare\":1,\"sign\":1,\"placement\":0,\"ciliaCarriers\":0,\"ciliaGene\":0,\"ciliaSd\":0,\"ciliaExpr\":0,\"beating\":0,\"freeSides\":0,\"waveN\":0,\"wave\":0,\"sync\":0,\"globalSync\":0,\"coupling\":0,\"tilt\":0,\"motorShare\":0.62899,\"payPerTick\":4.611328125}"
+    },
+    {
+      "t": 118.99999999999453,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":118.84999999999454,\"n\":400,\"carriers\":400,\"flagGene\":1,\"flagSd\":0,\"flagExpr\":0.4110375,\"swimmers\":400,\"speed\":1.2330800000000002,\"relSpeed\":1.1518225,\"turning\":0.16794250000000002,\"open\":87,\"pushers\":400,\"pusherShare\":1,\"sign\":1,\"placement\":0,\"ciliaCarriers\":0,\"ciliaGene\":0,\"ciliaSd\":0,\"ciliaExpr\":0,\"beating\":0,\"freeSides\":0,\"waveN\":0,\"wave\":0,\"sync\":0,\"globalSync\":0,\"coupling\":0,\"tilt\":0,\"motorShare\":0.4110375,\"payPerTick\":1.996826171875}"
+    },
+    {
+      "t": 118.99999999999453,
+      "js": "return JSON.stringify(moire.stir.census)",
+      "result": "{\"time\":116.94999999999465,\"mean\":0.05859650575369774,\"p90\":0.1235551853358281,\"max\":0.3707022391755649,\"psiMax\":71.4953842163086,\"nodes\":12870}"
+    },
+    {
+      "t": 120.99999999999442,
+      "js": "moire.camera.set(2.5, 0.5 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'",
+      "result": "zoom"
+    },
+    {
+      "t": 122.9999999999943,
+      "js": "moire.control.action('harmonic'); return 'harmonic toggled'",
+      "result": "harmonic toggled"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T03:13:41",
+  "wall_s": 617.35
+}

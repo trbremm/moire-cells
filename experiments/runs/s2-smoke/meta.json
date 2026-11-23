@@ -1,0 +1,89 @@
+{
+  "name": "s2-smoke",
+  "description": "step S2 smoke: the plain dish, every cell a pusher at 30 s, 60 s",
+  "condition": {
+    "name": "s2-smoke",
+    "description": "step S2 smoke: the plain dish, every cell a pusher at 30 s, 60 s",
+    "query": {
+      "seed": 3,
+      "world": "open"
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "stall": 400,
+    "shots": [
+      {
+        "t": 29,
+        "name": "before"
+      },
+      {
+        "t": 59,
+        "name": "pushers",
+        "panel": true
+      }
+    ],
+    "evals": [
+      {
+        "t": 30,
+        "js": "await moire.genome.setAll({flagellum: 1, flagSign: 1, flagPlace: 0}); return 'genes set'"
+      },
+      {
+        "t": 45,
+        "js": "return JSON.stringify(moire.motors.census)"
+      },
+      {
+        "t": 58,
+        "js": "return JSON.stringify(moire.motors.census)"
+      },
+      {
+        "t": 58,
+        "js": "return JSON.stringify(moire.stir.census)"
+      }
+    ]
+  },
+  "url": "http://localhost:54089/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3&world=open",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "d5076f5c5d0688a5f00df8a3ab68946f44f37d37",
+  "dirty": true,
+  "started": "2026-11-23T01:42:48",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 213.49,
+  "speed_reached": 0.28,
+  "samples": 7,
+  "shots": [
+    "shots/before.png",
+    "shots/pushers.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 29.99999999999958,
+      "js": "await moire.genome.setAll({flagellum: 1, flagSign: 1, flagPlace: 0}); return 'genes set'",
+      "result": "genes set"
+    },
+    {
+      "t": 44.99999999999873,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":44.88333333333207,\"n\":1669,\"carriers\":1669,\"flagGene\":1,\"flagSd\":0,\"flagExpr\":0.7063439185140803,\"swimmers\":1669,\"speed\":0.3000557219892151,\"relSpeed\":0.5823403235470341,\"turning\":0.253540443379269,\"open\":13,\"pushers\":1669,\"pusherShare\":1,\"sign\":1,\"placement\":0,\"ciliaCarriers\":0,\"ciliaGene\":0,\"ciliaSd\":0,\"ciliaExpr\":0,\"beating\":0,\"freeSides\":0,\"waveN\":0,\"wave\":0,\"sync\":0,\"globalSync\":0,\"coupling\":0,\"tilt\":0,\"motorShare\":0.7063439185140803,\"payPerTick\":2.317138671875}"
+    },
+    {
+      "t": 57.99999999999799,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":57.91666666666466,\"n\":1585,\"carriers\":1585,\"flagGene\":1,\"flagSd\":0,\"flagExpr\":0.6818334384858044,\"swimmers\":1585,\"speed\":0.09937097791798107,\"relSpeed\":0.5600536277602524,\"turning\":0.24140000000000003,\"open\":11,\"pushers\":1585,\"pusherShare\":1,\"sign\":1,\"placement\":0,\"ciliaCarriers\":0,\"ciliaGene\":0,\"ciliaSd\":0,\"ciliaExpr\":0,\"beating\":0,\"freeSides\":0,\"waveN\":0,\"wave\":0,\"sync\":0,\"globalSync\":0,\"coupling\":0,\"tilt\":0,\"motorShare\":0.6818334384858044,\"payPerTick\":0.75634765625}"
+    },
+    {
+      "t": 57.99999999999799,
+      "js": "return JSON.stringify(moire.stir.census)",
+      "result": "{\"time\":56.44999999999808,\"mean\":0.059693614000856696,\"p90\":0.20914938261388022,\"max\":0.5537343838443765,\"psiMax\":126.98117065429688,\"nodes\":24676}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T01:48:43",
+  "wall_s": 354.95
+}

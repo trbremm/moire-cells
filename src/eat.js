@@ -296,6 +296,7 @@ export class Eat {
     u[EP_DV] = this.cells.start; u[EP_DV + 1] = this.cells.division.costCounts;
     this.cells.fidelity.writeEat(u, EP_DV + 2);   // step G1: proofreading's cost, the bits (EatP.dv.z, dv.w)
     this.cells.dup.writeEat(u, EP_G2);            // step G2: the copies act (EatP.g2)
+    this.cells.motors.writeEat(u, f, EP_G2);      // step S2: the motors' bits and their motor proteins' want (EatP.g2.y..w, after G2's)
     this.cells.walls.writeEat(u, f, EP_WL, dt);   // step C10: the walls' pattern, maturity, linker cost and upkeep
     this.cells.guides.writeEat(u, EP_WL + 6);     // step C13: the gates' bits (EatP wl1.z)
     this.lipids.write(u, f, EP_LP);               // step C12b: the lipid membranes

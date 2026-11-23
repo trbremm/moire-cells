@@ -1,0 +1,131 @@
+{
+  "name": "s2-act-islands2-on",
+  "description": "step S2 act: islands2, motors on, 20 min",
+  "condition": {
+    "name": "s2-act-islands2-on",
+    "description": "step S2 act: islands2, motors on, 20 min",
+    "query": {
+      "terrain": "islands",
+      "seed": 2
+    },
+    "duration": 1203,
+    "sample_every": 30,
+    "stall": 400,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 600,
+        "name": "t600"
+      },
+      {
+        "t": 1200,
+        "name": "end"
+      },
+      {
+        "t": 1201,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "evals": [
+      {
+        "t": 300,
+        "js": "return JSON.stringify(moire.motors.census)"
+      },
+      {
+        "t": 600,
+        "js": "return JSON.stringify(moire.motors.census)"
+      },
+      {
+        "t": 900,
+        "js": "return JSON.stringify(moire.motors.census)"
+      },
+      {
+        "t": 1200,
+        "js": "return JSON.stringify(moire.motors.census)"
+      },
+      {
+        "t": 301,
+        "js": "return JSON.stringify(await moire.motors.now())"
+      },
+      {
+        "t": 601,
+        "js": "return JSON.stringify(await moire.motors.now())"
+      },
+      {
+        "t": 901,
+        "js": "return JSON.stringify(await moire.motors.now())"
+      },
+      {
+        "t": 1201,
+        "js": "return JSON.stringify(await moire.motors.now())"
+      }
+    ]
+  },
+  "url": "http://localhost:62619/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&terrain=islands&seed=2",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "611b321d2836815f0831d078523d4dd89fc1a220",
+  "dirty": false,
+  "started": "2026-11-23T05:48:40",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1203.0,
+  "run_wall_s": 2839.54,
+  "speed_reached": 0.42,
+  "samples": 42,
+  "shots": [
+    "shots/t600.png",
+    "shots/end.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 300.0000000000558,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":299.88333333338926,\"n\":1113,\"carriers\":380,\"flagGene\":0.11035579514824798,\"flagSd\":0.1572718876192726,\"flagExpr\":0.08742138364779874,\"swimmers\":437,\"speed\":0.5201464530892449,\"relSpeed\":1.1898695652173912,\"turning\":0.3028649885583524,\"open\":102,\"pushers\":245,\"pusherShare\":0.6447368421052632,\"sign\":0.1675139263252471,\"placement\":0.11071787960467205,\"ciliaCarriers\":301,\"ciliaGene\":0.0657915543575921,\"ciliaSd\":0.09640597950669848,\"ciliaExpr\":0.05059299191374663,\"beating\":372,\"freeSides\":4.193548387096774,\"waveN\":254,\"wave\":0.8037913385826773,\"sync\":0.8054409448818898,\"globalSync\":0.06750227489818136,\"coupling\":-0.03211141060197664,\"tilt\":0.10593081761006289,\"motorShare\":0.7921340782122904,\"payPerTick\":0.3173828125}"
+    },
+    {
+      "t": 301.0000000000549,
+      "js": "return JSON.stringify(await moire.motors.now())",
+      "result": "{\"time\":300.23333333338894,\"open\":{\"n\":955,\"flagGene\":0.10471956080555793,\"ciliaGene\":0.06689393086854432,\"swimShare\":0.3424083769633508,\"beatShare\":0.30052356020942406,\"speed\":1.064815837597864},\"wall\":{\"n\":163,\"flagGene\":0.1463996609187245,\"ciliaGene\":0.060817275036332066,\"swimShare\":0.4171779141104294,\"beatShare\":0.26380368098159507,\"speed\":1.1776266468570726},\"alone\":{\"n\":106,\"flagGene\":0.15859725498506483,\"ciliaGene\":0.11681547971389625,\"swimShare\":0.4528301886792453,\"beatShare\":0.44339622641509435,\"speed\":1.0625226410865953},\"tissue\":{\"n\":528,\"flagGene\":0.13089460977326697,\"ciliaGene\":0.1156541972486042,\"swimShare\":0.3977272727272727,\"beatShare\":0.5359848484848485,\"speed\":1.1502376155284462},\"all\":{\"n\":1118,\"flagGene\":0.11079635536588543,\"ciliaGene\":0.06600797836349012,\"swimShare\":0.35330948121645794,\"beatShare\":0.295169946332737,\"speed\":1.0812632096097186},\"walls\":true}"
+    },
+    {
+      "t": 599.999999999783,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":599.8666666664498,\"n\":1300,\"carriers\":850,\"flagGene\":0.24015615384615382,\"flagSd\":0.2279499410308683,\"flagExpr\":0.13694307692307692,\"swimmers\":753,\"speed\":0.5446321381142099,\"relSpeed\":1.1643691899070385,\"turning\":0.3638804780876494,\"open\":145,\"pushers\":526,\"pusherShare\":0.6188235294117647,\"sign\":0.1307276923076923,\"placement\":0.21092846153846154,\"ciliaCarriers\":564,\"ciliaGene\":0.1312876923076923,\"ciliaSd\":0.1621125069988241,\"ciliaExpr\":0.07207461538461539,\"beating\":499,\"freeSides\":4.424849699398798,\"waveN\":356,\"wave\":0.8148904494382022,\"sync\":0.7948089887640449,\"globalSync\":0.05892634629683421,\"coupling\":-0.11857692307692308,\"tilt\":0.21273076923076925,\"motorShare\":0.5777219047619047,\"payPerTick\":0.6083984375}"
+    },
+    {
+      "t": 600.9999999997821,
+      "js": "return JSON.stringify(await moire.motors.now())",
+      "result": "{\"time\":600.7333333331156,\"open\":{\"n\":1155,\"flagGene\":0.24271306777312482,\"ciliaGene\":0.1293900332610915,\"swimShare\":0.5376623376623376,\"beatShare\":0.3333333333333333,\"speed\":1.1578562314684009},\"wall\":{\"n\":151,\"flagGene\":0.23558395908257326,\"ciliaGene\":0.14369141177847883,\"swimShare\":0.5099337748344371,\"beatShare\":0.31788079470198677,\"speed\":1.1833521694983589},\"alone\":{\"n\":216,\"flagGene\":0.2807600357897442,\"ciliaGene\":0.18017696264696834,\"swimShare\":0.5324074074074074,\"beatShare\":0.46296296296296297,\"speed\":1.1037571208779977},\"tissue\":{\"n\":743,\"flagGene\":0.23668615187832917,\"ciliaGene\":0.17744616678124514,\"swimShare\":0.5370121130551817,\"beatShare\":0.44818304172274565,\"speed\":1.1850887393505578},\"all\":{\"n\":1306,\"flagGene\":0.24188879869787727,\"ciliaGene\":0.1310435617114173,\"swimShare\":0.5344563552833078,\"beatShare\":0.3315467075038285,\"speed\":1.1608040772896286},\"walls\":true}"
+    },
+    {
+      "t": 899.9999999995101,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":899.8999999995102,\"n\":1379,\"carriers\":1085,\"flagGene\":0.30666207396664247,\"flagSd\":0.23139955607447418,\"flagExpr\":0.13456997824510514,\"swimmers\":852,\"speed\":0.5156267605633803,\"relSpeed\":1.1559647887323943,\"turning\":0.4000692488262911,\"open\":169,\"pushers\":570,\"pusherShare\":0.5253456221198156,\"sign\":0.06353734590282813,\"placement\":0.24357142857142858,\"ciliaCarriers\":679,\"ciliaGene\":0.15273531544597535,\"ciliaSd\":0.17761121874893104,\"ciliaExpr\":0.06864829586656998,\"beating\":494,\"freeSides\":4.463562753036437,\"waveN\":365,\"wave\":0.8202465753424657,\"sync\":0.7956054794520548,\"globalSync\":0.01322419995709521,\"coupling\":-0.05490427846265409,\"tilt\":0.29086802030456854,\"motorShare\":0.48215580286168525,\"payPerTick\":0.614501953125}"
+    },
+    {
+      "t": 900.9999999995092,
+      "js": "return JSON.stringify(await moire.motors.now())",
+      "result": "{\"time\":891.2166666661848,\"open\":{\"n\":1220,\"flagGene\":0.30472128975117335,\"ciliaGene\":0.15718531230076685,\"swimShare\":0.5745901639344262,\"beatShare\":0.32131147540983607,\"speed\":1.195873486516454},\"wall\":{\"n\":179,\"flagGene\":0.31865301827104064,\"ciliaGene\":0.13043466506151263,\"swimShare\":0.6201117318435754,\"beatShare\":0.3240223463687151,\"speed\":1.4329207421974706},\"alone\":{\"n\":209,\"flagGene\":0.32760405022445976,\"ciliaGene\":0.17145772924998767,\"swimShare\":0.5741626794258373,\"beatShare\":0.3827751196172249,\"speed\":1.0455901122150162},\"tissue\":{\"n\":914,\"flagGene\":0.29714820306560663,\"ciliaGene\":0.19503002720056442,\"swimShare\":0.5525164113785558,\"beatShare\":0.4048140043763676,\"speed\":1.2737989602075432},\"all\":{\"n\":1399,\"flagGene\":0.30650383400067743,\"ciliaGene\":0.15376260618509388,\"swimShare\":0.5804145818441744,\"beatShare\":0.32165832737669764,\"speed\":1.2262033355278203},\"walls\":true}"
+    },
+    {
+      "t": 1199.9999999992374,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":1199.8833333325708,\"n\":1724,\"carriers\":1315,\"flagGene\":0.323745939675174,\"flagSd\":0.23189060636166478,\"flagExpr\":0.1728822505800464,\"swimmers\":1145,\"speed\":0.6430759825327511,\"relSpeed\":1.225151965065502,\"turning\":0.4486305676855895,\"open\":180,\"pushers\":668,\"pusherShare\":0.5079847908745247,\"sign\":0.0020910672853828305,\"placement\":0.2890469837587007,\"ciliaCarriers\":1060,\"ciliaGene\":0.2008636890951276,\"ciliaSd\":0.18607110441252142,\"ciliaExpr\":0.11694663573085848,\"beating\":882,\"freeSides\":4.26530612244898,\"waveN\":707,\"wave\":0.7326350777934936,\"sync\":0.7155770862800566,\"globalSync\":0.008802584694164355,\"coupling\":-0.15531090487238977,\"tilt\":0.2763109048723898,\"motorShare\":0.5583311814073596,\"payPerTick\":1.263671875}"
+    },
+    {
+      "t": 1200.9999999992365,
+      "js": "return JSON.stringify(await moire.motors.now())",
+      "result": "{\"time\":1191.7166666659116,\"open\":{\"n\":1499,\"flagGene\":0.3293891948867736,\"ciliaGene\":0.2039117229402064,\"swimShare\":0.628418945963976,\"beatShare\":0.47364909939959976,\"speed\":1.2927266827029786},\"wall\":{\"n\":221,\"flagGene\":0.3045735084030322,\"ciliaGene\":0.18183600769496241,\"swimShare\":0.6108597285067874,\"beatShare\":0.45701357466063347,\"speed\":1.2485002520673343},\"alone\":{\"n\":270,\"flagGene\":0.3263623775327923,\"ciliaGene\":0.24494312567705356,\"swimShare\":0.6111111111111112,\"beatShare\":0.5037037037037037,\"speed\":1.1948169888221745},\"tissue\":{\"n\":1234,\"flagGene\":0.33538625722772153,\"ciliaGene\":0.22621548761180835,\"swimShare\":0.6442463533225283,\"beatShare\":0.5470016207455429,\"speed\":1.3209493167933801},\"all\":{\"n\":1720,\"flagGene\":0.3262006677281068,\"ciliaGene\":0.20107525022555586,\"swimShare\":0.6261627906976744,\"beatShare\":0.47151162790697676,\"speed\":1.2870441006271212},\"walls\":true}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T06:37:58",
+  "wall_s": 2957.99
+}

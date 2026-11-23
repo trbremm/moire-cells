@@ -1,0 +1,33 @@
+{
+ "name": "s2-phone",
+ "description": "phone size 390x844: the delta world with motors given at 20 s, 60 s",
+ "size": "390x844",
+ "query": {
+  "terrain": "delta",
+  "seed": 7
+ },
+ "duration": 60,
+ "sample_every": 10,
+ "stall": 400,
+ "shots": [
+  {
+   "t": 59,
+   "name": "end"
+  },
+  {
+   "t": 59.5,
+   "name": "panel",
+   "panel": true
+  }
+ ],
+ "evals": [
+  {
+   "t": 20,
+   "js": "await moire.genome.setAll({flagellum: 0.7, flagSign: 1, cilia: 0.7, ciliaCouple: 1}); return 'genes set'"
+  },
+  {
+   "t": 58,
+   "js": "return JSON.stringify(moire.motors.census)"
+  }
+ ]
+}

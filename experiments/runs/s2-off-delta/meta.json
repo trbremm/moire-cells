@@ -1,0 +1,48 @@
+{
+  "name": "s2-off-delta",
+  "description": "motors off (?flagella=0&cilia=0), delta, 180 s: must match main",
+  "condition": {
+    "name": "s2-off-delta",
+    "description": "motors off (?flagella=0&cilia=0), delta, 180 s: must match main",
+    "query": {
+      "seed": 7,
+      "terrain": "delta",
+      "flagella": 0,
+      "cilia": 0
+    },
+    "duration": 180,
+    "sample_every": 10,
+    "stall": 400,
+    "snapshots": [],
+    "shots": [
+      {
+        "t": 180,
+        "name": "end",
+        "panel": true
+      }
+    ]
+  },
+  "url": "http://localhost:54293/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=7&terrain=delta&flagella=0&cilia=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "b0a675b5d69bbeded3411ac817384c0a2aa0aa88",
+  "dirty": true,
+  "started": "2026-11-23T01:55:34",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 180.0,
+  "run_wall_s": 950.49,
+  "speed_reached": 0.19,
+  "samples": 19,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-23T02:15:28",
+  "wall_s": 1194.16
+}

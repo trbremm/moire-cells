@@ -158,6 +158,10 @@
 //               ever engulfed); ?kinsparenull=1 kinship ignored (the sparing gene drifts without effect); knobs ?sizeratio= ?drive= ?holdbase=
 //               ?wallarm= ?stiffarm= ?wraptime= ?digesttime= ?startrate= ?batstart= ?wrapcost= ?startcost= ?wrapshare= ?batshare= ?predcensus=;
 //               ?predmark=1 the machinery's mark of engulf-capable cells; the founders' wild group 'engulf' (?founders=wild) draws the genes
+//   ?flagella=0   step S2: no flagella; ?cilia=0 no cilia (both 0: exactly as before S2); ?flagellanull=1 ?cilianull=1 their NEUTRAL controls
+//               (the genes drift, nothing acts, nothing is paid); ?mogrn=0 ?mowater=0 ?modipole=0 ?mopump=0 ?mocouple=0 ?mosteer=0 ?motorque=0
+//               one part off; knobs ?swim= ?steer= ?arm= ?dipole= ?swimdrift= ?ciliapush= ?beathz= ?couple= ?lag= ?swimcost= ?ciliaup=
+//               ?flagwant= ?ciliawant= ?mocensus=; ?modraw=0 the motors not drawn (src/motors.js; rules panel, Flagella and cilia)
 //   ?shape=0      step S1: cell shape off (today's round contacts exactly); ?shapenull=1 the elongation gene's NEUTRAL control (it drifts, cells
 //               ask to be round); ?shapegene=0 ?shapegrn=0 ?shapetorque=0 ?shapeexch=0 ?shapewrap=0 one part off; ?aspmax= the longest
 //               aspect (1.2..4, default 4); ?shapeturn= x the derived turning (rules panel, Cell shape)
@@ -537,6 +541,21 @@ async function boot() {
         if (params.has(q) && Number.isFinite(v) && v >= 0) SP[k] = v;
       }
     }
+    {   // step S2: flagella and cilia
+      const MP = cells.motors.params, ML = cells.motors.look;
+      for (const [q, k] of [['flagella', 'flagella'], ['flagellanull', 'flagellaNull'], ['cilia', 'cilia'], ['cilianull', 'ciliaNull'], ['mogrn', 'grn'],
+        ['mowater', 'water'], ['modipole', 'dipole'], ['mopump', 'pump'], ['mocouple', 'couple'], ['mosteer', 'steer'], ['motorque', 'torque']]) {
+        if (params.has(q)) MP[k] = flag(q);
+      }
+      // (?dipole= is the dipole's strength, a number; ?modipole=0 switches it off)
+      for (const [q, k] of [['swim', 'swim'], ['steer', 'steerRate'], ['arm', 'arm'], ['dipole', 'dipole'], ['swimdrift', 'swimDrift'],
+        ['ciliapush', 'ciliaPush'], ['beathz', 'beatHz'], ['couple', 'coupleRate'], ['lag', 'lag'], ['swimcost', 'swimCost'], ['ciliaup', 'ciliaUp'],
+        ['flagwant', 'flagWant'], ['ciliawant', 'ciliaWant'], ['mocensus', 'censusEvery']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && (v >= 0 || k === 'lag')) MP[k] = v;
+      }
+      if (params.has('modraw')) ML.on = flag('modraw');
+    }
     {   // step C13: fields as genes and guides
       const GP = cells.guides.params;
       for (const [q, k] of [['fgenes', 'genes'], ['gateglue', 'glue'], ['gatepump', 'pump'], ['gateengine', 'engine'], ['gatediv', 'div'],
@@ -793,7 +812,7 @@ async function boot() {
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
     kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, dup: cells.dup, perfusion, glue: cells.glue, stir: water.stir, obstacles,
-    spindle: cells.spindle, carbon: matter.carbon, carbonCells: cells.eat.carbon };
+    spindle: cells.spindle, carbon: matter.carbon, carbonCells: cells.eat.carbon, motors: cells.motors };
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.warfare = new Warfare(window.moire);     // step T1c: the chemical warfare census (lineage borders against interiors)
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
@@ -1101,7 +1120,8 @@ ${cells.pred.panelLine(compact)}
 ${cells.fidelity.panelLine(compact)}
 ${cells.dup.panelLine(compact)}
 ${cells.glue.panelLine(compact)}
-${cells.spindle.panelLine(compact)}${ELECTRONS ? `
+${cells.spindle.panelLine(compact)}
+${cells.motors.panelLine(compact)}${ELECTRONS ? `
 ${matter.vents.panelLine(compact)}` : ''}${CARBON ? `
 ${matter.carbon.panelLine(compact)}
 ${cells.eat.carbon.panelLine(compact)}` : ''}
@@ -1208,6 +1228,7 @@ function drawOverlay() {
     ...cells.walls.overlayLines(),
     ...cells.glue.overlayLines(),
     ...cells.spindle.overlayLines(),
+    ...cells.motors.overlayLines(),
     ...cells.guides.overlayLines(),
     ...matter.oil.overlayLines(),
     neon.overlayLine(),

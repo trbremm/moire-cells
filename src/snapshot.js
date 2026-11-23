@@ -173,6 +173,7 @@ export function settingObjects(M) {
     ...(M.predators ? { 'predators.params': M.predators.params, 'predators.look': M.predators.look } : {}),   // step P1
     ...(M.fidelity ? { 'fidelity.params': M.fidelity.params } : {}),   // step G1 (old snapshots: the gene 0 everywhere, the founders' value)
     ...(M.dup ? { 'dup.params': M.dup.params } : {}),                 // step G2 (old snapshots: duplication off, as they ran)
+    ...(M.motors ? { 'motors.params': M.motors.params } : {}),       // step S2 (old snapshots: flagella and cilia off, as they ran)
     ...(M.pigments ? { 'pigments.params': M.pigments.params } : {}),   // step N1: light needs matter
     ...(M.water ? { 'water.params': M.water.params } : {}),           // step N1: caustic light, currents
     ...(M.perfusion ? { 'perfusion.params': M.perfusion.params } : {}),   // perfusion (src/perfusion.js)
@@ -448,8 +449,11 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     const oldP1 = S.layout.cellWords === 88 && S.layout.bioWords === 156;
     // step G2: one from before gene duplication (genomes of 156 words) loads with the duplicate slots silent and no families (named at the next
     // births, by founder), and with duplication OFF, so it runs on as it was saved
-    const oldG2 = S.layout.cellWords === CELL_FLOATS && S.layout.bioWords === 156;
-    const widen = oldC10 || oldC12 || oldC13 || oldC12e || oldT1 || oldT1b || oldP1 || oldG2;
+    const oldG2 = S.layout.cellWords === 92 && S.layout.bioWords === 156;
+    // step S2: one from before flagella and cilia (cells of 92 words, genomes of 168) loads with the motor words 0 (no motors, the phase at 0)
+    // and with flagella and cilia OFF, so it runs on as it was saved
+    const oldS2 = S.layout.cellWords === 92 && S.layout.bioWords === 168;
+    const widen = oldC10 || oldC12 || oldC13 || oldC12e || oldT1 || oldT1b || oldP1 || oldG2 || oldS2;
     if (!widen && (S.layout.cellWords !== CELL_FLOATS || S.layout.bioWords !== BIO_FLOATS)) {
       throw new Error(`snapshot layout (cell ${S.layout.cellWords}, bio ${S.layout.bioWords} words) does not match this page (${CELL_FLOATS}, ${BIO_FLOATS})`);
     }
@@ -578,6 +582,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     if (opts.settings !== false && M.spindle && !(S.settings && S.settings['spindle.params'])) {
       M.spindle.params.on = false;   // step S1
       notes.push('saved before step S1: round contacts, no elongation (as it ran)');
+    }
+    if (opts.settings !== false && M.motors && !(S.settings && S.settings['motors.params'])) {
+      Object.assign(M.motors.params, { flagella: false, cilia: false, flagellaNull: false, ciliaNull: false });   // step S2
+      notes.push('saved before step S2: no flagella, no cilia (as it ran)');
     }
     if (opts.settings !== false && M.dup && !(S.settings && S.settings['dup.params'])) {
       Object.assign(M.dup.params, { on: false, null: false });   // step G2

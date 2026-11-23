@@ -1,0 +1,138 @@
+{
+  "name": "s2-strip-sheet_s3",
+  "description": "step S2 close-up strip: the edge of the ciliated sheet",
+  "condition": {
+    "name": "s2-strip-sheet_s3",
+    "description": "step S2 close-up strip: the edge of the ciliated sheet",
+    "query": {
+      "preset": "lab",
+      "cells": 150,
+      "genes": "cilia:1,ciliaCouple:1,ciliaTilt:0,adhesion:1.5",
+      "seed": 3
+    },
+    "duration": 92,
+    "sample_every": 30,
+    "stall": 400,
+    "dpr": 2,
+    "evals": [
+      {
+        "t": 0,
+        "js": "moire.eat.params.pay = false; return 'battery pays nothing, gates nothing'"
+      },
+      {
+        "t": 89,
+        "js": "moire.camera.set(6, 0.4 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'"
+      },
+      {
+        "t": 89.5,
+        "js": "return JSON.stringify(moire.motors.census)"
+      }
+    ],
+    "shots": [
+      {
+        "t": 90.0,
+        "name": "f00"
+      },
+      {
+        "t": 90.1,
+        "name": "f01"
+      },
+      {
+        "t": 90.2,
+        "name": "f02"
+      },
+      {
+        "t": 90.3,
+        "name": "f03"
+      },
+      {
+        "t": 90.4,
+        "name": "f04"
+      },
+      {
+        "t": 90.5,
+        "name": "f05"
+      },
+      {
+        "t": 90.6,
+        "name": "f06"
+      },
+      {
+        "t": 90.7,
+        "name": "f07"
+      },
+      {
+        "t": 90.8,
+        "name": "f08"
+      },
+      {
+        "t": 90.9,
+        "name": "f09"
+      },
+      {
+        "t": 91.0,
+        "name": "f10"
+      },
+      {
+        "t": 91.1,
+        "name": "f11"
+      },
+      {
+        "t": 91.5,
+        "name": "fpanel",
+        "panel": true
+      }
+    ]
+  },
+  "url": "http://localhost:59619/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&preset=lab&cells=150&genes=cilia:1,ciliaCouple:1,ciliaTilt:0,adhesion:1.5&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "2129e0c932ef2ea60c4bc829f0f2e8a7ef86ca9b",
+  "dirty": true,
+  "started": "2026-11-23T04:19:59",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 92.0,
+  "run_wall_s": 505.32,
+  "speed_reached": 0.18,
+  "samples": 5,
+  "shots": [
+    "shots/f00.png",
+    "shots/f01.png",
+    "shots/f02.png",
+    "shots/f03.png",
+    "shots/f04.png",
+    "shots/f05.png",
+    "shots/f06.png",
+    "shots/f07.png",
+    "shots/f08.png",
+    "shots/f09.png",
+    "shots/f10.png",
+    "shots/f11.png",
+    "shots/fpanel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.eat.params.pay = false; return 'battery pays nothing, gates nothing'",
+      "result": "battery pays nothing, gates nothing"
+    },
+    {
+      "t": 88.99999999999623,
+      "js": "moire.camera.set(6, 0.4 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'",
+      "result": "zoom"
+    },
+    {
+      "t": 89.4999999999962,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":89.36666666666288,\"n\":150,\"carriers\":0,\"flagGene\":0,\"flagSd\":0,\"flagExpr\":0,\"swimmers\":0,\"speed\":0,\"relSpeed\":0,\"turning\":0,\"open\":0,\"pushers\":0,\"pusherShare\":0,\"sign\":0.469,\"placement\":0.031000000000000003,\"ciliaCarriers\":150,\"ciliaGene\":1,\"ciliaSd\":0,\"ciliaExpr\":0.8573466666666667,\"beating\":49,\"freeSides\":2.122448979591837,\"waveN\":49,\"wave\":0.8475102040816326,\"sync\":0.8271224489795919,\"globalSync\":0.6675809441193408,\"coupling\":1,\"tilt\":0,\"motorShare\":0.8573466666666667,\"payPerTick\":0.01171875}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T04:31:24",
+  "wall_s": 685.14
+}

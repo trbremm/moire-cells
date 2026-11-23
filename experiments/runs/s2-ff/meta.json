@@ -1,0 +1,57 @@
+{
+  "name": "s2-ff",
+  "description": "Firefox headed: the lab's dense pushers and ciliated sheet draw and run",
+  "condition": {
+    "name": "s2-ff",
+    "description": "Firefox headed: the lab's dense pushers and ciliated sheet draw and run",
+    "query": {
+      "preset": "lab",
+      "cells": 150,
+      "genes": "flagellum:1,flagSign:1,cilia:1,ciliaCouple:1"
+    },
+    "duration": 40,
+    "sample_every": 10,
+    "stall": 400,
+    "shots": [
+      {
+        "t": 39,
+        "name": "end",
+        "panel": true
+      }
+    ],
+    "evals": [
+      {
+        "t": 38,
+        "js": "return JSON.stringify(moire.motors.census)"
+      }
+    ]
+  },
+  "url": "http://localhost:54925/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&preset=lab&cells=150&genes=flagellum:1,flagSign:1,cilia:1,ciliaCouple:1",
+  "browser": "firefox",
+  "size": "1280x800",
+  "commit": "9240a373c8cf4b0d6a072c0d5e539d64f454b94d",
+  "dirty": false,
+  "started": "2026-11-23T05:42:58",
+  "status": "ok",
+  "adapter": "ANGLE (NVIDIA, NVIDIA GeForce GTX 980 Direct3D11 vs_5_0 ps_5_0), or similar  (WebGL's name; WebGPU hides it)",
+  "t_start": 0,
+  "sim_s": 40.0,
+  "run_wall_s": 99.18,
+  "speed_reached": 0.4,
+  "samples": 5,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 37.999999999999126,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":37.93333333333246,\"n\":150,\"carriers\":150,\"flagGene\":1,\"flagSd\":0,\"flagExpr\":0.6487666666666666,\"swimmers\":150,\"speed\":0.07040666666666667,\"relSpeed\":0.72964,\"turning\":0.23853333333333335,\"open\":0,\"pushers\":150,\"pusherShare\":1,\"sign\":1,\"placement\":0.009000000000000001,\"ciliaCarriers\":150,\"ciliaGene\":1,\"ciliaSd\":0,\"ciliaExpr\":0.6487666666666666,\"beating\":54,\"freeSides\":1.9259259259259258,\"waveN\":54,\"wave\":0.7885370370370371,\"sync\":0.7869259259259259,\"globalSync\":0.2738680006058209,\"coupling\":1,\"tilt\":0,\"motorShare\":0.6487666666666666,\"payPerTick\":0}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T05:45:38",
+  "wall_s": 159.97
+}

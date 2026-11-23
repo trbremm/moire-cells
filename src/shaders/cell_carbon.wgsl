@@ -1166,7 +1166,7 @@ fn cb_trans(i: u32) -> f32 {
  * into the granules and the stock's G (exact). Short of the want, new units are BUILT (kBuild of the shortfall per s) from chain carbons
  * (cb_make_chain) + a free G from the stock. Returns the share of the want held (the engines' factor).
  */
-fn cb_enzymes(i: u32, rates: array<f32, 5>, areaR2: f32, m: ptr<function, array<i32, 18>>, bat: ptr<function, i32>, heat: ptr<function, i32>, r: u32) -> f32 {
+fn cb_enzymes(i: u32, rates: array<f32, 5>, motors: f32, areaR2: f32, m: ptr<function, array<i32, 18>>, bat: ptr<function, i32>, heat: ptr<function, i32>, r: u32) -> f32 {
   if (!cb_bit(CBF_ENZ)) { return 1.0; }
   let o = i * CW;
   let bat0 = *bat;
@@ -1174,6 +1174,7 @@ fn cb_enzymes(i: u32, rates: array<f32, 5>, areaR2: f32, m: ptr<function, array<
   let E0 = E;
   var rsum = 0.0;   // (step G2: the five slots' expressed rates: a copy is dosage, it wants its own enzymes)
   for (var k = 0u; k < 5u; k++) { rsum += max(rates[k], 0.0); }
+  rsum += max(motors, 0.0);   // (step S2: the motors' proteins, in units of expressed engine rate: the same recipe, the same pool)
   let want = CBP.t.z * rsum * areaR2 * ATOM_SCALE / 4.0;   // (units)
   // the worn units: RENEWED in place while the battery pays their assembly again (4 carbon sparks a unit, as heat: the turnover's cost);
   // what it cannot pay falls apart into the granules and the stock's G

@@ -78,6 +78,7 @@ export const RULE_GROUPS = [
   ['g2', 'Gene duplication (step G2)'],
   ['g0', 'Strong glue (step G0)'],
   ['s1', 'Cell shape (step S1)'],
+  ['s2', 'Flagella and cilia (step S2)'],
   ['g0w', 'Stirred water (step G0)'],
   ['vents', 'Vents in the dark (step C12f)'],
   ['n1', 'Nutrient landscape (step N1)'],
@@ -948,6 +949,42 @@ export function makeActions(app) {
     { id: 'aspectMax', keys: [], label: 'longest aspect', group: 's1', type: 'knob', get: () => Number(SHP().aspectMax).toFixed(2),
       run: (k) => { const p = SHP(); p.aspectMax = Math.max(1.2, Math.min(4, +((Number(p.aspectMax) || 4) * (k === '-' ? 1 / 1.15 : 1.15)).toPrecision(3))); return `longest aspect ${p.aspectMax}:1`; },
       help: 'the longest a cell may be, length over width (the neighbour grid grows with it)' },
+  );
+
+  // ---------- flagella and cilia (step S2; panel only: no keys are free) ----------
+  const MOP = () => app.cells.motors.params;
+  const mtog = (id, label, key, onTxt, offTxt, help) => ({ id, keys: [], label, group: 's2', type: 'toggle', get: () => MOP()[key],
+    run: () => (flip(MOP(), key) ? onTxt : offTxt), help });
+  const mknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 's2', type: 'knob', get: () => Number(MOP()[key]).toFixed(digits),
+    run: (k) => { const p = MOP(); p[key] = Math.max(lo, Math.min(hi, +((Number(p[key]) || lo || 0.01) * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    mtog('flagella', 'flagella', 'flagella', 'flagella on: a swimmer drives itself along its front and stirs the water as a force dipole (pusher or puller)',
+      'flagella off: no swimming, as before step S2', 'a flagellum gene (thrust, pusher or puller, placement) makes a swimmer'),
+    mtog('flagellaNull', 'flagella neutral control', 'flagellaNull', 'the flagellum genes drift WITHOUT effect (NEUTRAL CONTROL)', 'the flagellum genes act',
+      'the neutral control: the genes drift as usual, nothing swims, nothing is paid'),
+    mtog('cilia', 'cilia', 'cilia', 'cilia on: free sides beat, pushing the water along the surface (and a free cell forward); phases couple into waves',
+      'cilia off: no beating, as before step S2', 'a cilia gene (beat, coupling, tilt) makes short beaters on the free sides'),
+    mtog('ciliaNull', 'cilia neutral control', 'ciliaNull', 'the cilia genes drift WITHOUT effect (NEUTRAL CONTROL)', 'the cilia genes act',
+      'the neutral control: the genes drift as usual, nothing beats, nothing is paid'),
+    mtog('moGrn', 'motors from the gene network', 'grn', 'the gene network’s FLAGELLUM and CILIA outputs scale the motor genes', 'the motor genes act alone',
+      'the 19th and 20th outputs of the gene network multiply the flagellum and cilia genes'),
+    mtog('moWater', 'swimmers free in the water', 'water', 'a swimmer drifts with the water and turns with its swirls', 'a swimmer drifts like a crawler',
+      'a swimmer is in the water, not on the floor'),
+    mtog('moDipole', 'swimmers stir (dipole)', 'dipole', 'a swimmer’s motor pushes the water back: pushers push it out along their axis, pullers draw it in',
+      'swimmers push the water only by their body', 'the force dipole into the stirred water (needs the stirred water on)'),
+    mtog('moPump', 'cilia pump the water', 'pump', 'beating cilia push the water along the surface', 'cilia move only their cell', 'needs the stirred water on'),
+    mtog('moCouple', 'beats couple (waves)', 'couple', 'a cell’s beat follows its touching neighbours’ (less the lag): metachronal waves', 'every cell beats alone',
+      'the coupling gene pulls the beat’s phase toward the neighbours’'),
+    mtog('moSteer', 'swimmers steer', 'steer', 'a swimmer’s front turns toward its crawling intention (heading, smell)', 'a swimmer goes where its front points',
+      'steering by the senses a crawler already has'),
+    mtog('moTorque', 'motors turn the cell', 'torque', 'an off-axis flagellum and tilted cilia turn the cell (curved runs, spinning)', 'the motors push straight',
+      'the placement and tilt genes'),
+    mknob('swim', 'swim speed', 'swim', 0.1, 20, 1.25, 2, 'R / s at flagellum 1 (crawling is 0.6)'),
+    mknob('moDipoleK', 'dipole strength', 'dipole', 0.05, 20, 1.25, 2, 'the motor’s push on the water × the body’s drag (1 = force-free)'),
+    mknob('ciliaPush', 'cilia push', 'ciliaPush', 0.1, 20, 1.25, 2, 'R / s at cilia 1 (a free cell with six sides beating swims at half of it)'),
+    mknob('beatHz', 'beat frequency', 'beatHz', 0.1, 10, 1.25, 2, 'Hz'),
+    mknob('coupleRate', 'coupling', 'coupleRate', 0.1, 40, 1.25, 2, 'rad / s at the coupling gene 1'),
+    mknob('lag', 'wave lag', 'lag', 0.05, 6, 1.25, 2, 'rad per R along the stroke: the metachronal wave’s'),
   );
 
   // ---------- vents in the dark (step C12f; panel only: no keys are free) ----------

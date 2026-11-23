@@ -1,0 +1,103 @@
+{
+ "batch": "s2-speed",
+ "runs": [
+  {
+   "name": "s2-speed-2k-on",
+   "description": "speed: 2000 cells, neon, motors on, 150 s at MAX",
+   "query": {
+    "seed": 3,
+    "world": "open",
+    "cells": 2000
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 400,
+   "evals": [],
+   "shots": []
+  },
+  {
+   "name": "s2-speed-2k-off",
+   "description": "speed: 2000 cells, neon, motors off, 150 s at MAX",
+   "query": {
+    "seed": 3,
+    "world": "open",
+    "cells": 2000,
+    "flagella": 0,
+    "cilia": 0
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 400,
+   "evals": [],
+   "shots": []
+  },
+  {
+   "name": "s2-speed-2k-given",
+   "description": "speed: 2000 cells, neon, motors given, 150 s at MAX",
+   "query": {
+    "seed": 3,
+    "world": "open",
+    "cells": 2000
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 0,
+     "js": "await moire.genome.setAll({flagellum: 0.7, flagSign: 1, cilia: 0.7, ciliaCouple: 1}); return 'genes set'"
+    }
+   ],
+   "shots": []
+  },
+  {
+   "name": "s2-speed-10k-on",
+   "description": "speed: 10000 cells, neon, motors on, 60 s at MAX",
+   "query": {
+    "seed": 3,
+    "world": "open",
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 0,
+   "stall": 400,
+   "evals": [],
+   "shots": []
+  },
+  {
+   "name": "s2-speed-10k-off",
+   "description": "speed: 10000 cells, neon, motors off, 60 s at MAX",
+   "query": {
+    "seed": 3,
+    "world": "open",
+    "cells": 10000,
+    "flagella": 0,
+    "cilia": 0
+   },
+   "duration": 60,
+   "sample_every": 0,
+   "stall": 400,
+   "evals": [],
+   "shots": []
+  },
+  {
+   "name": "s2-speed-10k-given",
+   "description": "speed: 10000 cells, neon, motors given, 60 s at MAX",
+   "query": {
+    "seed": 3,
+    "world": "open",
+    "cells": 10000
+   },
+   "duration": 60,
+   "sample_every": 0,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 0,
+     "js": "await moire.genome.setAll({flagellum: 0.7, flagSign: 1, cilia: 0.7, ciliaCouple: 1}); return 'genes set'"
+    }
+   ],
+   "shots": []
+  }
+ ]
+}

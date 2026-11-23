@@ -1,0 +1,40 @@
+{
+ "name": "s2-smoke",
+ "description": "step S2 smoke: the plain dish, every cell a pusher at 30 s, 60 s",
+ "query": {
+  "seed": 3,
+  "world": "open"
+ },
+ "duration": 60,
+ "sample_every": 10,
+ "stall": 400,
+ "shots": [
+  {
+   "t": 29,
+   "name": "before"
+  },
+  {
+   "t": 59,
+   "name": "pushers",
+   "panel": true
+  }
+ ],
+ "evals": [
+  {
+   "t": 30,
+   "js": "await moire.genome.setAll({flagellum: 1, flagSign: 1, flagPlace: 0}); return 'genes set'"
+  },
+  {
+   "t": 45,
+   "js": "return JSON.stringify(moire.motors.census)"
+  },
+  {
+   "t": 58,
+   "js": "return JSON.stringify(moire.motors.census)"
+  },
+  {
+   "t": 58,
+   "js": "return JSON.stringify(moire.stir.census)"
+  }
+ ]
+}

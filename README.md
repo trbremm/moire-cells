@@ -8170,6 +8170,167 @@ moved by hand into copy slot 3 run (fix 0.29/s), stop under the neutral control 
 vs 153 / 169 (duplication on: 540 and 146). Headed Firefox loads it (`?seed=3&duprate=0.2`), and so does a phone-size Chrome (390x844: the
 toy's one world, Open dish). The toy's habit choice holds: delta seed 7's 370 founders all carry REDUCE + OXIDIZE (photosynthesisers).
 
+## Step S2: flagella and cilia
+
+BUILD QUEUE item 6a4 (the user, 2026-11-17): motors as PARTS, the body-plus-parts plan: a FLAGELLUM (a swimmer's motor) and CILIA (short
+beaters on free sides). Until now a cell moved only by crawling (its motor pushing on the dish's floor, its heading wandering slowly, the
+smell steering it) and by drifting with the water. Code: `src/motors.js` (switches, knobs, census, the drawing), `src/shaders/motor_draw.wgsl`,
+the "step S2" parts of `cell_common.wgsl` (genes, Cell words, census words, `motor_act`), `cell_step.wgsl` (forces, turning, the water,
+the phase, mutation, census), `cell_eat.wgsl` + `cell_carbon.wgsl` (the motor proteins), `cell_grn.wgsl` (two more outputs).
+
+### The flagellum
+
+- One gene for its THRUST (Bio.mo.x, 0..1, x `swim` = 3 R/s; crawling is 0.6 R/s). It drives the cell along its FRONT (C10/S1: the
+  body's own direction, inherited by daughters, the long axis of a spindle), x the battery's gate (as crawling), x the motor proteins'
+  share (below).
+- A SIGN gene (mo.y): > 0 the motor sits at the BACK (a PUSHER, as E. coli), < 0 in FRONT (a PULLER, as the alga Chlamydomonas). Both
+  swim toward the front; the sign changes how they stir the water and how they look.
+- FORCE-FREE: at low Reynolds number a swimmer pushes the water back as hard as its body drags it forward, so it stirs the water as a FORCE
+  DIPOLE, not a single push. In the code: G0's stirred water already takes each cell's drag at its centre; a swimmer's motor now puts the
+  opposite push on the stir grid `arm` = 1.5 R behind it (a pusher: the water is pushed OUT along its axis, drawn in at its sides) or in
+  front (a puller: drawn IN along its axis). x `dipole` (1 = exactly force-free).
+- IN THE WATER: a swimmer pushes on the water, not the floor, so it drifts with the water by more than a crawler: `swimDrift` = 0.7 of the
+  way from curDrift (0.3) to wholly, by its thrust; and it turns with half the water's local vorticity (as a small body in a flow). Its
+  drag share on the water grows the same way (action = reaction).
+- TURNING from what exists, no new chemotaxis rule: the front STEERS toward the cell's crawling intention (the heading's slow random
+  wander and the smell's pull up the fuel gradient: what a crawler already steers by), `steer` = 0.6 rad/s at full thrust; a motor set off
+  the axis (the PLACEMENT gene mo.z, -1..1 x 90 degrees round the pole) turns the cell by the thrust's torque (r x F over the rotational
+  drag, as S1's turning): curved runs and circles. The body turns (outline, front, stretch), through S1's turn.
+
+### The cilia
+
+- One gene for their BEAT (Bio.mo.w, 0..1). They beat on the FREE sides only: sides touching no neighbour (worked out in the neighbour
+  loop each tick, written to Cell.motW for the drawing and the census).
+- Each free side pushes the water along the surface, straight back along the front (the "effective stroke"), x (1 + cos phase) (the power
+  stroke and the recovery); by reaction the cell goes the other way: a free cell with six beating sides swims at half of `ciliaPush` = 2
+  R/s; a cell held in a tissue cannot go anywhere, so its push goes into the water: a ciliated edge PUMPS the water past the colony (the
+  water carries the food: a shared good). A TILT gene (mc.y, -1..1 x 90 degrees) turns the stroke round the body: a tilted free cell
+  spins.
+- Each cell's beat has a PHASE (Bio.mc.z, state, inherited by daughters) running at `beatHz` = 1.5 Hz (each cell 0.9..1.1 x, from its
+  seed, so without coupling they drift apart). The COUPLING gene (mc.x, -1..1) pulls it toward its touching ciliated neighbours' phases
+  less a LAG: the time a beat's push takes to reach a neighbour downstream through the water, `lag` = 1 rad per R along the two cells'
+  MEAN stroke (Kuramoto-like: d phase/dt = omega + K x mean sin(phase_j - phase_i - lag_ij), lag_ij = lag x (x_j - x_i) . (s_i + s_j)/2
+  / R, so lag_ji = -lag_ij exactly). Its stable state is a TRAVELLING WAVE whose crests run against the stroke (as airway cilia's
+  "metachronal" waves), wavelength 2 pi / lag ~ 6 R where neighbours' strokes agree; where they point different ways the mean stroke is
+  short and the cells simply beat in step. Negative coupling pushes neighbours out of step. (First built with the lag along each cell's
+  OWN stroke: neighbours with different fronts then each wanted the other ahead, and a lab sheet's edge stayed at the order random phases
+  give; fixed during the look tests, below.)
+
+### Genes, network, costs
+
+- Founders: no motors (thrust and beat 0), a random sign, a placement within +-0.05, coupling and tilt 0, a random phase, so motors must
+  evolve. WILD founders (`?founders=wild`, group `motors`): each gene over its whole range (thrust and beat half the time 0). Mutation
+  nudges each gene at every birth (thrust and beat 0.03, sign 0.05, placement and tilt 0.03, coupling 0.04, x the copying scale of G1) and
+  rarely redraws one anywhere (as one of mutate's 18 genes).
+- The gene network's 19th and 20th outputs, FLAGELLUM and CILIA (gains Bio.mg.x, mg.z; regulators mg.y, mg.w), multiply the genes (up to
+  x4, capped at 1 as acted), so the same DNA can grow cilia at a tissue's edge (the network senses contacts) and none inside.
+- COST, from the battery (Cell.pay, as heat): the swim pays `swimCost` = 0.15 x crawlCost per unit of its work; the cilia an upkeep per
+  beat, `ciliaUp` = 0.004 energy per s at beat 1 on six free sides. Why 0.15: at the crawl's own rate (1) a full flagellum, five times
+  the crawl's speed and so 25 times its work, emptied every battery in a dish of swimmers within about 15 s (the smoke run,
+  `experiments/runs/s2-smoke`); at 0.15 a full swimmer pays about 3.75 times a full-speed crawler, about half the upkeep of one engine at
+  rate 1 (a judgement, not derived). The motors' work on the cell is booked as every force's; the stirred water's push on other cells
+  comes out of the heat under them (G0), and the stirred flow fades away (into heat).
+- BUILT IN CARBON: the motor proteins (flagellin's rotor, dynein in cilia) are ATPases: they turn the battery's energy into motion, which
+  is catalysis. So their recipe is the ENZYME's (C15c: 4 carbons + 1 G, the heavy giver whose loose electron catalysis moves), in the same
+  pool, worn and renewed the same way. A full flagellum wants `flagWant` = 2 units of expressed engine rate's enzymes (half a typical
+  founder's engine set), full cilia on six free sides `ciliaWant` = 1.5 (x the share of free sides). The pool's share held (Cell.motE)
+  drives the motors at the next tick: a cell short of G or carbon swims slower. The filament itself (structure, carbon alone) is not
+  charged separately. Without carbon (`?carbon=0`) only the battery pays.
+
+### Words and layout (for merges)
+
+- Bio 168 -> 180 floats: mo (168..171: thrust, sign, placement, beat), mc (172..175: coupling, tilt, PHASE (state), spare), mg (176..179:
+  the two outputs' gains and regulators). `BIO_MO` in genome.js, `BIO_S2` in motors.js.
+- Cell 368 -> 376 bytes (92 -> 94 words): motE (92, the motor proteins' share, eat pass), motW (93: flagellum and cilia as acted, 8 bits
+  each, the free sides in bits 16..21; the step). CellCore unchanged (the neighbours' fronts for the lag come from its wadh word, as C10's).
+- Fields 592 -> 640 bytes: mo0..mo2 (words 148..159). EatP.g2.y..w (G2's spare words): the motor bits and the two wants.
+- Stats 9472 -> 9600 bytes: s2 (32 words, S2S_*). GRN outputs 18 -> 20 while a motor is on (`GRN_NOUT_S2`).
+- `cb_enzymes` takes the motors' want as a new argument.
+- Snapshots from before S2 (cells 92 words, genomes 168) widen and load with flagella and cilia OFF.
+
+### Switches
+
+- `?flagella=0`, `?cilia=0` (both: exactly as before S2: the genes never mutate, nothing acts, the network keeps 18 outputs);
+  `?flagellanull=1`, `?cilianull=1` the NEUTRAL controls (the genes drift as when on, nothing acts, nothing is paid).
+- Parts: `?mogrn=0 ?mowater=0 ?modipole=0 ?mopump=0 ?mocouple=0 ?mosteer=0 ?motorque=0`; knobs `?swim= ?steer= ?arm= ?dipole=
+  ?swimdrift= ?ciliapush= ?beathz= ?couple= ?lag= ?swimcost= ?ciliaup= ?flagwant= ?ciliawant= ?mocensus=`; `?modraw=0` not drawn.
+- Rules panel group "Flagella and cilia (step S2)"; `moire.motors.params`, `moire.motors.look`.
+- Lab genes (`?genes=`): flagellum, flagSign, flagPlace, cilia, ciliaCouple, ciliaTilt, ciliaPhase, grnFlagGain, grnFlagReg, grnCiliaGain,
+  grnCiliaReg.
+
+### Census
+
+The MOTORS panel line: flagellum carriers (gene >= 0.1) and the gene's mean, swimmers and their speed, the pusher share; cilia carriers,
+cells beating and on how many free sides, the local WAVE order (|mean of e^i(phi_j - phi_i - lag)| over touching beating neighbours: 1 a
+perfect metachronal wave) and SYNC (the same without the lag). Mind the yardstick: with one or two neighbours even random phases score
+0.6 .. 0.7 (two random phases give 2/pi); `?mocouple=0` shows the free-running value. `moire.motors.census` (every frame; also in
+`moire.sample()` as `motors.*`), `moire.motors.now()` (a read-back: carriers and swimmers in open water vs within 3 R of obstacles, alone
+vs in tissue; the alone/tissue split needs the cilia acting, so it is empty in the null).
+
+### The look
+
+- A PUSHER trails ONE long thin neon tube from its back pole, a sine wave running along it from root to tip (faster and wider the harder it
+  thrusts): a sperm-like tail. A PULLER has TWO shorter ones from its front pole, swept back either side (an alga's pair), waving less.
+  12 segments each (5 on the phone's cheap path). White-hot core and a tight halo in the cell's job ink, drawn under the body.
+- CILIA: short fine hairs on each free side (3 per side, 1 on the cheap path), each swinging round its root by the beat's phase, so a
+  ciliated edge reads as a fringe whose lean ripples along it.
+- Harmonic look: thin green filaments and hairs (THG-like interfaces), no white core.
+- Fixed during the look tests: the brightness was written inside a code comment, so every flagellum and hair was drawn at brightness 0.
+
+### What it looks like (pictures: `experiments/keep/s2/`)
+
+- `lab-pushers-few-s3-t122-x2.5-neon.jpg` / `-harm.jpg`, `pushers-400-s3-t90-x5-neon.jpg`: pushers with long sperm-like tails, swimming
+  in pairs and small clusters; `strip-pushers-s3-t90-x5-12frames-0.1s.jpg`: 12 frames 0.1 s apart, a cluster swimming up, tails waving.
+- `lab-pullers-s3-t122-x2.5-neon.jpg` / `-harm.jpg`: pullers with two short whips at the front, like Chlamydomonas.
+- `lab-cilia-sheet-s3-t122-x2.5-neon.jpg` / `-harm.jpg`, `cilia-edge-s3-t90-x6-neon.jpg`: a ciliated sheet, the hairs only on its free edge;
+  `strip-cilia-edge-s3-t90-x6-12frames-0.1s.jpg`: the fringe's lean shifting along the edge.
+- `swarm-3000-pushers-s3-t60-neon.jpg`: 3000 pushers: meandering clumps, crowding at the dish's edges.
+- `act-islands-on-s12-t1200-neon.jpg`, `act-colonies-on-s3-t600-neon.jpg`: evolved dishes.
+- Try: `?preset=lab&cells=40&genes=flagellum:1,flagSign:1&spread=scatter&zoom=5` (pushers; `flagSign:-1` pullers),
+  `?preset=lab&cells=150&genes=cilia:1,ciliaCouple:1,adhesion:1.5&zoom=6` (a ciliated sheet); the lab has no food, so its batteries
+  empty in ~40 s and the motors stop: in the console `moire.eat.params.pay = false` keeps them going (as the lab runs did).
+  Evolving: `?terrain=islands&seed=12`, `?terrain=delta&seed=7`.
+
+### Results (quick runs on a heavily shared GPU; EXPERIMENTS.md "Flagella and cilia")
+
+- Flagella and cilia work and read well: tails wave, pullers' pairs splay, fringes sit only on free edges and ripple.
+- METACHRONAL WAVES: with the lag along the mean stroke a lab sheet's edge locks (wave order 0.85, sync 0.83, the whole edge 0.67 in step;
+  free-running phases 0.44 / 0.40 / 0.22); in a lab sheet the fronts point every way, so it mostly beats in step with a small lead along
+  the edge. A true travelling wave needs neighbours whose fronts agree.
+- NO collective swirls: 3000 pushers stir the water at 0.14 R/s with the force dipole, 0.23 R/s as plain pushes: being force-free halves
+  the stirring, and swimmers outrun their own flow tenfold. No bacterial turbulence (G0 found none from crawlers either).
+- EVOLUTION (20 min, motors on vs their neutral control; delta and islands with two seeds, the Colonies with one): NEITHER MOTOR
+  SPREADS ABOVE ITS NULL: the flagellum is above it in 1 of 4 living dishes (islands seed 2: 0.32 against 0.28), below in 2 (delta seed
+  7: 0.16 against 0.40); cilia above in 1 (islands seed 12: 0.48 against 0.33), below in 2. The null itself drifts up to 0.2 .. 0.4 (a gene
+  that starts at 0 can only be nudged up). The wild Colonies crashed either way. In the delta, flagella were rarer near walls than in open
+  water with motors on (0.11 / 0.17; null 0.21 / 0.19); no such difference in the islands. Hints, not results.
+
+### Checked
+
+- Off equals main: `?flagella=0&cilia=0` against main d5076f5 (export), 180 s: open world seed 3 and delta seed 7, the same start and the
+  same founders' crash (133 / 140 and 712 / 735 cells at the end).
+- Books (`check.json`: 360 s at MAX, seed 5, whole dish lit, motors given to every cell, every motor switch toggled at runtime, a resize, a
+  snapshot saved and loaded): atoms, charge and carbon rounding exactly 0; energy -0.003 .. +0.025; the reload exact; console clean.
+  Every S2 run: atoms, charge and carbon 0, energy within +-0.11.
+- Headed Firefox (the lab with motors): runs and draws, console clean. Phone size 390 x 844 (Chrome): the delta world, motors given, runs.
+
+### Speed
+
+Not measured: the GPU was shared by up to ten pages of two workers throughout (sim speed x0.1 .. x0.4). What S2 adds: 12 genome floats and
+2 Cell words a cell, a few operations per neighbour in the step, one instanced draw (24 flagellum segments + 18 hairs a cell, collapsed
+where a cell has no motor).
+
+### Known issues
+
+- In the tissue lab (no food) the motors stop when the batteries empty (~40 s); the lab runs switched the battery's pay off.
+- Free ciliated cells do not swim off in the lab: the lab's fields pull them into a raft faster than their cilia push (half of 2 R/s x a
+  motor protein share ~0.5); tilted cilia gave no visible spin (1.4 deg/s).
+- The swim cost (0.15 x the crawl's per work) is a judgement, chosen so a full swimmer pays about half an engine's upkeep.
+- The wave order with one or two neighbours scores 0.6 .. 0.7 even for random phases: read it against `?mocouple=0`.
+- The place census's open-water / near-wall split was broken in the first act runs (fixed); alone / in tissue covers only cells whose
+  cilia act, and is empty in the null.
+- Not in snapshots beyond the genes and phase: the stirred flow (as G0).
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start
@@ -8229,6 +8390,11 @@ toy's one world, Open dish). The toy's habit choice holds: delta seed 7's 370 fo
   contacts, rotational drag and perimeter factor in `cell_common.wgsl` ("step S1"), the contacts, torques, elongation and the gene's
   mutation in `cell_step.wgsl`, the 18th output in `cell_grn.wgsl`, the exchange by perimeter and the inside on capsules in
   `cell_eat.wgsl`.
+- `src/motors.js` + `src/shaders/motor_draw.wgsl`: step S2, flagella and cilia: the switches and knobs (`moire.motors.params`,
+  `moire.motors.look`), the motor bits in Fields and EatP, the census (Stats.s2) and place read-back (`moire.motors.now()`), the MOTORS
+  panel line, the drawing (tails and hairs, neon and harmonic); the genes and `motor_act` in `cell_common.wgsl`, the forces, turning, the
+  water's dipole and pump, the beat's phase coupling, mutation and census in `cell_step.wgsl`, the motor proteins in `cell_eat.wgsl` /
+  `cell_carbon.wgsl`, the 19th and 20th outputs in `cell_grn.wgsl`.
 - `src/walls.js`: patterned walls (step C10): the switches and knobs, the census (from the cells' stats read-back,
   Stats.wall), the WALLS panel line, the overlay and `stats()` (where on the walls the contacts sit, the glue, the junctions); each
   side's pattern, linker want and upkeep are worked out in `cell_eat.wgsl` (Cell.wadh), the smaller side of each contact, the

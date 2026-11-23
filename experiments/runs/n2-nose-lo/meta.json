@@ -1,0 +1,84 @@
+{
+  "name": "n2-nose-lo",
+  "description": "chemo gene -3 for all, default scene",
+  "condition": {
+    "name": "n2-nose-lo",
+    "description": "chemo gene -3 for all, default scene",
+    "query": {
+      "seed": 3,
+      "genes": "chemo:-3",
+      "flowcensus": 5
+    },
+    "duration": 152,
+    "sample_every": 30,
+    "stall": 300,
+    "evals": [
+      {
+        "t": 60,
+        "js": "return JSON.stringify(moire.flow.census)"
+      },
+      {
+        "t": 90,
+        "js": "return JSON.stringify(moire.flow.census)"
+      },
+      {
+        "t": 120,
+        "js": "return JSON.stringify(moire.flow.census)"
+      },
+      {
+        "t": 150,
+        "js": "return JSON.stringify(moire.flow.census)"
+      }
+    ],
+    "shots": [
+      {
+        "t": 150,
+        "name": "end"
+      }
+    ]
+  },
+  "url": "http://localhost:49711/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3&genes=chemo:-3&flowcensus=5",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "e2f52189c53df09c5981ce50518cf007b0f60f47",
+  "dirty": true,
+  "started": "2026-11-23T12:23:32",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 152.0,
+  "run_wall_s": 418.84,
+  "speed_reached": 0.36,
+  "samples": 7,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 59.999999999997875,
+      "js": "return JSON.stringify(moire.flow.census)",
+      "result": "{\"time\":55.28333333333148,\"n\":1616,\"springs\":6,\"motility\":0.5672862274424717,\"flagellum\":0.00008525730267462164,\"cilia\":0.00018153487160654352,\"chemo\":-2.999230598385381,\"chemoSd\":0.026882381283315073,\"chemoFactor\":0.04982538935887906,\"smell\":0.3513639422154929,\"smellRel\":3.071908129120727,\"feel\":0.9962871287128713,\"align\":-0.034066884211166715,\"alignPath\":0.010708232661302159,\"speed\":0.6020260307306711,\"travel\":0.2542410897336386,\"lifePath\":7.344336081894461,\"lifeDisp\":4.593089408521523,\"lifeAge\":30.066666666666237,\"lives\":368,\"nearSpring\":0.08415841584158416,\"nearArea\":0.068359375,\"enrich\":1.2311173974540313}"
+    },
+    {
+      "t": 89.99999999999618,
+      "js": "return JSON.stringify(moire.flow.census)",
+      "result": "{\"time\":85.38333333332977,\"n\":1457,\"springs\":6,\"motility\":0.5657490059252708,\"flagellum\":0.0003892369466075033,\"cilia\":0.0007341859418599672,\"chemo\":-2.9982550084468182,\"chemoSd\":0.03458622425240383,\"chemoFactor\":0.0498740222264334,\"smell\":0.40365056119802367,\"smellRel\":3.9800750918758223,\"feel\":0.9958819492107069,\"align\":-0.042843333287775336,\"alignPath\":-0.024438375991705567,\"speed\":0.5599849861239578,\"travel\":0.24139572052381253,\"lifePath\":10.860783510018605,\"lifeDisp\":6.297068319655762,\"lifeAge\":40.099999999999,\"lives\":538,\"nearSpring\":0.045298558682223745,\"nearArea\":0.073828125,\"enrich\":0.6135677789761523}"
+    },
+    {
+      "t": 119.99999999999447,
+      "js": "return JSON.stringify(moire.flow.census)",
+      "result": "{\"time\":115.48333333332806,\"n\":944,\"springs\":6,\"motility\":0.5483665011854748,\"flagellum\":0.0008537445771823622,\"cilia\":0.0028046292166020404,\"chemo\":-2.991957281731953,\"chemoSd\":0.09540133340352211,\"chemoFactor\":0.050189106303904704,\"smell\":0.6659036167333321,\"smellRel\":6.504233200417977,\"feel\":1,\"align\":0.04643289010518662,\"alignPath\":-0.00870606430036547,\"speed\":0.6216995492793953,\"travel\":0.3002314446619353,\"lifePath\":20.28741531651121,\"lifeDisp\":8.826881744059277,\"lifeAge\":85.24999999999643,\"lives\":1066,\"nearSpring\":0.04766949152542373,\"nearArea\":0.0734375,\"enrich\":0.6491164803461954}"
+    },
+    {
+      "t": 150.0000000000115,
+      "js": "return JSON.stringify(moire.flow.census)",
+      "result": "{\"time\":145.5166666666746,\"n\":721,\"springs\":6,\"motility\":0.5573305364041983,\"flagellum\":0.0022253832950088195,\"cilia\":0.005026977157915184,\"chemo\":-2.985212331505986,\"chemoSd\":0.11753752677992506,\"chemoFactor\":0.05052877355943207,\"smell\":0.41701583023089966,\"smellRel\":5.148872303119632,\"feel\":0.9986130374479889,\"align\":-0.05542494075786766,\"alignPath\":-0.045205606703327385,\"speed\":0.46030477295166206,\"travel\":0.26249288445961627,\"lifePath\":22.68772530464119,\"lifeDisp\":10.0584299509205,\"lifeAge\":95.2833333333292,\"lives\":1308,\"nearSpring\":0.05131761442441054,\"nearArea\":0.07421875,\"enrich\":0.6914373311920577}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T12:32:47",
+  "wall_s": 555.03
+}

@@ -1,0 +1,212 @@
+{
+  "name": "n2-check",
+  "description": "step N2 books: 360 s at MAX, seed 5, whole dish lit, the currents world (tar, obstacles, patchy springs), every N2 switch toggled at runtime, a resize, a snapshot saved and loaded",
+  "condition": {
+    "name": "n2-check",
+    "description": "step N2 books: 360 s at MAX, seed 5, whole dish lit, the currents world (tar, obstacles, patchy springs), every N2 switch toggled at runtime, a resize, a snapshot saved and loaded",
+    "query": {
+      "seed": 5,
+      "light": "full",
+      "terrain": "currents"
+    },
+    "duration": 360,
+    "sample_every": 10,
+    "stall": 400,
+    "resizes": [
+      {
+        "t": 200,
+        "size": "1000x700"
+      },
+      {
+        "t": 220,
+        "size": "1280x800"
+      }
+    ],
+    "shots": [
+      {
+        "t": 360,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "evals": [
+      {
+        "t": 5,
+        "js": "await moire.genome.setAll({chemo: 1}); return 'genes set'"
+      },
+      {
+        "t": 50,
+        "js": "moire.flow.params.heat = false; return 'off heat'"
+      },
+      {
+        "t": 60,
+        "js": "moire.flow.params.heat = true; return 'on heat'"
+      },
+      {
+        "t": 70,
+        "js": "moire.flow.params.gusts = false; return 'off gusts'"
+      },
+      {
+        "t": 80,
+        "js": "moire.flow.params.gusts = true; return 'on gusts'"
+      },
+      {
+        "t": 90,
+        "js": "moire.flow.params.scour = false; return 'off scour'"
+      },
+      {
+        "t": 100,
+        "js": "moire.flow.params.scour = true; return 'on scour'"
+      },
+      {
+        "t": 110,
+        "js": "moire.flow.params.patchy = false; return 'off patchy'"
+      },
+      {
+        "t": 120,
+        "js": "moire.flow.params.patchy = true; return 'on patchy'"
+      },
+      {
+        "t": 130,
+        "js": "moire.flow.params.chemo = false; return 'off chemo'"
+      },
+      {
+        "t": 140,
+        "js": "moire.flow.params.chemo = true; return 'on chemo'"
+      },
+      {
+        "t": 150,
+        "js": "moire.flow.params.on = false; return 'off on'"
+      },
+      {
+        "t": 160,
+        "js": "moire.flow.params.on = true; return 'on on'"
+      },
+      {
+        "t": 165,
+        "js": "moire.flow.params.chemoNull = true; return 'chemo null'"
+      },
+      {
+        "t": 175,
+        "js": "moire.flow.params.chemoNull = false; return 'chemo act'"
+      },
+      {
+        "t": 300,
+        "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return JSON.stringify({ exact: r.exact, notes: r.notes, rounding: r.rounding })"
+      },
+      {
+        "t": 340,
+        "js": "return JSON.stringify({flow: moire.flow.census, ledger: moire.matter.ledger.rounding, heat: moire.heat.ledger && moire.heat.ledger.rounding})"
+      }
+    ]
+  },
+  "url": "http://localhost:60410/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=5&light=full&terrain=currents",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "0be11c5fe77a4c9fe9c7af42509b8b5f219eea18",
+  "dirty": false,
+  "started": "2026-11-23T13:05:07",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 360.0,
+  "run_wall_s": 379.66,
+  "speed_reached": 0.95,
+  "samples": 37,
+  "shots": [
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 4.999999999999998,
+      "js": "await moire.genome.setAll({chemo: 1}); return 'genes set'",
+      "result": "genes set"
+    },
+    {
+      "t": 49.99999999999845,
+      "js": "moire.flow.params.heat = false; return 'off heat'",
+      "result": "off heat"
+    },
+    {
+      "t": 59.99999999999788,
+      "js": "moire.flow.params.heat = true; return 'on heat'",
+      "result": "on heat"
+    },
+    {
+      "t": 69.99999999999731,
+      "js": "moire.flow.params.gusts = false; return 'off gusts'",
+      "result": "off gusts"
+    },
+    {
+      "t": 79.99999999999675,
+      "js": "moire.flow.params.gusts = true; return 'on gusts'",
+      "result": "on gusts"
+    },
+    {
+      "t": 89.99999999999618,
+      "js": "moire.flow.params.scour = false; return 'off scour'",
+      "result": "off scour"
+    },
+    {
+      "t": 99.99999999999561,
+      "js": "moire.flow.params.scour = true; return 'on scour'",
+      "result": "on scour"
+    },
+    {
+      "t": 109.99999999999504,
+      "js": "moire.flow.params.patchy = false; return 'off patchy'",
+      "result": "off patchy"
+    },
+    {
+      "t": 119.99999999999447,
+      "js": "moire.flow.params.patchy = true; return 'on patchy'",
+      "result": "on patchy"
+    },
+    {
+      "t": 129.9999999999956,
+      "js": "moire.flow.params.chemo = false; return 'off chemo'",
+      "result": "off chemo"
+    },
+    {
+      "t": 140.00000000000355,
+      "js": "moire.flow.params.chemo = true; return 'on chemo'",
+      "result": "on chemo"
+    },
+    {
+      "t": 150.0000000000115,
+      "js": "moire.flow.params.on = false; return 'off on'",
+      "result": "off on"
+    },
+    {
+      "t": 160.00000000001648,
+      "js": "moire.flow.params.on = true; return 'on on'",
+      "result": "on on"
+    },
+    {
+      "t": 165.00000000001899,
+      "js": "moire.flow.params.chemoNull = true; return 'chemo null'",
+      "result": "chemo null"
+    },
+    {
+      "t": 175.0000000000207,
+      "js": "moire.flow.params.chemoNull = false; return 'chemo act'",
+      "result": "chemo act"
+    },
+    {
+      "t": 300.0000000000138,
+      "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return JSON.stringify({ exact: r.exact, notes: r.notes, rounding: r.rounding })",
+      "result": "{\"exact\":true,\"notes\":[],\"rounding\":{\"energy\":0.0364227294921875,\"atoms\":0,\"charge\":0,\"snapshot\":{\"energy\":0.0364227294921875,\"atoms\":0,\"charge\":0}}}"
+    },
+    {
+      "t": 339.99999999998084,
+      "js": "return JSON.stringify({flow: moire.flow.census, ledger: moire.matter.ledger.rounding, heat: moire.heat.ledger && moire.heat.ledger.rounding})",
+      "result": "{\"flow\":{\"time\":330.9166666666558,\"n\":467,\"springs\":4,\"motility\":0.4133458199414247,\"flagellum\":0.0679406940022671,\"cilia\":0.06902257405105296,\"chemo\":0.8067106378984655,\"chemoSd\":0.4104533153186127,\"chemoFactor\":2.240525951087485,\"smell\":0.5923399271357598,\"smellRel\":6.9841337971756134,\"feel\":1,\"align\":0.1256461800736182,\"alignPath\":0.029575216047806132,\"speed\":0.9621669521802129,\"travel\":0.5888054313406941,\"lifePath\":27.87094540957684,\"lifeDisp\":11.426426966697633,\"lifeAge\":90.11666666666282,\"lives\":1161,\"nearSpring\":0.11563169164882227,\"nearArea\":0.05037683458944863,\"enrich\":2.2953346035171727},\"ledger\":0,\"heat\":0.0435638427734375}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T13:13:26",
+  "wall_s": 499.62
+}

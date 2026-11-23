@@ -64,7 +64,7 @@ export const GENES = {
   eng3: 156, eng4: 157, rate3: 158, rate4: 159, fam0: 160, fam1: 161, fam2: 162, fam3: 163, fam4: 164, famPump0: 165, famPump1: 166, dups: 167,
   // step S2: the FLAGELLUM (thrust 0..1, sign: + pusher / - puller, placement round the pole -1..1), the CILIA (beat 0..1, coupling -1..1,
   // stroke tilt -1..1), the beat's phase (state), the gene network's FLAGELLUM and CILIA outputs' gains and regulators (src/motors.js)
-  flagellum: 168, flagSign: 169, flagPlace: 170, cilia: 171, ciliaCouple: 172, ciliaTilt: 173, ciliaPhase: 174,
+  flagellum: 168, flagSign: 169, flagPlace: 170, cilia: 171, ciliaCouple: 172, ciliaTilt: 173, ciliaPhase: 174, chemo: 175,   // (step N2: chemo)
   grnFlagGain: 176, grnFlagReg: 177, grnCiliaGain: 178, grnCiliaReg: 179,
 };
 // words 19..30 are the cell's state, not genes (heading, accumulators, felt fields, conversion)
@@ -135,6 +135,7 @@ function gather(M, ctl) {
   if (M.stir && M.stir.census) flatten(M.stir.census, 'stir', out);       // step G0: the stirred water
   if (M.spindle && M.spindle.census) flatten(M.spindle.census, 'shape', out);   // step S1: cell shape
   if (M.motors && M.motors.census) flatten(M.motors.census, 'motors', out);     // step S2: flagella and cilia
+  if (M.flow && M.flow.census) flatten(M.flow.census, 'flow', out);           // step N2: substances that flow (motility, smell, patch tracking)
   if (M.obstacles && M.obstacles.census) flatten(M.obstacles.census, 'obs', out);   // step G0b: the obstacles' last measure (moire.obstacles.measure())
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;

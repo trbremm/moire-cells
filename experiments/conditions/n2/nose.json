@@ -1,0 +1,77 @@
+{
+ "batch": "n2-nose",
+ "runs": [
+  {
+   "name": "n2-nose-hi",
+   "description": "chemo gene 1.5 for all, default scene",
+   "query": {
+    "seed": 3,
+    "genes": "chemo:1.5",
+    "flowcensus": 5
+   },
+   "duration": 152,
+   "sample_every": 30,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 60,
+     "js": "return JSON.stringify(moire.flow.census)"
+    },
+    {
+     "t": 90,
+     "js": "return JSON.stringify(moire.flow.census)"
+    },
+    {
+     "t": 120,
+     "js": "return JSON.stringify(moire.flow.census)"
+    },
+    {
+     "t": 150,
+     "js": "return JSON.stringify(moire.flow.census)"
+    }
+   ],
+   "shots": [
+    {
+     "t": 150,
+     "name": "end"
+    }
+   ]
+  },
+  {
+   "name": "n2-nose-lo",
+   "description": "chemo gene -3 for all, default scene",
+   "query": {
+    "seed": 3,
+    "genes": "chemo:-3",
+    "flowcensus": 5
+   },
+   "duration": 152,
+   "sample_every": 30,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 60,
+     "js": "return JSON.stringify(moire.flow.census)"
+    },
+    {
+     "t": 90,
+     "js": "return JSON.stringify(moire.flow.census)"
+    },
+    {
+     "t": 120,
+     "js": "return JSON.stringify(moire.flow.census)"
+    },
+    {
+     "t": 150,
+     "js": "return JSON.stringify(moire.flow.census)"
+    }
+   ],
+   "shots": [
+    {
+     "t": 150,
+     "name": "end"
+    }
+   ]
+  }
+ ]
+}

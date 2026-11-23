@@ -24,7 +24,8 @@ struct HeatTick {
   first: u32,       // 1 on a tick's first substep: take in the delta, warmth and leak
   seed: u32,        // random stream of this substep
   count: u32,       // number of cells (sum_cells, deposit); pixels of the old grid (drain)
-  _p0: u32,
+  adv: f32,         // step N2 (src/flow.js): the water carries the heat: psi's corner difference x adv = the share of a pixel that crosses an
+                    // edge per substep (0 = not carried)
   _p1: u32,
   _p2: u32,
 };
@@ -112,6 +113,17 @@ fn flux(hj: i32, hi: i32) -> i32 {
   return i32(HP.k * f32(hj - hi));
 }
 
+// Step N2: what the water carries across an edge from its second pixel (holding hs) to its first (hf), the edge's share a (> 0: toward the
+// first): upwind, a share of the pixel it leaves, truncated toward zero, so both pixels of the edge get the same number (exact). The share is
+// capped at ADV_MAX per substep (the heat already spreads 0.2 to each neighbour: what leaves a pixel stays below all of it)
+const ADV_MAX: f32 = 0.04;
+fn hadv(hf: i32, hs: i32, a0: f32) -> i32 {
+  let a = clamp(a0, -ADV_MAX, ADV_MAX);
+  if (a > 0.0) { return i32(a * f32(max(hs, 0))); }
+  return -i32(-a * f32(max(hf, 0)));
+}
+fn hpsi(x: u32, y: u32) -> f32 { return bitcast<f32>(atomicLoad(&hb[HP.cur + y * (HP.hw + 1u) + x])); }
+
 @compute @workgroup_size(8, 8)
 fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index) li: u32,
           @builtin(workgroup_id) wid: vec3u, @builtin(num_workgroups) nw: vec3u) {
@@ -124,6 +136,19 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
     if (id.x + 1u < HP.hw) { acc += flux(atomicLoad(&hb[HT.src + i + 1u]), hc); }
     if (id.y > 0u) { acc += flux(atomicLoad(&hb[HT.src + i - HP.hw]), hc); }
     if (id.y + 1u < HP.hh) { acc += flux(atomicLoad(&hb[HT.src + i + HP.hw]), hc); }
+    // step N2: the water carries it (the matter's edges: L = (i - 1, i), R = (i, i + 1), U = (i - hw, i), D = (i, i + hw), each edge's share
+    // from the same two corners by the same expression from both of its pixels)
+    if (HT.adv != 0.0 && HP.cur != 0u) {
+      let p00 = hpsi(id.x, id.y);
+      let p10 = hpsi(id.x + 1u, id.y);
+      let p01 = hpsi(id.x, id.y + 1u);
+      let p11 = hpsi(id.x + 1u, id.y + 1u);
+      let aE = vec4f(-(p01 - p00), -(p11 - p10), p10 - p00, p11 - p01) * HT.adv;
+      if (id.x > 0u) { acc -= hadv(atomicLoad(&hb[HT.src + i - 1u]), hc, aE.x); }
+      if (id.x + 1u < HP.hw) { acc += hadv(hc, atomicLoad(&hb[HT.src + i + 1u]), aE.y); }
+      if (id.y > 0u) { acc -= hadv(atomicLoad(&hb[HT.src + i - HP.hw]), hc, aE.z); }
+      if (id.y + 1u < HP.hh) { acc += hadv(hc, atomicLoad(&hb[HT.src + i + HP.hw]), aE.w); }
+    }
     if (first) {
       let d = atomicExchange(&hb[LEDGER_WORDS + i], 0);
       var lr = HP.leak;

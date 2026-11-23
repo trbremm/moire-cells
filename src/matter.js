@@ -652,7 +652,7 @@ if (CARBON) SPRING_KINDS.seep = { label: 'fuel seep (methane-like carbon)', mix:
 export const ATOM_SCALE = 4096;          // counts per atom-unit (ATOM_SCALE in matter.wgsl)
 const CB_BYTES = 624;                     // step C15a: struct CarbonP (carbon.wgsl)
 const MT_BYTES = 48;                      // struct MatterTick (32 until step C15a's carbon words)
-const MP_BYTES = 736;                     // struct MatterP (step G0b: + obs, 720 until then; step N1: + n1, 704 until then; step C6b: + chg, cq; step C12: + the oil's, 400 until then; step C12f: + sea, 688 until then)
+const MP_BYTES = 752;                     // struct MatterP (step N2: + n2, 736 until then; step G0b: + obs, 720 until then; step N1: + n1, 704 until then; step C6b: + chg, cq; step C12: + the oil's, 400 until then; step C12f: + sea, 688 until then)
 const MT_SLOT = 256;                      // struct MatterTick slots, bound with a dynamic offset
 const MAX_TICKS = 320;                    // as SLOTS in cells.js
 const MAX_SUB = 4;                        // spreading substeps per tick at most
@@ -664,6 +664,7 @@ export const MAX_SPRINGS = 16;            // the springs uniform's capacity
 const SPRING_FLOATS = 32;                 // struct Spring: pos (4), amt (20: 18 channels, [19] its disc's pixels), ink (4), seg (4: a line's or patch's shape)
 const DRAW_BYTES = 560;                   // struct DrawP in matter_draw.wgsl (224 until step C12, 336 until step C12c, 368 until C12d, 448 until the app's cam, 464 until step C15a)
 const K_MAX = 0.2;
+const A_MAX = 0.15;                       // step N2: the water's share of a pixel per substep at most (CFL)
 const LG_M = { ADD: 3072, LOST: 4736, GONE: 6400, DISH: 8064, ORDER: 9728 };   // heat_common.wgsl
 const LG_C = { LIGHT: 10240, RX: 10752 };
 // step C12 (heat_common.wgsl): the ledger of channels 13..15, the oil's 4 families, the oil's snapshot
@@ -850,7 +851,7 @@ export class Matter {
     this.carbonBuf = d.createBuffer({ label: 'carbon params', size: CB_BYTES, usage: U.UNIFORM | U.COPY_DST });
     this.carbonAB = new ArrayBuffer(CB_BYTES);
     if (CARBON) {
-      for (const e of ['carbon_spread', 'carbon_react', 'carbon_count']) {
+      for (const e of ['carbon_spread', 'carbon_react', 'carbon_count', 'tar_move', 'tar_copy']) {   // (step N2: + tar_move, tar_copy)
         this.pipes[e] = d.createComputePipeline({ label: `matter ${e}`, layout, compute: { module: mod, entryPoint: e } });
       }
       this.cTexBgl = d.createBindGroupLayout({
@@ -1109,6 +1110,11 @@ export class Matter {
     // spreading per substep, per channel
     const kTot = SUBSTANCES.map((s) => Math.max(0, s.spread * p.spreadGain) * dt / (a * a));
     this.nSub = Math.max(1, Math.min(MAX_SUB, Math.ceil(Math.max(...kTot) / K_MAX)));
+    // step N2 (src/flow.js): and the water's CFL: the fastest water crosses at most A_MAX of a pixel per substep
+    if (this.flow && this.flow.gustsOn && this.water && this.water.currentsOn) {
+      const v = this.flow.fastest(Math.max(this.water.params.speed, this.water.params.gyre));
+      this.nSub = Math.max(this.nSub, Math.min(MAX_SUB, Math.ceil(v * dt / a / A_MAX)));
+    }
     this.carbon.flush(this.device, this.carbonBuf, this.carbonAB, this.nSub);   // step C15a: the carbon's uniform
     const f = new Float32Array(this.paramAB), u = new Uint32Array(this.paramAB);
     u[0] = H.hw; u[1] = H.hh; u[2] = H.n; u[3] = this.copyBase(0);
@@ -1140,6 +1146,7 @@ export class Matter {
     if (this.water) this.water.writeMatter(u, f, 176, dt / this.nSub);   // step N1: the caustic light, the currents (struct MatterP n1)
     if (this.oases) f[179] = this.oases.buryPerTick(dt);                 // step N1: trace settles into the floor
     if (this.obstacles) this.obstacles.writeMatter(u, f, 180); else u.fill(0, 180, 184);   // step G0b: the obstacles' mask (struct MatterP obs)
+    if (this.flow) this.flow.writeMatter(u, f, 184, dt / this.nSub, H.px, H.R); else u.fill(0, 184, 188);   // step N2: scour (struct MatterP n2)
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
 
     const T = new Uint32Array(this.tickAB), w = MT_SLOT / 4;
@@ -1196,6 +1203,11 @@ export class Matter {
       pass.setPipeline(this.pipes.carbon_react);
       pass.setBindGroup(0, this.bg, [(t * MAX_SUB + this.nSub - 1) * MT_SLOT]);
       pass.dispatchWorkgroups(Math.ceil(H.hw / 8), Math.ceil(H.hh / 8));
+      // step N2, SCOUR (src/flow.js): the tar moves as bedload where the water runs fast (into scratch blocks, then back)
+      if (this.flow && this.flow.scourOn && this.water && this.water.currentsOn) {
+        pass.setPipeline(this.pipes.tar_move); pass.dispatchWorkgroups(Math.ceil(H.hw / 8), Math.ceil(H.hh / 8));
+        pass.setPipeline(this.pipes.tar_copy); pass.dispatchWorkgroups(Math.ceil(H.hw / 8), Math.ceil(H.hh / 8));
+      }
     }
     // step C6b: the screened charge field, a few red-black sweeps on the copy the reactions left (src/charge.js)
     if (this.solve) {

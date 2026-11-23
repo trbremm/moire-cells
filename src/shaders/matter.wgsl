@@ -67,6 +67,10 @@ struct MatterP {
   obs: vec4u,                   // x: word offset in `mg` of the obstacles' MASK (u32 per pixel: bits 0-1 the kind, 0 water, 1 solid, 2 porous
                                 // (water and matter pass), 3 the round dish's rim; bits 2-4 a solid pixel's way out: 1 left, 2 right, 3 up,
                                 // 4 down; 0 = no obstacles); yzw spare
+  // ---- step N2, substances that flow (src/flow.js) ----
+  n2: vec4f,                    // x: SCOUR, the edge share per substep (|a|) at which the water starts lifting row-1 bed (sediment, tar; x row;
+                                // fully lifted at twice it); y: the lifted bed's share of the water's motion (carry); z: bits (u32: 1 the bed is
+                                // scoured, 2 the trace settles only where the water is slow); w spare. All 0 while off
 };
 
 struct MatterTick {
@@ -219,6 +223,10 @@ fn room(fill: u32, rho: f32, film: f32) -> f32 {
 // differences) and psi = 0 all round the dish's rim (no flow through the wall). Upwind: a share a of the pixel it LEAVES crosses
 // (a > 0: toward the edge's first pixel), added to the edge's flow before its random rounding, so the counts stay exact as before.
 fn psi_at(x: u32, y: u32) -> f32 { return bitcast<f32>(mg[MP.n1.y + y * (MP.hw + 1u) + x]); }
+// Step N2, SCOUR: the share of an edge's flow a the bed moves with, where it lifts from ac: a x carry x clamp((|a| - ac) / ac, 0, 1) (bedload:
+// nothing below the lifting speed, all of `carry` from twice it). Per edge, from the edge's own share: the same number from both pixels
+fn bed_share(a: f32, ac: f32) -> f32 { return a * MP.n2.y * clamp((abs(a) - ac) / max(ac, 1e-6), 0.0, 1.0); }
+fn n2_bits() -> u32 { return bitcast<u32>(MP.n2.z); }
 fn adv_up(mf: i32, ms: i32, a: f32) -> f32 { return select(a * f32(max(mf, 0)), a * f32(max(ms, 0)), a > 0.0); }
 
 @compute @workgroup_size(16, 4)
@@ -322,6 +330,15 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       var acc = m;
       if (solidHere) {
         if (outHere != 0u) { acc = 0; }        // (step G0b: all of it out, toward the water)
+      } else if (k <= 0.0 && (n2_bits() & 1u) != 0u && MP.n1.y != 0u) {
+        // step N2, SCOUR: the bed (sediment: crust ll, LL) is lifted where the water runs fast and moves with it as bedload, settling where it
+        // slows (src/flow.js). Its lifting share by its row (1 + its heavy share). No rim sink: it does not leave the dish
+        let cs = c * 0x9e3779b9u;
+        let ac = MP.n2.x * (1.0 + mp4(MP.heavy, c));
+        if (fL) { acc -= edge_flow(mg[s0 + i - 1u], m, 0.0, bed_share(aE.x, ac), u01(mpcg(eL + cs))); }
+        if (fR) { acc += edge_flow(m, mg[s0 + i + 1u], 0.0, bed_share(aE.y, ac), u01(mpcg(eR + cs))); }
+        if (fU) { acc -= edge_flow(mg[s0 + i - MP.hw], m, 0.0, bed_share(aE.z, ac), u01(mpcg(eU + cs))); }
+        if (fD) { acc += edge_flow(m, mg[s0 + i + MP.hw], 0.0, bed_share(aE.w, ac), u01(mpcg(eD + cs))); }
       } else if (k > 0.0) {
         let cs = c * 0x9e3779b9u;
         let zq = select(0.0, f32(charge_of(MP.chg.z, c)) * MP.cq.w, po != 0u);
@@ -370,7 +387,13 @@ fn spread(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
         // with distance and an old oasis's trace does not pile up for ever
         var bur = 0;
         if (first && c == CP.trace && m > 0 && MP.n1.w != 0u) {
-          bur = clamp(i32(floor(f32(m) * bitcast<f32>(MP.n1.w) + u01(mpcg(eI + cs + 0x7f4a7c15u)))), 0, m - nEdges * (m >> 2u));
+          // step N2: it settles only where the water is slow (the share of its row's lifting speed the water here runs at keeps it up)
+          var bshare = bitcast<f32>(MP.n1.w);
+          if ((n2_bits() & 2u) != 0u) {
+            let sp = 0.5 * length(vec2f(aE.x + aE.y, aE.z + aE.w));
+            bshare *= clamp(1.0 - sp / max(3.0 * MP.n2.x, 1e-6), 0.0, 1.0);
+          }
+          bur = clamp(i32(floor(f32(m) * bshare + u01(mpcg(eI + cs + 0x7f4a7c15u)))), 0, m - nEdges * (m >> 2u));
           acc -= bur;
           if (bur != 0) { atomicAdd(&wlost[c], bur); }
         }

@@ -1,0 +1,66 @@
+{
+  "name": "n2-diag-delta-off",
+  "description": "N2 part 1: the delta world as on main (?n2=0), 6 min",
+  "condition": {
+    "name": "n2-diag-delta-off",
+    "description": "N2 part 1: the delta world as on main (?n2=0), 6 min",
+    "query": {
+      "terrain": "delta",
+      "seed": 7,
+      "n2": 0
+    },
+    "duration": 362,
+    "sample_every": 30,
+    "stall": 300,
+    "evals": [
+      {
+        "t": 240,
+        "js": "return JSON.stringify(await moire.flow.diagnose())"
+      },
+      {
+        "t": 360,
+        "js": "return JSON.stringify(await moire.flow.diagnose())"
+      }
+    ],
+    "shots": [
+      {
+        "t": 360,
+        "name": "end"
+      }
+    ]
+  },
+  "url": "http://localhost:53848/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&terrain=delta&seed=7&n2=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "dfa2c248ba1c4a96fac70ecdfa6f8fd27e17155c",
+  "dirty": true,
+  "started": "2026-11-23T10:01:29",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 362.0,
+  "run_wall_s": 1041.23,
+  "speed_reached": 0.35,
+  "samples": 14,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 240.00000000008313,
+      "js": "return JSON.stringify(await moire.flow.diagnose())",
+      "result": "{\"time\":240.00000000008313,\"water\":{\"mean\":0.4465594495547512,\"max\":5.209859393746609,\"eddy\":20.694559725684893},\"interval\":0,\"channels\":[{\"name\":\"g\",\"kind\":\"atom\",\"spread\":1.2,\"carried\":true,\"bed\":false,\"dish\":716.007568359375,\"addRate\":null,\"tau\":null,\"byDiffusion\":null,\"byWater\":null},{\"name\":\"t\",\"kind\":\"atom\",\"spread\":1.2,\"carried\":true,\"bed\":false,\"dish\":596.17333984375,\"addRate\":null,\"tau\":null,\"byDiffusion\":null,\"byWater\":null},{\"name\":\"G\",\"kind\":\"atom\",\"spread\":0.144,\"carried\":true,\"bed\":false,\"dish\":65.14208984375,\"addRate\":null,\"tau\":null,\"byDiffusion\":null,\"byWater\":null},{\"name\":\"T\",\"kind\":\"atom\",\"spread\":0.144,\"carried\":true,\"bed\":false,\"dish\":1277.789306640625,\"addRate\":null,\"tau\":null,\"byDiffusion\":null,\"byWater\":null},{\"name\":\"gt\",\"kind\":\"fuel\",\"spread\":0.84,\"carried\":true,\"bed\":false,\"dish\":2324.3173828125,\"addRate\":null,\"tau\":null,\"byDiffusion\":null,\"byWater\":null},{\"name\":\"gT\",\"kind\":\"fuel\",\"spread\":0.10079999999999999,\"carried\":true,\"bed\":false,\"dish\":357.324462890625,\"addRate\":null,\"tau\":null,\"byDiffusion\":null,\"byWater\":null},{\"name\":\"Gt\",\"kind\":\"fuel\",\"spread\":0.10079999999999999,\"carried\":true,\"bed\":false,\"dish\":595.041015625,\"addRate\":null,\"tau\":null,\"byDiffusion\":null,\"byWater\":null},{\"name\":\"GT\",\"kind\":\"fuel\",\"spread\":0.10079999999999999,\"carried\":true,\"bed\":false,\"dish\":220.285400390625,\"addRate\":null,\"tau\":null,\"byDiffusion\":null,\"byWater\":null},{\"name\":\"trace\",\"kind\":\"trace\",\"spread\":0.01728,\"carried\":true,\"bed\":false,\"dish\":851.307373046875,\"addRate\":null,\"tau\":null,\"byDiffusion\":null,\"byWater\":null}],\"carbon\":{\"ladder\":[{\"name\":\"cg4\",\"dish\":2.3212890625},{\"name\":\"cg3t\",\"dish\":3.038818359375},{\"name\":\"cg2t2\",\"dish\":3.6279296875},{\"name\":\"cgt3\",\"dish\":2.366455078125},{\"name\":\"ct4\",\"dish\":15.850830078125}],\"tar\":6099.87158203125,\"tarShare\":0.9955598203367505},\"trace\":{\"buried\":0.006666666666666667,\"ch\":12},\"cells\":{\"time\":230.3000000000754,\"n\":1150,\"springs\":3,\"motility\":0.471415820069935,\"flagellum\":0.04724575776867467,\"cilia\":0.05978145756782159,\"chemo\":0,\"chemoSd\":0,\"chemoFactor\":1,\"smell\":1.375287149201421,\"smellRel\":15.204005667590836,\"feel\":0.9982608695652174,\"align\":-0.018866295727433688,\"speed\":0.9548548560479246,\"travel\":0.5164294740100174,\"lifePath\":18.35270384639438,\"lifeDisp\":11.496645641193016,\"lifeAge\":50.08333333333049,\"lives\":686,\"nearSpring\":0,\"nearArea\":0.052742616033755275,\"enrich\":0}}"
+    },
+    {
+      "t": 360.00000000000125,
+      "js": "return JSON.stringify(await moire.flow.diagnose())",
+      "result": "{\"time\":360.00000000000125,\"water\":{\"mean\":0.44690534325832576,\"max\":5.287501535296551,\"eddy\":20.0741076561015},\"interval\":119.99999999991812,\"channels\":[{\"name\":\"g\",\"kind\":\"atom\",\"spread\":1.2,\"carried\":true,\"bed\":false,\"dish\":901.369873046875,\"addRate\":0,\"tau\":null,\"byDiffusion\":null,\"byWater\":null},{\"name\":\"t\",\"kind\":\"atom\",\"spread\":1.2,\"carried\":true,\"bed\":false,\"dish\":621.280029296875,\"addRate\":0,\"tau\":null,\"byDiffusion\":null,\"byWater\":null},{\"name\":\"G\",\"kind\":\"atom\",\"spread\":0.144,\"carried\":true,\"bed\":false,\"dish\":94.938232421875,\"addRate\":0.960532633464197,\"tau\":98.83915352201694,\"byDiffusion\":7.545286769148126,\"byWater\":44.17174583211934},{\"name\":\"T\",\"kind\":\"atom\",\"spread\":0.144,\"carried\":true,\"bed\":false,\"dish\":1487.410400390625,\"addRate\":0,\"tau\":null,\"byDiffusion\":null,\"byWater\":null},{\"name\":\"gt\",\"kind\":\"fuel\",\"spread\":0.84,\"carried\":true,\"bed\":false,\"dish\":2553.57470703125,\"addRate\":23.026814778661546,\"tau\":110.89569840973371,\"byDiffusion\":19.30309681519277,\"byWater\":49.55988016367382},{\"name\":\"gT\",\"kind\":\"fuel\",\"spread\":0.10079999999999999,\"carried\":true,\"bed\":false,\"dish\":423.67041015625,\"addRate\":9.83231201172546,\"tau\":43.089601881124665,\"byDiffusion\":4.168180355799094,\"byWater\":19.256973319548617},{\"name\":\"Gt\",\"kind\":\"fuel\",\"spread\":0.10079999999999999,\"carried\":true,\"bed\":false,\"dish\":690.43603515625,\"addRate\":0,\"tau\":null,\"byDiffusion\":null,\"byWater\":null},{\"name\":\"GT\",\"kind\":\"fuel\",\"spread\":0.10079999999999999,\"carried\":true,\"bed\":false,\"dish\":253.534423828125,\"addRate\":6.993998209640189,\"tau\":36.25028434789494,\"byDiffusion\":3.823102751571194,\"byWater\":16.2004457697079},{\"name\":\"trace\",\"kind\":\"trace\",\"spread\":0.01728,\"carried\":true,\"bed\":false,\"dish\":1005.85107421875,\"addRate\":5.993845621748882,\"tau\":167.81397748533655,\"byDiffusion\":3.405774819888488,\"byWater\":74.99696321162928}],\"carbon\":{\"ladder\":[{\"name\":\"cg4\",\"dish\":4.28955078125},{\"name\":\"cg3t\",\"dish\":4.905029296875},{\"name\":\"cg2t2\",\"dish\":11.11376953125},{\"name\":\"cgt3\",\"dish\":6.166015625},{\"name\":\"ct4\",\"dish\":36.319580078125}],\"tar\":9376.420654296875,\"tarShare\":0.9933475455346572},\"trace\":{\"buried\":0.006666666666666667,\"ch\":12},\"cells\":{\"time\":350.45000000000994,\"n\":1047,\"springs\":3,\"motility\":0.4708532969384617,\"flagellum\":0.07411018158027853,\"cilia\":0.08678898526627732,\"chemo\":0,\"chemoSd\":0,\"chemoFactor\":1,\"smell\":1.2266635253239326,\"smellRel\":11.21627594038069,\"feel\":0.9990448901623686,\"align\":0.04910963736420096,\"speed\":0.7935786582076492,\"travel\":0.36172489092841936,\"lifePath\":25.660157032997326,\"lifeDisp\":15.840264708852056,\"lifeAge\":70.0000000000557,\"lives\":1749,\"nearSpring\":0,\"nearArea\":0.052742616033755275,\"enrich\":0}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T10:20:50",
+  "wall_s": 1161.26
+}

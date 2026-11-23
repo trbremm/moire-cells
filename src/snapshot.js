@@ -183,6 +183,7 @@ export function settingObjects(M) {
     ...(CARBON && M.carbon ? { 'carbon.params': M.carbon.params } : {}),                // step C15a: carbon in the open dish
     ...(CARBON && M.carbonCells ? { 'carbonCells.params': M.carbonCells.params } : {}),  // step C15b: cells eat carbon
     ...(M.spindle ? { 'spindle.params': M.spindle.params } : {}),     // step S1: cell shape
+    ...(M.flow ? { 'flow.params': M.flow.params } : {}),               // step N2: substances that flow (old snapshots: off, as they ran)
   };
 }
 const SCALARS = [['neon.on', (M) => M.neon, 'on'], ['background.heatOn', (M) => M.background, 'heatOn'], ['background.ambient', (M) => M.background, 'ambient']];
@@ -590,6 +591,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     if (opts.settings !== false && M.dup && !(S.settings && S.settings['dup.params'])) {
       Object.assign(M.dup.params, { on: false, null: false });   // step G2
       notes.push('saved before step G2: no gene duplication (as it ran)');
+    }
+    if (opts.settings !== false && M.flow && !(S.settings && S.settings['flow.params'])) {
+      M.flow.params.on = false;   // step N2
+      notes.push('saved before step N2: substances flow as in N1 (no gusts, heat not carried, no scour, fixed springs, no chemotaxis gene) (as it ran)');
     }
     if (opts.settings !== false && M.stir && !(S.settings && S.settings['stir.params'])) {
       M.stir.params.on = false;   // step G0

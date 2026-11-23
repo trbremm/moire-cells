@@ -1,0 +1,90 @@
+{
+ "batch": "n2-look2",
+ "runs": [
+  {
+   "name": "n2-look2-currents-neon_s3",
+   "query": {
+    "terrain": "currents",
+    "seed": 3
+   },
+   "duration": 302,
+   "sample_every": 60,
+   "stall": 400,
+   "shots": [
+    {
+     "t": 150,
+     "name": "t150"
+    },
+    {
+     "t": 300,
+     "name": "t300"
+    },
+    {
+     "t": 150,
+     "crop": [
+      400,
+      250,
+      480,
+      300
+     ],
+     "scale": 2.5,
+     "name": "t150-zoom"
+    },
+    {
+     "t": 300,
+     "crop": [
+      400,
+      250,
+      480,
+      300
+     ],
+     "scale": 2.5,
+     "name": "t300-zoom"
+    }
+   ]
+  },
+  {
+   "name": "n2-look2-currents-harmonic_s3",
+   "query": {
+    "terrain": "currents",
+    "seed": 3,
+    "look": "harmonic"
+   },
+   "duration": 302,
+   "sample_every": 60,
+   "stall": 400,
+   "shots": [
+    {
+     "t": 150,
+     "name": "t150"
+    },
+    {
+     "t": 300,
+     "name": "t300"
+    },
+    {
+     "t": 150,
+     "crop": [
+      400,
+      250,
+      480,
+      300
+     ],
+     "scale": 2.5,
+     "name": "t150-zoom"
+    },
+    {
+     "t": 300,
+     "crop": [
+      400,
+      250,
+      480,
+      300
+     ],
+     "scale": 2.5,
+     "name": "t300-zoom"
+    }
+   ]
+  }
+ ]
+}

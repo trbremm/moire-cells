@@ -512,6 +512,37 @@ export const TERRAINS = {
       return {};
     },
   },
+  // step N2 (substances that flow): an open shallows where the food MOVES: strong gusty currents and turning tides, a few scattered rocks
+  // (the water runs fast round them and stills in their lee, where scoured crust and tar settle as bars), springs that wander, go dry and
+  // rise elsewhere (src/flow.js)
+  currents: {
+    label: 'Tidal currents',
+    line: 'Strong, changing currents. Springs wander and run dry; sand bars pile up behind the rocks.',
+    make(S) {
+      const { W, H, R } = S;
+      const want = clampI(W * H / (R * R) / 2600, 4, 14), rocks = [];
+      for (let t = 0; t < 600 && rocks.length < want; t++) {
+        const x = S.r(12 * R, W - 12 * R), y = S.r(12 * R, H - 12 * R);
+        if (rocks.every((p) => Math.hypot(p.x - x, p.y - y) > 30 * R)) rocks.push({ x, y });
+      }
+      for (const p of rocks) {
+        // a rock: a few overlapping round stones, drawn out along a random direction (streamlined)
+        const a = S.r(0, TAU), m = 2 + Math.floor(S.rnd() * 3);
+        for (let k = 0; k < m; k++) {
+          const d = (k - (m - 1) / 2) * S.r(1.8, 3) * R;
+          S.circle(p.x + Math.cos(a) * d, p.y + Math.sin(a) * d, S.r(1.6, 3.2) * R);
+        }
+      }
+      // springs in the open water (they wander off from here), homes beside the first ones
+      // (five springs and the full light made a crowd of 4000 cells by 10 minutes: three and a dimmer sky leave room to see the water)
+      for (let k = 0; k < 3; k++) {
+        const at = S.free(S.r(0.15, 0.85) * W, S.r(0.15, 0.85) * H, 2 * R);
+        S.spring(...at, k === 2 ? 'heavy' : 'light', k === 2 ? 5 : 10);
+        if (k < 2) S.home(at[0] + 5 * R, at[1]);
+      }
+      return { water: { speed: 0.5, gyre: 0.5 }, flow: { strength: 2.5, sweep: 0.35, tide: 0.5 }, light: { power: 0.6 } };
+    },
+  },
 };
 export const TERRAIN_NAMES = Object.keys(TERRAINS);
 
@@ -555,7 +586,7 @@ export function makeWorld(name, seed, W, H, R) {
   });
   return {
     name, seed: seed >>> 0, label: T.label, line: T.line, shapes: S.shapes, round: S.round, springs, homes,
-    open: openShare(S), light: o.light || {}, water: o.water || null, perfusion: o.perfusion || null, sketch: S,
+    open: openShare(S), light: o.light || {}, water: o.water || null, perfusion: o.perfusion || null, flow: o.flow || null, sketch: S,
   };
 }
 

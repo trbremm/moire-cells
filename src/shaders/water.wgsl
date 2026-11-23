@@ -54,9 +54,13 @@ fn psi_node(p: vec2f, id: vec2u, ob: vec2f) -> f32 {
   if (win <= 0.0) { return through_at(p, id); }
   let d = p - W.cen.xy;
   var beat = 0.0;
-  for (var m = 0u; m < 3u; m++) { beat += cos(dot(W.q[m].xy, d) + W.q[m].z); }
-  let gyre = sin(3.14159265 * p.x / W.dish.x) * sin(3.14159265 * p.y / W.dish.y);
-  return win * (W.cen.z * beat + W.cen.w * gyre) + through_at(p, id);
+  for (var m = 0u; m < 3u; m++) { beat += W.n2a[m] * cos(dot(W.q[m].xy, d) + W.q[m].z); }   // (step N2: x each family's gust)
+  let sx = 3.14159265 * p.x / W.dish.x;
+  let sy = 3.14159265 * p.y / W.dish.y;
+  let gyre = sin(sx) * sin(sy);
+  // step N2: the two tidal modes, (2, 1) and (1, 2), turning round each other (src/flow.js; 0 while off)
+  let tide = W.n2b.x * sin(2.0 * sx) * sin(sy) + W.n2b.y * sin(sx) * sin(2.0 * sy);
+  return win * (W.cen.z * beat + W.cen.w * gyre + tide) + through_at(p, id);
 }
 
 // step G0b: the through-flow at corner id: SOLVED round the obstacles (src/obstacles.js: pressure-driven, x the pump's flux) when there are

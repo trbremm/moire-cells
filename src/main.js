@@ -166,6 +166,9 @@
 //               (the genes drift, nothing acts, nothing is paid); ?mogrn=0 ?mowater=0 ?modipole=0 ?mopump=0 ?mocouple=0 ?mosteer=0 ?motorque=0
 //               one part off; knobs ?swim= ?steer= ?arm= ?dipole= ?swimdrift= ?ciliapush= ?beathz= ?couple= ?lag= ?swimcost= ?ciliaup=
 //               ?flagwant= ?ciliawant= ?mocensus=; ?modraw=0 the motors not drawn (src/motors.js; rules panel, Flagella and cilia)
+//   ?n2=0         step N2: substances flow as in step N1 (every part off); ?heatflow=0 ?gusts=0 ?scour=0 ?patchy=0 ?chemo=0 one part off;
+//               ?chemonull=1 the chemotaxis gene's NEUTRAL control; knobs ?flowx= ?gust= ?sweep= ?tide= ?tideperiod= ?scourspeed= ?carry=
+//               ?springlife= ?springgap= ?flowcensus= (src/flow.js; rules panel, Substances that flow); ?terrain=currents the world for it
 //   ?shape=0      step S1: cell shape off (today's round contacts exactly); ?shapenull=1 the elongation gene's NEUTRAL control (it drifts, cells
 //               ask to be round); ?shapegene=0 ?shapegrn=0 ?shapetorque=0 ?shapeexch=0 ?shapewrap=0 one part off; ?aspmax= the longest
 //               aspect (1.2..4, default 4); ?shapeturn= x the derived turning (rules panel, Cell shape)
@@ -250,6 +253,7 @@ import { createToy } from './toy.js';   // the toy front: a few big buttons, wor
 import { applyPreset, layoutFromParams, applyDiversity, PRESETS, SPREAD_SQUEEZE } from './culture.js';
 import { Tissues, useDesignFounder, DESIGNS } from './tissues.js';
 import { Warfare } from './warfare.js';
+import { Flow } from './flow.js';   // step N2: substances that flow (gusts, heat carried, scour, patchy springs, the chemotaxis gene)
 import { CB_PHOTO } from './genome.js';   // step C15d: founders that photosynthesise fix carbon (?cbphoto=0)
 
 window.__moireBooted = true;
@@ -311,6 +315,7 @@ let matter = null;
 let charge = null;     // step C6b: the screened charge field (src/charge.js)
 let water = null;      // step N1: the water: caustic light and currents (src/water.js)
 let oases = null;      // step N1: the scarce nutrient's springs (src/oases.js)
+let flow = null;       // step N2: substances that flow (src/flow.js)
 let obstacles = null;  // step G0b: obstacles (src/obstacles.js)
 let perfusion = null;  // the microfluidic chip: inlet, through-flow, outlet (src/perfusion.js)
 let recorder = null;   // step C3b: the video recorder (Shift+V, the record button)
@@ -782,6 +787,21 @@ async function boot() {
       const r = Number(params.get('oasisrate'));
       if (params.has('oasisrate') && Number.isFinite(r) && r >= 0) OP.rate = r;
     }
+    // step N2: substances that flow (src/flow.js): the currents' gusts and tides, the heat carried, the bed scoured, patchy springs, the
+    // chemotaxis gene. ?n2=0: all off (as before step N2)
+    flow = new Flow(matter, SEED);
+    Object.assign(flow, { cells, obstacles, water });
+    water.flow = flow; cells.flow = flow;
+    {
+      const FP = flow.params;
+      for (const [q, k] of [['n2', 'on'], ['heatflow', 'heat'], ['gusts', 'gusts'], ['scour', 'scour'], ['patchy', 'patchy'], ['chemo', 'chemo'],
+        ['chemonull', 'chemoNull']]) { if (params.has(q)) FP[k] = flag(q); }
+      for (const [q, k] of [['flowx', 'strength'], ['gust', 'gust'], ['sweep', 'sweep'], ['tide', 'tide'], ['tideperiod', 'tidePeriod'],
+        ['scourspeed', 'scourSpeed'], ['carry', 'carry'], ['springlife', 'life'], ['springgap', 'gap'], ['flowcensus', 'censusEvery']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) FP[k] = v;
+      }
+    }
     {   // step N1: a nutrient landscape (light needs matter)
       const PG = cells.eat.pigments;
       PG.light = light;
@@ -808,7 +828,7 @@ async function boot() {
   }
   // the medium first: it writes the lattice every field-reading layer uses; the light before the cells (its uniform is
   // read by the heat passes the cells run), and its tint is drawn under them (its outline over them: renderTop)
-  layers = [obstacles, medium, oases, background, landscape, matter, charge, water, obstacles.drawLayer, light, cells];   // (step G0b: the obstacles'
+  layers = [obstacles, medium, oases, flow, background, landscape, matter, charge, water, obstacles.drawLayer, light, cells];   // (step G0b: the obstacles'
   // mask first, so every pass of the frame reads it; drawn over the water, under the light's tint and the cells)   // (step C6b: the charge's contours over the substances; step N1: the water
   // after the ripples stepped and before the cells' ticks, its caustic net under the light's tint)
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
@@ -817,7 +837,7 @@ async function boot() {
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
     kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, dup: cells.dup, perfusion, glue: cells.glue, stir: water.stir, obstacles,
-    spindle: cells.spindle, carbon: matter.carbon, carbonCells: cells.eat.carbon, motors: cells.motors };
+    spindle: cells.spindle, carbon: matter.carbon, carbonCells: cells.eat.carbon, motors: cells.motors, flow };
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.warfare = new Warfare(window.moire);     // step T1c: the chemical warfare census (lineage borders against interiors)
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
@@ -1132,7 +1152,8 @@ ${matter.carbon.panelLine(compact)}
 ${cells.eat.carbon.panelLine(compact)}` : ''}
 ${cells.eat.pigments.panelLine(compact)}
 ${water.panelLine(compact)}
-${oases.panelLine(compact)}`;
+${oases.panelLine(compact)}
+${flow.panelLine(compact)}`;
     if (paused || speed !== 1) {
       const r = reachedText();
       const sp = paused ? 'paused' : r ? (compact ? r : `${speedName(speed)} · reached ${r}`) : speedName(speed);
@@ -1222,6 +1243,7 @@ function drawOverlay() {
     ...cells.eat.pigments.overlayLines(),
     ...water.overlayLines(),
     ...oases.overlayLines(),
+    ...flow.overlayLines(),
     ...matter.vents.overlayLines(),
     ...matter.carbon.overlayLines(),
     ...cells.eat.carbon.overlayLines(),
@@ -1286,6 +1308,7 @@ function makeApp() {
     get light() { return light; }, get matter() { return matter; }, get heat() { return cells.heat; },
     get charge() { return charge; },
     get water() { return water; }, get oases() { return oases; },   // step N1
+    get flow() { return flow; },   // step N2
     get neon() { return neon; },
     get view() { return view; },
     overlayEl, entropyEl, ANCHORS,
@@ -1569,7 +1592,7 @@ function setupInput() {
   window.addEventListener('keydown', onKey);
   appUI = createApp({ app, params, flag, flash, cells, matter, light, background, control, get view() { return view; }, touch: TOUCH, tools: TOOLS,
     inPlace: newCultureInPlace, preset: PRESET, dish, obstacles });
-  toy = createToy({ app, actions, runAction, tools: TOOLS, cells, matter, light, obstacles, water, oases, perfusion, background, params, flag,
+  toy = createToy({ app, actions, runAction, tools: TOOLS, cells, matter, light, obstacles, water, oases, perfusion, flow, background, params, flag,
     control, preset: PRESET, appUI, get view() { return view; }, flash, showEntropy, touch: TOUCH });
   ui = setupUI(Object.assign(app, {
     actions, runAction, touch: TOUCH,

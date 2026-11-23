@@ -1,0 +1,84 @@
+{
+  "name": "n2-nose-hi",
+  "description": "chemo gene 1.5 for all, default scene",
+  "condition": {
+    "name": "n2-nose-hi",
+    "description": "chemo gene 1.5 for all, default scene",
+    "query": {
+      "seed": 3,
+      "genes": "chemo:1.5",
+      "flowcensus": 5
+    },
+    "duration": 152,
+    "sample_every": 30,
+    "stall": 300,
+    "evals": [
+      {
+        "t": 60,
+        "js": "return JSON.stringify(moire.flow.census)"
+      },
+      {
+        "t": 90,
+        "js": "return JSON.stringify(moire.flow.census)"
+      },
+      {
+        "t": 120,
+        "js": "return JSON.stringify(moire.flow.census)"
+      },
+      {
+        "t": 150,
+        "js": "return JSON.stringify(moire.flow.census)"
+      }
+    ],
+    "shots": [
+      {
+        "t": 150,
+        "name": "end"
+      }
+    ]
+  },
+  "url": "http://localhost:49711/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3&genes=chemo:1.5&flowcensus=5",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "e2f52189c53df09c5981ce50518cf007b0f60f47",
+  "dirty": true,
+  "started": "2026-11-23T12:14:57",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 152.0,
+  "run_wall_s": 393.4,
+  "speed_reached": 0.39,
+  "samples": 7,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 59.999999999997875,
+      "js": "return JSON.stringify(moire.flow.census)",
+      "result": "{\"time\":55.28333333333148,\"n\":1286,\"springs\":6,\"motility\":0.5425041360464845,\"flagellum\":0,\"cilia\":0,\"chemo\":1.5,\"chemoSd\":0,\"chemoFactor\":4.4816890703380645,\"smell\":0.5523233257902757,\"smellRel\":4.2705905444328724,\"feel\":0.9976671850699844,\"align\":0.01794472613145013,\"alignPath\":0.016179063334847716,\"speed\":0.6915239108507027,\"travel\":0.29426842241860507,\"lifePath\":8.902940448036253,\"lifeDisp\":5.399333267460983,\"lifeAge\":50.13333333333176,\"lives\":694,\"nearSpring\":0.10653188180404355,\"nearArea\":0.06875,\"enrich\":1.5495546444224515}"
+    },
+    {
+      "t": 89.99999999999618,
+      "js": "return JSON.stringify(moire.flow.census)",
+      "result": "{\"time\":85.38333333332977,\"n\":498,\"springs\":6,\"motility\":0.5294743385539955,\"flagellum\":0,\"cilia\":0,\"chemo\":1.5,\"chemoSd\":0,\"chemoFactor\":4.4816890703380645,\"smell\":0.7094803061238045,\"smellRel\":5.546804641072272,\"feel\":1,\"align\":0.0806600628870568,\"alignPath\":-0.08521170263460102,\"speed\":0.6387158522192548,\"travel\":0.3246899358792542,\"lifePath\":12.79222332394362,\"lifeDisp\":7.61123840148697,\"lifeAge\":60.166666666664526,\"lives\":1482,\"nearSpring\":0.08634538152610442,\"nearArea\":0.074609375,\"enrich\":1.1572993544860068}"
+    },
+    {
+      "t": 119.99999999999447,
+      "js": "return JSON.stringify(moire.flow.census)",
+      "result": "{\"time\":115.48333333332806,\"n\":200,\"springs\":6,\"motility\":0.5723484537005424,\"flagellum\":0.0007963982224464416,\"cilia\":0.002442744243890047,\"chemo\":1.4945651358366012,\"chemoSd\":0.05142238580889271,\"chemoFactor\":4.457397768772868,\"smell\":0.5234223884660288,\"smellRel\":4.654340832366206,\"feel\":1,\"align\":0.13271721804083414,\"alignPath\":0.11399526764432821,\"speed\":0.6792299014619361,\"travel\":0.321763961790464,\"lifePath\":14.313429106150894,\"lifeDisp\":8.324880270699667,\"lifeAge\":60.166666666664526,\"lives\":1784,\"nearSpring\":0.15,\"nearArea\":0.07265625,\"enrich\":2.064516129032258}"
+    },
+    {
+      "t": 150.0000000000115,
+      "js": "return JSON.stringify(moire.flow.census)",
+      "result": "{\"time\":145.5166666666746,\"n\":160,\"springs\":6,\"motility\":0.5975097434595227,\"flagellum\":0.002441964898025617,\"cilia\":0.006579075381159783,\"chemo\":1.496586363017559,\"chemoSd\":0.02795130766739902,\"chemoFactor\":4.466416293472755,\"smell\":0.47905690209443713,\"smellRel\":3.4188769810602664,\"feel\":0.99375,\"align\":0.10994998199855288,\"alignPath\":0.04309578358728734,\"speed\":0.6413600727810571,\"travel\":0.36993613385838153,\"lifePath\":14.48056709647138,\"lifeDisp\":8.502977053084635,\"lifeAge\":60.166666666664526,\"lives\":1827,\"nearSpring\":0.18125,\"nearArea\":0.074609375,\"enrich\":2.4293193717277486}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T12:23:32",
+  "wall_s": 514.79
+}

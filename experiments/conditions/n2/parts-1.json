@@ -1,0 +1,51 @@
+{
+ "batch": "n2-part-1",
+ "runs": [
+  {
+   "name": "n2-part-default-nogusts_s3",
+   "description": "default scene, N2 on except gusts, 10 min",
+   "query": {
+    "seed": 3,
+    "gusts": 0
+   },
+   "duration": 602,
+   "sample_every": 30,
+   "stall": 400,
+   "shots": [
+    {
+     "t": 600,
+     "name": "end"
+    }
+   ],
+   "evals": [
+    {
+     "t": 600,
+     "js": "return JSON.stringify(moire.flow.census)"
+    }
+   ]
+  },
+  {
+   "name": "n2-part-default-nogusts_s7",
+   "description": "default scene, N2 on except gusts, 10 min",
+   "query": {
+    "seed": 7,
+    "gusts": 0
+   },
+   "duration": 602,
+   "sample_every": 30,
+   "stall": 400,
+   "shots": [
+    {
+     "t": 600,
+     "name": "end"
+    }
+   ],
+   "evals": [
+    {
+     "t": 600,
+     "js": "return JSON.stringify(moire.flow.census)"
+    }
+   ]
+  }
+ ]
+}

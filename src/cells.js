@@ -748,6 +748,7 @@ export class Cells {
     if (this.stir) this.stir.writeFields(u, f, 132); else { u.fill(0, 132, 140); }   // step G0: the cells stir the water (Fields.g0b, g0c)
     if (this.obstacles) this.obstacles.writeFields(u, f, 140); else { u.fill(0, 140, 144); }   // step G0b: obstacles (Fields.ob0)
     this.dup.writeFields(u, f, 144);           // step G2: gene duplication (Fields.g2)
+    u[147] = this.flow ? this.flow.chemoBits : 0;   // step N2: the chemotaxis gene's bits (Fields.g2.w; src/flow.js)
     this.motors.writeFields(u, f, 148);        // step S2: flagella and cilia (Fields.mo0..mo2)
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }

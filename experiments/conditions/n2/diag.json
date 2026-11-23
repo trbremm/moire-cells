@@ -1,0 +1,13 @@
+{
+ "batch": "n2-diag",
+ "runs": [
+  {"name": "n2-diag-default-off", "description": "N2 part 1: the default scene as on main (?n2=0), 6 min", "query": {"seed": 3, "n2": 0},
+   "duration": 362, "sample_every": 30, "stall": 300,
+   "evals": [{"t": 240, "js": "return JSON.stringify(await moire.flow.diagnose())"}, {"t": 360, "js": "return JSON.stringify(await moire.flow.diagnose())"}],
+   "shots": [{"t": 360, "name": "end"}]},
+  {"name": "n2-diag-delta-off", "description": "N2 part 1: the delta world as on main (?n2=0), 6 min", "query": {"terrain": "delta", "seed": 7, "n2": 0},
+   "duration": 362, "sample_every": 30, "stall": 300,
+   "evals": [{"t": 240, "js": "return JSON.stringify(await moire.flow.diagnose())"}, {"t": 360, "js": "return JSON.stringify(await moire.flow.diagnose())"}],
+   "shots": [{"t": 360, "name": "end"}]}
+ ]
+}

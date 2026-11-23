@@ -1,0 +1,91 @@
+{
+  "name": "n2-evo-islands-null_s3",
+  "description": "step N2 evolution: islands, null, seed 3, 20 min",
+  "condition": {
+    "name": "n2-evo-islands-null_s3",
+    "description": "step N2 evolution: islands, null, seed 3, 20 min",
+    "query": {
+      "terrain": "islands",
+      "seed": 3,
+      "flagellanull": 1,
+      "cilianull": 1,
+      "chemonull": 1
+    },
+    "duration": 1203,
+    "sample_every": 30,
+    "stall": 600,
+    "shots": [
+      {
+        "t": 600,
+        "name": "t600"
+      },
+      {
+        "t": 1200,
+        "name": "end"
+      }
+    ],
+    "evals": [
+      {
+        "t": 300,
+        "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+      },
+      {
+        "t": 600,
+        "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+      },
+      {
+        "t": 900,
+        "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+      },
+      {
+        "t": 1200,
+        "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+      }
+    ]
+  },
+  "url": "http://localhost:64635/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&terrain=islands&seed=3&flagellanull=1&cilianull=1&chemonull=1",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "a8a92a31ea9dd7fcddc372cede95f9a734acd7e6",
+  "dirty": true,
+  "started": "2026-11-23T15:42:40",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1203.0,
+  "run_wall_s": 5026.79,
+  "speed_reached": 0.24,
+  "samples": 42,
+  "shots": [
+    "shots/t600.png",
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 300.0000000000558,
+      "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})",
+      "result": "{\"flow\":{\"time\":290.3500000000646,\"n\":2635,\"springs\":7,\"motility\":0.3459327880901053,\"flagellum\":0.07502925369053093,\"cilia\":0.09697340915138185,\"chemo\":0.000748001685829045,\"chemoSd\":0.6428802851369492,\"chemoFactor\":1.000748281508855,\"smell\":0.303162928454556,\"smellRel\":4.452567611918879,\"feel\":0.9969639468690702,\"align\":0.026402335226719646,\"alignPath\":-0.018077772124419317,\"speed\":1.0704450621975088,\"travel\":0.455419325031584,\"lifePath\":23.31001880381106,\"lifeDisp\":10.79899550044081,\"lifeAge\":60.06666666666453,\"lives\":2280,\"nearSpring\":0.0633776091081594,\"nearArea\":0.08378947368421052,\"enrich\":0.7563910634767768},\"motors\":{\"time\":299.85000000005596,\"n\":2732,\"carriers\":809,\"flagGene\":0.07763286969253294,\"flagSd\":0.11258576000495671,\"flagExpr\":0,\"swimmers\":0,\"speed\":0,\"relSpeed\":0,\"turning\":0,\"open\":0,\"pushers\":182,\"pusherShare\":0.2249690976514215,\"sign\":-0.28922840409956074,\"placement\":0.13364641288433382,\"ciliaCarriers\":994,\"ciliaGene\":0.10042972181551978,\"ciliaSd\":0.13314213651703527,\"ciliaExpr\":0,\"beating\":0,\"freeSides\":0,\"waveN\":0,\"wave\":0,\"sync\":0,\"globalSync\":0,\"coupling\":-0.02607467057101025,\"tilt\":0.13349450951683747,\"motorShare\":0.8714216701173223,\"payPerTick\":0}}"
+    },
+    {
+      "t": 599.999999999783,
+      "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})",
+      "result": "{\"flow\":{\"time\":590.8499999997913,\"n\":5348,\"springs\":7,\"motility\":0.25817713110739743,\"flagellum\":0.16568533969708946,\"cilia\":0.21263743491202863,\"chemo\":-0.21484989427826273,\"chemoSd\":1.0570795764769518,\"chemoFactor\":0.8066625157491564,\"smell\":0.3110478019708614,\"smellRel\":4.402244756361469,\"feel\":0.9962602842183994,\"align\":0.014358490193843627,\"alignPath\":-0.010061411215658974,\"speed\":0.9318534017704762,\"travel\":0.4178436230818207,\"lifePath\":18.371635868210547,\"lifeDisp\":8.884391204609129,\"lifeAge\":60.09999999994534,\"lives\":5000,\"nearSpring\":0.0893792071802543,\"nearArea\":0.0871578947368421,\"enrich\":1.025486072720309},\"motors\":{\"time\":599.8333333331165,\"n\":5351,\"carriers\":2785,\"flagGene\":0.16661371706223135,\"flagSd\":0.18863154942295982,\"flagExpr\":0,\"swimmers\":0,\"speed\":0,\"relSpeed\":0,\"turning\":0,\"open\":0,\"pushers\":590,\"pusherShare\":0.2118491921005386,\"sign\":-0.3505447579891609,\"placement\":0.23831190431695012,\"ciliaCarriers\":3376,\"ciliaGene\":0.21772154737432256,\"ciliaSd\":0.21564976636968453,\"ciliaExpr\":0,\"beating\":0,\"freeSides\":0,\"waveN\":0,\"wave\":0,\"sync\":0,\"globalSync\":0,\"coupling\":-0.003004858904877593,\"tilt\":0.24918949729022613,\"motorShare\":0.8507510297482838,\"payPerTick\":0}}"
+    },
+    {
+      "t": 899.9999999995101,
+      "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})",
+      "result": "{\"flow\":{\"time\":891.349999999518,\"n\":5730,\"springs\":6,\"motility\":0.24981438519910992,\"flagellum\":0.22956096058562894,\"cilia\":0.274490268269504,\"chemo\":-0.46805096683978226,\"chemoSd\":1.2579688223326335,\"chemoFactor\":0.6262216063079228,\"smell\":0.4052396082891101,\"smellRel\":5.938753699968216,\"feel\":0.9986038394415357,\"align\":-0.005362228583673983,\"alignPath\":-0.015680918207789492,\"speed\":0.8975767656004785,\"travel\":0.3992038834183486,\"lifePath\":15.191876653967542,\"lifeDisp\":6.641070677840402,\"lifeAge\":60.09999999994534,\"lives\":5000,\"nearSpring\":0.08394415357766143,\"nearArea\":0.0808421052631579,\"enrich\":1.0383716913903431},\"motors\":{\"time\":899.8499999995103,\"n\":5707,\"carriers\":3613,\"flagGene\":0.22917890310145436,\"flagSd\":0.22436617590475452,\"flagExpr\":0,\"swimmers\":0,\"speed\":0,\"relSpeed\":0,\"turning\":0,\"open\":0,\"pushers\":830,\"pusherShare\":0.22972598948242456,\"sign\":-0.3401284387594183,\"placement\":0.2916828456281759,\"ciliaCarriers\":3974,\"ciliaGene\":0.273028736639215,\"ciliaSd\":0.24254594375534186,\"ciliaExpr\":0,\"beating\":0,\"freeSides\":0,\"waveN\":0,\"wave\":0,\"sync\":0,\"globalSync\":0,\"coupling\":0.08705624671456107,\"tilt\":0.29175749080077096,\"motorShare\":0.8845435643564356,\"payPerTick\":0}}"
+    },
+    {
+      "t": 1199.9999999992374,
+      "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})",
+      "result": "{\"flow\":{\"time\":1191.8499999992448,\"n\":5891,\"springs\":6,\"motility\":0.2642106997012647,\"flagellum\":0.24260214980723743,\"cilia\":0.29062370092569123,\"chemo\":-0.5762615838170145,\"chemoSd\":1.3374471447384708,\"chemoFactor\":0.5619954170612308,\"smell\":0.5042940473004947,\"smellRel\":7.96367703407797,\"feel\":0.9977932439314208,\"align\":0.017353954188231546,\"alignPath\":0.0012433523282065334,\"speed\":0.8143391518055361,\"travel\":0.2782006266873844,\"lifePath\":25.6875443723975,\"lifeDisp\":10.63550713644286,\"lifeAge\":90.14999999991801,\"lives\":5000,\"nearSpring\":0.0813104736038024,\"nearArea\":0.08336842105263158,\"enrich\":0.975315024288034},\"motors\":{\"time\":1199.8833333325708,\"n\":5901,\"carriers\":3892,\"flagGene\":0.24457803762074226,\"flagSd\":0.2288853372235664,\"flagExpr\":0,\"swimmers\":0,\"speed\":0,\"relSpeed\":0,\"turning\":0,\"open\":0,\"pushers\":1092,\"pusherShare\":0.2805755395683453,\"sign\":-0.3189988137603796,\"placement\":0.3316439586510761,\"ciliaCarriers\":4250,\"ciliaGene\":0.2934019657685138,\"ciliaSd\":0.25174601455494205,\"ciliaExpr\":0,\"beating\":0,\"freeSides\":0,\"waveN\":0,\"wave\":0,\"sync\":0,\"globalSync\":0,\"coupling\":0.12275868496864938,\"tilt\":0.30738112184375527,\"motorShare\":0.9098274385703649,\"payPerTick\":0}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T17:08:48",
+  "wall_s": 5167.96
+}

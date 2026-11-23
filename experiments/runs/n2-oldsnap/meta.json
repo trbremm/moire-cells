@@ -1,0 +1,99 @@
+{
+  "name": "n2-oldsnap",
+  "description": "an old snapshot (tissue lab, before N2) loads with N2 off",
+  "condition": {
+    "name": "n2-oldsnap",
+    "description": "an old snapshot (tissue lab, before N2) loads with N2 off",
+    "query": {
+      "snap": "experiments/tissue/configs/tt-same/snapshot.json"
+    },
+    "duration": 30,
+    "sample_every": 10,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 30,
+        "name": "end"
+      }
+    ],
+    "evals": [
+      {
+        "t": 1,
+        "js": "return JSON.stringify({on: moire.flow.params.on, notes: moire.lab.loaded && moire.lab.loaded.notes.filter(n => n.includes('N2'))})"
+      }
+    ]
+  },
+  "url": "http://localhost:60410/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&snap=experiments/tissue/configs/tt-same/snapshot.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "0be11c5fe77a4c9fe9c7af42509b8b5f219eea18",
+  "dirty": false,
+  "started": "2026-11-23T13:13:27",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": false,
+    "notes": [
+      "no grid in the snapshot (cells only): the page's grid kept",
+      "saved before step C12b: lipid membranes off (as it ran)",
+      "saved before step C12c: excited waste off (as it ran)",
+      "saved before step C10: patterned walls off (as it ran)",
+      "saved before step C13: field genes, gates and the push gene off (as it ran)",
+      "saved before step C12f: the vent as in step C12d (no heat), no sea (as it ran)",
+      "saved before step C12g: the bilayer passes ions as before, channel genes off (as it ran)",
+      "saved before step M1: no head on oil inside cells, bites as before (as it ran)",
+      "saved before step T1a: no inside, no kin channels, no marker clock, no smell for trace (as it ran)",
+      "saved before step T1b: no gene network (as it ran)",
+      "saved before step P1: no engulfing (as it ran)",
+      "saved before step N1: pigments free, no saturation (as it ran)",
+      "saved before step N1: no caustic light, no currents (as it ran)",
+      "saved before step N1: trace from every spring, no oases (as it ran)",
+      "saved before step G0: the glue gene capped at 1, no junctions tearing (as it ran)",
+      "saved before step S1: round contacts, no elongation (as it ran)",
+      "saved before step S2: no flagella, no cilia (as it ran)",
+      "saved before step G2: no gene duplication (as it ran)",
+      "saved before step N2: substances flow as in N1 (no gusts, heat not carried, no scour, fixed springs, no chemotaxis gene) (as it ran)",
+      "saved before step G0: the cells do not stir the water (as it ran)",
+      "saved before step C12e: saturation and osmosis off (as it ran)",
+      "saved before step F0: the fates ignored (every cell undecided until its job shows)",
+      "stats buffer size differs: counters start from the page's"
+    ],
+    "rebased": {
+      "atoms": {},
+      "energy": 8999.379180908203
+    },
+    "rounding": {
+      "energy": 0,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": 0.0045623779296875,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 40,
+    "time": 119.99999999999837
+  },
+  "t_start": 119.99999999999837,
+  "sim_s": 30.0,
+  "run_wall_s": 1.67,
+  "speed_reached": 18.01,
+  "samples": 4,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 1.0000000000000284,
+      "js": "return JSON.stringify({on: moire.flow.params.on, notes: moire.lab.loaded && moire.lab.loaded.notes.filter(n => n.includes('N2'))})",
+      "result": "{\"on\":false,\"notes\":[\"saved before step N2: substances flow as in N1 (no gusts, heat not carried, no scour, fixed springs, no chemotaxis gene) (as it ran)\"]}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T13:14:54",
+  "wall_s": 87.73
+}

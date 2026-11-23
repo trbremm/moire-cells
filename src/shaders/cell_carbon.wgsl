@@ -75,6 +75,7 @@ const CBF_HYDFLOOR: u32 = 8388608u; // step C15f: THE GRANULES DIGESTED ONLY FRO
 const CBF_WALLCUT: u32 = 16777216u; // step C15f: a WALL's cross-linked pairs cut out of the granules as they are (cb_make_cross)
 const CBF_OILHELD: u32 = 33554432u; // step C15f: the builder makes oil only for the soap a side holds (cell_eat.wgsl, the lipid builder)
 const CBF_SPOILKEEP: u32 = 67108864u; // step C15f: a lipid or wall piece spoiled by oxygen stays in the cell as granules (cb_bites)
+const CBF_SMELLMUD: u32 = 1073741824u; // step C15g: a cell short of body carbon smells the MUD under its corners (cb_smell_mud)
 const CBF_IDLEHYD: u32 = 536870912u; // step C15g: idle photons first DIGEST over-condensed granules (HYDROLYZE spare backbones, cb_idle_red)
 const CBF_IDLEWATER: u32 = 268435456u; // step C15g: ... and, short of free g, a second idle photon splits a water for it (cb_idle_red)
 const CBF_IDLERED: u32 = 134217728u; // step C15g: a pigmented cell's IDLE photons drive the REDUCE reaction on its own carbon (cb_idle_red)
@@ -404,6 +405,19 @@ fn cb_smell(pi: u32) -> f32 {
   var v = 0.0;
   for (var j = 0u; j < 4u; j++) { v += f32(cbg(j) * CBP.e.w) * f32(max(mg[cur - LEDGER_WORDS + j * EP.n + pi], 0)); }
   return v;
+}
+
+/**
+ * Step C15g (CBF_SMELLMUD), HUNGRY CELLS SMELL THE MUD: the tar's carbons at a corner's pixel pi, each weighed as one fuel hand of the ladder
+ * (what a free t releases from it, CBP.e.w: cb_smell's unit) x the cell's HUNGER, the share of its body's want it lacks (hb: 0..1), as the
+ * trace smell is weighed by the engines' lack of trace (T1a). Mud is food only for a cell short of body carbon (a cell grazes it as a hungry
+ * one, C15c), and the dead's bodies lie where they died, mostly away from the colony; a cell with a full body smells none of it.
+ */
+fn cb_smell_mud(pi: u32, hunger: f32) -> f32 {
+  if (hunger <= 0.0 || !cb_bit(CBF_SMELLMUD) || (CBP.cfg.x & CBF_SMELL) == 0u) { return 0.0; }
+  let tb = CBP.off.z - LEDGER_WORDS;
+  let h = 2 * max(mg[tb + pi], 0) + max(mg[tb + EP.n + pi], 0) + max(mg[tb + 2u * EP.n + pi], 0);
+  return hunger * f32(CBP.e.w) * 0.25 * f32(h);
 }
 
 // n events over the carriers of one kind of hand: wts[q] the hands carrier q offers (0..4 the ladder molecules, 5 the granules), caps[q]

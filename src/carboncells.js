@@ -68,7 +68,7 @@ export const PART_RECIPES = {
   enzyme: { carbon: 4, hands: CB_ENZANY ? '4 burnt chain carbons (1 backbone bond, 2 burnt hands each: any carbon; step C15e)' : '4 chain carbons', element: 'G (the heavy giver: catalysis moves electrons)', k: 1, charged: CARBON },
 };
 const ATOM_SCALE = 4096;
-const CBF = { ON: 1, EXCH: 2, ENG: 4, GRAZE: 8, DIS: 16, FLIP: 32, RESET: 64, SMELL: 128, GROW: 256, LIP: 512, TRANS: 1024, RED: 2048, ENZ: 4096, OXB: 8192, SHUT: 16384, GRAN: 32768, HUNGER: 65536, WALLREC: 131072, ENZANY: 262144, GRANRED: 524288, GRANHYD: 1048576, GSPLIT: 2097152, BODYANY: 4194304, HYDFLOOR: 8388608, WALLCUT: 16777216, OILHELD: 33554432, SPOILKEEP: 67108864, IDLERED: 134217728, IDLEWATER: 268435456, IDLEHYD: 536870912 };
+const CBF = { ON: 1, EXCH: 2, ENG: 4, GRAZE: 8, DIS: 16, FLIP: 32, RESET: 64, SMELL: 128, GROW: 256, LIP: 512, TRANS: 1024, RED: 2048, ENZ: 4096, OXB: 8192, SHUT: 16384, GRAN: 32768, HUNGER: 65536, WALLREC: 131072, ENZANY: 262144, GRANRED: 524288, GRANHYD: 1048576, GSPLIT: 2097152, BODYANY: 4194304, HYDFLOOR: 8388608, WALLCUT: 16777216, OILHELD: 33554432, SPOILKEEP: 67108864, IDLERED: 134217728, IDLEWATER: 268435456, IDLEHYD: 536870912, SMELLMUD: 1073741824 };
 // the 64-bit event counters (LG_CBC.EV, cell_eat.wgsl CBE_*)
 const EV = ['ox', 'cond', 'red', 'hyd', 'dis', 'graze', 'gain', 'heat', 'paid', 'phUsed', 'phIdle', 'satWant', 'satLost', 'rise', 'built', 'buildPaid'];
 const EV_ENERGY = /^(gain|heat|paid|rise|buildPaid)$/;
@@ -157,6 +157,8 @@ export class CarbonCells {
                          // run the table's REDUCE on its own burnt hands, one photon a hand, the spark from the battery (?cbidlered=0)
       idleHyd: false,    // ... and first DIGEST: idle photons open the granules' spare backbones (the table's HYDROLYZE, one photon a bond) (?cbidlehyd=1)
       idleWater: false,  // ... and short of free g, a second idle photon splits a water for it (two photons a hand: photosynthesis) (?cbidlewater=1)
+      smellMud: false,   // HUNGRY CELLS SMELL THE MUD: a cell short of body carbon steers its crawl up the tar's gradient (each carbon as a fuel hand of
+                         // the ladder, x the share of the body it lacks) (?cbsmellmud=1)
       membFound: 1,      // FOUNDERS START WITH THEIR BILAYER: share of a typical founder's whole bilayer (the soap a thin membrane, thickness
                          // MEMB_THIN, wants at radius R; half soap1, half soap2), as bodies, enzymes and pigment (booked as carbon in; 0: none, as
                          // C15f) (?cbmembfound=)
@@ -211,7 +213,8 @@ export class CarbonCells {
         (this.rule('bodyAny') ? CBF.BODYANY : 0) | (this.rule('hydFloor') ? CBF.HYDFLOOR : 0) |
         (CB_LIP && this.rule('wallCut') ? CBF.WALLCUT : 0) | (CB_LIP && this.rule('oilHeld') ? CBF.OILHELD : 0) |
         (CB_LIP && this.rule('spoilKeep') ? CBF.SPOILKEEP : 0) | (this.rule('idleRed') ? CBF.IDLERED : 0) |
-        (this.rule('idleRed') && this.rule('idleWater') ? CBF.IDLEWATER : 0) | (this.rule('idleHyd') ? CBF.IDLEHYD : 0);
+        (this.rule('idleRed') && this.rule('idleWater') ? CBF.IDLEWATER : 0) | (this.rule('idleHyd') ? CBF.IDLEHYD : 0) |
+        (this.rule('smellMud') ? CBF.SMELLMUD : 0);
       u[1] = tickBase >>> 0; u[2] = ok ? Math.max(1, M.nSub || 1) : 1; u[3] = ok ? Cb.cur & 1 : 0;
       if (ok) {
         const LW = LEDGER_WORDS;   // (the heat buffer's grid starts behind the ledger)

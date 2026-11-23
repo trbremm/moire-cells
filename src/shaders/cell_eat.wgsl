@@ -1591,6 +1591,13 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     }
     var gr = vec2f(0.0);
     var rr = 0.0;
+    // step C15g (CBF_SMELLMUD): the cell's hunger for body carbon (the share of its body's want it lacks), for the mud's smell
+    var hunger = 0.0;
+    if (CARBON_ON != 0u && cb_bit(CBF_SMELLMUD) && cb_bit(CBF_GROW)) {
+      let wb = cb_want(c.r) * ATOM_SCALE;
+      let hv = 0.25 * f32(2 * cbSP[i * CW + CB_BODY] + cbSP[i * CW + CB_BODY + 1u] + cbSP[i * CW + CB_BODY + 2u]);
+      if (wb > 0.0) { hunger = clamp(1.0 - hv / wb, 0.0, 1.0); }
+    }
     for (var a = 0; a < 6; a++) {
       let cp = mb.mid[a] - 0.5 * mb.edge[a];
       let px = heat_xy(HP, c.pos + cp);
@@ -1600,7 +1607,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
         if ((EP.mask & (1u << f)) != 0u) { v += ep_f(EP.smellW, f) * f32(mg[cur - lw + f * EP.n + pi]); }   // (step C12d: smellW)
       }
       if (wTr > 0.0) { v += wTr * f32(mg[cur - lw + TRACE_CH * EP.n + pi]); }   // (step T1a: the trace)
-      if (CARBON_ON != 0u) { v += cb_smell(pi); }   // (step C15b: the ladder's fuel)
+      if (CARBON_ON != 0u) { v += cb_smell(pi) + cb_smell_mud(pi, hunger); }   // (step C15b: the ladder's fuel; step C15g: the mud, if hungry)
       gr += v * cp;
       rr += dot(cp, cp);
     }

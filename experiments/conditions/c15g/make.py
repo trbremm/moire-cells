@@ -195,3 +195,7 @@ if __name__ == "__main__":
         ab2.append(watch("default", s, 600, "ab2-hyd", "every C15g lever on + ?cbidlehyd=1", extra={"cbidlehyd": 1}))
         ab2.append(watch("default", s, 600, "ab2-hydwater", "every C15g lever on + ?cbidlehyd=1&cbidlewater=1", extra={"cbidlehyd": 1, "cbidlewater": 1}))
     dump({"batch": "c15g-ab2", "runs": ab2}, "ab2.json")
+
+    # ---------- ab3: hungry cells smell the mud (?cbsmellmud=1) with every C15g lever on, default scene seeds 3 and 7, 10 min ----------
+    dump({"batch": "c15g-ab3", "runs": [watch("default", s, 600, "ab3-mud", "every C15g lever on + ?cbsmellmud=1", extra={"cbsmellmud": 1})
+                                        for s in (3, 7)]}, "ab3.json")

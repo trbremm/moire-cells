@@ -1,0 +1,44 @@
+{
+  "name": "n2-off-delta-n2",
+  "description": "",
+  "condition": {
+    "name": "n2-off-delta-n2",
+    "query": {
+      "terrain": "delta",
+      "seed": 7,
+      "n2": 0
+    },
+    "duration": 182,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 180,
+        "name": "end"
+      }
+    ]
+  },
+  "url": "http://localhost:64776/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&terrain=delta&seed=7&n2=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "e2f52189c53df09c5981ce50518cf007b0f60f47",
+  "dirty": true,
+  "started": "2026-11-23T12:59:04",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 182.0,
+  "run_wall_s": 235.25,
+  "speed_reached": 0.77,
+  "samples": 8,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-23T13:04:35",
+  "wall_s": 331.62
+}

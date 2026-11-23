@@ -1,0 +1,40 @@
+{
+  "name": "n2-speed-2k-off",
+  "description": "speed: 2000 cells, neon, N2 off, 150 s at MAX",
+  "condition": {
+    "name": "n2-speed-2k-off",
+    "description": "speed: 2000 cells, neon, N2 off, 150 s at MAX",
+    "query": {
+      "seed": 3,
+      "world": "open",
+      "cells": 2000,
+      "n2": 0
+    },
+    "duration": 150,
+    "sample_every": 0,
+    "stall": 400,
+    "evals": [],
+    "shots": []
+  },
+  "url": "http://localhost:53781/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3&world=open&cells=2000&n2=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "d143ae5bcff4ff36f406ceeda60a21b591fc3401",
+  "dirty": true,
+  "started": "2026-11-23T13:38:53",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 150.0,
+  "run_wall_s": 52.27,
+  "speed_reached": 2.87,
+  "samples": 2,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-23T13:40:55",
+  "wall_s": 122.35
+}

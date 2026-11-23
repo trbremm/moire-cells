@@ -1,0 +1,55 @@
+{
+  "name": "n2-world-islands-on_s7",
+  "description": "",
+  "condition": {
+    "name": "n2-world-islands-on_s7",
+    "query": {
+      "terrain": "islands",
+      "seed": 7
+    },
+    "duration": 302,
+    "sample_every": 30,
+    "stall": 400,
+    "shots": [
+      {
+        "t": 300,
+        "name": "end"
+      }
+    ],
+    "evals": [
+      {
+        "t": 300,
+        "js": "return JSON.stringify(moire.flow.census)"
+      }
+    ]
+  },
+  "url": "http://localhost:50465/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&terrain=islands&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "d143ae5bcff4ff36f406ceeda60a21b591fc3401",
+  "dirty": true,
+  "started": "2026-11-23T14:23:48",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 302.0,
+  "run_wall_s": 902.61,
+  "speed_reached": 0.33,
+  "samples": 12,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 300.0000000000558,
+      "js": "return JSON.stringify(moire.flow.census)",
+      "result": "{\"time\":290.3500000000646,\"n\":3024,\"springs\":7,\"motility\":0.49202522326497333,\"flagellum\":0.0779480340381688,\"cilia\":0.08571712927055183,\"chemo\":-0.045477046756988986,\"chemoSd\":0.6265601587683967,\"chemoFactor\":0.9555415350973044,\"smell\":0.3821531241560723,\"smellRel\":4.742953627903732,\"feel\":0.9970238095238095,\"align\":0.041428691802038634,\"alignPath\":-0.0019366631301978392,\"speed\":1.1261680689994469,\"travel\":0.4711520954611641,\"lifePath\":24.803776532969707,\"lifeDisp\":11.812612517485958,\"lifeAge\":60.06666666666454,\"lives\":2920,\"nearSpring\":0.10615079365079365,\"nearArea\":0.0907928388746803,\"enrich\":1.1691538117594455}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T14:40:38",
+  "wall_s": 1009.4
+}

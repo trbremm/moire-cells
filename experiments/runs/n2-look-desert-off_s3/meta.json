@@ -1,0 +1,44 @@
+{
+  "name": "n2-look-desert-off_s3",
+  "description": "crust desert N2 off",
+  "condition": {
+    "name": "n2-look-desert-off_s3",
+    "description": "crust desert N2 off",
+    "query": {
+      "preset": "desert",
+      "seed": 3,
+      "n2": 0
+    },
+    "duration": 602,
+    "sample_every": 30,
+    "stall": 300,
+    "shots": [
+      {
+        "t": 300,
+        "name": "t300"
+      },
+      {
+        "t": 600,
+        "name": "t600"
+      }
+    ],
+    "evals": [
+      {
+        "t": 600,
+        "js": "return JSON.stringify({flow: moire.flow.census, diag: await moire.flow.diagnose()})"
+      }
+    ]
+  },
+  "url": "http://localhost:50029/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&preset=desert&seed=3&n2=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "dfa2c248ba1c4a96fac70ecdfa6f8fd27e17155c",
+  "dirty": true,
+  "started": "2026-11-23T12:11:55",
+  "status": "failed",
+  "browser_version": "Chrome/157.0.8103.80",
+  "error": "RunFailed: page message: Could not start\nReferenceError: CB_LIP is not defined\n    at Object.scene (http://localhost:50029/src/culture.js:193:75)\n    at presetScene (http://localhost:50029/src/main.js:945:19)\n    at boot (http://localhost:50029/src/main.js:847:17)\n\nRELOAD\n\nThe older CPU version runs in any browser: reference/neon_organoid_cpu.html",
+  "console_errors": [],
+  "ended": "2026-11-23T12:13:49",
+  "wall_s": 114.0
+}

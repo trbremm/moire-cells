@@ -1,0 +1,166 @@
+{
+ "batch": "n2-evo-1",
+ "runs": [
+  {
+   "name": "n2-evo-default-null_s3",
+   "description": "step N2 evolution: default, null, seed 3, 20 min",
+   "query": {
+    "seed": 3,
+    "flagellanull": 1,
+    "cilianull": 1,
+    "chemonull": 1
+   },
+   "duration": 1203,
+   "sample_every": 30,
+   "stall": 600,
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "end"
+    }
+   ],
+   "evals": [
+    {
+     "t": 300,
+     "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+    },
+    {
+     "t": 600,
+     "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+    },
+    {
+     "t": 900,
+     "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+    },
+    {
+     "t": 1200,
+     "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+    }
+   ]
+  },
+  {
+   "name": "n2-evo-default-off_s7",
+   "description": "step N2 evolution: default, off, seed 7, 20 min",
+   "query": {
+    "seed": 7,
+    "n2": 0
+   },
+   "duration": 1203,
+   "sample_every": 30,
+   "stall": 600,
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "end"
+    }
+   ],
+   "evals": [
+    {
+     "t": 300,
+     "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+    },
+    {
+     "t": 600,
+     "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+    },
+    {
+     "t": 900,
+     "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+    },
+    {
+     "t": 1200,
+     "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+    }
+   ]
+  },
+  {
+   "name": "n2-evo-islands-on_s7",
+   "description": "step N2 evolution: islands, on, seed 7, 20 min",
+   "query": {
+    "terrain": "islands",
+    "seed": 7
+   },
+   "duration": 1203,
+   "sample_every": 30,
+   "stall": 600,
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "end"
+    }
+   ],
+   "evals": [
+    {
+     "t": 300,
+     "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+    },
+    {
+     "t": 600,
+     "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+    },
+    {
+     "t": 900,
+     "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+    },
+    {
+     "t": 1200,
+     "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+    }
+   ]
+  },
+  {
+   "name": "n2-evo-currents-null_s3",
+   "description": "step N2 evolution: currents, null, seed 3, 20 min",
+   "query": {
+    "terrain": "currents",
+    "seed": 3,
+    "flagellanull": 1,
+    "cilianull": 1,
+    "chemonull": 1
+   },
+   "duration": 1203,
+   "sample_every": 30,
+   "stall": 600,
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "end"
+    }
+   ],
+   "evals": [
+    {
+     "t": 300,
+     "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+    },
+    {
+     "t": 600,
+     "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+    },
+    {
+     "t": 900,
+     "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+    },
+    {
+     "t": 1200,
+     "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,63 @@
+{
+ "batch": "n2-speed",
+ "runs": [
+  {
+   "name": "n2-speed-2k-on",
+   "description": "speed: 2000 cells, neon, N2 on, 150 s at MAX",
+   "query": {
+    "seed": 3,
+    "world": "open",
+    "cells": 2000
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 400,
+   "evals": [],
+   "shots": []
+  },
+  {
+   "name": "n2-speed-2k-off",
+   "description": "speed: 2000 cells, neon, N2 off, 150 s at MAX",
+   "query": {
+    "seed": 3,
+    "world": "open",
+    "cells": 2000,
+    "n2": 0
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 400,
+   "evals": [],
+   "shots": []
+  },
+  {
+   "name": "n2-speed-2k-on2",
+   "description": "speed: 2000 cells, neon, N2 on2, 150 s at MAX",
+   "query": {
+    "seed": 3,
+    "world": "open",
+    "cells": 2000
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 400,
+   "evals": [],
+   "shots": []
+  },
+  {
+   "name": "n2-speed-2k-off2",
+   "description": "speed: 2000 cells, neon, N2 off2, 150 s at MAX",
+   "query": {
+    "seed": 3,
+    "world": "open",
+    "cells": 2000,
+    "n2": 0
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 400,
+   "evals": [],
+   "shots": []
+  }
+ ]
+}

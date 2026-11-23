@@ -1,0 +1,55 @@
+{
+  "name": "n2-world-sieve-on_s7",
+  "description": "",
+  "condition": {
+    "name": "n2-world-sieve-on_s7",
+    "query": {
+      "terrain": "sieve",
+      "seed": 7
+    },
+    "duration": 302,
+    "sample_every": 30,
+    "stall": 400,
+    "shots": [
+      {
+        "t": 300,
+        "name": "end"
+      }
+    ],
+    "evals": [
+      {
+        "t": 300,
+        "js": "return JSON.stringify(moire.flow.census)"
+      }
+    ]
+  },
+  "url": "http://localhost:65528/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&terrain=sieve&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "d143ae5bcff4ff36f406ceeda60a21b591fc3401",
+  "dirty": true,
+  "started": "2026-11-23T14:24:46",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 302.0,
+  "run_wall_s": 826.85,
+  "speed_reached": 0.37,
+  "samples": 12,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 300.0000000000558,
+      "js": "return JSON.stringify(moire.flow.census)",
+      "result": "{\"time\":290.3500000000646,\"n\":2274,\"springs\":10,\"motility\":0.5041057578531293,\"flagellum\":0.0654594889888554,\"cilia\":0.0739312166668677,\"chemo\":-0.06409391491939481,\"chemoSd\":0.56099738939719,\"chemoFactor\":0.9379169110032849,\"smell\":0.47408544059279273,\"smellRel\":4.195471958055035,\"feel\":0.9907651715039578,\"align\":0.037870696080249795,\"alignPath\":-0.0030792097100544166,\"speed\":0.9653533269630227,\"travel\":0.36035344499233507,\"lifePath\":18.183078160366872,\"lifeDisp\":7.6227997161023175,\"lifeAge\":70.0000000000557,\"lives\":2606,\"nearSpring\":0.1218117854001759,\"nearArea\":0.1239870340356564,\"enrich\":0.9824558378027258}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T14:40:21",
+  "wall_s": 934.31
+}

@@ -1,0 +1,188 @@
+{
+ "batch": "s2-act2-on",
+ "runs": [
+  {
+   "name": "s2-act-delta2-on",
+   "description": "step S2 act: delta2, motors on, 20 min",
+   "query": {
+    "terrain": "delta",
+    "seed": 2
+   },
+   "duration": 1203,
+   "sample_every": 30,
+   "stall": 400,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "end"
+    },
+    {
+     "t": 1201,
+     "panel": true,
+     "name": "panel"
+    }
+   ],
+   "evals": [
+    {
+     "t": 300,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 600,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 900,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 1200,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 301,
+     "js": "return JSON.stringify(await moire.motors.now())"
+    },
+    {
+     "t": 601,
+     "js": "return JSON.stringify(await moire.motors.now())"
+    },
+    {
+     "t": 901,
+     "js": "return JSON.stringify(await moire.motors.now())"
+    },
+    {
+     "t": 1201,
+     "js": "return JSON.stringify(await moire.motors.now())"
+    }
+   ]
+  },
+  {
+   "name": "s2-act-islands2-on",
+   "description": "step S2 act: islands2, motors on, 20 min",
+   "query": {
+    "terrain": "islands",
+    "seed": 2
+   },
+   "duration": 1203,
+   "sample_every": 30,
+   "stall": 400,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "end"
+    },
+    {
+     "t": 1201,
+     "panel": true,
+     "name": "panel"
+    }
+   ],
+   "evals": [
+    {
+     "t": 300,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 600,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 900,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 1200,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 301,
+     "js": "return JSON.stringify(await moire.motors.now())"
+    },
+    {
+     "t": 601,
+     "js": "return JSON.stringify(await moire.motors.now())"
+    },
+    {
+     "t": 901,
+     "js": "return JSON.stringify(await moire.motors.now())"
+    },
+    {
+     "t": 1201,
+     "js": "return JSON.stringify(await moire.motors.now())"
+    }
+   ]
+  },
+  {
+   "name": "s2-act-colonies2-on",
+   "description": "step S2 act: colonies2, motors on, 20 min",
+   "query": {
+    "preset": "colonies",
+    "seed": 2
+   },
+   "duration": 1203,
+   "sample_every": 30,
+   "stall": 400,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "end"
+    },
+    {
+     "t": 1201,
+     "panel": true,
+     "name": "panel"
+    }
+   ],
+   "evals": [
+    {
+     "t": 300,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 600,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 900,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 1200,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 301,
+     "js": "return JSON.stringify(await moire.motors.now())"
+    },
+    {
+     "t": 601,
+     "js": "return JSON.stringify(await moire.motors.now())"
+    },
+    {
+     "t": 901,
+     "js": "return JSON.stringify(await moire.motors.now())"
+    },
+    {
+     "t": 1201,
+     "js": "return JSON.stringify(await moire.motors.now())"
+    }
+   ]
+  }
+ ]
+}

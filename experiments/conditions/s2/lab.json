@@ -70,6 +70,10 @@
    ],
    "evals": [
     {
+     "t": 0,
+     "js": "moire.eat.params.pay = false; return 'battery pays nothing, gates nothing'"
+    },
+    {
      "t": 50,
      "js": "return JSON.stringify(moire.motors.census)"
     },
@@ -156,6 +160,10 @@
     }
    ],
    "evals": [
+    {
+     "t": 0,
+     "js": "moire.eat.params.pay = false; return 'battery pays nothing, gates nothing'"
+    },
     {
      "t": 50,
      "js": "return JSON.stringify(moire.motors.census)"
@@ -244,6 +252,10 @@
    ],
    "evals": [
     {
+     "t": 0,
+     "js": "moire.eat.params.pay = false; return 'battery pays nothing, gates nothing'"
+    },
+    {
      "t": 50,
      "js": "return JSON.stringify(moire.motors.census)"
     },
@@ -328,6 +340,10 @@
     }
    ],
    "evals": [
+    {
+     "t": 0,
+     "js": "moire.eat.params.pay = false; return 'battery pays nothing, gates nothing'"
+    },
     {
      "t": 50,
      "js": "return JSON.stringify(moire.motors.census)"
@@ -416,6 +432,10 @@
    ],
    "evals": [
     {
+     "t": 0,
+     "js": "moire.eat.params.pay = false; return 'battery pays nothing, gates nothing'"
+    },
+    {
      "t": 50,
      "js": "return JSON.stringify(moire.motors.census)"
     },
@@ -502,6 +522,10 @@
     }
    ],
    "evals": [
+    {
+     "t": 0,
+     "js": "moire.eat.params.pay = false; return 'battery pays nothing, gates nothing'"
+    },
     {
      "t": 50,
      "js": "return JSON.stringify(moire.motors.census)"

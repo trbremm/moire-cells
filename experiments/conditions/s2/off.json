@@ -1,0 +1,47 @@
+{
+ "batch": "s2-off",
+ "runs": [
+  {
+   "name": "s2-off-open",
+   "description": "motors off (?flagella=0&cilia=0), open, 180 s: must match main",
+   "query": {
+    "seed": 3,
+    "world": "open",
+    "flagella": 0,
+    "cilia": 0
+   },
+   "duration": 180,
+   "sample_every": 10,
+   "stall": 400,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 180,
+     "name": "end",
+     "panel": true
+    }
+   ]
+  },
+  {
+   "name": "s2-off-delta",
+   "description": "motors off (?flagella=0&cilia=0), delta, 180 s: must match main",
+   "query": {
+    "seed": 7,
+    "terrain": "delta",
+    "flagella": 0,
+    "cilia": 0
+   },
+   "duration": 180,
+   "sample_every": 10,
+   "stall": 400,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 180,
+     "name": "end",
+     "panel": true
+    }
+   ]
+  }
+ ]
+}

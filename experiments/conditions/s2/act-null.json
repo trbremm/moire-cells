@@ -6,6 +6,7 @@
    "description": "step S2 act: delta, motors null, 20 min",
    "query": {
     "terrain": "delta",
+    "seed": 7,
     "flagellanull": 1,
     "cilianull": 1
    },
@@ -68,6 +69,7 @@
    "description": "step S2 act: islands, motors null, 20 min",
    "query": {
     "terrain": "islands",
+    "seed": 12,
     "flagellanull": 1,
     "cilianull": 1
    },
@@ -130,6 +132,7 @@
    "description": "step S2 act: colonies, motors null, 20 min",
    "query": {
     "preset": "colonies",
+    "seed": 3,
     "flagellanull": 1,
     "cilianull": 1
    },
@@ -187,9 +190,5 @@
     }
    ]
   }
- ],
- "seeds": [
-  3,
-  7
  ]
 }

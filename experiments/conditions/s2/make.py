@@ -5,9 +5,10 @@
                (its edge beats, coupled: waves?), a ciliated free cell (and tilted: spinning)
   check        the books (atoms, charge, energy, carbon rounding 0): 360 s at MAX (seed 5), whole dish lit, every motor switch toggled at runtime,
                a snapshot saved and loaded, a resize, half the cells given motors
-  act          does it act? 20 min, motors on vs their neutral controls (?flagellanull=1&cilianull=1), seeds 3 and 7 x the fresh-load worlds
-               delta and islands and the Colonies preset; the place census every 5 min
+  act          does it act? 20 min, motors on vs their neutral controls (?flagellanull=1&cilianull=1), the delta (seed 7), islands (seed 12) and
+               the Colonies preset (seed 3); act2: the same with seed 2; the place census every 5 min
   ff, phone    Firefox headed and the phone size (390 x 844): the page runs and draws the motors
+  off, main    ?flagella=0&cilia=0 vs main (run main.json from an export of main d5076f5): 180 s, seed 3, the open world and the delta
   speed        2000 / 10 000 cells, neon, motors on and off, every cell given motors (the GPU is shared: compare within the batch)
 """
 import json
@@ -30,6 +31,11 @@ MP = lambda k, v: f"moire.motors.params.{k} = {json.dumps(v)}; return 'motors {k
 GIVE = lambda genes: "await moire.genome.setAll({" + ", ".join(f"{k}: {v}" for k, v in genes.items()) + "}); return 'genes set'"
 
 
+# the lab has no food (no springs) and its batteries empty within ~40 s, which stops every motor (the battery gates them as it gates
+# crawling): for the look the lab's battery neither pays nor gates (the motors' costs are checked in check / act)
+FEED = "moire.eat.params.pay = false; return 'battery pays nothing, gates nothing'"
+
+
 def zoom_at(fx, fy, z):
     return f"moire.camera.set({z}, {fx} * moire.dish.W, {fy} * moire.dish.H); return 'zoom'"
 
@@ -50,7 +56,7 @@ def lab(name, cells, genes, desc, z=(0.5, 0.5, 2.5), extra_q=None):
     shots = [{"t": 60, "name": "t60"}, {"t": 120, "name": "t120"}] + [{"t": 100 + 0.5 * k, "name": f"strip{k:02d}"} for k in range(8)]
     return {"name": f"s2-lab-{name}", "description": f"step S2 lab: {desc}", "query": q, "duration": 126, "sample_every": 10, "stall": 400, "dpr": 1,
             "shots": shots + [{"t": 122, "name": "zoom"}, {"t": 124, "name": "zoom_harm"}],
-            "evals": [{"t": 50, "js": MOT}, {"t": 119, "js": MOT}, {"t": 119, "js": STIR}, {"t": 121, "js": zoom_at(*z)}, {"t": 123, "js": HARM}]}
+            "evals": [{"t": 0, "js": FEED}, {"t": 50, "js": MOT}, {"t": 119, "js": MOT}, {"t": 119, "js": STIR}, {"t": 121, "js": zoom_at(*z)}, {"t": 123, "js": HARM}]}
 
 
 write('lab', {"batch": "s2-lab", "seeds": [3], "runs": [
@@ -85,14 +91,18 @@ write('check', {"name": "s2-check", "description": "step S2 books check: 360 s a
                 "shots": [{"t": 40, "name": "motors"}, {"t": 360, "panel": True, "name": "panel"}], "evals": check_ev})
 
 act = []
-for name, q in (('delta', {"terrain": "delta"}), ('islands', {"terrain": "islands"}), ('colonies', {"preset": "colonies"})):
+for name, q in (('delta', {"terrain": "delta", "seed": 7}), ('islands', {"terrain": "islands", "seed": 12}), ('colonies', {"preset": "colonies", "seed": 3}),
+                ('delta2', {"terrain": "delta", "seed": 2}), ('islands2', {"terrain": "islands", "seed": 2}), ('colonies2', {"preset": "colonies", "seed": 2})):
     for ctl, cq in (('on', {}), ('null', {"flagellanull": 1, "cilianull": 1})):
         act.append({"name": f"s2-act-{name}-{ctl}", "description": f"step S2 act: {name}, motors {ctl}, 20 min",
                     "query": {**q, **cq}, "duration": 1203, "sample_every": 30, "stall": 400, "snapshots": [],
                     "shots": [{"t": 600, "name": "t600"}, {"t": 1200, "name": "end"}, {"t": 1201, "panel": True, "name": "panel"}],
                     "evals": [{"t": t, "js": MOT} for t in (300, 600, 900, 1200)] + [{"t": t + 1, "js": PLACE} for t in (300, 600, 900, 1200)]})
-write('act-on', {"batch": "s2-act-on", "runs": [r for r in act if r['name'].endswith('-on')], "seeds": [3, 7]})
-write('act-null', {"batch": "s2-act-null", "runs": [r for r in act if r['name'].endswith('-null')], "seeds": [3, 7]})
+first = lambda r: not r['name'].split('-')[2].endswith('2')
+write('act-on', {"batch": "s2-act-on", "runs": [r for r in act if r['name'].endswith('-on') and first(r)]})
+write('act-null', {"batch": "s2-act-null", "runs": [r for r in act if r['name'].endswith('-null') and first(r)]})
+write('act2-on', {"batch": "s2-act2-on", "runs": [r for r in act if r['name'].endswith('-on') and not first(r)]})
+write('act2-null', {"batch": "s2-act2-null", "runs": [r for r in act if r['name'].endswith('-null') and not first(r)]})
 
 write('ff', {"name": "s2-ff", "description": "Firefox headed: the lab's dense pushers and ciliated sheet draw and run",
              "query": {"preset": "lab", "cells": 150, "genes": "flagellum:1,flagSign:1,cilia:1,ciliaCouple:1"}, "duration": 40, "sample_every": 10,
@@ -111,4 +121,13 @@ for n, T in ((2000, 150), (10000, 60)):
                      "evals": ev, "shots": []})
         runs[-1]["query"].update(q)
 write('speed', {"batch": "s2-speed", "runs": runs})
+offruns = []
+for tag, q in (('open', {"seed": 3, "world": "open"}), ('delta', {"seed": 7, "terrain": "delta"})):
+    offruns.append({"name": f"s2-off-{tag}", "description": f"motors off (?flagella=0&cilia=0), {tag}, 180 s: must match main",
+                    "query": {**q, "flagella": 0, "cilia": 0}, "duration": 180, "sample_every": 10, "stall": 400, "snapshots": [],
+                    "shots": [{"t": 180, "name": "end", "panel": True}]})
+write('off', {"batch": "s2-off", "runs": offruns})
+write('main', {"batch": "s2-main", "runs": [{**r, "name": r["name"].replace("s2-off", "s2-main"),
+               "description": r["description"].replace("motors off (?flagella=0&cilia=0)", "main d5076f5"),
+               "query": {k: v for k, v in r["query"].items() if k not in ("flagella", "cilia")}} for r in offruns]})
 print('ok')

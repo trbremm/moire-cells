@@ -1,0 +1,43 @@
+{
+ "batch": "s2-main",
+ "runs": [
+  {
+   "name": "s2-main-open",
+   "description": "main d5076f5, open, 180 s: must match main",
+   "query": {
+    "seed": 3,
+    "world": "open"
+   },
+   "duration": 180,
+   "sample_every": 10,
+   "stall": 400,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 180,
+     "name": "end",
+     "panel": true
+    }
+   ]
+  },
+  {
+   "name": "s2-main-delta",
+   "description": "main d5076f5, delta, 180 s: must match main",
+   "query": {
+    "seed": 7,
+    "terrain": "delta"
+   },
+   "duration": 180,
+   "sample_every": 10,
+   "stall": 400,
+   "snapshots": [],
+   "shots": [
+    {
+     "t": 180,
+     "name": "end",
+     "panel": true
+    }
+   ]
+  }
+ ]
+}

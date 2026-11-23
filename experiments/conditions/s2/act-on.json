@@ -5,7 +5,8 @@
    "name": "s2-act-delta-on",
    "description": "step S2 act: delta, motors on, 20 min",
    "query": {
-    "terrain": "delta"
+    "terrain": "delta",
+    "seed": 7
    },
    "duration": 1203,
    "sample_every": 30,
@@ -65,7 +66,8 @@
    "name": "s2-act-islands-on",
    "description": "step S2 act: islands, motors on, 20 min",
    "query": {
-    "terrain": "islands"
+    "terrain": "islands",
+    "seed": 12
    },
    "duration": 1203,
    "sample_every": 30,
@@ -125,7 +127,8 @@
    "name": "s2-act-colonies-on",
    "description": "step S2 act: colonies, motors on, 20 min",
    "query": {
-    "preset": "colonies"
+    "preset": "colonies",
+    "seed": 3
    },
    "duration": 1203,
    "sample_every": 30,
@@ -181,9 +184,5 @@
     }
    ]
   }
- ],
- "seeds": [
-  3,
-  7
  ]
 }

@@ -17,6 +17,7 @@
 // starts the culture in place instead (no reload: the springs, the light and the atoms stay).
 
 import { HABITS, founderGenome, FOUNDER_MODES } from './genome.js';
+import { CB_LIP } from './carbon.js';   // (the desert preset's crust springs: carbon or linkers)
 
 const VALUE = (v) => String(v);
 

@@ -23,6 +23,11 @@
 @group(0) @binding(11) var<storage, read> beats: array<CellBeat>;
 @group(0) @binding(12) var<uniform> FL: Fields;
 @group(0) @binding(13) var<uniform> HP: HeatP;
+// step N2: the chemotaxis gene's factor on the smell's gain (Fields.g2.w bits; x 1 while off or in the neutral control)
+fn chemo_factor(b: Bio) -> f32 {
+  if ((bitcast<u32>(FL.g2.w) & (CHEMO_ON | CHEMO_NULL)) != CHEMO_ON) { return 1.0; }
+  return exp(clamp(b.mc.w, CHEMO_LO, CHEMO_HI));
+}
 
 // step N1: the water's velocity at p (CSS px per s) from the currents' stream function at the 4 corners of its heat pixel (bilinear:
 // u = d psi / dy, v = -d psi / dx; psi in CSS px^2 per s at the corners, (hw + 1) x (hh + 1), src/water.js)
@@ -1101,7 +1106,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   // per R) steers the motor up toward the fuel (tanh: gentle, saturating)
   if ((FL.eat & EAT_SMELL) != 0u && FL.smell > 0.0) {
     let gm = length(c.smell);
-    if (gm > 1e-9) { motor += FL.smell * tanh(gm / max(FL.smellHalf, 1e-6)) * c.smell / gm; }
+    if (gm > 1e-9) { motor += FL.smell * chemo_factor(bio) * tanh(gm / max(FL.smellHalf, 1e-6)) * c.smell / gm; }   // (step N2: x the gene)
   }
   // step C5: the battery gates the motor (full speed from FL.crawlFull of the battery, none when it is empty) and pays
   // for it: crawlCost x the work of crawling at that speed against the drag (its motion energy x (1 - damping^2) per
@@ -2132,6 +2137,13 @@ fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
       if (rand01(bs, 247u) < jp) { ck.y = 2.0 * rand01(bs, 248u) - 1.0; }
       nb.mo.w = cw;
       nb.mc = vec4f(ck, nb.mc.zw);
+    }
+    // step N2: the CHEMOTAXIS gene (Bio.mc.w, a log factor on the smell's gain) drifts by small steps, now and then a jump anywhere; on and in its
+    // neutral control alike, untouched while off
+    if ((bitcast<u32>(FL.g2.w) & CHEMO_ON) != 0u) {
+      var x = nudge(p.mc.w, sz * 0.12, CHEMO_LO, CHEMO_HI, bs, 250u);
+      if (rand01(bs, 251u) < jp) { x = CHEMO_LO + (CHEMO_HI - CHEMO_LO) * rand01(bs, 252u); }
+      nb.mc.w = x;
     }
   }
   // ... the gene itself drifts at today's size (not proofread by itself), on and in the neutral control

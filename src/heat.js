@@ -244,13 +244,17 @@ export class Heat {
     if (this.water) this.water.writeHeat(u, f, 13);   // step N1: the caustic block, the currents' stream function, the cells' drift
     this.device.queue.writeBuffer(this.paramBuf, 0, this.paramAB);
 
-    const T = new Uint32Array(this.tickAB), w = HT_SLOT / 4;
+    const T = new Uint32Array(this.tickAB), TF = new Float32Array(this.tickAB), w = HT_SLOT / 4;
     const tick0 = (frame.frameNo * 977 + 0x9e37) >>> 0;
+    // step N2 (src/flow.js): the water carries the heat too: the corners' psi difference x this = the share of a pixel crossing an edge per
+    // substep (0: not carried; only while the currents' psi is in this frame's words, HeatP cur)
+    const adv = this.water && this.water.flow && u[14] !== 0 ? this.water.flow.heatScale(dt / this.nSub, this.px) : 0;
     for (let t = 0; t < ticks; t++) {
       for (let s = 0; s < this.nSub; s++) {
         const o = (t * this.nSub + s) * w, c = this.cur ^ ((t * this.nSub + s) & 1);
         T[o] = this.offset(c); T[o + 1] = this.offset(c ^ 1); T[o + 2] = s === 0 ? 1 : 0;
         T[o + 3] = Math.imul(tick0 + t * 131 + s, 2654435761) >>> 0; T[o + 4] = this.count;
+        TF[o + 5] = adv;
       }
     }
     const L = HT_LEDGER * w;

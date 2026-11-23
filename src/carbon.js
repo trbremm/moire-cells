@@ -236,7 +236,8 @@ export class Carbon {
     this.matter = matter;
     this.on = CARBON;
     this.table = CARBON ? carbonTable() : null;
-    this.blocks = CARBON ? 13 : 0;   // the ladder in two copies (ping-pong), the tar's three hand counts (it does not move: one copy)
+    this.blocks = CARBON ? 16 : 0;   // the ladder in two copies (ping-pong), the tar's three hand counts (one copy), step N2: 3 scratch blocks the
+                                     // tar's bedload is worked out into (carbon.wgsl tar_move, tar_copy; 13 until then)
     // live-tunable: moire.carbon.params (rules switches in the rules panel, group "Carbon (step C15a)")
     this.params = {
       oxidize: true,       // t + [c-g] -> [c-t] + g by heat

@@ -31,7 +31,7 @@ import { Stir } from './stir.js';
 import { OBS_BLOCKS } from './obstacles.js';
 
 const WATER_COMMON_URL = 'src/shaders/water_common.wgsl';
-const WP_BYTES = 288;     // struct WaterP (step G0b: + obs, obs2; 256 until then)
+const WP_BYTES = 320;     // struct WaterP (step N2: + n2a, n2b, 288 until then; step G0b: + obs, obs2; 256 until then)
 const WD_BYTES = 144;     // struct WDraw (step G0: + the stirred streamlines, 112 until then)
 // the swell: directions (degrees from the wind), wavelengths (in R) and how fast each runs (R per s): a fixed set, so every dish's
 // light moves the same way
@@ -231,11 +231,16 @@ export class Water {
     const k0 = Md ? Md.k0 : 2 * Math.PI / (0.62 * 9), la = (Md ? Md.la0 : 0) * Math.max(0, p.breathe), turn = p.turn * Math.PI / 180;
     let qmag = 0;
     const ph = [p.wander * t, -p.wander * t, 0];
+    // step N2 (src/flow.js): the gusts (each family's strength, the tides) and the eddy pattern's drift X: its phases shift by -q . X
+    const N2 = this.flow;
+    const sx = N2 ? N2.advance(t, R) : [0, 0];
+    const gain = N2 ? N2.writeWater(f, 72, t, W, Hh, R) : 1;
+    if (!N2) { f[72] = 1; f[73] = 1; f[74] = 1; f.fill(0, 75, 80); }
     for (let m = 0; m < 3; m++) {
       const a1 = la + m * Math.PI / 3, a2 = turn + m * Math.PI / 3;
       const qx = k0 * (Math.cos(a1) - Math.cos(a2)), qy = k0 * (Math.sin(a1) - Math.sin(a2));
       qmag = Math.max(qmag, Math.hypot(qx, qy));
-      f[48 + 4 * m] = qx; f[49 + 4 * m] = qy; f[50 + 4 * m] = ph[m]; f[51 + 4 * m] = 0;
+      f[48 + 4 * m] = qx; f[49 + 4 * m] = qy; f[50 + 4 * m] = ph[m] - (qx * sx[0] + qy * sx[1]); f[51 + 4 * m] = 0;
     }
     f[51] = thr[1];
     if (this.stir) this.stir.writeWater(u, f, 60);   // step G0: the stirred psi (struct WaterP stir)
@@ -245,11 +250,13 @@ export class Water {
     if (this.obstacles) { this.obstacles.writeWater(u, f, 64); f[68] = thr[0] * Hh - thr[1] * W; }
     else u.fill(0, 64, 72);
     const eddies = this.eddiesOn;
-    const A = eddies && qmag > 1e-9 ? Math.max(0, p.speed) * R / qmag : 0;     // |u| ~ A |q|: the eddies' speed
-    const G = !eddies ? 0 : Math.max(0, p.gyre) * R * Math.min(W, Hh) / Math.PI * Math.cos(2 * Math.PI * t / Math.max(10, p.gyrePeriod));
+    const A = eddies && qmag > 1e-9 ? gain * Math.max(0, p.speed) * R / qmag : 0;     // |u| ~ A |q|: the eddies' speed (step N2: x gain)
+    const G = !eddies ? 0 : gain * Math.max(0, p.gyre) * R * Math.min(W, Hh) / Math.PI * Math.cos(2 * Math.PI * t / Math.max(10, p.gyrePeriod));
+    if (!eddies) { f[76] = 0; f[77] = 0; }   // (step N2: the tides are the eddies' kin: off with them)
     f[44] = Md ? Md.cx : W / 2; f[45] = Md ? Md.cy : Hh / 2; f[46] = A; f[47] = G;
-    this.psiScale = A * 3 + Math.abs(G) + Math.abs(thr[0]) * Hh + Math.abs(thr[1]) * W;
-    this.speedNow = Math.max(0, p.speed) + Math.abs(G) * Math.PI / Math.min(W, Hh) / R;
+    this.psiScale = A * 3 + Math.abs(G) + Math.abs(f[76]) + Math.abs(f[77]) + Math.abs(thr[0]) * Hh + Math.abs(thr[1]) * W;
+    this.speedNow = (eddies ? gain : 1) * Math.max(0, p.speed) + Math.abs(G) * Math.PI / Math.min(W, Hh) / R;
+    this.gain = eddies ? gain : 1;
     this.eddy = qmag > 1e-9 ? 2 * Math.PI / qmag / R : 0;   // the beat's period (R)
     this.device.queue.writeBuffer(this.uBuf, 0, this.uAB);
     const pass = encoder.beginComputePass({ label: 'water surface' });

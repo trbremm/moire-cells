@@ -30,6 +30,9 @@ struct WaterP {
                         // the corners, 0 at one side wall .. 1 at the other; 0: the prescribed profile); w bits: 1 the eddies fade near
                         // solids, 2 the through-flow is blocked (a wall joins both side walls)
   obs2: vec4f,          // x the pump's flux Q (CSS px^2 / s: the solved through-flow x Q); y the eddies' fade width (CSS px); zw spare
+  // ---- step N2, substances that flow (src/flow.js): GUSTS. (1, 1, 1, 0) and 0 while off ----
+  n2a: vec4f,           // xyz each of the beat's three eddy families' strength now (x the eddies' A); w spare
+  n2b: vec4f,           // x the tidal mode (2, 1)'s psi amplitude now (CSS px^2 / s), y the mode (1, 2)'s; zw spare
 };
 
 // step G0: where p (CSS px) sits on the stir grid: o the word of the node at its cell's lower corner (0 if p lies outside the grid, which reaches

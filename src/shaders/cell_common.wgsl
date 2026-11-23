@@ -498,7 +498,7 @@ struct Bio {
   mc: vec4f,            // x the cilia's COUPLING, -1..1 (how strongly a cell's beat follows its touching neighbours', with the lag the water's
                         // push takes to reach them; < 0: against them); y their stroke's TILT round the body, -1..1 (x 90 degrees: 0 straight
                         // back along the front, +-1 round the body: the cell spins); z STATE, not a gene: the cilia's BEAT PHASE (rad, 0..2 pi,
-                        // inherited); w spare
+                        // inherited); w step N2: the CHEMOTAXIS gene, a log factor on the smell's gain (0 = as before; -3..1.5; src/flow.js)
   mg: vec4f,            // the gene network's 19th output (FLAGELLUM: x its gain, y its regulator) and 20th (CILIA: z its gain, w its regulator)
 };
 // step T1b: the gene network's outputs (Bio.gu, Bio.go): each output multiplies an existing gene (its base level) by exp(u x) (at most
@@ -1277,7 +1277,7 @@ struct Fields {
                     // stops cells, CSS px, < 0 inside; the obstacles' mask word per pixel sits one block before it); z the contact push
                     // (1 / s); w the hard limit (the centre never nearer an edge than this x the cell's radius)  // ---- step G2, gene duplication (src/dup.js) ----
   g2: vec4f,        // x bits DUP_* (u32); y the chance per birth of a duplication (x the copying's scale: key M, fidelity, hard light);
-                    // z ... of a deletion (a copy lost back to silence); w spare
+                    // z ... of a deletion (a copy lost back to silence); w step N2: the CHEMOTAXIS gene's bits CHEMO_* (u32; src/flow.js)
   // ---- step S2, flagella and cilia (src/motors.js writeFields) ----
   mo0: vec4f,       // x bits MO_* (u32); y the SWIM speed at flagellum 1 (R / s); z the STEERING: how fast a swimmer's front turns toward its
                     // crawling intention (the heading's wander and the smell; rad / s at full thrust); w the thrust's ARM (R: how far behind a
@@ -1290,6 +1290,11 @@ struct Fields {
                     // stroke (the metachronal wave's: 0 = in step); z the swim's battery cost per unit of its work (x crawlCost); w the
                     // cilia's upkeep, energy per s at beat 1 on six free sides
 };
+// step N2: Fields.g2.w bits (keep in step with CHEMO in src/flow.js): the smell's gain is a gene (Bio.mc.w, e^gene); NULL: it drifts, acts x 1
+const CHEMO_ON: u32 = 1u;
+const CHEMO_NULL: u32 = 2u;
+const CHEMO_LO: f32 = -3.0;
+const CHEMO_HI: f32 = 1.5;
 // step S2: Fields.mo0.x bits (keep in step with MO in src/motors.js)
 const MO_FLAG: u32 = 1u;         // flagella act (thrust, steering, the force dipole, the cost)
 const MO_FNULL: u32 = 2u;        // ... the flagellum genes' NEUTRAL control: they drift, nothing acts, nothing is paid

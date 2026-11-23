@@ -82,6 +82,7 @@ export const RULE_GROUPS = [
   ['g0w', 'Stirred water (step G0)'],
   ['vents', 'Vents in the dark (step C12f)'],
   ['n1', 'Nutrient landscape (step N1)'],
+  ['n2', 'Substances that flow (step N2)'],
   ['guides', 'Fields as guides (step C13)'],
   ['state', 'Save and load the state (experiments)'],
 ];
@@ -985,6 +986,33 @@ export function makeActions(app) {
     mknob('beatHz', 'beat frequency', 'beatHz', 0.1, 10, 1.25, 2, 'Hz'),
     mknob('coupleRate', 'coupling', 'coupleRate', 0.1, 40, 1.25, 2, 'rad / s at the coupling gene 1'),
     mknob('lag', 'wave lag', 'lag', 0.05, 6, 1.25, 2, 'rad per R along the stroke: the metachronal wave’s'),
+  );
+
+  // ---------- substances that flow (step N2; panel only: no keys are free) ----------
+  const FWP = () => app.flow.params;
+  const ftog = (id, label, key, onTxt, offTxt, help) => ({ id, keys: [], label, group: 'n2', type: 'toggle', get: () => !!(app.flow && FWP()[key]),
+    run: () => (app.flow ? (flip(FWP(), key) ? onTxt : offTxt) : 'no flow'), help });
+  const fknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'n2', type: 'knob', get: () => (app.flow ? Number(FWP()[key]).toFixed(digits) : '-'),
+    run: (k) => { const p = FWP(); p[key] = Math.max(lo, Math.min(hi, +((Number(p[key]) || lo || 0.01) * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    ftog('n2', 'substances flow (all of N2)', 'on', 'step N2 on: stronger changing currents, heat carried, bed scoured, patchy springs, the chemotaxis gene',
+      'step N2 off: the water and the springs as in step N1', 'every part of step N2 at once (?n2=0)'),
+    ftog('n2heat', 'the water carries heat', 'heat', 'the heat drifts with the water too', 'the heat only spreads and leaks', '?heatflow=0'),
+    ftog('n2gusts', 'gusts and tides', 'gusts', 'stronger currents, eddies that swell and fade and drift across the dish, two tides turning',
+      'the currents of step N1', '?gusts=0; strength, sweep and tide below'),
+    ftog('n2scour', 'scour and resettle', 'scour', 'fast water lifts crust and tar and drops them where it slows; trace settles only in slow water',
+      'crust and tar stay where they formed', '?scour=0'),
+    ftog('n2patchy', 'patchy springs', 'patchy', 'lasting springs wander, pulse, go dry and rise again elsewhere', 'springs stay put',
+      '?patchy=0 (the oases roam by themselves)'),
+    ftog('n2chemo', 'chemotaxis gene', 'chemo', 'how strongly a cell follows the smell of food is a gene', 'every cell follows its nose alike',
+      '?chemo=0; the smell itself is the eating group’s switch'),
+    ftog('n2chemoNull', 'chemotaxis neutral control', 'chemoNull', 'the chemotaxis gene drifts WITHOUT effect (NEUTRAL CONTROL)', 'the chemotaxis gene acts',
+      '?chemonull=1'),
+    fknob('n2strength', 'current strength', 'strength', 0.1, 10, 1.25, 2, '× the step N1 eddies and gyre (?flowx=)'),
+    fknob('n2sweep', 'eddy drift', 'sweep', 0.01, 5, 1.25, 2, 'R / s the eddy pattern drifts across the dish (?sweep=)'),
+    fknob('n2tide', 'tide', 'tide', 0.01, 5, 1.25, 2, 'R / s of the two tidal modes (?tide=)'),
+    fknob('n2scourSpeed', 'lifting speed', 'scourSpeed', 0.05, 10, 1.25, 2, 'R / s of water that starts lifting row-1 crust and tar (× row) (?scourspeed=)'),
+    fknob('n2life', 'spring life', 'life', 10, 3600, 1.25, 0, 's a patchy spring runs before it goes dry (?springlife=)'),
   );
 
   // ---------- vents in the dark (step C12f; panel only: no keys are free) ----------

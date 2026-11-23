@@ -557,3 +557,61 @@ fn carbon_paint(@builtin(global_invocation_id) id: vec3u) {
 }
 
 // ===== end of carbon.wgsl =====
+
+// ---------- step N2, SCOUR: the tar moves as BEDLOAD (src/flow.js) ----------
+// Once per tick, after carbon_react (only while the scour is on and there is carbon): tar_move works out each pixel's tar after the water
+// moved it, into the 3 scratch blocks behind the tar (T.ctar + 3 n), from the tar as it is (one copy: it did not move until now), each edge
+// by the matter's bedload rule (bed_share: lifted where the edge's flow share is above the lifting share, row 1, at the tick's share: the
+// substep's x the substeps); tar_copy writes it back. Exact: every edge's count is the same number from both of its pixels. No flux across
+// a solid face, and none into or out of a solid pixel (its tar is handed out by carbon_spread as before)
+fn tar_solid(j: u32) -> bool { return MP.obs.x != 0u && (bitcast<u32>(mg[MP.obs.x + j]) & 1u) != 0u; }
+@compute @workgroup_size(8, 8)
+fn tar_move(@builtin(global_invocation_id) id: vec3u) {
+  if (id.x >= MP.hw || id.y >= MP.hh) { return; }
+  let i = id.y * MP.hw + id.x;
+  let n = MP.n;
+  let to = T.ctar;
+  let so = T.ctar + 3u * n;
+  let solidHere = tar_solid(i);
+  let fL = id.x > 0u && !solidHere && !tar_solid(i - 1u);
+  let fR = id.x + 1u < MP.hw && !solidHere && !tar_solid(i + 1u);
+  let fU = id.y > 0u && !solidHere && !tar_solid(i - MP.hw);
+  let fD = id.y + 1u < MP.hh && !solidHere && !tar_solid(i + MP.hw);
+  var aE = vec4f(0.0);
+  if (MP.n1.y != 0u) {
+    let sc = bitcast<f32>(MP.n1.z) * f32(MP.nSub);
+    let p00 = psi_at(id.x, id.y);
+    let p10 = psi_at(id.x + 1u, id.y);
+    let p01 = psi_at(id.x, id.y + 1u);
+    let p11 = psi_at(id.x + 1u, id.y + 1u);
+    aE = clamp(vec4f(-(p01 - p00) * sc, -(p11 - p10) * sc, (p10 - p00) * sc, (p11 - p01) * sc), vec4f(-DRIFT_MAX), vec4f(DRIFT_MAX));
+  }
+  let ac = MP.n2.x * f32(MP.nSub);
+  let bL = bed_share(aE.x, ac);
+  let bR = bed_share(aE.y, ac);
+  let bU = bed_share(aE.z, ac);
+  let bD = bed_share(aE.w, ac);
+  let salt = 0x7a3d2c1bu ^ T.seed;
+  let eL = mpcg((2u * (i - 1u)) ^ salt);
+  let eR = mpcg((2u * i) ^ salt);
+  let eU = mpcg((2u * (i - MP.hw) + 1u) ^ salt);
+  let eD = mpcg((2u * i + 1u) ^ salt);
+  for (var w = 0u; w < 3u; w++) {
+    let o = to + w * n;
+    let m = mg[o + i];
+    var acc = m;
+    let cs = (w + 50u) * 0x9e3779b9u;
+    if (fL && bL != 0.0) { acc -= edge_flow(mg[o + i - 1u], m, 0.0, bL, u01(mpcg(eL + cs))); }
+    if (fR && bR != 0.0) { acc += edge_flow(m, mg[o + i + 1u], 0.0, bR, u01(mpcg(eR + cs))); }
+    if (fU && bU != 0.0) { acc -= edge_flow(mg[o + i - MP.hw], m, 0.0, bU, u01(mpcg(eU + cs))); }
+    if (fD && bD != 0.0) { acc += edge_flow(m, mg[o + i + MP.hw], 0.0, bD, u01(mpcg(eD + cs))); }
+    mg[so + w * n + i] = acc;
+  }
+}
+@compute @workgroup_size(8, 8)
+fn tar_copy(@builtin(global_invocation_id) id: vec3u) {
+  if (id.x >= MP.hw || id.y >= MP.hh) { return; }
+  let i = id.y * MP.hw + id.x;
+  let n = MP.n;
+  for (var w = 0u; w < 3u; w++) { mg[T.ctar + w * n + i] = mg[T.ctar + 3u * n + w * n + i]; }
+}

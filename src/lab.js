@@ -135,6 +135,7 @@ function gather(M, ctl) {
   if (M.stir && M.stir.census) flatten(M.stir.census, 'stir', out);       // step G0: the stirred water
   if (M.spindle && M.spindle.census) flatten(M.spindle.census, 'shape', out);   // step S1: cell shape
   if (M.motors && M.motors.census) flatten(M.motors.census, 'motors', out);     // step S2: flagella and cilia
+  if (M.flow && M.flow.census) flatten(M.flow.census, 'flow', out);           // step N2: substances that flow (motility, smell, patch tracking)
   if (M.obstacles && M.obstacles.census) flatten(M.obstacles.census, 'obs', out);   // step G0b: the obstacles' last measure (moire.obstacles.measure())
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;

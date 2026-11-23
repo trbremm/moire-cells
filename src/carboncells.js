@@ -380,7 +380,7 @@ export class CarbonCells {
     return `\n        PARTS (carbon): ${lip}enzymes ${fmt(C2.enzC)} of ${fmt(C2.enzWant)} (${pc(C2.enzShort)} short)` +
       ` · LIMITED BY carbon ${pc(C2.limC)} · G ${pc(C2.limG)} · trace ${pc(C2.limTr)} · free g/t ${pc(C2.limAt)} · battery ${pc(C2.limBat)}` +
       ` · per s: lipids ${fmt(r2.lipMade)} walls ${fmt(r2.wallMade)} pigments ${fmt(r2.pigMade)} enzymes ${fmt(r2.enzMade)} · reduced ${fmt(r2.reduced)} oxidised ${fmt(r2.oxidised)}` +
-      ` · OXYGEN BITES ${fmt(r2.bites)}/s (${fmt(r2.spoiled)} spoiled into mud) · transporter ${n ? (C2.trans / n).toFixed(2) : '-'}`;
+      ` · OXYGEN BITES ${fmt(r2.bites)}/s (${fmt(r2.spoiled)} spoiled${this.rule('spoilKeep') ? ', kept as granules' : ' into mud'}) · transporter ${n ? (C2.trans / n).toFixed(2) : '-'}`;
   }
 
   /** The F overlay's lines. */

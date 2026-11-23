@@ -44,7 +44,8 @@ and the worlds use only what the dish already offers (the step G0b obstacles, sp
 
 ### What a friend sees
 
-A fresh load (no URL options) shows only the dish and:
+A fresh load (no URL options) opens a generated world (since 2026-11-23: "A fresh load opens a generated world" below; before, the open
+dish) and shows only the dish and:
 
 - **top left**, the world's name in neon capitals (OPEN DISH, MAZE seed 4821, ...) with one line about it, which fades after a few
   seconds (a hover or a tap on the name brings it back; the tap opens the worlds);
@@ -147,13 +148,74 @@ Seeds that look good (each run 4 minutes above; the dice and "other seeds" give 
 - `?terrain=caves&seed=7`, `?terrain=caves&seed=12` (the Firefox check), `?terrain=thicket&seed=7`, `?terrain=maze&seed=7`
 - add `&look=harmonic` for the microscope look.
 
+### A fresh load opens a generated world
+
+The user, 2026-11-23: with carbon on (the default since the carbon merge) the open dish is weak for a first look (about 170 cells at 4
+minutes, one colony beside amber mud flecks), while the generated worlds grow well. So the plain link, with NO option at all, now opens a
+generated world, picked at random, with a random seed (1 to 9999):
+
+- on a computer (wider than tall): **river delta, archipelago, filter walls, thicket, pillar forest**;
+- on a phone (taller than 1.15 x its width): **river delta, archipelago, thicket, pillar forest** (the filter walls left out: on a narrow
+  screen their faint porous lines barely show, so the world reads as an open dish, and its cells were still thinning at 4 minutes).
+
+How: a small classic script in `index.html`, before the modules, rewrites the address to `?terrain=<kind>&seed=<N>` when it has no query
+at all. Every module then reads exactly that link, so a fresh load IS that link: the share button and a reload rebuild the same world (the
+toy then adds `&dish=WxH`, as for every world). **Any option at all keeps the page as it was**: `?seed=`, `?preset=`, `?terrain=`,
+`?entropy=1` (which `tools/experiment.py` and `tools/shot.py` always add), `?dev=1`, `?carbon=0`, ... and the new `?world=open`, the plain
+open dish. The worlds menu's **OPEN DISH** now opens `?world=open` (it opened a bare link before), and the developer's New culture dialog
+adds `world=open` if its link would otherwise be empty. `tools/shot.py --bare` opens the page with no query, as a friend does.
+
+One line for friends: about 50 s in, as the founders' crash begins, a fresh load says once above the bar "Many of the first cells die now;
+the survivors find the food and grow back. The speed button makes a timelapse" (`first-load-phone-thicket-s117-t56.jpg`). Nothing else
+about the crash was changed: the first minute already looks full and lively in every chosen kind (the thinning comes between 1 and 2
+minutes), and hiding it would mean fewer founders (a sparser start) or a speed the friend did not choose.
+
+The candidates, chosen by looking (`experiments/conditions/firstload`: `make.py`, `table.py`): the five worlds that grew with carbon on,
+each at seeds 3 and 12, on a 1280 x 800 and a 390 x 844 dish, 4 simulated minutes, headless Chrome on a shared GPU; live cells at
+30 s / 2 min / 4 min (the open dish of a fresh load before: 1978 at 1 s, 381 at 2 min, 167 at 4 min):
+
+| world | computer, seed 3 | computer, seed 12 | phone, seed 3 | phone, seed 12 |
+|---|---|---|---|---|
+| river delta | 352 / 368 / 856 | 409 / 486 / 1372 | 222 / 223 / 277 | 246 / 251 / 356 |
+| archipelago | 863 / 459 / 691 | 892 / 671 / 1113 | 438 / 345 / 365 | 452 / 373 / 445 |
+| filter walls | 915 / 548 / 703 | 966 / 610 / 782 | 473 / 347 / 260 | 500 / 357 / 314 (left out) |
+| thicket | 795 / 364 / 456 | 789 / 416 / 702 | 397 / 230 / 185 | 397 / 267 / 256 |
+| pillar forest | 782 / 392 / 500 | 790 / 405 / 587 | 420 / 241 / 240 | 406 / 289 / 378 |
+
+What it looks like (`first-load-desk-sheet-s3.jpg`, `-s12.jpg`, `first-load-phone-sheet-s3.jpg`, `-s12.jpg`: every run at 10 s, 30 s, 2
+and 4 minutes): at 10 and 30 s every world is full of small lime-and-pink groups scattered over the open water, the walls crisp; by 2
+minutes many have died and life gathers at the springs; by 4 minutes the river delta's channels are lined with a lime-and-pink tissue
+(the strongest: no crash, `first-load-desk-delta-s12-t240.jpg`, `first-load-phone-delta-s12-t240.jpg`), the archipelago's sea fills
+(`first-load-desk-islands-s12-t240.jpg`), the thicket and the forest grow colonies round their springs, each filter-wall chamber its own
+community. Books (carbon, atoms, charge) exactly 0 in every run; energy rounding at most 0.01.
+
+THE DELTA'S MUD, kept on purpose: the page always starts the open dish's culture first (about 2000 founders in one clump in the middle) and
+replaces it with the world's once a frame has run (the energy-books fix of the carbon merge). Those founders' carbon bodies stay as tar,
+and walls built over the clump push it into the open water, so the river delta's channels start under an amber crust that the cells clear
+within 2 minutes (`first-load-desk-delta-s3-t30.jpg`). Washed out (`?toywash=1`, as a world built later in place is: `-washed.jpg`), the
+start looks clean, but that tar is the founders' first food (cells graze it into body carbon) and washed worlds grew less (seed 3 at 4
+minutes, washed against kept: phone delta 77 against 277, thicket 130 against 185, archipelago 280 against 365; computer delta 790 against
+856, thicket 256 against 456). So a fresh load, like every link, keeps it.
+
+Load time: building the world (the generator and the walls' raster, `moire.toy.buildMs`) took 17 to 63 ms on this computer and 9 to 59 ms
+for a phone's dish; with Chrome's CPU slowed 4x (`tools/shot.py --cpu-throttle 4`, a mid-range phone's main thread) on a phone's dish 39 ms
+(archipelago) and 70 ms (thicket). The page's own start (the shaders) dominates: 60 to 90 s here with the GPU shared by other runs, the
+same with or without a world.
+
+Checked: Chrome desktop (`first-load-chrome-sieve-s3560-t8.jpg`), Chrome at phone size, touch, 390 x 844 (`first-load-phone-thicket-
+s117-t3.jpg`), headed Firefox one fresh load (`first-load-firefox-thicket-s1998-t20.jpg`): each opened a generated world with the
+address showing `?terrain=...&seed=...&dish=...`, no console errors; the worlds menu's OPEN DISH opened the plain open dish
+(`first-load-open-dish-entry.jpg`); the survey runs (experiment URLs with `?terrain=`) behave as before.
+
 ### For the experiment tools
 
 - `tools/experiment.py` now adds `entropy=1` (the panel's text is still read into `panel.txt`) and hides the toy's controls in its
   pictures (`#toy`, `#toy-corner`) as it hides the old toolbar; it passed `ui=0` before and still does. Conditions and `moire.*` are
   unchanged.
 - `tools/shot.py` adds `entropy=1` unless the query names `entropy=`, so it prints the panel as before. Its pictures show the toy front
-  now (`dev=1` for the old toolbar; `entropy=0` for a clean toy picture).
+  now (`dev=1` for the old toolbar; `entropy=0` for a clean toy picture). Since 2026-11-23: `--bare` (no query at all: a friend's fresh
+  load, a generated world), `--cpu-throttle N` (Chrome's CPU slowed N times), `--print JS` (a value printed after the shot, e.g.
+  `location.href`, `moire.toy.buildMs`).
 - Console: `moire.toy.build(kind, seed)` (a world in place), `moire.toy.check()` (the open water: share of the dish, share reachable
   from the colonies' homes, springs reached, shapes), `moire.toy.link()`, `moire.toy.setDev(on)`.
 

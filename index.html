@@ -505,6 +505,23 @@ body.toy-mode .joblegend .jrow { grid-template-columns: 8px auto; }
   }, 15000);
 })();
 </script>
+<script>
+// A FRESH LOAD (the plain link, no URL options at all) opens a GENERATED WORLD (user 2026-11-23: with carbon on the open dish is weak,
+// the worlds grow well): a kind picked at random from the ones that look good from the first seconds and grow, on a wide or a tall
+// screen, with a random seed. The address becomes ?terrain=kind&seed=N BEFORE any module reads it, so the page is exactly that link
+// (share and reload rebuild it). Any option at all (?seed, ?preset, ?entropy, ... or ?world=open: the plain open dish) leaves the page
+// as it was: experiments and old links are unaffected. README "The toy front", "A fresh load opens a generated world".
+(function () {
+  if (location.search || location.protocol === 'file:') return;
+  var tall = window.innerHeight > window.innerWidth * 1.15;
+  // (chosen by looking: each kind at 2 seeds on 1280 x 800 and 390 x 844, pictures at 10 s, 30 s, 2 and 4 minutes, all with carbon on;
+  // on a tall phone the filter walls' faint porous lines barely show and its cells were still thinning at 4 minutes)
+  var kinds = tall ? ['delta', 'islands', 'thicket', 'forest'] : ['delta', 'islands', 'sieve', 'thicket', 'forest'];
+  var kind = kinds[Math.floor(Math.random() * kinds.length)], seed = 1 + Math.floor(Math.random() * 9999);
+  try { history.replaceState(null, '', location.pathname + '?terrain=' + kind + '&seed=' + seed + location.hash); } catch (e) { return; }
+  window.__moireFresh = { kind: kind, seed: seed };
+})();
+</script>
 <script type="module" src="src/main.js"></script>
 </body>
 </html>

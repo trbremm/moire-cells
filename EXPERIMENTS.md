@@ -3189,3 +3189,139 @@ above).
   off as it ran, and runs 60 s with no copies, atoms and charge 0.
 - Firefox (headed, the default scene, duplication 0.2, 60 s): runs, no console messages.
 - Phone (Chrome 390 x 844, dpr 3): the rules panel shows the new group; the short panel line was cut down to one line (COPIES ...).
+
+# Carbon life, round 3 (step C15f, 2026-11-23)
+
+Step C15f (README "Step C15f: carbon life, round 3"): with carbon on by default on the live site, the gaps C15e left: the default scene a
+quarter to a third of `?carbon=0` at 10 minutes, a wild-colony seed dying, the shallows at a fifth, the oxygen spotlight dish smaller with
+C15e's (j)/(l), the walls rebuilt after every jolt, the founders' crash. Goal (coordinator): default scene >= half of `?carbon=0` at 10
+minutes, both wild-colony seeds alive at 20 minutes, the oxygen spot no worse than C15d, the fresh-load worlds at least as lively.
+
+Fixes (each a switch, on by default): (n) digestion only from above the battery's floor `?cbhydfloor=0`, (o) wall pairs cut whole from the
+granules `?cbwallcut=0`, (p) oil only for the soap held `?cboilheld=0`, (q) spoiled pieces kept as granules `?cbspoilkeep=0`.
+
+Conditions: `experiments/conditions/c15f/` (`make.py` writes base-main, base-off (not run: killed for GPU time), fl-main, fl-fix, crash,
+crash2, smoke, ab1 (killed, see below), ab2, watch, watch-b, pictures, checks, firefox; `table.py` prints the tables). Main d5076f5 ran from
+an export of that commit (its `meta.json` has no commit: the export is not a git tree). Runs: `experiments/runs/c15f-*`.
+
+The GPU was shared the whole time with the S2 worker's three runs and up to eight of ours: runs went at x0.1 to x0.3 of real time (one
+run alone at the start: x2.8). So the plan was cut: the `?carbon=0` references are C15c's and C15d's runs (the same code path), the first
+A/B batch (10 minutes, three scenes, each fix off) was stopped after 4 minutes of simulation and replaced by short runs where each fix's
+mechanism acts, and every comparison is one seed. Two runs of the same build differ by a quarter or more (C15e): read single numbers as
+hints.
+
+## 1. Diagnosis
+
+SPEND probe and the CRASH runs (default scene, seed 3, 120 s, every 10 s, main = the C15f switches off), and the panel:
+
+| run | cells at 0 / 30 / 60 / 90 / 120 s | batteries | spending per s at 10 s |
+|---|---|---|---|
+| main | 1980 / 1768 / 1591 / 949 / 513 | 2995 / 1245 / 523 / 241 / 137 | crawl 38.8, upkeep 6.1, harvest sparks 1.2; income 1.9 |
+| crawling free | 1980 / 1764 / 1599 / 1447 / 1137 | 2995 / 2040 / 1348 / 854 / 552 | |
+| `?cblip=0` | 1980 / 1775 / 1596 / 1405 / 861 | 3002 / 1573 / 903 / 492 / 297 | |
+| `?cbsmell=0` | 1980 / 1764 / 1590 / 967 / 528 | 2995 / 1235 / 520 / 247 / 141 | |
+| no smell at all | 1980 / 1766 / 1585 / 1132 / 576 | 2995 / 1374 / 634 / 303 / 167 | |
+| `?cbenz=0` | 1980 / 1766 / 1474 / 281 / 82 | 2930 / 783 / 120 / 74 / 96 | (upkeep 26.7 at 30 s) |
+| `?carbon=0` | 1980 / 1770 / 1596 / 677 / 158 | 2943 / 1122 / 310 / 126 / 209 | crawl 27.4, upkeep 28.2; income 0.6 |
+| every C15f fix | 1980 / 1762 / 1575 / 1273 / 835 | 2998 / 1404 / 760 / 417 / 253 | crawl 39.6, upkeep 6.1, sparks 1.1; income 1.9 |
+
+(A run with `?starter=0.8` began with 3040 cells, not 1980, so it is not comparable and is left out.)
+
+- The crash is crawling first (founders start at 0.4 of a battery, above the 0.3 from which crawling is at full speed), in either
+  chemistry; `?carbon=0` crashes deeper. Carbon adds the founders' bilayer (`?cblip=0` 861 against 513).
+- The panel at 30 s (main): MEMBRANES "made 0.42 + 13.4" (soap + oil per s), "shed 0 + 13.3", soap held 11.4 of 191 wanted: oil made for
+  the soap wanted and shed at once (futile). With (p): oil made 0.03-0.05 a second, none shed.
+- C15e's oxygen A/B read again (at 60 s, granule fixes on / off): income 325 / 527 a minute, short of free g or t 77 / 49 %, short of
+  battery 42 / 16 %, the cells' water 40 / 67 units at 2 minutes; (l) ran 23-37 backbones a minute on batteries at 0.06-0.09; (j) 2-4
+  hands a minute (floored).
+- C15e's wild colonies seed 7 read again: 531 cells at 4 minutes, then bursts 4.8-6.5 a second, heat 24 k -> 90 k, free t 784, oxygen
+  bites 0.32 a second against lipids made 0.09 a second, 0.18 spoiled pieces a second into the mud, 63 % short of carbon.
+- Main's walls (default, 10 / 20 minutes): 5-7 / 5 carbons held, 123-169 / 256 built a minute, 155-253 energy a minute.
+- Main's plateau economy (default s3, 5 minutes) against `?carbon=0` (C15c's run, same seed): income per cell 0.085 / 0.21 a second;
+  photons caught per cell 0.09 / 0.18; pigment per cell 0.016 / 0.025; enzymes 66-76 % of their want (none in `?carbon=0`).
+
+## 2. Each fix against its switch off (`ab2.json`, the crash batch, the watch)
+
+| fix | where | on | off | main |
+|---|---|---|---|---|
+| (n) | oxygen spotlight, s3, cells at 5 / 10 min | 98 / 109 | 72 / 144 | 72 / 228 |
+| (o) | default s3, 5 min: cells; walls built and paid per min | 191; 101, 46 (0.46 each) | 171; 68, 70 (1.03 each) | 169 |
+| (p) | default s3, cells at 60 / 90 / 120 s | 1574 / 1273 / 834 | 1589 / 1016 / 578 | 1591 / 949 / 513 |
+| (q) | wild colonies s7, cells at 4 / 5 / 6 min | 529 / 370 / 213 | 458 / 149 / 57 | (C15e 531 / 169 / 95) |
+
+- (n) on its own did not make the oxygen spot dish bigger at 10 minutes (109 against 144 with it off, 228 on main: three runs of one seed
+  that differ by two): what it does do is keep digestion out of the founders' empty batteries.
+- (o) halves a wall carbon's cost; over 20 minutes the walls cost 93-94 energy a minute against 176-253 on main.
+- (p) is the founders' fix: the crash at 2 minutes as shallow as without carbon lipids.
+- (q) slows the colonies' collapse, does not stop it.
+
+## 3. The watch (every fix on; `watch.json`, `watch-b.json`)
+
+| scene | seed | C15f | main d5076f5 | C15e (watch) | `?carbon=0` | C15f / `?carbon=0` at 10 min |
+|---|---|---|---|---|---|---|
+| default | 3 | 206 / 428 / 563 | 169 / 205 / 514 | 129 / 217 / 593 | 411 / 831 / 1224 | 52 % |
+| default | 7 | 183 / 243 / 465 | 157 / 272 / 677 | 151 / 285 / 607 | 432 / 796 / 1128 | 31 % |
+| colonies (wild) | 3 | 802 / 312 / 182 | (C15e's watch) | 374 / 125 / 611 | 1832 / - / - | - |
+| colonies (wild) | 7 | 370 / 18 / dead (1 cell at 13 min, run stopped) | (C15e's watch) | 169 / 12 / 0 | 1339 / 2722 / - | 1 % |
+| Sunlit shallows | 3 | 812 / 1678 / - | 562 / 1120 / - | 606 / 1195 / - | 3110 / 5933 / - | 28 % |
+| oxygen, spotlight | 3 | 98 / 109 / - | 72 / 228 / - | 61 / 28 / - (C15d 104 / 120) | 94 / 400 / - | 27 % |
+| oxygen, whole dish | 3 | 189 / 186 / - | not run | 87 / 300 / - (C15d 236 / 243) | 381 / 933 / - | 20 % |
+
+| scene | seed | t | alive | limited C / G / trace / g,t / battery | integrity | jobs (undecided/light/breathe/ferment/gradient/build/predator) | ready: battery / body / both | mud's share |
+|---|---|---|---|---|---|---|---|---|
+| default | 3 | 20 min | 563 | 55 / 0 / 8 / 0 / 13 % | 0.91 | 169/22/361/0/1/4/6 | 139 / 206 / 21 | 84 % |
+| default | 7 | 20 min | 465 | 56 / 0 / 12 / 0 / 17 % | 0.83 | 136/66/156/8/0/7/92 | 103 / 192 / 14 | 81 % |
+| colonies (wild) | 3 | 20 min | 182 | 54 / 0 / 7 / 0 / 7 % | 0.82 | 49/14/117/0/0/0/2 | 25 / 66 / 2 | 99 % |
+| Sunlit shallows | 3 | 10 min | 1678 | 76 / 2 / 14 / 0 / 8 % | 0.74 | 626/363/553/83/1/12/40 | 475 / 494 / 33 | 74 % |
+| oxygen, spotlight | 3 | 10 min | 109 | 36 / 0 / 44 / 0 / 12 % | 0.90 | 57/17/32/0/0/0/3 | 13 / 59 / 1 | 82 % |
+
+Goal: default s3 52 % of `?carbon=0` at 10 min, s7 31 %: not met; wild colonies s3 alive at 20 min (182), s7 dead (1 cell at 13 min): not met; oxygen spot 109 against C15d's 120: about level, not clearly met.
+
+## 4. The fresh-load worlds (`fl-main.json`, `fl-fix.json`, seed 3)
+
+Desktop (1280 x 800):
+| world | seed | main d5076f5 | C15f |
+|---|---|---|---|
+| delta | 3 | 355 / 379 / 919 | 354 / 379 / 816 |
+| islands | 3 | 862 / 459 / 758 | 860 / 530 / 924 |
+| sieve | 3 | 912 / 555 / 740 | 914 / 624 / 664 |
+| thicket | 3 | 796 / 351 / 446 | 795 / 413 / 482 |
+| forest | 3 | 782 / 389 / 500 | 784 / 449 / 519 |
+
+Phone (390 x 844):
+| world | seed | main d5076f5 | C15f |
+|---|---|---|---|
+| delta | 3 | 219 / 248 / 431 | 223 / 239 / 399 |
+| islands | 3 | 438 / 352 / 363 | 435 / 366 / 447 |
+| thicket | 3 | 401 / 251 / 298 | 399 / 278 / 293 |
+| forest | 3 | 430 / 248 / 302 | 419 / 308 / 291 |
+
+## 5. Pictures (`experiments/keep/c15f/`)
+
+`default-s3-20min_neon.jpg` / `_harmonic.jpg`, `default-s3-10min_neon.jpg` against `default-s3-10min_neon_main.jpg`, `default-s7-20min_neon.jpg`,
+close-ups from the 20-minute snapshots (`default-s3-20min_zoom_memb*.jpg`, `_zoom_pig*`, `default-s7-20min_zoom_*`, `colonies-s3-20min_zoom_memb*`),
+`colonies-s3-5min_neon.jpg`, `colonies-s3-20min_neon.jpg` / `_harmonic.jpg`, `colonies-s7-5min_neon.jpg`, `shallows-s3-10min_neon.jpg` /
+`_harmonic.jpg`, fresh-load worlds `fl-desk-*-t240*.jpg`, `fl-desk-thicket-s3-t120.jpg`, the checks `firefox-default-s3-t40.jpg`,
+`phone-thicket-s3-t30.jpg`.
+
+## 6. Checks
+
+- BOOKS: carbon, atoms and charge rounding 0 at every probe of every C15f run (crash, A/B, watch, fresh-load worlds, checks); the energy
+  rounding at its usual noise (at most 0.11 of millions in).
+- `?carbon=0`: every fix sits behind the carbon switch (the CBF bits are read only with carbon on); the crash run with `?carbon=0`
+  behaves as before (deeper than with carbon).
+- SWITCHES OFF = MAIN: all four off (`?cbhydfloor=0&cbwallcut=0&cboilheld=0&cbspoilkeep=0`) is main's code path; the crash run "main" used
+  exactly that and matched main's own runs (513 cells at 2 minutes against 527 in the export's 20-minute run, same seed).
+- SNAPSHOTS: a C15e snapshot (`c15e-w-default_s7` at 20 minutes) loads "exact" with the four fixes off as it ran (a note says so,
+  `src/snapshot.js`) and runs on 30 s with carbon, atoms and charge 0 (`snapcheck.json`).
+- FIREFOX (headed, the default scene, 40 s, `firefox.json`): runs, no console error, books 0 (`firefox-default-s3-t40.jpg`); a first
+  try ran out of GPU memory while nine other runs were open.
+- PHONE SIZE (Chrome 390 x 844 at dpr 3, the thicket world, 30 s, `checks.json`): the world builds and runs, no console error
+  (`phone-thicket-s3-t30.jpg`).
+- SPEED: not measurable here. The default scene's first 60 s ran at x2.12 and x0.78 with the fixes and x2.73 on main, one after
+  another, while the other worker's three runs shared the GPU (`speed.json`). The fixes add a few integer steps to builders that already
+  ran (a per-side cap in the oil builder, a cut before the cross-link builder, a floor in digestion, another destination for spoiled
+  pieces); the fixed dish keeps more cells alive in its first two minutes, which costs more per frame there.
+- THE TOOLS: `tools/experiment.py` now waits out the safety net's late-start notice ("The page did not start", shown after 15 s of slow
+  module loading and cleared by the page when its modules start) until the ready timeout, instead of failing the run: with ten pages on
+  the GPU four runs had failed that way.

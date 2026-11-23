@@ -81,7 +81,20 @@ def strip(name, cells, genes, desc, at, extra_q=None):
 write('strip', {"batch": "s2-strip", "seeds": [3], "runs": [
     strip('sheet', 150, {**CIL, "adhesion": 1.5}, 'the edge of the ciliated sheet', (0.4, 0.5, 6)),
     strip('pushers', 400, PUSH, 'the dense pushers', (0.5, 0.5, 5), {"spread": "scatter", "spreadr": 0.4}),
+    strip('sheet-nocouple', 150, {**CIL, "adhesion": 1.5}, 'the edge of the ciliated sheet, coupling off (?mocouple=0): what random phases score',
+          (0.4, 0.5, 6), {"mocouple": 0}),
 ]})
+
+# a crowded suspension over the whole dish (3000 pushers): do the force dipoles stir collective swirls? dipole on (arm 1.5 R), off, and
+# a longer arm (3 R: the dipole's two pushes less smeared by the stir grid's ~1 R nodes and 2 R viscosity)
+def swarm(tag, extra):
+    return {"name": f"s2-swarm-{tag}", "description": f"step S2: 3000 pushers over the whole dish, {tag}", "query": {"preset": "lab", "cells": 3000,
+            "genes": "flagellum:1,flagSign:1,flagPlace:0,adhesion:0.2", "spread": "scatter", "zoom": 1, **extra}, "duration": 75, "sample_every": 15,
+            "stall": 400, "evals": [{"t": 0, "js": FEED}, {"t": 30, "js": STIR}, {"t": 60, "js": STIR}, {"t": 60, "js": MOT}, {"t": 70, "js": STIR}],
+            "shots": [{"t": 60, "name": "t60"}, {"t": 70, "name": "t70", "view": "machinery"}]}
+
+
+write('swarm', {"batch": "s2-swarm", "seeds": [3], "runs": [swarm('dipole', {}), swarm('nodipole', {"modipole": 0}), swarm('arm3', {"arm": 3})]})
 
 check_ev = [
     {"t": 5, "js": GIVE({"flagellum": 0.6, "flagSign": 0.5, "cilia": 0.5, "ciliaCouple": 0.5})},

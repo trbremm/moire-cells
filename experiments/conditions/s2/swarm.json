@@ -1,0 +1,151 @@
+{
+ "batch": "s2-swarm",
+ "seeds": [
+  3
+ ],
+ "runs": [
+  {
+   "name": "s2-swarm-dipole",
+   "description": "step S2: 3000 pushers over the whole dish, dipole",
+   "query": {
+    "preset": "lab",
+    "cells": 3000,
+    "genes": "flagellum:1,flagSign:1,flagPlace:0,adhesion:0.2",
+    "spread": "scatter",
+    "zoom": 1
+   },
+   "duration": 75,
+   "sample_every": 15,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.eat.params.pay = false; return 'battery pays nothing, gates nothing'"
+    },
+    {
+     "t": 30,
+     "js": "return JSON.stringify(moire.stir.census)"
+    },
+    {
+     "t": 60,
+     "js": "return JSON.stringify(moire.stir.census)"
+    },
+    {
+     "t": 60,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 70,
+     "js": "return JSON.stringify(moire.stir.census)"
+    }
+   ],
+   "shots": [
+    {
+     "t": 60,
+     "name": "t60"
+    },
+    {
+     "t": 70,
+     "name": "t70",
+     "view": "machinery"
+    }
+   ]
+  },
+  {
+   "name": "s2-swarm-nodipole",
+   "description": "step S2: 3000 pushers over the whole dish, nodipole",
+   "query": {
+    "preset": "lab",
+    "cells": 3000,
+    "genes": "flagellum:1,flagSign:1,flagPlace:0,adhesion:0.2",
+    "spread": "scatter",
+    "zoom": 1,
+    "modipole": 0
+   },
+   "duration": 75,
+   "sample_every": 15,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.eat.params.pay = false; return 'battery pays nothing, gates nothing'"
+    },
+    {
+     "t": 30,
+     "js": "return JSON.stringify(moire.stir.census)"
+    },
+    {
+     "t": 60,
+     "js": "return JSON.stringify(moire.stir.census)"
+    },
+    {
+     "t": 60,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 70,
+     "js": "return JSON.stringify(moire.stir.census)"
+    }
+   ],
+   "shots": [
+    {
+     "t": 60,
+     "name": "t60"
+    },
+    {
+     "t": 70,
+     "name": "t70",
+     "view": "machinery"
+    }
+   ]
+  },
+  {
+   "name": "s2-swarm-arm3",
+   "description": "step S2: 3000 pushers over the whole dish, arm3",
+   "query": {
+    "preset": "lab",
+    "cells": 3000,
+    "genes": "flagellum:1,flagSign:1,flagPlace:0,adhesion:0.2",
+    "spread": "scatter",
+    "zoom": 1,
+    "arm": 3
+   },
+   "duration": 75,
+   "sample_every": 15,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.eat.params.pay = false; return 'battery pays nothing, gates nothing'"
+    },
+    {
+     "t": 30,
+     "js": "return JSON.stringify(moire.stir.census)"
+    },
+    {
+     "t": 60,
+     "js": "return JSON.stringify(moire.stir.census)"
+    },
+    {
+     "t": 60,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 70,
+     "js": "return JSON.stringify(moire.stir.census)"
+    }
+   ],
+   "shots": [
+    {
+     "t": 60,
+     "name": "t60"
+    },
+    {
+     "t": 70,
+     "name": "t70",
+     "view": "machinery"
+    }
+   ]
+  }
+ ]
+}

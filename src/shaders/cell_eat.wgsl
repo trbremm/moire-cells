@@ -242,7 +242,8 @@ struct EatP {
                            //     z the share of the meal's battery that goes to the host's (the rest heat); w the digestion's time (s)
                            // [1] spare
   // ---- step G2, gene duplication (src/dup.js) ----
-  g2: vec4f,               // x DUP_* bits (u32: the copies act); y z w spare
+  g2: vec4f,               // x DUP_* bits (u32: the copies act); step S2 (src/motors.js): y the MO_* bits (u32), z the motor proteins a
+                           // full flagellum wants (in units of expressed engine rate, as the enzymes' kEnz), w ... full cilia on six free sides
 };
 // ---- step C12g, MEMBRANES MODULATE ION FLOW (src/ions.js). The lipid BILAYER blocks free ions (charged atoms: g t G T and the excited
 // g* t*), derived from its make-up: per side the intact share (its integrity: soap + the oil between its tails over what the thickness
@@ -2745,10 +2746,23 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     }
     // step C15c, ENZYMES (cell_carbon.wgsl cb_enzymes; CBF_ENZ): the engines run only as far as their enzymes (carbon + G) are there; the
     // enzymes wear and are rebuilt (T1b's upkeep of an expressed engine becomes their turnover: the upkeep below is off then)
-    if (cb_bit(CBF_ENZ) && (EP.flags & EF_ENG) != 0u) {
-      let fe = cb_enzymes(i, sr, areaR2, &m, &bat, &heat, pcg(rs + 0x4a7484aau));   // (step G2: one pool for all five slots, copies' rates in)
-      for (var k = 0u; k < 5u; k++) { sr[k] *= fe; }
+    // step S2, MOTORS (src/motors.js): a flagellum's and the cilia's MOTOR PROTEINS are enzymes too (ATPases: they turn the battery's energy
+    // into motion, catalysis, so the same recipe, 4 carbons + 1 G, in the same pool, wearing the same way): the motors as they act (genes x
+    // the network's outputs; the cilia by the share of the sides they beat on) want EP.g2.z (a full flagellum) and EP.g2.w (full cilia on
+    // six free sides) units of expressed engine rate's enzymes; the pool's share held drives the motors at the next tick (Cell.motE)
+    let moB = bitcast<u32>(EP.g2.y);
+    var moW = 0.0;
+    if (moB != 0u) {
+      let ma = motor_act(b, moB, grn_on());
+      moW = EP.g2.z * ma.x + EP.g2.w * ma.y * f32(countOneBits(mot_free(c.motW))) / 6.0;
     }
+    var motE = 1.0;
+    if (cb_bit(CBF_ENZ) && (EP.flags & EF_ENG) != 0u) {
+      let fe = cb_enzymes(i, sr, moW, areaR2, &m, &bat, &heat, pcg(rs + 0x4a7484aau));   // (step G2: one pool for all five slots, copies' rates in)
+      for (var k = 0u; k < 5u; k++) { sr[k] *= fe; }
+      motE = fe;
+    }
+    if (moB != 0u) { cells[i].motE = motE; }
     var fpg = 1.0;                                // step N1: the share of the wanted pigment the cell holds (1: light needs no matter)
     var pg = atomicLoad(&stock[o + W_PIG]);       // ... the pigment it holds (counts)
     let pg0 = pg;

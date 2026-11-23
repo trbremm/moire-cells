@@ -175,7 +175,7 @@ export class Neon {
     const HM = this.harmonic, harm = !!(HM && HM.on);   // step H1: the harmonic look over either
     const on = this.on && !harm, P = this.params, d = this.device;
     f.now = this.time;                          // real time, for the hum
-    f.look = { neon: on, hum: on && P.hum, harmonic: harm ? HM : null };   // what the layers draw (src/cells.js, src/matter.js, ...)
+    f.look = { neon: on, hum: on && P.hum, harmonic: harm ? HM : null, cheap: this.cheap };   // what the layers draw (step S2: + the cheap path) (src/cells.js, src/matter.js, ...)
     // 1. background (step H1, harmonic: none; its last pass clears the canvas to black)
     let pass;
     if (!harm) {

@@ -1,7 +1,7 @@
 // ===== cell_common.wgsl: the cells' state, the simulation uniforms and the neighbour grid =====
 // Not compiled on its own: src/cells.js prepends field_common.wgsl and then this file to every cell shader.
 //
-// Cells live in a fixed-capacity storage buffer (struct Cell, 352 bytes since step C12e, 336 since step C13, 312 since step C12b, 288 since C10, 256 since C7; keep in step with CELL_* in
+// Cells live in a fixed-capacity storage buffer (struct Cell, 376 bytes since step S2, 368 since step P1, 352 since step C12e, 336 since step C13, 312 since step C12b, 288 since C10, 256 since C7; keep in step with CELL_* in
 // src/cells.js, and CELL_FLOATS in heat.wgsl). Their order never changes, so drawing order is stable and a cell keeps its index.
 // Step C9: Sim.count is the CAPACITY; a slot is a live cell while its flags have CELL_ALIVE. The grid sorts the dead slots
 // into one more bucket after the last grid cell (cell_grid.wgsl), so sorted[0 .. starts[gw gh]) are the live cells and the
@@ -116,6 +116,12 @@ struct Cell {
   hold: f32,        // its HOLD against being engulfed: the glue to its touching neighbours + its armour (crust wall, stiffness); the step
                     // writes it for its neighbours (CellCore.eng.y), who must out-pull it
   engPay: i32,      // heat counts this tick's engulfing costs (the step works it out, the eat pass pays them from the battery, as heat)
+  // ---- step S2, flagella and cilia (src/motors.js; the record is 376 bytes since S2) ----
+  motE: f32,        // the MOTORS' share 0..1: the motor proteins (enzyme units, carbon + G) the cell holds over what its motors want (the eat
+                    // pass's cb_enzymes, the same pool as the engines'; 1 without the enzyme rule), which the next tick's step drives them by
+  motW: u32,        // what the motors did this tick (the step; the drawing, the census): bits 0..7 the flagellum's thrust as acted (unorm, x
+                    // the swim speed at gene 1), 8..15 the cilia's beat as acted (unorm), 16..21 the FREE sides the cilia beat on (bit k: side
+                    // k touches no neighbour), 24..31 spare
 };
 // step P1: Cell.eng and Cell.engBy (src/predators.js)
 const ENG_IDLE: u32 = 0u;
@@ -485,6 +491,15 @@ struct Bio {
                         // copy made by duplication; 0 = an empty slot, or one not named yet)
   dg: vec4f,            // x engine slot 4's family word; y z pump slots 0 and 1's (FAM_COPY: a pump copy, made into the empty pump slot);
                         // w the duplications in the cell's line since its founder (inherited, + 1 at each)
+  // ---- step S2: FLAGELLA AND CILIA, motors as parts (src/motors.js; README "Step S2"). Words 168..179 ----
+  mo: vec4f,            // x the FLAGELLUM: its thrust, 0..1 (x Fields.mo0.y, R / s; founders 0); y its SIGN, -1..1: > 0 a PUSHER (the motor
+                        // at the back, as E. coli), < 0 a PULLER (in front, as an alga); z its PLACEMENT round the pole, -1..1 (x 90 degrees: off
+                        // the axis its thrust turns the cell, a swimmer then runs in curves); w the CILIA: their beat, 0..1 (founders 0)
+  mc: vec4f,            // x the cilia's COUPLING, -1..1 (how strongly a cell's beat follows its touching neighbours', with the lag the water's
+                        // push takes to reach them; < 0: against them); y their stroke's TILT round the body, -1..1 (x 90 degrees: 0 straight
+                        // back along the front, +-1 round the body: the cell spins); z STATE, not a gene: the cilia's BEAT PHASE (rad, 0..2 pi,
+                        // inherited); w spare
+  mg: vec4f,            // the gene network's 19th output (FLAGELLUM: x its gain, y its regulator) and 20th (CILIA: z its gain, w its regulator)
 };
 // step T1b: the gene network's outputs (Bio.gu, Bio.go): each output multiplies an existing gene (its base level) by exp(u x) (at most
 // GRN_FMAX); a cell switches an engine off by expressing a regulator its output reads with a strongly negative gain
@@ -688,7 +703,38 @@ struct Stats {
   g0: array<atomic<u32>, 32>,
   // ---- step S1 (src/spindle.js): S1S_* a census, cleared every frame, counted on its last tick ----
   s1: array<atomic<u32>, 16>,
+  // ---- step S2 (src/motors.js): S2S_* a census, cleared every frame, counted on its last tick ----
+  s2: array<atomic<u32>, 32>,
 };
+const S2S_N: u32 = 0u;           // live cells
+const S2S_FC: u32 = 1u;          // flagellum carriers (gene at 0.1 or more)
+const S2S_FG: u32 = 2u;          // ... sum of the flagellum gene x 1000 (every cell)
+const S2S_FG2: u32 = 3u;         // ... its square x 1000
+const S2S_SWIM: u32 = 4u;        // swimmers (thrust as acted at 0.05 or more)
+const S2S_SPEED: u32 = 5u;       // ... sum of their swim speed (R / s x 1000: thrust x the swim speed x the gate)
+const S2S_PUSH: u32 = 6u;        // ... of the carriers, pushers (sign > 0)
+const S2S_CC: u32 = 7u;          // cilia carriers (gene at 0.1 or more)
+const S2S_CG: u32 = 8u;          // ... sum of the cilia gene x 1000
+const S2S_CG2: u32 = 9u;         // ... its square x 1000
+const S2S_BEAT: u32 = 10u;       // cells beating (cilia as acted at 0.05 or more, on at least one free side)
+const S2S_FREE: u32 = 11u;       // ... sum of their free sides
+const S2S_WAVE: u32 = 12u;       // ... sum of their local WAVE order x 1000 (|mean of e^i(phi_j - phi_i - lag_ij)| over beating neighbours)
+const S2S_SYNC: u32 = 13u;       // ... sum of their local SYNC x 1000 (the same without the lag)
+const S2S_WN: u32 = 14u;         // ... of them, those with a beating neighbour (the two sums' count)
+const S2S_K: u32 = 15u;          // sum of the coupling gene x 1000 (i32; every cell)
+const S2S_PLACE: u32 = 16u;      // sum of |the placement gene| x 1000 (every cell)
+const S2S_TILT: u32 = 17u;       // sum of |the cilia's tilt gene| x 1000 (every cell)
+const S2S_PAY: u32 = 18u;        // the motors' battery cost this tick (heat counts, i32)
+const S2S_MOTE: u32 = 19u;       // the carriers' motor share (motE) x 1000
+const S2S_COS: u32 = 20u;        // the beating cells' phases: sum of cos x 1000 (i32; the dish's global sync)
+const S2S_SIN: u32 = 21u;        // ... sum of sin x 1000 (i32)
+const S2S_SIGN: u32 = 22u;       // sum of the flagellum's sign gene x 1000 (i32; every cell)
+const S2S_SPIN: u32 = 23u;       // swimmers: sum of |their turning| (rad / s x 1000)
+const S2S_RELV: u32 = 24u;       // swimmers: sum of their speed relative to the water (R / s x 1000)
+const S2S_MC: u32 = 25u;         // carriers of either motor (gene at 0.1 or more; the motor share's count)
+const S2S_CFG: u32 = 26u;        // the flagellum gene as expressed (motor_act x) summed x 1000
+const S2S_CCG: u32 = 27u;        // the cilia gene as expressed summed x 1000
+const S2S_OPEN: u32 = 28u;       // swimmers with no touching neighbour (in open water)
 const G0S_TEARS: u32 = 0u;       // CUMULATIVE: sides torn (each tear counted by both cells of the pair)
 const G0S_HEALS: u32 = 1u;       // CUMULATIVE: torn sides healed
 const G0S_BAD: u32 = 2u;         // CUMULATIVE: the portable guard (cell_step.wgsl): cells whose numbers came out NaN or infinite, put back
@@ -1232,7 +1278,46 @@ struct Fields {
                     // (1 / s); w the hard limit (the centre never nearer an edge than this x the cell's radius)  // ---- step G2, gene duplication (src/dup.js) ----
   g2: vec4f,        // x bits DUP_* (u32); y the chance per birth of a duplication (x the copying's scale: key M, fidelity, hard light);
                     // z ... of a deletion (a copy lost back to silence); w spare
+  // ---- step S2, flagella and cilia (src/motors.js writeFields) ----
+  mo0: vec4f,       // x bits MO_* (u32); y the SWIM speed at flagellum 1 (R / s); z the STEERING: how fast a swimmer's front turns toward its
+                    // crawling intention (the heading's wander and the smell; rad / s at full thrust); w the thrust's ARM (R: how far behind a
+                    // pusher's centre, before a puller's, its motor pushes on the water)
+  mo1: vec4f,       // x the force DIPOLE's strength (x the swimmer's wet share; 1 = force-free: the motor pushes the water back as hard as the
+                    // body drags it forward); y how far a swimmer drifts with the water (0: as a crawler, curDrift; 1: wholly, it is free in
+                    // it; x its thrust's share); z the CILIA's push at gene 1 (R / s, a free cell with all six sides beating swims at half
+                    // of it); w the beat's frequency (Hz)
+  mo2: vec4f,       // x the cilia's COUPLING at gene 1 (rad / s); y the LAG a beat's push takes to reach a neighbour, rad per R along the
+                    // stroke (the metachronal wave's: 0 = in step); z the swim's battery cost per unit of its work (x crawlCost); w the
+                    // cilia's upkeep, energy per s at beat 1 on six free sides
 };
+// step S2: Fields.mo0.x bits (keep in step with MO in src/motors.js)
+const MO_FLAG: u32 = 1u;         // flagella act (thrust, steering, the force dipole, the cost)
+const MO_FNULL: u32 = 2u;        // ... the flagellum genes' NEUTRAL control: they drift, nothing acts, nothing is paid
+const MO_CIL: u32 = 4u;          // cilia act (their push on the cell and on the water, the beat's phase coupling, the cost)
+const MO_CNULL: u32 = 8u;        // ... the cilia genes' NEUTRAL control
+const MO_GRN: u32 = 16u;         // the gene network's 19th and 20th outputs (FLAGELLUM, CILIA) scale the genes
+const MO_WATER: u32 = 32u;       // a swimmer is free in the water: it drifts with it (mo1.y) and turns with half its vorticity
+const MO_DIPOLE: u32 = 64u;      // a swimmer's motor pushes the water back (the force dipole into the stirred water)
+const MO_PUMP: u32 = 128u;       // the cilia push the water along the surface (into the stirred water)
+const MO_COUPLE: u32 = 256u;     // the beats' phases couple to touching neighbours'
+const MO_STEER: u32 = 512u;      // a swimmer's front turns toward its crawling intention (heading, smell)
+const MO_TORQUE: u32 = 1024u;    // an off-axis flagellum and tilted cilia turn the cell
+// the motor genes as they act: x the flagellum's thrust, y the cilia's beat (0..1: gene x the gene network's output; 0 while off or null)
+fn motor_act(b: Bio, bits: u32, grnAct: bool) -> vec2f {
+  var a = vec2f(0.0);
+  if ((bits & (MO_FLAG | MO_FNULL)) == MO_FLAG) { a.x = clamp(b.mo.x, 0.0, 1.0); }
+  if ((bits & (MO_CIL | MO_CNULL)) == MO_CIL) { a.y = clamp(b.mo.w, 0.0, 1.0); }
+  if ((bits & MO_GRN) != 0u && grnAct && any(a > vec2f(0.0))) {
+    let jf = min(u32(max(b.mg.y, 0.0)), 7u);
+    let jc = min(u32(max(b.mg.w, 0.0)), 7u);
+    a *= vec2f(grn_fac(b.mg.x, b.gx[jf >> 2u][jf & 3u]), grn_fac(b.mg.z, b.gx[jc >> 2u][jc & 3u]));
+  }
+  return min(a, vec2f(1.0));
+}
+// ... Cell.motW's parts
+fn mot_flag(w: u32) -> f32 { return f32(w & 255u) / 255.0; }
+fn mot_cil(w: u32) -> f32 { return f32((w >> 8u) & 255u) / 255.0; }
+fn mot_free(w: u32) -> u32 { return (w >> 16u) & 63u; }
 const OB_ON: u32 = 1u;           // step G0b: obstacles act on the cells
 const OB_FLAT: u32 = 2u;         // ... the honeycomb's corners flatten against their edges
 const ST_ON: u32 = 1u;           // step G0: the cells stir the water (deposit their drag's reaction)

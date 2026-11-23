@@ -49,6 +49,12 @@
 //          0 and 1's, w the duplications in the line since its founder. A family word = id x 8 + bits (0..1 the gene-network output the slot
 //          follows, 4 a copy made by duplication); 0 = an empty slot or one not named yet (named at the next birth: founders' slots
 //          1 + 16 x founder + slot, pumps + 8; a slot started from empty by mutation a fresh id). Old genomes: all 0, the slots silent
+//   mo     step S2, FLAGELLA AND CILIA (src/motors.js), words 168..179: mo (168..171) x the FLAGELLUM's thrust (0..1), y its sign (> 0 a pusher,
+//          < 0 a puller), z its placement round the pole (-1..1 x 90 degrees), w the CILIA's beat (0..1); mc (172..175) x the cilia's coupling
+//          (-1..1), y their stroke's tilt (-1..1 x 90 degrees), z STATE: the beat's phase (rad), w spare; mg (176..179) the gene network's 19th
+//          output (FLAGELLUM: x gain, y regulator) and 20th (CILIA: z gain, w regulator). Founders: no motors (thrust and beat 0), a random
+//          sign, placement within +-0.05, coupling and tilt 0, a random phase; wild founders (group 'motors') every gene over its range.
+//          Old genomes: all 0 (no motors; the phase starts at 0)
 //   lip    step C12b, genes of the LIPID MEMBRANE (src/lipids.js): x WALL, the crust wall wanted as a share of a full wall (0..1);
 //          y HEAD, which head the soap the cell makes carries (-1 all t: tlL, -; 1 all g: glL, +); z the wall's ROW (its heavy
 //          share, LL of ll + LL); w spare. With the lipid membranes on, memb.x (the C6c mix) is the bilayer's OIL share (oil
@@ -63,10 +69,11 @@ import { CARBON, CB_LIP } from './carbon.js';
 import { fieldDefaults, founderGates, BIO_FG } from './guides.js';
 import { stampFounderGlue } from './glue.js';
 
-export const BIO_FLOATS = 168;  // (156 until step G2's duplicate slots and families; 40 until step C6c's membrane genes, 44 until step C7's pumps, 48 until step C10's walls, 52 until step C12b's lipids,
+export const BIO_FLOATS = 180;  // (168 until step S2's motor genes; 156 until step G2's duplicate slots and families; 40 until step C6c's membrane genes, 44 until step C7's pumps, 48 until step C10's walls, 52 until step C12b's lipids,
                                 //  56 until step C13's field genes and gates, 76 until step T1a's marker and kin channels, 84 until step T1b's gene network)
 export const BIO_GRN = 84;      // step T1b: the gene network's first word (Bio.gx)
 export const BIO_G2 = 156;      // step G2: the duplicate slots' first word (Bio.dx; Bio.df at 160, Bio.dg at 164)
+export const BIO_MO = 168;      // step S2: the motor genes' first word (Bio.mo; Bio.mc at 172, Bio.mg at 176)
 export const BIO_T1 = 76;       // step T1a: the first marker word (Bio.mark; Bio.kin at 80)
 export const BIO_BYTES = BIO_FLOATS * 4;
 
@@ -337,7 +344,21 @@ export function blankGenes(g, o = 0) {
   g[o + 73] = 1; g[o + 74] = 0; g[o + 75] = 0;                                        // push 1, stretch tolerance 0, ion channels 0
   g[o + 80] = 0;                                                                      // no kin channels
 }
-export const WILD_GROUPS = ['body', 'membrane', 'pumps', 'walls', 'lipids', 'fields', 'gates', 'kin', 'grn', 'engulf', 'shape'];
+export const WILD_GROUPS = ['body', 'membrane', 'pumps', 'walls', 'lipids', 'fields', 'gates', 'kin', 'grn', 'engulf', 'shape', 'motors'];
+// step S2: every founder's MOTOR genes (std and blank: no motors yet, a random sign and phase, the placement near the axis; so the motors must
+// evolve), and WILD founders' (group 'motors'): the flagellum's thrust anywhere in 0..1 (half of them 0), its sign and placement over -1..1, the
+// cilia's beat anywhere in 0..1 (half of them 0), coupling and tilt over -1..1, and the gene network's 19th and 20th outputs four times in ten
+// each from a random regulator at a gain in -3..3 (only with the group 'grn' too). Their own random stream (a seed's other genes stay as they were)
+export function motorGenes(g, rng, o = 0, wild = false, groups = WILD_GROUPS) {
+  const sign = U(rng, -1, 1), place = U(rng, -0.05, 0.05), phase = U(rng, 0, 2 * Math.PI);
+  const wf = rng() < 0.5 ? 0 : rng(), wp = U(rng, -1, 1), wc = rng() < 0.5 ? 0 : rng(), wk = U(rng, -1, 1), wt = U(rng, -1, 1);
+  const on1 = rng() < 0.4, r1 = Math.min(7, Math.floor(rng() * 8)), u1 = U(rng, -3, 3), on2 = rng() < 0.4, r2 = Math.min(7, Math.floor(rng() * 8)), u2 = U(rng, -3, 3);
+  const b = o + BIO_MO, W = wild && groups.includes('motors');
+  g[b] = W ? wf : 0; g[b + 1] = sign; g[b + 2] = W ? wp : place; g[b + 3] = W ? wc : 0;
+  g[b + 4] = W ? wk : 0; g[b + 5] = W ? wt : 0; g[b + 6] = phase; g[b + 7] = 0;
+  const net = W && groups.includes('grn');
+  g[b + 8] = net && on1 ? u1 : 0; g[b + 9] = net && on1 ? r1 : 0; g[b + 10] = net && on2 ? u2 : 0; g[b + 11] = net && on2 ? r2 : 0;
+}
 // step S1: WILD founders' shape genes (group 'shape'), from their own random stream (so a seed's other wild genes stay as they were): the
 // ELONGATION gene anywhere in 0..ln 4, and the gene network's 18th output (SHAPE) four times in ten from a random regulator at a gain in -3..3
 // (only with the group 'grn' too)
@@ -411,6 +432,7 @@ export class Genome {
     this.erng = makeRng(this.seed ^ 0x656e6731);   // step P1: the wild founders' predation genes' own stream
     this.crng = makeRng(this.seed ^ 0x63617262);   // step C15b: the founders' carbon engines' own stream
     this.srng = makeRng(this.seed ^ 0x73686170);   // step S1: the wild founders' shape genes' own stream
+    this.orng = makeRng(this.seed ^ 0x6d6f746f);   // step S2: the founders' motor genes' own stream
     this.founders = [];
     // live-tunable (moire.genome.params); the rule switches are keys
     this.params = {
@@ -479,6 +501,7 @@ export class Genome {
         wildGenes(g, this.xrng, 0, this.params.wildGroups); wildP1(g, this.erng, 0, this.params.wildGroups);
         wildS1(g, this.srng, 0, this.params.wildGroups);   // step S1
       }
+      motorGenes(g, this.orng, 0, mode === 'wild', this.params.wildGroups);   // step S2 (every mode: std and blank founders without motors)
     }
     // step T1b: wild founders' markers turned a golden angle apart (no random number drawn), so in the lineage view any few surviving
     // founders show clearly different hues (their markers are strangers either way)

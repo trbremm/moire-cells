@@ -1,0 +1,67 @@
+{
+  "name": "c15f-phone",
+  "description": "phone size (390 x 844 at dpr 3, Chrome): a fresh-load world (thicket, seed 3) 30 s, every C15f fix on",
+  "condition": {
+    "name": "c15f-phone",
+    "description": "phone size (390 x 844 at dpr 3, Chrome): a fresh-load world (thicket, seed 3) 30 s, every C15f fix on",
+    "query": {
+      "terrain": "thicket",
+      "seed": 3
+    },
+    "duration": 30,
+    "sample_every": 10,
+    "stall": 400,
+    "shots": [
+      {
+        "t": 30
+      }
+    ],
+    "snapshots": [],
+    "evals": [
+      {
+        "t": 10,
+        "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+      },
+      {
+        "t": 30,
+        "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})"
+      }
+    ],
+    "size": "390x844",
+    "dpr": 3
+  },
+  "url": "http://localhost:49983/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&terrain=thicket&seed=3",
+  "browser": "chrome",
+  "size": "390x844",
+  "commit": "42a5da50b3d1386f444fc1df7372b8db4a71c40a",
+  "dirty": false,
+  "started": "2026-11-23T04:25:17",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 30.0,
+  "run_wall_s": 149.93,
+  "speed_reached": 0.2,
+  "samples": 4,
+  "shots": [
+    "shots/t30.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 10.000000000000078,
+      "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})",
+      "result": "{\"t\":10.000000000000078,\"alive\":462,\"cRound\":0,\"atoms\":0,\"charge\":0,\"energy\":-0.002593994140625}"
+    },
+    {
+      "t": 29.99999999999958,
+      "js": "const L = moire.carbon && moire.carbon.ledger, H = moire.heat.ledger; return JSON.stringify({t: moire.time(), alive: moire.cells.alive, cRound: L && L.rounding, atoms: moire.matter.ledger.rounding, charge: moire.charge.ledger ? moire.charge.ledger.qRound : null, energy: H.rounding})",
+      "result": "{\"t\":29.99999999999958,\"alive\":400,\"cRound\":0,\"atoms\":0,\"charge\":0,\"energy\":-0.0093994140625}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T04:29:49",
+  "wall_s": 271.65
+}

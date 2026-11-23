@@ -1,0 +1,9 @@
+{
+ "batch": "m2-smoke",
+ "runs": [
+  {"name": "m2-smoke-rare", "description": "step M2 smoke: rare mode, 90 s, seed 3",
+   "query": {"seed": 3, "mutmode": "rare", "mutcensus": 15}, "duration": 90, "sample_every": 15,
+   "shots": [{"t": 90, "panel": true, "name": "panel"}],
+   "evals": [{"t": 89, "js": "const c = await moire.mutation.now(); return JSON.stringify({n: c.n, gen: c.gen, lines: c.lines, geno: c.genotypes, clone: c.cloneTop, rates: moire.mutation.rates})"}]}
+ ]
+}

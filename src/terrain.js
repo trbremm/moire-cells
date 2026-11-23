@@ -517,7 +517,7 @@ export const TERRAINS = {
   // rise elsewhere (src/flow.js)
   currents: {
     label: 'Tidal currents',
-    line: 'Open shallows with strong, changing currents. Springs wander and run dry; plumes of food sweep past. Sand bars pile up behind the rocks.',
+    line: 'Strong, changing currents. Springs wander and run dry; sand bars pile up behind the rocks.',
     make(S) {
       const { W, H, R } = S;
       const want = clampI(W * H / (R * R) / 2600, 4, 14), rocks = [];

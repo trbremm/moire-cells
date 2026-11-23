@@ -1,0 +1,72 @@
+{
+  "name": "s2-phone",
+  "description": "phone size 390x844: the delta world with motors given at 20 s, 60 s",
+  "condition": {
+    "name": "s2-phone",
+    "description": "phone size 390x844: the delta world with motors given at 20 s, 60 s",
+    "size": "390x844",
+    "query": {
+      "terrain": "delta",
+      "seed": 7
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "stall": 400,
+    "shots": [
+      {
+        "t": 59,
+        "name": "end"
+      },
+      {
+        "t": 59.5,
+        "name": "panel",
+        "panel": true
+      }
+    ],
+    "evals": [
+      {
+        "t": 20,
+        "js": "await moire.genome.setAll({flagellum: 0.7, flagSign: 1, cilia: 0.7, ciliaCouple: 1}); return 'genes set'"
+      },
+      {
+        "t": 58,
+        "js": "return JSON.stringify(moire.motors.census)"
+      }
+    ]
+  },
+  "url": "http://localhost:54210/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&terrain=delta&seed=7",
+  "browser": "chrome",
+  "size": "390x844",
+  "commit": "f6f5bb0e15ee19c21e1abcec44eac213b6593ca7",
+  "dirty": false,
+  "started": "2026-11-23T05:11:54",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 60.0,
+  "run_wall_s": 150.53,
+  "speed_reached": 0.4,
+  "samples": 7,
+  "shots": [
+    "shots/end.png",
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 20.00000000000015,
+      "js": "await moire.genome.setAll({flagellum: 0.7, flagSign: 1, cilia: 0.7, ciliaCouple: 1}); return 'genes set'",
+      "result": "genes set"
+    },
+    {
+      "t": 57.99999999999799,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":57.88333333333133,\"n\":174,\"carriers\":174,\"flagGene\":0.6994022988505747,\"flagSd\":0.05542613595082593,\"flagExpr\":0.5210632183908046,\"swimmers\":174,\"speed\":1.248735632183908,\"relSpeed\":1.732281609195402,\"turning\":0.3455632183908046,\"open\":100,\"pushers\":174,\"pusherShare\":1,\"sign\":0.9851264367816093,\"placement\":0.03940229885057471,\"ciliaCarriers\":174,\"ciliaGene\":0.7018965517241379,\"ciliaSd\":0.058935681770982976,\"ciliaExpr\":0.5216494252873562,\"beating\":174,\"freeSides\":5.390804597701149,\"waveN\":74,\"wave\":0.9558918918918919,\"sync\":0.9386216216216215,\"globalSync\":0.06969331160630071,\"coupling\":0.9842586206896552,\"tilt\":0.023724137931034485,\"motorShare\":0.7459655172413793,\"payPerTick\":0.367431640625}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T05:16:28",
+  "wall_s": 274.49
+}

@@ -53,6 +53,7 @@ import { Glue, STATS_G0, G0_WORDS, G0_CLEAR } from './glue.js';
 import { Spindle, STATS_S1, S1_WORDS } from './spindle.js';
 import { Fidelity } from './fidelity.js';
 import { Dup } from './dup.js';
+import { Mutation } from './mutation.js';
 import { Motors, STATS_S2, S2_WORDS } from './motors.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 import { dish } from './dish.js';      // the dish's own size and R
@@ -363,6 +364,7 @@ export class Cells {
     this.grn = new Grn(this);             // step T1b: the gene regulatory network, the reporter view (src/grn.js)
     this.pred = new Predators(this);      // step P1: predators, engulfing and kin sparing (src/predators.js)
     this.fidelity = new Fidelity(this);   // step G1: error correction, the fidelity gene (src/fidelity.js)
+    this.mutation = new Mutation(this);   // step M2: the mutation sweep (src/mutation.js)
     this.dup = new Dup(this);             // step G2: gene duplication for engines and pumps (src/dup.js)
     this.motors = new Motors(this);       // step S2: flagella and cilia (src/motors.js)
   }
@@ -750,6 +752,7 @@ export class Cells {
     this.dup.writeFields(u, f, 144);           // step G2: gene duplication (Fields.g2)
     u[147] = this.flow ? this.flow.chemoBits : 0;   // step N2: the chemotaxis gene's bits (Fields.g2.w; src/flow.js)
     this.motors.writeFields(u, f, 148);        // step S2: flagella and cilia (Fields.mo0..mo2)
+    this.mutation.writeFields(u, f);           // step M2: the mutation sweep (Fields.qA.yzw, qB.y)
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
 
@@ -794,6 +797,7 @@ export class Cells {
     this.pred.maybeCensus(frame.time);   // step P1: the clusters' census (a read-back every few s)
     this.fidelity.maybeCensus(frame.time);   // step G1: the fidelity census (a read-back every few s)
     this.dup.maybeCensus(frame.time);        // step G2: the engines' census (a read-back every few s)
+    this.mutation.maybeCensus(frame.time);   // step M2: generations, lines, genes (a read-back every few s)
     this.motors.maybeCensus(frame.time);     // step S2: where the motors are (a read-back every few s)
     if (this.gridSize() !== this.grid.cs) this.sizeGrid();   // params.cut or range changed
     // after a reset, the warm-up ticks run first (all in this frame, at the current time)

@@ -1741,6 +1741,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           }
           nb.env.y = FL.dv1.w;                    // both flash
           bio.env.y = FL.dv1.w;
+          bio.resp.z += 1.0;                      // step M2: the mother is a generation on too (her daughter's: hers + 1)
           cells[k] = d;
           bioNext[k] = nb;
           atomicAdd(&stats.div[DV_BIRTHS], 1u);
@@ -2011,7 +2012,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let jt = job_targets(bio, eng_mode(c.eng) != ENG_IDLE);
   let ja = min(1.0, S.dt / JOB_TAU);
   bio.acc += (jt[0] - bio.acc) * ja;
-  bio.resp = vec4f(bio.resp.xy + (jt[1].xy - bio.resp.xy) * ja, 0.0, 0.0);
+  bio.resp = vec4f(bio.resp.xy + (jt[1].xy - bio.resp.xy) * ja, bio.resp.zw);   // (step M2: z the generation, w a newborn's rare mask)
   // PORTABLE GUARD (the user's phone, 2026-11-22; src/gpu.js patchTanh): a cell whose position, velocity or size came out NaN or infinite
   // (a GPU whose maths overflows where the desktop's saturates) is put back where it was at the start of the tick, at rest, its outline
   // round, and counted (G0S_BAD), instead of being clamped onto the dish's edge or through a wall and spreading NaN to its neighbours'
@@ -2092,6 +2093,63 @@ fn hex_target(r0: f32, b: f32, snap: f32) -> f32 {
 // Step C8, hard light mutates: the parent's hard light dose (Cell.flags, from the eat pass) scales this copy's mutation,
 // x (1 + hm.x x dose), at most hm.y x (the small steps' size and every jump's chance alike); with mutation off (key M) only the
 // extra part mutates, so in the dark a lineage then stays pure. bs: the birth's random stream; i: the slot counting it.
+// step M2: every gene's copying errors at scale msF (mutate's small steps and jump chances x msF, then the G0 glue's log steps, the S1
+// elongation, the S2 motors and the N2 chemotaxis gene; the code as it was in daughter_genome, moved here so the RARE mode can run it at its
+// big step and keep only the groups it picked). msF 0: p unchanged. Same random draws as before.
+fn drift_genome(p: Bio, bs: u32, msF: f32) -> Bio {
+  var nb = p;
+  if (msF <= 0.0) { return nb; }
+  nb = mutate(nb, bs, S.mutSize * msF, min(S.mutJump * msF, 1.0), min(S.engJump * msF, 1.0), min(FL.memb.w * msF, 1.0));
+  // step G0, the glue's CEILING: the glue gene on a log scale (GLUE_LO..GLUE_HI): its step multiplies it (x e^(0.06 x size x n), the same
+  // 6 % a step was at 0.5 on the old linear scale; the same random draw), its rare jump lands anywhere on the log scale (the same draws as
+  // mutate's jump into it)
+  if ((bitcast<u32>(FL.g0a.x) & G0_CEIL) != 0u) {
+    let sz = S.mutSize * msF;
+    var x = max(p.body.x, GLUE_LO) * exp(sz * 0.06 * gauss(bs, 16u));
+    if (rand01(bs, 101u) < min(S.mutJump * msF, 1.0) && min(u32(rand01(bs, 102u) * 18.0), 17u) == 15u) {
+      x = GLUE_LO * pow(GLUE_HI / GLUE_LO, rand01(bs, 103u));
+    }
+    nb.body.x = clamp(x, GLUE_LO, GLUE_HI);
+  }
+  // step S1: the ELONGATION gene (Bio.relay.y, ln of the aspect asked, 0..ln 4) drifts by small steps, now and then a jump anywhere (as one
+  // of mutate's 18 genes would); on and in the neutral control alike, untouched while the shape is off
+  if ((S.shapeF & SH_ON) != 0u) {
+    let sz = S.mutSize * msF;
+    var x = nudge(p.relay.y, sz * 0.05, 0.0, SH_LN_MAX, bs, 220u);
+    if (rand01(bs, 221u) < min(S.mutJump * msF, 1.0) / 18.0) { x = SH_LN_MAX * rand01(bs, 222u); }
+    nb.relay.y = x;
+  }
+  // step S2: the MOTOR genes (Bio.mo, mc.xy) drift by small steps, now and then one jumps anywhere (as one of mutate's 18 genes would); on and in
+  // their neutral control alike, untouched while that motor is off (the phase, mc.z, is state: inherited as it is)
+  let mf = bitcast<u32>(FL.mo0.x);
+  let sz = S.mutSize * msF;
+  let jp = min(S.mutJump * msF, 1.0) / 18.0;
+  if ((mf & MO_FLAG) != 0u) {
+    var fl = vec3f(nudge(p.mo.x, sz * 0.03, 0.0, 1.0, bs, 230u), nudge(p.mo.y, sz * 0.05, -1.0, 1.0, bs, 231u), nudge(p.mo.z, sz * 0.03, -1.0, 1.0, bs, 232u));
+    if (rand01(bs, 233u) < jp) { fl.x = rand01(bs, 234u); }
+    if (rand01(bs, 235u) < jp) { fl.y = 2.0 * rand01(bs, 236u) - 1.0; }
+    if (rand01(bs, 237u) < jp) { fl.z = 2.0 * rand01(bs, 238u) - 1.0; }
+    nb.mo = vec4f(fl, nb.mo.w);
+  }
+  if ((mf & MO_CIL) != 0u) {
+    var cw = nudge(p.mo.w, sz * 0.03, 0.0, 1.0, bs, 240u);
+    var ck = vec2f(nudge(p.mc.x, sz * 0.04, -1.0, 1.0, bs, 241u), nudge(p.mc.y, sz * 0.03, -1.0, 1.0, bs, 242u));
+    if (rand01(bs, 243u) < jp) { cw = rand01(bs, 244u); }
+    if (rand01(bs, 245u) < jp) { ck.x = 2.0 * rand01(bs, 246u) - 1.0; }
+    if (rand01(bs, 247u) < jp) { ck.y = 2.0 * rand01(bs, 248u) - 1.0; }
+    nb.mo.w = cw;
+    nb.mc = vec4f(ck, nb.mc.zw);
+  }
+  // step N2: the CHEMOTAXIS gene (Bio.mc.w, a log factor on the smell's gain) drifts by small steps, now and then a jump anywhere; on and in its
+  // neutral control alike, untouched while off
+  if ((bitcast<u32>(FL.g2.w) & CHEMO_ON) != 0u) {
+    var x = nudge(p.mc.w, sz * 0.12, CHEMO_LO, CHEMO_HI, bs, 250u);
+    if (rand01(bs, 251u) < jp) { x = CHEMO_LO + (CHEMO_HI - CHEMO_LO) * rand01(bs, 252u); }
+    nb.mc.w = x;
+  }
+  return nb;
+}
+
 fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
   var nb = p;
   let hx = select(0.0, min(FL.hm.x * pdose, max(FL.hm.y - 1.0, 0.0)), FL.hm.x > 0.0);
@@ -2099,64 +2157,38 @@ fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
   let ms = select(0.0, 1.0, mOn) + hx;
   // step G1, error correction: the parent's FIDELITY gene scales the copying errors (and part of hard light's), cell_common.wgsl fid_birth
   let fBits = bitcast<u32>(FL.hm.z);
-  let msF = fid_birth(mOn, hx, p.conv.w, FL.hm);
+  // step M2, the MUTATION SWEEP (src/mutation.js): DRIFT (today's: every gene nudged at every birth) x the global SCALE (Fields.qA.z; 1 =
+  // today exactly, 0 = exact copies, hard light's extra included), or RARE BIG STEPS: an exact copy, except with chance pRare x the scale x
+  // (the fidelity gene's e^-F + hard light's extra) one to three gene GROUPS (MG_*) change by the big step (Fields.qB.y x today's steps
+  // and jump chances). The groups picked go to the gene network's pass in the daughter's Bio.resp.w (MG_GRN: its network mutates too)
+  let mSc = max(FL.qA.z, 0.0);
+  let rare = (bitcast<u32>(FL.qA.y) & MUT_RARE) != 0u;
+  let msF0 = fid_birth(mOn, hx, p.conv.w, FL.hm);
+  var msF = msF0 * mSc;
+  var mask = 0xffffffffu;
+  var nGroups = MUT_NG;
+  if (rare) {
+    mask = 0u;
+    nGroups = 0u;
+    msF = 0.0;
+    if (rand01(bs, 900u) < min(FL.qA.w * msF0 * mSc, 1.0)) {
+      nGroups = 1u + min(u32(rand01(bs, 901u) * 3.0), 2u);
+      for (var k = 0u; k < nGroups; k++) { mask |= 1u << min(u32(rand01(bs, 902u + k) * f32(MUT_NG)), MUT_NG - 1u); }
+      nGroups = countOneBits(mask);
+      msF = max(FL.qB.y, 0.0);
+    }
+  }
   let e0 = nb.eng.xyz;                      // (to count the slot jumps: an engine or pump slot changed, started or emptied)
   let r0 = nb.rate.xyz > vec3f(0.0);
   let q0 = nb.pump.xy;
   let qr0 = nb.pump.zw > vec2f(0.0);
-  if (msF > 0.0) {
-    nb = mutate(nb, bs, S.mutSize * msF, min(S.mutJump * msF, 1.0), min(S.engJump * msF, 1.0), min(FL.memb.w * msF, 1.0));
-    // step G0, the glue's CEILING: the glue gene on a log scale (GLUE_LO..GLUE_HI): its step multiplies it (x e^(0.06 x size x n), the same
-    // 6 % a step was at 0.5 on the old linear scale; the same random draw), its rare jump lands anywhere on the log scale (the same draws as
-    // mutate's jump into it)
-    if ((bitcast<u32>(FL.g0a.x) & G0_CEIL) != 0u) {
-      let sz = S.mutSize * msF;
-      var x = max(p.body.x, GLUE_LO) * exp(sz * 0.06 * gauss(bs, 16u));
-      if (rand01(bs, 101u) < min(S.mutJump * msF, 1.0) && min(u32(rand01(bs, 102u) * 18.0), 17u) == 15u) {
-        x = GLUE_LO * pow(GLUE_HI / GLUE_LO, rand01(bs, 103u));
-      }
-      nb.body.x = clamp(x, GLUE_LO, GLUE_HI);
-    }
-    // step S1: the ELONGATION gene (Bio.relay.y, ln of the aspect asked, 0..ln 4) drifts by small steps, now and then a jump anywhere (as one
-    // of mutate's 18 genes would); on and in the neutral control alike, untouched while the shape is off
-    if ((S.shapeF & SH_ON) != 0u) {
-      let sz = S.mutSize * msF;
-      var x = nudge(p.relay.y, sz * 0.05, 0.0, SH_LN_MAX, bs, 220u);
-      if (rand01(bs, 221u) < min(S.mutJump * msF, 1.0) / 18.0) { x = SH_LN_MAX * rand01(bs, 222u); }
-      nb.relay.y = x;
-    }
-    // step S2: the MOTOR genes (Bio.mo, mc.xy) drift by small steps, now and then one jumps anywhere (as one of mutate's 18 genes would); on and in
-    // their neutral control alike, untouched while that motor is off (the phase, mc.z, is state: inherited as it is)
-    let mf = bitcast<u32>(FL.mo0.x);
-    let sz = S.mutSize * msF;
-    let jp = min(S.mutJump * msF, 1.0) / 18.0;
-    if ((mf & MO_FLAG) != 0u) {
-      var fl = vec3f(nudge(p.mo.x, sz * 0.03, 0.0, 1.0, bs, 230u), nudge(p.mo.y, sz * 0.05, -1.0, 1.0, bs, 231u), nudge(p.mo.z, sz * 0.03, -1.0, 1.0, bs, 232u));
-      if (rand01(bs, 233u) < jp) { fl.x = rand01(bs, 234u); }
-      if (rand01(bs, 235u) < jp) { fl.y = 2.0 * rand01(bs, 236u) - 1.0; }
-      if (rand01(bs, 237u) < jp) { fl.z = 2.0 * rand01(bs, 238u) - 1.0; }
-      nb.mo = vec4f(fl, nb.mo.w);
-    }
-    if ((mf & MO_CIL) != 0u) {
-      var cw = nudge(p.mo.w, sz * 0.03, 0.0, 1.0, bs, 240u);
-      var ck = vec2f(nudge(p.mc.x, sz * 0.04, -1.0, 1.0, bs, 241u), nudge(p.mc.y, sz * 0.03, -1.0, 1.0, bs, 242u));
-      if (rand01(bs, 243u) < jp) { cw = rand01(bs, 244u); }
-      if (rand01(bs, 245u) < jp) { ck.x = 2.0 * rand01(bs, 246u) - 1.0; }
-      if (rand01(bs, 247u) < jp) { ck.y = 2.0 * rand01(bs, 248u) - 1.0; }
-      nb.mo.w = cw;
-      nb.mc = vec4f(ck, nb.mc.zw);
-    }
-    // step N2: the CHEMOTAXIS gene (Bio.mc.w, a log factor on the smell's gain) drifts by small steps, now and then a jump anywhere; on and in its
-    // neutral control alike, untouched while off
-    if ((bitcast<u32>(FL.g2.w) & CHEMO_ON) != 0u) {
-      var x = nudge(p.mc.w, sz * 0.12, CHEMO_LO, CHEMO_HI, bs, 250u);
-      if (rand01(bs, 251u) < jp) { x = CHEMO_LO + (CHEMO_HI - CHEMO_LO) * rand01(bs, 252u); }
-      nb.mc.w = x;
-    }
-  }
+  nb = drift_genome(p, bs, msF);           // (step M2: one call, so the shader inlines the mutation once)
+  if (rare) { nb = mut_merge(p, nb, mask); }
   // ... the gene itself drifts at today's size (not proofread by itself), on and in the neutral control
   var fid = p.conv.w;
-  if ((fBits & FID_DRIFT) != 0u && ms > 0.0) { fid = nudge(fid, S.mutSize * ms * FID_STEP, FID_LO, FID_HI, bs, 196u); }
+  // (step M2: x the scale; in RARE mode only when its group is picked, at the big step)
+  let fms = select(ms * mSc, select(0.0, msF, mg_has(mask, MG_FID)), rare);
+  if ((fBits & FID_DRIFT) != 0u && fms > 0.0) { fid = nudge(fid, S.mutSize * fms * FID_STEP, FID_LO, FID_HI, bs, 196u); }
   if (fBits != 0u) {
     atomicAdd(&hb[LG_DIV + 16u * FDC_BIRTHS + (i & 15u)], 1);
     atomicAdd(&hb[LG_DIV + 16u * FDC_MS + (i & 15u)], i32(round(msF * 1000.0)));
@@ -2176,13 +2208,15 @@ fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
   }
   // step G2: gene duplication (after the C8 census above, so its slot jumps count mutation alone): the families kept in order, and with
   // duplication on (or its neutral control) the copies' drift, a rare deletion and a rare duplication, x the copying scale msF
-  nb = dup_birth(nb, p, bs, msF, i);
+  // (step M2: in RARE mode only when its group is picked; the families' bookkeeping always)
+  nb = dup_birth(nb, p, bs, select(msF, select(0.0, msF, mg_has(mask, MG_DUP)), rare), i);
   // step T1a: the self MARKER drifts at every birth, a molecular clock (small Gaussian steps of its angle, period and phase; never a jump),
   // so marker distance grows with the time since a common ancestor
   // (step T1c, ?clockhard=0: the clock ticks only with mutation itself (key M), not with hard light's extra dose, so a lineage under hard
   // light keeps its kinship readable as long as one in the shade)
   // (step G1: the clock is a copying error too: x e^-F, hard light's part as in fid_birth; exactly as before while the gene does not act)
-  let cms = select(select(0.0, fid_m(p.conv.w, FL.hm), mOn), msF, (bitcast<u32>(FL.t1.x) & T1S_CLOCKHARD) != 0u);
+  // (step M2: x the scale, in both modes: the clock is a neutral tag, it ticks at every birth as before, not only at a rare mutation)
+  let cms = select(select(0.0, fid_m(p.conv.w, FL.hm), mOn), msF0, (bitcast<u32>(FL.t1.x) & T1S_CLOCKHARD) != 0u) * mSc;
   if ((bitcast<u32>(FL.t1.x) & T1S_CLOCK) != 0u && cms > 0.0) {
     let ck = FL.t1.y * cms;
     var ang = nb.mark.x + ck * 0.02 * gauss(bs, 190u);
@@ -2190,6 +2224,14 @@ fn daughter_genome(p: Bio, bs: u32, pdose: f32, i: u32) -> Bio {
     var ph = nb.mark.z + ck * 0.05 * gauss(bs, 192u);
     ph -= TAU * floor(ph / TAU);
     nb.mark = vec4f(ang, nudge(nb.mark.y, ck * 0.01, MARK_PLO, MARK_PHI, bs, 191u), ph, nb.mark.w);
+  }
+  // step M2: the GENERATION (Bio.resp.z: the parent's + 1; founders 0) and the groups a rare mutation picked (resp.w, for the gene network's
+  // pass, which clears it); the counters
+  nb.resp = vec4f(nb.resp.xy, p.resp.z + 1.0, select(0.0, f32(mask), rare));
+  atomicAdd(&hb[LG_DIV + 16u * MTC_BIRTHS + (i & 15u)], 1);
+  if (msF > 0.0) {
+    atomicAdd(&hb[LG_DIV + 16u * MTC_MUT + (i & 15u)], 1);
+    atomicAdd(&hb[LG_DIV + 16u * MTC_GROUPS + (i & 15u)], i32(nGroups));
   }
   nb.env = vec4f(0.0);                      // a newborn has felt nothing yet and is not converted (step C9: nor starving)
   nb.conv = vec4f(0.0, 0.0, 0.0, fid);      // (step G1: w is the fidelity gene, inherited)

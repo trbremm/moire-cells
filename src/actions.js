@@ -76,6 +76,7 @@ export const RULE_GROUPS = [
   ['p1', 'Predators (step P1)'],
   ['g1', 'Error correction (step G1)'],
   ['g2', 'Gene duplication (step G2)'],
+  ['m2', 'Mutation sweep (step M2)'],
   ['g0', 'Strong glue (step G0)'],
   ['s1', 'Cell shape (step S1)'],
   ['s2', 'Flagella and cilia (step S2)'],
@@ -893,6 +894,19 @@ export function makeActions(app) {
       help: 'the neutral control: duplications, drift and losses happen as usual, but the copies do nothing, to tell selection from noise' },
     dpknob('dupRate', 'duplication chance', 'rate', 0, 1, 1.5, 4, 'the chance per birth of one duplication (x the copying scale: key M, fidelity, hard light)'),
     dpknob('dupDel', 'loss chance', 'del', 0, 1, 1.5, 4, 'the chance per birth that one copy is lost back to silence (same scale)'),
+  );
+
+  // ---------- the mutation sweep (step M2; panel only: no keys are free) ----------
+  const MUP = () => app.cells.mutation.params;
+  const muknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'm2', type: 'knob', get: () => MUP()[key].toFixed(digits),
+    run: (k) => { const p = MUP(); p[key] = Math.max(lo, Math.min(hi, +(Math.max(p[key], 1e-3) * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    { id: 'mutrare', keys: [], label: 'rare big steps', group: 'm2', type: 'toggle', get: () => MUP().rare,
+      run: () => `mutation ${flip(MUP(), 'rare') ? 'in RARE BIG STEPS: most daughters are exact copies; now and then one changes 1-3 gene groups by a visible step' : 'drifts: every daughter differs a little in every gene (as before)'}`,
+      help: 'rare big steps (most births exact copies, a few change a lot) instead of every gene nudged a little at every birth' },
+    muknob('mutScale', 'mutation scale', 'scale', 0, 10, 1.5, 3, 'every copying error x this (1 = as before; drift: the steps and jump chances, rare: the chance)'),
+    muknob('mutP', 'rare chance', 'p', 0, 1, 1.5, 3, 'rare mode: the chance per birth of a mutation (x the scale, the fidelity gene, hard light)'),
+    muknob('mutBig', 'rare step', 'big', 0.5, 50, 1.5, 2, 'rare mode: the step of a rare mutation, x the usual small step and jump chance'),
   );
 
   // ---------- strong glue, junctions that break, stirred water (step G0; panel only: no keys are free) ----------

@@ -635,6 +635,51 @@ const DPC_PUMP: u32 = 9u;         // pump duplications (into the empty pump slot
 const DPC_DEL: u32 = 10u;         // deletions (a copy lost back to silence)
 const DPC_FULL: u32 = 11u;        // duplications asked with no silent slot left for that kind (nothing happens)
 const DPC_NEW: u32 = 12u;         // slots started from empty by ordinary mutation (a fresh family)
+// step M2, THE MUTATION SWEEP (src/mutation.js; README "Step M2: mutation sweep"): its counters in the same block (rows 13..15)
+const MTC_BIRTHS: u32 = 13u;      // births (every daughter genome made: turnover and division)
+const MTC_MUT: u32 = 14u;         // ... of them mutated (drift: any copying error at all; rare: a rare mutation drawn)
+const MTC_GROUPS: u32 = 15u;      // ... the gene groups changed (drift: every group, MUT_NG; rare: the 1..3 picked)
+const MUT_RARE: u32 = 1u;         // Fields.qA.y: RARE BIG STEPS (else DRIFT: every gene nudged at every birth, today's)
+const MUT_NG: u32 = 18u;          // the gene GROUPS a rare mutation picks from (MG_*; one bit each in its mask)
+const MG_KEY: u32 = 0u;           // the key and the receptor (identity, what it recognises), rec.x
+const MG_BODY: u32 = 1u;          // adhesion (glue), size, motility (body.xyz)
+const MG_ENG: u32 = 2u;           // the three engine slots, their rates, the heat tolerance, the permeability (eng, rate)
+const MG_MEMB: u32 = 3u;          // the membrane: oil share / mix, thickness, stiffness, ion balance (memb)
+const MG_PUMP: u32 = 4u;          // the two pump slots (pump)
+const MG_WALL: u32 = 5u;          // the walls' pattern and the division axis (wall)
+const MG_LIP: u32 = 6u;           // the lipid genes (lip.xyz) and the carbon transporter (relay.x)
+const MG_FA: u32 = 7u;            // field A's genes and the partner's (fa, fx)
+const MG_FB: u32 = 8u;            // field B's genes (fb)
+const MG_GATE: u32 = 9u;          // the guides' gates and the push (gate, gate2.xy)
+const MG_CHAN: u32 = 10u;         // the stretch tolerance, ion channels and stretch channels (gate2.zw, lip.w)
+const MG_KIN: u32 = 11u;          // the marker's display, kin channels, tolerance, ENGULF, kin sparing (mark.w, kin)
+const MG_SHAPE: u32 = 12u;        // the elongation gene (relay.y)
+const MG_MOTOR: u32 = 13u;        // flagellum and cilia (mo, mc.xy)
+const MG_CHEMO: u32 = 14u;        // the chemotaxis gene (mc.w)
+const MG_GRN: u32 = 15u;          // the gene network (cell_grn.wgsl: its weights, biases, gains, wiring, duplication)
+const MG_DUP: u32 = 16u;          // gene duplication: the copies' drift, a duplication, a deletion (dup_birth)
+const MG_FID: u32 = 17u;          // the fidelity gene (conv.w)
+fn mg_has(mask: u32, g: u32) -> bool { return ((mask >> g) & 1u) != 0u; }
+// a RARE mutation's daughter: the parent p with the groups in `mask` taken from m (p mutated at the big step everywhere); the rest exact
+fn mut_merge(p: Bio, m: Bio, mask: u32) -> Bio {
+  var b = p;
+  if (mg_has(mask, MG_KEY)) { b.key = m.key; b.rec.x = m.rec.x; }
+  if (mg_has(mask, MG_BODY)) { b.body = vec4f(m.body.xyz, b.body.w); }
+  if (mg_has(mask, MG_ENG)) { b.eng = m.eng; b.rate = m.rate; }
+  if (mg_has(mask, MG_MEMB)) { b.memb = m.memb; }
+  if (mg_has(mask, MG_PUMP)) { b.pump = m.pump; }
+  if (mg_has(mask, MG_WALL)) { b.wall = m.wall; }
+  if (mg_has(mask, MG_LIP)) { b.lip = vec4f(m.lip.xyz, b.lip.w); b.relay.x = m.relay.x; }
+  if (mg_has(mask, MG_FA)) { b.fa = m.fa; b.fx = m.fx; }
+  if (mg_has(mask, MG_FB)) { b.fb = m.fb; }
+  if (mg_has(mask, MG_GATE)) { b.gate = m.gate; b.gate2 = vec4f(m.gate2.xy, b.gate2.zw); }
+  if (mg_has(mask, MG_CHAN)) { b.gate2 = vec4f(b.gate2.xy, m.gate2.zw); b.lip.w = m.lip.w; }
+  if (mg_has(mask, MG_KIN)) { b.mark.w = m.mark.w; b.kin = m.kin; }
+  if (mg_has(mask, MG_SHAPE)) { b.relay.y = m.relay.y; }
+  if (mg_has(mask, MG_MOTOR)) { b.mo = m.mo; b.mc = vec4f(m.mc.xy, b.mc.zw); }
+  if (mg_has(mask, MG_CHEMO)) { b.mc.w = m.mc.w; }
+  return b;
+}
 // step C6c: the honeycomb stiffness a membrane's material gives (genetic elasticity): heavy and thick = stiff, light and thin
 // = soft; 1 for the founders' usual light thin membrane (mix 0.1, thickness tRef)
 fn memb_stiff(m: vec4f, tRef: f32) -> f32 {
@@ -1150,8 +1195,11 @@ fn sense_field(seg: ptr<function, array<f32, 6>>, mb: Membrane, rel: vec2f, q0: 
 // removed the per-fate charges; field B's comes from the cell's own genes since step C12g).
 // Written once per frame by src/cells.js (writeFields; keep in step); 432 bytes since step C13, 416 since step C10 (256 until C6c, 288 until C6d).
 struct Fields {
-  qA: vec4f,        // x field A charge (1 = as in step 4); y z w spare (the fates' until step F0)
-  qB: vec4f,        // x field B's fixed charge (signed: like charges repel, when bSign = 1; used with qStock 0 only); y z w spare
+  qA: vec4f,        // x field A charge (1 = as in step 4); step M2, the MUTATION knobs (src/mutation.js; the fates' until step F0): y bits
+                    // MUT_* (u32); z the SCALE x every copying error (1 = today exactly; 0 = exact copies); w RARE mode: the chance per birth
+                    // of a mutation (x the scale, the fidelity gene and hard light)
+  qB: vec4f,        // x field B's fixed charge (signed: like charges repel, when bSign = 1; used with qStock 0 only); y step M2: RARE mode's
+                    // STEP factor (x today's small steps and jump chances, for the groups a rare mutation picks); z w spare
   q4: vec2f,        // spare (cartilage's charges until step F0)
   bBand: f32,       // B's lattice period, in units of the medium's period (its band)
   bLever: f32,      // as Sim.lever, for B's lattices

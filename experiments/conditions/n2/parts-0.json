@@ -1,0 +1,51 @@
+{
+ "batch": "n2-part-0",
+ "runs": [
+  {
+   "name": "n2-part-default-nopatchy_s3",
+   "description": "default scene, N2 on except patchy, 10 min",
+   "query": {
+    "seed": 3,
+    "patchy": 0
+   },
+   "duration": 602,
+   "sample_every": 30,
+   "stall": 400,
+   "shots": [
+    {
+     "t": 600,
+     "name": "end"
+    }
+   ],
+   "evals": [
+    {
+     "t": 600,
+     "js": "return JSON.stringify(moire.flow.census)"
+    }
+   ]
+  },
+  {
+   "name": "n2-part-default-nopatchy_s7",
+   "description": "default scene, N2 on except patchy, 10 min",
+   "query": {
+    "seed": 7,
+    "patchy": 0
+   },
+   "duration": 602,
+   "sample_every": 30,
+   "stall": 400,
+   "shots": [
+    {
+     "t": 600,
+     "name": "end"
+    }
+   ],
+   "evals": [
+    {
+     "t": 600,
+     "js": "return JSON.stringify(moire.flow.census)"
+    }
+   ]
+  }
+ ]
+}

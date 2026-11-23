@@ -1,0 +1,72 @@
+{
+  "name": "n2-look2-currents-neon_s3",
+  "description": "",
+  "condition": {
+    "name": "n2-look2-currents-neon_s3",
+    "query": {
+      "terrain": "currents",
+      "seed": 3
+    },
+    "duration": 302,
+    "sample_every": 60,
+    "stall": 400,
+    "shots": [
+      {
+        "t": 150,
+        "name": "t150"
+      },
+      {
+        "t": 300,
+        "name": "t300"
+      },
+      {
+        "t": 150,
+        "crop": [
+          400,
+          250,
+          480,
+          300
+        ],
+        "scale": 2.5,
+        "name": "t150-zoom"
+      },
+      {
+        "t": 300,
+        "crop": [
+          400,
+          250,
+          480,
+          300
+        ],
+        "scale": 2.5,
+        "name": "t300-zoom"
+      }
+    ]
+  },
+  "url": "http://localhost:55464/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&terrain=currents&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "a8a92a31ea9dd7fcddc372cede95f9a734acd7e6",
+  "dirty": true,
+  "started": "2026-11-23T19:51:49",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 302.0,
+  "run_wall_s": 803.78,
+  "speed_reached": 0.38,
+  "samples": 7,
+  "shots": [
+    "shots/t150.png",
+    "shots/t150-zoom.png",
+    "shots/t300.png",
+    "shots/t300-zoom.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-23T20:07:07",
+  "wall_s": 918.03
+}

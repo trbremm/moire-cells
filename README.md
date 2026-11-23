@@ -8550,6 +8550,161 @@ where a cell has no motor).
   cilia act, and is empty in the null.
 - Not in snapshots beyond the genes and phase: the stirred flow (as G0).
 
+## Step N2: substances that flow
+
+BUILD QUEUE item 6a5 (the user, 2026-11-23, after S2 found no motor beating its null: "I also think that the nutrients need to flow more
+to pressure for activity", then "Not only nutrients, all substances"). Until now the food sat still: fixed springs, slow prescribed
+currents faded near walls, nearly all carbon parked as immobile tar, the heat never carried, so a cell parked by a spring lived and moving
+did not pay. Code: `src/flow.js` (switches, knobs, the springs, census, diagnosis), the "step N2" parts of `water.wgsl` /
+`water_common.wgsl` (gusts, tides), `heat.wgsl` (heat carried), `matter.wgsl` (scour, trace settling), `carbon.wgsl` (`tar_move`,
+`tar_copy`), `cell_step.wgsl` (the chemotaxis gene), `terrain.js` (the Tidal currents world).
+
+### 1. Diagnosis (as on main, `?n2=0`; `experiments/conditions/n2/diag.json`, 6 min, one seed each: hints)
+
+- WHAT MOVES: every mobile grid channel was already carried by the water, through the same upwind flux-form edges as its spreading: free
+  atoms, fuels and minerals, oil and soap, trace, the excited atoms (matter.wgsl), the carbon ladder (carbon.wgsl). Spreading speeds
+  (R^2/s): light atoms 1.2, light fuel gt 0.84, heavy atoms 0.14, heavy fuels 0.10, soaps 0.07, trace 0.017, the carbon ladder 0.29.
+- WHAT NEVER MOVED: crust (ll, LL; k = 0), TAR (its three hand counts, one copy, never advected), and HEAT (it only spread and leaked).
+  Settled trace is booked as lost (buried in the floor, 1/150 per s), so it cannot come back.
+- HOW MUCH IS PARKED: tar held 97 % of the dish's carbon in the default scene, 99 % in the delta (2 400 and 9 400 carbons against ~80
+  in the mobile ladder).
+- THE WATER: mean 0.41 R/s (fastest 1.4) in the default scene, 0.45 (fastest 5.3, between the delta's islands) in the delta.
+- HOW LONG FOOD STAYS (atoms in the dish / atoms dripped per s): trace ~155-170 s, light fuel gt 110-320 s, heavy fuels 36-43 s (delta).
+  In that time spreading alone takes it 3 R (trace) to 20-30 R (gt); the water at its mean speed 60-130 R, but the N1 eddies are
+  CLOSED LOOPS ~20 R across, so most of it circles its eddy instead of travelling.
+- THE CELLS: they move 0.30-0.36 R/s between two 10 s censuses, live 70-110 s (median), cover 20-26 R of path and end 11-16 R from where
+  they were born. The default colony sits on its springs: the share of cells within 10 R of a running spring is 3.5-4x the share of the
+  open water that is.
+- CAN THEY SMELL IT: yes, everywhere: the corners' fuel gradient (step C5, plus the carbon ladder and trace) is 2-11x the smell's
+  half-gradient in the median cell, so the steering is saturated: every cell is pulled 0.5 R/s up its gradient. But where they go does
+  not follow it: the cosine between the smell and the next 10 s of travel is -0.03 .. +0.03 (contacts, drift and the heat's kicks win).
+
+### 2. All substances flow: heat, gusts, tides (`?heatflow=0`, `?gusts=0`)
+
+- HEAT is carried by the same stream function (heat.wgsl: upwind, a share of the pixel it leaves, truncated toward zero the same from both
+  pixels of an edge: exact; at most 0.04 of a pixel per substep).
+- GUSTS: the N1 eddies and gyre x `strength` (2); each of the moire beat's three families of eddies swells and fades on its own clock (67,
+  103, 151 s; +- `gust` 0.6), so the hexagonal eddy array morphs instead of breathing; the whole pattern DRIFTS across the dish (`sweep`
+  0.25 R/s, its heading on a slow random walk), so a cell under a calm eddy core finds itself in a jet a minute later.
+- TIDES: two basin modes, (2, 1) and (1, 2), turn round each other once per `tidePeriod` (300 s) at `tide` 0.35 R/s: plumes swing slowly
+  from one side of a spring to the other.
+- Still ONE stream function, so divergence-free and exact; the matter's substeps follow the fastest water (at most 0.15 of a pixel per
+  substep). Measured: the default scene's water 0.96 R/s mean (fastest 3.0) against 0.38 off; the Tidal currents world 1.45 R/s.
+
+### 3. Scour and resettle (`?scour=0`)
+
+- No new channels: the bed (crust ll and LL, the tar's hands) moves by the SAME upwind edge flux as the water's, switched on only above a
+  lifting speed: across each edge it moves a x carry x clamp((|a| - a_c) / a_c, 0, 1) of the pixel it leaves, a the edge's share of
+  flow, a_c the lifting share (`scourSpeed` 0.7 R/s x the substance's ROW: heavy crust needs twice the water; tar as row 1), `carry` 0.5.
+  A Shields-like criterion: nothing moves in slow water, the bed rolls along where the water is fast, and drops where it slows: in the
+  lee of rocks and pillars, in dead zones, inside bends. Exact (each edge's count is the same number from both pixels); the tar, which
+  has one copy, is moved once a tick into three scratch blocks and copied back.
+- TRACE settles into the floor only where the water is slow: its bury rate x (1 - local speed / the lifting speed of row 3).
+- Look: the default scene's tar is no longer a scatter of flecks but swept CRESCENTS and streaks round the colony; in the Tidal currents
+  world tar runs in ribbons and piles into BARS behind the rocks within two minutes (pictures below). Carbon held as tar: 84 % with scour
+  (default, 10 min) against 97 % without: more of it is worked loose into the mobile ladder.
+
+### 4. Patchy, transient supply (`?patchy=0`)
+
+Every LASTING scene spring (not the oases, which roam already since N1; not a perfusion inlet; not a pipette drop) wanders (0.12 R/s),
+pulses (+- 0.5 over 40-120 s), goes dry after `life` (240 s, each 0.5..1.5 x) and `gap` (30 s) later rises somewhere else in the open water,
+gushing at first (x 2.5, settling over 25 s). While it runs its rate is x (1 + gap / life), so the dish gets as much on average. Booked as
+every spring's drip, on the GPU as it drips. The default colony is then less parked: cells near a running spring 1.5x the open water's
+share (3.5x off).
+
+### 5. Can cells follow it? The chemotaxis gene (`?chemo=0`, `?chemonull=1`)
+
+- The reading exists (above): the membrane's corners smell the fuels, the crawl steers up the gradient, and a swimmer's front turns toward
+  the same crawling intention (S2's steering). What was missing was VARIATION: every cell followed its nose at the same 0.5 R/s.
+- Gene Bio.mc.w (a spare word): a log factor on the smell's gain, e^gene, -3..1.5 (x 0.05 .. x 4.5); 0 = as before, so founders, old
+  genomes and snapshots start at today's value. It mutates at birth (small steps 0.12 x the mutation size, rare jumps anywhere), on and in
+  the null. Steering harder pushes harder, so it costs the crawl's work (no new cost).
+- Hand-set test (default scene, every cell x 4.5 against x 0.05, 150 s): the strong nose does steer (path-vs-smell cosine +0.04 .. +0.11
+  against -0.05 .. +0.01; cells near springs 1.2-2.4x the open water against 0.6-0.7x) but it is COSTLY: 160 cells left at 150 s against
+  721 (crowding at the springs and paying the crawl).
+
+### The Tidal currents world (`?terrain=currents`, worlds menu)
+
+Open shallows with a few streamlined rocks (two to four round stones drawn out along a line), strong gusty currents (x 2.5, sweep 0.35
+R/s, tide 0.5 R/s), three springs in the open water that wander and run dry, a dimmer sky (0.6). Worlds may now set flow knobs
+(`terrain.js` returns `flow: { strength, sweep, tide, scourSpeed, life }`; `toy.js` applies them, the page's own values otherwise). Not
+in the fresh-load list (a proposal: the coordinator and the user decide). Look: within two minutes the founders' tar runs off in amber
+ribbons and piles into bars and tails in the lee of the rocks; small colonies sit along the plumes.
+
+### Switches and knobs
+
+- `?n2=0`: every part off (as on main); `?heatflow=0`, `?gusts=0`, `?scour=0`, `?patchy=0`, `?chemo=0` one part off; `?chemonull=1` the
+  chemotaxis gene's NEUTRAL control (it drifts, every cell x 1).
+- Knobs: `?flowx=` (strength, 2), `?gust=` (0.6), `?sweep=` (0.25 R/s), `?tide=` (0.35 R/s), `?tideperiod=` (300 s), `?scourspeed=` (0.7
+  R/s), `?carry=` (0.5), `?springlife=` (240 s), `?springgap=` (30 s), `?flowcensus=` (10 s). Live: `moire.flow.params`; the rules panel's
+  group "Substances that flow (step N2)".
+- Old snapshots (no `flow.params` saved) load with N2 off, as they ran.
+
+### Words and layout (for merges)
+
+WaterP + n2a, n2b (320 bytes); MatterP + n2 (752 bytes); HeatTick `_p0` is now `adv`; the carbon's blocks 13 -> 16 (3 scratch blocks behind
+the tar); Bio.mc.w = the chemotaxis gene (word 175; lab gene name `chemo`); Fields.g2.w = its bits (cells.js u[147], after dup's g2).
+
+### Census
+
+`moire.flow.census` (every 10 s of simulated time, a read-back of the cells): the motility genes' means (crawl motility, flagellum, cilia,
+chemotaxis and its spread and factor), the smell (median gradient / half-gradient, share feeling one, cosine of velocity and of the next
+10 s of path with the smell), how far cells travel (R/s between censuses; per lifetime: path, net displacement, age), and PATCH TRACKING
+(share of cells within 10 R of a running spring over the share of the open water that is). `moire.flow.diagnose()`: part 1's table.
+FLOW panel line; `flow.*` columns in the experiment samples.
+
+### What it looks like (pictures: `experiments/keep/n2/`)
+
+- Default scene: the dead founders' tar no longer lies as scattered square flecks round the colony but is swept into amber CRESCENTS and
+  commas, all bent the same way by the eddies (`default-on-s3-t600-crescents-neon.jpg` against `default-off-s3-t600-flecks-neon.jpg`;
+  the machinery view shows the streamlines they follow). The springs wander off, so the colony is less tied to one spot.
+- Tidal currents: tar runs off in ribbons and piles into bars and tails behind the rocks within two minutes
+  (`currents-s3-t120-bars-neon.jpg`, from the first version with five springs); in the harmonic look the bars are orange fibrous streaks
+  (SHG-like) lying along the flow, with green-rimmed clusters strung along the plumes between them (`currents-s3-t150-x2.5-harm-bars.jpg`).
+- Archipelago: with N2 the cells fill the whole sea (the food reaches every shore), without it a central clump with a dark sea round it
+  (`islands-on-s7-t300-neon.jpg` against `islands-off-s7-t300-neon.jpg`). Busier: a matter of taste.
+
+### Results (2 seeds per side, 20 min unless said; EXPERIMENTS.md "Substances that flow")
+
+- Motion: cells travel farther with N2: 0.33-0.53 R/s against 0.32-0.38 off, 28-36 R of path per life against 20-25 R; they are less
+  parked at springs (within 10 R of a running spring 2.1-2.2x the open water's share in the default scene against 5.0-5.3x off).
+- MOTILITY IS STILL NOT SELECTED. Against their neutral controls (`?flagellanull=1&cilianull=1&chemonull=1`), N2 on: flagellum below or at
+  its null in 6/6 dishes (default 0.32 / 0.29 vs 0.41 / 0.29, islands 0.22 / 0.22 vs 0.24 / 0.31, currents 0.24 / 0.18 vs 0.32 / 0.29);
+  cilia above in 3/6 (both Tidal currents dishes: 0.27 / 0.32 vs 0.25 / 0.21); the chemotaxis gene below its null in 3/6, above in 3/6,
+  both drifting down (its jumps land anywhere in -3..1.5, so a drifting gene's mean sinks toward -0.75). Crawl motility N2 on vs off: no
+  difference (0.48 / 0.18 vs 0.96 / 0.17 default; 0.19 / 0.47 vs 0.31 / 0.50 islands). Where cells go still does not follow their nose:
+  path-vs-smell cosine -0.02 .. +0.05 everywhere.
+- Counts: the obstacle worlds GAIN (5 min, 2 seeds each: islands 2452 / 3054 vs 1541 / 2208, forest 2037 / 1883 vs 1270 / 1224, thicket
+  1638 / 1564 vs 1108 / 1237, sieve 1799 / 2259 vs 1191 / 1559, delta 1460 / 1233 vs 1618 / 1341; islands at 20 min 5420 / 5350 vs 2738 /
+  2018); the plain DEFAULT SCENE LOSES (20 min 344 / 269 vs 675 / 507; at 10 min 338 / 349 vs 532 / 354; one part off at a time, 10 min:
+  without patchy springs 524 / 374, without gusts 327 / 561, without scour 362 / 318: patchy springs and gusts cost it, scour does not;
+  runs of one seed vary by 2-3x, so a hint). All alive.
+
+### Checked
+
+- Off equals main: `?n2=0` against main 96f6ec0 (export), 180 s: default seed 3 232 / 229 cells, delta seed 7 775 / 817, the same
+  founders' crash (GPU runs are not bitwise repeatable). Merged main a900470+ (C15g) cleanly before the final batches.
+- Books (`check.json`: 360 s at MAX, seed 5, whole dish lit, the Tidal currents world, every N2 switch toggled at runtime, a resize, a
+  snapshot saved and reloaded): atoms, charge and carbon rounding exactly 0; energy -0.005 .. +0.045; the reload exact. Every N2 run:
+  matter and carbon 0, energy within +-0.1.
+- An old snapshot (tissue lab, before N2) loads with N2 off and says so.
+- Headed Firefox: the Tidal currents world runs and draws, no errors. Phone size (390 x 844, Chrome): the Tidal currents world runs.
+
+### Speed
+
+GPU free, 2000 cells, open dish, 150 s at MAX, twice each: N2 on x2.73 / x2.73, off x2.87 / x2.79: about 3-5 % slower (the heat's
+advection, the tar's two passes, a substep more when the water is fast).
+
+### Known issues
+
+- The smell is saturated and noisy: the median cell's fuel gradient is 2-11x the half-gradient, so steering is always at full strength
+  in a direction that barely predicts where food is; cells do not follow it (cosine ~0). A stronger nose (hand-set x4.5) does gather
+  cells at springs (x1.2-2.4 against x0.6-0.7) but is costly (crowding, the crawl's work). Not built, possible lever: a nose that
+  averages over a second or two (as bacteria compare concentrations over time).
+- The chemotaxis gene's range (-3..1.5) is asymmetric round its founders' 0, so jumps pull a drifting gene down: read it against its null.
+- Patchy springs move the default scene's lasting mineral spring away from the colony under the spot; that and the gusts lower its count.
+- Scour has no rim sink and no outlet: scoured crust and tar pile at the dish's edge and a perfusion outlet.
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start
@@ -8614,6 +8769,10 @@ where a cell has no motor).
   panel line, the drawing (tails and hairs, neon and harmonic); the genes and `motor_act` in `cell_common.wgsl`, the forces, turning, the
   water's dipole and pump, the beat's phase coupling, mutation and census in `cell_step.wgsl`, the motor proteins in `cell_eat.wgsl` /
   `cell_carbon.wgsl`, the 19th and 20th outputs in `cell_grn.wgsl`.
+- `src/flow.js`: step N2, substances that flow: the switches and knobs (`moire.flow.params`), the gusts' and tides' words for the water,
+  the scour's for the matter, the heat's advection scale, the patchy springs, the chemotaxis gene's bits (Fields.g2.w), the census and
+  `moire.flow.diagnose()`, the FLOW panel line; the rules in the "step N2" parts of `water.wgsl`, `heat.wgsl`, `matter.wgsl`,
+  `carbon.wgsl` (`tar_move`, `tar_copy`) and `cell_step.wgsl`; the Tidal currents world in `terrain.js`.
 - `src/walls.js`: patterned walls (step C10): the switches and knobs, the census (from the cells' stats read-back,
   Stats.wall), the WALLS panel line, the overlay and `stats()` (where on the walls the contacts sit, the glue, the junctions); each
   side's pattern, linker want and upkeep are worked out in `cell_eat.wgsl` (Cell.wadh), the smaller side of each contact, the

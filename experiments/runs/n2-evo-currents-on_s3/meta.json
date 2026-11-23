@@ -1,0 +1,88 @@
+{
+  "name": "n2-evo-currents-on_s3",
+  "description": "step N2 evolution: currents, on, seed 3, 20 min",
+  "condition": {
+    "name": "n2-evo-currents-on_s3",
+    "description": "step N2 evolution: currents, on, seed 3, 20 min",
+    "query": {
+      "terrain": "currents",
+      "seed": 3
+    },
+    "duration": 1203,
+    "sample_every": 30,
+    "stall": 600,
+    "shots": [
+      {
+        "t": 600,
+        "name": "t600"
+      },
+      {
+        "t": 1200,
+        "name": "end"
+      }
+    ],
+    "evals": [
+      {
+        "t": 300,
+        "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+      },
+      {
+        "t": 600,
+        "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+      },
+      {
+        "t": 900,
+        "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+      },
+      {
+        "t": 1200,
+        "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})"
+      }
+    ]
+  },
+  "url": "http://localhost:51756/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&terrain=currents&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "a8a92a31ea9dd7fcddc372cede95f9a734acd7e6",
+  "dirty": true,
+  "started": "2026-11-23T17:52:32",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1203.0,
+  "run_wall_s": 5168.62,
+  "speed_reached": 0.23,
+  "samples": 42,
+  "shots": [
+    "shots/t600.png",
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 300.0000000000558,
+      "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})",
+      "result": "{\"flow\":{\"time\":290.3500000000646,\"n\":1642,\"springs\":4,\"motility\":0.27280390769613044,\"flagellum\":0.05649323871683731,\"cilia\":0.07838365346603954,\"chemo\":0.13270941434221994,\"chemoSd\":0.5814997463609644,\"chemoFactor\":1.141918125084918,\"smell\":0.2581399299068469,\"smellRel\":3.2408872852225854,\"feel\":0.9939098660170523,\"align\":0.03376557375827557,\"alignPath\":-0.013781038928287241,\"speed\":0.9621618058464493,\"travel\":0.5031981794503735,\"lifePath\":26.911120409395245,\"lifeDisp\":12.096721778159171,\"lifeAge\":70.08333333333063,\"lives\":1586,\"nearSpring\":0.044457978075517664,\"nearArea\":0.05146476642913698,\"enrich\":0.8638527124519816},\"motors\":{\"time\":299.8333333333893,\"n\":1739,\"carriers\":411,\"flagGene\":0.060558941920644045,\"flagSd\":0.09378139063029879,\"flagExpr\":0.05261184588844164,\"swimmers\":604,\"speed\":0.35445198675496686,\"relSpeed\":0.8280496688741722,\"turning\":0.2326473509933775,\"open\":23,\"pushers\":50,\"pusherShare\":0.12165450121654502,\"sign\":-0.3492967222541691,\"placement\":0.11958769407705577,\"ciliaCarriers\":538,\"ciliaGene\":0.08268027602070156,\"ciliaSd\":0.12391715506273832,\"ciliaExpr\":0.07275790684301323,\"beating\":741,\"freeSides\":3.3063427800269904,\"waveN\":639,\"wave\":0.7056948356807512,\"sync\":0.7160985915492958,\"globalSync\":0.04151173766518004,\"coupling\":0.016485336400230016,\"tilt\":0.12490339275445658,\"motorShare\":0.8772918287937744,\"payPerTick\":0.187255859375}}"
+    },
+    {
+      "t": 599.999999999783,
+      "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})",
+      "result": "{\"flow\":{\"time\":590.8499999997913,\"n\":4245,\"springs\":3,\"motility\":0.20413139355056278,\"flagellum\":0.13327301136949618,\"cilia\":0.1450847301553253,\"chemo\":-0.08625130027672989,\"chemoSd\":0.881913752455864,\"chemoFactor\":0.9173636685073697,\"smell\":0.24928410695510142,\"smellRel\":3.3271640504806514,\"feel\":0.9945818610129564,\"align\":0.005830741581837468,\"alignPath\":-0.02608530147764325,\"speed\":0.9390423700815792,\"travel\":0.4696344581770391,\"lifePath\":25.39996843384156,\"lifeDisp\":11.406421270540653,\"lifeAge\":70.1166666666029,\"lives\":5000,\"nearSpring\":0.037220259128386335,\"nearArea\":0.039192399049881234,\"enrich\":0.9496805510939786},\"motors\":{\"time\":599.8666666664498,\"n\":4193,\"carriers\":1950,\"flagGene\":0.1352108275697591,\"flagSd\":0.1566543759994524,\"flagExpr\":0.1044364416885285,\"swimmers\":2302,\"speed\":0.4504252823631624,\"relSpeed\":0.8048223284100782,\"turning\":0.3008119026933102,\"open\":47,\"pushers\":222,\"pusherShare\":0.11384615384615385,\"sign\":-0.4226122108275697,\"placement\":0.1973408061054138,\"ciliaCarriers\":2072,\"ciliaGene\":0.14586000476985453,\"ciliaSd\":0.16048930504497255,\"ciliaExpr\":0.11682089196279513,\"beating\":2279,\"freeSides\":2.5708644142167616,\"waveN\":2188,\"wave\":0.5951823583180987,\"sync\":0.588827239488117,\"globalSync\":0.02311719834522403,\"coupling\":-0.0011089911757691392,\"tilt\":0.20823658478416407,\"motorShare\":0.7934858850880107,\"payPerTick\":1.286376953125}}"
+    },
+    {
+      "t": 899.9999999995101,
+      "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})",
+      "result": "{\"flow\":{\"time\":891.349999999518,\"n\":3978,\"springs\":4,\"motility\":0.18960442178629341,\"flagellum\":0.20746265275368672,\"cilia\":0.22232397549886548,\"chemo\":-0.22078760532734146,\"chemoSd\":1.096468386949539,\"chemoFactor\":0.8018869787266706,\"smell\":0.20301753813362305,\"smellRel\":2.776057789625908,\"feel\":0.9906988436400201,\"align\":0.00836989114567775,\"alignPath\":-0.020743670827845673,\"speed\":1.0796033547172639,\"travel\":0.5051839456236464,\"lifePath\":24.81866309452557,\"lifeDisp\":10.396807709236935,\"lifeAge\":70.1166666666029,\"lives\":5000,\"nearSpring\":0.06008044243338361,\"nearArea\":0.05146476642913698,\"enrich\":1.1674092122055924},\"motors\":{\"time\":899.8499999995103,\"n\":3836,\"carriers\":2322,\"flagGene\":0.2059530761209593,\"flagSd\":0.20748233561362406,\"flagExpr\":0.17513633993743483,\"swimmers\":2553,\"speed\":0.5688707403055229,\"relSpeed\":0.8905515080297689,\"turning\":0.4212385428907168,\"open\":43,\"pushers\":434,\"pusherShare\":0.18690783807062877,\"sign\":-0.3804204900938477,\"placement\":0.2597914494264859,\"ciliaCarriers\":2476,\"ciliaGene\":0.2233938998957247,\"ciliaSd\":0.2081430478478127,\"ciliaExpr\":0.19344082377476537,\"beating\":2637,\"freeSides\":2.7368221463784606,\"waveN\":2553,\"wave\":0.5753141402271837,\"sync\":0.5778382295338818,\"globalSync\":0.017794922645850125,\"coupling\":0.02990980187695516,\"tilt\":0.3009439520333681,\"motorShare\":0.8511104615384615,\"payPerTick\":2.354248046875}}"
+    },
+    {
+      "t": 1199.9999999992374,
+      "js": "return JSON.stringify({flow: moire.flow.census, motors: moire.motors.census})",
+      "result": "{\"flow\":{\"time\":1191.8499999992448,\"n\":5112,\"springs\":4,\"motility\":0.18680139326713455,\"flagellum\":0.23978951624912767,\"cilia\":0.27097586340172036,\"chemo\":-0.36456520223705147,\"chemoSd\":1.1753730667896765,\"chemoFactor\":0.6944985516569624,\"smell\":0.21417046102115028,\"smellRel\":3.1669681625130406,\"feel\":0.9894366197183099,\"align\":-0.005910498749981867,\"alignPath\":-0.015026716934768598,\"speed\":0.9461276211025205,\"travel\":0.419219181956014,\"lifePath\":36.497284764970715,\"lifeDisp\":13.825221386851394,\"lifeAge\":100.16666666657557,\"lives\":5000,\"nearSpring\":0.05516431924882629,\"nearArea\":0.0510688836104513,\"enrich\":1.080194344360738},\"motors\":{\"time\":1199.8833333325708,\"n\":5281,\"carriers\":3602,\"flagGene\":0.24061995834122324,\"flagSd\":0.21236704864680522,\"flagExpr\":0.19447888657451237,\"swimmers\":3904,\"speed\":0.6746124487704918,\"relSpeed\":0.8697922643442623,\"turning\":0.46153253073770495,\"open\":4,\"pushers\":919,\"pusherShare\":0.25513603553581343,\"sign\":-0.31554762355614463,\"placement\":0.3108042037492899,\"ciliaCarriers\":3863,\"ciliaGene\":0.272065139178186,\"ciliaSd\":0.2226364795034811,\"ciliaExpr\":0.22240087104715017,\"beating\":3653,\"freeSides\":1.8790035587188612,\"waveN\":3643,\"wave\":0.4677194619818831,\"sync\":0.4649829810595663,\"globalSync\":0.026366902648585173,\"coupling\":0.023613520166635107,\"tilt\":0.379357129331566,\"motorShare\":0.8197661512391442,\"payPerTick\":4.571044921875}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T19:20:38",
+  "wall_s": 5286.2
+}

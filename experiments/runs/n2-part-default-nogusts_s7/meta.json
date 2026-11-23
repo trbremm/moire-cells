@@ -1,0 +1,56 @@
+{
+  "name": "n2-part-default-nogusts_s7",
+  "description": "default scene, N2 on except gusts, 10 min",
+  "condition": {
+    "name": "n2-part-default-nogusts_s7",
+    "description": "default scene, N2 on except gusts, 10 min",
+    "query": {
+      "seed": 7,
+      "gusts": 0
+    },
+    "duration": 602,
+    "sample_every": 30,
+    "stall": 400,
+    "shots": [
+      {
+        "t": 600,
+        "name": "end"
+      }
+    ],
+    "evals": [
+      {
+        "t": 600,
+        "js": "return JSON.stringify(moire.flow.census)"
+      }
+    ]
+  },
+  "url": "http://localhost:65407/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=7&gusts=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "a8a92a31ea9dd7fcddc372cede95f9a734acd7e6",
+  "dirty": true,
+  "started": "2026-11-23T20:13:16",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 602.0,
+  "run_wall_s": 915.73,
+  "speed_reached": 0.66,
+  "samples": 22,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 599.9999999997943,
+      "js": "return JSON.stringify(moire.flow.census)",
+      "result": "{\"time\":590.8666666664648,\"n\":561,\"springs\":5,\"motility\":0.2583665668220656,\"flagellum\":0.14146048935842426,\"cilia\":0.09345135531585777,\"chemo\":-0.1581008600406415,\"chemoSd\":0.5809290662377766,\"chemoFactor\":0.8537636669876238,\"smell\":0.34031137359596303,\"smellRel\":2.5297857167275284,\"feel\":0.9928698752228164,\"align\":0.06742880877576334,\"alignPath\":-0.0014652004258469708,\"speed\":0.8168183635730955,\"travel\":0.29935681125032443,\"lifePath\":23.925078798122577,\"lifeDisp\":10.17785465924505,\"lifeAge\":130.11666666664328,\"lives\":2735,\"nearSpring\":0.21746880570409982,\"nearArea\":0.059375,\"enrich\":3.6626325171216814}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T20:30:30",
+  "wall_s": 1034.29
+}

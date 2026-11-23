@@ -3543,3 +3543,121 @@ Books: carbon, atoms, charge rounding 0 at every probe of every `c15g-*` run; en
 headed (`c15g-firefox`, 40 s): no console error, books 0. Phone (Chrome 390 x 844 dpr 3, islands seed 3, 30 s): no console error, books 0.
 Speed (first 60 s of the default scene, one other worker's page running): levers on x2.56 / x2.61, levers off on the same tree x2.79
 (about 7 % for the levers); main from the export x1.10 / x1.09 (the export setup, not the code: not used as a reference).
+
+# Substances that flow (step N2, 2026-11-23)
+
+Step N2 (BUILD QUEUE 6a5; README "Step N2: substances that flow"): stronger changing currents (gusts, a drifting eddy pattern, tides),
+the heat carried by the water, crust and tar scoured by fast water and settling where it slows, patchy springs that wander, go dry and
+rise elsewhere, and a chemotaxis gene (how strongly a cell follows the smell of food). Conditions `experiments/conditions/n2/`
+(`summary.py` prints the worlds and evolution tables), runs `experiments/runs/n2-*`, pictures `experiments/keep/n2/`. Headless Chrome,
+GTX 1650, at MAX. The GPU was shared with another worker until the speed runs (one page of mine at a time until then); from the speed
+runs on it was mine: the speed runs alone, then four pages side by side (x0.2 to x0.7). main a900470 (C15g) was merged before the speed,
+worlds, evolution and part runs; the diagnosis, look, nose, off and check runs are on 96f6ec0 + N2.
+
+## 1. Diagnosis (as on main: `?n2=0`, `diag.json`, 6 min, one seed each)
+
+| | default seed 3 | delta seed 7 |
+|---|---|---|
+| water, mean / fastest (R/s) | 0.41 / 1.4 | 0.45 / 5.3 |
+| carbon parked as tar | 97 % (2 376 carbons; ladder ~80) | 99 % (9 376) |
+| trace stays (dish / drip) | 155 s: 3 R by spreading, 63 R at the water's mean speed | 168 s: 3 R / 75 R |
+| light fuel gt stays | 317 s: 33 R / 129 R | 111 s: 19 R / 50 R |
+| cells travel (between 10 s censuses) | 0.30 R/s | 0.36 R/s |
+| a life: age / path / net displacement | 110 s / 20 R / 11 R | 70 s / 26 R / 16 R |
+| cells within 10 R of a running spring | 4.1x the open water's share | (the springs sit on the inlet: 0) |
+| smell: median gradient / half-gradient | 5.3 | 11.2 |
+| cosine smell . velocity | +0.03 | +0.05 |
+
+Never moved before N2: crust (ll, LL), tar, heat; settled trace is booked as lost. Everything else was already carried. The "by the
+water" distances overstate travel: the N1 eddies are closed loops ~20 R across.
+
+## 2. The look (`look.json`, `look2.json`, seed 3)
+
+- Default scene, 10 min: N2 on, the tar lies as curved CRESCENTS all bent one way by the eddies; off, as square flecks. 277 cells against 371
+  (one seed). Water 0.96 R/s mean, fastest 3.0. Carbon held as tar 84 % against 97 %. Cells near springs 1.5x against 3.5x.
+- Tidal currents (first version, five springs, full light): tar bars behind rocks by 2 min, but 4 000 cells by 10 min (a crowd): tuned to
+  three springs and light 0.6. Tuned, at 300 s: still lively, plumes of small clusters, bars and streaks of tar; in the harmonic look orange
+  fibrous bars along the flow with green-rimmed clusters strung between them (the best picture: `currents-s3-t150-x2.5-harm-bars.jpg`).
+
+## 3. Can a nose steer? (`nose.json`: default seed 3, every cell's chemotaxis gene set by hand, 150 s)
+
+| | x4.5 (gene 1.5) | x0.05 (gene -3) |
+|---|---|---|
+| cosine smell . next 10 s of path | -0.09 .. +0.11 (mean +0.02) | -0.05 .. +0.01 |
+| cells near springs / open water | 1.2 .. 2.4 | 0.6 .. 0.7 |
+| cells at 150 s | 160 | 721 |
+
+A strong nose gathers cells at springs but costs (crowding, crawl work): it loses.
+
+## 4. Checks
+
+- `off.json` against a main 96f6ec0 export, 180 s: default seed 3 232 / 229, delta seed 7 775 / 817 cells; rounding 0.
+- `check.json`: atoms, charge, carbon exactly 0 for 360 s through every runtime toggle, a resize and a reload (exact); energy <= 0.045.
+  The old snapshot `tt-same` loads with N2 off, with a note.
+- Firefox headed (Tidal currents) and phone size (390 x 844) run. Speed (`speed.json`, GPU free, 2000 cells): x2.73 / x2.73 on, x2.87 /
+  x2.79 off: 3-5 %.
+
+## 5. The fresh-load worlds (`worlds-*.json`, 5 min, seeds 3 and 7, cells at 60 / 180 / 300 s)
+
+| world | N2 on s3 | on s7 | off s3 | off s7 |
+|---|---|---|---|---|
+| delta | 468 / 1068 / 1460 | 510 / 1166 / 1233 | 454 / 1126 / 1618 | 502 / 1195 / 1341 |
+| islands | 946 / 1161 / 2452 | 1105 / 1639 / 3054 | 934 / 1050 / 1541 | 1040 / 1440 / 2208 |
+| sieve | 1066 / 1382 / 1799 | 1129 / 1771 / 2259 | 1040 / 1211 / 1191 | 1097 / 1457 / 1559 |
+| thicket | 878 / 922 / 1638 | 920 / 1170 / 1564 | 856 / 829 / 1108 | 856 / 970 / 1237 |
+| forest | 870 / 1061 / 2037 | 901 / 1185 / 1883 | 860 / 886 / 1270 | 888 / 941 / 1224 |
+| Tidal currents | 906 / 700 / 1325 | 912 / 1048 / 2265 | | |
+
+All alive; the obstacle worlds grow faster with N2 (the delta, already a flow world, about the same). Cells travel 0.36-0.51 R/s on
+against 0.30-0.49 off; near springs 0.6-1.2x on against 1.1-1.7x off. Books: matter and carbon 0, energy within 0.07.
+
+## 6. Do motility genes spread? (`evo-*.json`, 20 min, seeds 3 and 7; null = `?flagellanull=1&cilianull=1&chemonull=1`; off = `?n2=0`)
+
+At 1200 s (cells at 600 / 1200 s):
+
+| dish | cells | crawl motility | flagellum | cilia | chemotaxis gene (factor) | travel R/s | path . smell | near springs |
+|---|---|---|---|---|---|---|---|---|
+| default on s3 | 338 / 344 | 0.48 | 0.32 | 0.20 | -0.35 (x0.71) | 0.48 | -0.02 | 2.1 |
+| default on s7 | 349 / 269 | 0.18 | 0.29 | 0.50 | -0.67 (x0.51) | 0.53 | +0.05 | 2.2 |
+| default null s3 | 505 / 343 | 0.96 | 0.41 | 0.46 | +0.33 (x1.39) | 0.48 | -0.02 | 2.4 |
+| default null s7 | 390 / 369 | 0.14 | 0.29 | 0.17 | -0.91 (x0.40) | 0.53 | +0.01 | 2.8 |
+| default off s3 | 532 / 675 | 0.96 | 0.42 | 0.24 | - | 0.32 | +0.05 | 5.3 |
+| default off s7 | 354 / 507 | 0.17 | 0.30 | 0.32 | - | 0.38 | +0.06 | 5.0 |
+| islands on s3 | 4376 / 5420 | 0.19 | 0.22 | 0.21 | -0.96 (x0.38) | 0.35 | -0.00 | 1.1 |
+| islands on s7 | 4738 / 5350 | 0.47 | 0.22 | 0.28 | -0.62 (x0.54) | 0.33 | +0.02 | 1.0 |
+| islands null s3 | 5349 / 5902 | 0.26 | 0.24 | 0.29 | -0.58 (x0.56) | 0.28 | +0.00 | 1.0 |
+| islands null s7 | 5224 / 5791 | 0.44 | 0.31 | 0.23 | -0.01 (x0.99) | 0.28 | -0.01 | 0.9 |
+| islands off s3 | 2494 / 2738 | 0.31 | 0.32 | 0.34 | - | 0.34 | +0.03 | 1.2 |
+| islands off s7 | 2672 / 2018 | 0.50 | 0.22 | 0.28 | - | 0.36 | +0.01 | 1.5 |
+| currents on s3 | 4193 / 5281 | 0.19 | 0.24 | 0.27 | -0.36 (x0.69) | 0.42 | -0.02 | 1.1 |
+| currents on s7 | 4078 / 4941 | 0.46 | 0.18 | 0.32 | -0.32 (x0.72) | 0.34 | -0.01 | 1.1 |
+| currents null s3 | 4507 / 5474 | 0.19 | 0.32 | 0.25 | -0.44 (x0.64) | 0.35 | -0.01 | 1.0 |
+| currents null s7 | 4458 / 5650 | 0.44 | 0.29 | 0.21 | -0.55 (x0.58) | 0.27 | -0.02 | 1.2 |
+
+- Flagellum: at or below its null in 6/6. Cilia: above in 3/6 (both Tidal currents dishes and default s7), below in 3/6. Chemotaxis: below
+  in 3/6, above in 3/6; on and null both drift down (the jump range is asymmetric). Crawl motility: no N2 effect. NO SELECTION FOR MOTILITY.
+- Motion itself rises with N2 (travel +30-60 % in the default scene, lifetime path 28-36 R against 20-25 R), because the water carries and
+  the springs move, not because the genes changed.
+- Counts: the Archipelago doubles with N2 (food reaches every shore); the plain default scene halves at 20 min.
+- The Tidal currents and Archipelago dishes reach 5 000+ cells (the dish's capacity is 6 000): crowds, where S2 found swimmers at crawl
+  speed.
+
+## 7. Which part costs the default scene? (`parts-*.json`, one part off, 10 min, seeds 3 and 7)
+
+| | s3 | s7 |
+|---|---|---|
+| all on (the evolution runs) | 338 | 349 |
+| no patchy springs | 524 | 374 |
+| no gusts | 327 | 561 |
+| no scour | 362 | 318 |
+| all off | 532 | 354 |
+
+Patchy springs and gusts each seem to cost it; scour does not. Same-seed runs vary 2-3x (C15g): a hint.
+
+## Reading
+
+The substrate now moves and it shows (crescents, bars, plumes; the heat drifts too), cells travel farther and sit less on springs, and the
+worlds with obstacles feed more cells. But moving food did not make motility pay within 20 minutes: the dishes fill to crowds where
+nobody can swim or crawl far, and the smell that should steer them is saturated noise at the cells' own scale. Next levers if wanted: a
+nose that averages over time; fewer, richer, faster-moving patches with empty water between (so the crowd cannot cover them); P3's
+scents.

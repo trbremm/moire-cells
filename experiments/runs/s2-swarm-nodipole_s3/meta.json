@@ -1,0 +1,103 @@
+{
+  "name": "s2-swarm-nodipole_s3",
+  "description": "step S2: 3000 pushers over the whole dish, nodipole",
+  "condition": {
+    "name": "s2-swarm-nodipole_s3",
+    "description": "step S2: 3000 pushers over the whole dish, nodipole",
+    "query": {
+      "preset": "lab",
+      "cells": 3000,
+      "genes": "flagellum:1,flagSign:1,flagPlace:0,adhesion:0.2",
+      "spread": "scatter",
+      "zoom": 1,
+      "modipole": 0,
+      "seed": 3
+    },
+    "duration": 75,
+    "sample_every": 15,
+    "stall": 400,
+    "evals": [
+      {
+        "t": 0,
+        "js": "moire.eat.params.pay = false; return 'battery pays nothing, gates nothing'"
+      },
+      {
+        "t": 30,
+        "js": "return JSON.stringify(moire.stir.census)"
+      },
+      {
+        "t": 60,
+        "js": "return JSON.stringify(moire.stir.census)"
+      },
+      {
+        "t": 60,
+        "js": "return JSON.stringify(moire.motors.census)"
+      },
+      {
+        "t": 70,
+        "js": "return JSON.stringify(moire.stir.census)"
+      }
+    ],
+    "shots": [
+      {
+        "t": 60,
+        "name": "t60"
+      },
+      {
+        "t": 70,
+        "name": "t70",
+        "view": "machinery"
+      }
+    ]
+  },
+  "url": "http://localhost:63536/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&preset=lab&cells=3000&genes=flagellum:1,flagSign:1,flagPlace:0,adhesion:0.2&spread=scatter&zoom=1&modipole=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "f6f5bb0e15ee19c21e1abcec44eac213b6593ca7",
+  "dirty": false,
+  "started": "2026-11-23T04:52:56",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 75.0,
+  "run_wall_s": 477.74,
+  "speed_reached": 0.16,
+  "samples": 6,
+  "shots": [
+    "shots/t60.png",
+    "shots/t70.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "moire.eat.params.pay = false; return 'battery pays nothing, gates nothing'",
+      "result": "battery pays nothing, gates nothing"
+    },
+    {
+      "t": 29.99999999999958,
+      "js": "return JSON.stringify(moire.stir.census)",
+      "result": "{\"time\":28.21666666666635,\"mean\":0.24330333231336382,\"p90\":0.443088341233658,\"max\":1.1431426376957694,\"psiMax\":107.10779571533203,\"nodes\":36936}"
+    },
+    {
+      "t": 59.999999999997875,
+      "js": "return JSON.stringify(moire.stir.census)",
+      "result": "{\"time\":58.46666666666463,\"mean\":0.23369531316923906,\"p90\":0.43276311449711163,\"max\":1.0176497354325322,\"psiMax\":123.09175109863281,\"nodes\":36936}"
+    },
+    {
+      "t": 59.999999999997875,
+      "js": "return JSON.stringify(moire.motors.census)",
+      "result": "{\"time\":59.849999999997884,\"n\":3000,\"carriers\":3000,\"flagGene\":1,\"flagSd\":0,\"flagExpr\":0.6330180000000001,\"swimmers\":3000,\"speed\":1.8990926666666668,\"relSpeed\":1.598589,\"turning\":0.24538466666666667,\"open\":306,\"pushers\":3000,\"pusherShare\":1,\"sign\":1,\"placement\":0,\"ciliaCarriers\":0,\"ciliaGene\":0,\"ciliaSd\":0,\"ciliaExpr\":0,\"beating\":0,\"freeSides\":0,\"waveN\":0,\"wave\":0,\"sync\":0,\"globalSync\":0,\"coupling\":0,\"tilt\":0,\"motorShare\":0.6330180000000001,\"payPerTick\":12.117431640625}"
+    },
+    {
+      "t": 69.99999999999731,
+      "js": "return JSON.stringify(moire.stir.census)",
+      "result": "{\"time\":68.5499999999974,\"mean\":0.23417268535110652,\"p90\":0.42926519569853083,\"max\":1.0756590229861365,\"psiMax\":118.44227600097656,\"nodes\":36936}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T05:03:15",
+  "wall_s": 618.17
+}

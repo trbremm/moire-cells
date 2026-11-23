@@ -97,13 +97,14 @@
   },
   {
    "name": "s2-lab-pushers-dense",
-   "description": "step S2 lab: 400 pushers, a dense suspension",
+   "description": "step S2 lab: 400 pushers, a dense suspension (a central disc)",
    "query": {
     "preset": "lab",
     "cells": 400,
     "genes": "flagellum:1,flagSign:1,flagPlace:0",
     "spread": "scatter",
-    "zoom": 1
+    "spreadr": 0.4,
+    "zoom": 1.5
    },
    "duration": 126,
    "sample_every": 10,
@@ -188,13 +189,14 @@
   },
   {
    "name": "s2-lab-pullers-dense",
-   "description": "step S2 lab: 400 pullers, a dense suspension",
+   "description": "step S2 lab: 400 pullers, a dense suspension (a central disc)",
    "query": {
     "preset": "lab",
     "cells": 400,
     "genes": "flagellum:1,flagSign:-1,flagPlace:0",
     "spread": "scatter",
-    "zoom": 1
+    "spreadr": 0.4,
+    "zoom": 1.5
    },
    "duration": 126,
    "sample_every": 10,
@@ -372,7 +374,7 @@
    "query": {
     "preset": "lab",
     "cells": 12,
-    "genes": "cilia:1,ciliaCouple:1,ciliaTilt:0",
+    "genes": "cilia:1,ciliaCouple:1,ciliaTilt:0,adhesion:0",
     "spread": "scatter",
     "zoom": 1.5
    },
@@ -463,7 +465,7 @@
    "query": {
     "preset": "lab",
     "cells": 12,
-    "genes": "cilia:1,ciliaCouple:1,ciliaTilt:0.8",
+    "genes": "cilia:1,ciliaCouple:1,ciliaTilt:0.8,adhesion:0",
     "spread": "scatter",
     "zoom": 1.5
    },

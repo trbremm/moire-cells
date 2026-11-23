@@ -88,7 +88,7 @@ export class Motors {
     // the look (moire.motors.look)
     this.look = {
       on: true,          // draw the motors (?modraw=0)
-      segs: 8,           // segments per flagellum (the cheap path: 5)
+      segs: 12,          // segments per flagellum (the cheap path: 5; at 8 the wave looked jagged from zoom 2.5)
       hairs: 3,          // hairs per free side (the cheap path: 1)
       length: 2.6,       // a flagellum's length at full thrust (R)
       hair: 0.5,         // a hair's length (R)

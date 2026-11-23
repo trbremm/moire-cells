@@ -99,7 +99,7 @@ fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> MOut 
       p0 = c.pos + ef * (0.85 * pole);
     }
     let ph = TAU * MD.wave.z * (0.4 + 0.6 * fa) * MD.look.y + f32(c.seed & 1023u) * 0.0061 + select(0.0, 3.14159265, strand == 1u);
-    let A = MD.R * MD.wave.x * (0.5 + 0.5 * fa);
+    let A = MD.R * MD.wave.x * (0.5 + 0.5 * fa) * select(0.6, 1.0, push);   // (a puller's short pair waves less: the same amplitude kinked them)
     let k = TAU * MD.wave.y;
     let s0 = f32(seg) / f32(NS);
     let s1 = f32(seg + 1u) / f32(NS);

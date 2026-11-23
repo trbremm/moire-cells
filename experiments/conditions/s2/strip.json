@@ -1,0 +1,174 @@
+{
+ "batch": "s2-strip",
+ "seeds": [
+  3
+ ],
+ "runs": [
+  {
+   "name": "s2-strip-sheet",
+   "description": "step S2 close-up strip: the edge of the ciliated sheet",
+   "query": {
+    "preset": "lab",
+    "cells": 150,
+    "genes": "cilia:1,ciliaCouple:1,ciliaTilt:0,adhesion:1.5"
+   },
+   "duration": 92,
+   "sample_every": 30,
+   "stall": 400,
+   "dpr": 2,
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.eat.params.pay = false; return 'battery pays nothing, gates nothing'"
+    },
+    {
+     "t": 89,
+     "js": "moire.camera.set(6, 0.4 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 89.5,
+     "js": "return JSON.stringify(moire.motors.census)"
+    }
+   ],
+   "shots": [
+    {
+     "t": 90.0,
+     "name": "f00"
+    },
+    {
+     "t": 90.1,
+     "name": "f01"
+    },
+    {
+     "t": 90.2,
+     "name": "f02"
+    },
+    {
+     "t": 90.3,
+     "name": "f03"
+    },
+    {
+     "t": 90.4,
+     "name": "f04"
+    },
+    {
+     "t": 90.5,
+     "name": "f05"
+    },
+    {
+     "t": 90.6,
+     "name": "f06"
+    },
+    {
+     "t": 90.7,
+     "name": "f07"
+    },
+    {
+     "t": 90.8,
+     "name": "f08"
+    },
+    {
+     "t": 90.9,
+     "name": "f09"
+    },
+    {
+     "t": 91.0,
+     "name": "f10"
+    },
+    {
+     "t": 91.1,
+     "name": "f11"
+    },
+    {
+     "t": 91.5,
+     "name": "fpanel",
+     "panel": true
+    }
+   ]
+  },
+  {
+   "name": "s2-strip-pushers",
+   "description": "step S2 close-up strip: the dense pushers",
+   "query": {
+    "preset": "lab",
+    "cells": 400,
+    "genes": "flagellum:1,flagSign:1,flagPlace:0",
+    "spread": "scatter",
+    "spreadr": 0.4
+   },
+   "duration": 92,
+   "sample_every": 30,
+   "stall": 400,
+   "dpr": 2,
+   "evals": [
+    {
+     "t": 0,
+     "js": "moire.eat.params.pay = false; return 'battery pays nothing, gates nothing'"
+    },
+    {
+     "t": 89,
+     "js": "moire.camera.set(5, 0.5 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 89.5,
+     "js": "return JSON.stringify(moire.motors.census)"
+    }
+   ],
+   "shots": [
+    {
+     "t": 90.0,
+     "name": "f00"
+    },
+    {
+     "t": 90.1,
+     "name": "f01"
+    },
+    {
+     "t": 90.2,
+     "name": "f02"
+    },
+    {
+     "t": 90.3,
+     "name": "f03"
+    },
+    {
+     "t": 90.4,
+     "name": "f04"
+    },
+    {
+     "t": 90.5,
+     "name": "f05"
+    },
+    {
+     "t": 90.6,
+     "name": "f06"
+    },
+    {
+     "t": 90.7,
+     "name": "f07"
+    },
+    {
+     "t": 90.8,
+     "name": "f08"
+    },
+    {
+     "t": 90.9,
+     "name": "f09"
+    },
+    {
+     "t": 91.0,
+     "name": "f10"
+    },
+    {
+     "t": 91.1,
+     "name": "f11"
+    },
+    {
+     "t": 91.5,
+     "name": "fpanel",
+     "panel": true
+    }
+   ]
+  }
+ ]
+}

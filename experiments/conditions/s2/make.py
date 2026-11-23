@@ -61,11 +61,26 @@ def lab(name, cells, genes, desc, z=(0.5, 0.5, 2.5), extra_q=None):
 
 write('lab', {"batch": "s2-lab", "seeds": [3], "runs": [
     lab('pushers-few', 12, PUSH, '12 pushers in open water', extra_q={"spread": "scatter", "zoom": 1.5}),
-    lab('pushers-dense', 400, PUSH, '400 pushers, a dense suspension', extra_q={"spread": "scatter", "zoom": 1}),
-    lab('pullers-dense', 400, PULL, '400 pullers, a dense suspension', extra_q={"spread": "scatter", "zoom": 1}),
+    lab('pushers-dense', 400, PUSH, '400 pushers, a dense suspension (a central disc)', extra_q={"spread": "scatter", "spreadr": 0.4, "zoom": 1.5}),
+    lab('pullers-dense', 400, PULL, '400 pullers, a dense suspension (a central disc)', extra_q={"spread": "scatter", "spreadr": 0.4, "zoom": 1.5}),
     lab('cilia-sheet', 150, {**CIL, "adhesion": 1.5}, 'a sticky sheet of 150 ciliated cells, coupled'),
-    lab('cilia-free', 12, CIL, '12 free ciliated cells', extra_q={"spread": "scatter", "zoom": 1.5}),
-    lab('cilia-spin', 12, {**CIL, "ciliaTilt": 0.8}, '12 free ciliated cells, stroke tilted round the body (spinning)', extra_q={"spread": "scatter", "zoom": 1.5}),
+    lab('cilia-free', 12, {**CIL, "adhesion": 0}, '12 free ciliated cells', extra_q={"spread": "scatter", "zoom": 1.5}),
+    lab('cilia-spin', 12, {**CIL, "ciliaTilt": 0.8, "adhesion": 0}, '12 free ciliated cells, stroke tilted round the body (spinning)', extra_q={"spread": "scatter", "zoom": 1.5}),
+]})
+
+# close-up motion strips (frames 0.1 s apart, at x6 on a free edge / in the middle of a dense suspension): the beat (1.5 Hz) and the
+# flagella's wave cannot be seen in frames 0.5 s apart
+def strip(name, cells, genes, desc, at, extra_q=None):
+    q = {"preset": "lab", "cells": cells, "genes": ",".join(f"{k}:{v}" for k, v in genes.items())}
+    q.update(extra_q or {})
+    return {"name": f"s2-strip-{name}", "description": f"step S2 close-up strip: {desc}", "query": q, "duration": 92, "sample_every": 30,
+            "stall": 400, "dpr": 2, "evals": [{"t": 0, "js": FEED}, {"t": 89, "js": zoom_at(*at)}, {"t": 89.5, "js": MOT}],
+            "shots": [{"t": 90 + 0.1 * k, "name": f"f{k:02d}"} for k in range(12)] + [{"t": 91.5, "name": "fpanel", "panel": True}]}
+
+
+write('strip', {"batch": "s2-strip", "seeds": [3], "runs": [
+    strip('sheet', 150, {**CIL, "adhesion": 1.5}, 'the edge of the ciliated sheet', (0.4, 0.5, 6)),
+    strip('pushers', 400, PUSH, 'the dense pushers', (0.5, 0.5, 5), {"spread": "scatter", "spreadr": 0.4}),
 ]})
 
 check_ev = [

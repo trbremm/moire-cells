@@ -1391,6 +1391,7 @@ const EAT_HEAT: u32 = 2u;
 const EAT_BIAS: u32 = 4u;
 const EAT_SMELL: u32 = 8u;
 const EAT_TOLG: u32 = 16u;   // step C6: heat damage by each cell's own tolerance gene (else the global `tol`)
+const EAT_WORK: u32 = 32u;   // step C15g: the crawl is paid by the work it does (force . motion), not by its free-running speed
 const FUEL_CH: u32 = 6u;   // the first fuel channel (gt, gT, Gt, GT: 6 .. 9; src/matter.js SUBSTANCES)
 
 // Step 8: the partner A'. Field A of one cell is  amp x envelope x (1/3) sum_m cos(q_m . d + ph_m); its partner is

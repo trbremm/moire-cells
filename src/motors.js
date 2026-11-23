@@ -193,7 +193,7 @@ export class Motors {
         const sp = Math.hypot(f[o + 2], f[o + 3]) / R;
         const add = (z) => { z.n++; z.flag += fl; z.cil += ci; if (sw >= 0.05) z.swim++; if (be >= 0.05 && nfree > 0) z.beat++; z.speed += sp; };
         add(Z.all);
-        if (O) add(O.sdAt(f[o], f[o + 1]) < 3 * R ? Z.wall : Z.open);
+        if (O) add(O.sdAt(f[o], f[o + 1]).a < 3 * R ? Z.wall : Z.open);   // (.a: the distance to what stops cells; sdAt returns {a, s})
         // alone or in tissue: by the motors' own touch word (bits 16..21 hold the free sides while the cilia act); else the panel's contact
         if (nfree === 6) add(Z.alone); else if (nfree >= 0) add(Z.tissue);
       }

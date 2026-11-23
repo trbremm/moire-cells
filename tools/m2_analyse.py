@@ -16,7 +16,7 @@ import statistics
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RUNS = os.path.join(HERE, "..", "experiments", "runs")
-SETTINGS = ["x0", "x03", "x1", "x3", "rare", "rare3"]
+SETTINGS = ["x0", "x03", "x1", "x3", "rare", "rare3", "rarehl"]
 SCENES = ["def3", "def7", "isl7", "col3"]
 # the genes with a neutral control (mutation.js TRACKED), and a natural size to read a shift against (their range)
 GENES = {"glue": 1.0, "elongation": 1.39, "flagellum": 1.0, "cilia": 1.0, "ciliaCouple": 2.0, "chemo": 4.5, "fidelity": 5.0,

@@ -1,6 +1,6 @@
 """Step M2: write the mutation sweep's condition batches (experiments/conditions/m2/sweep-*.json).
 
-Settings: drift x0, x0.3, x1, x3 and rare (p 0.1, step 8); scenes: default seed 3 and 7, islands seed 7, colonies seed 3. Each setting
+Settings: drift x0, x0.3, x1, x3 and rare (p 0.1, step 8), hard light's extra mutation OFF in all (?hardmut=0) but one pair; scenes: default seed 3 and 7, islands seed 7, colonies seed 3. Each setting
 ON and (most) with a NULL twin: every neutral control that exists for a tracked gene at once (glue, flagellum, cilia, chemotaxis,
 fidelity, duplication, gates, engulf, kin sparing, kin channels, shape). 20 simulated minutes, samples every 30 s (the MUTATION census
 every 20 s), pictures at 4, 10 and 20 min in the neon view and the lineage (self marker) view.
@@ -21,6 +21,7 @@ SETTINGS = {
     "x3": {"mut": 3},
     "rare": {"mutmode": "rare", "mutp": 0.1},
     "rare3": {"mutmode": "rare", "mutp": 0.3},
+    "rarehl": {"mutmode": "rare", "mutp": 0.1, "hardmut": 1},   # the one pair with hard light's extra ON (against def3 rare)
 }
 SCENES = {
     "def3": {"seed": 3},
@@ -31,7 +32,7 @@ SCENES = {
 
 
 def run(scene, setting, null, dur=1200):
-    q = dict(SCENES[scene]); q.update(SETTINGS[setting]); q["mutcensus"] = 20
+    q = dict(SCENES[scene]); q["hardmut"] = 0; q.update(SETTINGS[setting]); q["mutcensus"] = 20   # hard light's extra OFF (but rarehl)
     if null:
         q.update(NULLS)
     name = f"m2-sw-{scene}-{setting}-{'null' if null else 'on'}"
@@ -50,16 +51,16 @@ def batch(name, runs):
 
 
 if __name__ == "__main__":
-    # four parallel queues, balanced roughly by cost (islands run ~2x slower)
+    # the plan (coordinator 2026-11-23: at most ~5 h of GPU; x1, x3 and rare with twins on default s3/s7 and islands; x0, x0.3 and the
+    # colonies without twins), most important first; four parallel queues balanced by cost (islands ~2x)
     plan = []
-    for sc in ("def3", "def7", "col3"):
-        for st in ("x0", "x03", "x1", "x3", "rare"):
-            plan.append((sc, st, False))
-            if st != "x0" or sc in ("def3", "col3"):
-                plan.append((sc, st, True))
-    for st in ("x0", "x03", "x1", "x3", "rare"):
-        plan.append(("isl7", st, False))
-    plan += [("isl7", "x1", True), ("isl7", "rare", True)]
+    for st in ("x1", "rare", "x3"):
+        for sc in ("def3", "def7"):
+            plan += [(sc, st, False), (sc, st, True)]
+    plan += [("def3", "x0", False), ("def7", "x0", False), ("def3", "x03", False), ("def3", "rarehl", False)]
+    for st in ("x1", "rare", "x3"):
+        plan += [("isl7", st, False), ("isl7", st, True)]
+    plan += [("col3", st, False) for st in ("x1", "rare", "x3", "x0")]
     queues = [[], [], [], []]
     cost = [0, 0, 0, 0]
     for sc, st, nu in plan:

@@ -438,6 +438,8 @@ def main():
     ap.add_argument("--wheel", action="append", default=[], help="wheel x,y,dy[,shift] (dy 100 = one notch down; "
                                                                  "repeatable)")
     ap.add_argument("--eval", action="append", default=[], help="run JS in the page after start (repeatable)")
+    ap.add_argument("--print", action="append", default=[], help="a JS expression evaluated after the shot, its value printed "
+                    "(repeatable; e.g. location.href, moire.toy.buildMs)")
     ap.add_argument("--extra", action="append", default=[], help="extra browser flag (repeatable; use --extra=--flag)")
     ap.add_argument("--pref", action="append", default=[], help="Firefox pref name=json_value (repeatable)")
     ap.add_argument("--headed", action="store_true",
@@ -562,6 +564,11 @@ def main():
             state = shoot(out)
 
         print(f"browser {args.browser}  url {url}")
+        for js in args.print:
+            try:
+                print(f"print   {js} = {driver.eval(f'(() => {{ try {{ return JSON.stringify({js}); }} catch (e) {{ return String(e); }} }})()')}")
+            except Exception as e:   # (a page that navigated away)
+                print(f"print   {js}: {e}")
         print(f"stage   {state.get('stage', '')}")
         if state.get("entropy"):
             print("entropy panel:\n  " + state["entropy"].replace("\n", "\n  "))

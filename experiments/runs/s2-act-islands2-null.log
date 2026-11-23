@@ -1,0 +1,48 @@
+[s2-act-islands2-null] http://localhost:60753/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&terrain=islands&seed=2&flagellanull=1&cilianull=1
+[s2-act-islands2-null] started in 96.2 s at t 0.00; adapter nvidia turing
+[s2-act-islands2-null] t     0.0  cells  1024  entropy  2.493e+05 (+0/s)  order nan  rounding atoms 0 charge 0
+[s2-act-islands2-null] t    30.0  cells   864  entropy  1.771e+06 (+5.58e+04/s)  order 0.153  rounding atoms 0 charge 0
+[s2-act-islands2-null] t    60.0  cells   824  entropy  3.474e+06 (+5.69e+04/s)  order 0.115  rounding atoms 0 charge 0
+[s2-act-islands2-null] t    90.0  cells   719  entropy  4.987e+06 (+4.38e+04/s)  order 0.103  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   120.0  cells   671  entropy  5.993e+06 (+2.48e+04/s)  order 0.097  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   150.0  cells   708  entropy  6.537e+06 (+1.4e+04/s)  order 0.080  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   180.0  cells   819  entropy   6.99e+06 (+1.9e+04/s)  order 0.070  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   210.0  cells  1007  entropy  7.823e+06 (+3.76e+04/s)  order 0.065  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   240.0  cells  1074  entropy  9.274e+06 (+5.75e+04/s)  order 0.060  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   270.0  cells  1083  entropy  1.129e+07 (+7.3e+04/s)  order 0.059  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   300.0  cells  1054  entropy  1.351e+07 (+7.31e+04/s)  order 0.056  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   330.0  cells  1033  entropy  1.549e+07 (+5.82e+04/s)  order 0.052  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   360.0  cells  1077  entropy  1.687e+07 (+3.44e+04/s)  order 0.051  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   390.0  cells  1177  entropy  1.763e+07 (+1.96e+04/s)  order 0.049  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   420.0  cells  1419  entropy  1.826e+07 (+2.58e+04/s)  order 0.048  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   450.0  cells  1669  entropy  1.936e+07 (+4.89e+04/s)  order 0.051  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   480.0  cells  1743  entropy  2.127e+07 (+7.69e+04/s)  order 0.050  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   510.0  cells  1463  entropy  2.385e+07 (+9.09e+04/s)  order 0.047  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   540.0  cells  1228  entropy  2.656e+07 (+8.64e+04/s)  order 0.044  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   570.0  cells  1141  entropy  2.887e+07 (+6.48e+04/s)  order 0.043  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   600.0  cells  1158  entropy  3.041e+07 (+3.81e+04/s)  order 0.041  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   630.0  cells  1243  entropy  3.125e+07 (+2.16e+04/s)  order 0.040  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   660.0  cells  1518  entropy  3.195e+07 (+2.96e+04/s)  order 0.043  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   690.0  cells  1746  entropy  3.328e+07 (+6.05e+04/s)  order 0.042  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   720.0  cells  1581  entropy  3.564e+07 (+9.42e+04/s)  order 0.038  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   750.0  cells  1086  entropy  3.883e+07 (+1.16e+05/s)  order 0.036  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   780.0  cells   845  entropy  4.222e+07 (+1.07e+05/s)  order 0.035  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   810.0  cells   722  entropy  4.502e+07 (+7.81e+04/s)  order 0.036  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   840.0  cells   721  entropy  4.679e+07 (+4.27e+04/s)  order 0.037  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   870.0  cells   833  entropy  4.769e+07 (+2.24e+04/s)  order 0.036  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   900.0  cells  1030  entropy   4.84e+07 (+2.97e+04/s)  order 0.036  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   930.0  cells  1279  entropy   4.97e+07 (+5.86e+04/s)  order 0.036  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   960.0  cells  1158  entropy  5.195e+07 (+9e+04/s)  order 0.034  rounding atoms 0 charge 0
+[s2-act-islands2-null] t   990.0  cells   842  entropy  5.496e+07 (+1.08e+05/s)  order 0.032  rounding atoms 0 charge 0
+[s2-act-islands2-null] t  1020.0  cells   642  entropy  5.815e+07 (+1.01e+05/s)  order 0.032  rounding atoms 0 charge 0
+[s2-act-islands2-null] t  1050.0  cells   557  entropy  6.074e+07 (+7.07e+04/s)  order 0.032  rounding atoms 0 charge 0
+[s2-act-islands2-null] t  1080.0  cells   538  entropy  6.233e+07 (+3.72e+04/s)  order 0.032  rounding atoms 0 charge 0
+[s2-act-islands2-null] t  1110.0  cells   621  entropy   6.31e+07 (+1.89e+04/s)  order 0.030  rounding atoms 0 charge 0
+[s2-act-islands2-null] t  1140.0  cells   845  entropy  6.371e+07 (+2.53e+04/s)  order 0.031  rounding atoms 0 charge 0
+[s2-act-islands2-null] t  1170.0  cells  1219  entropy  6.481e+07 (+4.88e+04/s)  order 0.034  rounding atoms 0 charge 0
+[s2-act-islands2-null] t  1200.0  cells  1339  entropy  6.673e+07 (+7.69e+04/s)  order 0.034  rounding atoms 0 charge 0
+[s2-act-islands2-null] t  1203.0  cells  1332  entropy  6.697e+07 (+8e+04/s)  order 0.034  rounding atoms 0 charge 0
+[s2-act-islands2-null] ok in 2873 s, 1203 sim s at x0.44
+
+batch s2-act2-null:
+  s2-act-islands2-null             ok       1203.0 sim s  x0.44  

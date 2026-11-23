@@ -8052,10 +8052,11 @@ vs in tissue; the alone/tissue split needs the cilia acting, so it is empty in t
   the edge. A true travelling wave needs neighbours whose fronts agree.
 - NO collective swirls: 3000 pushers stir the water at 0.14 R/s with the force dipole, 0.23 R/s as plain pushes: being force-free halves
   the stirring, and swimmers outrun their own flow tenfold. No bacterial turbulence (G0 found none from crawlers either).
-- EVOLUTION (20 min, motors on vs the null, one seed per world; a second seed for the delta and islands was still running when this was written): the flagellum did NOT spread above its null (delta 0.16
-  against 0.40, islands 0.36 against 0.39); cilia rose above it in the islands (0.48 against 0.33) and were level in the delta (0.24 against
-  0.22); the wild Colonies crashed either way. The coupling gene drifted positive with motors on (+0.29, +0.28) and not in the null.
-  Hints, not results.
+- EVOLUTION (20 min, motors on vs their neutral control; delta and islands with two seeds, the Colonies with one): NEITHER MOTOR
+  SPREADS ABOVE ITS NULL: the flagellum is above it in 1 of 4 living dishes (islands seed 2: 0.32 against 0.28), below in 2 (delta seed
+  7: 0.16 against 0.40); cilia above in 1 (islands seed 12: 0.48 against 0.33), below in 2. The null itself drifts up to 0.2 .. 0.4 (a gene
+  that starts at 0 can only be nudged up). The wild Colonies crashed either way. In the delta, flagella were rarer near walls than in open
+  water with motors on (0.11 / 0.17; null 0.21 / 0.19); no such difference in the islands. Hints, not results.
 
 ### Checked
 

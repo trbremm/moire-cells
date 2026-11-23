@@ -3258,24 +3258,30 @@ Gene means (+- spread) at 20 min (in brackets 10 min); carriers = cells with the
 | delta, 7 | 0.16 +-0.18 (0.14) | 0.40 +-0.30 (0.19) | 0.24 +-0.25 (0.18) | 0.22 +-0.18 (0.13) | +0.29 / -0.20 | 932 / 940 |
 | islands, 12 | 0.36 +-0.30 (0.14) | 0.39 +-0.27 (0.28) | 0.48 +-0.35 (0.11) | 0.33 +-0.27 (0.18) | +0.28 / +0.04 | 1850 / 1657 |
 | Colonies (wild founders), 3 | 0.28 (0.31) | 0.03 (0.18) | 0.73 (0.66) | 0.32 (0.40) | -0.90 / +0.01 | 20 / 1 (crashed) |
+| delta, 2 (new lag) | 0.15 +-0.17 (0.10) | 0.20 +-0.20 (0.12) | 0.22 +-0.20 (0.11) | 0.26 +-0.29 (0.10) | 0.00 / +0.03 | 934 / 893 |
+| islands, 2 (new lag) | 0.32 +-0.23 (0.24) | 0.28 +-0.23 (0.16) | 0.20 +-0.19 (0.13) | 0.26 +-0.24 (0.12) | -0.16 / +0.08 | 1724 / 1338 |
 
 In plain words:
 
-- **The flagellum does NOT spread above its null.** Delta: below it (0.16 against 0.40); islands: level (0.36 against 0.39). The null
-  is not empty: a gene that starts at 0 and can only be nudged up from there drifts UP by itself (0 -> 0.4 in 20 minutes over thousands of
-  births), and on stays at or under that. Swimming is paid (a full swimmer pays ~3.75 crawlers) and the motor proteins take G and carbon
-  from the enzyme pool; in these crowded dishes a swimmer mostly bumps into neighbours (swimmers average 0.4-0.55 R/s, crawling's speed).
-- **Cilia are above the null in islands** (0.48 against 0.33, carriers 1458 against 1236, the gap opening only after 15 min) and level in the
-  delta (0.24 against 0.22). In the Colonies both dishes crashed (20 cells left on, 1 in the null), so nothing can be read there.
-- **Where:** among ciliated cells, loners carry a little more of both genes than cells in tissue (islands at 20 min: flagellum 0.38 against
-  0.34, cilia 0.56 against 0.51; delta at 10 min cilia 0.25 against 0.21); small. Open water vs near walls could not be read in these runs:
-  the census compared the wrong thing and counted every cell as in open water (fixed after them; the seed-2 runs have it).
-- **Coupling** drifted positive with the motors on (+0.29, +0.28) and not in the null (-0.20, +0.04): a hint that beating with neighbours
-  pays, from two dishes. Pusher vs puller: the pusher share falls on AND in the null (drift).
+- **Neither motor spreads above its null.** Over the four dishes that lived, the flagellum is above its null once (islands seed 2:
+  0.32 against 0.28), level once and below twice (delta seed 7: 0.16 against 0.40); cilia are above once (islands seed 12: 0.48 against
+  0.33), level once and below twice. The null is not empty: a gene that starts at 0 and can only be nudged up from there drifts UP by itself
+  (0 -> 0.2 .. 0.4 in 20 minutes over thousands of births); the motors on stay around that. Swimming is paid (a full swimmer pays ~3.75
+  crawlers) and the motor proteins take G and carbon from the enzyme pool; in these crowded dishes swimmers average only 0.4-0.65 R/s,
+  about crawling's speed: they mostly bump into neighbours. The Colonies crashed either way (20 cells left on, 1 in the null).
+- **Where:** among ciliated cells, loners carry a little more of both genes than cells in tissue (islands seed 12 at 20 min: flagellum
+  0.38 against 0.34, cilia 0.56 against 0.51; islands seed 2: 0.33 / 0.34 and 0.25 / 0.23); small and not consistent. Near walls (within
+  3 R of an obstacle, seed-2 runs only, the census fixed): in the delta flagella are rarer near walls than in open water with the motors on
+  (0.11 against 0.17) but not in the null (0.21 against 0.19), as if swimmers leave the walls or wall dwellers lose the gene; in the
+  islands no difference (0.31 / 0.33 on, 0.30 / 0.27 null).
+- **Coupling** drifted positive with the motors on in the seed-1 dishes (+0.29, +0.28; null -0.20, +0.04) but not with seed 2 (0.00, -0.16;
+  null +0.03, +0.08): no sign that beating with neighbours pays. Pusher vs puller: the pusher share wanders on and in the null alike.
+- **Counts:** the islands seed 2 with motors held more cells (1724 against 1338); the other pairs within 10 %.
 - **Look of the evolved dishes** (`act-islands-on-s12-t1200-neon.jpg`, `act-colonies-on-s3-t600-neon.jpg`): the islands' pink breathers
-  show short tails and fringes here and there; the wild Colonies are scattered spindles each with a tail or hairs, swimming between
-  the dying colonies.
-- Cut short: one seed per world (seed-2 runs: delta and islands with seed 2 and the new lag rule were still running when this was written). These are hints, not results.
+  show short tails and fringes here and there; the wild Colonies are scattered spindles each with a tail or hairs, swimming between the
+  dying colonies.
+- Two seeds for the delta and islands, one for the Colonies (seed-1 runs with the first lag rule, seed-2 with the new one): hints, not
+  results.
 
 ## 5. Checks
 

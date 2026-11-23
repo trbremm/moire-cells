@@ -1,0 +1,25 @@
+{
+ "name": "s2-ff",
+ "description": "Firefox headed: the lab's dense pushers and ciliated sheet draw and run",
+ "query": {
+  "preset": "lab",
+  "cells": 150,
+  "genes": "flagellum:1,flagSign:1,cilia:1,ciliaCouple:1"
+ },
+ "duration": 40,
+ "sample_every": 10,
+ "stall": 400,
+ "shots": [
+  {
+   "t": 39,
+   "name": "end",
+   "panel": true
+  }
+ ],
+ "evals": [
+  {
+   "t": 38,
+   "js": "return JSON.stringify(moire.motors.census)"
+  }
+ ]
+}

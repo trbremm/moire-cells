@@ -1,0 +1,124 @@
+{
+ "name": "s2-check",
+ "description": "step S2 books check: 360 s at MAX (seed 5), whole dish lit; motors given to every cell; every motor switch toggled at runtime, a resize, a snapshot saved and loaded: rounding must stay 0",
+ "query": {
+  "seed": 5,
+  "light": "full",
+  "world": "open"
+ },
+ "duration": 360,
+ "sample_every": 10,
+ "stall": 400,
+ "snapshots": [],
+ "resizes": [
+  {
+   "t": 200,
+   "size": "1000x700"
+  },
+  {
+   "t": 220,
+   "size": "1280x800"
+  }
+ ],
+ "shots": [
+  {
+   "t": 40,
+   "name": "motors"
+  },
+  {
+   "t": 360,
+   "panel": true,
+   "name": "panel"
+  }
+ ],
+ "evals": [
+  {
+   "t": 5,
+   "js": "await moire.genome.setAll({flagellum: 0.6, flagSign: 0.5, cilia: 0.5, ciliaCouple: 0.5}); return 'genes set'"
+  },
+  {
+   "t": 40,
+   "js": "return JSON.stringify(moire.motors.census)"
+  },
+  {
+   "t": 50,
+   "js": "moire.motors.params.flagellaNull = true; return 'motors flagellaNull'"
+  },
+  {
+   "t": 60,
+   "js": "moire.motors.params.flagellaNull = false; return 'motors flagellaNull'"
+  },
+  {
+   "t": 65,
+   "js": "moire.motors.params.ciliaNull = true; return 'motors ciliaNull'"
+  },
+  {
+   "t": 75,
+   "js": "moire.motors.params.ciliaNull = false; return 'motors ciliaNull'"
+  },
+  {
+   "t": 80,
+   "js": "moire.motors.params.dipole = false; return 'motors dipole'"
+  },
+  {
+   "t": 90,
+   "js": "moire.motors.params.dipole = true; return 'motors dipole'"
+  },
+  {
+   "t": 95,
+   "js": "moire.motors.params.water = false; return 'motors water'"
+  },
+  {
+   "t": 105,
+   "js": "moire.motors.params.water = true; return 'motors water'"
+  },
+  {
+   "t": 110,
+   "js": "moire.motors.params.pump = false; return 'motors pump'"
+  },
+  {
+   "t": 115,
+   "js": "moire.motors.params.pump = true; return 'motors pump'"
+  },
+  {
+   "t": 120,
+   "js": "moire.motors.params.couple = false; return 'motors couple'"
+  },
+  {
+   "t": 125,
+   "js": "moire.motors.params.couple = true; return 'motors couple'"
+  },
+  {
+   "t": 130,
+   "js": "moire.motors.params.flagella = false; return 'motors flagella'"
+  },
+  {
+   "t": 140,
+   "js": "moire.motors.params.cilia = false; return 'motors cilia'"
+  },
+  {
+   "t": 150,
+   "js": "moire.motors.params.flagella = true; return 'motors flagella'"
+  },
+  {
+   "t": 160,
+   "js": "moire.motors.params.cilia = true; return 'motors cilia'"
+  },
+  {
+   "t": 170,
+   "js": "await moire.genome.setAll({flagSign: -0.5, ciliaTilt: 0.7, flagPlace: 0.3}); return 'genes set'"
+  },
+  {
+   "t": 240,
+   "js": "const S = await moire.snapshot({ grid: true }); const r = await moire.loadSnapshot(S); return JSON.stringify({ exact: r.exact, notes: r.notes, rounding: r.rounding })"
+  },
+  {
+   "t": 300,
+   "js": "return JSON.stringify(moire.motors.census)"
+  },
+  {
+   "t": 358,
+   "js": "return JSON.stringify(moire.motors.census)"
+  }
+ ]
+}

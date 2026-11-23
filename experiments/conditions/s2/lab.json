@@ -1,0 +1,528 @@
+{
+ "batch": "s2-lab",
+ "seeds": [
+  3
+ ],
+ "runs": [
+  {
+   "name": "s2-lab-pushers-few",
+   "description": "step S2 lab: 12 pushers in open water",
+   "query": {
+    "preset": "lab",
+    "cells": 12,
+    "genes": "flagellum:1,flagSign:1,flagPlace:0",
+    "spread": "scatter",
+    "zoom": 1.5
+   },
+   "duration": 126,
+   "sample_every": 10,
+   "stall": 400,
+   "dpr": 1,
+   "shots": [
+    {
+     "t": 60,
+     "name": "t60"
+    },
+    {
+     "t": 120,
+     "name": "t120"
+    },
+    {
+     "t": 100.0,
+     "name": "strip00"
+    },
+    {
+     "t": 100.5,
+     "name": "strip01"
+    },
+    {
+     "t": 101.0,
+     "name": "strip02"
+    },
+    {
+     "t": 101.5,
+     "name": "strip03"
+    },
+    {
+     "t": 102.0,
+     "name": "strip04"
+    },
+    {
+     "t": 102.5,
+     "name": "strip05"
+    },
+    {
+     "t": 103.0,
+     "name": "strip06"
+    },
+    {
+     "t": 103.5,
+     "name": "strip07"
+    },
+    {
+     "t": 122,
+     "name": "zoom"
+    },
+    {
+     "t": 124,
+     "name": "zoom_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 50,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 119,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 119,
+     "js": "return JSON.stringify(moire.stir.census)"
+    },
+    {
+     "t": 121,
+     "js": "moire.camera.set(2.5, 0.5 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 123,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    }
+   ]
+  },
+  {
+   "name": "s2-lab-pushers-dense",
+   "description": "step S2 lab: 400 pushers, a dense suspension",
+   "query": {
+    "preset": "lab",
+    "cells": 400,
+    "genes": "flagellum:1,flagSign:1,flagPlace:0",
+    "spread": "scatter",
+    "zoom": 1
+   },
+   "duration": 126,
+   "sample_every": 10,
+   "stall": 400,
+   "dpr": 1,
+   "shots": [
+    {
+     "t": 60,
+     "name": "t60"
+    },
+    {
+     "t": 120,
+     "name": "t120"
+    },
+    {
+     "t": 100.0,
+     "name": "strip00"
+    },
+    {
+     "t": 100.5,
+     "name": "strip01"
+    },
+    {
+     "t": 101.0,
+     "name": "strip02"
+    },
+    {
+     "t": 101.5,
+     "name": "strip03"
+    },
+    {
+     "t": 102.0,
+     "name": "strip04"
+    },
+    {
+     "t": 102.5,
+     "name": "strip05"
+    },
+    {
+     "t": 103.0,
+     "name": "strip06"
+    },
+    {
+     "t": 103.5,
+     "name": "strip07"
+    },
+    {
+     "t": 122,
+     "name": "zoom"
+    },
+    {
+     "t": 124,
+     "name": "zoom_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 50,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 119,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 119,
+     "js": "return JSON.stringify(moire.stir.census)"
+    },
+    {
+     "t": 121,
+     "js": "moire.camera.set(2.5, 0.5 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 123,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    }
+   ]
+  },
+  {
+   "name": "s2-lab-pullers-dense",
+   "description": "step S2 lab: 400 pullers, a dense suspension",
+   "query": {
+    "preset": "lab",
+    "cells": 400,
+    "genes": "flagellum:1,flagSign:-1,flagPlace:0",
+    "spread": "scatter",
+    "zoom": 1
+   },
+   "duration": 126,
+   "sample_every": 10,
+   "stall": 400,
+   "dpr": 1,
+   "shots": [
+    {
+     "t": 60,
+     "name": "t60"
+    },
+    {
+     "t": 120,
+     "name": "t120"
+    },
+    {
+     "t": 100.0,
+     "name": "strip00"
+    },
+    {
+     "t": 100.5,
+     "name": "strip01"
+    },
+    {
+     "t": 101.0,
+     "name": "strip02"
+    },
+    {
+     "t": 101.5,
+     "name": "strip03"
+    },
+    {
+     "t": 102.0,
+     "name": "strip04"
+    },
+    {
+     "t": 102.5,
+     "name": "strip05"
+    },
+    {
+     "t": 103.0,
+     "name": "strip06"
+    },
+    {
+     "t": 103.5,
+     "name": "strip07"
+    },
+    {
+     "t": 122,
+     "name": "zoom"
+    },
+    {
+     "t": 124,
+     "name": "zoom_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 50,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 119,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 119,
+     "js": "return JSON.stringify(moire.stir.census)"
+    },
+    {
+     "t": 121,
+     "js": "moire.camera.set(2.5, 0.5 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 123,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    }
+   ]
+  },
+  {
+   "name": "s2-lab-cilia-sheet",
+   "description": "step S2 lab: a sticky sheet of 150 ciliated cells, coupled",
+   "query": {
+    "preset": "lab",
+    "cells": 150,
+    "genes": "cilia:1,ciliaCouple:1,ciliaTilt:0,adhesion:1.5"
+   },
+   "duration": 126,
+   "sample_every": 10,
+   "stall": 400,
+   "dpr": 1,
+   "shots": [
+    {
+     "t": 60,
+     "name": "t60"
+    },
+    {
+     "t": 120,
+     "name": "t120"
+    },
+    {
+     "t": 100.0,
+     "name": "strip00"
+    },
+    {
+     "t": 100.5,
+     "name": "strip01"
+    },
+    {
+     "t": 101.0,
+     "name": "strip02"
+    },
+    {
+     "t": 101.5,
+     "name": "strip03"
+    },
+    {
+     "t": 102.0,
+     "name": "strip04"
+    },
+    {
+     "t": 102.5,
+     "name": "strip05"
+    },
+    {
+     "t": 103.0,
+     "name": "strip06"
+    },
+    {
+     "t": 103.5,
+     "name": "strip07"
+    },
+    {
+     "t": 122,
+     "name": "zoom"
+    },
+    {
+     "t": 124,
+     "name": "zoom_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 50,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 119,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 119,
+     "js": "return JSON.stringify(moire.stir.census)"
+    },
+    {
+     "t": 121,
+     "js": "moire.camera.set(2.5, 0.5 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 123,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    }
+   ]
+  },
+  {
+   "name": "s2-lab-cilia-free",
+   "description": "step S2 lab: 12 free ciliated cells",
+   "query": {
+    "preset": "lab",
+    "cells": 12,
+    "genes": "cilia:1,ciliaCouple:1,ciliaTilt:0",
+    "spread": "scatter",
+    "zoom": 1.5
+   },
+   "duration": 126,
+   "sample_every": 10,
+   "stall": 400,
+   "dpr": 1,
+   "shots": [
+    {
+     "t": 60,
+     "name": "t60"
+    },
+    {
+     "t": 120,
+     "name": "t120"
+    },
+    {
+     "t": 100.0,
+     "name": "strip00"
+    },
+    {
+     "t": 100.5,
+     "name": "strip01"
+    },
+    {
+     "t": 101.0,
+     "name": "strip02"
+    },
+    {
+     "t": 101.5,
+     "name": "strip03"
+    },
+    {
+     "t": 102.0,
+     "name": "strip04"
+    },
+    {
+     "t": 102.5,
+     "name": "strip05"
+    },
+    {
+     "t": 103.0,
+     "name": "strip06"
+    },
+    {
+     "t": 103.5,
+     "name": "strip07"
+    },
+    {
+     "t": 122,
+     "name": "zoom"
+    },
+    {
+     "t": 124,
+     "name": "zoom_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 50,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 119,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 119,
+     "js": "return JSON.stringify(moire.stir.census)"
+    },
+    {
+     "t": 121,
+     "js": "moire.camera.set(2.5, 0.5 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 123,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    }
+   ]
+  },
+  {
+   "name": "s2-lab-cilia-spin",
+   "description": "step S2 lab: 12 free ciliated cells, stroke tilted round the body (spinning)",
+   "query": {
+    "preset": "lab",
+    "cells": 12,
+    "genes": "cilia:1,ciliaCouple:1,ciliaTilt:0.8",
+    "spread": "scatter",
+    "zoom": 1.5
+   },
+   "duration": 126,
+   "sample_every": 10,
+   "stall": 400,
+   "dpr": 1,
+   "shots": [
+    {
+     "t": 60,
+     "name": "t60"
+    },
+    {
+     "t": 120,
+     "name": "t120"
+    },
+    {
+     "t": 100.0,
+     "name": "strip00"
+    },
+    {
+     "t": 100.5,
+     "name": "strip01"
+    },
+    {
+     "t": 101.0,
+     "name": "strip02"
+    },
+    {
+     "t": 101.5,
+     "name": "strip03"
+    },
+    {
+     "t": 102.0,
+     "name": "strip04"
+    },
+    {
+     "t": 102.5,
+     "name": "strip05"
+    },
+    {
+     "t": 103.0,
+     "name": "strip06"
+    },
+    {
+     "t": 103.5,
+     "name": "strip07"
+    },
+    {
+     "t": 122,
+     "name": "zoom"
+    },
+    {
+     "t": 124,
+     "name": "zoom_harm"
+    }
+   ],
+   "evals": [
+    {
+     "t": 50,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 119,
+     "js": "return JSON.stringify(moire.motors.census)"
+    },
+    {
+     "t": 119,
+     "js": "return JSON.stringify(moire.stir.census)"
+    },
+    {
+     "t": 121,
+     "js": "moire.camera.set(2.5, 0.5 * moire.dish.W, 0.5 * moire.dish.H); return 'zoom'"
+    },
+    {
+     "t": 123,
+     "js": "moire.control.action('harmonic'); return 'harmonic toggled'"
+    }
+   ]
+  }
+ ]
+}

@@ -19,6 +19,7 @@ import { DESIGNS, DESIGN_NAMES, designGenome } from './tissues.js';
 import { CELL_FLOATS } from './cells.js';
 import { CARBON, CB_LIP, CB_ENZANY, LADDER, carbonTable, describeCarbon } from './carbon.js';   // step C15a: the builder c, its ladder, tar
 import { JOBS, jobOf, jobInk } from './jobs.js';   // step F0: colour by job
+import { drawGenome, latticesOf } from './folding.js';   // step G3: the genome view
 
 const NS = 'http://www.w3.org/2000/svg';
 const rgb = (c, a = 1) => (a >= 1 ? `rgb(${c.map((v) => Math.round(v)).join(',')})` : `rgba(${c.map((v) => Math.round(v)).join(',')},${a})`);
@@ -541,6 +542,19 @@ export function cellPanel(ctx, onAdd) {
       const S = Math.round(56 * dpr);
       cv.width = S; cv.height = S;
       drawPortrait(cv.getContext('2d'), S, f, g, G.rep, P, M.R);
+      // step G3: the GENOME VIEW beside it: the regulators' lattices overlaid (a moire; tap: larger)
+      const FD = M.folding, gv = FD && FD.params.on ? el('canvas', 'portrait genome') : null;
+      if (gv) {
+        gv.width = S; gv.height = S;
+        drawGenome(gv.getContext('2d'), S, g, G.rep * BIO_FLOATS, FD.params);
+        const Lr = latticesOf(g, G.rep * BIO_FLOATS);
+        gv.title = `its genome: the 8 regulators' lattices overlaid (${Lr.state ? 'STRESS fold' : 'home fold'}); slow fringes = links. Tap to enlarge`;
+        gv.addEventListener('click', () => {
+          const big = gv.classList.toggle('big'), SB = Math.round((big ? 260 : 56) * dpr);
+          gv.width = SB; gv.height = SB;
+          drawGenome(gv.getContext('2d'), SB, g, G.rep * BIO_FLOATS, FD.params);
+        });
+      }
       const main = el('div', 'zmain');
       const share = alive ? Math.round(100 * G.members.length / alive) : 0;
       const head = el('div', 'zhead');
@@ -552,7 +566,7 @@ export function cellPanel(ctx, onAdd) {
       add.type = 'button';
       add.title = 'place copies of this cell\'s genome where you tap or drag (the add-cell tool)';
       add.addEventListener('click', () => onAdd(G.genome, `${HABIT_NAME[G.habit] || G.habit} (${G.text[0]})`, cellIcon(G, f, g)));
-      r.append(cv, main, add);
+      r.append(cv, ...(gv ? [gv] : []), main, add);
       Z.rows.append(r);
     }
   }

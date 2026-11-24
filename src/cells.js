@@ -58,6 +58,7 @@ import { Motors, STATS_S2, S2_WORDS } from './motors.js';
 import { Senses } from './senses.js';
 import { Folding } from './folding.js';
 import { Signals } from './signals.js';
+import { Contract } from './contract.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 import { dish } from './dish.js';      // the dish's own size and R
 import { cultureLayout } from './culture.js';   // app: how a new culture is spread
@@ -375,6 +376,7 @@ export class Cells {
     this.folding = new Folding(this);     // step G3: the moire genome, DNA folding (src/folding.js)
     this.genome.foldP = this.folding.params;
     this.signals = new Signals(this);     // step Q1: a signal substance (src/signals.js)
+    this.contract = new Contract(this);   // step L1: contraction (src/contract.js)
   }
 
   static async create(device, format, medium, count, seed, cap = 0) {
@@ -650,6 +652,11 @@ export class Cells {
       f[o + 16] = this.eat.starterShare;               // step C5: the battery share (the starter charge, below)
       u[o + 60] = u[o + 61] = u[o + 62] = 0xffffffff;  // step C7: no neighbours across the sides yet (the step finds them)
       f[o + 64] = u[o + 10] / 4294967296 * 2 * Math.PI;   // step C10: the front, any way (from the cell's own seed: no extra draw)
+      if (place.front) {   // step L1: a laid-out organ gives each cell its front and the stretch it starts with (its spindle)
+        const fr = place.front(i), e = place.stretch ? place.stretch(i) : 0;
+        f[o + 64] = ((fr % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+        f[o + 6] = e * Math.cos(2 * f[o + 64]); f[o + 7] = e * Math.sin(2 * f[o + 64]);
+      }
     }
     this.heat.depositAll();     // step C1: the old cells' motion becomes heat (queued before they are overwritten)
     this.eat.reset();           // step C5: the old cells' stock back to the dish, the starter charge into every battery
@@ -711,6 +718,7 @@ export class Cells {
     f[o + 59] = X.on ? Math.max(0, X.hard) : 0; f[o + 60] = Math.max(0, X.reach); f[o + 61] = Math.max(0, X.pack);
     u[o + 62] = Math.max(1, Math.min(4, Math.round(X.states))); u[o + 63] = count ? 1 : 0;
     this.spindle.writeSim(u, f, o);              // step S1: cell shape (words 28, 29, 33: the fates' until step F0)
+    this.contract.writeSim(u, o);                // step L1: contraction (its bits in word 28, with the shape's)
   }
 
   /** Write the fields' uniform (struct Fields): the charges, field B's band, range and rules. */
@@ -815,6 +823,8 @@ export class Cells {
     this.senses.maybeCensus(frame.time);     // step P3: the taste, chases, glued groups (a read-back every few s)
     this.folding.maybeCensus(frame.time);    // step G3: folds, dose, buffering, hidden links (a read-back every few s)
     this.signals.maybeCensus(frame.time);    // step Q1: emitters, listeners, relays, waves (a read-back every few s)
+    this.contract.maybeCensus(frame.time);   // step L1: who contracts (a read-back every few s)
+    if (this.organ) this.organ.maybeCensus(frame.time);   // step L1: the laid-out organ (src/organ.js; main.js sets it)
     if (this.gridSize() !== this.grid.cs) this.sizeGrid();   // params.cut or range changed
     // after a reset, the warm-up ticks run first (all in this frame, at the current time)
     const warm = Math.min(this.warm, SLOTS - frame.ticks);

@@ -524,9 +524,9 @@ export function createApp(ctx) {
       cbw[8] = cbw[9] = cbw[10] = nBody;   // (cellulose-like: per carbon one backbone bond, one fuel hand, one burnt hand)
       cbw[11] = nEnz;                      // (each unit 4 carbons as ENZ_H hands + 1 G: (4, 4, 4), step C15e (4, 0, 8))
       free.forEach((slot, j) => {
-        const [x, y] = points[j];
+        const [x, y, front, stretch] = points[j];   // (step L1: a point may carry the cell's front and the stretch it starts with: a laid-out organ)
         f.fill(0);
-        const a = Math.random() * 2 * Math.PI, jr = 0.15 * R * Math.random();
+        const a = Math.random() * 2 * Math.PI, jr = front == null ? 0.15 * R * Math.random() : 0;
         f[0] = Math.max(R, Math.min(W - R, x + Math.cos(a) * jr)); f[1] = Math.max(R, Math.min(H - R, y + Math.sin(a) * jr));
         f[4] = R; f[5] = bio[0];                     // radius; the lattice angle = the key angle (as cells.seed)
         u[8] = KIND.STEM; u[9] = 1; u[10] = (Math.random() * 4294967296) >>> 0;
@@ -535,6 +535,11 @@ export function createApp(ctx) {
         f[16] = E.starterShare;                      // the battery share (the starter charge, in the stock below)
         u[60] = u[61] = u[62] = 0xffffffff;          // no neighbours across the sides yet
         f[64] = u[10] / 4294967296 * 2 * Math.PI;   // the front
+        if (front != null) {
+          f[64] = ((front % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+          const e = Math.max(0, Number(stretch) || 0);
+          f[6] = e * Math.cos(2 * f[64]); f[7] = e * Math.sin(2 * f[64]);   // (e1, e2: the outline starts as the spindle it asks to be)
+        }
         bio[19] = Math.random() * 2 * Math.PI;       // its crawling heading (state)
         d.queue.writeBuffer(C.cellBuf, slot * CELL_BYTES, rec);
         for (const b of C.bioBuf) d.queue.writeBuffer(b, slot * BIO_FLOATS * 4, bio);

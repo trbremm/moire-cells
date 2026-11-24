@@ -179,6 +179,10 @@
 //               regulators; ?signalnull=1 the NEUTRAL control (released and paid, heard at a random place); ?sigmut=0 its genes copy exactly;
 //               knobs ?sigspread= ?siglife= ?sigpower= ?hearw= ?hearj= ?taufast= ?sigcensus= (rules panel, Signal substance); ?view=signals;
 //               ?tissue=relay (the hand-wired relay sheet)
+//   ?contract=0   step L1, contraction (src/contract.js): no cell contracts (the genes carried, never mutating); ?contractnull=1 its NEUTRAL
+//               control (the genes drift, nothing contracts, nothing is paid); ?contractgrn=0 the gene alone (the network's 23rd output does not
+//               act); knobs ?concost= ?concensus= (rules panel, Contraction); ?tissue=organ the tissue lab's organ (src/tissues.js: muscle,
+//               nerve, skin; ?organ=muscle|ring|worm, ?pacemaker=1)
 //   ?flagella=0   step S2: no flagella; ?cilia=0 no cilia (both 0: exactly as before S2); ?flagellanull=1 ?cilianull=1 their NEUTRAL controls
 //               (the genes drift, nothing acts, nothing is paid); ?mogrn=0 ?mowater=0 ?modipole=0 ?mopump=0 ?mocouple=0 ?mosteer=0 ?motorque=0
 //               one part off; knobs ?swim= ?steer= ?arm= ?dipole= ?swimdrift= ?ciliapush= ?beathz= ?couple= ?lag= ?swimcost= ?ciliaup=
@@ -272,9 +276,10 @@ import { createApp } from './app.js';
 import { createToy } from './toy.js';   // the toy front: a few big buttons, worlds, terrain generators; the developer mode (src/toy.js)
 import { applyPreset, layoutFromParams, applyDiversity, PRESETS, SPREAD_SQUEEZE } from './culture.js';
 import { Tissues, useDesignFounder, DESIGNS } from './tissues.js';
+import { Organ, organCells, organGenomes, organGroove, ORGAN_KINDS } from './organ.js';   // step L1
 import { Warfare } from './warfare.js';
 import { Flow } from './flow.js';   // step N2: substances that flow (gusts, heat carried, scour, patchy springs, the chemotaxis gene)
-import { CB_PHOTO } from './genome.js';   // step C15d: founders that photosynthesise fix carbon (?cbphoto=0)
+import { CB_PHOTO, makeRng } from './genome.js';   // step C15d: founders that photosynthesise fix carbon (?cbphoto=0)
 
 window.__moireBooted = true;
 { const m = document.getElementById('msg'); if (m && m.dataset.net) { m.hidden = true; delete m.dataset.net; } }   // (a slow start: the safety net's message goes)
@@ -410,6 +415,12 @@ async function boot() {
   const dishR = parseDish(dishQ.replace(/,?\s*round\s*$/i, ''));
   if (params.has('perarea') && !flag('perarea')) dish.perArea = false;   // ?perarea=0: supplies per px / per dish as before (a comparison)
   let nCells = snap ? snap.start : Number(params.get('cells')) || defaultCells();
+  // step L1: ?tissue=organ, the tissue lab's organ (src/organ.js): as many cells as it lays out
+  const ORGAN = !snap && params.get('tissue') === 'organ' ? { kind: ORGAN_KINDS.includes(params.get('organ')) ? params.get('organ') : 'muscle', opts: {
+    fibres: Number(params.get('fibres')) || undefined, length: Number(params.get('olen')) || undefined, ringCells: Number(params.get('ringcells')) || undefined,
+    aspect: Number(params.get('oasp')) || undefined, glue: Number(params.get('oglue')) || undefined, con: params.has('ocon') ? Number(params.get('ocon')) : undefined,
+    pacemaker: params.has('pacemaker') && flag('pacemaker'), stagger: !(params.has('stagger') && !flag('stagger')), noskin: params.has('skin') && !flag('skin'), angle: Number(params.get('organangle')) || 0 } } : null;
+  if (ORGAN && !params.has('cells')) nCells = organCells(ORGAN.kind, ORGAN.opts).length;
   {
     const [winW, winH] = windowSize();
     if (flag('dishfollow')) {   // (also with a snapshot: it loads into the window, as before)
@@ -505,6 +516,9 @@ async function boot() {
     if (params.has('life')) cells.genome.rules.turn = flag('life'); // ?life=0 the life cycle off (key T)
     if (params.has('excl')) cells.excl.on = flag('excl');
     if (params.has('squeeze')) cells.params.squeeze = flag('squeeze') ? SQUEEZE_HARD : SQUEEZE_SOFT;
+    // ?warmup=n the ticks a new culture runs at once (180); step L1: a laid-out organ starts as laid out (n 0) unless asked
+    if (params.has('warmup') && Number(params.get('warmup')) >= 0) cells.params.warmup = Number(params.get('warmup'));
+    else if (ORGAN) cells.params.warmup = 0;
     if (params.has('flip')) cells.excl.flip = flag('flip');
     if (params.has('partner')) cells.partner.on = flag('partner');
     if (params.has('change')) cells.partner.change = flag('change');
@@ -633,6 +647,16 @@ async function boot() {
         ['sigcensus', 'censusEvery']]) {
         const v = Number(params.get(q));
         if (params.has(q) && Number.isFinite(v) && v >= 0) QP[k] = v;
+      }
+    }
+    {   // step L1: contraction
+      const CP = cells.contract.params;
+      for (const [q, k] of [['contract', 'on'], ['contractnull', 'null'], ['contractgrn', 'grn']]) {
+        if (params.has(q)) CP[k] = flag(q);
+      }
+      for (const [q, k] of [['concost', 'cost'], ['concensus', 'censusEvery']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) CP[k] = v;
       }
     }
     {   // step C13: fields as genes and guides
@@ -841,6 +865,8 @@ async function boot() {
       obstacles.round = roundDish;
       // a preset's own walls and pillars (before the culture is seeded, so no founder starts inside one)
       if (PRESET && PRESETS[PRESET].obstacles && !(params.has('presetwalls') && !flag('presetwalls'))) PRESETS[PRESET].obstacles({ obs: obstacles, W: dish.W, H: dish.H, R: dish.R });
+      // step L1: the organ lab's GROOVE (porous walls: they stop cells, not water or substances) round the laid-out organ; ?groove=0 none
+      if (ORGAN && !(params.has('groove') && !flag('groove'))) organGroove(obstacles, ORGAN, dish.W, dish.H, dish.R);
     }
     // step N1: the scarce nutrient and its roaming springs (src/oases.js)
     oases = new Oases(matter, SEED);
@@ -886,7 +912,11 @@ async function boot() {
     background.heat = cells.heat;
     // app: how the culture is spread and how diverse it is (?spread= ?colonies= ?diversity=, or a preset's), before the first
     // resize seeds it
-    cultureOptions(layoutFromParams(params, PRESET), params.has('diversity'));
+    cultureOptions(ORGAN ? { ...layoutFromParams(params, PRESET), spread: 'organ', organ: ORGAN } : layoutFromParams(params, PRESET), params.has('diversity'));
+    if (ORGAN) {   // step L1: the organ's four designs are the founders (founder k = design k: muscle, nerve, skin, pacemaker)
+      cells.genome.params.founders = 4;
+      cells.genome.founders = organGenomes(makeRng((SEED ^ 0x6f72676e) >>> 0), ORGAN.opts);
+    }
     // step T1c: ?tissue=plant|filament|biofilm, the culture's one founder is a designed tissue's genome (src/tissues.js); the reporter
     // view shows its job regulator
     if (params.has('tissue') && useDesignFounder(cells.genome, params.get('tissue'), SEED) && !params.has('reporter')) {
@@ -907,8 +937,11 @@ async function boot() {
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
     kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, dup: cells.dup, mutation: cells.mutation, perfusion, glue: cells.glue, stir: water.stir, obstacles,
-    spindle: cells.spindle, carbon: matter.carbon, carbonCells: cells.eat.carbon, motors: cells.motors, flow, senses: cells.senses, folding: cells.folding, signals: cells.signals };
+    spindle: cells.spindle, carbon: matter.carbon, carbonCells: cells.eat.carbon, motors: cells.motors, flow, senses: cells.senses, folding: cells.folding, signals: cells.signals,
+    contract: cells.contract };
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
+  window.moire.organ = cells.organ = new Organ(window.moire);   // step L1: the tissue lab's organ (lay out, poke, twitch, measure)
+  if (ORGAN) Object.assign(cells.organ, { kind: ORGAN.kind, opts: ORGAN.opts, angle: ORGAN.opts.angle, n0: nCells });
   window.moire.warfare = new Warfare(window.moire);     // step T1c: the chemical warfare census (lineage borders against interiors)
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
@@ -1220,7 +1253,9 @@ ${cells.spindle.panelLine(compact)}
 ${cells.motors.panelLine(compact)}
 ${cells.senses.panelLine(compact)}
 ${cells.folding.panelLine(compact)}
-${cells.signals.panelLine(compact)}${ELECTRONS ? `
+${cells.signals.panelLine(compact)}
+${cells.contract.panelLine(compact)}${cells.organ && cells.organ.kind ? `
+${cells.organ.panelLine(compact)}` : ''}${ELECTRONS ? `
 ${matter.vents.panelLine(compact)}` : ''}${CARBON ? `
 ${matter.carbon.panelLine(compact)}
 ${cells.eat.carbon.panelLine(compact)}` : ''}
@@ -1334,6 +1369,7 @@ function drawOverlay() {
     ...cells.senses.overlayLines(),
     ...cells.folding.overlayLines(),
     ...cells.signals.overlayLines(),
+    ...cells.contract.overlayLines(),
     ...cells.guides.overlayLines(),
     ...matter.oil.overlayLines(),
     neon.overlayLine(),

@@ -253,7 +253,7 @@ struct EatP {
                            // [2] x SHARED ARMOUR: the share of the crust wall a side joined to a neighbour by a junction still wants; y z w spare
   // ---- step G3, the moire genome (src/folding.js writeEat) ----
   g3: vec4f,               // x the G3E_* bits (u32); y REPAIR's cost (heat counts per unit of dose repaired); z the BUFFER's upkeep (heat
-                           // counts per tick at gene 1); w spare
+                           // counts per tick at gene 1); w step L1: CONTRACTION's upkeep (heat counts per tick at drive 1; src/contract.js)
   // ---- step Q1, a signal substance (src/signals.js writeEat) ----
   q1: array<vec4f, 2>,     // [0] x the Q1E_* bits (u32); y heat counts per tick a cell releases at release gene 1 and output factor 1; z the word
                            //     offset in hb of the signal's copy 0, channel A (u32; X at + n, Y at + 2 n); w the inboxes' (u32)
@@ -3259,6 +3259,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       let g3e = bitcast<u32>(EP.g3.x);
       if ((g3e & G3E_BUF) != 0u) { cost += EP.g3.z * clamp(bio[i].fh.w, 0.0, 1.0); }
       if ((g3e & G3E_REP) != 0u) { cost += EP.g3.y * max(bio[i].gs.z, 0.0); }
+      // step L1: CONTRACTION, EP.g3.w heat counts per tick at drive 1 (src/contract.js; 0 while off and in its neutral control)
+      if (EP.g3.w > 0.0) { cost += EP.g3.w * con_drive(bio[i], S.shapeF); }
       let pay = clamp(i32(floor(cost + u01(pcg(rs + 0x0b4e0ef3u)))), 0, bat);
       if (pay > 0) {
         bat -= pay;

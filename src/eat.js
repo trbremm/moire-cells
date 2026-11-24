@@ -303,6 +303,7 @@ export class Eat {
     this.cells.dup.writeEat(u, EP_G2);            // step G2: the copies act (EatP.g2)
     if (this.cells.senses) this.cells.senses.writeEat(u, f, EP_P3, dt);   // step P3: the nose, the taste, shared armour (EatP.p3)
     if (this.cells.folding) this.cells.folding.writeEat(u, f, EP_G3, dt);   // step G3: the buffer's upkeep, repair's cost, the events (EatP.g3)
+    if (this.cells.contract) this.cells.contract.writeEat(f, EP_G3 + 3, dt);   // step L1: contraction's upkeep (EatP.g3.w)
     if (this.cells.signals) this.cells.signals.writeEat(u, f, EP_Q1, dt);   // step Q1: the release, the junctions, the taste, the flash (EatP.q1)
     this.cells.motors.writeEat(u, f, EP_G2);      // step S2: the motors' bits and their motor proteins' want (EatP.g2.y..w, after G2's)
     this.cells.walls.writeEat(u, f, EP_WL, dt);   // step C10: the walls' pattern, maturity, linker cost and upkeep

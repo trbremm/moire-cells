@@ -327,6 +327,21 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
       bioW[i].gm = gm;
       if (nOut > GRN_NOUT) { bioW[i].relay = vec4f(rl.xy, u[17], f32(oreg[17])); }
       if (nOut > GRN_NOUT_S1) { bioW[i].mg = vec4f(u[18], f32(oreg[18]), u[19], f32(oreg[19])); }
+      // step L1: the CONTRACTION gene (Bio.tb.y, 0..1) and its output (the 23rd: gain tb.z, regulator tb.w) drift as the others (own draws,
+      // only while contraction is on, so with it off a birth is exactly as before)
+      if ((S.shapeF & (SH_ON | SH_CON)) == (SH_ON | SH_CON)) {
+        var tb = bioW[i].tb;
+        tb.y = clamp(tb.y + ms * 0.02 * gauss(bs, 430u), 0.0, 1.0);
+        if (tb.z != 0.0) { tb.z = clamp(tb.z + ms * GP.uStep * gauss(bs, 431u), -GRN_UMAX, GRN_UMAX); }
+        if (grn_rand(bs, 432u) < min(GP.orewire * ms, 1.0)) {
+          if (grn_rand(bs, 433u) < 0.2) { tb.z = 0.0; }
+          else {
+            tb.w = f32(min(u32(grn_rand(bs, 434u) * 8.0), 7u));
+            if (tb.z == 0.0) { tb.z = GP.uNew * (2.0 * grn_rand(bs, 435u) - 1.0); }
+          }
+        }
+        bioW[i].tb = tb;
+      }
     }
   }
 

@@ -511,7 +511,8 @@ struct Bio {
                         // eaters' waste, a poison), y EXHAUST (the CO2-like end of the carbon ladder: breathers' waste), z SPILL (free G: the metal
                         // of broken enzymes, set free where a cell died, burst or was digested), w HEAT (the temperature: busy cells, digestion)
   tb: vec4f,            // x the RANGE (a log sensitivity, -2..2; founders 0): how faint a trace still counts (the floor below which a
-                        // concentration is not told apart is the dish's mean x e^-range), costing upkeep x e^range; y z w spare
+                        // concentration is not told apart is the dish's mean x e^-range), costing upkeep x e^range; step L1 (src/contract.js): y
+                        // the CONTRACTION gene (0..1; founders 0), z the 23rd output's gain (CONTRACT), w its regulator (0..7)
   // ---- step G3: THE MOIRE GENOME, DNA FOLDING (src/folding.js, cell_grn.wgsl; README "Step G3"). Words 188..223 ----
   // Each of the 8 regulators carries a small hex LATTICE; the gene network's links are DERIVED from how alike two lattices are (their moire
   // beat) and cached in gw / gi (which are genes again with the moire genome off)
@@ -1775,6 +1776,22 @@ const SH_EXCH: u32 = 16u;     // the membrane's exchange with the dish x its rea
 const SH_WRAP: u32 = 32u;     // engulfing must wrap the prey's LENGTH (a predator shorter than its prey's long axis cannot)
 const SH_GENE: u32 = 64u;     // the elongation gene acts (off: only passive deformation makes capsules)
 const SH_LN_MAX: f32 = 1.3862944;   // ln 4: the elongation gene's top (an aspect of 4); the knob S.eCap may cap lower
+// step L1, CONTRACTION (src/contract.js; README "Step L1"): a cell SHORTENS ALONG ITS FRONT by its contraction gene (Bio.tb.y, 0..1; founders
+// 0) x the gene network's 23rd output (gain Bio.tb.z, regulator tb.w): a stretch of CON_MAX x the drive taken off its asked elongation along
+// the front (a 4:1 spindle at drive 1 is round; a round cell flattens across its front). Its glued neighbours are pulled along through the
+// junctions (the capsules shorten, the glue closes the gap). Paid from the battery per s of drive (the eat pass's upkeep); none with an empty one
+const SH_CON: u32 = 128u;     // contraction acts
+const SH_CNULL: u32 = 256u;   // its NEUTRAL control: the genes drift, no cell contracts, nothing is paid
+const SH_CGRN: u32 = 512u;    // the gene network's 23rd output (CONTRACT) scales it (set only while the network's outputs act)
+const CON_MAX: f32 = 0.6931472;   // the stretch taken off at drive 1 (half ln 4)
+fn con_drive(b: Bio, shF: u32) -> f32 {
+  if ((shF & (SH_ON | SH_CON)) != (SH_ON | SH_CON) || (shF & SH_CNULL) != 0u) { return 0.0; }
+  let k = clamp(b.tb.y, 0.0, 1.0);
+  if (k <= 0.0) { return 0.0; }
+  var f = 1.0;
+  if ((shF & SH_CGRN) != 0u) { let j = min(u32(max(b.tb.w, 0.0)), 7u); f = grn_fac(b.tb.z, b.gx[j >> 2u][j & 3u]); }
+  return min(k * f, 1.0);
+}
 const S1S_N: u32 = 0u;        // census: live cells
 const S1S_LA: u32 = 1u;       // ... sum of ln(aspect) as the outline has it x 1000
 const S1S_LA2: u32 = 2u;      // ... its square x 1000

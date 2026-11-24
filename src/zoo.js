@@ -654,6 +654,18 @@ export function cellPanel(ctx, onAdd) {
         });
         tr.append(b);
       }
+      // step L1: a whole ORGAN at once (muscle + nerve + skin, laid out; room cleared round it), or the organ's own lab (a fresh culture)
+      for (const [kind, label] of [['muscle', 'organ: muscle'], ['ring', 'organ: beating ring'], ['worm', 'organ: worm']]) {
+        const b = el('button', 'act', label);
+        b.type = 'button';
+        b.title = `lay out the ${kind} organ (step L1: muscle spindles, a nerve of relay cells, a skin of walled cells) at the middle of the view; cells in its way are moved aside. Touch the nerve's free end with the signal pipette (or moire.organ.twitch())`;
+        b.addEventListener('click', () => {
+          const M = window.moire;
+          if (!M || !M.organ) return;
+          M.organ.place(kind, { pacemaker: kind === 'ring' }).catch((e) => console.warn('organ:', e));
+        });
+        tr.append(b);
+      }
       body.append(tr);
       if (Z.list) render();
       Z.last = 0;

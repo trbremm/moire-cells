@@ -181,6 +181,7 @@ export function settingObjects(M) {
     ...(M.senses ? { 'senses.params': M.senses.params } : {}),       // step P3 (old snapshots: the senses off, as they ran)
     ...(M.folding ? { 'folding.params': M.folding.params } : {}),   // step G3 (old snapshots: the moire genome off, as they ran)
     ...(M.signals ? { 'signals.params': M.signals.params } : {}),   // step Q1 (old snapshots: the signal substance off, as they ran)
+    ...(M.contract ? { 'contract.params': M.contract.params } : {}),   // step L1 (old snapshots: every contraction gene 0, nothing contracts)
     ...(M.pigments ? { 'pigments.params': M.pigments.params } : {}),   // step N1: light needs matter
     ...(M.water ? { 'water.params': M.water.params } : {}),           // step N1: caustic light, currents
     ...(M.perfusion ? { 'perfusion.params': M.perfusion.params } : {}),   // perfusion (src/perfusion.js)

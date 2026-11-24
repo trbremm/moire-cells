@@ -1350,7 +1350,10 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let eG = myAsk;
   let capE = select(0.5, max(0.5, eG), shOn);   // the largest stretch (0.5 as before; a spindle: what it asks for, up to 0.5 ln 4)
   var t = select(0.5 * C, vec2f(0.0), hexShape);
-  if (eG > 0.0) { t += eG * vec2f(cos(2.0 * c.front), sin(2.0 * c.front)); }
+  // step L1, CONTRACTION (src/contract.js): the drive (its gene x the network's 23rd output) takes CON_MAX x drive off the elongation along
+  // the front; an empty battery cannot pay for it (the eat pass pays the upkeep), so the cell relaxes
+  let eCon = select(0.0, CON_MAX * con_drive(bio, shF) * select(1.0, clamp(c.bat / 0.05, 0.0, 1.0), (FL.eat & EAT_PAY) != 0u), shOn);
+  if (eG > 0.0 || eCon > 0.0) { t += (eG - eCon) * vec2f(cos(2.0 * c.front), sin(2.0 * c.front)); }
   t += dStretch;                             // step C6d: a polarised cell in a field stretches along it
   if (S.activeGain > 0.0) {
     let spd = length(c.vel);

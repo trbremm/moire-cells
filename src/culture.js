@@ -18,6 +18,7 @@
 
 import { HABITS, founderGenome, FOUNDER_MODES } from './genome.js';
 import { CB_LIP } from './carbon.js';   // (the desert preset's crust springs: carbon or linkers)
+import { organLayout } from './organ.js';   // (step L1: the tissue lab's organ)
 
 const VALUE = (v) => String(v);
 
@@ -245,6 +246,19 @@ export const PRESETS = {
       }
     },
   },
+  organ: {
+    label: 'Tissue lab: organ',
+    desc: 'A hand-designed organ (step L1): a muscle bundle of spindles glued end to end, a nerve of long relay cells along it, a skin of flat walled cells round it. Touch the nerve’s free end (left, outside the skin) with the signal pipette: a flash runs along the nerve, the muscle fires and shortens, the skin flexes. No evolution until you release it.',
+    // (the lab's dish: still water, the glue free (no linkers or upkeep for it), junctions that stretch 15 % before they tear (G0's 5 % tore
+    // the spindles' end-to-end junctions faster than they formed), no mutation, no births or deaths, light everywhere, no night)
+    query: { tissue: 'organ', mut: 0, life: 0, light: 'full', day: 0, view: 'signals', currents: 0, wallcost: 0, tearat: 0.15 },
+    zoom: 3,
+    scene({ matter, W, H }) {
+      // food: two lasting mineral springs (and with carbon a fuel seep) above and below the organ, out of its way
+      const m = Math.min(W, H);
+      for (const s of [-1, 1]) matter.addSpring(W / 2 + 0.12 * m * s, H / 2 + 0.3 * m * s, 'light', 1e9);
+    },
+  },
   lab: {
     label: 'Tissue lab',
     desc: 'Sixty cells of one cloned genome, no evolution (no mutation, no births or deaths) and no springs: watch how they link into tissue, as the tissue experiments did.',
@@ -279,6 +293,8 @@ function defaultSpots(W, H, cells) {
 
 /** Main.js, first thing: the preset's URL options into `params` (the URL's own win). Returns the preset's name or null. */
 export function applyPreset(params) {
+  // (step L1: ?tissue=organ alone opens the organ's lab)
+  if (!params.has('preset') && params.get('tissue') === 'organ') params.set('preset', 'organ');
   const name = params.get('preset');
   const P = name && PRESETS[name];
   if (!P) return null;
@@ -316,6 +332,7 @@ export function applyDiversity(genome, diversity) {
  */
 export function cultureLayout(L, W, H, R, n, rng) {
   const spread = (L && L.spread) || 'clump';
+  if (spread === 'organ' && L.organ) return organLayout(L.organ.kind, L.organ.opts || {}, W, H, R);   // (step L1: a laid-out organ, src/organ.js)
   if (spread === 'clump') {
     const s = R * Math.sqrt(n / 0.85);   // blob radius at 0.85 area fraction (overlaps settle in the warm-up)
     return { founder: null, at: () => { const a = rng() * 2 * Math.PI, dd = Math.sqrt(rng()) * s; return [W / 2 + Math.cos(a) * dd, H / 2 + Math.sin(a) * dd]; } };

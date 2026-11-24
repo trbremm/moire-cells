@@ -70,6 +70,8 @@ export function wire(g, { regs, outputs = {}, broadcast = 0, kinWeight = 0 }) {
     if (o === 16) { g[b + 70] = u; g[b + 71] = r; continue; }   // (the 17th output, engulf, lives in gm.z, gm.w)
     if (o === 17) { g[14] = u; g[15] = r; continue; }           // (step S1: the 18th, shape, in relay.z, relay.w)
     if (o === 18 || o === 19) { g[176 + 2 * (o - 18)] = u; g[177 + 2 * (o - 18)] = r; continue; }   // (step S2: flagellum, cilia, in mg)
+    if (o === 20 || o === 21) { g[232 + 2 * (o - 20)] = u; g[233 + 2 * (o - 20)] = r; continue; }   // (step Q1: the releases, in so)
+    if (o === 22) { g[186] = u; g[187] = r; continue; }                                             // (step L1: contract, in tb.z, tb.w)
     g[b + 48 + o] = u;
     regWords[o >> 2] += r * 8 ** (o & 3);
   }
@@ -226,6 +228,94 @@ DESIGNS.relay = {
   job: 2, jobs: ['resting', 'firing'],
   reporter: 2,
   genome(rng = Math.random, founder = 730) { return relayGenome(rng, founder); },
+};
+// ---------- step L1: THE TISSUE LAB'S ORGAN (README "Step L1"; src/organ.js lays it out and measures it) ----------
+// Four hand-wired genomes, one ORGANISM: they share the identity words (the key, so their glue's likeness is full; the receptor; the self marker,
+// so they are kin), each its own founder id. Every capability they use is a general gene any cell could evolve: elongation (S1), contraction
+// (L1), glue and junctions (G0), the relay's wiring (Q1), the crust wall and stiffness (C12b), the fast regulators (Q1).
+const ORGAN_ID = { key: [0.42, 0.1, 0.42, 0.1], rec: 0.12, mark: [1.1, Math.log(0.25), 2.0, 1] };
+function organIdentity(g) {
+  for (let k = 0; k < 4; k++) g[k] = ORGAN_ID.key[k];
+  g[4] = ORGAN_ID.rec;
+  for (let k = 0; k < 4; k++) g[76 + k] = ORGAN_ID.mark[k];
+  g[73] = 0;     // no push from field A (a calm organ: the moire field still guides nothing here)
+  return g;
+}
+export const ORGAN_GLUE = 2.5;   // the organ's glue (G0's log scale, 0.05..4)
+/** MUSCLE: a relay (it fires on what it hears through its junctions and passes it on) that is a 4:1 SPINDLE and CONTRACTS while it fires (the
+ * 23rd output reads the release regulator r0, inverted: e^(-8 x0), ~0 at rest, ~0.6 firing). */
+export function muscleGenome(rng = Math.random, founder = 740, con = 1) {
+  const g = organIdentity(relayGenome(rng, founder));
+  g[13] = Math.log(4); g[14] = 0; g[15] = 0;   // elongation 4:1 (relay.y), the shape output off
+  g[16] = ORGAN_GLUE; g[18] = 0.05;            // glue, barely crawls
+  g[185] = con; g[186] = -8; g[187] = 0;       // CONTRACTION: gene, the 23rd output's gain (inverted) and regulator (r0, as the releases)
+  g[49] = -0.6;                                // the C10 two-fold wall pattern: the long SIDES stickier than the ends (fibres hold side by side)
+  return g;
+}
+/** NERVE: the same relay as a long 4:1 spindle (one hop per cell length: a pulse runs about twice as far per firing as in a round sheet). */
+export function nerveGenome(rng = Math.random, founder = 750) {
+  const g = organIdentity(relayGenome(rng, founder));
+  g[13] = Math.log(4); g[14] = 0; g[15] = 0;
+  g[16] = ORGAN_GLUE; g[18] = 0.05; g[49] = -0.6;
+  return g;
+}
+/** SKIN: flat (2.5:1 along the surface), a full crust wall, a thick stiff membrane, the organ's glue; a light eater; silent (it hears, nothing is
+ * wired to it). */
+export function skinGenome(rng = Math.random, founder = 760) {
+  const g = organIdentity(base(rng, founder));
+  g[13] = Math.log(2.5); g[14] = 0; g[15] = 0;
+  g[16] = ORGAN_GLUE; g[18] = 0.05;
+  g[41] = 0.03; g[42] = 3;                     // thickness x 2.5, stiffness gene 3
+  g[52] = 1;                                   // a full crust wall
+  for (let k = 0; k < 3; k++) slot(g, k, 'g + t → gt', 0);
+  slot(g, 0, 'gt → g + t', 1.2, 2);
+  slot(g, 1, 'g + t → gt', 2.4);
+  return g;
+}
+// the PACEMAKER's lattices: six regulators at ONE address (far from every sense), in three pairs a third of a turn apart in phase (2.1 rad):
+// with the phase offset chi = pi/4 the derived links run one way round (each pair inhibits the next at ~-3.9, its twin excites it at +2.8,
+// backward links below wMin): a doubled REPRESSILATOR, which oscillates (tools/l1_pacemaker.py). r0, r1 fast (0.3 s), r2..r5 slow (5 s), biases 2:
+// period ~12 s in the model. r6, r7 parked a sixth of a turn away. The releases read r0 (inverted): it fires once a cycle
+const PACE = { th0: 0.2, lk0: -0.7, s: 2.1 };
+export function pacemakerGenome(rng = Math.random, founder = 770) {
+  const g = organIdentity(relayGenome(rng, founder));
+  g[13] = Math.log(2); g[14] = 0; g[15] = 0;
+  g[16] = ORGAN_GLUE; g[18] = 0.05;
+  const x0 = [0.9, 0.9, 0.1, 0.1, 0.5, 0.5, 0.5, 0.5], bias = [2, 2, 2, 2, 2, 2, 0, 0];
+  wire(g, { regs: x0.map((x, r) => ({ bias: bias[r], x0: x, inputs: [] })) });
+  for (let r = 0; r < 8; r++) {
+    const park = r >= 6;
+    g[W_LA + r] = PACE.th0 + (park ? Math.PI / 6 : 0); g[W_LK + r] = PACE.lk0; g[W_LP + r] = park ? 0 : PACE.s * Math.floor(r / 2);
+  }
+  const links = derive(latticesOf(g, 0), [0, 0, 0], { sigma: 0.12, wMax: 4, wMin: 1, chi: Math.PI / 4 }, 27);
+  for (let r = 0; r < 8; r++) {
+    let code = 0;
+    links[r].forEach((l, k) => { g[BIO_GRN + 16 + 3 * r + k] = l.w; code += l.q * 32 ** k; });
+    g[BIO_GRN + 40 + r] = code;
+  }
+  g[BIO_Q1 + 6] = 1 | 2;   // r0, r1 fast
+  g[BIO_Q1 + 2] = 0.6;     // (its receptor as the relay's; nothing reads it)
+  return g;
+}
+DESIGNS.muscle = {
+  label: 'muscle', desc: 'a 4:1 spindle relay that CONTRACTS while it fires (step L1): glued end to end in a bundle it shortens as a whole when the signal reaches it',
+  shape: 'line', job: 0, jobs: ['firing', 'resting'], reporter: 0, organ: true,
+  genome(rng = Math.random, founder = 740) { return muscleGenome(rng, founder); },
+};
+DESIGNS.nerve = {
+  label: 'nerve', desc: 'a chain of long relay cells (step L1): one hop per cell length, it carries a pulse along the muscle and hands it over through its junctions',
+  shape: 'line', job: 0, jobs: ['firing', 'resting'], reporter: 0, organ: true,
+  genome(rng = Math.random, founder = 750) { return nerveGenome(rng, founder); },
+};
+DESIGNS.skin = {
+  label: 'skin', desc: 'flat walled stiff cells with strong glue (step L1): wrapped round the organ, they shelter its inside',
+  shape: 'disc', job: 0, jobs: ['skin', 'skin'], reporter: 0, organ: true,
+  genome(rng = Math.random, founder = 760) { return skinGenome(rng, founder); },
+};
+DESIGNS.pacemaker = {
+  label: 'pacemaker', desc: 'a cell whose gene network OSCILLATES (a doubled repressilator, step L1) and fires once a cycle: a rhythm for the nerve or a ring',
+  shape: 'disc', job: 0, jobs: ['firing', 'resting'], reporter: 0, organ: true,
+  genome(rng = Math.random, founder = 770) { return pacemakerGenome(rng, founder); },
 };
 export const DESIGN_NAMES = Object.keys(DESIGNS);
 

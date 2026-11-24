@@ -88,6 +88,7 @@ export const RULE_GROUPS = [
   ['p3', 'Cells that sense cells (step P3)'],
   ['g3', 'Moire genome (step G3)'],
   ['q1', 'Signal substance (step Q1)'],
+  ['l1', 'Contraction (step L1)'],
   ['g0w', 'Stirred water (step G0)'],
   ['vents', 'Vents in the dark (step C12f)'],
   ['n1', 'Nutrient landscape (step N1)'],
@@ -1084,6 +1085,20 @@ export function makeActions(app) {
     q1knob('q1hearj', 'hearing (junctions)', 'hearJ', 1e-6, 0.01, 1.5, 6, 'energy per s heard at 63 % (smaller: more sensitive)'),
     q1knob('q1tau', 'fast time', 'tauFast', 0.05, 5, 1.25, 2, 's: a fast regulator’s time constant'),
     q1knob('q1puff', 'pipette puff', 'puffAmount', 0.01, 10, 1.5, 2, 'energy per puff of the signal pipette'),
+  );
+
+  // ---------- contraction (step L1; panel only) ----------
+  const L1P = () => app.cells.contract.params;
+  const l1tog = (id, label, key, onTxt, offTxt, help) => ({ id, keys: [], label, group: 'l1', type: 'toggle', get: () => L1P()[key],
+    run: () => (flip(L1P(), key) ? onTxt : offTxt), help });
+  A.push(
+    l1tog('l1on', 'contraction', 'on', 'cells with the contraction gene shorten along their front (x the gene network’s 23rd output)', 'no cell contracts (as before step L1)',
+      'an actomyosin toy: it pulls glued neighbours through the junctions; needs the cell shape (step S1)'),
+    l1tog('l1grn', 'contraction by the network', 'grn', 'the gene network’s 23rd output drives it (a fast regulator: a twitch)', 'the gene alone (tonic)', ''),
+    l1tog('l1null', 'contraction neutral control', 'null', 'the genes drift, nothing contracts, nothing is paid (NEUTRAL CONTROL)', 'contraction acts', ''),
+    { id: 'l1cost', keys: [], label: 'contraction cost', group: 'l1', type: 'knob', get: () => Number(L1P().cost).toFixed(4),
+      run: (k) => { const p = L1P(); p.cost = Math.max(0, Math.min(1, +((Number(p.cost) || 0.001) * (k === '-' ? 1 / 1.5 : 1.5)).toPrecision(3))); return `contraction cost ${p.cost}`; },
+      help: 'energy per s at drive 1' },
   );
 
   // ---------- the moire genome (step G3; panel only: no keys are free) ----------

@@ -188,10 +188,12 @@ fn tforce(@builtin(global_invocation_id) id: vec3u) {
   var allow = 1e9;
   if ((TP.u.x & TPF_POOL) != 0u) { allow = f32(max(cbR[i * CWT + CB_TEND], 0)) / max(TP.c.x * thick, 1e-6); }
   var used = 0.0;
+  var anySlot = false;
   for (var s = 0u; s < 4u; s++) {
     let so = o + 8u + TSLOT * s;
-    if (atomicLoad(&tb[so]) != 0) { used += max(ldf(so + 5u), 0.0); }
+    if (atomicLoad(&tb[so]) != 0) { used += max(ldf(so + 5u), 0.0); anySlot = true; }
   }
+  if (n == 0u && !anySlot) { return; }   // (no tendrils wanted, none left: most cells, at little cost)
   var tens = 0.0;
   var gripping = 0;
   let rs = pcg(c.seed ^ pcg(S.tick * 0x2c1b3c6du + 0x74656e64u));

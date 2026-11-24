@@ -148,14 +148,17 @@ function limbCells(out, opts, M4a, dy) {
   // shortened by itself as it settled and pulled the tendons, so the joint crept before any poke)
   const M4 = cap(Math.max(1.5, Math.min(4, Number(opts.layAspect) || 2.8)));
   const nb = Math.max(3, Math.round(opts.bone || 5)), g = 0.8, dB = 1.98, yLo = -0.5 * Math.sqrt(3) * dB / 2, yHi = -yLo;
+  // (with an ANTAGONIST, muscles lie on both sides of the rods near the joint: only the left rod's far cells anchor, the lower row's
+  // tendrils away from one muscle, the upper row's (front pi) away from the other)
+  const ant = !!opts.antagonist, far = (k) => !ant || k >= nb - 2;
   for (let k = 0; k < nb; k++) {
     // (the lower rows' cells at the joint are JOINT bones: each reaches a tendril across to the other rod's, the LIGAMENT: front 0 on the
     // left, pi on the right, so each points at the other)
-    out.push({ x: -(g + 1 + dB * k), y: yLo, front: 0, d: k === 0 ? D_JOINT : D_ANCHOR });
+    out.push({ x: -(g + 1 + dB * k), y: yLo, front: 0, d: k === 0 ? D_JOINT : far(k) ? D_ANCHOR : D_BONE });
     out.push({ x: g + 1 + dB * k, y: yLo, front: k === 0 ? Math.PI : 0, d: k === 0 ? D_JOINT : D_BONE });
   }
   for (let k = 0; k < nb - 1; k++) {
-    out.push({ x: -(g + 1 + dB * (k + 0.5)), y: yHi, front: 0, d: D_BONE });
+    out.push({ x: -(g + 1 + dB * (k + 0.5)), y: yHi, front: ant && k >= nb - 3 ? Math.PI : 0, d: ant && k >= nb - 3 ? D_ANCHOR : D_BONE });
     out.push({ x: g + 1 + dB * (k + 0.5), y: yHi, front: 0, d: D_BONE });
   }
   const sides = opts.antagonist ? [1, -1] : [1];

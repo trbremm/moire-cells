@@ -89,6 +89,7 @@ export const RULE_GROUPS = [
   ['g3', 'Moire genome (step G3)'],
   ['q1', 'Signal substance (step Q1)'],
   ['l1', 'Contraction (step L1)'],
+  ['t2', 'Tendrils and bone (step T2)'],
   ['g0w', 'Stirred water (step G0)'],
   ['vents', 'Vents in the dark (step C12f)'],
   ['n1', 'Nutrient landscape (step N1)'],
@@ -1099,6 +1100,25 @@ export function makeActions(app) {
     { id: 'l1cost', keys: [], label: 'contraction cost', group: 'l1', type: 'knob', get: () => Number(L1P().cost).toFixed(4),
       run: (k) => { const p = L1P(); p.cost = Math.max(0, Math.min(1, +((Number(p.cost) || 0.001) * (k === '-' ? 1 / 1.5 : 1.5)).toPrecision(3))); return `contraction cost ${p.cost}`; },
       help: 'energy per s at drive 1' },
+  );
+
+  // ---------- tendrils and bone (step T2; panel only) ----------
+  const T2P = () => app.cells.tendrils.params;
+  const t2tog = (id, label, key, onTxt, offTxt, help) => ({ id, keys: [], label, group: 't2', type: 'toggle', get: () => T2P()[key],
+    run: () => (flip(T2P(), key) ? onTxt : offTxt), help });
+  const t2knob = (id, label, key, lo, hi, digits, help) => ({ id, keys: [], label, group: 't2', type: 'knob', get: () => Number(T2P()[key]).toFixed(digits),
+    run: (k) => { const p = T2P(); p[key] = Math.max(lo, Math.min(hi, +((Number(p[key]) || lo || 0.01) * (k === '-' ? 1 / 1.5 : 1.5)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    t2tog('t2on', 'tendrils', 'on', 'cells with the tendril genes grow tendrils that grip, pull as ropes, break, retract', 'no tendrils (as before step T2)',
+      'filaments of chain carbon from the outline: the tip grips a cell, an obstacle, the edge or the floor'),
+    t2tog('t2null', 'tendrils neutral control', 'null', 'the genes drift, nothing grows, nothing is paid (NEUTRAL CONTROL)', 'tendrils act', ''),
+    t2tog('t2min', 'mineral walls (bone)', 'mineral', 'cells with the mineralise gene build rust into their wall: hard, stiff, stronger junctions', 'no mineral walls', ''),
+    t2tog('t2mnull', 'mineral neutral control', 'mineralNull', 'the gene drifts, nothing mineralises (NEUTRAL CONTROL)', 'mineralising acts', ''),
+    t2tog('t2grn', 'tendrils and bone by the network', 'grn', 'the gene network’s 24th..26th outputs (grow, retract, mineralise) act', 'the genes alone', ''),
+    t2knob('t2grow', 'tendril growth', 'grow', 0.05, 10, 2, 'R per s a free tip grows'),
+    t2knob('t2k', 'rope stiffness', 'k', 0.1, 60, 2, 'per s at stiffness gene 0 (the contact push is 7)'),
+    t2knob('t2brk', 'rope strength', 'brk', 0.1, 100, 2, 'the pull a rope breaks at, R per s at stiffness gene 0'),
+    t2knob('t2ret', 'retraction speed', 'retract', 0.05, 10, 2, 'R per s a rope is pulled in at drive 1'),
   );
 
   // ---------- the moire genome (step G3; panel only: no keys are free) ----------

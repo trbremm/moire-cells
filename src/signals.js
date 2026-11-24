@@ -84,8 +84,8 @@ export class Signals {
     };
     // the look (moire.signals.look; drawing only)
     this.look = {
-      haze: 1.1,         // the signals view's haze brightness (0: none)
-      ref: 1e-4,         // energy per R^2 (as a vector) at which the haze is half bright
+      haze: 0.8,         // the signals view's haze brightness (0: none)
+      ref: 2e-4,         // energy per R^2 (as a vector) at which the haze is half bright
       mist: 0.5,         // the pale mist where flavours cancel (share)
       flash: 1.6,        // the release flash's brightness on the tube, in every view (0: none)
       fill: 0.45,        // the signals view's body fill at full release

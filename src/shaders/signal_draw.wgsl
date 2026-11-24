@@ -51,6 +51,6 @@ fn fs(@builtin(position) fc: vec4f) -> @location(0) vec4f {
   let h = atan2(v.y, v.x) / 6.2831853 + 0.56;   // (as the cells' q1_hue: flavour 0 sky blue)
   let hue = max(0.55 + 0.5 * D.dish.z * cos(6.2831853 * (h + vec3f(0.0, -1.0 / 3.0, 1.0 / 3.0))), vec3f(0.0));
   let rgb = D.strength * (hue * hb + vec3f(0.55, 0.58, 0.62) * mb);
-  let al = clamp(0.85 * (hb + mb), 0.0, 1.0);
+  let al = clamp(0.85 * (hb + mb), 0.0, 0.45);   // (faint: a dense, busy dish's haze stays a veil)
   return vec4f(rgb * al, al);
 }

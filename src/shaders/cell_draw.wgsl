@@ -452,13 +452,13 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   let q1fl = f32((c.motW >> 24u) & 255u) / 255.0;
   var q1Fill = 0.0;
   if (q1View) {
-    // the release it asks for now, as a share of gene 1 (as the eat pass works it out): a quarter or more lights the cell fully; a cell that
-    // could release but rests is a dim hue, a silent one dim grey
+    // the release it asks for now, as a share of gene 1 (as the eat pass works it out): a steady release lights the cell part way (at most
+    // 0.6), FIRING (the flash: a rise above its own baseline) fully; a cell that could release but rests is a dim hue, a silent one dim grey
     let rel = clamp(g.sg.w, 0.0, 1.0);
     let js = clamp(g.sh.x, 0.0, 1.0);
     let acts = D.q1.x > 2.5;
     let lv = rel * ((1.0 - js) * q1_fac(g, 0u, acts) + js * q1_fac(g, 1u, acts));
-    let fb = max(clamp(lv / 0.25, 0.0, 1.0), q1fl);
+    let fb = max(0.6 * clamp(lv / 0.25, 0.0, 1.0), q1fl);
     col = mix(D.inkOther.rgb * 0.35, q1_hue(g.sg.x, D.q1.w) * (0.3 + 0.7 * fb), clamp(20.0 * rel, 0.0, 1.0));
     q1Fill = D.q1.z * fb;
   }

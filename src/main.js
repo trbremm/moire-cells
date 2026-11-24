@@ -174,6 +174,11 @@
 //               ?latstep= ?phstep= ?latjump= ?foldstep= ?refold= ?s0= ?kon= ?koff= ?doseheat= ?doseox= ?dosestep= ?repk= ?repcost= ?bufcap=
 //               ?bufcost= ?buffounder= ?bufweaken= ?g3census= (rules panel, Moire genome); ?g3out=0 outputs wired as in T1b (else by lattice, so a
 //               refold changes which regulator drives each gene); ?g3founders=0 std founders without output gains (?foundergain= ?foundershare=)
+//   ?signal=0     step Q1, a signal substance (src/signals.js): no signal at all (the genes carried, no grid, nothing heard); ?sigflow=0 the water
+//               does not carry it; ?junction=0 no release through junctions; ?sigtaste=0 its taste dial does not steer; ?fastreg=0 no fast
+//               regulators; ?signalnull=1 the NEUTRAL control (released and paid, heard at a random place); ?sigmut=0 its genes copy exactly;
+//               knobs ?sigspread= ?siglife= ?sigpower= ?hearw= ?hearj= ?taufast= ?sigcensus= (rules panel, Signal substance); ?view=signals;
+//               ?tissue=relay (the hand-wired relay sheet)
 //   ?flagella=0   step S2: no flagella; ?cilia=0 no cilia (both 0: exactly as before S2); ?flagellanull=1 ?cilianull=1 their NEUTRAL controls
 //               (the genes drift, nothing acts, nothing is paid); ?mogrn=0 ?mowater=0 ?modipole=0 ?mopump=0 ?mocouple=0 ?mosteer=0 ?motorque=0
 //               one part off; knobs ?swim= ?steer= ?arm= ?dipole= ?swimdrift= ?ciliapush= ?beathz= ?couple= ?lag= ?swimcost= ?ciliaup=

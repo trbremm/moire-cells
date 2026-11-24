@@ -393,6 +393,15 @@ export function summary(g, o = 0, lipidsOn = true) {
     if (fol.length) body.push(`follows ${fol.join(', ')}${rw}`);
     if (fle.length) body.push(`flees ${fle.join(', ')}${fol.length ? '' : rw}`);
   }
+  // step Q1: the signal (Bio.sg, sh, so: words 224..235), in words: what it releases and where, its flavour, fast regulators, its taste for it
+  if (g.length > o + 235) {
+    const deg = (a) => Math.round((((a || 0) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) * 180 / Math.PI);
+    const rel = g[o + 227] || 0, js = g[o + 228] || 0, fast = Math.round(g[o + 230] || 0) & 255;
+    if (rel >= 0.05) body.push(`signals ${rel.toFixed(2)} (flavour ${deg(g[o + 224])}°, ${js > 0.7 ? 'through junctions' : js < 0.3 ? 'into the water' : 'water and junctions'}${g[o + 232] || g[o + 234] ? ', switched by its network' : ''})`);
+    if (fast) body.push(`${[0, 1, 2, 3, 4, 5, 6, 7].filter((r) => (fast >> r) & 1).length} fast regulator${(fast & (fast - 1)) ? 's' : ''}`);
+    const ts = g[o + 229] || 0;
+    if (Math.abs(ts) >= 0.2) body.push(`${ts > 0 ? 'follows' : 'flees'} the signal (${deg(g[o + 225])}°) ${Math.abs(ts).toFixed(1)}`);
+  }
   // step G1: the fidelity gene (copying errors x e^-F; founders 0), in words when it is off the founders' care
   const fid = g[o + 31] || 0;
   if (Math.abs(fid) >= 0.15) {

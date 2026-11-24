@@ -80,6 +80,7 @@ export const RULE_GROUPS = [
   ['g0', 'Strong glue (step G0)'],
   ['s1', 'Cell shape (step S1)'],
   ['s2', 'Flagella and cilia (step S2)'],
+  ['p3', 'Cells that sense cells (step P3)'],
   ['g0w', 'Stirred water (step G0)'],
   ['vents', 'Vents in the dark (step C12f)'],
   ['n1', 'Nutrient landscape (step N1)'],
@@ -1027,6 +1028,31 @@ export function makeActions(app) {
     fknob('n2tide', 'tide', 'tide', 0.01, 5, 1.25, 2, 'R / s of the two tidal modes (?tide=)'),
     fknob('n2scourSpeed', 'lifting speed', 'scourSpeed', 0.05, 10, 1.25, 2, 'R / s of water that starts lifting row-1 crust and tar (× row) (?scourspeed=)'),
     fknob('n2life', 'spring life', 'life', 10, 3600, 1.25, 0, 's a patchy spring runs before it goes dry (?springlife=)'),
+  );
+
+  // ---------- cells that sense cells (step P3; panel only: no keys are free) ----------
+  const SNP = () => app.cells.senses.params;
+  const stog = (id, label, key, onTxt, offTxt, help) => ({ id, keys: [], label, group: 'p3', type: 'toggle', get: () => SNP()[key],
+    run: () => (flip(SNP(), key) ? onTxt : offTxt), help });
+  const sknob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'p3', type: 'knob', get: () => Number(SNP()[key]).toFixed(digits),
+    run: (k) => { const p = SNP(); p[key] = Math.max(lo, Math.min(hi, +((Number(p[key]) || lo || 0.01) * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    stog('p3nose', 'averaged nose', 'nose', 'the nose averages: the fuel smell is a relative gradient, low-passed over tau, with a soft response',
+      'the nose as in step N2 (saturated, noisy)', 'bacteria sense ratios over time, not single differences'),
+    stog('p3taste', 'taste dials', 'taste', 'taste on: each cell’s dials steer it toward (+) or away from (−) oxygen, exhaust, spilled metal, heat',
+      'no taste: the dials do nothing and do not drift', 'four genes −1..1 and a range gene (sensitivity, costs upkeep)'),
+    stog('p3tasteNull', 'taste neutral control', 'tasteNull', 'the taste genes drift WITHOUT effect (NEUTRAL CONTROL)', 'the taste genes act',
+      'the neutral control: the dials and range drift as usual, nothing steers, nothing is paid'),
+    stog('p3clump', 'eat the clump or nothing', 'clump', 'a predator must be big enough for the prey’s whole glued group; it tugs until junctions tear',
+      'the size test counts the prey alone (as in step P1)', 'the glued group: the prey and each neighbour joined to it by a junction'),
+    stog('p3armour', 'shared armour', 'armour', 'the crust wall is built on exposed sides only; sides joined to a neighbour stay soft',
+      'the wall on every side (as before)', 'a clump’s outer ring armours, its core stays soft'),
+    sknob('p3tau', 'nose time', 'tau', 0.1, 20, 1.25, 2, 's the nose and the taste average over'),
+    sknob('p3speed', 'taste speed', 'tasteSpeed', 0.05, 10, 1.25, 2, 'R / s at a strong taste'),
+    sknob('p3range', 'range (global)', 'rangeGain', 0.05, 100, 1.5, 2, 'every cell’s sensitivity × this: fainter traces count'),
+    sknob('p3cost', 'range cost', 'rangeCost', 0.0001, 1, 1.5, 4, 'energy per s per unit of dial at range 0 (× e^range)'),
+    sknob('p3tug', 'tug', 'tug', 0.05, 0.95, 1.2, 2, 'how far a wrap gets while the prey’s glued group is too big'),
+    sknob('p3kin', 'sheltered wall', 'kinShare', 0.01, 1, 1.25, 2, 'the share of the wall a side joined to a neighbour still wants'),
   );
 
   // ---------- vents in the dark (step C12f; panel only: no keys are free) ----------

@@ -55,6 +55,7 @@ import { Fidelity } from './fidelity.js';
 import { Dup } from './dup.js';
 import { Mutation } from './mutation.js';
 import { Motors, STATS_S2, S2_WORDS } from './motors.js';
+import { Senses } from './senses.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 import { dish } from './dish.js';      // the dish's own size and R
 import { cultureLayout } from './culture.js';   // app: how a new culture is spread
@@ -72,8 +73,9 @@ export const CELL_URL = 'src/shaders/cell_common.wgsl';
 // step C12e, osmosis on the ions (src/waste.js): osm (84: the swelling), osmP (85: the osmotic pressure); step T1b:
 // sns0, sns1 (86, 87: the senses the eat pass hands the gene network, 4 x 8 bits each; spare until T1b); step P1, predators (src/predators.js):
 // eng (88: what it engulfs, how far), engBy (89: who wraps it, or the host of the meal its dead slot holds), hold (90), engPay (91); step S2,
-// flagella and cilia (src/motors.js): motE (92: the motors' share of their motor proteins), motW (93: what the motors did, the free sides)
-export const CELL_FLOATS = 94;
+// flagella and cilia (src/motors.js): motE (92: the motors' share of their motor proteins), motW (93: what the motors did, the free sides); step P3,
+// cells that sense cells (src/senses.js): taste (94, 95: the low-passed taste the step steers by)
+export const CELL_FLOATS = 96;
 export const CELL_BYTES = CELL_FLOATS * 4;
 const CELL_CORE_BYTES = 120;   // step C6c: struct CellCore (the grid's sorted copy: Cell without the outline and per-side slots;
                                // step C6d: + the dipole, 104 until then; step C10: + the walls, 112 until then)
@@ -94,7 +96,7 @@ const STATS_CENSUS = 1088;     // byte offset of the key bins (then the founder 
 const STATS_EVENTS = 64;
 const A_BIN = 0.2;             // width of the A-felt histogram's bins (STATS_X_AW in cell_common.wgsl)
 const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
-const FIELDS_BYTES = 640;      // struct Fields in cell_common.wgsl (step S2: + mo0..mo2, 592 until then; step G2: + g2, 576 until then; step G0b: + ob0, 560 until then; step G0: + g0a..g0c; step P1: + p1..p1d; step T1a: + t1; step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
+const FIELDS_BYTES = 672;      // struct Fields in cell_common.wgsl (step P3: + p3a, p3b, 640 until then; step S2: + mo0..mo2, 592 until then; step G2: + g2, 576 until then; step G0b: + ob0, 560 until then; step G0: + g0a..g0c; step P1: + p1..p1d; step T1a: + t1; step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
                                // step C9: + dv0..dv2; step C10: + wl0, wl1)
 const FIELD_FORMAT = 'rgba16float';
 const DRAW_BYTES = 1424;       // struct Draw in cell_draw.wgsl (step F0: + job[7], 1312 until then; step P1: + p1, p1Ink; step T1b: + grn, grnInk, grnInkH, 1232 until then; step T1a: + kin, 1216 until then; step H1: + harm, harm2, harm3, harm4, hInk[5] after cam, 1072 until then; app: + cam, 1056 until then; step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
@@ -367,6 +369,7 @@ export class Cells {
     this.mutation = new Mutation(this);   // step M2: the mutation sweep (src/mutation.js)
     this.dup = new Dup(this);             // step G2: gene duplication for engines and pumps (src/dup.js)
     this.motors = new Motors(this);       // step S2: flagella and cilia (src/motors.js)
+    this.senses = new Senses(this);       // step P3: cells that sense cells (src/senses.js)
   }
 
   static async create(device, format, medium, count, seed, cap = 0) {
@@ -752,6 +755,7 @@ export class Cells {
     this.dup.writeFields(u, f, 144);           // step G2: gene duplication (Fields.g2)
     u[147] = this.flow ? this.flow.chemoBits : 0;   // step N2: the chemotaxis gene's bits (Fields.g2.w; src/flow.js)
     this.motors.writeFields(u, f, 148);        // step S2: flagella and cilia (Fields.mo0..mo2)
+    this.senses.writeFields(u, f, 160);        // step P3: cells that sense cells (Fields.p3a, p3b)
     this.mutation.writeFields(u, f);           // step M2: the mutation sweep (Fields.qA.yzw, qB.y)
     this.device.queue.writeBuffer(this.fieldsBuf, 0, this.fieldsAB);
   }
@@ -799,6 +803,7 @@ export class Cells {
     this.dup.maybeCensus(frame.time);        // step G2: the engines' census (a read-back every few s)
     this.mutation.maybeCensus(frame.time);   // step M2: generations, lines, genes (a read-back every few s)
     this.motors.maybeCensus(frame.time);     // step S2: where the motors are (a read-back every few s)
+    this.senses.maybeCensus(frame.time);     // step P3: the taste, chases, glued groups (a read-back every few s)
     if (this.gridSize() !== this.grid.cs) this.sizeGrid();   // params.cut or range changed
     // after a reset, the warm-up ticks run first (all in this frame, at the current time)
     const warm = Math.min(this.warm, SLOTS - frame.ticks);

@@ -124,6 +124,8 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   var bestI = NBR_NONE;
   var tFound = false;         // a wrapping predator: its prey still touches it ...
   var tOk = false;            // ... and it still out-pulls it
+  var tGroup = true;          // ... (step P3, EAT THE CLUMP OR NOTHING) and it is big enough for the prey's glued group
+  let clumpOn = (bitcast<u32>(FL.p3a.x) & P3_CLUMP) != 0u;
   var byP = 0.0;              // a prey: the furthest wrap round it, and its wrapper
   var byI = NBR_NONE;
   var capI = 0xffffffffu;     // ... a wrapper that has closed round it (the lowest index if several)
@@ -705,8 +707,18 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
               margin = FL.p1.z * eExpr * (1.0 - mySpare * kin) - hold;
               ok = margin > 0.0;
             }
+            // step P3, EAT THE CLUMP OR NOTHING (P3_CLUMP): the size test counts the prey's GLUED GROUP, the prey and every neighbour joined to
+            // it by a junction (formed, not torn: the G0 word; each as big as the prey; its junction to this cell not counted). A wrap may
+            // start on a glued prey, but it runs only up to the TUG (p3b.x of the way) and pulls at it meanwhile, until its junctions tear
+            // (G0: a junction pulled past its length while the pair separates tears) and the group is small enough
+            var grpOk = true;
+            if (clumpOn) {
+              let ko2 = wall_side(wall_theta(o.flags, (o.wadh.y >> 16u) & 255u), vO);
+              let grpN = f32(countOneBits(jn_formed(o.kind) & ~(1u << ko2)));
+              grpOk = c.r * c.r >= FL.p1.y * o.r * o.r * (1.0 + grpN);
+            }
             if (myMode == ENG_IDLE) { if (ok && margin > bestM) { bestM = margin; bestI = oi; } }
-            else { tFound = true; tOk = ok; }
+            else { tFound = true; tOk = ok; tGroup = grpOk; }
           }
         }
 
@@ -1104,9 +1116,20 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   }
   // step C5, smell: the fuel gradient the membrane's 6 corners smelled (the eat pass's plan, last tick; energy per R^2
   // per R) steers the motor up toward the fuel (tanh: gentle, saturating)
+  // (step P3, P3_NOSE: the smell is a RELATIVE gradient (d log c across the cell, per R), low-passed by the eat pass, and the response is
+  // soft, x / (x + half), not tanh: a weak smell steers a little, only a strong one steers fully)
+  let p3f = bitcast<u32>(FL.p3a.x);
   if ((FL.eat & EAT_SMELL) != 0u && FL.smell > 0.0) {
     let gm = length(c.smell);
-    if (gm > 1e-9) { motor += FL.smell * chemo_factor(bio) * tanh(gm / max(FL.smellHalf, 1e-6)) * c.smell / gm; }   // (step N2: x the gene)
+    let resp = select(tanh(gm / max(FL.smellHalf, 1e-6)), gm / (gm + max(FL.p3a.w, 1e-6)), (p3f & P3_NOSE) != 0u);
+    if (gm > 1e-9) { motor += FL.smell * chemo_factor(bio) * resp * c.smell / gm; }   // (step N2: x the gene)
+  }
+  // step P3, the TASTE: the dials x the substances' relative gradients (the eat pass's plan, low-passed: Cell.taste) steer the crawl up (+)
+  // or down (-) them, p3a.y R / s at a strong taste (x / (x + half)); a swimmer's front turns toward the same intention (S2's steering).
+  // Not in the neutral control (the dials drift, nothing steers)
+  if ((p3f & (P3_TASTE | P3_NULL)) == P3_TASTE) {
+    let tm = length(c.taste);
+    if (tm > 1e-9) { motor += FL.p3a.y * (tm / (tm + max(FL.p3a.z, 1e-6))) * c.taste / tm; }
   }
   // step C5: the battery gates the motor (full speed from FL.crawlFull of the battery, none when it is empty) and pays
   // for it: crawlCost x the work of crawling at that speed against the drag (its motion energy x (1 - damping^2) per
@@ -1665,6 +1688,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         atomicAdd(&stats.p1[PS_EATEN], 1u);
         if (capKin > 0.5) { atomicAdd(&stats.p1[PS_KIN], 1u); }
         if (holdG - capGlue < 0.05) { atomicAdd(&stats.p1[PS_ALONE], 1u); }
+        atomicAdd(&stats.p1[PS_GLUED], countOneBits(jn_formed(c.kind)));   // (step P3: its junctions when caught)
         atomicAdd(&stats.p1[PS_HOLD], u32(round(max(preyHold - capGlue, 0.0) * 1000.0)));
         atomicAdd(&stats.p1[PS_AREA], u32(round(3.14159265 * c.r * c.r / (S.R * S.R) * 1000.0)));
         atomicAdd(&stats.p1[PS_KINSUM], u32(round(clamp(capKin, 0.0, 1.0) * 1000.0)));
@@ -1789,7 +1813,12 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
       } else if (c.bat < FL.p1c.z || integM < 0.5 * FL.p1d.x) {
         atomicAdd(&stats.p1[PS_POOR], 1u);
       } else {
-        let np = min(prog + max(1u, u32(round(S.dt / max(FL.p1b.x, 0.05) * f32(ENG_FULL)))), ENG_FULL);
+        var np = min(prog + max(1u, u32(round(S.dt / max(FL.p1b.x, 0.05) * f32(ENG_FULL)))), ENG_FULL);
+        // (step P3: a prey whose glued group is too big holds the wrap at the TUG, pulling, until its junctions tear)
+        if (clumpOn && !tGroup) {
+          np = min(np, max(prog, u32(clamp(FL.p3b.x, 0.0, 0.99) * f32(ENG_FULL))));
+          if (S.xCount != 0u) { atomicAdd(&stats.p1[PS_TUG], 1u); }
+        }
         ne = eng_word(ENG_WRAP, np, myPart, 0u);
         near = ENG_NEAR;
         pay += i32(floor(FL.p1d.y * S.dt + rand01(c.seed ^ 0x2d1f3a5bu, S.tick)));
@@ -1810,10 +1839,15 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
     if (p1On) {
       var wc = 0.0;
       var kk = 0.0;
-      for (var q = 0; q < 6; q++) { let l = unpack4x8unorm(c.lip[q]); wc += l.w; kk += l.x; }
-      var kq = kk / 6.0 * LIP_KMAX;
+      // (step P3, SHARED ARMOUR: the armour of the EXPOSED sides, those without a junction, where a predator can come at the cell; all six
+      // sides when every one is joined)
+      let jfA = select(0u, jn_formed(c.kind), (bitcast<u32>(FL.p3a.x) & P3_ARMOUR) != 0u);
+      let nEx = select(6.0, f32(6u - countOneBits(jfA)), countOneBits(jfA) < 6u);
+      let exM = select(0x3fu, ~jfA & 0x3fu, countOneBits(jfA) < 6u);
+      for (var q = 0u; q < 6u; q++) { if (((exM >> q) & 1u) != 0u) { let l = unpack4x8unorm(c.lip[q]); wc += l.w; kk += l.x; } }
+      var kq = kk / nEx * LIP_KMAX;
       if (kk <= 0.0) { kq = select(1.0, memb_stiff(bio.memb, FL.memb.y), (bitcast<u32>(FL.memb.x) & MB_ELASTIC) != 0u); }
-      arm = FL.p1b.w * wc / 6.0 + FL.p1c.x * clamp((kq - 1.0) / (LIP_KMAX - 1.0), 0.0, 1.0);
+      arm = FL.p1b.w * wc / nEx + FL.p1c.x * clamp((kq - 1.0) / (LIP_KMAX - 1.0), 0.0, 1.0);
     }
     c.hold = select(0.0, holdG + arm, p1On);
     c.engBy = select(0u, (BY_WRAPPED << 24u) | (u32(round(clamp(byP, 0.0, 1.0) * 255.0)) << 16u) | byI, byI != NBR_NONE);
@@ -2146,6 +2180,19 @@ fn drift_genome(p: Bio, bs: u32, msF: f32) -> Bio {
     var x = nudge(p.mc.w, sz * 0.12, CHEMO_LO, CHEMO_HI, bs, 250u);
     if (rand01(bs, 251u) < jp) { x = CHEMO_LO + (CHEMO_HI - CHEMO_LO) * rand01(bs, 252u); }
     nb.mc.w = x;
+  }
+  // step P3: the TASTE DIALS (Bio.ta, -1..1) and the RANGE (tb.x, -2..2) drift by small steps, now and then a jump anywhere (both ranges
+  // symmetric round the founders' 0, so a drifting gene's mean stays put); on and in the neutral control alike, untouched while off
+  if ((bitcast<u32>(FL.p3a.x) & P3_TASTE) != 0u) {
+    var td = nb.ta;
+    for (var k = 0u; k < 4u; k++) {
+      td[k] = nudge(p.ta[k], sz * 0.05, -1.0, 1.0, bs, 253u + 3u * k);
+      if (rand01(bs, 254u + 3u * k) < jp) { td[k] = 2.0 * rand01(bs, 255u + 3u * k) - 1.0; }
+    }
+    nb.ta = td;
+    var rg = nudge(p.tb.x, sz * 0.1, TASTE_RLO, TASTE_RHI, bs, 266u);
+    if (rand01(bs, 267u) < jp) { rg = TASTE_RLO + (TASTE_RHI - TASTE_RLO) * rand01(bs, 268u); }
+    nb.tb = vec4f(rg, p.tb.yzw);
   }
   return nb;
 }

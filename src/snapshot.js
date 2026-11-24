@@ -175,6 +175,7 @@ export function settingObjects(M) {
     ...(M.mutation ? { 'mutation.params': M.mutation.params } : {}),   // step M2 (old snapshots: today's drift x 1, the defaults)
     ...(M.dup ? { 'dup.params': M.dup.params } : {}),                 // step G2 (old snapshots: duplication off, as they ran)
     ...(M.motors ? { 'motors.params': M.motors.params } : {}),       // step S2 (old snapshots: flagella and cilia off, as they ran)
+    ...(M.senses ? { 'senses.params': M.senses.params } : {}),       // step P3 (old snapshots: the senses off, as they ran)
     ...(M.pigments ? { 'pigments.params': M.pigments.params } : {}),   // step N1: light needs matter
     ...(M.water ? { 'water.params': M.water.params } : {}),           // step N1: caustic light, currents
     ...(M.perfusion ? { 'perfusion.params': M.perfusion.params } : {}),   // perfusion (src/perfusion.js)
@@ -455,7 +456,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     // step S2: one from before flagella and cilia (cells of 92 words, genomes of 168) loads with the motor words 0 (no motors, the phase at 0)
     // and with flagella and cilia OFF, so it runs on as it was saved
     const oldS2 = S.layout.cellWords === 92 && S.layout.bioWords === 168;
-    const widen = oldC10 || oldC12 || oldC13 || oldC12e || oldT1 || oldT1b || oldP1 || oldG2 || oldS2;
+    // step P3: one from before the senses (cells of 94 words, genomes of 180) loads with the taste words 0 (no dials, range 0, nothing tasted)
+    // and with the nose, the taste, the clump test and shared armour OFF, so it runs on as it was saved
+    const oldP3 = S.layout.cellWords === 94 && S.layout.bioWords === 180;
+    const widen = oldC10 || oldC12 || oldC13 || oldC12e || oldT1 || oldT1b || oldP1 || oldG2 || oldS2 || oldP3;
     if (!widen && (S.layout.cellWords !== CELL_FLOATS || S.layout.bioWords !== BIO_FLOATS)) {
       throw new Error(`snapshot layout (cell ${S.layout.cellWords}, bio ${S.layout.bioWords} words) does not match this page (${CELL_FLOATS}, ${BIO_FLOATS})`);
     }
@@ -591,6 +595,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     }
     if (opts.settings !== false && M.mutation && !(S.settings && S.settings['mutation.params'])) {
       Object.assign(M.mutation.params, { scale: 1, rare: false });   // step M2: today's copying (drift x 1), as it ran
+    }
+    if (opts.settings !== false && M.senses && !(S.settings && S.settings['senses.params'])) {
+      Object.assign(M.senses.params, { nose: false, taste: false, tasteNull: false, clump: false, armour: false });   // step P3
+      notes.push('saved before step P3: the nose as in N2, no taste, no clump test, no shared armour (as it ran)');
     }
     if (opts.settings !== false && M.dup && !(S.settings && S.settings['dup.params'])) {
       Object.assign(M.dup.params, { on: false, null: false });   // step G2

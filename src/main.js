@@ -162,6 +162,11 @@
 //               ever engulfed); ?kinsparenull=1 kinship ignored (the sparing gene drifts without effect); knobs ?sizeratio= ?drive= ?holdbase=
 //               ?wallarm= ?stiffarm= ?wraptime= ?digesttime= ?startrate= ?batstart= ?wrapcost= ?startcost= ?wrapshare= ?batshare= ?predcensus=;
 //               ?predmark=1 the machinery's mark of engulf-capable cells; the founders' wild group 'engulf' (?founders=wild) draws the genes
+//   ?p3=0         step P3, cells that sense cells (src/senses.js): every part off (exactly as before P3); ?nose=0 the smell as in N2 (else a relative
+//               gradient, averaged over ?nosetau= s, soft response ?nosehalf= ?fuelfloor=); ?taste=0 no taste dials (?tastenull=1 their NEUTRAL
+//               control: the dials and range drift, nothing steers, nothing is paid; knobs ?tastespeed= ?tastehalf= ?rangegain= ?rangecost=);
+//               ?clump=0 the engulf size test by the prey alone (else its glued group; ?tug=); ?sharedarmour=0 the wall on every side (?kinshare=);
+//               ?p3census= ?p3near= (rules panel, Cells that sense cells)
 //   ?flagella=0   step S2: no flagella; ?cilia=0 no cilia (both 0: exactly as before S2); ?flagellanull=1 ?cilianull=1 their NEUTRAL controls
 //               (the genes drift, nothing acts, nothing is paid); ?mogrn=0 ?mowater=0 ?modipole=0 ?mopump=0 ?mocouple=0 ?mosteer=0 ?motorque=0
 //               one part off; knobs ?swim= ?steer= ?arm= ?dipole= ?swimdrift= ?ciliapush= ?beathz= ?couple= ?lag= ?swimcost= ?ciliaup=
@@ -579,6 +584,18 @@ async function boot() {
       }
       if (params.has('modraw')) ML.on = flag('modraw');
     }
+    {   // step P3: cells that sense cells
+      const PP = cells.senses.params;
+      if (params.get('p3') === '0') Object.assign(PP, { nose: false, taste: false, clump: false, armour: false });   // every part off
+      for (const [q, k] of [['nose', 'nose'], ['taste', 'taste'], ['tastenull', 'tasteNull'], ['clump', 'clump'], ['sharedarmour', 'armour']]) {
+        if (params.has(q)) PP[k] = flag(q);
+      }
+      for (const [q, k] of [['nosetau', 'tau'], ['nosehalf', 'noseHalf'], ['fuelfloor', 'fuelFloor'], ['tastespeed', 'tasteSpeed'], ['tastehalf', 'tasteHalf'],
+        ['rangegain', 'rangeGain'], ['rangecost', 'rangeCost'], ['tug', 'tug'], ['kinshare', 'kinShare'], ['p3census', 'censusEvery'], ['p3near', 'near']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) PP[k] = v;
+      }
+    }
     {   // step C13: fields as genes and guides
       const GP = cells.guides.params;
       for (const [q, k] of [['fgenes', 'genes'], ['gateglue', 'glue'], ['gatepump', 'pump'], ['gateengine', 'engine'], ['gatediv', 'div'],
@@ -851,7 +868,7 @@ async function boot() {
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
     kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, dup: cells.dup, mutation: cells.mutation, perfusion, glue: cells.glue, stir: water.stir, obstacles,
-    spindle: cells.spindle, carbon: matter.carbon, carbonCells: cells.eat.carbon, motors: cells.motors, flow };
+    spindle: cells.spindle, carbon: matter.carbon, carbonCells: cells.eat.carbon, motors: cells.motors, flow, senses: cells.senses };
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.warfare = new Warfare(window.moire);     // step T1c: the chemical warfare census (lineage borders against interiors)
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
@@ -1161,7 +1178,8 @@ ${cells.dup.panelLine(compact)}
 ${cells.mutation.panelLine(compact)}
 ${cells.glue.panelLine(compact)}
 ${cells.spindle.panelLine(compact)}
-${cells.motors.panelLine(compact)}${ELECTRONS ? `
+${cells.motors.panelLine(compact)}
+${cells.senses.panelLine(compact)}${ELECTRONS ? `
 ${matter.vents.panelLine(compact)}` : ''}${CARBON ? `
 ${matter.carbon.panelLine(compact)}
 ${cells.eat.carbon.panelLine(compact)}` : ''}
@@ -1272,6 +1290,7 @@ function drawOverlay() {
     ...cells.glue.overlayLines(),
     ...cells.spindle.overlayLines(),
     ...cells.motors.overlayLines(),
+    ...cells.senses.overlayLines(),
     ...cells.guides.overlayLines(),
     ...matter.oil.overlayLines(),
     neon.overlayLine(),

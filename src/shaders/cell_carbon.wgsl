@@ -407,6 +407,14 @@ fn cb_smell(pi: u32) -> f32 {
   return v;
 }
 
+/** Step P3, the taste: the ladder's channel j (0..4; 4 the CO2-like) at pixel pi, in counts (0 without carbon). */
+fn cb_ladder_at(j: u32, pi: u32) -> f32 {
+  if (CARBON_ON == 0u) { return 0.0; }
+  let cur = cb_cur();
+  if (cur == 0u) { return 0.0; }
+  return f32(max(mg[cur - LEDGER_WORDS + j * EP.n + pi], 0));
+}
+
 /**
  * Step C15g (CBF_SMELLMUD), HUNGRY CELLS SMELL THE MUD: the tar's carbons at a corner's pixel pi, each weighed as one fuel hand of the ladder
  * (what a free t releases from it, CBP.e.w: cb_smell's unit) x the cell's HUNGER, the share of its body's want it lacks (hb: 0..1), as the

@@ -244,6 +244,13 @@ struct EatP {
   // ---- step G2, gene duplication (src/dup.js) ----
   g2: vec4f,               // x DUP_* bits (u32: the copies act); step S2 (src/motors.js): y the MO_* bits (u32), z the motor proteins a
                            // full flagellum wants (in units of expressed engine rate, as the enzymes' kEnz), w ... full cilia on six free sides
+  // ---- step P3, cells that sense cells (src/senses.js writeEat) ----
+  p3: array<vec4f, 3>,     // [0] x the P3_* bits (u32, as Fields.p3a.x); y the nose's low-pass share per tick (1 - e^(-dt / tau)); z the fuel
+                           //     smell's FLOOR (energy per R^2: d log (c + floor)); w the taste's upkeep (heat counts per tick per unit of
+                           //     |dial| at range 0, x e^range)
+                           // [1] the taste's floors at range 0 (the dish's mean, per R^2, / the global range knob): x OXYGEN (free t), y
+                           //     EXHAUST (CO2-like carbon), z SPILL (free G), w HEAT (temperature)
+                           // [2] x SHARED ARMOUR: the share of the crust wall a side joined to a neighbour by a junction still wants; y z w spare
 };
 // ---- step C12g, MEMBRANES MODULATE ION FLOW (src/ions.js). The lipid BILAYER blocks free ions (charged atoms: g t G T and the excited
 // g* t*), derived from its make-up: per side the intact share (its integrity: soap + the oil between its tails over what the thickness
@@ -1591,6 +1598,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
     }
     var gr = vec2f(0.0);
     var rr = 0.0;
+    var vsum = 0.0;
     // step C15g (CBF_SMELLMUD): the cell's hunger for body carbon (the share of its body's want it lacks), for the mud's smell
     var hunger = 0.0;
     if (CARBON_ON != 0u && cb_bit(CBF_SMELLMUD) && cb_bit(CBF_GROW)) {
@@ -1610,13 +1618,62 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
       if (CARBON_ON != 0u) { v += cb_smell(pi) + cb_smell_mud(pi, hunger); }   // (step C15b: the ladder's fuel; step C15g: the mud, if hungry)
       gr += v * cp;
       rr += dot(cp, cp);
+      vsum += v;   // (step P3: the corners' mean, for the relative gradient)
     }
     // (e16 / 16 = energy per count; counts in a pixel / (ATOM_SCALE x its area in R^2) = units per R^2; x R: per R
     // instead of per CSS px)
     let conc = EP.R * EP.R / (ATOM_SCALE * HP.px * HP.px);
     g = 2.0 * gr / max(rr, 1e-6) * conc / 16.0 * EP.R;
+    // step P3, THE AVERAGED NOSE (P3_NOSE): the RELATIVE gradient, d log (c + floor) across the cell (per R: G / (the corners' mean + the
+    // floor)), as bacteria sense ratios, not differences; and low-passed over tau (a share p3[0].y per tick of the new reading), so the
+    // pixels' noise and the cell's own jostling average out and the steering keeps a direction
+    if ((bitcast<u32>(EP.p3[0].x) & P3_NOSE) != 0u) {
+      g = g / (vsum / 6.0 * conc / 16.0 + max(EP.p3[0].z, 1e-6));
+      g = mix(c.smell, g, clamp(EP.p3[0].y, 0.0, 1.0));
+    }
   }
   cells[i].smell = g;
+  // step P3, THE TASTE: at the same 6 corners, four substances that are already in the water, each its RELATIVE gradient (d log (c + floor),
+  // per R; the floor the dish's mean / the range knob x e^-range: a long-range nose tells fainter traces apart), times the cell's dial for
+  // it (+ approach, - flee), summed, low-passed as the nose: Cell.taste, which the next tick's step steers by. OXYGEN: free t (and t*); EXHAUST:
+  // the CO2-like end of the carbon ladder; SPILL: free G (a broken enzyme's metal); HEAT: the temperature. In the neutral control the dials
+  // are read too (the census), the step ignores them
+  var tv = vec2f(0.0);
+  let p3f = bitcast<u32>(EP.p3[0].x);
+  if ((p3f & P3_TASTE) != 0u && cur != 0u && (c.flags & CELL_ALIVE) != 0u) {
+    let dial = clamp(bio[i].ta, vec4f(-1.0), vec4f(1.0));
+    if (any(dial != vec4f(0.0))) {
+      let mb = membrane(c);
+      let conc = EP.R * EP.R / (ATOM_SCALE * HP.px * HP.px);
+      let fl = max(EP.p3[1], vec4f(1e-6)) * exp(-clamp(bio[i].tb.x, TASTE_RLO, TASTE_RHI));
+      var g0 = vec2f(0.0);
+      var g1 = vec2f(0.0);
+      var g2 = vec2f(0.0);
+      var g3 = vec2f(0.0);
+      var vs = vec4f(0.0);
+      var rr = 0.0;
+      for (var a = 0; a < 6; a++) {
+        let cp = mb.mid[a] - 0.5 * mb.edge[a];
+        let px = heat_xy(HP, c.pos + cp);
+        let pi = u32(px.y) * HP.hw + u32(px.x);
+        let v = vec4f(f32(max(mg[cur - lw + 1u * EP.n + pi], 0) + max(mg[cur - lw + 17u * EP.n + pi], 0)) * conc,
+                      cb_ladder_at(4u, pi) * conc,
+                      f32(max(mg[cur - lw + 3u * EP.n + pi], 0)) * conc,
+                      f32(max(mg[S.heatCur - lw + pi], 0)) * HP.tempScale);
+        vs += v;
+        g0 += v.x * cp;
+        g1 += v.y * cp;
+        g2 += v.z * cp;
+        g3 += v.w * cp;
+        rr += dot(cp, cp);
+      }
+      let tk = 2.0 * EP.R / max(rr, 1e-6);
+      let tmn = vs / 6.0 + fl;
+      tv = tk * (dial.x * g0 / tmn.x + dial.y * g1 / tmn.y + dial.z * g2 / tmn.z + dial.w * g3 / tmn.w);
+    }
+    tv = mix(c.taste, tv, clamp(EP.p3[0].y, 0.0, 1.0));
+  }
+  cells[i].taste = tv;
   // step C6b: the substrate's screened potential phi at the same 6 corners (bilinear), its gradient across the cell (phi
   // per R), for the next tick's step: a charged cell is pushed down (+) or up (-) it
   var ef = vec2f(0.0);
@@ -2290,6 +2347,14 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     let wW = select(0.0, want * clamp(gl.x, 0.0, 1.0), lipOn);            // crust (a full wall: as much as the bilayer)
     let wWh = wW * clamp(gl.z, 0.0, 1.0);                                  // ... of it heavy (LL)
     let wWl = wW - wWh;                                                    // ... light (ll)
+    // step P3, SHARED ARMOUR (P3_ARMOUR): a side joined to a neighbour by a junction (formed, not torn: the G0 word) is sheltered, it wants
+    // only p3[2].x of the wall; the exposed sides keep the whole wall. The wall's material and its building are then paid where it faces the
+    // dish (a clump's outer ring armours, its core stays soft); a wall a side no longer wants is shed back into the dish, exact
+    var wshl = array<f32, 6>(1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+    if ((bitcast<u32>(EP.p3[0].x) & P3_ARMOUR) != 0u) {
+      let jf = jn_formed(c.kind);
+      for (var k = 0u; k < 6u; k++) { if (((jf >> k) & 1u) != 0u) { wshl[k] = clamp(EP.p3[2].x, 0.0, 1.0); } }
+    }
     let pG = clamp(0.5 + 0.5 * gl.y, 0.0, 1.0);                            // the head gene: the share of + heads (glL)
     let m1Heads = (m1_flags() & M1F_OILSOAP) != 0u && m[0] + m[1] > 0;     // step M1: heads in the stock (oil may wait for one)
     if (lipOn && cur != 0u) {
@@ -2365,8 +2430,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         for (var k = 0u; k < 6u; k++) {
           let S = f32(lpm[LK_GP][k] + lpm[LK_TM][k]);
           shB += max(wS - S, 0.0) + max(min(wO, EP.lp[5].y * max(S, wS)) - f32(lpm[LK_OIL][k]), 0.0);
-          shW.x += max(wWl - f32(lpm[LK_CL][k]), 0.0);
-          shW.y += max(wWh - f32(lpm[LK_CH][k]), 0.0);
+          shW.x += max(wWl * wshl[k] - f32(lpm[LK_CL][k]), 0.0);
+          shW.y += max(wWh * wshl[k] - f32(lpm[LK_CH][k]), 0.0);
         }
         let kg = EP.lp[5].x * EP.dt * bitcast<f32>(flux[fo + 39u]);   // (step T1a: through the free sides only)
         let needl = max(shB - f32(max(m[MB_CH_L], 0)), 0.0);  // linkers the stock lacks for that bilayer
@@ -2391,9 +2456,9 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           let k0 = pcg(rs + 0x3b9aca07u) % 6u;
           for (var j = 0u; j < 6u; j++) {
             let k = (k0 + j) % 6u;
-            let a = min(i32(ceil(max(wWl - f32(lpm[LK_CL][k]), 0.0))), forW.x - dw.x);
+            let a = min(i32(ceil(max(wWl * wshl[k] - f32(lpm[LK_CL][k]), 0.0))), forW.x - dw.x);
             lpm[LK_CL][k] += a; dw.x += a;
-            let b2 = min(i32(ceil(max(wWh - f32(lpm[LK_CH][k]), 0.0))), forW.y - dw.y);
+            let b2 = min(i32(ceil(max(wWh * wshl[k] - f32(lpm[LK_CH][k]), 0.0))), forW.y - dw.y);
             lpm[LK_CH][k] += b2; dw.y += b2;
           }
           atomicAdd(&wlp[LC_GRAZE_W], dw.x + dw.y);
@@ -2514,8 +2579,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         let hs = pcg(rs + k * 0x7feb352du + 0x3c6ef372u);
         rS[k] = max(i32(floor(kb * max(wS - S, 0.0) + u01(hs))), 0);
         rO[k] = max(i32(floor(kb * max(min(wO, EP.lp[5].y * max(S, wS)) - f32(lpm[LK_OIL][k]), 0.0) + u01(pcg(hs)))), 0);
-        rWl[k] = max(i32(floor(kr * max(wWl - f32(lpm[LK_CL][k]), 0.0) + u01(pcg(hs + 1u)))), 0);
-        rWh[k] = max(i32(floor(kr * max(wWh - f32(lpm[LK_CH][k]), 0.0) + u01(pcg(hs + 2u)))), 0);
+        rWl[k] = max(i32(floor(kr * max(wWl * wshl[k] - f32(lpm[LK_CL][k]), 0.0) + u01(pcg(hs + 1u)))), 0);
+        rWh[k] = max(i32(floor(kr * max(wWh * wshl[k] - f32(lpm[LK_CH][k]), 0.0) + u01(pcg(hs + 2u)))), 0);
         tS += rS[k]; tO += rO[k]; tWl += rWl[k]; tWh += rWh[k];
       }
       let spS = i32(EP.lp[3].x);
@@ -2682,7 +2747,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         let xs = f32(S) - EP.mb3.x * wS - 1.0;
         let qs = select(LK_TM, LK_GP, f32(lpm[LK_GP][k]) > pG * f32(S));
         for (var q = 0u; q < 5u; q++) {
-          var lim = EP.mb3.x * select(wWh, wWl, q == LK_CL);
+          var lim = EP.mb3.x * select(wWh, wWl, q == LK_CL) * select(1.0, wshl[k], q == LK_CL || q == LK_CH);   // (step P3: shared armour)
           if (q == LK_OIL) {
             lim = min(EP.mb3.x * wO, EP.lp[5].y * f32(S));
             // step M1: with heads in the stock, oil for the soap still short waits for its head (the builder above)
@@ -3143,6 +3208,11 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       var pcu = 0.0;
       if ((puf & PUF_ON) != 0u) { pcu = EP.pu1.x * (min(max(gpu.z, 0.0), EP.pu0.w) + min(max(gpu.w, 0.0), EP.pu0.w)); }
       cost += pcu;
+      // step P3: the TASTE's receptors, p3[0].w per tick per unit of |dial|, x e^range (a long-range nose costs more); not in the neutral control
+      if ((bitcast<u32>(EP.p3[0].x) & (P3_TASTE | P3_NULL)) == P3_TASTE) {
+        let td = abs(clamp(bio[i].ta, vec4f(-1.0), vec4f(1.0)));
+        cost += EP.p3[0].w * (td.x + td.y + td.z + td.w) * exp(clamp(bio[i].tb.x, TASTE_RLO, TASTE_RHI));
+      }
       let pay = clamp(i32(floor(cost + u01(pcg(rs + 0x0b4e0ef3u)))), 0, bat);
       if (pay > 0) {
         bat -= pay;

@@ -239,7 +239,7 @@ export class Flow {
       const C = this.cells, d = C.device, n = C.count, R = C.R;
       const [bioAB, cellAB] = await Promise.all([readBuffer(d, C.bioBuf[C.bioCur], 0, n * BIO_FLOATS * 4), readBuffer(d, C.cellBuf, 0, n * CELL_FLOATS * 4)]);
       const g = new Float32Array(bioAB), f = new Float32Array(cellAB), u = new Uint32Array(cellAB);
-      const half = (C.eat && C.eat.params.smellHalf) || 0.05;
+      const half = C.senses && C.senses.params.nose ? C.senses.params.noseHalf : ((C.eat && C.eat.params.smellHalf) || 0.05);   // (step P3: the averaged nose's units)
       const springs = this.matter.springs.filter((s) => (s.rate ?? 1) > 0 && !s.drop);
       const near2 = (this.params.near * R) ** 2;
       let N = 0, mot = 0, flag = 0, cil = 0, chemo = 0, chemo2 = 0, sm = 0, feel = 0, align = 0, nAlign = 0, speed = 0, nearN = 0, step = 0, nStep = 0;

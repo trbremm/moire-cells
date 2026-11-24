@@ -1,7 +1,7 @@
 // ===== cell_common.wgsl: the cells' state, the simulation uniforms and the neighbour grid =====
 // Not compiled on its own: src/cells.js prepends field_common.wgsl and then this file to every cell shader.
 //
-// Cells live in a fixed-capacity storage buffer (struct Cell, 376 bytes since step S2, 368 since step P1, 352 since step C12e, 336 since step C13, 312 since step C12b, 288 since C10, 256 since C7; keep in step with CELL_* in
+// Cells live in a fixed-capacity storage buffer (struct Cell, 384 bytes since step P3, 376 since step S2, 368 since step P1, 352 since step C12e, 336 since step C13, 312 since step C12b, 288 since C10, 256 since C7; keep in step with CELL_* in
 // src/cells.js, and CELL_FLOATS in heat.wgsl). Their order never changes, so drawing order is stable and a cell keeps its index.
 // Step C9: Sim.count is the CAPACITY; a slot is a live cell while its flags have CELL_ALIVE. The grid sorts the dead slots
 // into one more bucket after the last grid cell (cell_grid.wgsl), so sorted[0 .. starts[gw gh]) are the live cells and the
@@ -122,6 +122,10 @@ struct Cell {
   motW: u32,        // what the motors did this tick (the step; the drawing, the census): bits 0..7 the flagellum's thrust as acted (unorm, x
                     // the swim speed at gene 1), 8..15 the cilia's beat as acted (unorm), 16..21 the FREE sides the cilia beat on (bit k: side
                     // k touches no neighbour), 24..31 spare
+  // ---- step P3, cells that sense cells (src/senses.js; the record is 384 bytes since P3) ----
+  taste: vec2f,     // the TASTE the membrane's corners smelled (the eat pass's plan, low-passed over Fields' tau: the averaged nose): the taste
+                    // dials (Bio.ta) x each substance's RELATIVE gradient (d log c across the cell, per R; the sensitivity by the range gene),
+                    // summed; the next tick's step steers the crawl (and a swimmer's front) along it. 0 while the taste is off
 };
 // step P1: Cell.eng and Cell.engBy (src/predators.js)
 const ENG_IDLE: u32 = 0u;
@@ -155,6 +159,8 @@ const PS_ALONE: u32 = 6u;        // ... of them holding no glue to other neighbo
 const PS_HOLD: u32 = 7u;         // ... sum of their hold x 1000
 const PS_AREA: u32 = 8u;         // ... sum of their area in R^2 x 1000
 const PS_KINSUM: u32 = 9u;       // ... sum of their kinship to the predator x 1000
+const PS_TUG: u32 = 10u;         // step P3: ticks a wrap was held at the tug (its prey's glued group too big: it pulls at it meanwhile)
+const PS_GLUED: u32 = 11u;       // step P3: the junctions (formed, not torn) of the cells engulfed, summed: how glued the eaten were
 const PZ_N: u32 = 16u;           // census: live cells
 const PZ_E: u32 = 17u;           // ... sum of the engulf gene x 1000
 const PZ_E2: u32 = 18u;          // ... its square x 1000
@@ -500,6 +506,12 @@ struct Bio {
                         // back along the front, +-1 round the body: the cell spins); z STATE, not a gene: the cilia's BEAT PHASE (rad, 0..2 pi,
                         // inherited); w step N2: the CHEMOTAXIS gene, a log factor on the smell's gain (0 = as before; -3..1.5; src/flow.js)
   mg: vec4f,            // the gene network's 19th output (FLAGELLUM: x its gain, y its regulator) and 20th (CILIA: z its gain, w its regulator)
+  // ---- step P3: CELLS THAT SENSE CELLS, the taste (src/senses.js; README "Step P3"). Words 180..187 ----
+  ta: vec4f,            // the TASTE DIALS, -1..1 each (+ approach: crawl up its gradient; - flee: down it; founders 0): x OXYGEN (free t: the light
+                        // eaters' waste, a poison), y EXHAUST (the CO2-like end of the carbon ladder: breathers' waste), z SPILL (free G: the metal
+                        // of broken enzymes, set free where a cell died, burst or was digested), w HEAT (the temperature: busy cells, digestion)
+  tb: vec4f,            // x the RANGE (a log sensitivity, -2..2; founders 0): how faint a trace still counts (the floor below which a
+                        // concentration is not told apart is the dish's mean x e^-range), costing upkeep x e^range; y z w spare
 };
 // step T1b: the gene network's outputs (Bio.gu, Bio.go): each output multiplies an existing gene (its base level) by exp(u x) (at most
 // GRN_FMAX); a cell switches an engine off by expressing a regulator its output reads with a strongly negative gain
@@ -655,7 +667,7 @@ const MG_CHAN: u32 = 10u;         // the stretch tolerance, ion channels and str
 const MG_KIN: u32 = 11u;          // the marker's display, kin channels, tolerance, ENGULF, kin sparing (mark.w, kin)
 const MG_SHAPE: u32 = 12u;        // the elongation gene (relay.y)
 const MG_MOTOR: u32 = 13u;        // flagellum and cilia (mo, mc.xy)
-const MG_CHEMO: u32 = 14u;        // the chemotaxis gene (mc.w)
+const MG_CHEMO: u32 = 14u;        // the chemotaxis gene (mc.w); step P3: the taste dials and the range (ta, tb)
 const MG_GRN: u32 = 15u;          // the gene network (cell_grn.wgsl: its weights, biases, gains, wiring, duplication)
 const MG_DUP: u32 = 16u;          // gene duplication: the copies' drift, a duplication, a deletion (dup_birth)
 const MG_FID: u32 = 17u;          // the fidelity gene (conv.w)
@@ -677,7 +689,7 @@ fn mut_merge(p: Bio, m: Bio, mask: u32) -> Bio {
   if (mg_has(mask, MG_KIN)) { b.mark.w = m.mark.w; b.kin = m.kin; }
   if (mg_has(mask, MG_SHAPE)) { b.relay.y = m.relay.y; }
   if (mg_has(mask, MG_MOTOR)) { b.mo = m.mo; b.mc = vec4f(m.mc.xy, b.mc.zw); }
-  if (mg_has(mask, MG_CHEMO)) { b.mc.w = m.mc.w; }
+  if (mg_has(mask, MG_CHEMO)) { b.mc.w = m.mc.w; b.ta = m.ta; b.tb = m.tb; }   // (step P3: the taste dials and range with the nose)
   return b;
 }
 // step C6c: the honeycomb stiffness a membrane's material gives (genetic elasticity): heavy and thick = stiff, light and thin
@@ -1336,8 +1348,22 @@ struct Fields {
                     // of it); w the beat's frequency (Hz)
   mo2: vec4f,       // x the cilia's COUPLING at gene 1 (rad / s); y the LAG a beat's push takes to reach a neighbour, rad per R along the
                     // stroke (the metachronal wave's: 0 = in step); z the swim's battery cost per unit of its work (x crawlCost); w the
-                    // cilia's upkeep, energy per s at beat 1 on six free sides
+                    // cilia's upkeep, energy per s at beat 1 on six free sides  // ---- step P3, cells that sense cells (src/senses.js writeFields) ----
+  p3a: vec4f,       // x bits P3_* (u32); y the TASTE's crawl speed at a strong taste (R / s); z the taste's half (relative gradient per R
+                    // at which the steering is half its full); w the NOSE's half for the fuel smell (relative gradient per R)
+  p3b: vec4f,       // x the TUG: the share of a wrap a predator gets to while its prey's glued group is too big (it pulls at it meanwhile);
+                    // y spare; z w spare
 };
+// step P3: Fields.p3a.x bits (keep in step with P3 in src/senses.js)
+const P3_NOSE: u32 = 1u;         // the averaged nose: the fuel smell is a relative gradient, low-passed (else as in step N2)
+const P3_TASTE: u32 = 2u;        // the taste dials steer the crawl (and a swimmer's front)
+const P3_NULL: u32 = 4u;         // ... their NEUTRAL control: the dials and range drift, nothing steers, nothing is paid
+const P3_CLUMP: u32 = 8u;        // EAT THE CLUMP OR NOTHING: the engulf size test counts the prey's glued group (junctions)
+const P3_ARMOUR: u32 = 16u;      // SHARED ARMOUR: the crust wall is built (and counted as armour) on the sides without a junction
+const TASTE_RLO: f32 = -2.0;
+const TASTE_RHI: f32 = 2.0;
+// step P3: the junctions FORMED on a cell's sides (bits 0..5), torn ones not counted
+fn jn_formed(w: u32) -> u32 { return (w >> JN_FORM_SHIFT) & ~w & 0x3fu; }
 // step N2: Fields.g2.w bits (keep in step with CHEMO in src/flow.js): the smell's gain is a gene (Bio.mc.w, e^gene); NULL: it drifts, acts x 1
 const CHEMO_ON: u32 = 1u;
 const CHEMO_NULL: u32 = 2u;

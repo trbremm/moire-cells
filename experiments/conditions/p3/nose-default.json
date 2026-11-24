@@ -1,0 +1,80 @@
+{
+ "batch": "p3-nose-default",
+ "runs": [
+  {
+   "name": "p3-nosedef-on",
+   "description": "default s3, chemo gene 1.5 for all (as N2's nose test)",
+   "query": {
+    "seed": 3,
+    "genes": "chemo:1.5",
+    "flowcensus": 5,
+    "p3census": 5
+   },
+   "duration": 152,
+   "sample_every": 30,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 60,
+     "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})"
+    },
+    {
+     "t": 90,
+     "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})"
+    },
+    {
+     "t": 120,
+     "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})"
+    },
+    {
+     "t": 150,
+     "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 150,
+     "name": "end"
+    }
+   ]
+  },
+  {
+   "name": "p3-nosedef-off",
+   "description": "default s3, chemo gene 1.5 for all (as N2's nose test)",
+   "query": {
+    "seed": 3,
+    "genes": "chemo:1.5",
+    "flowcensus": 5,
+    "p3census": 5,
+    "nose": 0
+   },
+   "duration": 152,
+   "sample_every": 30,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 60,
+     "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})"
+    },
+    {
+     "t": 90,
+     "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})"
+    },
+    {
+     "t": 120,
+     "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})"
+    },
+    {
+     "t": 150,
+     "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 150,
+     "name": "end"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,104 @@
+{
+ "batch": "p3-nose",
+ "runs": [
+  {
+   "name": "p3-nose-on",
+   "description": "nose on: 60 scattered cells, chemo gene 1.5, a vent spring in the middle, crawling free",
+   "query": {
+    "preset": "lab",
+    "cells": 60,
+    "spread": "scatter",
+    "genes": "chemo:1.5",
+    "patchy": 0,
+    "seed": 3,
+    "p3census": 5,
+    "flowcensus": 5
+   },
+   "duration": 152,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 0,
+     "js": "const v=moire.cells.view; moire.matter.addSpring(v.cssW*0.5, v.cssH*0.5, 'heavy', 1e9, {rate: 40}); moire.eat.params.pay=false; return 'spring'"
+    },
+    {
+     "t": 30,
+     "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})"
+    },
+    {
+     "t": 60,
+     "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})"
+    },
+    {
+     "t": 90,
+     "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})"
+    },
+    {
+     "t": 120,
+     "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})"
+    },
+    {
+     "t": 150,
+     "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 150,
+     "name": "end"
+    }
+   ]
+  },
+  {
+   "name": "p3-nose-off",
+   "description": "the same with the N2 nose",
+   "query": {
+    "preset": "lab",
+    "cells": 60,
+    "spread": "scatter",
+    "genes": "chemo:1.5",
+    "patchy": 0,
+    "seed": 3,
+    "p3census": 5,
+    "flowcensus": 5,
+    "nose": 0
+   },
+   "duration": 152,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 0,
+     "js": "const v=moire.cells.view; moire.matter.addSpring(v.cssW*0.5, v.cssH*0.5, 'heavy', 1e9, {rate: 40}); moire.eat.params.pay=false; return 'spring'"
+    },
+    {
+     "t": 30,
+     "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})"
+    },
+    {
+     "t": 60,
+     "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})"
+    },
+    {
+     "t": 90,
+     "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})"
+    },
+    {
+     "t": 120,
+     "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})"
+    },
+    {
+     "t": 150,
+     "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 150,
+     "name": "end"
+    }
+   ]
+  }
+ ]
+}

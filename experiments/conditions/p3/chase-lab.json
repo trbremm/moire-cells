@@ -1,0 +1,186 @@
+{
+ "batch": "p3-chase",
+ "runs": [
+  {
+   "name": "p3-chase-taste",
+   "description": "default s3: 25 hand-made swimming predators at 60 s that approach oxygen, exhaust and heat (range 1)",
+   "query": {
+    "seed": 3,
+    "p3census": 5,
+    "predcensus": 5
+   },
+   "duration": 242,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 60,
+     "js": "await moire.predators.place(25, {\"engulf\": 1, \"flagellum\": 0.5, \"taste\": [1, 1, 0, 1], \"range\": 1}); return 'placed'"
+    },
+    {
+     "t": 90,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+    },
+    {
+     "t": 120,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+    },
+    {
+     "t": 150,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+    },
+    {
+     "t": 180,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+    },
+    {
+     "t": 210,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+    },
+    {
+     "t": 240,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 120,
+     "name": "t120"
+    },
+    {
+     "t": 240,
+     "name": "t240"
+    }
+   ],
+   "clips": [
+    {
+     "t": 150,
+     "until": 165,
+     "speed": 4
+    }
+   ]
+  },
+  {
+   "name": "p3-chase-blind",
+   "description": "the same predators without a taste",
+   "query": {
+    "seed": 3,
+    "p3census": 5,
+    "predcensus": 5
+   },
+   "duration": 242,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 60,
+     "js": "await moire.predators.place(25, {\"engulf\": 1, \"flagellum\": 0.5}); return 'placed'"
+    },
+    {
+     "t": 90,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+    },
+    {
+     "t": 120,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+    },
+    {
+     "t": 150,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+    },
+    {
+     "t": 180,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+    },
+    {
+     "t": 210,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+    },
+    {
+     "t": 240,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 120,
+     "name": "t120"
+    },
+    {
+     "t": 240,
+     "name": "t240"
+    }
+   ],
+   "clips": [
+    {
+     "t": 150,
+     "until": 165,
+     "speed": 4
+    }
+   ]
+  },
+  {
+   "name": "p3-chase-flee",
+   "description": "tasting predators; every resident flees spill (free G) and heat (range 1)",
+   "query": {
+    "seed": 3,
+    "p3census": 5,
+    "predcensus": 5
+   },
+   "duration": 242,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 55,
+     "js": "await moire.genome.setAll({\"tasteSpill\": -1, \"tasteHeat\": -0.5, \"range\": 1}); return 'prey dials'"
+    },
+    {
+     "t": 60,
+     "js": "await moire.predators.place(25, {\"engulf\": 1, \"flagellum\": 0.5, \"taste\": [1, 1, 0, 1], \"range\": 1}); return 'placed'"
+    },
+    {
+     "t": 90,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+    },
+    {
+     "t": 120,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+    },
+    {
+     "t": 150,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+    },
+    {
+     "t": 180,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+    },
+    {
+     "t": 210,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+    },
+    {
+     "t": 240,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 120,
+     "name": "t120"
+    },
+    {
+     "t": 240,
+     "name": "t240"
+    }
+   ],
+   "clips": [
+    {
+     "t": 150,
+     "until": 165,
+     "speed": 4
+    }
+   ]
+  }
+ ]
+}

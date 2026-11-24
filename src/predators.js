@@ -42,7 +42,7 @@ export const P1_CLEAR = 16;     // the census's first word (16 words cleared eve
 const P1F = { ON: 1, NULL: 2, KINNULL: 4 };
 const LG_T1 = 31488;            // heat_common.wgsl: the T1a block; its counters at + 512 (16 counters x 16 slots), P1's are 4..13
 const PC = ['paid', 'atoms', 'lipid', 'bat', 'heat', 'spill', 'meals', 'wrapm', 'void', 'orphan'];
-const PS = ['start', 'lost', 'held', 'poor', 'eaten', 'kin', 'alone', 'hold', 'area', 'kinSum'];
+const PS = ['start', 'lost', 'held', 'poor', 'eaten', 'kin', 'alone', 'hold', 'area', 'kinSum', 'tug', 'glued'];   // (step P3: tug, glued)
 const PZ = ['n', 'e', 'e2', 's', 's2', 'carry', 'sparer', 'wrap', 'digest', 'wrapped', 'expr', 'sc', 'near', 'hold', 'glue', 'arm'];
 const C_FLAGS = 9, C_NBR = 60, C_ENGBY = 89;
 

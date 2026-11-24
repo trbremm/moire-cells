@@ -384,6 +384,14 @@ export function summary(g, o = 0, lipidsOn = true) {
   if (g[o + 80] > 0.3) body.push('opens kin channels');   // step T1a
   if (g[o + 79] < 0.3 && g.length > o + 79) body.push('hides its marker');
   if (g[o + 82] >= 0.25) body.push(`engulfs ${g[o + 82].toFixed(2)}${g[o + 83] >= 0.25 ? `, spares kin ${g[o + 83].toFixed(2)}` : ''}`);   // step P1
+  // step P3: the taste dials (Bio.ta, words 180..183) and the range (184), in words: what it follows (+) or flees (-)
+  if (g.length > o + 184) {
+    const names = ['oxygen', 'exhaust', 'spilled metal', 'heat'], fol = [], fle = [];
+    for (let k = 0; k < 4; k++) { const d = g[o + 180 + k] || 0; if (d >= 0.2) fol.push(`${names[k]} ${d.toFixed(1)}`); else if (d <= -0.2) fle.push(`${names[k]} ${(-d).toFixed(1)}`); }
+    const rg = g[o + 184] || 0, rw = rg >= 0.7 ? ', long-range nose' : rg <= -0.7 ? ', short-range nose' : '';
+    if (fol.length) body.push(`follows ${fol.join(', ')}${rw}`);
+    if (fle.length) body.push(`flees ${fle.join(', ')}${fol.length ? '' : rw}`);
+  }
   // step G1: the fidelity gene (copying errors x e^-F; founders 0), in words when it is off the founders' care
   const fid = g[o + 31] || 0;
   if (Math.abs(fid) >= 0.15) {

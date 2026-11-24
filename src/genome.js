@@ -55,6 +55,9 @@
 //          output (FLAGELLUM: x gain, y regulator) and 20th (CILIA: z gain, w regulator). Founders: no motors (thrust and beat 0), a random
 //          sign, placement within +-0.05, coupling and tilt 0, a random phase; wild founders (group 'motors') every gene over its range.
 //          Old genomes: all 0 (no motors; the phase starts at 0)
+//   ta tb  step P3, CELLS THAT SENSE CELLS (src/senses.js), words 180..187: ta the four TASTE DIALS, -1..1 (+ approach, - flee): x OXYGEN (free
+//          t), y EXHAUST (the CO2-like carbon), z SPILL (free G), w HEAT; tb x the RANGE (log sensitivity, -2..2), y z w spare. Founders 0 (std and
+//          blank: no taste, the range in the middle); wild founders (group 'taste') every dial and the range over their whole span. Old genomes 0
 //   lip    step C12b, genes of the LIPID MEMBRANE (src/lipids.js): x WALL, the crust wall wanted as a share of a full wall (0..1);
 //          y HEAD, which head the soap the cell makes carries (-1 all t: tlL, -; 1 all g: glL, +); z the wall's ROW (its heavy
 //          share, LL of ll + LL); w spare. With the lipid membranes on, memb.x (the C6c mix) is the bilayer's OIL share (oil
@@ -69,7 +72,7 @@ import { CARBON, CB_LIP } from './carbon.js';
 import { fieldDefaults, founderGates, BIO_FG } from './guides.js';
 import { stampFounderGlue } from './glue.js';
 
-export const BIO_FLOATS = 180;  // (168 until step S2's motor genes; 156 until step G2's duplicate slots and families; 40 until step C6c's membrane genes, 44 until step C7's pumps, 48 until step C10's walls, 52 until step C12b's lipids,
+export const BIO_FLOATS = 188;  // (180 until step P3's taste genes; 168 until step S2's motor genes; 156 until step G2's duplicate slots and families; 40 until step C6c's membrane genes, 44 until step C7's pumps, 48 until step C10's walls, 52 until step C12b's lipids,
                                 //  56 until step C13's field genes and gates, 76 until step T1a's marker and kin channels, 84 until step T1b's gene network)
 export const BIO_GRN = 84;      // step T1b: the gene network's first word (Bio.gx)
 export const BIO_G2 = 156;      // step G2: the duplicate slots' first word (Bio.dx; Bio.df at 160, Bio.dg at 164)
@@ -344,7 +347,16 @@ export function blankGenes(g, o = 0) {
   g[o + 73] = 1; g[o + 74] = 0; g[o + 75] = 0;                                        // push 1, stretch tolerance 0, ion channels 0
   g[o + 80] = 0;                                                                      // no kin channels
 }
-export const WILD_GROUPS = ['body', 'membrane', 'pumps', 'walls', 'lipids', 'fields', 'gates', 'kin', 'grn', 'engulf', 'shape', 'motors'];
+export const WILD_GROUPS = ['body', 'membrane', 'pumps', 'walls', 'lipids', 'fields', 'gates', 'kin', 'grn', 'engulf', 'shape', 'motors', 'taste'];
+export const BIO_TASTE = 180;   // step P3: the taste dials' first word (Bio.ta; the range at 184)
+// step P3: every founder's TASTE genes (std and blank: none, the range 0; so a taste must evolve), and WILD founders' (group 'taste'): each dial
+// anywhere in -1..1, the range anywhere in -2..2. Their own random stream (a seed's other genes stay as they were)
+export function tasteGenes(g, rng, o = 0, wild = false, groups = WILD_GROUPS) {
+  const d = [U(rng, -1, 1), U(rng, -1, 1), U(rng, -1, 1), U(rng, -1, 1)], r = U(rng, -2, 2);
+  const W = wild && groups.includes('taste'), b = o + BIO_TASTE;
+  for (let k = 0; k < 4; k++) g[b + k] = W ? d[k] : 0;
+  g[b + 4] = W ? r : 0; g[b + 5] = 0; g[b + 6] = 0; g[b + 7] = 0;
+}
 // step S2: every founder's MOTOR genes (std and blank: no motors yet, a random sign and phase, the placement near the axis; so the motors must
 // evolve), and WILD founders' (group 'motors'): the flagellum's thrust anywhere in 0..1 (half of them 0), its sign and placement over -1..1, the
 // cilia's beat anywhere in 0..1 (half of them 0), coupling and tilt over -1..1, and the gene network's 19th and 20th outputs four times in ten
@@ -433,6 +445,7 @@ export class Genome {
     this.crng = makeRng(this.seed ^ 0x63617262);   // step C15b: the founders' carbon engines' own stream
     this.srng = makeRng(this.seed ^ 0x73686170);   // step S1: the wild founders' shape genes' own stream
     this.orng = makeRng(this.seed ^ 0x6d6f746f);   // step S2: the founders' motor genes' own stream
+    this.trng = makeRng(this.seed ^ 0x74617374);   // step P3: the wild founders' taste genes' own stream
     this.founders = [];
     // live-tunable (moire.genome.params); the rule switches are keys
     this.params = {
@@ -502,6 +515,7 @@ export class Genome {
         wildS1(g, this.srng, 0, this.params.wildGroups);   // step S1
       }
       motorGenes(g, this.orng, 0, mode === 'wild', this.params.wildGroups);   // step S2 (every mode: std and blank founders without motors)
+      tasteGenes(g, this.trng, 0, mode === 'wild', this.params.wildGroups);   // step P3 (every mode: std and blank founders without a taste)
     }
     // step T1b: wild founders' markers turned a golden angle apart (no random number drawn), so in the lineage view any few surviving
     // founders show clearly different hues (their markers are strangers either way)
@@ -609,5 +623,9 @@ export function predatorGenome(opts = {}) {
   g[18] = 1.6;                                    // crawls a little more
   g[82] = Math.max(0, Math.min(1, opts.engulf ?? 1));
   g[83] = Math.max(0, Math.min(1, opts.spare ?? 0));
+  // step P3: a taste, if asked (opts.taste: [oxygen, exhaust, spill, heat], -1..1; opts.range -2..2), and a flagellum (opts.flagellum 0..1)
+  if (opts.taste) for (let k = 0; k < 4; k++) g[BIO_TASTE + k] = Math.max(-1, Math.min(1, Number(opts.taste[k]) || 0));
+  if (opts.range != null) g[BIO_TASTE + 4] = Math.max(-2, Math.min(2, Number(opts.range) || 0));
+  if (opts.flagellum != null) { g[168] = Math.max(0, Math.min(1, opts.flagellum)); g[169] = 1; g[170] = 0; }
   return g;
 }

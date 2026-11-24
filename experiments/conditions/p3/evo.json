@@ -1,0 +1,373 @@
+{
+ "batch": "p3-evo",
+ "seeds": [
+  3,
+  7
+ ],
+ "runs": [
+  {
+   "name": "p3-evo-colonies-on",
+   "description": "step P3 evolution, colonies, on",
+   "query": {
+    "p3census": 10,
+    "predcensus": 15,
+    "preset": "colonies"
+   },
+   "duration": 1202,
+   "sample_every": 30,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 300,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 600,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 900,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 1200,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "t1200"
+    },
+    {
+     "t": 1200,
+     "view": "lineage",
+     "name": "t1200-lineage"
+    }
+   ]
+  },
+  {
+   "name": "p3-evo-colonies-null",
+   "description": "step P3 evolution, colonies, null",
+   "query": {
+    "p3census": 10,
+    "predcensus": 15,
+    "preset": "colonies",
+    "tastenull": 1
+   },
+   "duration": 1202,
+   "sample_every": 30,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 300,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 600,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 900,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 1200,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "t1200"
+    },
+    {
+     "t": 1200,
+     "view": "lineage",
+     "name": "t1200-lineage"
+    }
+   ]
+  },
+  {
+   "name": "p3-evo-colonies-noclump",
+   "description": "step P3 evolution, colonies, noclump",
+   "query": {
+    "p3census": 10,
+    "predcensus": 15,
+    "preset": "colonies",
+    "clump": 0,
+    "sharedarmour": 0
+   },
+   "duration": 1202,
+   "sample_every": 30,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 300,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 600,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 900,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 1200,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "t1200"
+    },
+    {
+     "t": 1200,
+     "view": "lineage",
+     "name": "t1200-lineage"
+    }
+   ]
+  },
+  {
+   "name": "p3-evo-default-on",
+   "description": "step P3 evolution, default, on",
+   "query": {
+    "p3census": 10,
+    "predcensus": 15
+   },
+   "duration": 1202,
+   "sample_every": 30,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 300,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 600,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 900,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 1200,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "t1200"
+    },
+    {
+     "t": 1200,
+     "view": "lineage",
+     "name": "t1200-lineage"
+    }
+   ]
+  },
+  {
+   "name": "p3-evo-default-null",
+   "description": "step P3 evolution, default, null",
+   "query": {
+    "p3census": 10,
+    "predcensus": 15,
+    "tastenull": 1
+   },
+   "duration": 1202,
+   "sample_every": 30,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 300,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 600,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 900,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 1200,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "t1200"
+    },
+    {
+     "t": 1200,
+     "view": "lineage",
+     "name": "t1200-lineage"
+    }
+   ]
+  },
+  {
+   "name": "p3-evo-default-noclump",
+   "description": "step P3 evolution, default, noclump",
+   "query": {
+    "p3census": 10,
+    "predcensus": 15,
+    "clump": 0,
+    "sharedarmour": 0
+   },
+   "duration": 1202,
+   "sample_every": 30,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 300,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 600,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 900,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 1200,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "t1200"
+    },
+    {
+     "t": 1200,
+     "view": "lineage",
+     "name": "t1200-lineage"
+    }
+   ]
+  },
+  {
+   "name": "p3-evo-islands-on",
+   "description": "step P3 evolution, islands, on",
+   "query": {
+    "p3census": 10,
+    "predcensus": 15,
+    "terrain": "islands"
+   },
+   "duration": 1202,
+   "sample_every": 30,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 300,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 600,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 900,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 1200,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "t1200"
+    },
+    {
+     "t": 1200,
+     "view": "lineage",
+     "name": "t1200-lineage"
+    }
+   ]
+  },
+  {
+   "name": "p3-evo-islands-null",
+   "description": "step P3 evolution, islands, null",
+   "query": {
+    "p3census": 10,
+    "predcensus": 15,
+    "terrain": "islands",
+    "tastenull": 1
+   },
+   "duration": 1202,
+   "sample_every": 30,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 300,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 600,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 900,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 1200,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "t1200"
+    },
+    {
+     "t": 1200,
+     "view": "lineage",
+     "name": "t1200-lineage"
+    }
+   ]
+  }
+ ]
+}

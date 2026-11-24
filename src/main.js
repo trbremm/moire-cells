@@ -618,6 +618,18 @@ async function boot() {
         if (params.has(q) && Number.isFinite(v) && v >= 0) FP[k] = v;
       }
     }
+    {   // step Q1: a signal substance
+      const QP = cells.signals.params;
+      if (params.get('signal') === '0') QP.on = false;
+      for (const [q, k] of [['sigflow', 'flow'], ['junction', 'junction'], ['sigtaste', 'taste'], ['fastreg', 'fast'], ['signalnull', 'null'], ['sigmut', 'mutate']]) {
+        if (params.has(q)) QP[k] = flag(q);
+      }
+      for (const [q, k] of [['sigspread', 'spread'], ['siglife', 'life'], ['sigpower', 'power'], ['hearw', 'hearW'], ['hearj', 'hearJ'], ['taufast', 'tauFast'],
+        ['sigcensus', 'censusEvery']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) QP[k] = v;
+      }
+    }
     {   // step C13: fields as genes and guides
       const GP = cells.guides.params;
       for (const [q, k] of [['fgenes', 'genes'], ['gateglue', 'glue'], ['gatepump', 'pump'], ['gateengine', 'engine'], ['gatediv', 'div'],
@@ -890,7 +902,7 @@ async function boot() {
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
     kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, dup: cells.dup, mutation: cells.mutation, perfusion, glue: cells.glue, stir: water.stir, obstacles,
-    spindle: cells.spindle, carbon: matter.carbon, carbonCells: cells.eat.carbon, motors: cells.motors, flow, senses: cells.senses, folding: cells.folding };
+    spindle: cells.spindle, carbon: matter.carbon, carbonCells: cells.eat.carbon, motors: cells.motors, flow, senses: cells.senses, folding: cells.folding, signals: cells.signals };
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.warfare = new Warfare(window.moire);     // step T1c: the chemical warfare census (lineage borders against interiors)
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
@@ -1202,7 +1214,8 @@ ${cells.glue.panelLine(compact)}
 ${cells.spindle.panelLine(compact)}
 ${cells.motors.panelLine(compact)}
 ${cells.senses.panelLine(compact)}
-${cells.folding.panelLine(compact)}${ELECTRONS ? `
+${cells.folding.panelLine(compact)}
+${cells.signals.panelLine(compact)}${ELECTRONS ? `
 ${matter.vents.panelLine(compact)}` : ''}${CARBON ? `
 ${matter.carbon.panelLine(compact)}
 ${cells.eat.carbon.panelLine(compact)}` : ''}
@@ -1315,6 +1328,7 @@ function drawOverlay() {
     ...cells.motors.overlayLines(),
     ...cells.senses.overlayLines(),
     ...cells.folding.overlayLines(),
+    ...cells.signals.overlayLines(),
     ...cells.guides.overlayLines(),
     ...matter.oil.overlayLines(),
     neon.overlayLine(),

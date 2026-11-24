@@ -57,6 +57,7 @@ import { Mutation } from './mutation.js';
 import { Motors, STATS_S2, S2_WORDS } from './motors.js';
 import { Senses } from './senses.js';
 import { Folding } from './folding.js';
+import { Signals } from './signals.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 import { dish } from './dish.js';      // the dish's own size and R
 import { cultureLayout } from './culture.js';   // app: how a new culture is spread
@@ -373,6 +374,7 @@ export class Cells {
     this.senses = new Senses(this);       // step P3: cells that sense cells (src/senses.js)
     this.folding = new Folding(this);     // step G3: the moire genome, DNA folding (src/folding.js)
     this.genome.foldP = this.folding.params;
+    this.signals = new Signals(this);     // step Q1: a signal substance (src/signals.js)
   }
 
   static async create(device, format, medium, count, seed, cap = 0) {
@@ -396,6 +398,8 @@ export class Cells {
       loadFieldShader(d, 'src/shaders/cell_grn.wgsl', pre),   // step T1b: the gene network
     ]);
     this.heat = heat;           // step C1: the heat band (src/heat.js)
+    heat.signals = this.signals; this.signals.heat = heat;   // step Q1: the signal's blocks live in the heat buffer
+    await this.signals.init(d);
     this.eat = null;            // step C5: the cells' stock and battery (src/eat.js; made at the end of init)
     // the cells' field: plain additive blending into a float texture (signed values add up)
     const add = { srcFactor: 'one', dstFactor: 'one', operation: 'add' };
@@ -822,6 +826,7 @@ export class Cells {
     const M = this.matter;
     if (M) M.beginFrame(encoder, frame, warm);
     this.eat.beginFrame(frame, ticks);   // step C5: after the matter's, which decides the channels the cells may write into
+    this.signals.beginFrame(encoder, frame, ticks);   // step Q1: the signal's uniforms (after the heat's: the currents), the pipette's puffs
     for (let t = 0; t < ticks; t++) {
       const time = frame.time - Math.max(0, ticks - 1 - t) * frame.tickDt * (t < warm ? 0 : 1);
       this.writeSim(t, frame.tickDt, time, t === ticks - 1);
@@ -848,6 +853,7 @@ export class Cells {
       this.encodeStep(encoder, t);
       this.grn.encodeTick(encoder, t, SLOT);   // step T1b: the gene network (after the step, before the cells eat: its newborns still marked)
       this.eat.encodeTick(encoder, t, SLOT);   // step C5: the cells eat (after their step, before the dish spreads)
+      this.signals.encodeTick(encoder, t);     // step Q1: the signal spreads and fades (after the cells released, before the heat spreads)
       this.heat.encodeTick(encoder, t, M && t >= warm ? (pass) => M.encodeTick(pass, t - warm) : null);
     }
     if (M) M.endTicks(encoder);

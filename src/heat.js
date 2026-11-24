@@ -35,7 +35,7 @@ const LIGHT_COMMON_URL = 'src/shaders/light_common.wgsl';
 
 export const HEAT_COMMON_URL = 'src/shaders/heat_common.wgsl';
 export const HEAT_SCALE = 65536;          // counts per energy unit (HEAT_SCALE in heat_common.wgsl)
-export const LEDGER_WORDS = 47104;              // LEDGER_WORDS in heat_common.wgsl (46080 until step C15g; 45056 until step C15d; 43776 until step C15c; 38400 until step C15b; 32256 until step C15a; 31488 until step T1a; 30976 until step M1; 30464 on branch landscape: N1 alone; 28928 until step N1 merged; 28416 until step C12g; 28288 until step C12f; 27776 until step C12e; words 3072 on: step C3's matter ledger;
+export const LEDGER_WORDS = 47616;              // LEDGER_WORDS in heat_common.wgsl (47104 until step Q1; 46080 until step C15g; 45056 until step C15d; 43776 until step C15c; 38400 until step C15b; 32256 until step C15a; 31488 until step T1a; 30976 until step M1; 30464 on branch landscape: N1 alone; 28928 until step N1 merged; 28416 until step C12g; 28288 until step C12f; 27776 until step C12e; words 3072 on: step C3's matter ledger;
                                                 // 10240 on: step C4's chemistry; 11520 on: step C5, cells eat; 15872 on:
                                                 // step C6, engines; 19136 on: step C6b, charge; 19712 on: step C6c, the
                                                 // membrane chemistry; 20224 on: step C7, the pumps; 21760 on: step C7b,
@@ -90,6 +90,7 @@ export class Heat {
     this.eat = null;        // step C5: the cells' eating (src/eat.js), which books into this ledger too
     this.charge = null;     // step C6b: the charge field (src/charge.js): its blocks live in this buffer too
     this.water = null;      // step N1: the water (src/water.js): the caustic light and the currents, blocks in this buffer too
+    this.signals = null;    // step Q1: the signal substance (src/signals.js): its blocks are the last in this buffer
     // ledger (cumulative since the page started; energy units)
     this.tot = { work: 0, base: 0, out: 0, drag: 0, kick: 0, lin: [0, 0, 0, 0], labs: [0, 0, 0, 0], vent: 0 };   // (vent: step C12f)
     this.ledger = null;     // last snapshot: { time, moving, heat, in, out, rounding, rate }
@@ -178,7 +179,11 @@ export class Heat {
    * Blocks of n words that other bands keep in this buffer (step C3: the substances, 2 copies of 13 channels; step C6:
    * then the cells' pigments, 3 bands).
    */
-  get extraBlocks() { return (this.matter ? this.matter.blocks : 0) + (this.eat ? this.eat.blocks : 0) + (this.charge ? this.charge.blocks : 0) + (this.water ? this.water.blocks : 0); }
+  get extraBlocks() { return this.blocksBeforeSignal + (this.signals ? this.signals.blocks : 0); }
+  /** Step Q1: the extra blocks in front of the signal's (they do not depend on n). */
+  get blocksBeforeSignal() { return (this.matter ? this.matter.blocks : 0) + (this.eat ? this.eat.blocks : 0) + (this.charge ? this.charge.blocks : 0) + (this.water ? this.water.blocks : 0); }
+  /** Step Q1: word offset of the signal's blocks (behind the water's) for a grid of n pixels. */
+  signalBase(n = this.n) { return this.extraBase(n) + this.blocksBeforeSignal * n; }
   /** Step C6: word offset of the cells' pigment blocks (behind the substances'). */
   get pigOffset() { return this.extraBase() + (this.matter ? this.matter.blocks : 0) * this.n; }
   /** Step C6b: word offset of the charge's blocks (behind the pigments'): phi, then the cells' charge put down this tick. */
@@ -279,6 +284,7 @@ export class Heat {
     pass.dispatchWorkgroups(Math.ceil(O.n / 256));
     pass.end();
     if (this.matter) this.matter.encodeDrain(encoder, O.buffer, O.n);   // step C3: its atoms leave with the old dish
+    if (this.signals) this.signals.encodeDrain(encoder, O.buffer, O.n); // step Q1: its signal's energy leaves as heat
     encoder.copyBufferToBuffer(O.buffer, 0, this.buffer, 0, LEDGER_WORDS * 4);
     this.trash.push(O.buffer);
     this.old = null;
@@ -340,6 +346,7 @@ export class Heat {
     pass.end();
     if (this.matter) this.matter.encodeLedger(encoder);                  // step C3: the atoms in the dish, the order
     if (this.eat) this.eat.encodeLedger(encoder);                        // step C5: the atoms and energy in the cells
+    if (this.signals) this.signals.encodeLedger(encoder);                // step Q1: the signal's energy in the dish
     encoder.copyBufferToBuffer(this.buffer, 0, rb.buf, 0, LEDGER_WORDS * 4);
     encoder.clearBuffer(this.buffer, 0, LG.HEAT[0] * 4);                  // work, warmth, out: counted from here on
     encoder.clearBuffer(this.buffer, LG.DRAG[0] * 4, (LEDGER_WORDS - LG.DRAG[0]) * 4);   // drag, kicks
@@ -367,7 +374,7 @@ export class Heat {
       // (the matter first: step C4's chemical energy is part of the energy books)
       // (step C5: the cells' stock first, which both books include)
       // (step C6b: the charge after both, as it reads the dish's and the cells' substances)
-      if (w) { if (this.eat) this.eat.apply(r, w); if (this.matter) this.matter.apply(r, w); if (this.charge) this.charge.apply(r, w); this.apply(r, w); }
+      if (w) { if (this.eat) this.eat.apply(r, w); if (this.matter) this.matter.apply(r, w); if (this.charge) this.charge.apply(r, w); if (this.signals) this.signals.apply(r, w); this.apply(r, w); }
     }
   }
 
@@ -399,7 +406,9 @@ export class Heat {
     // step C6: the light the cells' pigments caught came in too (src/eat.js reads it from the same read-back, first)
     const PG = this.eat ? this.eat.pig : { tot: 0, rate: [0, 0, 0, 0], sum: 0 };
     // (step C12: and the chemical energy springs of molecules brought in, C.added)
-    const moving = sum('MOVE'), heat = sum('HEAT'), inn = T.work + T.base + labs + C.light + (C.start || 0) + PG.tot + (C.added || 0) + T.vent;
+    // step Q1: the signal's energy in the dish is stored; the pipette's puffs came in
+    const SG = this.signals && this.signals.ledger ? this.signals.ledger : { dish: 0, puff: 0 };
+    const moving = sum('MOVE'), heat = sum('HEAT'), inn = T.work + T.base + labs + C.light + (C.start || 0) + PG.tot + (C.added || 0) + T.vent + SG.puff;
     // the heat under the cells / pixels in the light and the rest, as temperatures (heat per R^2)
     const ts = this.tempScale;
     const spot = [0, 1, 2, 3].map((k) => {
@@ -412,7 +421,7 @@ export class Heat {
     const h0 = H[0], dt = rec.time - h0[0];
     const rate = (k) => (dt > 0.05 ? (H[H.length - 1][k] - h0[k]) / dt : 0);
     this.ledger = {
-      time: rec.time, moving, heat, in: inn, vent: T.vent, out: T.out, rounding: inn - (moving + heat + T.out + C.dish + cellsE + C.out),
+      time: rec.time, moving, heat, in: inn, vent: T.vent, out: T.out, rounding: inn - (moving + heat + T.out + C.dish + cellsE + C.out + SG.dish), signal: SG.dish,
       chem: C.dish + cellsE, chemDish: C.dish, chemCells: C.cells || 0, bat: C.bat || 0, chemOut: C.out,
       light: { in: lin, abs: labs, chem: C.light, pig: PG.tot, pass: lin - labs - C.light - PG.tot },
       rate: {

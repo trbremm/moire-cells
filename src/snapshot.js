@@ -35,6 +35,9 @@ import { CARBON, CB_LIP, CB_ENZANY, LADDER, TAR } from './carbon.js';   // step 
 import { CW as CB_W, CW_STOCK as CB_STOCK } from './carboncells.js';   // step C15b: the cells' carbon words
 // step C15a: the carbon's grid blocks in a snapshot (behind phi): the ladder's current copy, then the tar's hand counts
 const CARBON_BLOCKS = CARBON ? [...LADDER, ...TAR.map((h) => `tar.${h}`)] : [];
+// step Q1: the signal's blocks (behind the carbon's): its energy and flavour vector (the current copy)
+const SIG_BLOCKS = ['sig.A', 'sig.X', 'sig.Y'];
+const sigBlocks = (M) => (M.signals ? SIG_BLOCKS : []);
 import { fieldDefaults } from './guides.js';
 import { dish, snapDish } from './dish.js';
 
@@ -177,6 +180,7 @@ export function settingObjects(M) {
     ...(M.motors ? { 'motors.params': M.motors.params } : {}),       // step S2 (old snapshots: flagella and cilia off, as they ran)
     ...(M.senses ? { 'senses.params': M.senses.params } : {}),       // step P3 (old snapshots: the senses off, as they ran)
     ...(M.folding ? { 'folding.params': M.folding.params } : {}),   // step G3 (old snapshots: the moire genome off, as they ran)
+    ...(M.signals ? { 'signals.params': M.signals.params } : {}),   // step Q1 (old snapshots: the signal substance off, as they ran)
     ...(M.pigments ? { 'pigments.params': M.pigments.params } : {}),   // step N1: light needs matter
     ...(M.water ? { 'water.params': M.water.params } : {}),           // step N1: caustic light, currents
     ...(M.perfusion ? { 'perfusion.params': M.perfusion.params } : {}),   // perfusion (src/perfusion.js)
@@ -233,6 +237,7 @@ function captureBooks(M) {
     vents: M.vents ? clone(M.vents.tot) : null,   // step C12f
     pigments: M.pigments ? clone(M.pigments.tot) : null,   // step N1
     carbon: CARBON ? cloneCarbon(M.matter.carbon.tot) : null,   // step C15a
+    signals: M.signals ? clone(M.signals.tot) : null,   // step Q1
     excitedE16: M.excited ? M.excited.table.e16 : null,   // (the energy one excited count holds: ?exshare=)
     division: { costTot: M.division.costTot || 0 },
     rounding: {
@@ -258,6 +263,7 @@ function restoreBooks(M, B) {
   if (M.vents) { for (const k of Object.keys(M.vents.tot)) M.vents.tot[k] = (B.vents && B.vents[k]) || 0; }   // (step C12f)
   if (M.pigments) { for (const k of Object.keys(M.pigments.tot)) M.pigments.tot[k] = (B.pigments && B.pigments[k]) || 0; }   // (step N1)
   if (!(H.tot.vent >= 0)) H.tot.vent = 0;
+  if (M.signals) { const ST = M.signals.tot; for (const k of Object.keys(ST)) ST[k] = (B.signals && B.signals[k]) || 0; M.signals.hist = []; }   // (step Q1)
   if (CARBON) {   // step C15a
     const CT = M.matter.carbon.tot, BC = B.carbon || {};
     for (const k of ['add', 'lost', 'gone', 'rx', 'light', 'cin', 'cout']) { CT[k].fill(0); if (BC[k]) CT[k].set(BC[k].slice(0, CT[k].length)); }   // (step C15b: + cin, cout)
@@ -291,12 +297,15 @@ function gridOffsets(M) {
     // step C15a: the carbon ladder (current copy, both copies) and the tar
     ...(CARBON ? { carbon: LEDGER_WORDS + Mt.carbon.copyBase(Mt.carbon.cur), carbonCopies: [0, 1].map((k) => LEDGER_WORDS + Mt.carbon.copyBase(k)),
       tar: LEDGER_WORDS + Mt.carbon.tarBase() } : {}),
+    // step Q1: the signal (copy 0 is current between ticks; copy 1 and the inboxes cleared on a load)
+    ...(M.signals && H.signals ? { sig: M.signals.base(), sigCopy1: M.signals.base() + 3 * n, sigInbox: M.signals.inbox, sigInboxWords: (M.signals.blocks - 6) * n } : {}),
   };
 }
 
 export async function readGrid(M) {   // (step T1c: also the warfare census)
   const d = M.gpu.device, H = M.heat, o = gridOffsets(M), n = o.n;
-  const staging = d.createBuffer({ size: (3 + NCH + CARBON_BLOCKS.length) * n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+  const nsig = o.sig ? SIG_BLOCKS.length : 0;   // (step Q1: the signal's 3 blocks last)
+  const staging = d.createBuffer({ size: (3 + NCH + CARBON_BLOCKS.length + nsig) * n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
   const e = d.createCommandEncoder({ label: 'lab grid read-back' });
   e.copyBufferToBuffer(H.buffer, o.delta * 4, staging, 0, n * 4);
   e.copyBufferToBuffer(H.buffer, o.heat * 4, staging, n * 4, n * 4);
@@ -306,6 +315,7 @@ export async function readGrid(M) {   // (step T1c: also the warfare census)
     e.copyBufferToBuffer(H.buffer, o.carbon * 4, staging, (3 + NCH) * n * 4, 5 * n * 4);
     e.copyBufferToBuffer(H.buffer, o.tar * 4, staging, (8 + NCH) * n * 4, 3 * n * 4);
   }
+  if (nsig) e.copyBufferToBuffer(H.buffer, o.sig * 4, staging, (3 + NCH + CARBON_BLOCKS.length) * n * 4, nsig * n * 4);
   d.queue.submit([e.finish()]);
   await staging.mapAsync(GPUMapMode.READ);
   const out = new Int32Array(staging.getMappedRange().slice(0));
@@ -331,6 +341,13 @@ function writeGrid(M, w, names) {
     for (const c of o.carbonCopies) q.writeBuffer(H.buffer, c * 4, lad);
     q.writeBuffer(H.buffer, o.tar * 4, tar);
     M.matter.carbon.cur = 0;
+  }
+  if (o.sig) {   // step Q1: the signal (a snapshot from before has none: the dish starts without)
+    const sig = new Int32Array(3 * n);
+    SIG_BLOCKS.forEach((nm, j) => { const k = at(nm); if (k >= 0) sig.set(block(k), j * n); });
+    q.writeBuffer(H.buffer, o.sig * 4, sig);
+    q.writeBuffer(H.buffer, o.sigCopy1 * 4, new Int32Array(3 * n));
+    q.writeBuffer(H.buffer, o.sigInbox * 4, new Int32Array(o.sigInboxWords));
   }
   H.cur = 0; M.matter.cur = 0;
   M.charge.phiLive = true;
@@ -391,7 +408,7 @@ export async function snapshot(M, ctl, opts = {}) {
       cells: { idx: await pack(new Uint32Array(idx)), rec: await pack(rec), bio: await pack(bio), stock: await pack(stock),
         ...(cstock ? { carbon: await pack(cstock), carbonWords: CB_STOCK } : {}) },   // (step C15b: the cells' carbon, CB_STOCK words a cell; absent before)
       stats: await pack(new Uint32Array(statsAB)),
-      grid: grid ? { hw: H.hw, hh: H.hh, px: H.px, blocks: ['delta', 'heat', ...SUBSTANCES.map((s) => s.name), 'phi', ...CARBON_BLOCKS], data: await pack(await readGrid(M)) } : null,
+      grid: grid ? { hw: H.hw, hh: H.hh, px: H.px, blocks: ['delta', 'heat', ...SUBSTANCES.map((s) => s.name), 'phi', ...CARBON_BLOCKS, ...sigBlocks(M)], data: await pack(await readGrid(M)) } : null,
       measures: opts.measures || null,
     };
     return out;
@@ -599,6 +616,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     }
     if (opts.settings !== false && M.mutation && !(S.settings && S.settings['mutation.params'])) {
       Object.assign(M.mutation.params, { scale: 1, rare: false });   // step M2: today's copying (drift x 1), as it ran
+    }
+    if (opts.settings !== false && M.signals && !(S.settings && S.settings['signals.params'])) {
+      M.signals.params.on = false;   // step Q1
+      notes.push('saved before step Q1: no signal substance (as it ran)');
     }
     if (opts.settings !== false && M.folding && !(S.settings && S.settings['folding.params'])) {
       M.folding.params.on = false;   // step G3

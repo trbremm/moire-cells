@@ -1,0 +1,47 @@
+{
+ "batch": "p3-speed",
+ "runs": [
+  {
+   "name": "p3-speed-on-r1",
+   "description": "speed, P3 on: default s3, 2000 cells, 150 s at MAX, GPU free",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 300
+  },
+  {
+   "name": "p3-speed-off-r1",
+   "description": "speed, ?p3=0",
+   "query": {
+    "seed": 3,
+    "p3": 0
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 300
+  },
+  {
+   "name": "p3-speed-on-r2",
+   "description": "speed, P3 on: default s3, 2000 cells, 150 s at MAX, GPU free",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 300
+  },
+  {
+   "name": "p3-speed-off-r2",
+   "description": "speed, ?p3=0",
+   "query": {
+    "seed": 3,
+    "p3": 0
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 300
+  }
+ ]
+}

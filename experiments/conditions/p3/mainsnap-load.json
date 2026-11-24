@@ -1,0 +1,21 @@
+{
+ "batch": "p3-mainsnap-load",
+ "runs": [
+  {
+   "name": "p3-mainsnap-load",
+   "description": "main's snapshot (94-word cells, 180-word genomes) loads into P3 with P3 off",
+   "query": {
+    "snap": "experiments/runs/p3-mainsnap-make/snapshots/snap_t40.json"
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 1,
+     "js": "return JSON.stringify({p3: moire.senses.params, notes: moire.lab.loaded && moire.lab.loaded.notes, exact: moire.lab.loaded && moire.lab.loaded.exact})"
+    }
+   ]
+  }
+ ]
+}

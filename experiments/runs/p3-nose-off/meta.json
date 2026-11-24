@@ -1,0 +1,108 @@
+{
+  "name": "p3-nose-off",
+  "description": "the same with the N2 nose",
+  "condition": {
+    "name": "p3-nose-off",
+    "description": "the same with the N2 nose",
+    "query": {
+      "preset": "lab",
+      "cells": 60,
+      "spread": "scatter",
+      "genes": "chemo:1.5",
+      "patchy": 0,
+      "seed": 3,
+      "p3census": 5,
+      "flowcensus": 5,
+      "nose": 0
+    },
+    "duration": 152,
+    "sample_every": 10,
+    "stall": 300,
+    "evals": [
+      {
+        "t": 0,
+        "js": "const v=moire.cells.view; moire.matter.addSpring(v.cssW*0.5, v.cssH*0.5, 'heavy', 1e9, {rate: 40}); moire.eat.params.pay=false; return 'spring'"
+      },
+      {
+        "t": 30,
+        "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})"
+      },
+      {
+        "t": 60,
+        "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})"
+      },
+      {
+        "t": 90,
+        "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})"
+      },
+      {
+        "t": 120,
+        "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})"
+      },
+      {
+        "t": 150,
+        "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})"
+      }
+    ],
+    "shots": [
+      {
+        "t": 150,
+        "name": "end"
+      }
+    ]
+  },
+  "url": "http://localhost:59846/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&preset=lab&cells=60&spread=scatter&genes=chemo:1.5&patchy=0&seed=3&p3census=5&flowcensus=5&nose=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "4509b8d371bd89a936c5d538308e9392b5786833",
+  "dirty": true,
+  "started": "2026-11-24T08:15:43",
+  "status": "ok",
+  "browser_version": "Chrome/158.0.8127.38",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 152.0,
+  "run_wall_s": 48.64,
+  "speed_reached": 3.12,
+  "samples": 17,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 0,
+      "js": "const v=moire.cells.view; moire.matter.addSpring(v.cssW*0.5, v.cssH*0.5, 'heavy', 1e9, {rate: 40}); moire.eat.params.pay=false; return 'spring'",
+      "result": "spring"
+    },
+    {
+      "t": 30.000000000000206,
+      "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})",
+      "result": "{\"senses\":{\"nose\":{\"feel\":0.6166666666666667,\"align\":0.40349462258793367,\"alignPath\":0.21269570540156946}},\"flow\":{\"enrich\":1.4222222222222223,\"near\":0.03333333333333333,\"align\":0.19426628768431747,\"smellRel\":0.862793491710056}}"
+    },
+    {
+      "t": 59.99999999999946,
+      "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})",
+      "result": "{\"senses\":{\"nose\":{\"feel\":0.8,\"align\":0.23453322132192525,\"alignPath\":0.10998891260539008}},\"flow\":{\"enrich\":2.8444444444444446,\"near\":0.06666666666666667,\"align\":-0.05967301758965733,\"smellRel\":1.5703382582878067}}"
+    },
+    {
+      "t": 89.99999999999812,
+      "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})",
+      "result": "{\"senses\":{\"nose\":{\"feel\":0.9666666666666667,\"align\":0.2638271476926125,\"alignPath\":0.10872536973427388}},\"flow\":{\"enrich\":6.3999999999999995,\"near\":0.15,\"align\":0.10872536973427391,\"smellRel\":1.8213172065322825}}"
+    },
+    {
+      "t": 119.99999999999675,
+      "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})",
+      "result": "{\"senses\":{\"nose\":{\"feel\":0.9333333333333333,\"align\":0.33094956756889393,\"alignPath\":0.18335011927480818}},\"flow\":{\"enrich\":5.688888888888889,\"near\":0.13333333333333333,\"align\":0.18335011927480813,\"smellRel\":2.3186114402053035}}"
+    },
+    {
+      "t": 149.9999999999978,
+      "js": "return JSON.stringify({senses: moire.senses.census && {nose: moire.senses.census.nose}, flow: moire.flow.census && {enrich: moire.flow.census.enrich, near: moire.flow.census.nearSpring, align: moire.flow.census.alignPath, smellRel: moire.flow.census.smellRel}})",
+      "result": "{\"senses\":{\"nose\":{\"feel\":0.95,\"align\":0.3966818964991868,\"alignPath\":0.12995697616224908}},\"flow\":{\"enrich\":5.688888888888889,\"near\":0.13333333333333333,\"align\":0.12995697616224908,\"smellRel\":2.531945790049608}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-24T08:18:04",
+  "wall_s": 141.12
+}

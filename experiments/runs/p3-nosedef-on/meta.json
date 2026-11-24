@@ -1,0 +1,85 @@
+{
+  "name": "p3-nosedef-on",
+  "description": "default s3, chemo gene 1.5 for all (as N2's nose test)",
+  "condition": {
+    "name": "p3-nosedef-on",
+    "description": "default s3, chemo gene 1.5 for all (as N2's nose test)",
+    "query": {
+      "seed": 3,
+      "genes": "chemo:1.5",
+      "flowcensus": 5,
+      "p3census": 5
+    },
+    "duration": 152,
+    "sample_every": 30,
+    "stall": 300,
+    "evals": [
+      {
+        "t": 60,
+        "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})"
+      },
+      {
+        "t": 90,
+        "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})"
+      },
+      {
+        "t": 120,
+        "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})"
+      },
+      {
+        "t": 150,
+        "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})"
+      }
+    ],
+    "shots": [
+      {
+        "t": 150,
+        "name": "end"
+      }
+    ]
+  },
+  "url": "http://localhost:60592/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3&genes=chemo:1.5&flowcensus=5&p3census=5",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "4509b8d371bd89a936c5d538308e9392b5786833",
+  "dirty": true,
+  "started": "2026-11-24T08:18:20",
+  "status": "ok",
+  "browser_version": "Chrome/158.0.8127.38",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 152.0,
+  "run_wall_s": 376.46,
+  "speed_reached": 0.4,
+  "samples": 7,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 59.999999999997875,
+      "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})",
+      "result": "{\"nose\":{\"feel\":0.9048507462686567,\"align\":0.05375011976168251,\"alignPath\":-0.0021348297142645425},\"flow\":{\"enrich\":1.6201844204333313,\"align\":-0.009816622430795403,\"n\":1607}}"
+    },
+    {
+      "t": 89.99999999999618,
+      "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})",
+      "result": "{\"nose\":{\"feel\":0.9402135231316726,\"align\":0.04421067457084636,\"alignPath\":-0.006752693042280336},\"flow\":{\"enrich\":0.8114437433809161,\"align\":-0.009798562146231388,\"n\":1404}}"
+    },
+    {
+      "t": 119.99999999999447,
+      "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})",
+      "result": "{\"nose\":{\"feel\":0.9732824427480916,\"align\":0.01963382352106754,\"alignPath\":0.03290296757400049},\"flow\":{\"enrich\":0.9755695628888065,\"align\":0.03509578384234029,\"n\":1044}}"
+    },
+    {
+      "t": 150.0000000000115,
+      "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})",
+      "result": "{\"nose\":{\"feel\":0.9704510108864697,\"align\":-0.06709874719356901,\"alignPath\":0.001712324541476044},\"flow\":{\"enrich\":1.1273670303860643,\"align\":-0.01254928667244136,\"n\":642}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-24T08:26:43",
+  "wall_s": 503.12
+}

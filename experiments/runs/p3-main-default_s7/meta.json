@@ -1,0 +1,44 @@
+{
+  "name": "p3-main-default_s7",
+  "description": "off-equals-main check: default scene, main 4509b8d (run from an export)",
+  "condition": {
+    "name": "p3-main-default_s7",
+    "description": "off-equals-main check: default scene, main 4509b8d (run from an export)",
+    "query": {
+      "seed": 7
+    },
+    "duration": 302,
+    "sample_every": 30,
+    "stall": 400,
+    "shots": [
+      {
+        "t": 300,
+        "panel": true,
+        "name": "panel"
+      }
+    ]
+  },
+  "url": "http://localhost:54017/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=7",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-24T12:08:14",
+  "status": "ok",
+  "browser_version": "Chrome/158.0.8127.38",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 302.0,
+  "run_wall_s": 751.34,
+  "speed_reached": 0.4,
+  "samples": 12,
+  "shots": [
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-24T12:22:17",
+  "wall_s": 843.03
+}

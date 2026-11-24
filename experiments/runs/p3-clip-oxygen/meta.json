@@ -1,0 +1,131 @@
+{
+  "name": "p3-clip-oxygen",
+  "description": "default s3, 300 s: 16 swimming predators following OXYGEN (range 2) on a ring 12 R out; the camera on the ring's left side (x2.5)",
+  "condition": {
+    "name": "p3-clip-oxygen",
+    "description": "default s3, 300 s: 16 swimming predators following OXYGEN (range 2) on a ring 12 R out; the camera on the ring's left side (x2.5)",
+    "query": {
+      "seed": 3,
+      "p3census": 5
+    },
+    "duration": 352,
+    "sample_every": 30,
+    "stall": 400,
+    "evals": [
+      {
+        "t": 300,
+        "js": "const r=await moire.senses.ring(16, 12, {\"engulf\": 1, \"flagellum\": 0.5, \"range\": 2, \"taste\": [1, 0, 0, 0]}); moire.camera.set(2.5, r.centre[0]-0.75*r.radius*moire.cells.R, r.centre[1]); return JSON.stringify(r)"
+      },
+      {
+        "t": 310,
+        "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+      },
+      {
+        "t": 320,
+        "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+      },
+      {
+        "t": 335,
+        "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+      },
+      {
+        "t": 350,
+        "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+      }
+    ],
+    "shots": [
+      {
+        "t": 301,
+        "name": "t301"
+      },
+      {
+        "t": 310,
+        "name": "t310"
+      },
+      {
+        "t": 320,
+        "name": "t320"
+      },
+      {
+        "t": 335,
+        "name": "t335"
+      },
+      {
+        "t": 350,
+        "name": "t350"
+      },
+      {
+        "t": 335,
+        "view": "machinery",
+        "name": "t335-machinery"
+      }
+    ],
+    "clips": [
+      {
+        "t": 302,
+        "until": 332,
+        "speed": 2
+      }
+    ]
+  },
+  "url": "http://localhost:54572/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3&p3census=5",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "224e6ef11e0eeeb7adade55688e639a9dfe3378f",
+  "dirty": true,
+  "started": "2026-11-24T09:13:46",
+  "status": "ok",
+  "browser_version": "Chrome/158.0.8127.38",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 352.0,
+  "run_wall_s": 924.08,
+  "speed_reached": 0.38,
+  "samples": 13,
+  "shots": [
+    "shots/t301.png",
+    "shots/t310.png",
+    "shots/t320.png",
+    "shots/t335.png",
+    "shots/t335-machinery.png",
+    "shots/t350.png"
+  ],
+  "snapshots": [],
+  "clips": [
+    {
+      "file": "clips/clip_t302-332.webm",
+      "t_end": 332.00000000005235,
+      "bytes": 3834213
+    }
+  ],
+  "evals": [
+    {
+      "t": 300.0000000000558,
+      "js": "const r=await moire.senses.ring(16, 12, {\"engulf\": 1, \"flagellum\": 0.5, \"range\": 2, \"taste\": [1, 0, 0, 0]}); moire.camera.set(2.5, r.centre[0]-0.75*r.radius*moire.cells.R, r.centre[1]); return JSON.stringify(r)",
+      "result": "{\"centre\":[765.461752842147,349.71840980803347],\"radius\":42.48421820857913,\"placed\":16}"
+    },
+    {
+      "t": 332.00000000005235,
+      "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))",
+      "result": "{\"1,0,0,0\":{\"n\":15,\"taste\":0.059074256149588306,\"cos\":0.29041197691927245,\"dist\":10.550415412088846,\"close\":0.6142271199048861,\"far\":9,\"farCos\":0.5045611683723215}}"
+    },
+    {
+      "t": 332.00000000005235,
+      "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))",
+      "result": "{\"1,0,0,0\":{\"n\":15,\"taste\":0.059074256149588306,\"cos\":0.29041197691927245,\"dist\":10.550415412088846,\"close\":0.6142271199048861,\"far\":9,\"farCos\":0.5045611683723215}}"
+    },
+    {
+      "t": 335.0000000000496,
+      "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))",
+      "result": "{\"1,0,0,0\":{\"n\":15,\"taste\":0.07638102123065107,\"cos\":0.29413755426230775,\"dist\":10.28496284273707,\"close\":0.052359171448463616,\"far\":10,\"farCos\":0.3672536021858915}}"
+    },
+    {
+      "t": 350.000000000036,
+      "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))",
+      "result": "{\"1,0,0,0\":{\"n\":14,\"taste\":0.07484816904684966,\"cos\":0.2315229881907434,\"dist\":8.360019394929951,\"close\":0.5006120909089977,\"far\":7,\"farCos\":0.604837210794628}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-24T09:31:19",
+  "wall_s": 1052.8
+}

@@ -1,0 +1,43 @@
+{
+  "name": "p3-mainsnap-make",
+  "description": "main 4509b8d (export): a snapshot at 40 s (default s3) to load into P3",
+  "condition": {
+    "name": "p3-mainsnap-make",
+    "description": "main 4509b8d (export): a snapshot at 40 s (default s3) to load into P3",
+    "query": {
+      "seed": 3
+    },
+    "duration": 40,
+    "sample_every": 20,
+    "stall": 300,
+    "snapshots": [
+      {
+        "t": 40,
+        "grid": true
+      }
+    ]
+  },
+  "url": "http://localhost:65226/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-24T12:17:41",
+  "status": "ok",
+  "browser_version": "Chrome/158.0.8127.38",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 40.0,
+  "run_wall_s": 108.49,
+  "speed_reached": 0.37,
+  "samples": 3,
+  "shots": [],
+  "snapshots": [
+    "snapshots/snap_t40.json"
+  ],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-24T12:21:15",
+  "wall_s": 213.38
+}

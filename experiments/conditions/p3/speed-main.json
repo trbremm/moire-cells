@@ -1,0 +1,25 @@
+{
+ "batch": "p3-speed-main",
+ "runs": [
+  {
+   "name": "p3-speed-main-r1",
+   "description": "speed, main 4509b8d (export)",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 300
+  },
+  {
+   "name": "p3-speed-main-r2",
+   "description": "speed, main 4509b8d (export)",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 300
+  }
+ ]
+}

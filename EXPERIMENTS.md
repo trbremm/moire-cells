@@ -3810,3 +3810,134 @@ normal look.
   variation comes from mutation within the winning line. The crash does not explain the null on its own (genes could still move within
   a line), but it throws away the founders' standing variation in the first minutes.
 - **x0 is not "clean".** The colonies' single clone collapsed (one run). Some mutation keeps a dish able to change jobs.
+
+# Cells that sense cells (step P3, 2026-11-24)
+
+**The question** (the user, 2026-11-23): predators are boring: they eat only what they bump into. Give cells a dial to detect other cells
+from farther away, to run away or to come closer; scents must be real chemicals; and give defenders a reason to clump.
+
+**How.** Headless Chrome, up to five pages at a time (so the labs ran slowly; numbers are simulated time). Conditions in
+`experiments/conditions/p3/`, runs `experiments/runs/p3-*`. One seed per lab cell: hints unless said.
+
+## 1. The nose
+
+NOSE-LAB (`nose-lab.json`): 60 scattered cells of one clone, every chemotaxis gene 1.5, a vent spring in the middle, crawling free, the
+springs fixed, 150 s. Cosine between where a cell went in the next 5 s and the smell it had (1 = straight up the smell):
+
+| | 30 s | 60 s | 90 s | 120 s | 150 s |
+|---|---|---|---|---|---|
+| nose on (averaged, relative) | 0.06 | 0.12 | 0.29 | 0.26 | 0.15 |
+| nose off (as N2) | 0.21 | 0.11 | 0.11 | 0.18 | 0.13 |
+
+Both noses steer in open water (0.1-0.3). The averaged one is not better there, but it is no longer saturated: the median cell's gradient
+is 0.5-1.1 x the half (on) against 0.9-2.5 x (off).
+
+NOSE-DEFAULT (`nose-default.json`, N2's own test): the default scene seed 3, every chemotaxis gene 1.5, 150 s:
+
+| | 60 s | 90 s | 120 s | 150 s |
+|---|---|---|---|---|
+| nose on: path cosine / cells | -0.00 / 1607 | -0.01 / 1404 | 0.03 / 1044 | 0.00 / 642 |
+| nose off: path cosine / cells | -0.06 / 1593 | -0.03 / 1004 | 0.03 / 559 | 0.13 / 207 |
+
+In a packed colony neither nose decides where cells go: the contacts do (cosine ~0 in both, as N2 found). The averaged nose makes a STRONG
+nose cheaper: 642 cells left at 150 s against 207 (the saturated nose spent every cell's battery pulling at full strength; N2 saw 160 vs
+721 for the strong nose). One seed: a hint.
+
+## 2. Does a taste point at other cells? (the probe)
+
+PROBE (`probe.json`): at 300 s, four rings of 8 hand-made crawling predators 15 R outside the colony, each ring following ONE substance
+(dial +1, range 2); `moire.senses.probe()`: the cosine between each predator's taste and the way to its nearest smaller cell (1 = straight
+at it), for those more than 5 R away:
+
+| scene | t | oxygen (free t) | exhaust (CO2-like) | spill (free G) | heat |
+|---|---|---|---|---|---|
+| default s3 | 305 | 0.53 | -0.09 | 0.10 | 0.25 |
+| default s3 | 315 | 0.37 | 0.13 | 0.08 | 0.66 |
+| default s3 | 330 | 0.91 | 0.00 | 0.05 | 0.52 |
+| default s3 | 360 | 0.01 | -0.06 | -0.30 | 0.84 |
+| colonies s3 | 305 | 0.63 | 0.01 | 0.18 | 0.19 |
+| colonies s3 | 315 | 0.49 | 0.08 | 0.25 | -0.11 |
+| colonies s3 | 330 | 0.37 | 0.07 | -0.16 | -0.02 |
+
+OXYGEN points at prey from 10-20 R in both scenes (the light eaters breathe it out), HEAT in the default scene (a warm colony), weaker.
+EXHAUST and SPILL do not: the springs drip CO2-like carbon and G everywhere, so they mark springs more than cells. The heat taste is weak
+(|taste| 0.03-0.05 against 0.07-0.17 for the others).
+
+## 3. Chases (hand-made predators, labs)
+
+RING (`clip.json`): default s3 at 300 s, 16 hand-made SWIMMING predators (flagellum 0.5, engulf 1, range 2) on a ring 12 R outside the
+colony; probe 32 and 50 s later: mean distance to the nearest prey (R), closing speed (R/s):
+
+| predators | +32 s | +50 s |
+|---|---|---|
+| blind (no taste) | 16.5 R, -0.46 R/s | 15.0 R, +0.45 |
+| oxygen +1, first steering (0.6 R/s, half 0.15) | 10.6 R, +0.61 | 8.4 R, +0.50 |
+| oxygen +1, final steering (1 R/s, half 0.04) | 7.7 R, +0.34 | 5.1 R, +0.72 |
+
+With the first knobs the taste (|taste| 0.06-0.1 at 10-15 R) steered at a third of its speed and the crawl's random wander (0.6 R/s)
+outweighed it; the final knobs (the defaults now) make the oxygen-followers reach the colony's edge in under a minute while the blind
+ones stay where the water puts them. Pictures: `experiments/keep/p3/ring-oxygen-swimmers-t301-x2.5.jpg` / `-t350-` (the tailed pink-red
+swimmers on the left have gone into the colony 50 s later) against `ring-blind-swimmers-t301/t350` (they are still out in the water).
+The clips: `experiments/runs/p3-clip-*/clips/` (not committed).
+
+Earlier, weaker labs (first knobs, predators dropped at random over the dish or on a ring with oxygen + exhaust + heat; `chase-lab.json`,
+`ring-lab.json`): closing speeds and meals within noise of the blind predators: in the default scene a third of the cells are already
+evolved engulfers by 300 s, so 16 hand-made predators make little difference to meals.
+
+## 4. Evolution (taste on vs its neutral control; the clump test and shared armour on vs off)
+
+`evo.json`: 20 simulated minutes, sample every 30 s, census every 10 s. Colonies preset (five wild founders: every gene drawn, the taste
+dials and range too) and the default dish, seeds 3 and 7: ON, NULL (`?tastenull=1`: the dials and range drift, nothing steers, nothing is
+paid) and NOCLUMP (`?clump=0&sharedarmour=0`, taste on). The Islands world, seeds 3 and 7, ON and NULL at 10 min (stopped there: budget).
+Numbers: `python tools/p3_analyse.py` (`experiments/runs/p3-analysis.md`, `.json`). The colonies-on dishes and colonies-noclump s3 ran with
+the first steering knobs (0.6 R/s, half 0.15), the rest with the final ones (1 R/s, 0.04).
+
+At 20 min (islands 10 min); on / null / noclump:
+
+| dish | cells | range | oxygen dial | predators' oxygen dial | taste path cos | predators closing R/s | meals/s |
+|---|---|---|---|---|---|---|---|
+| colonies s3 | 2170 / 2870 / 2910 | -0.98 / -0.31 / -0.27 | 0.10 / 0.36 / 0.46 | 0.08 / 0.37 / 0.53 | 0.06 / -0.02 / 0.05 | 0.02 / -0.02 / 0.09 | 7.8 / 15.5 / 14.3 |
+| colonies s7 | 1280 / 1480 / 1280 | -0.98 / 0.02 / 0.22 | 0.05 / 0.34 / -0.13 | 0.04 / 0.33 / -0.15 | 0.07 / 0.03 / 0.11 | 0.02 / 0.09 / -0.04 | 2.3 / 4.8 / 2.1 |
+| default s3 | 319 / 248 / 306 | -0.57 / -0.58 / -0.68 | 0.10 / 0.09 / -0.08 | 0.37 / 0.09 / -0.12 | 0.08 / -0.01 / 0.06 | 0.16 / 0.13 / -0.18 | 0.8 / 1.0 / 1.3 |
+| default s7 | 424 / 300 / 366 | -0.64 / 0.54 / -0.83 | 0.45 / 0.19 / 0.21 | 0.47 / 0.23 / 0.36 | 0.08 / -0.03 / 0.07 | 0.23 / -0.03 / 0.15 | 1.3 / 0.9 / 0.6 |
+| islands s3 (10 min) | 3950 / 4580 | -0.51 / 0.17 | 0.08 / 0.13 | 0.11 / 0.23 | 0.03 / -0.01 | 0.05 / 0.03 | 11.7 / 16.6 |
+| islands s7 (10 min) | 4950 / 5020 | -0.68 / -0.27 | -0.13 / -0.17 | -0.15 / -0.25 | 0.05 / 0.01 | -0.14 / 0.07 | 12.5 / 13.2 |
+
+- RANGE below the null in 5 of 6 dishes (level in default s3): the sensitivity's upkeep is selected against. The clearest signal.
+- In the colonies the wild founders' dials shrink toward 0 (oxygen, exhaust, heat all nearer 0 than in the null, both seeds): the taste is
+  paid for and mostly lost.
+- PREDATORS' OXYGEN DIAL above the null in both default dishes, with faster closing on prey; not in colonies or islands. A hint.
+- Cells follow their taste a little (path cosine above the null in 6 of 6; the null does not steer, so this is expected, and it is small).
+- Meals, counts: no consistent change; dial means swing +-0.5 between runs as one lineage takes each dish (the founders' crash).
+
+DEFENDERS (on vs noclump, 20 min):
+
+| dish | junctions of the eaten per meal | wall cover exposed / sheltered sides | glue gene | armour | glued group (mean size) |
+|---|---|---|---|---|---|
+| colonies s3 | 0.08 / 0.25 | 0.06 / 0.04 vs 0.20 / 0.34 | 0.53 / 1.91 | 0.21 / 0.69 | 1.16 / 2.31 |
+| colonies s7 | 0.11 / 0.21 | 0.017 / 0.009 vs 0.022 / 0.021 | 1.74 / 1.18 | 0.14 / 0.07 | 1.18 / 1.24 |
+| default s3 | 0.10 / 0.25 | 0.22 / 0.05 vs 0.09 / 0.09 | 0.43 / 1.26 | 0.93 / 0.49 | 1.11 / 1.34 |
+| default s7 | 0.02 / 0.06 | 0.025 / 0.002 vs 0.057 / 0.024 | 0.21 / 0.25 | 0.07 / 0.28 | 1.03 / 1.09 |
+
+- The rules act: predators eat less-glued cells with the clump test (4 of 4), and the wall moves to the exposed sides with shared armour
+  (exposed above sheltered in 4 of 4 with it; without it the sheltered sides hold as much or more).
+- They select nothing in 20 min: the glue gene is lower with them in 3 of 4, armour mixed, glued groups ~1.1 cells everywhere (junctions
+  rarely form in these dishes, so few cells are protected by the clump test at all). Tug ticks (a wrap held at the tug) 1.7e4-1.3e6 per run.
+
+## 5. Checks
+
+- `?p3=0` against main 4509b8d (`off.json`, the main runs from an export; default 300 s): seed 3 1580 / 1206 / 352 / 293 cells at 1 / 2 /
+  3 / 5 min against 1583 / 1175 / 320 / 286; seed 7 1643 / 1233 / 350 / 191 against 1664 / 1238 / 344 / 344.
+- Books exact (atoms, charge, carbon 0) in all 16 evolution runs and the labs; energy rounding at most 0.17 against 1.2e7-6.4e7 in.
+- Snapshots (`oldsnap.json`, `mainsnap-*.json`): a tissue-lab snapshot (64-word cells) and one saved by main load with P3 off and the note;
+  main's exact. Headed Firefox and phone size run. 37 P3 runs, no console errors.
+- Speed (`speed.json`, GPU free, 2000 cells, 150 s): on x2.55 / x2.64, off x2.51, main x2.62 / x2.62.
+
+## Reading
+
+The new sense works where it can: oxygen, the light eaters' waste, carries far enough to point a predator at a colony from 10-20 R, and in
+the lab tasting swimmers steer into it in under a minute while blind ones drift. In evolving dishes it is mostly a cost: the range falls
+everywhere and wild tastes fade, with a hint that predators in the default dish keep following oxygen. Chases are not yet a sight in an
+evolving dish: predators already live inside the colonies they eat. The defenders' rules work mechanically but do not yet make glue or
+clumps pay: junctions rarely form, so there is little group to count. Possible next levers (not built): a cheaper or free range, faster
+swimmers, the alarm through the gene network, cells that start glued (snowflake-like daughters).

@@ -1,0 +1,86 @@
+{
+  "name": "p3-nosedef-off",
+  "description": "default s3, chemo gene 1.5 for all (as N2's nose test)",
+  "condition": {
+    "name": "p3-nosedef-off",
+    "description": "default s3, chemo gene 1.5 for all (as N2's nose test)",
+    "query": {
+      "seed": 3,
+      "genes": "chemo:1.5",
+      "flowcensus": 5,
+      "p3census": 5,
+      "nose": 0
+    },
+    "duration": 152,
+    "sample_every": 30,
+    "stall": 300,
+    "evals": [
+      {
+        "t": 60,
+        "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})"
+      },
+      {
+        "t": 90,
+        "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})"
+      },
+      {
+        "t": 120,
+        "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})"
+      },
+      {
+        "t": 150,
+        "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})"
+      }
+    ],
+    "shots": [
+      {
+        "t": 150,
+        "name": "end"
+      }
+    ]
+  },
+  "url": "http://localhost:60593/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3&genes=chemo:1.5&flowcensus=5&p3census=5&nose=0",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "4509b8d371bd89a936c5d538308e9392b5786833",
+  "dirty": true,
+  "started": "2026-11-24T08:18:20",
+  "status": "ok",
+  "browser_version": "Chrome/158.0.8127.38",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 152.0,
+  "run_wall_s": 372.88,
+  "speed_reached": 0.41,
+  "samples": 7,
+  "shots": [
+    "shots/end.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 59.99999999999788,
+      "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})",
+      "result": "{\"nose\":{\"feel\":0.9918392969240427,\"align\":0.06445064967280215,\"alignPath\":-0.055287276625845594},\"flow\":{\"enrich\":1.6709467556925184,\"align\":-0.034780386956656605,\"n\":1593}}"
+    },
+    {
+      "t": 89.99999999999618,
+      "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})",
+      "result": "{\"nose\":{\"feel\":0.9990079365079365,\"align\":0.05710088594307451,\"alignPath\":-0.030499762308994476},\"flow\":{\"enrich\":1.047485732744697,\"align\":-0.023918400679951428,\"n\":1004}}"
+    },
+    {
+      "t": 119.99999999999447,
+      "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})",
+      "result": "{\"nose\":{\"feel\":0.9982174688057041,\"align\":0.07521001087337095,\"alignPath\":0.03480305306230074},\"flow\":{\"enrich\":1.144901610017889,\"align\":0.021940771420214434,\"n\":559}}"
+    },
+    {
+      "t": 150.0000000000115,
+      "js": "return JSON.stringify({nose: moire.senses.census && moire.senses.census.nose, flow: moire.flow.census && {enrich: moire.flow.census.enrich, align: moire.flow.census.alignPath, n: moire.flow.census.n}})",
+      "result": "{\"nose\":{\"feel\":0.9951690821256038,\"align\":0.2553361255096836,\"alignPath\":0.1303128709811687},\"flow\":{\"enrich\":2.395730581480638,\"align\":0.10309037999004729,\"n\":207}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-24T08:26:39",
+  "wall_s": 499.25
+}

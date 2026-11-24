@@ -1,0 +1,21 @@
+{
+ "batch": "p3-oldsnap",
+ "runs": [
+  {
+   "name": "p3-oldsnap",
+   "description": "an old snapshot (tissue lab, before P3) loads with P3 off",
+   "query": {
+    "snap": "experiments/tissue/configs/tt-same/snapshot.json"
+   },
+   "duration": 30,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 1,
+     "js": "return JSON.stringify({p3: moire.senses.params, notes: moire.lab.loaded && moire.lab.loaded.notes.filter(n => n.includes('P3'))})"
+    }
+   ]
+  }
+ ]
+}

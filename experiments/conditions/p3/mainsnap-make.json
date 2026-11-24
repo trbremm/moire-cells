@@ -1,0 +1,21 @@
+{
+ "batch": "p3-mainsnap",
+ "runs": [
+  {
+   "name": "p3-mainsnap-make",
+   "description": "main 4509b8d (export): a snapshot at 40 s (default s3) to load into P3",
+   "query": {
+    "seed": 3
+   },
+   "duration": 40,
+   "sample_every": 20,
+   "stall": 300,
+   "snapshots": [
+    {
+     "t": 40,
+     "grid": true
+    }
+   ]
+  }
+ ]
+}

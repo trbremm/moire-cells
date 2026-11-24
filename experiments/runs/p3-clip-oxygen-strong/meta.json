@@ -1,0 +1,133 @@
+{
+  "name": "p3-clip-oxygen-strong",
+  "description": "default s3, 300 s: 16 swimming predators following OXYGEN (range 2) on a ring 12 R out; the camera on the ring's left side (x2.5) ; steering knobs ?tastehalf=0.04&tastespeed=1",
+  "condition": {
+    "name": "p3-clip-oxygen-strong",
+    "description": "default s3, 300 s: 16 swimming predators following OXYGEN (range 2) on a ring 12 R out; the camera on the ring's left side (x2.5) ; steering knobs ?tastehalf=0.04&tastespeed=1",
+    "query": {
+      "seed": 3,
+      "p3census": 5,
+      "tastehalf": 0.04,
+      "tastespeed": 1
+    },
+    "duration": 352,
+    "sample_every": 30,
+    "stall": 400,
+    "evals": [
+      {
+        "t": 300,
+        "js": "const r=await moire.senses.ring(16, 12, {\"engulf\": 1, \"flagellum\": 0.5, \"range\": 2, \"taste\": [1, 0, 0, 0]}); moire.camera.set(2.5, r.centre[0]-0.75*r.radius*moire.cells.R, r.centre[1]); return JSON.stringify(r)"
+      },
+      {
+        "t": 310,
+        "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+      },
+      {
+        "t": 320,
+        "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+      },
+      {
+        "t": 335,
+        "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+      },
+      {
+        "t": 350,
+        "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+      }
+    ],
+    "shots": [
+      {
+        "t": 301,
+        "name": "t301"
+      },
+      {
+        "t": 310,
+        "name": "t310"
+      },
+      {
+        "t": 320,
+        "name": "t320"
+      },
+      {
+        "t": 335,
+        "name": "t335"
+      },
+      {
+        "t": 350,
+        "name": "t350"
+      },
+      {
+        "t": 335,
+        "view": "machinery",
+        "name": "t335-machinery"
+      }
+    ],
+    "clips": [
+      {
+        "t": 302,
+        "until": 332,
+        "speed": 2
+      }
+    ]
+  },
+  "url": "http://localhost:59592/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3&p3census=5&tastehalf=0.04&tastespeed=1",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "b38436de7f1c9957c377e7d348fe7086a3f924c0",
+  "dirty": true,
+  "started": "2026-11-24T09:31:44",
+  "status": "ok",
+  "browser_version": "Chrome/158.0.8127.38",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 352.0,
+  "run_wall_s": 1305.46,
+  "speed_reached": 0.27,
+  "samples": 13,
+  "shots": [
+    "shots/t301.png",
+    "shots/t310.png",
+    "shots/t320.png",
+    "shots/t335.png",
+    "shots/t335-machinery.png",
+    "shots/t350.png"
+  ],
+  "snapshots": [],
+  "clips": [
+    {
+      "file": "clips/clip_t302-332.webm",
+      "t_end": 332.00000000005235,
+      "bytes": 3896626
+    }
+  ],
+  "evals": [
+    {
+      "t": 300.0000000000558,
+      "js": "const r=await moire.senses.ring(16, 12, {\"engulf\": 1, \"flagellum\": 0.5, \"range\": 2, \"taste\": [1, 0, 0, 0]}); moire.camera.set(2.5, r.centre[0]-0.75*r.radius*moire.cells.R, r.centre[1]); return JSON.stringify(r)",
+      "result": "{\"centre\":[770.4166965650476,347.6358533112899],\"radius\":42.29665832907806,\"placed\":16}"
+    },
+    {
+      "t": 332.00000000005235,
+      "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))",
+      "result": "{\"1,0,0,0\":{\"n\":14,\"taste\":0.11387540324544328,\"cos\":-0.034364765284515646,\"dist\":7.726518816022732,\"close\":0.3397574082215793,\"far\":8,\"farCos\":0.22611131339879076},\"0.9,-0.3,0.5,0.2\":{\"n\":1,\"taste\":0.19400774340538982,\"cos\":-0.979760656180089,\"dist\":3.330563422713335,\"close\":0.4010654101685742,\"far\":0,\"farCos\":null}}"
+    },
+    {
+      "t": 332.00000000005235,
+      "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))",
+      "result": "{\"1,0,0,0\":{\"n\":14,\"taste\":0.11387540324544328,\"cos\":-0.034364765284515646,\"dist\":7.726518816022732,\"close\":0.3397574082215793,\"far\":8,\"farCos\":0.22611131339879076},\"0.9,-0.3,0.5,0.2\":{\"n\":1,\"taste\":0.19400774340538982,\"cos\":-0.979760656180089,\"dist\":3.330563422713335,\"close\":0.4010654101685742,\"far\":0,\"farCos\":null}}"
+    },
+    {
+      "t": 335.0000000000496,
+      "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))",
+      "result": "{\"1,0,0,0\":{\"n\":14,\"taste\":0.09854377639257968,\"cos\":0.021739935677689507,\"dist\":6.434992718510506,\"close\":0.17258758276823905,\"far\":5,\"farCos\":-0.059623470710219804},\"0.9,-0.3,0.5,0.2\":{\"n\":1,\"taste\":0.27072454151010994,\"cos\":-0.5085124089600315,\"dist\":6.1510539949179925,\"close\":-2.6591675350686934,\"far\":1,\"farCos\":-0.5085124089600315}}"
+    },
+    {
+      "t": 350.000000000036,
+      "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))",
+      "result": "{\"1,0,0,0\":{\"n\":13,\"taste\":0.10543760666541874,\"cos\":-0.21935829049389216,\"dist\":5.052609776487872,\"close\":0.7206493241721247,\"far\":4,\"farCos\":0.13229247827523383},\"0.9,-0.3,0.5,0.2\":{\"n\":1,\"taste\":0.21238610908003464,\"cos\":-0.9928100192120256,\"dist\":11.824812259693088,\"close\":-1.567437683908098,\"far\":1,\"farCos\":-0.9928100192120256}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-24T09:55:28",
+  "wall_s": 1424.3
+}

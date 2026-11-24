@@ -1,0 +1,131 @@
+{
+  "name": "p3-clip-blind",
+  "description": "the same predators without a taste (nothing to point them: taste 0; probe empty)",
+  "condition": {
+    "name": "p3-clip-blind",
+    "description": "the same predators without a taste (nothing to point them: taste 0; probe empty)",
+    "query": {
+      "seed": 3,
+      "p3census": 5
+    },
+    "duration": 352,
+    "sample_every": 30,
+    "stall": 400,
+    "evals": [
+      {
+        "t": 300,
+        "js": "const r=await moire.senses.ring(16, 12, {\"engulf\": 1, \"flagellum\": 0.5, \"range\": 2}); moire.camera.set(2.5, r.centre[0]-0.75*r.radius*moire.cells.R, r.centre[1]); return JSON.stringify(r)"
+      },
+      {
+        "t": 310,
+        "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+      },
+      {
+        "t": 320,
+        "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+      },
+      {
+        "t": 335,
+        "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+      },
+      {
+        "t": 350,
+        "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+      }
+    ],
+    "shots": [
+      {
+        "t": 301,
+        "name": "t301"
+      },
+      {
+        "t": 310,
+        "name": "t310"
+      },
+      {
+        "t": 320,
+        "name": "t320"
+      },
+      {
+        "t": 335,
+        "name": "t335"
+      },
+      {
+        "t": 350,
+        "name": "t350"
+      },
+      {
+        "t": 335,
+        "view": "machinery",
+        "name": "t335-machinery"
+      }
+    ],
+    "clips": [
+      {
+        "t": 302,
+        "until": 332,
+        "speed": 2
+      }
+    ]
+  },
+  "url": "http://localhost:57949/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3&p3census=5",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "b38436de7f1c9957c377e7d348fe7086a3f924c0",
+  "dirty": false,
+  "started": "2026-11-24T09:31:24",
+  "status": "ok",
+  "browser_version": "Chrome/158.0.8127.38",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 352.0,
+  "run_wall_s": 1306.05,
+  "speed_reached": 0.27,
+  "samples": 13,
+  "shots": [
+    "shots/t301.png",
+    "shots/t310.png",
+    "shots/t320.png",
+    "shots/t335.png",
+    "shots/t335-machinery.png",
+    "shots/t350.png"
+  ],
+  "snapshots": [],
+  "clips": [
+    {
+      "file": "clips/clip_t302-332.webm",
+      "t_end": 332.0000000000523,
+      "bytes": 3765211
+    }
+  ],
+  "evals": [
+    {
+      "t": 300.0000000000558,
+      "js": "const r=await moire.senses.ring(16, 12, {\"engulf\": 1, \"flagellum\": 0.5, \"range\": 2}); moire.camera.set(2.5, r.centre[0]-0.75*r.radius*moire.cells.R, r.centre[1]); return JSON.stringify(r)",
+      "result": "{\"centre\":[733.2464364369711,362.26130243142444],\"radius\":36.40546203273267,\"placed\":16}"
+    },
+    {
+      "t": 332.0000000000523,
+      "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))",
+      "result": "{\"0,0,0,0\":{\"n\":12,\"taste\":0,\"cos\":0,\"dist\":16.477672340194395,\"close\":-0.45559643912148373,\"far\":9,\"farCos\":0},\"0.3,0,0.1,-0.2\":{\"n\":1,\"taste\":0.0263742831104737,\"cos\":-0.46627039189857095,\"dist\":19.458217150542392,\"close\":-1.1912232910311118,\"far\":1,\"farCos\":-0.46627039189857095}}"
+    },
+    {
+      "t": 332.0000000000523,
+      "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))",
+      "result": "{\"0,0,0,0\":{\"n\":12,\"taste\":0,\"cos\":0,\"dist\":16.477672340194395,\"close\":-0.45559643912148373,\"far\":9,\"farCos\":0},\"0.3,0,0.1,-0.2\":{\"n\":1,\"taste\":0.0263742831104737,\"cos\":-0.46627039189857095,\"dist\":19.458217150542392,\"close\":-1.1912232910311118,\"far\":1,\"farCos\":-0.46627039189857095}}"
+    },
+    {
+      "t": 335.00000000004957,
+      "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))",
+      "result": "{\"0,0,0,0\":{\"n\":12,\"taste\":0,\"cos\":0,\"dist\":16.270451302362957,\"close\":0.38664171389691027,\"far\":11,\"farCos\":0},\"0.3,0,0.1,-0.2\":{\"n\":1,\"taste\":0.018313701251771987,\"cos\":-0.4092842126071643,\"dist\":20.435233768379785,\"close\":-1.742329194488579,\"far\":1,\"farCos\":-0.4092842126071643}}"
+    },
+    {
+      "t": 350.0000000000359,
+      "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))",
+      "result": "{\"0,0,0,0\":{\"n\":12,\"taste\":0,\"cos\":0,\"dist\":15.034762708904758,\"close\":0.4530944391959595,\"far\":7,\"farCos\":0},\"0.3,0,0.1,-0.2\":{\"n\":1,\"taste\":0.019464484324613316,\"cos\":0.9854666889725895,\"dist\":29.12271290325185,\"close\":1.02176346094614,\"far\":1,\"farCos\":0.9854666889725895}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-24T09:55:12",
+  "wall_s": 1428.18
+}

@@ -1,0 +1,66 @@
+{
+  "name": "p3-mainsnap-load",
+  "description": "main's snapshot (94-word cells, 180-word genomes) loads into P3 with P3 off",
+  "condition": {
+    "name": "p3-mainsnap-load",
+    "description": "main's snapshot (94-word cells, 180-word genomes) loads into P3 with P3 off",
+    "query": {
+      "snap": "experiments/runs/p3-mainsnap-make/snapshots/snap_t40.json"
+    },
+    "duration": 60,
+    "sample_every": 10,
+    "stall": 300,
+    "evals": [
+      {
+        "t": 1,
+        "js": "return JSON.stringify({p3: moire.senses.params, notes: moire.lab.loaded && moire.lab.loaded.notes, exact: moire.lab.loaded && moire.lab.loaded.exact})"
+      }
+    ]
+  },
+  "url": "http://localhost:63085/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&snap=experiments/runs/p3-mainsnap-make/snapshots/snap_t40.json",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "9aab14aa0e9ad5435bfdd4059e6ee9e9b9eb5688",
+  "dirty": true,
+  "started": "2026-11-24T12:21:24",
+  "status": "ok",
+  "browser_version": "Chrome/158.0.8127.38",
+  "adapter": "nvidia turing",
+  "snapshot_load": {
+    "exact": true,
+    "notes": [
+      "saved before step P3: the nose as in N2, no taste, no clump test, no shared armour (as it ran)"
+    ],
+    "rebased": null,
+    "rounding": {
+      "energy": 0.00445556640625,
+      "atoms": 0,
+      "charge": 0,
+      "snapshot": {
+        "energy": 0.00445556640625,
+        "atoms": 0,
+        "charge": 0
+      }
+    },
+    "cells": 1696,
+    "time": 39.99999999999902
+  },
+  "t_start": 39.99999999999902,
+  "sim_s": 60.0,
+  "run_wall_s": 150.56,
+  "speed_reached": 0.4,
+  "samples": 7,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 1.0,
+      "js": "return JSON.stringify({p3: moire.senses.params, notes: moire.lab.loaded && moire.lab.loaded.notes, exact: moire.lab.loaded && moire.lab.loaded.exact})",
+      "result": "{\"p3\":{\"nose\":false,\"tau\":1.5,\"noseHalf\":0.15,\"fuelFloor\":0.5,\"taste\":false,\"tasteNull\":false,\"tasteSpeed\":1,\"tasteHalf\":0.04,\"rangeGain\":1,\"rangeCost\":0.003,\"minFloor\":[0.002,0.002,0.002,0.05],\"clump\":false,\"tug\":0.5,\"armour\":false,\"kinShare\":0.2,\"censusEvery\":10,\"near\":12},\"notes\":[\"saved before step P3: the nose as in N2, no taste, no clump test, no shared armour (as it ran)\"],\"exact\":true}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-24T12:25:25",
+  "wall_s": 240.72
+}

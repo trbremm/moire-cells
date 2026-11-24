@@ -8798,6 +8798,147 @@ Unchanged.
 - Rare mode in the default scene with hard light on is light-dominated: the chance goes up to x10 under the spotlight.
 - x0 does not mean "clean": a single clone can collapse.
 
+## Step P3: cells that sense cells
+
+BUILD QUEUE item 6a6 (the user, 2026-11-23: "predators are so boring still ... either give them more skills or just have a larger dial for
+cells to be able to detect other cells, both to run away and to get closer. The run away/attraction should also be a dial"; then: scents
+must be REAL CHEMICALS, no magic labels; and "the defensive cells should also have a reason to cluster or collaborate"). Until now nothing
+sensed another cell beyond touch, so a predator only ate what it bumped into. Code: `src/senses.js` (switches, knobs, the taste's floors,
+census, panel line, the lab's `ring()`), the "step P3" parts of `cell_common.wgsl` (Bio `ta`, `tb`; Cell `taste`; Fields `p3a`, `p3b`;
+`P3_*` bits, `jn_formed`, `PS_TUG`, `PS_GLUED`), `cell_eat.wgsl` (the nose, the taste, its upkeep, shared armour's wall), `cell_step.wgsl`
+(steering, mutation, the clump test and the tug, the exposed sides' armour), `cell_carbon.wgsl` (`cb_ladder_at`); `tools/p3_analyse.py`.
+
+### 1. A nose that works (`?nose=0`)
+
+N2 found the membrane corners' fuel smell saturated (the median cell's gradient 2-11x the half-gradient, so the crawl always steered at
+full strength) and noisy (smell vs the next 10 s of path: cosine -0.03 .. +0.05). Now, with the nose on:
+- The smell is a RELATIVE gradient: d log (c + floor) across the cell (G / (the six corners' mean + `fuelFloor` 0.5 energy per R^2), per
+  R), as bacteria sense ratios, not differences: the same pull near a rich spring and in a faint plume, nothing from a flat background.
+- It is AVERAGED: each tick's reading is mixed into Cell.smell with the share 1 - e^(-dt / tau) (`tau` 1.5 s): a per-cell low-pass
+  (state, not a gene), so the pixels' noise and the cell's jostling average out.
+- The steering is soft, x / (x + `noseHalf` 0.15 per R), not tanh: a weak smell steers a little, only a strong one fully.
+- The chemotaxis gene (N2, Bio.mc.w) still multiplies it; the swimmers' fronts still turn toward the same crawling intention (S2).
+
+### 2. Taste dials and a range (`?taste=0`, `?tastenull=1`)
+
+Four DIALS per cell, -1..1 (Bio.ta; + approach: crawl up the gradient, - flee: down it), each on a substance ALREADY in the water that
+cells give off or that marks a place. No new chemical, no label:
+- OXYGEN: free t (and t*): the light eaters' waste, also a poison (it bites membranes).
+- EXHAUST: the CO2-like end of the carbon ladder (ct4): breathers' and burners' waste.
+- SPILL: free G (the heavy giver, "iron-like"): the metal of broken enzymes (4 C + 1 G each), set free where a cell died, burst or its
+  meal's leftovers spilled. Inside-only stuff found outside: a derived danger signal.
+- HEAT: the temperature: busy cells, digestion (a meal's battery mostly becomes heat), vents.
+
+At the same 6 corners as the smell, each substance's relative gradient (d log (c + floor_k), per R), times its dial, summed, low-passed as
+the nose: Cell.taste. The step steers the crawl along it, `tasteSpeed` (0.6 R/s) x |taste| / (|taste| + `tasteHalf` 0.15), x motility,
+x the battery's gate; a swimmer's front turns toward it (S2's steering). The RANGE gene (Bio.tb.x, -2..2) is the sensitivity: floor_k =
+the dish's mean of substance k (per R^2; the temperature for heat; from the books every frame: adaptation to the background) /
+`rangeGain` x e^-range, at least `minFloor`. A long-range nose (range 2: floor / 7.4) follows a trace 7 times fainter, so it notices
+cells farther off; it costs upkeep `rangeCost` (0.003 energy per s, an engine of rate 1's) per unit of |dial| x e^range, from the battery
+as heat. Genes: founders 0 (std and blank), wild founders (group `taste`) anywhere in their spans; at a birth small steps (0.05 x the
+mutation size for the dials, 0.1 for the range) and rare jumps anywhere (spans symmetric round 0, so a drifting gene's mean stays put);
+with M2's rare mode they travel with the chemotaxis group. NEUTRAL CONTROL `?tastenull=1`: they drift, nothing steers, nothing is paid.
+Hand-set in the lab: `?genes=tasteOxygen:1,tasteExhaust:1,tasteSpill:-1,tasteHeat:0,range:1`; a hand-made predator with a taste:
+`moire.predators.place(n, {taste: [1, 1, 0, 1], range: 2, flagellum: 0.5})`, or on a ring round the colony `moire.senses.ring(16, 15, {...})`.
+
+### 3. Defenders collaborate
+
+- EAT THE CLUMP OR NOTHING (`?clump=0`): the engulf size test counts the prey's GLUED GROUP: the prey and every neighbour joined to it by a
+  junction (formed and not torn, the G0 word; its junction to the predator not counted), each as big as the prey. A predator only 1.56x the
+  prey's area cannot eat a cell glued to even one neighbour. It may still START a wrap (the hold test as in P1), but the wrap stops at the
+  TUG (`tug` 0.5 of the way) and pulls the prey in meanwhile (P1's pull at half strength), paying the wrap's cost, until the prey's
+  junctions tear (G0's own rule: a junction pulled past its length while the pair separates tears) and what is left of the group is small
+  enough; or the prey's hold wins and it escapes. Counters: `pred.total.tug` (ticks spent tugging), `pred.total.glued` (junctions of the
+  cells eaten, at the catch).
+- SHARED ARMOUR (`?sharedarmour=0`): the crust wall is wanted (built, paid in material and battery, cracked when jolted) on the EXPOSED sides
+  only; a side joined to a neighbour by a junction wants `kinShare` (0.2) of it and sheds the rest back into the dish (exact). A cell's hold
+  against a predator counts the wall and stiffness of its exposed sides (all six when every side is joined). Expected: a clump's outer ring
+  armours, its core stays soft and cheap. ("Kin" is read as "joined by a junction": the T1a marker's kinship fades within a lineage in
+  10-20 min, so a marker-weighted share would treat nearly every neighbour as a stranger.)
+- Not built (pieces 3-5): an ALARM through the gene network (the taste's SPILL dial is the chemical side of it: cells can evolve to flee
+  burst and digested cells; a network sense for it is not added), BAD TASTE (the digested stock already reacts inside the predator, P1), MOBBING.
+
+### 4. Seeing it
+
+- The scents are ordinary substances: Shift+S (substances shown) cycles through each substance alone: `t` (oxygen), `G` (spill), and with
+  carbon `ct4` (exhaust); the heat is the background's shimmer. No new view.
+- Zoo and cell portraits say what a cell follows or flees ("follows oxygen 0.8, heat 0.5, long-range nose", "flees spilled metal 1.0").
+- SENSES panel line: the four dials' means and the range, how well paths follow the taste and the nose, predators' closing speed on their
+  nearest prey against ordinary cells', prey opening speed, glued group size, wall on exposed vs sheltered sides. `moire.senses.census`,
+  `now()`; `senses.*` columns in the experiment samples.
+
+### Switches and knobs
+
+- `?p3=0`: every part off (exactly as before P3); `?nose=0`, `?taste=0`, `?clump=0`, `?sharedarmour=0` one part off; `?tastenull=1` the
+  taste's NEUTRAL control.
+- Knobs: `?nosetau=` (1.5 s), `?nosehalf=` (0.15 per R), `?fuelfloor=` (0.5 energy per R^2), `?tastespeed=` (1 R/s), `?tastehalf=` (0.04),
+  `?rangegain=` (1: the global sensitivity), `?rangecost=` (0.003 energy per s), `?tug=` (0.5), `?kinshare=` (0.2), `?p3census=` (10 s),
+  `?p3near=` (12 R: how far the census looks for a predator's prey). Live: `moire.senses.params`; the rules panel's group "Cells that sense
+  cells (step P3)".
+- Old snapshots (no `senses.params` saved) load with every part off and say so; main's last layout (94-word cells, 180-word genomes) widens.
+
+### Words and layout (for merges)
+
+Bio 180 -> 188 floats (`ta` 180..183, `tb` 184..187); Cell 94 -> 96 words (`taste` 94, 95; 384 bytes); Fields + `p3a`, `p3b` (words 160..167,
+672 bytes); EatP + `p3[3]` (word 484, 1984 bytes); Stats.p1 words 10, 11 (`PS_TUG`, `PS_GLUED`); the taste genes travel with the chemotaxis
+group (`MG_CHEMO`) in M2's rare mode; wild group `taste`; lab gene names `tasteOxygen tasteExhaust tasteSpill tasteHeat range`.
+
+### Results (EXPERIMENTS.md "Cells that sense cells"; one or two seeds: hints unless said)
+
+- THE NOSE: in open water both noses steer (path cosine 0.1-0.3, lab); in a packed colony neither does (cosine ~0: contacts decide).
+  The averaged nose is no longer saturated and makes a strong nose cheap: default s3 with every chemotaxis gene at x4.5, 642 cells left
+  at 150 s against 207 with N2's nose.
+- WHICH SCENT POINTS AT CELLS (the probe: hand-made predators 15 R out, one scent each): OXYGEN does, from 10-20 R, in the default dish and
+  the colonies (taste-to-prey cosine 0.4-0.9: light eaters breathe it out); HEAT does in the default dish (0.25-0.84, weaker); EXHAUST and
+  SPILL do not (the springs drip CO2-like carbon and G everywhere).
+- CHASES (lab): 16 oxygen-following swimmers on a ring 12 R outside the default colony are 5 R from prey after 50 s (closing 0.7 R/s);
+  the same swimmers without a taste stay 15 R out. With the first knobs (0.6 R/s, half 0.15) the crawl's random wander outweighed the taste
+  (8 R after 50 s), hence the defaults now.
+- EVOLUTION (20 min; colonies of wild founders and the default dish, seeds 3 and 7; the Islands world at 10 min; taste on vs its null):
+  - The RANGE falls when it costs: below its null in 5 of 6 dishes, level in 1 (e.g. colonies -0.98 / -0.98 vs -0.31 / 0.02, islands
+    -0.51 / -0.68 vs 0.17 / -0.27). Wild founders' random dials shrink toward 0 in both colonies (oxygen 0.10 / 0.05 vs 0.36 / 0.34 in the
+    null). Smelling is paid for and mostly not worth it.
+  - PREDATORS' OXYGEN DIAL ends above the null in both default dishes (0.37 / 0.47 vs 0.09 / 0.23), and their closing speed on prey too
+    (0.16 / 0.23 vs 0.13 / -0.03 R/s); not in the colonies or islands. A hint: the one scent that points at prey.
+  - Cells follow their taste a little (path cosine 0.03-0.10 against -0.08..0.05 in the null, 6 of 6). Meals and counts: no consistent change.
+- DEFENDERS: the rules act (glued cells are eaten less: the junctions of the eaten per meal 0.02-0.14 with the clump test against 0.15-0.35
+  without, 4 of 4; with shared armour the walls sit on exposed sides, 0.02-0.22 cover against 0.002-0.05 on sheltered ones, 4 of 4), but they
+  select nothing yet: the glue gene is not higher with them (3 of 4 lower), glued groups stay ~1.1 cells everywhere (junctions rarely form in
+  these dishes), armour mixed.
+
+### What it looks like (pictures: `experiments/keep/p3/`)
+
+- `ring-oxygen-swimmers-t301-x2.5.jpg` and `-t350-`: hand-made swimming predators (pink-red, a sperm-like neon tail) on a ring left of the
+  default colony; 50 s later the ones that follow oxygen have gone into the colony's edge. `ring-blind-swimmers-t301/t350`: the same without
+  a taste; they are still out in the water. The clips (`experiments/runs/p3-clip-*/clips/`, not committed) show them steering in.
+- In an evolving dish the taste is invisible: no chases stand out; predators are already inside the colonies they eat.
+
+### Checked
+
+- Off equals main: `?p3=0` against main 4509b8d (an export), default 300 s: seed 3 1580 / 1206 / 352 / 293 cells at 1 / 2 / 3 / 5 min against
+  1583 / 1175 / 320 / 286; seed 7 1643 / 1233 / 350 / 191 against 1664 / 1238 / 344 / 344 (the same founders' crash; runs vary).
+- Books: atoms, charge and carbon rounding exactly 0 in every P3 run; energy rounding at most 0.17 against 1.2e7-6.4e7 of energy in.
+- Snapshots: an old one (tissue lab, 64-word cells) and one saved by main 4509b8d (94 / 180 words) load with P3 off and the note; main's
+  loads exact.
+- Headed Firefox (colonies preset) runs, no errors; phone size (390 x 844, Chrome) runs; no console errors in any run.
+
+### Speed
+
+GPU free, 2000 cells, default seed 3, 150 s at MAX: P3 on x2.55 / x2.64, `?p3=0` x2.51, main 4509b8d x2.62 / x2.62: unchanged.
+
+### Known issues
+
+- The nose does not help in packed tissue (contacts win); it helps only where cells are loose.
+- Exhaust and spill are poor cues while springs drip CO2-like carbon and G: they mark springs more than cells.
+- The taste costs upkeep and evolution mostly drops it; with no cost (`?rangecost=0`) the outcome is untested.
+- The clump test counts only the prey's first ring of glued neighbours (each as big as the prey), not the whole glued group.
+- "Kin" in shared armour means "joined by a junction", not the marker's kinship (which fades within a lineage in 10-20 min).
+- The colonies-on dishes (both seeds) and colonies-noclump s3 ran with the first steering knobs (0.6 R/s, half 0.15), every other on-run
+  with the final ones; the null does not steer, so taste-vs-null holds, but the colonies s7 clump comparison mixes knobs. The Islands world
+  was compared at 10 min (budget; its runs were stopped there). One or two seeds per cell: hints.
+- Not built: alarm through the gene network, bad taste, mobbing (pieces 3-5 of DEFENDERS COLLABORATE); a scent view (Shift+S shows each
+  scent substance alone).
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start
@@ -8862,6 +9003,9 @@ Unchanged.
   panel line, the drawing (tails and hairs, neon and harmonic); the genes and `motor_act` in `cell_common.wgsl`, the forces, turning, the
   water's dipole and pump, the beat's phase coupling, mutation and census in `cell_step.wgsl`, the motor proteins in `cell_eat.wgsl` /
   `cell_carbon.wgsl`, the 19th and 20th outputs in `cell_grn.wgsl`.
+- `src/senses.js`: step P3, cells that sense cells: the switches and knobs (`moire.senses.params`), the step's and the eat pass's words, the
+  taste's floors from the books, the census (taste genes, following, chases, glued groups, walls), the SENSES panel line, the lab's
+  `ring()` (hand-made predators round the colony) and `probe()` (where each taste points)
 - `src/flow.js`: step N2, substances that flow: the switches and knobs (`moire.flow.params`), the gusts' and tides' words for the water,
   the scour's for the matter, the heat's advection scale, the patchy springs, the chemotaxis gene's bits (Fields.g2.w), the census and
   `moire.flow.diagnose()`, the FLOW panel line; the rules in the "step N2" parts of `water.wgsl`, `heat.wgsl`, `matter.wgsl`,

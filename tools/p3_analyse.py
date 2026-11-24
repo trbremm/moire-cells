@@ -6,16 +6,36 @@ Prints one markdown table per measure (rows = scene and seed, columns = variants
 """
 
 import argparse
+import csv
 import glob
 import json
 import os
 import re
 
 
+def samples(run):
+    """samples.csv rows as {trun: {column: float}} (for runs stopped early, without meta.json evals)."""
+    rows = {}
+    try:
+        with open(os.path.join(run, "samples.csv"), encoding="utf-8") as h:
+            for r in csv.DictReader(h):
+                try:
+                    t = float(r["trun"])
+                except Exception:
+                    continue
+                rows[t] = {k: (float(v) if v not in ("", None) else None) for k, v in r.items() if k}
+    except Exception:
+        pass
+    return rows
+
+
 def load(run):
+    rows = samples(run)
     try:
         m = json.load(open(os.path.join(run, "meta.json"), encoding="utf-8"))
     except Exception:
+        m = {"status": "stopped (samples only)", "evals": []}
+    if not rows and not m.get("evals"):
         return None
     out = {}
     for e in m.get("evals", []) or []:
@@ -28,7 +48,19 @@ def load(run):
             continue
         t = round(d.get("t", e.get("t", 0)) / 30) * 30
         out[t] = d
-    return {"status": m.get("status"), "evals": out}
+    return {"status": m.get("status"), "evals": out, "rows": rows}
+
+
+def from_rows(r, t, path):
+    """A measure from the samples nearest run time t (within 20 s): the census column of the same name."""
+    rows = r.get("rows") or {}
+    if not rows:
+        return None
+    k = min(rows, key=lambda x: abs(x - t))
+    if abs(k - t) > 20:
+        return None
+    col = path.replace(".pred", ".pred")
+    return rows[k].get(col)
 
 
 def get(d, path):
@@ -81,14 +113,14 @@ MEASURES = [
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--runs", default=os.path.join("experiments", "runs"))
+    ap.add_argument("--runs", default=os.path.join("experiments", "runs"), help="comma-separated folders")
     ap.add_argument("--prefix", default="p3-evo-")
     ap.add_argument("--times", default="600,1200")
     ap.add_argument("--json", default="")
     a = ap.parse_args()
     times = [int(x) for x in a.times.split(",")]
     runs = {}
-    for p in sorted(glob.glob(os.path.join(a.runs, a.prefix + "*"))):
+    for p in sorted(sum((glob.glob(os.path.join(d, a.prefix + "*")) for d in a.runs.split(",")), [])):
         name = os.path.basename(p)
         m = re.match(re.escape(a.prefix) + r"(\w+)-(\w+?)(?:_s(\d+))?$", name)
         if not m:
@@ -107,6 +139,10 @@ def main():
                 r = runs.get((sc, seed, v))
                 for t in times:
                     d = r["evals"].get(t) if r else None
+                    if r and d is None and path is not None:
+                        cells.append(from_rows(r, t, path))
+                        allout.setdefault(label, {}).setdefault(f"{sc}_s{seed}", {})[f"{v}@{t}"] = cells[-1]
+                        continue
                     if path is None and d:
                         e = get(d, "pred.total.eaten") or 0
                         g = get(d, "pred.total.glued")

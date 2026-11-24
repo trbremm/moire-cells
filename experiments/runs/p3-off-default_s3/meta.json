@@ -1,0 +1,45 @@
+{
+  "name": "p3-off-default_s3",
+  "description": "off-equals-main check: default scene, every P3 part off (?p3=0)",
+  "condition": {
+    "name": "p3-off-default_s3",
+    "description": "off-equals-main check: default scene, every P3 part off (?p3=0)",
+    "query": {
+      "p3": 0,
+      "seed": 3
+    },
+    "duration": 302,
+    "sample_every": 30,
+    "stall": 400,
+    "shots": [
+      {
+        "t": 300,
+        "panel": true,
+        "name": "panel"
+      }
+    ]
+  },
+  "url": "http://localhost:57469/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&p3=0&seed=3",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "9aab14aa0e9ad5435bfdd4059e6ee9e9b9eb5688",
+  "dirty": true,
+  "started": "2026-11-24T11:39:50",
+  "status": "ok",
+  "browser_version": "Chrome/158.0.8127.38",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 302.0,
+  "run_wall_s": 890.7,
+  "speed_reached": 0.34,
+  "samples": 12,
+  "shots": [
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-24T11:56:17",
+  "wall_s": 986.32
+}

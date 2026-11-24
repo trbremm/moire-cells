@@ -1,0 +1,129 @@
+{
+  "name": "p3-chase-taste",
+  "description": "default s3: 25 hand-made swimming predators at 60 s that approach oxygen, exhaust and heat (range 1)",
+  "condition": {
+    "name": "p3-chase-taste",
+    "description": "default s3: 25 hand-made swimming predators at 60 s that approach oxygen, exhaust and heat (range 1)",
+    "query": {
+      "seed": 3,
+      "p3census": 5,
+      "predcensus": 5
+    },
+    "duration": 242,
+    "sample_every": 10,
+    "stall": 300,
+    "evals": [
+      {
+        "t": 60,
+        "js": "await moire.predators.place(25, {\"engulf\": 1, \"flagellum\": 0.5, \"taste\": [1, 1, 0, 1], \"range\": 1}); return 'placed'"
+      },
+      {
+        "t": 90,
+        "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+      },
+      {
+        "t": 120,
+        "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+      },
+      {
+        "t": 150,
+        "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+      },
+      {
+        "t": 180,
+        "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+      },
+      {
+        "t": 210,
+        "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+      },
+      {
+        "t": 240,
+        "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})"
+      }
+    ],
+    "shots": [
+      {
+        "t": 120,
+        "name": "t120"
+      },
+      {
+        "t": 240,
+        "name": "t240"
+      }
+    ],
+    "clips": [
+      {
+        "t": 150,
+        "until": 165,
+        "speed": 4
+      }
+    ]
+  },
+  "url": "http://localhost:62722/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3&p3census=5&predcensus=5",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "4509b8d371bd89a936c5d538308e9392b5786833",
+  "dirty": true,
+  "started": "2026-11-24T08:16:49",
+  "status": "ok",
+  "browser_version": "Chrome/158.0.8127.38",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 242.0,
+  "run_wall_s": 88.19,
+  "speed_reached": 2.74,
+  "samples": 26,
+  "shots": [
+    "shots/t120.png",
+    "shots/t240.png"
+  ],
+  "snapshots": [],
+  "clips": [
+    {
+      "file": "clips/clip_t150-165.webm",
+      "t_end": 164.99999999999986,
+      "bytes": 804323
+    }
+  ],
+  "evals": [
+    {
+      "t": 59.99999999999911,
+      "js": "await moire.predators.place(25, {\"engulf\": 1, \"flagellum\": 0.5, \"taste\": [1, 1, 0, 1], \"range\": 1}); return 'placed'",
+      "result": "placed"
+    },
+    {
+      "t": 89.99999999999801,
+      "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})",
+      "result": "{\"t\":89.99999999999801,\"chase\":{\"preds\":3,\"close\":-0.03662741539228772,\"chases\":1,\"dist\":4.828144790061629,\"baseN\":449,\"baseClose\":0.07850307136627933,\"baseChaseShare\":0.36525612472160357,\"chaseShare\":0.3333333333333333},\"prey\":{\"n\":485,\"open\":0.011443616165626058,\"flee\":158,\"fleeShare\":0.32577319587628867},\"taste\":{\"feel\":0.0205620287868403,\"align\":0.16474488277552213,\"alignPath\":0.109503518488461},\"glued\":{\"groups\":568,\"single\":0.2700479780671693,\"in4\":0.5620287868403016,\"meanSize\":25.80603152844414,\"largest\":134},\"meals\":0.09884678747941157,\"eaten\":6,\"tug\":545,\"carriers\":23}"
+    },
+    {
+      "t": 119.99999999999665,
+      "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})",
+      "result": "{\"t\":119.99999999999665,\"chase\":{\"preds\":5,\"close\":0.0709509979733266,\"chases\":3,\"dist\":4.420219855797677,\"baseN\":416,\"baseClose\":-0.0054377743649703,\"baseChaseShare\":0.3173076923076923,\"chaseShare\":0.6},\"prey\":{\"n\":416,\"open\":-0.15310889104929534,\"flee\":125,\"fleeShare\":0.3004807692307692},\"taste\":{\"feel\":0.029503105590062112,\"align\":0.03017472904571368,\"alignPath\":0.1301274640309557},\"glued\":{\"groups\":479,\"single\":0.24145962732919254,\"in4\":0.578416149068323,\"meanSize\":17.45807453416149,\"largest\":88},\"meals\":0,\"eaten\":7,\"tug\":545,\"carriers\":18}"
+    },
+    {
+      "t": 149.99999999999977,
+      "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})",
+      "result": "{\"t\":149.99999999999977,\"chase\":{\"preds\":2,\"close\":-0.05651076059485852,\"chases\":0,\"dist\":3.292230763594123,\"baseN\":279,\"baseClose\":0.01156064415537464,\"baseChaseShare\":0.31899641577060933,\"chaseShare\":0},\"prey\":{\"n\":91,\"open\":-0.09648904048432617,\"flee\":28,\"fleeShare\":0.3076923076923077},\"taste\":{\"feel\":0.03680203045685279,\"align\":0.1359962046391382,\"alignPath\":0.060481286480638385},\"glued\":{\"groups\":255,\"single\":0.20558375634517767,\"in4\":0.6687817258883249,\"meanSize\":16.85786802030457,\"largest\":72},\"meals\":0.19966722129783326,\"eaten\":10,\"tug\":557,\"carriers\":9}"
+    },
+    {
+      "t": 180.0000000000015,
+      "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})",
+      "result": "{\"t\":180.0000000000015,\"chase\":{\"preds\":8,\"close\":0.04052518220341417,\"chases\":3,\"dist\":5.444918375145132,\"baseN\":177,\"baseClose\":0.02764808651126914,\"baseChaseShare\":0.3615819209039548,\"chaseShare\":0.375},\"prey\":{\"n\":82,\"open\":-0.113098729051364,\"flee\":28,\"fleeShare\":0.34146341463414637},\"taste\":{\"feel\":0.09848484848484848,\"align\":-0.044905453657213566,\"alignPath\":0.024192360324423366},\"glued\":{\"groups\":173,\"single\":0.2676767676767677,\"in4\":0.5176767676767676,\"meanSize\":5.565656565656566,\"largest\":24},\"meals\":0,\"eaten\":12,\"tug\":938,\"carriers\":12}"
+    },
+    {
+      "t": 210.00000000000435,
+      "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})",
+      "result": "{\"t\":210.00000000000435,\"chase\":{\"preds\":9,\"close\":-0.16949149522893103,\"chases\":4,\"dist\":3.5128838093523895,\"baseN\":110,\"baseClose\":-0.04208335753330563,\"baseChaseShare\":0.34545454545454546,\"chaseShare\":0.4444444444444444},\"prey\":{\"n\":86,\"open\":0.2221933543670261,\"flee\":44,\"fleeShare\":0.5116279069767442},\"taste\":{\"feel\":0.19838056680161945,\"align\":-0.11984763375536234,\"alignPath\":-0.05218037901246097},\"glued\":{\"groups\":108,\"single\":0.27125506072874495,\"in4\":0.5141700404858299,\"meanSize\":5.2105263157894735,\"largest\":20},\"meals\":0.09917355371900034,\"eaten\":18,\"tug\":1497,\"carriers\":16}"
+    },
+    {
+      "t": 240.00000000000588,
+      "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), chase: s&&s.chase, prey: s&&s.prey, taste: s&&s.taste, glued: s&&s.glued, meals: p&&p.rate&&p.rate.meals, eaten: p&&p.total&&p.total.eaten, tug: p&&p.total&&p.total.tug, carriers: s&&s.carriers})",
+      "result": "{\"t\":240.00000000000588,\"chase\":{\"preds\":8,\"close\":-0.4248732113663197,\"chases\":2,\"dist\":4.486549367208123,\"baseN\":82,\"baseClose\":-0.0017296854273191567,\"baseChaseShare\":0.34146341463414637,\"chaseShare\":0.25},\"prey\":{\"n\":92,\"open\":0.05802339513690856,\"flee\":33,\"fleeShare\":0.358695652173913},\"taste\":{\"feel\":0.26548672566371684,\"align\":0.03817212527369825,\"alignPath\":0.047981287396055707},\"glued\":{\"groups\":113,\"single\":0.3230088495575221,\"in4\":0.415929203539823,\"meanSize\":3.9026548672566372,\"largest\":13},\"meals\":0.19704433497536109,\"eaten\":22,\"tug\":1679,\"carriers\":17}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-24T08:20:05",
+  "wall_s": 195.81
+}

@@ -1,0 +1,61 @@
+{
+ "batch": "q1-snapload",
+ "runs": [
+  {
+   "name": "q1-mainsnap-load",
+   "description": "main aadc3f8's snapshot (96-word cells, 224-word genomes) loads into Q1 with the signal off",
+   "query": {
+    "snap": "experiments/runs/main-aadc/q1-main-snap/snapshots/snap_t60.json"
+   },
+   "duration": 30,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 1,
+     "js": "return JSON.stringify({q1: moire.signals.params.on, notes: moire.lab.loaded && moire.lab.loaded.notes, exact: moire.lab.loaded && moire.lab.loaded.exact, rounding: moire.lab.loaded && moire.lab.loaded.rounding, sig: moire.signals.ledger})"
+    },
+    {
+     "t": 29,
+     "js": "return JSON.stringify({round: moire.heat.ledger.rounding, atoms: moire.matter.ledger.rounding})"
+    }
+   ]
+  },
+  {
+   "name": "q1-oldsnap",
+   "description": "an old snapshot (tissue lab) loads with the signal off",
+   "query": {
+    "snap": "experiments/tissue/configs/tt-same/snapshot.json"
+   },
+   "duration": 30,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 1,
+     "js": "return JSON.stringify({q1: moire.signals.params.on, notes: moire.lab.loaded && moire.lab.loaded.notes.filter(n => n.includes('Q1'))})"
+    }
+   ]
+  },
+  {
+   "name": "q1-selfsnap-load",
+   "description": "a Q1 snapshot (a puff in the water) reloads with its signal",
+   "query": {
+    "snap": "experiments/runs/q1-snap-save/snapshots/snap_t61.json"
+   },
+   "duration": 30,
+   "sample_every": 5,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 0.1,
+     "js": "return JSON.stringify({q1: moire.signals.params.on, notes: moire.lab.loaded && moire.lab.loaded.notes, exact: moire.lab.loaded && moire.lab.loaded.exact, rounding: moire.lab.loaded && moire.lab.loaded.rounding, sig: moire.signals.ledger})"
+    },
+    {
+     "t": 5,
+     "js": "return JSON.stringify({round: moire.heat.ledger.rounding, sig: moire.signals.ledger})"
+    }
+   ]
+  }
+ ]
+}

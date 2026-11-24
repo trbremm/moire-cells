@@ -9091,6 +9091,179 @@ about 2-3 % slower (the genome record grew from 188 to 224 words).
 - Also fixed here: a drag on the dish (the touch tool, and the lab's stir) threw "cells.stir is not a function" since step G0, because
   `cells.stir` became the water stirrer; the pointer's stir is now `cells.stirAt`.
 
+## Step Q1: a signal substance
+
+BUILD QUEUE item 6a6c (the user, 2026-11-24: "create a substance just for signaling, even if it is not realistic. It would still be multi
+purpose and let evolution apply it as a tool, could even become like a neuro transmitter of sorts"; and, the same day, "an over powered
+toy", but "I still want my principle of emergent behavior"). A toy substance whose only property is that it can be HEARD: it does nothing
+unless a cell's genes and gene network are wired to it. Nothing names a relay, a wave or a hormone; the tools are a scientist's hand.
+Code: `src/signals.js` (switches, knobs, the grid's passes, the books, the gene network's and the eat pass's words, census, SIGNALS panel
+line, the pipette, the view's haze), `src/shaders/signal.wgsl` (the grid), `src/shaders/signal_draw.wgsl` (the haze), the "step Q1" parts
+of `cell_grn.wgsl` (the `signal` dispatch: inboxes, hearing, mutation, the release's baseline; the two senses and two outputs, fast
+regulators), `cell_eat.wgsl` (the release, the flash, the signal's taste), `cell_common.wgsl` (Bio `sg sh so ss`, `q1_fac`, `q1_hear`),
+`cell_draw.wgsl` (the signals view, the flash), `cell_step.wgsl` and `motor_draw.wgsl` (Cell.motW bits 24..31 kept), `src/tissues.js`
+(the relay), `src/toy.js`, `src/app.js`, `src/actions.js` (the pipette tool, the view, the rules panel group), `src/zoo.js` (relay buttons,
+the portrait's words), `src/heat.js` and `src/snapshot.js` (blocks and books).
+
+### 1. The substance on the grid (`?signal=0`)
+
+One MATTER-FREE substance on the heat grid, in two copies of three channels behind the water's blocks (the last blocks of the heat buffer):
+- its ENERGY A (heat counts, whole numbers): what the cells paid from their batteries, or the pipette brought in;
+- its FLAVOUR as a vector X, Y (16 counts per heat count, x cos / sin of a flavour angle): no energy, only the meaning. Signals of different
+  flavours ADD AS VECTORS and partly cancel (their energy still adds up: where they cancel the view shows a pale mist).
+It spreads fast (`spread` 4.5 R^2/s: two substeps per tick, even, so copy 0 is current at every tick's start), rides the water (the heat's upwind rule on the
+currents' stream function, exact; `?sigflow=0`), does not cross SOLID walls (step G0b's mask; porous walls let it through) and FADES with
+a fixed lifetime (`life` 2 s): each tick a share of each pixel's energy becomes heat there (booked), the flavour the same share.
+BOOKS: the heat ledger grows by 512 words (LG_SIG 47104: the signal's energy in the dish, a stored energy in the rounding; faded into heat;
+the pipette's puffs, energy in; the cells' releases into the water and through junctions); a replaced grid's signal leaves as heat (out).
+
+### 2. Cells: genes, release, hearing (always with the switches below)
+
+Genes (Bio 224 -> 240 floats; words 224..239): `sg` = the FLAVOUR emitted (rad), the flavour PREFERRED (rad), the TUNING width (rad,
+0.1..3), the RELEASE gene (0..1); `sh` = the JUNCTION SHARE (0..1), the signal's TASTE dial (-1..1), the FAST regulators (bits, one per
+regulator); `so` = the gene network's 21st and 22nd outputs, RELEASE TO WATER and RELEASE TO JUNCTIONS (gain, regulator); `ss` = state
+(heard in water, heard through junctions, the release's baseline, the last onset of firing). Founders: std and blank are SILENT (release 0,
+no taste, no fast regulators, no outputs), each founder line with a flavour of its own, emitted and preferred alike (a private language per
+line); founders the app makes (`founderGenome`) the same from their own stream; wild founders (group `signal`) draw everything (release
+anywhere in 0..1 for half of them, the preferred flavour their own or anywhere, tuning 0.2..3, each regulator fast one time in four, each
+release output four times in ten with the group `grn`). Births mutate them at M2's scale (rare mode: with the gene network's group):
+flavours 0.05 rad, tuning 5 % (log), release 0.02, junction share 0.03, taste 0.05, a speed bit flips 0.005 x the size, the outputs' gains
+as the network's, now and then one switched on or off.
+
+RELEASE (the eat pass): `power` 0.004 energy per s at release gene 1 and output factor 1 (an engine of rate 1 costs 0.003), x each output's
+factor (gene x exp(u x), at most 4), split by the junction share; paid from the battery (what it cannot pay is not released):
+- into the WATER: the energy and the flavour vector onto the grid at the cell (a hormone or quorum signal: slow, wide, heard by any cell
+  whose receptor matches, including the sender);
+- through JUNCTIONS (`?junction=0`): only through formed junction sides (step G0) with a live neighbour across: the energy is heat at the cell
+  at once, the flavour vector (shared among those sides) goes straight into each neighbour's INBOX (two words per cell slot in the heat
+  buffer), read and cleared by the neighbour's gene network pass the next tick (a TRANSMITTER: fast, private).
+
+HEARING (a new dispatch, `signal`, in the gene network's pass, before the network): the inbox and the water's vector at the cell
+(bilinear), each through the receptor's TUNING, heard = |v| exp(-(1 - cos(angle(v) - preferred)) / width^2) (only near-matching flavours
+are heard: the moire principle again), give two new SENSES of the network: HEARD IN WATER, 1 - e^-(heard / `hearW`) (2e-4 energy per R^2),
+and HEARD THROUGH JUNCTIONS, 1 - e^-(heard per s / `hearJ`) (2e-4 energy per s). In the moire genome (step G3) they sit on the sense grid's
+next row (lattice spacing 0.625, angles 0.13 and 0.39; codes 25, 26), and the two release outputs on the output grid's next row (0.75), each
+read by the regulator whose folded lattice beats slowest with it, as every other.
+TASTE (`?sigtaste=0`): the dial (Bio.sh.y) times the heard signal's relative gradient across the cell (the same six corners, d log(heard +
+floor)), added to step P3's taste: cells can follow or flee a flavour (with P3's taste on).
+NEUTRAL CONTROL (`?signalnull=1`): released and paid as usual, but every cell hears the water at a random pixel and a random cell's inbox
+(noise with the dish's statistics), and the taste does not steer.
+
+### 3. Fast regulators (`?fastreg=0`)
+
+A regulator whose speed bit is set relaxes with `tauFast` (0.3 s) instead of the network's tau (5 s). With a fast regulator between hearing
+and releasing, a pulse can pass from cell to cell within a fraction of a second; with a slow one switching it back off, a cell becomes
+EXCITABLE (fire, then refractory): waves and spirals through tissue are possible. Never written as a rule: only wiring makes it, evolved or
+by hand.
+
+### 4. The look
+
+- The SIGNALS view (key V cycles to it; `?view=signals`): the signal in the water as a faint haze in its flavour's hue (soft brightness; a
+  pale mist where flavours cancel), each cell in the hue of the flavour it emits, as bright as the release it asks for NOW (a quarter of
+  gene 1 or more: fully lit), dim when it rests, dim grey when silent. Flavour 0 (the pipette's first) is sky blue.
+- In EVERY view a cell FLASHES when it fires: its tube rings white-hot toward its colour, the inside a little lit, for a moment (Cell.motW
+  bits 24..31). The flash shows what rises above the cell's own BASELINE (the release it asks for, low-passed over 1 s), so a steady
+  emitter does not glow, a firing one does (a neuron-firing look). Colour by job stays the default.
+
+### 5. Tools and the relay
+
+- The SIGNAL PIPETTE (toy bar 'signal'; the dev toolbar 'signal pipette'; the button again turns the flavour by 60 degrees): a tap or a drag
+  drops a puff into the water (0.4 energy over 2.5 R, booked as energy in) and TOUCHES the cells under it for 0.6 s: they find the flavour
+  in their inboxes, as if through junctions (a micro-injection; no energy). Console: `moire.signals.drop(x, y, flavour)`, `puff(x, y,
+  flavour, energy, radius)`.
+- The RELAY (`src/tissues.js`, design `relay`; `?tissue=relay`; the cells zoo's `relay` (tap: a few cells), `relay sheet` (a disc of 160)
+  and `relay ring` (150) buttons; `moire.tissues.place('relay', { n, shape: 'disc' | 'strip' | 'ring' })`): ONE genome, hand-wired as a
+  scientist would, whose moire-genome lattices (found by a search over placements near the junction sense; the cached links are the derived
+  ones, so `?g3=0` runs the same) derive: r0 RELEASE (fast; both release outputs read it with gain -8, so the cell releases only when r0
+  drops) = {r1 +2.6, heard through junctions -2.5, r2 -2.2}; r1 REFRACTORY (slow) = {r2 +3.2, r0 -2.7}; r2 EXCITE (fast) = {r0 -2.9, r1
+  -2.3, heard +1.5}; biases 1, 0, 1. Release 1, all through junctions, glue 1.5 (junctions form in a sheet), it barely crawls; a light eater.
+  Touched, a cell flips (r0 down, r2 up: each the other's off-switch), fires through its junctions, its neighbours flip; r1 climbs over a few
+  seconds and switches it off, and it cannot fire again until r1 has fallen: a WAVE of firing runs across the sheet with a dark refractory
+  wake.
+- Census (every 5 s; `moire.signals.now()`, `sig.*` columns in the experiment samples) and the SIGNALS panel line: carriers of the release
+  gene, EMITTERS (releasing more than 2 % of gene 1 now; to water / to junctions), LISTENERS (the network reads a heard sense), WIRED RELAYS
+  (a carrier whose carried release output is driven by a hearing regulator, or one that reads a hearing one), cells with fast regulators,
+  FIRING now, the FLAVOURS among emitters (twelfths of the wheel holding 5 %), the largest lines' flavours, what is heard, and a crude WAVE
+  detector: pairs of cells within 3 R that began to fire within the last 4 s, 0.03 s or more apart: distance over onset gap (median, R/s).
+  Books in the line: the signal in the water, made, through junctions, faded (energy per s).
+
+### Switches and knobs
+
+- `?signal=0` the whole step off (no grid, no genes acting, nothing heard; the genes are carried); `?sigflow=0`, `?junction=0`,
+  `?sigtaste=0`, `?fastreg=0`, `?sigmut=0` one part off; `?signalnull=1` the NEUTRAL control.
+- Knobs: `?sigspread=` (4.5 R^2/s), `?siglife=` (2 s), `?sigpower=` (0.004 energy/s), `?hearw=` (2e-4 per R^2), `?hearj=` (2e-4 per s),
+  `?taufast=` (0.3 s), `?sigcensus=` (5 s). Live: `moire.signals.params` (also `puffAmount`, `puffRadius`, `puffFlavour`, `pokeTime`,
+  `pokeHear`), `moire.signals.look` (haze, flash, fill, saturation); the rules panel's group "Signal substance (step Q1)".
+- Old snapshots (no `signals.params` saved) load with the signal OFF and say so; main's last layout (96-word cells, 224-word genomes)
+  widens; a Q1 snapshot keeps the signal's blocks (`sig.A`, `sig.X`, `sig.Y`) and books.
+
+### Words and layout (for merges)
+
+Bio 224 -> 240 floats (`sg` 224..227, `sh` 228..231, `so` 232..235, `ss` 236..239); Cell unchanged (motW bits 24..31: the flash); GrnP
+192 -> 208 bytes (`q1`, words 48..51; word 39 still free); the gene network's bind group + binding 6 (the heat buffer) and 7 (SigQ, 80
+bytes); EatP + `q1[2]` (word 500, 2032 bytes); Draw + `q1` (words 368..371, 1488 bytes); LEDGER_WORDS 47104 -> 47616 (LG_SIG); heat
+buffer + 6 grid blocks + the inboxes (2 words per slot) behind the water's; sources 25 -> 27 and outputs 20 -> 22 while the step is on (the
+G3 derivation's loop bound and output grid follow); the founders' signal genes come from their own random stream (`qrng`), so a seed's
+other genes stay as they were.
+
+### Results (EXPERIMENTS.md "A signal substance"; one seed: hints unless said)
+
+- THE RELAY SHEET (lab, `?tissue=relay&cells=400&mut=0&life=0`, a touch of the signal pipette at its edge): a WAVE of firing crosses the
+  400-cell disc in about 10 s, a thin white flash at its front, the cells behind it lit (firing) and then dark (refractory), all at rest
+  again ~12 s later; the census's onset detector gives a median pulse speed of 4.1-5.6 R/s.
+  The design came from a small model of the same equations (`tools/q1_relay_sim.py`: 1 / 0 / 1 for the biases travels and
+  recovers; with the refractory regulator fast too no setting does) and a search over lattice placements (`tools/q1_relay_design.py`).
+- EVOLUTION (10 min, seed 3, the default dish and the wild colonies, each against `?signalnull=1`): the signal is taken up as material but
+  not (yet) as a tool. In the default dish the silent founders' release gene drifts up (292 of 408 cells carry some at 10 min; 253 of 332 in
+  the null), fast regulators spread (317 vs 202 in the null: a hint), a quarter of the cells listen and a few dozen are wired as relays, no more
+  than in the null; the colonies (wild: everyone releases) the same story. No travelling waves in any evolving dish. Hints: receptors got
+  WIDER where the signal is real (tuning 1.08 vs 0.57, 2.04 vs 1.68), the colonies' taste dial went negative (-0.25 vs +0.46 in the null).
+
+### What it looks like (pictures: `experiments/keep/q1/`)
+
+- `relay-wave-400cells-signals-view.jpg` (the money shot) and `relay-wave-t14-signals.jpg`: the relay sheet 1.5 s apart after a touch at
+  its left edge (the pipette's puff a blue glow there): a bright sky-blue arc sweeps right, the cells behind it dim again (refractory).
+  `relay-wave-400cells-job-view.jpg`: the same in the default colour by job: only the FLASH shows, a white front crossing the sheet.
+- `default-10min-signals.jpg`: the default dish after 10 minutes in the signals view: a warm haze of released signal round the colony,
+  cells in many hues (each line's flavour, drifting). `colonies-10min-signals-before-toning.jpg`: the wild colonies, everyone releasing: a
+  bright, busy field (the view was toned down after it). `firefox-colonies-signals.jpg`: the wild colonies in Firefox, each colony its own
+  flavour's hue, one wrapped in its own signal haze, a small relay group placed at the left.
+
+### Checked
+
+- Off equals main: `?signal=0` against main aadc3f8 (an export), default 300 s: seed 3 1978 / 1745 / 1556 / 1234 / 783 / 454 / 244 cells
+  every 30 s to 3 min, 164 at 5 min, against main's 1978 / 1752 / 1561 / 1239 / 768 / 467 / 276 and 226; seed 7 1976 / 1788 / 1627 / 1469 /
+  1041 / 502 / 247 and 146 against 1976 / 1784 / 1627 / 1455 / 1037 / 499 / 261 and 166 (the same founders' crash; runs of the same seed
+  vary by tens of cells after the crash, as in every step's check). Q1 on (founders silent): 201 and 194 at 5 min.
+- Books: atoms and carbon rounding 0 in every Q1 run; energy rounding at most 0.03 against 3.7e6 of energy in (a 40-cell lab releasing
+  0.14 energy per s: -0.0004); a pipette puff test 0.004-0.007 against 2e5.
+- Snapshots: main aadc3f8's (96 / 224 words) loads exact with the signal OFF and the note; an old tissue-lab one with the note; a Q1 snapshot
+  saved one second after a puff reloads exact with its signal in the water (0.59 energy, fading as before) and the same rounding.
+- Headed Firefox (the wild colonies in the signals view, a puff, a relay group placed): runs, no errors, rounding -0.0015. Phone size (390 x
+  844, Chrome): runs, the relay wave travels after a touch, the toy bar's twelve tools wrap onto three rows. No console errors in any run.
+- The toy's signal tool driven by pointer events: one puff and a touch per tap; a touch of the flavour the relay hears starts the wave, one
+  of another flavour (180 degrees off) does nothing (the tuning).
+
+### Speed
+
+GPU free, 2000 cells, default seed 3, 150 s at MAX: Q1 on x2.48 / x2.47, `?signal=0` x2.48 / x2.57, main aadc3f8 x2.53: about 2 % slower (the
+signal's two substeps per tick, the extra dispatch, the bigger genome record). With the first spread (6 R^2/s, four substeps) it was x2.28 /
+x2.35, hence 4.5.
+
+### Known issues
+
+- One seed and 10 minutes for evolution: every evolutionary number is a hint. The release gene starts at 0 and cannot go below it, so it
+  drifts up by itself; compare with the null, not with zero.
+- Junctions rarely form in evolving dishes (35-435 cells with one), so the transmitter route is little used there; the relay sheet needs
+  its glue (1.5).
+- The relay's pulse is ~5 s long (the slow regulator is the network's tau, 5 s): the firing band is wide (about 20 R at 4-5 R/s); a third
+  speed would make narrower bands. `?grntau=` changes every slow regulator in the dish.
+- The signal pipette's flavour must match what the cells prefer (the relay's is 0, the pipette's first); the toast says which flavour is
+  picked. The touch carries no energy (a hand's stimulus, like the stress button).
+- The flash is drawn in the neon and flat looks; the harmonic look does not show it. The signals view's haze is a veil in busy dishes by
+  design (alpha at most 0.45).
+- Placing a relay strip or ring needs free slots and room: in a crowded dish the cells are pushed into a ball.
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start
@@ -9158,6 +9331,11 @@ about 2-3 % slower (the genome record grew from 188 to 224 words).
 - `src/senses.js`: step P3, cells that sense cells: the switches and knobs (`moire.senses.params`), the step's and the eat pass's words, the
   taste's floors from the books, the census (taste genes, following, chases, glued groups, walls), the SENSES panel line, the lab's
   `ring()` (hand-made predators round the colony) and `probe()` (where each taste points)
+- `src/signals.js`: step Q1, a signal substance: the switches and knobs (`moire.signals.params`, `look`), the grid's passes (spread, fade,
+  books, drain, the pipette's puff), the gene network's (GrnP q1, SigQ) and the eat pass's words (EatP q1), the census and the SIGNALS panel
+  line, the pipette (`drop`, `puff`), the signals view's haze; `src/shaders/signal.wgsl` (the grid), `src/shaders/signal_draw.wgsl` (the
+  haze); the cells' side in the "step Q1" parts of `cell_grn.wgsl` (the `signal` dispatch), `cell_eat.wgsl`, `cell_common.wgsl`,
+  `cell_draw.wgsl`; the relay in `src/tissues.js`.
 - `src/flow.js`: step N2, substances that flow: the switches and knobs (`moire.flow.params`), the gusts' and tides' words for the water,
   the scour's for the matter, the heat's advection scale, the patchy springs, the chemotaxis gene's bits (Fields.g2.w), the census and
   `moire.flow.diagnose()`, the FLOW panel line; the rules in the "step N2" parts of `water.wgsl`, `heat.wgsl`, `matter.wgsl`,

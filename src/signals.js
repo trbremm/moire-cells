@@ -62,7 +62,7 @@ export class Signals {
     // live-tunable (moire.signals.params); the rules panel's group "Signal substance (step Q1)"
     this.params = {
       on: true,           // the whole step (?signal=0: no grid, no genes acting, nothing heard; the genes are carried)
-      spread: 6,          // R^2 per s (?sigspread=): fast (the heat spreads 12, the atoms 0.5 .. 3)
+      spread: 4.5,        // R^2 per s (?sigspread=): fast (the heat spreads 12, the atoms 0.5 .. 3); 4.5 fits in two substeps per tick (6 took four: ~6 % slower)
       life: 2,            // s: the signal fades with this lifetime, its energy to heat (?siglife=)
       flow: true,         // the water carries it (?sigflow=0)
       power: 0.004,       // energy per s a cell releases at release gene 1 and output factor 1 (?sigpower=; an engine's upkeep at rate 1 is 0.003)

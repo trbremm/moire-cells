@@ -1,0 +1,36 @@
+{
+ "batch": "q1-speed2",
+ "runs": [
+  {
+   "name": "q1-speed-on45",
+   "description": "speed: Q1 on, spread 4.5 (two substeps)",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 300
+  },
+  {
+   "name": "q1-speed-on6",
+   "description": "speed: Q1 on, spread 6 (four substeps)",
+   "query": {
+    "seed": 3,
+    "sigspread": 6
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 300
+  },
+  {
+   "name": "q1-speed-on45b",
+   "description": "speed: Q1 on, spread 4.5 again",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 300
+  }
+ ]
+}

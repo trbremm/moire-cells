@@ -19,7 +19,7 @@
   },
   {
    "t": 8,
-   "js": "const f = moire.relayAt; moire.signals.drop(f.x - 17 * moire.cells.R, f.y, 3.5); return 'poked'"
+   "js": "const f = moire.relayAt; moire.signals.drop(f.x - 17 * moire.cells.R, f.y, 0); return 'poked'"
   },
   {
    "t": 11,

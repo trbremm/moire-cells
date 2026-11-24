@@ -4029,3 +4029,76 @@ Means over the last third (`tools/g3_analyse.py g3-evo`):
 - In evolution it is mostly background so far: most cells live in their stress fold under the spotlight, flickering in and out. Buffering
   is the one gene that moved off its null (colonies), and the place-dependent fidelity is a hint. Nothing like "a new cell type in one refold"
   stood out in 10 minutes; the toy's hands (refold tool, stress button, zoo buttons) are the way to see what a fold does.
+
+# A signal substance (step Q1, 2026-11-24)
+
+**The question** (the user, 2026-11-24): "create a substance just for signaling, even if it is not realistic ... let evolution apply it as a
+tool, could even become like a neuro transmitter of sorts". Built as a toy material (README "Step Q1"); evolution got a quick look only (the
+user's wish since the same day: features and play first, a short look at evolution).
+
+**How.** Headless Chrome on the shared GPU (numbers are simulated time). Conditions in `experiments/conditions/q1/`, runs
+`experiments/runs/q1-*`. One seed per cell: hints unless said.
+
+## 1. The hand-wired relay sheet (`relay-lab.json`, `relay-disc.json`)
+
+DESIGN. Three of the eight regulators placed by a search over lattice positions near the junction sense (so that the moire genome derives
+the wiring by itself): r0 RELEASE (fast, inverted release), r1 REFRACTORY (slow), r2 EXCITE (fast). The biases came from a small model of the
+same equations on a hex sheet (junction hearing only; `relay_sim2` in the session's notes): a scan of b0, b1, b2 kept the sets where a touch
+at one edge sends a pulse that travels and every cell returns to rest; 1 / 0 / 1 travels at ~1.8 cells per s with a ~5 s pulse. With r1
+fast too, no set worked (the refractory is the slow regulator's job).
+
+LAB. `?tissue=relay&cells=400&mut=0&life=0`, the signal pipette's touch at the sheet's left edge at 8 s (`relay-disc.json`): a white
+wavefront crosses the 400-cell disc in ~10 s, one cell thick at the flash, the cells behind it firing (blue) and then dark (refractory); all
+at rest again ~12 s after. The census's onset detector: median pulse speed 4.1-5.6 R/s over 129-139 onsets (pairs of near cells 0.03 s or
+more apart). With the first junction hearing reference (1e-3/s) a touched cell dipped to its threshold and recovered (no wave); at 2e-4/s
+(the default now) a firing neighbour is heard at ~0.8 and the wave runs. A 150-cell sheet (`relay-lab.json`): 40 emitters 2 s after the
+touch, 135 at 6 s, none at 12 s.
+Pictures: `keep/q1/relay-wave-400cells-signals-view.jpg` (six frames 1.5 s apart, signals view), `relay-wave-t14-signals.jpg`,
+`relay-wave-400cells-job-view.jpg` (colour by job: the flash front only).
+
+## 2. A quick look at evolution (`evo.json`: 10 min, seed 3, the default dish and the wild colonies, each against the neutral control)
+
+The census at 2 / 5 / 7.5 / 10 min (`moire.signals.now()`):
+
+| at 10 min | cells | carriers (release > 0.02) | release gene | listeners | wired relays | fast regulators | firing | heard (water) | taste dial (mean, mean abs) | tuning width | pulse pairs |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| default, on | 408 | 292 | 0.24 | 98 | 32 | 317 | 0 | 0.20 | -0.01, 0.50 | 1.08 | 0 |
+| default, null | 332 | 253 | 0.35 | 137 | 68 | 202 | 0 | 0.03 | -0.21, 0.44 | 0.57 | 0 |
+| colonies, on | 2460 | 2438 | 0.78 | 274 | 252 | 2455 | 4 | 0.76 | -0.25, 0.70 | 2.04 | 1 |
+| colonies, null | 2293 | 2217 | 0.62 | 448 | 416 | 2291 | 20 | 0.60 | +0.46, 0.63 | 1.68 | 26 |
+
+- The default dish's founders start silent; by 10 minutes most cells carry some release (14 carriers at 2 min, 57 at 5, 292 at 10), as
+  much in the null: the release gene DRIFTS up from 0 (a walk that cannot go below 0), it is not selected. Fast regulators spread too, a little
+  more than in the null in the default dish (317 of 408 vs 202 of 332: a hint).
+- About a quarter of the default dish's cells (a tenth to a fifth of the colonies') LISTEN (their network reads a heard sense), equally or
+  more in the nulls; a few dozen (hundreds in the colonies) are WIRED as relays, again no more than in the nulls. No travelling waves: the
+  onset detector found none in the on-dishes (0-1 pairs); the colonies' null had more near firings (26 pairs), noise-heard cells switching.
+- Hints, one seed: the receptors got WIDER where the signal is real (tuning 1.08 vs 0.57 default, 2.04 vs 1.68 colonies): hearing more
+  flavours; the colonies' taste dial went negative (fleeing the heard signal, -0.25) where the null's went positive (+0.46). Neither is a
+  result.
+- Look: in the signals view the default dish is a warm haze round the colony with cells in many hues (each line its flavour, drifting); the
+  colonies are a bright, busy field (every wild founder releases): the view was toned down afterwards (steady release at most 0.6 bright, the
+  haze a veil). `keep/q1/default-10min-signals.jpg`, `colonies-10min-signals.jpg`.
+
+## 3. Checks
+
+- OFF EQUALS MAIN: `?signal=0` against main aadc3f8 (an export), default 300 s, cells every 30 s: seed 3 1978 / 1745 / 1556 / 1234 / 783 /
+  454 / 244 / 204 / 183 / 157 / 164 against 1978 / 1752 / 1561 / 1239 / 768 / 467 / 276 / 263 / 245 / 231 / 226; seed 7 1976 / 1788 / 1627 /
+  1469 / 1041 / 502 / 247 / 188 / 165 / 166 / 146 against 1976 / 1784 / 1627 / 1455 / 1037 / 499 / 261 / 210 / 186 / 172 / 166 (the same
+  founders' crash; same-seed runs differ by tens of cells after it). Q1 on (founders silent): seed 3 1978 / 1755 / 1561 / 1240 / 771 / 457 / 272 and 201 at 5 min, seed 7 1976 / 1786 / 1621 / 1448 / 1021 / 513 / 282 and 194.
+- BOOKS: atoms and carbon rounding 0 in every Q1 run; energy rounding at most 0.03 against 3.7e6 in.
+- SNAPSHOTS (`snapload.json`): main's (96 / 224 words) loads exact with the signal off and the note; an old tissue-lab one with the note; a
+  Q1 snapshot saved 1 s after a puff reloads exact, the puff's signal in the water (0.59 energy, fading at the same rate), rounding as saved.
+- Headed Firefox, phone size (390 x 844): run, no errors; the phone's toy bar wraps onto three rows.
+- SPEED (2000 cells, default s3, 150 s at MAX, GPU free): Q1 on x2.48 / x2.47, `?signal=0` x2.48 / x2.57, main x2.53 (spread 6, four
+  substeps: x2.28 / x2.35, so the default became 4.5, two substeps).
+
+## Reading
+
+- As a material it works: a matter-free, flavoured, booked substance that cells can release into the water or straight through junctions,
+  hear through tuned receptors, follow or flee, and wire into their networks with fast regulators. Hand-wired, three regulators make an
+  excitable sheet, and a touch sends a wave of firing across it: the neuron-like look the user hoped for is possible in this engine.
+- Evolution has not picked it up in 10 minutes: the genes drift into use as much without information (the null) as with it, and nothing
+  in the evolving dishes fires in waves. The relay needs junctions (rare in evolving dishes), a fast and a slow regulator in the right
+  signs, and an inverted release: a lot to find by drift. Levers not built: cheaper or free release, junctions that form more readily,
+  a third regulator speed (narrower pulses), a sense for the neighbours' firing.

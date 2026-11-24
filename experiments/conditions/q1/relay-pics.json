@@ -1,0 +1,73 @@
+{
+ "name": "q1-relay-pics",
+ "description": "pictures: the relay sheet (400 cells) with the final look; a touch at 8 s; signals view and colour by job",
+ "query": {
+  "tissue": "relay",
+  "cells": 400,
+  "mut": 0,
+  "life": 0,
+  "seed": 3,
+  "view": "signals",
+  "sigcensus": 1,
+  "zoom": 1
+ },
+ "duration": 34,
+ "sample_every": 2,
+ "evals": [
+  {
+   "t": 7.9,
+   "js": "const f = await moire.tissues.focus('relay', 1.5); moire.relayAt = f; const c = await moire.signals.now(); return JSON.stringify({f, n: c.n, junctionCells: c.junctionCells})"
+  },
+  {
+   "t": 8,
+   "js": "const f = moire.relayAt; moire.signals.drop(f.x - 17 * moire.cells.R, f.y, 0); return 'poked'"
+  }
+ ],
+ "shots": [
+  {
+   "t": 7.9,
+   "view": "signals",
+   "name": "t7.9-signals"
+  },
+  {
+   "t": 9.5,
+   "view": "signals",
+   "name": "t9.5-signals"
+  },
+  {
+   "t": 11,
+   "view": "signals",
+   "name": "t11-signals"
+  },
+  {
+   "t": 12.5,
+   "view": "signals",
+   "name": "t12.5-signals"
+  },
+  {
+   "t": 14,
+   "view": "signals",
+   "name": "t14-signals"
+  },
+  {
+   "t": 15.5,
+   "view": "signals",
+   "name": "t15.5-signals"
+  },
+  {
+   "t": 17,
+   "view": "signals",
+   "name": "t17-signals"
+  },
+  {
+   "t": 20,
+   "view": "signals",
+   "name": "t20-signals"
+  },
+  {
+   "t": 12.6,
+   "view": "job",
+   "name": "t12.6-job"
+  }
+ ]
+}

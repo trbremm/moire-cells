@@ -658,7 +658,7 @@ export function cellPanel(ctx, onAdd) {
       for (const [kind, label] of [['muscle', 'organ: muscle'], ['ring', 'organ: beating ring'], ['worm', 'organ: worm'], ['limb', 'organ: limb']]) {   // (step T2: + the limb)
         const b = el('button', 'act', label);
         b.type = 'button';
-        b.title = kind === 'limb' ? 'lay out the LIMB (step T2: two rods of hard bone, a joint held by the bones' own tendrils, a muscle with a tendon at each end, its nerve, a skin cover) at the middle of the view; cells in its way are moved aside. Touch the nerve's free end with the signal pipette (or moire.organ.twitch()): the joint bends'
+        b.title = kind === 'limb' ? 'lay out the LIMB (step T2: two rods of hard bone, a joint held by the bones’ own tendrils, a muscle with a tendon at each end, its nerve, a skin cover) at the middle of the view; cells in its way are moved aside. Touch the nerve’s free end with the signal pipette (or moire.organ.twitch()): the joint bends'
           : `lay out the ${kind} organ (step L1: muscle spindles, a nerve of relay cells, a skin of walled cells) at the middle of the view; cells in its way are moved aside. Touch the nerve's free end with the signal pipette (or moire.organ.twitch())`;
         b.addEventListener('click', () => {
           const M = window.moire;

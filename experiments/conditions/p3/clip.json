@@ -134,6 +134,144 @@
      "speed": 2
     }
    ]
+  },
+  {
+   "name": "p3-clip-oxygen-strong",
+   "description": "default s3, 300 s: 16 swimming predators following OXYGEN (range 2) on a ring 12 R out; the camera on the ring's left side (x2.5) ; steering knobs ?tastehalf=0.04&tastespeed=1",
+   "query": {
+    "seed": 3,
+    "p3census": 5,
+    "tastehalf": 0.04,
+    "tastespeed": 1
+   },
+   "duration": 352,
+   "sample_every": 30,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 300,
+     "js": "const r=await moire.senses.ring(16, 12, {\"engulf\": 1, \"flagellum\": 0.5, \"range\": 2, \"taste\": [1, 0, 0, 0]}); moire.camera.set(2.5, r.centre[0]-0.75*r.radius*moire.cells.R, r.centre[1]); return JSON.stringify(r)"
+    },
+    {
+     "t": 310,
+     "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+    },
+    {
+     "t": 320,
+     "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+    },
+    {
+     "t": 335,
+     "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+    },
+    {
+     "t": 350,
+     "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+    }
+   ],
+   "shots": [
+    {
+     "t": 301,
+     "name": "t301"
+    },
+    {
+     "t": 310,
+     "name": "t310"
+    },
+    {
+     "t": 320,
+     "name": "t320"
+    },
+    {
+     "t": 335,
+     "name": "t335"
+    },
+    {
+     "t": 350,
+     "name": "t350"
+    },
+    {
+     "t": 335,
+     "view": "machinery",
+     "name": "t335-machinery"
+    }
+   ],
+   "clips": [
+    {
+     "t": 302,
+     "until": 332,
+     "speed": 2
+    }
+   ]
+  },
+  {
+   "name": "p3-clip-blind-strong",
+   "description": "the same predators without a taste (nothing to point them: taste 0; probe empty)",
+   "query": {
+    "seed": 3,
+    "p3census": 5,
+    "tastehalf": 0.04,
+    "tastespeed": 1
+   },
+   "duration": 352,
+   "sample_every": 30,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 300,
+     "js": "const r=await moire.senses.ring(16, 12, {\"engulf\": 1, \"flagellum\": 0.5, \"range\": 2}); moire.camera.set(2.5, r.centre[0]-0.75*r.radius*moire.cells.R, r.centre[1]); return JSON.stringify(r)"
+    },
+    {
+     "t": 310,
+     "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+    },
+    {
+     "t": 320,
+     "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+    },
+    {
+     "t": 335,
+     "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+    },
+    {
+     "t": 350,
+     "js": "return JSON.stringify(await moire.senses.probe({founder: 900}))"
+    }
+   ],
+   "shots": [
+    {
+     "t": 301,
+     "name": "t301"
+    },
+    {
+     "t": 310,
+     "name": "t310"
+    },
+    {
+     "t": 320,
+     "name": "t320"
+    },
+    {
+     "t": 335,
+     "name": "t335"
+    },
+    {
+     "t": 350,
+     "name": "t350"
+    },
+    {
+     "t": 335,
+     "view": "machinery",
+     "name": "t335-machinery"
+    }
+   ],
+   "clips": [
+    {
+     "t": 302,
+     "until": 332,
+     "speed": 2
+    }
+   ]
   }
  ]
 }

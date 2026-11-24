@@ -7,7 +7,7 @@
  "runs": [
   {
    "name": "p3-evo-colonies-on",
-   "description": "step P3 evolution, colonies, on",
+   "description": "step P3 evolution, colonies, on (first knobs: tasteSpeed 0.6, tasteHalf 0.15; partner of colonies-noclump s3)",
    "query": {
     "p3census": 10,
     "predcensus": 15,
@@ -331,6 +331,51 @@
     "predcensus": 15,
     "terrain": "islands",
     "tastenull": 1
+   },
+   "duration": 1202,
+   "sample_every": 30,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 300,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 600,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 900,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    },
+    {
+     "t": 1200,
+     "js": "const s=moire.senses.census, p=moire.predators.census; return JSON.stringify({t: moire.time(), senses: s, pred: p && {rate: p.rate, total: p.total, genes: p.genes, now: p.now, clusters: p.clusters, recent: p.recent}})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 1200,
+     "name": "t1200"
+    },
+    {
+     "t": 1200,
+     "view": "lineage",
+     "name": "t1200-lineage"
+    }
+   ]
+  },
+  {
+   "name": "p3-evo-colonies-on2",
+   "description": "step P3 evolution, colonies, on (rerun with the final steering knobs: tasteSpeed 1, tasteHalf 0.04)",
+   "query": {
+    "p3census": 10,
+    "predcensus": 15,
+    "preset": "colonies"
    },
    "duration": 1202,
    "sample_every": 30,

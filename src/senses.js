@@ -55,8 +55,9 @@ export class Senses {
       fuelFloor: 0.5,      // energy per R^2: the fuel smell's floor, d log (c + floor) (?fuelfloor=)
       taste: true,         // the taste dials steer (?taste=0: no taste at all, the genes do not drift)
       tasteNull: false,    // ... their NEUTRAL control (?tastenull=1): the dials and range drift, nothing steers, nothing is paid
-      tasteSpeed: 0.6,     // R / s at a strong taste (crawling's own wander is 0.6) (?tastespeed=)
-      tasteHalf: 0.15,     // the summed taste (relative gradient per R x dial) at which the steering is half its full (?tastehalf=)
+      tasteSpeed: 1,       // R / s at a strong taste (crawling's own wander is 0.6) (?tastespeed=; 0.6 in the first lab runs and colonies-on)
+      tasteHalf: 0.04,     // the summed taste (relative gradient per R x dial) at which the steering is half its full (?tastehalf=; 0.15 at
+                           // first: a predator 10-15 R from a colony tastes ~0.06-0.1, so the wander's 0.6 R/s outweighed it; lab p3-clip-*)
       rangeGain: 1,        // the global sensitivity: every floor / this (?rangegain=)
       rangeCost: 0.003,    // energy per s per unit of |dial| at range 0 (x e^range; an engine of rate 1 costs as much) (?rangecost=)
       minFloor: [0.002, 0.002, 0.002, 0.05],   // the floors' least (per R^2; heat as temperature), so an empty dish still has one

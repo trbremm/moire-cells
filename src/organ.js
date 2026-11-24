@@ -300,13 +300,13 @@ export class Organ {
     const t0 = M.time();
     await this.poke(null, null, opts.side || 0);
     const series = [];
-    let minL = rest.length, minAt = t0, maxW = rest.width;
+    let minL = rest.ends, minAt = t0, maxW = rest.width;
     while (M.time() < t0 + follow) {
       const t1 = M.time();
       while (M.time() < t1 + every) await frames(1);
       const c = await this.measure();
-      series.push([+(c.time - t0).toFixed(2), +c.length.toFixed(3), +c.width.toFixed(3), c.firing.muscle, c.firing.nerve, +c.ringR.toFixed(3), +c.skin.length.toFixed(2)]);
-      if (c.length < minL) { minL = c.length; minAt = c.time - t0; }
+      series.push([+(c.time - t0).toFixed(2), +c.ends.toFixed(3), +c.width.toFixed(3), c.firing.muscle, c.firing.nerve, +c.ringR.toFixed(3), +c.skin.length.toFixed(2)]);
+      if (c.ends < minL) { minL = c.ends; minAt = c.time - t0; }
       if (c.width > maxW) maxW = c.width;
     }
     const end = this.census;
@@ -322,7 +322,7 @@ export class Organ {
     const mOn = end.muscleOnsets.filter((p) => p[1] >= t0 - 0.05).map((p) => p[1] - t0).sort((a, b) => a - b);
     const tears1 = M.glue && M.glue.census ? M.glue.census.tears : 0;
     this.last = {
-      time: t0, rest: rest.length, min: minL, shortening: rest.length ? 1 - minL / rest.length : 0, at: minAt, widthRest: rest.width, widthMax: maxW,
+      time: t0, rest: rest.ends, min: minL, shortening: rest.ends ? 1 - minL / rest.ends : 0, sumRest: rest.sumLen, at: minAt, widthRest: rest.width, widthMax: maxW,
       ringRest: rest.ringR, nerveSpeed: speed, nerveFired: pts.length, nerveCells: end.nerve.length,
       muscleFired: mOn.length, muscleCells: end.cells.muscle, muscleFirst: mOn.length ? mOn[0] : null, muscleMedian: mOn.length ? mOn[mOn.length >> 1] : null,
       torn: Math.max(0, tears1 - tears0), tornNow: end.junctions.torn, formed: end.junctions.formed, survival: end.survival, series,
@@ -393,10 +393,11 @@ export class Organ {
     const c = this.census, t = this.last;
     if (!this.kind) return null;
     if (!c) return 'ORGAN …';
-    const tw = t ? ` · last twitch ${(100 * t.shortening).toFixed(0)}% shorter${t.nerveSpeed ? `, nerve ${t.nerveSpeed.toFixed(1)} R/s` : ''}, ${t.torn} torn` : '';
+    const tw = t ? ` · last twitch ${(100 * t.shortening).toFixed(0)}% shorter end to end${t.nerveSpeed ? `, nerve ${t.nerveSpeed.toFixed(1)} R/s` : ''}, ${t.torn} torn` : '';
     if (compact) return `ORGAN ${this.kind} ${c.cells.all}/${c.cells.laidOut}${tw}`;
     return `ORGAN  ${this.kind}: ${c.cells.muscle} muscle · ${c.cells.nerve} nerve · ${c.cells.skin} skin${c.cells.pacemaker ? ` · ${c.cells.pacemaker} pacemaker` : ''}` +
-      ` (alive ${c.cells.all} of ${c.cells.laidOut}) · bundle ${c.length.toFixed(1)} × ${c.width.toFixed(1)} R · firing ${c.firing.nerve} nerve, ${c.firing.muscle} muscle` +
+      ` (alive ${c.cells.all} of ${c.cells.laidOut}) · bundle ${c.ends.toFixed(1)} × ${c.width.toFixed(1)} R end to end (cells ${c.sumLen.toFixed(0)} R laid end to end)` +
+      ` · firing ${c.firing.nerve} nerve, ${c.firing.muscle} muscle · contracting ${c.contracting}` +
       ` · junctions ${c.junctions.formed}, torn ${c.junctions.torn}${tw}`;
   }
 

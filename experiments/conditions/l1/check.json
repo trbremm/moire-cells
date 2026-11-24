@@ -1,0 +1,12 @@
+{
+ "batch": "l1-check",
+ "runs": [
+  {"name": "l1-off_s3", "description": "check: the default dish 300 s, contraction off", "query": {"contract": 0, "seed": 3}, "duration": 300, "sample_every": 30, "stall": 300,
+   "snapshots": [{"t": 60}]},
+  {"name": "l1-on_s3", "description": "check: the default dish 300 s, contraction on (default)", "query": {"seed": 3}, "duration": 300, "sample_every": 30, "stall": 300,
+   "evals": [{"t": 299, "js": "return JSON.stringify(await moire.contract.now())"}]},
+  {"name": "l1-off_s7", "description": "check: the default dish 300 s, contraction off", "query": {"contract": 0, "seed": 7}, "duration": 300, "sample_every": 30, "stall": 300},
+  {"name": "l1-on_s7", "description": "check: the default dish 300 s, contraction on", "query": {"seed": 7}, "duration": 300, "sample_every": 30, "stall": 300,
+   "evals": [{"t": 299, "js": "return JSON.stringify(await moire.contract.now())"}]}
+ ]
+}

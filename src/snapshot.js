@@ -624,6 +624,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       M.signals.params.on = false;   // step Q1
       notes.push('saved before step Q1: no signal substance (as it ran)');
     }
+    if (opts.settings !== false && M.contract && !(S.settings && S.settings['contract.params'])) {
+      M.contract.params.on = false;   // step L1 (its genes 0 everywhere; off, births draw nothing new for them)
+      notes.push('saved before step L1: no contraction (as it ran)');
+    }
     if (opts.settings !== false && M.folding && !(S.settings && S.settings['folding.params'])) {
       M.folding.params.on = false;   // step G3
       notes.push('saved before step G3: the gene network with free weights, no lattices (as it ran)');

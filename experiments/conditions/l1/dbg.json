@@ -1,0 +1,10 @@
+{
+  "runs": [
+  {"name": "l1-d-base", "query": {"tissue": "organ", "seed": 3, "zoom": 3, "view": "clean"}, "duration": 4, "sample_every": 0,
+   "evals": [{"t": 4, "js": "const b = await moire.organ.read(); const bits=(w)=>{let n=0;for(let k=0;k<6;k++)n+=(w>>k)&1;return n}; return JSON.stringify(b.map(L=>({n:L.length, torn:L.reduce((a,p)=>a+bits(p.torn),0), formed:L.reduce((a,p)=>a+bits(p.formed),0), asp:+(L.reduce((a,p)=>a+Math.exp(2*p.e),0)/Math.max(1,L.length)).toFixed(2)})))"}]},
+  {"name": "l1-d-glue1", "query": {"tissue": "organ", "seed": 3, "zoom": 3, "view": "clean"}, "duration": 4, "sample_every": 0,
+   "evals": [{"t": 0, "js": "await moire.genome.setAll('adhesion', 1.0); return 'ok'"}, {"t": 4, "js": "const b = await moire.organ.read(); const bits=(w)=>{let n=0;for(let k=0;k<6;k++)n+=(w>>k)&1;return n}; return JSON.stringify(b.map(L=>({n:L.length, torn:L.reduce((a,p)=>a+bits(p.torn),0), formed:L.reduce((a,p)=>a+bits(p.formed),0), asp:+(L.reduce((a,p)=>a+Math.exp(2*p.e),0)/Math.max(1,L.length)).toFixed(2)})))"}]},
+  {"name": "l1-d-nojit", "query": {"tissue": "organ", "seed": 3, "zoom": 3, "view": "clean"}, "duration": 4, "sample_every": 0,
+   "evals": [{"t": 0, "js": "moire.cells.params.jitter = 0; moire.genome.params.crawl = 0; return 'ok'"}, {"t": 4, "js": "const b = await moire.organ.read(); const bits=(w)=>{let n=0;for(let k=0;k<6;k++)n+=(w>>k)&1;return n}; return JSON.stringify(b.map(L=>({n:L.length, torn:L.reduce((a,p)=>a+bits(p.torn),0), formed:L.reduce((a,p)=>a+bits(p.formed),0), asp:+(L.reduce((a,p)=>a+Math.exp(2*p.e),0)/Math.max(1,L.length)).toFixed(2)})))"}], "shots": [{"t": 4}]}
+  ]
+}

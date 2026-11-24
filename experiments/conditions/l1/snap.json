@@ -1,0 +1,66 @@
+{
+ "runs": [
+  {
+   "name": "l1-mainsnap-load",
+   "description": "main d3b405f's snapshot loads into L1",
+   "query": {
+    "snap": "experiments/runs/main-d3b4_s3/snapshots/snap_t60.json"
+   },
+   "duration": 30,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 1,
+     "js": "return JSON.stringify({con: moire.contract.params, notes: moire.lab.loaded && moire.lab.loaded.notes, exact: moire.lab.loaded && moire.lab.loaded.exact})"
+    },
+    {
+     "t": 29,
+     "js": "return JSON.stringify({round: moire.heat.ledger.rounding, atoms: moire.matter.ledger.rounding, c: await moire.contract.now()})"
+    }
+   ]
+  },
+  {
+   "name": "l1-oldsnap",
+   "description": "an old snapshot (tissue lab) loads",
+   "query": {
+    "snap": "experiments/tissue/configs/tt-same/snapshot.json"
+   },
+   "duration": 20,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 1,
+     "js": "return JSON.stringify({exact: moire.lab.loaded && moire.lab.loaded.exact, con: moire.contract.params.on})"
+    }
+   ]
+  },
+  {
+   "name": "l1-organsnap",
+   "description": "the organ lab, a snapshot mid-twitch",
+   "query": {
+    "tissue": "organ",
+    "seed": 3
+   },
+   "duration": 10,
+   "sample_every": 5,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 6,
+     "js": "return JSON.stringify(await moire.organ.poke())"
+    },
+    {
+     "t": 10,
+     "js": "const c=await moire.organ.measure(); return JSON.stringify({E:c.ends,S:c.sumLen,dr:c.drive})"
+    }
+   ],
+   "snapshots": [
+    {
+     "t": 10
+    }
+   ]
+  }
+ ]
+}

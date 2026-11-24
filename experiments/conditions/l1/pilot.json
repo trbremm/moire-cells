@@ -1,0 +1,21 @@
+{
+  "name": "l1-pilot",
+  "description": "the organ lab: laid out, a poke of the nerve's free end at 6 s, measures every 0.5 s",
+  "query": {"tissue": "organ", "seed": 3, "zoom": 3},
+  "duration": 20,
+  "sample_every": 0,
+  "evals": [
+    {"t": 5.9, "js": "return JSON.stringify(await moire.organ.measure())"},
+    {"t": 6, "js": "return JSON.stringify(await moire.organ.poke())"},
+    {"t": 6.5, "js": "const c = await moire.organ.measure(); return JSON.stringify({t: c.time, L: c.length, W: c.width, f: c.firing, j: c.junctions, a: c.aspect})"},
+    {"t": 7, "js": "const c = await moire.organ.measure(); return JSON.stringify({t: c.time, L: c.length, W: c.width, f: c.firing, j: c.junctions, a: c.aspect})"},
+    {"t": 7.5, "js": "const c = await moire.organ.measure(); return JSON.stringify({t: c.time, L: c.length, W: c.width, f: c.firing, j: c.junctions, a: c.aspect})"},
+    {"t": 8, "js": "const c = await moire.organ.measure(); return JSON.stringify({t: c.time, L: c.length, W: c.width, f: c.firing, j: c.junctions, a: c.aspect})"},
+    {"t": 9, "js": "const c = await moire.organ.measure(); return JSON.stringify({t: c.time, L: c.length, W: c.width, f: c.firing, j: c.junctions, a: c.aspect})"},
+    {"t": 10, "js": "const c = await moire.organ.measure(); return JSON.stringify({t: c.time, L: c.length, W: c.width, f: c.firing, j: c.junctions, a: c.aspect})"},
+    {"t": 12, "js": "const c = await moire.organ.measure(); return JSON.stringify({t: c.time, L: c.length, W: c.width, f: c.firing, j: c.junctions, a: c.aspect, n: c.nerve, m: c.muscleOnsets})"},
+    {"t": 16, "js": "const c = await moire.organ.measure(); return JSON.stringify({t: c.time, L: c.length, W: c.width, f: c.firing, j: c.junctions, a: c.aspect})"},
+    {"t": 20, "js": "const c = await moire.organ.measure(); return JSON.stringify({t: c.time, L: c.length, W: c.width, f: c.firing, j: c.junctions, a: c.aspect, cells: c.cells})"}
+  ],
+  "shots": [{"t": 0.5}, {"t": 5.9}, {"t": 7}, {"t": 8}, {"t": 9}, {"t": 12}, {"t": 20}]
+}

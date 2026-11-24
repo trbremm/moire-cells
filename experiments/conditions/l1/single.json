@@ -1,0 +1,12 @@
+{
+  "name": "l1-single",
+  "description": "loose muscle cells: what shape they reach alone",
+  "query": {"tissue": "muscle", "cells": 12, "spread": "scatter", "mut": 0, "life": 0, "seed": 3, "light": "full", "day": 0, "zoom": 3},
+  "duration": 8,
+  "sample_every": 0,
+  "evals": [
+    {"t": 1, "js": "moire.organ.kind='muscle'; const b = await moire.organ.read(); return JSON.stringify(b[0].map(p=>[+p.e.toFixed(3), +(Math.exp(2*p.e)).toFixed(2), p.formed, p.torn]))"},
+    {"t": 8, "js": "const b = await moire.organ.read(); return JSON.stringify({R: moire.cells.R, eCap: moire.spindle.aspect(), c: b[0].map(p=>[+p.e.toFixed(3), +(Math.exp(2*p.e)).toFixed(2)])})"}
+  ],
+  "shots": [{"t": 8, "crop": [440, 250, 400, 300], "scale": 2}]
+}

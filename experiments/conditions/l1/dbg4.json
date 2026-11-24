@@ -1,0 +1,5 @@
+{"runs": [
+ {"name": "l1-d-r", "query": {"tissue": "organ", "seed": 3, "zoom": 3, "view": "clean", "wallcost": 0}, "duration": 6, "sample_every": 0,
+  "evals": [{"t": 6, "js": "const C=moire.cells,d=moire.gpu.device;const {readBuffer}=await import('./src/snapshot.js');const ab=await readBuffer(d,C.cellBuf,0,C.count*384);const f=new Float32Array(ab),u=new Uint32Array(ab);const b=await moire.organ.read();const R=C.R;const all=[].concat(...b);let gap=[];for(const p of all){let best=1e9;for(const q of all){if(q===p)continue;const dd=Math.hypot(p.x-q.x,p.y-q.y)/R;if(dd<best)best=dd;}gap.push(+best.toFixed(2));}return JSON.stringify({R, r: all.slice(0,10).map(p=>+(f[p.i*96+4]/R).toFixed(3)), osm: all.slice(0,10).map(p=>+f[p.i*96+84].toFixed(3)), vel: all.slice(0,10).map(p=>+(Math.hypot(f[p.i*96+2],f[p.i*96+3])/R).toFixed(2)), nn: gap.slice(0,30)})"}],
+  "shots": [{"t": 6, "crop": [440, 250, 400, 300], "scale": 2}]}
+]}

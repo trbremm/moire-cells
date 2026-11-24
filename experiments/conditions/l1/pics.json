@@ -1,0 +1,127 @@
+{
+ "runs": [
+  {
+   "name": "l1-pics",
+   "description": "pictures: the organ lab, poked at 6 s (signals view strip, neon before/during)",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 4.2
+   },
+   "size": "1280x800",
+   "duration": 22,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 5.9,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),dr:+c.drive.toFixed(2),f:c.firing})"
+    },
+    {
+     "t": 6,
+     "js": "return JSON.stringify(await moire.organ.poke())"
+    },
+    {
+     "t": 8,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),dr:+c.drive.toFixed(2),f:c.firing})"
+    },
+    {
+     "t": 10,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),dr:+c.drive.toFixed(2),f:c.firing})"
+    },
+    {
+     "t": 12,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),dr:+c.drive.toFixed(2),f:c.firing})"
+    },
+    {
+     "t": 14,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),dr:+c.drive.toFixed(2),f:c.firing})"
+    },
+    {
+     "t": 18,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),dr:+c.drive.toFixed(2),f:c.firing})"
+    },
+    {
+     "t": 22,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),dr:+c.drive.toFixed(2),f:c.firing})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 5.9,
+     "view": "signals",
+     "name": "s05.9"
+    },
+    {
+     "t": 7,
+     "view": "signals",
+     "name": "s07.0"
+    },
+    {
+     "t": 8,
+     "view": "signals",
+     "name": "s08.0"
+    },
+    {
+     "t": 9,
+     "view": "signals",
+     "name": "s09.0"
+    },
+    {
+     "t": 10,
+     "view": "signals",
+     "name": "s10.0"
+    },
+    {
+     "t": 11,
+     "view": "signals",
+     "name": "s11.0"
+    },
+    {
+     "t": 12,
+     "view": "signals",
+     "name": "s12.0"
+    },
+    {
+     "t": 13,
+     "view": "signals",
+     "name": "s13.0"
+    },
+    {
+     "t": 14,
+     "view": "signals",
+     "name": "s14.0"
+    },
+    {
+     "t": 16,
+     "view": "signals",
+     "name": "s16.0"
+    },
+    {
+     "t": 18,
+     "view": "signals",
+     "name": "s18.0"
+    },
+    {
+     "t": 20,
+     "view": "signals",
+     "name": "s20.0"
+    },
+    {
+     "t": 5.9,
+     "name": "neon05.9"
+    },
+    {
+     "t": 12.5,
+     "name": "neon12.5"
+    }
+   ],
+   "clips": [
+    {
+     "t": 5,
+     "until": 19,
+     "speed": 2
+    }
+   ]
+  }
+ ]
+}

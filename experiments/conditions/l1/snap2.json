@@ -1,0 +1,24 @@
+{
+ "runs": [
+  {
+   "name": "l1-organsnap-reload",
+   "description": "the organ snapshot reloads",
+   "query": {
+    "snap": "experiments/runs/l1-organsnap/snapshots/snap_t10.json"
+   },
+   "duration": 12,
+   "sample_every": 2,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 10.01,
+     "js": "moire.organ.kind='muscle'; const c=await moire.organ.measure(); return JSON.stringify({exact: moire.lab.loaded && moire.lab.loaded.exact, notes: moire.lab.loaded && moire.lab.loaded.notes, E:c.ends,S:c.sumLen,dr:c.drive})"
+    },
+    {
+     "t": 12,
+     "js": "return JSON.stringify({round: moire.heat.ledger.rounding, atoms: moire.matter.ledger.rounding})"
+    }
+   ]
+  }
+ ]
+}

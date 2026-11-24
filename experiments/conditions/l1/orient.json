@@ -1,0 +1,210 @@
+{
+ "runs": [
+  {
+   "name": "l1-x-uni",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3
+   },
+   "duration": 14,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 0,
+     "js": "await moire.genome.setAll('a2',0); return 'ok'"
+    },
+    {
+     "t": 0.1,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 3,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 7.9,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 8,
+     "js": "const v=moire.cells.view; moire.signals.drop(v.cssW/2, v.cssH/2, 0); return 'poked muscle'"
+    },
+    {
+     "t": 8.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 9,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 9.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 10,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 11,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 12,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 14,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 7.9
+    },
+    {
+     "t": 10
+    }
+   ]
+  },
+  {
+   "name": "l1-x-uni-nt",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3,
+    "shapetorque": 0
+   },
+   "duration": 14,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 0,
+     "js": "await moire.genome.setAll('a2',0); return 'ok'"
+    },
+    {
+     "t": 0.1,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 3,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 7.9,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 8,
+     "js": "const v=moire.cells.view; moire.signals.drop(v.cssW/2, v.cssH/2, 0); return 'poked muscle'"
+    },
+    {
+     "t": 8.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 9,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 9.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 10,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 11,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 12,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 14,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 7.9
+    },
+    {
+     "t": 10
+    }
+   ]
+  },
+  {
+   "name": "l1-x-side-nt",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3,
+    "shapetorque": 0
+   },
+   "duration": 14,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 0,
+     "js": "await moire.genome.setAll('a2',-0.6); return 'ok'"
+    },
+    {
+     "t": 0.1,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 3,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 7.9,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 8,
+     "js": "const v=moire.cells.view; moire.signals.drop(v.cssW/2, v.cssH/2, 0); return 'poked muscle'"
+    },
+    {
+     "t": 8.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 9,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 9.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 10,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 11,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 12,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 14,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),o:+c.order.toFixed(2),af:c.aspFiring&&+c.aspFiring.toFixed(2),ar:c.aspResting&&+c.aspResting.toFixed(2),f:c.firing,j:c.junctions})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 7.9
+    },
+    {
+     "t": 10
+    }
+   ]
+  }
+ ]
+}

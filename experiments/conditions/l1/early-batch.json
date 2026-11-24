@@ -1,0 +1,121 @@
+{
+ "runs": [
+  {
+   "name": "l1-e-f1",
+   "description": "the organ's first seconds, no warm-up",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3,
+    "view": "clean",
+    "fibres": 1
+   },
+   "duration": 4,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 0,
+     "js": "const c = await moire.organ.measure(); return JSON.stringify({L: c.length, W: c.width, j: c.junctions, a: c.aspect})"
+    },
+    {
+     "t": 0.3,
+     "js": "const c = await moire.organ.measure(); return JSON.stringify({L: c.length, W: c.width, j: c.junctions, a: c.aspect})"
+    },
+    {
+     "t": 1,
+     "js": "const c = await moire.organ.measure(); return JSON.stringify({L: c.length, W: c.width, j: c.junctions, a: c.aspect})"
+    },
+    {
+     "t": 4,
+     "js": "const c = await moire.organ.measure(); return JSON.stringify({L: c.length, W: c.width, j: c.junctions, a: c.aspect})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 1
+    },
+    {
+     "t": 4
+    }
+   ]
+  },
+  {
+   "name": "l1-e-nostag",
+   "description": "the organ's first seconds, no warm-up",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3,
+    "view": "clean",
+    "stagger": 0
+   },
+   "duration": 4,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 0,
+     "js": "const c = await moire.organ.measure(); return JSON.stringify({L: c.length, W: c.width, j: c.junctions, a: c.aspect})"
+    },
+    {
+     "t": 0.3,
+     "js": "const c = await moire.organ.measure(); return JSON.stringify({L: c.length, W: c.width, j: c.junctions, a: c.aspect})"
+    },
+    {
+     "t": 1,
+     "js": "const c = await moire.organ.measure(); return JSON.stringify({L: c.length, W: c.width, j: c.junctions, a: c.aspect})"
+    },
+    {
+     "t": 4,
+     "js": "const c = await moire.organ.measure(); return JSON.stringify({L: c.length, W: c.width, j: c.junctions, a: c.aspect})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 1
+    },
+    {
+     "t": 4
+    }
+   ]
+  },
+  {
+   "name": "l1-e-notorque",
+   "description": "the organ's first seconds, no warm-up",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3,
+    "view": "clean",
+    "shapetorque": 0
+   },
+   "duration": 4,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 0,
+     "js": "const c = await moire.organ.measure(); return JSON.stringify({L: c.length, W: c.width, j: c.junctions, a: c.aspect})"
+    },
+    {
+     "t": 0.3,
+     "js": "const c = await moire.organ.measure(); return JSON.stringify({L: c.length, W: c.width, j: c.junctions, a: c.aspect})"
+    },
+    {
+     "t": 1,
+     "js": "const c = await moire.organ.measure(); return JSON.stringify({L: c.length, W: c.width, j: c.junctions, a: c.aspect})"
+    },
+    {
+     "t": 4,
+     "js": "const c = await moire.organ.measure(); return JSON.stringify({L: c.length, W: c.width, j: c.junctions, a: c.aspect})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 1
+    },
+    {
+     "t": 4
+    }
+   ]
+  }
+ ]
+}

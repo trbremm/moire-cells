@@ -1,0 +1,41 @@
+{
+ "runs": [
+  {
+   "name": "l1-ad",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3
+   },
+   "duration": 9,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 5.9,
+     "js": "const M=moire,C=M.cells,d=M.gpu.device;const {readBuffer}=await import('./src/snapshot.js');const g=new Float32Array(await readBuffer(d,C.bioBuf[C.bioCur],0,C.count*960));const b=await M.organ.read();const bits=(w)=>{let n=0;for(let k=0;k<6;k++)n+=(w>>k)&1;return n};return JSON.stringify(b[1].sort((p,q)=>p.x-q.x).map(p=>{const o=p.i*240;return [Math.round(p.x),Math.round(p.y),+g[o+84].toFixed(2),+g[o+85].toFixed(2),+g[o+86].toFixed(2),+g[o+237].toFixed(2),bits(p.formed),+g[o+92+8*0].toFixed(2)]}))"
+    },
+    {
+     "t": 6,
+     "js": "return JSON.stringify(await moire.organ.poke())"
+    },
+    {
+     "t": 6.4,
+     "js": "const M=moire,C=M.cells,d=M.gpu.device;const {readBuffer}=await import('./src/snapshot.js');const g=new Float32Array(await readBuffer(d,C.bioBuf[C.bioCur],0,C.count*960));const b=await M.organ.read();const bits=(w)=>{let n=0;for(let k=0;k<6;k++)n+=(w>>k)&1;return n};return JSON.stringify(b[1].sort((p,q)=>p.x-q.x).map(p=>{const o=p.i*240;return [Math.round(p.x),Math.round(p.y),+g[o+84].toFixed(2),+g[o+85].toFixed(2),+g[o+86].toFixed(2),+g[o+237].toFixed(2),bits(p.formed),+g[o+92+8*0].toFixed(2)]}))"
+    },
+    {
+     "t": 6.8,
+     "js": "const M=moire,C=M.cells,d=M.gpu.device;const {readBuffer}=await import('./src/snapshot.js');const g=new Float32Array(await readBuffer(d,C.bioBuf[C.bioCur],0,C.count*960));const b=await M.organ.read();const bits=(w)=>{let n=0;for(let k=0;k<6;k++)n+=(w>>k)&1;return n};return JSON.stringify(b[1].sort((p,q)=>p.x-q.x).map(p=>{const o=p.i*240;return [Math.round(p.x),Math.round(p.y),+g[o+84].toFixed(2),+g[o+85].toFixed(2),+g[o+86].toFixed(2),+g[o+237].toFixed(2),bits(p.formed),+g[o+92+8*0].toFixed(2)]}))"
+    },
+    {
+     "t": 7.5,
+     "js": "const M=moire,C=M.cells,d=M.gpu.device;const {readBuffer}=await import('./src/snapshot.js');const g=new Float32Array(await readBuffer(d,C.bioBuf[C.bioCur],0,C.count*960));const b=await M.organ.read();const bits=(w)=>{let n=0;for(let k=0;k<6;k++)n+=(w>>k)&1;return n};return JSON.stringify(b[1].sort((p,q)=>p.x-q.x).map(p=>{const o=p.i*240;return [Math.round(p.x),Math.round(p.y),+g[o+84].toFixed(2),+g[o+85].toFixed(2),+g[o+86].toFixed(2),+g[o+237].toFixed(2),bits(p.formed),+g[o+92+8*0].toFixed(2)]}))"
+    },
+    {
+     "t": 9,
+     "js": "const M=moire,C=M.cells,d=M.gpu.device;const {readBuffer}=await import('./src/snapshot.js');const g=new Float32Array(await readBuffer(d,C.bioBuf[C.bioCur],0,C.count*960));const b=await M.organ.read();const bits=(w)=>{let n=0;for(let k=0;k<6;k++)n+=(w>>k)&1;return n};return JSON.stringify(b[1].sort((p,q)=>p.x-q.x).map(p=>{const o=p.i*240;return [Math.round(p.x),Math.round(p.y),+g[o+84].toFixed(2),+g[o+85].toFixed(2),+g[o+86].toFixed(2),+g[o+237].toFixed(2),bits(p.formed),+g[o+92+8*0].toFixed(2)]}))"
+    }
+   ],
+   "shots": []
+  }
+ ]
+}

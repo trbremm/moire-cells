@@ -1,0 +1,220 @@
+{
+ "runs": [
+  {
+   "name": "l1-u-notorq",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3,
+    "currents": 0,
+    "wallcost": 0,
+    "tearat": 0.25,
+    "shapetorque": 0,
+    "turn": 0
+   },
+   "duration": 15,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 0,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 2,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 5.9,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 6,
+     "js": "return JSON.stringify(await moire.organ.poke())"
+    },
+    {
+     "t": 6.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 7,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 7.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 8,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 9,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 10,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 12,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 15,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 5.9
+    },
+    {
+     "t": 15
+    }
+   ]
+  },
+  {
+   "name": "l1-u-sides",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3,
+    "currents": 0,
+    "wallcost": 0,
+    "tearat": 0.25
+   },
+   "duration": 15,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 0,
+     "js": "await moire.genome.setAll('a2',-0.6); return 'ok'"
+    },
+    {
+     "t": 2,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 5.9,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 6,
+     "js": "return JSON.stringify(await moire.organ.poke())"
+    },
+    {
+     "t": 6.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 7,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 7.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 8,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 9,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 10,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 12,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 15,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 5.9
+    },
+    {
+     "t": 15
+    }
+   ]
+  },
+  {
+   "name": "l1-u-nostag",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3,
+    "currents": 0,
+    "wallcost": 0,
+    "tearat": 0.25,
+    "stagger": 0
+   },
+   "duration": 15,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 0,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 2,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 5.9,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 6,
+     "js": "return JSON.stringify(await moire.organ.poke())"
+    },
+    {
+     "t": 6.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 7,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 7.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 8,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 9,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 10,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 12,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 15,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),f:c.firing,j:c.junctions})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 5.9
+    },
+    {
+     "t": 15
+    }
+   ]
+  }
+ ]
+}

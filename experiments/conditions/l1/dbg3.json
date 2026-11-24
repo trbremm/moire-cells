@@ -1,0 +1,87 @@
+{
+ "runs": [
+  {
+   "name": "l1-d-base2",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3,
+    "view": "clean"
+   },
+   "duration": 8,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 2,
+     "js": "const C=moire.cells,d=moire.gpu.device;const {readBuffer}=await import('./src/snapshot.js');const ab=await readBuffer(d,C.cellBuf,0,C.count*384);const u=new Uint32Array(ab),f=new Float32Array(ab);let s=[0,0,0,0],n=[0,0,0,0];const b=await moire.organ.read();const out=b.map(L=>{let w=0,k=0,bat=0;for(const p of L){const o=p.i*96;for(let q=0;q<6;q++){const word=u[o+68+(q>>2)];const byte=(word>>>(8*(q&3)))&255;w+=byte/255*8;k++;}bat+=f[o+16];}return {n:L.length,wadh:+(w/Math.max(1,k)).toFixed(3),bat:+(bat/Math.max(1,L.length)).toFixed(3)}});const c=await moire.organ.measure();return JSON.stringify({out,L:c.length,W:c.width,j:c.junctions})"
+    },
+    {
+     "t": 8,
+     "js": "const C=moire.cells,d=moire.gpu.device;const {readBuffer}=await import('./src/snapshot.js');const ab=await readBuffer(d,C.cellBuf,0,C.count*384);const u=new Uint32Array(ab),f=new Float32Array(ab);let s=[0,0,0,0],n=[0,0,0,0];const b=await moire.organ.read();const out=b.map(L=>{let w=0,k=0,bat=0;for(const p of L){const o=p.i*96;for(let q=0;q<6;q++){const word=u[o+68+(q>>2)];const byte=(word>>>(8*(q&3)))&255;w+=byte/255*8;k++;}bat+=f[o+16];}return {n:L.length,wadh:+(w/Math.max(1,k)).toFixed(3),bat:+(bat/Math.max(1,L.length)).toFixed(3)}});const c=await moire.organ.measure();return JSON.stringify({out,L:c.length,W:c.width,j:c.junctions})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 8
+    }
+   ]
+  },
+  {
+   "name": "l1-d-noB",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3,
+    "view": "clean"
+   },
+   "duration": 8,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 0,
+     "js": "await moire.genome.setAll('emitB',0); await moire.genome.setAll('emitA',0); return 'ok'"
+    },
+    {
+     "t": 2,
+     "js": "const C=moire.cells,d=moire.gpu.device;const {readBuffer}=await import('./src/snapshot.js');const ab=await readBuffer(d,C.cellBuf,0,C.count*384);const u=new Uint32Array(ab),f=new Float32Array(ab);let s=[0,0,0,0],n=[0,0,0,0];const b=await moire.organ.read();const out=b.map(L=>{let w=0,k=0,bat=0;for(const p of L){const o=p.i*96;for(let q=0;q<6;q++){const word=u[o+68+(q>>2)];const byte=(word>>>(8*(q&3)))&255;w+=byte/255*8;k++;}bat+=f[o+16];}return {n:L.length,wadh:+(w/Math.max(1,k)).toFixed(3),bat:+(bat/Math.max(1,L.length)).toFixed(3)}});const c=await moire.organ.measure();return JSON.stringify({out,L:c.length,W:c.width,j:c.junctions})"
+    },
+    {
+     "t": 8,
+     "js": "const C=moire.cells,d=moire.gpu.device;const {readBuffer}=await import('./src/snapshot.js');const ab=await readBuffer(d,C.cellBuf,0,C.count*384);const u=new Uint32Array(ab),f=new Float32Array(ab);let s=[0,0,0,0],n=[0,0,0,0];const b=await moire.organ.read();const out=b.map(L=>{let w=0,k=0,bat=0;for(const p of L){const o=p.i*96;for(let q=0;q<6;q++){const word=u[o+68+(q>>2)];const byte=(word>>>(8*(q&3)))&255;w+=byte/255*8;k++;}bat+=f[o+16];}return {n:L.length,wadh:+(w/Math.max(1,k)).toFixed(3),bat:+(bat/Math.max(1,L.length)).toFixed(3)}});const c=await moire.organ.measure();return JSON.stringify({out,L:c.length,W:c.width,j:c.junctions})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 8
+    }
+   ]
+  },
+  {
+   "name": "l1-d-sq",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3,
+    "view": "clean",
+    "squeeze": 1
+   },
+   "duration": 8,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 2,
+     "js": "const C=moire.cells,d=moire.gpu.device;const {readBuffer}=await import('./src/snapshot.js');const ab=await readBuffer(d,C.cellBuf,0,C.count*384);const u=new Uint32Array(ab),f=new Float32Array(ab);let s=[0,0,0,0],n=[0,0,0,0];const b=await moire.organ.read();const out=b.map(L=>{let w=0,k=0,bat=0;for(const p of L){const o=p.i*96;for(let q=0;q<6;q++){const word=u[o+68+(q>>2)];const byte=(word>>>(8*(q&3)))&255;w+=byte/255*8;k++;}bat+=f[o+16];}return {n:L.length,wadh:+(w/Math.max(1,k)).toFixed(3),bat:+(bat/Math.max(1,L.length)).toFixed(3)}});const c=await moire.organ.measure();return JSON.stringify({out,L:c.length,W:c.width,j:c.junctions})"
+    },
+    {
+     "t": 8,
+     "js": "const C=moire.cells,d=moire.gpu.device;const {readBuffer}=await import('./src/snapshot.js');const ab=await readBuffer(d,C.cellBuf,0,C.count*384);const u=new Uint32Array(ab),f=new Float32Array(ab);let s=[0,0,0,0],n=[0,0,0,0];const b=await moire.organ.read();const out=b.map(L=>{let w=0,k=0,bat=0;for(const p of L){const o=p.i*96;for(let q=0;q<6;q++){const word=u[o+68+(q>>2)];const byte=(word>>>(8*(q&3)))&255;w+=byte/255*8;k++;}bat+=f[o+16];}return {n:L.length,wadh:+(w/Math.max(1,k)).toFixed(3),bat:+(bat/Math.max(1,L.length)).toFixed(3)}});const c=await moire.organ.measure();return JSON.stringify({out,L:c.length,W:c.width,j:c.junctions})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 8
+    }
+   ]
+  }
+ ]
+}

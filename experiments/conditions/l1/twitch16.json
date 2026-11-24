@@ -1,0 +1,234 @@
+{
+ "runs": [
+  {
+   "name": "l1-ah-p12",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3,
+    "sigpower": 0.012
+   },
+   "duration": 30,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 0.1,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 3,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 5.9,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 6,
+     "js": "return JSON.stringify(await moire.organ.poke())"
+    },
+    {
+     "t": 6.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 7,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 7.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 8,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 8.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 9,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 9.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 10,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 11,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 12,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 13,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 14,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 16,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 18,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 20,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 24,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 30,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 5.9
+    },
+    {
+     "t": 8,
+     "view": "signals"
+    },
+    {
+     "t": 10
+    },
+    {
+     "t": 14
+    },
+    {
+     "t": 24
+    }
+   ]
+  },
+  {
+   "name": "l1-ah-p8",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3,
+    "sigpower": 0.008
+   },
+   "duration": 30,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 0.1,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 3,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 5.9,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 6,
+     "js": "return JSON.stringify(await moire.organ.poke())"
+    },
+    {
+     "t": 6.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 7,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 7.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 8,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 8.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 9,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 9.5,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 10,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 11,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 12,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 13,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 14,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 16,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 18,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 20,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 24,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    },
+    {
+     "t": 30,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(2),L:+c.length.toFixed(2),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),a:+c.aspect.toFixed(2),dr:+c.drive.toFixed(2),con:c.contracting,f:c.firing,j:c.junctions})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 5.9
+    },
+    {
+     "t": 8,
+     "view": "signals"
+    },
+    {
+     "t": 10
+    },
+    {
+     "t": 14
+    },
+    {
+     "t": 24
+    }
+   ]
+  }
+ ]
+}

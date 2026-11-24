@@ -1,0 +1,86 @@
+{
+ "runs": [
+  {
+   "name": "l1-d-nobreak",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3,
+    "view": "clean",
+    "breaks": 0
+   },
+   "duration": 8,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 8,
+     "js": "const b = await moire.organ.read(); const bits=(w)=>{let n=0;for(let k=0;k<6;k++)n+=(w>>k)&1;return n}; return JSON.stringify(b.map(L=>({n:L.length, torn:L.reduce((a,p)=>a+bits(p.torn),0), formed:L.reduce((a,p)=>a+bits(p.formed),0), asp:+(L.reduce((a,p)=>a+Math.exp(2*p.e),0)/Math.max(1,L.length)).toFixed(2)})))"
+    },
+    {
+     "t": 8.01,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({L:c.length,W:c.width})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 8
+    }
+   ]
+  },
+  {
+   "name": "l1-d-tear20",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3,
+    "view": "clean",
+    "tearat": 0.2
+   },
+   "duration": 8,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 8,
+     "js": "const b = await moire.organ.read(); const bits=(w)=>{let n=0;for(let k=0;k<6;k++)n+=(w>>k)&1;return n}; return JSON.stringify(b.map(L=>({n:L.length, torn:L.reduce((a,p)=>a+bits(p.torn),0), formed:L.reduce((a,p)=>a+bits(p.formed),0), asp:+(L.reduce((a,p)=>a+Math.exp(2*p.e),0)/Math.max(1,L.length)).toFixed(2)})))"
+    },
+    {
+     "t": 8.01,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({L:c.length,W:c.width})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 8
+    }
+   ]
+  },
+  {
+   "name": "l1-d-noshape",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3,
+    "view": "clean",
+    "shapetorque": 0,
+    "breaks": 0
+   },
+   "duration": 8,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 8,
+     "js": "const b = await moire.organ.read(); const bits=(w)=>{let n=0;for(let k=0;k<6;k++)n+=(w>>k)&1;return n}; return JSON.stringify(b.map(L=>({n:L.length, torn:L.reduce((a,p)=>a+bits(p.torn),0), formed:L.reduce((a,p)=>a+bits(p.formed),0), asp:+(L.reduce((a,p)=>a+Math.exp(2*p.e),0)/Math.max(1,L.length)).toFixed(2)})))"
+    },
+    {
+     "t": 8.01,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({L:c.length,W:c.width})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 8
+    }
+   ]
+  }
+ ]
+}

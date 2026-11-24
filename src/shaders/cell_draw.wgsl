@@ -131,6 +131,8 @@ struct Draw {
   p1Ink: vec4f,     // the harmonic look's phagosome glow (rgb, violet); w the phagosome ring's brightness
   // ---- step F0: colour by job (src/jobs.js writeDraw) ----
   job: array<vec4f, 7>,    // the jobs' inks (rgb): undecided, light eater, breather, fermenter, gradient eater, builder, predator
+  g3: vec4f,        // step G3: x a REFOLD's flash brightness (0 = none); y z w spare
+  g3Ink: array<vec4f, 2>,  // ... its inks: [0] into the stress fold, [1] back home
 };
 // step P1: a neighbour WRAPPING this cell (Cell.engBy): the wrapper's membrane as a tube round this cell, from the wrapper's side as far round
 // as the wrap has gone (at the cell's radius x (1 + arm / 2)); returns (coverage, the tube's centre-line profile 0..1); p the pixel's offset
@@ -810,6 +812,16 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     let f2 = fd * fd;
     lineCol = mix(lineCol, vec3f(1.0), 0.7 * f2) * (1.0 + D.div.x * f2);
     rgb += col * 0.1 * D.div.x * f2;
+  }
+  // step G3: a REFOLD's flash (Bio.gs.w bits 5..9 count down ~1.5 s): the tube rings in the fold's ink (white-hot into the stress fold,
+  // ice blue back home), a second ring pulsing outward, the inside lit a little
+  let gfl = (u32(max(g.gs.w, 0.0)) >> 5u) & 31u;
+  if (D.g3.x > 0.0 && gfl > 0u) {
+    let fr = f32(gfl) / 31.0;
+    let fk = select(D.g3Ink[1].rgb, D.g3Ink[0].rgb, (u32(max(g.gs.w, 0.0)) & 1024u) != 0u);
+    let pulse = fr * (0.6 + 0.4 * sin(fr * 18.0));
+    lineCol = mix(lineCol, mix(fk, vec3f(1.0), 0.35 * fr), clamp(pulse, 0.0, 1.0)) * (1.0 + D.g3.x * pulse);
+    rgb += fk * 0.18 * D.g3.x * fr * fr;
   }
   rgb = mix(rgb, lineCol, ring);
   // step C12b: the wall's rim of crust, outside the tube: flat bricks (about lip2.y r long with thin joints), present where this

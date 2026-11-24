@@ -283,7 +283,7 @@ function makeTissue(M, ctl) {
       ctl.runUntil(null);
       try {
         for (let k = 0; k < n; k++) {
-          M.cells.stir(x + dx * k, y + dy * k, dx, dy);
+          M.cells.stirAt(x + dx * k, y + dy * k, dx, dy);
           M.background.impulse(x + dx * k, y + dy * k, 1.2);
           await frames(1);
         }

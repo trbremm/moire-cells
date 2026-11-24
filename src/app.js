@@ -49,6 +49,7 @@ export const TOOL_ICONS = {
   cell: '<path d="M8.5 3.5l4.6 2.65v5.3L8.5 14.1l-4.6-2.65v-5.3z"/><circle cx="8.5" cy="8.8" r="1.3" fill="currentColor" stroke="none"/><path d="M15.5 12.5v5M13 15h5"/>',
   pipette: '<path d="M13.2 2.8l4 4-2 2-4-4z"/><path d="M12.2 7.8l-7 7-1.2 3.2 3.2-1.2 7-7"/><circle cx="4.2" cy="17.4" r="0.9" fill="currentColor" stroke="none"/>',
   obstacle: '<rect x="2.8" y="3" width="6" height="14" rx="1"/><circle cx="14.2" cy="6.3" r="2.6"/><circle cx="14.2" cy="13.7" r="2.6"/>',   // step G0b
+  refold: '<circle cx="10" cy="10" r="7"/><path d="M6 7.5l8 5M6 12.5l8-5M10 3v14"/>',   // step G3
 };
 const OBS_SHAPES = ['wall', 'block', 'pillar', 'erase'];
 const OBS_WORD = { wall: 'wall: drag paints a wall', block: 'block: drag spans a block', pillar: 'pillar: tap places one, drag a row', erase: 'erase: drag cuts through' };
@@ -345,6 +346,12 @@ export function createApp(ctx) {
   A.dishDown = (x, y) => {
     const t = toolNow();
     if (t.obstacle) return obsDown(x, y);
+    if (t.refold) {   // step G3: the refold tool (cells under it go into the fold it sets while it is held)
+      const FD = ctx.cells.folding;
+      Object.assign(drag, { on: true, kind: 'fold', x, y, pts: [[x, y]] });
+      FD.setZone(x, y, 1.6 * ctx.cells.R);
+      return true;
+    }
     if (!t.addCell && !t.pipette) return false;
     Object.assign(drag, { on: true, kind: t.addCell ? 'cell' : 'pip', x, y, pts: [[x, y]] });
     if (drag.kind === 'pip') drop(x, y);
@@ -353,6 +360,7 @@ export function createApp(ctx) {
   A.dishMove = (x, y) => {
     if (!drag.on) return false;
     if (drag.kind === 'obs') { obsMove(x, y); return true; }
+    if (drag.kind === 'fold') { ctx.cells.folding.setZone(x, y, 1.6 * ctx.cells.R); drag.x = x; drag.y = y; return true; }
     const R = ctx.cells.R, gap = drag.kind === 'cell' ? 2.1 * R : 3 * R;
     if (Math.hypot(x - drag.x, y - drag.y) >= gap) {
       drag.x = x; drag.y = y;
@@ -364,6 +372,12 @@ export function createApp(ctx) {
     if (!drag.on) return false;
     drag.on = false;
     if (drag.kind === 'obs') { obsUp(); return true; }
+    if (drag.kind === 'fold') {
+      const FD = ctx.cells.folding;
+      FD.setZone(null);
+      FD.card(drag.x, drag.y).catch(() => {});   // the genome card of the cell under the pointer
+      return true;
+    }
     if (drag.kind === 'cell' && drag.pts.length) {
       const { g, label } = genomeNow();
       // (the toy front, src/toy.js: a tap drops a small group, a hexagon of `cluster` cells, so it shows at a glance)
@@ -375,6 +389,7 @@ export function createApp(ctx) {
   };
   A.cancel = () => {
     if (drag.on && drag.kind === 'obs' && ctx.obstacles) { ctx.obstacles.endStroke(); ctx.obstacles.prev = null; }
+    if (drag.on && drag.kind === 'fold') ctx.cells.folding.setZone(null);
     drag.on = false; drag.pts = [];
   };
 

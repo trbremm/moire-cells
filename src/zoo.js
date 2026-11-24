@@ -566,7 +566,16 @@ export function cellPanel(ctx, onAdd) {
       add.type = 'button';
       add.title = 'place copies of this cell\'s genome where you tap or drag (the add-cell tool)';
       add.addEventListener('click', () => onAdd(G.genome, `${HABIT_NAME[G.habit] || G.habit} (${G.text[0]})`, cellIcon(G, f, g)));
-      r.append(cv, ...(gv ? [gv] : []), main, add);
+      // step G3: refold the whole line by hand (the founder line of the group's middle cell): into its stress fold, or back home
+      let fb = null;
+      if (gv) {
+        const line = Math.round(g[G.rep * BIO_FLOATS + 7]), inStress = latticesOf(g, G.rep * BIO_FLOATS).state === 1;
+        fb = el('button', 'act zpip', inStress ? 'unfold' : 'refold');
+        fb.type = 'button';
+        fb.title = inStress ? `fold every cell of line ${line} back to its home fold` : `refold every cell of line ${line} into its stress fold (what changes comes from their genomes)`;
+        fb.addEventListener('click', () => { FD.forceFold(inStress ? 0 : 1, line); fb.textContent = inStress ? 'home…' : 'folded…'; });
+      }
+      r.append(cv, ...(gv ? [gv] : []), main, add, ...(fb ? [fb] : []));
       Z.rows.append(r);
     }
   }

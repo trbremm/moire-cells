@@ -58,7 +58,11 @@ struct GrnP {
   chi: f32,         // a link's weight x cos(phase difference + chi)
   hPhase: f32,      // a phase change counts toward the hidden drift x this
   bufFounder: f32,  // the buffering gene of a cell whose lattices are drawn here (a genome without them)
-  spare2: f32,
+  spare2: f32,      // (kept free for step Q1: fast regulators)
+  // ---- step G3, the toy's hands (src/folding.js writeGrn; words 40..47) ----
+  zone: vec4f,      // the REFOLD tool: x y its centre (dish px), z its radius (0: none), w the fold it sets (0 home, 1 stress)
+  shock: vec4f,     // the STRESS button: x added to every cell's stress, y x the refold rate; the LINE REFOLD (the zoo, the lab): z the founder
+                    // line + 1 whose cells are put into the fold w this frame (-1: every cell; 0: none)
 };
 const G3_ON: u32 = 1u;          // the moire genome: the links derived from the lattices (off: the free weights and codes of step T1b)
 const G3_FOLD: u32 = 2u;        // the fold acts on the lattices' addresses
@@ -70,12 +74,20 @@ const G3_REPAIR: u32 = 64u;     // the fidelity gene repairs the dose (battery-p
 const G3_BUF: u32 = 128u;       // the buffering gene acts (and drifts)
 const G3_BUFNULL: u32 = 256u;   // ... its neutral control: it drifts, the capacity stays 0, nothing paid
 const G3_DERALL: u32 = 512u;    // derive every cell's links afresh this frame (a knob changed)
+const G3_OUT: u32 = 1024u;      // the OUTPUTS are addressed by lattice too: each reads the regulator whose (folded) lattice best matches its own
+                                // fixed one, so a refold also changes WHICH regulator drives each gene (the outputs' gains stay genes)
+// step G3: Bio.gs.w, bits 5..9 the refold FLASH still to run (in 3-tick steps; the drawing), bit 10 its kind (1: into the stress fold)
+const GS_FLASH_SHIFT: u32 = 5u;
+const GS_FLASH_KIND: u32 = 1024u;
+const GS_LINE: u32 = 2048u;     // the refolds in the line: the word / GS_LINE
 const G3_PI3: f32 = 1.0471975512;
 
 // the 16 senses' fixed lattices (angle, ln wavenumber, phase): a 4 x 4 grid over the regulators' address space, phases a golden angle apart
 fn g3_sense(s: u32) -> vec3f {
   return vec3f((f32(s & 3u) + 0.5) * G3_PI3 / 4.0, -0.375 + 0.25 * f32(s >> 2u), f32(s) * 2.3999632);
 }
+// the 20 outputs' fixed lattices: a 5 x 4 grid set between the senses'
+fn g3_out(o: u32) -> vec2f { return vec2f((f32(o % 5u) + 0.5) * G3_PI3 / 5.0, -0.45 + 0.3 * f32(o / 5u)); }
 // a lattice's address under a fold (twist, stretch, axis): turned by the twist; its spacing stretched as it faces the axis (six-fold, as the
 // lattice itself)
 fn g3_addr(th: f32, lk: f32, fold: vec3f) -> vec2f { return vec2f(th + fold.x, lk + fold.y * cos(6.0 * (th - fold.z))); }
@@ -180,8 +192,11 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
   var fs = bioW[i].fs;
   var gsv = bioW[i].gs;
   let gw0 = u32(max(gsv.w, 0.0));
-  var gline = gw0 >> 5u;                   // refolds in life in the cell's line
+  var gline = gw0 / GS_LINE;                // refolds in life in the cell's line
   var gbits = select(0u, gw0 & GS_SET, g3); // (this tick's events cleared; the links' mark kept while the moire genome is on)
+  var gflash = (gw0 >> GS_FLASH_SHIFT) & 31u;   // the refold flash (the drawing), counting down
+  var gfkind = gw0 & GS_FLASH_KIND;
+  if (gflash > 0u && S.tick % 3u == 0u) { gflash -= 1u; }
   var g3force = false;                      // a big change: the links are derived afresh whatever the buffer holds
   var msG = 0.0;                            // this birth's mutation size (as the network's)
   // a genome without lattices (made by hand, or before step G3): drawn from its founder id, so a hand-made founder's copies share them
@@ -346,6 +361,8 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
         if (rand01(b3, 74u) < 0.5) { fh = vec4f(nf, fh.w); } else { fs = vec4f(nf, fs.w); }
         g3force = true;
         gbits |= GS_EV_BIG;
+        gflash = 31u;
+        gfkind = GS_FLASH_KIND;
       }
       if ((GP.g3f & (G3_BUF | G3_BUFNULL)) != 0u) { fh.w = clamp(fh.w + msG * GP.bufStep * gauss(b3, 80u), 0.0, 1.0); }
     }
@@ -433,14 +450,31 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
   if (g3 && !bornG) {
     let heat = src[o + GRN_S_HEAT];
     let tin = src[o + GRN_S_T];
-    let st = clamp(GP.heatW * heat + GP.oxW * tin, 0.0, 1.0);
+    let st = clamp(GP.heatW * heat + GP.oxW * tin + GP.shock.x, 0.0, 1.0);   // (the toy's STRESS button adds shock.x)
+    var flip = false;
     if ((GP.g3f & G3_FOLDLIFE) != 0u) {
       let rr = rand01(c.seed ^ 0x67336631u, S.tick);
-      var flip = false;
+      let kOn = GP.kOn * max(GP.shock.y, 1.0);
       if (fs.w < 0.5) {
-        if (st > GP.s0 && rr < GP.kOn * (st - GP.s0) / max(1.0 - GP.s0, 1e-3) * S.dt) { fs.w = 1.0; gbits |= GS_EV_ON; gline += 1u; flip = true; }
+        if (st > GP.s0 && rr < kOn * (st - GP.s0) / max(1.0 - GP.s0, 1e-3) * S.dt) { fs.w = 1.0; gbits |= GS_EV_ON; gline += 1u; flip = true; }
       } else if (st < GP.s0 && rr < GP.kOff * (GP.s0 - st) / max(GP.s0, 1e-3) * S.dt) { fs.w = 0.0; gbits |= GS_EV_OFF; flip = true; }
-      if (flip && (GP.g3f & (G3_FOLD | G3_FOLDNULL)) == G3_FOLD) { g3derive = true; }
+    }
+    // the toy's REFOLD tool: cells under it are put into the fold it sets; the LINE REFOLD: every cell of a founder line (or all)
+    let byLine = GP.shock.z < -0.5 || (GP.shock.z > 0.5 && round(bioW[i].rec.w) + 1.0 == round(GP.shock.z));
+    let byZone = GP.zone.z > 0.0 && distance(c.pos, GP.zone.xy) < GP.zone.z + c.r;
+    if (byZone || byLine) {
+      let want = select(0.0, 1.0, select(GP.zone.w, GP.shock.w, byLine) > 0.5);
+      if (fs.w != want) {
+        fs.w = want;
+        gbits |= select(GS_EV_OFF, GS_EV_ON, want > 0.5);
+        if (want > 0.5) { gline += 1u; }
+        flip = true;
+      }
+    }
+    if (flip) {
+      gflash = 31u;
+      gfkind = select(0u, GS_FLASH_KIND, fs.w > 0.5);
+      if ((GP.g3f & (G3_FOLD | G3_FOLDNULL)) == G3_FOLD) { g3derive = true; }
     }
     var D = max(gsv.x, 0.0);
     D += S.dt * (GP.doseHeat * heat + GP.doseOx * tin - GP.doseFade * D);
@@ -465,6 +499,27 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
       g3_derive(&th, &lk, &ph, fold, &w, &code);
       gsv.y = 0.0;
       gbits |= GS_SET;
+      // the outputs: each reads the regulator whose folded lattice beats slowest with its own (the gains stay as they are)
+      if ((GP.g3f & G3_OUT) != 0u) {
+        var oreg: array<u32, 20>;
+        for (var q = 0u; q < 20u; q++) {
+          let oa = g3_out(q);
+          var best = 1e9;
+          var br = 0u;
+          for (var r = 0u; r < GRN_R; r++) {
+            let dd = g3_d2(g3_addr(th[r], lk[r], fold), oa);
+            if (dd < best) { best = dd; br = r; }
+          }
+          oreg[q] = br;
+        }
+        for (var v = 0u; v < 4u; v++) {
+          bioW[i].go[v] = f32(oreg[4u * v] + 8u * oreg[4u * v + 1u] + 64u * oreg[4u * v + 2u] + 512u * oreg[4u * v + 3u]);
+        }
+        bioW[i].gm.w = f32(oreg[16]);
+        bioW[i].relay.w = f32(oreg[17]);
+        bioW[i].mg.y = f32(oreg[18]);
+        bioW[i].mg.w = f32(oreg[19]);
+      }
       for (var r = 0u; r < GRN_R; r++) {
         bioW[i].gi[r >> 2u][r & 3u] = f32(code[3u * r] + 32u * code[3u * r + 1u] + 1024u * code[3u * r + 2u]);
       }
@@ -481,7 +536,9 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
     bioW[i].fh = fh;
     bioW[i].fs = fs;
   }
-  if (g3 || (gw0 & 31u) != 0u) { bioW[i].gs = vec4f(gsv.xyz, f32(gbits + 32u * gline)); }
+  if (g3 || (gw0 & 31u) != 0u || gflash != 0u) {
+    bioW[i].gs = vec4f(gsv.xyz, f32(gbits + (gflash << GS_FLASH_SHIFT) + gfkind + GS_LINE * gline));
+  }
 
   // ---- the update: each regulator relaxes toward sigmoid(its input) ----
   let a = clamp(S.dt / max(GP.tau, 1e-3), 0.0, 1.0);

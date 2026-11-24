@@ -71,7 +71,7 @@ import { ALL_ENGINES as ENGINES, engineIndex, ELECTRONS } from './matter.js';   
 import { CARBON, CB_LIP } from './carbon.js';
 import { fieldDefaults, founderGates, BIO_FG } from './guides.js';
 import { stampFounderGlue } from './glue.js';
-import { stampLattices } from './folding.js';
+import { stampLattices, founderOutputs } from './folding.js';
 
 export const BIO_FLOATS = 224;  // (188 until step G3's moire genome; 180 until step P3's taste genes; 168 until step S2's motor genes; 156 until step G2's duplicate slots and families; 40 until step C6c's membrane genes, 44 until step C7's pumps, 48 until step C10's walls, 52 until step C12b's lipids,
                                 //  56 until step C13's field genes and gates, 76 until step T1a's marker and kin channels, 84 until step T1b's gene network)
@@ -521,6 +521,7 @@ export class Genome {
       motorGenes(g, this.orng, 0, mode === 'wild', this.params.wildGroups);   // step S2 (every mode: std and blank founders without motors)
       tasteGenes(g, this.trng, 0, mode === 'wild', this.params.wildGroups);   // step P3 (every mode: std and blank founders without a taste)
       stampLattices(g, this.frng, 0, this.foldP);   // step G3: every founder's regulator lattices and folds (without outputs they change nothing)
+      if (this.foldP && this.foldP.on && this.foldP.founderOut && mode !== 'wild') founderOutputs(g, this.frng, 0, this.foldP);   // ... and outputs
     }
     // step T1b: wild founders' markers turned a golden angle apart (no random number drawn), so in the lineage view any few surviving
     // founders show clearly different hues (their markers are strangers either way)

@@ -39,6 +39,8 @@ export const TOOLS = [
   { id: 'pipette', name: 'pipette', label: 'drop a substance (pick one in the molecules zoo)', pipette: true },
   // step G0b (src/obstacles.js): paint walls, blocks and pillars, or erase them (the Dish panel picks which; the button again cycles)
   { id: 'obstacle', name: 'obstacles', label: 'paint walls, blocks, pillars (the Dish panel picks; the button again cycles)', obstacle: true },
+  // step G3 (src/folding.js): refold cells by hand, a scientist's tool like the pipette (what a refold does comes from their genomes)
+  { id: 'refold', name: 'refold', label: 'refold cells: tap or drag across cells puts them into their stress fold (the button again: back home)', refold: true },
 ];
 
 export const RULE_GROUPS = [

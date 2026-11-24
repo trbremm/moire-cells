@@ -172,7 +172,8 @@
 //               switch, links from the home fold); ?dose=0 no damage dose written (?dosenull=1 collected, never written); ?repair=0 the fidelity
 //               gene does not repair the dose; ?buffer=0 no buffering (?buffernull=1 its neutral control); knobs ?g3sigma= ?g3wmax= ?g3wmin=
 //               ?latstep= ?phstep= ?latjump= ?foldstep= ?refold= ?s0= ?kon= ?koff= ?doseheat= ?doseox= ?dosestep= ?repk= ?repcost= ?bufcap=
-//               ?bufcost= ?buffounder= ?bufweaken= ?g3census= (rules panel, Moire genome)
+//               ?bufcost= ?buffounder= ?bufweaken= ?g3census= (rules panel, Moire genome); ?g3out=0 outputs wired as in T1b (else by lattice, so a
+//               refold changes which regulator drives each gene); ?g3founders=0 std founders without output gains (?foundergain= ?foundershare=)
 //   ?flagella=0   step S2: no flagella; ?cilia=0 no cilia (both 0: exactly as before S2); ?flagellanull=1 ?cilianull=1 their NEUTRAL controls
 //               (the genes drift, nothing acts, nothing is paid); ?mogrn=0 ?mowater=0 ?modipole=0 ?mopump=0 ?mocouple=0 ?mosteer=0 ?motorque=0
 //               one part off; knobs ?swim= ?steer= ?arm= ?dipole= ?swimdrift= ?ciliapush= ?beathz= ?couple= ?lag= ?swimcost= ?ciliaup=
@@ -606,13 +607,13 @@ async function boot() {
       const FP = cells.folding.params;
       if (params.get('g3') === '0') FP.on = false;
       for (const [q, k] of [['fold', 'fold'], ['foldlife', 'foldLife'], ['foldnull', 'foldNull'], ['dose', 'dose'], ['dosenull', 'doseNull'],
-        ['repair', 'repair'], ['buffer', 'buffer'], ['buffernull', 'bufferNull']]) {
+        ['repair', 'repair'], ['buffer', 'buffer'], ['buffernull', 'bufferNull'], ['g3out', 'out'], ['g3founders', 'founderOut']]) {
         if (params.has(q)) FP[k] = flag(q);
       }
       for (const [q, k] of [['g3sigma', 'sigma'], ['g3wmax', 'wMax'], ['g3wmin', 'wMin'], ['latstep', 'latStep'], ['phstep', 'phStep'], ['latjump', 'jump'],
         ['foldstep', 'foldStep'], ['refold', 'refold'], ['s0', 's0'], ['kon', 'kOn'], ['koff', 'kOff'], ['doseheat', 'doseHeat'], ['doseox', 'doseOx'],
         ['dosestep', 'doseStep'], ['repk', 'repK'], ['repcost', 'repCost'], ['bufcap', 'bufCap'], ['bufcost', 'bufCost'], ['buffounder', 'bufFounder'],
-        ['bufweaken', 'bufWeaken'], ['g3census', 'censusEvery']]) {
+        ['bufweaken', 'bufWeaken'], ['g3census', 'censusEvery'], ['foundergain', 'founderGain'], ['foundershare', 'founderShare']]) {
         const v = Number(params.get(q));
         if (params.has(q) && Number.isFinite(v) && v >= 0) FP[k] = v;
       }
@@ -1591,7 +1592,7 @@ function setupInput() {
       for (let k = 1; k <= n; k++) {
         background.impulse(pointer.x + (x - pointer.x) * k / n, pointer.y + (y - pointer.y) * k / n, 1.2 / Math.sqrt(n));
       }
-      cells.stir(x, y, x - pointer.x, y - pointer.y);   // cells near the pointer are pushed along
+      cells.stirAt(x, y, x - pointer.x, y - pointer.y);   // cells near the pointer are pushed along
     }
     pointer.x = x; pointer.y = y;
   });

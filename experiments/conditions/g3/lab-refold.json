@@ -1,0 +1,323 @@
+{
+ "batch": "g3-lab-refold",
+ "runs": [
+  {
+   "name": "g3-lab-refold-colonies",
+   "description": "lab: colonies s3, refolding in life off from 200 s; by hand: all home at 200 s, all into the STRESS fold at 240 s, all home at 270 s; the phenotype (output factors) compared per cell 30 s apart",
+   "query": {
+    "preset": "colonies",
+    "seed": 3,
+    "g3census": 10
+   },
+   "duration": 302,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 200,
+     "js": "moire.folding.params.foldLife = false; return moire.folding.forceFold(0)"
+    },
+    {
+     "t": 240,
+     "js": "const s = await moire.sample(); const job = [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)); return JSON.stringify({t: moire.time(), alive: s.alive, job, fold: moire.folding.panelLine(true)})"
+    },
+    {
+     "t": 240.1,
+     "js": "return JSON.stringify(await moire.folding.phenotype(true))"
+    },
+    {
+     "t": 240.2,
+     "js": "return moire.folding.forceFold(1)"
+    },
+    {
+     "t": 270,
+     "js": "const s = await moire.sample(); const job = [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)); return JSON.stringify({t: moire.time(), alive: s.alive, job, fold: moire.folding.panelLine(true)})"
+    },
+    {
+     "t": 270.1,
+     "js": "return JSON.stringify(await moire.folding.phenotype())"
+    },
+    {
+     "t": 270.2,
+     "js": "return JSON.stringify(await moire.folding.phenotype(true))"
+    },
+    {
+     "t": 270.3,
+     "js": "return moire.folding.forceFold(0)"
+    },
+    {
+     "t": 300,
+     "js": "const s = await moire.sample(); const job = [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)); return JSON.stringify({t: moire.time(), alive: s.alive, job, fold: moire.folding.panelLine(true)})"
+    },
+    {
+     "t": 300.1,
+     "js": "return JSON.stringify(await moire.folding.phenotype())"
+    },
+    {
+     "t": 301,
+     "js": "return JSON.stringify(await moire.folding.show({lineages: 2, size: 220}))"
+    }
+   ],
+   "shots": [
+    {
+     "t": 240,
+     "name": "t240-home"
+    },
+    {
+     "t": 241,
+     "name": "t241-flash"
+    },
+    {
+     "t": 270,
+     "name": "t270-stressfold"
+    },
+    {
+     "t": 300,
+     "name": "t300-home"
+    },
+    {
+     "t": 301,
+     "name": "genome"
+    }
+   ]
+  },
+  {
+   "name": "g3-lab-refold-colonies-ctl",
+   "description": "lab: colonies s3, refolding in life off from 200 s; nothing done (control); the phenotype (output factors) compared per cell 30 s apart",
+   "query": {
+    "preset": "colonies",
+    "seed": 3,
+    "g3census": 10
+   },
+   "duration": 302,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 200,
+     "js": "moire.folding.params.foldLife = false; return 'no refold'"
+    },
+    {
+     "t": 240,
+     "js": "const s = await moire.sample(); const job = [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)); return JSON.stringify({t: moire.time(), alive: s.alive, job, fold: moire.folding.panelLine(true)})"
+    },
+    {
+     "t": 240.1,
+     "js": "return JSON.stringify(await moire.folding.phenotype(true))"
+    },
+    {
+     "t": 240.2,
+     "js": "return 'no refold'"
+    },
+    {
+     "t": 270,
+     "js": "const s = await moire.sample(); const job = [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)); return JSON.stringify({t: moire.time(), alive: s.alive, job, fold: moire.folding.panelLine(true)})"
+    },
+    {
+     "t": 270.1,
+     "js": "return JSON.stringify(await moire.folding.phenotype())"
+    },
+    {
+     "t": 270.2,
+     "js": "return JSON.stringify(await moire.folding.phenotype(true))"
+    },
+    {
+     "t": 270.3,
+     "js": "return 'no refold'"
+    },
+    {
+     "t": 300,
+     "js": "const s = await moire.sample(); const job = [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)); return JSON.stringify({t: moire.time(), alive: s.alive, job, fold: moire.folding.panelLine(true)})"
+    },
+    {
+     "t": 300.1,
+     "js": "return JSON.stringify(await moire.folding.phenotype())"
+    },
+    {
+     "t": 301,
+     "js": "return JSON.stringify(await moire.folding.show({lineages: 2, size: 220}))"
+    }
+   ],
+   "shots": [
+    {
+     "t": 240,
+     "name": "t240-home"
+    },
+    {
+     "t": 241,
+     "name": "t241-flash"
+    },
+    {
+     "t": 270,
+     "name": "t270-stressfold"
+    },
+    {
+     "t": 300,
+     "name": "t300-home"
+    },
+    {
+     "t": 301,
+     "name": "genome"
+    }
+   ]
+  },
+  {
+   "name": "g3-lab-refold-default",
+   "description": "lab: default s3, refolding in life off from 200 s; by hand: all home at 200 s, all into the STRESS fold at 240 s, all home at 270 s; the phenotype (output factors) compared per cell 30 s apart",
+   "query": {
+    "seed": 3,
+    "g3census": 10
+   },
+   "duration": 302,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 200,
+     "js": "moire.folding.params.foldLife = false; return moire.folding.forceFold(0)"
+    },
+    {
+     "t": 240,
+     "js": "const s = await moire.sample(); const job = [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)); return JSON.stringify({t: moire.time(), alive: s.alive, job, fold: moire.folding.panelLine(true)})"
+    },
+    {
+     "t": 240.1,
+     "js": "return JSON.stringify(await moire.folding.phenotype(true))"
+    },
+    {
+     "t": 240.2,
+     "js": "return moire.folding.forceFold(1)"
+    },
+    {
+     "t": 270,
+     "js": "const s = await moire.sample(); const job = [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)); return JSON.stringify({t: moire.time(), alive: s.alive, job, fold: moire.folding.panelLine(true)})"
+    },
+    {
+     "t": 270.1,
+     "js": "return JSON.stringify(await moire.folding.phenotype())"
+    },
+    {
+     "t": 270.2,
+     "js": "return JSON.stringify(await moire.folding.phenotype(true))"
+    },
+    {
+     "t": 270.3,
+     "js": "return moire.folding.forceFold(0)"
+    },
+    {
+     "t": 300,
+     "js": "const s = await moire.sample(); const job = [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)); return JSON.stringify({t: moire.time(), alive: s.alive, job, fold: moire.folding.panelLine(true)})"
+    },
+    {
+     "t": 300.1,
+     "js": "return JSON.stringify(await moire.folding.phenotype())"
+    },
+    {
+     "t": 301,
+     "js": "return JSON.stringify(await moire.folding.show({lineages: 2, size: 220}))"
+    }
+   ],
+   "shots": [
+    {
+     "t": 240,
+     "name": "t240-home"
+    },
+    {
+     "t": 241,
+     "name": "t241-flash"
+    },
+    {
+     "t": 270,
+     "name": "t270-stressfold"
+    },
+    {
+     "t": 300,
+     "name": "t300-home"
+    },
+    {
+     "t": 301,
+     "name": "genome"
+    }
+   ]
+  },
+  {
+   "name": "g3-lab-refold-default-ctl",
+   "description": "lab: default s3, refolding in life off from 200 s; nothing done (control); the phenotype (output factors) compared per cell 30 s apart",
+   "query": {
+    "seed": 3,
+    "g3census": 10
+   },
+   "duration": 302,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 200,
+     "js": "moire.folding.params.foldLife = false; return 'no refold'"
+    },
+    {
+     "t": 240,
+     "js": "const s = await moire.sample(); const job = [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)); return JSON.stringify({t: moire.time(), alive: s.alive, job, fold: moire.folding.panelLine(true)})"
+    },
+    {
+     "t": 240.1,
+     "js": "return JSON.stringify(await moire.folding.phenotype(true))"
+    },
+    {
+     "t": 240.2,
+     "js": "return 'no refold'"
+    },
+    {
+     "t": 270,
+     "js": "const s = await moire.sample(); const job = [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)); return JSON.stringify({t: moire.time(), alive: s.alive, job, fold: moire.folding.panelLine(true)})"
+    },
+    {
+     "t": 270.1,
+     "js": "return JSON.stringify(await moire.folding.phenotype())"
+    },
+    {
+     "t": 270.2,
+     "js": "return JSON.stringify(await moire.folding.phenotype(true))"
+    },
+    {
+     "t": 270.3,
+     "js": "return 'no refold'"
+    },
+    {
+     "t": 300,
+     "js": "const s = await moire.sample(); const job = [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)); return JSON.stringify({t: moire.time(), alive: s.alive, job, fold: moire.folding.panelLine(true)})"
+    },
+    {
+     "t": 300.1,
+     "js": "return JSON.stringify(await moire.folding.phenotype())"
+    },
+    {
+     "t": 301,
+     "js": "return JSON.stringify(await moire.folding.show({lineages: 2, size: 220}))"
+    }
+   ],
+   "shots": [
+    {
+     "t": 240,
+     "name": "t240-home"
+    },
+    {
+     "t": 241,
+     "name": "t241-flash"
+    },
+    {
+     "t": 270,
+     "name": "t270-stressfold"
+    },
+    {
+     "t": 300,
+     "name": "t300-home"
+    },
+    {
+     "t": 301,
+     "name": "genome"
+    }
+   ]
+  }
+ ]
+}

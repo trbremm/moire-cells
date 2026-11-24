@@ -47,7 +47,7 @@ const GRN_ACT = 1;
 const W_X = 0, W_B = 8, W_W = 16, W_I = 40, W_U = 48, W_O = 64, W_M = 68;
 import { CELL_FLOATS } from './cells.js';
 const C_POS = 0, C_FLAGS = 9, C_BAT = 16, C_NBR = 60, C_FELT1 = 83, C_SNS0 = 86, C_SNS1 = 87;
-const UNIFORM_BYTES = 160;   // (step G3: + the moire genome's words 12..39, 48 until then)
+const UNIFORM_BYTES = 192;   // (step G3: + the moire genome's words 12..47, 48 until then)
 
 /** The network's numbers from genome g at word o (o = cell x BIO_FLOATS): { x, bias, w, code, u, reg, bc, kw }. */
 export function grnOf(g, o = 0) {

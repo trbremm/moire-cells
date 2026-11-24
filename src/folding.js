@@ -41,7 +41,8 @@ import { BIO_FLOATS } from './genome.js';   // (used inside functions only: geno
 import { readBuffer } from './snapshot.js';
 import { HEAT_SCALE } from './heat.js';
 
-export const G3 = { ON: 1, FOLD: 2, FOLDLIFE: 4, FOLDNULL: 8, DOSE: 16, DOSENULL: 32, REPAIR: 64, BUF: 128, BUFNULL: 256, DERALL: 512 };
+export const G3 = { ON: 1, FOLD: 2, FOLDLIFE: 4, FOLDNULL: 8, DOSE: 16, DOSENULL: 32, REPAIR: 64, BUF: 128, BUFNULL: 256, DERALL: 512, OUT: 1024 };
+const GS_LINE = 2048, GS_FLASH_SHIFT = 5;   // Bio.gs.w: bits 0..4 the mark and events, 5..9 the refold flash, 10 its kind; the line's refolds x 2048
 const G3E = { BUF: 1, REP: 2, COUNT: 4 };
 export const GS = { SET: 1, ON: 2, OFF: 4, REL: 8, BIG: 16 };
 const BIO_G3 = 188, BIO_GRN = 84;   // (genome.js BIO_G3, BIO_GRN; kept here: the two modules import each other)
@@ -136,6 +137,19 @@ export function stampLattices(g, rng, o = 0, P = null) {
   for (let k = 0; k < 4; k++) g[o + W_GS + k] = 0;
 }
 
+/**
+ * Std and blank founders' OUTPUT GAINS (the moire genome on, founderOut): each of the 16 basic outputs (pigment, engines, wall, membrane,
+ * glue, pumps, channels, kin channels, display, division, motility, emission) gets a gain anywhere in -founderGain..founderGain with chance
+ * founderShare, so a founder's network acts from the first tick and a refold, which changes which regulator drives each output, changes what
+ * the cell does. Random, not designed: what a founder's network makes of it is up to its lattices. Words a wild founder already has are kept.
+ */
+export function founderOutputs(g, rng, o = 0, P = null) {
+  const share = P ? P.founderShare : 0.6, gain = P ? P.founderGain : 1.5;
+  for (let q = 0; q < 16; q++) {
+    const on = rng() < share, u = (2 * rng() - 1) * gain;
+    if (!g[o + GRN_U + q]) g[o + GRN_U + q] = on ? u : 0;
+  }
+}
 // the derivation's knobs when none are given (as Folding.params)
 const DEFAULTS = { fold: true, foldNull: false, sigma: 0.12, wMax: 4, wMin: 1, chi: Math.PI / 4 };
 // the genome view's inks: eight neon hues, one per regulator (sense lattices in a dim grey)
@@ -268,7 +282,22 @@ export class Folding {
       bufFounder: 0.05,  // the founders' buffering gene (subtle at first)
       hPhase: 0.3,       // a phase change counts toward the hidden drift x this
       censusEvery: 15,   // s of simulated time between the census's read-backs (0: never)
+      out: true,         // the OUTPUTS by lattice too: each reads the regulator whose folded lattice best matches its fixed one (?g3out=0:
+                         // step T1b's output wiring), so a refold changes which regulator drives each gene
+      founderOut: true,  // std and blank founders get random output gains (each of the 16 outputs with chance founderShare, a gain in
+                         // -founderGain..founderGain), so their networks (and so their folds) act from the start (?g3founders=0: no network
+                         // effect, as step T1b's founders)
+      founderShare: 0.6,
+      founderGain: 1.5,
+      shockLevel: 0.8,   // the STRESS button: stress added to every cell ...
+      shockRate: 10,     // ... the refold rate x this ...
+      shockTime: 8,      // ... for this many s of simulated time
     };
+    // the toy's hands (src/app.js, src/toy.js): the refold tool's zone (dish px) and the fold it sets; the stress button's end time
+    this.zone = null;    // { x, y, r, state }
+    this.shockUntil = -1;
+    this.target = 1;     // the refold tool sets this fold (1 stress, 0 home; the tool's button again switches)
+    this.look = { flash: 2.2, inkOn: [255, 246, 230], inkOff: [110, 210, 255] };   // (into the stress fold: white-hot; home: ice blue; job hues are taken)
     this.derAll = false;  // derive every cell's links afresh on the next frame (a knob changed: moire.folding.rederive())
     this.tot = Object.fromEntries(CNT.map((k) => [k, 0]));
     this.hist = [];
@@ -283,7 +312,7 @@ export class Folding {
     const p = this.params;
     return (p.on ? G3.ON : 0) | (p.fold ? G3.FOLD : 0) | (p.foldLife ? G3.FOLDLIFE : 0) | (p.foldNull ? G3.FOLDNULL : 0) |
       (p.dose ? G3.DOSE : 0) | (p.doseNull ? G3.DOSENULL : 0) | (p.repair ? G3.REPAIR : 0) | (p.buffer ? G3.BUF : 0) |
-      (p.bufferNull ? G3.BUFNULL : 0) | (this.derAll ? G3.DERALL : 0);
+      (p.bufferNull ? G3.BUFNULL : 0) | (this.derAll ? G3.DERALL : 0) | (p.out ? G3.OUT : 0);
   }
   /** Derive every cell's links afresh (after a knob of the derivation changed; releases every hidden variation). */
   rederive() { this.derAll = true; return 'every cell re-derives its links next frame'; }
@@ -298,8 +327,49 @@ export class Folding {
     f[o + 16] = n(p.doseHeat); f[o + 17] = n(p.doseOx); f[o + 18] = n(p.doseFade); f[o + 19] = n(p.doseStep); f[o + 20] = n(p.repK);
     f[o + 21] = n(p.bufCap); f[o + 22] = n(p.bufStep); f[o + 23] = n(p.bufWeaken); f[o + 24] = Number(p.chi) || 0; f[o + 25] = n(p.hPhase);
     f[o + 26] = Math.min(1, n(p.bufFounder)); f[o + 27] = 0;
+    const Z = this.zone, now = this.cells.lastTime || 0, sh = now < this.shockUntil;
+    f[o + 28] = Z ? Z.x : 0; f[o + 29] = Z ? Z.y : 0; f[o + 30] = Z ? Math.max(1, Z.r) : 0; f[o + 31] = Z ? Z.state : 0;
+    const LF = this.lineFold;
+    f[o + 32] = sh ? n(p.shockLevel) : 0; f[o + 33] = sh ? Math.max(1, n(p.shockRate)) : 1;
+    f[o + 34] = LF ? (LF.line == null ? -1 : LF.line + 1) : 0; f[o + 35] = LF ? LF.state : 0;
+    this.lineFold = null;   // (one frame)
+    if (Z && Z.release) this.zone = null;   // (a tap shorter than a frame still acts once)
     this.derAll = false;
   }
+  /** The drawing's words (struct Draw g3, g3Ink[2], from word o). */
+  writeDraw(a, o, neon = true) {
+    const K = this.look;
+    a[o] = this.params.on ? Math.max(0, K.flash) * (neon ? 1 : 0.6) : 0; a[o + 1] = 0; a[o + 2] = 0; a[o + 3] = 0;
+    for (let k = 0; k < 3; k++) { a[o + 4 + k] = K.inkOn[k] / 255; a[o + 8 + k] = K.inkOff[k] / 255; }
+    a[o + 7] = 1; a[o + 11] = 1;
+  }
+  /** The REFOLD tool (src/app.js): cells within r of (x, y) (dish px) are put into the fold `state` while it is held; null lifts it. */
+  setZone(x, y, r, state = this.target) {
+    if (x == null) { if (this.zone) this.zone.release = true; return; }
+    this.zone = { x, y, r, state: state ? 1 : 0 };
+  }
+  /** The refold tool's button again: the fold it sets flips (stress <-> home). */
+  flipTarget() { this.target = this.target ? 0 : 1; return this.target; }
+  /** A GENOME CARD for the cell nearest (x, y) (dish px): its genome view, home and stress fold, for `ms` of real time (the refold tool). */
+  async card(x, y, ms = 7000) {
+    const C = this.cells, d = C.device, n = C.count;
+    const cellAB = await readBuffer(d, C.cellBuf, 0, n * CELL_FLOATS * 4);
+    const f = new Float32Array(cellAB), u = new Uint32Array(cellAB);
+    let best = -1, bd = Infinity;
+    for (let i = 0; i < n; i++) {
+      if (!(u[i * CELL_FLOATS + C_FLAGS] & 1)) continue;
+      const dd = Math.hypot(f[i * CELL_FLOATS] - x, f[i * CELL_FLOATS + 1] - y);
+      if (dd < bd) { bd = dd; best = i; }
+    }
+    if (best < 0 || bd > 4 * (C.R || 9)) return null;
+    await this.show({ cells: [best], size: 150, card: true });
+    clearTimeout(this.cardT);
+    this.cardT = setTimeout(() => this.hide(), ms);
+    return best;
+  }
+  /** The STRESS button: every cell's stress raised for shockTime s (refolds come fast); calm folds them back over the next minute. */
+  shock() { this.shockUntil = (this.cells.lastTime || 0) + Math.max(0.5, Number(this.params.shockTime) || 8); return `stress shock for ${this.params.shockTime} s`; }
+
   /** The eat pass's words (struct EatP g3, from word o), dt the tick. */
   writeEat(u, f, o, dt) {
     const p = this.params, on = !!p.on;
@@ -367,12 +437,13 @@ export class Folding {
       const o = i * BIO_FLOATS, L = latticesOf(g, o);
       const gsw = Math.max(0, Math.round(g[o + W_GS + 3] || 0));
       if (gsw & GS.SET) setN++;
+      const lineN = Math.floor(gsw / GS_LINE);
       const dose = g[o + W_GS] || 0, hid = g[o + W_GS + 1] || 0, fid = g[o + W_FID] || 0;
       const s0 = u[oc + C_SNS0], s1 = u[oc + C_SNS1];
       const tIn = ((s0 >>> 8) & 255) / 255, heat = ((s1 >>> 8) & 255) / 255;
       const st = Math.max(0, Math.min(1, P.heatW * heat + P.oxW * tIn));
       heats.push(heat); ts.push(tIn);
-      stressN += L.state; doseS += dose; bufS += L.buf; bufS2 += L.buf * L.buf; hidS += hid; lineS += gsw >> 5; stS += st;
+      stressN += L.state; doseS += dose; bufS += L.buf; bufS2 += L.buf * L.buf; hidS += hid; lineS += lineN; stS += st;
       if (hid > 1e-6) buffered++;
       if ((g[o + W_GS + 2] || 0) > 0) { repairing++; repS += g[o + W_GS + 2]; }
       const side = st >= P.s0 ? hi : lo;
@@ -453,7 +524,7 @@ export class Folding {
     const cv = document.createElement('canvas');
     cv.id = 'g3view';
     cv.width = 2 * S + 3 * gap; cv.height = picks.length * (S + lab + gap) + gap;
-    Object.assign(cv.style, { position: 'fixed', right: '12px', top: '12px', width: `${cv.width / dpr}px`, height: `${cv.height / dpr}px`, zIndex: 50,
+    Object.assign(cv.style, { position: 'fixed', inset: 'auto', ...(opts.card ? { left: '12px', bottom: '118px' } : { right: '12px', top: '12px' }), width: `${cv.width / dpr}px`, height: `${cv.height / dpr}px`, zIndex: 50,
       background: '#000', border: '1px solid rgba(217,221,230,0.15)' });
     const cx = cv.getContext('2d');
     cx.fillStyle = '#000'; cx.fillRect(0, 0, cv.width, cv.height);
@@ -475,6 +546,52 @@ export class Folding {
     return { cells: picks };
   }
   hide() { const e = document.getElementById('g3view'); if (e) e.remove(); }
+
+  /**
+   * LAB and ZOO: put every live cell (or those of founder line `line`) into a fold (1 stress, 0 home) on the next frame, on the GPU (race-free;
+   * re-derived, flashing). A scientist's hand, like the pipette: what the cells then do comes from their own genomes. Refolding in life goes on
+   * (moire.folding.params.foldLife = false keeps them there).
+   */
+  forceFold(state = 1, line = null) {
+    this.lineFold = { state: state ? 1 : 0, line: line == null ? null : Math.round(line) };
+    return `next frame: ${line == null ? 'every cell' : `line ${line}`} into the ${state ? 'stress' : 'home'} fold`;
+  }
+
+  /**
+   * LAB: what a refold DOES. phenotype(true) keeps each live cell's 16 output factors (ln, from its gains, the regulators its outputs read
+   * and their expression now); phenotype() later compares the same slots (same founder line), returning per output the mean |change in ln
+   * factor| (ln 2 = a gene's level doubled or halved), the share of cells whose largest change is past ln 2, and how many cells were compared.
+   */
+  async phenotype(keep = false) {
+    const C = this.cells, d = C.device, n = C.count;
+    const [bioAB, cellAB] = await Promise.all([readBuffer(d, C.bioBuf[C.bioCur], 0, n * BIO_FLOATS * 4), readBuffer(d, C.cellBuf, 0, n * CELL_FLOATS * 4)]);
+    const g = new Float32Array(bioAB), u = new Uint32Array(cellAB);
+    const now = new Map();
+    for (let i = 0; i < n; i++) {
+      if (!(u[i * CELL_FLOATS + C_FLAGS] & 1)) continue;
+      const o = i * BIO_FLOATS, fac = new Float32Array(16);
+      for (let q = 0; q < 16; q++) {
+        const r = (Math.max(0, Math.round(g[o + GRN_O + (q >> 2)])) >> (3 * (q & 3))) & 7;
+        fac[q] = Math.max(-8, Math.min(Math.log(4), g[o + GRN_U + q] * Math.max(0, Math.min(1, g[o + BIO_GRN + r]))));
+      }
+      now.set(i, { line: Math.round(g[o + W_FOUNDER]), fac, state: latticesOf(g, o).state });
+    }
+    if (keep || !this.pheno) { this.pheno = now; return { kept: now.size }; }
+    const dm = new Array(16).fill(0);
+    let k = 0, big = 0, sw = 0;
+    for (const [i, c] of now) {
+      const p = this.pheno.get(i);
+      if (!p || p.line !== c.line) continue;
+      k++;
+      let mx = 0;
+      for (let q = 0; q < 16; q++) { const e = Math.abs(c.fac[q] - p.fac[q]); dm[q] += e; mx = Math.max(mx, e); }
+      if (mx > Math.LN2) big++;
+      if (p.state !== c.state) sw++;
+    }
+    return { compared: k, switched: k ? sw / k : 0, bigShare: k ? big / k : 0, meanChange: k ? dm.reduce((a, b) => a + b, 0) / (16 * k) : 0,
+      perOutput: Object.fromEntries(['pigment', 'engine 1', 'engine 2', 'engine 3', 'wall', 'thickness', 'stiffness', 'glue', 'pumps', 'channels',
+        'kin channels', 'display', 'division', 'motility', 'emit A', 'emit B'].map((nm, q) => [nm, k ? +(dm[q] / k).toFixed(3) : 0])) };
+  }
 
   /** The entropy panel's FOLDING line. */
   panelLine(compact = false) {

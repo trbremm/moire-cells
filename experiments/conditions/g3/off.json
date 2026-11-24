@@ -1,0 +1,27 @@
+{
+ "batch": "g3-off",
+ "runs": [
+  {
+   "name": "g3-off-s3",
+   "description": "?g3=0 (main 97b6005 when run from the export), default seed 3, 300 s",
+   "query": {
+    "seed": 3,
+    "g3": 0
+   },
+   "duration": 301,
+   "sample_every": 60,
+   "stall": 300
+  },
+  {
+   "name": "g3-off-s7",
+   "description": "?g3=0 (main 97b6005 when run from the export), default seed 7, 300 s",
+   "query": {
+    "seed": 7,
+    "g3": 0
+   },
+   "duration": 301,
+   "sample_every": 60,
+   "stall": 300
+  }
+ ]
+}

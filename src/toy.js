@@ -43,6 +43,8 @@ const ICON = {
   share: '<path d="M8.4 11.6l3.2-3.2"/><path d="M9.8 6.3l1.6-1.6a3 3 0 0 1 4.2 4.2L14 10.5M10.2 13.7l-1.6 1.6a3 3 0 0 1-4.2-4.2L6 9.5"/>',
   gear: '<circle cx="10" cy="10" r="2.6"/><path d="M10 2.2v2.6M10 15.2v2.6M2.2 10h2.6M15.2 10h2.6M4.5 4.5l1.8 1.8M13.7 13.7l1.8 1.8M4.5 15.5l1.8-1.8M13.7 6.3l1.8-1.8"/>',
   close: '<path d="M5 5l10 10M15 5L5 15"/>',
+  fold: '<circle cx="10" cy="10" r="7"/><path d="M6 7.5l8 5M6 12.5l8-5M10 3v14"/>',   // step G3: refold (a folded hex lattice)
+  stress: '<path d="M11.5 2.5L5 11h4.6l-1.4 6.5L15 9h-4.6z"/>',   // step G3: a stress shock
 };
 function svg(name) {
   const s = document.createElementNS(NS, 'svg');
@@ -86,6 +88,7 @@ const TOOLSET = [
   ['cells', 'cells', 'cells', 'cell'],
   ['food', 'food', 'food', 'light'],
   ['light', 'light', 'light', 'spot'],
+  ['fold', 'fold', 'refold', 'refold'],   // step G3: refold cells by hand (the button again: back home)
 ];
 const FOODS = [['light', 'minerals', 'a mineral spring (water-like minerals and linkers for membranes)'],
   ['heavy', 'vent', 'a vent (fuel-rich, with metals and trace)'], ['oil', 'oil', 'an oil spring (droplets; cells can take oil into their skins)']];
@@ -99,6 +102,7 @@ const TIPS = {
   erase: 'Erase: drag across walls to cut a way through',
   cells: 'Cells: tap to drop a small group, drag for a line',
   light: 'Light: drag to move the spotlight (tap light again: the whole dish lit)',
+  fold: 'Refold: tap or drag across cells to fold their genome into its stress fold (tap refold again: back home); a card shows the genome',
 };
 
 /**
@@ -149,6 +153,10 @@ export function createToy(ctx) {
   bNew.classList.add('hot');
   gA.append(bPlay, bSpeed, bUndo, bWorlds, bNew);
   const toolBtns = TOOLSET.map(([id, ic, label]) => { const b = btn(ic, label, TIPS[id] || label); b.dataset.tool = id; gT.append(b); return b; });
+  // step G3: the STRESS button (a shock: every cell's stress raised for a few seconds, so genomes refold; calm folds them back)
+  const bStress = btn('stress', 'stress', 'Stress: a shock of heat and oxidation for every cell; their genomes refold (they fold back when calm)');
+  if (ctx.cells && ctx.cells.folding && ctx.cells.folding.params.on) gT.append(bStress);
+  bStress.addEventListener('click', () => { ctx.cells.folding.shock(); say('Stress shock: genomes refold into their stress fold (white flashes); they fold back when calm (blue)', 3200); });
   bar.append(gA, gT);
   const toast = el('p', 'toy-toast');
   root.append(top, bar, toast);
@@ -230,6 +238,7 @@ export function createToy(ctx) {
     if (t.id === 'cell') return 'cells';
     if (t.id === 'light' || t.id === 'heavy' || t.id === 'oil') return 'food';
     if (t.id === 'spot') return 'light';
+    if (t.id === 'refold') return 'fold';
     return '';
   }
   function pickTool(id) {
@@ -249,6 +258,12 @@ export function createToy(ctx) {
         say(L.mode === 'full' ? 'Light: the whole dish lit' : 'Light: a spotlight (drag to move it)');
         if (L.mode === 'full') A.setTool(toolIndex('ripple'));
       } else { A.setTool(toolIndex('spot')); say(TIPS.light, 3000); }
+    } else if (id === 'fold') {
+      const FD = ctx.cells.folding;
+      if (again) FD.flipTarget(); else FD.target = 1;
+      A.setTool(toolIndex('refold'));
+      setLabel(toolBtns[8], FD.target ? 'refold' : 'unfold');
+      say(FD.target ? TIPS.fold : 'Unfold: tap or drag across cells to fold their genome back home (tap again: stress fold)', 3200);
     } else if (def[4]) {
       A.setTool(toolIndex('obstacle'));
       if (O) {

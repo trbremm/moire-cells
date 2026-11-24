@@ -187,7 +187,7 @@
 //               its NEUTRAL control (copies are made, drift and are lost as when on, but have no effect and cost nothing); ?duprate=x the
 //               chance per birth of a duplication (0.02), ?dupdel=x of a copy's loss (0.02), both x the copying scale; ?dupcensus=s the
 //               census's interval (rules panel, Gene duplication)
-//   ?mut=x        step M2: every copying error x x (1 = today; 0 = exact copies, hard light's extra included, key M off); ?mutmode=rare
+//   ?mut=x        step M2: every copying error x x (default 2.5; 1 = before 2026-11-24; 0 = exact copies, hard light's extra included, key M off); ?mutmode=rare
 //               RARE BIG STEPS (exact copies, a mutation with chance ?mutp= (0.1) changing 1-3 gene groups by ?mutbig= (8) x the small
 //               step), drift (default) every gene nudged at every birth; ?mutcensus=s the census's interval (rules panel, Mutation sweep)
 //   ?grn=0        step T1b: the gene network frozen, without effect (as before T1b); ?grnnull=1 its NEUTRAL control (it runs and mutates,

@@ -56,7 +56,8 @@ export class Mutation {
     // live-tunable (moire.mutation.params). Switches: the rules panel's group "Mutation sweep (step M2)"; URL ?mut= ?mutmode= ?mutp= ?mutbig=
     // ?mutcensus=
     this.params = {
-      scale: 1,          // x every copying error (1 = today exactly, 0 = exact copies)
+      scale: 2.5,        // x every copying error (default 2.5 since 2026-11-24, the user: "a mix of x2 and x3" after the M2 sweep; 1 = the
+                         // old rate, the same draws; 0 = exact copies)
       rare: false,       // RARE BIG STEPS (else DRIFT: today's)
       p: 0.1,            // rare mode: the chance per birth of a mutation (x the scale, the fidelity gene, hard light)
       big: 8,            // rare mode: the step, x today's small steps and jump chances

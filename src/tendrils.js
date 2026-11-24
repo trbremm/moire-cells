@@ -99,7 +99,7 @@ export class Tendrils {
       minDamp: 0.3,      // the outline's wobble damped by this share a tick at hardness 1 (?mindamp=)
       censusEvery: 5,    // s of simulated time between the census's read-backs (0: never) (?tcensus=)
     };
-    this.look = { on: true, segs: 8, tube: 0.9, bright: 0.9, dot: 2.2, boneBright: 0.55, fullT: 3, boneInk: [255, 238, 210], spacing: 0.2 };
+    this.look = { on: true, segs: 8, tube: 2.2, bright: 1.0, dot: 2.2, boneBright: 0.55, fullT: 3, boneInk: [255, 238, 210], spacing: 0.2 };
     this.census = null;
     this.busy = false;
     this.lastAt = -1e9;
@@ -262,6 +262,16 @@ export class Tendrils {
     pass.setPipeline(this.bPipe);
     pass.setBindGroup(0, this.bbgs[this.cells.bioCur]);
     pass.draw(6, this.cells.count);
+  }
+
+  /** What a new cell of radius R with genome g starts with (the add-cell tool, src/app.js): its tendril pool (units) and mineral wall (rust
+   * counts), as its genes want them now (the network's outputs at 1). */
+  startOf(g, o = 0) {
+    const p = this.params, t = tendrilGenes(g, o);
+    const units = p.on && !p.null && t.reach > 0.05 ? Math.ceil(Math.max(0, p.carbon) * ATOM_SCALE / 4 * Math.exp(Math.max(-2, Math.min(2, t.stiff))) *
+      (1 + Math.round(3 * Math.max(0, Math.min(1, t.count)))) * Math.min(2.5, t.reach)) : 0;
+    const rust = p.mineral && !p.mineralNull && t.mineral > 0.02 ? Math.round(p.minFull * ATOM_SCALE * Math.PI * Math.min(1, t.mineral)) : 0;
+    return { units, rust };
   }
 
   // ---------------------------------------------------------------- a scientist's hand: provision designed cells

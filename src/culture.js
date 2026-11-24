@@ -261,6 +261,26 @@ export const PRESETS = {
       for (const s of [-1, 1]) matter.addSpring(W / 2 + 0.12 * m * s, H / 2 + 0.3 * m * s, 'light', 1e9);
     },
   },
+  limb: {
+    label: 'Tissue lab: limb',
+    desc: 'A hand-designed LIMB (step T2): two rods of hard mineralised bone cells, a joint held by a ligament (a cell whose tendrils grip both rods), a muscle above it with a tendon at each end, the nerve on the muscle, a skin cover. The left rod nails itself to the floor with its own tendrils. Touch the nerve’s free end (left) with the signal pipette: the muscle shortens, the tendons pull, the joint bends.',
+    // (the organ lab's dish: still water, free glue, junctions that stretch 15 %, no S1 torques, the signal x 1.5, no evolution, light, no night)
+    query: { tissue: 'limb', mut: 0, life: 0, light: 'full', day: 0, currents: 0, wallcost: 0, tearat: 0.15, shapetorque: 0, sigpower: 0.006 },
+    zoom: 3,
+    scene({ matter, W, H }) {
+      const m = Math.min(W, H);
+      for (const s of [-1, 1]) matter.addSpring(W / 2 + 0.12 * m * s, H / 2 + 0.32 * m * s, 'light', 1e9);
+    },
+  },
+  pili: {
+    label: 'Tissue lab: pili',
+    desc: 'Forty crawlers with three long tendrils each (step T2): the tips grip the floor, the tendrils RETRACT and drag the cell to the anchor, let go and sprout again elsewhere: twitching motility. No evolution.',
+    query: { tissue: 'pili', cells: 40, spread: 'scatter', mut: 0, life: 0, light: 'full', day: 0, currents: 0 },
+    zoom: 2.5,
+    scene({ matter, W, H }) {
+      matter.addSpring(W / 2, H / 2, 'light', 1e9);
+    },
+  },
   lab: {
     label: 'Tissue lab',
     desc: 'Sixty cells of one cloned genome, no evolution (no mutation, no births or deaths) and no springs: watch how they link into tissue, as the tissue experiments did.',
@@ -297,6 +317,7 @@ function defaultSpots(W, H, cells) {
 export function applyPreset(params) {
   // (step L1: ?tissue=organ alone opens the organ's lab)
   if (!params.has('preset') && params.get('tissue') === 'organ') params.set('preset', 'organ');
+  if (!params.has('preset') && (params.get('tissue') === 'limb' || params.get('tissue') === 'pili')) params.set('preset', params.get('tissue'));   // (step T2)
   const name = params.get('preset');
   const P = name && PRESETS[name];
   if (!P) return null;

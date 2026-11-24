@@ -36,6 +36,7 @@ import { grnOf, SENSES, OUTPUTS } from './grn.js';
 import { CELL_FLOATS } from './cells.js';
 import { SW } from './eat.js';
 import { readBuffer, settle } from './snapshot.js';
+import { setTendrils } from './tendrils.js';   // step T2
 
 const C_POS = 0, C_R = 4, C_FLAGS = 9, C_BAT = 16, C_INTEG = 48, C_NBR = 60, C_LIP = 72, C_OSM = 84, C_SNS0 = 86, C_SNS1 = 87;
 
@@ -328,6 +329,69 @@ DESIGNS.pacemaker = {
   label: 'pacemaker', desc: 'a cell whose gene network OSCILLATES (a doubled repressilator, step L1) and fires once a cycle: a rhythm for the nerve or a ring',
   shape: 'disc', job: 0, jobs: ['firing', 'resting'], reporter: 0, organ: true,
   genome(rng = Math.random, founder = 770) { return pacemakerGenome(rng, founder); },
+};
+// ---------- step T2: TENDRILS, BONE, TENDONS (README "Step T2"; src/tendrils.js the capabilities, src/organ.js the limb's layout) ----------
+// Hand-set genomes (the scientist's hand) using only general genes: the tendril genes (reach, count, placement, spread, stiffness, retraction,
+// floor grip), the MINERALISE gene, glue, elongation, the crust wall. They share the organ's identity (one organism, kin) where they meet it.
+/** BONE: a round, hard cell: it mineralises fully (rust Gt into its wall: stiff, its junctions x 2), the strongest glue, a full crust wall, a
+ * thick stiff membrane, barely crawls; a light eater (it must pay its upkeep). Glued in a staggered double row it makes a stiff ROD. */
+export function boneGenome(rng = Math.random, founder = 780) {
+  const g = organIdentity(base(rng, founder));
+  g[13] = 0; g[14] = 0; g[15] = 0;            // round
+  g[16] = 4; g[18] = 0.02;                    // the strongest glue, barely crawls
+  g[0] = ORGAN_ID.key[0] + 0.5;               // its own KEY (the glue's likeness): bone sticks to bone, not to the muscle sliding over it (the
+                                              // tendons and the ligament hold by their tendrils, not by glue)
+  g[41] = 0.03; g[42] = 3; g[52] = 1;         // thick, stiff, a full crust wall
+  for (let k = 0; k < 3; k++) slot(g, k, 'g + t → gt', 0);
+  slot(g, 0, 'gt → g + t', 1.2, 2);
+  slot(g, 1, 'g + t → gt', 2.4);
+  return setTendrils(g, { mineral: 1 });
+}
+/** ANCHOR BONE: a bone cell with one short thick tendril a quarter turn clockwise of its front (away from the muscle, in a rod along x) that
+ * grips the FLOOR at its full length and never retracts: the rod's lower row nails itself to the dish (a clamp the cells make themselves;
+ * three tendrils round it gripped their neighbours too and pulled the rod into a knot). */
+export function anchorGenome(rng = Math.random, founder = 785) {
+  return setTendrils(boneGenome(rng, founder), { reach: 0.4, count: 1, place: -Math.PI / 2, spread: 0, stiff: 2, retract: 0, floor: 1 });
+}
+/** JOINT BONE: a bone cell at a rod's end with two thick tendrils pointing out along its front (a little apart), across the joint's gap: they
+ * grip the other rod's end cell and hold it as LIGAMENTS (never retracting); the rods turn about them. */
+export function jointGenome(rng = Math.random, founder = 787) {
+  return setTendrils(boneGenome(rng, founder), { reach: 2, count: 2, place: -0.12, spread: 0.04, stiff: 2, retract: 0, floor: 0 });
+}
+/** TENDON: a 2.5:1 spindle whose two tendrils grow from its two POLES along its axis (placement 0, spread 0.5) and grip whatever they touch
+ * first (the muscle's end at one pole, a bone at the other); thick (stiffness gene 2: strong, k x 7.4), no retraction, little glue. Across a
+ * joint the same cell is a LIGAMENT. */
+export function tendonGenome(rng = Math.random, founder = 790) {
+  const g = organIdentity(base(rng, founder));
+  g[13] = Math.log(2.5); g[14] = 0; g[15] = 0;
+  g[16] = 0.3; g[18] = 0.02;
+  g[41] = 0.02; g[42] = 2; g[52] = 0.5;
+  for (let k = 0; k < 3; k++) slot(g, k, 'g + t → gt', 0);
+  slot(g, 0, 'gt → g + t', 1.2, 2);
+  slot(g, 1, 'g + t → gt', 2.4);
+  return setTendrils(g, { reach: 1.6, count: 2, place: 0, spread: 0.5, stiff: 2, retract: 0, floor: 0 });
+}
+/** PILI: a crawler with three long tendrils evenly round it (pili) that grip the floor (or a neighbour) at full length, RETRACT (dragging the
+ * cell to the anchor), let go fully in and sprout again somewhere else: twitching motility. */
+export function piliGenome(rng = Math.random, founder = 795) {
+  const g = base(rng, founder);
+  g[16] = 0.3; g[18] = 0.3;
+  return setTendrils(g, { reach: 2, count: 3, place: 0, spread: 1, stiff: 0.5, retract: 0.5, floor: 1 });
+}
+DESIGNS.bone = {
+  label: 'bone', desc: 'a HARD cell (step T2): it mineralises its wall with rust (stiff, outline held, junctions x 2) and holds the strongest glue; glued in a double row it makes a stiff rod',
+  shape: 'line', job: 0, jobs: ['bone', 'bone'], reporter: 0, organ: true, provision: true,
+  genome(rng = Math.random, founder = 780) { return boneGenome(rng, founder); },
+};
+DESIGNS.tendon = {
+  label: 'tendon', desc: 'a spindle whose two TENDRILS grow from its poles along its axis and grip what they meet (step T2): ropes from a muscle to a bone, or a ligament across a joint',
+  shape: 'line', job: 0, jobs: ['tendon', 'tendon'], reporter: 0, organ: true, provision: true,
+  genome(rng = Math.random, founder = 790) { return tendonGenome(rng, founder); },
+};
+DESIGNS.pili = {
+  label: 'pili', desc: 'a crawler with three long tendrils that grip the floor, RETRACT and let go (step T2): it twitches across the dish, tugged from anchor to anchor',
+  shape: 'scatter', job: 0, jobs: ['pili', 'pili'], reporter: 0, provision: true,
+  genome(rng = Math.random, founder = 795) { return piliGenome(rng, founder); },
 };
 export const DESIGN_NAMES = Object.keys(DESIGNS);
 

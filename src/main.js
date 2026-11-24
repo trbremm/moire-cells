@@ -282,7 +282,7 @@ import { createApp } from './app.js';
 import { createToy } from './toy.js';   // the toy front: a few big buttons, worlds, terrain generators; the developer mode (src/toy.js)
 import { applyPreset, layoutFromParams, applyDiversity, PRESETS, SPREAD_SQUEEZE } from './culture.js';
 import { Tissues, useDesignFounder, DESIGNS } from './tissues.js';
-import { Organ, organCells, organGenomes, organGroove, ORGAN_KINDS } from './organ.js';   // step L1
+import { Organ, organCells, organGenomes, organGroove, ORGAN_KINDS, LIMB_IDS } from './organ.js';   // step L1 (step T2: the limb)
 import { Warfare } from './warfare.js';
 import { Flow } from './flow.js';   // step N2: substances that flow (gusts, heat carried, scour, patchy springs, the chemotaxis gene)
 import { CB_PHOTO, makeRng } from './genome.js';   // step C15d: founders that photosynthesise fix carbon (?cbphoto=0)
@@ -422,7 +422,10 @@ async function boot() {
   if (params.has('perarea') && !flag('perarea')) dish.perArea = false;   // ?perarea=0: supplies per px / per dish as before (a comparison)
   let nCells = snap ? snap.start : Number(params.get('cells')) || defaultCells();
   // step L1: ?tissue=organ, the tissue lab's organ (src/organ.js): as many cells as it lays out
-  const ORGAN = !snap && params.get('tissue') === 'organ' ? { kind: ORGAN_KINDS.includes(params.get('organ')) ? params.get('organ') : 'muscle', opts: {
+  // (step T2: ?tissue=limb, the limb: bone rods, a joint, a muscle with tendons; ?bonelen= cells a bone row, ?antagonist=1 a second muscle)
+  const ORGAN = !snap && (params.get('tissue') === 'organ' || params.get('tissue') === 'limb') ? {
+    kind: params.get('tissue') === 'limb' ? 'limb' : ORGAN_KINDS.includes(params.get('organ')) ? params.get('organ') : 'muscle', opts: {
+    bone: Number(params.get('bonelen')) || undefined, antagonist: params.has('antagonist') && flag('antagonist'), gap: params.has('limbgap') ? Number(params.get('limbgap')) : undefined,
     fibres: Number(params.get('fibres')) || undefined, length: Number(params.get('olen')) || undefined, ringCells: Number(params.get('ringcells')) || undefined,
     aspect: Number(params.get('oasp')) || undefined, muscleSheet: params.has('omsheet') && flag('omsheet'), glue: Number(params.get('oglue')) || undefined, con: params.has('ocon') ? Number(params.get('ocon')) : undefined,
     pacemaker: params.has('pacemaker') && flag('pacemaker'), stagger: !(params.has('stagger') && !flag('stagger')), noskin: params.has('skin') && !flag('skin'), angle: Number(params.get('organangle')) || 0 } } : null;
@@ -935,8 +938,8 @@ async function boot() {
     // resize seeds it
     cultureOptions(ORGAN ? { ...layoutFromParams(params, PRESET), spread: 'organ', organ: ORGAN } : layoutFromParams(params, PRESET), params.has('diversity'));
     if (ORGAN) {   // step L1: the organ's four designs are the founders (founder k = design k: muscle, nerve, skin, pacemaker)
-      cells.genome.params.founders = 4;
       cells.genome.founders = organGenomes(makeRng((SEED ^ 0x6f72676e) >>> 0), ORGAN.opts);
+      cells.genome.params.founders = cells.genome.founders.length;   // (step T2: 7, + bone, tendon, anchor)
     }
     // step T1c: ?tissue=plant|filament|biofilm, the culture's one founder is a designed tissue's genome (src/tissues.js); the reporter
     // view shows its job regulator
@@ -963,6 +966,16 @@ async function boot() {
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.organ = cells.organ = new Organ(window.moire);   // step L1: the tissue lab's organ (lay out, poke, twitch, measure)
   if (ORGAN) Object.assign(cells.organ, { kind: ORGAN.kind, opts: ORGAN.opts, angle: ORGAN.opts.angle, n0: nCells });
+  // step T2: a lab whose designed cells carry tendrils or a mineral wall starts them with their tendril carbon and their rust (the scientist's
+  // hand, booked in): the limb's bones, tendons and anchors; a design founder with `provision` (?tissue=pili, bone, tendon)
+  const t2prov = ORGAN && ORGAN.kind === 'limb' ? LIMB_IDS : params.has('tissue') && DESIGNS[params.get('tissue')] && DESIGNS[params.get('tissue')].provision ? 'all' : null;
+  if (t2prov && !(params.has('provision') && !flag('provision'))) {
+    (async () => {
+      const M = window.moire;
+      for (let k = 0; k < 900 && !(M.eat.ready && M.heat.ledger && M.matter.bg && simTime > 0.2); k++) await new Promise((r) => requestAnimationFrame(r));
+      try { M.tendrils.provisioned = await M.tendrils.provision(t2prov === 'all' ? null : t2prov); } catch (e) { console.warn('tendrils provision:', e); }
+    })();
+  }
   window.moire.warfare = new Warfare(window.moire);     // step T1c: the chemical warfare census (lineage borders against interiors)
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)

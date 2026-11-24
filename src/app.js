@@ -523,6 +523,12 @@ export function createApp(ctx) {
       const cbw = new Int32Array(CB_W);
       cbw[8] = cbw[9] = cbw[10] = nBody;   // (cellulose-like: per carbon one backbone bond, one fuel hand, one burnt hand)
       cbw[11] = nEnz;                      // (each unit 4 carbons as ENZ_H hands + 1 G: (4, 4, 4), step C15e (4, 0, 8))
+      // step T2: a placed cell with tendril genes starts with their carbon pool (the enzymes' frame, ENZ_H hands a unit) and one with the
+      // mineralise gene with its mineral wall (rust Gt, stock word 31), both as its genes want them now, booked in (src/tendrils.js)
+      const T2 = M.tendrils ? M.tendrils.startOf(bio) : { units: 0, rust: 0 };
+      const nTend = CARBON ? T2.units : 0, nRust = T2.rust;
+      cbw[23] = nTend;
+      if (nRust) stock[31] = nRust;
       free.forEach((slot, j) => {
         const [x, y, front, stretch] = points[j];   // (step L1: a point may carry the cell's front and the stretch it starts with: a laid-out organ)
         f.fill(0);
@@ -544,17 +550,18 @@ export function createApp(ctx) {
         d.queue.writeBuffer(C.cellBuf, slot * CELL_BYTES, rec);
         for (const b of C.bioBuf) d.queue.writeBuffer(b, slot * BIO_FLOATS * 4, bio);
         d.queue.writeBuffer(E.stockBuf, slot * SW * 4, stock);
-        if (nBody || nEnz) d.queue.writeBuffer(E.carbon.buf, slot * CB_W * 4, cbw);
+        if (nBody || nEnz || nTend) d.queue.writeBuffer(E.carbon.buf, slot * CB_W * 4, cbw);
       });
       // step C15c: the books for the bodies and enzymes (carbon in: the dish's ADD and the cells' IN per tar hand; the G atoms: matter ADD)
-      if (nBody || nEnz || nPig || nMemb) {
+      if (nBody || nEnz || nPig || nMemb || nTend || nRust) {
         const k = free.length;   // (a pigment count: 1 backbone bond, 6 fuel hands: step C15d; an enzyme unit ENZ_H: step C15e; soap1 (1, 5, 1),
-        // soap2 (1, 4, 2) on each of the 6 sides: step C15g)
-        const hc = nBody + ENZ_H[0] * nEnz + nPig + 6 * (nM1 + nM2), hg = nBody + ENZ_H[1] * nEnz + 6 * nPig + 6 * (5 * nM1 + 4 * nM2),
-          ht = nBody + ENZ_H[2] * nEnz + 6 * (nM1 + 2 * nM2);
+        // soap2 (1, 4, 2) on each of the 6 sides: step C15g; step T2: the tendrils' units as the enzymes' frame)
+        const nE = nEnz + nTend;
+        const hc = nBody + ENZ_H[0] * nE + nPig + 6 * (nM1 + nM2), hg = nBody + ENZ_H[1] * nE + 6 * nPig + 6 * (5 * nM1 + 4 * nM2),
+          ht = nBody + ENZ_H[2] * nE + 6 * (nM1 + 2 * nM2);
         const words = [[LG_CB + 128 * 5, hc], [LG_CB + 128 * 6, hg], [LG_CB + 128 * 7, ht],
           [LG_CBC.IN + 128 * 5, hc], [LG_CBC.IN + 128 * 6, hg], [LG_CBC.IN + 128 * 7, ht], [lgM('ADD', CH.G), nEnz],
-          [lgM('ADD', CH.trace), nPig]];
+          [lgM('ADD', CH.trace), nPig], [lgM('ADD', CH.Gt), nRust]];
         for (const [w, x] of words) {
           if (!x) continue;
           const [lo, hi] = await Promise.all([readBuffer(d, C.heat.buffer, w * 4, 4), readBuffer(d, C.heat.buffer, (w + 64) * 4, 4)]);

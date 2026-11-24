@@ -471,7 +471,7 @@ export class Folding {
       const fac = (q) => Math.min(Math.exp(Math.max(-8, Math.min(8, g[o + GRN_U + q])) * x(reg(q))), 4);
       Lg.fac[fs][0] += fac(1) + fac(2) + fac(3); Lg.fac[fs][1] += fac(0); Lg.fac[fs][2] += fac(7);
       // hidden links: the links the current lattices would give, against the cached ones (a sample of cells)
-      if (i % SAMPLE === 0 && P.on) {
+      if (i % SAMPLE === 0 && P.on && (gsw & GS.SET)) {   // (only cells whose links were derived: not the first frame's founders)
         hidL += linkDiff(derive(L, foldInUse(L, P), P), cached); hidLN++;
         if (P.fold) foldD += linkDiff(derive(L, L.home, P), derive(L, L.stress, P));   // what a refold would rewire
       }

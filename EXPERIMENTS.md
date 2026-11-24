@@ -3941,3 +3941,91 @@ everywhere and wild tastes fade, with a hint that predators in the default dish 
 evolving dish: predators already live inside the colonies they eat. The defenders' rules work mechanically but do not yet make glue or
 clumps pay: junctions rarely form, so there is little group to count. Possible next levers (not built): a cheaper or free range, faster
 swimmers, the alarm through the gene network, cells that start glued (snowflake-like daughters).
+
+# The moire genome (step G3, 2026-11-24)
+
+**The question** (the user, 2026-11-24): apply the moire principle inside the cell, as a DNA folding dynamic: the gene network's links from
+the beat between its regulators' lattices; a FOLD that rewires many links at once (the large mutation); stress refolding living cells; damage
+from heat and oxidation written in at birth; a buffering gene, subtle at first. Mid-way the emphasis changed: "an over powered toy", but "I
+still want my principle of emergent behavior". So: a quick look at evolution only, and labs on what a refold DOES.
+
+**How.** Headless Chrome on the shared GPU (numbers are simulated time). Conditions in `experiments/conditions/g3/`, runs
+`experiments/runs/g3-*`, `tools/g3_analyse.py`. One seed per cell: hints unless said.
+
+## 1. Calibration (`stress.json`, `check.json`)
+
+The network's senses, 10 / 50 / 90 % of cells (seed 3, 1 and 3 min): the HEAT sense is graded (default 0.02 / 0.04-0.06 / 0.1-0.39,
+colonies 0.03-0.12 / 0.09-0.31 / 0.18-0.51); the FREE-T sense is nearly on or off (0 / 0-0.83 / 0.92-1 in the default dish, 1 / 1 / 1 in the
+colonies: it saturates at a thousandth of a cell's capacity). With the first weights (stress = heat + free t) every colonies cell sat at
+stress ~1 and 99 % in the stress fold within 90 s; hence stress = 2 x heat + 0.3 x free t (threshold 0.5) and the dose's oxidation share
+small. With the first lattice steps (0.012 / 0.08 per unit) one birth changed ~5 of 12 links (a node check of the derivation, 2000 random
+genomes), so the steps were halved (~2 of 12, weights moving ~17 % per birth; a random refold changes ~7 of 12).
+
+## 2. What a refold does (`lab-refold.json`)
+
+Seed 3, refolding in life switched off at 200 s. HAND: every cell put HOME at 200 s, into its STRESS fold at 240 s, home again at 270 s
+(`moire.folding.forceFold`); CONTROL: nothing done. `moire.folding.phenotype()` compares each cell's 16 output factors (ln) 30 s apart (the
+same slots, same founder line): the mean |change| and the share of cells with some gene's level changed more than 2x.
+
+| | cells compared | changed > 2x | mean ln change | outputs that moved most |
+|---|---|---|---|---|
+| default, refold 240 -> 270 | 194 | 58 % | 0.21 | wall 0.77, emit A 0.37, glue 0.24, emit B 0.25, stiffness 0.23 |
+| default, unfold 270 -> 300 | 188 | 61 % | 0.23 | wall 0.81, emit A 0.41, emit B 0.27, glue 0.25 |
+| default, control (two windows) | 168 / 151 | 2 / 4 % | 0.025 / 0.031 | |
+| colonies, refold | 446 | 77 % | 0.17 | display 1.00, thickness 0.65, division 0.40, motility 0.34 |
+| colonies, unfold | 584 | 77 % | 0.18 | display 0.95, thickness 0.80, division 0.44, motility 0.35 |
+| colonies, control | 719 / 1043 | 19 / 24 % | 0.047 / 0.053 | |
+
+A refold moves the phenotype 4-8x more than 30 s of ordinary life, and in different genes per dish: the default founders (random gains, new
+in G3) mostly change their WALL, field emission and GLUE; the wild colonies their marker display, membrane thickness, division and
+crawling. Engines and pigment barely move in either (0.01-0.1), so the job colours change little: a refold changes how cells are BUILT and
+behave, more than what they eat. In the colonies the dish put home by hand at 200 s had fewer cells afterwards (480 at 240 s and 634 at 270 s
+against 763 and 1111 in the control; one seed, a hint): most of its cells had been living in their stress fold. Look: `t241-flash.png` (the colonies 1 s after the
+hand refold: most cells ring white-hot), `genome.png` (home | stress fold of two lineages).
+
+## 3. A quick look at evolution (`evo.json`: 10 min, seed 3, everything on vs the neutral controls of fold, dose and buffer)
+
+Means over the last third (`tools/g3_analyse.py g3-evo`):
+
+| | cells | in the stress fold | refolds in / back / big per s | releases per s | dose | buffering gene | hidden drift | lattice drift | wirings | network cell types |
+|---|---|---|---|---|---|---|---|---|---|---|
+| default, on | 370 | 81 % | 0.19 / 0.48 / 0.30 | 0.08 | 0.24 | 0.064 ± 0.073 | 0.00002 | 0.15 | 311 | 11 |
+| default, null | 452 | 83 % | 0.26 / 0.57 / 0.53 | 0 | 0.21 | 0.097 ± 0.098 | 0 | 0.17 | 399 | 9 |
+| colonies, on | 1890 | 95 % | 0.59 / 0.37 / 1.78 | 1.96 | 0.21 | 0.28 ± 0.16 | 0.00005 | 0.22 | 1690 | 6 |
+| colonies, null | 2290 | 72 % | 1.91 / 0.54 / 1.78 | 0 | 0.20 | 0.096 ± 0.091 | 0 | 0.24 | 1970 | 10 |
+
+- The STRESS FOLD is where most cells live: the spotlight's heat (and the colonies' free t) keeps 72-95 % of cells above the threshold,
+  with a steady flicker of refolds both ways (0.2-2 per s; at 2000 cells, a white or blue flash every second or so).
+- BUFFERING rose in the colonies (0.21 at 5 min, 0.32 at 10 min, against 0.09-0.10 in the null), not in the default dish (0.06-0.08 vs
+  0.10). Even at 0.3 it holds about one birth's drift, so it hides almost nothing yet (hidden drift ~0, 1 % of cells carrying some); the
+  colonies' 2 releases per s are those small buffers letting go under stress. One seed: a hint worth a second look (subtle, as asked).
+- REPAIR: the fidelity gene (now also repair) is higher in stressed places than calm ones in both on-dishes (default 1.10 vs 0.85,
+  colonies 1.49 vs 1.08 at 10 min); in the nulls the default shows no gap (1.28 vs 1.32), the colonies a smaller one (1.17 vs 0.98). A hint
+  of damage-protected cells where it is hot, not a result (one seed; fidelity rises everywhere since M2's x2.5).
+- Every cell is a different wiring (wirings ~ cells): the beat amplifies each birth's small drift, so no two cells share a network exactly;
+  the network's cell types (T1b's census) are not more numerous with the fold acting (6-11 either way).
+- No new cell type appeared from a single refold in these 10 minutes that the census could tell apart; the labs above show what a refold
+  does when it happens to every cell at once.
+
+## 4. Checks
+
+- OFF EQUALS MAIN: `?g3=0` against main 97b6005 (an export), default 300 s: seed 3 1978 / 1581 / 1197 / 338 / 222 / 235 cells at 0 / 1 /
+  2 / 3 / 4 / 5 min against 1978 / 1574 / 1216 / 345 / 231 / 191 (an earlier g3=0 run: 1579 / 1225 / 348 / 244 / 234); seed 7 1977 / 1647 /
+  1270 / 350 / 236 / 249 against 1977 / 1641 / 1254 / 335 / 207 / 208 (the same founders' crash; runs vary).
+- BOOKS: atoms and carbon rounding exactly 0 in every G3 run; energy rounding at most 0.07 against 3.7e6-2.6e7 of energy in.
+- SNAPSHOTS: one saved by main 97b6005 (96 / 188 words) and an old one (tissue lab) load with the moire genome off and the note; one saved
+  with G3 loads exact, lattices kept (every cell derived, lattice drift 0.016).
+- Headed Firefox (colonies, a stress shock at 20 s) runs, no errors; phone size (390 x 844, Chrome): runs, the shock's flashes show, the
+  toy bar's ten tools wrap onto two rows; no console errors in any run.
+- The toy's refold tool driven by pointer events: the cells under a drag flash white, 60 refolds counted, the genome card appears.
+- SPEED (2000 cells, default s3, 150 s at MAX, the GPU shared by one page): G3 on x2.56 / x2.57, `?g3=0` x2.60 / x2.50, main 97b6005
+  x2.66 / x2.61: about 2-3 % slower (the bigger genome record), within the runs' spread.
+
+## Reading
+
+- The fold is a strong, visible switch: putting a colony into its other fold changes most cells' genes by more than 2x within half a
+  minute, and differently in each dish (walls and glue in the default founders, display, thickness and division in the wild colonies). It
+  comes only from where each genome's lattices sit, so no two lineages refold the same way.
+- In evolution it is mostly background so far: most cells live in their stress fold under the spotlight, flickering in and out. Buffering
+  is the one gene that moved off its null (colonies), and the place-dependent fidelity is a hint. Nothing like "a new cell type in one refold"
+  stood out in 10 minutes; the toy's hands (refold tool, stress button, zoo buttons) are the way to see what a fold does.

@@ -8939,6 +8939,158 @@ GPU free, 2000 cells, default seed 3, 150 s at MAX: P3 on x2.55 / x2.64, `?p3=0`
 - Not built: alarm through the gene network, bad taste, mobbing (pieces 3-5 of DEFENDERS COLLABORATE); a scent view (Shift+S shows each
   scent substance alone).
 
+## Step G3: the moire genome (DNA folding)
+
+BUILD QUEUE item 6a6b (the user, 2026-11-24: "apply the moire principle in essence ... different beats", inside the cell, "as our own dna
+folding dynamic for large mutations and the small ones that can be caused by brownian motion and chemical oxidation"; chose "fold in life,
+damage at birth"; on buffering: "I like the buffering! Add it, but make it subtle at first"; then, while it was built: "now I basically want
+an over powered toy" and "I still want my principle of emergent behavior ... it is more of an artistic project inspired by science"). So
+the step became a toy you can play with by hand, while what a refold DOES still comes only from each cell's own lattices and network.
+Code: `src/folding.js` (switches, knobs, the JS mirror of the derivation, founders' lattices and output gains, census, the FOLDING panel
+line, the genome view, the toy's hands), the "step G3" parts of `cell_grn.wgsl` (derivation, fold, dose, buffer, refold zone, stress
+shock), `cell_common.wgsl` (Bio `la lk lp fh fs gs`, `GS_*`, `G3E_*`), `cell_eat.wgsl` (the buffer's upkeep, repair's cost, the event
+counters), `cell_draw.wgsl` (the refold flash), `src/zoo.js` (genome view and refold buttons), `src/toy.js` and `src/app.js` (the refold tool
+and the stress button); `design/g3_genome_view.html` (genome views without a GPU); `tools/g3_analyse.py`.
+
+### 1. Regulators as lattices (`?g3=0`: step T1b's free weights)
+
+Each of the gene network's 8 regulators carries a small hex LATTICE: an angle (a hex lattice repeats every 60 degrees), a spacing (ln of its
+wavenumber) and a phase. The 16 senses sit on FIXED lattices (a 4 x 4 grid over the same address space), and so do the 20 outputs (a 5 x 4
+grid set between them). A regulator's inputs are DERIVED from the moire beat between lattices, as the receptors' tuning already is:
+source q feeds regulator r at
+
+    w = wMax x exp(-d^2 / (2 sigma^2)) x cos(phase_r - phase_q + chi),   d^2 = 2 cosh(d spacing) - 2 cos(d angle)
+
+(only near-matches beat slowly: addressing by tuning). Each regulator keeps its 3 strongest inputs (|w| >= wMin) in step T1b's words, which
+are now a cache. Each OUTPUT reads the regulator whose lattice beats slowest with its own (`?g3out=0`: T1b's output wiring); the outputs'
+gains, the biases and the broadcast stay genes. A birth nudges the lattices (0.006 rad and ln-spacing, 0.03 rad of phase, x the mutation
+size, x2.5 by default) instead of the weights, and now and then draws one regulator's lattice afresh (T1b's rewiring). The beat amplifies
+small changes (the moire lever): one birth moves the weights ~17 %. A random genome has ~12 links, 3-4 of them between regulators.
+
+Founders: every founder gets random lattices (its own random stream: a seed's other genes stay as they were). Std and blank founders also
+get random OUTPUT GAINS (each of the 16 basic outputs with chance 0.6, -1.5..1.5; `?g3founders=0`: none, as T1b's founders), so their
+networks act from the first tick; wild founders keep theirs. A genome without lattices (hand-made, or older) draws them from its founder id.
+
+### 2. The fold (`?fold=0`)
+
+A genome-wide TWIST (every lattice turned) and STRETCH (lattices facing its axis lengthened, six-fold like the lattice) applied to all
+regulator lattices at once. One change of the fold moves every beat: the LARGE MUTATION (a random fold changes ~7 of a genome's ~12 links, and
+re-picks which regulator drives each output). Each genome has a HOME fold and a STRESS fold (Bio.fh, fs). Both drift a little at each birth; rarely
+(0.01 x the mutation size per birth) one is drawn afresh: a BIG REFOLD at birth (the cell flashes).
+
+### 3. Fold in life (`?foldlife=0`, `?foldnull=1`)
+
+A living cell's STRESS = clamp(2 x heat + 0.3 x free t + the stress button, 0, 1), from the network's own senses (the heat sense is the
+temperature over twice the tolerance; the free-t sense is nearly on or off). Above 0.5 it may REFOLD into its stress fold (0.05 per s at
+full stress), below it fold back home (0.02 per s when calm). The fold in use is STATE, inherited by daughters (epigenetic); the lattices
+themselves change only at birth. `?foldnull=1` the NEUTRAL control: the folds drift and switch, the links always come from the home fold.
+
+### 4. Damage dose and repair (`?dose=0`, `?dosenull=1`, `?repair=0`)
+
+In life a cell collects a DOSE (Bio.gs.x): 0.04 per s at heat 1 (Brownian: heat jitters the lattices) and 0.006 per s while it holds free t
+(oxidation knocks them), fading by itself (1/60 per s). At a birth the parent's dose becomes lattice kicks of 0.05 x D in the daughter, who
+starts at 0. REPAIR: the G1 fidelity gene, when above the founders' (F > 0), removes 0.02 x (e^F - 1) x D per s while the battery has charge,
+paid 0.3 energy per unit repaired (the eat pass's upkeep, as heat). Copying errors (M2's scale) stay as they were. `?dosenull=1`: collected,
+never written.
+
+### 5. Buffering, a capacitor (`?buffer=0`, `?buffernull=1`)
+
+A gene (Bio.fh.w, 0..1) like the Hsp90 chaperone: small lattice changes at a birth (copying errors, the fold's drift, damage) stay HIDDEN
+(Bio.gs.y: the squared change since the links were last derived) while they are within its capacity (0.03 x the gene; one birth's drift at
+x2.5 is ~0.008), so the links stay at the lineage's working state. Stress weakens it (capacity x (1 - stress)), so under heat or oxidation the
+hidden variation shows at once (a RELEASE). Big changes (a fresh lattice, a duplication, a big refold) are never buffered. SUBTLE AT FIRST:
+founders 0.05 (a fifth of one birth's drift: nothing hidden), a small step at births (0.01 x the mutation size), upkeep 0.003 energy per s at
+gene 1 (an engine of rate 1's). `?buffernull=1`: it drifts, hides nothing, costs nothing.
+
+### 6. Seeing and playing
+
+- GENOME VIEW: in the cells zoo, beside each group's portrait, its middle cell's genome as a round neon picture (tap: larger). Every
+  regulator's lattice is a field of faint dots in its own hue; over it, for every link the network derives, the two lattices' moire BEAT is
+  drawn as glowing rosette rings in the receiving regulator's hue: a strong near-match beats into big slow rosettes, a poor one into small
+  ones; brightness follows the regulator's expression. A refold turns every lattice at once, so the whole picture changes.
+  `moire.folding.show()` puts the largest lineages' genomes on the page, home fold beside stress fold; `design/g3_genome_view.html` shows
+  random genomes (home, stress fold, a birth later) with no GPU.
+- REFOLD FLASH: a cell that refolds (by stress, by hand, or a big refold at birth) rings white-hot for about 1.5 s; one folding back home rings
+  ice blue.
+- The toy bar's REFOLD tool: tap or drag across cells to put them into their stress fold (tap the button again: 'unfold', back home); on
+  release a GENOME CARD shows the cell under the pointer, home | stress fold, for a few seconds. The STRESS button: every cell's stress raised
+  by 0.8 for 8 s with the refold rate x10, so a colony refolds in a sweep of white flashes; it folds back (blue) over the next minute when calm.
+  In the cells zoo each group has a REFOLD / UNFOLD button for its whole founder line. These are a scientist's hands, like the pipette:
+  they set the fold; what the cells then do comes from their lattices and networks.
+- Console: `moire.folding.forceFold(state, line)` (on the GPU, race-free), `moire.folding.phenotype(true)` then `phenotype()` (how much each
+  cell's genes moved), `moire.folding.shock()`, `moire.folding.card(x, y)`, `moire.folding.now()` (the census).
+- FOLDING panel line: the share in the stress fold and the stress, refolds per s (in, back, big at birth), releases per s, the dose (and the
+  share repairing), the buffering gene (mean, spread; hidden drift, hidden links per cell, share carrying some), lattice drift from the
+  founder, what a refold would rewire, distinct wirings.
+
+### Switches and knobs
+
+- `?g3=0` the whole step off (T1b's network as on main); `?fold=0`, `?foldlife=0`, `?dose=0`, `?repair=0`, `?buffer=0`, `?g3out=0`,
+  `?g3founders=0` one part off; `?foldnull=1`, `?dosenull=1`, `?buffernull=1` the NEUTRAL controls.
+- Knobs: `?g3sigma=` (0.12), `?g3wmax=` (4), `?g3wmin=` (1), `?latstep=` (0.006), `?phstep=` (0.03), `?latjump=` (0.05), `?foldstep=`
+  (0.01), `?refold=` (0.01), `?s0=` (0.5), `?kon=` (0.05), `?koff=` (0.02), `?doseheat=` (0.04), `?doseox=` (0.006), `?dosestep=` (0.05),
+  `?repk=` (0.02), `?repcost=` (0.3), `?bufcap=` (0.03), `?bufcost=` (0.003), `?buffounder=` (0.05), `?bufweaken=` (1), `?foundergain=` (1.5),
+  `?foundershare=` (0.6), `?g3census=` (15 s). Live: `moire.folding.params`; the rules panel's group "Moire genome (step G3)" (changing the
+  tuning width or link weight re-derives every cell, which also releases every hidden variation).
+- Old snapshots (no `folding.params` saved) load with the moire genome off and say so; main's last layout (96-word cells, 188-word genomes)
+  widens.
+
+### Words and layout (for merges)
+
+Bio 188 -> 224 floats (`la` 188..195, `lk` 196..203, `lp` 204..211, `fh` 212..215, `fs` 216..219, `gs` 220..223; Bio.gs.w = bits 0..4 the
+derived mark and this tick's events, 5..9 the refold flash, 10 its kind, + 2048 x the refolds in the line); GrnP 48 -> 192 bytes (words
+12..39 the knobs, 40..47 the refold zone and the stress shock; word 39 kept free for step Q1's fast regulators); EatP + `g3` (word 496, 2000
+bytes); Draw + `g3`, `g3Ink[2]` (words 356..367, 1472 bytes); the heat ledger's step C9 block row 7 (refolds in, back, releases, big
+refolds; 4 slots each). The gene network's regulators still relax with one time constant: step Q1 can give each its own (a natural hook:
+a lattice's spacing as its speed).
+
+### Results (EXPERIMENTS.md "The moire genome"; one seed: hints unless said)
+
+- WHAT A REFOLD DOES (lab, seed 3, every cell refolded by hand vs untouched, each cell's genes compared 30 s apart): in the default dish
+  58-61 % of cells change some gene's level more than 2x (untouched: 2-4 %), mostly the wall, field emission and glue; in the wild colonies
+  77 % (19-24 %), mostly marker display, membrane thickness, division and crawling. Engines and pigment barely move, so job colours change
+  little: a refold changes how cells are built and behave more than what they eat. Different dishes, different refolds: it comes from the
+  lattices.
+- QUICK LOOK (10 min, seed 3, default and colonies, vs the neutral controls): 72-95 % of cells live in the stress fold (the spotlight's
+  heat), with refolds flickering both ways at 0.2-2 per s. The BUFFERING gene rose in the colonies (0.32 against 0.10 in the null) but not in
+  the default dish, and even there it hides almost nothing yet (about one birth's drift). The fidelity (repair) gene is higher where it is
+  hot in both on-dishes (1.10 vs 0.85, 1.49 vs 1.08), less so in the nulls: a hint. Every cell carries a slightly different wiring (the beat
+  amplifies each birth's drift). No new cell type from a single refold stood out.
+
+### What it looks like (pictures: `experiments/keep/g3/`)
+
+- `genome-views-random.jpg`: three random genomes, each home | stress fold | a birth later: neon rosette rings (the links' beats) over dust
+  (the lattices); a refold turns the picture over.
+- `colonies-hand-refold-flash.jpg`: the colonies one second after every cell was refolded by hand: most cells ring white-hot.
+- `colonies-genomes-home-stress.jpg`, `default-10min-genomes-home-stress.jpg`: the largest lineages' genomes, home beside stress fold (in the
+  default dish one line's stress fold has a single huge golden rosette: a slow beat that only that fold makes).
+- `toy-refold-drag-card.jpg`: the refold tool dragged across the open dish's colony: a trail of white flashes and the genome card.
+- `zoo-genome-view.jpg`: the cells zoo with a group's genome view enlarged; `phone-islands-stress-shock.jpg`, `phone-toy-bar.jpg`: a phone.
+
+### Checked
+
+- Off equals main: `?g3=0` against main 97b6005 (an export), default 300 s, seeds 3 and 7: the same founders' crash, counts within the runs'
+  spread (s3 at 5 min 235 vs 191, s7 249 vs 208; at 1 min 1581 vs 1574, 1647 vs 1641).
+- Books: atoms and carbon rounding 0 in every G3 run, energy rounding at most 0.07 against up to 2.6e7 in.
+- Snapshots: main's (96 / 188 words) and an old tissue-lab one load with G3 off and say so; a G3 snapshot reloads exact.
+- Headed Firefox and phone size (390 x 844) run with no errors; the toy bar's tools wrap onto two rows on a phone.
+
+### Speed
+
+GPU shared by one page, 2000 cells, default seed 3, 150 s at MAX: G3 on x2.56 / x2.57, `?g3=0` x2.60 / x2.50, main 97b6005 x2.66 / x2.61:
+about 2-3 % slower (the genome record grew from 188 to 224 words).
+
+### Known issues
+
+- One seed per condition and 10 minutes: every evolutionary number is a hint.
+- The free-t sense is nearly on or off, so oxidation adds a fixed step to stress (and dose); the heat sense does the grading.
+- Most cells sit in their stress fold in lit dishes: the threshold (0.5) is near the spotlight's typical stress. `?s0=` moves it.
+- Buffering at its founders' level hides nothing; it is subtle as asked and would need a wider range (`?bufcap=`) to matter.
+- The wirings census counts every link difference, so it shows ~one wiring per cell; it does not tell neutral from meaningful variation.
+- `moire.folding.phenotype()` compares slots: a slot reused by a birth inside the window is compared only if it is the same founder line.
+- Also fixed here: a drag on the dish (the touch tool, and the lab's stir) threw "cells.stir is not a function" since step G0, because
+  `cells.stir` became the water stirrer; the pointer's stir is now `cells.stirAt`.
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start

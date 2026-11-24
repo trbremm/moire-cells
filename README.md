@@ -8705,6 +8705,99 @@ advection, the tar's two passes, a substep more when the water is fast).
 - Patchy springs move the default scene's lasting mineral spring away from the colony under the spot; that and the gusts lower its count.
 - Scour has no rim sink and no outlet: scoured crust and tar pile at the dish's edge and a perfusion outlet.
 
+## Step M2: mutation sweep
+
+BUILD QUEUE item 6a5b (the user, 2026-11-23). The repeated evolutionary null ("the genes drift like the neutral control") could come from
+too MUCH mutation (every birth nudges every one of ~180 genes), too LITTLE (a few hundred cells x a few dozen generations), or the
+founders' crash (one lineage fills the dish). Genes change ONLY at birth (`daughter_genome` in `cell_step.wgsl`, the network's mutation
+in `cell_grn.wgsl`). This step turns the copying into a knob and measures. Code: `src/mutation.js`, the "step M2" parts of
+`cell_common.wgsl` (`MG_*` groups, `mut_merge`, the counters), `cell_step.wgsl` (`drift_genome`, `daughter_genome`) and `cell_grn.wgsl`;
+tools `tools/m2_sweep.py`, `m2_analyse.py`, `m2_montage.py`.
+
+### What it does
+
+- **SCALE** (`?mut=x`, `moire.mutation.params.scale`): every copying error x x. It applies to:
+  - mutate()'s small steps and every jump's chance;
+  - the G0 glue's log steps, the S1 elongation, the S2 motors, the N2 chemotaxis gene;
+  - the gene network's nudges, rewiring, output moves and regulator duplication;
+  - G2's duplication, deletion and copy drift;
+  - the fidelity gene's own drift and the self marker's clock;
+  - hard light's extra mutation (C8), so x0 = exact copies everywhere.
+
+  1 = today exactly (the same random draws). `?mut=0` also switches key M off, as before.
+- **MODES**:
+  - DRIFT (`?mutmode=drift`, the default, today's): every gene nudged at every birth.
+  - RARE BIG STEPS (`?mutmode=rare`): a birth is an EXACT copy, except with chance `?mutp=` (0.1) it changes 1-3 of 18 gene GROUPS,
+    each by `?mutbig=` (8) x today's small step and jump chance. The chance is x the scale x the parent's copying (the fidelity gene's
+    e^-F, plus hard light's extra). The groups: key, body/glue, engines, membrane, pumps, walls, lipids, field A, field B, gates,
+    channels, kin/engulf, shape, motors, chemotaxis, gene network, duplication, fidelity. The marker's clock still ticks at every birth
+    (a neutral tag for the lineage view), x the scale. A rare mask for the network's pass travels in the newborn's Bio.resp.w.
+- **GENERATION**: Bio.resp.z (a spare word). A daughter gets her parent's + 1; at a division the mother's goes + 1 too. Founders 0.
+- **Words**: Fields qA.y (bits), qA.z (scale), qA.w (rare chance), qB.y (rare step); spare since step F0. Counters: rows 13-15 of the
+  heat ledger's C9 block (births, mutated births, groups changed).
+- **CENSUS** (every `?mutcensus=` s, 30): read back the genomes and work out:
+  - the generation (mean, max);
+  - founder lines alive and their effective number;
+  - marker patches (the marker binned);
+  - distinct genotypes and the largest clone;
+  - ~30 tracked genes (mean, spread, shift from the founders' first census).
+- **Where it shows**: the MUTATION panel line, overlay lines, `moire.mutation.census` / `now()`, `moire.sample()` `mut.*`, the rules
+  panel's group "Mutation sweep (step M2)". Snapshots save the settings; old ones load as drift x1.
+
+### The sweep (EXPERIMENTS.md "Mutation sweep")
+
+- 26 runs of 20 min: drift x0, x0.3, x1, x3 and rare (p 0.1, x8).
+- Scenes: default seeds 3 and 7, Islands seed 7, Colonies seed 3.
+- Null twins (every neutral control at once) for x1, x3 and rare on default and islands.
+- **Hard light's extra mutation was OFF in every run** (`?hardmut=0`), except one rare run with it on.
+- The laptop was paused mid-sweep: 22 unfinished runs were rerun from the start (`--only`); all 26 ended ok.
+
+Results (one run per cell: hints unless they repeat):
+
+- **No error catastrophe at x3.** Counts are as high as at x1 or higher, and births are faster. But the FIDELITY gene rises at x3 in
+  all three scenes (+0.35..+0.60 against nulls -0.15..+0.16): the cells pay battery to copy more carefully. At x1 it goes either way.
+- **More mutation = more selection signal, not less.** Consistent across both default seeds and beyond both nulls:
+  - x1: chemotaxis down (the nose costs crawling).
+  - x3: fidelity, engine copies, the pump gate down, kin channels, cilia.
+  - rare: almost nothing moves (~150 mutations in a default dish in 20 min), except one gate or shape change sweeping with its line.
+- **Generations**: 16-43 (mean) in 20 min; default dishes ~2500 births in all.
+- **The founders' crash and sorting** happen at every rate, x0 included: 10-12 founder lines alive at 4 min (about 6 effective), 1-3
+  effective at 20 min. In the lineage view every dish is a quilt of colours at 10 min and one colour at 20.
+- **Colonies at x0** (one exact clone) collapse from 2486 cells at 10 min to 477 at 20. With any mutation they stay ~2950 and grow
+  breathers, predators and light eaters. Breathers appear sooner the higher the rate.
+- **Verdict (hint)**: not fog; mostly too LITTLE variation x too few generations, with the founders' crash throwing away the founders'
+  standing variation in the first minutes whatever the rate.
+
+### Checked
+
+- Defaults = main: `?mut=1&mutmode=drift` vs main 9f3e57f, 5 min. Same founders' crash: seed 3 280 / 310 cells at 3.5 min, seed 7 281 /
+  261; the differences go both ways.
+- Books exact (atoms, charge, carbon rounding 0) in rare, x0 and x3 (whole dish lit, 5 min) and in every sweep run.
+- Firefox headed (rare): runs, no errors.
+
+### Speed
+
+GPU free, 2000 cells, default seed 3, 150 s at MAX:
+- M2 drift x1: x2.54 / x2.66;
+- M2 rare: x2.59;
+- main 9f3e57f: x2.47 / x2.62.
+
+Unchanged.
+
+### Pictures
+
+`experiments/keep/m2/`: `<scene>-marker.png` (lineage view) and `<scene>-neon.png`, one column per setting, rows at 10 and 20 min, for
+`def3`, `def7`, `isl7` (islands) and `col3` (colonies). Best:
+- `col3-neon.png`: breathers turn the dish pink sooner the higher the rate; the x0 clone thins out.
+- `isl7-marker.png`: rare mode splits the islands into two big lineage territories.
+- `def3-marker.png`: the colours of 10 min are gone by 20 at every rate.
+
+### Known issues
+
+- One run per setting and scene; the null twins switch every control at once, which also removes predation (an ecological change).
+- Rare mode in the default scene with hard light on is light-dominated: the chance goes up to x10 under the spotlight.
+- x0 does not mean "clean": a single clone can collapse.
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start
@@ -8886,6 +8979,9 @@ advection, the tar's two passes, a substep more when the water is fast).
   1..6), the census read-back every 15 s (`now()`), the FIDELITY panel line and overlay. The shader side: `fid_m`, `fid_birth`, `FID_*`,
   `FDC_*` in `cell_common.wgsl`; `daughter_genome` in `cell_step.wgsl` (the scale, the gene's own drift, the marker clock, the counters);
   the network's mutation in `cell_grn.wgsl`; proofreading's cost in `cell_eat.wgsl` `split`. The gene is genome word 31 (`Bio.conv.w`)
+- `src/mutation.js`: the mutation sweep (step M2): the scale and rare mode (`moire.mutation.params`: scale, rare, p, big, censusEvery), the
+  counters, the census (generations, founder lines, marker patches, genotypes, tracked genes), the MUTATION panel line. Tools:
+  `tools/m2_sweep.py` (the sweep's batches), `tools/m2_analyse.py` (its tables), `tools/m2_montage.py` (side-by-side pictures).
 - `src/dup.js`: gene duplication (step G2): the switches and knobs (`moire.dup.params`: on, null, rate, del, censusEvery, minCells,
   partSize), the step's words (`Fields.g2`), the eat pass's (`EatP.g2`), the draw's (`Draw.spare5[0]`), the counters (the step C9 ledger
   block `LG_DIV`, rows 8..12), the census read-back every 15 s (`now()`, `where(n)`), the ENGINE COPIES panel line and overlay;

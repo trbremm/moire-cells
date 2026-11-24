@@ -89,6 +89,8 @@ def f(x, d=0):
 
 
 def main():
+    import sys
+    sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser()
     ap.add_argument("--json", default="")
     a = ap.parse_args()

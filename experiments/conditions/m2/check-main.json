@@ -1,0 +1,39 @@
+{
+ "batch": "m2-check-main",
+ "runs": [
+  {
+   "name": "m2-check-main_s3",
+   "description": "main 9f3e57f, seed 3, 5 min (reference for drift x1)",
+   "query": {
+    "seed": 3
+   },
+   "duration": 300,
+   "sample_every": 30,
+   "stall": 400,
+   "shots": [
+    {
+     "t": 300,
+     "panel": true,
+     "name": "panel"
+    }
+   ]
+  },
+  {
+   "name": "m2-check-main_s7",
+   "description": "main 9f3e57f, seed 7, 5 min",
+   "query": {
+    "seed": 7
+   },
+   "duration": 300,
+   "sample_every": 30,
+   "stall": 400,
+   "shots": [
+    {
+     "t": 300,
+     "panel": true,
+     "name": "panel"
+    }
+   ]
+  }
+ ]
+}

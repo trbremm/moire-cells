@@ -1,0 +1,46 @@
+{
+  "name": "m2-check-drift1_s7",
+  "description": "M2 drift x1, seed 7, 5 min",
+  "condition": {
+    "name": "m2-check-drift1_s7",
+    "description": "M2 drift x1, seed 7, 5 min",
+    "query": {
+      "seed": 7,
+      "mut": 1,
+      "mutmode": "drift"
+    },
+    "duration": 300,
+    "sample_every": 30,
+    "stall": 400,
+    "shots": [
+      {
+        "t": 300,
+        "panel": true,
+        "name": "panel"
+      }
+    ]
+  },
+  "url": "http://localhost:61265/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=7&mut=1&mutmode=drift",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "5da10efe66aae7974c7adec4d7857f7c77a77342",
+  "dirty": false,
+  "started": "2026-11-23T21:00:22",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 300.0,
+  "run_wall_s": 514.82,
+  "speed_reached": 0.58,
+  "samples": 11,
+  "shots": [
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-23T21:10:38",
+  "wall_s": 615.54
+}

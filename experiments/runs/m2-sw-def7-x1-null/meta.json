@@ -1,0 +1,85 @@
+{
+  "name": "m2-sw-def7-x1-null",
+  "description": "step M2 sweep: def7 x1 NULL twin, 20 min",
+  "condition": {
+    "name": "m2-sw-def7-x1-null",
+    "description": "step M2 sweep: def7 x1 NULL twin, 20 min",
+    "query": {
+      "seed": 7,
+      "hardmut": 0,
+      "mut": 1,
+      "mutcensus": 20,
+      "gluenull": 1,
+      "flagellanull": 1,
+      "cilianull": 1,
+      "chemonull": 1,
+      "fidelitynull": 1,
+      "dupnull": 1,
+      "gatenull": 1,
+      "engulfnull": 1,
+      "kinsparenull": 1,
+      "kinnull": 1,
+      "shapenull": 1
+    },
+    "duration": 1203,
+    "sample_every": 30,
+    "stall": 900,
+    "shots": [
+      {
+        "t": 240,
+        "name": "t240"
+      },
+      {
+        "t": 240,
+        "view": "marker",
+        "name": "t240-marker"
+      },
+      {
+        "t": 600,
+        "name": "t600"
+      },
+      {
+        "t": 600,
+        "view": "marker",
+        "name": "t600-marker"
+      },
+      {
+        "t": 1200,
+        "name": "t1200"
+      },
+      {
+        "t": 1200,
+        "view": "marker",
+        "name": "t1200-marker"
+      }
+    ]
+  },
+  "url": "http://localhost:58647/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=7&hardmut=0&mut=1&mutcensus=20&gluenull=1&flagellanull=1&cilianull=1&chemonull=1&fidelitynull=1&dupnull=1&gatenull=1&engulfnull=1&kinsparenull=1&kinnull=1&shapenull=1",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "bc953ed8c2a4cec36a2bdb450cac8303408259b0",
+  "dirty": true,
+  "started": "2026-11-23T21:12:08",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1203.0,
+  "run_wall_s": 2634.02,
+  "speed_reached": 0.46,
+  "samples": 42,
+  "shots": [
+    "shots/t240.png",
+    "shots/t240-marker.png",
+    "shots/t600.png",
+    "shots/t600-marker.png",
+    "shots/t1200.png",
+    "shots/t1200-marker.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-23T21:58:43",
+  "wall_s": 2795.1
+}

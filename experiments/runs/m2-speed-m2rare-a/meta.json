@@ -1,0 +1,36 @@
+{
+  "name": "m2-speed-m2rare-a",
+  "description": "speed: 2000 cells, default seed 3, 150 s at MAX, GPU free",
+  "condition": {
+    "name": "m2-speed-m2rare-a",
+    "description": "speed: 2000 cells, default seed 3, 150 s at MAX, GPU free",
+    "query": {
+      "seed": 3,
+      "cells": 2000,
+      "mutmode": "rare"
+    },
+    "duration": 150,
+    "sample_every": 30
+  },
+  "url": "http://localhost:64445/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3&cells=2000&mutmode=rare",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "3911699421ee099e3714014f40ba643ae3ad28ab",
+  "dirty": true,
+  "started": "2026-11-24T04:26:37",
+  "status": "ok",
+  "browser_version": "Chrome/158.0.8127.38",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 150.0,
+  "run_wall_s": 57.85,
+  "speed_reached": 2.59,
+  "samples": 6,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-24T04:28:45",
+  "wall_s": 127.98
+}

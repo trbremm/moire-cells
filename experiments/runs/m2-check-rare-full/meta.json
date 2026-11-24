@@ -1,0 +1,47 @@
+{
+  "name": "m2-check-rare-full",
+  "description": "books in rare mode, whole dish lit (hard light scales the chance)",
+  "condition": {
+    "name": "m2-check-rare-full",
+    "description": "books in rare mode, whole dish lit (hard light scales the chance)",
+    "query": {
+      "seed": 5,
+      "light": "full",
+      "mutmode": "rare",
+      "mutcensus": 15
+    },
+    "duration": 300,
+    "sample_every": 30,
+    "stall": 400,
+    "shots": [
+      {
+        "t": 300,
+        "panel": true,
+        "name": "panel"
+      }
+    ]
+  },
+  "url": "http://localhost:61267/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=5&light=full&mutmode=rare&mutcensus=15",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "5da10efe66aae7974c7adec4d7857f7c77a77342",
+  "dirty": false,
+  "started": "2026-11-23T20:49:54",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 300.0,
+  "run_wall_s": 535.95,
+  "speed_reached": 0.56,
+  "samples": 11,
+  "shots": [
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-23T21:00:32",
+  "wall_s": 638.49
+}

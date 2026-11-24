@@ -1,0 +1,35 @@
+{
+  "name": "m2-speed-main-a",
+  "description": "speed: 2000 cells, default seed 3, 150 s at MAX, GPU free",
+  "condition": {
+    "name": "m2-speed-main-a",
+    "description": "speed: 2000 cells, default seed 3, 150 s at MAX, GPU free",
+    "query": {
+      "seed": 3,
+      "cells": 2000
+    },
+    "duration": 150,
+    "sample_every": 30
+  },
+  "url": "http://localhost:57668/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3&cells=2000",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "",
+  "dirty": false,
+  "started": "2026-11-24T04:22:20",
+  "status": "ok",
+  "browser_version": "Chrome/158.0.8127.38",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 150.0,
+  "run_wall_s": 60.64,
+  "speed_reached": 2.47,
+  "samples": 6,
+  "shots": [],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-24T04:24:29",
+  "wall_s": 129.9
+}

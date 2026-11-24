@@ -1,0 +1,57 @@
+{
+  "name": "m2-smoke-rare",
+  "description": "step M2 smoke: rare mode, 90 s, seed 3",
+  "condition": {
+    "name": "m2-smoke-rare",
+    "description": "step M2 smoke: rare mode, 90 s, seed 3",
+    "query": {
+      "seed": 3,
+      "mutmode": "rare",
+      "mutcensus": 15
+    },
+    "duration": 90,
+    "sample_every": 15,
+    "shots": [
+      {
+        "t": 90,
+        "panel": true,
+        "name": "panel"
+      }
+    ],
+    "evals": [
+      {
+        "t": 89,
+        "js": "const c = await moire.mutation.now(); return JSON.stringify({n: c.n, gen: c.gen, lines: c.lines, geno: c.genotypes, clone: c.cloneTop, rates: moire.mutation.rates})"
+      }
+    ]
+  },
+  "url": "http://localhost:59159/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3&mutmode=rare&mutcensus=15",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "9f3e57f7662f60fb9802555d7d51102cd8340571",
+  "dirty": true,
+  "started": "2026-11-23T20:46:58",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 90.0,
+  "run_wall_s": 32.56,
+  "speed_reached": 2.76,
+  "samples": 7,
+  "shots": [
+    "shots/panel.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [
+    {
+      "t": 88.99999999999834,
+      "js": "const c = await moire.mutation.now(); return JSON.stringify({n: c.n, gen: c.gen, lines: c.lines, geno: c.genotypes, clone: c.cloneTop, rates: moire.mutation.rates})",
+      "result": "{\"n\":1428,\"gen\":{\"mean\":0.025210084033613446,\"sd\":0.16963553981669202,\"max\":2},\"lines\":12,\"geno\":31,\"clone\":0.09943977591036414,\"rates\":{\"time\":88.99999999999834,\"birthsPerS\":0.2477291494632634,\"mutShare\":0.8,\"groupsPerBirth\":1.4,\"births\":21,\"mutated\":13}}"
+    }
+  ],
+  "console_errors": [],
+  "ended": "2026-11-23T20:48:43",
+  "wall_s": 105.08
+}

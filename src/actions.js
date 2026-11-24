@@ -41,6 +41,9 @@ export const TOOLS = [
   { id: 'obstacle', name: 'obstacles', label: 'paint walls, blocks, pillars (the Dish panel picks; the button again cycles)', obstacle: true },
   // step G3 (src/folding.js): refold cells by hand, a scientist's tool like the pipette (what a refold does comes from their genomes)
   { id: 'refold', name: 'refold', label: 'refold cells: tap or drag across cells puts them into their stress fold (the button again: back home)', refold: true },
+  // step Q1 (src/signals.js): the SIGNAL PIPETTE, a scientist's hand: a puff of the signal substance into the water (booked as energy in) and a
+  // touch of the cells under it (they hear it as through their junctions for a moment); the button again: the next flavour
+  { id: 'signal', name: 'signal pipette', label: 'drop a puff of the signal substance and touch the cells under it (the button again: another flavour)', signalPipette: true },
 ];
 
 export const RULE_GROUPS = [
@@ -92,7 +95,7 @@ export const RULE_GROUPS = [
   ['state', 'Save and load the state (experiments)'],
 ];
 
-export const VIEWS = ['job', 'lineage', 'strategy', 'charge', 'walls', 'guides', 'marker', 'reporter'];   // key V: what the cells' bodies are coloured by (cells.look.view;
+export const VIEWS = ['job', 'lineage', 'strategy', 'charge', 'walls', 'guides', 'marker', 'reporter', 'signals'];   // key V: what the cells' bodies are coloured by (cells.look.view;
                                                                          // step C10: + the wall pattern)
 
 export const SQUEEZE_SOFT = 0.25, SQUEEZE_HARD = 1.2;   // key \ : cells.params.squeeze, normal or pressed together
@@ -1299,6 +1302,7 @@ export function makeActions(app) {
           : v === 'guides' ? 'colour by strongest guide (step C13): ivory glue, teal pumps, green engines, lilac division, yellow turning, grey unguided; each side’s tube bright where it feels the field high, dark where low'
           : v === 'marker' ? 'colour by lineage, the self marker (step T1a): each family its own hue, close relatives close hues (the marker drifts at every birth, a molecular clock)'
           : v === 'reporter' ? `reporter view (step T1b): cells glow green as far as they express regulator r${app.cells.grn.look.reporter} (like a GFP reporter line; the harmonic look shows it as a red channel)`
+          : v === 'signals' ? 'signals view (step Q1): the signal in the water as a faint haze in its flavour\'s hue (pale where flavours cancel), each cell in the hue of the flavour it emits, lit while it releases'
           : `colour by job (step F0): ${JOBS.map((J, k) => `${JOB_WORD[k]} ${J.label}`).join(', ')}; the legend bottom right`;
   }
 

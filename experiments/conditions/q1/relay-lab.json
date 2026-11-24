@@ -1,0 +1,15 @@
+{
+  "name": "q1-relay-lab",
+  "description": "the hand-wired relay sheet (150 cells, no mutation or turnover), the signals view; a touch of the signal pipette at its left edge at 8 s; pictures every 1-2 s as the wave goes",
+  "query": {"tissue": "relay", "cells": 150, "mut": 0, "life": 0, "seed": 3, "view": "signals", "sigcensus": 1},
+  "duration": 30,
+  "sample_every": 2,
+  "evals": [
+    {"t": 7.9, "js": "const f = await moire.tissues.focus('relay', 2.2); moire.relayAt = f; return JSON.stringify({f, c: await moire.signals.now()})"},
+    {"t": 8, "js": "const f = moire.relayAt; moire.signals.drop(f.x - 9 * moire.cells.R, f.y); return 'poked'"},
+    {"t": 10, "js": "return JSON.stringify(await moire.signals.now())"},
+    {"t": 14, "js": "return JSON.stringify(await moire.signals.now())"},
+    {"t": 20, "js": "return JSON.stringify(await moire.signals.now())"}
+  ],
+  "shots": [{"t": 7.9}, {"t": 9}, {"t": 10.5}, {"t": 12}, {"t": 14}, {"t": 17}, {"t": 22}, {"t": 28}]
+}

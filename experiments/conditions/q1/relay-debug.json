@@ -1,0 +1,12 @@
+{
+  "name": "q1-relay-debug",
+  "query": {"tissue": "relay", "cells": 150, "mut": 0, "life": 0, "seed": 3, "view": "signals"},
+  "duration": 9,
+  "sample_every": 0,
+  "evals": [
+    {"t": 7.9, "js": "const f = await moire.tissues.focus('relay', 2.2); moire.relayAt = f; const C=moire.cells; const {readBuffer}=await import('./src/snapshot.js'); const b=new Float32Array(await readBuffer(C.device,C.bioBuf[C.bioCur],0,240*4)); return JSON.stringify({gx:Array.from(b.slice(84,92)).map(x=>+x.toFixed(3)), gb:Array.from(b.slice(92,100)), gw:Array.from(b.slice(100,109)).map(x=>+x.toFixed(2)), gi:Array.from(b.slice(124,132)), go:Array.from(b.slice(148,152)), gs:Array.from(b.slice(220,224)), sg:Array.from(b.slice(224,240)).map(x=>+x.toFixed(3))})"},
+    {"t": 8, "js": "const f = moire.relayAt; moire.signals.drop(f.x, f.y); return JSON.stringify(moire.signals.pokeNow)"},
+    {"t": 8.2, "js": "const C=moire.cells; const {readBuffer}=await import('./src/snapshot.js'); const n=C.count; const b=new Float32Array(await readBuffer(C.device,C.bioBuf[C.bioCur],0,n*240*4)); const c=new Float32Array(await readBuffer(C.device,C.cellBuf,0,n*96*4)); const f=moire.relayAt; let out=[]; for(let i=0;i<n;i++){const d=Math.hypot(c[i*96]-f.x,c[i*96+1]-f.y); if(d<4*C.R) out.push([+d.toFixed(1), Array.from(b.slice(i*240+84,i*240+87)).map(x=>+x.toFixed(3)), Array.from(b.slice(i*240+236,i*240+240)).map(x=>+x.toFixed(3))]);} return JSON.stringify(out.slice(0,8))"},
+    {"t": 8.6, "js": "const C=moire.cells; const {readBuffer}=await import('./src/snapshot.js'); const n=C.count; const b=new Float32Array(await readBuffer(C.device,C.bioBuf[C.bioCur],0,n*240*4)); const c=new Float32Array(await readBuffer(C.device,C.cellBuf,0,n*96*4)); const u=new Uint32Array(c.buffer); const f=moire.relayAt; let out=[]; for(let i=0;i<n;i++){const d=Math.hypot(c[i*96]-f.x,c[i*96+1]-f.y); if(d<6*C.R) out.push([+d.toFixed(1), Array.from(b.slice(i*240+84,i*240+87)).map(x=>+x.toFixed(3)), Array.from(b.slice(i*240+236,i*240+240)).map(x=>+x.toFixed(3)), (u[i*96+93]>>>24), ((u[i*96+8]>>>8)&~u[i*96+8]&63).toString(2)]);} return JSON.stringify(out.slice(0,12))"}
+  ]
+}

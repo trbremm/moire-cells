@@ -576,7 +576,9 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
 //   HEARING   the flavour vector in the water at its centre (bilinear) and in its inbox, each through its receptor's tuning (q1_hear), as the
 //             network's two senses (Bio.ss.x, ss.y: 1 - e^-(heard / ref)). The NEUTRAL control hears the water at a random pixel and a random
 //             cell's inbox instead (noise with the dish's statistics)
-//   ONSET     the release's flash (the eat pass's, last tick, Cell.motW bits 24..31) crossing one half: the time it began to fire (Bio.ss.w)
+//   FIRING    the release it asks for now (gene x the outputs' factors, as a share of gene 1) low-passed over a second (Bio.ss.z): the eat pass
+//             flashes the tube only when the release jumps above it (a neuron-like firing, not a steady glow); the flash crossing one half
+//             (the eat pass's, last tick, Cell.motW bits 24..31) more than 0.6 s after the last: the time it began to fire (Bio.ss.w)
 struct SigQ {
   flags: u32,       // Q1S_* bits
   base: u32,        // word offset in hb of the signal's copy 0, channel A (X at + n, Y at + 2 n)
@@ -590,12 +592,16 @@ struct SigQ {
   kW: f32,          // heard in water: the vector's counts (tuned) x kW = heard / hearW
   kJ: f32,          // heard through junctions: the inbox's counts this tick (tuned) x kJ = heard per s / hearJ
   _p2: f32,
+  poke: vec4f,      // the PIPETTE's touch (a scientist's hand, like a micro-injection): x y the centre (dish px), z the radius (px; 0: none), w the
+                    // vector counts a cell under it finds in its inbox this tick (heard as through junctions; no energy)
+  pokeF: vec4f,     // x y the poke's flavour (cos, sin); z w spare
 };
 @group(0) @binding(6) var<storage, read_write> hbs: array<atomic<i32>>;
 @group(0) @binding(7) var<uniform> SQ: SigQ;
 const Q1S_ON: u32 = 1u;
 const Q1S_NULL: u32 = 2u;
 const Q1S_MUT: u32 = 4u;
+const Q1_BASE_TAU: f32 = 1.0;   // s: the release's baseline (the flash shows only what rises above it)
 
 // the signal's flavour vector (counts) at a position (dish px), bilinear between the pixel centres
 fn q1_xy_at(p: vec2f) -> vec2f {
@@ -620,9 +626,10 @@ fn signal(@builtin(global_invocation_id) id: vec3u) {
   let i = id.x;
   if (i >= S.count || (SQ.flags & Q1S_ON) == 0u) { return; }
   let ib = SQ.inbox + 2u * i;
-  let jin = vec2f(f32(atomicExchange(&hbs[ib], 0)), f32(atomicExchange(&hbs[ib + 1u], 0)));
+  var jin = vec2f(f32(atomicExchange(&hbs[ib], 0)), f32(atomicExchange(&hbs[ib + 1u], 0)));
   let c = cells[i];
   if ((c.flags & CELL_ALIVE) == 0u) { return; }
+  if (SQ.poke.z > 0.0 && distance(c.pos, SQ.poke.xy) < SQ.poke.z + c.r) { jin += SQ.pokeF.xy * SQ.poke.w; }   // (the pipette's touch)
   var sg = bioW[i].sg;
   var sh = bioW[i].sh;
   var so = bioW[i].so;
@@ -676,9 +683,13 @@ fn signal(@builtin(global_invocation_id) id: vec3u) {
   let hJ = q1_hear(jv, sg.y, sg.z) * SQ.kJ;
   ss.x = 1.0 - exp(-hW);
   ss.y = 1.0 - exp(-hJ);
-  // ---- the firing's onset (for the census's waves) ----
+  // ---- the release asked for, low-passed (the flash's baseline), and the firing's onset (for the census's waves) ----
+  let acts = (bitcast<u32>(FL.t1.z) & GRN_ACT) != 0u;
+  let rel = clamp(sg.w, 0.0, 1.0);
+  let js = clamp(sh.x, 0.0, 1.0);
+  let lv = rel * ((1.0 - js) * q1_fac(bioW[i], 0u, acts) + js * q1_fac(bioW[i], 1u, acts));
+  ss.z = mix(ss.z, lv, clamp(S.dt / Q1_BASE_TAU, 0.0, 1.0));
   let fl = f32((c.motW >> 24u) & 255u) / 255.0;
-  if (fl > 0.5 && ss.z <= 0.5) { ss.w = S.time; }
-  ss.z = fl;
+  if (fl > 0.5 && S.time - ss.w > 0.6) { ss.w = S.time; }
   bioW[i].ss = ss;
 }

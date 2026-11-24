@@ -29,7 +29,8 @@
 // makes the culture's founder the design (with ?spread=, ?cells=: a clump is a tissue, scatter the same cells loose; ?grnnull=1 the same
 // genome with its network nulled).
 
-import { BIO_FLOATS, BIO_GRN, BIO_G2, founderGenome, makeRng } from './genome.js';
+import { BIO_FLOATS, BIO_GRN, BIO_G2, BIO_Q1, founderGenome, makeRng } from './genome.js';
+import { derive, latticesOf, W_LA, W_LK, W_LP, W_FH, W_FS, W_GS } from './folding.js';
 import { engineIndex } from './matter.js';
 import { grnOf, SENSES, OUTPUTS } from './grn.js';
 import { CELL_FLOATS } from './cells.js';
@@ -175,6 +176,57 @@ export const DESIGNS = {
     },
   },
 };
+// step Q1: the RELAY's regulators as LATTICES (the moire genome derives the links from them; found by a search over placements near the
+// signal's junction sense, src/tissues.js relayGenome): r0 RELEASE (fast; the release outputs read it, inverted), r1 REFRACTORY (slow), r2
+// EXCITE (fast); the other five parked far away (lk -0.6), so they link with none of these
+const RELAY_LATTICES = {
+  th: [0.478, 0.519, 0.508, 0.05, 0.25, 0.45, 0.65, 0.85],
+  lk: [0.677, 0.698, 0.717, -0.6, -0.6, -0.6, -0.6, -0.6],
+  ph: [4.946, 0.261, 1.672, 3 * 1.3, 4 * 1.3, 5 * 1.3, 6 * 1.3, 7 * 1.3],
+};
+/**
+ * Step Q1: the hand-wired RELAY (an EXCITABLE sheet; a scientist's design, the evolving dishes must find their own). Its moire-genome lattices
+ * derive (sigma 0.12, wMax 4) r0 = {r1 +2.6, heard through junctions -2.5, r2 -2.2}, r1 = {r2 +3.2, r0 -2.7}, r2 = {r0 -2.9, r1 -2.3, heard
+ * through junctions +1.5}; biases 1, 0, 1; r0 and r2 FAST (0.3 s), r1 slow (5 s). At rest r0 is high (0.75), so the release (gain -8: e^(-8
+ * x0)) is ~0.25 % of the gene; hearing the signal through a junction pulls r0 down and r2 up (each the other's off-switch: a quick flip),
+ * so the cell FIRES: it releases its own flavour through every formed junction, which fires its neighbours; r1 climbs over a few seconds and
+ * puts r0 back up and r2 down (refractory: it cannot fire again until r1 has fallen). Release 1, all through junctions (share 1), its
+ * receptor tuned to its own flavour. Glue 1.5 (junctions form in a sheet), it barely crawls. The cached links (the network's words) are the
+ * derived ones, so ?g3=0 runs the same wiring as free weights.
+ */
+export function relayGenome(rng = Math.random, founder = 730, flavour = 0) {   // (flavour 0: the signal pipette's first, sky blue in the signals view)
+  const g = base(rng, founder);
+  g[16] = 1.5; g[18] = 0.1;   // glue (junctions form in a sheet), barely crawls
+  for (let k = 0; k < 3; k++) slot(g, k, 'g + t → gt', 0);
+  slot(g, 0, 'gt → g + t', 1.2, 2);       // a light eater: the pigment splits the mineral
+  slot(g, 1, 'g + t → gt', 2.4);          // ... and burns what it split (the battery)
+  const x0 = [0.75, 0.18, 0.17, 0.5, 0.5, 0.5, 0.5, 0.5], bias = [1, 0, 1, 0, 0, 0, 0, 0];
+  wire(g, { regs: x0.map((x, r) => ({ bias: bias[r], x0: x, inputs: [] })) });
+  for (let r = 0; r < 8; r++) { g[W_LA + r] = RELAY_LATTICES.th[r]; g[W_LK + r] = RELAY_LATTICES.lk[r]; g[W_LP + r] = RELAY_LATTICES.ph[r]; }
+  g[W_FH] = 0; g[W_FH + 1] = 0; g[W_FH + 2] = 0; g[W_FH + 3] = 0.05;   // the home fold at rest
+  g[W_FS] = 0; g[W_FS + 1] = 0; g[W_FS + 2] = 0; g[W_FS + 3] = 0;      // the stress fold the same (a refold changes nothing)
+  for (let k = 0; k < 4; k++) g[W_GS + k] = 0;                          // (derived at its first tick)
+  const links = derive(latticesOf(g, 0), [0, 0, 0], { sigma: 0.12, wMax: 4, wMin: 1, chi: Math.PI / 4 }, 27);
+  for (let r = 0; r < 8; r++) {
+    let code = 0;
+    links[r].forEach((l, k) => { g[BIO_GRN + 16 + 3 * r + k] = l.w; code += l.q * 32 ** k; });
+    g[BIO_GRN + 40 + r] = code;
+  }
+  const q = BIO_Q1;
+  g[q] = flavour; g[q + 1] = flavour; g[q + 2] = 0.6; g[q + 3] = 1;   // emits and prefers its flavour, release 1
+  g[q + 4] = 1; g[q + 5] = 0; g[q + 6] = 1 | 4; g[q + 7] = 0;         // all through junctions, no taste, r0 and r2 fast
+  g[q + 8] = -8; g[q + 9] = 0; g[q + 10] = -8; g[q + 11] = 0;         // both releases read r0, inverted
+  for (let k = 12; k < 16; k++) g[q + k] = 0;
+  return g;
+}
+DESIGNS.relay = {
+  label: 'relay',
+  desc: 'an EXCITABLE sheet (step Q1): each cell hears the signal through its junctions, FIRES (releases it through its junctions, a flash) and is then refractory for a few seconds; a touch of the signal pipette sends a wave of flashes across the sheet',
+  shape: 'disc',
+  job: 2, jobs: ['resting', 'firing'],
+  reporter: 2,
+  genome(rng = Math.random, founder = 730) { return relayGenome(rng, founder); },
+};
 export const DESIGN_NAMES = Object.keys(DESIGNS);
 
 /** A design's genome (a plain array of BIO_FLOATS numbers). */
@@ -191,6 +243,18 @@ export function shapePoints(shape, n, x, y, R, gap = 1.9, rng = Math.random, ang
   if (shape === 'line') {
     const c = Math.cos(angle), s = Math.sin(angle);
     for (let k = 0; k < n; k++) { const t = (k - (n - 1) / 2) * d; pts.push([x + c * t, y + s * t]); }
+  } else if (shape === 'strip') {   // (step Q1: a band of hexagonally packed rows, 6 deep, along `angle`)
+    const rows = Math.max(1, Math.min(6, Math.round(n / 8))), cols = Math.ceil(n / rows), c = Math.cos(angle), s = Math.sin(angle);
+    for (let k = 0; k < n; k++) {
+      const r = k % rows, q = Math.floor(k / rows), u = (q - (cols - 1) / 2 + (r % 2) / 2) * d, v = (r - (rows - 1) / 2) * d * 0.866;
+      pts.push([x + c * u - s * v, y + s * u + c * v]);
+    }
+  } else if (shape === 'ring') {    // (step Q1: an annulus 3 cells wide, its circumference from n)
+    const width = 3, rm = Math.max(3 * d, n * d * d * 0.866 / (2 * Math.PI * width * d));
+    for (let w = 0; w < width; w++) {
+      const r = rm + (w - (width - 1) / 2) * d * 0.866, m = Math.max(6, Math.round(2 * Math.PI * r / d));
+      for (let k = 0; k < m && pts.length < n; k++) { const a = (k + (w % 2) / 2) / m * 2 * Math.PI; pts.push([x + r * Math.cos(a), y + r * Math.sin(a)]); }
+    }
   } else if (shape === 'scatter') {
     const rad = d * Math.sqrt(n) * 3;
     for (let k = 0; k < n; k++) { const a = rng() * 2 * Math.PI, r = rad * Math.sqrt(rng()); pts.push([x + Math.cos(a) * r, y + Math.sin(a) * r]); }

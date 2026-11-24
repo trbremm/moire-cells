@@ -893,7 +893,7 @@ async function boot() {
   }
   // the medium first: it writes the lattice every field-reading layer uses; the light before the cells (its uniform is
   // read by the heat passes the cells run), and its tint is drawn under them (its outline over them: renderTop)
-  layers = [obstacles, medium, oases, flow, background, landscape, matter, charge, water, obstacles.drawLayer, light, cells];   // (step G0b: the obstacles'
+  layers = [obstacles, medium, oases, flow, background, landscape, matter, charge, water, obstacles.drawLayer, cells.signals.drawLayer, light, cells];   // (step Q1: the signals view's haze)   // (step G0b: the obstacles'
   // mask first, so every pass of the frame reads it; drawn over the water, under the light's tint and the cells)   // (step C6b: the charge's contours over the substances; step N1: the water
   // after the ripples stepped and before the cells' ticks, its caustic net under the light's tint)
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03

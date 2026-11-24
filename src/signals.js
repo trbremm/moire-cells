@@ -34,6 +34,7 @@ import { SIGNAL_SENSES } from './folding.js';
 import { CELL_FLOATS } from './cells.js';
 import { BIO_FLOATS } from './genome.js';
 import { readBuffer } from './snapshot.js';
+import { camera } from './camera.js';
 
 const B_SG = 224, B_SH = 228, B_SO = 232, B_SS = 236, B_FOUNDER = 7, B_GX = 84, B_GW = 100, B_GI = 124;
 const C_FLAGS = 9, C_KIND = 8, C_MOTW = 93;
@@ -43,8 +44,9 @@ const deg = (a) => Math.round(((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI
 export const XY_SCALE = 16;            // flavour vector counts per heat count of energy (signal.wgsl, cell_eat.wgsl, cell_grn.wgsl)
 export const SIG_BLOCKS_GRID = 6;      // two copies of A, X, Y
 export const Q1 = { ON: 1, JUNC: 2, TASTE: 4, NULL: 8 };   // EatP.q1[0].x bits (cell_eat.wgsl Q1E_*)
-const SQ_BYTES = 48;                   // struct SigQ (cell_grn.wgsl)
+const SQ_BYTES = 80;                   // struct SigQ (cell_grn.wgsl)
 const FLASH_TAU = 0.25;                // s: a release's flash fades this fast
+const FLASH_GAIN = 4;                  // a rise of a quarter of gene 1's release above the baseline lights the flash fully
 const SP_BYTES = 80;                   // struct SigP
 const ST_SLOT = 256;                   // struct SigT slots, bound with a dynamic offset
 const MAX_TICKS = 320, MAX_SUB = 8;
@@ -65,7 +67,7 @@ export class Signals {
       flow: true,         // the water carries it (?sigflow=0)
       power: 0.004,       // energy per s a cell releases at release gene 1 and output factor 1 (?sigpower=; an engine's upkeep at rate 1 is 0.003)
       hearW: 2e-4,        // heard in water: energy per R^2 (tuned projection) at which the sense is 1 - 1/e (?hearw=)
-      hearJ: 1e-3,        // heard through junctions: energy per s at which the sense is 1 - 1/e (?hearj=)
+      hearJ: 2e-4,        // heard through junctions: energy per s at which the sense is 1 - 1/e (?hearj=; a neighbour firing at a release of 0.45 x gene 1 through 6 junctions gives 1.5)
       junction: true,     // release through formed junctions (?junction=0: the junction share is not released at all)
       taste: true,        // the taste dial steers (with step P3's taste on) (?sigtaste=0)
       fast: true,         // fast regulators act (?fastreg=0: every regulator at step T1b's tau)
@@ -77,8 +79,18 @@ export class Signals {
       puffAmount: 0.4,    // the pipette: energy per puff (booked as energy in)
       puffRadius: 2.5,    // ... its radius (R)
       puffFlavour: 0,     // ... its flavour (rad)
+      pokeTime: 0.6,      // s: the pipette's touch lasts this long (the cells under it hear its flavour as through junctions)
+      pokeHear: 3,        // ... as strongly as pokeHear x hearJ per s (heard at 1 - e^-3: 95 %)
     };
-    this.look = { haze: 1, ref: 2e-4 };
+    // the look (moire.signals.look; drawing only)
+    this.look = {
+      haze: 1.1,         // the signals view's haze brightness (0: none)
+      ref: 1e-4,         // energy per R^2 (as a vector) at which the haze is half bright
+      mist: 0.5,         // the pale mist where flavours cancel (share)
+      flash: 1.6,        // the release flash's brightness on the tube, in every view (0: none)
+      fill: 0.45,        // the signals view's body fill at full release
+      sat: 0.9,          // the hues' saturation
+    };
     this.tot = { decay: 0, puff: 0, made: 0, junc: 0 };
     this.ledger = null;
     this.hist = [];
@@ -112,8 +124,53 @@ export class Signals {
     this.pAB = new ArrayBuffer(SP_BYTES);
     this.tBuf = device.createBuffer({ label: 'signal tick params', size: ST_SLOTS * ST_SLOT, usage: U.UNIFORM | U.COPY_DST });
     this.tAB = new ArrayBuffer(ST_SLOTS * ST_SLOT);
-    this.qBuf = device.createBuffer({ label: 'signal cells params', size: 64, usage: U.UNIFORM | U.COPY_DST });   // struct SigQ (cell_grn.wgsl)
-    this.qAB = new ArrayBuffer(64);
+    this.qBuf = device.createBuffer({ label: 'signal cells params', size: SQ_BYTES, usage: U.UNIFORM | U.COPY_DST });   // struct SigQ (cell_grn.wgsl)
+    this.qAB = new ArrayBuffer(SQ_BYTES);
+    // the signals view's haze (src/shaders/signal_draw.wgsl), into the light buffer under the cells
+    const dmod = await loadShader(device, 'src/shaders/signal_draw.wgsl');
+    const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
+    this.drawPipe = device.createRenderPipeline({
+      label: 'signal haze', layout: 'auto',
+      vertex: { module: dmod, entryPoint: 'vs' },
+      fragment: { module: dmod, entryPoint: 'fs', targets: [{ format: this.cells.format, blend: { color: over, alpha: over } }] },
+      primitive: { topology: 'triangle-list' },
+    });
+    this.dBuf = device.createBuffer({ label: 'signal haze params', size: 64, usage: U.UNIFORM | U.COPY_DST });
+    this.dAB = new ArrayBuffer(64);
+  }
+
+  // ---------------------------------------------------------------- the look
+  /** The view in use is the signals view (cells.look.view, VIEWS in src/actions.js). */
+  get viewOn() { return this.cells.look && this.cells.look.view === 8; }
+  /** The cells' drawing words (struct Draw q1, from word o). */
+  writeDraw(a, o, neon = true) {
+    const K = this.look;
+    a[o] = this.viewOn ? 1 + (this.cells.grn && this.cells.grn.acts ? 2 : 0) : 0; a[o + 1] = this.on ? Math.max(0, K.flash) * (neon ? 1 : 0.7) : 0; a[o + 2] = Math.max(0, K.fill); a[o + 3] = Math.max(0, K.sat);
+  }
+  /** A layer for main.js (under the cells, over the water): the haze, in the signals view only. */
+  get drawLayer() {
+    if (!this._dl) this._dl = { resize: () => {}, compute: () => {}, render: (pass, frame) => this.draw(pass, frame) };
+    return this._dl;
+  }
+  draw(pass) {
+    const H = this.heat, K = this.look;
+    if (!this.on || !this.viewOn || !(K.haze > 0) || !H || !H.buffer || !this.drawPipe || !this.cells.view) return;
+    if (!this.dbg || this.dbgHeat !== H.buffer) {
+      this.dbgHeat = H.buffer;
+      this.dbg = this.device.createBindGroup({
+        label: 'signal haze', layout: this.drawPipe.getBindGroupLayout(0),
+        entries: [{ binding: 0, resource: { buffer: this.dBuf } }, { binding: 1, resource: { buffer: H.buffer } }],
+      });
+    }
+    const u = new Uint32Array(this.dAB), f = new Float32Array(this.dAB), a = H.px / H.R, v = this.cells.view;
+    u[0] = H.hw; u[1] = H.hh; u[2] = this.base(); u[3] = H.n;
+    f[4] = H.px; f[5] = v.dpr * camera.z; f[6] = Math.max(1, K.ref * XY_SCALE * HEAT_SCALE * a * a); f[7] = K.haze;
+    f.set(camera.vec(), 8);
+    f[12] = v.cssW; f[13] = v.cssH; f[14] = K.sat; f[15] = K.mist;
+    this.device.queue.writeBuffer(this.dBuf, 0, this.dAB);
+    pass.setPipeline(this.drawPipe);
+    pass.setBindGroup(0, this.dbg);
+    pass.draw(3);
   }
 
   get on() { return !!this.params.on; }
@@ -151,6 +208,7 @@ export class Signals {
   beginFrame(encoder, frame, ticks) {
     const H = this.heat;
     this.active = false;
+    this.timeNow = frame.time;
     SIGNAL_SENSES.on = this.on;
     if (!this.on || !H || !H.buffer || !this.pipes) return;
     const p = this.params, dt = frame.tickDt, a = H.px / H.R;
@@ -274,6 +332,15 @@ export class Signals {
     f[9] = 1 / (XY_SCALE * HEAT_SCALE * a * a * Math.max(1e-9, p.hearW));
     f[10] = 1 / (XY_SCALE * HEAT_SCALE * dt * Math.max(1e-9, p.hearJ));
     f[11] = 0;
+    // the pipette's touch: while it lasts, cells under it find the poke's flavour in their inboxes (as `pokeHear` x hearJ per s: heard well)
+    const K = this.pokeNow, tNow = this.timeNow || 0;
+    if (K && tNow <= K.until) {
+      f[12] = K.x; f[13] = K.y; f[14] = K.r; f[15] = p.pokeHear * p.hearJ * XY_SCALE * HEAT_SCALE * dt;
+      f[16] = Math.cos(K.flavour); f[17] = Math.sin(K.flavour);
+    } else {
+      f[14] = 0; f[15] = 0;
+      if (K && tNow > K.until) this.pokeNow = null;
+    }
     this.device.queue.writeBuffer(this.qBuf, 0, this.qAB, 0, SQ_BYTES);
   }
   /** The eat pass's words (struct EatP q1[2], from word o), dt the tick: the release, the junctions, the taste, the flash. */
@@ -284,7 +351,7 @@ export class Signals {
     f[o + 1] = per; u[o + 2] = on ? this.base() : 0; u[o + 3] = on ? this.inbox : 0;
     u[o + 4] = on ? H.n : 0;
     f[o + 5] = 0.1 * Math.max(1e-9, p.hearW) * XY_SCALE * HEAT_SCALE * a * a;   // the taste's floor (tuned counts)
-    f[o + 6] = Math.exp(-dt / FLASH_TAU); f[o + 7] = Math.max(1e-9, 0.25 * per);
+    f[o + 6] = Math.exp(-dt / FLASH_TAU); f[o + 7] = FLASH_GAIN;
   }
 
   // ---------------------------------------------------------------- the census
@@ -339,15 +406,18 @@ export class Signals {
         const b = i * B, rel = Math.max(0, Math.min(1, g[b + B_SG + 3] || 0)), js = Math.max(0, Math.min(1, g[b + B_SH] || 0));
         sRel += rel; sJs += js; sTaste += g[b + B_SH + 1] || 0; sTasteA += Math.abs(g[b + B_SH + 1] || 0); sWidth += g[b + B_SG + 2] || 0;
         if (rel > 0.02) carriers++;
+        const gw0 = g[b + B_SO] || 0, gj0 = g[b + B_SO + 2] || 0;
         const eW = rel * (1 - js) * fac(b, 0), eJ = rel * js * fac(b, 1);
         const a0 = g[b + B_SG] || 0, a = ((a0 % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
         if (eW + eJ > 0.02) { emit++; if (eW >= eJ) emitW++; else emitJ++; bins[Math.min(11, Math.floor(a / (Math.PI / 6)))]++; }
         let lis = false;
         for (let r = 0; r < 8; r++) if (hears(b, r)) lis = true;
         if (lis) listen++;
-        if (eW + eJ > 0.02 && lis && acts) {
+        // a WIRED RELAY: it can release (the gene), and a release output that carries part of it is driven by a regulator that hears (or reads
+        // one that hears): the wiring, whether it fires now or not
+        if (rel > 0.02 && lis && acts) {
           const rw = Math.round(g[b + B_SO + 1] || 0), rj = Math.round(g[b + B_SO + 3] || 0);
-          const wired = (g[b + B_SO] && (hears(b, rw) || feeds(b, rw))) || (g[b + B_SO + 2] && (hears(b, rj) || feeds(b, rj)));
+          const wired = (gw0 && js < 0.95 && (hears(b, rw) || feeds(b, rw))) || (gj0 && js > 0.05 && (hears(b, rj) || feeds(b, rj)));
           if (wired) relay++;
         }
         const fm = Math.round(g[b + B_SH + 2] || 0) & 255;
@@ -399,6 +469,17 @@ export class Signals {
   }
 
   // ---------------------------------------------------------------- the pipette
+  /**
+   * The PIPETTE (the toy's 'signal' tool, a scientist's hand): a puff into the water at (x, y) (dish px) and a TOUCH of the cells under it for
+   * `pokeTime` s (they find the flavour in their inboxes, heard as through junctions: a micro-injection; no energy). f the flavour (rad).
+   */
+  drop(x, y, f = this.params.puffFlavour) {
+    if (!this.on) return false;
+    const R = this.cells.R || 6, p = this.params;
+    this.puff(x, y, f);
+    this.pokeNow = { x, y, r: p.puffRadius * R, flavour: Number(f) || 0, until: (this.timeNow || 0) + p.pokeTime };
+    return true;
+  }
   /** A puff of signal at (x, y) (dish px): energy e (booked as energy in), flavour f (rad), radius r (R). Returns false when off. */
   puff(x, y, f = this.params.puffFlavour, e = this.params.puffAmount, r = this.params.puffRadius) {
     if (!this.on) return false;

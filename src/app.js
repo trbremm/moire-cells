@@ -50,6 +50,7 @@ export const TOOL_ICONS = {
   pipette: '<path d="M13.2 2.8l4 4-2 2-4-4z"/><path d="M12.2 7.8l-7 7-1.2 3.2 3.2-1.2 7-7"/><circle cx="4.2" cy="17.4" r="0.9" fill="currentColor" stroke="none"/>',
   obstacle: '<rect x="2.8" y="3" width="6" height="14" rx="1"/><circle cx="14.2" cy="6.3" r="2.6"/><circle cx="14.2" cy="13.7" r="2.6"/>',   // step G0b
   refold: '<circle cx="10" cy="10" r="7"/><path d="M6 7.5l8 5M6 12.5l8-5M10 3v14"/>',   // step G3
+  signal: '<path d="M10 2.5c-2.6 3.4-4.3 5.9-4.3 8.2a4.3 4.3 0 0 0 8.6 0c0-2.3-1.7-4.8-4.3-8.2z"/><path d="M3 17.5q2-2 4 0t4 0 4 0 4 0"/>',   // step Q1: the signal pipette (a drop over ripples)
 };
 const OBS_SHAPES = ['wall', 'block', 'pillar', 'erase'];
 const OBS_WORD = { wall: 'wall: drag paints a wall', block: 'block: drag spans a block', pillar: 'pillar: tap places one, drag a row', erase: 'erase: drag cuts through' };
@@ -352,6 +353,11 @@ export function createApp(ctx) {
       FD.setZone(x, y, 1.6 * ctx.cells.R);
       return true;
     }
+    if (t.signalPipette) {   // step Q1: the signal pipette (a puff into the water, a touch of the cells under it)
+      Object.assign(drag, { on: true, kind: 'sig', x, y, pts: [[x, y]] });
+      sigDrop(x, y);
+      return true;
+    }
     if (!t.addCell && !t.pipette) return false;
     Object.assign(drag, { on: true, kind: t.addCell ? 'cell' : 'pip', x, y, pts: [[x, y]] });
     if (drag.kind === 'pip') drop(x, y);
@@ -364,7 +370,7 @@ export function createApp(ctx) {
     const R = ctx.cells.R, gap = drag.kind === 'cell' ? 2.1 * R : 3 * R;
     if (Math.hypot(x - drag.x, y - drag.y) >= gap) {
       drag.x = x; drag.y = y;
-      if (drag.kind === 'cell') { if (drag.pts.length < 400) drag.pts.push([x, y]); } else drop(x, y);
+      if (drag.kind === 'cell') { if (drag.pts.length < 400) drag.pts.push([x, y]); } else if (drag.kind === 'sig') sigDrop(x, y); else drop(x, y);
     }
     return true;
   };
@@ -438,6 +444,16 @@ export function createApp(ctx) {
     if (text) ctx.flash(`${text} (undo in the Dish panel)`);
   }
 
+  // step Q1: the signal pipette's drop (its flavour: moire.signals.params.puffFlavour; the toy's button again turns it)
+  function sigDrop(x, y) {
+    const Q = ctx.cells.signals;
+    if (!Q || !Q.drop(x, y)) { ctx.flash('the signal substance is off (?signal=0)'); return; }
+    ctx.background.impulse(x, y, 0.6);
+  }
+  A.sigFlavourText = () => {
+    const Q = ctx.cells.signals, a = Q ? Q.params.puffFlavour : 0;
+    return `${Math.round(((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) * 180 / Math.PI)}°`;
+  };
   function drop(x, y) {
     const name = subName(pick.sub);
     const ok = ctx.matter.addSpring(x, y, `drop:${name}`, PIPETTE.life, { drop: true, rate: PIPETTE.rate });

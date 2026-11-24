@@ -257,8 +257,8 @@ struct EatP {
   // ---- step Q1, a signal substance (src/signals.js writeEat) ----
   q1: array<vec4f, 2>,     // [0] x the Q1E_* bits (u32); y heat counts per tick a cell releases at release gene 1 and output factor 1; z the word
                            //     offset in hb of the signal's copy 0, channel A (u32; X at + n, Y at + 2 n); w the inboxes' (u32)
-                           // [1] x the pixels n (u32); y the taste's floor (tuned vector counts); z the flash's fade per tick; w the release per
-                           //     tick that lights the flash fully (heat counts)
+                           // [1] x the pixels n (u32); y the taste's floor (tuned vector counts); z the flash's fade per tick; w the flash gain: the
+                           //     rise above the baseline (a share of gene 1) x this = the flash
 };
 // step Q1 (src/signals.js): EatP.q1[0].x bits
 const Q1E_ON: u32 = 1u;       // the cells release (and the signal's taste may be read)
@@ -3273,7 +3273,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     // network's factor (Bio.so). Paid from the battery (what it cannot pay is not released). Into the WATER: the energy and the flavour vector
     // (Bio.sg.x) onto the grid at its centre (the signal pass spreads it, it fades to heat there). Through JUNCTIONS: the energy is heat here at
     // once, the flavour vector (shared among the sides) into each neighbour's INBOX (read and cleared by its gene network's pass next tick).
-    // The FLASH (Cell.motW bits 24..31): the release as a share of q1[1].w, held with a short fade
+    // The FLASH (Cell.motW bits 24..31): what the release asked for rises above its baseline (Bio.ss.z, low-passed over a second by the gene
+    // network's pass): x q1[1].w (the full flash's rise, as a share of gene 1), held with a short fade; a steady emitter does not flash
     var q1fl = 0.0;
     let q1b = bitcast<u32>(EP.q1[0].x);
     if ((q1b & Q1E_ON) != 0u) {
@@ -3321,7 +3322,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
             }
           }
         }
-        if (bat > 0 || pay > 0) { q1fl = clamp(want / EP.q1[1].w, 0.0, 1.0); }
+        let lv = rel * ((1.0 - js) * q1_fac(bio[i], 0u, acts) + js * q1_fac(bio[i], 1u, acts));
+        if (bat > 0 || pay > 0) { q1fl = clamp((lv - bio[i].ss.z) * EP.q1[1].w, 0.0, 1.0); }
       }
       let fl0 = f32((c.motW >> 24u) & 255u) / 255.0;
       q1fl = max(q1fl, fl0 * EP.q1[1].z);

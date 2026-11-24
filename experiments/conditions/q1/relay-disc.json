@@ -1,0 +1,80 @@
+{
+ "name": "q1-relay-disc",
+ "description": "the hand-wired relay sheet (400 cells, no mutation or turnover), the signals view; a touch of the signal pipette at its left edge at 8 s",
+ "query": {
+  "tissue": "relay",
+  "cells": 400,
+  "mut": 0,
+  "life": 0,
+  "seed": 3,
+  "view": "signals",
+  "sigcensus": 1
+ },
+ "duration": 34,
+ "sample_every": 2,
+ "evals": [
+  {
+   "t": 7.9,
+   "js": "const f = await moire.tissues.focus('relay', 1.5); moire.relayAt = f; const c = await moire.signals.now(); return JSON.stringify({f, n: c.n, junctionCells: c.junctionCells})"
+  },
+  {
+   "t": 8,
+   "js": "const f = moire.relayAt; moire.signals.drop(f.x - 17 * moire.cells.R, f.y, 3.5); return 'poked'"
+  },
+  {
+   "t": 11,
+   "js": "const c = await moire.signals.now(); return JSON.stringify({firing: c.firing, emitters: c.emitters, wave: c.wave})"
+  },
+  {
+   "t": 15,
+   "js": "const c = await moire.signals.now(); return JSON.stringify({firing: c.firing, emitters: c.emitters, wave: c.wave})"
+  },
+  {
+   "t": 22,
+   "js": "const c = await moire.signals.now(); return JSON.stringify({firing: c.firing, emitters: c.emitters, wave: c.wave})"
+  }
+ ],
+ "shots": [
+  {
+   "t": 7.9
+  },
+  {
+   "t": 9
+  },
+  {
+   "t": 10
+  },
+  {
+   "t": 11
+  },
+  {
+   "t": 12
+  },
+  {
+   "t": 13
+  },
+  {
+   "t": 14
+  },
+  {
+   "t": 15.5
+  },
+  {
+   "t": 17
+  },
+  {
+   "t": 19
+  },
+  {
+   "t": 22
+  },
+  {
+   "t": 30
+  },
+  {
+   "t": 13,
+   "view": "job",
+   "name": "t13-job"
+  }
+ ]
+}

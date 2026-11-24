@@ -101,7 +101,7 @@ const CELL_BEAT_BYTES = 128;   // struct CellBeat in cell_common.wgsl
 const FIELDS_BYTES = 672;      // struct Fields in cell_common.wgsl (step P3: + p3a, p3b, 640 until then; step S2: + mo0..mo2, 592 until then; step G2: + g2, 576 until then; step G0b: + ob0, 560 until then; step G0: + g0a..g0c; step P1: + p1..p1d; step T1a: + t1; step C13: + fg0; step C6c: + memb; step C6d: + dip0..dip2; step C8: + hm;
                                // step C9: + dv0..dv2; step C10: + wl0, wl1)
 const FIELD_FORMAT = 'rgba16float';
-const DRAW_BYTES = 1472;       // struct Draw in cell_draw.wgsl (step G3: + g3, g3Ink[2], 1424 until then; step F0: + job[7], 1312 until then; step P1: + p1, p1Ink; step T1b: + grn, grnInk, grnInkH, 1232 until then; step T1a: + kin, 1216 until then; step H1: + harm, harm2, harm3, harm4, hInk[5] after cam, 1072 until then; app: + cam, 1056 until then; step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
+const DRAW_BYTES = 1488;       // struct Draw in cell_draw.wgsl (step Q1: + q1, 1472 until then; step G3: + g3, g3Ink[2], 1424 until then; step F0: + job[7], 1312 until then; step P1: + p1, p1Ink; step T1b: + grn, grnInk, grnInkH, 1232 until then; step T1a: + kin, 1216 until then; step H1: + harm, harm2, harm3, harm4, hInk[5] after cam, 1072 until then; app: + cam, 1056 until then; step C13: + gd, gdInk[6]; step C12b: + lip, lip2, lipInk[3]; step C10: + wall, wall2, wallInk[4]; step C9: + div; step C7: + pump, pump2, pumpInk[13]); (step C6b: + the charge view's inks; step C6c: + the honeycomb, the membrane;
                                // step C6d: + the dipoles)
 export const ANCHORS = ['sliding moire (reference)', 'pinned to the cell', 'still in the world'];
 
@@ -1463,6 +1463,7 @@ export class Cells {
     this.pred.writeDraw(a, 320);               // step P1: the wraps' arms, the phagosomes
     P.job.forEach((ink, j) => { for (let k = 0; k < 3; k++) a[328 + 4 * j + k] = ink[k] / 255; });   // step F0: the jobs' inks
     this.folding.writeDraw(a, 356, neon);    // step G3: a refold's flash
+    this.signals.writeDraw(a, 368, neon);    // step Q1: the signals view, the release flash
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     // step S2: the flagella and cilia first (src/motors.js; a body then covers its flagellum's root)
     this.motors.render(pass, { view: v, cam: camera.vec(), zoom: camera.z, neon, harmonic: !!HM, time: frame.time || 0, palette: P, cheap: !!look.cheap });

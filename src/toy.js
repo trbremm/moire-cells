@@ -45,6 +45,7 @@ const ICON = {
   close: '<path d="M5 5l10 10M15 5L5 15"/>',
   fold: '<circle cx="10" cy="10" r="7"/><path d="M6 7.5l8 5M6 12.5l8-5M10 3v14"/>',   // step G3: refold (a folded hex lattice)
   stress: '<path d="M11.5 2.5L5 11h4.6l-1.4 6.5L15 9h-4.6z"/>',   // step G3: a stress shock
+  signal: '<path d="M10 2.5c-2.6 3.4-4.3 5.9-4.3 8.2a4.3 4.3 0 0 0 8.6 0c0-2.3-1.7-4.8-4.3-8.2z"/><path d="M3 17.5q2-2 4 0t4 0 4 0 4 0"/>',   // step Q1: the signal pipette
 };
 function svg(name) {
   const s = document.createElementNS(NS, 'svg');
@@ -89,6 +90,7 @@ const TOOLSET = [
   ['food', 'food', 'food', 'light'],
   ['light', 'light', 'light', 'spot'],
   ['fold', 'fold', 'refold', 'refold'],   // step G3: refold cells by hand (the button again: back home)
+  ['signal', 'signal', 'signal', 'signal'],   // step Q1: the signal pipette (the button again: another flavour)
 ];
 const FOODS = [['light', 'minerals', 'a mineral spring (water-like minerals and linkers for membranes)'],
   ['heavy', 'vent', 'a vent (fuel-rich, with metals and trace)'], ['oil', 'oil', 'an oil spring (droplets; cells can take oil into their skins)']];
@@ -103,6 +105,7 @@ const TIPS = {
   cells: 'Cells: tap to drop a small group, drag for a line',
   light: 'Light: drag to move the spotlight (tap light again: the whole dish lit)',
   fold: 'Refold: tap or drag across cells to fold their genome into its stress fold (tap refold again: back home); a card shows the genome',
+  signal: 'Signal: tap or drag to drop a puff of the signal substance; cells under it hear it at once (tap signal again: another flavour; the look button: signals view)',
 };
 
 /**
@@ -239,6 +242,7 @@ export function createToy(ctx) {
     if (t.id === 'light' || t.id === 'heavy' || t.id === 'oil') return 'food';
     if (t.id === 'spot') return 'light';
     if (t.id === 'refold') return 'fold';
+    if (t.id === 'signal') return 'signal';
     return '';
   }
   function pickTool(id) {
@@ -264,6 +268,11 @@ export function createToy(ctx) {
       A.setTool(toolIndex('refold'));
       setLabel(toolBtns[8], FD.target ? 'refold' : 'unfold');
       say(FD.target ? TIPS.fold : 'Unfold: tap or drag across cells to fold their genome back home (tap again: stress fold)', 3200);
+    } else if (id === 'signal') {   // step Q1: the signal pipette; again: the next flavour (a sixth of the wheel)
+      const Q = ctx.cells.signals;
+      if (again && Q) Q.params.puffFlavour = ((Q.params.puffFlavour || 0) + Math.PI / 3) % (2 * Math.PI);
+      A.setTool(toolIndex('signal'));
+      say(`${TIPS.signal} · flavour ${A.sigFlavourText ? A.sigFlavourText() : ''}`, 3200);
     } else if (def[4]) {
       A.setTool(toolIndex('obstacle'));
       if (O) {

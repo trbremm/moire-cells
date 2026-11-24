@@ -1,0 +1,72 @@
+{
+ "name": "q1-relay-strip",
+ "description": "the hand-wired relay as a long strip (240 cells, no mutation or turnover), the signals view; a touch of the signal pipette at its left end at 4 s",
+ "query": {
+  "tissue": "relay",
+  "cells": 1,
+  "cap": 700,
+  "dish": "160x100",
+  "mut": 0,
+  "life": 0,
+  "seed": 3,
+  "view": "signals",
+  "sigcensus": 1,
+  "light": "full"
+ },
+ "duration": 26,
+ "sample_every": 2,
+ "evals": [
+  {
+   "t": 0.5,
+   "js": "const v = moire.cells.view; await moire.tissues.place('relay', {n: 240, shape: 'strip', x: v.cssW / 2, y: v.cssH / 2 + 12 * moire.cells.R}); return 'placed ' + moire.cells.R"
+  },
+  {
+   "t": 3.9,
+   "js": "const f = await moire.tissues.focus('relay', 1.6); moire.relayAt = f; return JSON.stringify(f)"
+  },
+  {
+   "t": 4,
+   "js": "const f = moire.relayAt; moire.signals.drop(f.x - 36 * moire.cells.R, f.y); return 'poked'"
+  },
+  {
+   "t": 8,
+   "js": "return JSON.stringify((await moire.signals.now()).wave)"
+  },
+  {
+   "t": 12,
+   "js": "return JSON.stringify((await moire.signals.now()).wave)"
+  }
+ ],
+ "shots": [
+  {
+   "t": 3.9
+  },
+  {
+   "t": 5.5
+  },
+  {
+   "t": 7
+  },
+  {
+   "t": 8.5
+  },
+  {
+   "t": 10
+  },
+  {
+   "t": 11.5
+  },
+  {
+   "t": 13
+  },
+  {
+   "t": 15
+  },
+  {
+   "t": 18
+  },
+  {
+   "t": 24
+  }
+ ]
+}

@@ -133,7 +133,15 @@ struct Draw {
   job: array<vec4f, 7>,    // the jobs' inks (rgb): undecided, light eater, breather, fermenter, gradient eater, builder, predator
   g3: vec4f,        // step G3: x a REFOLD's flash brightness (0 = none); y z w spare
   g3Ink: array<vec4f, 2>,  // ... its inks: [0] into the stress fold, [1] back home
+  q1: vec4f,        // step Q1 (src/signals.js writeDraw): x 1 = the SIGNALS view (mode 8: the body in the hue of the flavour it emits, as
+                    // bright as it releases now), + 2 while the gene network's outputs act; y the release FLASH's brightness in every view
+                    // (0 = none); z the view's body fill at full release; w the hues' saturation
 };
+// step Q1: a flavour (rad) as a neon hue round the colour wheel
+fn q1_hue(a: f32, sat: f32) -> vec3f {
+  let h = a / TAU + 0.56;   // (flavour 0, the signal pipette's first, sky blue)
+  return max(0.55 + 0.5 * sat * cos(TAU * (h + vec3f(0.0, -1.0 / 3.0, 1.0 / 3.0))), vec3f(0.0));
+}
 // step P1: a neighbour WRAPPING this cell (Cell.engBy): the wrapper's membrane as a tube round this cell, from the wrapper's side as far round
 // as the wrap has gone (at the cell's radius x (1 + arm / 2)); returns (coverage, the tube's centre-line profile 0..1); p the pixel's offset
 // from the centre (CSS px)
@@ -438,6 +446,22 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     repX = clamp(bio[in.id].gx[rr >> 2u][rr & 3u], 0.0, 1.0);
     col = mix(D.inkOther.rgb * 0.45, D.grnInk.rgb, repX);
   }
+  // step Q1, the SIGNALS view (mode 8): the body in the hue of the flavour it emits, as strongly as it can release (its gene); a silent cell
+  // dim grey; the flash below lights it while it releases
+  let q1View = D.q1.x > 0.5;
+  let q1fl = f32((c.motW >> 24u) & 255u) / 255.0;
+  var q1Fill = 0.0;
+  if (q1View) {
+    // the release it asks for now, as a share of gene 1 (as the eat pass works it out): a quarter or more lights the cell fully; a cell that
+    // could release but rests is a dim hue, a silent one dim grey
+    let rel = clamp(g.sg.w, 0.0, 1.0);
+    let js = clamp(g.sh.x, 0.0, 1.0);
+    let acts = D.q1.x > 2.5;
+    let lv = rel * ((1.0 - js) * q1_fac(g, 0u, acts) + js * q1_fac(g, 1u, acts));
+    let fb = max(clamp(lv / 0.25, 0.0, 1.0), q1fl);
+    col = mix(D.inkOther.rgb * 0.35, q1_hue(g.sg.x, D.q1.w) * (0.3 + 0.7 * fb), clamp(20.0 * rel, 0.0, 1.0));
+    q1Fill = D.q1.z * fb;
+  }
   if (wallsView) {
     let a1 = g.wall.x;
     let a2 = g.wall.y;
@@ -532,8 +556,9 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   }
   // cells with a clear job get a flat fill in their colour, so tissues read as areas; undecided cells stay dark inside (step F0: by the
   // job's strength; the committed fates until then) (neon: every inside dark, a faint tint; the fills come from src/cells.js by the look)
-  let fill = select(select(select(select(select(mix(D.fill, D.fillC, jb.y), D.inkOther.w, strategyView || chargeView), D.wall2.y, wallsView),
+  let fill0 = select(select(select(select(select(mix(D.fill, D.fillC, jb.y), D.inkOther.w, strategyView || chargeView), D.wall2.y, wallsView),
                     gdFill, guidesView), D.kin.z, markerView), D.grn.z * repX, reporterView);
+  let fill = select(fill0, q1Fill, q1View);   // (step Q1: the signals view)
   var fillRgb = col * fill;   // (step 8 may tint it below)
   // step C6n: neon, the tube lights the inside near it (a soft glow falling off inward)
   if (neon) { fillRgb += col * D.neon2.x * exp(-max(ein2 - lw, 0.0) / max(D.neon.w * c.r, 1e-3)); }
@@ -673,7 +698,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   // step T1a: zoomed in, the self marker as a fine stripe texture along the tube (like surface immunostaining), as deep as the cell displays it
   if (D.kin.y > 0.0) { lineCol *= 1.0 - D.kin.y * clamp(g.mark.w, 0.0, 1.0) * (1.0 - marker_stripe(g, in.local, D.R)); }
   // step C12b: soap's pearl (a pale sheen whose hue drifts along the tube and slowly in time) and oil's depth (more saturated)
-  if (D.lip.x > 0.5) {
+  if (D.lip.x > 0.5 && !q1View) {   // (step Q1: not in the signals view, where the tube's hue is the flavour)
     let hsh = f32((c.seed >> 8u) & 255u) / 255.0;
     let hue = sd.y / max(2.2 * c.r, 1.0) + 0.04 * D.hum.z + hsh + 0.17 * f32(side);
     let irid = 0.62 + 0.38 * cos(TAU * (hue + vec3f(0.0, 0.33, 0.67)));
@@ -822,6 +847,14 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     let pulse = fr * (0.6 + 0.4 * sin(fr * 18.0));
     lineCol = mix(lineCol, mix(fk, vec3f(1.0), 0.35 * fr), clamp(pulse, 0.0, 1.0)) * (1.0 + D.g3.x * pulse);
     rgb += fk * 0.18 * D.g3.x * fr * fr;
+  }
+  // step Q1: the signal's RELEASE FLASH (Cell.motW bits 24..31, the eat pass: the release now, with a short fade): the tube rings white-hot
+  // toward the flavour's hue (the signals view) or the cell's own colour, like a neuron firing; the inside lit a little
+  if (D.q1.y > 0.0 && q1fl > 0.02) {
+    let f2 = q1fl * q1fl;
+    let fk = select(lineCol, q1_hue(g.sg.x, D.q1.w), q1View);
+    lineCol = mix(lineCol, mix(fk, vec3f(1.0), 0.45), clamp(f2, 0.0, 1.0)) * (1.0 + D.q1.y * f2);
+    rgb += fk * 0.15 * D.q1.y * f2;
   }
   rgb = mix(rgb, lineCol, ring);
   // step C12b: the wall's rim of crust, outside the tube: flat bricks (about lip2.y r long with thin joints), present where this

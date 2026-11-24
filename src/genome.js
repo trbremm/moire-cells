@@ -626,6 +626,7 @@ export function founderGenome(strategy, rng = Math.random, founder = 0, bSign = 
   engines(g, rng, STRATEGIES.includes(strategy) || (strategy === 'carbon' && CARBON) ? strategy : 'burn');
   if (bSign === 'mixed') g[BIO_FG + 6] = rng() < 0.5 ? -1 : 1;   // the field-B sign (drawn last, so the other genes stay as they were)
   if (t1) t1Genes(g, rng);                                       // step T1a: a marker of its own (after, for the same reason)
+  signalGenes(g, makeRng((Math.imul(founder + 1, 2654435761) ^ 0x7369676e) >>> 0), 0, false);   // step Q1: silent, a flavour (its own stream)
   return g;
 }
 export const HABITS = ['burn', 'both', 'pigments', 'other', ...(CARBON && ELECTRONS ? ['carbon'] : [])];   // (step C15b: + carbon eaters)

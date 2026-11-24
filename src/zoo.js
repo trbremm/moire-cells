@@ -632,6 +632,19 @@ export function cellPanel(ctx, onAdd) {
         b.addEventListener('click', () => { onAdd(designGenome(name), `tissue: ${DESIGNS[name].label}`, null); });
         tr.append(b);
       }
+      // step Q1: a whole RELAY SHEET at once (an excitable tissue: touch it with the signal pipette and a wave of flashes runs across it)
+      for (const [shape, n, label] of [['disc', 160, 'relay sheet'], ['ring', 150, 'relay ring']]) {
+        const b = el('button', 'act', label);
+        b.type = 'button';
+        b.title = `place a ${shape} of ${n} relay cells (an excitable sheet, step Q1) at the middle of the view; then touch it with the signal pipette: a wave of flashes runs across it (the signals view shows it best)`;
+        b.addEventListener('click', () => {
+          const M = window.moire, C = M && M.cells;
+          if (!C || !M.tissues) return;
+          const v = C.view, cam = M.camera, x = cam && cam.z ? cam.x + cam.W / (2 * cam.z) : v.cssW / 2, y = cam && cam.z ? cam.y + cam.H / (2 * cam.z) : v.cssH / 2;
+          M.tissues.place('relay', { n, shape, x, y }).catch((e) => console.warn('relay:', e));
+        });
+        tr.append(b);
+      }
       body.append(tr);
       if (Z.list) render();
       Z.last = 0;

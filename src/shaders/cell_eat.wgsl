@@ -254,7 +254,45 @@ struct EatP {
   // ---- step G3, the moire genome (src/folding.js writeEat) ----
   g3: vec4f,               // x the G3E_* bits (u32); y REPAIR's cost (heat counts per unit of dose repaired); z the BUFFER's upkeep (heat
                            // counts per tick at gene 1); w spare
+  // ---- step Q1, a signal substance (src/signals.js writeEat) ----
+  q1: array<vec4f, 2>,     // [0] x the Q1E_* bits (u32); y heat counts per tick a cell releases at release gene 1 and output factor 1; z the word
+                           //     offset in hb of the signal's copy 0, channel A (u32; X at + n, Y at + 2 n); w the inboxes' (u32)
+                           // [1] x the pixels n (u32); y the taste's floor (tuned vector counts); z the flash's fade per tick; w the release per
+                           //     tick that lights the flash fully (heat counts)
 };
+// step Q1 (src/signals.js): EatP.q1[0].x bits
+const Q1E_ON: u32 = 1u;       // the cells release (and the signal's taste may be read)
+const Q1E_JUNC: u32 = 2u;     // ... the junction share goes through formed junction sides (else it is not released)
+const Q1E_TASTE: u32 = 4u;    // the taste dial reads the signal's gradient (not in the neutral control)
+const Q1E_NULL: u32 = 8u;     // the neutral control
+const LG_SIG_MADE: u32 = LG_SIG + 384u;   // the books (heat_common.wgsl): released into the water (heat counts, 64 slots)
+const LG_SIG_JUNC: u32 = LG_SIG + 448u;   // ... through junctions (heat at once)
+// step Q1: the TASTE for the signal: its heard value (the receptor's tuned projection) at the membrane's 6 corners, the relative gradient
+// (d log (heard + floor), per R) x the dial (Bio.sh.y), as the P3 dials; mg is the plain view behind the ledger
+fn q1_taste(i: u32, c: Cell) -> vec2f {
+  let q = bitcast<u32>(EP.q1[0].x);
+  if ((q & (Q1E_ON | Q1E_TASTE)) != (Q1E_ON | Q1E_TASTE)) { return vec2f(0.0); }
+  let d = clamp(bio[i].sh.y, -1.0, 1.0);
+  if (d == 0.0) { return vec2f(0.0); }
+  let mb = membrane(c);
+  let b = bitcast<u32>(EP.q1[0].z) - LEDGER_WORDS;
+  let n = bitcast<u32>(EP.q1[1].x);
+  let pref = bio[i].sg.y;
+  let wd = bio[i].sg.z;
+  var g = vec2f(0.0);
+  var vs = 0.0;
+  var rr = 0.0;
+  for (var a = 0; a < 6; a++) {
+    let cp = mb.mid[a] - 0.5 * mb.edge[a];
+    let px = heat_xy(HP, c.pos + cp);
+    let pi = u32(px.y) * HP.hw + u32(px.x);
+    let v = q1_hear(vec2f(f32(mg[b + n + pi]), f32(mg[b + 2u * n + pi])), pref, wd);
+    g += v * cp;
+    vs += v;
+    rr += dot(cp, cp);
+  }
+  return d * 2.0 * EP.R / max(rr, 1e-6) * g / (vs / 6.0 + max(EP.q1[1].y, 1e-6));
+}
 // ---- step C12g, MEMBRANES MODULATE ION FLOW (src/ions.js). The lipid BILAYER blocks free ions (charged atoms: g t G T and the excited
 // g* t*), derived from its make-up: per side the intact share (its integrity: soap + the oil between its tails over what the thickness
 // asks; with ?lipids=0 the C6c weave's) passes ions at ionPass of a neutral molecule's rate, the damaged share (holes) as a neutral one;
@@ -1674,6 +1712,7 @@ fn plan(@builtin(global_invocation_id) id: vec3u) {
       let tmn = vs / 6.0 + fl;
       tv = tk * (dial.x * g0 / tmn.x + dial.y * g1 / tmn.y + dial.z * g2 / tmn.z + dial.w * g3 / tmn.w);
     }
+    tv += q1_taste(i, c);   // (step Q1: the signal's dial)
     tv = mix(c.taste, tv, clamp(EP.p3[0].y, 0.0, 1.0));
   }
   cells[i].taste = tv;
@@ -3228,6 +3267,66 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         if (pcu > 0.0) { atomicAdd(&wpu[PC_UPKEEP], i32(round(f32(pay) * pcu / max(cost, 1e-9)))); }
       }
     }
+
+    // ---- step Q1, the SIGNAL's RELEASE (src/signals.js): EP.q1[0].y heat counts per tick at release gene 1 (Bio.sg.w) and output factor 1, the
+    // JUNCTION SHARE (Bio.sh.x) through its formed junction sides (G0: formed, not torn, a live neighbour across), each output x the gene
+    // network's factor (Bio.so). Paid from the battery (what it cannot pay is not released). Into the WATER: the energy and the flavour vector
+    // (Bio.sg.x) onto the grid at its centre (the signal pass spreads it, it fades to heat there). Through JUNCTIONS: the energy is heat here at
+    // once, the flavour vector (shared among the sides) into each neighbour's INBOX (read and cleared by its gene network's pass next tick).
+    // The FLASH (Cell.motW bits 24..31): the release as a share of q1[1].w, held with a short fade
+    var q1fl = 0.0;
+    let q1b = bitcast<u32>(EP.q1[0].x);
+    if ((q1b & Q1E_ON) != 0u) {
+      let rel = clamp(bio[i].sg.w, 0.0, 1.0);
+      if (rel > 0.0) {
+        let acts = grn_on();
+        let js = clamp(bio[i].sh.x, 0.0, 1.0);
+        var wantW = EP.q1[0].y * rel * (1.0 - js) * q1_fac(bio[i], 0u, acts);
+        var wantJ = EP.q1[0].y * rel * js * q1_fac(bio[i], 1u, acts);
+        var jm = 0u;
+        if ((q1b & Q1E_JUNC) != 0u && S.count <= NBR_NONE && wantJ > 0.0) {
+          let jf = jn_formed(c.kind);
+          for (var k = 0u; k < 6u; k++) {
+            let j = cell_nbr(c, k);
+            if (((jf >> k) & 1u) != 0u && j < S.count && j != i) { jm |= 1u << k; }
+          }
+        }
+        if (jm == 0u) { wantJ = 0.0; }
+        let want = wantW + wantJ;
+        let pay = clamp(i32(floor(want + u01(pcg(rs + 0x51677131u)))), 0, max(bat, 0));
+        if (pay > 0) {
+          bat -= pay;
+          let pW = clamp(i32(round(f32(pay) * wantW / max(want, 1e-9))), 0, pay);
+          let pJ = pay - pW;
+          let fv = vec2f(cos(bio[i].sg.x), sin(bio[i].sg.x)) * Q1_XY;
+          if (pW > 0) {
+            let qb = bitcast<u32>(EP.q1[0].z);
+            let qn = bitcast<u32>(EP.q1[1].x);
+            let pix = idx[4];
+            atomicAdd(&hb[qb + pix], pW);
+            atomicAdd(&hb[qb + qn + pix], i32(round(f32(pW) * fv.x)));
+            atomicAdd(&hb[qb + 2u * qn + pix], i32(round(f32(pW) * fv.y)));
+            atomicAdd(&hb[LG_SIG_MADE + (i & 63u)], pW);
+          }
+          if (pJ > 0) {
+            heat += pJ;
+            atomicAdd(&hb[LG_SIG_JUNC + (i & 63u)], pJ);
+            let per = fv * f32(pJ) / f32(countOneBits(jm));
+            let ib = bitcast<u32>(EP.q1[0].w);
+            for (var k = 0u; k < 6u; k++) {
+              if (((jm >> k) & 1u) == 0u) { continue; }
+              let j = cell_nbr(c, k);
+              atomicAdd(&hb[ib + 2u * j], i32(round(per.x)));
+              atomicAdd(&hb[ib + 2u * j + 1u], i32(round(per.y)));
+            }
+          }
+        }
+        if (bat > 0 || pay > 0) { q1fl = clamp(want / EP.q1[1].w, 0.0, 1.0); }
+      }
+      let fl0 = f32((c.motW >> 24u) & 255u) / 255.0;
+      q1fl = max(q1fl, fl0 * EP.q1[1].z);
+    }
+    cells[i].motW = (c.motW & 0xffffffu) | (u32(round(clamp(q1fl, 0.0, 1.0) * 255.0)) << 24u);
 
     // ---- sediment formed inside is expelled where the cell is (it cannot pass the membrane, and it would clog the cell);
     // while its channel is not moving in the dish (the first frame it appears) it waits inside

@@ -57,6 +57,8 @@ const GRN_U = BIO_GRN + 48, GRN_O = BIO_GRN + 64;
 const quant = (a) => { if (!a.length) return [null, null, null]; const b = a.slice().sort((x, y) => x - y); return [0.1, 0.5, 0.9].map((q) => b[Math.min(b.length - 1, Math.floor(q * b.length))]); };
 /** A sense's fixed lattice: [angle, ln wavenumber, phase] (cell_grn.wgsl g3_sense). */
 export function senseAddr(s) { return [((s & 3) + 0.5) * PI3 / 4, -0.375 + 0.25 * (s >> 2), s * 2.3999632]; }
+/** Step Q1: whether the signal's two senses exist (src/signals.js sets it every frame), for the JS mirror of the derivation. */
+export const SIGNAL_SENSES = { on: false };
 /** A lattice's address under a fold [twist, stretch, axis] (cell_grn.wgsl g3_addr). */
 export function addr(th, lk, fold) { return [th + fold[0], lk + fold[1] * Math.cos(6 * (th - fold[2]))]; }
 export function d2(a, b) {
@@ -76,13 +78,13 @@ export function foldInUse(L, P) {
   return L.state && !P.foldNull ? L.stress : L.home;
 }
 /** The derived links (cell_grn.wgsl g3_derive): per regulator its 3 inputs [{ q, w }] (q 1..8 regulators, 9..24 senses; none: q 0). */
-export function derive(L, fold, P) {
+export function derive(L, fold, P, nsrc = SIGNAL_SENSES.on ? 27 : 25) {   // (step Q1: + the signal's two senses while it is on)
   const ax = L.th.map((t, r) => addr(t, L.lk[r], fold));
   const inv = 1 / Math.max(2 * P.sigma * P.sigma, 1e-6);
   const out = [];
   for (let r = 0; r < 8; r++) {
     const best = [{ q: 0, w: 0 }, { q: 0, w: 0 }, { q: 0, w: 0 }];
-    for (let q = 1; q < 25; q++) {
+    for (let q = 1; q < nsrc; q++) {
       if (q === r + 1) continue;
       let a, p;
       if (q <= 8) { a = ax[q - 1]; p = L.ph[q - 1]; } else { const s = senseAddr(q - 9); a = [s[0], s[1]]; p = s[2]; }

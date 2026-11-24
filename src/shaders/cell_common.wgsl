@@ -410,7 +410,7 @@ struct Sim {
 };
 
 // ---------- the genome ----------
-// Every cell carries a Bio record (672 bytes since step G2, 624 since T1b, 304 since step C13, 224 since C12b, 208 since step C10, 192 since C7; keep in step with BIO_* in src/genome.js): its genome plus its
+// Every cell carries a Bio record (960 bytes since step Q1, 896 since step G3, 672 bytes since step G2, 624 since T1b, 304 since step C13, 224 since C12b, 208 since step C10, 192 since C7; keep in step with BIO_* in src/genome.js): its genome plus its
 // small mutable state. Bio is double-buffered: each tick reads last tick's copy of every cell (bioPrev) and
 // writes the new one (bioNext), so a newborn copies its parent's genome race-free.
 //
@@ -522,6 +522,15 @@ struct Bio {
   fs: vec4f,            // the STRESS FOLD: x y z as fh; w STATE (epigenetic, inherited): the fold in use, 0 home, 1 stress
   gs: vec4f,            // STATE: x the DAMAGE DOSE collected in life; y the HIDDEN drift (the lattices' squared change since the links were
                         // last derived); z the dose repaired this tick (the eat pass pays for it); w GS_* bits + 32 x refolds in the line
+  // ---- step Q1: A SIGNAL SUBSTANCE (src/signals.js, cell_grn.wgsl signal, cell_eat.wgsl; README "Step Q1"). Words 224..239 ----
+  sg: vec4f,            // x the FLAVOUR it emits (rad, 0..2 pi); y the flavour its receptor PREFERS (rad); z the receptor's TUNING width (rad,
+                        // 0.1..3: heard = |v| exp(-(1 - cos(angle(v) - preferred)) / width^2)); w the RELEASE gene (0..1; founders 0: silent)
+  sh: vec4f,            // x the JUNCTION SHARE (0..1: the part released through formed junction sides, the rest into the water); y the signal's
+                        // TASTE dial (-1..1: + follow its heard gradient, - flee it; founders 0); z the FAST regulators (bits 0..7 as a whole
+                        // number: regulator r relaxes with tauFast; founders 0); w spare
+  so: vec4f,            // the gene network's 21st output (RELEASE TO WATER: x gain, y regulator) and 22nd (RELEASE TO JUNCTIONS: z gain, w regulator)
+  ss: vec4f,            // STATE: x heard in the water (the network's sense, 0..1), y heard through junctions (0..1), z the firing level last tick
+                        // (0..1: the release's flash), w when the cell last began to fire (simulation time, s: the census's waves)
 };
 // step G3: Bio.gs.w bits (the rest of the word / 32: the refolds in life in the cell's line, inherited)
 const GS_SET: u32 = 1u;          // the links in gw / gi were derived from the lattices (with the moire genome on)
@@ -533,6 +542,23 @@ const GS_EV_BIG: u32 = 16u;      // ... born with a big refold (one fold drawn a
 const G3E_BUF: u32 = 1u;         // the buffering gene costs upkeep (acts, not the neutral control)
 const G3E_REP: u32 = 2u;         // repair costs (the dose repaired)
 const G3E_COUNT: u32 = 4u;       // count the events (the heat ledger's step C9 block, row 7)
+// step Q1 (src/signals.js): the signal's vector counts per heat count of energy (XY_SCALE), the release outputs' factors
+const Q1_XY: f32 = 16.0;
+// the gene network's factor for release output k (0 water, 1 junctions): exp(u x) of the regulator it reads (1 while the outputs do not act)
+fn q1_fac(b: Bio, k: u32, acts: bool) -> f32 {
+  if (!acts) { return 1.0; }
+  let u = select(b.so.x, b.so.z, k == 1u);
+  let r = min(u32(max(select(b.so.y, b.so.w, k == 1u), 0.0)), 7u);
+  return grn_fac(u, b.gx[r >> 2u][r & 3u]);
+}
+// the receptor's hearing of a flavour vector v (any units): |v| x the tuning at its angle
+fn q1_hear(v: vec2f, pref: f32, width: f32) -> f32 {
+  let a = length(v);
+  if (a <= 0.0) { return 0.0; }
+  let w = clamp(width, 0.05, 3.5);
+  let c = dot(v / a, vec2f(cos(pref), sin(pref)));
+  return a * exp(-(1.0 - c) / (w * w));
+}
 // step T1b: the gene network's outputs (Bio.gu, Bio.go): each output multiplies an existing gene (its base level) by exp(u x) (at most
 // GRN_FMAX); a cell switches an engine off by expressing a regulator its output reads with a strongly negative gain
 const GRN_R: u32 = 8u;           // regulators

@@ -66,6 +66,10 @@ export const GENES = {
   // stroke tilt -1..1), the beat's phase (state), the gene network's FLAGELLUM and CILIA outputs' gains and regulators (src/motors.js)
   flagellum: 168, flagSign: 169, flagPlace: 170, cilia: 171, ciliaCouple: 172, ciliaTilt: 173, ciliaPhase: 174, chemo: 175,   // (step N2: chemo)
   tasteOxygen: 180, tasteExhaust: 181, tasteSpill: 182, tasteHeat: 183, range: 184,   // (step P3: the taste dials and the range)
+  // step Q1: the signal genes (src/signals.js): the flavour emitted and preferred (rad), the tuning width (rad), the release (0..1), the
+  // junction share, the signal's taste dial, the fast regulators (bits as a whole number), the release outputs' gains and regulators
+  sigEmit: 224, sigHear: 225, sigWidth: 226, sigRelease: 227, sigJunction: 228, sigTaste: 229, sigFast: 230,
+  grnRelWGain: 232, grnRelWReg: 233, grnRelJGain: 234, grnRelJReg: 235,
   grnFlagGain: 176, grnFlagReg: 177, grnCiliaGain: 178, grnCiliaReg: 179,
 };
 // words 19..30 are the cell's state, not genes (heading, accumulators, felt fields, conversion)
@@ -140,6 +144,7 @@ function gather(M, ctl) {
   if (M.flow && M.flow.census) flatten(M.flow.census, 'flow', out);           // step N2: substances that flow (motility, smell, patch tracking)
   if (M.senses && M.senses.census) flatten(M.senses.census, 'senses', out);   // step P3: taste genes, following, chases, glued groups
   if (M.folding && M.folding.census) flatten(M.folding.census, 'fold', out);   // step G3: folds, dose, buffering, hidden links
+  if (M.signals && M.signals.census) flatten(M.signals.census, 'sig', out);   // step Q1: emitters, listeners, relays, waves
   if (M.obstacles && M.obstacles.census) flatten(M.obstacles.census, 'obs', out);   // step G0b: the obstacles' last measure (moire.obstacles.measure())
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;

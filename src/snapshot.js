@@ -480,7 +480,9 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     // step G3: one from before the moire genome (genomes of 188 words) loads with the lattice words 0 and the moire genome OFF (the network's
     // weights as they were), so it runs on as it was saved
     const oldG3 = S.layout.cellWords === 96 && S.layout.bioWords === 188;
-    const widen = oldC10 || oldC12 || oldC13 || oldC12e || oldT1 || oldT1b || oldP1 || oldG2 || oldS2 || oldP3 || oldG3;
+    // step Q1: one from before the signal (genomes of 224 words) loads with the signal words 0 and the signal substance OFF
+    const oldQ1 = S.layout.cellWords === 96 && S.layout.bioWords === 224;
+    const widen = oldC10 || oldC12 || oldC13 || oldC12e || oldT1 || oldT1b || oldP1 || oldG2 || oldS2 || oldP3 || oldG3 || oldQ1;
     if (!widen && (S.layout.cellWords !== CELL_FLOATS || S.layout.bioWords !== BIO_FLOATS)) {
       throw new Error(`snapshot layout (cell ${S.layout.cellWords}, bio ${S.layout.bioWords} words) does not match this page (${CELL_FLOATS}, ${BIO_FLOATS})`);
     }

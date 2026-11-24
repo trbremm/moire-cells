@@ -2036,11 +2036,12 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   c.nbr = array<u32, 3>(nbIA.x | (nbIA.y << 16u), nbIA.z | (nbIA.w << 16u), nbIB.x | (nbIB.y << 16u));
   // step S2: what the motors did (the drawing, the census), the beat's phase on, the census (the frame's last tick)
   if (moF != 0u) {
-    c.motW = u32(round(clamp(flagA * select(1.0, gate, flagA > 0.0), 0.0, 1.0) * 255.0)) | (u32(round(clamp(ciliaA * gate, 0.0, 1.0) * 255.0)) << 8u) | (moFree << 16u);
+    c.motW = u32(round(clamp(flagA * select(1.0, gate, flagA > 0.0), 0.0, 1.0) * 255.0)) | (u32(round(clamp(ciliaA * gate, 0.0, 1.0) * 255.0)) << 8u) | (moFree << 16u)
+      | (c.motW & 0xff000000u);   // (step Q1: bits 24..31 the signal's flash, the eat pass's)
     bio.mc.z = moPhiN;
     if (S.xCount != 0u) { motor_census(bio, c, flagA, ciliaA, swimV, moFree, moTouch, cpN, cpS, cpC, cyS, cyC, moTurn, uW, curD, moPay); }
   } else {
-    c.motW = 0u;
+    c.motW = c.motW & 0xff000000u;   // (step Q1: the signal's flash kept)
   }
   // step F0: the JOB scores follow what the genes ask for now, as expressed, through a low-pass (cell_common.wgsl job_of, src/jobs.js)
   let jt = job_targets(bio, eng_mode(c.eng) != ENG_IDLE);

@@ -63,7 +63,12 @@ struct GrnP {
   zone: vec4f,      // the REFOLD tool: x y its centre (dish px), z its radius (0: none), w the fold it sets (0 home, 1 stress)
   shock: vec4f,     // the STRESS button: x added to every cell's stress, y x the refold rate; the LINE REFOLD (the zoo, the lab): z the founder
                     // line + 1 whose cells are put into the fold w this frame (-1: every cell; 0: none)
+  // ---- step Q1, A SIGNAL SUBSTANCE (src/signals.js writeGrn; words 48..51) ----
+  q1: vec4f,        // x the Q1G_* bits (u32); y tauFast (s: a FAST regulator's time constant); z w spare
 };
+const Q1G_ON: u32 = 1u;         // the signal's two senses (heard in water, through junctions) and two outputs (release to water, to junctions) exist
+const Q1G_FAST: u32 = 2u;       // the fast regulators act (Bio.sh.z bits: tauFast instead of tau)
+const GRN_NSRC_Q1: u32 = 27u;   // (sources with the signal's two senses)
 const G3_ON: u32 = 1u;          // the moire genome: the links derived from the lattices (off: the free weights and codes of step T1b)
 const G3_FOLD: u32 = 2u;        // the fold acts on the lattices' addresses
 const G3_FOLDLIFE: u32 = 4u;    // stress refolds a living cell (and calm folds it back)
@@ -99,14 +104,14 @@ fn g3_d2(a: vec2f, b: vec2f) -> f32 {
 // DERIVE the network's links from the lattices under a fold: regulator r reads source q (another regulator, or a sense) at the weight
 // wMax x exp(-d^2 / (2 sigma^2)) x cos(phase_r - phase_q + chi), keeping its 3 strongest (|w| >= wMin; none: 0) as step T1b's inputs
 fn g3_derive(th: ptr<function, array<f32, 8>>, lk: ptr<function, array<f32, 8>>, ph: ptr<function, array<f32, 8>>, fold: vec3f,
-             w: ptr<function, array<f32, 24>>, code: ptr<function, array<u32, 24>>) {
+             w: ptr<function, array<f32, 24>>, code: ptr<function, array<u32, 24>>, nsrc: u32) {
   var ax: array<vec2f, 8>;
   for (var r = 0u; r < GRN_R; r++) { ax[r] = g3_addr((*th)[r], (*lk)[r], fold); }
   let inv = 1.0 / max(2.0 * GP.sigma * GP.sigma, 1e-6);
   for (var r = 0u; r < GRN_R; r++) {
     var bw = array<f32, 3>(0.0, 0.0, 0.0);
     var bc = array<u32, 3>(0u, 0u, 0u);
-    for (var q = 1u; q < GRN_NSRC; q++) {
+    for (var q = 1u; q < nsrc; q++) {   // (step Q1: + the signal's two senses, 16 and 17 on the grid's next row)
       if (q == r + 1u) { continue; }
       var a: vec2f;
       var p: f32;
@@ -164,6 +169,8 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
   if (i >= S.count || (GP.flags & GF_RUN) == 0u) { return; }
   let c = cells[i];
   if ((c.flags & CELL_ALIVE) == 0u) { return; }
+  let q1on = (bitcast<u32>(GP.q1.x) & Q1G_ON) != 0u;   // (step Q1: the signal's senses and outputs)
+  let nsrc = select(GRN_NSRC, GRN_NSRC_Q1, q1on);
   var x = array<f32, 8>(bioW[i].gx[0].x, bioW[i].gx[0].y, bioW[i].gx[0].z, bioW[i].gx[0].w,
                         bioW[i].gx[1].x, bioW[i].gx[1].y, bioW[i].gx[1].z, bioW[i].gx[1].w);
   var w: array<f32, 24>;
@@ -265,7 +272,7 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
       if (!g3 && grn_rand(bs, 360u) < min(GP.rewire * ms, 1.0)) {
         let q = min(u32(grn_rand(bs, 361u) * 24.0), 23u);
         let v = grn_rand(bs, 362u);
-        let nc = select(1u + min(u32(v * 7.0 / 6.0 * f32(GRN_NSRC - 1u)), GRN_NSRC - 2u), 0u, v >= 6.0 / 7.0);
+        let nc = select(1u + min(u32(v * 7.0 / 6.0 * f32(nsrc - 1u)), nsrc - 2u), 0u, v >= 6.0 / 7.0);
         if (nc == 0u) { w[q] = 0.0; }
         else if (code[q] == 0u || w[q] == 0.0) { w[q] = GP.wNew * (2.0 * grn_rand(bs, 363u) - 1.0); }
         code[q] = nc;
@@ -444,6 +451,8 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
   // step P1: a meal inside (the share still to digest) and prey near (the step's Cell.eng)
   src[o + GRN_S_MEAL] = select(0.0, 1.0 - eng_prog(c.eng), eng_mode(c.eng) == ENG_DIGEST);
   src[o + GRN_S_PREY] = select(0.0, 1.0, (c.eng & ENG_NEAR) != 0u);
+  // step Q1: the signal HEARD in the water and through junctions (this tick: the signal pass, just before, wrote them)
+  if (q1on) { src[o + 16u] = clamp(bioW[i].ss.x, 0.0, 1.0); src[o + 17u] = clamp(bioW[i].ss.y, 0.0, 1.0); }
 
   // ---- step G3 in life: STRESS (heat, oxidation) may REFOLD the cell (calm folds it back; inherited, epigenetic), the DAMAGE DOSE
   // grows with heat and free t and is REPAIRED by the fidelity gene (the eat pass pays), and the BUFFER, weakened by stress, may let go ----
@@ -496,13 +505,14 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
     if ((gbits & GS_SET) == 0u || (GP.g3f & G3_DERALL) != 0u) { g3derive = true; }
     if (g3derive) {
       let fold = select(vec3f(0.0), select(fh.xyz, fs.xyz, fs.w > 0.5 && (GP.g3f & G3_FOLDNULL) == 0u), (GP.g3f & G3_FOLD) != 0u);
-      g3_derive(&th, &lk, &ph, fold, &w, &code);
+      g3_derive(&th, &lk, &ph, fold, &w, &code, nsrc);
       gsv.y = 0.0;
       gbits |= GS_SET;
       // the outputs: each reads the regulator whose folded lattice beats slowest with its own (the gains stay as they are)
       if ((GP.g3f & G3_OUT) != 0u) {
-        var oreg: array<u32, 20>;
-        for (var q = 0u; q < 20u; q++) {
+        var oreg: array<u32, 22>;
+        let nOutG = select(20u, 22u, q1on);   // (step Q1: + RELEASE TO WATER, TO JUNCTIONS on the grid's next row)
+        for (var q = 0u; q < nOutG; q++) {
           let oa = g3_out(q);
           var best = 1e9;
           var br = 0u;
@@ -519,6 +529,7 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
         bioW[i].relay.w = f32(oreg[17]);
         bioW[i].mg.y = f32(oreg[18]);
         bioW[i].mg.w = f32(oreg[19]);
+        if (q1on) { bioW[i].so.y = f32(oreg[20]); bioW[i].so.w = f32(oreg[21]); }
       }
       for (var r = 0u; r < GRN_R; r++) {
         bioW[i].gi[r >> 2u][r & 3u] = f32(code[3u * r] + 32u * code[3u * r + 1u] + 1024u * code[3u * r + 2u]);
@@ -542,13 +553,132 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
 
   // ---- the update: each regulator relaxes toward sigmoid(its input) ----
   let a = clamp(S.dt / max(GP.tau, 1e-3), 0.0, 1.0);
+  // step Q1: FAST regulators (Bio.sh.z, one bit each) relax with tauFast (GP.q1.y)
+  let fastM = select(0u, u32(max(bioW[i].sh.z, 0.0)) & 255u, (bitcast<u32>(GP.q1.x) & (Q1G_ON | Q1G_FAST)) == (Q1G_ON | Q1G_FAST));
+  let aF = clamp(S.dt / max(GP.q1.y, 1e-3), 0.0, 1.0);
   var xn: array<f32, 8>;
   for (var r = 0u; r < GRN_R; r++) {
     var h = bias[r];
     for (var k = 0u; k < 3u; k++) { let q = 3u * r + k; h += w[q] * src[code[q]]; }
     let t = 1.0 / (1.0 + exp(-clamp(h, -30.0, 30.0)));
-    xn[r] = clamp(x[r] + a * (t - x[r]), 0.0, 1.0);
+    xn[r] = clamp(x[r] + select(a, aF, ((fastM >> r) & 1u) != 0u) * (t - x[r]), 0.0, 1.0);
   }
   bioW[i].gx[0] = vec4f(xn[0], xn[1], xn[2], xn[3]);
   bioW[i].gx[1] = vec4f(xn[4], xn[5], xn[6], xn[7]);
+}
+
+// ===== step Q1, A SIGNAL SUBSTANCE: the cells' side in the gene network's pass (src/signals.js; README "Step Q1") =====
+// One more dispatch, BEFORE the network's (same bindings + the heat buffer and SQ): every slot's junction INBOX (the flavour vector its
+// neighbours released into it through formed junctions last tick, in the eat pass) is read and cleared; then for every live cell:
+//   MUTATION  a cell born this tick: its signal genes nudged (M2's scale; rare mode with the gene network's group): the flavours, the tuning
+//             width, the release, the junction share, the taste dial; each regulator's speed bit flipped now and then; the release outputs'
+//             gains nudged, now and then one switched on (a random regulator) or off
+//   HEARING   the flavour vector in the water at its centre (bilinear) and in its inbox, each through its receptor's tuning (q1_hear), as the
+//             network's two senses (Bio.ss.x, ss.y: 1 - e^-(heard / ref)). The NEUTRAL control hears the water at a random pixel and a random
+//             cell's inbox instead (noise with the dish's statistics)
+//   ONSET     the release's flash (the eat pass's, last tick, Cell.motW bits 24..31) crossing one half: the time it began to fire (Bio.ss.w)
+struct SigQ {
+  flags: u32,       // Q1S_* bits
+  base: u32,        // word offset in hb of the signal's copy 0, channel A (X at + n, Y at + 2 n)
+  inbox: u32,       // ... of the inboxes (2 words per cell slot)
+  n: u32,           // pixels
+  hw: u32,
+  hh: u32,
+  _p0: u32,
+  _p1: u32,
+  px: f32,          // CSS px per pixel
+  kW: f32,          // heard in water: the vector's counts (tuned) x kW = heard / hearW
+  kJ: f32,          // heard through junctions: the inbox's counts this tick (tuned) x kJ = heard per s / hearJ
+  _p2: f32,
+};
+@group(0) @binding(6) var<storage, read_write> hbs: array<atomic<i32>>;
+@group(0) @binding(7) var<uniform> SQ: SigQ;
+const Q1S_ON: u32 = 1u;
+const Q1S_NULL: u32 = 2u;
+const Q1S_MUT: u32 = 4u;
+
+// the signal's flavour vector (counts) at a position (dish px), bilinear between the pixel centres
+fn q1_xy_at(p: vec2f) -> vec2f {
+  let gp = p / SQ.px - 0.5;
+  let b = floor(gp);
+  let f = gp - b;
+  var v = vec2f(0.0);
+  for (var k = 0u; k < 4u; k++) {
+    let dx = k & 1u;
+    let dy = k >> 1u;
+    let q = clamp(vec2i(b) + vec2i(i32(dx), i32(dy)), vec2i(0), vec2i(i32(SQ.hw) - 1, i32(SQ.hh) - 1));
+    let j = u32(q.y) * SQ.hw + u32(q.x);
+    let wt = select(1.0 - f.x, f.x, dx == 1u) * select(1.0 - f.y, f.y, dy == 1u);
+    v += wt * vec2f(f32(atomicLoad(&hbs[SQ.base + SQ.n + j])), f32(atomicLoad(&hbs[SQ.base + 2u * SQ.n + j])));
+  }
+  return v;
+}
+fn q1_wrap(a: f32) -> f32 { return a - TAU * floor(a / TAU); }
+
+@compute @workgroup_size(64)
+fn signal(@builtin(global_invocation_id) id: vec3u) {
+  let i = id.x;
+  if (i >= S.count || (SQ.flags & Q1S_ON) == 0u) { return; }
+  let ib = SQ.inbox + 2u * i;
+  let jin = vec2f(f32(atomicExchange(&hbs[ib], 0)), f32(atomicExchange(&hbs[ib + 1u], 0)));
+  let c = cells[i];
+  if ((c.flags & CELL_ALIVE) == 0u) { return; }
+  var sg = bioW[i].sg;
+  var sh = bioW[i].sh;
+  var so = bioW[i].so;
+  var ss = bioW[i].ss;
+  // ---- a newborn: the signal genes mutate (the step copied her mother's) ----
+  if ((c.flags & CELL_BORN) != 0u && (SQ.flags & Q1S_MUT) != 0u && (S.rules & RULE_MUT) != 0u) {
+    let mom = c.mom & 0x7fffffffu;
+    let pdose = select(0.0, cell_dose(cells[min(mom, S.count - 1u)].flags), mom < S.count);
+    let hx = select(0.0, min(FL.hm.x * pdose, max(FL.hm.y - 1.0, 0.0)), FL.hm.x > 0.0);
+    let pfid = select(0.0, bioW[min(mom, S.count - 1u)].conv.w, mom < S.count);
+    let rare = (bitcast<u32>(FL.qA.y) & MUT_RARE) != 0u;
+    let rmask = u32(max(bioW[i].resp.w, 0.0));
+    let ms = select(fid_birth(true, hx, pfid, FL.hm) * S.mutSize * max(FL.qA.z, 0.0),
+                    select(0.0, S.mutSize * max(FL.qB.y, 0.0), mg_has(rmask, MG_GRN)), rare);
+    if (ms > 0.0) {
+      let bs = pcg(c.seed ^ pcg(S.tick * 0x2545f491u + 0x51677132u));
+      sg.x = q1_wrap(sg.x + ms * 0.05 * gauss(bs, 1u));
+      sg.y = q1_wrap(sg.y + ms * 0.05 * gauss(bs, 2u));
+      sg.z = clamp(sg.z * exp(ms * 0.05 * gauss(bs, 3u)), 0.1, 3.0);
+      sg.w = clamp(sg.w + ms * 0.02 * gauss(bs, 4u), 0.0, 1.0);
+      sh.x = clamp(sh.x + ms * 0.03 * gauss(bs, 5u), 0.0, 1.0);
+      sh.y = clamp(sh.y + ms * 0.05 * gauss(bs, 6u), -1.0, 1.0);
+      var fm = u32(max(sh.z, 0.0)) & 255u;
+      for (var r = 0u; r < 8u; r++) { if (rand01(bs, 10u + r) < min(0.005 * ms, 1.0)) { fm ^= 1u << r; } }
+      sh.z = f32(fm);
+      if (so.x != 0.0) { so.x = clamp(so.x + ms * GP.uStep * gauss(bs, 20u), -GRN_UMAX, GRN_UMAX); }
+      if (so.z != 0.0) { so.z = clamp(so.z + ms * GP.uStep * gauss(bs, 21u), -GRN_UMAX, GRN_UMAX); }
+      if (rand01(bs, 22u) < min(GP.orewire * ms, 1.0)) {
+        let k = rand01(bs, 23u) < 0.5;
+        let rg = f32(min(u32(rand01(bs, 24u) * 8.0), 7u));
+        let nu = GP.uNew * (2.0 * rand01(bs, 25u) - 1.0);
+        let off = rand01(bs, 26u) < 0.2;
+        if (k) { so.z = select(select(so.z, nu, so.z == 0.0), 0.0, off); so.w = rg; }
+        else { so.x = select(select(so.x, nu, so.x == 0.0), 0.0, off); so.y = rg; }
+      }
+      bioW[i].sg = sg;
+      bioW[i].sh = sh;
+      bioW[i].so = so;
+    }
+  }
+  // ---- HEARING ----
+  var pw = c.pos;
+  var jv = jin;
+  if ((SQ.flags & Q1S_NULL) != 0u) {   // (the neutral control: somewhere else in the dish, some other cell's inbox)
+    let h = pcg(c.seed ^ pcg(S.tick * 0x9e3779b9u + 0x6e756c6cu));
+    pw = vec2f(rand01(h, 1u) * f32(SQ.hw), rand01(h, 2u) * f32(SQ.hh)) * SQ.px;
+    let j = min(u32(rand01(h, 3u) * f32(S.count)), S.count - 1u);
+    jv = vec2f(f32(atomicLoad(&hbs[SQ.inbox + 2u * j])), f32(atomicLoad(&hbs[SQ.inbox + 2u * j + 1u])));
+  }
+  let hW = q1_hear(q1_xy_at(pw), sg.y, sg.z) * SQ.kW;
+  let hJ = q1_hear(jv, sg.y, sg.z) * SQ.kJ;
+  ss.x = 1.0 - exp(-hW);
+  ss.y = 1.0 - exp(-hJ);
+  // ---- the firing's onset (for the census's waves) ----
+  let fl = f32((c.motW >> 24u) & 255u) / 255.0;
+  if (fl > 0.5 && ss.z <= 0.5) { ss.w = S.time; }
+  ss.z = fl;
+  bioW[i].ss = ss;
 }

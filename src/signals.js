@@ -30,9 +30,21 @@
 
 import { loadShader } from './gpu.js';
 import { HEAT_COMMON_URL, HEAT_SCALE, LEDGER_WORDS, fmt } from './heat.js';
+import { SIGNAL_SENSES } from './folding.js';
+import { CELL_FLOATS } from './cells.js';
+import { BIO_FLOATS } from './genome.js';
+import { readBuffer } from './snapshot.js';
+
+const B_SG = 224, B_SH = 228, B_SO = 232, B_SS = 236, B_FOUNDER = 7, B_GX = 84, B_GW = 100, B_GI = 124;
+const C_FLAGS = 9, C_KIND = 8, C_MOTW = 93;
+const SRC_W = 25, SRC_J = 26;   // the input codes of the senses heard in water, through junctions (9 + 16, 9 + 17)
+const deg = (a) => Math.round(((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) * 180 / Math.PI);
 
 export const XY_SCALE = 16;            // flavour vector counts per heat count of energy (signal.wgsl, cell_eat.wgsl, cell_grn.wgsl)
 export const SIG_BLOCKS_GRID = 6;      // two copies of A, X, Y
+export const Q1 = { ON: 1, JUNC: 2, TASTE: 4, NULL: 8 };   // EatP.q1[0].x bits (cell_eat.wgsl Q1E_*)
+const SQ_BYTES = 48;                   // struct SigQ (cell_grn.wgsl)
+const FLASH_TAU = 0.25;                // s: a release's flash fades this fast
 const SP_BYTES = 80;                   // struct SigP
 const ST_SLOT = 256;                   // struct SigT slots, bound with a dynamic offset
 const MAX_TICKS = 320, MAX_SUB = 8;
@@ -61,6 +73,7 @@ export class Signals {
       null: false,        // the NEUTRAL control (?signalnull=1): heard at a random place, the taste does not steer
       mutate: true,       // the genes mutate at births (?sigmut=0)
       censusEvery: 5,     // s of simulated time between the census's read-backs (0: never) (?sigcensus=)
+      waveWindow: 4,      // s: the census's wave detector looks at cells that began to fire this recently
       puffAmount: 0.4,    // the pipette: energy per puff (booked as energy in)
       puffRadius: 2.5,    // ... its radius (R)
       puffFlavour: 0,     // ... its flavour (rad)
@@ -72,6 +85,8 @@ export class Signals {
     this.puffs = [];
     this.nSub = 2; this.k = 0;
     this.census = null;
+    this.busy = false;
+    this.lastAt = -1e9;
   }
 
   async init(device) {
@@ -97,6 +112,8 @@ export class Signals {
     this.pAB = new ArrayBuffer(SP_BYTES);
     this.tBuf = device.createBuffer({ label: 'signal tick params', size: ST_SLOTS * ST_SLOT, usage: U.UNIFORM | U.COPY_DST });
     this.tAB = new ArrayBuffer(ST_SLOTS * ST_SLOT);
+    this.qBuf = device.createBuffer({ label: 'signal cells params', size: 64, usage: U.UNIFORM | U.COPY_DST });   // struct SigQ (cell_grn.wgsl)
+    this.qAB = new ArrayBuffer(64);
   }
 
   get on() { return !!this.params.on; }
@@ -134,8 +151,10 @@ export class Signals {
   beginFrame(encoder, frame, ticks) {
     const H = this.heat;
     this.active = false;
+    SIGNAL_SENSES.on = this.on;
     if (!this.on || !H || !H.buffer || !this.pipes) return;
     const p = this.params, dt = frame.tickDt, a = H.px / H.R;
+    this.tickDt = dt;
     const kTot = Math.max(0, p.spread) * dt / (a * a);
     this.nSub = Math.max(2, Math.min(MAX_SUB, 2 * Math.ceil(kTot / (2 * K_MAX))));   // (even: copy 0 is current at every tick's start)
     this.k = Math.min(K_MAX, kTot / this.nSub);
@@ -238,6 +257,147 @@ export class Signals {
     this.ledger = { time: rec.time, dish: wide(LG_SIG), puff: T.puff, rate: { decay: rate(1), puff: rate(2), made: rate(3), junc: rate(4) } };
   }
 
+  // ---------------------------------------------------------------- the cells' words
+  /** The gene network's words (struct GrnP q1, from word o): the senses and outputs exist, fast regulators, tauFast. */
+  writeGrn(u, f, o) {
+    const p = this.params;
+    u[o] = this.on ? 1 | (p.fast ? 2 : 0) : 0; f[o + 1] = Math.max(0.02, Number(p.tauFast) || 0.3); f[o + 2] = 0; f[o + 3] = 0;
+  }
+  /** The signal dispatch's words (struct SigQ in cell_grn.wgsl), once a frame (with the gene network's uniform). */
+  writeQ() {
+    const H = this.heat, p = this.params;
+    if (!H || !H.buffer) return;
+    const u = new Uint32Array(this.qAB), f = new Float32Array(this.qAB), a = H.px / H.R, dt = this.tickDt || 1 / 60;
+    u[0] = (this.on && this.active ? 1 : 0) | (p.null ? 2 : 0) | (p.mutate ? 4 : 0);
+    u[1] = this.base(); u[2] = this.inbox; u[3] = H.n; u[4] = H.hw; u[5] = H.hh; u[6] = 0; u[7] = 0;
+    f[8] = H.px;
+    f[9] = 1 / (XY_SCALE * HEAT_SCALE * a * a * Math.max(1e-9, p.hearW));
+    f[10] = 1 / (XY_SCALE * HEAT_SCALE * dt * Math.max(1e-9, p.hearJ));
+    f[11] = 0;
+    this.device.queue.writeBuffer(this.qBuf, 0, this.qAB, 0, SQ_BYTES);
+  }
+  /** The eat pass's words (struct EatP q1[2], from word o), dt the tick: the release, the junctions, the taste, the flash. */
+  writeEat(u, f, o, dt) {
+    const H = this.heat, p = this.params, on = this.on && this.active && H && H.buffer;
+    const a = H ? H.px / H.R : 0.5, per = Math.max(0, Number(p.power) || 0) * HEAT_SCALE * dt;
+    u[o] = on ? Q1.ON | (p.junction ? Q1.JUNC : 0) | (p.taste && !p.null ? Q1.TASTE : 0) | (p.null ? Q1.NULL : 0) : 0;
+    f[o + 1] = per; u[o + 2] = on ? this.base() : 0; u[o + 3] = on ? this.inbox : 0;
+    u[o + 4] = on ? H.n : 0;
+    f[o + 5] = 0.1 * Math.max(1e-9, p.hearW) * XY_SCALE * HEAT_SCALE * a * a;   // the taste's floor (tuned counts)
+    f[o + 6] = Math.exp(-dt / FLASH_TAU); f[o + 7] = Math.max(1e-9, 0.25 * per);
+  }
+
+  // ---------------------------------------------------------------- the census
+  maybeCensus(time) {
+    const every = this.params.censusEvery;
+    if (!this.on || !(every > 0) || this.busy || (time - this.lastAt < every && time >= this.lastAt)) return;
+    this.lastAt = time;
+    this.read(time).catch((e) => { console.warn('signals census:', e); });
+  }
+  /** The census now (a fresh read-back; console and experiment evals). */
+  now() { return this.read(window.moire && window.moire.time ? window.moire.time() : this.lastAt); }
+
+  /**
+   * Read the genomes and cells back: EMITTERS (release gene x the outputs' factors, as expressed now, above 2 % of gene 1), LISTENERS (the
+   * network reads a heard sense: a cached link from source 25 or 26), WIRED RELAYS (an emitter whose release output's regulator hears, or
+   * reads a regulator that hears), fast regulators, what is heard, who fires now, the FLAVOURS per founder line, and a crude WAVE detector:
+   * pairs of near cells (within 3 R) that began to fire within the last `waveWindow` s, apart in time by 0.03 s or more: their distance /
+   * onset gap is a pulse speed (median, R/s).
+   */
+  async read(time = 0) {
+    if (this.busy) return this.census;
+    this.busy = true;
+    try {
+      const C = this.cells, d = C.device, n = C.count, B = BIO_FLOATS, CF = CELL_FLOATS, R = C.R;
+      const [bioAB, cellAB] = await Promise.all([readBuffer(d, C.bioBuf[C.bioCur], 0, n * B * 4), readBuffer(d, C.cellBuf, 0, n * CF * 4)]);
+      const g = new Float32Array(bioAB), f = new Float32Array(cellAB), u = new Uint32Array(cellAB);
+      const acts = !!(C.grn && C.grn.acts);
+      const fac = (b, k) => {
+        if (!acts) return 1;
+        const gain = g[b + B_SO + 2 * k] || 0, r = Math.max(0, Math.min(7, Math.round(g[b + B_SO + 2 * k + 1] || 0)));
+        const x = Math.max(0, Math.min(1, g[b + B_GX + r] || 0));
+        return Math.min(Math.exp(Math.max(-8, Math.min(8, gain)) * x), 4);
+      };
+      const hears = (b, r) => {   // regulator r reads a heard sense (a cached link)
+        const cw = Math.max(0, Math.round(g[b + B_GI + r] || 0));
+        for (let k = 0; k < 3; k++) { const q = (cw >> (5 * k)) & 31; if ((q === SRC_W || q === SRC_J) && Math.abs(g[b + B_GW + 3 * r + k] || 0) >= 0.5) return true; }
+        return false;
+      };
+      const feeds = (b, r) => {   // regulator r reads a regulator that hears
+        const cw = Math.max(0, Math.round(g[b + B_GI + r] || 0));
+        for (let k = 0; k < 3; k++) { const q = (cw >> (5 * k)) & 31; if (q >= 1 && q <= 8 && Math.abs(g[b + B_GW + 3 * r + k] || 0) >= 0.5 && hears(b, q - 1)) return true; }
+        return false;
+      };
+      let N = 0, carriers = 0, emit = 0, emitW = 0, emitJ = 0, listen = 0, relay = 0, fastC = 0, fastB = 0, firing = 0, hearW = 0, hearJ = 0, junc = 0;
+      let sRel = 0, sJs = 0, sTaste = 0, sTasteA = 0, sWidth = 0;
+      const lines = new Map(), bins = new Array(12).fill(0), recent = [];
+      const tnow = time, win = this.params.waveWindow;
+      for (let i = 0; i < n; i++) {
+        const o = i * CF;
+        if (!(u[o + C_FLAGS] & 1)) continue;
+        N++;
+        const b = i * B, rel = Math.max(0, Math.min(1, g[b + B_SG + 3] || 0)), js = Math.max(0, Math.min(1, g[b + B_SH] || 0));
+        sRel += rel; sJs += js; sTaste += g[b + B_SH + 1] || 0; sTasteA += Math.abs(g[b + B_SH + 1] || 0); sWidth += g[b + B_SG + 2] || 0;
+        if (rel > 0.02) carriers++;
+        const eW = rel * (1 - js) * fac(b, 0), eJ = rel * js * fac(b, 1);
+        const a0 = g[b + B_SG] || 0, a = ((a0 % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+        if (eW + eJ > 0.02) { emit++; if (eW >= eJ) emitW++; else emitJ++; bins[Math.min(11, Math.floor(a / (Math.PI / 6)))]++; }
+        let lis = false;
+        for (let r = 0; r < 8; r++) if (hears(b, r)) lis = true;
+        if (lis) listen++;
+        if (eW + eJ > 0.02 && lis && acts) {
+          const rw = Math.round(g[b + B_SO + 1] || 0), rj = Math.round(g[b + B_SO + 3] || 0);
+          const wired = (g[b + B_SO] && (hears(b, rw) || feeds(b, rw))) || (g[b + B_SO + 2] && (hears(b, rj) || feeds(b, rj)));
+          if (wired) relay++;
+        }
+        const fm = Math.round(g[b + B_SH + 2] || 0) & 255;
+        if (fm) { fastC++; for (let r = 0; r < 8; r++) if ((fm >> r) & 1) fastB++; }
+        hearW += g[b + B_SS] || 0; hearJ += g[b + B_SS + 1] || 0;
+        if (((u[o + C_MOTW] >>> 24) & 255) / 255 > 0.5) firing++;
+        const w = u[o + C_KIND];
+        if (((w >>> 8) & ~w) & 63) junc++;
+        const on = g[b + B_SS + 3] || 0;
+        if (on > 0 && tnow - on <= win && tnow - on >= 0) recent.push([f[o], f[o + 1], on]);
+        const id = Math.round(g[b + B_FOUNDER] || 0);
+        if (!lines.has(id)) lines.set(id, { n: 0, cx: 0, cy: 0, emit: 0 });
+        const L = lines.get(id);
+        L.n++; L.cx += Math.cos(a); L.cy += Math.sin(a); if (eW + eJ > 0.02) L.emit++;
+      }
+      // the waves: onset gaps between near cells
+      const cs = 3 * R, grid = new Map(), key = (x, y) => `${Math.floor(x / cs)},${Math.floor(y / cs)}`;
+      recent.forEach((c, k) => { const kk = key(c[0], c[1]); if (!grid.has(kk)) grid.set(kk, []); grid.get(kk).push(k); });
+      const speeds = [];
+      recent.forEach((c, k) => {
+        const gx = Math.floor(c[0] / cs), gy = Math.floor(c[1] / cs);
+        for (let a = -1; a <= 1; a++) for (let b2 = -1; b2 <= 1; b2++) {
+          const L = grid.get(`${gx + a},${gy + b2}`);
+          if (!L) continue;
+          for (const j of L) {
+            if (j <= k) continue;
+            const e = recent[j], dd = Math.hypot(e[0] - c[0], e[1] - c[1]), dt = Math.abs(e[2] - c[2]);
+            if (dd <= cs && dd > 0.5 * R && dt >= 0.03) speeds.push(dd / R / dt);
+          }
+        }
+      });
+      speeds.sort((x, y) => x - y);
+      const top = [...lines.entries()].sort((x, y) => y[1].n - x[1].n).slice(0, 4).map(([id, L]) => ({
+        line: id, n: L.n, emit: L.emit, flavour: deg(Math.atan2(L.cy, L.cx)), spread: L.n ? 1 - Math.hypot(L.cx, L.cy) / L.n : 0 }));
+      const out = {
+        time, n: N, carriers, emitters: emit, toWater: emitW, toJunctions: emitJ, listeners: listen, relays: relay, fast: fastC,
+        fastBits: fastC ? fastB / fastC : 0, firing, junctionCells: junc,
+        heard: { water: N ? hearW / N : 0, junctions: N ? hearJ / N : 0 },
+        genes: { release: N ? sRel / N : 0, junction: N ? sJs / N : 0, taste: N ? sTaste / N : 0, tasteAbs: N ? sTasteA / N : 0, width: N ? sWidth / N : 0 },
+        flavours: bins.filter((x) => emit && x >= 0.05 * emit).length, lines: top,
+        wave: { onsets: recent.length, pairs: speeds.length, speed: speeds.length ? speeds[Math.floor(speeds.length / 2)] : 0,
+          p90: speeds.length ? speeds[Math.floor(0.9 * (speeds.length - 1))] : 0 },
+      };
+      this.census = out;
+      return out;
+    } finally {
+      this.busy = false;
+    }
+  }
+
   // ---------------------------------------------------------------- the pipette
   /** A puff of signal at (x, y) (dish px): energy e (booked as energy in), flavour f (rad), radius r (R). Returns false when off. */
   puff(x, y, f = this.params.puffFlavour, e = this.params.puffAmount, r = this.params.puffRadius) {
@@ -249,9 +409,12 @@ export class Signals {
   // ---------------------------------------------------------------- words for the panel
   panelLine(compact = false) {
     if (!this.on) return 'SIGNALS off';
-    const L = this.ledger;
+    const L = this.ledger, c = this.census;
     const lr = L ? `in water ${fmt(L.dish)} · made ${fmt(L.rate.made)}/s · via junctions ${fmt(L.rate.junc)}/s · faded ${fmt(L.rate.decay)}/s` : '…';
-    return compact ? `SIGNALS ${L ? fmt(L.dish) : '…'}` : `SIGNALS  ${lr}${this.params.null ? ' · NULL' : ''}`;
+    const cz = c ? `emitters ${c.emitters} (water ${c.toWater}, junctions ${c.toJunctions}) · listeners ${c.listeners} · relays ${c.relays} · fast ${c.fast}` +
+      ` · firing ${c.firing} · flavours ${c.flavours}${c.wave.pairs >= 3 ? ` · pulses ${c.wave.speed.toFixed(1)} R/s (${c.wave.pairs})` : ''}` : '…';
+    if (compact) return `SIGNALS ${c ? `emit ${c.emitters} · relays ${c.relays} · firing ${c.firing}` : '…'}`;
+    return `SIGNALS  ${cz} · ${lr}${this.params.null ? ' · NULL' : ''}`;
   }
   overlayLines() {
     const p = this.params, on = (x) => (x ? 'on' : 'off');

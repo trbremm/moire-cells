@@ -36,18 +36,18 @@ import { BIO_FLOATS, BIO_GRN } from './genome.js';
 
 export const GRN_R = 8;
 export const OUTPUTS = ['pigment', 'engine 1', 'engine 2', 'engine 3', 'wall', 'thickness', 'stiffness', 'glue', 'pumps', 'channels',
-  'kin channels', 'display', 'division', 'motility', 'emit A', 'emit B', 'engulf', 'shape', 'flagellum', 'cilia'];   // (step S2: + flagellum, cilia, in mg)   // (step P1: + engulf, its gain and regulator in gm.z, gm.w;
+  'kin channels', 'display', 'division', 'motility', 'emit A', 'emit B', 'engulf', 'shape', 'flagellum', 'cilia', 'release water', 'release junctions'];   // (step Q1: + the releases, in so)   // (step S2: + flagellum, cilia, in mg)   // (step P1: + engulf, its gain and regulator in gm.z, gm.w;
                                                                                               //  step S1: + shape, the elongation gene's, in relay.z, relay.w)
 const NOUT = OUTPUTS.length;
 export const SENSES = ['contact', 'field A', 'A spread', 'field B', 'light', 'free t', 'battery', 'swelling', 'fuel', 'linkers', 'trace',
-  'integrity', 'signal', 'heat', 'meal', 'prey'];   // (step P1: + a meal inside, prey near)
+  'integrity', 'signal', 'heat', 'meal', 'prey', 'heard water', 'heard junctions'];   // (step Q1: + the signal heard)   // (step P1: + a meal inside, prey near)
 const GF = { RUN: 1, SIGNAL: 2, KINW: 4, MUT: 8 };
 const GRN_ACT = 1;
 // the Bio words (genome.js BIO_GRN = 84)
 const W_X = 0, W_B = 8, W_W = 16, W_I = 40, W_U = 48, W_O = 64, W_M = 68;
 import { CELL_FLOATS } from './cells.js';
 const C_POS = 0, C_FLAGS = 9, C_BAT = 16, C_NBR = 60, C_FELT1 = 83, C_SNS0 = 86, C_SNS1 = 87;
-const UNIFORM_BYTES = 192;   // (step G3: + the moire genome's words 12..47, 48 until then)
+const UNIFORM_BYTES = 208;   // (step Q1: + q1, words 48..51, 192 until then; step G3: + the moire genome's words 12..47, 48 until then)
 
 /** The network's numbers from genome g at word o (o = cell x BIO_FLOATS): { x, bias, w, code, u, reg, bc, kw }. */
 export function grnOf(g, o = 0) {
@@ -65,6 +65,7 @@ export function grnOf(g, o = 0) {
   u.push(g[b + W_M + 2]); reg.push(Math.max(0, Math.min(7, Math.round(g[b + W_M + 3]) || 0)));   // (step P1: the 17th output, ENGULF)
   u.push(g[o + 14] || 0); reg.push(Math.max(0, Math.min(7, Math.round(g[o + 15]) || 0)));        // (step S1: the 18th, SHAPE, in relay.z, relay.w)
   for (const w of [176, 178]) { u.push(g[o + w] || 0); reg.push(Math.max(0, Math.min(7, Math.round(g[o + w + 1]) || 0))); }   // (step S2: FLAGELLUM, CILIA, in mg)
+  for (const w of [232, 234]) { u.push(g[o + w] || 0); reg.push(Math.max(0, Math.min(7, Math.round(g[o + w + 1]) || 0))); }   // (step Q1: the RELEASES, in so)
   return { x, bias, w, code, u, reg, bc: Math.round(g[b + W_M]) & 7, kw: g[b + W_M + 1] };
 }
 /**
@@ -182,22 +183,25 @@ export class Grn {
 
   /** The tick's dispatch (after the step, which flipped bioCur: bioBuf[bioCur] is this tick's genome copy), Sim slot t. */
   encodeTick(encoder, t, slot) {
-    const C = this.cells, d = C.device;
-    if (!this.params.on || !C.pipes.grn) return;
+    const C = this.cells, d = C.device, Q = C.signals;
+    const sig = !!(Q && Q.on && Q.active && C.pipes.signal);   // step Q1: the signal's dispatch (hearing, the inboxes, its genes' mutation)
+    if ((!this.params.on && !sig) || !C.pipes.grn) return;
     if (!this.uniform) this.uniform = d.createBuffer({ label: 'grn params', size: UNIFORM_BYTES, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
-    if (!this.bgs || this.bgKey !== C.cellBuf || this.bgBio !== C.bioBuf[0]) {
-      this.bgKey = C.cellBuf; this.bgBio = C.bioBuf[0];
+    const H = C.heat;
+    if (!this.bgs || this.bgKey !== C.cellBuf || this.bgBio !== C.bioBuf[0] || this.bgHeat !== H.version) {
+      this.bgKey = C.cellBuf; this.bgBio = C.bioBuf[0]; this.bgHeat = H.version;
       const b = (binding, buffer, size) => ({ binding, resource: size ? { buffer, size } : { buffer } });
       this.bgs = [0, 1].map((k) => d.createBindGroup({
         label: 'cell grn', layout: C.grnL.bgl,
-        entries: [b(0, C.simBuf, 256), b(1, C.cellBuf), b(2, C.bioBuf[k]), b(3, C.bioBuf[1 - k]), b(4, this.uniform), b(5, C.fieldsBuf)],
+        entries: [b(0, C.simBuf, 256), b(1, C.cellBuf), b(2, C.bioBuf[k]), b(3, C.bioBuf[1 - k]), b(4, this.uniform), b(5, C.fieldsBuf),
+          b(6, H.buffer), b(7, Q.qBuf)],   // (step Q1: the heat buffer, the signal's words)
       }));
     }
-    if (t === 0) this.writeUniform();
+    if (t === 0) { this.writeUniform(); if (Q) Q.writeQ(); }
     const pass = encoder.beginComputePass({ label: 'cell grn' });
-    pass.setPipeline(C.pipes.grn);
     pass.setBindGroup(0, this.bgs[C.bioCur], [t * slot]);
-    pass.dispatchWorkgroups(Math.ceil(C.count / 64));
+    if (sig) { pass.setPipeline(C.pipes.signal); pass.dispatchWorkgroups(Math.ceil(C.count / 64)); }
+    if (this.params.on) { pass.setPipeline(C.pipes.grn); pass.dispatchWorkgroups(Math.ceil(C.count / 64)); }
     pass.end();
   }
 
@@ -207,6 +211,7 @@ export class Grn {
     f[3] = Math.max(0, p.wStep); f[4] = Math.max(0, p.uStep); f[5] = Math.max(0, p.rewire); f[6] = Math.max(0, p.orewire);
     f[7] = Math.max(0, p.dup); f[8] = Math.max(0, p.bjump); f[9] = Math.max(0, p.wNew); f[10] = Math.max(0, p.uNew); f[11] = 0;
     if (this.cells.folding) this.cells.folding.writeGrn(u, f, 12);   // step G3: the moire genome (GrnP g3f..)
+    if (this.cells.signals) this.cells.signals.writeGrn(u, f, 48);   // step Q1: the signal's senses and outputs, fast regulators (GrnP q1)
     this.cells.device.queue.writeBuffer(this.uniform, 0, ab);
   }
 

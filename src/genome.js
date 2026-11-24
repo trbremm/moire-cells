@@ -73,13 +73,14 @@ import { fieldDefaults, founderGates, BIO_FG } from './guides.js';
 import { stampFounderGlue } from './glue.js';
 import { stampLattices, founderOutputs } from './folding.js';
 
-export const BIO_FLOATS = 224;  // (188 until step G3's moire genome; 180 until step P3's taste genes; 168 until step S2's motor genes; 156 until step G2's duplicate slots and families; 40 until step C6c's membrane genes, 44 until step C7's pumps, 48 until step C10's walls, 52 until step C12b's lipids,
+export const BIO_FLOATS = 240;  // (224 until step Q1's signal genes; 188 until step G3's moire genome; 180 until step P3's taste genes; 168 until step S2's motor genes; 156 until step G2's duplicate slots and families; 40 until step C6c's membrane genes, 44 until step C7's pumps, 48 until step C10's walls, 52 until step C12b's lipids,
                                 //  56 until step C13's field genes and gates, 76 until step T1a's marker and kin channels, 84 until step T1b's gene network)
 export const BIO_GRN = 84;      // step T1b: the gene network's first word (Bio.gx)
 export const BIO_G2 = 156;      // step G2: the duplicate slots' first word (Bio.dx; Bio.df at 160, Bio.dg at 164)
 export const BIO_MO = 168;      // step S2: the motor genes' first word (Bio.mo; Bio.mc at 172, Bio.mg at 176)
 export const BIO_T1 = 76;       // step T1a: the first marker word (Bio.mark; Bio.kin at 80)
 export const BIO_G3 = 188;      // step G3: the regulators' lattice angles (Bio.la; lk at 196, lp at 204, fh 212, fs 216, gs 220)
+export const BIO_Q1 = 224;      // step Q1: the signal genes (Bio.sg; sh at 228, so 232, ss 236: state)
 export const BIO_BYTES = BIO_FLOATS * 4;
 
 export const KEY_SPAN = Math.PI / 3;
@@ -349,7 +350,7 @@ export function blankGenes(g, o = 0) {
   g[o + 73] = 1; g[o + 74] = 0; g[o + 75] = 0;                                        // push 1, stretch tolerance 0, ion channels 0
   g[o + 80] = 0;                                                                      // no kin channels
 }
-export const WILD_GROUPS = ['body', 'membrane', 'pumps', 'walls', 'lipids', 'fields', 'gates', 'kin', 'grn', 'engulf', 'shape', 'motors', 'taste'];
+export const WILD_GROUPS = ['body', 'membrane', 'pumps', 'walls', 'lipids', 'fields', 'gates', 'kin', 'grn', 'engulf', 'shape', 'motors', 'taste', 'signal'];
 export const BIO_TASTE = 180;   // step P3: the taste dials' first word (Bio.ta; the range at 184)
 // step P3: every founder's TASTE genes (std and blank: none, the range 0; so a taste must evolve), and WILD founders' (group 'taste'): each dial
 // anywhere in -1..1, the range anywhere in -2..2. Their own random stream (a seed's other genes stay as they were)
@@ -358,6 +359,24 @@ export function tasteGenes(g, rng, o = 0, wild = false, groups = WILD_GROUPS) {
   const W = wild && groups.includes('taste'), b = o + BIO_TASTE;
   for (let k = 0; k < 4; k++) g[b + k] = W ? d[k] : 0;
   g[b + 4] = W ? r : 0; g[b + 5] = 0; g[b + 6] = 0; g[b + 7] = 0;
+}
+// step Q1: every founder's SIGNAL genes (src/signals.js). Std and blank founders are SILENT (release 0, no taste, no fast regulators, no
+// outputs; so using the signal must evolve), each with a FLAVOUR of its own (emits and prefers the same: a private language per line), a
+// moderate tuning (0.6 rad) and half its release through junctions. WILD founders (group 'signal'): release anywhere in 0..1 (half of them 0),
+// a preferred flavour their own or anywhere (half each), tuning anywhere in 0.2..3 (log), junction share and taste dial over their spans, each
+// regulator fast one time in four, and (with the group 'grn' too) each release output four times in ten from a random regulator at a gain in
+// -3..3. Their own random stream (a seed's other genes stay as they were)
+export function signalGenes(g, rng, o = 0, wild = false, groups = WILD_GROUPS) {
+  const fl = U(rng, 0, 2 * Math.PI), own = rng() < 0.5, pref = U(rng, 0, 2 * Math.PI), width = logU(rng, 0.2, 3);
+  const rel = rng() < 0.5 ? 0 : rng(), js = rng(), taste = U(rng, -1, 1);
+  let mask = 0;
+  for (let r = 0; r < 8; r++) if (rng() < 0.25) mask |= 1 << r;
+  const on1 = rng() < 0.4, r1 = Math.min(7, Math.floor(rng() * 8)), u1 = U(rng, -3, 3), on2 = rng() < 0.4, r2 = Math.min(7, Math.floor(rng() * 8)), u2 = U(rng, -3, 3);
+  const b = o + BIO_Q1, W = wild && groups.includes('signal'), net = W && groups.includes('grn');
+  g[b] = fl; g[b + 1] = W && !own ? pref : fl; g[b + 2] = W ? width : 0.6; g[b + 3] = W ? rel : 0;
+  g[b + 4] = W ? js : 0.5; g[b + 5] = W ? taste : 0; g[b + 6] = W ? mask : 0; g[b + 7] = 0;
+  g[b + 8] = net && on1 ? u1 : 0; g[b + 9] = net && on1 ? r1 : 0; g[b + 10] = net && on2 ? u2 : 0; g[b + 11] = net && on2 ? r2 : 0;
+  for (let k = 12; k < 16; k++) g[b + k] = 0;
 }
 // step S2: every founder's MOTOR genes (std and blank: no motors yet, a random sign and phase, the placement near the axis; so the motors must
 // evolve), and WILD founders' (group 'motors'): the flagellum's thrust anywhere in 0..1 (half of them 0), its sign and placement over -1..1, the
@@ -449,6 +468,7 @@ export class Genome {
     this.orng = makeRng(this.seed ^ 0x6d6f746f);   // step S2: the founders' motor genes' own stream
     this.trng = makeRng(this.seed ^ 0x74617374);   // step P3: the wild founders' taste genes' own stream
     this.frng = makeRng(this.seed ^ 0x666f6c64);   // step G3: the founders' regulator lattices and folds' own stream
+    this.qrng = makeRng(this.seed ^ 0x7369676e);   // step Q1: the founders' signal genes' own stream
     this.foldP = null;                              // step G3: the moire genome's knobs (src/cells.js sets it: the folds' bounds, the buffer)
     this.founders = [];
     // live-tunable (moire.genome.params); the rule switches are keys
@@ -520,6 +540,7 @@ export class Genome {
       }
       motorGenes(g, this.orng, 0, mode === 'wild', this.params.wildGroups);   // step S2 (every mode: std and blank founders without motors)
       tasteGenes(g, this.trng, 0, mode === 'wild', this.params.wildGroups);   // step P3 (every mode: std and blank founders without a taste)
+      signalGenes(g, this.qrng, 0, mode === 'wild', this.params.wildGroups);   // step Q1 (every mode: std and blank founders silent)
       stampLattices(g, this.frng, 0, this.foldP);   // step G3: every founder's regulator lattices and folds (without outputs they change nothing)
       if (this.foldP && this.foldP.on && this.foldP.founderOut && mode !== 'wild') founderOutputs(g, this.frng, 0, this.foldP);   // ... and outputs
     }

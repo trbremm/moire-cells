@@ -440,7 +440,7 @@ export class Cells {
     // (binding 10 held the nutrient and threat sources until step C3)
     this.stepL = layout('cell step', [sim, ro(1), ro(3), rw(4), rw(5), ro(6), rw(7), rw(8), un(9), ro(11), un(12), un(13)]);
     this.censusL = layout('cell census', [sim, ro(1), ro(2), rw(3)]);
-    this.grnL = layout('cell grn', [sim, ro(1), rw(2), ro(3), un(4), un(5)]);   // step T1b (src/grn.js makes its bind groups)
+    this.grnL = layout('cell grn', [sim, ro(1), rw(2), ro(3), un(4), un(5), rw(6), un(7)]);   // step T1b (src/grn.js makes its bind groups; step Q1: + the heat buffer, the signal's words)
     this.checkL = layout('cell check', [sim, ro(1), ro(2), ro(3), ro(4), ro(5), rw(6),
       { binding: 7, visibility: C, buffer: { type: 'uniform' } }]);
     const pipe = (L, module, entryPoint) => d.createComputePipeline({
@@ -452,6 +452,7 @@ export class Cells {
     this.pipes.check = pipe(this.checkL, checkMod, 'check');
     this.pipes.census = pipe(this.censusL, censusMod, 'census');
     this.pipes.grn = pipe(this.grnL, grnMod, 'grn');
+    this.pipes.signal = pipe(this.grnL, grnMod, 'signal');   // step Q1: hearing, the inboxes, the signal genes' mutation
 
     const U = GPUBufferUsage;
     const n = this.count;
@@ -813,6 +814,7 @@ export class Cells {
     this.motors.maybeCensus(frame.time);     // step S2: where the motors are (a read-back every few s)
     this.senses.maybeCensus(frame.time);     // step P3: the taste, chases, glued groups (a read-back every few s)
     this.folding.maybeCensus(frame.time);    // step G3: folds, dose, buffering, hidden links (a read-back every few s)
+    this.signals.maybeCensus(frame.time);    // step Q1: emitters, listeners, relays, waves (a read-back every few s)
     if (this.gridSize() !== this.grid.cs) this.sizeGrid();   // params.cut or range changed
     // after a reset, the warm-up ticks run first (all in this frame, at the current time)
     const warm = Math.min(this.warm, SLOTS - frame.ticks);
@@ -825,8 +827,8 @@ export class Cells {
     // C4: and react, each tick inside the heat's pass (after the cells' step, before the heat spreads)
     const M = this.matter;
     if (M) M.beginFrame(encoder, frame, warm);
+    this.signals.beginFrame(encoder, frame, ticks);   // step Q1: the signal's uniforms (after the heat's: the currents; before the eat pass's), the pipette's puffs
     this.eat.beginFrame(frame, ticks);   // step C5: after the matter's, which decides the channels the cells may write into
-    this.signals.beginFrame(encoder, frame, ticks);   // step Q1: the signal's uniforms (after the heat's: the currents), the pipette's puffs
     for (let t = 0; t < ticks; t++) {
       const time = frame.time - Math.max(0, ticks - 1 - t) * frame.tickDt * (t < warm ? 0 : 1);
       this.writeSim(t, frame.tickDt, time, t === ticks - 1);

@@ -59,7 +59,7 @@ import { CARBON, LG_CBC } from './carbon.js';
 export const SW = 64;               // stock words per cell (cell_eat.wgsl; 16 until step C6c's membranes, words 16..27; step C7:
                                     // 14 the pumped charge across the membrane, 15 the voltage's energy; 32 until step C12b's
                                     // lipid membrane, words 32..61)
-const EP_BYTES = 2000;              // struct EatP (step G3: + g3, 1984 until then; step P3: + p3[3], 1936 until then; step G2: + g2, 1920 until then; step P1: + p1[2], 1888 until then; step T1a: + t1[2], 1856 until then; step M1: + m1[2], 1824 until then) (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat; step C8: + hl;
+const EP_BYTES = 2032;              // struct EatP (step Q1: + q1[2], 2000 until then; step G3: + g3, 1984 until then; step P3: + p3[3], 1936 until then; step G2: + g2, 1920 until then; step P1: + p1[2], 1888 until then; step T1a: + t1[2], 1856 until then; step M1: + m1[2], 1824 until then) (step C6c: + mb0..mb4; step C7: + pu0..pu2; step C7b: + cat; step C8: + hl;
                                     // step C9: + dv; step C10: + wl0, wl1; step C12b: + lp[9]; step C12d: + smellW; step C12e: + ws[2], ws2;
                                     // step C12g: + io[2] (1792); step N1: + nl[2] (1824; N1 alone had nl at 440, merged after io))
 const EP_NL = 448;                  // ... its words nl (step N1)
@@ -69,6 +69,7 @@ const EP_P1 = 472;                  // ... its words p1 (step P1)
 const EP_G2 = 480;                  // ... its words g2 (step G2)
 const EP_P3 = 484;                  // ... its words p3 (step P3)
 const EP_G3 = 496;                  // ... its words g3 (step G3)
+const EP_Q1 = 500;                  // ... its words q1 (step Q1)
 const EP_WS = 428;                  // ... its words ws (step C12e)
 const EP_IO = 440;                  // ... its words io (step C12g)
 const EP_SMELL = 412;               // ... its words smellW (step C12d)
@@ -302,6 +303,7 @@ export class Eat {
     this.cells.dup.writeEat(u, EP_G2);            // step G2: the copies act (EatP.g2)
     if (this.cells.senses) this.cells.senses.writeEat(u, f, EP_P3, dt);   // step P3: the nose, the taste, shared armour (EatP.p3)
     if (this.cells.folding) this.cells.folding.writeEat(u, f, EP_G3, dt);   // step G3: the buffer's upkeep, repair's cost, the events (EatP.g3)
+    if (this.cells.signals) this.cells.signals.writeEat(u, f, EP_Q1, dt);   // step Q1: the release, the junctions, the taste, the flash (EatP.q1)
     this.cells.motors.writeEat(u, f, EP_G2);      // step S2: the motors' bits and their motor proteins' want (EatP.g2.y..w, after G2's)
     this.cells.walls.writeEat(u, f, EP_WL, dt);   // step C10: the walls' pattern, maturity, linker cost and upkeep
     this.cells.guides.writeEat(u, EP_WL + 6);     // step C13: the gates' bits (EatP wl1.z)

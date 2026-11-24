@@ -57,7 +57,7 @@ fn flag_at(p0: vec2f, u: vec2f, L: f32, A: f32, k: f32, ph: f32, s: f32) -> vec2
 @vertex
 fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> MOut {
   let c = cells[ii];
-  if ((c.flags & CELL_ALIVE) == 0u || c.motW == 0u) { return off_clip(); }
+  if ((c.flags & CELL_ALIVE) == 0u || (c.motW & 0xffffffu) == 0u) { return off_clip(); }   // (step Q1: bits 24..31 the signal's flash)
   let NS = u32(MD.geo.x);
   let HPS = u32(MD.geo.y);
   let nFl = 2u * NS * 6u;                       // two filaments' vertices

@@ -167,6 +167,12 @@
 //               control: the dials and range drift, nothing steers, nothing is paid; knobs ?tastespeed= ?tastehalf= ?rangegain= ?rangecost=);
 //               ?clump=0 the engulf size test by the prey alone (else its glued group; ?tug=); ?sharedarmour=0 the wall on every side (?kinshare=);
 //               ?p3census= ?p3near= (rules panel, Cells that sense cells)
+//   ?g3=0         step G3, the moire genome (src/folding.js): the gene network's links are step T1b's free weights again (else DERIVED from the
+//               regulators' lattices); ?fold=0 no fold; ?foldlife=0 no refolding in life; ?foldnull=1 the fold's NEUTRAL control (folds drift and
+//               switch, links from the home fold); ?dose=0 no damage dose written (?dosenull=1 collected, never written); ?repair=0 the fidelity
+//               gene does not repair the dose; ?buffer=0 no buffering (?buffernull=1 its neutral control); knobs ?g3sigma= ?g3wmax= ?g3wmin=
+//               ?latstep= ?phstep= ?latjump= ?foldstep= ?refold= ?s0= ?kon= ?koff= ?doseheat= ?doseox= ?dosestep= ?repk= ?repcost= ?bufcap=
+//               ?bufcost= ?buffounder= ?bufweaken= ?g3census= (rules panel, Moire genome)
 //   ?flagella=0   step S2: no flagella; ?cilia=0 no cilia (both 0: exactly as before S2); ?flagellanull=1 ?cilianull=1 their NEUTRAL controls
 //               (the genes drift, nothing acts, nothing is paid); ?mogrn=0 ?mowater=0 ?modipole=0 ?mopump=0 ?mocouple=0 ?mosteer=0 ?motorque=0
 //               one part off; knobs ?swim= ?steer= ?arm= ?dipole= ?swimdrift= ?ciliapush= ?beathz= ?couple= ?lag= ?swimcost= ?ciliaup=
@@ -596,6 +602,21 @@ async function boot() {
         if (params.has(q) && Number.isFinite(v) && v >= 0) PP[k] = v;
       }
     }
+    {   // step G3: the moire genome
+      const FP = cells.folding.params;
+      if (params.get('g3') === '0') FP.on = false;
+      for (const [q, k] of [['fold', 'fold'], ['foldlife', 'foldLife'], ['foldnull', 'foldNull'], ['dose', 'dose'], ['dosenull', 'doseNull'],
+        ['repair', 'repair'], ['buffer', 'buffer'], ['buffernull', 'bufferNull']]) {
+        if (params.has(q)) FP[k] = flag(q);
+      }
+      for (const [q, k] of [['g3sigma', 'sigma'], ['g3wmax', 'wMax'], ['g3wmin', 'wMin'], ['latstep', 'latStep'], ['phstep', 'phStep'], ['latjump', 'jump'],
+        ['foldstep', 'foldStep'], ['refold', 'refold'], ['s0', 's0'], ['kon', 'kOn'], ['koff', 'kOff'], ['doseheat', 'doseHeat'], ['doseox', 'doseOx'],
+        ['dosestep', 'doseStep'], ['repk', 'repK'], ['repcost', 'repCost'], ['bufcap', 'bufCap'], ['bufcost', 'bufCost'], ['buffounder', 'bufFounder'],
+        ['bufweaken', 'bufWeaken'], ['g3census', 'censusEvery']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) FP[k] = v;
+      }
+    }
     {   // step C13: fields as genes and guides
       const GP = cells.guides.params;
       for (const [q, k] of [['fgenes', 'genes'], ['gateglue', 'glue'], ['gatepump', 'pump'], ['gateengine', 'engine'], ['gatediv', 'div'],
@@ -868,7 +889,7 @@ async function boot() {
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
     kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, dup: cells.dup, mutation: cells.mutation, perfusion, glue: cells.glue, stir: water.stir, obstacles,
-    spindle: cells.spindle, carbon: matter.carbon, carbonCells: cells.eat.carbon, motors: cells.motors, flow, senses: cells.senses };
+    spindle: cells.spindle, carbon: matter.carbon, carbonCells: cells.eat.carbon, motors: cells.motors, flow, senses: cells.senses, folding: cells.folding };
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.warfare = new Warfare(window.moire);     // step T1c: the chemical warfare census (lineage borders against interiors)
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
@@ -1179,7 +1200,8 @@ ${cells.mutation.panelLine(compact)}
 ${cells.glue.panelLine(compact)}
 ${cells.spindle.panelLine(compact)}
 ${cells.motors.panelLine(compact)}
-${cells.senses.panelLine(compact)}${ELECTRONS ? `
+${cells.senses.panelLine(compact)}
+${cells.folding.panelLine(compact)}${ELECTRONS ? `
 ${matter.vents.panelLine(compact)}` : ''}${CARBON ? `
 ${matter.carbon.panelLine(compact)}
 ${cells.eat.carbon.panelLine(compact)}` : ''}
@@ -1291,6 +1313,7 @@ function drawOverlay() {
     ...cells.spindle.overlayLines(),
     ...cells.motors.overlayLines(),
     ...cells.senses.overlayLines(),
+    ...cells.folding.overlayLines(),
     ...cells.guides.overlayLines(),
     ...matter.oil.overlayLines(),
     neon.overlayLine(),

@@ -81,6 +81,7 @@ export const RULE_GROUPS = [
   ['s1', 'Cell shape (step S1)'],
   ['s2', 'Flagella and cilia (step S2)'],
   ['p3', 'Cells that sense cells (step P3)'],
+  ['g3', 'Moire genome (step G3)'],
   ['g0w', 'Stirred water (step G0)'],
   ['vents', 'Vents in the dark (step C12f)'],
   ['n1', 'Nutrient landscape (step N1)'],
@@ -1053,6 +1054,36 @@ export function makeActions(app) {
     sknob('p3cost', 'range cost', 'rangeCost', 0.0001, 1, 1.5, 4, 'energy per s per unit of dial at range 0 (× e^range)'),
     sknob('p3tug', 'tug', 'tug', 0.05, 0.95, 1.2, 2, 'how far a wrap gets while the prey’s glued group is too big'),
     sknob('p3kin', 'sheltered wall', 'kinShare', 0.01, 1, 1.25, 2, 'the share of the wall a side joined to a neighbour still wants'),
+  );
+
+  // ---------- the moire genome (step G3; panel only: no keys are free) ----------
+  const G3FP = () => app.cells.folding.params;
+  const g3tog = (id, label, key, onTxt, offTxt, help, derive = false) => ({ id, keys: [], label, group: 'g3', type: 'toggle', get: () => G3FP()[key],
+    run: () => { const r = flip(G3FP(), key); if (derive) app.cells.folding.rederive(); return r ? onTxt : offTxt; }, help });
+  const g3knob = (id, label, key, lo, hi, f, digits, help, derive = false) => ({ id, keys: [], label, group: 'g3', type: 'knob', get: () => Number(G3FP()[key]).toFixed(digits),
+    run: (k) => { const p = G3FP(); p[key] = Math.max(lo, Math.min(hi, +((Number(p[key]) || lo || 0.01) * (k === '-' ? 1 / f : f)).toPrecision(3))); if (derive) app.cells.folding.rederive(); return `${label} ${p[key]}`; }, help });
+  A.push(
+    g3tog('g3on', 'moire genome', 'on', 'the gene network’s links come from the regulators’ lattices (their moire beat)',
+      'the gene network’s links are free weights (step T1b)', 'each regulator a hex lattice; near-matching lattices link', true),
+    g3tog('g3fold', 'fold', 'fold', 'the fold (twist + stretch) acts on every lattice at once', 'no fold', 'a change of the fold rewires many links at once', true),
+    g3tog('g3foldlife', 'refold in life', 'foldLife', 'heat and oxidation refold a living cell into its stress fold (calm folds it back)',
+      'no refolding in life', 'reversible, inherited by daughters (epigenetic)'),
+    g3tog('g3foldnull', 'fold neutral control', 'foldNull', 'folds drift and switch WITHOUT effect (NEUTRAL CONTROL)', 'the fold acts',
+      'the links always from the home fold', true),
+    g3tog('g3dose', 'damage dose', 'dose', 'heat and free t leave a dose, written into the lattices at a birth', 'no damage written',
+      'Brownian and oxidative damage; the fidelity gene repairs it'),
+    g3tog('g3dosenull', 'dose neutral control', 'doseNull', 'the dose is collected but never written (NEUTRAL CONTROL)', 'the dose is written', 'copying errors stay'),
+    g3tog('g3repair', 'repair', 'repair', 'the fidelity gene repairs the dose, paid from the battery', 'no repair', 'repK x (e^F - 1) x dose per s'),
+    g3tog('g3buffer', 'buffering', 'buffer', 'the buffering gene hides small lattice changes until stress lets them show', 'no buffering',
+      'a capacitor (Hsp90-like); subtle at first'),
+    g3tog('g3bufnull', 'buffering neutral control', 'bufferNull', 'the buffering gene drifts WITHOUT effect, unpaid (NEUTRAL CONTROL)', 'the buffering gene acts', ''),
+    g3knob('g3sigma', 'tuning width', 'sigma', 0.02, 1, 1.25, 3, 'how alike two lattices must be to link (re-derives every cell)', true),
+    g3knob('g3wmax', 'link weight', 'wMax', 0.5, 12, 1.25, 2, 'a perfect match’s weight (re-derives every cell)', true),
+    g3knob('g3s0', 'stress threshold', 's0', 0.05, 0.95, 1.15, 2, 'stress (heat + free t) above which a cell may refold'),
+    g3knob('g3kon', 'refold rate', 'kOn', 0.001, 5, 1.5, 3, 'refolds per s at full stress'),
+    g3knob('g3dosestep', 'damage kick', 'doseStep', 0.001, 1, 1.5, 3, 'lattice kicks at a birth per unit of the parent’s dose'),
+    g3knob('g3bufcap', 'buffer capacity', 'bufCap', 0.001, 2, 1.5, 3, 'hidden drift held at gene 1'),
+    g3knob('g3bufcost', 'buffer cost', 'bufCost', 0.0001, 0.1, 1.5, 4, 'energy per s at gene 1'),
   );
 
   // ---------- vents in the dark (step C12f; panel only: no keys are free) ----------

@@ -1,0 +1,11 @@
+{
+ "batch": "g3-check",
+ "runs": [
+  {"name": "g3-check-col", "description": "colonies s3: stress after recalibration, the genome view", "query": {"seed": 3, "preset": "colonies", "g3census": 10},
+   "duration": 242, "sample_every": 30, "stall": 300,
+   "evals": [{"t": 120, "js": "const c = await moire.folding.now(); return JSON.stringify({line: moire.folding.panelLine(), s: c.senses, lin: c.lineages.slice(0,3)})"},
+             {"t": 240, "js": "const c = await moire.folding.now(); return JSON.stringify({line: moire.folding.panelLine(), s: c.senses, lin: c.lineages.slice(0,3), stressed: c.stressed, calm: c.calm})"},
+             {"t": 241, "js": "return JSON.stringify(await moire.folding.show({lineages: 3, size: 220}))"}],
+   "shots": [{"t": 240, "name": "t240"}, {"t": 241, "name": "genome"}]}
+ ]
+}

@@ -56,6 +56,7 @@ import { Dup } from './dup.js';
 import { Mutation } from './mutation.js';
 import { Motors, STATS_S2, S2_WORDS } from './motors.js';
 import { Senses } from './senses.js';
+import { Folding } from './folding.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 import { dish } from './dish.js';      // the dish's own size and R
 import { cultureLayout } from './culture.js';   // app: how a new culture is spread
@@ -370,6 +371,8 @@ export class Cells {
     this.dup = new Dup(this);             // step G2: gene duplication for engines and pumps (src/dup.js)
     this.motors = new Motors(this);       // step S2: flagella and cilia (src/motors.js)
     this.senses = new Senses(this);       // step P3: cells that sense cells (src/senses.js)
+    this.folding = new Folding(this);     // step G3: the moire genome, DNA folding (src/folding.js)
+    this.genome.foldP = this.folding.params;
   }
 
   static async create(device, format, medium, count, seed, cap = 0) {
@@ -665,6 +668,7 @@ export class Cells {
 
   /** Write the Sim uniform for one tick (at simulation time `time`) into slot k. */
   writeSim(k, dt, time, count = false) {
+    this.lastDt = dt;   // (step G3's census: the tick)
     const v = this.view, g = this.grid, p = this.params;
     const f = this.simF, u = this.simU, o = k * SLOT / 4;
     u[o] = this.count; u[o + 1] = g.gw; u[o + 2] = g.gh; u[o + 3] = this.tick >>> 0;
@@ -804,6 +808,7 @@ export class Cells {
     this.mutation.maybeCensus(frame.time);   // step M2: generations, lines, genes (a read-back every few s)
     this.motors.maybeCensus(frame.time);     // step S2: where the motors are (a read-back every few s)
     this.senses.maybeCensus(frame.time);     // step P3: the taste, chases, glued groups (a read-back every few s)
+    this.folding.maybeCensus(frame.time);    // step G3: folds, dose, buffering, hidden links (a read-back every few s)
     if (this.gridSize() !== this.grid.cs) this.sizeGrid();   // params.cut or range changed
     // after a reset, the warm-up ticks run first (all in this frame, at the current time)
     const warm = Math.min(this.warm, SLOTS - frame.ticks);

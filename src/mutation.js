@@ -35,7 +35,8 @@ const C_FLAGS = 9;
 export const W_GEN = 10;       // Bio.resp.z: the generation
 // genome words that are STATE, not genes (left out of a genotype): the job scores, the generation and rare mask, the heading, the
 // accumulators, the felt and converted words, the network's expression, the cilia's beat phase
-const STATE = new Set([8, 9, 10, 11, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 84, 85, 86, 87, 88, 89, 90, 91, 174]);
+const STATE = new Set([8, 9, 10, 11, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 84, 85, 86, 87, 88, 89, 90, 91, 174,
+  219, 220, 221, 222, 223]);   // (step G3: the fold in use, the dose, the hidden drift, the repair, the events)
 // the tracked genes (genome word or a function of the genome at word o) and the neutral control that tests each
 export const TRACKED = [
   ['glue', 16, 'gluenull'], ['size', 17, null], ['motility', 18, null], ['elongation', 13, 'shapenull'],

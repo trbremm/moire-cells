@@ -251,6 +251,9 @@ struct EatP {
                            // [1] the taste's floors at range 0 (the dish's mean, per R^2, / the global range knob): x OXYGEN (free t), y
                            //     EXHAUST (CO2-like carbon), z SPILL (free G), w HEAT (temperature)
                            // [2] x SHARED ARMOUR: the share of the crust wall a side joined to a neighbour by a junction still wants; y z w spare
+  // ---- step G3, the moire genome (src/folding.js writeEat) ----
+  g3: vec4f,               // x the G3E_* bits (u32); y REPAIR's cost (heat counts per unit of dose repaired); z the BUFFER's upkeep (heat
+                           // counts per tick at gene 1); w spare
 };
 // ---- step C12g, MEMBRANES MODULATE ION FLOW (src/ions.js). The lipid BILAYER blocks free ions (charged atoms: g t G T and the excited
 // g* t*), derived from its make-up: per side the intact share (its integrity: soap + the oil between its tails over what the thickness
@@ -3213,6 +3216,10 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         let td = abs(clamp(bio[i].ta, vec4f(-1.0), vec4f(1.0)));
         cost += EP.p3[0].w * (td.x + td.y + td.z + td.w) * exp(clamp(bio[i].tb.x, TASTE_RLO, TASTE_RHI));
       }
+      // step G3: the BUFFER's upkeep (x its gene, while it acts) and REPAIR (the dose the gene network's pass repaired this tick)
+      let g3e = bitcast<u32>(EP.g3.x);
+      if ((g3e & G3E_BUF) != 0u) { cost += EP.g3.z * clamp(bio[i].fh.w, 0.0, 1.0); }
+      if ((g3e & G3E_REP) != 0u) { cost += EP.g3.y * max(bio[i].gs.z, 0.0); }
       let pay = clamp(i32(floor(cost + u01(pcg(rs + 0x0b4e0ef3u)))), 0, bat);
       if (pay > 0) {
         bat -= pay;
@@ -3282,6 +3289,16 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     fill += cbo.atoms;                                        // (step C15b: and its carbon)
     cells[i].bat = clamp(f32(bat) / f32(batMax), 0.0, 1.0);
     cells[i].fill = clamp(fill / max(cap, 1.0), 0.0, 1.0);
+    // step G3: this tick's fold events (the gene network's pass marked them in Bio.gs.w), counted in the heat ledger's step C9 block, row 7
+    // (4 counters x 4 slots: refolded into the stress fold, folded back home, the buffer let go, born with a big refold)
+    if ((bitcast<u32>(EP.g3.x) & G3E_COUNT) != 0u) {
+      let gev = u32(max(bio[i].gs.w, 0.0)) & 30u;
+      if (gev != 0u) {
+        for (var k = 0u; k < 4u; k++) {
+          if ((gev & (2u << k)) != 0u) { atomicAdd(&hb[LG_DIV + 112u + 4u * k + (i & 3u)], 1); }
+        }
+      }
+    }
     // step T1b: what the gene network senses of the cell's inside and its light (src/grn.js; Cell.sns0, sns1)
     {
       let ls = select(0.0, 1.0 - exp(-light_factor(LP, c.pos) * caustic_at(c.pos) * EP.nl[1].w), LP.mode != LIGHT_OFF);

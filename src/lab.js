@@ -139,6 +139,7 @@ function gather(M, ctl) {
   if (M.motors && M.motors.census) flatten(M.motors.census, 'motors', out);     // step S2: flagella and cilia
   if (M.flow && M.flow.census) flatten(M.flow.census, 'flow', out);           // step N2: substances that flow (motility, smell, patch tracking)
   if (M.senses && M.senses.census) flatten(M.senses.census, 'senses', out);   // step P3: taste genes, following, chases, glued groups
+  if (M.folding && M.folding.census) flatten(M.folding.census, 'fold', out);   // step G3: folds, dose, buffering, hidden links
   if (M.obstacles && M.obstacles.census) flatten(M.obstacles.census, 'obs', out);   // step G0b: the obstacles' last measure (moire.obstacles.measure())
   out['division.costRate'] = M.division.costRate || 0;
   out['division.costTot'] = M.division.costTot || 0;

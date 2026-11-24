@@ -1,0 +1,18 @@
+{
+ "batch": "g3-smoke",
+ "runs": [
+  {
+   "name": "g3-smoke-col",
+   "description": "colonies s3, 90 s: the moire genome runs, census reads",
+   "query": {"seed": 3, "preset": "colonies", "g3census": 10},
+   "duration": 90,
+   "sample_every": 30,
+   "stall": 300,
+   "evals": [
+    {"t": 45, "js": "const c = await moire.folding.now(); return JSON.stringify({line: moire.folding.panelLine(), c: {n: c.n, derived: c.derived, sf: c.stressFold, st: c.stress, dose: c.dose, buf: c.buf, hid: c.hidden, hl: c.hiddenLinks, drift: c.drift, w: c.wirings, lin: c.lineages.slice(0,3)}, rates: moire.folding.rates, grn: moire.grn.panelLine()})"},
+    {"t": 88, "js": "const c = await moire.folding.now(); return JSON.stringify({line: moire.folding.panelLine(), grn: moire.grn.panelLine(), lin: c.lineages.slice(0,3), stressed: c.stressed, calm: c.calm})"}
+   ],
+   "shots": [{"t": 88, "name": "end", "panel": true}]
+  }
+ ]
+}

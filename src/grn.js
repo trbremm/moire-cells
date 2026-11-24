@@ -47,7 +47,7 @@ const GRN_ACT = 1;
 const W_X = 0, W_B = 8, W_W = 16, W_I = 40, W_U = 48, W_O = 64, W_M = 68;
 import { CELL_FLOATS } from './cells.js';
 const C_POS = 0, C_FLAGS = 9, C_BAT = 16, C_NBR = 60, C_FELT1 = 83, C_SNS0 = 86, C_SNS1 = 87;
-const UNIFORM_BYTES = 48;
+const UNIFORM_BYTES = 160;   // (step G3: + the moire genome's words 12..39, 48 until then)
 
 /** The network's numbers from genome g at word o (o = cell x BIO_FLOATS): { x, bias, w, code, u, reg, bc, kw }. */
 export function grnOf(g, o = 0) {
@@ -206,6 +206,7 @@ export class Grn {
     u[0] = this.flags; f[1] = Math.max(0.05, p.tau); f[2] = Math.max(0.5, this.cells.kin ? this.cells.kin.params.press : 1.1);
     f[3] = Math.max(0, p.wStep); f[4] = Math.max(0, p.uStep); f[5] = Math.max(0, p.rewire); f[6] = Math.max(0, p.orewire);
     f[7] = Math.max(0, p.dup); f[8] = Math.max(0, p.bjump); f[9] = Math.max(0, p.wNew); f[10] = Math.max(0, p.uNew); f[11] = 0;
+    if (this.cells.folding) this.cells.folding.writeGrn(u, f, 12);   // step G3: the moire genome (GrnP g3f..)
     this.cells.device.queue.writeBuffer(this.uniform, 0, ab);
   }
 

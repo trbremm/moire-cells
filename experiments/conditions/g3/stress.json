@@ -1,0 +1,17 @@
+{
+ "batch": "g3-stress",
+ "runs": [
+  {"name": "g3-stress-default", "description": "what the stress is made of, default s3", "query": {"seed": 3, "g3census": 10},
+   "duration": 181, "sample_every": 60, "stall": 300,
+   "evals": [{"t": 60, "js": "const c = await moire.folding.now(); return JSON.stringify({s: c.senses, sf: c.stressFold, st: c.stress, dose: c.dose, n: c.n})"},
+             {"t": 180, "js": "const c = await moire.folding.now(); return JSON.stringify({s: c.senses, sf: c.stressFold, st: c.stress, dose: c.dose, n: c.n})"}]},
+  {"name": "g3-stress-colonies", "description": "colonies s3", "query": {"seed": 3, "preset": "colonies", "g3census": 10},
+   "duration": 181, "sample_every": 60, "stall": 300,
+   "evals": [{"t": 60, "js": "const c = await moire.folding.now(); return JSON.stringify({s: c.senses, sf: c.stressFold, st: c.stress, dose: c.dose, n: c.n})"},
+             {"t": 180, "js": "const c = await moire.folding.now(); return JSON.stringify({s: c.senses, sf: c.stressFold, st: c.stress, dose: c.dose, n: c.n})"}]},
+  {"name": "g3-stress-oxygen", "description": "oxygen preset s3", "query": {"seed": 3, "preset": "oxygen", "g3census": 10},
+   "duration": 181, "sample_every": 60, "stall": 300,
+   "evals": [{"t": 60, "js": "const c = await moire.folding.now(); return JSON.stringify({s: c.senses, sf: c.stressFold, st: c.stress, dose: c.dose, n: c.n})"},
+             {"t": 180, "js": "const c = await moire.folding.now(); return JSON.stringify({s: c.senses, sf: c.stressFold, st: c.stress, dose: c.dose, n: c.n})"}]}
+ ]
+}

@@ -71,13 +71,15 @@ import { ALL_ENGINES as ENGINES, engineIndex, ELECTRONS } from './matter.js';   
 import { CARBON, CB_LIP } from './carbon.js';
 import { fieldDefaults, founderGates, BIO_FG } from './guides.js';
 import { stampFounderGlue } from './glue.js';
+import { stampLattices } from './folding.js';
 
-export const BIO_FLOATS = 188;  // (180 until step P3's taste genes; 168 until step S2's motor genes; 156 until step G2's duplicate slots and families; 40 until step C6c's membrane genes, 44 until step C7's pumps, 48 until step C10's walls, 52 until step C12b's lipids,
+export const BIO_FLOATS = 224;  // (188 until step G3's moire genome; 180 until step P3's taste genes; 168 until step S2's motor genes; 156 until step G2's duplicate slots and families; 40 until step C6c's membrane genes, 44 until step C7's pumps, 48 until step C10's walls, 52 until step C12b's lipids,
                                 //  56 until step C13's field genes and gates, 76 until step T1a's marker and kin channels, 84 until step T1b's gene network)
 export const BIO_GRN = 84;      // step T1b: the gene network's first word (Bio.gx)
 export const BIO_G2 = 156;      // step G2: the duplicate slots' first word (Bio.dx; Bio.df at 160, Bio.dg at 164)
 export const BIO_MO = 168;      // step S2: the motor genes' first word (Bio.mo; Bio.mc at 172, Bio.mg at 176)
 export const BIO_T1 = 76;       // step T1a: the first marker word (Bio.mark; Bio.kin at 80)
+export const BIO_G3 = 188;      // step G3: the regulators' lattice angles (Bio.la; lk at 196, lp at 204, fh 212, fs 216, gs 220)
 export const BIO_BYTES = BIO_FLOATS * 4;
 
 export const KEY_SPAN = Math.PI / 3;
@@ -446,6 +448,8 @@ export class Genome {
     this.srng = makeRng(this.seed ^ 0x73686170);   // step S1: the wild founders' shape genes' own stream
     this.orng = makeRng(this.seed ^ 0x6d6f746f);   // step S2: the founders' motor genes' own stream
     this.trng = makeRng(this.seed ^ 0x74617374);   // step P3: the wild founders' taste genes' own stream
+    this.frng = makeRng(this.seed ^ 0x666f6c64);   // step G3: the founders' regulator lattices and folds' own stream
+    this.foldP = null;                              // step G3: the moire genome's knobs (src/cells.js sets it: the folds' bounds, the buffer)
     this.founders = [];
     // live-tunable (moire.genome.params); the rule switches are keys
     this.params = {
@@ -516,6 +520,7 @@ export class Genome {
       }
       motorGenes(g, this.orng, 0, mode === 'wild', this.params.wildGroups);   // step S2 (every mode: std and blank founders without motors)
       tasteGenes(g, this.trng, 0, mode === 'wild', this.params.wildGroups);   // step P3 (every mode: std and blank founders without a taste)
+      stampLattices(g, this.frng, 0, this.foldP);   // step G3: every founder's regulator lattices and folds (without outputs they change nothing)
     }
     // step T1b: wild founders' markers turned a golden angle apart (no random number drawn), so in the lineage view any few surviving
     // founders show clearly different hues (their markers are strangers either way)

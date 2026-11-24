@@ -512,7 +512,27 @@ struct Bio {
                         // of broken enzymes, set free where a cell died, burst or was digested), w HEAT (the temperature: busy cells, digestion)
   tb: vec4f,            // x the RANGE (a log sensitivity, -2..2; founders 0): how faint a trace still counts (the floor below which a
                         // concentration is not told apart is the dish's mean x e^-range), costing upkeep x e^range; y z w spare
+  // ---- step G3: THE MOIRE GENOME, DNA FOLDING (src/folding.js, cell_grn.wgsl; README "Step G3"). Words 188..223 ----
+  // Each of the 8 regulators carries a small hex LATTICE; the gene network's links are DERIVED from how alike two lattices are (their moire
+  // beat) and cached in gw / gi (which are genes again with the moire genome off)
+  la: array<vec4f, 2>,  // the regulators' lattice ANGLES (rad; a hex lattice repeats every pi/3)
+  lk: array<vec4f, 2>,  // ... their SPACING, as ln of the wavenumber over the reference one (-0.75..0.75)
+  lp: array<vec4f, 2>,  // ... their PHASE (rad): the sign and shape of a link come from the phase difference
+  fh: vec4f,            // the HOME FOLD: x twist (rad), y stretch, z the stretch's axis (rad); w the BUFFERING gene (0..1)
+  fs: vec4f,            // the STRESS FOLD: x y z as fh; w STATE (epigenetic, inherited): the fold in use, 0 home, 1 stress
+  gs: vec4f,            // STATE: x the DAMAGE DOSE collected in life; y the HIDDEN drift (the lattices' squared change since the links were
+                        // last derived); z the dose repaired this tick (the eat pass pays for it); w GS_* bits + 32 x refolds in the line
 };
+// step G3: Bio.gs.w bits (the rest of the word / 32: the refolds in life in the cell's line, inherited)
+const GS_SET: u32 = 1u;          // the links in gw / gi were derived from the lattices (with the moire genome on)
+const GS_EV_ON: u32 = 2u;        // this tick: refolded into the stress fold
+const GS_EV_OFF: u32 = 4u;       // ... folded back home
+const GS_EV_REL: u32 = 8u;       // ... the buffer let go: the hidden variation was expressed
+const GS_EV_BIG: u32 = 16u;      // ... born with a big refold (one fold drawn afresh)
+// step G3: EatP.g3.x bits
+const G3E_BUF: u32 = 1u;         // the buffering gene costs upkeep (acts, not the neutral control)
+const G3E_REP: u32 = 2u;         // repair costs (the dose repaired)
+const G3E_COUNT: u32 = 4u;       // count the events (the heat ledger's step C9 block, row 7)
 // step T1b: the gene network's outputs (Bio.gu, Bio.go): each output multiplies an existing gene (its base level) by exp(u x) (at most
 // GRN_FMAX); a cell switches an engine off by expressing a regulator its output reads with a strongly negative gain
 const GRN_R: u32 = 8u;           // regulators

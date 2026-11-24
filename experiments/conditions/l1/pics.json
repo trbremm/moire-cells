@@ -122,6 +122,78 @@
      "speed": 2
     }
    ]
+  },
+  {
+   "name": "l1-release",
+   "description": "the organ released to evolution (mutation, births and deaths on) at 10 s, 3 min; poked at 190 s",
+   "query": {
+    "tissue": "organ",
+    "seed": 3,
+    "zoom": 3
+   },
+   "duration": 202,
+   "sample_every": 30,
+   "evals": [
+    {
+     "t": 10,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(1),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),o:+c.order.toFixed(2),dr:+c.drive.toFixed(2),f:c.firing,j:c.junctions,cells:c.cells})"
+    },
+    {
+     "t": 10.01,
+     "js": "return moire.organ.release()"
+    },
+    {
+     "t": 40,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(1),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),o:+c.order.toFixed(2),dr:+c.drive.toFixed(2),f:c.firing,j:c.junctions,cells:c.cells})"
+    },
+    {
+     "t": 70,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(1),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),o:+c.order.toFixed(2),dr:+c.drive.toFixed(2),f:c.firing,j:c.junctions,cells:c.cells})"
+    },
+    {
+     "t": 100,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(1),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),o:+c.order.toFixed(2),dr:+c.drive.toFixed(2),f:c.firing,j:c.junctions,cells:c.cells})"
+    },
+    {
+     "t": 130,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(1),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),o:+c.order.toFixed(2),dr:+c.drive.toFixed(2),f:c.firing,j:c.junctions,cells:c.cells})"
+    },
+    {
+     "t": 160,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(1),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),o:+c.order.toFixed(2),dr:+c.drive.toFixed(2),f:c.firing,j:c.junctions,cells:c.cells})"
+    },
+    {
+     "t": 190,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(1),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),o:+c.order.toFixed(2),dr:+c.drive.toFixed(2),f:c.firing,j:c.junctions,cells:c.cells})"
+    },
+    {
+     "t": 190.5,
+     "js": "return JSON.stringify(await moire.organ.poke())"
+    },
+    {
+     "t": 196,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(1),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),o:+c.order.toFixed(2),dr:+c.drive.toFixed(2),f:c.firing,j:c.junctions,cells:c.cells})"
+    },
+    {
+     "t": 202,
+     "js": "const c=await moire.organ.measure();return JSON.stringify({t:+c.time.toFixed(1),E:+c.ends.toFixed(2),S:+c.sumLen.toFixed(1),W:+c.width.toFixed(2),o:+c.order.toFixed(2),dr:+c.drive.toFixed(2),f:c.firing,j:c.junctions,cells:c.cells})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 10
+    },
+    {
+     "t": 100
+    },
+    {
+     "t": 190
+    },
+    {
+     "t": 198,
+     "view": "signals"
+    }
+   ]
   }
  ]
 }

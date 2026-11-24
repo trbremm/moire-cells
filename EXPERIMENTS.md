@@ -4102,3 +4102,90 @@ The census at 2 / 5 / 7.5 / 10 min (`moire.signals.now()`):
   in the evolving dishes fires in waves. The relay needs junctions (rare in evolving dishes), a fast and a slow regulator in the right
   signs, and an inverted release: a lot to find by drift. Levers not built: cheaper or free release, junctions that form more readily,
   a third regulator speed (narrower pulses), a sense for the neighbours' firing.
+
+# The tissue lab: muscle, nerve, skin (step L1, 2026-11-24)
+
+**The question** (the user, 2026-11-24): "let's create a tissue lab, that we pre design cells and try to create a muscle for instance, with
+nerves and skin, as simple as it is, as long as it is cohesive". Built as a lab with hand-wired genomes and one new general capability,
+contraction (README "Step L1"). Evolution got a quick look only.
+
+**How.** Headless Chrome on the shared GPU (numbers are simulated time), seed 3 unless said; one run per setting: hints. Conditions in
+`experiments/conditions/l1/`, runs `experiments/runs/l1-*`.
+
+## 1. Getting a laid-out organ to hold together (`pilot`, `early*`, `dbg*`, `twitch1..7`, `orient`)
+
+The first organ (5 fibres of 4:1 muscle spindles end to end, a nerve chain, a skin ring; 53 cells) fell apart within seconds in the
+default dish. One cause at a time, each switched off in turn:
+- G0's tearing: 60..100 of 168 sides torn by 4 s (the spindles' end-to-end junctions, the shape below shortening them); at 15 % stretch
+  (`tearat=0.15`) none tear (0 in every later run). With `breaks=0` the organ still spread: not the only cause.
+- The water: cells moved 0.1..0.85 R/s (the currents, gusts and tides); still water (`currents=0`) halved the spreading.
+- The glue's cost: the organ's glue (2.5) is paid above 0.5 per side in linkers the founders do not hold; free glue (`wallcost=0`) kept more
+  junctions formed (45..60 against 15..20).
+- S1's torques: the fibres' ORDER (mean cos 2 of each spindle's front against the organ's axis) fell 0.97 -> 0.39 -> 0.16 in 8 s with them,
+  stayed 1.00 without (`shapetorque=0`).
+- Spreading sideways (the bundle 3.8 R wide grew to 6..10 R in 15 s): a GROOVE of porous walls along the organ holds it to ~6 R.
+- A spindle in contact shortens by itself: its pole corners meet the neighbour's wall at its capsule's end, the outline's second moment
+  shrinks, the capsule (capped by it) follows: 4:1 -> about 2.7:1 in a packed bundle (3.6:1 alone).
+- A soft squeeze (the clump's pull to the centre) rounded the organ into a ball in 6 s (the pull scales with 1 / the starting count: 37 x a
+  2000-cell culture's for 53 cells); a hard one crushed it.
+
+## 2. Making it contract (`twitch8..10`, `l1-z`)
+
+- Contraction as first built (the asked stretch along the front less the drive) did nothing visible in the bundle: firing cells' aspect
+  2.6 against 2.8 at rest. The outline is held by its tile's walls, and the walls sit at the old capsule. With the capsule shortened by the
+  contraction too (`shape_cap`), firing cells went to 1.4..1.7 against 2.9 at rest, but the bundle end to end shortened 2.5 %: the
+  neighbours stayed behind (G0's glue reaches only 15 % past contact).
+- With the PULL through joined junctions (0.3 x the glue's scale) the bundle shortens as a whole (below).
+
+## 3. Making the nerve conduct (`nervedbg`, `twitch11..17`, the relay's model on one row)
+
+- The Q1 relay (biases 1 / 0 / 1) needs two firing neighbours: a chain of it never passed a pulse. Its model on one row of 12
+  (tools/q1_relay_sim.py) carries a pulse along and back to rest only at biases 0.3 / 0 / 2 with 3 to 5 junction sides; in the dish that
+  nerve conducts at ~6 R/s (`nervedbg`: 2 cells firing 0.4 s after the touch, 5 at 1.5 s, 12 of 13 at 3 s).
+- The muscle at the nerve's biases re-excited itself into a lasting contraction (28 of 28 contracting from 10 s to 30 s, a tetanus) and
+  fired before the poke; at the sheet relay's it ignored the nerve. 0.6 / 0.5 / 1.5 (the model on a sheet: crosses and goes back to rest).
+- The signal power decides between silence and self-firing: 0.004 (the default) a poked nerve died out in 2 of 3 tries; 0.008 the organ
+  fired by itself at ~3 s and again ~20 s later (an AUTORHYTHM, kept as a curiosity); 0.006 rest until poked (the organ lab's value).
+- The flash (Cell.motW) shows only a release's ONSET; counting firing by the release regulator (r0 below 0.3) showed the nerve had fired in
+  runs that looked silent.
+
+## 4. The organ (`twitch17` l1-ai-p6, the lab's settings)
+
+The organ (63 cells: 28 muscle, 13 nerve, 22 skin) at rest in its groove, no junction torn, all alive. Poked at 6 s (the nerve's free end,
+1.8 R): cells contracting 2 / 3 / 5 / 7 / 10 / 15 / 23 / 26 / 28 at 0.5 s steps to 4 s, then each s; drive (mean over the muscle) 0.92 at
+13 s; the bundle end to end 21.1 -> 18.4 R at 12 s (-12 %), the cells laid end to end 87.7 -> 61.7 R (-30 %); spindles 2.9:1 -> 1.4:1;
+relaxed by 20 s (19.7 R, 2.6:1); a second contraction by itself from ~24 s. The nerve (`nervedbg`, reading the release regulator): the
+pulse reached 2, 3, 5 and 12 of 13 nerve cells 0.4, 0.8, 1.5 and 3 s after the touch, about 6 R/s.
+
+## 5. Ring, worm, placing, release (`ring.json`)
+
+- RING with its pacemaker, 60 s: no lumen holds it open, it tightens into a knot (mean radius of the muscle 8.8 -> 3.9 R); the muscle
+  fired once, at ~45..55 s (19..23 of 30 contracting); the model's 12 s rhythm was not seen. Poked (no pacemaker): 3..13 of 30 contract.
+- WORM, its two nerves poked 20 s apart: nothing fired. Not working (not looked into further).
+- PLACE into the default dish at 20 s (room cleared, 63 laid out), poked at 26 s: 17 muscle cells contracting at 34 s, end to end 17.2 ->
+  12.8 R; outside the lab the fibres lose their line within 5 s (order 0.32 -> 0) and 7 cells died in 20 s.
+- RELEASED at 10 s (mutation, births, deaths), 3 min: deaths first (63 -> 44 by 70 s), then the muscle and nerve lines divide (79 cells
+  at 200 s: 40 / 27 / 12 skin), order 1.00 -> 0.67 -> 0.31 (100 s, 190 s), 5.4 -> 9.5 R wide in the groove; from ~2 min the muscle
+  contracts again and again by itself.
+
+## 6. Checks
+
+- OFF = MAIN (`check.json`, main d3b405f exported): the default dish 300 s, cells every 30 s match main's through the founders' crash (3
+  min) at both seeds; after it runs of one seed vary (s3 off 187 / main 315, s7 144 / 173 at 5 min). On (the default): 200 / 184; the gene
+  drifts up from 0 (65 / 48 carriers, 24 / 29 cells contracting now, 0.08 energy per s for the whole dish at 5 min).
+- Books exact (atoms, carbon 0; energy rounding <= 0.05). Snapshots: main's loads exact; an old one with contraction off and the note; the
+  organ's mid-twitch reloads exact. Headed Firefox and phone size run. No console errors. Speed x2.74 / x2.89 on, x2.81 / x2.89 off, main
+  x2.69 / x2.90 (2000 cells, shared GPU).
+
+## Reading
+
+- A cohesive organ made only of general capabilities is possible, but it is a LAB piece: it needed a dish of its own (groove, still water,
+  free glue, stretchy junctions, no S1 torques, a tuned signal power). Each of those was a separate way the default dish took it apart.
+- Contraction needed three things to show at the tissue's scale: the shape (the cell rounds), the cell's own frame (its capsule shortens,
+  so the walls let it) and the pull through junctions (so neighbours follow). With all three a touch to the nerve shortens the muscle by
+  12..16 % end to end, its cells by 30 %.
+- Excitable chains are fragile: the sheet relay does not conduct as a chain; the chain-tuned relay re-excites a packed muscle; the window
+  between silence and self-firing is narrow (signal power 0.004 .. 0.008). The autorhythm at 0.008 (a beat every ~20 s with nothing
+  wired as a clock) is the most heart-like thing seen; the designed pacemaker fired only once in a minute in the ring.
+- Released to evolution it keeps the outline the groove gives it, but the lines grow apart (muscle and nerve divide, skin thins) and the
+  muscle fires by itself: a quick look only.

@@ -1,0 +1,20 @@
+{
+ "runs": [
+  {
+   "name": "l1-oldsnap2",
+   "description": "an old snapshot (tissue lab) loads with contraction off",
+   "query": {
+    "snap": "experiments/tissue/configs/tt-same/snapshot.json"
+   },
+   "duration": 10,
+   "sample_every": 5,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 1,
+     "js": "return JSON.stringify({con: moire.contract.params.on, notes: moire.lab.loaded && moire.lab.loaded.notes.filter(n => n.includes('L1'))})"
+    }
+   ]
+  }
+ ]
+}

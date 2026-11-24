@@ -9264,6 +9264,125 @@ x2.35, hence 4.5.
   design (alpha at most 0.45).
 - Placing a relay strip or ring needs free slots and room: in a crowded dish the cells are pushed into a ball.
 
+## Step L1: the tissue lab (muscle, nerve, skin)
+
+BUILD QUEUE item 6a6d (the user, 2026-11-24: "let's create a tissue lab, that we pre design cells and try to create a muscle for instance,
+with nerves and skin, as simple as it is, as long as it is cohesive"). Hand-designed genomes are the scientist's hand; every capability they
+use is a general gene or gene-network output any cell could evolve. One new capability (CONTRACTION), four hand-wired designs, a layout that
+builds them into one organ, a lab dish for it, a poke, measures. Code: `src/contract.js` (contraction: switches, census, CONTRACTION panel
+line), the "step L1" parts of `cell_common.wgsl` (`con_drive`, `shape_cap`, SH_CON bits), `cell_step.wgsl` (the shortening, the pull through
+junctions), `cell_eat.wgsl` (its upkeep), `cell_grn.wgsl` (its mutation), `src/grn.js` (the 23rd output), `src/tissues.js` (the designs),
+`src/organ.js` (layouts, groove, poke, measure, twitch, place, ORGAN panel line), `src/culture.js` (preset `organ`, the 'organ' spread),
+`src/cells.js` / `src/app.js` (a laid-out cell's front and starting stretch), `src/zoo.js` (organ buttons), `src/actions.js` (rules panel
+group), `tools/l1_pacemaker.py` (the pacemaker's model).
+
+### 1. Contraction (`?contract=0`)
+
+- GENE: Bio.tb.y, 0..4, founders 0 (Bio.tb.yzw were spare). The gene network's 23rd output, CONTRACT (gain tb.z, regulator tb.w; not
+  addressed by lattice in the moire genome: it keeps the regulator it is wired to), multiplies it: drive = min(gene x exp(u x), 1).
+- SHAPE: the drive takes CON_MAX x drive (half ln 4) off the stretch the cell asks for along its FRONT (S1's axis): a 4:1 spindle at drive 1 is
+  round, a round cell flattens across its front. Its CAPSULE (the contacts' body) shortens with it (`shape_cap`): before that a packed
+  spindle's outline was held by its tile's walls, which sat at its old capsule, and nothing changed.
+- PULL (`?conpull=`, 0.3; 0 = the shape alone): the contractile machinery is anchored in the junctions, so a contracting cell pulls each
+  JOINED partner (a formed G0 junction) toward itself along its own axis (x |cos| of the contact to the axis: the poles pull, the flanks
+  hardly) and is pulled back as hard. In a chain of contracting cells the pulls cancel in the middle and the ends draw in: the bundle
+  shortens as a whole. Without it, G0's glue (reach 1.15 x the contact distance) let a shortening cell's neighbours fall behind.
+- COST: `cost` 0.01 energy per s at drive 1 from the battery (the eat pass's upkeep, as heat: booked); an empty battery cannot contract.
+- MUTATION: with the gene network's at births (the gene's step 0.02, the gain's as the network's, now and then pointed at another regulator,
+  switched on at a random gain or off), own random draws, only while on.
+- NULL `?contractnull=1`: the genes drift, nothing contracts, nothing is paid. `?contractgrn=0`: the gene alone (tonic).
+- Needs the cell shape (step S1). Census every 5 s (`?concensus=`): contracting now, mean drive, carriers, wired, cost per s.
+- Not in the job colours: contraction is not one of the six job scores (a seventh would need state words); a contracting relay flashes
+  anyway (its release), and its outline rounds visibly.
+
+### 2. The designs (src/tissues.js; one genome each, one organism: they share the identity words)
+
+All four share the key (full glue likeness), the receptor and the self marker (they are kin), no field push (push gene 0), glue 2.5,
+motility 0.05; each its own founder id (740..770).
+- MUSCLE: the Q1 relay (it fires on what it hears through its junctions and passes it on), a 4:1 spindle, contraction gene 3 read from the
+  release regulator r0 inverted (gain -8: ~0 at rest, 0.25..0.7 firing, so drive ~1 while it fires). Biases 0.6 / 0.5 / 1.5 (the sheet
+  relay's 1 / 0 / 1 needed two firing neighbours; the nerve's 0.3 / 0 / 2 made a packed muscle re-excite itself into a lasting tetanus),
+  starting at its own rest.
+- NERVE: the same relay as a 4:1 spindle, more EXCITABLE (biases 0.3 / 0 / 2): in a chain a cell hears only the one before it, split over its
+  junction sides; the relay's model on one row (tools/q1_relay_sim.py, a row of 12) carries a pulse along and back to rest with 3 to 5 sides
+  only there. Two staggered rows.
+- SKIN: flat (2.5:1 along the surface), a full crust wall, thickness x 2.5, stiffness gene 3, a light eater, silent.
+- PACEMAKER: six regulators at ONE lattice address in three pairs a third of a turn apart in phase: with the moire genome's phase offset
+  (chi = pi/4) the derived links run one way round (each pair inhibits the next at -3.9, its twin excites it at +2.8, backward links under
+  wMin): a doubled REPRESSILATOR. One link is capped at |w| 4 (a loop gain of 1, too weak to oscillate); the twins double it. In the model
+  (tools/l1_pacemaker.py) r0, r1 fast and the rest slow give a period of ~12 s; the releases read r0.
+
+### 3. The organ and its lab (`?tissue=organ`, preset `organ`)
+
+- LAYOUT (src/organ.js, the culture's 'organ' spread: each cell's place, genome and front, its spindle laid out at full length): MUSCLE a
+  bundle of 5 staggered fibres of 6 spindles end to end (28 cells), the NERVE two rows along its top (13 cells), one cell longer than the
+  bundle, its free end over the bundle's left end, the SKIN a stadium of flat cells round all (22; 63 cells in all).
+  `?organ=ring` a BEATING RING (a loop of muscle end to end, a second loop inside, skin outside, a trigger cell or with `?pacemaker=1` the pacemaker), `?organ=worm` two bundles side
+  by side, each with a nerve on its outer side. `?fibres= ?olen= ?oasp= ?oglue= ?ocon= ?organangle= ?stagger=0 ?skin=0 ?pacemaker=1`.
+- THE LAB DISH (the preset's query, each a URL option): no mutation, no births or deaths, light everywhere, no night, the signals view; a
+  GROOVE of porous walls along both long sides (G0b: they stop cells, not water or substances; `?groove=0`); STILL WATER (`currents=0`: the
+  currents sheared the organ apart, cells moved 0.1..0.85 R/s); FREE GLUE (`wallcost=0`: the glue above 0.5 per side costs linkers the
+  founders do not have); junctions stretch 15 % before they tear (`tearat=0.15`: at G0's 5 % the spindles' end-to-end junctions tore faster
+  than they formed, 60..100 sides torn of 168); S1's TORQUES OFF (`shapetorque=0`: off-centre contacts turned the bundle's fibres out of line
+  within 8 s, order 0.97 -> 0.16); the signal's release 0.006 per s (`sigpower`: at 0.004 a pulse along the nerve died out as often as not,
+  at 0.008 the muscle fired by itself). No warm-up (`?warmup=`): the organ starts as laid out.
+- POKE: `moire.organ.poke()` (the signal pipette's touch, 1.8 R, at the nerve's free end; or the toy's signal tool anywhere). `measure()`:
+  cells per design and alive, the bundle end to end (with the cells' lengths) and the cells' summed length, firing (the release regulator
+  r0 low: the flash shows only onsets), drive, junctions formed and torn, the fibres' order. `twitch()`: poke and follow (shortening %, the
+  nerve's speed, junctions torn). `place(kind)`: lay an organ into a living dish (the cells in its footprint moved out to its rim: nothing
+  dies, the books untouched; the zoo's organ buttons). `release()`: mutation and the life cycle on. The ORGAN panel line.
+
+### 4. What it does (seed 3, the organ lab; `experiments/conditions/l1/`)
+
+TWITCH: at rest the organ lies still in its groove, the muscle's spindles about 3:1 (4:1 laid out: a spindle in contact shortens by
+itself, its poles meeting its neighbours' walls). A touch of the nerve's free end at 6 s: the nerve's two rows light up cell by cell
+(~6 R/s), the muscle under it is recruited from the left (2 cells contracting 0.5 s after the touch, 15 at 4 s, all 28 at 7 s), each
+spindle rounding to ~1.4:1 and pulling its neighbours in through the junctions: the bundle end to end 21.1 -> 18.4 R (12 % shorter), the
+cells laid end to end 30 % shorter, at ~6 s after the touch; relaxed again by ~14 s after it (19.7 R, spindles back to ~2.6:1). No
+junction tore (15 % stretch); all 63 cells alive. Sometimes a second contraction follows ~18 s later by itself (the muscle re-excites).
+Pictures (`experiments/keep/l1/`): `twitch-strip-signals-view.jpg` (six frames, 6 to 18 s: the flash runs in from the left, the spindles
+round up in a widening blue patch, all but three of the muscle at the peak, relaxing), `twitch-clip-6-20s-x2.webm` (the same twitch as a
+clip), `organ-rest-vs-contracted-neon.jpg` and `-harmonic.jpg` (thin spindles in rows at rest; chunky, rounder cells at the peak),
+`firefox-organ-poked.jpg`. A second run of the same twitch (`l1-pics2`): 26 of 28 contracting at 10 s after the touch, end to end -16 %,
+cells -29 %.
+RING (stretch goal, `?organ=ring&pacemaker=1`): the ring has no lumen to hold it open and tightens into a knot (mean radius 8.8 -> 3.9 R in
+50 s); poked, 3 .. 13 of its 30 muscle cells contract. With the pacemaker it fired once, at ~45 s (19..23 cells contracting); the model's
+12 s period was not seen. WORM (`?organ=worm`): its pokes started nothing (no nerve fired): not working.
+PLACING into a living default dish (`place('muscle')` at 20 s): the room is cleared, all 63 cells laid out; poked at 26 s the muscle fires
+and contracts (17 of 27 at 34 s, end to end 17.2 -> 12.8 R), but outside the lab (currents, S1's torques, births and deaths) the fibres
+lose their line in seconds (order 0.32 -> 0) and 7 of 63 cells died within 20 s.
+RELEASE (`release()` at 10 s: mutation and births and deaths on; 3 min, seed 3): the organ stays in its groove but loosens: cells die
+first (63 -> 44 by 70 s), then the muscle and nerve lines divide (79 cells at 200 s: 40 muscle, 27 nerve, 12 skin: the skin's walls cost
+it), the fibres lose their line (order 1.00 -> 0.67 at 100 s -> 0.31 at 190 s) and it widens (5.4 -> 9.5 R); from ~2 min the muscle
+contracts again and again by itself (18..25 of 30..40 cells at once), a poke adds little.
+
+### Checked
+
+- Off equals main: `?contract=0` against main d3b405f (an export), the default dish 300 s, cells every 30 s: seed 3 1978 / 1747 / 1553 / 1238
+  / 772 / 441 / 232 to 3 min and 187 at 5 min, against main's 1978 / 1750 / 1550 / 1239 / 783 / 457 / 269 and 315; seed 7 1976 / 1792 / 1630
+  / 1444 / 1031 / 500 / 261 and 144 against 1976 / 1781 / 1615 / 1445 / 1036 / 505 / 266 and 173 (the same founders' crash; after it runs of
+  one seed vary by tens of cells, more at seed 3 here). L1 on (the default; the gene drifts up from 0 at births): 200 and 184 at 5 min; at 5
+  min 65 / 48 carriers, 24 / 29 contracting now, costing 0.08 energy per s in the whole dish.
+- Books: atoms and carbon rounding 0 in every L1 run; energy rounding at most 0.05 (default dishes, 300 s), 0.002 (the organ, reloaded).
+- Snapshots: main d3b405f's loads exact (no notes: it has every setting); an old tissue-lab one loads, contraction off and a note (as it
+  ran); an organ snapshot saved mid-twitch reloads exact, rounding 0.0016.
+- No console errors in any run. Headed Firefox (the organ lab, poked: the twitch runs) and phone size (390 x 844: the organ wider than the screen at x3; runs, the
+  touch works) without errors.
+- Speed (2000 cells, the default dish, seed 3 / 7, 300 s at MAX, GPU shared): L1 on x2.74 / x2.89, `?contract=0` x2.81 / x2.89, main
+  x2.69 / x2.90: within run spread (the contraction adds a few multiplications per cell and contact).
+
+### Known issues
+
+- The organ is a lab piece: its LAB DISH matters (groove, still water, free glue, 15 % junction stretch, S1's torques off, signal power
+  0.006). In the default dish the same cells lose their line within seconds.
+- Excitable relays sit near a threshold: the same poke may start a pulse or not (the hearing is spiky: a resting cell's tiny release
+  arrives as whole counts), and the muscle sometimes contracts again by itself.
+- Contraction is slow and soft: a twitch takes ~6 s to its peak (the relay's slow regulator sets the pulse) and the bundle shortens 12 %
+  end to end while its cells shorten 30 % (the rest is gaps opening and cells widening against the groove).
+- A spindle in contact rests at ~3:1, not the 4:1 it asks for (S1's outline meets its neighbours' walls).
+- The ring tightens into a knot (no lumen), the pacemaker fired once in 60 s, the worm does not move: stretch goals not reached.
+- The contraction output is not addressed by lattice in the moire genome (it keeps its wired regulator); not one of the job colours.
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start
@@ -9331,6 +9450,11 @@ x2.35, hence 4.5.
 - `src/senses.js`: step P3, cells that sense cells: the switches and knobs (`moire.senses.params`), the step's and the eat pass's words, the
   taste's floors from the books, the census (taste genes, following, chases, glued groups, walls), the SENSES panel line, the lab's
   `ring()` (hand-made predators round the colony) and `probe()` (where each taste points)
+- `src/contract.js`: step L1, contraction: the switches and knobs (`moire.contract.params`), the Sim bits (in Sim.shapeF with the shape's: on,
+  null, the network's output, the pull x 32 in bits 16..23), the eat pass's upkeep word (EatP.g3.w), the census and the CONTRACTION panel line;
+  the cells' side in the "step L1" parts of `cell_common.wgsl` (`con_drive`, `shape_cap`), `cell_step.wgsl`, `cell_eat.wgsl`, `cell_grn.wgsl`.
+- `src/organ.js`: step L1, the tissue lab's organ: layouts (muscle, ring, worm; the culture's 'organ' spread), the groove, `moire.organ`
+  (poke, measure, twitch, wriggle, place, release) and the ORGAN panel line; the designs (muscle, nerve, skin, pacemaker) in `src/tissues.js`.
 - `src/signals.js`: step Q1, a signal substance: the switches and knobs (`moire.signals.params`, `look`), the grid's passes (spread, fade,
   books, drain, the pipette's puff), the gene network's (GrnP q1, SigQ) and the eat pass's words (EatP q1), the census and the SIGNALS panel
   line, the pipette (`drop`, `puff`), the signals view's haze; `src/shaders/signal.wgsl` (the grid), `src/shaders/signal_draw.wgsl` (the

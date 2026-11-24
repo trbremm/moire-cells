@@ -535,6 +535,27 @@ select.toy-input option { background: #05080d; }
   window.__moireFresh = { kind: kind, seed: seed };
 })();
 </script>
-<script type="module" src="src/main.js"></script>
+<script>
+// CACHE-SAFE START (2026-11-24): the shaders are always fetched fresh, but the JS modules come from the browser's cache, so right
+// after a push old JS could meet new shaders (a GPU validation error). version.json (always fetched fresh; written by
+// tools/stamp.py) holds a content hash per module; an import map points every module at src/x.js?v=<hash>, so changed modules
+// load fresh and unchanged ones stay cached. On localhost (development) it is skipped unless ?stamp=1; without version.json the
+// page starts as before.
+(function () {
+  function start(src) { var s = document.createElement('script'); s.type = 'module'; s.src = src; document.body.appendChild(s); }
+  var local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) && !/[?&]stamp=1/.test(location.search);
+  if (local || location.protocol === 'file:' || !window.fetch) { start('src/main.js'); return; }
+  fetch('version.json', { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function (v) {
+      var imports = {};
+      for (var f in v.js) imports['./' + f] = './' + f + '?v=' + v.js[f];
+      var m = document.createElement('script'); m.type = 'importmap';
+      m.textContent = JSON.stringify({ imports: imports });
+      document.head.appendChild(m);
+      start('src/main.js?v=' + (v.js['src/main.js'] || v.v));
+    })
+    .catch(function () { start('src/main.js'); });
+})();
+</script>
 </body>
 </html>

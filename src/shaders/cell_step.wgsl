@@ -154,7 +154,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
   let shF = S.shapeF;
   let shOn = (shF & SH_ON) != 0u;
   let myAsk = select(0.0, shape_ask(bio, shF, S.eCap), shOn);   // the elongation it asks for (its gene x the network's SHAPE output)
-  let myK = capsule(c.r, cap_stretch(vec2f(c.e1, c.e2), myAsk), shOn);
+  let myK = capsule(c.r, cap_stretch(vec2f(c.e1, c.e2), select(0.0, shape_cap(bio, shF, S.eCap), shOn)), shOn);   // (step L1: less its contraction)
   let myReach = myK.z + 1.45 * myK.w;        // how far its contact can reach from its centre (along its axis)
   var sTq = 0.0;
   var nemN = 0u;                             // the census: touching pairs both longer than 1.5:1, the sum of cos 2 (their axes' angle)
@@ -364,7 +364,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
         if (shOn) {
           let far = myReach + 2.05 * o.r;        // (at most h + 1.45 rho of the neighbour at an aspect of 4: a cheap test first)
           if (d2 < far * far) {
-            oK = capsule(o.r, cap_stretch(vec2f(o.e1, o.e2), shape_ask(bioPrev[beats[k].idx], shF, S.eCap)), true);
+            oK = capsule(o.r, cap_stretch(vec2f(o.e1, o.e2), shape_cap(bioPrev[beats[k].idx], shF, S.eCap)), true);
             let st = seg_closest(d, myK.xy, myK.z, oK.xy, oK.z);
             dk = d + st.y * oK.xy - st.x * myK.xy;
             sA = st.x;
@@ -588,6 +588,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
           if (rand01(c.seed ^ pcg(S.tick ^ 0x27d4eb2fu), k) * wParent < wp) { parent = k; }
         }
         var pairStick = 0.0;      // step P1: this pair's glue (the adhesion below)
+        var conJoin = false;      // step L1: the pair is joined (a formed junction on this side; without tearing: glued within reach)
         if (adh) {
           if (dist > 1e-3) {
             // like sticks to like: both cells' stickiness, times how alike their keys are (step F0: no same-fate glue on top)
@@ -613,6 +614,7 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
               stick = gl * like;
               // step G0: the junction on side ks forms, holds or tears (see above; only a pulling pair: glue above the base loss)
               let hold = stick - S.adhBase;
+              conJoin = select(dist < reach && hold > 0.0, (jn0 & ((1u << ks) << JN_FORM_SHIFT)) != 0u && hold > 0.0, tearOn);
               if (tearOn && hold > 0.0) {
                 let bit = 1u << ks;
                 if (dist < reach) { jnKeep |= bit; }
@@ -674,7 +676,18 @@ fn step(@builtin(global_invocation_id) id: vec3u) {
             f += fa;
             sTq += sA * (myK.x * fa.y - myK.y * fa.x);
             pairStick = stick;
+            if (!wallOn) { conJoin = dist < reach && stick > S.adhBase; }
           }
+        }
+        // step L1, CONTRACTION PULLS THROUGH JUNCTIONS: a contracting cell's machinery is anchored in its junctions, so it pulls each joined
+        // partner toward itself along its own axis (x |cos| of the contact's direction to that axis: the poles pull, the flanks hardly), and is
+        // pulled back as hard (equal and opposite: each cell adds its own pull's reaction and its partner's pull). In a chain of contracting
+        // cells the pulls cancel in the middle and the ends draw in: the bundle shortens as a whole. Strength: shapeF bits 16..23 / 32 x the
+        // glue's scale (adhesion x R x stiffness) x the drive; worked out on the joined pair only, booked with the other forces
+        let conK = f32((shF >> 16u) & 255u) / 32.0;
+        if (conJoin && conK > 0.0 && (shF & SH_CON) != 0u && dist > 1e-3) {
+          let pm = con_drive(bio, shF) * abs(dot(uk, myK.xy)) + con_drive(ob, shF) * abs(dot(uk, oK.xy));
+          if (pm > 0.0) { f += uk * (conK * pm * S.adhesion * S.R * S.stiffness); }
         }
         // step P1, predators: (a) this cell's HOLD gathers the glue to every touching neighbour; (b) a neighbour wrapping this cell pulls it
         // in, and once its wrap has closed (full progress) this cell is caught (below, with the deaths); (c) a predator looks for a prey (idle)

@@ -331,7 +331,7 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
       // only while contraction is on, so with it off a birth is exactly as before)
       if ((S.shapeF & (SH_ON | SH_CON)) == (SH_ON | SH_CON)) {
         var tb = bioW[i].tb;
-        tb.y = clamp(tb.y + ms * 0.02 * gauss(bs, 430u), 0.0, 1.0);
+        tb.y = clamp(tb.y + ms * 0.02 * gauss(bs, 430u), 0.0, CON_GMAX);
         if (tb.z != 0.0) { tb.z = clamp(tb.z + ms * GP.uStep * gauss(bs, 431u), -GRN_UMAX, GRN_UMAX); }
         if (grn_rand(bs, 432u) < min(GP.orewire * ms, 1.0)) {
           if (grn_rand(bs, 433u) < 0.2) { tb.z = 0.0; }
@@ -424,7 +424,7 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
       // (step S1: pressed against it on their capsules: their gap against their end radii; off, the centres against the radii as before)
       let shOn = (S.shapeF & SH_ON) != 0u;
       let gp = cap_pair(c.pos, c.r, vec2f(c.e1, c.e2), cj.pos, cj.r, vec2f(cj.e1, cj.e2), shOn,
-                        select(0.0, shape_ask(bioOld[i], S.shapeF, S.eCap), shOn), select(0.0, shape_ask(bioOld[j], S.shapeF, S.eCap), shOn));
+                        select(0.0, shape_cap(bioOld[i], S.shapeF, S.eCap), shOn), select(0.0, shape_cap(bioOld[j], S.shapeF, S.eCap), shOn));
       if (gp.x >= GP.press * gp.y) { continue; }
       cov += 1.0;
       if (sigOn) {

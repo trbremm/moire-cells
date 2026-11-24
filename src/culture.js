@@ -250,8 +250,10 @@ export const PRESETS = {
     label: 'Tissue lab: organ',
     desc: 'A hand-designed organ (step L1): a muscle bundle of spindles glued end to end, a nerve of long relay cells along it, a skin of flat walled cells round it. Touch the nerve’s free end (left, outside the skin) with the signal pipette: a flash runs along the nerve, the muscle fires and shortens, the skin flexes. No evolution until you release it.',
     // (the lab's dish: still water, the glue free (no linkers or upkeep for it), junctions that stretch 15 % before they tear (G0's 5 % tore
-    // the spindles' end-to-end junctions faster than they formed), no mutation, no births or deaths, light everywhere, no night)
-    query: { tissue: 'organ', mut: 0, life: 0, light: 'full', day: 0, view: 'signals', currents: 0, wallcost: 0, tearat: 0.15 },
+    // the spindles' end-to-end junctions faster than they formed), the spindles not turned by off-centre contacts (S1's torques turned the
+    // bundle's fibres out of line within 8 s: order 0.97 -> 0.16), the signal's release x 1.5 (0.006 per s: at 0.004 a pulse along the
+    // nerve died out as often as not, at 0.008 the muscle fired by itself), no mutation, no births or deaths, light everywhere, no night)
+    query: { tissue: 'organ', mut: 0, life: 0, light: 'full', day: 0, view: 'signals', currents: 0, wallcost: 0, tearat: 0.15, shapetorque: 0, sigpower: 0.006 },
     zoom: 3,
     scene({ matter, W, H }) {
       // food: two lasting mineral springs (and with carbon a fuel seep) above and below the organ, out of its way

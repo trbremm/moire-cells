@@ -181,7 +181,7 @@
 //               ?tissue=relay (the hand-wired relay sheet)
 //   ?contract=0   step L1, contraction (src/contract.js): no cell contracts (the genes carried, never mutating); ?contractnull=1 its NEUTRAL
 //               control (the genes drift, nothing contracts, nothing is paid); ?contractgrn=0 the gene alone (the network's 23rd output does not
-//               act); knobs ?concost= ?concensus= (rules panel, Contraction); ?tissue=organ the tissue lab's organ (src/tissues.js: muscle,
+//               act); knobs ?concost= ?concensus= ?conpull= (rules panel, Contraction); ?tissue=organ the tissue lab's organ (src/tissues.js: muscle,
 //               nerve, skin; ?organ=muscle|ring|worm, ?pacemaker=1)
 //   ?flagella=0   step S2: no flagella; ?cilia=0 no cilia (both 0: exactly as before S2); ?flagellanull=1 ?cilianull=1 their NEUTRAL controls
 //               (the genes drift, nothing acts, nothing is paid); ?mogrn=0 ?mowater=0 ?modipole=0 ?mopump=0 ?mocouple=0 ?mosteer=0 ?motorque=0
@@ -418,7 +418,7 @@ async function boot() {
   // step L1: ?tissue=organ, the tissue lab's organ (src/organ.js): as many cells as it lays out
   const ORGAN = !snap && params.get('tissue') === 'organ' ? { kind: ORGAN_KINDS.includes(params.get('organ')) ? params.get('organ') : 'muscle', opts: {
     fibres: Number(params.get('fibres')) || undefined, length: Number(params.get('olen')) || undefined, ringCells: Number(params.get('ringcells')) || undefined,
-    aspect: Number(params.get('oasp')) || undefined, glue: Number(params.get('oglue')) || undefined, con: params.has('ocon') ? Number(params.get('ocon')) : undefined,
+    aspect: Number(params.get('oasp')) || undefined, muscleSheet: params.has('omsheet') && flag('omsheet'), glue: Number(params.get('oglue')) || undefined, con: params.has('ocon') ? Number(params.get('ocon')) : undefined,
     pacemaker: params.has('pacemaker') && flag('pacemaker'), stagger: !(params.has('stagger') && !flag('stagger')), noskin: params.has('skin') && !flag('skin'), angle: Number(params.get('organangle')) || 0 } } : null;
   if (ORGAN && !params.has('cells')) nCells = organCells(ORGAN.kind, ORGAN.opts).length;
   {
@@ -654,7 +654,7 @@ async function boot() {
       for (const [q, k] of [['contract', 'on'], ['contractnull', 'null'], ['contractgrn', 'grn']]) {
         if (params.has(q)) CP[k] = flag(q);
       }
-      for (const [q, k] of [['concost', 'cost'], ['concensus', 'censusEvery']]) {
+      for (const [q, k] of [['concost', 'cost'], ['concensus', 'censusEvery'], ['conpull', 'pull']]) {
         const v = Number(params.get(q));
         if (params.has(q) && Number.isFinite(v) && v >= 0) CP[k] = v;
       }

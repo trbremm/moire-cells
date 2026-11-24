@@ -2,7 +2,7 @@
 // for instance, with nerves and skin, as simple as it is, as long as it is cohesive"; README "Step L1"). A general capability any cell could
 // evolve (an actomyosin toy), never a "muscle" rule:
 //
-//   the gene     CONTRACTION (Bio.tb.y, 0..1; founders 0): how hard the cell can shorten along its FRONT (the S1 spindle's axis)
+//   the gene     CONTRACTION (Bio.tb.y, 0..4; founders 0): how hard the cell can shorten along its FRONT (the S1 spindle's axis)
 //   the network  the 23rd output, CONTRACT (gain Bio.tb.z, regulator tb.w; not addressed by lattice in the moire genome: it keeps the regulator
 //                it was wired to), multiplies the gene: drive = min(gene x exp(u x), 1). A fast regulator (step Q1) makes it a TWITCH
 //   the shape    the drive takes CON_MAX x drive (half ln 4) off the stretch the cell asks for along its front (cell_step.wgsl): a 4:1 spindle at
@@ -10,6 +10,10 @@
 //                contacts, step S1) shortens with them, and the glue across its junctions (step G0) pulls its neighbours after it: a bundle
 //                glued end to end shortens as a whole. Nothing pushes or pulls by itself; the junctions may TEAR if it shortens faster than
 //                the glue can follow (G0's breaking rule)
+//   the pull     its contractile machinery is anchored in its junctions: a contracting cell PULLS each joined partner (a formed junction) toward
+//                itself along its own axis (x |cos| of the contact to the axis: the poles pull), and is pulled back as hard; in a chain of
+//                contracting cells the pulls cancel in the middle and the ends draw in, so the bundle shortens as a whole (`pull` x the
+//                glue's scale x the drive; ?conpull=0: the shape alone)
 //   the cost     `cost` energy per s at drive 1 from the battery (the eat pass's upkeep, as heat: booked); a cell with an empty battery cannot
 //                contract (it relaxes). Free when it does not contract
 //   mutation     at births with the gene network's (the gene drifts, the output's gain drifts, now and then it is pointed at another regulator,
@@ -30,10 +34,11 @@ const B_GX = 84;                            // Bio.gx: the regulators' expressio
 const C_FLAGS = 9, C_BAT = 16;
 const BITS = { ON: 128, NULL: 256, GRN: 512 };   // SH_CON, SH_CNULL, SH_CGRN (cell_common.wgsl)
 export const CON_MAX = 0.5 * Math.log(4);
+export const CON_GMAX = 4;                 // the gene's top (cell_common.wgsl CON_GMAX)
 
 /** A genome's contraction drive now (0..1), as cell_common.wgsl con_drive: g the Bio words at o; acts = the network's outputs act. */
 export function conDrive(g, o, acts = true) {
-  const k = Math.max(0, Math.min(1, g[o + BIO_CON] || 0));
+  const k = Math.max(0, Math.min(CON_GMAX, g[o + BIO_CON] || 0));
   if (!(k > 0)) return 0;
   let f = 1;
   if (acts) {
@@ -53,6 +58,7 @@ export class Contract {
       null: false,       // the NEUTRAL control (?contractnull=1): the genes drift, nothing contracts, nothing is paid
       grn: true,         // the gene network's 23rd output scales the drive (?contractgrn=0: the gene alone, tonic)
       cost: 0.01,        // energy per s at drive 1 (?concost=; an engine's upkeep at rate 1 is 0.003, the signal's release 0.004)
+      pull: 0.3,         // the pull through joined junctions at drive 1, x the glue's scale (adhesion x R x stiffness; 0: the shape alone) (?conpull=)
       censusEvery: 5,    // s of simulated time between the census's read-backs (0: never) (?concensus=)
     };
     this.census = null;
@@ -67,7 +73,8 @@ export class Contract {
     const p = this.params, S = this.cells.spindle;
     if (!p.on || !S || !S.on) return 0;
     const acts = !!(this.cells.grn && this.cells.grn.acts);
-    return BITS.ON | (p.null ? BITS.NULL : 0) | (p.grn && acts ? BITS.GRN : 0);
+    const pq = Math.max(0, Math.min(255, Math.round(32 * (Number(p.pull) || 0))));   // (bits 16..23: the pull x 32)
+    return BITS.ON | (p.null ? BITS.NULL : 0) | (p.grn && acts ? BITS.GRN : 0) | (pq << 16);
   }
   writeSim(u, o) { u[o + 28] |= this.bits(); }
 
@@ -99,7 +106,7 @@ export class Contract {
         const o = i * CF;
         if (!(u[o + C_FLAGS] & 1)) continue;
         N++;
-        const b = i * B, k = Math.max(0, Math.min(1, g[b + BIO_CON] || 0));
+        const b = i * B, k = Math.max(0, Math.min(CON_GMAX, g[b + BIO_CON] || 0));
         sGene += k;
         if (k > 0.02) carriers++;
         if (k > 0.02 && (g[b + BIO_CON + 1] || 0) !== 0) wired++;

@@ -661,7 +661,7 @@ fn cover_mask(c: Cell, i: u32) -> u32 {
     // (step S1: on their capsules: their gap against their end radii; off, the centres against the radii as before)
     let shOn = (S.shapeF & SH_ON) != 0u;
     let gp = cap_pair(c.pos, c.r, vec2f(c.e1, c.e2), cells[j].pos, cells[j].r, vec2f(cells[j].e1, cells[j].e2), shOn,
-                      select(0.0, shape_ask(bio[i], S.shapeF, S.eCap), shOn), select(0.0, shape_ask(bio[j], S.shapeF, S.eCap), shOn));
+                      select(0.0, shape_cap(bio[i], S.shapeF, S.eCap), shOn), select(0.0, shape_cap(bio[j], S.shapeF, S.eCap), shOn));
     if (gp.x < EP.t1[0].z * gp.y) { m |= 1u << k; }
   }
   return m;

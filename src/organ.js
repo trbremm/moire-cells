@@ -20,12 +20,13 @@ import { CELL_FLOATS, CELL_BYTES } from './cells.js';
 import { BIO_FLOATS } from './genome.js';
 import { muscleGenome, nerveGenome, skinGenome, pacemakerGenome } from './tissues.js';
 import { readBuffer, frames, settle } from './snapshot.js';
+import { conDrive } from './contract.js';
 
 export const ORGAN_KINDS = ['muscle', 'ring', 'worm'];
 export const ORGAN_DESIGNS = ['muscle', 'nerve', 'skin', 'pacemaker'];   // the founders' order (founder k = design k)
 const FOUNDER_IDS = [740, 750, 760, 770];
 const C_FLAGS = 9, C_KIND = 8, C_FRONT = 64, C_MOTW = 93;
-const B_FOUNDER = 7, B_SSW = 239;
+const B_FOUNDER = 7, B_SSW = 239, B_GX0 = 84;
 // the spindles' lengths (capsule 2 (h + rho), area kept): 4:1 -> 3.64 R long, 0.91 R wide; 2.5:1 (skin) 2.93 R long, 1.17 R wide
 const cap = (A) => { const rho = Math.sqrt(Math.PI / (Math.PI + 4 * (A - 1))); return { len: 2 * A * rho, wid: 2 * rho }; };
 const M4 = cap(4), S25 = cap(2.5);
@@ -33,12 +34,17 @@ const M4 = cap(4), S25 = cap(2.5);
 /** The muscle's and nerve's spindle aspect (opts.aspect, 1.5..4). */
 export function organAspect(opts = {}) { return Math.max(1.5, Math.min(4, Number(opts.aspect) || ORGAN_ASPECT)); }
 export const ORGAN_ASPECT = 4;
+export const ORGAN_CON = 3;   // the muscle's contraction gene: a firing relay's output factor (0.25 .. 0.7) contracts it nearly fully
 /** A genome per design (the founders, in ORGAN_DESIGNS' order), opts: aspect (the spindles'), glue, con (the muscle's contraction gene). */
 export function organGenomes(rng = Math.random, opts = {}) {
-  const G = [muscleGenome(rng, 740, opts.con ?? 1), nerveGenome(rng), skinGenome(rng), pacemakerGenome(rng)];
+  const G = [muscleGenome(rng, 740, opts.con ?? ORGAN_CON), nerveGenome(rng), skinGenome(rng), pacemakerGenome(rng)];
   const la = Math.log(organAspect(opts));
   G[0][13] = la; G[1][13] = la;
   if (opts.glue > 0) for (const g of G) g[16] = Math.max(0.05, Math.min(4, opts.glue));
+  if (opts.muscleSheet) {   // (the sheet's relay biases and rest for the muscle: less excitable)
+    const b = 84;
+    G[0][b + 8] = 1; G[0][b + 9] = 0; G[0][b + 10] = 1; G[0][b] = 0.75; G[0][b + 1] = 0.18; G[0][b + 2] = 0.17;
+  }
   return G;
 }
 
@@ -106,11 +112,14 @@ export function organCells(kind = 'muscle', opts = {}) {
   // muscle: a bundle, a nerve on top (out through the skin on the left), skin round
   const F = Math.max(1, Math.round(opts.fibres || 5)), L = Math.max(2, Math.round(opts.length || 6));
   bundle(out, F, L, 0, dy, opts.stagger !== false, M4);
-  const yTop = (F - 1) / 2 * dy, yN = yTop + dy, half = L * M4.len / 2;
-  // the nerve: one cell longer than the bundle, its free end out over the bundle's left end (where the pipette pokes it), inside the skin
-  const nN = L + 1;
-  for (let k = 0; k < nN; k++) out.push({ x: -half - 0.6 * M4.len + (k + 0.5) * M4.len, y: yN, front: 0, d: pace && k === 0 ? 3 : 1 });
-  const lo = -yTop - 0.5 * M4.wid, hi = yN + 0.5 * M4.wid, mid = (lo + hi) / 2;
+  const yTop = (F - 1) / 2 * dy, yN = yTop + dy, half = L * M4.len / 2;   // (the nerve's first row just above the top fibre)
+  // the nerve: two staggered rows of long relay cells (a chain alone passes a pulse badly: each cell hears only the one before it), one
+  // cell longer than the bundle, its free end out over the bundle's left end (where the pipette pokes it), inside the skin
+  const nR = Math.max(1, Math.round(opts.nerveRows || 2)), nN = L + 1;
+  for (let r = 0; r < nR; r++) {
+    for (let k = 0; k < nN - (r % 2); k++) out.push({ x: -half - 0.6 * M4.len + (k + 0.5 + 0.5 * (r % 2)) * M4.len, y: yN + r * dy, front: 0, d: pace && r === 0 && k === 0 ? 3 : 1 });
+  }
+  const lo = -yTop - 0.5 * M4.wid, hi = yN + (nR - 1) * dy + 0.5 * M4.wid, mid = (lo + hi) / 2;
   for (const c of out) c.y -= mid;
   const b = (hi - lo) / 2 + 0.55 * S25.wid + 0.1, a = half + 0.6 * M4.len + 0.3;
   if (!opts.noskin) stadium(out, a, b, 0.98 * S25.len, null);
@@ -162,6 +171,7 @@ export class Organ {
     this.n0 = 0;          // cells laid out
     this.last = null;     // the last twitch's numbers
     this.census = null;   // the last measure()
+    this.pokeR = 1.8;     // the poke's radius (R): a few cells at the nerve's free end (one cell alone often fails to start a pulse)
   }
 
   /** The founder id of each design (to tell the organ's cells apart). */
@@ -172,15 +182,17 @@ export class Organ {
     const M = this.M, C = M.cells, d = M.gpu.device, n = C.count;
     const [cellAB, bioAB] = await Promise.all([readBuffer(d, C.cellBuf, 0, n * CELL_FLOATS * 4), readBuffer(d, C.bioBuf[C.bioCur], 0, n * BIO_FLOATS * 4)]);
     const f = new Float32Array(cellAB), u = new Uint32Array(cellAB), g = new Float32Array(bioAB);
-    const by = [[], [], [], []];
+    const by = [[], [], [], []], acts = !!(C.grn && C.grn.acts);
     for (let i = 0; i < n; i++) {
       const o = i * CELL_FLOATS;
       if (!(u[o + C_FLAGS] & 1)) continue;
       const k = Organ.designOf(g[i * BIO_FLOATS + B_FOUNDER]);
       if (k < 0) continue;
       const w = u[o + C_KIND];
-      by[k].push({ i, x: f[o], y: f[o + 1], front: f[o + C_FRONT], e: Math.hypot(f[o + 6], f[o + 7]), fire: ((u[o + C_MOTW] >>> 24) & 255) / 255,
-        onset: g[i * BIO_FLOATS + B_SSW], formed: ((w >>> 8) & ~w & 63), torn: w & 63 });
+      // (FIRING: the relays' release regulator r0 low, its release factor e^(-8 x0) above 0.1; the flash (Cell.motW) shows only the onset)
+      by[k].push({ i, x: f[o], y: f[o + 1], front: f[o + C_FRONT], e: Math.hypot(f[o + 6], f[o + 7]), fire: k === 2 ? 0 : Math.exp(-8 * Math.max(0, g[i * BIO_FLOATS + B_GX0])) / 0.3,
+        flash: ((u[o + C_MOTW] >>> 24) & 255) / 255,
+        onset: g[i * BIO_FLOATS + B_SSW], formed: ((w >>> 8) & ~w & 63), torn: w & 63, drive: conDrive(g, i * BIO_FLOATS, acts) });
     }
     return by;
   }
@@ -203,6 +215,11 @@ export class Organ {
     const ax = this.axisOf(mus), pr = (p) => p.x * ax[0] + p.y * ax[1], pp = (p) => -p.x * ax[1] + p.y * ax[0];
     const stat = (L, f) => { if (!L.length) return null; const v = L.map(f).sort((a, b) => a - b); return { lo: v[0], hi: v[v.length - 1], span: v[v.length - 1] - v[0] }; };
     const len = stat(mus, pr), wid = stat(mus, pp);
+    // with the cells' own lengths: each muscle cell's capsule half-length along the axis (its outline's aspect, area kept), the bundle's
+    // extent end to end, and the cells' summed length (what they would make laid end to end: shortens with every cell that contracts)
+    const hl = (p) => { const A = Math.exp(2 * p.e), rho = Math.sqrt(Math.PI / (Math.PI + 4 * (A - 1))); return A * rho * R * Math.abs(Math.cos(p.front - Math.atan2(ax[1], ax[0]))); };
+    const ends = mus.length ? (Math.max(...mus.map((p) => pr(p) + hl(p))) - Math.min(...mus.map((p) => pr(p) - hl(p)))) / R : 0;
+    const sumLen = mus.reduce((a, p) => a + 2 * hl(p), 0) / R;
     let cx = 0, cy = 0;
     for (const p of mus) { cx += p.x; cy += p.y; }
     cx /= Math.max(1, mus.length); cy /= Math.max(1, mus.length);
@@ -221,7 +238,9 @@ export class Organ {
       time: M.time(), kind: this.kind,
       cells: { muscle: mus.length, nerve: ner.length, skin: skin.length, pacemaker: pace.length, all: all.length, laidOut: this.n0 },
       survival: this.n0 ? all.length / this.n0 : null,
-      length: len ? len.span / R : 0, width: wid ? wid.span / R : 0, ringR, aspect, aspFiring, aspResting, order,
+      length: len ? len.span / R : 0, ends, sumLen, width: wid ? wid.span / R : 0, ringR, aspect, aspFiring, aspResting, order,
+      drive: mus.length ? mus.reduce((a, p) => a + p.drive, 0) / mus.length : 0, contracting: mus.filter((p) => p.drive > 0.3).length,
+      nerveJunctions: ner.length ? ner.reduce((a, p) => a + bits(p.formed), 0) / ner.length : 0,
       skin: { length: skinL ? skinL.span / R : 0, width: skinW ? skinW.span / R : 0 },
       firing: { muscle: mus.filter((p) => p.fire > 0.3).length, nerve: ner.filter((p) => p.fire > 0.3).length },
       junctions: { formed: all.reduce((a, p) => a + bits(p.formed), 0) / 2, torn: all.reduce((a, p) => a + bits(p.torn), 0) },
@@ -258,7 +277,7 @@ export class Organ {
       }
     }
     const r = Q.params.puffRadius;
-    Q.params.puffRadius = 0.9;     // (a fine tip: the end cell only)
+    Q.params.puffRadius = this.pokeR;   // (the electrode's tip: the end cells of the nerve, 1.8 R)
     Q.drop(x, y, 0);
     Q.params.puffRadius = r;
     return { x, y };

@@ -1777,16 +1777,17 @@ const SH_WRAP: u32 = 32u;     // engulfing must wrap the prey's LENGTH (a predat
 const SH_GENE: u32 = 64u;     // the elongation gene acts (off: only passive deformation makes capsules)
 const SH_LN_MAX: f32 = 1.3862944;   // ln 4: the elongation gene's top (an aspect of 4); the knob S.eCap may cap lower
 // step L1, CONTRACTION (src/contract.js; README "Step L1"): a cell SHORTENS ALONG ITS FRONT by its contraction gene (Bio.tb.y, 0..1; founders
-// 0) x the gene network's 23rd output (gain Bio.tb.z, regulator tb.w): a stretch of CON_MAX x the drive taken off its asked elongation along
+// 0; 0..4) x the gene network's 23rd output (gain Bio.tb.z, regulator tb.w), at most 1: a stretch of CON_MAX x the drive taken off its asked elongation along
 // the front (a 4:1 spindle at drive 1 is round; a round cell flattens across its front). Its glued neighbours are pulled along through the
 // junctions (the capsules shorten, the glue closes the gap). Paid from the battery per s of drive (the eat pass's upkeep); none with an empty one
 const SH_CON: u32 = 128u;     // contraction acts
 const SH_CNULL: u32 = 256u;   // its NEUTRAL control: the genes drift, no cell contracts, nothing is paid
 const SH_CGRN: u32 = 512u;    // the gene network's 23rd output (CONTRACT) scales it (set only while the network's outputs act)
 const CON_MAX: f32 = 0.6931472;   // the stretch taken off at drive 1 (half ln 4)
+const CON_GMAX: f32 = 4.0;        // the gene's top: drive = min(gene x the output's factor, 1), so a strong gene contracts fully on a weak signal
 fn con_drive(b: Bio, shF: u32) -> f32 {
   if ((shF & (SH_ON | SH_CON)) != (SH_ON | SH_CON) || (shF & SH_CNULL) != 0u) { return 0.0; }
-  let k = clamp(b.tb.y, 0.0, 1.0);
+  let k = clamp(b.tb.y, 0.0, CON_GMAX);
   if (k <= 0.0) { return 0.0; }
   var f = 1.0;
   if ((shF & SH_CGRN) != 0u) { let j = min(u32(max(b.tb.w, 0.0)), 7u); f = grn_fac(b.tb.z, b.gx[j >> 2u][j & 3u]); }
@@ -1814,6 +1815,13 @@ fn shape_ask(b: Bio, shF: u32, eCap: f32) -> f32 {
   var la = clamp(b.relay.y, 0.0, SH_LN_MAX);
   if ((shF & SH_GRN) != 0u && la > 0.0) { la *= grn_fac_shape(b); }
   return min(0.5 * la, eCap);
+}
+// step L1: the longest a cell's CAPSULE may be: the elongation it asks for less what its contraction takes off (the cell's own frame
+// shortens, so its contacts' walls move in and its outline can follow; exactly shape_ask while nothing contracts)
+fn shape_cap(b: Bio, shF: u32, eCap: f32) -> f32 {
+  let a = shape_ask(b, shF, eCap);
+  if ((shF & SH_CON) == 0u) { return a; }
+  return abs(a - CON_MAX * con_drive(b, shF));
 }
 // the stretch a capsule takes: the outline's, no longer than what the cell asks for
 fn cap_stretch(e: vec2f, ask: f32) -> vec2f {

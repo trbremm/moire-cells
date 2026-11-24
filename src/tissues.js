@@ -249,14 +249,25 @@ export function muscleGenome(rng = Math.random, founder = 740, con = 1) {
   g[13] = Math.log(4); g[14] = 0; g[15] = 0;   // elongation 4:1 (relay.y), the shape output off
   g[16] = ORGAN_GLUE; g[18] = 0.05;            // glue, barely crawls
   g[185] = con; g[186] = -8; g[187] = 0;       // CONTRACTION: gene, the 23rd output's gain (inverted) and regulator (r0, as the releases)
-  g[49] = -0.6;                                // the C10 two-fold wall pattern: the long SIDES stickier than the ends (fibres hold side by side)
+  // between the sheet's relay and the nerve: biases 0.6, 0.5, 1.5 (the relay's model on a sheet: a pulse crosses it and every cell goes back
+  // to rest; at the nerve's biases a packed muscle re-excites itself and stays contracted, a tetanus), starting at its rest
+  g[BIO_GRN + 8] = 0.6; g[BIO_GRN + 9] = 0.5; g[BIO_GRN + 10] = 1.5;
+  g[BIO_GRN] = 0.719; g[BIO_GRN + 1] = 0.317; g[BIO_GRN + 2] = 0.211;
   return g;
 }
 /** NERVE: the same relay as a long 4:1 spindle (one hop per cell length: a pulse runs about twice as far per firing as in a round sheet). */
 export function nerveGenome(rng = Math.random, founder = 750) {
   const g = organIdentity(relayGenome(rng, founder));
   g[13] = Math.log(4); g[14] = 0; g[15] = 0;
-  g[16] = ORGAN_GLUE; g[18] = 0.05; g[49] = -0.6;
+  g[16] = ORGAN_GLUE; g[18] = 0.05;
+  return excitable(g);
+}
+/** The organ's relays are more EXCITABLE than the sheet's (biases 0.3, 0, 2 against 1, 0, 1): in a chain a cell hears only the one before it,
+ * split over its 2 .. 5 junction sides; the relay's model on a chain (tools/q1_relay_sim.py with one row) carries a pulse along it and back
+ * to rest with 3 to 5 sides only at these biases. They start at their own rest (else they fire as they settle). */
+function excitable(g) {
+  g[BIO_GRN + 8] = 0.3; g[BIO_GRN + 9] = 0; g[BIO_GRN + 10] = 2;
+  g[BIO_GRN] = 0.614; g[BIO_GRN + 1] = 0.367; g[BIO_GRN + 2] = 0.348;
   return g;
 }
 /** SKIN: flat (2.5:1 along the surface), a full crust wall, a thick stiff membrane, the organ's glue; a light eater; silent (it hears, nothing is

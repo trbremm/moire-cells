@@ -1,0 +1,189 @@
+{
+ "batch": "g3-evo",
+ "runs": [
+  {
+   "name": "g3-evo-default-on",
+   "description": "step G3 quick look, default s3, 10 min, every part on",
+   "query": {
+    "seed": 3,
+    "g3census": 30
+   },
+   "duration": 602,
+   "sample_every": 30,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 300,
+     "js": "const f=await moire.folding.now(); const g=moire.grn.census; const s = await moire.sample(); return JSON.stringify({t: moire.time(), alive: s.alive, job: [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)), fold: {stressFold: f.stressFold, stress: f.stress, dose: f.dose, buf: f.buf, bufSd: f.bufSd, hidden: f.hidden, buffered: f.buffered, hiddenLinks: f.hiddenLinks, foldLinks: f.foldLinks, drift: f.drift, wirings: f.wirings, lineRefolds: f.lineRefolds, stressed: f.stressed, calm: f.calm, lineages: f.lineages}, rates: moire.folding.rates, grn: g && {types: g.types, lineageN: g.lineageN, lineages: g.lineages.slice(0,3).map(l=>({id:l.id,n:l.n,types:l.types,differ:l.differ}))}})"
+    },
+    {
+     "t": 600,
+     "js": "const f=await moire.folding.now(); const g=moire.grn.census; const s = await moire.sample(); return JSON.stringify({t: moire.time(), alive: s.alive, job: [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)), fold: {stressFold: f.stressFold, stress: f.stress, dose: f.dose, buf: f.buf, bufSd: f.bufSd, hidden: f.hidden, buffered: f.buffered, hiddenLinks: f.hiddenLinks, foldLinks: f.foldLinks, drift: f.drift, wirings: f.wirings, lineRefolds: f.lineRefolds, stressed: f.stressed, calm: f.calm, lineages: f.lineages}, rates: moire.folding.rates, grn: g && {types: g.types, lineageN: g.lineageN, lineages: g.lineages.slice(0,3).map(l=>({id:l.id,n:l.n,types:l.types,differ:l.differ}))}})"
+    },
+    {
+     "t": 601,
+     "js": "return JSON.stringify(await moire.folding.show({lineages: 3, size: 200}))"
+    }
+   ],
+   "shots": [
+    {
+     "t": 300,
+     "name": "t300"
+    },
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 600,
+     "view": "marker",
+     "name": "t600-marker"
+    },
+    {
+     "t": 601,
+     "name": "t601-genome"
+    }
+   ]
+  },
+  {
+   "name": "g3-evo-default-null",
+   "description": "step G3 quick look, default s3, 10 min, the neutral controls (fold, dose, buffer drift without effect)",
+   "query": {
+    "foldnull": 1,
+    "dosenull": 1,
+    "buffernull": 1,
+    "seed": 3,
+    "g3census": 30
+   },
+   "duration": 602,
+   "sample_every": 30,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 300,
+     "js": "const f=await moire.folding.now(); const g=moire.grn.census; const s = await moire.sample(); return JSON.stringify({t: moire.time(), alive: s.alive, job: [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)), fold: {stressFold: f.stressFold, stress: f.stress, dose: f.dose, buf: f.buf, bufSd: f.bufSd, hidden: f.hidden, buffered: f.buffered, hiddenLinks: f.hiddenLinks, foldLinks: f.foldLinks, drift: f.drift, wirings: f.wirings, lineRefolds: f.lineRefolds, stressed: f.stressed, calm: f.calm, lineages: f.lineages}, rates: moire.folding.rates, grn: g && {types: g.types, lineageN: g.lineageN, lineages: g.lineages.slice(0,3).map(l=>({id:l.id,n:l.n,types:l.types,differ:l.differ}))}})"
+    },
+    {
+     "t": 600,
+     "js": "const f=await moire.folding.now(); const g=moire.grn.census; const s = await moire.sample(); return JSON.stringify({t: moire.time(), alive: s.alive, job: [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)), fold: {stressFold: f.stressFold, stress: f.stress, dose: f.dose, buf: f.buf, bufSd: f.bufSd, hidden: f.hidden, buffered: f.buffered, hiddenLinks: f.hiddenLinks, foldLinks: f.foldLinks, drift: f.drift, wirings: f.wirings, lineRefolds: f.lineRefolds, stressed: f.stressed, calm: f.calm, lineages: f.lineages}, rates: moire.folding.rates, grn: g && {types: g.types, lineageN: g.lineageN, lineages: g.lineages.slice(0,3).map(l=>({id:l.id,n:l.n,types:l.types,differ:l.differ}))}})"
+    },
+    {
+     "t": 601,
+     "js": "return JSON.stringify(await moire.folding.show({lineages: 3, size: 200}))"
+    }
+   ],
+   "shots": [
+    {
+     "t": 300,
+     "name": "t300"
+    },
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 600,
+     "view": "marker",
+     "name": "t600-marker"
+    },
+    {
+     "t": 601,
+     "name": "t601-genome"
+    }
+   ]
+  },
+  {
+   "name": "g3-evo-colonies-on",
+   "description": "step G3 quick look, colonies s3, 10 min, every part on",
+   "query": {
+    "preset": "colonies",
+    "seed": 3,
+    "g3census": 30
+   },
+   "duration": 602,
+   "sample_every": 30,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 300,
+     "js": "const f=await moire.folding.now(); const g=moire.grn.census; const s = await moire.sample(); return JSON.stringify({t: moire.time(), alive: s.alive, job: [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)), fold: {stressFold: f.stressFold, stress: f.stress, dose: f.dose, buf: f.buf, bufSd: f.bufSd, hidden: f.hidden, buffered: f.buffered, hiddenLinks: f.hiddenLinks, foldLinks: f.foldLinks, drift: f.drift, wirings: f.wirings, lineRefolds: f.lineRefolds, stressed: f.stressed, calm: f.calm, lineages: f.lineages}, rates: moire.folding.rates, grn: g && {types: g.types, lineageN: g.lineageN, lineages: g.lineages.slice(0,3).map(l=>({id:l.id,n:l.n,types:l.types,differ:l.differ}))}})"
+    },
+    {
+     "t": 600,
+     "js": "const f=await moire.folding.now(); const g=moire.grn.census; const s = await moire.sample(); return JSON.stringify({t: moire.time(), alive: s.alive, job: [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)), fold: {stressFold: f.stressFold, stress: f.stress, dose: f.dose, buf: f.buf, bufSd: f.bufSd, hidden: f.hidden, buffered: f.buffered, hiddenLinks: f.hiddenLinks, foldLinks: f.foldLinks, drift: f.drift, wirings: f.wirings, lineRefolds: f.lineRefolds, stressed: f.stressed, calm: f.calm, lineages: f.lineages}, rates: moire.folding.rates, grn: g && {types: g.types, lineageN: g.lineageN, lineages: g.lineages.slice(0,3).map(l=>({id:l.id,n:l.n,types:l.types,differ:l.differ}))}})"
+    },
+    {
+     "t": 601,
+     "js": "return JSON.stringify(await moire.folding.show({lineages: 3, size: 200}))"
+    }
+   ],
+   "shots": [
+    {
+     "t": 300,
+     "name": "t300"
+    },
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 600,
+     "view": "marker",
+     "name": "t600-marker"
+    },
+    {
+     "t": 601,
+     "name": "t601-genome"
+    }
+   ]
+  },
+  {
+   "name": "g3-evo-colonies-null",
+   "description": "step G3 quick look, colonies s3, 10 min, the neutral controls (fold, dose, buffer drift without effect)",
+   "query": {
+    "preset": "colonies",
+    "foldnull": 1,
+    "dosenull": 1,
+    "buffernull": 1,
+    "seed": 3,
+    "g3census": 30
+   },
+   "duration": 602,
+   "sample_every": 30,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 300,
+     "js": "const f=await moire.folding.now(); const g=moire.grn.census; const s = await moire.sample(); return JSON.stringify({t: moire.time(), alive: s.alive, job: [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)), fold: {stressFold: f.stressFold, stress: f.stress, dose: f.dose, buf: f.buf, bufSd: f.bufSd, hidden: f.hidden, buffered: f.buffered, hiddenLinks: f.hiddenLinks, foldLinks: f.foldLinks, drift: f.drift, wirings: f.wirings, lineRefolds: f.lineRefolds, stressed: f.stressed, calm: f.calm, lineages: f.lineages}, rates: moire.folding.rates, grn: g && {types: g.types, lineageN: g.lineageN, lineages: g.lineages.slice(0,3).map(l=>({id:l.id,n:l.n,types:l.types,differ:l.differ}))}})"
+    },
+    {
+     "t": 600,
+     "js": "const f=await moire.folding.now(); const g=moire.grn.census; const s = await moire.sample(); return JSON.stringify({t: moire.time(), alive: s.alive, job: [0,1,2,3,4,5,6].map(k => Math.round(s['census.job.' + k] || 0)), fold: {stressFold: f.stressFold, stress: f.stress, dose: f.dose, buf: f.buf, bufSd: f.bufSd, hidden: f.hidden, buffered: f.buffered, hiddenLinks: f.hiddenLinks, foldLinks: f.foldLinks, drift: f.drift, wirings: f.wirings, lineRefolds: f.lineRefolds, stressed: f.stressed, calm: f.calm, lineages: f.lineages}, rates: moire.folding.rates, grn: g && {types: g.types, lineageN: g.lineageN, lineages: g.lineages.slice(0,3).map(l=>({id:l.id,n:l.n,types:l.types,differ:l.differ}))}})"
+    },
+    {
+     "t": 601,
+     "js": "return JSON.stringify(await moire.folding.show({lineages: 3, size: 200}))"
+    }
+   ],
+   "shots": [
+    {
+     "t": 300,
+     "name": "t300"
+    },
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 600,
+     "view": "marker",
+     "name": "t600-marker"
+    },
+    {
+     "t": 601,
+     "name": "t601-genome"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,25 @@
+{
+ "batch": "g3-speed-main",
+ "runs": [
+  {
+   "name": "g3-speedmain-r1",
+   "description": "speed, main 97b6005 (export): default s3, 2000 cells, 150 s at MAX",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 300
+  },
+  {
+   "name": "g3-speedmain-r2",
+   "description": "speed, main 97b6005 (export): default s3, 2000 cells, 150 s at MAX",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 300
+  }
+ ]
+}

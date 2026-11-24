@@ -1,0 +1,38 @@
+{
+ "batch": "g3-phone",
+ "runs": [
+  {
+   "name": "g3-phone",
+   "description": "phone size 390x844, default (fresh-load-like world: islands), 60 s, a shock at 20 s",
+   "size": "390x844",
+   "dpr": 3,
+   "query": {
+    "terrain": "islands",
+    "seed": 5
+   },
+   "duration": 60,
+   "sample_every": 20,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 20,
+     "js": "return moire.folding.shock()"
+    },
+    {
+     "t": 59,
+     "js": "return moire.folding.panelLine()"
+    }
+   ],
+   "shots": [
+    {
+     "t": 22,
+     "name": "t22-shock"
+    },
+    {
+     "t": 60,
+     "name": "end"
+    }
+   ]
+  }
+ ]
+}

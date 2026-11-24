@@ -1,0 +1,47 @@
+{
+ "batch": "g3-speed",
+ "runs": [
+  {
+   "name": "g3-speed-on-r1",
+   "description": "speed, G3 on: default s3, 2000 cells, 150 s at MAX",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 300
+  },
+  {
+   "name": "g3-speed-off-r1",
+   "description": "speed, ?g3=0",
+   "query": {
+    "seed": 3,
+    "g3": 0
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 300
+  },
+  {
+   "name": "g3-speed-on-r2",
+   "description": "speed, G3 on: default s3, 2000 cells, 150 s at MAX",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 300
+  },
+  {
+   "name": "g3-speed-off-r2",
+   "description": "speed, ?g3=0",
+   "query": {
+    "seed": 3,
+    "g3": 0
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 300
+  }
+ ]
+}

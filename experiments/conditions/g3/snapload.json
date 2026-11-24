@@ -1,0 +1,71 @@
+{
+ "batch": "g3-snapload",
+ "runs": [
+  {
+   "name": "g3-mainsnap-load",
+   "description": "main's snapshot (96-word cells, 188-word genomes) loads into G3 with the moire genome off",
+   "query": {
+    "snap": "experiments/runs/main97/g3-mainsnap-make/snapshots/snap_t40.json"
+   },
+   "duration": 60,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 1,
+     "js": "return JSON.stringify({g3: moire.folding.params.on, notes: moire.lab.loaded && moire.lab.loaded.notes, exact: moire.lab.loaded && moire.lab.loaded.exact})"
+    }
+   ]
+  },
+  {
+   "name": "g3-oldsnap",
+   "description": "an old snapshot (tissue lab) loads with the moire genome off",
+   "query": {
+    "snap": "experiments/tissue/configs/tt-same/snapshot.json"
+   },
+   "duration": 30,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 1,
+     "js": "return JSON.stringify({g3: moire.folding.params.on, notes: moire.lab.loaded && moire.lab.loaded.notes.filter(n => n.includes('G3'))})"
+    }
+   ]
+  },
+  {
+   "name": "g3-selfsnap-make",
+   "description": "G3 on: colonies s3, a snapshot at 60 s",
+   "query": {
+    "seed": 3,
+    "preset": "colonies"
+   },
+   "duration": 60,
+   "sample_every": 30,
+   "stall": 300,
+   "snapshots": [
+    {
+     "t": 60,
+     "grid": true
+    }
+   ]
+  },
+  {
+   "name": "g3-selfsnap-load",
+   "description": "... loads back with G3 on, lattices kept",
+   "query": {
+    "snap": "experiments/runs/g3-selfsnap-make/snapshots/snap_t60.json",
+    "g3census": 5
+   },
+   "duration": 30,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 1,
+     "js": "const c = await moire.folding.now(); return JSON.stringify({g3: moire.folding.params.on, exact: moire.lab.loaded && moire.lab.loaded.exact, derived: c.derived, drift: c.drift, sf: c.stressFold})"
+    }
+   ]
+  }
+ ]
+}

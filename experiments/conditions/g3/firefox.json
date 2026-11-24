@@ -1,0 +1,36 @@
+{
+ "batch": "g3-device",
+ "runs": [
+  {
+   "name": "g3-firefox",
+   "description": "headed Firefox, colonies s3, 60 s, the stress button's shock at 20 s",
+   "query": {
+    "seed": 3,
+    "preset": "colonies"
+   },
+   "duration": 60,
+   "sample_every": 20,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 20,
+     "js": "return moire.folding.shock()"
+    },
+    {
+     "t": 59,
+     "js": "return moire.folding.panelLine()"
+    }
+   ],
+   "shots": [
+    {
+     "t": 22,
+     "name": "t22-shock"
+    },
+    {
+     "t": 60,
+     "name": "end"
+    }
+   ]
+  }
+ ]
+}

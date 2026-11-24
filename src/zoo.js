@@ -549,10 +549,13 @@ export function cellPanel(ctx, onAdd) {
         drawGenome(gv.getContext('2d'), S, g, G.rep * BIO_FLOATS, FD.params);
         const Lr = latticesOf(g, G.rep * BIO_FLOATS);
         gv.title = `its genome: the 8 regulators' lattices overlaid (${Lr.state ? 'STRESS fold' : 'home fold'}); slow fringes = links. Tap to enlarge`;
+        // tap: a large view on its own line under the row (tap it again: back)
+        const home = el('div', 'zgenome');
         gv.addEventListener('click', () => {
           const big = gv.classList.toggle('big'), SB = Math.round((big ? 260 : 56) * dpr);
           gv.width = SB; gv.height = SB;
           drawGenome(gv.getContext('2d'), SB, g, G.rep * BIO_FLOATS, FD.params);
+          if (big) { gv.replaceWith(home); r.after(gv); } else { home.replaceWith(gv); }
         });
       }
       const main = el('div', 'zmain');

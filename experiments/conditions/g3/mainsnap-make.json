@@ -1,0 +1,21 @@
+{
+ "batch": "g3-mainsnap",
+ "runs": [
+  {
+   "name": "g3-mainsnap-make",
+   "description": "main 97b6005 (export): a snapshot at 40 s (default s3) to load into G3",
+   "query": {
+    "seed": 3
+   },
+   "duration": 40,
+   "sample_every": 20,
+   "stall": 300,
+   "snapshots": [
+    {
+     "t": 40,
+     "grid": true
+    }
+   ]
+  }
+ ]
+}

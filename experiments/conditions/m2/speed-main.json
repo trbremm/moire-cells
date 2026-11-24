@@ -1,0 +1,25 @@
+{
+ "batch": "m2-speed-main",
+ "runs": [
+  {
+   "name": "m2-speed-main-a",
+   "description": "speed: 2000 cells, default seed 3, 150 s at MAX, GPU free",
+   "query": {
+    "seed": 3,
+    "cells": 2000
+   },
+   "duration": 150,
+   "sample_every": 30
+  },
+  {
+   "name": "m2-speed-main-b",
+   "description": "speed: 2000 cells, default seed 3, 150 s at MAX, GPU free",
+   "query": {
+    "seed": 3,
+    "cells": 2000
+   },
+   "duration": 150,
+   "sample_every": 30
+  }
+ ]
+}

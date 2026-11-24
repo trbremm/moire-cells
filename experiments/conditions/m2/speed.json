@@ -1,0 +1,40 @@
+{
+ "batch": "m2-speed",
+ "runs": [
+  {
+   "name": "m2-speed-m2-a",
+   "description": "speed: 2000 cells, default seed 3, 150 s at MAX, GPU free",
+   "query": {
+    "seed": 3,
+    "cells": 2000,
+    "mut": 1,
+    "mutmode": "drift"
+   },
+   "duration": 150,
+   "sample_every": 30
+  },
+  {
+   "name": "m2-speed-m2-b",
+   "description": "speed: 2000 cells, default seed 3, 150 s at MAX, GPU free",
+   "query": {
+    "seed": 3,
+    "cells": 2000,
+    "mut": 1,
+    "mutmode": "drift"
+   },
+   "duration": 150,
+   "sample_every": 30
+  },
+  {
+   "name": "m2-speed-m2rare-a",
+   "description": "speed: 2000 cells, default seed 3, 150 s at MAX, GPU free",
+   "query": {
+    "seed": 3,
+    "cells": 2000,
+    "mutmode": "rare"
+   },
+   "duration": 150,
+   "sample_every": 30
+  }
+ ]
+}

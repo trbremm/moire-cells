@@ -1,0 +1,32 @@
+[m2-check-drift1_s3] http://localhost:61265/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=3&mut=1&mutmode=drift
+[m2-check-drift1_s3] started in 95.0 s at t 0.00; adapter nvidia turing
+[m2-check-drift1_s3] t     0.0  cells  1978  entropy  4.501e+04 (+0/s)  order nan  rounding atoms 0 charge 0
+[m2-check-drift1_s3] t    30.0  cells  1754  entropy  5.335e+05 (+1.59e+04/s)  order 0.269  rounding atoms 0 charge 0
+[m2-check-drift1_s3] t    60.0  cells  1573  entropy  9.953e+05 (+1.52e+04/s)  order 0.212  rounding atoms 0 charge 0
+[m2-check-drift1_s3] t    90.0  cells  1427  entropy  1.398e+06 (+1.16e+04/s)  order 0.177  rounding atoms 0 charge 0
+[m2-check-drift1_s3] t   120.0  cells  1188  entropy  1.674e+06 (+7.03e+03/s)  order 0.150  rounding atoms 0 charge 0
+[m2-check-drift1_s3] t   150.0  cells   727  entropy  1.837e+06 (+4.29e+03/s)  order 0.136  rounding atoms 0 charge 0
+[m2-check-drift1_s3] t   180.0  cells   336  entropy  1.967e+06 (+4.9e+03/s)  order 0.114  rounding atoms 0 charge 0
+[m2-check-drift1_s3] t   210.0  cells   281  entropy  2.163e+06 (+8.33e+03/s)  order 0.101  rounding atoms 0 charge 0
+[m2-check-drift1_s3] t   240.0  cells   280  entropy  2.492e+06 (+1.33e+04/s)  order 0.098  rounding atoms 0 charge 0
+[m2-check-drift1_s3] t   270.0  cells   298  entropy  2.956e+06 (+1.63e+04/s)  order 0.082  rounding atoms 0 charge 0
+[m2-check-drift1_s3] t   300.0  cells   302  entropy  3.442e+06 (+1.57e+04/s)  order 0.075  rounding atoms 0 charge 0
+[m2-check-drift1_s3] ok in 628 s, 300 sim s at x0.57
+[m2-check-drift1_s7] http://localhost:61265/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=7&mut=1&mutmode=drift
+[m2-check-drift1_s7] started in 94.3 s at t 0.00; adapter nvidia turing
+[m2-check-drift1_s7] t     0.0  cells  1977  entropy  4.567e+04 (+0/s)  order nan  rounding atoms 0 charge 0
+[m2-check-drift1_s7] t    30.0  cells  1801  entropy  5.312e+05 (+1.57e+04/s)  order 0.295  rounding atoms 0 charge 0
+[m2-check-drift1_s7] t    60.0  cells  1651  entropy  9.923e+05 (+1.49e+04/s)  order 0.228  rounding atoms 0 charge 0
+[m2-check-drift1_s7] t    90.0  cells  1528  entropy   1.39e+06 (+1.13e+04/s)  order 0.193  rounding atoms 0 charge 0
+[m2-check-drift1_s7] t   120.0  cells  1241  entropy  1.659e+06 (+6.9e+03/s)  order 0.172  rounding atoms 0 charge 0
+[m2-check-drift1_s7] t   150.0  cells   612  entropy  1.824e+06 (+4.35e+03/s)  order 0.151  rounding atoms 0 charge 0
+[m2-check-drift1_s7] t   180.0  cells   354  entropy  1.953e+06 (+4.91e+03/s)  order 0.126  rounding atoms 0 charge 0
+[m2-check-drift1_s7] t   210.0  cells   281  entropy  2.152e+06 (+8.56e+03/s)  order 0.113  rounding atoms 0 charge 0
+[m2-check-drift1_s7] t   240.0  cells   268  entropy  2.489e+06 (+1.36e+04/s)  order 0.111  rounding atoms 0 charge 0
+[m2-check-drift1_s7] t   270.0  cells   267  entropy  2.959e+06 (+1.66e+04/s)  order 0.093  rounding atoms 0 charge 0
+[m2-check-drift1_s7] t   300.0  cells   270  entropy  3.445e+06 (+1.53e+04/s)  order 0.081  rounding atoms 0 charge 0
+[m2-check-drift1_s7] ok in 616 s, 300 sim s at x0.58
+
+batch m2-check-drift:
+  m2-check-drift1_s3               ok        300.0 sim s  x0.57  
+  m2-check-drift1_s7               ok        300.0 sim s  x0.58  

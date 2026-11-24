@@ -172,6 +172,7 @@ export function settingObjects(M) {
     ...(M.grn ? { 'grn.params': M.grn.params, 'grn.look': M.grn.look } : {}),   // step T1b
     ...(M.predators ? { 'predators.params': M.predators.params, 'predators.look': M.predators.look } : {}),   // step P1
     ...(M.fidelity ? { 'fidelity.params': M.fidelity.params } : {}),   // step G1 (old snapshots: the gene 0 everywhere, the founders' value)
+    ...(M.mutation ? { 'mutation.params': M.mutation.params } : {}),   // step M2 (old snapshots: today's drift x 1, the defaults)
     ...(M.dup ? { 'dup.params': M.dup.params } : {}),                 // step G2 (old snapshots: duplication off, as they ran)
     ...(M.motors ? { 'motors.params': M.motors.params } : {}),       // step S2 (old snapshots: flagella and cilia off, as they ran)
     ...(M.pigments ? { 'pigments.params': M.pigments.params } : {}),   // step N1: light needs matter
@@ -587,6 +588,9 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     if (opts.settings !== false && M.motors && !(S.settings && S.settings['motors.params'])) {
       Object.assign(M.motors.params, { flagella: false, cilia: false, flagellaNull: false, ciliaNull: false });   // step S2
       notes.push('saved before step S2: no flagella, no cilia (as it ran)');
+    }
+    if (opts.settings !== false && M.mutation && !(S.settings && S.settings['mutation.params'])) {
+      Object.assign(M.mutation.params, { scale: 1, rare: false });   // step M2: today's copying (drift x 1), as it ran
     }
     if (opts.settings !== false && M.dup && !(S.settings && S.settings['dup.params'])) {
       Object.assign(M.dup.params, { on: false, null: false });   // step G2

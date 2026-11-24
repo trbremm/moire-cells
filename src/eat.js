@@ -449,6 +449,7 @@ export class Eat {
     this.cells.division.applyLedger(rec.time, dc / HEAT_SCALE);
     this.cells.fidelity.apply(rec, w);   // step G1: births, their mutation scale, proofreading's cost (the C9 block's words 1..6)
     this.cells.dup.apply(rec, w);        // step G2: duplications, deletions (the C9 block's rows 8..12)
+    this.cells.mutation.apply(rec, w);   // step M2: births, mutated births, groups changed (rows 13..15)
   }
 
   /**

@@ -1,0 +1,65 @@
+{
+ "batch": "m2-check-books",
+ "runs": [
+  {
+   "name": "m2-check-rare-full",
+   "description": "books in rare mode, whole dish lit (hard light scales the chance)",
+   "query": {
+    "seed": 5,
+    "light": "full",
+    "mutmode": "rare",
+    "mutcensus": 15
+   },
+   "duration": 300,
+   "sample_every": 30,
+   "stall": 400,
+   "shots": [
+    {
+     "t": 300,
+     "panel": true,
+     "name": "panel"
+    }
+   ]
+  },
+  {
+   "name": "m2-check-x0-full",
+   "description": "books at x0, whole dish lit: exact copies (genotypes stay at the founders')",
+   "query": {
+    "seed": 5,
+    "light": "full",
+    "mut": 0,
+    "mutcensus": 15
+   },
+   "duration": 300,
+   "sample_every": 30,
+   "stall": 400,
+   "shots": [
+    {
+     "t": 300,
+     "panel": true,
+     "name": "panel"
+    }
+   ]
+  },
+  {
+   "name": "m2-check-x3-full",
+   "description": "books at x3, whole dish lit",
+   "query": {
+    "seed": 5,
+    "light": "full",
+    "mut": 3,
+    "mutcensus": 15
+   },
+   "duration": 300,
+   "sample_every": 30,
+   "stall": 400,
+   "shots": [
+    {
+     "t": 300,
+     "panel": true,
+     "name": "panel"
+    }
+   ]
+  }
+ ]
+}

@@ -97,7 +97,13 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
     let hx = select(0.0, min(FL.hm.x * pdose, max(FL.hm.y - 1.0, 0.0)), FL.hm.x > 0.0);
     // (step G1: x the parent's fidelity, as the step's daughter_genome; exactly as before while the gene does not act)
     let pfid = select(0.0, bioW[min(mom, S.count - 1u)].conv.w, mom < S.count);
-    let ms = fid_birth(mOn, hx, pfid, FL.hm) * S.mutSize;
+    // (step M2, the mutation sweep: DRIFT x the scale Fields.qA.z; RARE: only when the step picked the network's group for this birth (the
+    // mask it left in Bio.resp.w), at the big step Fields.qB.y; the mask cleared here)
+    let rare = (bitcast<u32>(FL.qA.y) & MUT_RARE) != 0u;
+    let rmask = u32(max(bioW[i].resp.w, 0.0));
+    let ms = select(fid_birth(mOn, hx, pfid, FL.hm) * S.mutSize * max(FL.qA.z, 0.0),
+                    select(0.0, S.mutSize * max(FL.qB.y, 0.0), mg_has(rmask, MG_GRN)), rare);
+    bioW[i].resp.w = 0.0;
     if (ms > 0.0) {
       let bs = pcg(c.seed ^ pcg(S.tick * 0x2545f491u + 0x67726e31u));
       var u: array<f32, 20>;

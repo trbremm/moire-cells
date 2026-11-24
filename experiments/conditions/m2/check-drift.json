@@ -1,0 +1,43 @@
+{
+ "batch": "m2-check-drift",
+ "runs": [
+  {
+   "name": "m2-check-drift1_s3",
+   "description": "M2 drift x1 (should = main), seed 3, 5 min",
+   "query": {
+    "seed": 3,
+    "mut": 1,
+    "mutmode": "drift"
+   },
+   "duration": 300,
+   "sample_every": 30,
+   "stall": 400,
+   "shots": [
+    {
+     "t": 300,
+     "panel": true,
+     "name": "panel"
+    }
+   ]
+  },
+  {
+   "name": "m2-check-drift1_s7",
+   "description": "M2 drift x1, seed 7, 5 min",
+   "query": {
+    "seed": 7,
+    "mut": 1,
+    "mutmode": "drift"
+   },
+   "duration": 300,
+   "sample_every": 30,
+   "stall": 400,
+   "shots": [
+    {
+     "t": 300,
+     "panel": true,
+     "name": "panel"
+    }
+   ]
+  }
+ ]
+}

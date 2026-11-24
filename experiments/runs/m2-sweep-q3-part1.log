@@ -1,0 +1,62 @@
+[m2-sw-def7-x1-null] http://localhost:58647/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=7&hardmut=0&mut=1&mutcensus=20&gluenull=1&flagellanull=1&cilianull=1&chemonull=1&fidelitynull=1&dupnull=1&gatenull=1&engulfnull=1&kinsparenull=1&kinnull=1&shapenull=1
+[m2-sw-def7-x1-null] started in 133.5 s at t 0.00; adapter nvidia turing
+[m2-sw-def7-x1-null] t     0.0  cells  1977  entropy  4.567e+04 (+0/s)  order nan  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t    30.0  cells  1800  entropy   5.34e+05 (+1.59e+04/s)  order 0.294  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t    60.0  cells  1649  entropy  9.942e+05 (+1.49e+04/s)  order 0.228  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t    90.0  cells  1529  entropy   1.39e+06 (+1.14e+04/s)  order 0.193  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   120.0  cells  1245  entropy  1.658e+06 (+6.84e+03/s)  order 0.173  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   150.0  cells   574  entropy   1.82e+06 (+4.29e+03/s)  order 0.149  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   180.0  cells   344  entropy  1.945e+06 (+4.78e+03/s)  order 0.123  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   210.0  cells   238  entropy   2.14e+06 (+8.38e+03/s)  order 0.110  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   240.0  cells   226  entropy  2.469e+06 (+1.35e+04/s)  order 0.109  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   270.0  cells   230  entropy  2.934e+06 (+1.62e+04/s)  order 0.090  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   300.0  cells   242  entropy  3.412e+06 (+1.52e+04/s)  order 0.079  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   330.0  cells   241  entropy  3.821e+06 (+1.17e+04/s)  order 0.070  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   360.0  cells   255  entropy   4.09e+06 (+6.47e+03/s)  order 0.065  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   390.0  cells   283  entropy  4.234e+06 (+3.84e+03/s)  order 0.063  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   420.0  cells   307  entropy  4.353e+06 (+4.75e+03/s)  order 0.058  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   450.0  cells   340  entropy  4.541e+06 (+7.99e+03/s)  order 0.053  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   480.0  cells   351  entropy  4.843e+06 (+1.23e+04/s)  order 0.051  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   510.0  cells   372  entropy  5.264e+06 (+1.5e+04/s)  order 0.052  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   540.0  cells   358  entropy   5.71e+06 (+1.4e+04/s)  order 0.050  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   570.0  cells   359  entropy  6.078e+06 (+1.05e+04/s)  order 0.051  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   600.0  cells   372  entropy  6.336e+06 (+6.48e+03/s)  order 0.050  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   630.0  cells   376  entropy  6.485e+06 (+3.94e+03/s)  order 0.049  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   660.0  cells   381  entropy  6.602e+06 (+4.58e+03/s)  order 0.051  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   690.0  cells   406  entropy  6.793e+06 (+8.44e+03/s)  order 0.051  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   720.0  cells   393  entropy  7.091e+06 (+1.14e+04/s)  order 0.051  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   750.0  cells   380  entropy  7.482e+06 (+1.44e+04/s)  order 0.052  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   780.0  cells   367  entropy  7.911e+06 (+1.35e+04/s)  order 0.051  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   810.0  cells   358  entropy  8.271e+06 (+1.03e+04/s)  order 0.054  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   840.0  cells   350  entropy  8.517e+06 (+6.37e+03/s)  order 0.057  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   870.0  cells   359  entropy  8.665e+06 (+4.01e+03/s)  order 0.058  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   900.0  cells   334  entropy  8.786e+06 (+4.44e+03/s)  order 0.058  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   930.0  cells   366  entropy  8.973e+06 (+8.25e+03/s)  order 0.057  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   960.0  cells   363  entropy  9.285e+06 (+1.23e+04/s)  order 0.056  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t   990.0  cells   366  entropy   9.68e+06 (+1.41e+04/s)  order 0.057  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t  1020.0  cells   354  entropy  1.011e+07 (+1.39e+04/s)  order 0.055  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t  1050.0  cells   331  entropy  1.047e+07 (+1.03e+04/s)  order 0.057  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t  1080.0  cells   317  entropy  1.071e+07 (+6.04e+03/s)  order 0.055  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t  1110.0  cells   314  entropy  1.085e+07 (+3.95e+03/s)  order 0.055  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t  1140.0  cells   309  entropy  1.097e+07 (+4.56e+03/s)  order 0.056  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t  1170.0  cells   319  entropy  1.115e+07 (+7.73e+03/s)  order 0.055  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t  1200.0  cells   337  entropy  1.146e+07 (+1.24e+04/s)  order 0.054  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] t  1203.0  cells   338  entropy  1.149e+07 (+1.29e+04/s)  order 0.055  rounding atoms 0 charge 0
+[m2-sw-def7-x1-null] ok in 2795 s, 1203 sim s at x0.46
+[m2-sw-def7-rare-null] http://localhost:58647/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&seed=7&hardmut=0&mutmode=rare&mutp=0.1&mutcensus=20&gluenull=1&flagellanull=1&cilianull=1&chemonull=1&fidelitynull=1&dupnull=1&gatenull=1&engulfnull=1&kinsparenull=1&kinnull=1&shapenull=1
+[m2-sw-def7-rare-null] started in 114.4 s at t 0.00; adapter nvidia turing
+[m2-sw-def7-rare-null] t     0.0  cells  1977  entropy  4.567e+04 (+0/s)  order nan  rounding atoms 0 charge 0
+[m2-sw-def7-rare-null] t    30.0  cells  1801  entropy  5.348e+05 (+1.59e+04/s)  order 0.295  rounding atoms 0 charge 0
+[m2-sw-def7-rare-null] t    60.0  cells  1651  entropy  9.963e+05 (+1.5e+04/s)  order 0.227  rounding atoms 0 charge 0
+[m2-sw-def7-rare-null] t    90.0  cells  1525  entropy  1.394e+06 (+1.13e+04/s)  order 0.190  rounding atoms 0 charge 0
+[m2-sw-def7-rare-null] t   120.0  cells  1241  entropy  1.661e+06 (+6.86e+03/s)  order 0.171  rounding atoms 0 charge 0
+[m2-sw-def7-rare-null] t   150.0  cells   584  entropy  1.822e+06 (+4.26e+03/s)  order 0.148  rounding atoms 0 charge 0
+[m2-sw-def7-rare-null] t   180.0  cells   336  entropy  1.948e+06 (+4.85e+03/s)  order 0.123  rounding atoms 0 charge 0
+[m2-sw-def7-rare-null] t   210.0  cells   245  entropy  2.141e+06 (+8.35e+03/s)  order 0.110  rounding atoms 0 charge 0
+[m2-sw-def7-rare-null] t   240.0  cells   234  entropy  2.473e+06 (+1.36e+04/s)  order 0.109  rounding atoms 0 charge 0
+[m2-sw-def7-rare-null] t   270.0  cells   218  entropy  2.939e+06 (+1.63e+04/s)  order 0.090  rounding atoms 0 charge 0
+[m2-sw-def7-rare-null] t   300.0  cells   228  entropy  3.417e+06 (+1.51e+04/s)  order 0.079  rounding atoms 0 charge 0
+[m2-sw-def7-rare-null] t   330.0  cells   224  entropy  3.822e+06 (+1.16e+04/s)  order 0.070  rounding atoms 0 charge 0
+[m2-sw-def7-rare-null] t   360.0  cells   244  entropy  4.089e+06 (+6.44e+03/s)  order 0.064  rounding atoms 0 charge 0
+[m2-sw-def7-rare-null] t   390.0  cells   262  entropy  4.233e+06 (+3.73e+03/s)  order 0.063  rounding atoms 0 charge 0
+[m2-sw-def7-rare-null] t   420.0  cells   253  entropy  4.348e+06 (+4.62e+03/s)  order 0.057  rounding atoms 0 charge 0

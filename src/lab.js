@@ -128,6 +128,7 @@ function gather(M, ctl) {
   if (M.grn && M.grn.census) flatten(M.grn.census, 'grn', out);         // step T1b: the gene network's census (cell types)
   if (M.predators && M.predators.census) flatten(M.predators.census, 'pred', out);   // step P1: predation, the genes, the clusters
   if (M.fidelity) flatten(M.fidelity.census || (M.fidelity.copy ? { copy: M.fidelity.copy } : null), 'fid', out);   // step G1: error correction
+  if (M.mutation && M.mutation.sample) flatten(M.mutation.sample, 'mut', out);   // step M2: the mutation sweep
   if (M.dup) flatten(M.dup.census ? { ...M.dup.census, families: { ...M.dup.census.families, top: undefined }, pumpFamilies: { ...M.dup.census.pumpFamilies, top: undefined } }
     : (M.dup.rates ? { rates: M.dup.rates } : null), 'dup', out);   // step G2: gene duplication (the families' top lists left out)
   if (M.pigments && M.pigments.census) flatten(M.pigments.census, 'lightmatter', out);   // step N1: light needs matter

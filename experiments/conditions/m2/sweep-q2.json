@@ -1,0 +1,304 @@
+{
+ "batch": "sweep-q2",
+ "runs": [
+  {
+   "name": "m2-sw-def7-x1-on",
+   "description": "step M2 sweep: def7 x1 on, 20 min",
+   "query": {
+    "seed": 7,
+    "hardmut": 0,
+    "mut": 1,
+    "mutcensus": 20
+   },
+   "duration": 1203,
+   "sample_every": 30,
+   "stall": 900,
+   "shots": [
+    {
+     "t": 240,
+     "name": "t240"
+    },
+    {
+     "t": 240,
+     "view": "marker",
+     "name": "t240-marker"
+    },
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 600,
+     "view": "marker",
+     "name": "t600-marker"
+    },
+    {
+     "t": 1200,
+     "name": "t1200"
+    },
+    {
+     "t": 1200,
+     "view": "marker",
+     "name": "t1200-marker"
+    }
+   ]
+  },
+  {
+   "name": "m2-sw-def7-rare-on",
+   "description": "step M2 sweep: def7 rare on, 20 min",
+   "query": {
+    "seed": 7,
+    "hardmut": 0,
+    "mutmode": "rare",
+    "mutp": 0.1,
+    "mutcensus": 20
+   },
+   "duration": 1203,
+   "sample_every": 30,
+   "stall": 900,
+   "shots": [
+    {
+     "t": 240,
+     "name": "t240"
+    },
+    {
+     "t": 240,
+     "view": "marker",
+     "name": "t240-marker"
+    },
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 600,
+     "view": "marker",
+     "name": "t600-marker"
+    },
+    {
+     "t": 1200,
+     "name": "t1200"
+    },
+    {
+     "t": 1200,
+     "view": "marker",
+     "name": "t1200-marker"
+    }
+   ]
+  },
+  {
+   "name": "m2-sw-def7-x3-on",
+   "description": "step M2 sweep: def7 x3 on, 20 min",
+   "query": {
+    "seed": 7,
+    "hardmut": 0,
+    "mut": 3,
+    "mutcensus": 20
+   },
+   "duration": 1203,
+   "sample_every": 30,
+   "stall": 900,
+   "shots": [
+    {
+     "t": 240,
+     "name": "t240"
+    },
+    {
+     "t": 240,
+     "view": "marker",
+     "name": "t240-marker"
+    },
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 600,
+     "view": "marker",
+     "name": "t600-marker"
+    },
+    {
+     "t": 1200,
+     "name": "t1200"
+    },
+    {
+     "t": 1200,
+     "view": "marker",
+     "name": "t1200-marker"
+    }
+   ]
+  },
+  {
+   "name": "m2-sw-def3-x03-on",
+   "description": "step M2 sweep: def3 x03 on, 20 min",
+   "query": {
+    "seed": 3,
+    "hardmut": 0,
+    "mut": 0.3,
+    "mutcensus": 20
+   },
+   "duration": 1203,
+   "sample_every": 30,
+   "stall": 900,
+   "shots": [
+    {
+     "t": 240,
+     "name": "t240"
+    },
+    {
+     "t": 240,
+     "view": "marker",
+     "name": "t240-marker"
+    },
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 600,
+     "view": "marker",
+     "name": "t600-marker"
+    },
+    {
+     "t": 1200,
+     "name": "t1200"
+    },
+    {
+     "t": 1200,
+     "view": "marker",
+     "name": "t1200-marker"
+    }
+   ]
+  },
+  {
+   "name": "m2-sw-isl7-rare-on",
+   "description": "step M2 sweep: isl7 rare on, 20 min",
+   "query": {
+    "terrain": "islands",
+    "seed": 7,
+    "hardmut": 0,
+    "mutmode": "rare",
+    "mutp": 0.1,
+    "mutcensus": 20
+   },
+   "duration": 1203,
+   "sample_every": 30,
+   "stall": 900,
+   "shots": [
+    {
+     "t": 240,
+     "name": "t240"
+    },
+    {
+     "t": 240,
+     "view": "marker",
+     "name": "t240-marker"
+    },
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 600,
+     "view": "marker",
+     "name": "t600-marker"
+    },
+    {
+     "t": 1200,
+     "name": "t1200"
+    },
+    {
+     "t": 1200,
+     "view": "marker",
+     "name": "t1200-marker"
+    }
+   ]
+  },
+  {
+   "name": "m2-sw-col3-x1-on",
+   "description": "step M2 sweep: col3 x1 on, 20 min",
+   "query": {
+    "preset": "colonies",
+    "seed": 3,
+    "hardmut": 0,
+    "mut": 1,
+    "mutcensus": 20
+   },
+   "duration": 1203,
+   "sample_every": 30,
+   "stall": 900,
+   "shots": [
+    {
+     "t": 240,
+     "name": "t240"
+    },
+    {
+     "t": 240,
+     "view": "marker",
+     "name": "t240-marker"
+    },
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 600,
+     "view": "marker",
+     "name": "t600-marker"
+    },
+    {
+     "t": 1200,
+     "name": "t1200"
+    },
+    {
+     "t": 1200,
+     "view": "marker",
+     "name": "t1200-marker"
+    }
+   ]
+  },
+  {
+   "name": "m2-sw-col3-x3-on",
+   "description": "step M2 sweep: col3 x3 on, 20 min",
+   "query": {
+    "preset": "colonies",
+    "seed": 3,
+    "hardmut": 0,
+    "mut": 3,
+    "mutcensus": 20
+   },
+   "duration": 1203,
+   "sample_every": 30,
+   "stall": 900,
+   "shots": [
+    {
+     "t": 240,
+     "name": "t240"
+    },
+    {
+     "t": 240,
+     "view": "marker",
+     "name": "t240-marker"
+    },
+    {
+     "t": 600,
+     "name": "t600"
+    },
+    {
+     "t": 600,
+     "view": "marker",
+     "name": "t600-marker"
+    },
+    {
+     "t": 1200,
+     "name": "t1200"
+    },
+    {
+     "t": 1200,
+     "view": "marker",
+     "name": "t1200-marker"
+    }
+   ]
+  }
+ ]
+}

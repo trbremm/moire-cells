@@ -1,0 +1,86 @@
+{
+  "name": "m2-sw-isl7-x1-null",
+  "description": "step M2 sweep: isl7 x1 NULL twin, 20 min",
+  "condition": {
+    "name": "m2-sw-isl7-x1-null",
+    "description": "step M2 sweep: isl7 x1 NULL twin, 20 min",
+    "query": {
+      "terrain": "islands",
+      "seed": 7,
+      "hardmut": 0,
+      "mut": 1,
+      "mutcensus": 20,
+      "gluenull": 1,
+      "flagellanull": 1,
+      "cilianull": 1,
+      "chemonull": 1,
+      "fidelitynull": 1,
+      "dupnull": 1,
+      "gatenull": 1,
+      "engulfnull": 1,
+      "kinsparenull": 1,
+      "kinnull": 1,
+      "shapenull": 1
+    },
+    "duration": 1203,
+    "sample_every": 30,
+    "stall": 900,
+    "shots": [
+      {
+        "t": 240,
+        "name": "t240"
+      },
+      {
+        "t": 240,
+        "view": "marker",
+        "name": "t240-marker"
+      },
+      {
+        "t": 600,
+        "name": "t600"
+      },
+      {
+        "t": 600,
+        "view": "marker",
+        "name": "t600-marker"
+      },
+      {
+        "t": 1200,
+        "name": "t1200"
+      },
+      {
+        "t": 1200,
+        "view": "marker",
+        "name": "t1200-marker"
+      }
+    ]
+  },
+  "url": "http://localhost:54652/index.html?speed=max&until=0&overlay=ghost&ui=0&entropy=1&terrain=islands&seed=7&hardmut=0&mut=1&mutcensus=20&gluenull=1&flagellanull=1&cilianull=1&chemonull=1&fidelitynull=1&dupnull=1&gatenull=1&engulfnull=1&kinsparenull=1&kinnull=1&shapenull=1",
+  "browser": "chrome",
+  "size": "1280x800",
+  "commit": "3911699421ee099e3714014f40ba643ae3ad28ab",
+  "dirty": false,
+  "started": "2026-11-24T00:50:47",
+  "status": "ok",
+  "browser_version": "Chrome/157.0.8103.80",
+  "adapter": "nvidia turing",
+  "t_start": 0,
+  "sim_s": 1203.0,
+  "run_wall_s": 5251.6,
+  "speed_reached": 0.23,
+  "samples": 42,
+  "shots": [
+    "shots/t240.png",
+    "shots/t240-marker.png",
+    "shots/t600.png",
+    "shots/t600-marker.png",
+    "shots/t1200.png",
+    "shots/t1200-marker.png"
+  ],
+  "snapshots": [],
+  "clips": [],
+  "evals": [],
+  "console_errors": [],
+  "ended": "2026-11-24T02:20:46",
+  "wall_s": 5399.1
+}

@@ -3661,3 +3661,152 @@ worlds with obstacles feed more cells. But moving food did not make motility pay
 nobody can swim or crawl far, and the smell that should steer them is saturated noise at the cells' own scale. Next levers if wanted: a
 nose that averages over time; fewer, richer, faster-moving patches with empty water between (so the crowd cannot cover them); P3's
 scents.
+
+# Mutation sweep (step M2, 2026-11-23/24)
+
+**The question** (the user, 2026-11-23): every evolution test so far ended with "the genes drift like the neutral control" (glue, gates,
+motors, channels, chemotaxis). Is that too MUCH mutation (fog: every birth nudges all ~180 genes), too LITTLE (a few hundred cells x a
+few dozen generations: little to choose from), or the FOUNDERS' CRASH (one lineage fills the dish whatever the genes)?
+
+**How.** `tools/m2_sweep.py` -> `experiments/conditions/m2/sweep-q0..q3.json`: 26 runs of 20 simulated minutes (1203 s), four headless
+Chrome pages at a time on the GTX 1650 (about 5 h).
+- Settings: DRIFT (today's: every gene nudged at every birth) at x0 (exact copies), x0.3, x1 (today) and x3; and RARE BIG STEPS (an exact
+  copy, except 1 birth in 10 changes 1-3 of 18 gene groups by 8x today's step).
+- **Hard light's extra mutation was OFF in every run** (`?hardmut=0`), so the settings compare the copying rate alone. One extra run
+  has it on: default seed 3, rare (`rarehl`).
+- Scenes: the plain default dish (seeds 3 and 7), the Islands world (seed 7: dense life, ~4500 cells) and the Colonies preset (seed 3:
+  five WILD founders, real diversity at the start).
+- NULL TWINS (`-null`): the same dish with every neutral control on at once (`gluenull flagellanull cilianull chemonull fidelitynull
+  dupnull gatenull engulfnull kinsparenull kinnull shapenull`: the genes drift and are inherited but do nothing), for x1, x3 and rare on
+  default s3, s7 and islands. x0, x0.3, the colonies and `rarehl` ran without a twin (budget).
+- The laptop was paused mid-sweep: the queues were killed and the 22 unfinished runs rerun from the start with `--only`. Logs:
+  `experiments/runs/m2-sweep-q*-part1.log` for the first part (it gave the four x1 default runs), `m2-sweep-q*.log` for the rest. All 26
+  ended ok.
+- Numbers: `python tools/m2_analyse.py` (`experiments/runs/m2-analysis.md`, `.json`). Runs: `experiments/runs/m2-sw-<scene>-<setting>-<on|null>`.
+- Same-seed runs vary 2-3x (C15g). One run per cell of the table, so count differences below ~1.5x are noise, and every gene result
+  below is a HINT unless it repeats across scenes.
+
+## 1. Counts, generations, lineages (ON runs)
+
+| scene | setting | cells 2 / 4 / 10 / 20 min | births/s | births mutated | generation at 20 min, mean (max) | founder lines 4 -> 20 min (effective number) | genotypes at 20 min (largest clone) |
+|---|---|---|---|---|---|---|---|
+| default s3 | x0 | 1203 / 267 / 365 / 271 | 1.4 | 0 % | 16.5 (23) | 10 (5.9) -> 2 (1.8) | 2 (67 %) |
+| default s3 | x0.3 | 1199 / 267 / 299 / 258 | 1.4 | 100 % | 21.3 (31) | 10 (6.3) -> 2 (1.9) | 237 |
+| default s3 | x1 | 1210 / 244 / 438 / 358 | 2.1 | 100 % | 32.3 (42) | 11 (5.8) -> 3 (1.0) | 304 |
+| default s3 | x3 | 1184 / 270 / 410 / 478 | 3.9 | 100 % | 39.3 (46) | 10 (6.1) -> 3 (2.0) | 440 |
+| default s3 | rare | 1213 / 289 / 258 / 218 | 1.2 | 10 % | 18.3 (34) | 10 (6.0) -> 5 (2.2) | 180 |
+| default s3 | rare, hard light on | 1197 / 246 / 372 / 351 | 1.8 | 33 % | 19.2 (27) | 10 (6.1) -> 5 (2.2) | 310 |
+| default s7 | x0 | 1251 / 214 / 262 / 308 | 1.2 | 0 % | 16.1 (34) | 11 (7.0) -> 4 (2.9) | 4 (46 %) |
+| default s7 | x1 | 1255 / 251 / 423 / 364 | 1.9 | 100 % | 23.9 (30) | 12 (7.5) -> 5 (1.9) | 322 |
+| default s7 | x3 | 1253 / 264 / 505 / 318 | 2.5 | 100 % | 35.0 (44) | 11 (6.9) -> 4 (1.8) | 272 |
+| default s7 | rare | 1249 / 235 / 247 / 325 | 1.3 | 10 % | 20.0 (27) | 11 (7.1) -> 4 (2.5) | 285 |
+| islands s7 | x1 | 1491 / 2624 / 4487 / 4453 | 28.6 | 100 % | 25.5 (43) | 12 (6.2) -> 8 (1.5) | 4338 |
+| islands s7 | x3 | 1411 / 2398 / 4830 / 5314 | 44.4 | 100 % | 35.5 (49) | 12 (5.2) -> 5 (1.1) | 5160 |
+| islands s7 | rare | 1471 / 2669 / 4269 / 4376 | 29.8 | 10 % | 31.6 (49) | 12 (6.9) -> 7 (2.4) | 4371 |
+| colonies s3 | x0 | 851 / 1341 / 2486 / **477** | 14.9 | 0 % | 32.1 (41) | 4 (1.4) -> 1 (1.0) | 1 (100 %) |
+| colonies s3 | x1 | 778 / 1286 / 2892 / 2956 | 30.5 | 100 % | 43.0 (57) | 4 (1.4) -> 2 (1.0) | 2748 |
+| colonies s3 | x3 | 736 / 1171 / 2580 / 2927 | 31.3 | 100 % | 41.2 (54) | 4 (1.4) -> 1 (1.0) | 2802 |
+| colonies s3 | rare | 793 / 1231 / 2508 / 2970 | 25.7 | 11 % | 39.2 (54) | 4 (1.5) -> 1 (1.0) | 2959 |
+
+- **No error catastrophe at x3.** Counts at x3 are as high as at x1 or higher (default s3 478 vs 358, islands 5314 vs 4453; s7 318 vs
+  364 is noise), and births per second are higher (the x3 dishes turn over faster). But see the fidelity gene in section 2: at x3 the
+  cells PAY to copy more carefully.
+- **Generations**: 16-43 on average in 20 minutes; the deepest line reaches 23-57. Mutation makes lines deeper (default s3: x0 16.5,
+  x1 32.3, x3 39.3). The twins with all controls on sit lower (s3 x1 null 19.8, x3 null 27.0), probably because the null dishes have
+  no predation, so fewer deaths and births.
+- **The founders' crash, and the sorting after it.** Every default dish crashes from 2000 to ~250 cells by 4 min whatever the setting,
+  with 10-12 founder lines still alive (about 6 effective). By 20 min 2-5 lines are left, 1-3 effective, at EVERY setting, x0
+  included. The colonies are one colony's dish (effective 1.4) by 4 min already. So "one lineage fills the dish" happens at every
+  mutation rate, and without mutation too: it comes from the founders' own differences plus chance, not from mutation.
+- **Colonies without mutation collapse** (one run: a hint). At x0 the colonies dish is ONE exact clone (100 %) by 20 min and falls
+  from 2486 cells at 10 min to 477. With any mutation (x1, x3, rare) it holds ~2950 cells and grows breathers (26 %), predators (6 %)
+  and light eaters among the founders' undecided cells.
+
+## 2. Genes against their null twin (shift from the founders' mean at 20 min, on / null)
+
+A gene "beats its null" in a dish when its shift with the gene acting is larger than the shift of the same gene in the twin where it
+does nothing. By chance alone that happens half the time.
+
+| setting | genes x scenes where on > null | median of on shift / null shift (sizes) |
+|---|---|---|
+| x1 | 29 / 48 | 1.16 |
+| x3 | 30 / 48 | 1.17 |
+| rare | 20 / 47 | 0.72 |
+
+Barely above chance at x1 and x3, below chance at rare. Where the SAME direction shows in both default seeds and goes beyond both nulls:
+
+- **x1**: chemotaxis DOWN (-0.53 / -0.36, nulls +0.18 / +0.13), flagellum +0.11 / +0.08 (nulls up to 0.07), kin sparing +0.09 /
+  +0.09 (nulls up to 0.07). Only chemotaxis is clear. It also goes down at x3 on the islands (-0.65 vs -0.11) and seed 7 (-0.71 vs
+  -0.07): a sharper nose costs crawling work (N2), and the cells lose it. It repeats in 4 of 6 dishes: a fair hint. (Its range is
+  asymmetric, so its null drifts down too; on goes further.)
+- **x3**:
+  - **FIDELITY UP** in all three scenes: +0.41 / +0.60 / +0.35 against nulls -0.15 / +0.13 / +0.16; colonies, without a twin, +0.89.
+    At x1 the same gene goes either way (-0.34 / +0.10 / -0.08). This is the clearest selection signal in the project so far: at x3
+    the lines that proofread, and pay battery for it, win; at x1 they do not.
+  - Engine COPIES up: +0.93 / +0.68, nulls +0.28 / +0.27 (islands not: +0.65 vs +0.77).
+  - The PUMP gate down: -0.30 / -0.21, nulls under 0.07.
+  - Kin channels and cilia slightly up.
+- **rare**: shifts are tiny in every gene except the groups that one lucky rare mutation hit, which then spread with its line. Default
+  s3: the glue gate +0.31, pump gate -0.30, engine gate +0.26 (null ~0). Islands: elongation +0.42 (null +0.05), engulf +0.17 (null
+  +0.03). One mutation sweeping with its line: from one run, selection cannot be told apart from hitchhiking.
+- The null twins change the ecology too: the engulf null means no predation, so the islands' nulls fill all 6000 slots in x3 and rare.
+  That makes on vs null an imperfect comparison. A twin per gene would be cleaner but would cost 11x as much.
+
+## 3. Spread of the genes in the dish (standard deviation at 20 min)
+
+At x3 the genes spread 2-4x wider than at x1: on default s3, glue 0.45 vs 0.21, fidelity 0.73 vs 0.20, glue gate 0.47 vs 0.17. In rare
+mode the motor genes hardly vary (flagellum sd 0.015 vs 0.08 at x1). A rare default dish makes only ~150 mutations in 20 min (1.2
+births/s x 1200 s x 10 %): each gene group is hit about 16 times in the whole dish, mostly in lines that die.
+
+## 4. What it looks like (`experiments/keep/m2/`)
+
+Side by side, one column per setting: x0, x0.3 (default s3 only), x1, x3, rare (islands: x1, x3, rare). One row per time: 10 and 20 min
+(single frames at 4, 10 and 20 min are in each run's `shots/`). `*-marker.png` is
+the lineage view: each cell coloured by its self marker, like Brainbow, so the same colour means the same line. `*-neon.png` is the
+normal look.
+
+- **Default dish, lineage view** (`def3-marker.png`). At 10 min every dish is a quilt of several colours (pink, lime, yellow, a little
+  cyan); at 20 min every one is nearly a single salmon-pink colony. The colours vanish between 10 and 20 min at EVERY rate, x0 included:
+  the founders' lines being sorted out, the same at any mutation rate. At 20 min:
+  - x0: two big flat patches, salmon and magenta, side by side.
+  - x1: one salmon line fills the whole colony.
+  - x3: salmon and magenta mixed cell by cell, salt-and-pepper, with orange shades. The marker drifts three times faster, so even
+    sisters differ in colour.
+  - rare: a salmon colony with a few small, sharply bounded islands of another colour (a lime-green cluster, a magenta edge). These
+    are clones, each born of one mutation.
+- **Islands** (`isl7-marker.png`):
+  - x1 and x3: one yellow-green line covers the archipelago's sea, sprinkled with single violet and cyan cells at x1 and with a
+    turquoise corner at x3; at x1 the right third is thinner, over brown mud.
+  - rare: the dish splits into two big territories, lime-green on the left and lavender-blue on the right, meeting in a brown muddy
+    middle. This is the clearest lineage geography of the sweep.
+- **Colonies** (`col3-neon.png`):
+  - x0: a single warm-white clone of spindles fills the dish at 10 min, then thins out over brown mud by 20 min.
+  - x1, x3 and rare: the dish is still dense at 20 min, and mixed: hot-pink breathers, red predators and lime light eaters among the
+    warm-white undecided cells.
+  - The order in which pink (breathers) appears follows the rate. At x3 the dish is already mostly pink at 10 min. At x1 it is pink and
+    warm white at 10 min, and pinker at 20. In rare mode it is still warm white at 10 min; by 20 min one pink TERRITORY has grown on
+    the right (one rare mutation's clone spreading). More mutation finds the new job sooner. This is the clearest picture of the sweep.
+
+## 5. Checks
+
+- **Defaults = main.** `?mut=1&mutmode=drift` against main 9f3e57f (exported to the scratchpad), 5 min, the same founders' crash:
+  - seed 3: 280 vs 310 cells at 3.5 min (302 vs 429 at 5 min);
+  - seed 7: 281 vs 261 (270 vs 205).
+  - The differences go both ways (runs are not bit-repeatable).
+- **Books** (`check-books.json`, 5 min, whole dish lit, seed 5): rare, x0 and x3 are all exact (atoms, charge and carbon rounding 0;
+  energy within ±0.05). x0 keeps only exact copies (10 genotypes at 5 min = 10 founder lines). Every sweep run: atoms and charge 0.
+- **Firefox headed** (rare, p 0.3): runs, the MUTATION line shows, no errors.
+- **Speed**: see README "Step M2".
+
+## Reading
+
+- **NOT too much mutation (fog).** Tripling it does not hurt the dish, and it gives MORE consistent signals (fidelity, copies, pump
+  gate, chemotaxis), not fewer: selection is visible at x3 where it is not at x1.
+- **More like too LITTLE.** The default dish keeps ~250-450 cells and ~2 births/s, so 20 minutes give ~2500 births and ~25-35
+  generations, with gene spreads that leave selection little to pick from. The islands give ~15x more births and still show little at
+  x1, but more at x3. Rare big steps give the least variation of all (one mutation per ten births, 1-3 groups): most genes do not move
+  at all in 20 minutes. Hint: the null result is mostly "too little variation x too few generations".
+- **The founders' crash is real, but independent of the rate.** Every dish ends with 1-3 effective founder lines; after that, all
+  variation comes from mutation within the winning line. The crash does not explain the null on its own (genes could still move within
+  a line), but it throws away the founders' standing variation in the first minutes.
+- **x0 is not "clean".** The colonies' single clone collapsed (one run). Some mutation keeps a dish able to change jobs.

@@ -187,6 +187,9 @@
 //               its NEUTRAL control (copies are made, drift and are lost as when on, but have no effect and cost nothing); ?duprate=x the
 //               chance per birth of a duplication (0.02), ?dupdel=x of a copy's loss (0.02), both x the copying scale; ?dupcensus=s the
 //               census's interval (rules panel, Gene duplication)
+//   ?mut=x        step M2: every copying error x x (1 = today; 0 = exact copies, hard light's extra included, key M off); ?mutmode=rare
+//               RARE BIG STEPS (exact copies, a mutation with chance ?mutp= (0.1) changing 1-3 gene groups by ?mutbig= (8) x the small
+//               step), drift (default) every gene nudged at every birth; ?mutcensus=s the census's interval (rules panel, Mutation sweep)
 //   ?grn=0        step T1b: the gene network frozen, without effect (as before T1b); ?grnnull=1 its NEUTRAL control (it runs and mutates,
 //               its outputs have no effect); ?grnsignal=0 no contact signal; ?grnkin=0 the signal not weighted by kinship; ?grnmut=0 the
 //               network copied exactly at births; ?grntau=x the expression's time constant (s); ?reporter=i the regulator the reporter
@@ -471,6 +474,17 @@ async function boot() {
       cells.excl.on = true;    // step 7 exclusion: pinwheel rosettes (key 8; the user chose it as this view's default)
     }
     if (params.has('mut')) cells.genome.rules.mut = flag('mut');    // experiments: ?mut=0 mutation off (key M)
+    {   // step M2: the mutation sweep (src/mutation.js): ?mut=x every copying error x x (0 = exact copies, also key M off), ?mutmode=rare|drift,
+        // ?mutp= (rare: the chance per birth), ?mutbig= (rare: the step), ?mutcensus=
+      const MP = cells.mutation.params;
+      const v = Number(params.get('mut'));
+      if (params.has('mut') && Number.isFinite(v) && v >= 0) MP.scale = v;
+      if (params.has('mutmode')) MP.rare = params.get('mutmode') === 'rare';
+      for (const [q, k] of [['mutp', 'p'], ['mutbig', 'big'], ['mutcensus', 'censusEvery']]) {
+        const x = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(x) && x >= 0) MP[k] = k === 'p' ? Math.min(1, x) : x;
+      }
+    }
     if (params.has('life')) cells.genome.rules.turn = flag('life'); // ?life=0 the life cycle off (key T)
     if (params.has('excl')) cells.excl.on = flag('excl');
     if (params.has('squeeze')) cells.params.squeeze = flag('squeeze') ? SQUEEZE_HARD : SQUEEZE_SOFT;
@@ -836,7 +850,7 @@ async function boot() {
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
-    kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, dup: cells.dup, perfusion, glue: cells.glue, stir: water.stir, obstacles,
+    kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, dup: cells.dup, mutation: cells.mutation, perfusion, glue: cells.glue, stir: water.stir, obstacles,
     spindle: cells.spindle, carbon: matter.carbon, carbonCells: cells.eat.carbon, motors: cells.motors, flow };
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.warfare = new Warfare(window.moire);     // step T1c: the chemical warfare census (lineage borders against interiors)
@@ -1144,6 +1158,7 @@ ${cells.grn.panelLine(compact)}
 ${cells.pred.panelLine(compact)}
 ${cells.fidelity.panelLine(compact)}
 ${cells.dup.panelLine(compact)}
+${cells.mutation.panelLine(compact)}
 ${cells.glue.panelLine(compact)}
 ${cells.spindle.panelLine(compact)}
 ${cells.motors.panelLine(compact)}${ELECTRONS ? `
@@ -1240,6 +1255,7 @@ function drawOverlay() {
     ...cells.pred.overlayLines(),
     ...cells.fidelity.overlayLines(),
     ...cells.dup.overlayLines(),
+    ...cells.mutation.overlayLines(),
     ...cells.eat.pigments.overlayLines(),
     ...water.overlayLines(),
     ...oases.overlayLines(),

@@ -1,0 +1,41 @@
+{
+ "batch": "p3-off",
+ "seeds": [
+  3,
+  7
+ ],
+ "runs": [
+  {
+   "name": "p3-off-default",
+   "description": "off-equals-main check: default scene, every P3 part off (?p3=0)",
+   "query": {
+    "p3": 0
+   },
+   "duration": 302,
+   "sample_every": 30,
+   "stall": 400,
+   "shots": [
+    {
+     "t": 300,
+     "panel": true,
+     "name": "panel"
+    }
+   ]
+  },
+  {
+   "name": "p3-main-default",
+   "description": "off-equals-main check: default scene, main 4509b8d (run from an export)",
+   "query": {},
+   "duration": 302,
+   "sample_every": 30,
+   "stall": 400,
+   "shots": [
+    {
+     "t": 300,
+     "panel": true,
+     "name": "panel"
+    }
+   ]
+  }
+ ]
+}

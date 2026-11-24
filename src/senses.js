@@ -190,18 +190,28 @@ export class Senses {
         const oi = i * CF, oj = j * CF, dx = f[oj] - f[oi], dy = f[oj + 1] - f[oi + 1], dd = Math.hypot(dx, dy) || 1;
         return ((f[oi + 2] - f[oj + 2]) * dx + (f[oi + 3] - f[oj + 3]) * dy) / dd / R;
       };
-      const ch = { n: 0, close: 0, chases: 0, dist: 0 }, base = { n: 0, close: 0, chases: 0 }, prey = { n: 0, open: 0, flee: 0 };
+      const ch = { n: 0, close: 0, chases: 0, dist: 0, point: 0, nPoint: 0, taste: 0 }, base = { n: 0, close: 0, chases: 0 }, prey = { n: 0, open: 0, flee: 0, point: 0, nPoint: 0 };
       for (const i of live) {
         const o = i * CF, ri = f[o + 4], isPred = (g[i * B + B_ENGULF] || 0) >= 0.25;
         const [j, dd] = nearest(i, (k) => f[k * CF + 4] ** 2 * ratio <= ri * ri);
         if (j >= 0 && dd >= 2.2 * R) {
           const v = closing(i, j), Z = isPred ? ch : base;
           Z.n++; Z.close += v; if (v > 0.25) Z.chases++;
-          if (isPred) ch.dist += dd / R;
+          if (isPred) {
+            ch.dist += dd / R;
+            // where its taste points: the cosine between Cell.taste and the way to that prey (1: straight at it)
+            const tx = f[o + C_TASTE], ty = f[o + C_TASTE + 1], tm = Math.hypot(tx, ty);
+            ch.taste += tm;
+            if (tm > 1e-6) { ch.point += (tx * (f[j * CF] - f[o]) + ty * (f[j * CF + 1] - f[o + 1])) / (tm * dd); ch.nPoint++; }
+          }
         }
         if (!isPred) {
           const [k, dk] = nearest(i, (q) => (g[q * B + B_ENGULF] || 0) >= 0.25 && f[q * CF + 4] ** 2 >= ratio * ri * ri);
-          if (k >= 0 && dk >= 2.2 * R) { const v = -closing(i, k); prey.n++; prey.open += v; if (v > 0.25) prey.flee++; }
+          if (k >= 0 && dk >= 2.2 * R) {
+            const v = -closing(i, k); prey.n++; prey.open += v; if (v > 0.25) prey.flee++;
+            const tx = f[o + C_TASTE], ty = f[o + C_TASTE + 1], tm = Math.hypot(tx, ty);
+            if (tm > 1e-6) { prey.point -= (tx * (f[k * CF] - f[o]) + ty * (f[k * CF + 1] - f[o + 1])) / (tm * dk); prey.nPoint++; }   // (+: away from it)
+          }
         }
       }
       // GLUED GROUPS: cells joined by junctions (formed, not torn, on the side facing a listed neighbour that lists it back) (union-find)
@@ -236,8 +246,9 @@ export class Senses {
         taste: { feel: N ? tFeel / N : 0, align: nTA ? tAlign / nTA : 0, alignPath: nPT ? pAlignT / nPT : 0 },
         nose: { feel: N ? sFeel / N : 0, align: nSA ? sAlign / nSA : 0, alignPath: nPS ? pAlignS / nPS : 0 },
         chase: { preds: ch.n, close: ch.n ? ch.close / ch.n : 0, chases: ch.chases, dist: ch.n ? ch.dist / ch.n : 0,
+          point: ch.nPoint ? ch.point / ch.nPoint : 0, nPoint: ch.nPoint, taste: ch.n ? ch.taste / ch.n : 0,
           baseN: base.n, baseClose: base.n ? base.close / base.n : 0, baseChaseShare: base.n ? base.chases / base.n : 0, chaseShare: ch.n ? ch.chases / ch.n : 0 },
-        prey: { n: prey.n, open: prey.n ? prey.open / prey.n : 0, flee: prey.flee, fleeShare: prey.n ? prey.flee / prey.n : 0 },
+        prey: { n: prey.n, open: prey.n ? prey.open / prey.n : 0, flee: prey.flee, fleeShare: prey.n ? prey.flee / prey.n : 0, point: prey.nPoint ? prey.point / prey.nPoint : 0, nPoint: prey.nPoint },
         glued: { groups: size.size, single: N ? single / N : 0, in4: N ? in4 / N : 0, meanSize: N ? wsum / N : 0, largest },
         wall: { exposed: exN ? exW / exN : 0, sheltered: shN ? shW / shN : 0, shelteredSides: (exN + shN) ? shN / (exN + shN) : 0 },
         floors: this.floors.slice(),
@@ -249,6 +260,69 @@ export class Senses {
     } finally {
       this.busy = false;
     }
+  }
+
+  // ---------------------------------------------------------------- the lab
+  /**
+   * Place `n` hand-made predators (moire.predators.genome(opts): opts.taste [oxygen, exhaust, spill, heat], opts.range, opts.flagellum, ...)
+   * evenly on a RING round the live cells: centred on their mean place, at the radius that holds 90 % of them + `gap` R (so they start out
+   * in the open water, `gap` R from the colony's edge). Returns { centre, radius (R), placed }.
+   */
+  async ring(n = 16, gap = 15, opts = {}) {
+    const C = this.cells, CF = CELL_FLOATS, R = C.R, v = C.view;
+    const ab = await readBuffer(C.device, C.cellBuf, 0, C.count * CF * 4), f = new Float32Array(ab), u = new Uint32Array(ab);
+    let sx = 0, sy = 0, m = 0;
+    for (let i = 0; i < C.count; i++) if (u[i * CF + C_FLAGS] & 1) { sx += f[i * CF]; sy += f[i * CF + 1]; m++; }
+    if (!m) throw new Error('no live cells');
+    const cx = sx / m, cy = sy / m, ds = [];
+    for (let i = 0; i < C.count; i++) if (u[i * CF + C_FLAGS] & 1) ds.push(Math.hypot(f[i * CF] - cx, f[i * CF + 1] - cy));
+    ds.sort((a, b) => a - b);
+    const r = ds[Math.floor(0.9 * (ds.length - 1))] + gap * R, mg = 3 * R, pts = [];
+    for (let k = 0; k < n; k++) {
+      const a = 2 * Math.PI * (k + 0.5 + (Number(opts.phase) || 0)) / n;   // (opts.phase: a share of the spacing, to put several rings between each other)
+      pts.push([Math.max(mg, Math.min(v.cssW - mg, cx + r * Math.cos(a))), Math.max(mg, Math.min(v.cssH - mg, cy + r * Math.sin(a)))]);
+    }
+    await window.moire.app.place(pts, C.pred.genome(opts), 'predator');
+    return { centre: [cx, cy], radius: r / R, placed: pts.length };
+  }
+
+  /**
+   * The lab's probe: every cell with the engulf gene (>= 0.25) and a taste, grouped by its dials' pattern (as text): how big the taste it
+   * holds is (Cell.taste), the cosine of it with the way to its nearest smaller live cell (+ = toward it; also for those > 5 R away), that
+   * cell's distance (R) and the closing speed (R/s). For telling which scent points at prey, and from how far.
+   */
+  async probe(opts = {}) {   // (opts.founder: only cells of that founder id, Bio.rec.w: the hand-made predators are 900; then dials of 0 count too)
+    const C = this.cells, d = C.device, n = C.count, CF = CELL_FLOATS, B = BIO_FLOATS, R = C.R;
+    const ratio = (C.pred && C.pred.params.sizeRatio) || 1.4;
+    const [bioAB, cellAB] = await Promise.all([readBuffer(d, C.bioBuf[C.bioCur], 0, n * B * 4), readBuffer(d, C.cellBuf, 0, n * CF * 4)]);
+    const g = new Float32Array(bioAB), f = new Float32Array(cellAB), u = new Uint32Array(cellAB);
+    const live = [];
+    for (let i = 0; i < n; i++) if (u[i * CF + C_FLAGS] & 1) live.push(i);
+    const groups = {};
+    for (const i of live) {
+      const b = i * B, o = i * CF;
+      if ((g[b + B_ENGULF] || 0) < 0.25) continue;
+      const dl = [0, 1, 2, 3].map((k) => Math.round(10 * g[b + BIO_P3 + k]) / 10);
+      if (opts.founder != null ? Math.round(g[b + B_FOUNDER]) !== opts.founder : dl.every((x) => x === 0)) continue;
+      let best = -1, bd = Infinity;
+      for (const j of live) {
+        if (j === i || f[j * CF + 4] ** 2 * ratio > f[o + 4] ** 2) continue;
+        const dd = Math.hypot(f[j * CF] - f[o], f[j * CF + 1] - f[o + 1]);
+        if (dd < bd) { bd = dd; best = j; }
+      }
+      if (best < 0) continue;
+      const dx = f[best * CF] - f[o], dy = f[best * CF + 1] - f[o + 1], tx = f[o + C_TASTE], ty = f[o + C_TASTE + 1], tm = Math.hypot(tx, ty);
+      const close = ((f[o + 2] - f[best * CF + 2]) * dx + (f[o + 3] - f[best * CF + 3]) * dy) / bd / R;
+      const key = dl.join(','), G = groups[key] || (groups[key] = { n: 0, taste: 0, cos: 0, dist: 0, close: 0, far: 0, farCos: 0 });
+      const cs = tm > 1e-6 ? (tx * dx + ty * dy) / (tm * bd) : 0;
+      G.n++; G.taste += tm; G.cos += cs; G.dist += bd / R; G.close += close;
+      if (bd > 5 * R) { G.far++; G.farCos += cs; }
+    }
+    for (const G of Object.values(groups)) {
+      for (const k of ['taste', 'cos', 'dist', 'close']) G[k] /= G.n;
+      G.farCos = G.far ? G.farCos / G.far : null;
+    }
+    return groups;
   }
 
   // ---------------------------------------------------------------- words
@@ -271,7 +345,7 @@ export class Senses {
     if (c && c.n) {
       lines.push(`taste genes: ${c.dials.map((x) => `${x.name} ${x.mean.toFixed(3)} ± ${x.sd.toFixed(3)}${x.pred != null ? ` (predators ${x.pred.toFixed(2)})` : ''}`).join(' · ')} · range ${c.range.mean.toFixed(3)} ± ${c.range.sd.toFixed(3)}` +
         ` · taste felt by ${(100 * c.taste.feel).toFixed(0)} %, velocity ${c.taste.align.toFixed(3)}, path ${c.taste.alignPath.toFixed(3)} · nose felt ${(100 * c.nose.feel).toFixed(0)} %, velocity ${c.nose.align.toFixed(3)}, path ${c.nose.alignPath.toFixed(3)}`);
-      lines.push(`chases: ${c.chase.preds} predators at ${c.chase.dist.toFixed(1)} R from prey, closing ${c.chase.close.toFixed(3)} R/s (${(100 * c.chase.chaseShare).toFixed(0)} % > 0.25) vs others ${c.chase.baseClose.toFixed(3)} (${(100 * c.chase.baseChaseShare).toFixed(0)} %) · prey ${c.prey.n} opening ${c.prey.open.toFixed(3)} R/s` +
+      lines.push(`chases: ${c.chase.preds} predators at ${c.chase.dist.toFixed(1)} R from prey, closing ${c.chase.close.toFixed(3)} R/s (${(100 * c.chase.chaseShare).toFixed(0)} % > 0.25), taste points at prey ${c.chase.point.toFixed(2)} vs others ${c.chase.baseClose.toFixed(3)} (${(100 * c.chase.baseChaseShare).toFixed(0)} %) · prey ${c.prey.n} opening ${c.prey.open.toFixed(3)} R/s` +
         ` · glued groups ${c.glued.groups}, mean size ${c.glued.meanSize.toFixed(2)}, largest ${c.glued.largest}, single ${(100 * c.glued.single).toFixed(0)} % · wall cover exposed ${c.wall.exposed.toFixed(3)} sheltered ${c.wall.sheltered.toFixed(3)} (${(100 * c.wall.shelteredSides).toFixed(0)} % of sides)`);
     }
     return lines;

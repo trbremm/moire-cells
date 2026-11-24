@@ -1,0 +1,116 @@
+{
+ "batch": "p3-probe",
+ "runs": [
+  {
+   "name": "p3-probe-default",
+   "description": "default s3: at 300 s four rings of 8 crawling predators 15 R out, each ring following ONE scent (oxygen, exhaust, spill, heat; range 2); where their taste points",
+   "query": {
+    "seed": 3,
+    "p3census": 5
+   },
+   "duration": 422,
+   "sample_every": 30,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 300,
+     "js": "return JSON.stringify(await moire.senses.ring(8, 15, {\"engulf\": 1, \"taste\": [1, 0, 0, 0], \"range\": 2, \"phase\": 0.0}))"
+    },
+    {
+     "t": 300,
+     "js": "return JSON.stringify(await moire.senses.ring(8, 15, {\"engulf\": 1, \"taste\": [0, 1, 0, 0], \"range\": 2, \"phase\": 0.25}))"
+    },
+    {
+     "t": 300,
+     "js": "return JSON.stringify(await moire.senses.ring(8, 15, {\"engulf\": 1, \"taste\": [0, 0, 1, 0], \"range\": 2, \"phase\": 0.5}))"
+    },
+    {
+     "t": 300,
+     "js": "return JSON.stringify(await moire.senses.ring(8, 15, {\"engulf\": 1, \"taste\": [0, 0, 0, 1], \"range\": 2, \"phase\": 0.75}))"
+    },
+    {
+     "t": 305,
+     "js": "return JSON.stringify(await moire.senses.probe())"
+    },
+    {
+     "t": 315,
+     "js": "return JSON.stringify(await moire.senses.probe())"
+    },
+    {
+     "t": 330,
+     "js": "return JSON.stringify(await moire.senses.probe())"
+    },
+    {
+     "t": 360,
+     "js": "return JSON.stringify(await moire.senses.probe())"
+    },
+    {
+     "t": 420,
+     "js": "return JSON.stringify(await moire.senses.probe())"
+    }
+   ],
+   "shots": [
+    {
+     "t": 300,
+     "name": "t300"
+    }
+   ]
+  },
+  {
+   "name": "p3-probe-colonies",
+   "description": "the same in the colonies preset s3",
+   "query": {
+    "seed": 3,
+    "preset": "colonies",
+    "p3census": 5
+   },
+   "duration": 422,
+   "sample_every": 30,
+   "stall": 400,
+   "evals": [
+    {
+     "t": 300,
+     "js": "return JSON.stringify(await moire.senses.ring(8, 15, {\"engulf\": 1, \"taste\": [1, 0, 0, 0], \"range\": 2, \"phase\": 0.0}))"
+    },
+    {
+     "t": 300,
+     "js": "return JSON.stringify(await moire.senses.ring(8, 15, {\"engulf\": 1, \"taste\": [0, 1, 0, 0], \"range\": 2, \"phase\": 0.25}))"
+    },
+    {
+     "t": 300,
+     "js": "return JSON.stringify(await moire.senses.ring(8, 15, {\"engulf\": 1, \"taste\": [0, 0, 1, 0], \"range\": 2, \"phase\": 0.5}))"
+    },
+    {
+     "t": 300,
+     "js": "return JSON.stringify(await moire.senses.ring(8, 15, {\"engulf\": 1, \"taste\": [0, 0, 0, 1], \"range\": 2, \"phase\": 0.75}))"
+    },
+    {
+     "t": 305,
+     "js": "return JSON.stringify(await moire.senses.probe())"
+    },
+    {
+     "t": 315,
+     "js": "return JSON.stringify(await moire.senses.probe())"
+    },
+    {
+     "t": 330,
+     "js": "return JSON.stringify(await moire.senses.probe())"
+    },
+    {
+     "t": 360,
+     "js": "return JSON.stringify(await moire.senses.probe())"
+    },
+    {
+     "t": 420,
+     "js": "return JSON.stringify(await moire.senses.probe())"
+    }
+   ],
+   "shots": [
+    {
+     "t": 300,
+     "name": "t300"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,185 @@
+{
+ "batch": "q1-evo",
+ "runs": [
+  {
+   "name": "q1-evo-default",
+   "description": "quick look: does any lineage start using the signal? (10 min, seed 3)",
+   "query": {
+    "seed": 3
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 120,
+     "js": "const c = await moire.signals.now(); return JSON.stringify({n: c.n, carriers: c.carriers, emitters: c.emitters, toW: c.toWater, toJ: c.toJunctions, listeners: c.listeners, relays: c.relays, fast: c.fast, firing: c.firing, junctionCells: c.junctionCells, heard: c.heard, genes: c.genes, flavours: c.flavours, lines: c.lines, wave: c.wave, ledger: moire.signals.ledger})"
+    },
+    {
+     "t": 300,
+     "js": "const c = await moire.signals.now(); return JSON.stringify({n: c.n, carriers: c.carriers, emitters: c.emitters, toW: c.toWater, toJ: c.toJunctions, listeners: c.listeners, relays: c.relays, fast: c.fast, firing: c.firing, junctionCells: c.junctionCells, heard: c.heard, genes: c.genes, flavours: c.flavours, lines: c.lines, wave: c.wave, ledger: moire.signals.ledger})"
+    },
+    {
+     "t": 450,
+     "js": "const c = await moire.signals.now(); return JSON.stringify({n: c.n, carriers: c.carriers, emitters: c.emitters, toW: c.toWater, toJ: c.toJunctions, listeners: c.listeners, relays: c.relays, fast: c.fast, firing: c.firing, junctionCells: c.junctionCells, heard: c.heard, genes: c.genes, flavours: c.flavours, lines: c.lines, wave: c.wave, ledger: moire.signals.ledger})"
+    },
+    {
+     "t": 600,
+     "js": "const c = await moire.signals.now(); return JSON.stringify({n: c.n, carriers: c.carriers, emitters: c.emitters, toW: c.toWater, toJ: c.toJunctions, listeners: c.listeners, relays: c.relays, fast: c.fast, firing: c.firing, junctionCells: c.junctionCells, heard: c.heard, genes: c.genes, flavours: c.flavours, lines: c.lines, wave: c.wave, ledger: moire.signals.ledger})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 300,
+     "view": "signals",
+     "name": "t300-signals"
+    },
+    {
+     "t": 600,
+     "view": "signals",
+     "name": "t600-signals"
+    },
+    {
+     "t": 600,
+     "name": "t600-job"
+    }
+   ]
+  },
+  {
+   "name": "q1-evo-default-null",
+   "description": "quick look: does any lineage start using the signal? (10 min, seed 3)",
+   "query": {
+    "seed": 3,
+    "signalnull": 1
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 120,
+     "js": "const c = await moire.signals.now(); return JSON.stringify({n: c.n, carriers: c.carriers, emitters: c.emitters, toW: c.toWater, toJ: c.toJunctions, listeners: c.listeners, relays: c.relays, fast: c.fast, firing: c.firing, junctionCells: c.junctionCells, heard: c.heard, genes: c.genes, flavours: c.flavours, lines: c.lines, wave: c.wave, ledger: moire.signals.ledger})"
+    },
+    {
+     "t": 300,
+     "js": "const c = await moire.signals.now(); return JSON.stringify({n: c.n, carriers: c.carriers, emitters: c.emitters, toW: c.toWater, toJ: c.toJunctions, listeners: c.listeners, relays: c.relays, fast: c.fast, firing: c.firing, junctionCells: c.junctionCells, heard: c.heard, genes: c.genes, flavours: c.flavours, lines: c.lines, wave: c.wave, ledger: moire.signals.ledger})"
+    },
+    {
+     "t": 450,
+     "js": "const c = await moire.signals.now(); return JSON.stringify({n: c.n, carriers: c.carriers, emitters: c.emitters, toW: c.toWater, toJ: c.toJunctions, listeners: c.listeners, relays: c.relays, fast: c.fast, firing: c.firing, junctionCells: c.junctionCells, heard: c.heard, genes: c.genes, flavours: c.flavours, lines: c.lines, wave: c.wave, ledger: moire.signals.ledger})"
+    },
+    {
+     "t": 600,
+     "js": "const c = await moire.signals.now(); return JSON.stringify({n: c.n, carriers: c.carriers, emitters: c.emitters, toW: c.toWater, toJ: c.toJunctions, listeners: c.listeners, relays: c.relays, fast: c.fast, firing: c.firing, junctionCells: c.junctionCells, heard: c.heard, genes: c.genes, flavours: c.flavours, lines: c.lines, wave: c.wave, ledger: moire.signals.ledger})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 300,
+     "view": "signals",
+     "name": "t300-signals"
+    },
+    {
+     "t": 600,
+     "view": "signals",
+     "name": "t600-signals"
+    },
+    {
+     "t": 600,
+     "name": "t600-job"
+    }
+   ]
+  },
+  {
+   "name": "q1-evo-colonies",
+   "description": "quick look: does any lineage start using the signal? (10 min, seed 3)",
+   "query": {
+    "preset": "colonies",
+    "seed": 3
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 120,
+     "js": "const c = await moire.signals.now(); return JSON.stringify({n: c.n, carriers: c.carriers, emitters: c.emitters, toW: c.toWater, toJ: c.toJunctions, listeners: c.listeners, relays: c.relays, fast: c.fast, firing: c.firing, junctionCells: c.junctionCells, heard: c.heard, genes: c.genes, flavours: c.flavours, lines: c.lines, wave: c.wave, ledger: moire.signals.ledger})"
+    },
+    {
+     "t": 300,
+     "js": "const c = await moire.signals.now(); return JSON.stringify({n: c.n, carriers: c.carriers, emitters: c.emitters, toW: c.toWater, toJ: c.toJunctions, listeners: c.listeners, relays: c.relays, fast: c.fast, firing: c.firing, junctionCells: c.junctionCells, heard: c.heard, genes: c.genes, flavours: c.flavours, lines: c.lines, wave: c.wave, ledger: moire.signals.ledger})"
+    },
+    {
+     "t": 450,
+     "js": "const c = await moire.signals.now(); return JSON.stringify({n: c.n, carriers: c.carriers, emitters: c.emitters, toW: c.toWater, toJ: c.toJunctions, listeners: c.listeners, relays: c.relays, fast: c.fast, firing: c.firing, junctionCells: c.junctionCells, heard: c.heard, genes: c.genes, flavours: c.flavours, lines: c.lines, wave: c.wave, ledger: moire.signals.ledger})"
+    },
+    {
+     "t": 600,
+     "js": "const c = await moire.signals.now(); return JSON.stringify({n: c.n, carriers: c.carriers, emitters: c.emitters, toW: c.toWater, toJ: c.toJunctions, listeners: c.listeners, relays: c.relays, fast: c.fast, firing: c.firing, junctionCells: c.junctionCells, heard: c.heard, genes: c.genes, flavours: c.flavours, lines: c.lines, wave: c.wave, ledger: moire.signals.ledger})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 300,
+     "view": "signals",
+     "name": "t300-signals"
+    },
+    {
+     "t": 600,
+     "view": "signals",
+     "name": "t600-signals"
+    },
+    {
+     "t": 600,
+     "name": "t600-job"
+    }
+   ]
+  },
+  {
+   "name": "q1-evo-colonies-null",
+   "description": "quick look: does any lineage start using the signal? (10 min, seed 3)",
+   "query": {
+    "preset": "colonies",
+    "seed": 3,
+    "signalnull": 1
+   },
+   "duration": 600,
+   "sample_every": 30,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 120,
+     "js": "const c = await moire.signals.now(); return JSON.stringify({n: c.n, carriers: c.carriers, emitters: c.emitters, toW: c.toWater, toJ: c.toJunctions, listeners: c.listeners, relays: c.relays, fast: c.fast, firing: c.firing, junctionCells: c.junctionCells, heard: c.heard, genes: c.genes, flavours: c.flavours, lines: c.lines, wave: c.wave, ledger: moire.signals.ledger})"
+    },
+    {
+     "t": 300,
+     "js": "const c = await moire.signals.now(); return JSON.stringify({n: c.n, carriers: c.carriers, emitters: c.emitters, toW: c.toWater, toJ: c.toJunctions, listeners: c.listeners, relays: c.relays, fast: c.fast, firing: c.firing, junctionCells: c.junctionCells, heard: c.heard, genes: c.genes, flavours: c.flavours, lines: c.lines, wave: c.wave, ledger: moire.signals.ledger})"
+    },
+    {
+     "t": 450,
+     "js": "const c = await moire.signals.now(); return JSON.stringify({n: c.n, carriers: c.carriers, emitters: c.emitters, toW: c.toWater, toJ: c.toJunctions, listeners: c.listeners, relays: c.relays, fast: c.fast, firing: c.firing, junctionCells: c.junctionCells, heard: c.heard, genes: c.genes, flavours: c.flavours, lines: c.lines, wave: c.wave, ledger: moire.signals.ledger})"
+    },
+    {
+     "t": 600,
+     "js": "const c = await moire.signals.now(); return JSON.stringify({n: c.n, carriers: c.carriers, emitters: c.emitters, toW: c.toWater, toJ: c.toJunctions, listeners: c.listeners, relays: c.relays, fast: c.fast, firing: c.firing, junctionCells: c.junctionCells, heard: c.heard, genes: c.genes, flavours: c.flavours, lines: c.lines, wave: c.wave, ledger: moire.signals.ledger})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 300,
+     "view": "signals",
+     "name": "t300-signals"
+    },
+    {
+     "t": 600,
+     "view": "signals",
+     "name": "t600-signals"
+    },
+    {
+     "t": 600,
+     "name": "t600-job"
+    }
+   ]
+  }
+ ]
+}

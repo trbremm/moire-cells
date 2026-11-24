@@ -1,0 +1,26 @@
+{
+ "batch": "q1-speed",
+ "runs": [
+  {
+   "name": "q1-speed-on",
+   "description": "speed: 2000 cells, the default dish, 150 s at MAX",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 300
+  },
+  {
+   "name": "q1-speed-off",
+   "description": "speed: 2000 cells, the default dish, 150 s at MAX",
+   "query": {
+    "seed": 3,
+    "signal": 0
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 300
+  }
+ ]
+}

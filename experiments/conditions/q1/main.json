@@ -1,0 +1,39 @@
+{
+ "batch": "q1-main",
+ "runs": [
+  {
+   "name": "q1-main_s3",
+   "description": "main aadc3f8: the default dish 300 s",
+   "query": {
+    "seed": 3
+   },
+   "duration": 300,
+   "sample_every": 30,
+   "stall": 300
+  },
+  {
+   "name": "q1-main_s7",
+   "description": "main aadc3f8: the default dish 300 s",
+   "query": {
+    "seed": 7
+   },
+   "duration": 300,
+   "sample_every": 30,
+   "stall": 300
+  },
+  {
+   "name": "q1-main-snap",
+   "description": "a snapshot saved by main aadc3f8",
+   "query": {
+    "seed": 3
+   },
+   "duration": 61,
+   "sample_every": 0,
+   "snapshots": [
+    {
+     "t": 60
+    }
+   ]
+  }
+ ]
+}

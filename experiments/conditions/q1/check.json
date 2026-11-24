@@ -1,0 +1,67 @@
+{
+ "batch": "q1-check",
+ "runs": [
+  {
+   "name": "q1-off_s3",
+   "description": "check: the default dish 300 s (step Q1 off / on)",
+   "query": {
+    "signal": 0,
+    "seed": 3
+   },
+   "duration": 300,
+   "sample_every": 30,
+   "stall": 300
+  },
+  {
+   "name": "q1-on_s3",
+   "description": "check: the default dish 300 s (step Q1 off / on)",
+   "query": {
+    "seed": 3
+   },
+   "duration": 300,
+   "sample_every": 30,
+   "stall": 300
+  },
+  {
+   "name": "q1-off_s7",
+   "description": "check: the default dish 300 s (step Q1 off / on)",
+   "query": {
+    "signal": 0,
+    "seed": 7
+   },
+   "duration": 300,
+   "sample_every": 30,
+   "stall": 300
+  },
+  {
+   "name": "q1-on_s7",
+   "description": "check: the default dish 300 s (step Q1 off / on)",
+   "query": {
+    "seed": 7
+   },
+   "duration": 300,
+   "sample_every": 30,
+   "stall": 300
+  },
+  {
+   "name": "q1-snap-save",
+   "description": "a Q1 snapshot (with a puff in the water) to reload",
+   "query": {
+    "seed": 3
+   },
+   "duration": 62,
+   "sample_every": 0,
+   "evals": [
+    {
+     "t": 60,
+     "js": "moire.signals.puff(640, 400, 1, 1, 4); return 'puffed'"
+    }
+   ],
+   "snapshots": [
+    {
+     "t": 61
+    }
+   ]
+  }
+ ]
+}

@@ -87,6 +87,7 @@ export const RULE_GROUPS = [
   ['s2', 'Flagella and cilia (step S2)'],
   ['p3', 'Cells that sense cells (step P3)'],
   ['g3', 'Moire genome (step G3)'],
+  ['q1', 'Signal substance (step Q1)'],
   ['g0w', 'Stirred water (step G0)'],
   ['vents', 'Vents in the dark (step C12f)'],
   ['n1', 'Nutrient landscape (step N1)'],
@@ -1059,6 +1060,30 @@ export function makeActions(app) {
     sknob('p3cost', 'range cost', 'rangeCost', 0.0001, 1, 1.5, 4, 'energy per s per unit of dial at range 0 (× e^range)'),
     sknob('p3tug', 'tug', 'tug', 0.05, 0.95, 1.2, 2, 'how far a wrap gets while the prey’s glued group is too big'),
     sknob('p3kin', 'sheltered wall', 'kinShare', 0.01, 1, 1.25, 2, 'the share of the wall a side joined to a neighbour still wants'),
+  );
+
+  // ---------- the signal substance (step Q1; panel only: no keys are free) ----------
+  const Q1P = () => app.cells.signals.params;
+  const q1tog = (id, label, key, onTxt, offTxt, help) => ({ id, keys: [], label, group: 'q1', type: 'toggle', get: () => Q1P()[key],
+    run: () => (flip(Q1P(), key) ? onTxt : offTxt), help });
+  const q1knob = (id, label, key, lo, hi, f, digits, help) => ({ id, keys: [], label, group: 'q1', type: 'knob', get: () => Number(Q1P()[key]).toFixed(digits),
+    run: (k) => { const p = Q1P(); p[key] = Math.max(lo, Math.min(hi, +((Number(p[key]) || lo || 0.01) * (k === '-' ? 1 / f : f)).toPrecision(3))); return `${label} ${p[key]}`; }, help });
+  A.push(
+    q1tog('q1on', 'signal substance', 'on', 'cells can release a signal and hear it (genes, the gene network)', 'no signal substance (as before step Q1)',
+      'a matter-free substance with a flavour; it does nothing unless a cell is wired to it'),
+    q1tog('q1flow', 'carried by water', 'flow', 'the water carries the signal', 'the signal only spreads', ''),
+    q1tog('q1junc', 'through junctions', 'junction', 'the junction share goes straight to joined neighbours (a transmitter)', 'no release through junctions', ''),
+    q1tog('q1taste', 'signal taste', 'taste', 'the taste dial steers toward (+) or away from (−) the heard signal', 'the signal taste does not steer', 'with step P3’s taste on'),
+    q1tog('q1fast', 'fast regulators', 'fast', 'regulators with the speed bit relax in tauFast (relays can fire)', 'every regulator at the network’s tau', ''),
+    q1tog('q1null', 'signal neutral control', 'null', 'released and paid, but every cell hears the dish somewhere else (NEUTRAL CONTROL)', 'cells hear the signal where they are', ''),
+    q1tog('q1mut', 'signal genes mutate', 'mutate', 'the signal genes mutate at births', 'the signal genes copy exactly', ''),
+    q1knob('q1spread', 'spread', 'spread', 0.5, 60, 1.25, 1, 'R² per s'),
+    q1knob('q1life', 'lifetime', 'life', 0.1, 30, 1.25, 2, 's before the signal fades into heat'),
+    q1knob('q1power', 'release power', 'power', 0.0002, 0.1, 1.5, 4, 'energy per s at release gene 1'),
+    q1knob('q1hearw', 'hearing (water)', 'hearW', 1e-6, 0.01, 1.5, 6, 'energy per R² heard at 63 % (smaller: more sensitive)'),
+    q1knob('q1hearj', 'hearing (junctions)', 'hearJ', 1e-6, 0.01, 1.5, 6, 'energy per s heard at 63 % (smaller: more sensitive)'),
+    q1knob('q1tau', 'fast time', 'tauFast', 0.05, 5, 1.25, 2, 's: a fast regulator’s time constant'),
+    q1knob('q1puff', 'pipette puff', 'puffAmount', 0.01, 10, 1.5, 2, 'energy per puff of the signal pipette'),
   );
 
   // ---------- the moire genome (step G3; panel only: no keys are free) ----------

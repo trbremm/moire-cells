@@ -1,0 +1,15 @@
+{
+ "batch": "q1-speed-main",
+ "runs": [
+  {
+   "name": "q1-speed-main",
+   "description": "speed: main aadc3f8, 2000 cells, the default dish, 150 s at MAX",
+   "query": {
+    "seed": 3
+   },
+   "duration": 150,
+   "sample_every": 0,
+   "stall": 300
+  }
+ ]
+}

@@ -20,16 +20,21 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
+def norm(p):
+    # line-ending independent (checkouts on Windows may hold CRLF, the server serves LF): same content, same hash
+    return p.read_bytes().replace(b'\r\n', b'\n')
+
+
 def build():
     js = {}
     for p in sorted((ROOT / 'src').rglob('*.js')):
         rel = p.relative_to(ROOT).as_posix()
-        js[rel] = hashlib.sha1(p.read_bytes()).hexdigest()[:10]
+        js[rel] = hashlib.sha1(norm(p)).hexdigest()[:10]
     every = hashlib.sha1()
     for p in sorted((ROOT / 'src').rglob('*')):
         if p.is_file() and p.suffix in ('.js', '.wgsl'):
             every.update(p.relative_to(ROOT).as_posix().encode())
-            every.update(p.read_bytes())
+            every.update(norm(p))
     return {'v': every.hexdigest()[:10], 'js': js}
 
 
@@ -38,7 +43,7 @@ def main():
     text = json.dumps(data, indent=1, sort_keys=True) + '\n'
     out = ROOT / 'version.json'
     if '--check' in sys.argv:
-        ok = out.exists() and out.read_text(encoding='utf-8') == text
+        ok = out.exists() and out.read_bytes().replace(b'\r\n', b'\n').decode('utf-8') == text
         print('version.json is up to date' if ok else 'version.json is STALE: run python tools/stamp.py')
         sys.exit(0 if ok else 1)
     out.write_text(text, encoding='utf-8', newline='\n')

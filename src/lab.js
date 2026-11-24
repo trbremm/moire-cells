@@ -71,6 +71,10 @@ export const GENES = {
   sigEmit: 224, sigHear: 225, sigWidth: 226, sigRelease: 227, sigJunction: 228, sigTaste: 229, sigFast: 230,
   grnRelWGain: 232, grnRelWReg: 233, grnRelJGain: 234, grnRelJReg: 235,
   grnFlagGain: 176, grnFlagReg: 177, grnCiliaGain: 178, grnCiliaReg: 179,
+  // step T2: the TENDRILS (reach R, count 0..1 -> 1..4, placement rad from the front, spread 0..1, stiffness log, retraction, floor grip),
+  // MINERALISE (0..1), the GROW / RETRACT / MINERALISE outputs' gains and regulators (src/tendrils.js)
+  reach: 240, tendrilCount: 241, tendrilPlace: 242, tendrilSpread: 243, tendrilStiff: 244, retract: 245, floorGrip: 246, mineralise: 247,
+  grnGrowGain: 248, grnGrowReg: 249, grnRetractGain: 250, grnRetractReg: 251, grnMineralGain: 252, grnMineralReg: 253,
 };
 // words 19..30 are the cell's state, not genes (heading, accumulators, felt fields, conversion)
 // (step T1b: and 84..91, the regulators' expression)

@@ -259,7 +259,18 @@ struct EatP {
                            //     offset in hb of the signal's copy 0, channel A (u32; X at + n, Y at + 2 n); w the inboxes' (u32)
                            // [1] x the pixels n (u32); y the taste's floor (tuned vector counts); z the flash's fade per tick; w the flash gain: the
                            //     rise above the baseline (a share of gene 1) x this = the flash
+  // ---- step T2, tendrils and bone (src/tendrils.js writeEat) ----
+  t2: array<vec4f, 3>,     // [0] x the tendrils' carbon: pool units per R at stiffness 0 (0: no pool, carbon off or tendrils off); y their UPKEEP (heat
+                           //     counts per tick per R wanted, x e^stiffness); z the RETRACTION's (heat counts per tick per tendril at drive 1); w the
+                           //     T2E_* bits (u32)
+                           // [1] x a full MINERAL wall (rust Gt counts per R^2 of the cell's area); y the share of the shortfall built per tick; z its
+                           //     cost (heat counts per count); w the junctions' glue x (1 + w x hardness)
+                           // [2] x how far the hardness takes the sides' stiffness toward a full wall's (LIP_KMAX); y the share of an excess
+                           //     dissolved back per tick; z w spare
 };
+const T2E_MIN: u32 = 1u;   // step T2: mineralising acts
+const W_MIN: u32 = 31u;    // step T2: the stock word of the MINERAL wall (rust Gt, counts: Gt taken out of the stock; it counts with the cells' Gt in
+                           // the books, goes back to the dish as Gt with the cell, a daughter takes her share)
 // step Q1 (src/signals.js): EatP.q1[0].x bits
 const Q1E_ON: u32 = 1u;       // the cells release (and the signal's taste may be read)
 const Q1E_JUNC: u32 = 2u;     // ... the junction share goes through formed junction sides (else it is not released)
@@ -931,6 +942,13 @@ fn give_back(i: u32, p: vec2f, cur: u32, slot: u32) {
       else { add64(lg_mc(LG_M_GONE, c) + slot, mm); gone += mm; }
     }
   }
+  // step T2: the MINERAL wall, as rust Gt (channel 8)
+  let mnv = atomicExchange(&stock[i * SW + W_MIN], 0);
+  if (mnv > 0) {
+    let na = i32(ep_f(EP.natoms, 8u));
+    if (cur != 0u && (EP.mask & (1u << 8u)) != 0u) { spread9(cur + 8u * EP.n, idx, mnv); back += mnv * na; }
+    else { add64(lg_mc(LG_M_GONE, 8u) + slot, mnv); gone += mnv * na; }
+  }
   // (step C7: and the energy stored in its membrane voltage, as heat with the battery; the voltage itself is gone)
   atomicStore(&stock[i * SW + VQ], 0);
   atomicStore(&stock[i * SW + W_TMADE], 0);   // (step C12e: its t counters start again with the next cell in the slot)
@@ -1073,6 +1091,9 @@ fn split(@builtin(global_invocation_id) id: vec3u) {
     // step N1: and half of its pigment
     let pgh = take_stock(pi * SW + W_PIG, atomicLoad(&stock[pi * SW + W_PIG]) / 2);
     if (pgh > 0) { atomicAdd(&stock[i * SW + W_PIG], pgh); }
+    // step T2: and a share r / (r + r_parent) of its mineral wall (as of its membrane: both keep about the parent's hardness)
+    let mnh = take_stock(pi * SW + W_MIN, i32(floor(f32(atomicLoad(&stock[pi * SW + W_MIN])) * c.r / max(c.r + cells[pi].r, 1e-3))));
+    if (mnh > 0) { atomicAdd(&stock[i * SW + W_MIN], mnh); }
     // step C6c: and a share r / (r + r_parent) of each side of the parent's membrane (side k to side k), so both start with
     // about the parent's integrity (the newborn is smaller and wants less)
     let sh = c.r / max(c.r + cells[pi].r, 1e-3);
@@ -2316,6 +2337,36 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
     // upkeep). Off: no cost, the sides hold what the pattern and the maturity ask.
     // Step C11: the cost is charged only for what a side asks ABOVE the free base glue (wl1.y): the base is held at no cost, as
     // every side's adhesion was before step C10, so a colony short of linkers still packs; a sticky side's extra is paid
+    // ---- step T2, MINERALISE (src/tendrils.js; README "Step T2"): a cell whose mineralise gene (Bio.tk.w x the 26th output) asks for it
+    // builds a MINERAL WALL from the most settled compound it holds, rust Gt (heavy giver + light taker, C12d), toward t2[1].x counts per R^2
+    // of its area x the drive: t2[1].y of the shortfall a tick, each count paying t2[1].z from the battery (as heat; none it cannot pay), taken
+    // out of the stock (stock word W_MIN: still the same atoms). An excess (the drive fell) dissolves back into the stock at t2[2].y. Its
+    // HARDNESS (held / a full wall) stiffens its sides toward a full crust wall's (below), multiplies its junctions' glue (here) and holds
+    // its outline (tendril.wgsl damps the corners' wobble)
+    var hard = 0.0;
+    {
+      let t2e = bitcast<u32>(EP.t2[0].w);
+      var held = atomicLoad(&stock[o + W_MIN]);
+      let held0 = held;
+      let fullM = EP.t2[1].x * areaR2;
+      if ((t2e & T2E_MIN) != 0u) {
+        let wantM = fullM * t2_mineral(bio[i], S.shapeF);
+        if (f32(held) < wantM) {
+          var x = min(i32(floor((wantM - f32(held)) * EP.t2[1].y + u01(pcg(rs + 0x6d696e31u)))), max(m[8], 0));
+          let cpc = max(EP.t2[1].z, 0.0);
+          if (cpc > 0.0) { x = min(x, i32(floor(f32(max(bat, 0)) / cpc))); }
+          if (x > 0) {
+            let pay = min(i32(round(f32(x) * cpc)), max(bat, 0));
+            m[8] -= x; held += x; bat -= pay; heat += pay;
+          }
+        } else if (f32(held) > wantM + 1.0) {
+          let x = min(i32(floor((f32(held) - wantM) * EP.t2[2].y + u01(pcg(rs + 0x6d696e32u)))), held);
+          if (x > 0) { held -= x; m[8] += x; }
+        }
+        hard = clamp(f32(max(held, 0)) / max(fullM, 1.0), 0.0, 1.0);
+      }
+      if (held != held0) { atomicStore(&stock[o + W_MIN], held); }
+    }
     if (wallOn) {
       var av = array<f32, 6>(1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
       var linkC = 0.0;
@@ -2338,7 +2389,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
         if (pay < owe) { pf = clamp(f32(pay) / up, 0.0, 1.0); }
       }
       var e = array<f32, 6>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-      for (var k = 0u; k < 6u; k++) { e[k] = wall_enc(aReq[k] - aPay[k] + aPay[k] * av[k] * pf); }   // (step G0: the log code)
+      let hg = 1.0 + max(EP.t2[1].w, 0.0) * hard;   // (step T2: a hard cell's junctions hold harder)
+      for (var k = 0u; k < 6u; k++) { e[k] = wall_enc((aReq[k] - aPay[k] + aPay[k] * av[k] * pf) * hg); }   // (step G0: the log code)
       cells[i].wadh = array<u32, 2>(pack4x8unorm(vec4f(e[0], e[1], e[2], e[3])), pack4x8unorm(vec4f(e[4], e[5], 0.0, 0.0)));
       cells[i].wlink = u32(round(linkC));
       cells[i].wpay = u32(pay);
@@ -2831,7 +2883,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       let ib = clamp((S + Oe) / want, 0.0, 1.0);
       let cover = clamp(W / want, 0.0, 1.0);
       var kk = lip_kb(S, Oe, tmpL) * (EP.lp[5].w + (1.0 - EP.lp[5].w) * ib) * thickF;
-      kk = clamp(mix(kk, LIP_KMAX, cover), EP.lp[5].z, LIP_KMAX);
+      kk = clamp(mix(kk, LIP_KMAX, max(cover, clamp(EP.t2[2].x * hard, 0.0, 1.0))), EP.lp[5].z, LIP_KMAX);   // (step T2: + the mineral's hardness)
       kMean += kk / 6.0;
       lipI[k] = ib;
       lipL[k] = pack4x8unorm(vec4f(kk / LIP_KMAX, select(0.0, f32(lpm[LK_CH][k]) / max(W, 1.0), W > 0.0),
@@ -2891,6 +2943,8 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       motE = fe;
     }
     if (moB != 0u) { cells[i].motE = motE; }
+    // step T2: the TENDRILS' carbon pool (cell_carbon.wgsl cb_tendrils: built with the enzymes' recipe, the battery paying its sparks)
+    if (CARBON_ON != 0u && EP.t2[0].x > 0.0) { cb_tendrils(i, b, &m, &bat, &heat, pcg(rs + 0x74656e64u)); }
     var fpg = 1.0;                                // step N1: the share of the wanted pigment the cell holds (1: light needs no matter)
     var pg = atomicLoad(&stock[o + W_PIG]);       // ... the pigment it holds (counts)
     let pg0 = pg;
@@ -3261,6 +3315,14 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
       if ((g3e & G3E_REP) != 0u) { cost += EP.g3.y * max(bio[i].gs.z, 0.0); }
       // step L1: CONTRACTION, EP.g3.w heat counts per tick at drive 1 (src/contract.js; 0 while off and in its neutral control)
       if (EP.g3.w > 0.0) { cost += EP.g3.w * con_drive(bio[i], S.shapeF); }
+      // step T2: the TENDRILS' upkeep (EP.t2[0].y per R wanted, x e^stiffness: thicker costs more) and the RETRACTION's (EP.t2[0].z per tendril
+      // at drive 1); 0 while off and in the null (t2_want, t2_retract)
+      if (EP.t2[0].y > 0.0 || EP.t2[0].z > 0.0) {
+        let tw = t2_want(bio[i], S.shapeF);
+        if (tw.x > 0.0) {
+          cost += EP.t2[0].y * exp(clamp(bio[i].tk.x, -2.0, 2.0)) * tw.x * tw.y + EP.t2[0].z * t2_retract(bio[i], S.shapeF) * tw.x;
+        }
+      }
       let pay = clamp(i32(floor(cost + u01(pcg(rs + 0x0b4e0ef3u)))), 0, bat);
       if (pay > 0) {
         bat -= pay;
@@ -3649,6 +3711,7 @@ fn ledger(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
         if (k == 1u) { v += lk[LK_TM]; }
       }
       if (k == 3u && CARBON_ON != 0u) { v += max(atomicLoad(&cbS[i * CW + CB_ENZ]), 0); }   // (step C15c: the enzymes' G)
+      if (k == 8u) { v += max(atomicLoad(&stock[i * SW + W_MIN]), 0); }   // (step T2: the mineral wall's rust Gt)
       if (k == BAT) { v += evc; }
       if (v == 0) { continue; }
       atomicAdd(&wlo[k], u32(v) & 0xffffu);

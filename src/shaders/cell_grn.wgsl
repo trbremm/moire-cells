@@ -342,6 +342,55 @@ fn grn(@builtin(global_invocation_id) id: vec3u) {
         }
         bioW[i].tb = tb;
       }
+      // step T2: the TENDRIL genes (Bio.tn, tk.xyz) and the MINERALISE gene (tk.w), and their outputs (24th GROW, 25th RETRACT: Bio.tq;
+      // 26th MINERALISE: tm.xy) drift as the others (own draws, only while tendrils or mineralising are on or in their nulls, so with both
+      // off a birth is exactly as before). Founders 0: reach, count, retraction, floor grip and mineral start at 0 and drift up
+      let t2On = (S.shapeF & (SH_TEN | SH_TNULL)) != 0u;
+      let m2On = (S.shapeF & (SH_MIN | SH_MNULL)) != 0u;
+      if (t2On || m2On) {
+        var tn = bioW[i].tn;
+        var tk = bioW[i].tk;
+        var tq = bioW[i].tq;
+        var tm = bioW[i].tm;
+        if (t2On) {
+          tn.x = clamp(tn.x + ms * 0.04 * gauss(bs, 440u), 0.0, T2_REACH_MAX);
+          tn.y = clamp(tn.y + ms * 0.03 * gauss(bs, 441u), 0.0, 1.0);
+          tn.z = tn.z + ms * 0.15 * gauss(bs, 442u);
+          tn.z -= TAU * floor((tn.z + 3.14159265) / TAU);
+          tn.w = clamp(tn.w + ms * 0.04 * gauss(bs, 443u), 0.0, 1.0);
+          tk.x = clamp(tk.x + ms * 0.08 * gauss(bs, 444u), -2.0, 2.0);
+          tk.y = clamp(tk.y + ms * 0.02 * gauss(bs, 445u), 0.0, 1.0);
+          tk.z = clamp(tk.z + ms * 0.02 * gauss(bs, 446u), 0.0, 1.0);
+          for (var q = 0u; q < 2u; q++) {   // (the GROW and RETRACT outputs: gain drift, now and then rewired, switched on or off)
+            var gu = select(tq.x, tq.z, q == 1u);
+            var gr = select(tq.y, tq.w, q == 1u);
+            if (gu != 0.0) { gu = clamp(gu + ms * GP.uStep * gauss(bs, 447u + 5u * q), -GRN_UMAX, GRN_UMAX); }
+            if (grn_rand(bs, 448u + 5u * q) < min(GP.orewire * ms, 1.0)) {
+              if (grn_rand(bs, 449u + 5u * q) < 0.2) { gu = 0.0; }
+              else {
+                gr = f32(min(u32(grn_rand(bs, 450u + 5u * q) * 8.0), 7u));
+                if (gu == 0.0) { gu = GP.uNew * (2.0 * grn_rand(bs, 451u + 5u * q) - 1.0); }
+              }
+            }
+            if (q == 0u) { tq.x = gu; tq.y = gr; } else { tq.z = gu; tq.w = gr; }
+          }
+        }
+        if (m2On) {
+          tk.w = clamp(tk.w + ms * 0.02 * gauss(bs, 460u), 0.0, 1.0);
+          if (tm.x != 0.0) { tm.x = clamp(tm.x + ms * GP.uStep * gauss(bs, 461u), -GRN_UMAX, GRN_UMAX); }
+          if (grn_rand(bs, 462u) < min(GP.orewire * ms, 1.0)) {
+            if (grn_rand(bs, 463u) < 0.2) { tm.x = 0.0; }
+            else {
+              tm.y = f32(min(u32(grn_rand(bs, 464u) * 8.0), 7u));
+              if (tm.x == 0.0) { tm.x = GP.uNew * (2.0 * grn_rand(bs, 465u) - 1.0); }
+            }
+          }
+        }
+        bioW[i].tn = tn;
+        bioW[i].tk = tk;
+        bioW[i].tq = tq;
+        bioW[i].tm = tm;
+      }
     }
   }
 

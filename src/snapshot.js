@@ -182,6 +182,7 @@ export function settingObjects(M) {
     ...(M.folding ? { 'folding.params': M.folding.params } : {}),   // step G3 (old snapshots: the moire genome off, as they ran)
     ...(M.signals ? { 'signals.params': M.signals.params } : {}),   // step Q1 (old snapshots: the signal substance off, as they ran)
     ...(M.contract ? { 'contract.params': M.contract.params } : {}),   // step L1 (old snapshots: every contraction gene 0, nothing contracts)
+    ...(M.tendrils ? { 'tendrils.params': M.tendrils.params } : {}),   // step T2 (old snapshots: tendrils and bone off, as they ran)
     ...(M.pigments ? { 'pigments.params': M.pigments.params } : {}),   // step N1: light needs matter
     ...(M.water ? { 'water.params': M.water.params } : {}),           // step N1: caustic light, currents
     ...(M.perfusion ? { 'perfusion.params': M.perfusion.params } : {}),   // perfusion (src/perfusion.js)
@@ -381,11 +382,13 @@ export async function snapshot(M, ctl, opts = {}) {
     const m = idx.length;
     const rec = new Uint32Array(m * CELL_FLOATS), bio = new Uint32Array(m * BIO_FLOATS), stock = new Uint32Array(m * SW);
     const cbu = cbAB ? new Uint32Array(cbAB) : null, cstock = cbu ? new Uint32Array(m * CB_STOCK) : null;
+    const ctend = cbu ? new Uint32Array(m) : null;   // (step T2: the tendrils' carbon pool, carbon word 23)
     idx.forEach((i, k) => {
       rec.set(cu.subarray(i * CELL_FLOATS, (i + 1) * CELL_FLOATS), k * CELL_FLOATS);
       bio.set(bu.subarray(i * BIO_FLOATS, (i + 1) * BIO_FLOATS), k * BIO_FLOATS);
       stock.set(su.subarray(i * SW, (i + 1) * SW), k * SW);
       if (cstock) cstock.set(cbu.subarray(i * CB_W, i * CB_W + CB_STOCK), k * CB_STOCK);   // (step C15b: the ladder and granules)
+      if (ctend) ctend[k] = cbu[i * CB_W + 23];
     });
     const H = M.heat, v = ctl.view();
     const out = {
@@ -407,7 +410,8 @@ export async function snapshot(M, ctl, opts = {}) {
       books: captureBooks(M),
       js: { aQuant: C.aQuant ? clone(C.aQuant) : null },
       cells: { idx: await pack(new Uint32Array(idx)), rec: await pack(rec), bio: await pack(bio), stock: await pack(stock),
-        ...(cstock ? { carbon: await pack(cstock), carbonWords: CB_STOCK } : {}) },   // (step C15b: the cells' carbon, CB_STOCK words a cell; absent before)
+        ...(cstock ? { carbon: await pack(cstock), carbonWords: CB_STOCK } : {}),   // (step C15b: the cells' carbon, CB_STOCK words a cell; absent before)
+        ...(ctend ? { tendrilCarbon: await pack(ctend) } : {}) },   // (step T2: the tendrils' pools; absent before: none; the ropes themselves regrow)
       stats: await pack(new Uint32Array(statsAB)),
       grid: grid ? { hw: H.hw, hh: H.hh, px: H.px, blocks: ['delta', 'heat', ...SUBSTANCES.map((s) => s.name), 'phi', ...CARBON_BLOCKS, ...sigBlocks(M)], data: await pack(await readGrid(M)) } : null,
       measures: opts.measures || null,
@@ -483,7 +487,9 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     const oldG3 = S.layout.cellWords === 96 && S.layout.bioWords === 188;
     // step Q1: one from before the signal (genomes of 224 words) loads with the signal words 0 and the signal substance OFF
     const oldQ1 = S.layout.cellWords === 96 && S.layout.bioWords === 224;
-    const widen = oldC10 || oldC12 || oldC13 || oldC12e || oldT1 || oldT1b || oldP1 || oldG2 || oldS2 || oldP3 || oldG3 || oldQ1;
+    // step T2: one from before the tendrils (genomes of 240 words) loads with the tendril and mineral words 0 and tendrils and bone OFF
+    const oldT2 = S.layout.cellWords === 96 && S.layout.bioWords === 240;
+    const widen = oldC10 || oldC12 || oldC13 || oldC12e || oldT1 || oldT1b || oldP1 || oldG2 || oldS2 || oldP3 || oldG3 || oldQ1 || oldT2;
     if (!widen && (S.layout.cellWords !== CELL_FLOATS || S.layout.bioWords !== BIO_FLOATS)) {
       throw new Error(`snapshot layout (cell ${S.layout.cellWords}, bio ${S.layout.bioWords} words) does not match this page (${CELL_FLOATS}, ${BIO_FLOATS})`);
     }
@@ -624,6 +630,10 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       M.signals.params.on = false;   // step Q1
       notes.push('saved before step Q1: no signal substance (as it ran)');
     }
+    if (opts.settings !== false && M.tendrils && !(S.settings && S.settings['tendrils.params'])) {
+      Object.assign(M.tendrils.params, { on: false, null: false, mineral: false, mineralNull: false });   // step T2 (its genes 0 everywhere)
+      notes.push('saved before step T2: no tendrils, no bone (as it ran)');
+    }
     if (opts.settings !== false && M.contract && !(S.settings && S.settings['contract.params'])) {
       M.contract.params.on = false;   // step L1 (its genes 0 everywhere; off, births draw nothing new for them)
       notes.push('saved before step L1: no contraction (as it ran)');
@@ -688,6 +698,7 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
     // step C15b: the cells' carbon (a snapshot from before C15b: none, every cell's carbon empty)
     const CBC = CARBON ? C.eat.carbon : null, cbs = CBC && S.cells.carbon ? await unpack(S.cells.carbon) : null;
     const cbo = CBC ? new Uint32Array(n * CB_W) : null;
+    const ctl2 = CBC && S.cells.tendrilCarbon ? await unpack(S.cells.tendrilCarbon) : null;   // (step T2)
     if (CBC && !cbs) notes.push('saved before step C15b: the cells hold no carbon');
     const dx = (v.cssW - S.view.cssW) / 2, dy = (v.cssH - S.view.cssH) / 2;
     // (step P1: packed slots renumber the engulfing partners, Cell.eng's bits 16..31 and Cell.engBy's 0..15, by the same map)
@@ -699,6 +710,7 @@ export async function loadSnapshot(M, ctl, S, opts = {}) {
       bu.set(bio.subarray(k * BIO_FLOATS, (k + 1) * BIO_FLOATS), i * BIO_FLOATS);
       su.set(stock.subarray(k * SW, (k + 1) * SW), i * SW);
       if (cbs) { const cw = S.cells.carbonWords || 8; cbo.set(cbs.subarray(k * cw, (k + 1) * cw), i * CB_W); }   // (8: saved before the body)
+      if (ctl2 && cbo) cbo[i * CB_W + 23] = ctl2[k];   // (step T2: the tendrils' pool)
       if (!sameView) { cf[o] += dx; cf[o + 1] += dy; }
       if (!sameSlots) {
         cu[o + 60] = cu[o + 61] = cu[o + 62] = 0xffffffff;

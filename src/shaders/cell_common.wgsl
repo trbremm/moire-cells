@@ -532,6 +532,15 @@ struct Bio {
   so: vec4f,            // the gene network's 21st output (RELEASE TO WATER: x gain, y regulator) and 22nd (RELEASE TO JUNCTIONS: z gain, w regulator)
   ss: vec4f,            // STATE: x heard in the water (the network's sense, 0..1), y heard through junctions (0..1), z the firing level last tick
                         // (0..1: the release's flash), w when the cell last began to fire (simulation time, s: the census's waves)
+  // ---- step T2: TENDRILS and BONE (src/tendrils.js, tendril.wgsl; README "Step T2"). Words 240..255; founders 0 ----
+  tn: vec4f,            // the TENDRILS: x REACH (each one's full length, R, 0..2.5; 0 = none); y COUNT (0..1: 1 + round(3 y) of them); z their
+                        // PLACEMENT (rad from the front: where the first sprouts); w their SPREAD (0..1: the turn between two, x 2 pi / count:
+                        // 0 all at one pole, 0.5 with two = both ends, 1 evenly round)
+  tk: vec4f,            // x their STIFFNESS (a log factor, -2..2: thickness, so carbon per R, stiffness and breaking strength all x e^x); y the
+                        // RETRACTION gene (0..1: a gripping rope's rest length pulled in, as pili twitch); z the FLOOR GRIP (0..1: chance per s
+                        // that a full-length free tip sticks to the floor); w the MINERALISE gene (0..1: the share of a full mineral wall wanted)
+  tq: vec4f,            // the gene network's 24th output (GROW: the reach x its factor; x gain, y regulator) and 25th (RETRACT: z gain, w regulator)
+  tm: vec4f,            // the 26th (MINERALISE: x gain, y regulator); z w spare
 };
 // step G3: Bio.gs.w bits (the rest of the word / 32: the refolds in life in the cell's line, inherited)
 const GS_SET: u32 = 1u;          // the links in gw / gi were derived from the lattices (with the moire genome on)
@@ -1784,6 +1793,36 @@ const SH_CON: u32 = 128u;     // contraction acts
 const SH_CNULL: u32 = 256u;   // its NEUTRAL control: the genes drift, no cell contracts, nothing is paid
 const SH_CGRN: u32 = 512u;    // the gene network's 23rd output (CONTRACT) scales it (set only while the network's outputs act)
 const CON_MAX: f32 = 0.6931472;   // the stretch taken off at drive 1 (half ln 4)
+// step T2, TENDRILS AND BONE (src/tendrils.js; README "Step T2"): Sim.shapeF bits 10..14 (with the shape's and contraction's)
+const SH_TEN: u32 = 1024u;    // tendrils act (grow, grip, pull, break, retract; their carbon and upkeep)
+const SH_TNULL: u32 = 2048u;  // their NEUTRAL control: the genes drift, nothing grows, nothing is paid
+const SH_MIN: u32 = 4096u;    // MINERALISE acts (the wall takes rust Gt from the stock: a hard cell)
+const SH_MNULL: u32 = 8192u;  // its NEUTRAL control
+const SH_TGRN: u32 = 16384u;  // the gene network's 24th..26th outputs act (set only while the network's outputs act)
+const T2_REACH_MAX: f32 = 2.5;    // R
+// a T2 output's factor (gain u, regulator r), 1 while the network's outputs do not act
+fn t2_fac(b: Bio, u: f32, r: f32, shF: u32) -> f32 {
+  if ((shF & SH_TGRN) == 0u || u == 0.0) { return 1.0; }
+  let j = min(u32(max(r, 0.0)), 7u);
+  return grn_fac(u, b.gx[j >> 2u][j & 3u]);
+}
+// the tendrils a cell grows now: x how many (0..4), y each one's full length (R): the reach gene x the 24th output, at most T2_REACH_MAX
+fn t2_want(b: Bio, shF: u32) -> vec2f {
+  if ((shF & (SH_TEN | SH_TNULL)) != SH_TEN) { return vec2f(0.0); }
+  let L = min(clamp(b.tn.x, 0.0, T2_REACH_MAX) * t2_fac(b, b.tq.x, b.tq.y, shF), T2_REACH_MAX);
+  if (L < 0.05) { return vec2f(0.0); }
+  return vec2f(1.0 + round(3.0 * clamp(b.tn.y, 0.0, 1.0)), L);
+}
+// the retraction's drive now (0..1): the gene x the 25th output
+fn t2_retract(b: Bio, shF: u32) -> f32 {
+  if ((shF & (SH_TEN | SH_TNULL)) != SH_TEN) { return 0.0; }
+  return clamp(clamp(b.tk.y, 0.0, 1.0) * t2_fac(b, b.tq.z, b.tq.w, shF), 0.0, 1.0);
+}
+// the mineral wall wanted now (0..1 of a full one): the gene x the 26th output
+fn t2_mineral(b: Bio, shF: u32) -> f32 {
+  if ((shF & (SH_MIN | SH_MNULL)) != SH_MIN) { return 0.0; }
+  return clamp(clamp(b.tk.w, 0.0, 1.0) * t2_fac(b, b.tm.x, b.tm.y, shF), 0.0, 1.0);
+}
 const CON_GMAX: f32 = 4.0;        // the gene's top: drive = min(gene x the output's factor, 1), so a strong gene contracts fully on a weak signal
 fn con_drive(b: Bio, shF: u32) -> f32 {
   if ((shF & (SH_ON | SH_CON)) != (SH_ON | SH_CON) || (shF & SH_CNULL) != 0u) { return 0.0; }

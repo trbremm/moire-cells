@@ -72,6 +72,7 @@ export function wire(g, { regs, outputs = {}, broadcast = 0, kinWeight = 0 }) {
     if (o === 18 || o === 19) { g[176 + 2 * (o - 18)] = u; g[177 + 2 * (o - 18)] = r; continue; }   // (step S2: flagellum, cilia, in mg)
     if (o === 20 || o === 21) { g[232 + 2 * (o - 20)] = u; g[233 + 2 * (o - 20)] = r; continue; }   // (step Q1: the releases, in so)
     if (o === 22) { g[186] = u; g[187] = r; continue; }                                             // (step L1: contract, in tb.z, tb.w)
+    if (o >= 23 && o <= 25) { g[248 + 2 * (o - 23)] = u; g[249 + 2 * (o - 23)] = r; continue; }   // (step T2: grow tendrils, retract, mineralise)
     g[b + 48 + o] = u;
     regWords[o >> 2] += r * 8 ** (o & 3);
   }

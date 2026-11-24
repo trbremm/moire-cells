@@ -183,6 +183,12 @@
 //               control (the genes drift, nothing contracts, nothing is paid); ?contractgrn=0 the gene alone (the network's 23rd output does not
 //               act); knobs ?concost= ?concensus= ?conpull= (rules panel, Contraction); ?tissue=organ the tissue lab's organ (src/tissues.js: muscle,
 //               nerve, skin; ?organ=muscle|ring|worm, ?pacemaker=1)
+//   ?tendrils=0   step T2, tendrils (src/tendrils.js): none grow (the genes carried, never mutating); ?tendrilnull=1 their NEUTRAL control;
+//               ?mineral=0 no mineral walls (bone), ?mineralnull=1 its NEUTRAL control; ?t2grn=0 the network's 24th..26th outputs do not act;
+//               knobs ?tgrow= ?tk= ?tbreak= ?tretract= ?tminrest= ?tfloor= ?ttorque= ?tmaxstep= ?twander= ?tcarbon= ?tupkeep= ?tretcost=
+//               ?minfull= ?minrate= ?mincost= ?mindis= ?minglue= ?minstiff= ?mindamp= ?tcensus=, ?tedge=0 ?twalls=0; ?tdraw=0 not drawn;
+//               ?tissue=limb the tissue lab's limb (bone rods, a joint of ligaments, muscle with tendons, nerve, skin); ?tissue=pili twitching
+//               pili on a floor
 //   ?flagella=0   step S2: no flagella; ?cilia=0 no cilia (both 0: exactly as before S2); ?flagellanull=1 ?cilianull=1 their NEUTRAL controls
 //               (the genes drift, nothing acts, nothing is paid); ?mogrn=0 ?mowater=0 ?modipole=0 ?mopump=0 ?mocouple=0 ?mosteer=0 ?motorque=0
 //               one part off; knobs ?swim= ?steer= ?arm= ?dipole= ?swimdrift= ?ciliapush= ?beathz= ?couple= ?lag= ?swimcost= ?ciliaup=
@@ -659,6 +665,21 @@ async function boot() {
         if (params.has(q) && Number.isFinite(v) && v >= 0) CP[k] = v;
       }
     }
+    {   // step T2: tendrils and bone
+      const TP = cells.tendrils.params;
+      for (const [q, k] of [['tendrils', 'on'], ['tendrilnull', 'null'], ['mineral', 'mineral'], ['mineralnull', 'mineralNull'], ['t2grn', 'grn'],
+        ['tedge', 'edge'], ['twalls', 'walls']]) {
+        if (params.has(q)) TP[k] = flag(q);
+      }
+      for (const [q, k] of [['tgrow', 'grow'], ['tk', 'k'], ['tbreak', 'brk'], ['tretract', 'retract'], ['tminrest', 'minRest'], ['tfloor', 'floorRate'],
+        ['ttorque', 'torque'], ['tmaxstep', 'maxStep'], ['twander', 'wander'], ['thold', 'hold'], ['tcarbon', 'carbon'], ['tupkeep', 'upkeep'], ['tretcost', 'retCost'],
+        ['minfull', 'minFull'], ['minrate', 'minRate'], ['mincost', 'minCost'], ['mindis', 'minDissolve'], ['minglue', 'minGlue'], ['minstiff', 'minStiff'],
+        ['mindamp', 'minDamp'], ['tcensus', 'censusEvery']]) {
+        const v = Number(params.get(q));
+        if (params.has(q) && Number.isFinite(v) && v >= 0) TP[k] = v;
+      }
+      if (params.has('tdraw')) cells.tendrils.look.on = flag('tdraw');
+    }
     {   // step C13: fields as genes and guides
       const GP = cells.guides.params;
       for (const [q, k] of [['fgenes', 'genes'], ['gateglue', 'glue'], ['gatepump', 'pump'], ['gateengine', 'engine'], ['gatediv', 'div'],
@@ -938,7 +959,7 @@ async function boot() {
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
     kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, dup: cells.dup, mutation: cells.mutation, perfusion, glue: cells.glue, stir: water.stir, obstacles,
     spindle: cells.spindle, carbon: matter.carbon, carbonCells: cells.eat.carbon, motors: cells.motors, flow, senses: cells.senses, folding: cells.folding, signals: cells.signals,
-    contract: cells.contract };
+    contract: cells.contract, tendrils: cells.tendrils };
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.organ = cells.organ = new Organ(window.moire);   // step L1: the tissue lab's organ (lay out, poke, twitch, measure)
   if (ORGAN) Object.assign(cells.organ, { kind: ORGAN.kind, opts: ORGAN.opts, angle: ORGAN.opts.angle, n0: nCells });
@@ -1254,7 +1275,8 @@ ${cells.motors.panelLine(compact)}
 ${cells.senses.panelLine(compact)}
 ${cells.folding.panelLine(compact)}
 ${cells.signals.panelLine(compact)}
-${cells.contract.panelLine(compact)}${cells.organ && cells.organ.kind ? `
+${cells.contract.panelLine(compact)}
+${cells.tendrils.panelLine(compact)}${cells.organ && cells.organ.kind ? `
 ${cells.organ.panelLine(compact)}` : ''}${ELECTRONS ? `
 ${matter.vents.panelLine(compact)}` : ''}${CARBON ? `
 ${matter.carbon.panelLine(compact)}
@@ -1370,6 +1392,7 @@ function drawOverlay() {
     ...cells.folding.overlayLines(),
     ...cells.signals.overlayLines(),
     ...cells.contract.overlayLines(),
+    ...cells.tendrils.overlayLines(),
     ...cells.guides.overlayLines(),
     ...matter.oil.overlayLines(),
     neon.overlayLine(),

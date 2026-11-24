@@ -120,6 +120,9 @@ const LG_CB_ADD_C: u32 = 32256u; // ... ADD per channel (carbon.wgsl LG_CB_ADD):
 // frame's LIEBIG bits: which element stopped a part being built; read and cleared by the ledger pass)
 const CB_ENZ: u32 = 11u;
 const CB_LIM: u32 = 20u;
+// step T2: the cell's carbon word 23, its TENDRILS' pool (units, each 4 chain carbons with the enzymes' hands, cb_enz_h; src/tendrils.js); the
+// tendrils grow only as far as it reaches (tendril.wgsl), it goes back to the dish with the cell, half of it (the share) with a daughter
+const CB_TEND: u32 = 23u;
 const CBL_C: u32 = 1u;       // short of buildable carbon (the ladder with a fuel hand, the granules)
 const CBL_G: u32 = 2u;       // short of the heavy giver G (enzymes)
 const CBL_TR: u32 = 4u;      // short of trace (pigments)
@@ -311,6 +314,9 @@ fn cb_give_back(i: u32, idx: array<u32, 9>, slot: u32, gcur: u32) {   // (step C
     cb_spill(cb_enz_h(), ne, idx, false, slot);
     if (gcur != 0u && (EP.mask & 8u) != 0u) { spread9(gcur + 3u * EP.n, idx, ne); } else { add64(lg_mc(LG_M_GONE, 3u) + slot, ne); }
   }
+  // step T2: the tendrils, as tar hands
+  let nt = atomicExchange(&cbS[i * CW + CB_TEND], 0);
+  if (nt > 0) { cb_spill(cb_enz_h(), nt, idx, false, slot); }
   for (var w = 12u; w < CW; w++) { atomicStore(&cbS[i * CW + w], 0); }
 }
 
@@ -323,6 +329,10 @@ fn cb_split(i: u32, pi: u32, sh: f32) {
     let got = take_cb(pi * CW + w, want);
     if (got > 0) { atomicAdd(&cbS[i * CW + w], got); }
   }
+  // step T2: and the same share of its tendrils' pool (the mother keeps her tendrils as far as the rest reaches)
+  let ht = atomicLoad(&cbS[pi * CW + CB_TEND]);
+  let gt = take_cb(pi * CW + CB_TEND, i32(floor(f32(ht) * sh)));
+  if (gt > 0) { atomicAdd(&cbS[i * CW + CB_TEND], gt); }
 }
 
 /** Digestion (P1): the host i takes the share dsh of its meal g's carbon (the rest spills with the meal at the end). */
@@ -334,6 +344,12 @@ fn cb_digest(i: u32, g: u32, dsh: f32, r: u32) {
     let n = min(mv, i32(floor(f32(mv) * dsh + u01(pcg(r + w * 0x2f6b1e3du)))));
     // (its body into the host's granules; step C15c: its enzymes into the host's enzymes)
     if (n > 0) { atomicSub(&cbS[g * CW + w], n); atomicAdd(&cbS[i * CW + select(select(w, w - 3u, w >= CB_BODY), CB_ENZ, w == CB_ENZ)], n); }
+  }
+  // step T2: its tendrils into the host's granules
+  let mt = atomicLoad(&cbS[g * CW + CB_TEND]);
+  if (mt > 0) {
+    let nt = min(mt, i32(floor(f32(mt) * dsh + u01(pcg(r + 0x74656e64u)))));
+    if (nt > 0) { atomicSub(&cbS[g * CW + CB_TEND], nt); cb_gran_add(i, cb_enz_h(), nt); }
   }
 }
 
@@ -1253,6 +1269,43 @@ fn cb_enzymes(i: u32, rates: array<f32, 5>, motors: f32, areaR2: f32, m: ptr<fun
 }
 
 /**
+ * Step T2, the TENDRILS' CARBON (src/tendrils.js; the eat pass, after the enzymes): a cell growing tendrils WANTS EP.t2[0].x units per R of
+ * them at stiffness 0 (x e^stiffness: a stiffer tendril is thicker), for count x reach (t2_want); short of it, it BUILDS units of 4 chain
+ * carbons (the enzymes' frame, cb_enz_h: the same builders, the sparks from the battery) at kBuild of the shortfall per s; above it (the reach
+ * or the output fell) the excess falls back into its granules at the same rate (the hands only move). tendril.wgsl lets them grow only as
+ * far as the pool reaches.
+ */
+fn cb_tendrils(i: u32, b: Bio, m: ptr<function, array<i32, 18>>, bat: ptr<function, i32>, heat: ptr<function, i32>, r: u32) {
+  if (CARBON_ON == 0u || (CBP.cfg.x & CBF_ON) == 0u) { return; }
+  let o = i * CW;
+  var P = atomicLoad(&cbS[o + CB_TEND]);
+  let P0 = P;
+  let w = t2_want(b, S.shapeF);
+  let want = EP.t2[0].x * exp(clamp(b.tk.x, -2.0, 2.0)) * w.x * w.y;   // (units)
+  let rate = min(CBP.g.y * EP.dt, 1.0);
+  if (f32(P) < want) {
+    let nb = i32(floor((want - f32(P)) * rate + u01(pcg(r))));
+    if (nb > 0) {
+      var S5: array<i32, 5>;
+      var gr = cb_ld(i, &S5);
+      var lim = 0u;
+      let any = (CBP.cfg.x & CBF_ENZANY) != 0u;
+      var c4 = 0;   // (an if, not a select: WGSL's select runs both builders)
+      if (any) { c4 = cb_make_burnt(4 * nb, &S5, &gr, m, bat, heat, &lim); } else { c4 = cb_make_chain(4 * nb, &S5, &gr, m, bat, heat, &lim); }
+      let u = c4 / 4;
+      if (c4 - 4 * u > 0) { gr += select(vec3i(1, 1, 1), vec3i(1, 0, 2), any) * (c4 - 4 * u); }
+      cb_st(i, &S5, gr);
+      P += u;
+      cb_lim(i, lim);
+    }
+  } else if (f32(P) > want + 1.5) {   // (a little slack: no churn round the want)
+    let nx = min(i32(floor((f32(P) - want) * rate + u01(pcg(r + 1u)))), P);
+    if (nx > 0) { P -= nx; cb_gran_add(i, cb_enz_h(), nx); }
+  }
+  if (P != P0) { atomicStore(&cbS[o + CB_TEND], P); }
+}
+
+/**
  * Step C15e (CBF_GSPLIT), AN ENZYME'S G FROM ITS COMPOUNDS: in a dish with free t and T most of the heavy giver sits bound, as GT (fuel) and
  * as rust Gt (the most settled compound), and those, neutral, cross the membrane while the free G ion is held back. An enzyme builder short
  * of free G splits up to k of them in its stock by the table's reverse reactions (GT -> G + T first, the cheaper; then Gt -> G + t), the
@@ -1467,7 +1520,7 @@ fn cb_ledger_parts(i: u32, live: bool) {
     for (var k = 0u; k < 12u; k++) { glue += max(atomicLoad(&stock[i * SW + MB_L0 + k]), 0); }
   }
   let ne = max(atomicLoad(&cbS[i * CW + CB_ENZ]), 0);
-  let he = cb_enz_h() * ne;
+  let he = cb_enz_h() * (ne + max(atomicLoad(&cbS[i * CW + CB_TEND]), 0));   // (step T2: + the tendrils' pool, the same hands)
   let h = hm + hw + hp + he;
   for (var w = 0u; w < 3u; w++) { if (h[w] != 0) { add64(LG_CBC_STOCK + 128u * (5u + w) + slot, h[w]); } }
   if (glue != 0) { add64(LG_CBC_STOCK + 128u * 2u + slot, glue); }

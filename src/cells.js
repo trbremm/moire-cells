@@ -59,6 +59,7 @@ import { Senses } from './senses.js';
 import { Folding } from './folding.js';
 import { Signals } from './signals.js';
 import { Contract } from './contract.js';
+import { Tendrils } from './tendrils.js';   // step T2: tendrils and bone
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 import { dish } from './dish.js';      // the dish's own size and R
 import { cultureLayout } from './culture.js';   // app: how a new culture is spread
@@ -377,6 +378,7 @@ export class Cells {
     this.genome.foldP = this.folding.params;
     this.signals = new Signals(this);     // step Q1: a signal substance (src/signals.js)
     this.contract = new Contract(this);   // step L1: contraction (src/contract.js)
+    this.tendrils = new Tendrils(this);   // step T2: tendrils and bone (src/tendrils.js)
   }
 
   static async create(device, format, medium, count, seed, cap = 0) {
@@ -493,6 +495,7 @@ export class Cells {
     this.eat = await Eat.create(d, this);
     this.heat.eat = this.eat;
     await this.motors.init(d, this.format, pre);   // step S2: the flagella's and cilia's drawing (src/motors.js)
+    await this.tendrils.init(d, this.format, pre);   // step T2: the tendrils' passes and drawing (src/tendrils.js)
 
     this.drawU = d.createBuffer({ label: 'cell draw params', size: DRAW_BYTES, usage: U.UNIFORM | U.COPY_DST });
     this.drawAB = new ArrayBuffer(DRAW_BYTES);
@@ -719,6 +722,7 @@ export class Cells {
     u[o + 62] = Math.max(1, Math.min(4, Math.round(X.states))); u[o + 63] = count ? 1 : 0;
     this.spindle.writeSim(u, f, o);              // step S1: cell shape (words 28, 29, 33: the fates' until step F0)
     this.contract.writeSim(u, o);                // step L1: contraction (its bits in word 28, with the shape's)
+    this.tendrils.writeSim(u, o);                // step T2: tendrils and bone (their bits in word 28 too)
   }
 
   /** Write the fields' uniform (struct Fields): the charges, field B's band, range and rules. */
@@ -824,6 +828,7 @@ export class Cells {
     this.folding.maybeCensus(frame.time);    // step G3: folds, dose, buffering, hidden links (a read-back every few s)
     this.signals.maybeCensus(frame.time);    // step Q1: emitters, listeners, relays, waves (a read-back every few s)
     this.contract.maybeCensus(frame.time);   // step L1: who contracts (a read-back every few s)
+    this.tendrils.maybeCensus(frame.time);   // step T2: tendrils, ropes, bone (a read-back every few s)
     if (this.organ) this.organ.maybeCensus(frame.time);   // step L1: the laid-out organ (src/organ.js; main.js sets it)
     if (this.gridSize() !== this.grid.cs) this.sizeGrid();   // params.cut or range changed
     // after a reset, the warm-up ticks run first (all in this frame, at the current time)
@@ -863,6 +868,7 @@ export class Cells {
       // ?check runs between the grid build and the move, so both see the same positions
       if (t === ticks - 1) this.maybeCheck(encoder, t, frame);
       this.encodeStep(encoder, t);
+      this.tendrils.encodeTick(encoder, t, SLOT);   // step T2: the tendrils pull, the bone holds (after the step: its newborns still marked)
       this.grn.encodeTick(encoder, t, SLOT);   // step T1b: the gene network (after the step, before the cells eat: its newborns still marked)
       this.eat.encodeTick(encoder, t, SLOT);   // step C5: the cells eat (after their step, before the dish spreads)
       this.signals.encodeTick(encoder, t);     // step Q1: the signal spreads and fades (after the cells released, before the heat spreads)
@@ -1477,8 +1483,10 @@ export class Cells {
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     // step S2: the flagella and cilia first (src/motors.js; a body then covers its flagellum's root)
     this.motors.render(pass, { view: v, cam: camera.vec(), zoom: camera.z, neon, harmonic: !!HM, time: frame.time || 0, palette: P, cheap: !!look.cheap });
+    this.tendrils.render(pass, { view: v, cam: camera.vec(), zoom: camera.z, neon, harmonic: !!HM, time: frame.time || 0, palette: P });   // step T2
     pass.setPipeline(HM ? this.harmPipe : this.drawPipe);
     pass.setBindGroup(0, (HM ? this.harmBGs : this.drawBGs)[this.bioCur]);
     pass.draw(6, this.count);
+    this.tendrils.renderOver(pass);   // step T2: the bone's lamellae over the cells
   }
 }

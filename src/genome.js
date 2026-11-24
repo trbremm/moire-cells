@@ -73,7 +73,7 @@ import { fieldDefaults, founderGates, BIO_FG } from './guides.js';
 import { stampFounderGlue } from './glue.js';
 import { stampLattices, founderOutputs } from './folding.js';
 
-export const BIO_FLOATS = 240;  // (224 until step Q1's signal genes; 188 until step G3's moire genome; 180 until step P3's taste genes; 168 until step S2's motor genes; 156 until step G2's duplicate slots and families; 40 until step C6c's membrane genes, 44 until step C7's pumps, 48 until step C10's walls, 52 until step C12b's lipids,
+export const BIO_FLOATS = 256;  // (240 until step T2's tendril and mineral genes; 224 until step Q1's signal genes; 188 until step G3's moire genome; 180 until step P3's taste genes; 168 until step S2's motor genes; 156 until step G2's duplicate slots and families; 40 until step C6c's membrane genes, 44 until step C7's pumps, 48 until step C10's walls, 52 until step C12b's lipids,
                                 //  56 until step C13's field genes and gates, 76 until step T1a's marker and kin channels, 84 until step T1b's gene network)
 export const BIO_GRN = 84;      // step T1b: the gene network's first word (Bio.gx)
 export const BIO_G2 = 156;      // step G2: the duplicate slots' first word (Bio.dx; Bio.df at 160, Bio.dg at 164)
@@ -81,6 +81,7 @@ export const BIO_MO = 168;      // step S2: the motor genes' first word (Bio.mo;
 export const BIO_T1 = 76;       // step T1a: the first marker word (Bio.mark; Bio.kin at 80)
 export const BIO_G3 = 188;      // step G3: the regulators' lattice angles (Bio.la; lk at 196, lp at 204, fh 212, fs 216, gs 220)
 export const BIO_Q1 = 224;      // step Q1: the signal genes (Bio.sg; sh at 228, so 232, ss 236: state)
+export const BIO_T2 = 240;      // step T2: the tendril genes (Bio.tn; tk at 244: stiffness, retraction, floor grip, MINERALISE; tq 248, tm 252: outputs)
 export const BIO_BYTES = BIO_FLOATS * 4;
 
 export const KEY_SPAN = Math.PI / 3;

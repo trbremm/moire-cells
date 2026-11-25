@@ -60,6 +60,7 @@ import { Folding } from './folding.js';
 import { Signals } from './signals.js';
 import { Contract } from './contract.js';
 import { Tendrils } from './tendrils.js';   // step T2: tendrils and bone
+import { Inspect } from './inspect.js';     // step I1: the cell inspector (read-only: a family tree, what engines ran, the card)
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 import { dish } from './dish.js';      // the dish's own size and R
 import { cultureLayout } from './culture.js';   // app: how a new culture is spread
@@ -380,6 +381,7 @@ export class Cells {
     this.signals = new Signals(this);     // step Q1: a signal substance (src/signals.js)
     this.contract = new Contract(this);   // step L1: contraction (src/contract.js)
     this.tendrils = new Tendrils(this);   // step T2: tendrils and bone (src/tendrils.js)
+    this.inspect = new Inspect(this);     // step I1: the cell inspector (src/inspect.js; ?inspect=0 none)
   }
 
   static async create(device, format, medium, count, seed, cap = 0) {
@@ -497,6 +499,7 @@ export class Cells {
     this.heat.eat = this.eat;
     await this.motors.init(d, this.format, pre);   // step S2: the flagella's and cilia's drawing (src/motors.js)
     await this.tendrils.init(d, this.format, pre);   // step T2: the tendrils' passes and drawing (src/tendrils.js)
+    await this.inspect.init(d);   // step I1: the cell inspector (after the eat pass: its engine counters)
 
     this.drawU = d.createBuffer({ label: 'cell draw params', size: DRAW_BYTES, usage: U.UNIFORM | U.COPY_DST });
     this.drawAB = new ArrayBuffer(DRAW_BYTES);
@@ -845,6 +848,7 @@ export class Cells {
     if (M) M.beginFrame(encoder, frame, warm);
     this.signals.beginFrame(encoder, frame, ticks);   // step Q1: the signal's uniforms (after the heat's: the currents; before the eat pass's), the pipette's puffs
     this.eat.beginFrame(frame, ticks);   // step C5: after the matter's, which decides the channels the cells may write into
+    this.inspect.beginFrame(frame);      // step I1: the inspector's uniform
     for (let t = 0; t < ticks; t++) {
       const time = frame.time - Math.max(0, ticks - 1 - t) * frame.tickDt * (t < warm ? 0 : 1);
       this.writeSim(t, frame.tickDt, time, t === ticks - 1);
@@ -869,6 +873,7 @@ export class Cells {
       // ?check runs between the grid build and the move, so both see the same positions
       if (t === ticks - 1) this.maybeCheck(encoder, t, frame);
       this.encodeStep(encoder, t);
+      this.inspect.encodeTick(encoder, t);   // step I1: births and deaths into the family tree (after the step: its newborns still marked)
       this.tendrils.encodeTick(encoder, t, SLOT);   // step T2: the tendrils pull, the bone holds (after the step: its newborns still marked)
       this.grn.encodeTick(encoder, t, SLOT);   // step T1b: the gene network (after the step, before the cells eat: its newborns still marked)
       this.eat.encodeTick(encoder, t, SLOT);   // step C5: the cells eat (after their step, before the dish spreads)
@@ -879,6 +884,7 @@ export class Cells {
     this.heat.endFrame(encoder, ticks, frame);
     this.maybeCensus(encoder, ticks - 1, frame);
     this.maybeMotion(encoder, frame);
+    this.inspect.encodeFrame(encoder);   // step I1: the inspector's read-backs (the log; the chosen cell's card)
     this.encodeField(encoder);
   }
 

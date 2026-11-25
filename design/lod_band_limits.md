@@ -62,3 +62,27 @@ World unit = the cell radius R. Scale s = screen px per R (dish px per R x camer
   beat is right only if pixels area-average; point sampling gives a false (aliased) beat at the wrong spacing. Moiré cells
   computes its fields directly as the difference term (q = k_emitter - k_medium), which is why they stay broad and stable at any
   zoom. Risk here: halftone dots and machinery lattice dots (period ~1 R, 5-9 px at zoom 1) alias on phones: fade at the Grid limit.
+
+## In practice (step V1, 2026-11-25)
+
+What the mapping turned out to be once built (README "Step V1"; `src/lod.js`, `src/shaders/lod_common.wgsl`):
+
+- **Declare, don't code** held: one table in `src/lod.js` (size in R or dish px, limit kind), one WGSL fade. Two departures: the sign
+  ladder (2.5 / 1.25 beats) sits beside the per-feature fades, and a few "host" marks use the cell as their host (the cell must be
+  12 px) rather than their own size.
+- **At zoom 1 on a desktop a cell is ~13 px across**: just under the full form. So the everyday default view is the SIMPLIFIED sign, and
+  the biggest calming came from the engine marks (3 px: far below the beat limit) leaving. Light conservation mattered more than the
+  table: folding the parts' light into a flat inside tint at area share made the colony look dim and pastel (the neon halo only lights
+  bright, concentrated light, so spread light disappears twice). What looks right is to fold most of a failed part's light into the TUBE
+  (busy cells shine brighter, as the hum) and only a little into the tint; the merged walls give a third of their light to the insides.
+- **Merge** works best mild (shared walls dim 35 %, the seam closes so two tubes meet as one line); strong merging turns neon into tiles.
+- **Minimal sign**: a flat blob read as dull paint; a small lamp (bright middle, the halo picks it up) reads as light.
+- **Values over details vs. "zoomed in exactly as before"**: the marker stripes only darken, so folding them to their mean dims every tube at
+  zoom 1. Kept: they fade in by darkening (a smooth value change over the fade, not a pop), and zoomed in nothing differs (checked:
+  zoom 8, lod on and off, pixel-identical).
+- **Open claim**: not tested further. In this project the fields are already the difference term (the beat itself), so the far view
+  keeps broad beats by construction; what aliased were the fixed screens (dust 3.2 dish px, pores 2 px, halftone, field dots, stripes,
+  fibre noise), and those now fade to their tone at the grid limit. The old "marker texture from zoom 3" was a real pop: the mean
+  brightness of a zoom sweep dropped ~15-25 % between zoom 2.6 and 3.0 with lod off; with lod on it moves smoothly.
+- **Skipped**: "fewer tones when small" as its own rule (the ladder already leaves 2 to 3 tones per cell) and "sub-pixel motion becomes
+  tone" (the neon trails already smear motion; nothing visible to gain at a cost).

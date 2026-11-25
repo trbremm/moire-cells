@@ -267,7 +267,138 @@ address showing `?terrain=...&seed=...&dish=...`, no console errors; the worlds 
   then STAYED over the running dish (seen twice here while the machine was busy; a phone on a slow connection could hit it). It now waits
   15 s and goes away by itself once the modules do start (src/main.js).
 
-### Files
+### Step V1: level of detail from band limits
+
+BUILD QUEUE item 6a6f (the user, 2026-11-25, brought an approach from another project: `design/lod_band_limits.md`). DRAWING ONLY: the
+simulation never sees it, and `?lod=0` draws exactly as before (checked pixel for pixel, below). Code: `src/lod.js` (the declared table,
+the knobs, `moire.lod.table()`), `src/shaders/lod_common.wgsl` (the one shared fade, `lod_keep`, and `lod_mix`), and the step V1 parts of
+`cell_draw.wgsl` (neon `fs` and harmonic `fs_harm`), `matter_draw.wgsl`, `landscape_draw.wgsl`, `motor_draw.wgsl`, `tendril_draw.wgsl`,
+`obstacles_draw.wgsl`; `src/kin.js` (the marker stripes no longer switch on at zoom 3), the View panel switch (`src/actions.js`).
+
+### The idea in one paragraph
+
+Every drawn feature is declared once with its size in the world (in R, the cells' radius, or in dish px for the dish's own fixed grids)
+and the kind of limit it must clear on screen: PIXEL 1 (the tube's line), GRID 3 (patterns: dust, dots, stripes, fibres, pores), BEAT 6
+(parts: engine marks, the battery core, a phagosome, a flagellum) and HOST 12 (marks that sit on a part: pump notches, wall bricks, cilia,
+tendrils; their host, the cell, must be 2 beats across). Screen size = world size x s, s = device px per R (dish px per R x the camera's
+zoom x the device pixel ratio). A feature is kept by a smoothstep over +-30 % of its limit, so nothing pops while zooming. What fails is
+not just dropped: its light goes into its cell's tone or tube (values over details), and zoomed out the walls two cells share dim and
+close their seam (merge), so packed tissue reads as one lit mass with a bright outer outline.
+
+### The cell's sign ladder
+
+- FULL (2.5 beats, 15 px across, and more): the neon tube and every part, as before.
+- SIMPLIFIED (1.25 to 2.5 beats, 7.5 to 15 px): the tube and ONE core, a fixed small disc in the battery's green as bright as the battery
+  is full (the full core's area-by-charge form fails its own beat limit first). The engine marks fade by their own size (beat); 80 % of
+  their light lights the tube instead (busy cells shine brighter, as the hum: up to x2), 20 % tints the inside in their inks. Granules
+  (grid) fold into an amber tint, a meal's ghost (beat) into the host's tint.
+- MINIMAL (below 7.5 px: 10 000 cells, phones, big worlds): a lit blob in the JOB colour, a small lamp brightest at its middle (a little
+  brighter the fuller the battery), its tube at 70 %. Colour always means the job.
+- MERGE: a side shared with a touching neighbour (Cell.nbr) dims its tube by up to 35 % as the cell falls below the full form, a third
+  of that light goes into the inside, and the tubes' gap from the wall closes (the two neighbours' tubes meet as one line). Free sides keep
+  their full tube: a colony keeps its outline. Harmonic: half as much (a shared wall is one green interface).
+- SILHOUETTE LAST: the tube (and the harmonic rim) never thins below one device pixel; a tube that would be thinner is drawn 1 px wide and
+  dimmed by the width it lost. Halos were already in screen px (the neon pass).
+- Membrane damage dashes (grid) become a dimmer whole tube; wall bricks (host) a flat rim as covered as the wall; pump notches (host) fade,
+  the tube's tinted segment stays; the self-marker stripes fade in by their period (grid) and the cell (host) instead of switching on at
+  zoom 3 (they only darken, so they cut in smoothly; zoomed in exactly as before); the machinery's lattice dots (grid) become their tone.
+- Harmonic: fibres and striations in cells (grid) become their average orange, granules (orange) and engine granules (violet) their tone,
+  the rim's merged green a faint inside tone.
+
+### The dish
+
+- Substances as DUST (the default): the grid square (3.2 dish px) is right at the grid limit at zoom 1 on a desktop (kept 0.66): the specks
+  mix with an even glow of the same light (each kind's ink x the share of a square its speck covers); fully a glow on small or squeezed
+  dishes. As HALFTONE (machinery): the same at the halftone's spacing (13 px at zoom 1: kept).
+- Harmonic crust strands: their average orange below the grid limit (kept 0.5 at zoom 1).
+- The fields' machinery dots: their tone below the grid limit. Porous walls' pores and dashes (2 px apart: always below it at zoom 1):
+  an even lighter fill and a half-bright edge.
+- Flagella (beat, by their length: kept nearly always), cilia and tendrils (host: the cell) fade; a rope keeps a quarter (structure).
+  Fading motors light their cell's tube a little. Bone lamellae (grid) become an even ivory tone.
+
+### Switches, knobs, console
+
+- `?lod=0`: off (the drawing as before step V1). View panel, Look: "level of detail".
+- `moire.lod.params`: spread 0.3, merge 0.35, wallFold 0.35, fold 1, partTube 0.8, tubeMax 2, signFill 0.18, signLamp 0.7, signTube 0.7,
+  coreR 0.34, harmFill 0.3. The limits: `LOD_LIMITS` in `src/lod.js`.
+- `moire.lod.table()`: each feature's screen size and kept share at zoom 1, 3, 8 for the dish as it is.
+
+### The table (from `moire.lod.table()` in the page)
+
+Screen size (device px) and kept share. Desktop: 1280 x 800 window, R 6.48 dish px, 1 device px per dish px; 10 000 cells: R 2.90; phone
+(headless, 390 x 844, the page draws at 2 device px per CSS px): R 4.99, 2 device px per dish px. The marker row uses a typical period of
+0.25 R (its genes range 0.12 to 0.5 R); at 10 000 cells the tube is 0.87 px (0.3 R) and is drawn 1 px wide at 0.87 brightness.
+
+| feature | limit | desktop x1: px, kept | x3 | x8 | 10 000 cells x1 | phone x1 |
+| --- | --- | --- | --- | --- | --- | --- |
+| cell.full | beat x2.5 (15 px) | 13 px, 0.18 | 38.9, 1 | 103.7, 1 | 5.8, 0 | 20, 1 |
+| cell.sign | beat x1.25 (7.5 px) | 13 px, 1 | 38.9, 1 | 103.7, 1 | 5.8, 0.04 | 20, 1 |
+| tube | pixel 1 | 1.1 px, 1 | 3.3, 1 | 8.8, 1 | 1.1, 1 | 2.2, 1 |
+| walls | beat x2.5 | 13 px, 0.18 | 38.9, 1 | 103.7, 1 | 5.8, 0 | 20, 1 |
+| core | beat 6 | 4.7 px, 0.05 | 14, 1 | 37.3, 1 | 2.1, 0 | 7.2, 0.92 |
+| parts | beat 6 | 3.1 px, 0 | 9.3, 1 | 24.9, 1 | 1.4, 0 | 4.8, 0.07 |
+| granules | grid 3 | 1.3 px, 0 | 3.9, 1 | 10.4, 1 | 0.6, 0 | 2, 0 |
+| phago | beat 6 | 4.5 px, 0.02 | 13.6, 1 | 36.3, 1 | 2, 0 | 7, 0.87 |
+| notches | host 12 | 13 px, 0.7 | 38.9, 1 | 103.7, 1 | 5.8, 0 | 20, 1 |
+| bricks | host 12 | 13 px, 0.7 | 38.9, 1 | 103.7, 1 | 5.8, 0 | 20, 1 |
+| dashes | grid 3 | 2.9 px, 0.43 | 8.7, 1 | 23.3, 1 | 1.3, 0 | 4.5, 1 |
+| marker | grid 3 x host | 1.6 px, 0 | 4.9, 1 | 13, 1 | 0.7, 0 | 2.5, 0.12 |
+| latdots | grid 3 | 4 px, 1 | 12.1, 1 | 32.1, 1 | 1.8, 0 | 6.2, 1 |
+| fibres | grid 3 | 1.7 px, 0 | 5.1, 1 | 13.5, 1 | 0.8, 0 | 2.6, 0.19 |
+| flagella | beat 6 | 19.4 px, 1 | 58.3, 1 | 155.5, 1 | 8.7, 1 | 30, 1 |
+| cilia | host 12 | 13 px, 0.7 | 38.9, 1 | 103.7, 1 | 5.8, 0 | 20, 1 |
+| tendrils | host 12 | 13 px, 0.7 | 38.9, 1 | 103.7, 1 | 5.8, 0 | 20, 1 |
+| lamellae | grid 3 | 1.9 px, 0 | 5.8, 1 | 15.6, 1 | 0.9, 0 | 3, 0.5 |
+| dust | grid 3 | 3.2 px, 0.66 | 9.6, 1 | 25.6, 1 | 3.2, 0.66 | 6.4, 1 |
+| halftone | grid 3 | 12.9 px, 1 | 38.7, 1 | 103.1, 1 | 12.9, 1 | 14.3, 1 |
+| crust | grid 3 | 3 px, 0.5 | 9, 1 | 24, 1 | 3, 0.5 | 6, 1 |
+| fielddots | grid 3 | 6 px, 1 | 18, 1 | 48, 1 | 6, 1 | 12, 1 |
+| pores | grid 3 | 2 px, 0 | 6, 1 | 16, 1 | 2, 0 | 4, 1 |
+
+### Checks
+
+All headless Chrome on the development machine unless said (the GPU may have been shared with other work).
+
+- **`?lod=0` draws exactly as before.** Main at the plan commit (`ee6d4e1`, an export) against this branch with `?lod=0`, the same frame:
+  `?seed=3&paused=1&warmup=0&hum=0&trails=0` with the background's ripples and sheen set to 0 (they move in real time), compared pixel by
+  pixel: neon zoom 1, neon zoom 8, harmonic zoom 1 and 3 (`grain=0`: the grain is random), the islands world with the machinery: **0 of
+  1 024 000 pixels differ** in each. With the lod ON at zoom 8 the picture is identical too (0 pixels): zoomed in, nothing changes.
+- **The simulation does not change.** The LOD lives only in draw shaders and their uniforms (nothing in a compute pass reads it). The sim
+  is not bit-repeatable run to run (GPU atomics): at the same tick (`?until=20`, seed 3) two lod-off runs differ in 42 of the entropy
+  panel's 50 lines, lod off vs on in 41 to 42: no more than run to run; atoms' books "rounding 0" in all three.
+- **No popping.** A zoom sweep (the camera from zoom 1 to 4.6 over 9 s of simulation, one still a second at zoom 1, 1.4, ... 4.6; the
+  mean brightness 0..255 of the middle half; final code): lod off 73, 94, 98, 89, 89, **75**, 72, 74, 70, 75 (the drop from zoom 2.6 to 3.0
+  is the old marker texture switching on at once); lod on 61, 85, 85, 83, 75, 77, 74, 74, 69, 75 (no step; darker at zoom 1). The stills
+  show the parts fading in smoothly between zoom 1.4 and 2.2. (Not a video: the motion check is these stills; no .webm was made.)
+- **A/B pictures**, the same frame with the lod off and on (the run pauses, the lod is switched, the second shot is the same state):
+  `experiments/keep/v1/` default dish at zoom 1 (whole and a x3 crop of real pixels), zoom 3, zoom 8; harmonic zoom 1 (crop) and 3; 10 000
+  cells (crop); the islands world; phone size.
+- Firefox headed: loads and draws with the lod on and off (`tools/shot.py --headed`), no console errors (also none in Chrome
+  with the machinery, the harmonic look and the View panel's switch toggled live; the limb and chip presets draw). A sequence of stills
+  in headed Firefox shows the WHOLE picture over the ripples blank in a few frames (2 of 11 here); the same happens on main (`ee6d4e1`: 3 of
+  13), so it is older than V1 (a Firefox capture or present issue, to look at separately).
+- Speed: headless Chrome, seed 3, MAX, samples from 30 to 70 s of simulation, the overlay's GPU probe of the whole drawing (ms per
+  frame) and the speed reached; alternating runs; ANOTHER WORKER'S RUNS SHARED THE GPU, so single runs vary up to 2x. 2000 cells neon:
+  drawing 4.1 / 3.0 ms off, 3.4 / 3.8 on; speed reached x2.24 / x2.14 off, x2.17 / x2.25 on: no difference to see. 10 000 cells neon: the
+  first version (all per pixel) cost ~2.5 ms more drawing (7.5-7.8 against 10.0); with the per-cell values moved to the vertex shader
+  8.7 / 11.4 off against 9.3 / 16.6 on (the second pair under heavy sharing); harmonic 7.6 / 7.0 off, 8.4 / 7.1 on. Best estimate: lod on costs
+  ~0.5 ms of drawing at 10 000 cells (~5-8 %), nothing measurable at 2000; the simulation dominates (speed reached ~x0.45 either way).
+
+### Known
+
+- At zoom 1 on a desktop the picture is calmer but DIMMER on average than before (the parts were bright lamps; their light now lights the
+  tube, x2 at most, and tints the inside, but the neon halo only lights concentrated light): mean brightness at zoom 1 about 61 against 73
+  (0..255, the middle half of the frame).
+- Merge reads which side touches whom from Cell.nbr (one neighbour per side): a side touching two cells is shared only with the nearest, so
+  a few shared walls stay bright.
+- Tendrils fade with their cell but their light does not fold into it (the cell pass does not see the tendril buffer).
+- Not built: "fewer tones when small" as its own rule (the ladder leaves 2 to 3 tones), "sub-pixel motion becomes tone" (the trails
+  already smear motion). The machinery's diagnostic marks (state bar, hand, arrows, ticks) keep their old pixel gates.
+- The reporter view's nucleus and the inner glow are soft already and are not faded.
+- Spread and limits are knobs; the choices of merge 0.35, fold shares and lamp brightness are judgement by eye (one seed, desktop and
+  headless phone size), not derived.
+
+## Files
 
 - new: `src/toy.js` (the toy front: bar, caption, corner buttons, worlds sheet and its pictures, the Developer panel, building a world in
   place, links), `src/terrain.js` (the generators, `makeWorld`, `reach`)

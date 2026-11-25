@@ -1,13 +1,13 @@
 {
  "js": {
-  "src/actions.js": "02d699af34",
-  "src/app.js": "aad2d29cc0",
+  "src/actions.js": "34b20e25bd",
+  "src/app.js": "fd68ecafe9",
   "src/background.js": "f030c71b28",
   "src/camera.js": "05f78070cc",
   "src/carbon.js": "b1a8ee8ba2",
   "src/carboncells.js": "25be428c5e",
   "src/catalysts.js": "6632f8215f",
-  "src/cells.js": "3e1cdde6c7",
+  "src/cells.js": "8409f95cc1",
   "src/charge.js": "707a20cce0",
   "src/contract.js": "0b5a08f88c",
   "src/culture.js": "a39e9a2981",
@@ -15,7 +15,7 @@
   "src/dish.js": "298d736dd4",
   "src/division.js": "ace4d3c3bf",
   "src/dup.js": "44c6696c9c",
-  "src/eat.js": "ce4a3f5cbf",
+  "src/eat.js": "d32e6cdced",
   "src/electrons.js": "0da62e20b3",
   "src/excited.js": "dd88db8af9",
   "src/fidelity.js": "f966c6a73a",
@@ -31,6 +31,8 @@
   "src/harmonic.js": "b65eef24fe",
   "src/heat.js": "3ffc4403eb",
   "src/home.js": "e0680ab286",
+  "src/inspect.js": "2777420bd6",
+  "src/inspectcard.js": "73efc8114f",
   "src/ions.js": "0eabb725c4",
   "src/jobs.js": "2ab4faee1a",
   "src/kin.js": "55b637fe20",
@@ -40,7 +42,7 @@
   "src/light.js": "7c0160f86b",
   "src/lipids.js": "0b4d748ec7",
   "src/lod.js": "7d30f0913c",
-  "src/main.js": "2409c3966e",
+  "src/main.js": "bc4957de5a",
   "src/matter.js": "5425ef1ef7",
   "src/membrane.js": "151da32d47",
   "src/motors.js": "472260d0de",
@@ -65,7 +67,7 @@
   "src/tendrils.js": "8f538fff78",
   "src/terrain.js": "07210d72d5",
   "src/tissues.js": "e6f57ab5b8",
-  "src/toy.js": "c278290502",
+  "src/toy.js": "58a7a27034",
   "src/ui.js": "83b9a56011",
   "src/vents.js": "9778fa25c3",
   "src/walls.js": "957c767a70",
@@ -75,5 +77,5 @@
   "src/whole.js": "370560f882",
   "src/zoo.js": "e46a2510c2"
  },
- "v": "0782b87fd4"
+ "v": "f415994bb0"
 }

@@ -136,7 +136,19 @@ struct Draw {
   q1: vec4f,        // step Q1 (src/signals.js writeDraw): x 1 = the SIGNALS view (mode 8: the body in the hue of the flavour it emits, as
                     // bright as it releases now), + 2 while the gene network's outputs act; y the release FLASH's brightness in every view
                     // (0 = none); z the view's body fill at full release; w the hues' saturation
+  // ---- step V1: LOD from band limits (src/lod.js writeCells; lod_common.wgsl lod_keep) ----
+  lod: vec4f,       // x 1 = on (0, ?lod=0: everything as before step V1); y the fade's spread; z how far a shared wall's tube dims zoomed out;
+                    // w the fold: how much of a failed feature's light goes into its cell's tone (1 = all)
+  lod2: vec4f,      // x the minimal sign's tone (share of the job colour); y its tube's brightness; z the simplified sign's core radius (share
+                    // of r); w the harmonic look: the share of a merged rim's green kept as the inside's tone
+  lodL: vec4f,      // the limits (device px): pixel, grid, beat, host
+  lod3: vec4f,      // x the merged walls' fold (their lost light into the insides, x this); y the share of the failed parts' light that lights
+                    // the tube (as busy cells shine brighter; the rest tints the inside in the parts' inks); z the most it brightens the tube; w the minimal sign's
+                    // lamp: its middle's extra brightness (share of the job colour)
 };
+// step V1: is side k of cell c shared with a touching neighbour (Cell.nbr, written by the step)?
+fn side_shared(c: Cell, k: u32) -> bool { return ((c.nbr[k >> 1u] >> (16u * (k & 1u))) & 0xffffu) != 0xffffu; }
+fn lod_k(px: f32, limit: f32) -> f32 { return lod_keep(px, limit, D.lod.y, D.lod.x); }
 // step Q1: a flavour (rad) as a neon hue round the colour wheel
 fn q1_hue(a: f32, sat: f32) -> vec3f {
   let h = a / TAU + 0.56;   // (flavour 0, the signal pipette's first, sky blue)
@@ -379,8 +391,16 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   // inside the drawn outline a pixel is: an ellipse cell's r - |lp|; step C6c, a honeycomb cell: inside the rounded
   // hexagon (exact distance), less the tube's gap from the wall (so two neighbours' tubes do not merge into one thick line)
   let lp = in.lp;
+  // step V1: the cell's size on screen and its SIGN LADDER (src/lod.js): the full form (tube and parts) at 2.5 beats across or more,
+  // the simplified sign (tube and one battery core) from 1.25 beats, the minimal sign (a lit blob) below; zoomed out the walls two
+  // cells share dim (merge) and the seam between them closes. All 1 / 0 with ?lod=0.
+  let lodOn = D.lod.x > 0.5;
+  let cpx = 2.0 * c.r * D.dpr;                                   // the cell across (device px)
+  let wFull = lod_k(cpx, 2.5 * D.lodL.z);
+  let wSign = lod_k(cpx, 1.25 * D.lodL.z);
+  let mergeW = select(0.0, (1.0 - wFull) * D.lod.z, lodOn);
   var ein = c.r - length(in.local);
-  if (in.hh1.w > 0.5) { ein = hex_inside(in.local, in) - min(D.hexDraw.y, 0.08 * c.r); }
+  if (in.hh1.w > 0.5) { ein = hex_inside(in.local, in) - min(D.hexDraw.y, 0.08 * c.r) * select(1.0, wFull, lodOn); }
   let d = length(lp);
   let aa = max(fwidth(ein), 0.35 / D.dpr);
   // the cell's own lattice as sharp dots (the reference turns its dot pattern by la + 90 degrees): the lattice
@@ -503,7 +523,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   var inner = 0.0;         // the heavy membrane's inner tube
   let bt = cell_burst(c.flags);
   var sd = vec2f(0.0);
-  if (D.memb.x > 0.5 || D.dip.x > 0.0 || D.pump.x > 0.5 || D.wall.x > 0.5 || D.lip.x > 0.5) { sd = memb_side(in.local, lp, c.r, in); }
+  if (D.memb.x > 0.5 || D.dip.x > 0.0 || D.pump.x > 0.5 || D.wall.x > 0.5 || D.lip.x > 0.5 || lodOn) { sd = memb_side(in.local, lp, c.r, in); }
   let side = u32(sd.x);
   if (D.memb.x > 0.5) {
     ig = clamp(c.integ[side], 0.0, 1.0);
@@ -521,6 +541,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       let gap = 0.7 * dmg;
       mGap = clamp(min(u - gap, 1.0 - u) * per / aa + 0.5, 0.0, 1.0);
       if (gap <= 0.0) { mGap = 1.0; }
+      if (lodOn) { mGap = mix(1.0 - gap, mGap, lod_k(per * D.dpr, D.lodL.y)); }   // (step V1: dashes below the grid limit: a dimmer whole tube)
       mDim *= 1.0 - D.memb2.x * dmg * (0.5 + 0.5 * sin(TAU * (D.hum.z * (2.3 + 1.7 * hsh)) + 6.0 * hsh));
     }
     inner = D.memb.w * smoothstep(0.35, 0.85, gmb.x) * (0.6 + 0.4 * ig);
@@ -544,8 +565,20 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     soapy = ig - oily;
     lw *= (1.0 - 0.2 * soapy) * (1.0 + 0.6 * D.lip.z * oily);
   }
+  // step V1: SILHOUETTE LAST: the tube never thins below the pixel limit, it dims by the width it lost; zoomed out a SHARED wall's tube
+  // dims (merge) and its light goes into the inside (below, with the other folds)
+  var tubeDim = 1.0;
+  var onShared = false;
+  var nShared = 0.0;
+  if (lodOn) {
+    if (lw * D.dpr < D.lodL.x) { tubeDim = lw * D.dpr / D.lodL.x; lw = D.lodL.x / D.dpr; }
+    onShared = side_shared(c, min(side, 5u));
+    for (var k = 0u; k < 6u; k++) { if (side_shared(c, k)) { nShared += 1.0; } }
+  }
   let ein2 = ein - wOff;     // how far inside the tube's outer edge (the outline less the wall's rim)
-  let dot = select(0.0, cover(D.dotR * s, dd, aad) * cover_in(ein2 - lw - 0.12 * D.R, aa), D.dots > 0.0);
+  var dotC = cover(D.dotR * s, dd, aad);
+  if (lodOn) { dotC = mix(3.628 * D.dotR * D.dotR, dotC, lod_k(s * D.dpr, D.lodL.y)); }   // (step V1: the lattice's dots below the grid limit: their tone)
+  let dot = select(0.0, dotC * cover_in(ein2 - lw - 0.12 * D.R, aa), D.dots > 0.0);
   var ring = (1.0 - cover_in(ein2 - lw, aa)) * mGap * cover_in(ein2, aa);   // clean outline at the rim (step C6c: broken where the membrane is)
   // step C6c: a heavy membrane's inner tube, a thin line just inside the outer one (a gap of about 0.8 px)
   var ring2 = 0.0;
@@ -568,6 +601,61 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   if (conv && jb.y < 0.5) { fillRgb = D.blue.rgb * D.convFill; }
   // step 8, rule b, clock: an undecided cell filled with the partner's ink as far as it emits A' (see the hand below)
   if (D.hand < 0.0 && jb.y < 0.5) { fillRgb = mix(fillRgb, D.pInk.rgb * 0.55, clamp(c.z.y, 0.0, 1.0)); }
+  // step V1: VALUES OVER DETAILS and MERGE (src/lod.js): the light of every feature that fails its limit goes into the inside's tone,
+  // as much as it gave (its area's share of the cell x its brightness, x the fold), and at the minimal sign the inside is a lit blob
+  let partsOn = D.ink1.w > 0.0;
+  var kCore = 1.0;
+  var tubeBoost = 1.0;
+  if (lodOn) {
+    var fold = vec3f(0.0);
+    var partLum = 0.0;
+    let r2 = max(c.r * c.r, 1e-4);
+    // merged shared walls: the light the tubes there lost (the tube's area share x the shared sides' share x how far they dimmed)
+    let lw0 = max(select(min(D.lineW, 0.22 * c.r), min(D.neon.y, 0.3 * c.r), neon), D.lodL.x / D.dpr);
+    fold += col * (select(D.line, 1.15 * D.line, neon) * tubeDim) * min(1.0, 2.31 * lw0 / c.r) * (nShared / 6.0) * mergeW * D.lod3.x / max(D.lod.w, 1e-3);
+    // the battery's full core (area by charge) fails at the beat limit into the simplified core, which at the minimal sign is the tone
+    if (D.core > 0.0 && c.bat > 0.0) {
+      kCore = lod_k(2.0 * select(D.core, D.inkSwap.w, partsOn) * c.r * D.dpr, D.lodL.z);
+      fold += D.coreInk.rgb * clamp(c.bat, 0.0, 1.0) * D.lod2.z * D.lod2.z * (1.0 - kCore) * (1.0 - wSign);
+    }
+    // the engines' marks (beat): their lamps' inks
+    if (partsOn) {
+      let hmax = D.ink2.w * c.r;
+      let pc = array<f32, 5>(g.eng.x, g.eng.y, g.eng.z, g.dx.x, g.dx.y);
+      let pr = array<f32, 5>(g.rate.x, g.rate.y, g.rate.z, select(0.0, g.dx.z, D.spare5[0].x > 0.5), select(0.0, g.dx.w, D.spare5[0].x > 0.5));
+      for (var k = 0u; k < 5u; k++) {
+        if (pr[k] <= 0.0) { continue; }
+        let e = eng_index(pc[k]);
+        let kind = part_kind(e);
+        let h = hmax * sqrt(clamp(pr[k] / max(D.inkSed.w, 1e-3), 0.12, 1.0)) * select(1.0, D.spare5[0].y, k >= 3u);
+        var ink = band_ink(eng_band(pc[k]));
+        if (kind == 0u && eng_band(pc[k]) == 0u) { ink = D.coreInk.rgb * 0.6; }   // (a storer: a ring)
+        if (kind == 1u) { ink = D.inkBurn.rgb; } else if (kind == 2u) { ink = D.inkSwap.rgb * 0.6; } else if (kind == 3u) { ink = D.inkSed.rgb; }
+        let pl = ink * (1.0 + 0.3 * select(0.0, 1.0, neon)) * 0.8 * (h * h / r2) * (1.0 - lod_k(2.0 * h * D.dpr, D.lodL.z));
+        fold += pl * (1.0 - D.lod3.y);
+        partLum += (pl.r + pl.g + pl.b) / 3.0 * D.lod3.y;
+      }
+      // (that share lights the tube: its light over the tube's own)
+      let tl = max(select(D.line, 1.15 * D.line, neon) * min(1.0, 2.31 * lw0 / c.r) * (col.r + col.g + col.b) / 3.0, 0.03);
+      tubeBoost = min(1.0 + D.lod.w * partLum / tl, D.lod3.z);
+    }
+    // tar granules (grid): amber
+    let gz0 = unpack4x8unorm(c.sns1).z;
+    if (gz0 > 0.02) {
+      let gr0 = c.r * (0.055 + 0.07 * gz0);
+      fold += select(vec3f(0.34, 0.17, 0.04), vec3f(0.95, 0.55, 0.16) * 0.7, neon) * f32(1u + u32(gz0 * 4.99)) * (gr0 * gr0 / r2) * (1.0 - lod_k(2.0 * gr0 * D.dpr, D.lodL.y));
+    }
+    // a meal being digested (beat): its colour
+    let ph0 = phago(c);
+    if (ph0.w >= 0.0) {
+      fold += cell_colour(eng_partner(c.eng)) * D.p1.z * (1.0 - ph0.w) * (ph0.z * ph0.z / r2) * (1.0 - lod_k(2.0 * ph0.z * D.dpr, D.lodL.z));
+    }
+    fillRgb += fold * D.lod.w;
+    // the minimal sign: a lit blob in the job colour, a small lamp brightest at its middle (as bright as the battery is full, a little);
+    // its tube dims below by about as much
+    let lamp = D.lod2.x + D.lod3.w * exp(-d * d / max(0.3 * r2, 1e-4)) * (0.6 + 0.4 * clamp(c.bat, 0.0, 1.0));
+    fillRgb = mix(fillRgb, max(fillRgb, col * lamp), 1.0 - wSign);
+  }
   var rgb = mix(fillRgb, col * D.dots, dot);
   if (reporterView) {   // (step T1b: the reporter's nucleus-like glow)
     let dn = length(lp) / max(0.38 * c.r, 0.5);
@@ -576,15 +664,21 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   // step C5: the battery as a flat core at the centre, its AREA in proportion to the charge (full: a big core; empty:
   // none), in the fuel's green (energy); drawn over the lattice dots, crisp
   var coreA = 0.0;
-  let partsOn = D.ink1.w > 0.0;
   if (D.core > 0.0 && c.bat > 0.0) {
     let rc = select(D.core, D.inkSwap.w, partsOn) * c.r * sqrt(clamp(c.bat, 0.0, 1.0));
+    // step V1: the SIMPLIFIED sign's core (where the full core fails its beat limit): a fixed disc, as bright as the battery is full
+    if (lodOn && kCore < 1.0) {
+      let cs = cover(D.lod2.z * c.r, d, aa) * (1.0 - kCore) * wSign;
+      rgb = mix(rgb, max(rgb, D.coreInk.rgb * clamp(c.bat, 0.0, 1.0)), cs);
+      coreA = cs;
+    }
     if (rc * D.dpr > 0.6) {
-      coreA = cover(rc, d, aa);
+      let fa = cover(rc, d, aa) * kCore;
+      coreA = max(coreA, fa);
       var ci = D.coreInk.rgb;
       // step C6n: neon, a soft-lit disc: dim inside, a bright rim (a large core reads as a lit ring, a small one as a dot)
       if (neon) { ci *= mix(D.neon2.w, 1.0, smoothstep(rc * (1.0 - D.neon2.y) - aa, rc - 0.5 * aa, d)); }
-      rgb = mix(rgb, ci, coreA);
+      rgb = mix(rgb, ci, fa);
     }
   }
   // step C6: the engines as parts around the core: flat marks with crisp edges, each in a clear margin
@@ -614,8 +708,9 @@ fn fs(in: VSOut) -> @location(0) vec4f {
         dd2 = max(abs(q.y) * 0.8660254 + q.x * 0.5, -q.x) - 0.62 * h;
         ink = D.inkSwap.rgb;
       } else if (kind == 3u) { dd2 = max(abs(q.x), abs(q.y)) - 0.84 * h; ink = D.inkSed.rgb; }           // form: a square
-      let pa = cover(0.0, dd2, aa);
-      let margin = cover(0.14 * c.r, dd2, aa);
+      let kp = lod_k(2.0 * h * D.dpr, D.lodL.z);                // (step V1: a mark below the beat limit fades; its ink is in the tone)
+      let pa = cover(0.0, dd2, aa) * kp;
+      let margin = cover(0.14 * c.r, dd2, aa) * kp;
       rgb = mix(rgb, fillRgb, margin * dot);
       if (neon) { ink = mix(ink, vec3f(1.0), D.neon2.z * clamp(-dd2 / max(h, 1e-3), 0.0, 1.0)); }   // step C6n: a lamp, whiter inside
       rgb = mix(rgb, ink, pa);
@@ -629,13 +724,14 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   if (gz > 0.02 && c.r * D.dpr > 3.0) {
     let ng = 1u + u32(gz * 4.99);
     let gr = max(c.r * (0.055 + 0.07 * gz), 0.55 / D.dpr);
+    let kg = lod_k(2.0 * c.r * (0.055 + 0.07 * gz) * D.dpr, D.lodL.y);   // (step V1: below the grid limit they fade into the tone)
     for (var q = 0u; q < 5u; q++) {
       if (q >= ng) { break; }
       let hq = f32((c.seed >> (q * 5u + 3u)) & 31u) / 31.0;
       let ang = 0.5236 + f32(q) * 2.3999632 + 0.8 * hq;
       let gp = lp - vec2f(cos(ang), sin(ang)) * (c.r * (0.28 + 0.34 * fract(hq * 7.13 + f32(q) * 0.37)));
       let gd = length(gp);
-      let ga = cover(gr, gd, aa);
+      let ga = cover(gr, gd, aa) * kg;
       var gi = vec3f(0.34, 0.17, 0.04);
       if (neon) { gi = mix(gi, vec3f(0.95, 0.55, 0.16), smoothstep(0.45 * gr, gr, gd)); }
       rgb = mix(rgb, gi, ga);
@@ -649,15 +745,15 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   if (ph.w >= 0.0) {
     let gc = cells[min(eng_partner(c.eng), arrayLength(&cells) - 1u)];
     let dg = length(pw - ph.xy);
-    let fade = (1.0 - ph.w);
-    let gin = cover(ph.z, dg, aa);
+    let fade = (1.0 - ph.w) * lod_k(2.0 * ph.z * D.dpr, D.lodL.z);   // (step V1: below the beat limit the meal is the host's tone)
+    let gin = cover(ph.z, dg, aa) * lod_k(2.0 * ph.z * D.dpr, D.lodL.z);
     let gcol = cell_colour(eng_partner(c.eng));
     rgb = mix(rgb, gcol * D.p1.z * (0.25 + 0.75 * fade) * fade, gin * 0.85);
     let ow = max(0.6 * lw, 0.6 / D.dpr);
     let gl = cover(0.5 * ow, abs(dg - 0.78 * ph.z), aa) * fade;
     rgb = mix(rgb, gcol * D.p1.z * 1.2, gl);
     let rw = max(0.8 * lw, 0.7 / D.dpr);
-    let rg = cover(0.5 * rw, abs(dg - ph.z - 0.6 * rw), aa);
+    let rg = cover(0.5 * rw, abs(dg - ph.z - 0.6 * rw), aa) * lod_k(2.0 * ph.z * D.dpr, D.lodL.z);
     var rc = mix(col, vec3f(1.0), 0.35) * D.p1Ink.w * (0.55 + 0.45 * fade);
     if (neon) { rc = mix(rc, vec3f(1.0), 0.4 * D.neon.z * clamp(1.0 - abs(dg - ph.z - 0.6 * rw) / max(0.5 * rw, 1e-3), 0.0, 1.0)); }
     rgb = mix(rgb, rc, rg);
@@ -696,7 +792,14 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   // step C13, the guides view: each side's tube by what that side feels (s, -1..1): bright where the field is high, dark where low
   if (guidesView) { lineCol *= (1.0 - D.gd.y) + D.gd.y * (1.0 + cell_felt(c, min(side, 5u))); }
   // step T1a: zoomed in, the self marker as a fine stripe texture along the tube (like surface immunostaining), as deep as the cell displays it
-  if (D.kin.y > 0.0) { lineCol *= 1.0 - D.kin.y * clamp(g.mark.w, 0.0, 1.0) * (1.0 - marker_stripe(g, in.local, D.R)); }
+  // (step V1: the stripes kept as far as their period clears the grid limit and the cell the host limit; below, their average dimming)
+  if (D.kin.y > 0.0) {
+    var stp = marker_stripe(g, in.local, D.R);
+    if (lodOn) { stp = mix(0.5, stp, lod_k(D.R * exp(g.mark.y) * D.dpr, D.lodL.y) * lod_k(cpx, D.lodL.w)); }
+    lineCol *= 1.0 - D.kin.y * clamp(g.mark.w, 0.0, 1.0) * (1.0 - stp);
+    // (step V1: the tube keeps its value: the stripes modulate round it instead of only darkening, so nothing dims as they fade)
+    if (lodOn) { lineCol /= 1.0 - 0.5 * D.kin.y * clamp(g.mark.w, 0.0, 1.0); }
+  }
   // step C12b: soap's pearl (a pale sheen whose hue drifts along the tube and slowly in time) and oil's depth (more saturated)
   if (D.lip.x > 0.5 && !q1View) {   // (step Q1: not in the signals view, where the tube's hue is the flavour)
     let hsh = f32((c.seed >> 8u) & 255u) / 255.0;
@@ -806,7 +909,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
         let hw = select(h * (1.0 - y / dep), h * (y / dep), out);    // IN: tip inward; OUT: tip on the tube
         let sdf = max(u - hw, max(-y - 0.5 * lw, y - dep));
         let ink = D.pumpInk[pump_ch(code)].rgb;
-        notch = cover(0.0, sdf, aa);
+        notch = cover(0.0, sdf, aa) * lod_k(cpx, D.lodL.w);   // (step V1: a mark on the tube: the cell must clear the host limit)
         var nk = ink;
         if (neon) { nk = mix(ink, vec3f(1.0), 0.5 * D.neon2.z * clamp(1.0 - u / max(h, 1e-3), 0.0, 1.0)); }
         rgb = mix(rgb, nk, notch);
@@ -856,6 +959,15 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     lineCol = mix(lineCol, mix(fk, vec3f(1.0), 0.45), clamp(f2, 0.0, 1.0)) * (1.0 + D.q1.y * f2);
     rgb += fk * 0.15 * D.q1.y * f2;
   }
+  // step V1: MERGE: zoomed out a shared wall's tube dims (its light is in the inside's tone, above); the minimal sign's tube dims by
+  // what its blob took; a tube held at the pixel limit dims by the width it lost; motors that fail their limits light the tube a little
+  if (lodOn) {
+    var tk = tubeDim * tubeBoost * select(1.0, 1.0 - mergeW, onShared) * mix(1.0, D.lod2.y, 1.0 - wSign);
+    if ((c.motW & 0xffffu) != 0u) {
+      tk *= 1.0 + D.lod.w * (0.3 * mot_flag(c.motW) * (1.0 - lod_k(3.0 * c.r * D.dpr, D.lodL.z)) + 0.25 * mot_cil(c.motW) * (1.0 - lod_k(cpx, D.lodL.w)));
+    }
+    lineCol *= tk;
+  }
   rgb = mix(rgb, lineCol, ring);
   // step C12b: the wall's rim of crust, outside the tube: flat bricks (about lip2.y r long with thin joints), present where this
   // side's wall is (a brick shows when its hash is below the side's cover), amber for a light crust, brown for a heavy one
@@ -868,6 +980,8 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     let fu = fract(u);
     let joint = clamp(min(fu, 1.0 - fu) * bl / aa - 0.4, 0.0, 1.0);
     rimA = (1.0 - cover_in(ein2, aa)) * cover_in(ein - 0.15 * wOff, aa) * joint * select(0.0, 1.0, bh < lq.w);
+    // step V1: bricks are marks on the cell (host limit): below it a flat rim as covered as the wall is
+    if (lodOn) { rimA = mix((1.0 - cover_in(ein2, aa)) * cover_in(ein - 0.15 * wOff, aa) * 0.85 * lq.w, rimA, lod_k(cpx, D.lodL.w)); }
     let ck = mix(D.lipInk[0].rgb, D.lipInk[1].rgb, lq.y) * D.lip2.x;
     rgb = mix(rgb, ck, rimA);
   }
@@ -928,6 +1042,12 @@ fn hm_fibres(x: vec2f, t: vec2f, len: f32, w: f32) -> f32 {
 fn fs_harm(in: VSOut) -> @location(0) vec4f {
   let c = cells[in.id];
   let lp = in.lp;
+  // step V1: the sign ladder and the merge, as fs (src/lod.js)
+  let lodOn = D.lod.x > 0.5;
+  let cpx = 2.0 * c.r * D.dpr;
+  let wFull = lod_k(cpx, 2.5 * D.lodL.z);
+  let wSign = lod_k(cpx, 1.25 * D.lodL.z);
+  let mergeW = select(0.0, (1.0 - wFull) * D.lod.z, lodOn);
   var ein = c.r - length(in.local);
   // (the neon tubes' gap from the wall, times harm4.y: 0 = two neighbours' rims touch, one shared green wall)
   if (in.hh1.w > 0.5) { ein = hex_inside(in.local, in) - D.harm4.y * min(D.hexDraw.y, 0.08 * c.r); }
@@ -946,7 +1066,7 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
   let V = D.hInk[4].rgb;
   // the membrane: this pixel's side, its integrity and its lipid make-up (as fs)
   var sd = vec2f(0.0);
-  if (D.memb.x > 0.5 || D.lip.x > 0.5) { sd = memb_side(in.local, lp, c.r, in); }
+  if (D.memb.x > 0.5 || D.lip.x > 0.5 || lodOn) { sd = memb_side(in.local, lp, c.r, in); }
   let side = min(u32(sd.x), 5u);
   var ig = 1.0;
   if (D.memb.x > 0.5) { ig = clamp(c.integ[side], 0.0, 1.0); }
@@ -961,7 +1081,19 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
     oily = min(2.0 * lq.z, 1.0) * ig;
   }
   let ein2 = ein - wOff;                                     // inside the rim's outer edge (the outline less the wall)
-  let lw = clamp(D.harm.z, 0.5 / D.dpr, 0.3 * c.r);
+  var lw = clamp(D.harm.z, 0.5 / D.dpr, 0.3 * c.r);
+  // step V1: the rim never thins below the pixel limit (it dims by the width it lost); a shared wall's rim dims zoomed out (merge), the
+  // minimal sign's rim by what its inside took; the light lost goes into the inside as a faint green tone (below)
+  var rimK = 1.0;
+  var lostG = 0.0;
+  if (lodOn) {
+    var rimDim = 1.0;
+    if (lw * D.dpr < D.lodL.x) { rimDim = lw * D.dpr / D.lodL.x; lw = D.lodL.x / D.dpr; }
+    var nSh = 0.0;
+    for (var k = 0u; k < 6u; k++) { if (side_shared(c, k)) { nSh += 1.0; } }
+    rimK = rimDim * select(1.0, 1.0 - mergeW, side_shared(c, side)) * mix(1.0, D.lod2.y, 1.0 - wSign);
+    lostG = rimDim * min(1.0, 2.31 * lw / c.r) * ((nSh / 6.0) * mergeW * D.lod3.x / max(D.lod.w, 1e-3) + (1.0 - nSh / 6.0) * (1.0 - D.lod2.y) * (1.0 - wSign));
+  }
   let inner = cover_in(ein2 - lw, aa);                       // 1 inside the rim
   // GREEN: the rim
   // (a thicker membrane gives more signal: the thickness gene against the founders' usual, 0.75 at half of it to 1.15 at twice)
@@ -969,11 +1101,15 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
   let lipid = (D.harm.y + (1.0 - D.harm.y) * ig) * (1.0 + D.harm.w * oily) * thick;
   let ring = (1.0 - inner) * cover_in(ein2, aa);
   // step T1a: zoomed in, the self marker as fine stripes along the green rim (surface immunostaining), as deep as the cell displays it
-  let mk = select(1.0, 1.0 - D.kin.y * clamp(g.mark.w, 0.0, 1.0) * (1.0 - marker_stripe(g, in.local, D.R)), D.kin.y > 0.0);
+  var stp = marker_stripe(g, in.local, D.R);
+  if (lodOn) { stp = mix(0.5, stp, lod_k(D.R * exp(g.mark.y) * D.dpr, D.lodL.y) * lod_k(cpx, D.lodL.w)); }   // (step V1, as fs)
+  var mk = select(1.0, 1.0 - D.kin.y * clamp(g.mark.w, 0.0, 1.0) * (1.0 - stp), D.kin.y > 0.0);
+  if (lodOn && D.kin.y > 0.0) { mk /= 1.0 - 0.5 * D.kin.y * clamp(g.mark.w, 0.0, 1.0); }   // (step V1: the rim keeps its value, as fs)
   // step G0: a torn junction's side (src/glue.js): the rim broken in its middle, until it heals
   let tornH = select(1.0, smoothstep(0.1 * c.r, 0.2 * c.r, abs(sd.y)), jn_torn(c.kind, side) && D.wall.x > 0.5);   // (a break in the rim)
-  var rgb = G * D.harm.x * lipid * ring * mk * tornH;
+  var rgb = G * D.harm.x * lipid * ring * mk * tornH * rimK;
   rgb += G * D.harm2.y * inner;
+  if (lodOn) { rgb += G * D.harm.x * lipid * lostG * D.lod2.w * D.lod.w * inner; }   // (step V1: the merged rims' green, as the inside's tone)
   // the pixel's offset from the centre on screen (a honeycomb cell: local; an ellipse cell: F lp), and the stretch's axis
   let Fd = cell_F(c);
   let pw = select(vec2f(Fd.x * lp.x + Fd.y * lp.y, Fd.y * lp.x + Fd.z * lp.y), in.local, in.hh1.w > 0.5);
@@ -999,7 +1135,9 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
       let h = hmax * sqrt(clamp(rk / max(D.inkSed.w, 1e-3), 0.12, 1.0)) * select(1.0, D.spare5[0].y, k >= 3u);
       let a3 = select(-1.5707963 + f32(k) * 2.0943951, -0.5235988 - f32(k - 3u) * 2.0943951, k >= 3u);
       let p = lp - vec2f(cos(a3), sin(a3)) * (D.ink3.w * c.r);
-      vio += D.harm3.x * exp(-(p.x * p.x + p.y * p.y) / max(0.45 * h * h, 0.2));
+      var gv = exp(-(p.x * p.x + p.y * p.y) / max(0.45 * h * h, 0.2));
+      if (lodOn) { gv = mix(D.lod.w * 0.45 * h * h / max(c.r * c.r, 1e-4), gv, lod_k(1.34 * h * D.dpr, D.lodL.y)); }   // (step V1: grid; their tone)
+      vio += D.harm3.x * gv;
     }
   }
   rgb += V * vio * inner;
@@ -1009,26 +1147,30 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
   let fl = max(0.9 * c.r, 3.0);
   let fw = max(0.13 * c.r, 0.7);
   let fst = D.harm3.y * smoothstep(0.08, 0.35, em);
-  if (fst > 0.0) { org += fst * hm_fibres(pw + sh, t, fl, fw); }
+  // (step V1: fibres and striations are patterns: below the grid limit their average orange)
+  let kfib = lod_k(0.26 * c.r * D.dpr, D.lodL.y);
+  let kstr = lod_k(0.3 * c.r * D.dpr, D.lodL.y);
+  if (fst > 0.0) { org += fst * lod_mix(0.28 * D.lod.w, hm_fibres(pw + sh, t, fl, fw), kfib); }
   if (u32(hj.x) == 6u && hj.y > 0.0 && D.harm3.z > 0.0) {
     let st = 0.5 + 0.5 * cos(TAU * (pw.x * t.x + pw.y * t.y) / max(0.3 * c.r, 1.4));
-    org += D.harm3.z * hj.y * st * st * st * (0.55 + 0.45 * hm_noise(vec2f(t.x * pw.y - t.y * pw.x, 0.0) / fw + sh));
+    org += D.harm3.z * hj.y * lod_mix(0.24 * D.lod.w, st * st * st * (0.55 + 0.45 * hm_noise(vec2f(t.x * pw.y - t.y * pw.x, 0.0) / fw + sh)), kstr);
   }
   if (u32(hj.x) == 5u && hj.y > 0.0 && D.harm3.w > 0.0) {
     let ca = f32(c.seed & 255u) / 255.0 * 3.14159265;
-    org += D.harm3.w * hj.y * hm_fibres(pw + sh, vec2f(cos(ca), sin(ca)), 0.7 * fl, fw);
+    org += D.harm3.w * hj.y * lod_mix(0.28 * D.lod.w, hm_fibres(pw + sh, vec2f(cos(ca), sin(ca)), 0.7 * fl, fw), kfib);
   }
   // step C15b: tar GRANULES as bright orange dots (as starch granules shine in second-harmonic images), as many as the neon look's
   let gzh = unpack4x8unorm(c.sns1).z;
   if (gzh > 0.02) {
     let ng = 1u + u32(gzh * 4.99);
     let gr = max(c.r * (0.055 + 0.07 * gzh), 0.6);
+    let kgh = lod_k(2.0 * c.r * (0.055 + 0.07 * gzh) * D.dpr, D.lodL.y);   // (step V1: grid; their tone)
     for (var q = 0u; q < 5u; q++) {
       if (q >= ng) { break; }
       let hq = f32((c.seed >> (q * 5u + 3u)) & 31u) / 31.0;
       let ang = 0.5236 + f32(q) * 2.3999632 + 0.8 * hq;
       let gp = lp - vec2f(cos(ang), sin(ang)) * (c.r * (0.28 + 0.34 * fract(hq * 7.13 + f32(q) * 0.37)));
-      org += 1.4 * exp(-dot(gp, gp) / (gr * gr));
+      org += 1.4 * lod_mix(D.lod.w * gr * gr / max(c.r * c.r, 1e-4), exp(-dot(gp, gp) / (gr * gr)), kgh);
     }
   }
   rgb += mix(O, Y, 0.3) * org * inner;

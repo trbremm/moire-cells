@@ -21,6 +21,7 @@
 import { ELECTRONS } from './matter.js';
 import { CARBON } from './carbon.js';   // step C15a
 import { JOBS } from './jobs.js';
+import { lod } from './lod.js';   // step V1
 const JOB_WORD = ['warm white', 'lime', 'pink', 'violet', 'cyan', 'amber', 'red'];   // step F0: the jobs' neon inks in words (src/palette.js)
 
 // (step C12d, electrons: tap mode 2 drips minerals, tap mode 3 is a vent; their ids stay)
@@ -172,6 +173,9 @@ export function makeActions(app) {
     { id: 'hum', keys: ['shift+3'], label: 'hum', group: 'look', type: 'toggle', get: () => app.neon.params.hum,
       run: () => `hum ${flip(app.neon.params, 'hum') ? 'on: the tubes wobble a little in brightness, busy cells (battery filling or emptying fast) shine brighter' : 'off: every tube steady'}${app.neon.on ? '' : ' (the neon look is off: E)'}`,
       help: 'tubes brighten and dim a little; busy cells (battery filling or emptying fast) shine brighter (neon look)' },
+    { id: 'lod', keys: [], label: 'level of detail', group: 'look', type: 'toggle', get: () => lod.on,
+      run: () => `level of detail ${flip(lod.params, 'on') ? 'on: small cells drawn as simple lit signs, packed tissue as one lit mass, fine patterns as tone (step V1)' : 'off: every detail at every zoom (as before step V1)'}`,
+      help: 'step V1: each detail drawn only while it is big enough on screen; what is too small becomes tone, packed cells merge into one lit mass. Off: everything at every zoom (?lod=0)' },
     { id: 'machinery', keys: ['shift+4'], label: 'show the machinery', group: 'look', type: 'toggle', get: () => machinery(),
       run: () => setMachinery(!machinery()),
       help: 'off (clean, the default): the cells, the materials and the light. On: every diagnostic layer at once: the fields\' dots, the lattice inside the cells, the substances as a halftone on the lattice, the marks of steps 6 to 8' },

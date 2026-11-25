@@ -49,6 +49,7 @@
 //               direction the light comes from: 0 right, 90 below, 180 left, 270 above); ?day=0 no day / night cycle
 //               (Shift+D); ?hour=h the hour of the day at the start (12 = noon); ?clouds=0 no clouds (full field);
 //               ?power=x the light's power (default 33: per 100 px^2 at the reference R, i.e. 13.9 per R^2; src/dish.js)
+//   ?lod=0      step V1: no level of detail from the band limits (src/lod.js): every feature drawn at every zoom, as before step V1
 //   ?neon=0     step C6n: start with the flat look (key E); ?halo=off|low|medium|high (Shift+1); ?trails=0 (Shift+2);
 //               ?hum=0 (Shift+3); ?cheap=0|1 the phone's cheaper neon path off / on (default: on touch screens and small
 //               windows); ?machinery=1 start with every diagnostic layer shown (Shift+4; default: the clean view)
@@ -284,6 +285,7 @@ import { applyPreset, layoutFromParams, applyDiversity, PRESETS, SPREAD_SQUEEZE 
 import { Tissues, useDesignFounder, DESIGNS } from './tissues.js';
 import { Organ, organCells, organGenomes, organGroove, ORGAN_KINDS, LIMB_IDS } from './organ.js';   // step L1 (step T2: the limb)
 import { Warfare } from './warfare.js';
+import { lod } from './lod.js';   // step V1: LOD from band limits (drawing only; ?lod=0 the drawing as before)
 import { Flow } from './flow.js';   // step N2: substances that flow (gusts, heat carried, scour, patchy springs, the chemotaxis gene)
 import { CB_PHOTO, makeRng } from './genome.js';   // step C15d: founders that photosynthesise fix carbon (?cbphoto=0)
 
@@ -307,6 +309,7 @@ let lastBud = null;   // the budget that limited the last frame (adapted at the 
 
 const params = new URLSearchParams(location.search);
 const flag = (name) => params.has(name) && params.get(name) !== '0';
+if (params.has('lod')) lod.params.on = flag('lod');   // step V1
 // app (src/culture.js): ?preset=name fills in its URL options (the URL's own win) before anything reads them
 const PRESET = applyPreset(params);
 
@@ -965,7 +968,8 @@ async function boot() {
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
     kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, dup: cells.dup, mutation: cells.mutation, perfusion, glue: cells.glue, stir: water.stir, obstacles,
     spindle: cells.spindle, carbon: matter.carbon, carbonCells: cells.eat.carbon, motors: cells.motors, flow, senses: cells.senses, folding: cells.folding, signals: cells.signals,
-    contract: cells.contract, tendrils: cells.tendrils };
+    contract: cells.contract, tendrils: cells.tendrils, lod };
+  lod.app = window.moire;   // step V1: LOD from band limits (drawing only; moire.lod.table())
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.organ = cells.organ = new Organ(window.moire);   // step L1: the tissue lab's organ (lay out, poke, twitch, measure)
   if (ORGAN) Object.assign(cells.organ, { kind: ORGAN.kind, opts: ORGAN.opts, angle: ORGAN.opts.angle, n0: nCells });

@@ -31,6 +31,7 @@
 // drawing's (Draw kin), reads the census back and gives the TISSUES panel line, the overlay lines and moire.sample()'s kin.*.
 
 import { fmt } from './heat.js';
+import { lod } from './lod.js';   // step V1
 
 const LG_T1 = 31488;   // heat_common.wgsl: 32 snapshot numbers x 16 slots, then 16 counters x 16 slots
 const TZ = ['n', 'free', 'b0', 'b1', 'b2', 'b3', 'bat0', 'bat1', 'bat2', 'bat3', 'int0', 'int1', 'int2', 'int3', 'tin0', 'tin1', 'tin2', 'tin3',
@@ -103,7 +104,9 @@ export class Kin {
   writeDraw(a, o, L, zoom) {
     const K = this.look;
     a[o] = L.view === 6 ? 1 : 0;
-    a[o + 1] = K.texture && zoom >= K.texZoom - 1e-6 ? Math.max(0, Math.min(1, K.texDepth)) : 0;
+    // (step V1: with the LOD on, the stripes are always passed and the shader keeps them as far as their period clears the grid limit;
+    // ?lod=0: from texZoom on, as before)
+    a[o + 1] = K.texture && (lod.on || zoom >= K.texZoom - 1e-6) ? Math.max(0, Math.min(1, K.texDepth)) : 0;
     a[o + 2] = Math.max(0, K.viewFill); a[o + 3] = Math.max(0, Math.min(1.5, K.viewSat));
   }
 

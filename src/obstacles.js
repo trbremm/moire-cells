@@ -40,6 +40,7 @@ import { camera } from './camera.js';
 import { pal } from './palette.js';
 import { readGrid, readBuffer } from './snapshot.js';
 import { CELL_FLOATS } from './cells.js';
+import { lod, LOD_URL, LOD_LIMITS } from './lod.js';   // step V1: LOD from band limits (drawing only)
 
 const DRAW_BYTES = 176;          // struct ODraw (obstacles_draw.wgsl)
 const BLOCK = { mask: 5, sdA: 6, sdS: 7, thru: 8 };   // blocks of the water's (src/water.js: 10 in all)
@@ -129,7 +130,7 @@ export class Obstacles {
 
   async init() {
     const d = this.device;
-    const mod = await loadShader(d, 'src/shaders/obstacles_draw.wgsl');
+    const mod = await loadShader(d, 'src/shaders/obstacles_draw.wgsl', { prefixes: [{ name: LOD_URL, text: await (await fetch(LOD_URL, { cache: 'no-cache' })).text() }] });   // (step V1: + the shared fade)
     const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
     this.drawPipe = d.createRenderPipeline({
       label: 'obstacles draw', layout: 'auto',
@@ -649,7 +650,7 @@ export class Obstacles {
       else if (P.type === 'circle') { f[32] = P.x; f[33] = P.y; f[34] = P.r; }
       else { f[32] = P.x0; f[33] = P.y0; f[34] = P.x1; f[35] = P.y1; f[36] = P.w / 2; }
     }
-    f[40] = this.W; f[41] = this.H; f[42] = 0; f[43] = 0;
+    f[40] = this.W; f[41] = this.H; f[42] = lod.on ? Math.max(0.01, lod.params.spread) : 0; f[43] = LOD_LIMITS.grid;   // (step V1: z the fade's spread, 0 = off; w the grid limit)
     this.device.queue.writeBuffer(this.dBuf, 0, this.dAB);
     pass.setPipeline(this.drawPipe);
     pass.setBindGroup(0, this.bg);

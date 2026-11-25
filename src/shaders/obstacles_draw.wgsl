@@ -25,7 +25,7 @@ struct ODraw {
   prev: vec4f,          // the preview: x type (0 none, 1 rect, 2 circle, 3 capsule), y spare, zw spare
   pa: vec4f,            // rect: x0 y0 x1 y1; circle: x y r; capsule: x0 y0 x1 y1
   pb: vec4f,            // capsule: half width
-  dish: vec4f,          // W, H (CSS px)
+  dish: vec4f,          // W, H (CSS px); z step V1: the LOD fade's spread (0 = off, ?lod=0), w the grid limit (device px)
 };
 
 @group(0) @binding(0) var<uniform> D: ODraw;
@@ -87,7 +87,8 @@ fn fs(@builtin(position) fc: vec4f) -> @location(0) vec4f {
     if (por > 0.0) {
       // pores: a fine square lattice of dim dots (about 0.6 CSS px each, 2 px apart)
       let q = fract(x / 2.0) - 0.5;
-      let dot_ = 1.0 - smoothstep(0.18, 0.32, length(q));
+      // (step V1: pores below the grid limit: their average, an even lighter fill)
+      let dot_ = lod_mix(0.2, 1.0 - smoothstep(0.18, 0.32, length(q)), lod_keep(2.0 * D.dpr, D.dish.w, D.dish.z, select(0.0, 1.0, D.dish.z > 0.0)));
       let pa = por * D.pfill.w;
       fcol += pa * (D.pfill.rgb * (0.45 + 0.9 * dot_));
       fa += pa;
@@ -99,7 +100,7 @@ fn fs(@builtin(position) fc: vec4f) -> @location(0) vec4f {
     let eS = 1.0 - smoothstep(0.5 * lw - 0.5, 0.5 * lw + 0.5, abs(devS));
     let eA = 1.0 - smoothstep(0.5 * lw - 0.5, 0.5 * lw + 0.5, abs(devA));
     // the porous edge: where the cell-stopping edge is not also a solid one, dashed along its length
-    let dash = step(0.5, fract((x.x + x.y) / 3.0));
+    let dash = lod_mix(0.5, step(0.5, fract((x.x + x.y) / 3.0)), lod_keep(2.1 * D.dpr, D.dish.w, D.dish.z, select(0.0, 1.0, D.dish.z > 0.0)));   // (step V1)
     let ePor = eA * (1.0 - inS) * (1.0 - eS) * dash;
     let core = 1.0 - smoothstep(0.0, 0.6, abs(devS));
     var tube = D.ink.rgb * eS * D.ink.w;

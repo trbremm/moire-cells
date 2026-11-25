@@ -10,7 +10,7 @@
   "src/cells.js": "97fa64b8cb",
   "src/charge.js": "707a20cce0",
   "src/contract.js": "0b5a08f88c",
-  "src/culture.js": "11029a1bcd",
+  "src/culture.js": "a39e9a2981",
   "src/dipole.js": "3f19b668bf",
   "src/dish.js": "298d736dd4",
   "src/division.js": "ace4d3c3bf",
@@ -30,10 +30,12 @@
   "src/hardlight.js": "4bd7bb42b5",
   "src/harmonic.js": "b65eef24fe",
   "src/heat.js": "3ffc4403eb",
+  "src/home.js": "e0680ab286",
   "src/ions.js": "0eabb725c4",
   "src/jobs.js": "2ab4faee1a",
   "src/kin.js": "430d42c951",
   "src/lab.js": "ff7fa334b1",
+  "src/labs.js": "26811347b0",
   "src/landscape.js": "ca1a61b82e",
   "src/light.js": "7c0160f86b",
   "src/lipids.js": "0b4d748ec7",
@@ -62,7 +64,7 @@
   "src/tendrils.js": "d91595d071",
   "src/terrain.js": "07210d72d5",
   "src/tissues.js": "e6f57ab5b8",
-  "src/toy.js": "ba6319cc2b",
+  "src/toy.js": "c278290502",
   "src/ui.js": "83b9a56011",
   "src/vents.js": "9778fa25c3",
   "src/walls.js": "957c767a70",
@@ -72,5 +74,5 @@
   "src/whole.js": "370560f882",
   "src/zoo.js": "e46a2510c2"
  },
- "v": "408e7303c5"
+ "v": "2ed9aedf3f"
 }

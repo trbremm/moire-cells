@@ -492,8 +492,9 @@ export class Inspect {
   async survey(topN = 12) {
     if (!this.ready) return null;
     const C = this.cells, n = this.n, d = this.device;
-    const [cab, iab] = await Promise.all([readBuffer(d, C.cellBuf, 0, n * CELL_BYTES), readBuffer(d, this.infoBuf, 0, n * IW * 4)]);
-    const f = new Float32Array(cab), u = new Uint32Array(cab), inf = new Uint32Array(iab), T = this.tree, now = this.time;
+    const [cab, iab, rab] = await Promise.all([readBuffer(d, C.cellBuf, 0, n * CELL_BYTES), readBuffer(d, this.infoBuf, 0, n * IW * 4),
+      readBuffer(d, C.eat.ranBuf, 0, n * RAN_W * 4)]);
+    const f = new Float32Array(cab), u = new Uint32Array(cab), inf = new Uint32Array(iab), ran = new Uint32Array(rab), T = this.tree, now = this.time;
     const rows = [];
     for (let i = 0; i < n; i++) {
       const o = i * CELL_FLOATS;
@@ -501,8 +502,12 @@ export class Inspect {
       const id = inf[i * IW];
       if (!T.known(id)) continue;
       const D = T.descendants(id);
+      let nb = 0;
+      for (let w = 0; w < 3; w++) { const v = u[o + 60 + w]; if ((v & 0xffff) !== 0xffff) nb++; if ((v >>> 16) !== 0xffff) nb++; }
+      const a = Math.max(1e-3, now - T.born[id]);
       rows.push({ slot: i, id, x: f[o], y: f[o + 1], bat: f[o + 16], r: f[o + 4], age: now - T.born[id], kids: T.kids[id], live: D.live.length,
-        deep: D.deep, how: HOW[T.how[id]], gen: T.line(id).length - 1 });
+        deep: D.deep, how: HOW[T.how[id]], gen: T.line(id).length - 1, light: (u[o + 86] & 255) / 255, nb,
+        gain: ran[i * RAN_W + 5] / 65536 / a, paid: ran[i * RAN_W + 6] / 65536 / a });   // (energy per s over its life, into / out of the battery by engines)
     }
     const corr = (a, b) => {
       const m = rows.length;
@@ -515,8 +520,11 @@ export class Inspect {
     const top = [...rows].sort((a, b) => b.live - a.live).slice(0, topN);
     const rich = rows.filter((r) => r.bat >= 0.9), poor = rows.filter((r) => r.bat < 0.5);
     const mean = (a, k) => (a.length ? a.reduce((s, r) => s + r[k], 0) / a.length : null);
+    const mean2 = (a, k) => (a.length ? a.reduce((s, r) => s + r[k], 0) / a.length : null);
+    const grp = (a) => ({ n: a.length, age: mean2(a, 'age'), kids: mean2(a, 'kids'), live: mean2(a, 'live'), light: mean2(a, 'light'), nb: mean2(a, 'nb'),
+      gain: mean2(a, 'gain'), paid: mean2(a, 'paid'), r: mean2(a, 'r') });
     return {
-      n: rows.length, since: T.since, now, lost: T.lost,
+      n: rows.length, since: T.since, now, lost: T.lost, groups: { rich: grp(rich), poor: grp(poor), all: grp(rows) },
       corr: { batAge: corr((r) => r.bat, (r) => r.age), batKids: corr((r) => r.bat, (r) => r.kids), batLive: corr((r) => r.bat, (r) => Math.log1p(r.live)) },
       rich: { n: rich.length, age: mean(rich, 'age'), kids: mean(rich, 'kids'), live: mean(rich, 'live') },
       poor: { n: poor.length, age: mean(poor, 'age'), kids: mean(poor, 'kids'), live: mean(poor, 'live') },

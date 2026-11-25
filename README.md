@@ -9814,11 +9814,132 @@ the engine counters in `cell_eat.wgsl` / `cell_carbon.wgsl` (`ran_add`, binding 
 - `?inspect=0`: none of it (no pass, no read-back, no card; the engine counters still count, unread). The tree starts with the page: a
   snapshot loaded or a new culture starts every cell as a founder (snapshots carry no ids; nothing in them changed).
 
+## Step SP1: speed
+
+MAX at 2000 cells had fallen from about x16 early on to x7.4 (C12f) and about x2.7 now, and the harmonic look was only 5 to 10 % faster
+than neon, so the simulation, not the drawing, was the cost. This step first MEASURES where the GPU's time goes, pass by pass, then
+changes only what the table pointed at. Nothing the dish does changes (the one behaviour difference, the empty signal grid's skip,
+delays a first signal by a read-back and is behind its switch).
+
+### Measuring: `moire.speed.passes()`
+
+- `src/speed.js`. For a few frames (default 30) the frame's command encoder is INSTRUMENTED: every compute pass a layer begins is
+  handed out as a stand-in that opens one real pass per run of dispatches with the same pipeline (so the eat pass's dump, split, plan
+  and eat, or the matter's spread, react and carbon, are timed apart), with GPU timestamps at its beginning and end. The same
+  dispatches run in the same order with the same bindings; only the pass boundaries move. Render passes get a timestamp pair each.
+- The table (console, `console.table`): one row per pass / pipeline with GPU ms per tick, ms per frame, runs per frame and share of the
+  timed total, plus the same in groups (cell step, cell eat, matter, heat spread, signal grid, drawing, ...); the result object also
+  has the span from the frame's first timestamp to its last. The Developer panel has a button "measure speed per pass" (summary under
+  it); the F overlay shows the last summary.
+- Needs the browser's `timestamp-query` feature, asked for at start where offered (`src/gpu.js`; `?timestamps=0` asks for nothing).
+  Chrome and Firefox (Windows, this machine) both offer it. Chrome rounds timestamps to 0.1 ms unless its WebGPU developer features
+  are on (`tools/speed.py` starts Chrome with `--enable-webgpu-developer-features`); the rounding averages out over the hundreds of
+  passes a table times. Without the feature: the frame's GPU time only (`moire.speed.passes()`), or each pass left out in turn
+  (`{ skip: true }`, which CHANGES the dish: a throwaway dish only).
+- The start: `moire.stats.boot` (each part of the start, ms since the page began loading, to the first frame) and `moire.stats.pipes`
+  (each pipeline's compile time).
+- `tools/speed.py`: headless Chrome, for each configuration opens `?seed=3&speed=max&ui=0&cells=N&look=L`, records the start, takes
+  the per-pass table at t0 (40 s; 10 000 cells 20 s), then the speed reached from t0 + 5 s to t1 (150 s; 60 s), from the page's own
+  clocks; `--root before=folder --root after=folder` runs two exported trees interleaved. Results as JSON
+  (`experiments/runs/sp1/final.json`, not committed).
+
+### What the table said (before; default dish, seed 3, headless Chrome, 1280 x 800)
+
+GPU ms per TICK at t0, mean of two runs (the drawing and the other once-a-frame passes are per frame, so their per-tick share depends on
+how many ticks a frame carries: 1 to 2 before):
+
+| pass group | 2000 neon | 2000 harmonic | 10 000 neon | 10 000 harmonic |
+|---|---|---|---|---|
+| cell step (one dispatch, one thread per cell) | 2.50 | 2.45 | 9.06 | 9.11 |
+| drawing (per frame) | 2.67 / frame | 1.54 / frame | 5.59 / frame | 3.70 / frame |
+| matter (spread, react, carbon, oil, tar) | 1.05 | 1.05 | 2.78 | 2.77 |
+| cell eat (dump, split, plan, eat; its ledger) | 0.75 | 0.68 | 5.64 | 5.59 |
+| heat spread | 0.31 | 0.31 | 0.76 | 0.76 |
+| signal grid (nobody signals in this dish) | 0.23 | 0.22 | 0.74 | 0.74 |
+| gene network + hearing | 0.09 | 0.09 | 0.70 | 0.70 |
+| stirred water, matter paint, water surface, ledgers (per frame) | 0.48 | 0.31 | 1.82 | 1.79 |
+| cell grid (count, scan, scatter) | 0.10 | 0.09 | 0.49 | 0.48 |
+| tendrils (no carriers yet) | 0.08 | 0.10 | 0.44 | 0.42 |
+
+Also found: (1) the START took ~87 s from loading to the first frame on a fresh profile, almost all of it compiling the cells'
+pipelines one after the other (the eat pass's `eat` entry point alone ~40 s, the step ~30 s); (2) at MAX the GPU waited for the screen:
+with frames of 20 ms the budget settled at 1 to 4 ticks a frame and the frame's span was 9 to 13 ms of GPU work; (3) the books' read-back
+(sums over the grid and the cells, a 190 kB copy) ran on nearly every frame (~2 ms a frame at 10 000 cells); (4) the signal grid was
+spread every tick in dishes where nobody signals; (5) census read-backs on timers cost nothing measurable (their passes never reach the
+table's first 45 rows).
+
+### What changed (each its own switch; off = today)
+
+| change | switch (today's behaviour) | what it gave |
+|---|---|---|
+| Pipelines made with the ASYNC API, a module's all at once and the layers at once (the browser compiles them side by side) | `?asyncpipes=0` | start ~87 s -> ~44 s (Chrome); Firefox ~59 s either way |
+| CellCore (the neighbours' lean copy) without q, qNet, efield, which no neighbour read: 120 -> 104 bytes | none (no behaviour) | cell step -5 % (2000) / -6 % (10 000) |
+| An EMPTY signal grid is not spread (no energy in the water, nothing released or puffed in the last 3 read-backs) | `?sigidle=0` | signal grid 0.74 -> 0.004 ms/tick at 10 000; at 2000 cells mutants already signalled by 40 s in some runs |
+| The books' read-back at most every 100 ms real time (or 240 ticks), not every frame (its counters are deltas; samples and snapshots still flush one at the frozen state) | `?ledgerms=0` | the eat ledger ran on every frame (2.14 ms each at 10 000 cells), now on 1 frame in 3 to 5 (0.50..0.65 ms per frame on average); matter and heat ledgers 0.46 -> 0.12 ms per frame |
+| MAX aims at frames of 33 ms (about 30 a second, as 16x and 32x do): more ticks per drawing, less waiting for the screen | `?maxframe=20` | 2000 cells, sim 15..60 s: x2.50 (20 ms), x3.09 (33), x3.19 (50 ms) |
+
+### Speed before / after (MAX, x real time; headless Chrome, 1280 x 800, default dish, seed 3, runs interleaved, two each)
+
+| | 2000 neon | 2000 harmonic | 10 000 neon | 10 000 harmonic |
+|---|---|---|---|---|
+| before (main 3c96c3f, + the measuring only) | x2.66, x2.68 | x2.84, x2.94 | x0.626, x0.620 | x0.667, x0.659 |
+| after | x3.21, x3.22 | x3.36, x3.40 | x0.781, x0.769 | x0.821, x0.830 |
+| gain | 1.20 | 1.17 | 1.24 | 1.25 |
+| start, load to first frame | 86.8 / 43.9 s | 86.5 / 44.5 s | 88.1 / 44.2 s | 87.6 / 44.1 s |
+
+(2000 cells: speed from 45 to 150 s, the cells fall from ~1650 to ~450 on both sides; 10 000: 25 to 60 s, ~9050 to ~8000.) The GPU was
+free of other programs during these runs (it was shared at 100 % by another program during the first measurements, which then gave
+cell step 1.4..2.5 ms for the same dish: per-pass numbers taken on a shared GPU are noisy, shares less so). Both runs of each side agree
+within 1 to 3 %. In headed Firefox (one run each, the first ~40 s after start): before reached sim 12.8 s, after 20.1 s; the start is
+~59 s either way (Firefox seems to compile async pipelines one after another).
+
+After, per tick at t0 (same table; the frame now carries 1.6 to 3.8 ticks): cell step 2.37 / 2.32 / 8.53 / 8.30 ms, cell eat 0.58 /
+0.56 / 3.89 / 3.72, matter 1.05 / 1.06 / 2.77 / 2.77, heat 0.31 / 0.31 / 0.76 / 0.76, signal grid 0.14 / 0.22 / 0.004 / 0.002, drawing per
+frame unchanged (2.67 / 1.52 / 5.58 / 3.71 ms).
+
+### What did not help, or was not done
+
+- BAKING SWITCHES INTO THE SHADERS: a test with the step's off-by-default features (exclusion, partner fields, relay, dipoles) written as
+  constants gave cell step 8.38 against 8.74 ms at 10 000 cells (~4 %, one run, within noise), and would need a ~30 s recompile at every
+  rules-panel toggle. Not built. Most features are on by default, so little would compile out.
+- SLOW SYSTEMS EVERY N TICKS: only the signal grid's exact idle skip and the ledger. The candidates the table shows: the matter's reactions
+  (react + carbon + tar ~0.5 ms/tick at 2000, ~10 %) could run every 2nd tick with 2 dt (the light caught per pixel x 2, the books exact);
+  the spreads cannot (their substeps are set by stability, so 2 dt needs 2 substeps); the gene network is 1.5 to 3 %. Not done in this
+  step.
+- SPLITTING THE EAT FUNCTION: its `eat` entry point is now the start's longest compile (~40 s); splitting it into passes would mean moving
+  its locals into buffers: not done.
+- The cell step is one thread per cell running ~2000 lines with ~1 kB of genome and a ~400-line neighbour loop; at 2000 cells it is
+  partly latency-bound (2000 threads cannot fill the GPU), at 10 000 throughput-bound. A real gain there needs a restructure (e.g. a
+  separate neighbour pass), not a switch.
+- The census read-backs: not worth a change (see above).
+
+### Checked
+
+- Guards (`experiments/conditions/sp1/guard.json`, `tools/experiment.py`, default dish seeds 3 and 7, two runs a side, cells alive every
+  30 s to 180 s): before s3 1978/1755/1562/1226/766/449/228 and 1978/1755/1555/1256/793/499/314, after 1978/1754/1560/1225/763/453/245
+  and 1978/1748/1559/1238/769/449/258; before s7 1976/1789/1629/1457/1012/498/263 and 1976/1785/1630/1458/1027/492/262, after
+  1976/1788/1634/1460/1020/477/251 and 1976/1798/1635/1469/1037/513/269. Atoms, charge and carbon rounding 0 in every sample on both
+  sides; energy rounding at most 0.018..0.028 before, 0.020..0.026 after.
+- All switches off (`?asyncpipes=0&sigidle=0&ledgerms=0&maxframe=20`): start 87.7 s, frame budget 20 ms, the signal grid spread, loads and
+  runs.
+- The old snapshot (`?snap=experiments/runs/c10/c10-evo-on_s3/snapshots/end.json`): loads and runs; its energy rounding +59.7 is the same on
+  the old build (+59.7).
+- Headed Firefox: runs, timestamps offered, the per-pass table works, no console errors. Phone size (Chrome 390 x 844): runs, the toy front
+  as before. No console errors in Chrome either.
+
+### Files
+
+`src/speed.js` (the measuring), `tools/speed.py` (the headless speed runs), `src/gpu.js` (`computePipe`, `renderPipe`, `allPipes`, the
+timestamp feature), `src/main.js` (the hooks, `?maxframe`, `?ledgerms`, the layers made at once), `src/heat.js` (the ledger's rate),
+`src/signals.js` (the idle grid).
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start; the start: the home screen (no options) or the dish
 - `src/home.js`: step H2, the home screen (culture dish or tissue lab, the faint moire behind); `src/labs.js`: the tissue lab's pieces
   (names, lines, hints, glyphs; read by the home screen and the toy front)
+- `src/speed.js`: step SP1, `moire.speed.passes()` (GPU time per pass and pipeline, by timestamp queries; a fallback without them);
+  `tools/speed.py`: headless speed runs (start, per-pass table, MAX speed; before/after folders interleaved)
 - `src/inspect.js`: step I1, the cell inspector (the family tree from `src/shaders/inspect.wgsl`, the read-backs, follow, survey, the
   overlay `src/shaders/inspect_draw.wgsl`); `src/inspectcard.js`: its card
 - `src/tendrils.js`: step T2, tendrils and bone (switches, knobs, the tendril pass's setup, provision, census, the TENDRILS panel line,

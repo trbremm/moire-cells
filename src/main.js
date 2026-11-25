@@ -554,6 +554,7 @@ async function boot() {
     if (params.has('clock')) cells.partner.chMode = flag('clock') ? 1 : 0;
     if (params.has('states')) cells.excl.states = Math.max(2, Math.min(4, Number(params.get('states')) || 2));
     if (params.has('heat')) cells.heat.params.kicks = flag('heat');
+    { const v = Number(params.get('ledgerms')); if (params.has('ledgerms') && Number.isFinite(v) && v >= 0) cells.heat.params.ledgerMs = v; }   // step SP1
     if (params.has('simmer')) background.heatOn = flag('simmer');
     if (params.has('show')) { const i = SHOWS.indexOf(params.get('show')); if (i >= 0) matter.params.show = i; }
     if (params.has('chem')) matter.chem.on = flag('chem');   // step C4: ?chem=0 starts with the chemistry off (Shift+M)

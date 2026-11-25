@@ -76,7 +76,10 @@ export class Heat {
       grab: 0.00125,    // share of the heat under a cell (its 3 x 3 pixels) that one kick takes on average, per tick
       kickMax: 2,       // largest kick, R / s per axis
       pxR: 0.5,         // heat pixel size in units of the cells' radius R
+      ledgerMs: 100,    // step SP1: the books' read-back at most every this many ms of real time (or 240 ticks), not every frame: its sums
+                        // over the grid and the cells (the eat ledger costs ~2 ms at 10 000 cells) and a 190 kB copy (?ledgerms=0: every frame)
     };
+    this.lastLedger = -1e9;
     this.hw = 0; this.hh = 0; this.n = 0; this.px = 1; this.R = 1;
     this.cur = 0;           // which heat copy is current
     this.nSub = 1; this.k = 0;
@@ -336,9 +339,13 @@ export class Heat {
   endFrame(encoder, ticks, frame) {
     this.cur ^= (ticks * this.nSub) & 1;
     this.ticksSince += ticks;
+    // (step SP1: not more often than params.ledgerMs; the counters are deltas, so they simply add up until the next one)
+    const nowMs = performance.now();
+    if (nowMs - this.lastLedger < this.params.ledgerMs && this.ticksSince < 240) return;
     const rb = this.reads.find((r) => !r.busy);
     if (!rb) return;
     rb.busy = true;
+    this.lastLedger = nowMs;
     encoder.clearBuffer(this.buffer, LG.HEAT[0] * 4, 256 * 4);           // the two snapshots (64-bit)
     const pass = encoder.beginComputePass({ label: 'heat ledger' });
     pass.setBindGroup(0, this.bg, [HT_LEDGER * HT_SLOT]);

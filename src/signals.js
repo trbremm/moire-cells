@@ -74,6 +74,8 @@ export class Signals {
       tauFast: 0.3,       // s (?taufast=)
       null: false,        // the NEUTRAL control (?signalnull=1): heard at a random place, the taste does not steer
       mutate: true,       // the genes mutate at births (?sigmut=0)
+      idle: true,         // step SP1: an EMPTY grid is not spread (no energy in the water, nothing released or puffed in the last 3 read-backs; the
+                          // first release after that waits a read-back or two, a few frames, before it spreads and fades) (?sigidle=0: spread always)
       censusEvery: 5,     // s of simulated time between the census's read-backs (0: never) (?sigcensus=)
       waveWindow: 4,      // s: the census's wave detector looks at cells that began to fire this recently
       puffAmount: 0.4,    // the pipette: energy per puff (booked as energy in)
@@ -99,6 +101,7 @@ export class Signals {
     this.census = null;
     this.busy = false;
     this.lastAt = -1e9;
+    this.idleN = 0;            // step SP1: read-backs in a row that found the grid empty and nothing released or puffed
   }
 
   async init(device) {
@@ -224,6 +227,8 @@ export class Signals {
     u[4] = this.base(); u[5] = this.maskOffset(); u[6] = this.cur; u[7] = 0;
     f[8] = this.k; f[9] = 1 - Math.exp(-dt / Math.max(0.05, p.life)); f[10] = H.px; f[11] = 0;
     const pf = this.puffs.shift();
+    if (pf) this.idleN = 0;
+    this.idle = !!(p.idle && this.idleN >= 3);   // step SP1: this frame's ticks leave the empty grid alone (copy 0 stays current: nSub is even)
     if (pf) {
       const r = Math.max(0.5, pf.r) * H.R, npx = Math.max(1, Math.PI * r * r / (H.px * H.px));
       f[12] = pf.x; f[13] = pf.y; f[14] = r; f[15] = pf.e * HEAT_SCALE / npx;
@@ -259,6 +264,7 @@ export class Signals {
   /** Tick t's substeps (after the cells eat: their releases are in copy 0; before the heat spreads: the fade's heat is in its delta). */
   encodeTick(encoder, t) {
     if (!this.active) return;
+    if (this.idle) return;   // step SP1: an empty grid (see params.idle)
     const H = this.heat, pass = encoder.beginComputePass({ label: 'signal spread' });
     pass.setPipeline(this.pipes.spread);
     const bg = this.bindGroup(), wx = Math.ceil(H.hw / 8), wy = Math.ceil(H.hh / 8);
@@ -314,6 +320,10 @@ export class Signals {
     const h0 = H[0], dt = rec.time - h0[0], last = H[H.length - 1];
     const rate = (k) => (dt > 0.05 ? (last[k] - h0[k]) / dt : 0);
     this.ledger = { time: rec.time, dish: wide(LG_SIG), puff: T.puff, rate: { decay: rate(1), puff: rate(2), made: rate(3), junc: rate(4) } };
+    // (step SP1: the grid is idle while it holds nothing and nothing came in: exact integer words, all zero)
+    let quiet = true;
+    for (const a of [LG_SIG, LG_SIG + 64, LG_SIG + 256, LG_SIG + 320, LG_SIG + 384]) for (let k = a; k < a + 64; k++) if (w[k] !== 0) quiet = false;
+    this.idleN = quiet ? this.idleN + 1 : 0;
   }
 
   // ---------------------------------------------------------------- the cells' words

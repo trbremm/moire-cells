@@ -1,0 +1,379 @@
+{
+ "batch": "t2-limb",
+ "runs": [
+  {
+   "name": "t2-limb-twitch_s3",
+   "description": "the limb lab: settle 20 s, poke the nerve's free end and the muscle's end, follow 20 s",
+   "query": {
+    "tissue": "limb",
+    "seed": 3
+   },
+   "duration": 40,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 5,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 10,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 15,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 19.9,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 20,
+     "js": "return JSON.stringify(await moire.organ.poke())"
+    },
+    {
+     "t": 21,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 23,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 25,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 27,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 29,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 31,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 33,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 35,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 37,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 39,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    }
+   ],
+   "shots": [
+    {
+     "t": 19.8,
+     "name": "rest",
+     "crop": [
+      300,
+      170,
+      680,
+      460
+     ],
+     "scale": 2
+    },
+    {
+     "t": 30,
+     "name": "flexed",
+     "crop": [
+      300,
+      170,
+      680,
+      460
+     ],
+     "scale": 2
+    }
+   ]
+  },
+  {
+   "name": "t2-limb-control_s3",
+   "description": "the limb lab, no poke: the joint's creep by itself",
+   "query": {
+    "tissue": "limb",
+    "seed": 3
+   },
+   "duration": 40,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 5,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 10,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 15,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 19.9,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 21,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 23,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 25,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 27,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 29,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 31,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 33,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 35,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 37,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 39,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    }
+   ]
+  },
+  {
+   "name": "t2-limb-twitch_s7",
+   "description": "the limb lab: settle 20 s, poke the nerve's free end and the muscle's end, follow 20 s",
+   "query": {
+    "tissue": "limb",
+    "seed": 7
+   },
+   "duration": 40,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 5,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 10,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 15,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 19.9,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 20,
+     "js": "return JSON.stringify(await moire.organ.poke())"
+    },
+    {
+     "t": 21,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 23,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 25,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 27,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 29,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 31,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 33,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 35,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 37,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 39,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    }
+   ]
+  },
+  {
+   "name": "t2-limb-control_s7",
+   "description": "the limb lab, no poke: the joint's creep by itself",
+   "query": {
+    "tissue": "limb",
+    "seed": 7
+   },
+   "duration": 40,
+   "sample_every": 10,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 5,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 10,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 15,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 19.9,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 21,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 23,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 25,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 27,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 29,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 31,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 33,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 35,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 37,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    },
+    {
+     "t": 39,
+     "js": "const c=await moire.organ.measure();const j=c.joint||{};return JSON.stringify({t:+c.time.toFixed(1),bend:+(j.bend||0).toFixed(1),ends:+c.ends.toFixed(2),fireM:c.firing.muscle,fireN:c.firing.nerve,ten:+(j.tension||0).toFixed(2),tmax:+(j.maxTension||0).toFixed(2),grip:j.gripping,lig:j.ligaments,anch:j.anchorsHeld,torn:c.junctions.torn,alive:c.cells.all})"
+    }
+   ]
+  },
+  {
+   "name": "t2-limb-clip_s3",
+   "description": "the limb lab: a clip of the twitch (poke at 20 s)",
+   "query": {
+    "tissue": "limb",
+    "seed": 3
+   },
+   "duration": 34,
+   "sample_every": 0,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 20,
+     "js": "return JSON.stringify(await moire.organ.poke())"
+    }
+   ],
+   "clips": [
+    {
+     "t": 20,
+     "until": 34,
+     "speed": 2
+    }
+   ]
+  },
+  {
+   "name": "t2-limb-harmonic_s3",
+   "description": "the limb lab in the harmonic look: rest and flexed",
+   "query": {
+    "tissue": "limb",
+    "seed": 3,
+    "look": "harmonic"
+   },
+   "duration": 31,
+   "sample_every": 0,
+   "stall": 300,
+   "evals": [
+    {
+     "t": 20,
+     "js": "return JSON.stringify(await moire.organ.poke())"
+    }
+   ],
+   "shots": [
+    {
+     "t": 19.8,
+     "name": "rest",
+     "crop": [
+      300,
+      170,
+      680,
+      460
+     ],
+     "scale": 2
+    },
+    {
+     "t": 30.5,
+     "name": "flexed",
+     "crop": [
+      300,
+      170,
+      680,
+      460
+     ],
+     "scale": 2
+    }
+   ]
+  }
+ ]
+}

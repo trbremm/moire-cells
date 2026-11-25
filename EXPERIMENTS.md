@@ -4189,3 +4189,63 @@ pulse reached 2, 3, 5 and 12 of 13 nerve cells 0.4, 0.8, 1.5 and 3 s after the t
   wired as a clock) is the most heart-like thing seen; the designed pacemaker fired only once in a minute in the ring.
 - Released to evolution it keeps the outline the groove gives it, but the lines grow apart (muscle and nerve divide, skin thins) and the
   muscle fires by itself: a quick look only.
+
+# Tendrils, bone, tendons (step T2, 2026-11-25)
+
+**The question** (the user, 2026-11-24, after the L1 organ): "Tendrils, and possibly a simple skeleton tissue? With tendons". Built as two
+general capabilities (tendrils, the mineral wall) and a lab (README "Step T2"); evolution got a quick look only.
+
+**How.** Headless Chrome on the shared GPU (numbers are simulated time), seed 3 unless said; one run per setting: hints. Conditions in
+`experiments/conditions/t2/` (check, limb, antagonist, speed, quick), runs `experiments/runs/t2-*`; the limb's pilots with tools/shot.py.
+
+## 1. Getting the limb to hold (pilots)
+
+One cause at a time:
+- TENDONS GRIPPING NOTHING: the first layout put a tendon's lower pole past the end of the rod's upper row (3 of 6 tendon slots free).
+- A KNOTTED ROD: anchor bones with three tendrils round them gripped their own neighbours at rest length ~0 and pulled the rod into a knot
+  in 8 s. One short floor tendril each, pointing away from the muscle, holds it (4 of 4 anchors held in every later run).
+- THE MUSCLE GLUED TO THE BONES (one organism, one key): bone got a key of its own, so the muscle slides over it.
+- A LOOSE LIGAMENT: a separate ligament cell between the rods (pole tendrils to both) slid out of the gap; with every tendril off the right
+  rod still wandered 0 -> 26 degrees. Then joint bones with a 1.6 R gap: the rods drifted apart before the ligaments had grown across.
+  Now the rods' lower end cells TOUCH (glued bone to bone) and tie each other: a pivot (4 ligament ropes in every run).
+- THE MUSCLE'S OWN LENGTH: laid out at 4:1 the bundle shortened by itself (10.8 -> 7.7 R in 16 s) and pulled the joint 30..47 degrees with
+  NO poke (drive 0.01: the muscle never fired). Laid out at 2.8:1 it holds better; with no pull to the dish's centre it lengthened instead
+  (the joint crept -17 degrees) and its junctions did not form (a poke fired 2 of 6).
+
+## 2. The twitch against no poke (`limb.json`, settled 20 s, poke at 20 s)
+
+| run | bend at 20 s | at 29 s | at 37..39 s | muscle firing |
+|---|---|---|---|---|
+| seed 3 poked | 17.6 | 37.3 | 50.7 | 6 of 6 from 23 s |
+| seed 3 no poke | 14.0 | 27.4 | 36.6 | none |
+| seed 7 poked | 13.6 | 36.3 | 38.4 (45 at 35 s) | 6 of 6 from 23 s |
+| seed 7 no poke | 19.0 | 30.0 | 43.1 | fired by itself at ~35 s |
+
+The poke flexes the joint about twice as fast as it creeps (+20..23 degrees in 9 s against +11..13); the muscle bundle shortens end to
+end 9.5 -> 7.4 R; it stays bent. No junction torn, all 34 alive, tendon ropes below 4 R/s. With the pull through junctions at 1 (pilot):
++39 degrees in 10 s poked, +19 not poked.
+ANTAGONIST (`antagonist.json`): the flexor's poke 15.9 -> 32.6 degrees in 11 s; the extensor's fired nothing; the joint drifted back to 22.7.
+
+## 3. Pili and evolution
+
+- PILI (40 crawlers, 40 s): ~20 let-gos and sprouts a second, 25 floor grips, 14 breaks (a retracting rope often snaps before the cell
+  reaches its anchor); at 40 s 49 of 120 tendrils on the floor, 9 on another cell. The look is the best of the step: small cells tugged
+  from anchor to anchor on three glowing threads (harmonic: orange fibres with knots at the grips).
+- QUICK LOOK (the default dish 10 min, seed 3, against both nulls): reach 0.50 R mean against 0.27, the mineralise gene 0.29 against 0.15,
+  139 of 225 cells growing tendrils, 21 hard cells; 225 cells against 419 in the null. One run: a hint.
+
+## 4. Checks
+
+- OFF = MAIN (`check.json`, main 616d266 exported): the same founders' crash to 3 min at both seeds (s3 1978 / 1756 / 1561 / 1233 / 783 /
+  442 / 243 against 1978 / 1751 / 1555 / 1225 / 756 / 440 / 249; s7 within 20 cells at every sample); after it runs vary (s3 118 vs 293,
+  s7 160 vs 163 at 5 min). On: 180 / 143 at 5 min, 50 / 30 cells growing tendrils.
+- Books exact (atoms, carbon 0; energy <= 0.03). Main's snapshot loads exact with T2 off and the note; a T2 snapshot reloads exact.
+  Headed Firefox and phone size run; no console errors. Speed: a few % (shared GPU: on x2.66 / x2.71, off x2.84 / x2.78, main x2.73 / x2.78).
+
+## Reading
+
+- Tendrils as ropes work as a general capability: twitching pili, floor anchors, cell-to-cell ropes, a ligament pivot, tendons that carry a
+  muscle's pull to a bone. Mineral walls make round hard cells; packed and glued in two rows they make rods that stay rods.
+- A limb is a balance of soft and hard parts: the soft muscle's own settling moves the joint as much as its twitch does. A cleaner joint
+  would need a muscle that holds its length at rest (stiffer cells, or a tendon with slack) and something that pulls back (a working
+  antagonist, or an elastic ligament).

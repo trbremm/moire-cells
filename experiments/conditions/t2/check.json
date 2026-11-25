@@ -1,0 +1,12 @@
+{
+ "batch": "t2-check",
+ "runs": [
+  {"name": "t2-off_s3", "description": "check: the default dish 300 s, tendrils and bone off (compare with main 616d266, an export)", "query": {"tendrils": 0, "mineral": 0, "seed": 3}, "duration": 300, "sample_every": 30, "stall": 300,
+   "snapshots": [{"t": 60}]},
+  {"name": "t2-on_s3", "description": "check: the default dish 300 s, tendrils and bone on (default)", "query": {"seed": 3}, "duration": 300, "sample_every": 30, "stall": 300,
+   "evals": [{"t": 299, "js": "return JSON.stringify(await moire.tendrils.now())"}], "snapshots": [{"t": 120}]},
+  {"name": "t2-off_s7", "description": "check: the default dish 300 s, tendrils and bone off", "query": {"tendrils": 0, "mineral": 0, "seed": 7}, "duration": 300, "sample_every": 30, "stall": 300},
+  {"name": "t2-on_s7", "description": "check: the default dish 300 s, tendrils and bone on", "query": {"seed": 7}, "duration": 300, "sample_every": 30, "stall": 300,
+   "evals": [{"t": 299, "js": "return JSON.stringify(await moire.tendrils.now())"}]}
+ ]
+}

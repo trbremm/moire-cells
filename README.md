@@ -9383,9 +9383,148 @@ contracts again and again by itself (18..25 of 30..40 cells at once), a poke add
 - The ring tightens into a knot (no lumen), the pacemaker fired once in 60 s, the worm does not move: stretch goals not reached.
 - The contraction output is not addressed by lattice in the moire genome (it keeps its wired regulator); not one of the job colours.
 
+## Step T2: tendrils, bone, tendons
+
+BUILD QUEUE item 6a6e (the user, 2026-11-24, after the L1 organ: "Tendrils, and possibly a simple skeleton tissue? With tendons"). Two new
+general capabilities any cell could evolve (founders 0, each with a neutral control), then lab designs that use them (the scientist's
+hand): bone, tendon, anchor, joint, pili, and a LIMB whose joint bends when its nerve is touched. "Tendon", "bone", "ligament" are only the
+names of hand-set genomes; no rule names them. Code: `src/tendrils.js` (switches, knobs, the passes' setup, provision, startOf, census,
+TENDRILS/BONE panel line, drawing), `src/shaders/tendril.wgsl` (the tendrils: tforce, tapply), `src/shaders/tendril_draw.wgsl` (tendrils
+and bone drawn), the "step T2" parts of `cell_common.wgsl` (Bio words 240..255, SH_TEN.. bits, `t2_want`, `t2_retract`, `t2_mineral`),
+`cell_grn.wgsl` (their mutation), `cell_eat.wgsl` (upkeep, the mineral wall, its effects, spills, splits, books), `cell_carbon.wgsl`
+(the tendril pool: `cb_tendrils`, spills, splits, digestion, books), `src/grn.js` (outputs 24..26), `src/tissues.js` (designs),
+`src/organ.js` (the limb, its joint measure), `src/culture.js` (presets limb, pili), `src/app.js` (placed cells get their pool and
+mineral), `src/snapshot.js`, `src/actions.js` (rules panel group), `src/zoo.js` (buttons), `src/lab.js` (gene names).
+
+### 1. Tendrils (`?tendrils=0`)
+
+- GENES (Bio 240 -> 256 floats, words 240..255; founders 0): REACH (each tendril's full length, 0..2.5 R; 0 none), COUNT (1..4), PLACEMENT
+  (rad from the FRONT: where the first sprouts), SPREAD (0..1: the turn between two, x 2 pi / count: 0 all at one pole, 0.5 with two = both
+  poles, 1 evenly round), STIFFNESS (a log factor -2..2: THICKNESS, so carbon per R, stiffness and breaking strength all x e^s), RETRACTION
+  (0..1), FLOOR GRIP (0..1). The gene network's 24th output GROW scales the reach, the 25th RETRACT the retraction (gains and regulators in
+  Bio.tq; not addressed by lattice in the moire genome, as contraction). They drift at births in the gene network's pass (own draws, only
+  while on or in the null).
+- MATTER: tendrils are built of CHAIN CARBON: the eat pass keeps a TENDRIL POOL (carbon word 23, units of 4 carbons with the enzymes' frame
+  hands, `cb_tendrils`), built toward 0.004 carbon per R x e^s x count x reach at the builders' rate (the battery paying the sparks), the
+  excess falling back into the granules. A tip grows only as far as the pool reaches. The pool goes back to the dish as tar with the cell,
+  a daughter takes her share, a predator digests it into its granules; it counts in the carbon books and is kept in snapshots (the ropes
+  themselves regrow after a load). With carbon off they need no carbon.
+- GROW: a SPROUT at placement + slot x spread x a turn / count from the front (wandering 0.3 rad), growing at 1.2 R/s from the outline
+  (its exact honeycomb rim).
+- GRIP: the TIP grips the first thing it meets: another cell's outline (the grip point kept in that cell's own frame: angle from its front
+  and share of its rim, so it follows the outline as the cell turns, stretches or contracts), an obstacle (G0b: where a cell may not go;
+  `?twalls=0`), the dish's edge (`?tedge=0`), or, at full length, the FLOOR (the floor grip gene's chance per s x 1.5).
+- ROPE: a gripping tendril pulls both ends together when stretched past its rest length (k 6/s x e^s, at most 0.4 / dt: stable), never
+  pushes; equal and opposite (the same fixed-point counts added to one cell's accumulator and taken from the other's; a rope on the floor
+  or a wall pulls its cell alone), applied as an overdamped displacement F dt (at most 0.3 R a tick; nothing booked: no velocity changes,
+  as G0b's hard limit), each body turned by its off-centre pull (`?ttorque=`, 1 = derived as the glue's torque).
+- BREAK: above 3 R/s x e^s the rope lets go and the tendril regrows from its root.
+- RETRACT (`retract` gene x the 25th output, a battery above 2 %): the rest length is pulled in at 1.5 R/s x drive; held at least 0.8 s and
+  fully in (0.15 R), it lets go and sprouts again: PILI's twitching (grip, drag the cell to the anchor, let go, reach out again).
+- COST: upkeep 0.0006 energy per s per R wanted (x e^s), the retraction 0.004 per s per tendril at drive 1, both from the battery as heat
+  (the eat pass's upkeep: booked); the carbon's sparks as every build.
+- NULL `?tendrilnull=1`: the genes drift, nothing grows, nothing is paid. `?t2grn=0`: the outputs do not act.
+
+### 2. Bone: the mineral wall (`?mineral=0`)
+
+- GENE: MINERALISE (Bio.tk.w, 0..1, founders 0) x the 26th output (Bio.tm).
+- The eat pass moves RUST Gt (the most settled compound of the C12d table: heavy giver + light taker) out of the stock into the MINERAL WALL
+  (stock word 31) toward 0.5 units per R^2 of the cell's area x the drive, 3 % of the shortfall per s (slow), each unit paying 0.4 energy
+  from the battery (costly; as heat); an excess (the drive fell) dissolves back at 1 %/s. Still the same atoms: they count with the cells'
+  Gt in the books, go back to the dish as Gt when the cell dies or bursts, a daughter takes her share r / (r + r_parent).
+- HARDNESS (held / a full wall for the cell's size): the sides' stiffness is taken toward a full crust wall's (LIP_KMAX) by it, the
+  junctions' glue x (1 + hardness) (`?minglue=`), and the outline's wobble is damped (tendril.wgsl, 30 % a tick at hardness 1: the
+  outline is held).
+- NULL `?mineralnull=1`.
+
+### 3. The look
+
+- NEON: thin neon tubes in the cell's job ink (a tendril is a part of the cell): a free tendril curls a little as it reaches out, a rope
+  runs straight from its root to its grip while taut (brighter with its tension), sags while slack; a bright white-hot dot at the grip.
+- HARMONIC (key backquote): collagen-like ORANGE SHG fibres, yellower where pulled taut; the grip a yellow-orange knot.
+- BONE: faint ivory LAMELLAE, concentric rings round a small dark canal (as an osteon), as bright as the cell is hard; harmonic: orange.
+- `?tdraw=0`: not drawn.
+
+### 4. The designs and the labs (src/tissues.js, src/organ.js)
+
+- BONE (round, mineralise 1, glue 4, full crust wall, thick, stiff; its OWN KEY, so bone glues to bone and not to the muscle sliding over
+  it), ANCHOR (a bone with one short thick tendril away from the muscle that grips the FLOOR: the rod nails itself to the dish), JOINT (a
+  bone with two thick tendrils across the joint's gap that grip the other rod's end cell: the LIGAMENT), TENDON (a 2.5:1 spindle whose
+  two pole tendrils grip what they touch, stiffness 2), PILI (three long tendrils round it that grip the floor, retract and let go).
+- LIMB (`?tissue=limb`, preset `limb`; `?bonelen= ?limbgap= ?antagonist=1`): two staggered double ROWS of 5 bones (the left rod's lower
+  row anchors), a 1.6 R JOINT whose lower row's end cells are joint bones (their tendrils the ligaments: a hinge on the far side from the
+  muscle), a 2-fibre MUSCLE of 3 L1 spindles 1.4 R above the rods, laid out at the ~2.8:1 they settle to, a TENDON from each end of the
+  bundle steeply down to the rod below, the L1 NERVE on the muscle's outer side (its free end out over the left rod), a SKIN cover. 34
+  cells. The lab dish as the organ's (still water, free glue, 15 % junction stretch, no S1 torques, signal power 0.006, no evolution, light
+  everywhere) without a groove: the anchors hold it.
+- `moire.organ.poke()` (the nerve's free end), `measure()` (+ the JOINT: each rod's principal axis, the BEND in degrees, + toward the
+  muscle's side; the tendons' ropes gripping and their tension; the anchors' floor holds; the ligaments), `twitch()` (+ the joint's flex,
+  the largest tension), `place('limb')` (into a living dish; the zoo's 'organ: limb'), the ORGAN panel line with the joint.
+- PILI lab (`?tissue=pili`, preset `pili`): 40 crawlers scattered, the design's three tendrils.
+- Lab cells start with their tendril carbon and their rust (`moire.tendrils.provision()`, booked in); the add-cell tool gives any placed
+  genome the same (`Tendrils.startOf`).
+
+### 5. What it does (`experiments/conditions/t2/`, runs `t2-*`; one run per setting: hints)
+
+LIMB (settled 20 s, then the electrode on the nerve's free end and the muscle's end; the joint every 2 s; seeds 3 and 7, each against a
+run with no poke): the nerve fires, the muscle is recruited (6 of 6 cells within 3 s, firing ~10 s), the bundle shortens (end to end 9.5 ->
+7.4 R), the tendons pull and the right rod swings toward the muscle about its pivot: the bend 17.6 -> 37.3 degrees in 9 s (seed 3; 50.7 at
+17 s), 13.6 -> 36.3 (seed 7; 45 at 15 s). It stays bent after the muscle relaxes (nothing pulls it back). But the joint also CREEPS
+without a poke: 14 -> 27.4 degrees over the same 9 s (seed 3) and 19 -> 30 (seed 7), from ~0 at the start. So a twitch adds about 6..12
+degrees to a creep of 11..13 in those 9 s (roughly doubling the rate); the creep is the soft muscle bundle settling against the tendons
+(the dish's pull to the centre squeezes it) and the free hinge. No junction torn, all 34 cells alive, the anchors held (4 of 4) and the
+ligaments too (4 ropes) in every run; the tendons' ropes stay below 4 R/s (well under the 22 R/s that breaks them). The seed-7 control
+fired by itself at ~35 s (the L1 relays' known self-firing).
+ANTAGONIST (`?antagonist=1`, 50 cells): the flexor's poke flexes it 15.9 -> 32.6 degrees in 11 s; the extensor's poke at 40 s fired
+nothing (0 of 6) and the joint drifted back 26.8 -> 22.7: not working.
+PILI (40 crawlers, 40 s): about 20 tendrils a second let go fully retracted and sprout again, 25 floor grips and 14 breaks a second (a
+retracting rope often snaps before the cell has reached its anchor: the snap is part of the twitch); at 40 s 49 of 120 tendrils hold the
+floor, 9 hold another cell, 62 reach out; cells jerk from anchor to anchor and now and then two tie themselves together.
+EVOLUTION (quick look, the default dish 10 min, seed 3, against both nulls): the genes drift up from 0 at births; at 10 min 139 of 225
+cells grow tendrils (111 ropes on cells, 35 on the floor or edge), reach mean 0.50 R against 0.27 in the null, the mineralise gene 0.29
+against 0.15, 21 cells hard (hardness above 0.5); fewer cells than the null (225 vs 419; one run). A hint that tendrils and bone are kept,
+not a result.
+Pictures (`experiments/keep/t2/`): `limb-rest-neon.png`, `limb-flexed-neon.png` (the rods as two staggered rows of ivory-ringed bone, the
+right one swung down toward the muscle), `limb-rest-harmonic.png`, `limb-flexed-harmonic.png` (orange osteon rings in the bone, striated
+muscle spindles, green rims), `pili-neon-zoom.png`, `pili-harmonic-zoom.png` (crawlers with three tendrils, grip dots; orange SHG fibres
+with knots at the grips), `evolving-default-10min-zoom.png` (an evolving dish at 10 min: hairy cells), `firefox-limb.png`.
+
+### Checked
+
+- Off equals main: `?tendrils=0&mineral=0` against main 616d266 (an export), the default dish 300 s, cells every 30 s: seed 3 1978 / 1756 /
+  1561 / 1233 / 783 / 442 / 243 to 3 min (main 1978 / 1751 / 1555 / 1225 / 756 / 440 / 249), 118 at 5 min (main 293); seed 7 1976 / 1786 /
+  1633 / 1448 / 1031 / 500 / 248 (main 1976 / 1776 / 1622 / 1451 / 1038 / 499 / 268), 160 at 5 min (main 163): the same founders' crash;
+  after it runs of one seed vary (as in L1). On (the default; the genes drift up at births): 180 / 143 at 5 min; at 5 min 50 / 30 cells grow
+  tendrils, 17 / 11 ropes on cells.
+- Books: atoms and carbon rounding 0 in every run (on, off, labs); energy rounding at most 0.03 (main's runs 0.04).
+- Snapshots: main 616d266's (t 60 s) loads exact with tendrils and bone off and the note "saved before step T2"; a T2 one (t 120 s, tendrils
+  growing) reloads exact (its pools kept, the ropes regrow).
+- No console errors in any run. Headed Firefox (the limb lab) and phone size (390 x 844, the pili lab) run.
+- Speed (shared GPU, other runs at the same time: rough): the default dish 2000 cells, 300 s at MAX, on x2.66 / x2.71, off x2.84 / x2.78,
+  main x2.73 / x2.78; 60 s runs with a browser running beside them: 2000 cells on x1.20 / off x1.27, 10 000 on x0.41 / off x0.38. The pass
+  costs a few % at most (cells without tendrils leave it at once).
+
+### Known issues
+
+- The limb's joint CREEPS by itself (11..13 degrees in 9 s, 30..40 in 40 s): a poke roughly doubles the rate, it does not stand out as a
+  clean twitch. The muscle is soft and its length drifts as it settles; the hinge is free. Laid out at the 4:1 the spindles ask for the
+  bundle shortened by itself and the joint crept 30..50 degrees with no poke; with no pull to the centre (`?limbsqueeze=0`) the bundle
+  loosened, its junctions did not form and a poke fired only 2 of 6.
+- A stronger pull through junctions (`conpull=1`) flexes harder (+39 degrees in 10 s) but the control crept +19 too; early layouts with it
+  knotted the anchored rod.
+- The antagonist does not work (its nerve does not fire the second muscle); a joint once bent stays bent.
+- Rods are stiff only by packing and glue (central forces): a long single row would hinge at every cell.
+- Ropes move cells by displacement, not velocity: their work is not in the energy books (as the obstacles' hard limit); retraction and
+  upkeep are paid from the battery as heat.
+- Tendrils grip anything their tip enters first, so packed tissue's tendrils grip neighbours at rest length ~0 (pili in a clump churn:
+  grip, let go). The draw shows ropes only when the cell is alive and its record current; ropes are not kept in snapshots (they regrow).
+- Bone needs rust Gt in the stock; in the default chemistry little is there (the lab provides it), so evolved bone is rare.
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start
+- `src/tendrils.js`: step T2, tendrils and bone (switches, knobs, the tendril pass's setup, provision, census, the TENDRILS panel line,
+  drawing; `src/shaders/tendril.wgsl`, `tendril_draw.wgsl`)
 - `src/actions.js`: the one table of actions (step C3b): every key and every toolbar button, with its label, group,
   state, what it does and its one-line explanation
 - `src/ui.js`: the toolbar and its panels (light, view, rules, dish), built from that table; `src/record.js`: the

@@ -1,0 +1,10 @@
+{
+ "batch": "t2-quick",
+ "runs": [
+  {"name": "t2-quick-on_s3", "description": "quick look: the default dish 10 min, tendrils and bone on (founders 0, the genes drift up at births)", "query": {"seed": 3}, "duration": 600, "sample_every": 60, "stall": 300,
+   "evals": [{"t": 300, "js": "return JSON.stringify(await moire.tendrils.now())"}, {"t": 599, "js": "return JSON.stringify(await moire.tendrils.now())"}],
+   "shots": [{"t": 598, "name": "end"}, {"t": 598.5, "name": "zoom", "crop": [440, 250, 400, 300], "scale": 2.5}]},
+  {"name": "t2-quick-null_s3", "description": "quick look: the same with both neutral controls (the genes drift, nothing acts)", "query": {"seed": 3, "tendrilnull": 1, "mineralnull": 1}, "duration": 600, "sample_every": 60, "stall": 300,
+   "evals": [{"t": 300, "js": "return JSON.stringify(await moire.tendrils.now())"}, {"t": 599, "js": "return JSON.stringify(await moire.tendrils.now())"}]}
+ ]
+}

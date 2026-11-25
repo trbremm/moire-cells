@@ -51,6 +51,7 @@ export const TOOL_ICONS = {
   obstacle: '<rect x="2.8" y="3" width="6" height="14" rx="1"/><circle cx="14.2" cy="6.3" r="2.6"/><circle cx="14.2" cy="13.7" r="2.6"/>',   // step G0b
   refold: '<circle cx="10" cy="10" r="7"/><path d="M6 7.5l8 5M6 12.5l8-5M10 3v14"/>',   // step G3
   signal: '<path d="M10 2.5c-2.6 3.4-4.3 5.9-4.3 8.2a4.3 4.3 0 0 0 8.6 0c0-2.3-1.7-4.8-4.3-8.2z"/><path d="M3 17.5q2-2 4 0t4 0 4 0 4 0"/>',   // step Q1: the signal pipette (a drop over ripples)
+  inspect: '<circle cx="8.6" cy="8.6" r="5.4"/><path d="M12.5 12.5l4.8 4.8" stroke-width="2.2"/><circle cx="8.6" cy="8.6" r="1.4" fill="currentColor" stroke="none"/>',   // step I1: the magnifier
 };
 const OBS_SHAPES = ['wall', 'block', 'pillar', 'erase'];
 const OBS_WORD = { wall: 'wall: drag paints a wall', block: 'block: drag spans a block', pillar: 'pillar: tap places one, drag a row', erase: 'erase: drag cuts through' };
@@ -353,6 +354,11 @@ export function createApp(ctx) {
       FD.setZone(x, y, 1.6 * ctx.cells.R);
       return true;
     }
+    if (t.inspect) {   // step I1: the magnifier (a tap chooses the cell under it; a drag pans the view)
+      const [sx, sy] = camera.toScreen(x, y);
+      Object.assign(drag, { on: true, kind: 'insp', x, y, sx, sy, moved: false, pts: [] });
+      return true;
+    }
     if (t.signalPipette) {   // step Q1: the signal pipette (a puff into the water, a touch of the cells under it)
       Object.assign(drag, { on: true, kind: 'sig', x, y, pts: [[x, y]] });
       sigDrop(x, y);
@@ -367,6 +373,17 @@ export function createApp(ctx) {
     if (!drag.on) return false;
     if (drag.kind === 'obs') { obsMove(x, y); return true; }
     if (drag.kind === 'fold') { ctx.cells.folding.setZone(x, y, 1.6 * ctx.cells.R); drag.x = x; drag.y = y; return true; }
+    if (drag.kind === 'insp') {   // step I1: a drag pans (the dish follows the finger)
+      const [sx, sy] = camera.toScreen(x, y);
+      if (!drag.moved && Math.hypot(sx - drag.sx, sy - drag.sy) > 6) drag.moved = true;
+      if (drag.moved) {
+        const I = ctx.cells.inspect;
+        if (I && I.following) I.follow(false);
+        camera.panBy(sx - drag.sx, sy - drag.sy);
+        [drag.sx, drag.sy] = camera.toScreen(x, y);
+      }
+      return true;
+    }
     const R = ctx.cells.R, gap = drag.kind === 'cell' ? 2.1 * R : 3 * R;
     if (Math.hypot(x - drag.x, y - drag.y) >= gap) {
       drag.x = x; drag.y = y;
@@ -378,6 +395,11 @@ export function createApp(ctx) {
     if (!drag.on) return false;
     drag.on = false;
     if (drag.kind === 'obs') { obsUp(); return true; }
+    if (drag.kind === 'insp') {   // step I1: a tap chooses the cell under it (none there: the card closes)
+      const I = ctx.cells.inspect;
+      if (!drag.moved && I && I.ready) I.at(drag.x, drag.y).then((s) => { if (s == null && I.sel) I.close(); }).catch((e) => console.warn('inspector:', e));
+      return true;
+    }
     if (drag.kind === 'fold') {
       const FD = ctx.cells.folding;
       FD.setZone(null);

@@ -45,6 +45,8 @@ export const TOOLS = [
   // step Q1 (src/signals.js): the SIGNAL PIPETTE, a scientist's hand: a puff of the signal substance into the water (booked as energy in) and a
   // touch of the cells under it (they hear it as through their junctions for a moment); the button again: the next flavour
   { id: 'signal', name: 'signal pipette', label: 'drop a puff of the signal substance and touch the cells under it (the button again: another flavour)', signalPipette: true },
+  // step I1 (src/inspect.js): the MAGNIFIER, a scientist's hand that only looks: tap a cell for its card (job, battery, age, family, engines)
+  { id: 'inspect', name: 'inspect', label: 'inspect a cell: tap one for its card (job, battery, age, family, what its engines run); drag pans', inspect: true, key: 'i' },
 ];
 
 export const RULE_GROUPS = [
@@ -123,6 +125,7 @@ export function makeActions(app) {
         : t.id === 'spot' ? 'tap or drag: move the spotlight there (switches the light to spotlight)'
           : t.addCell ? 'tap: place a cell, drag: a line of cells (copies of the genome picked in the cells zoo; empty stock, the starter charge)'
             : t.pipette ? 'tap: drop the substance picked in the molecules zoo, drag: drop more (booked as added, like a spring)'
+              : t.inspect ? 'tap a cell: its card (job, battery, age, generation, family, engines that ran); the card can follow it and light up its family; drag: pan the view'
               : t.obstacle ? 'drag: paint a wall (or a block, pillars, or erase: tap the button again or pick in the Dish panel); cells cannot enter, matter does not cross, water flows round'
               : `tap: ${t.label}; drag: stir`,
     })),

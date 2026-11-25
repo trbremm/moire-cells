@@ -549,6 +549,70 @@ body.home-on canvas#gpu { display: none; }
   color: var(--ink); background: var(--panel); border: 1px solid var(--line);
   border-radius: 3px; padding: 8px 12px; cursor: pointer;
 }
+
+/* ---------- step I1: the cell inspector's card (src/inspectcard.js): crisp, at the side away from the chosen cell ---------- */
+.icard { position: absolute; z-index: 4; box-sizing: border-box; width: 340px; max-width: calc(100% - 24px);
+  top: 72px; max-height: calc(100% - 72px - var(--toy-h, 60px) - 30px); overflow: auto; overscroll-behavior: contain;
+  background: rgba(5, 8, 13, 0.9); border: 1px solid var(--ic-ink, rgba(24, 232, 255, 0.3)); border-radius: 12px;
+  box-shadow: 0 0 16px rgba(0, 0, 0, 0.6); color: var(--ink); font-size: 11.5px; line-height: 1.45; -webkit-user-select: none; user-select: none; }
+.icard[hidden] { display: none; }
+.icard[data-side="right"] { right: max(14px, env(safe-area-inset-right, 0px)); }
+.icard[data-side="left"] { left: max(14px, env(safe-area-inset-left, 0px)); }
+body.dev .icard { top: 14px; max-height: calc(100% - 28px - var(--ui-h, 60px)); }
+.ic-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 7px; padding: 6px 6px 6px 12px;
+  background: rgb(5, 8, 13); border-bottom: 1px solid rgba(217, 221, 230, 0.1); }
+.ic-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--ink); }
+.ic-job { font-size: 12.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ic-id { color: var(--dim); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.ic-btns { margin-left: auto; display: flex; gap: 4px; flex: none; }
+.icard button { font: inherit; color: var(--ink); cursor: pointer; touch-action: manipulation; }
+.ic-b { height: 34px; min-width: 34px; padding: 2px 6px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  background: rgba(6, 9, 15, 0.7); border: 1px solid rgba(24, 232, 255, 0.2); border-radius: 8px; }
+.ic-b svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.ic-b span { font-size: 8.5px; line-height: 1; color: var(--dim); }
+.ic-b[aria-pressed="true"] { color: var(--neon); border-color: var(--neon); box-shadow: 0 0 8px var(--neon-a); }
+.ic-b[aria-pressed="true"] span { color: var(--neon); }
+.ic-b:disabled { opacity: 0.35; cursor: default; }
+.ic-b:focus-visible { outline: 1px solid var(--neon); outline-offset: 1px; }
+.ic-x { border-color: transparent; }
+.ic-top { display: flex; gap: 10px; padding: 8px 12px 2px; align-items: flex-start; }
+.ic-pic { position: static; inset: auto; width: 84px; height: 84px; flex: none; background: #020305; border-radius: 8px; touch-action: auto; cursor: default; }
+.ic-facts { flex: 1; min-width: 0; }
+.ic-body { padding: 0 12px 10px; }
+.icard h4 { margin: 9px 0 2px; font-size: 9.5px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--neon); opacity: 0.75; }
+.icard h4 em { font-style: normal; letter-spacing: 0.02em; text-transform: none; color: var(--dim); opacity: 0.9; margin-left: 4px; }
+.ic-r { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 5px; }
+.ic-r > span:first-child { color: var(--dim); min-width: 5.6em; }
+.ic-r b { font-weight: 500; font-variant-numeric: tabular-nums; }
+.ic-r > i { font-style: normal; color: var(--dim); font-size: 10.5px; }
+.ic-sw { display: inline-block; width: 14px; height: 9px; border-radius: 2px; align-self: center; }
+.ic-bar { display: inline-block; width: 46px; height: 5px; border-radius: 3px; background: rgba(217, 221, 230, 0.12); overflow: hidden; align-self: center; }
+.ic-bar i { display: block; height: 100%; }
+.ic-dead { margin: 0 0 4px; padding: 3px 6px; border-radius: 5px; background: rgba(255, 112, 98, 0.14); color: var(--thr); font-weight: 600; letter-spacing: 0.04em; }
+.ic-e { display: flex; align-items: center; gap: 6px; opacity: 0.6; }
+.ic-e.on { opacity: 1; }
+.ic-e > i { width: 8px; height: 8px; flex: none; }
+.ic-e > i.tri { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.ic-e span { flex: 1; min-width: 0; }
+.ic-e b { font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ic-e.on b { color: var(--neon); }
+.ic-note { margin: 2px 0 0; color: var(--dim); font-size: 10.5px; }
+.ic-state { margin: 4px 0 0; color: rgb(255, 204, 32); }
+.ic-genes { margin: 0; display: flex; flex-wrap: wrap; gap: 1px 10px; }
+.ic-genes span { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ic-genes i { font-style: normal; color: var(--dim); }
+.ic-key { margin: 3px 0 0; color: var(--dim); font-size: 10.5px; }
+.ic-key i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 2px solid; box-sizing: border-box; margin: 0 3px -1px 6px; }
+.ic-key i:first-child { margin-left: 0; }
+.ic-key i.k1 { border-color: rgb(255, 237, 90); } .ic-key i.k2 { border-color: rgb(255, 128, 31); }
+.ic-key i.k3 { border-color: rgb(90, 235, 255); } .ic-key i.k4 { border-color: rgb(199, 153, 255); }
+@media (max-width: 639px) {
+  .icard { left: 8px; right: 8px; width: auto; max-width: none; max-height: 42%; font-size: 11px; }
+  .icard[data-side="top"] { top: max(56px, env(safe-area-inset-top, 0px)); }
+  .icard[data-side="bottom"] { top: auto; bottom: calc(max(10px, env(safe-area-inset-bottom, 0px)) + var(--toy-h, 100px) + 10px); }
+  body.dev .icard[data-side="bottom"] { bottom: calc(14px + var(--ui-h, 60px) + 8px); }
+  .ic-pic { width: 64px; height: 64px; }
+}
 </style>
 </head>
 <body>

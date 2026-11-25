@@ -280,6 +280,7 @@ import { scaleDish } from './squeeze.js';
 import { Perfusion, parseRecipe } from './perfusion.js';   // the microfluidic chip: inlet, through-flow, outlet
 import { Obstacles } from './obstacles.js';   // step G0b: walls, blocks, pillars; the round dish
 import { createApp } from './app.js';
+import { createInspectCard } from './inspectcard.js';   // step I1: the cell inspector's card (src/inspect.js holds its data)
 import { createToy } from './toy.js';   // the toy front: a few big buttons, worlds, terrain generators; the developer mode (src/toy.js)
 import { applyPreset, layoutFromParams, applyDiversity, PRESETS, SPREAD_SQUEEZE } from './culture.js';
 import { Tissues, useDesignFounder, DESIGNS } from './tissues.js';
@@ -968,7 +969,7 @@ async function boot() {
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
     kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, dup: cells.dup, mutation: cells.mutation, perfusion, glue: cells.glue, stir: water.stir, obstacles,
     spindle: cells.spindle, carbon: matter.carbon, carbonCells: cells.eat.carbon, motors: cells.motors, flow, senses: cells.senses, folding: cells.folding, signals: cells.signals,
-    contract: cells.contract, tendrils: cells.tendrils, lod };
+    contract: cells.contract, tendrils: cells.tendrils, lod, inspect: cells.inspect };   // (step I1: moire.inspect.at(x, y), .cell(i), .family(), .follow(), .survey())
   lod.app = window.moire;   // step V1: LOD from band limits (drawing only; moire.lod.table())
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.organ = cells.organ = new Organ(window.moire);   // step L1: the tissue lab's organ (lay out, poke, twitch, measure)
@@ -1260,6 +1261,7 @@ function frame(now) {
   neon.tickReal(dtReal);
   const drawn = { background, cells, under: layers.filter((l) => l !== background && l !== cells), top: layers };
   neon.encode(encoder, f, gpu.context.getCurrentTexture().createView(), drawn);
+  if (cells.inspect && cells.inspect.sel) cells.inspect.draw(encoder, gpu.context.getCurrentTexture().createView(), view, now / 1000);   // step I1: its overlay, over either look
   device.queue.submit([encoder.finish()]);
   const slow = neon.watch(stats.frameMs, dtReal, !paused && speed >= 1 && speed <= 8 && frameNo > 120);
   if (slow) flash(slow);
@@ -1445,7 +1447,7 @@ function hintLine() {
   if (document.body.classList.contains('toy-mode')) return '';   // (the toy front: no key hints; the developer mode shows them)
   if (TOUCH || hintQuiet) return '';   // touch only: the toolbar says it all; the line shows only the flashes
   const t = TOOLS[tool];
-  const what = t.spot ? 'click or drag: move the light' : t.stir ? 'click or drag: stir' : t.addCell ? 'click: place a cell · drag: a line of cells'
+  const what = t.spot ? 'click or drag: move the light' : t.stir ? 'click or drag: stir' : t.inspect ? 'click a cell: its card · drag: pan' : t.addCell ? 'click: place a cell · drag: a line of cells'
     : t.pipette ? 'click or drag: drop the substance' : t.obstacle ? (appUI ? appUI.obstacleHint() : 'drag: paint a wall')
       : `click: ${t.label} · drag: stir`;
   // (app: the wheel zooms while the spotlight is off; Ctrl+wheel always; middle-drag or Space+drag pans)
@@ -1524,6 +1526,7 @@ function setTool(i) {
     if (light.params.mode !== 'spot') { light.params.mode = 'spot'; text += ' (the light is now a spotlight)'; }
   } else if (t.addCell || t.pipette) text = appUI ? appUI.toolText(t) : t.label;   // app: the add tools
   else if (t.obstacle) text = appUI ? appUI.obstacleTool(again) : t.label;     // step G0b: again = the next shape
+  else if (t.inspect) text = 'inspect: tap a cell for its card (job, battery, age, family, engines that ran); drag pans; Escape closes the card';   // step I1
   else text = `click drops: ${t.label.replace(/^drop /, '')}`;
   return text;
 }
@@ -1758,6 +1761,7 @@ function setupInput() {
   }));
   appUI.attach(ui);
   toy.attach(ui);
+  createInspectCard({ cells });   // step I1: the inspector's card (hidden until a cell is chosen)
   window.moire.toy = toy;   // the toy front: moire.toy.build(name, seed), .check(), .link(), .setDev(on)
   window.moire.app = appUI;
   window.moire.camera = camera;   // app: the view camera (moire.camera.set(zoom, x, y), .fit())

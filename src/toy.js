@@ -49,6 +49,7 @@ const ICON = {
   stress: '<path d="M11.5 2.5L5 11h4.6l-1.4 6.5L15 9h-4.6z"/>',   // step G3: a stress shock
   home: '<path d="M3.2 9.6L10 3.4l6.8 6.2"/><path d="M5.2 8v8.6h3.6v-4.8h2.4v4.8h3.6V8"/>',   // step H2: back to the home screen
   signal: '<path d="M10 2.5c-2.6 3.4-4.3 5.9-4.3 8.2a4.3 4.3 0 0 0 8.6 0c0-2.3-1.7-4.8-4.3-8.2z"/><path d="M3 17.5q2-2 4 0t4 0 4 0 4 0"/>',   // step Q1: the signal pipette
+  inspect: '<circle cx="8.6" cy="8.6" r="5.4"/><path d="M12.5 12.5l4.8 4.8" stroke-width="2.2"/><circle cx="8.6" cy="8.6" r="1.4" fill="currentColor" stroke="none"/>',   // step I1: the magnifier
 };
 function svg(name) {
   const s = document.createElementNS(NS, 'svg');
@@ -93,6 +94,7 @@ const TOOLSET = [
   ['light', 'light', 'light', 'spot'],
   ['fold', 'fold', 'refold', 'refold'],   // step G3: refold cells by hand (the button again: back home)
   ['signal', 'signal', 'signal', 'signal'],   // step Q1: the signal pipette (the button again: another flavour)
+  ['inspect', 'inspect', 'inspect', 'inspect'],   // step I1: the magnifier (tap a cell: its card)
 ];
 const FOODS = [['light', 'minerals', 'a mineral spring (water-like minerals and linkers for membranes)'],
   ['heavy', 'vent', 'a vent (fuel-rich, with metals and trace)'], ['oil', 'oil', 'an oil spring (droplets; cells can take oil into their skins)']];
@@ -107,6 +109,7 @@ const TIPS = {
   cells: 'Cells: tap to drop a small group, drag for a line',
   light: 'Light: drag to move the spotlight (tap light again: the whole dish lit)',
   fold: 'Refold: tap or drag across cells to fold their genome into its stress fold (tap refold again: back home); a card shows the genome',
+  inspect: 'Inspect: tap a cell to ask what it is (its card: job, battery, age, family); drag pans. On the card: follow it, light up its family',
   signal: 'Signal: tap or drag to drop a puff of the signal substance; cells under it hear it at once (tap signal again: another flavour; the look button: signals view)',
 };
 
@@ -252,6 +255,7 @@ export function createToy(ctx) {
     if (t.id === 'spot') return 'light';
     if (t.id === 'refold') return 'fold';
     if (t.id === 'signal') return 'signal';
+    if (t.id === 'inspect') return 'inspect';
     return '';
   }
   function pickTool(id) {

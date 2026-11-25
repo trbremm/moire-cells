@@ -257,7 +257,7 @@
 // Mouse: left tap drops (keys 1 2 3: a ripple, a light spring, a heavy spring; step C12's oil tool, no key: an oil spring), left drag stirs; step C2's spotlight: right-drag moves it, the wheel tilts it,
 // Shift+wheel turns the direction the light comes from.
 
-import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown, tanhMode, gpuGuard } from './gpu.js';
+import { initGPU, GPUUnavailable, showNoWebGPU, showError, adapterName, messageIsShown, tanhMode, gpuGuard, asyncPipes, PIPE_TIMES } from './gpu.js';
 import { Background } from './background.js';
 import { Medium } from './field.js';
 import { Landscape } from './landscape.js';
@@ -470,26 +470,27 @@ async function boot() {
   try {
     // step C6n: every layer but the background draws into the light buffers (LIGHT_FORMAT), which src/neon.js
     // composites onto the canvas
-    background = await Background.create(gpu.device, gpu.format);
-    bootMark('background');
+    // (step SP1: the layers at once, so their pipelines compile side by side; ?asyncpipes=0 one after the other, as before)
     medium = new Medium(gpu.device);
-    landscape = await Landscape.create(gpu.device, LIGHT_FORMAT, medium);
-    bootMark('landscape');
-    light = await Light.create(gpu.device, LIGHT_FORMAT);
-    bootMark('light');
-    matter = await Matter.create(gpu.device, LIGHT_FORMAT, medium);
-    bootMark('matter');
-    charge = await Charge.create(gpu.device, LIGHT_FORMAT);
-    bootMark('charge');
-    water = await Water.create(gpu.device, LIGHT_FORMAT);   // step N1
-    bootMark('water');
-    obstacles = await Obstacles.create(gpu.device, LIGHT_FORMAT);   // step G0b
-    bootMark('obstacles');
-    cells = await Cells.create(gpu.device, LIGHT_FORMAT, medium, nCells, SEED, nCap);
-    bootMark('cells');
     const small = Math.min(window.innerWidth || 800, window.innerHeight || 800) < 600;
-    neon = await Neon.create(gpu.device, gpu.format, params.has('cheap') ? flag('cheap') : TOUCH || small);
-    bootMark('neon');
+    const makers = [
+      ['background', () => Background.create(gpu.device, gpu.format)],
+      ['landscape', () => Landscape.create(gpu.device, LIGHT_FORMAT, medium)],
+      ['light', () => Light.create(gpu.device, LIGHT_FORMAT)],
+      ['matter', () => Matter.create(gpu.device, LIGHT_FORMAT, medium)],
+      ['charge', () => Charge.create(gpu.device, LIGHT_FORMAT)],
+      ['water', () => Water.create(gpu.device, LIGHT_FORMAT)],             // step N1
+      ['obstacles', () => Obstacles.create(gpu.device, LIGHT_FORMAT)],     // step G0b
+      ['cells', () => Cells.create(gpu.device, LIGHT_FORMAT, medium, nCells, SEED, nCap)],
+      ['neon', () => Neon.create(gpu.device, gpu.format, params.has('cheap') ? flag('cheap') : TOUCH || small)],
+    ];
+    const made = {};
+    if (asyncPipes()) {
+      await Promise.all(makers.map(([name, make]) => make().then((x) => { made[name] = x; bootMark(name); })));
+    } else {
+      for (const [name, make] of makers) { made[name] = await make(); bootMark(name); }
+    }
+    ({ background, landscape, light, matter, charge, water, obstacles, cells, neon } = made);
     neonOptions(neon);
     cells.heat.setLight(light);   // step C2: the heat passes absorb the light
     light.heat = cells.heat;
@@ -667,7 +668,7 @@ async function boot() {
     {   // step Q1: a signal substance
       const QP = cells.signals.params;
       if (params.get('signal') === '0') QP.on = false;
-      for (const [q, k] of [['sigflow', 'flow'], ['junction', 'junction'], ['sigtaste', 'taste'], ['fastreg', 'fast'], ['signalnull', 'null'], ['sigmut', 'mutate']]) {
+      for (const [q, k] of [['sigflow', 'flow'], ['junction', 'junction'], ['sigtaste', 'taste'], ['fastreg', 'fast'], ['signalnull', 'null'], ['sigmut', 'mutate'],]) {
         if (params.has(q)) QP[k] = flag(q);
       }
       for (const [q, k] of [['sigspread', 'spread'], ['siglife', 'life'], ['sigpower', 'power'], ['hearw', 'hearW'], ['hearj', 'hearJ'], ['taufast', 'tauFast'],
@@ -1003,6 +1004,7 @@ async function boot() {
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
   stats.boot = bootTimes;              // step SP1: the start's parts, [name, ms since the page began loading]
+  stats.pipes = PIPE_TIMES;            // ... and each pipeline's [label, asked, ready] (async pipelines only)
   window.moire.budgets = budgets;      // the fast speeds' tick budgets
   // births and deaths drop small ripples into the background (a birth a bump, a death a dip)
   cells.onEvents = (events) => {

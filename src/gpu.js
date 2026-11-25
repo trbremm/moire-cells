@@ -180,6 +180,35 @@ function patchTanh(code) {
   return code.replace(/\btanh\s*\(/g, 'tanh_p(') + `\n// (src/gpu.js patchTanh, ?tanh=${TANH_MODE})\nfn tanh_p(x: f32) -> f32 { ${body} }\n`;
 }
 
+// Step SP1: pipelines made with the ASYNC API, a module's all at once (and the layers at once, src/main.js), so the browser can compile
+// them side by side instead of one after the other on its GPU thread (the start was ~90 s on a fresh profile, almost all shader compiling).
+// ?asyncpipes=0: the old synchronous calls (made in the same order).
+const ASYNC_PIPES = (() => {
+  try { return new URLSearchParams(globalThis.location ? location.search : '').get('asyncpipes') !== '0'; } catch { return true; }
+})();
+export function asyncPipes() { return ASYNC_PIPES; }
+// (each async pipeline's [label, asked, ready] in ms since the page began loading: moire.stats.pipes, for the start's table)
+export const PIPE_TIMES = [];
+function timed(desc, p) {
+  const t0 = performance.now();
+  return p.then((x) => { PIPE_TIMES.push([desc.label || '?', Math.round(t0), Math.round(performance.now())]); return x; });
+}
+/** A compute pipeline, as a promise. */
+export function computePipe(device, desc) {
+  return ASYNC_PIPES && device.createComputePipelineAsync ? timed(desc, device.createComputePipelineAsync(desc)) : Promise.resolve(device.createComputePipeline(desc));
+}
+/** A render pipeline, as a promise. */
+export function renderPipe(device, desc) {
+  return ASYNC_PIPES && device.createRenderPipelineAsync ? timed(desc, device.createRenderPipelineAsync(desc)) : Promise.resolve(device.createRenderPipeline(desc));
+}
+/** Every pipeline of an object of promises (name: promise), at once: the same object with the pipelines. */
+export async function allPipes(obj) {
+  const keys = Object.keys(obj), vals = await Promise.all(keys.map((k) => obj[k]));
+  const out = {};
+  keys.forEach((k, i) => { out[k] = vals[i]; });
+  return out;
+}
+
 export async function loadShader(device, url, { prefix = '', prefixName = 'prefix', prefixes = null, suffix = null } = {}) {
   const res = await fetch(url, { cache: 'no-cache' });
   if (!res.ok) throw new Error(`Could not load shader ${url}: HTTP ${res.status}`);

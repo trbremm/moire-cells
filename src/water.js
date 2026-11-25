@@ -21,7 +21,7 @@
 // buffer (3 blocks behind the charge's; heat.waterOffset); the heat (HeatP caus, cur, curDrift) and the matter (MatterP n1) pass
 // the offsets on. Switches: the rules panel's group "Nutrient landscape (step N1)", URL ?caustics=0 ?currents=0.
 
-import { loadShader } from './gpu.js';
+import { loadShader, computePipe, renderPipe, allPipes } from './gpu.js';
 import { LEDGER_WORDS, fmt } from './heat.js';
 import { LIGHT_COMMON_URL } from './light.js';
 import { pal, LOOK } from './palette.js';
@@ -101,14 +101,16 @@ export class Water {
       loadShader(d, 'src/shaders/water.wgsl', { prefixes: [{ name: WATER_COMMON_URL, text: waterC }] }),
       loadShader(d, 'src/shaders/water_draw.wgsl', { prefixes: [{ name: LIGHT_COMMON_URL, text: lightC }, { name: WATER_COMMON_URL, text: waterC }] }),
     ]);
-    this.pipe = d.createComputePipeline({ label: 'water surface', layout: 'auto', compute: { module: mod, entryPoint: 'surface' } });
     const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
-    this.drawPipe = d.createRenderPipeline({
-      label: 'water draw', layout: 'auto',
-      vertex: { module: drawMod, entryPoint: 'vs' },
-      fragment: { module: drawMod, entryPoint: 'fs', targets: [{ format: this.format, blend: { color: over, alpha: over } }] },
-      primitive: { topology: 'triangle-list' },
-    });
+    Object.assign(this, await allPipes({   // (step SP1: async, at once)
+      pipe: computePipe(d, { label: 'water surface', layout: 'auto', compute: { module: mod, entryPoint: 'surface' } }),
+      drawPipe: renderPipe(d, {
+        label: 'water draw', layout: 'auto',
+        vertex: { module: drawMod, entryPoint: 'vs' },
+        fragment: { module: drawMod, entryPoint: 'fs', targets: [{ format: this.format, blend: { color: over, alpha: over } }] },
+        primitive: { topology: 'triangle-list' },
+      }),
+    }));
     const U = GPUBufferUsage;
     this.uBuf = d.createBuffer({ label: 'water params', size: WP_BYTES, usage: U.UNIFORM | U.COPY_DST });
     this.uAB = new ArrayBuffer(WP_BYTES);

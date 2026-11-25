@@ -29,7 +29,7 @@
 // H = -sum p ln p (Shannon entropy); Hmax = what H would be if the same matter were smeared evenly over the whole dish
 // (ln pixels + the entropy of the mix); ORDER = 1 - H / Hmax: 1 = all in one spot, 0 = evenly smeared.
 
-import { loadShader } from './gpu.js';
+import { loadShader, computePipe, renderPipe, allPipes } from './gpu.js';
 import { HEAT_COMMON_URL, HEAT_SCALE, LEDGER_WORDS, fmt } from './heat.js';
 import { BANDS, LIGHT_COMMON_URL } from './light.js';
 import { FLAT, pal } from './palette.js';
@@ -844,17 +844,17 @@ export class Matter {
     });
     const layout = d.createPipelineLayout({ label: 'matter', bindGroupLayouts: [this.bgl] });
     const paintLayout = d.createPipelineLayout({ label: 'matter paint', bindGroupLayouts: [this.bgl, this.texBgl] });
-    this.pipes = {};
+    const pp = {};   // (step SP1: every pipeline of the matter at once, async: awaited below with the drawing's)
     for (const e of ['spread', 'count', 'react', 'relax_red', 'relax_black', 'oil_rho', 'oil_blur', 'oil_blur_y']) {   // (relax: step C6b's charge field; oil_*: C12)
-      this.pipes[e] = d.createComputePipeline({ label: `matter ${e}`, layout, compute: { module: mod, entryPoint: e } });
+      pp[e] = computePipe(d, { label: `matter ${e}`, layout, compute: { module: mod, entryPoint: e } });
     }
-    this.pipes.paint = d.createComputePipeline({ label: 'matter paint', layout: paintLayout, compute: { module: mod, entryPoint: 'paint' } });
+    pp.paint = computePipe(d, { label: 'matter paint', layout: paintLayout, compute: { module: mod, entryPoint: 'paint' } });
     // step C15a: the carbon's passes (carbon.wgsl) and its uniform (written every frame; zeros with carbon off)
     this.carbonBuf = d.createBuffer({ label: 'carbon params', size: CB_BYTES, usage: U.UNIFORM | U.COPY_DST });
     this.carbonAB = new ArrayBuffer(CB_BYTES);
     if (CARBON) {
       for (const e of ['carbon_spread', 'carbon_react', 'carbon_count', 'tar_move', 'tar_copy']) {   // (step N2: + tar_move, tar_copy)
-        this.pipes[e] = d.createComputePipeline({ label: `matter ${e}`, layout, compute: { module: mod, entryPoint: e } });
+        pp[e] = computePipe(d, { label: `matter ${e}`, layout, compute: { module: mod, entryPoint: e } });
       }
       this.cTexBgl = d.createBindGroupLayout({
         label: 'carbon paint',
@@ -863,7 +863,7 @@ export class Matter {
           { binding: 5, visibility: C, storageTexture: { access: 'write-only', format: 'rgba16float' } },
         ],
       });
-      this.pipes.carbon_paint = d.createComputePipeline({
+      pp.carbon_paint = computePipe(d, {
         label: 'carbon paint', layout: d.createPipelineLayout({ label: 'carbon paint', bindGroupLayouts: [this.bgl, this.cTexBgl] }),
         compute: { module: mod, entryPoint: 'carbon_paint' },
       });
@@ -879,7 +879,7 @@ export class Matter {
 
     // drawing
     const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
-    this.drawPipe = d.createRenderPipeline({
+    pp.drawPipe = renderPipe(d, {
       label: 'matter draw', layout: 'auto',
       vertex: { module: drawMod, entryPoint: 'vs' },
       fragment: { module: drawMod, entryPoint: 'fs', targets: [{ format: this.format, blend: { color: over, alpha: over } }] },
@@ -888,12 +888,18 @@ export class Matter {
     this.drawU = d.createBuffer({ label: 'matter draw params', size: DRAW_BYTES, usage: U.UNIFORM | U.COPY_DST });
     this.drawAB = new ArrayBuffer(DRAW_BYTES);
     // step H1: the harmonic look's substances (fs_harm, its own uniform HarmP at binding 8; src/harmonic.js)
-    this.harmPipe = d.createRenderPipeline({
+    pp.harmPipe = renderPipe(d, {
       label: 'matter draw (harmonic)', layout: 'auto',
       vertex: { module: drawMod, entryPoint: 'vs' },
       fragment: { module: drawMod, entryPoint: 'fs_harm', targets: [{ format: this.format, blend: { color: over, alpha: over } }] },
       primitive: { topology: 'triangle-list' },
     });
+    {
+      const P = await allPipes(pp);
+      this.drawPipe = P.drawPipe; this.harmPipe = P.harmPipe;
+      delete P.drawPipe; delete P.harmPipe;
+      this.pipes = P;
+    }
     this.harmU = d.createBuffer({ label: 'matter draw (harmonic)', size: 160, usage: U.UNIFORM | U.COPY_DST });   // (step V1: + lod, 144 until then)
     this.harmF = new Float32Array(40);
     this.sampler = d.createSampler({ label: 'matter', magFilter: 'linear', minFilter: 'linear' });

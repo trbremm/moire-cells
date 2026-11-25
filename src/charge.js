@@ -30,7 +30,7 @@
 // cells' charge and the spread of phi (ledger words LG_Q_* in heat_common.wgsl), shown in the F overlay and a short
 // CHARGE line in the entropy panel.
 
-import { loadShader } from './gpu.js';
+import { loadShader, computePipe, renderPipe, allPipes } from './gpu.js';
 import { LEDGER_WORDS, fmt } from './heat.js';
 import { SUBSTANCES, NCH } from './matter.js';
 import { pal } from './palette.js';
@@ -101,7 +101,7 @@ export class Charge {
     const d = this.device;
     const mod = await loadShader(d, 'src/shaders/charge_draw.wgsl');
     const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
-    this.drawPipe = d.createRenderPipeline({
+    this.drawPipe = await renderPipe(d, {   // (step SP1: async)
       label: 'charge contours', layout: 'auto',
       vertex: { module: mod, entryPoint: 'vs' },
       fragment: { module: mod, entryPoint: 'fs', targets: [{ format: this.format, blend: { color: over, alpha: over } }] },

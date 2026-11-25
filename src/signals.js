@@ -28,7 +28,7 @@
 // This module: switches and knobs (moire.signals.params), the grid's passes, the books (heat ledger words 47104.., LG_SIG), the gene network's
 // and the eat pass's words, a census, the SIGNALS panel line, overlay lines, the pipette (moire.signals.puff), the view's haze.
 
-import { loadShader } from './gpu.js';
+import { loadShader, computePipe, renderPipe, allPipes } from './gpu.js';
 import { HEAT_COMMON_URL, HEAT_SCALE, LEDGER_WORDS, fmt } from './heat.js';
 import { SIGNAL_SENSES } from './folding.js';
 import { CELL_FLOATS } from './cells.js';
@@ -117,8 +117,9 @@ export class Signals {
       ],
     });
     const layout = device.createPipelineLayout({ label: 'signal', bindGroupLayouts: [this.bgl] });
-    this.pipes = {};
-    for (const e of ['spread', 'sum', 'drain', 'puff']) this.pipes[e] = device.createComputePipeline({ label: `signal ${e}`, layout, compute: { module: mod, entryPoint: e } });
+    const pp = {};   // (step SP1: async, at once, with the haze's below)
+    for (const e of ['spread', 'sum', 'drain', 'puff']) pp[e] = computePipe(device, { label: `signal ${e}`, layout, compute: { module: mod, entryPoint: e } });
+    const pipesP = allPipes(pp);
     const U = GPUBufferUsage;
     this.pBuf = device.createBuffer({ label: 'signal params', size: SP_BYTES, usage: U.UNIFORM | U.COPY_DST });
     this.pAB = new ArrayBuffer(SP_BYTES);
@@ -129,12 +130,12 @@ export class Signals {
     // the signals view's haze (src/shaders/signal_draw.wgsl), into the light buffer under the cells
     const dmod = await loadShader(device, 'src/shaders/signal_draw.wgsl');
     const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
-    this.drawPipe = device.createRenderPipeline({
+    [this.pipes, this.drawPipe] = await Promise.all([pipesP, renderPipe(device, {
       label: 'signal haze', layout: 'auto',
       vertex: { module: dmod, entryPoint: 'vs' },
       fragment: { module: dmod, entryPoint: 'fs', targets: [{ format: this.cells.format, blend: { color: over, alpha: over } }] },
       primitive: { topology: 'triangle-list' },
-    });
+    })]);
     this.dBuf = device.createBuffer({ label: 'signal haze params', size: 64, usage: U.UNIFORM | U.COPY_DST });
     this.dAB = new ArrayBuffer(64);
   }

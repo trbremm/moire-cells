@@ -40,6 +40,7 @@
 // starter charges to "in".
 
 import { loadFieldShader } from './field.js';
+import { computePipe, allPipes } from './gpu.js';   // step SP1: async pipelines
 import { HEAT_COMMON_URL, HEAT_SCALE, LEDGER_WORDS, fmt } from './heat.js';
 import { SUBSTANCES, NCH, NCH_CELL, CH, ATOM_SCALE, ENGINES, ENGINE_KINDS, CHARGE_CODES, EXC0, ELECTRONS } from './matter.js';
 import { BANDS, LIGHT_COMMON_URL } from './light.js';
@@ -202,11 +203,12 @@ export class Eat {
     });
     const layout = d.createPipelineLayout({ label: 'cell eat', bindGroupLayouts: [this.bgl] });
     const layoutP = d.createPipelineLayout({ label: 'cell eat plan', bindGroupLayouts: [this.bglP] });
-    this.pipes = {};
+    const pp = {};   // (step SP1: async, at once: the browser may compile the six entry points side by side)
     for (const e of ['dump', 'split', 'eat', 'ledger', 'reset']) {
-      this.pipes[e] = d.createComputePipeline({ label: `cell ${e}`, layout, compute: { module: mod, entryPoint: e } });
+      pp[e] = computePipe(d, { label: `cell ${e}`, layout, compute: { module: mod, entryPoint: e } });
     }
-    this.pipes.plan = d.createComputePipeline({ label: 'cell plan', layout: layoutP, compute: { module: mod, entryPoint: 'plan' } });
+    pp.plan = computePipe(d, { label: 'cell plan', layout: layoutP, compute: { module: mod, entryPoint: 'plan' } });
+    this.pipes = await allPipes(pp);
     const U = GPUBufferUsage, n = this.cells.count;
     this.stockBuf = d.createBuffer({ label: 'cell stock', size: n * SW * 4, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
     this.fluxBuf = d.createBuffer({ label: 'cell flux', size: n * (SW + KW) * 4, usage: U.STORAGE });   // (step T1a: + the kin channels' KW words a cell)

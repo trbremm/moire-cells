@@ -29,7 +29,7 @@
 // this module makes room for them (extraBlocks), calls the matter's drain on a resize and its ledger pass once per frame,
 // and hands it the read-back.
 
-import { loadShader } from './gpu.js';
+import { loadShader, computePipe, renderPipe, allPipes } from './gpu.js';
 
 const LIGHT_COMMON_URL = 'src/shaders/light_common.wgsl';
 
@@ -128,10 +128,11 @@ export class Heat {
       ],
     });
     const layout = d.createPipelineLayout({ label: 'heat', bindGroupLayouts: [this.bgl] });
-    this.pipes = {};
+    const pp = {};   // (step SP1: async, at once)
     for (const e of ['spread', 'sum_heat', 'sum_cells', 'deposit', 'drain']) {
-      this.pipes[e] = d.createComputePipeline({ label: `heat ${e}`, layout, compute: { module: mod, entryPoint: e } });
+      pp[e] = computePipe(d, { label: `heat ${e}`, layout, compute: { module: mod, entryPoint: e } });
     }
+    this.pipes = await allPipes(pp);
     const U = GPUBufferUsage;
     this.paramBuf = d.createBuffer({ label: 'heat params', size: HP_BYTES, usage: U.UNIFORM | U.COPY_DST });
     this.paramAB = new ArrayBuffer(HP_BYTES);

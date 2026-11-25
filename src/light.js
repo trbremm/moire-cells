@@ -18,7 +18,7 @@
 // `dayMin` and 1; Shift+D) and, in full field only, soft cloud patches drifting across (low-frequency noise multiplying
 // the power).
 
-import { loadShader } from './gpu.js';
+import { loadShader, computePipe, renderPipe, allPipes } from './gpu.js';
 import { HEAT_SCALE } from './heat.js';
 import { pal } from './palette.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
@@ -112,14 +112,13 @@ export class Light {
       entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX, buffer: { type: 'uniform' } }],
     });
     const layout = d.createPipelineLayout({ label: 'light draw', bindGroupLayouts: [bgl] });
-    const pipe = (entry) => d.createRenderPipeline({
+    const pipe = (entry) => renderPipe(d, {
       label: `light ${entry}`, layout,
       vertex: { module: mod, entryPoint: 'vs' },
       fragment: { module: mod, entryPoint: entry, targets: [{ format: this.format, blend: { color: over, alpha: over } }] },
       primitive: { topology: 'triangle-list' },
     });
-    this.tintPipe = pipe('fs_tint');
-    this.linePipe = pipe('fs_line');
+    [this.tintPipe, this.linePipe] = await Promise.all([pipe('fs_tint'), pipe('fs_line')]);   // (step SP1: async, at once)
     this.bg = d.createBindGroup({ label: 'light draw', layout: bgl, entries: [{ binding: 0, resource: { buffer: this.buffer } }] });
   }
 

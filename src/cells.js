@@ -36,6 +36,7 @@
 //      ?check=1  every 2 s, compare the grid's contacts with a brute-force count (console and overlay)
 
 import { loadFieldShader, KIND } from './field.js';
+import { computePipe, renderPipe, allPipes } from './gpu.js';   // step SP1: async pipelines
 import { Genome, BIO_BYTES } from './genome.js';
 import { Heat, HEAT_COMMON_URL } from './heat.js';
 import { Eat } from './eat.js';
@@ -410,21 +411,22 @@ export class Cells {
     this.eat = null;            // step C5: the cells' stock and battery (src/eat.js; made at the end of init)
     // the cells' field: plain additive blending into a float texture (signed values add up)
     const add = { srcFactor: 'one', dstFactor: 'one', operation: 'add' };
-    this.fieldPipe = d.createRenderPipeline({
+    const rp = {};   // (step SP1: every pipeline of the cells at once, async; awaited below)
+    rp.fieldPipe = renderPipe(d, {
       label: 'cell field', layout: 'auto',
       vertex: { module: fieldMod, entryPoint: 'vs' },
       fragment: { module: fieldMod, entryPoint: 'fs', targets: [{ format: FIELD_FORMAT, blend: { color: add, alpha: add } }] },
       primitive: { topology: 'triangle-list' },
     });
     const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
-    this.drawPipe = d.createRenderPipeline({
+    rp.drawPipe = renderPipe(d, {
       label: 'cell draw', layout: 'auto',
       vertex: { module: drawMod, entryPoint: 'vs' },
       fragment: { module: drawMod, entryPoint: 'fs', targets: [{ format: this.format, blend: { color: over, alpha: over } }] },
       primitive: { topology: 'triangle-list' },
     });
     // step H1: the harmonic look's cells (the same quads, fs_harm; src/harmonic.js)
-    this.harmPipe = d.createRenderPipeline({
+    rp.harmPipe = renderPipe(d, {
       label: 'cell draw (harmonic)', layout: 'auto',
       vertex: { module: drawMod, entryPoint: 'vs' },
       fragment: { module: drawMod, entryPoint: 'fs_harm', targets: [{ format: this.format, blend: { color: over, alpha: over } }] },
@@ -450,16 +452,18 @@ export class Cells {
     this.grnL = layout('cell grn', [sim, ro(1), rw(2), ro(3), un(4), un(5), rw(6), un(7)]);   // step T1b (src/grn.js makes its bind groups; step Q1: + the heat buffer, the signal's words)
     this.checkL = layout('cell check', [sim, ro(1), ro(2), ro(3), ro(4), ro(5), rw(6),
       { binding: 7, visibility: C, buffer: { type: 'uniform' } }]);
-    const pipe = (L, module, entryPoint) => d.createComputePipeline({
+    const pipe = (L, module, entryPoint) => computePipe(d, {
       label: `cell ${entryPoint}`, layout: L.pl, compute: { module, entryPoint },
     });
-    this.pipes = {};
-    for (const e of ['count', 'scan_local', 'scan_top', 'scan_add', 'scatter']) this.pipes[e] = pipe(this.gridL, gridMod, e);
-    this.pipes.step = pipe(this.stepL, stepMod, 'step');
-    this.pipes.check = pipe(this.checkL, checkMod, 'check');
-    this.pipes.census = pipe(this.censusL, censusMod, 'census');
-    this.pipes.grn = pipe(this.grnL, grnMod, 'grn');
-    this.pipes.signal = pipe(this.grnL, grnMod, 'signal');   // step Q1: hearing, the inboxes, the signal genes' mutation
+    const cp = {};
+    for (const e of ['count', 'scan_local', 'scan_top', 'scan_add', 'scatter']) cp[e] = pipe(this.gridL, gridMod, e);
+    cp.step = pipe(this.stepL, stepMod, 'step');
+    cp.check = pipe(this.checkL, checkMod, 'check');
+    cp.census = pipe(this.censusL, censusMod, 'census');
+    cp.grn = pipe(this.grnL, grnMod, 'grn');
+    cp.signal = pipe(this.grnL, grnMod, 'signal');   // step Q1: hearing, the inboxes, the signal genes' mutation
+    rp.glowPipe = computePipe(d, { label: 'cell glow', layout: 'auto', compute: { module: glowMod, entryPoint: 'main' } });
+    const pipesP = Promise.all([allPipes(rp), allPipes(cp)]);   // (awaited after the buffers, with the eat pass's: compiled side by side)
 
     const U = GPUBufferUsage;
     const n = this.count;
@@ -471,10 +475,6 @@ export class Cells {
     this.fieldsBuf = d.createBuffer({ label: 'fields (charges, field B)', size: FIELDS_BYTES, usage: U.UNIFORM | U.COPY_DST });
     this.fieldsAB = new ArrayBuffer(FIELDS_BYTES);
     this.fieldU = d.createBuffer({ label: 'cell field params', size: 32, usage: U.UNIFORM | U.COPY_DST });
-    this.fieldBG = d.createBindGroup({
-      label: 'cell field', layout: this.fieldPipe.getBindGroupLayout(0),
-      entries: [{ binding: 0, resource: { buffer: this.fieldU } }, { binding: 1, resource: { buffer: this.beatBuf } }],
-    });
     this.cellGridBuf = d.createBuffer({ label: 'cell grid slot', size: n * 8, usage: U.STORAGE });
     // the Bio records (genome + state), double-buffered: bioBuf[bioCur] holds the current tick's
     this.bioBuf = [0, 1].map((k) => d.createBuffer({ label: `cell bio ${k}`, size: n * BIO_BYTES, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC }));
@@ -495,11 +495,22 @@ export class Cells {
     this.simU = new Uint32Array(this.simAB);
 
     // step C5: the stock and battery of every cell, and the pass that eats (src/eat.js)
-    this.eat = await Eat.create(d, this);
+    // (step SP1: these and the cells' own pipelines at once, async: the browser may compile them side by side)
+    const [eat, , , , [rpd, cpd]] = await Promise.all([
+      Eat.create(d, this),
+      this.motors.init(d, this.format, pre),     // step S2: the flagella's and cilia's drawing (src/motors.js)
+      this.tendrils.init(d, this.format, pre),   // step T2: the tendrils' passes and drawing (src/tendrils.js)
+      this.inspect.init(d),                      // step I1: the cell inspector (its engine counters: the eat pass's, bound later)
+      pipesP,
+    ]);
+    this.eat = eat;
     this.heat.eat = this.eat;
-    await this.motors.init(d, this.format, pre);   // step S2: the flagella's and cilia's drawing (src/motors.js)
-    await this.tendrils.init(d, this.format, pre);   // step T2: the tendrils' passes and drawing (src/tendrils.js)
-    await this.inspect.init(d);   // step I1: the cell inspector (after the eat pass: its engine counters)
+    Object.assign(this, rpd);
+    this.pipes = cpd;
+    this.fieldBG = d.createBindGroup({
+      label: 'cell field', layout: this.fieldPipe.getBindGroupLayout(0),
+      entries: [{ binding: 0, resource: { buffer: this.fieldU } }, { binding: 1, resource: { buffer: this.beatBuf } }],
+    });
 
     this.drawU = d.createBuffer({ label: 'cell draw params', size: DRAW_BYTES, usage: U.UNIFORM | U.COPY_DST });
     this.drawAB = new ArrayBuffer(DRAW_BYTES);
@@ -508,7 +519,6 @@ export class Cells {
     // step C6n: the cells' activity for the hum (cell_glow.wgsl; drawing only)
     this.glowBuf = d.createBuffer({ label: 'cell glow (drawing)', size: n * 8, usage: U.STORAGE | U.COPY_SRC });
     this.glowU = d.createBuffer({ label: 'cell glow params', size: 16, usage: U.UNIFORM | U.COPY_DST });
-    this.glowPipe = d.createComputePipeline({ label: 'cell glow', layout: 'auto', compute: { module: glowMod, entryPoint: 'main' } });
     this.glowBG = d.createBindGroup({
       label: 'cell glow', layout: this.glowPipe.getBindGroupLayout(0),
       entries: [{ binding: 0, resource: { buffer: this.glowU } }, { binding: 1, resource: { buffer: this.cellBuf } },

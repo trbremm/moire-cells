@@ -27,7 +27,7 @@
 // Switches: ?stir=0 (off), ?stirgain= (the gain), ?stirsplit=0 (the stirred work not taken from heat: books then count it as work in, like the
 // prescribed currents); streamlines of the stirred flow (pink) in the machinery view.
 
-import { loadShader } from './gpu.js';
+import { loadShader, computePipe, renderPipe, allPipes } from './gpu.js';
 import { readBuffer } from './snapshot.js';
 
 const SP_BYTES = 64;      // struct StirP
@@ -84,8 +84,9 @@ export class Stir {
       ],
     });
     const layout = d.createPipelineLayout({ label: 'stir', bindGroupLayouts: [this.bgl] });
-    this.pipes = {};
-    for (const e of ['curl', 'omega', 'psi', 'publish']) this.pipes[e] = d.createComputePipeline({ label: `stir ${e}`, layout, compute: { module: mod, entryPoint: e } });
+    const pp = {};   // (step SP1: async, at once)
+    for (const e of ['curl', 'omega', 'psi', 'publish']) pp[e] = computePipe(d, { label: `stir ${e}`, layout, compute: { module: mod, entryPoint: e } });
+    this.pipes = await allPipes(pp);
     this.uBuf = d.createBuffer({ label: 'stir params', size: SP_BYTES, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
     this.uAB = new ArrayBuffer(SP_BYTES);
   }

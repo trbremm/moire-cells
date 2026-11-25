@@ -20,6 +20,7 @@
 // ?tretcost= ?minfull= ?minrate= ?mincost= ?minglue= ?minstiff=). Census every 5 s: the TENDRILS panel line; moire.tendrils.now().
 
 import { loadFieldShader } from './field.js';
+import { computePipe, renderPipe, allPipes } from './gpu.js';   // step SP1: async pipelines
 import { CELL_FLOATS } from './cells.js';
 import { BIO_FLOATS, BIO_T2 } from './genome.js';
 import { HEAT_SCALE } from './heat.js';
@@ -153,22 +154,24 @@ export class Tendrils {
       { binding: 0, visibility: S, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: SIM_BYTES } },
       rw(1), ro(2), rw(3), ro(4), ro(5), ro(6), ro(7), ro(8), un(9), un(10)] });
     const pl = d.createPipelineLayout({ label: 'tendrils', bindGroupLayouts: [this.bgl] });
-    this.pForce = d.createComputePipeline({ label: 'tendril force', layout: pl, compute: { module: mod, entryPoint: 'tforce' } });
-    this.pApply = d.createComputePipeline({ label: 'tendril apply', layout: pl, compute: { module: mod, entryPoint: 'tapply' } });
     const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
     const add = { srcFactor: 'one', dstFactor: 'one', operation: 'add' };
-    this.dPipe = d.createRenderPipeline({
-      label: 'tendrils draw', layout: 'auto',
-      vertex: { module: dmod, entryPoint: 'vs' },
-      fragment: { module: dmod, entryPoint: 'fs', targets: [{ format, blend: { color: over, alpha: over } }] },
-      primitive: { topology: 'triangle-list' },
-    });
-    this.bPipe = d.createRenderPipeline({
-      label: 'bone draw', layout: 'auto',
-      vertex: { module: dmod, entryPoint: 'vsb' },
-      fragment: { module: dmod, entryPoint: 'fsb', targets: [{ format, blend: { color: add, alpha: over } }] },
-      primitive: { topology: 'triangle-list' },
-    });
+    Object.assign(this, await allPipes({   // (step SP1: async, at once)
+      pForce: computePipe(d, { label: 'tendril force', layout: pl, compute: { module: mod, entryPoint: 'tforce' } }),
+      pApply: computePipe(d, { label: 'tendril apply', layout: pl, compute: { module: mod, entryPoint: 'tapply' } }),
+      dPipe: renderPipe(d, {
+        label: 'tendrils draw', layout: 'auto',
+        vertex: { module: dmod, entryPoint: 'vs' },
+        fragment: { module: dmod, entryPoint: 'fs', targets: [{ format, blend: { color: over, alpha: over } }] },
+        primitive: { topology: 'triangle-list' },
+      }),
+      bPipe: renderPipe(d, {
+        label: 'bone draw', layout: 'auto',
+        vertex: { module: dmod, entryPoint: 'vsb' },
+        fragment: { module: dmod, entryPoint: 'fsb', targets: [{ format, blend: { color: add, alpha: over } }] },
+        primitive: { topology: 'triangle-list' },
+      }),
+    }));
     this.dBuf = d.createBuffer({ label: 'tendrils draw params', size: TD_BYTES, usage: U.UNIFORM | U.COPY_DST });
     this.dAB = new ArrayBuffer(TD_BYTES);
     this.bgs = null;

@@ -22,6 +22,7 @@
 // starts every cell as a founder.
 
 import { loadFieldShader } from './field.js';
+import { computePipe, renderPipe, allPipes } from './gpu.js';   // step SP1: async pipelines
 import { HEAT_COMMON_URL } from './heat.js';
 import { readBuffer } from './snapshot.js';
 import { camera } from './camera.js';
@@ -144,10 +145,10 @@ export class Inspect {
       ],
     });
     const layout = d.createPipelineLayout({ label: 'inspector', bindGroupLayouts: [this.bgl] });
-    this.pipes = {
-      detect: d.createComputePipeline({ label: 'inspector detect', layout, compute: { module: mod, entryPoint: 'detect' } }),
-      commit: d.createComputePipeline({ label: 'inspector commit', layout, compute: { module: mod, entryPoint: 'commit' } }),
-    };
+    const pipesP = allPipes({   // (step SP1: async, at once, with the overlay's below)
+      detect: computePipe(d, { label: 'inspector detect', layout, compute: { module: mod, entryPoint: 'detect' } }),
+      commit: computePipe(d, { label: 'inspector commit', layout, compute: { module: mod, entryPoint: 'commit' } }),
+    });
     // the overlay: four pipelines on one layout
     const V = GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT;
     this.dbgl = d.createBindGroupLayout({
@@ -160,11 +161,11 @@ export class Inspect {
     });
     const dl = d.createPipelineLayout({ label: 'inspector draw', bindGroupLayouts: [this.dbgl] });
     const A = GPUColorWrite.ALPHA, ALL = GPUColorWrite.ALL;
-    const pipe = (label, vs, fs, target) => d.createRenderPipeline({
+    const pipe = (label, vs, fs, target) => renderPipe(d, {
       label, layout: dl, vertex: { module: dmod, entryPoint: vs }, fragment: { module: dmod, entryPoint: fs, targets: [{ format, ...target }] },
       primitive: { topology: 'triangle-list' },
     });
-    this.dpipes = {
+    [this.pipes, this.dpipes] = await Promise.all([pipesP, allPipes({
       maskAll: pipe('inspector mask', 'vs_full', 'fs_maskall', { writeMask: A }),
       maskFam: pipe('inspector mask family', 'vs_cell', 'fs_mask', { writeMask: A }),
       dim: pipe('inspector dim', 'vs_full', 'fs_dim', {
@@ -173,7 +174,7 @@ export class Inspect {
       rings: pipe('inspector rings', 'vs_cell', 'fs_ring', {
         writeMask: ALL, blend: { color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' }, alpha: { srcFactor: 'zero', dstFactor: 'one', operation: 'add' } },
       }),
-    };
+    })]);
     this.logRead = [0, 1].map(() => ({ buf: d.createBuffer({ label: 'inspector log read', size: (4 + RING * 4) * 4, usage: U.MAP_READ | U.COPY_DST }), busy: false }));
     this.cardRead = [0, 1].map(() => ({ buf: d.createBuffer({ label: 'inspector card read', size: RB.size, usage: U.MAP_READ | U.COPY_DST }), busy: false }));
     this.followRead = [0, 1, 2, 3].map(() => ({ buf: d.createBuffer({ label: 'inspector follow read', size: 48, usage: U.MAP_READ | U.COPY_DST }), busy: false }));

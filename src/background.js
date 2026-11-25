@@ -13,7 +13,7 @@
 //   render(pass, frame)       draw into the shared render pass
 //   impulse(x, y, amp, r)     public: drop a ripple at CSS pixel (x, y); later used by divisions and deaths
 
-import { loadShader } from './gpu.js';
+import { loadShader, computePipe, renderPipe, allPipes } from './gpu.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 
 const MAX_IMPULSES = 256;
@@ -57,18 +57,16 @@ export class Background {
       loadShader(d, 'src/shaders/ripple_inject.wgsl'),
       loadShader(d, 'src/shaders/background_draw.wgsl'),
     ]);
-    this.stepPipe = d.createComputePipeline({
-      label: 'ripple step', layout: 'auto', compute: { module: stepMod, entryPoint: 'step' },
-    });
-    this.injectPipe = d.createComputePipeline({
-      label: 'ripple inject', layout: 'auto', compute: { module: injectMod, entryPoint: 'inject' },
-    });
-    this.drawPipe = d.createRenderPipeline({
-      label: 'background draw', layout: 'auto',
-      vertex: { module: drawMod, entryPoint: 'vs' },
-      fragment: { module: drawMod, entryPoint: 'fs', targets: [{ format: this.format }] },
-      primitive: { topology: 'triangle-list' },
-    });
+    Object.assign(this, await allPipes({   // (step SP1: async, at once)
+      stepPipe: computePipe(d, { label: 'ripple step', layout: 'auto', compute: { module: stepMod, entryPoint: 'step' } }),
+      injectPipe: computePipe(d, { label: 'ripple inject', layout: 'auto', compute: { module: injectMod, entryPoint: 'inject' } }),
+      drawPipe: renderPipe(d, {
+        label: 'background draw', layout: 'auto',
+        vertex: { module: drawMod, entryPoint: 'vs' },
+        fragment: { module: drawMod, entryPoint: 'fs', targets: [{ format: this.format }] },
+        primitive: { topology: 'triangle-list' },
+      }),
+    }));
 
     const U = GPUBufferUsage;
     this.stepU = d.createBuffer({ label: 'ripple step params', size: 64, usage: U.UNIFORM | U.COPY_DST });

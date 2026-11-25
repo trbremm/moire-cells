@@ -32,7 +32,7 @@
 // (fs_harm) draw the cells, src/matter.js and matter_draw.wgsl (fs_harm) the substances, src/shaders/harmonic.wgsl the
 // last pass (blur, grain, shoulder) onto the canvas. The scale bar is the app's (src/app.js), in every look.
 
-import { loadShader } from './gpu.js';
+import { loadShader, computePipe, renderPipe, allPipes } from './gpu.js';
 import { LOOK, HARMONIC } from './palette.js';
 import { camera } from './camera.js';   // app: the view camera (the rim's width under the zoom)
 
@@ -95,7 +95,7 @@ export class Harmonic {
   async init() {
     const d = this.device;
     const mod = await loadShader(d, 'src/shaders/harmonic.wgsl');
-    this.pipe = d.createRenderPipeline({
+    this.pipe = await renderPipe(d, {   // (step SP1: async)
       label: 'harmonic post', layout: 'auto',
       vertex: { module: mod, entryPoint: 'vs' },
       fragment: { module: mod, entryPoint: 'fs', targets: [{ format: this.canvasFormat }] },

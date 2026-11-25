@@ -42,6 +42,7 @@
 // water or near walls, alone or in tissue).
 
 import { loadFieldShader } from './field.js';
+import { computePipe, renderPipe, allPipes } from './gpu.js';   // step SP1: async pipelines
 import { CELL_FLOATS } from './cells.js';
 import { BIO_FLOATS } from './genome.js';
 import { readBuffer } from './snapshot.js';
@@ -216,7 +217,7 @@ export class Motors {
     const d = device;
     const mod = await loadFieldShader(d, 'src/shaders/motor_draw.wgsl', [...pre, LOD_URL]);   // (step V1: + the shared fade)
     const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
-    this.pipe = d.createRenderPipeline({
+    this.pipe = await renderPipe(d, {   // (step SP1: async)
       label: 'motors draw', layout: 'auto',
       vertex: { module: mod, entryPoint: 'vs' },
       fragment: { module: mod, entryPoint: 'fs', targets: [{ format, blend: { color: over, alpha: over } }] },

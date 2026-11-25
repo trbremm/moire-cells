@@ -8,6 +8,7 @@
 // field dots and the substances' dots together).
 
 import { loadFieldShader } from './field.js';
+import { computePipe, renderPipe, allPipes } from './gpu.js';   // step SP1: async pipelines
 import { lod, LOD_URL } from './lod.js';   // step V1: LOD from band limits
 import { pal } from './palette.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
@@ -68,7 +69,7 @@ export class Landscape {
     const drawMod = await loadFieldShader(d, 'src/shaders/landscape_draw.wgsl', [LOD_URL]);   // (step V1: + the shared fade)
     // premultiplied "over": flat dots stay flat on top of the background
     const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
-    this.drawPipe = d.createRenderPipeline({
+    this.drawPipe = await renderPipe(d, {   // (step SP1: async)
       label: 'landscape draw', layout: 'auto',
       vertex: { module: drawMod, entryPoint: 'vs' },
       fragment: { module: drawMod, entryPoint: 'fs', targets: [{ format: this.format, blend: { color: over, alpha: over } }] },

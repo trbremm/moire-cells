@@ -34,7 +34,7 @@
 // Light: no shadows (not built). Speed: one mask word, two fields and a solved psi; the shaders skip it all while nothing is painted.
 // Switches: ?obstacles=0 (the mask ignored: as before), ?obsflow=0 (perfusion keeps the old prescribed profile); knobs in params.
 
-import { loadShader } from './gpu.js';
+import { loadShader, computePipe, renderPipe, allPipes } from './gpu.js';
 import { LEDGER_WORDS } from './heat.js';
 import { camera } from './camera.js';
 import { pal } from './palette.js';
@@ -132,7 +132,7 @@ export class Obstacles {
     const d = this.device;
     const mod = await loadShader(d, 'src/shaders/obstacles_draw.wgsl', { prefixes: [{ name: LOD_URL, text: await (await fetch(LOD_URL, { cache: 'no-cache' })).text() }] });   // (step V1: + the shared fade)
     const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
-    this.drawPipe = d.createRenderPipeline({
+    this.drawPipe = await renderPipe(d, {   // (step SP1: async)
       label: 'obstacles draw', layout: 'auto',
       vertex: { module: mod, entryPoint: 'vs' },
       fragment: { module: mod, entryPoint: 'fs', targets: [{ format: this.format, blend: { color: over, alpha: over } }] },

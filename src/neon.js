@@ -29,7 +29,7 @@
 // to black by the last pass), no trails, no hum, no halo; the layers draw their harmonic versions into the same buffers
 // (frame.look.harmonic), and the last pass (blur, grain, shoulder) puts the light buffer onto the canvas.
 
-import { loadShader } from './gpu.js';
+import { loadShader, computePipe, renderPipe, allPipes } from './gpu.js';
 import { LOOK } from './palette.js';
 import { Harmonic } from './harmonic.js';
 
@@ -93,17 +93,19 @@ export class Neon {
     const mod = await loadShader(d, 'src/shaders/neon.wgsl');
     const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
     const fade = { srcFactor: 'zero', dstFactor: 'constant', operation: 'add' };
-    const pipe = (entryPoint, format, blend) => d.createRenderPipeline({
+    const pipe = (entryPoint, format, blend) => renderPipe(d, {
       label: `neon ${entryPoint}`, layout: 'auto',
       vertex: { module: mod, entryPoint: 'vs' },
       fragment: { module: mod, entryPoint, targets: [blend ? { format, blend } : { format }] },
       primitive: { topology: 'triangle-list' },
     });
-    this.fadePipe = pipe('fs_fade', LIGHT_FORMAT, { color: fade, alpha: fade });
-    this.copyPipe = pipe('fs_copy', LIGHT_FORMAT, { color: over, alpha: over });
-    this.downPipe = pipe('fs_down', LIGHT_FORMAT, null);
-    this.blurPipe = pipe('fs_blur', LIGHT_FORMAT, null);
-    this.compPipe = pipe('fs_comp', this.canvasFormat, { color: over, alpha: over });
+    Object.assign(this, await allPipes({   // (step SP1: async, at once)
+      fadePipe: pipe('fs_fade', LIGHT_FORMAT, { color: fade, alpha: fade }),
+      copyPipe: pipe('fs_copy', LIGHT_FORMAT, { color: over, alpha: over }),
+      downPipe: pipe('fs_down', LIGHT_FORMAT, null),
+      blurPipe: pipe('fs_blur', LIGHT_FORMAT, null),
+      compPipe: pipe('fs_comp', this.canvasFormat, { color: over, alpha: over }),
+    }));
     this.sampler = d.createSampler({ label: 'neon', magFilter: 'linear', minFilter: 'linear' });
     const U = GPUBufferUsage;
     this.downU = [0, 1].map((k) => d.createBuffer({ label: `neon down ${k}`, size: 32, usage: U.UNIFORM | U.COPY_DST }));

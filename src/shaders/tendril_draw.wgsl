@@ -18,6 +18,8 @@ struct TendDraw {
   orange: vec4f,     // the harmonic look's fibre ink (rgb), w its yellow mix where taut
   bone: vec4f,       // the neon look's bone ink (rgb), w the lamellae's spacing (x r)
   job: array<vec4f, 7>,   // the jobs' inks (rgb)
+  lod: vec4f,        // step V1 (src/lod.js): x 1 = on, y the fade's spread, z the grid limit (the lamellae's spacing), w the host limit (the
+                     // cell across: tendrils are marks on their cell; below it they fade, a rope keeps a quarter)
 };
 @group(0) @binding(0) var<uniform> TD: TendDraw;
 @group(0) @binding(1) var<storage, read> cells: array<Cell>;
@@ -122,7 +124,9 @@ fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> TOut 
   if (length(B - A) < 0.05 * TD.R && !grip) { return off_clip(); }
   let ph = f32(c.seed & 1023u) * 0.0061 + f32(slot) * 1.7 + 0.6 * TD.look.y;
   let taut = clamp(T / max(TD.geo.w, 1e-3), 0.0, 1.0);
-  let br = TD.look.w * select(0.55, 0.7 + 0.3 * taut, grip);
+  let kt = lod_keep(2.0 * c.r * TD.dpr, TD.lod.w, TD.lod.y, TD.lod.x);   // (step V1)
+  if (kt <= 0.0 && !grip) { return off_clip(); }
+  let br = TD.look.w * select(0.55, 0.7 + 0.3 * taut, grip) * select(kt, mix(0.25, 1.0, kt), grip);
   let ink = ink_of(ii);
   let q = vi % 6u;
   var qa = array<f32, 6>(0.0, 1.0, 0.0, 0.0, 1.0, 1.0);
@@ -209,7 +213,7 @@ fn vsb(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> TOut
   out.q = stretch_m(vec2f(c.e1, c.e2), lc, -1.0) / max(c.r, 1e-3);
   out.v = h;
   out.s = f32(c.seed & 255u) / 255.0;
-  out.ink = vec4f(TD.bone.rgb, TD.geo.z);
+  out.ink = vec4f(lod_keep(TD.bone.w * c.r * TD.dpr, TD.lod.z, TD.lod.y, TD.lod.x), 0.0, 0.0, TD.geo.z);   // (step V1: x the rings' keep)
   return out;
 }
 
@@ -223,7 +227,7 @@ fn fsb(in: TOut) -> @location(0) vec4f {
   let ang = atan2(in.q.y, in.q.x);
   let wob = 0.025 * sin(3.0 * ang + 6.28 * in.s) + 0.015 * sin(7.0 * ang);
   let x = (r + wob) / sp;
-  let ring = pow(0.5 + 0.5 * cos(6.2831853 * x), 6.0);
+  let ring = lod_mix(0.23, pow(0.5 + 0.5 * cos(6.2831853 * x), 6.0), in.ink.x);   // (step V1: rings below the grid limit: their average tone)
   let canal = 1.0 - smoothstep(0.08, 0.14, r);
   let edge = 1.0 - smoothstep(0.62, 0.82, r);
   var a = ring * edge * (1.0 - canal) * h * in.ink.a;
@@ -233,5 +237,5 @@ fn fsb(in: TOut) -> @location(0) vec4f {
     return vec4f(TD.orange.rgb * a, a);
   }
   a *= 0.7;
-  return vec4f(in.ink.rgb * a, a);
+  return vec4f(TD.bone.rgb * a, a);
 }

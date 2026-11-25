@@ -21,6 +21,8 @@ struct MotorDraw {
                      // swing (rad)
   ink: vec4f,        // the harmonic look's ink (rgb), w the cilia's brightness (share of a flagellum's)
   job: array<vec4f, 7>,   // the jobs' inks (rgb), as Draw.job
+  lod: vec4f,        // step V1 (src/lod.js): x 1 = on, y the fade's spread, z the beat limit (a flagellum: its length), w the host limit
+                     // (cilia: the cell across); below them a motor fades (cell_draw.wgsl lights the tube a little instead)
 };
 @group(0) @binding(0) var<uniform> MD: MotorDraw;
 @group(0) @binding(1) var<storage, read> cells: array<Cell>;
@@ -110,10 +112,12 @@ fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> MOut 
     let dv = a1 - a0;
     let nrm = vec2f(-dv.y, dv.x) / max(length(dv), 1e-4);
     let w = tw * mix(1.0, 0.45, sAt);                 // (the filament tapers toward its tip)
+    let kf = lod_keep(L * MD.dpr, MD.lod.z, MD.lod.y, MD.lod.x);   // (step V1)
+    if (kf <= 0.0) { return off_clip(); }
     o.pos = clip_of(pt + nrm * (across * w));
     o.v = across;
     o.s = sAt;
-    o.ink = vec4f(ink, MD.look.w * (0.55 + 0.45 * fa));
+    o.ink = vec4f(ink, MD.look.w * (0.55 + 0.45 * fa) * kf);
     return o;
   }
   // ---- the cilia: HPS hairs on each free side ----
@@ -124,6 +128,8 @@ fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> MOut 
   let side = hi / max(HPS, 1u);
   let hk = hi % max(HPS, 1u);
   if (side >= 6u || ((free >> side) & 1u) == 0u) { return off_clip(); }
+  let kc = lod_keep(2.0 * c.r * MD.dpr, MD.lod.w, MD.lod.y, MD.lod.x);   // (step V1: hairs are marks on the cell: the host limit)
+  if (kc <= 0.0) { return off_clip(); }
   var mb = membrane(c);
   let mk = mb.mid[side];
   let ek = mb.edge[side];
@@ -145,7 +151,7 @@ fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> MOut 
   o.pos = clip_of(pt + nrm * (across * 0.6 * tw));
   o.v = across;
   o.s = along;
-  o.ink = vec4f(ink, MD.look.w * MD.ink.w * (0.5 + 0.5 * ca));
+  o.ink = vec4f(ink, MD.look.w * MD.ink.w * (0.5 + 0.5 * ca) * kc);
   return o;
 }
 

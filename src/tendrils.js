@@ -27,6 +27,7 @@ import { CARBON, ENZ_H, LG_CB, LG_CBC } from './carbon.js';
 import { CW as CB_W } from './carboncells.js';
 import { CH, lgM } from './matter.js';
 import { readBuffer, settle, flushLedger, frames } from './snapshot.js';
+import { lod, LOD_URL } from './lod.js';   // step V1: LOD from band limits (drawing only)
 
 export const TW = 40;                 // tendril words a cell (tendril.wgsl TW)
 const TC_WORDS = 8;                   // the counters behind the cells' words
@@ -140,7 +141,7 @@ export class Tendrils {
   async init(device, format, pre) {
     const d = device, C = this.cells, n = C.count;
     this.device = d;
-    const [mod, dmod] = await Promise.all([loadFieldShader(d, 'src/shaders/tendril.wgsl', pre), loadFieldShader(d, 'src/shaders/tendril_draw.wgsl', pre)]);
+    const [mod, dmod] = await Promise.all([loadFieldShader(d, 'src/shaders/tendril.wgsl', pre), loadFieldShader(d, 'src/shaders/tendril_draw.wgsl', [...pre, LOD_URL])]);   // (step V1: + the shared fade)
     const U = GPUBufferUsage, S = GPUShaderStage.COMPUTE;
     this.buf = d.createBuffer({ label: 'tendrils', size: (n * TW + TC_WORDS) * 4, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
     this.ubuf = d.createBuffer({ label: 'tendril params', size: TP_BYTES, usage: U.UNIFORM | U.COPY_DST });
@@ -243,6 +244,7 @@ export class Tendrils {
     a[20] = L.boneInk[0] / 255; a[21] = L.boneInk[1] / 255; a[22] = L.boneInk[2] / 255; a[23] = L.spacing;
     const job = palette && palette.job ? palette.job : [];
     job.forEach((ink, j) => { for (let k = 0; k < 3; k++) a[24 + 4 * j + k] = ink[k] / 255; });
+    lod.write4(a, 52, 'grid', 'host');   // step V1: the lamellae's grid limit, the tendrils' host limit
     this.device.queue.writeBuffer(this.dBuf, 0, this.dAB);
   }
   /** The tendrils, into the cells' pass before the cells (a body covers a tendril's root). */

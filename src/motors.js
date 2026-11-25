@@ -45,12 +45,13 @@ import { loadFieldShader } from './field.js';
 import { CELL_FLOATS } from './cells.js';
 import { BIO_FLOATS } from './genome.js';
 import { readBuffer } from './snapshot.js';
+import { lod, LOD_URL } from './lod.js';   // step V1: LOD from band limits (drawing only)
 
 export const STATS_S2 = 9472;     // byte offset of Stats.s2 in struct Stats (cell_common.wgsl)
 export const S2_WORDS = 32;
 export const BIO_S2 = 168;        // the motor genes' first word (Bio.mo; Bio.mc at 172, Bio.mg at 176)
 export const MO = { FLAG: 1, FNULL: 2, CIL: 4, CNULL: 8, GRN: 16, WATER: 32, DIPOLE: 64, PUMP: 128, COUPLE: 256, STEER: 512, TORQUE: 1024 };
-const MD_BYTES = 208;             // struct MotorDraw (motor_draw.wgsl)
+const MD_BYTES = 224;             // struct MotorDraw (motor_draw.wgsl; step V1: + lod, 208 until then)
 const C_FLAGS = 9, C_MOTW = 93;
 
 export class Motors {
@@ -213,7 +214,7 @@ export class Motors {
   // ---------------------------------------------------------------- the drawing
   async init(device, format, pre) {
     const d = device;
-    const mod = await loadFieldShader(d, 'src/shaders/motor_draw.wgsl', pre);
+    const mod = await loadFieldShader(d, 'src/shaders/motor_draw.wgsl', [...pre, LOD_URL]);   // (step V1: + the shared fade)
     const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
     this.pipe = d.createRenderPipeline({
       label: 'motors draw', layout: 'auto',
@@ -255,6 +256,7 @@ export class Motors {
     a[20] = hi[0] / 255; a[21] = hi[1] / 255; a[22] = hi[2] / 255; a[23] = L.ciliaBright;
     const job = palette && palette.job ? palette.job : [];
     job.forEach((ink, j) => { for (let k = 0; k < 3; k++) a[24 + 4 * j + k] = ink[k] / 255; });
+    lod.write4(a, 52, 'beat', 'host');   // step V1
     this.device.queue.writeBuffer(this.uBuf, 0, this.uAB);
     pass.setPipeline(this.pipe);
     pass.setBindGroup(0, this.bgs[C.bioCur]);

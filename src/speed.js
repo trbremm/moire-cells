@@ -66,7 +66,7 @@ export class Speed {
       this.wrap(encoder, true);
       J.cur = { ticks: f.ticks };
     } else {
-      this.wrap(encoder, false);
+      if (J.kind === 'skip') this.wrap(encoder, false);   // (the frame-time fallback leaves the passes as they are)
       J.cur = { ticks: f.ticks };
     }
   }

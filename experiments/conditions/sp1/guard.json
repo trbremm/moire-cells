@@ -1,0 +1,7 @@
+{
+ "batch": "sp1-guard",
+ "runs": [
+  {"name": "sp1-guard-r1", "description": "step SP1 guard: default dish, cells alive and books every 30 s to 180 s", "query": {}, "duration": 180, "sample_every": 30, "shots": [{"t": 180}]},
+  {"name": "sp1-guard-r2", "description": "step SP1 guard: the same again (main's own runs differ a lot)", "query": {}, "duration": 180, "sample_every": 30, "shots": []}
+ ]
+}

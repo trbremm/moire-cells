@@ -601,6 +601,7 @@ fn cb_cell(i: u32, sc: array<f32, 5>, sr: array<f32, 5>, ph: array<i32, 5>, phs:
         }
         *bat += done * g1;
         *heat += done * h1;
+        ran_add(i, k, done); ran_add(i, 5u, done * g1);   // (step I1: the inspector's counters, cell_eat.wgsl)
         atomicAdd(&wcbe[CBE_GAIN], done * g1);
         atomicAdd(&wcbe[CBE_HEAT], done * h1);
       } else {
@@ -651,6 +652,7 @@ fn cb_cell(i: u32, sc: array<f32, 5>, sr: array<f32, 5>, ph: array<i32, 5>, phs:
         }
         if (band == 0u) { np = done; }   // (a storer has no photons to waste)
         *bat -= done * c16;
+        ran_add(i, k, done); ran_add(i, 6u, done * c16);   // (step I1: the inspector's counters, cell_eat.wgsl)
         let hh = done * (ph16 + c16 - g16) + (np - done) * ph16;
         *heat += hh;
         atomicAdd(&wcbe[CBE_PAID], done * c16);

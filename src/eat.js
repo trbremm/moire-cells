@@ -56,6 +56,7 @@ import { KW } from './kin.js';
 import { CarbonCells } from './carboncells.js';   // step C15b: cells eat carbon
 import { CARBON, LG_CBC } from './carbon.js';
 
+export const RAN_W = 8;   // step I1: the inspector's counters per slot (RAN_W in cell_eat.wgsl)
 export const SW = 64;               // stock words per cell (cell_eat.wgsl; 16 until step C6c's membranes, words 16..27; step C7:
                                     // 14 the pumped charge across the membrane, 15 the voltage's energy; 32 until step C12b's
                                     // lipid membrane, words 32..61)
@@ -189,6 +190,7 @@ export class Eat {
         { binding: 10, visibility: C, buffer: { type: 'read-only-storage' } },  // step C6: the genomes
         { binding: 11, visibility: C, buffer: { type: 'storage' } },            // step C15b: the cells' carbon (a stub without carbon)
         { binding: 12, visibility: C, buffer: { type: 'uniform' } },            // ... its uniform (struct CbCellP)
+        { binding: 13, visibility: C, buffer: { type: 'storage' } },            // step I1: what the engines ran (the inspector's counters)
       ],
     });
     // the plan pass: plain views (the stock, the heat buffer's grid part), no atomics (cell_eat.wgsl)
@@ -209,6 +211,9 @@ export class Eat {
     this.stockBuf = d.createBuffer({ label: 'cell stock', size: n * SW * 4, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
     this.fluxBuf = d.createBuffer({ label: 'cell flux', size: n * (SW + KW) * 4, usage: U.STORAGE });   // (step T1a: + the kin channels' KW words a cell)
     this.paramBuf = d.createBuffer({ label: 'cell eat params', size: EP_BYTES, usage: U.UNIFORM | U.COPY_DST });
+    // step I1, the cell inspector (src/inspect.js): RAN_W counters per slot of what its engines actually ran (cell_eat.wgsl ran_add); nothing in
+    // the simulation reads them
+    this.ranBuf = d.createBuffer({ label: 'cell engines ran (inspector)', size: n * RAN_W * 4, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST });
     this.paramAB = new ArrayBuffer(EP_BYTES);
     this.carbon.init(d, n);   // step C15b
   }
@@ -227,7 +232,7 @@ export class Eat {
       label: 'cell eat', layout: this.bgl,
       entries: [b(0, this.cells.simBuf, 256), b(1, this.cells.cellBuf), b(2, this.stockBuf), b(3, H.buffer),
         b(4, this.paramBuf), b(5, M.chemBuf), b(6, H.paramBuf), b(8, H.light.buffer), b(9, this.fluxBuf), b(10, bio),
-        b(11, this.carbon.buf), b(12, this.carbon.ubuf)],
+        b(11, this.carbon.buf), b(12, this.carbon.ubuf), b(13, this.ranBuf)],
     }));
     this.bgPs = this.cells.bioBuf.map((bio) => this.device.createBindGroup({
       label: 'cell eat plan', layout: this.bglP,

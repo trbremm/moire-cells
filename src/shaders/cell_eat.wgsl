@@ -92,6 +92,13 @@
 // so reading the 3 x 3 pixels of 13 channels per cell through atomics cost as much as the rest of the tick): the stock,
 // and the heat buffer's grid part (everything behind the ledger), read only.
 @group(0) @binding(2) var<storage, read_write> stockP: array<i32>;
+// step I1, the CELL INSPECTOR (src/inspect.js): what each cell's engines ACTUALLY ran (counters only: nothing in the simulation reads
+// them). Per slot RAN_W words, cumulative (wrapping u32): 0..4 the events each engine slot ran (counts), 5 the energy the downhill ones put
+// into the battery, 6 the energy the uphill ones took from it (heat counts). The inspector's tick pass zeroes a slot's words at a birth
+@group(0) @binding(13) var<storage, read_write> ran: array<atomic<u32>>;
+const RAN_W: u32 = 8u;
+fn ran_add(i: u32, k: u32, n: i32) { if (n > 0) { atomicAdd(&ran[i * RAN_W + k], u32(n)); } }
+
 @group(0) @binding(7) var<storage, read_write> mg: array<i32>;
 
 const SW: u32 = 64u;       // stock words per cell (16 until step C6c, 32 until step C12b)
@@ -3125,6 +3132,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           m[E.ch.z] += n;
           if (E.ch.w != NONE) { m[select(E.ch.w, E.ch.w + EXC0, exm)] += n; }
           bat -= n * c16;
+          ran_add(i, k, n); ran_add(i, 6u, n * c16);   // (step I1: the inspector's counters)
           var hh = n * (ph16 + c16 - E.g16) + (np - n) * ph16;
           if (exm && n > 0) { hh -= n * ex16; atomicAdd(&wxn[XN_MADE_CELL], n); }
           // ... and the excited reactants it used give their energy to the battery (an engine), less the ineff share
@@ -3172,6 +3180,7 @@ fn eat(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_index
           tMade += n * max(t_net(E.ch), 0);
           bat += n * g1;
           heat += n * h1;
+          ran_add(i, k, n); ran_add(i, 5u, n * g1);   // (step I1: the inspector's counters)
           // step C12c: an excited reactant's energy goes into the battery too (an engine: controlled), less the ineff share; what
           // a full battery has no room for is heat
           var eb = 0;

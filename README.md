@@ -1,8 +1,9 @@
 # Moiré cells
 
-A toy simulation made for beauty: cells moving through a "chemical" landscape made of moiré beats between
-lattices. This is the WebGPU version (work in progress). The original CPU version is
-`reference/neon_organoid_cpu.html`. See `CLAUDE.md` for the plan.
+A neon petri dish where cells evolve, eat and build tissues on a landscape of moiré fields. A toy made for beauty, an
+artistic project inspired by science: nothing is scripted, behaviour emerges from chemistry, physics and evolution. Live at
+https://trbremm.github.io/moire-cells/ (WebGPU). The original CPU version is `reference/neon_organoid_cpu.html`; the steps
+below record how it grew.
 
 ## Run it
 

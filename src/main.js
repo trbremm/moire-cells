@@ -668,7 +668,7 @@ async function boot() {
     {   // step Q1: a signal substance
       const QP = cells.signals.params;
       if (params.get('signal') === '0') QP.on = false;
-      for (const [q, k] of [['sigflow', 'flow'], ['junction', 'junction'], ['sigtaste', 'taste'], ['fastreg', 'fast'], ['signalnull', 'null'], ['sigmut', 'mutate'],]) {
+      for (const [q, k] of [['sigflow', 'flow'], ['junction', 'junction'], ['sigtaste', 'taste'], ['fastreg', 'fast'], ['signalnull', 'null'], ['sigmut', 'mutate'], ['sigidle', 'idle']]) {   // (step SP1: ?sigidle=0)
         if (params.has(q)) QP[k] = flag(q);
       }
       for (const [q, k] of [['sigspread', 'spread'], ['siglife', 'life'], ['sigpower', 'power'], ['hearw', 'hearW'], ['hearj', 'hearJ'], ['taufast', 'tauFast'],

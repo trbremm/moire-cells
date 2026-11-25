@@ -31,7 +31,7 @@ struct DrawParams {
   hex: u32,         // 1 = triangular (hex) screen, 0 = square screen
   _s3: f32,         // (spare: the sources' base glow and marker stroke until step C3)
   _s4: f32,
-  _s5: vec4f,       // (spare: the nutrient and threat inks until step C3)
+  lod: vec4f,       // step V1 (src/lod.js): x 1 = on, y the fade's spread, z the grid limit (device px); (spare: the nutrient and threat inks until step C3)
   _s6: vec4f,
   cell: vec4f,      // the cells' field ink
   cellGain: f32,    // the cells' field strength gain (0 = not drawn)
@@ -93,6 +93,13 @@ fn disc(d: f32, r: f32) -> f32 {
   return clamp((r - d) * D.dpr + 0.5, 0.0, 1.0);
 }
 
+// step V1: a dot of radius r on a screen of pitch p (CSS px), its coverage a here: below the grid limit it fades into its even tone (its
+// area over its screen cell's), so far or small screens show a tone, not aliased dots
+fn dot_or_tone(a: f32, r: f32, p: f32) -> f32 {
+  let k = lod_keep(p * D.dpr, D.lod.z, D.lod.y, D.lod.x);
+  return lod_mix(3.14159265 * r * r / (select(1.0, 0.8660254, D.hex != 0u) * p * p), a, k);
+}
+
 // premultiplied "over"
 fn over(top: vec4f, under: vec4f) -> vec4f {
   return top + under * (1.0 - top.a);
@@ -113,7 +120,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     let cov = clamp((cel - D.thresh) / max(1.0 - D.thresh, 1e-3), 0.0, 1.0);
     if (cov > 0.0) {
       let r = D.maxDot * 0.5 * D.pitch * sqrt(cov);
-      res = vec4f(D.cell.rgb * D.cell.a, 1.0) * disc(length(x - c), r);
+      res = vec4f(D.cell.rgb * D.cell.a, 1.0) * dot_or_tone(disc(length(x - c), r), r, D.pitch);
     }
   }
 
@@ -125,7 +132,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     let cov = clamp((v - D.pThresh) / max(1.0 - D.pThresh, 1e-3), 0.0, 1.0);
     if (cov > 0.0) {
       let r = D.maxDot * 0.5 * D.pPitch * sqrt(cov);
-      res = over(vec4f(D.pInk.rgb * D.pInk.a, 1.0) * disc(length(x - cp), r), res);
+      res = over(vec4f(D.pInk.rgb * D.pInk.a, 1.0) * dot_or_tone(disc(length(x - cp), r), r, D.pPitch), res);
     }
   }
 
@@ -141,6 +148,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       // positive: an open ring (light ink, so the black stays); negative: a filled dot
       var a = disc(abs(d - r), 0.5 * D.bRing);
       if (v < 0.0 || D.bRing <= 0.0) { a = disc(d, r); }
+      a = dot_or_tone(a, select(sqrt(max(2.0 * r * D.bRing, 0.0)), r, v < 0.0 || D.bRing <= 0.0), D.bPitch);   // (a ring's area: 2 pi r w)
       res = over(vec4f(D.bInk.rgb * D.bInk.a, 1.0) * a, res);
     }
   }

@@ -8,6 +8,7 @@
 // field dots and the substances' dots together).
 
 import { loadFieldShader } from './field.js';
+import { lod, LOD_URL } from './lod.js';   // step V1: LOD from band limits
 import { pal } from './palette.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
 
@@ -64,7 +65,7 @@ export class Landscape {
 
   async init() {
     const d = this.device;
-    const drawMod = await loadFieldShader(d, 'src/shaders/landscape_draw.wgsl');
+    const drawMod = await loadFieldShader(d, 'src/shaders/landscape_draw.wgsl', [LOD_URL]);   // (step V1: + the shared fade)
     // premultiplied "over": flat dots stay flat on top of the background
     const over = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' };
     this.drawPipe = d.createRenderPipeline({
@@ -117,6 +118,7 @@ export class Landscape {
     F[3] = camera.x; F[4] = camera.y;   // app: the view camera
     F[5] = Math.max(2, p.pitch); F[6] = p.angle * Math.PI / 180; F[7] = p.threshold;
     F[8] = Math.max(0, Math.min(1, p.maxDot)); this.drawI[9] = p.hex ? 1 : 0;
+    lod.write4(F, 12);   // step V1: the dots' grid limit
     const P = pal();
     for (let j = 0; j < 3; j++) F[20 + j] = P.field.A[j] / 255;
     F[23] = p.cellLevel * P.levels.field / 0.32;

@@ -29,7 +29,9 @@ function glyph(inner, vb = 40) {
   return s;
 }
 const base = () => location.pathname;   // (the page itself, no query: this screen)
-const linkTo = (q) => `${base()}?${q}`;
+// ?go=home&nogpu=1 (or ?go=lab&nogpu=1): pretend WebGPU is missing, here and in every choice (main.js's ?nogpu=1: its fallback message)
+const NOGPU = new URLSearchParams(location.search).get('nogpu') === '1';
+const linkTo = (q) => `${base()}?${q}${NOGPU ? '&nogpu=1' : ''}`;
 
 const DISH_GLYPH = '<circle cx="20" cy="20" r="17"/><circle cx="20" cy="20" r="13.5" stroke-opacity="0.4"/>' +
   '<path d="M13 13l3 1.7v3.4l-3 1.7-3-1.7v-3.4zM19 17l3 1.7v3.4l-3 1.7-3-1.7v-3.4zM25 22l3 1.7v3.4l-3 1.7-3-1.7v-3.4z"/>' +
@@ -89,7 +91,7 @@ function build() {
     el('span', '', 'Hand-designed tissues to poke: a muscle with its nerve, a limb that bends, a sheet that carries waves.'));
   choices.append(dish, lab);
   start.append(h1, line, choices);
-  if (!navigator.gpu) {
+  if (!navigator.gpu || NOGPU) {
     start.append(el('p', 'home-note', 'This browser has no WebGPU, so the dish cannot run here: it needs Chrome or Edge, Firefox 141+ on Windows, or Safari 26. Each choice will say so.'));
   }
   const foot = el('p', 'home-foot');

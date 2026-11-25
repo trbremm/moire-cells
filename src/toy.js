@@ -633,7 +633,7 @@ export function createToy(ctx) {
       else if (b.dataset.preset != null) {
         const q = new URLSearchParams();
         if (b.dataset.preset) q.set('preset', b.dataset.preset);
-        else q.set('world', 'open');   // (the plain open dish: a link with no option at all opens a generated world, index.html)
+        else q.set('world', 'open');   // (the plain open dish: a link with no option at all opens the home screen, index.html, step H2)
         if (A.neon.harmonic.on) q.set('look', 'harmonic');
         if (P.has('dev')) q.set('dev', P.get('dev'));
         const u = new URL(location.href); u.search = q.toString(); u.hash = '';

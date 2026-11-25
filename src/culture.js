@@ -560,7 +560,7 @@ export function openCultureDialog(ctx) {
     const ds = DISH_SIZES[st.dish][1];
     if (ds && !(P && P.query.dish === ds.join('x'))) keep.set('dish', ds.join('x'));
     if (st.round) keep.set('round', '1');   // (step G0b)
-    if (![...keep.keys()].length) keep.set('world', 'open');   // (a link with no option at all opens a generated world: index.html)
+    if (![...keep.keys()].length) keep.set('world', 'open');   // (a link with no option at all opens the home screen: index.html, step H2)
     u.search = keep.toString();
     return u.href;
   }

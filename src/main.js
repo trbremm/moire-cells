@@ -937,6 +937,9 @@ async function boot() {
     // app: how the culture is spread and how diverse it is (?spread= ?colonies= ?diversity=, or a preset's), before the first
     // resize seeds it
     cultureOptions(ORGAN ? { ...layoutFromParams(params, PRESET), spread: 'organ', organ: ORGAN } : layoutFromParams(params, PRESET), params.has('diversity'));
+    // step T2: ?limbsqueeze= the limb's pull to the dish's centre (the spread's 0.02, x 2000 / 34 cells, pulls its far ends in at ~0.3 R/s
+    // and squeezes the muscle, so its fibres join and conduct; at 0 the bundle loosened, its junctions did not form and a poke fired 2 of 6)
+    if (ORGAN && ORGAN.kind === 'limb' && params.has('limbsqueeze')) cells.params.squeeze = Math.max(0, Number(params.get('limbsqueeze')) || 0);
     if (ORGAN) {   // step L1: the organ's four designs are the founders (founder k = design k: muscle, nerve, skin, pacemaker)
       cells.genome.founders = organGenomes(makeRng((SEED ^ 0x6f72676e) >>> 0), ORGAN.opts);
       cells.genome.params.founders = cells.genome.founders.length;   // (step T2: 7, + bone, tendon, anchor)

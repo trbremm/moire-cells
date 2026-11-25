@@ -144,10 +144,12 @@ export function organCells(kind = 'muscle', opts = {}) {
  * muscle under the rods, with its own nerve and tendons: it extends the joint again).
  */
 function limbCells(out, opts, M4a, dy) {
-  // (the muscle and nerve laid out at the length their spindles settle to, ~2.8:1, not the 4:1 they ask for: laid out longer, the bundle
-  // shortened by itself as it settled and pulled the tendons, so the joint crept before any poke)
+  // (the muscle and nerve laid out at the length their spindles settle to with no pull to the centre, ~3.6:1: laid out longer or shorter,
+  // the bundle changed its length by itself as it settled and pulled or pushed through the tendons, so the joint crept before any poke)
   const M4 = cap(Math.max(1.5, Math.min(4, Number(opts.layAspect) || 2.8)));
-  const nb = Math.max(3, Math.round(opts.bone || 5)), g = 0.8, dB = 1.98, yLo = -0.5 * Math.sqrt(3) * dB / 2, yHi = -yLo;
+  // (g: half the joint's gap; 0: the lower rows' end cells touch, glued bone to bone, a pivot the joint bones' tendrils tie as well; with a
+  // gap the rods drifted apart before the ligaments had grown across)
+  const nb = Math.max(3, Math.round(opts.bone || 5)), g = 0.02, dB = 1.98, yLo = -0.5 * Math.sqrt(3) * dB / 2, yHi = -yLo;
   // (with an ANTAGONIST, muscles lie on both sides of the rods near the joint: only the left rod's far cells anchor, the lower row's
   // tendrils away from one muscle, the upper row's (front pi) away from the other)
   const ant = !!opts.antagonist, far = (k) => !ant || k >= nb - 2;
@@ -157,7 +159,7 @@ function limbCells(out, opts, M4a, dy) {
     out.push({ x: -(g + 1 + dB * k), y: yLo, front: 0, d: k === 0 ? D_JOINT : far(k) ? D_ANCHOR : D_BONE });
     out.push({ x: g + 1 + dB * k, y: yLo, front: k === 0 ? Math.PI : 0, d: k === 0 ? D_JOINT : D_BONE });
   }
-  for (let k = 0; k < nb - 1; k++) {
+  for (let k = 1; k < nb; k++) {   // (the upper rows start one cell back from the joint: the V the joint closes into)
     out.push({ x: -(g + 1 + dB * (k + 0.5)), y: yHi, front: ant && k >= nb - 3 ? Math.PI : 0, d: ant && k >= nb - 3 ? D_ANCHOR : D_BONE });
     out.push({ x: g + 1 + dB * (k + 0.5), y: yHi, front: 0, d: D_BONE });
   }
@@ -396,8 +398,21 @@ export class Organ {
     const r = Q.params.puffRadius;
     Q.params.puffRadius = this.pokeR;   // (the electrode's tip: the end cells of the nerve, 1.8 R)
     Q.drop(x, y, 0);
+    // step T2: the limb's electrode touches the muscle's end too (its relays pass it on: the nerve alone, one row of long cells, often failed
+    // to recruit the muscle once the bundle had settled)
+    let mx = null, my = null;
+    if (this.kind === 'limb' && arguments[0] == null) {
+      const v = this.M.cells.view, ctr = this.centre || [v.cssW / 2, v.cssH / 2];
+      const by = await this.read(), ax = this.axisOf(by[0]);
+      const mus = by[0].filter((p) => !this.opts.antagonist || (side ? -1 : 1) * ((p.y - ctr[1]) * ax[0] - (p.x - ctr[0]) * ax[1]) > 0);
+      if (mus.length) {
+        const e = mus.reduce((b, p) => (p.x * ax[0] + p.y * ax[1] < b.x * ax[0] + b.y * ax[1] ? p : b));
+        mx = e.x; my = e.y;
+        Q.drop(mx, my, 0);
+      }
+    }
     Q.params.puffRadius = r;
-    return { x, y };
+    return { x, y, ...(mx != null ? { muscle: [mx, my] } : {}) };
   }
 
   /**

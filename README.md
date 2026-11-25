@@ -9751,7 +9751,7 @@ runs; pictures in `experiments/keep/h2/`:
 - The relay sheet sits in the default dish's scene (its springs and spotlight beside the sheet), as `?tissue=relay` always did.
 - The home button leaves at once (no "are you sure?"): a dish left is gone, as with a reload.
 
-### Step I1: a cell inspector
+## Step I1: a cell inspector
 
 The user, 2026-11-25, after leaving a dish running and finding a striking "queen": in a big starving honeycomb colony (one clone, every
 cell dark inside with the same engine marks) a few cells were round with a full green battery core and a bright halo, and the central

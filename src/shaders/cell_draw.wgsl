@@ -219,6 +219,10 @@ struct VSOut {
   // then 4, 5), for the pumps' notches
   @location(9) @interpolate(flat) tm0: vec4f,
   @location(10) @interpolate(flat) tm1: vec4f,
+  // step V1: the cell's LOD values, worked out once per cell here (lod_cell) instead of per pixel: x the number of shared sides, y the full
+  // core's keep, z the failed parts' light that lights the tube (luminance), w spare; lodB: the failed features' light for the inside (rgb)
+  @location(11) @interpolate(flat) lodA: vec4f,
+  @location(12) @interpolate(flat) lodB: vec4f,
 };
 
 // Step C6c: how far inside a honeycomb outline a point p is (relative to the centre). Inside each side's line by
@@ -287,10 +291,61 @@ fn hum_bright(c: Cell, i: u32) -> f32 {
   return wob * act;
 }
 
+// step V1 (src/lod.js): a cell's LOD values that do not depend on the pixel (see VSOut.lodA, lodB): its shared sides, the full core's keep,
+// and the light of what fails its limit (the engines' marks, beat: 80 % to the tube by default, the rest to the inside in their inks;
+// granules, grid: amber; a meal's ghost, beat: its colour; the full core's light at the minimal sign). The walls' part needs the job colour
+// and is added in fs.
+fn lod_cell(c: Cell, i: u32) -> array<vec4f, 2> {
+  let g = bio[i];
+  let neon = D.neon.x > 0.5;
+  let partsOn = D.ink1.w > 0.0;
+  let cpx = 2.0 * c.r * D.dpr;
+  let wSign = lod_k(cpx, 1.25 * D.lodL.z);
+  let r2 = max(c.r * c.r, 1e-4);
+  var nShared = 0.0;
+  for (var k = 0u; k < 6u; k++) { if (side_shared(c, k)) { nShared += 1.0; } }
+  var kCore = 1.0;
+  var fold = vec3f(0.0);
+  var partLum = 0.0;
+  if (D.core > 0.0 && c.bat > 0.0) {
+    kCore = lod_k(2.0 * select(D.core, D.inkSwap.w, partsOn) * c.r * D.dpr, D.lodL.z);
+    fold += D.coreInk.rgb * clamp(c.bat, 0.0, 1.0) * D.lod2.z * D.lod2.z * (1.0 - kCore) * (1.0 - wSign);
+  }
+  if (partsOn) {
+    let hmax = D.ink2.w * c.r;
+    let pc = array<f32, 5>(g.eng.x, g.eng.y, g.eng.z, g.dx.x, g.dx.y);
+    let pr = array<f32, 5>(g.rate.x, g.rate.y, g.rate.z, select(0.0, g.dx.z, D.spare5[0].x > 0.5), select(0.0, g.dx.w, D.spare5[0].x > 0.5));
+    for (var k = 0u; k < 5u; k++) {
+      if (pr[k] <= 0.0) { continue; }
+      let e = eng_index(pc[k]);
+      let kind = part_kind(e);
+      let h = hmax * sqrt(clamp(pr[k] / max(D.inkSed.w, 1e-3), 0.12, 1.0)) * select(1.0, D.spare5[0].y, k >= 3u);
+      var ink = band_ink(eng_band(pc[k]));
+      if (kind == 0u && eng_band(pc[k]) == 0u) { ink = D.coreInk.rgb * 0.6; }   // (a storer: a ring)
+      if (kind == 1u) { ink = D.inkBurn.rgb; } else if (kind == 2u) { ink = D.inkSwap.rgb * 0.6; } else if (kind == 3u) { ink = D.inkSed.rgb; }
+      let pl = ink * (1.0 + 0.3 * select(0.0, 1.0, neon)) * 0.8 * (h * h / r2) * (1.0 - lod_k(2.0 * h * D.dpr, D.lodL.z));
+      fold += pl * (1.0 - D.lod3.y);
+      partLum += (pl.r + pl.g + pl.b) / 3.0 * D.lod3.y;
+    }
+  }
+  let gz0 = unpack4x8unorm(c.sns1).z;
+  if (gz0 > 0.02) {
+    let gr0 = c.r * (0.055 + 0.07 * gz0);
+    fold += select(vec3f(0.34, 0.17, 0.04), vec3f(0.95, 0.55, 0.16) * 0.7, neon) * f32(1u + u32(gz0 * 4.99)) * (gr0 * gr0 / r2) * (1.0 - lod_k(2.0 * gr0 * D.dpr, D.lodL.y));
+  }
+  let ph0 = phago(c);
+  if (ph0.w >= 0.0) {
+    fold += cell_colour(eng_partner(c.eng)) * D.p1.z * (1.0 - ph0.w) * (ph0.z * ph0.z / r2) * (1.0 - lod_k(2.0 * ph0.z * D.dpr, D.lodL.z));
+  }
+  return array<vec4f, 2>(vec4f(nShared, kCore, partLum, 0.0), vec4f(fold, 0.0));
+}
+
 @vertex
 fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VSOut {
   var o: VSOut;
   o.id = ii;
+  o.lodA = vec4f(0.0, 1.0, 0.0, 0.0);
+  o.lodB = vec4f(0.0);
   if ((cells[ii].flags & CELL_ALIVE) == 0u) { o.pos = vec4f(2.0, 2.0, 2.0, 1.0); return o; }   // step C9: a free slot: nothing
   let c = cells[ii];
   // two triangles: corners (-1,-1) (1,-1) (-1,1) / (-1,1) (1,-1) (1,1)
@@ -346,6 +401,9 @@ fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VSOut
   if ((c.flags & CELL_ALIVE) == 0u) { o.pos = vec4f(2.0, 2.0, 2.0, 1.0); }   // outside the clip volume
   o.dipv = vec2f(0.0);
   if (D.dip2.x > 0.5) { o.dipv = dip_sat(cell_dipole_raw(c, membrane(c)), D.dip.z); }
+  o.lodA = vec4f(0.0, 1.0, 0.0, 0.0);
+  o.lodB = vec4f(0.0);
+  if (D.lod.x > 0.5) { let L = lod_cell(c, ii); o.lodA = L[0]; o.lodB = L[1]; }   // (step V1)
   return o;
 }
 
@@ -573,7 +631,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   if (lodOn) {
     if (lw * D.dpr < D.lodL.x) { tubeDim = lw * D.dpr / D.lodL.x; lw = D.lodL.x / D.dpr; }
     onShared = side_shared(c, min(side, 5u));
-    for (var k = 0u; k < 6u; k++) { if (side_shared(c, k)) { nShared += 1.0; } }
+    nShared = in.lodA.x;
   }
   let ein2 = ein - wOff;     // how far inside the tube's outer edge (the outline less the wall's rim)
   var dotC = cover(D.dotR * s, dd, aad);
@@ -607,48 +665,16 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   var kCore = 1.0;
   var tubeBoost = 1.0;
   if (lodOn) {
-    var fold = vec3f(0.0);
-    var partLum = 0.0;
+    var fold = in.lodB.rgb;   // (the parts, granules, meal and core: lod_cell, per cell)
+    kCore = in.lodA.y;
     let r2 = max(c.r * c.r, 1e-4);
     // merged shared walls: the light the tubes there lost (the tube's area share x the shared sides' share x how far they dimmed)
     let lw0 = max(select(min(D.lineW, 0.22 * c.r), min(D.neon.y, 0.3 * c.r), neon), D.lodL.x / D.dpr);
     fold += col * (select(D.line, 1.15 * D.line, neon) * tubeDim) * min(1.0, 2.31 * lw0 / c.r) * (nShared / 6.0) * mergeW * D.lod3.x / max(D.lod.w, 1e-3);
-    // the battery's full core (area by charge) fails at the beat limit into the simplified core, which at the minimal sign is the tone
-    if (D.core > 0.0 && c.bat > 0.0) {
-      kCore = lod_k(2.0 * select(D.core, D.inkSwap.w, partsOn) * c.r * D.dpr, D.lodL.z);
-      fold += D.coreInk.rgb * clamp(c.bat, 0.0, 1.0) * D.lod2.z * D.lod2.z * (1.0 - kCore) * (1.0 - wSign);
-    }
-    // the engines' marks (beat): their lamps' inks
+    // the failed parts' share that lights the tube: their light over the tube's own
     if (partsOn) {
-      let hmax = D.ink2.w * c.r;
-      let pc = array<f32, 5>(g.eng.x, g.eng.y, g.eng.z, g.dx.x, g.dx.y);
-      let pr = array<f32, 5>(g.rate.x, g.rate.y, g.rate.z, select(0.0, g.dx.z, D.spare5[0].x > 0.5), select(0.0, g.dx.w, D.spare5[0].x > 0.5));
-      for (var k = 0u; k < 5u; k++) {
-        if (pr[k] <= 0.0) { continue; }
-        let e = eng_index(pc[k]);
-        let kind = part_kind(e);
-        let h = hmax * sqrt(clamp(pr[k] / max(D.inkSed.w, 1e-3), 0.12, 1.0)) * select(1.0, D.spare5[0].y, k >= 3u);
-        var ink = band_ink(eng_band(pc[k]));
-        if (kind == 0u && eng_band(pc[k]) == 0u) { ink = D.coreInk.rgb * 0.6; }   // (a storer: a ring)
-        if (kind == 1u) { ink = D.inkBurn.rgb; } else if (kind == 2u) { ink = D.inkSwap.rgb * 0.6; } else if (kind == 3u) { ink = D.inkSed.rgb; }
-        let pl = ink * (1.0 + 0.3 * select(0.0, 1.0, neon)) * 0.8 * (h * h / r2) * (1.0 - lod_k(2.0 * h * D.dpr, D.lodL.z));
-        fold += pl * (1.0 - D.lod3.y);
-        partLum += (pl.r + pl.g + pl.b) / 3.0 * D.lod3.y;
-      }
-      // (that share lights the tube: its light over the tube's own)
       let tl = max(select(D.line, 1.15 * D.line, neon) * min(1.0, 2.31 * lw0 / c.r) * (col.r + col.g + col.b) / 3.0, 0.03);
-      tubeBoost = min(1.0 + D.lod.w * partLum / tl, D.lod3.z);
-    }
-    // tar granules (grid): amber
-    let gz0 = unpack4x8unorm(c.sns1).z;
-    if (gz0 > 0.02) {
-      let gr0 = c.r * (0.055 + 0.07 * gz0);
-      fold += select(vec3f(0.34, 0.17, 0.04), vec3f(0.95, 0.55, 0.16) * 0.7, neon) * f32(1u + u32(gz0 * 4.99)) * (gr0 * gr0 / r2) * (1.0 - lod_k(2.0 * gr0 * D.dpr, D.lodL.y));
-    }
-    // a meal being digested (beat): its colour
-    let ph0 = phago(c);
-    if (ph0.w >= 0.0) {
-      fold += cell_colour(eng_partner(c.eng)) * D.p1.z * (1.0 - ph0.w) * (ph0.z * ph0.z / r2) * (1.0 - lod_k(2.0 * ph0.z * D.dpr, D.lodL.z));
+      tubeBoost = min(1.0 + D.lod.w * in.lodA.z / tl, D.lod3.z);
     }
     fillRgb += fold * D.lod.w;
     // the minimal sign: a lit blob in the job colour, a small lamp brightest at its middle (as bright as the battery is full, a little);
@@ -1097,8 +1123,7 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
   if (lodOn) {
     var rimDim = 1.0;
     if (lw * D.dpr < D.lodL.x) { rimDim = lw * D.dpr / D.lodL.x; lw = D.lodL.x / D.dpr; }
-    var nSh = 0.0;
-    for (var k = 0u; k < 6u; k++) { if (side_shared(c, k)) { nSh += 1.0; } }
+    let nSh = in.lodA.x;   // (lod_cell)
     rimK = rimDim * select(1.0, 1.0 - mergeW, side_shared(c, side)) * mix(1.0, D.lod2.y, 1.0 - wSign);
     lostG = rimDim * min(1.0, 2.31 * lw / c.r) * ((nSh / 6.0) * mergeW * D.lod3.x / max(D.lod.w, 1e-3) + (1.0 - nSh / 6.0) * (1.0 - D.lod2.y) * (1.0 - wSign));
   }

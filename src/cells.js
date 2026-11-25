@@ -84,8 +84,9 @@ export const CELL_URL = 'src/shaders/cell_common.wgsl';
 // cells that sense cells (src/senses.js): taste (94, 95: the low-passed taste the step steers by)
 export const CELL_FLOATS = 96;
 export const CELL_BYTES = CELL_FLOATS * 4;
-const CELL_CORE_BYTES = 120;   // step C6c: struct CellCore (the grid's sorted copy: Cell without the outline and per-side slots;
-                               // step C6d: + the dipole, 104 until then; step C10: + the walls, 112 until then)
+const CELL_CORE_BYTES = 104;   // step C6c: struct CellCore (the grid's sorted copy: Cell without the outline and per-side slots;
+                               // step C6d: + the dipole, 104 until then; step C10: + the walls, 112 until then; step SP1: - the
+                               // charge words no neighbour read, 120 until then)
 const ALIVE = 1;
 
 export const DEFAULT_CELLS = 2000;

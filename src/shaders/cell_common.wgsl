@@ -225,17 +225,18 @@ fn nbr_side(w: array<u32, 3>, i: u32) -> u32 {
 // Step C10: plus the walls (wadh: x the effective adhesion of sides 0..3; y those of sides 4, 5 in the low half, the hexagon's
 // orientation theta in bits 16..23 and the front in bits 24..31, 8 bits each): what a neighbour needs to find the side facing it
 // and how sticky it is, and what a turnover daughter inherits. 120 bytes
+// Step SP1: without the charge words (q, qNet, efield: no neighbour ever read them; a cell reads its own from its slot in `cells`). 104 bytes
 // Step P1: the Cell's `dead` (where a cell that died this tick was: its own slot's business) is replaced by `eng`: x the cell's engulfing word
 // (Cell.eng: whom it wraps, how far), y its hold (Cell.hold, f32 bits): what a neighbour needs to know it is being wrapped, and to out-pull it
 struct CellCore {
   pos: vec2f, vel: vec2f, r: f32, la: f32, e1: f32, e2: f32, kind: u32, flags: u32, seed: u32, aux: f32, z: vec2f,
-  eng: vec2u, bat: f32, pay: i32, mom: u32, fill: f32, smell: vec2f, q: f32, qNet: f32, efield: vec2f, dip: vec2f,
+  eng: vec2u, bat: f32, pay: i32, mom: u32, fill: f32, smell: vec2f, dip: vec2f,
   wadh: vec2<u32>,
 };
 fn cell_core(c: Cell, dip: vec2f) -> CellCore {
   let w = vec2u(c.wadh[0], (c.wadh[1] & 0xffffu) | (wall_q8(c.theta) << 16u) | (wall_q8(c.front) << 24u));
   return CellCore(c.pos, c.vel, c.r, c.la, c.e1, c.e2, c.kind, c.flags, c.seed, c.aux, c.z,
-                  vec2u(c.eng, bitcast<u32>(c.hold)), c.bat, c.pay, c.mom, c.fill, c.smell, c.q, c.qNet, c.efield, dip, w);
+                  vec2u(c.eng, bitcast<u32>(c.hold)), c.bat, c.pay, c.mom, c.fill, c.smell, dip, w);
 }
 
 // ---------- step C10: patterned walls (src/walls.js) ----------

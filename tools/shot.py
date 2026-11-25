@@ -426,8 +426,9 @@ def main():
                     "so --dpr 2 with --clip x,y,w,h,2 gives a sharp zoom)")
     ap.add_argument("--wait", type=int, default=2500, help="ms to let the page run after it is ready")
     ap.add_argument("--ready-timeout", type=int, default=30000, help="ms to wait for the page to start")
-    ap.add_argument("--bare", action="store_true", help="open the page with NO query at all, as a friend's fresh load (since "
-                    "2026-11-23 that builds a generated world; --query and the added entropy=1 are ignored)")
+    ap.add_argument("--bare", action="store_true", help="open the page with NO query at all, as a friend does (since step H2 "
+                    "the HOME SCREEN; --query go=dish for a fresh generated world, go=lab the home's tissue-lab menu; --query and "
+                    "the added entropy=1 are ignored)")
     ap.add_argument("--cpu-throttle", type=float, default=0, help="Chrome: slow the page's CPU down this many times (e.g. 4: "
                     "a mid-range phone's main thread; DevTools' CPU throttling)")
     ap.add_argument("--port", type=int, default=0, help="use an already running server on this port")
@@ -494,7 +495,8 @@ def main():
         t0, state = time.time(), {}
         while time.time() - t0 < args.ready_timeout / 1000:
             state = json.loads(driver.eval(STATE_JS) or "{}")
-            if state.get("msg") or state.get("stage", "").startswith("running-10"):
+            # (step H2: the home screen, a plain link or ?go=lab, never starts the simulation: its stage 'home' / 'home-lab' is ready)
+            if state.get("msg") or state.get("stage", "").startswith(("running-10", "home")):
                 break
             if not state.get("stage") and state.get("ready") == "complete" and time.time() - t0 > 0.5:
                 break   # a page without stage markers

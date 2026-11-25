@@ -11,7 +11,9 @@ Online: **https://trbremm.github.io/moire-cells/** (GitHub Pages, published from
 push). Some views to try: `?bio=0` (the loop alone, with exclusion), `?cells=10000&bio=0&excl=0&seed=3&change=1&side=1&partner=1`
 (step 8's curling waves); pick a spring in the toolbar (or press 2 or 3) and tap into the empty dish to drop a spring
 of atoms (step C3). On a phone, tap the dish with the toolbar's tools; everything else is in its panels.
-Since the toy front (2026-11-22) a fresh load is a toy: a few big buttons, WORLDS and the terrain generators (try
+Since step H2 (2026-11-25) the plain link opens a HOME SCREEN with two choices, CULTURE DISH (a random generated world) and TISSUE LAB
+(the hand-designed organ, limb, relay sheet, pili, linking); any link with options starts as before (see "Step H2: a home screen").
+Since the toy front (2026-11-22) a culture dish is a toy: a few big buttons, WORLDS and the terrain generators (try
 `?terrain=maze&seed=7`, or the dice); the developer toolbar is behind the gear (key D, `?dev=1`). See "The toy front: controls,
 worlds and terrain generators". Carbon is on by default since 2026-11-22 (`?carbon=0` the old chemistry): see "Carbon on by
 default, and the toy worlds".
@@ -45,13 +47,13 @@ and the worlds use only what the dish already offers (the step G0b obstacles, sp
 
 ### What a friend sees
 
-A fresh load (no URL options) opens a generated world (since 2026-11-23: "A fresh load opens a generated world" below; before, the open
-dish) and shows only the dish and:
+A fresh load (since step H2 the home screen's CULTURE DISH, `?go=dish`; from 2026-11-23 to H2 a link with no URL options) opens a
+generated world ("A fresh load opens a generated world" below; before, the open dish) and shows only the dish and:
 
 - **top left**, the world's name in neon capitals (OPEN DISH, MAZE seed 4821, ...) with one line about it, which fades after a few
   seconds (a hover or a tap on the name brings it back; the tap opens the worlds);
-- **top right**, three small buttons: **neon / harmonic** (the look, step H1), **share** (copies this world's link), **dev** (the gear:
-  the developer mode, below);
+- **top right**, small buttons: **home** (since step H2: the home screen), **neon / harmonic** (the look, step H1), **share** (copies
+  this world's link), **dev** (the gear: the developer mode, below);
 - **bottom**, one bar of big buttons (a row on a computer, two rows on a phone), each an icon with a short word:
   - **pause / play** (Space), **speed** (1×, 4×, 16×, MAX, then 1× again: a timelapse; the button shows the speed), **undo** (the last
     wall, block or pillar you drew; a world's own walls stay), **worlds** (the sheet below), **new** (the dice, in hot pink: a new world of
@@ -150,6 +152,9 @@ Seeds that look good (each run 4 minutes above; the dice and "other seeds" give 
 - add `&look=harmonic` for the microscope look.
 
 ### A fresh load opens a generated world
+
+(Since step H2, 2026-11-25, the link with no option opens the HOME SCREEN; its CULTURE DISH, `?go=dish`, is the fresh load described here,
+unchanged. "Step H2: a home screen".)
 
 The user, 2026-11-23: with carbon on (the default since the carbon merge) the open dish is weak for a first look (about 170 cells at 4
 minutes, one colony beside amber mud flecks), while the generated worlds grow well. So the plain link, with NO option at all, now opens a
@@ -9521,9 +9526,105 @@ with knots at the grips), `evolving-default-10min-zoom.png` (an evolving dish at
   grip, let go). The draw shows ropes only when the cell is alive and its record current; ropes are not kept in snapshots (they regrow).
 - Bone needs rust Gt in the stock; in the default chemistry little is there (the lab provides it), so evolved bone is rare.
 
+## Step H2: a home screen
+
+The user, 2026-11-25: "we need the home screen of the app to either go to tissue lab or to culture dish". Nothing here changes a rule, a
+design or a world: the home screen is a small page in front of the dish. Code: `src/home.js` (the home screen), `src/labs.js` (the tissue
+lab's pieces: names, lines, hints, glyphs; read by the home screen and the toy front), the routing in `index.html` (and its styles),
+`src/toy.js` (the home button, lab captions and hints, the worlds sheet's tissue lab list).
+
+### What a friend sees
+
+A plain link (https://trbremm.github.io/moire-cells/, no options) opens the HOME SCREEN: on black, a faint moire of two neon dot lattices
+(cyan and hot pink, a few degrees apart: their beat makes large soft rosettes; the pink one turns to and fro over about a minute, by CSS
+alone, and stands still with the system's "reduce motion"), the title MOIRÉ CELLS as a white-hot neon tube with a tight cyan halo, the line
+"A neon petri dish where cells evolve, eat and build tissues on a landscape of moiré fields." and two big choices:
+
+- **CULTURE DISH** (a petri dish glyph): a random generated world, exactly as a fresh load opened since 2026-11-23 (the same kinds for a
+  wide and a tall screen, a random seed, the friendly line about the founders' crash at ~50 s); the worlds menu stays one tap away.
+- **TISSUE LAB** (a flask): a menu of the hand-designed lab pieces, each a card with a neon glyph, its name, one line about what it is and
+  one about how to poke it (a pink bar beside it):
+
+| card | link | what it is | how to poke it |
+|---|---|---|---|
+| ORGAN | `?tissue=organ` | a muscle bundle of spindles, a nerve along its top, a skin round it (step L1) | the signal tool at the nerve's free end (left): a flash runs along the nerve, the muscle twitches |
+| LIMB | `?tissue=limb` | two bone rods, a joint held by ligaments, a muscle with tendons, nerve, skin (step T2) | the signal tool at the nerve's free end: the muscle shortens, the joint bends |
+| RELAY SHEET | `?tissue=relay&cells=400&mut=0&life=0&view=signals&zoom=2` | 400 excitable cells (step Q1) | the signal tool at the sheet's edge: a wave of flashes crosses it |
+| PILI | `?tissue=pili` | 40 crawlers with three grappling tendrils (step T2) | just watch them twitch from anchor to anchor |
+| LINKING | `?preset=lab` | 60 cloned cells, no evolution, no food: they link into a small tissue | watch; the touch tool stirs, the cells tool drops more |
+
+On a tall screen (a phone) the organ, limb and relay links add `zoom=1.3`, `2` and `1` (at the lab zoom the organ is wider than a
+phone and the nerve's free end, where it is poked, falls off screen).
+
+Left out on purpose: the ring and the worm (L1: not working), the T1c designs plant, filament and biofilm (opened alone they are one big
+clump of the default dish whose pattern does not show in the first minute; the filament needs `spread=line`). They stay in the zoo.
+
+Below the choices, small and dim: "the plain open dish" (`?world=open`) and "developer mode" (`?world=open&dev=1`). Without WebGPU (no
+`navigator.gpu`) a short note under the choices says the dish cannot run here and names the browsers that work; each choice then opens
+the page's usual fallback message (`?go=home&nogpu=1` shows both: the note, and the choices carry `nogpu=1`).
+
+In a lab piece the toy front names it (ORGAN, "tissue lab" where a world shows its seed, and its line), picks the SIGNAL tool for the
+pieces poked with it, and says once, above the bar, how to poke it. The worlds sheet lists the tissue lab's pieces under the classic dishes
+(the old "Tissue lab" classic row is the LINKING card now).
+
+### The way home
+
+- The toy's corner has a **home** button first (a house; then look, share, dev). It stays in the developer mode beside the gear, and the
+  Developer panel has a "home screen" row too.
+- Going home is a NEW PAGE at the plain link (`location.assign`), so nothing of the dish keeps running behind the home screen.
+- Every choice on the home screen is a real link (a new page), so the browser's back button returns to the home screen (or to its lab
+  menu), and a long press / middle click opens it in a new tab. The lab menu is `?go=lab` (the home screen's own state: a reload or a
+  shared link keeps it; its "home" button and Escape go back to the start).
+
+### Links
+
+- No option at all: the home screen. `?go=lab`: the home screen's tissue lab menu. `?go=dish`: a fresh culture dish (the address becomes
+  `?terrain=<kind>&seed=<N>` before any module reads it, plus any other option given with it, e.g. `?go=dish&look=harmonic`). `?go=home`:
+  the home screen (other options ignored, except `nogpu=1`).
+- ANY OTHER OPTION starts the page exactly as before (no home screen): `?seed=3`, `?terrain=`, `?preset=`, `?tissue=`, `?world=open`,
+  `?entropy=1`, `?snap=`, share links, every experiment URL.
+- `tools/experiment.py` always passes options (unchanged). `tools/shot.py` takes the home screen's `<body data-stage>` (`home`,
+  `home-lab`) as ready: `--bare` now shoots the home screen, `--query go=dish` a fresh generated world (with the panel's `entropy=1` added
+  as always), `--query go=lab` the lab menu.
+- The home screen starts `src/home.js` instead of `src/main.js` through the same cache-safe start (the version.json import map; `home.js`
+  and `labs.js` are stamped like every module). It needs no GPU, no shader and no worker: it shows within a second.
+
+### Checked
+
+Headless Chrome (`tools/shot.py`, 1280 x 800 and `--mobile` 390 x 844, touch) and headed Firefox, this machine, GPU shared with other
+runs; pictures in `experiments/keep/h2/`:
+
+- The home screen and its lab menu show within about a second (stage `home` / `home-lab`), desktop and phone (`home-desktop.jpg`,
+  `home-phone.jpg`, `lab-menu-desktop.jpg`, `lab-menu-phone.jpg`); on a phone the two choices stack, each a full-width card (48 px and up
+  targets), the lab cards in one column, the page scrolls.
+- CULTURE DISH (`?go=dish`): a generated world (thicket seed 3763 here) with the address `?terrain=...&seed=...&dish=...`
+  (`culture-dish-chosen-t4.jpg`); then the corner's HOME button at 8 s: the plain link, stage `home`, the dish gone.
+- TISSUE LAB: Firefox, the home screen's Tissue lab -> the lab menu at `?go=lab` (`firefox-home-to-lab-menu.jpg`); its LIMB card -> the
+  limb runs (`firefox-lab-menu-to-limb.jpg`, ~4 minutes in). Phone: the lab menu's ORGAN card tapped -> `?tissue=organ&zoom=1.3`, the toy
+  names it ORGAN, signal tool lit, the whole organ on screen (`organ-phone-from-lab-menu-t170.jpg`, 170 s in). Desktop: the organ (`organ-loaded-hint.jpg`: the caption, the hint above the bar, the signal tool lit);
+  the relay sheet clicked once at its left edge with the preselected tool: a wave of white flashes leaves the edge
+  (`relay-sheet-poked-wave.jpg`). The limb in the developer mode: the corner keeps home and the gear (`limb-developer-mode-home-button.jpg`).
+- On a phone the organ, the limb and the relay sheet fit the screen at their tall-screen zoom (`limb-phone-zoom2.jpg`,
+  `relay-sheet-phone.jpg`); at the lab zoom 3 the organ was wider than the phone and the nerve's free end off screen.
+- Without WebGPU (`?go=home&nogpu=1`): the note on the home screen (`home-phone-no-webgpu.jpg`); the Culture dish chosen -> the usual
+  fallback message, never a blank page (`no-webgpu-choice-fallback-phone.jpg`).
+- An option URL unchanged: `?seed=3&entropy=1` on this branch and on main a912aeb8 (an export), 30 simulated seconds: the same founders, the
+  same panel within run spread (alive 1752 vs 1755, light in 39.5 vs 39.4 k/s, rounding 0 for atoms); the only difference on screen is the
+  home button (`seed3-t30-this-branch.jpg`, `seed3-t30-main.jpg`). `tools/experiment.py` builds its URLs with options as before.
+- No console errors in any run (only Chrome's usual powerPreference warning).
+- Load: the home screen fetches index.html, version.json (online), `home.js` and `labs.js` and two small canvas tiles; no GPU, no shaders.
+
+### Known issues
+
+- A lab piece still loads the whole simulation (the shaders take as long as any dish to start; on this shared machine 1-2 minutes headless).
+- The relay sheet sits in the default dish's scene (its springs and spotlight beside the sheet), as `?tissue=relay` always did.
+- The home button leaves at once (no "are you sure?"): a dish left is gone, as with a reload.
+
 ## Files
 
-- `index.html`: page, styles, safety-net message if the scripts do not start
+- `index.html`: page, styles, safety-net message if the scripts do not start; the start: the home screen (no options) or the dish
+- `src/home.js`: step H2, the home screen (culture dish or tissue lab, the faint moire behind); `src/labs.js`: the tissue lab's pieces
+  (names, lines, hints, glyphs; read by the home screen and the toy front)
 - `src/tendrils.js`: step T2, tendrils and bone (switches, knobs, the tendril pass's setup, provision, census, the TENDRILS panel line,
   drawing; `src/shaders/tendril.wgsl`, `tendril_draw.wgsl`)
 - `src/actions.js`: the one table of actions (step C3b): every key and every toolbar button, with its label, group,

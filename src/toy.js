@@ -2,7 +2,8 @@
 // mazes and topologies. Don't have the entropy panel opening by default. Shove the development stuff into one hidden panel. I want to
 // be able to show this to friends."). README "The toy front: controls, worlds and terrain generators".
 //
-// What a fresh load shows: the dish, a world's name top left, three small buttons top right (look, share, developer), and one bar of
+// What a fresh load shows (since step H2 the plain link opens the home screen, src/home.js; its CULTURE DISH is this fresh load and its
+// TISSUE LAB the pieces of src/labs.js): the dish, a world's name top left, small buttons top right (home, look, share, developer), and one bar of
 // big buttons at the bottom: play, speed, undo, worlds, new; and the tools: touch (tap: a ripple, drag: stir), wall, block, pillar, erase,
 // cells, food, light. Nothing else: no counters, no key hints. Every developer control is in ONE place, the DEVELOPER mode (the gear, or
 // key D): the old toolbar with all its panels (light, view, rules, dish, molecules, cells) plus a Developer panel (the entropy panel, the
@@ -22,7 +23,7 @@ import { dish } from './dish.js';
 import { springInk } from './matter.js';
 import { keysText } from './actions.js';
 import { CARBON } from './carbon.js';
-import { LABS, labOf } from './labs.js';   // step H2: the tissue lab's pieces (their names, lines and hints)
+import { LABS, labOf, labQuery } from './labs.js';   // step H2: the tissue lab's pieces (their names, lines and hints)
 
 const NS = 'http://www.w3.org/2000/svg';
 const ICON = {
@@ -626,7 +627,7 @@ export function createToy(ctx) {
       if (b.dataset.terrain) { const n = b.dataset.terrain; closeWorlds(); buildWorld(n, previews.get(n)); }
       else if (b.dataset.lab) {
         const L = LABS.find((x) => x.id === b.dataset.lab), u = new URL(location.href);
-        u.search = L.query + (A.neon.harmonic.on ? '&look=harmonic' : '') + (P.has('dev') ? `&dev=${P.get('dev')}` : '');
+        u.search = labQuery(L) + (A.neon.harmonic.on ? '&look=harmonic' : '') + (P.has('dev') ? `&dev=${P.get('dev')}` : '');
         u.hash = '';
         location.assign(u.href);
       }

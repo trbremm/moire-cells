@@ -5,24 +5,25 @@
 // the signal tool. Pure data: importing it does nothing.
 
 /** One lab piece: id, name, query (the link's options), line (what it is), hint (what to do), tool (the toy tool to pick on load),
- * match(params) (is this page that piece?), glyph (svg inner, 40 x 40 view box). */
+ * match(params) (is this page that piece?), glyph (svg inner, 40 x 40 view box), tallZoom (the zoom on a tall screen, a phone: the
+ * pieces laid out along x are wider than a phone at their lab zoom, and the nerve's free end would be off screen). */
 export const LABS = [
   {
-    id: 'organ', name: 'Organ', query: 'tissue=organ', tool: 'signal',
+    id: 'organ', name: 'Organ', query: 'tissue=organ', tool: 'signal', tallZoom: 1.3,
     line: 'A muscle bundle of long spindle cells, a nerve along its top, a skin of flat walled cells around it.',
     hint: 'Touch the nerve’s free end (left, outside the skin) with the signal tool: a flash runs along the nerve and the muscle twitches.',
     match: (p) => (p.get('tissue') === 'organ' || p.get('preset') === 'organ') && !p.has('organ'),
     glyph: '<rect x="3" y="11" width="34" height="22" rx="11"/><ellipse cx="12" cy="18" rx="4" ry="1.4"/><ellipse cx="21" cy="18" rx="4" ry="1.4"/><ellipse cx="30" cy="18" rx="3.4" ry="1.4"/><ellipse cx="16" cy="22.5" rx="4" ry="1.4"/><ellipse cx="25" cy="22.5" rx="4" ry="1.4"/><ellipse cx="12" cy="27" rx="4" ry="1.4"/><ellipse cx="21" cy="27" rx="4" ry="1.4"/><ellipse cx="30" cy="27" rx="3.4" ry="1.4"/><path d="M1 7c4-2 8 1 12-1s8 1 12-1 8 1 12-1" class="g2"/>',
   },
   {
-    id: 'limb', name: 'Limb', query: 'tissue=limb', tool: 'signal',
+    id: 'limb', name: 'Limb', query: 'tissue=limb', tool: 'signal', tallZoom: 2,
     line: 'Two rods of hard bone cells, a joint held by ligaments, a muscle with a tendon at each end, its nerve, a skin.',
     hint: 'Touch the nerve’s free end (left) with the signal tool: the muscle shortens, the tendons pull and the joint bends.',
     match: (p) => p.get('tissue') === 'limb' || p.get('preset') === 'limb',
     glyph: '<path d="M3 33l15-4M23.5 27l10-13" stroke-width="4.2"/><circle cx="21" cy="28.5" r="1.8" class="g2"/><path d="M7 26c3-8 12-12 22-12" stroke-width="2.4"/><path d="M7 26l1 5M29 14l1.5 2.5" class="g2"/><path d="M5 21c3-1 5 1 8-1" class="g2" stroke-opacity="0.7"/>',
   },
   {
-    id: 'relay', name: 'Relay sheet', query: 'tissue=relay&cells=400&mut=0&life=0&view=signals&zoom=2', tool: 'signal',
+    id: 'relay', name: 'Relay sheet', query: 'tissue=relay&cells=400&mut=0&life=0&view=signals&zoom=2', tool: 'signal', tallZoom: 1,
     line: 'Four hundred excitable cells in one sheet: each fires when it hears its neighbour, then rests a few seconds.',
     hint: 'Touch the sheet’s edge with the signal tool: a wave of flashes crosses it, with a dark resting wake behind.',
     match: (p) => p.get('tissue') === 'relay',
@@ -43,6 +44,14 @@ export const LABS = [
     glyph: '<path d="M13 8l5 3v6l-5 3-5-3v-6zM23 14l5 3v6l-5 3-5-3v-6zM13 20l5 3v6l-5 3-5-3v-6zM33 8l5 3v6"/><path d="M30 28l4-2" class="g2"/>',
   },
 ];
+
+/** A lab piece's link options for this screen (on a tall one, a phone, its tallZoom). */
+export function labQuery(L, w = window.innerWidth, h = window.innerHeight) {
+  if (!(L.tallZoom && h > w * 1.15)) return L.query;
+  const q = new URLSearchParams(L.query);
+  q.set('zoom', String(L.tallZoom));
+  return q.toString();
+}
 
 /** The lab piece this page is (from its URL options), or null. */
 export function labOf(params) {

@@ -7,7 +7,7 @@
 // Every choice is a real link (a new page), so the browser's back button returns here and nothing keeps running behind. Links with any
 // other option never come here (share links, presets, the experiment tools). README "Step H2: a home screen".
 
-import { LABS } from './labs.js';
+import { LABS, labQuery } from './labs.js';
 
 window.__moireBooted = true;   // (index.html's safety net: the page did start)
 { const m = document.getElementById('msg'); if (m && m.dataset.net) { m.hidden = true; delete m.dataset.net; } }
@@ -115,7 +115,7 @@ function build() {
   const grid = el('div', 'home-cards');
   for (const L of LABS) {
     const c = el('a', 'home-card');
-    c.href = linkTo(L.query);
+    c.href = linkTo(labQuery(L));
     c.dataset.lab = L.id;
     const top = el('div', 'home-card-top');
     top.append(glyph(L.glyph), el('b', '', L.name));

@@ -106,6 +106,7 @@ struct DrawP {
   tarL: vec4f,        // rgb tar where fresh (amber)
   tarH: vec4f,        // rgb tar where burnt (dull brown)
   tarG: vec4f,        // rgb tar's waxy sheen (fuel hands)
+  lod: vec4f,         // step V1 (src/lod.js): x 1 = on; y the fade's spread; z the grid limit (device px); w spare
 };
 
 struct Spring {
@@ -183,6 +184,60 @@ fn speck(x: vec2f, c: vec2f, r: f32, ink: vec3f) -> vec4f {
 
 // step C6n: the substances as dust (see the top of this file); `under` holds the sediment
 fn dust(x: vec2f, under: vec4f) -> vec4f {
+  var res = under;
+  let cs = D.dust.x;
+  // step V1: the dust's grid square below the grid limit: the specks fade into an even glow of the same light (each kind's ink x the
+  // share of the square its speck covers, read here), so a far or small dish shows a tone, not a flickering scatter
+  let kd = lod_keep(cs * D.dpr, D.lod.z, D.lod.y, D.lod.x);
+  if (kd < 1.0) {
+    var tone = vec4f(0.0);
+    let va = textureSampleLevel(texA, samp, uv_of(x), 0.0);
+    let vb = textureSampleLevel(texB, samp, uv_of(x), 0.0);
+    let hot = select(1.0, 1.25, D.neon > 0.5);
+    let ar = 3.14159265 / (cs * cs);
+    let ca = cover(va.x);
+    if (ca > 0.0) {
+      let rs = clamp(va.y / va.x, 0.0, 1.0);
+      let hs = clamp(va.z / va.x, 0.0, 1.0);
+      let ink = mix(mix(D.linkL.rgb, D.linkH.rgb, hs), mix(D.reactL.rgb, D.reactH.rgb, hs), rs) * D.level * D.dust.w;
+      let r = mix(D.dust.y, D.dust.z, ca) * 0.8;
+      tone += vec4f(ink * hot, 1.0) * (ca * ar * r * r);
+    }
+    let cf = cover(vb.x);
+    if (cf > 0.0) {
+      let ink = mix(D.fuelL.rgb, D.fuelH.rgb, clamp(vb.y / vb.x, 0.0, 1.0)) * D.level;
+      let r = mix(D.dust.y, D.dust.z, cf);
+      tone += vec4f(ink * hot, 1.0) * (cf * ar * r * r);
+    }
+    if (D.el.x > 0.5) {
+      let vd = textureSampleLevel(texD, samp, uv_of(x), 0.0);
+      let cm = cover(vd.y);
+      if (cm > 0.0) {
+        let ink = mix(D.minL.rgb, D.minH.rgb, clamp(vd.z / max(vd.y, 1e-6), 0.0, 1.0)) * D.level * D.minL.w;
+        let r = mix(D.dust.y, D.dust.z, cm) * 0.85;
+        tone += vec4f(ink * hot, 1.0) * (cm * ar * r * r);
+      }
+    }
+    if (D.cb.x > 0.5) {
+      let ve = textureSampleLevel(texE, samp, uv_of(x), 0.0);
+      let cl = cover(ve.x);
+      if (cl > 0.0) {
+        let ink = mix(D.cbFuel.rgb, D.cbSlate.rgb, clamp(ve.y / max(ve.x, 1e-6), 0.0, 1.0)) * D.level * D.cb.y;
+        let r = mix(D.dust.y, D.dust.z, cl) * 0.85;
+        tone += vec4f(ink * hot, 1.0) * (cl * ar * r * r);
+      }
+    }
+    let ct = cover(va.w);
+    if (ct > 0.0) { let r = D.dust.z * 1.1; tone += vec4f(D.trace.rgb * D.level * 1.2, 1.0) * (0.35 * ct * 0.5 * r * r / (cs * cs)); }
+    tone = min(tone, vec4f(1.0));
+    let toned = over(tone, under);
+    if (kd <= 0.0) { return toned; }
+    return mix(toned, dust_specks(x, under), kd);
+  }
+  return dust_specks(x, under);
+}
+
+fn dust_specks(x: vec2f, under: vec4f) -> vec4f {
   var res = under;
   let cs = D.dust.x;
   let base = floor(x / cs - 0.5);
@@ -418,6 +473,40 @@ fn fs(in: VSOut) -> @location(0) vec4f {
 
   // the medium's lattice: spacing 2 / sqrt 3 x its period, rows along la0 + 30 degrees
   let p = D.step * 2.0 * (TAU / medium.k0) / 1.7320508;
+  // step V1: the halftone's spacing below the grid limit: an even tone of the same ink (each layer's dot area over its cell), no dots
+  let kh = lod_keep(p * D.dpr, D.lod.z, D.lod.y, D.lod.x);
+  var htone = vec4f(0.0);
+  if (kh < 1.0) {
+    let rm = D.maxDot * 0.5 * p / 1.7320508;
+    let af = 3.14159265 * rm * rm / (0.8660254 * p * p);   // a full dot's share of its layer's cell
+    let va = textureSampleLevel(texA, samp, uv_of(x), 0.0);
+    let vb = textureSampleLevel(texB, samp, uv_of(x), 0.0);
+    let ca = cover(va.x);
+    if (ca > 0.0) {
+      let ink = mix(mix(D.linkL.rgb, D.linkH.rgb, clamp(va.z / va.x, 0.0, 1.0)), mix(D.reactL.rgb, D.reactH.rgb, clamp(va.z / va.x, 0.0, 1.0)), clamp(va.y / va.x, 0.0, 1.0)) * D.level;
+      htone += vec4f(ink, 1.0) * (af * ca);
+    }
+    let cb = cover(vb.x);
+    if (cb > 0.0) { htone += vec4f(mix(D.fuelL.rgb, D.fuelH.rgb, clamp(vb.y / vb.x, 0.0, 1.0)) * D.level, 1.0) * (af * cb); }
+    let ct = cover(va.w);
+    if (ct > 0.0) { htone += vec4f(D.trace.rgb * D.level, 1.0) * (0.5 * af * ct * D.traceDot * D.traceDot * 1.5625); }
+    htone = min(htone, vec4f(1.0));
+  }
+  if (kh <= 0.0) {
+    res = over(htone, res);
+    if (D.exc.x > 0.5) { res = sparkle(x, res); }
+    if (D.el.x > 0.5 && D.el.z > 0.0) { res = glow(x, res); }
+    var mk0 = vec4f(0.0);
+    for (var k = 0u; k < D.nSprings; k++) {
+      let s = SP.s[k];
+      let rr = max(D.ringR, s.seg.w);
+      let rc = 0.32 * D.ringR * sqrt(clamp(s.pos.w, 0.0, 1.0)) + 0.6;
+      let d = spring_d(x, s);
+      mk0 = over(vec4f(s.ink.rgb, 1.0) * max(disc(abs(d - rr), 0.5 * s.ink.w), disc(d, rc)), mk0);
+    }
+    return over(mk0, res);
+  }
+  let resUnder = res;
   let ang = medium.la0 + 0.5 * P3;
   let o = medium.centre;
   let u = rot(x - o, -ang);
@@ -500,6 +589,7 @@ fn fs(in: VSOut) -> @location(0) vec4f {
       }
     }
   }
+  if (kh < 1.0) { res = mix(over(htone, resUnder), res, kh); }   // (step V1)
   if (D.exc.x > 0.5) { res = sparkle(x, res); }   // step C12c
   if (D.el.x > 0.5 && D.el.z > 0.0) { res = glow(x, res); }   // step C12d
   return over(mark, res);
@@ -526,6 +616,7 @@ struct HarmP {
   hm2: vec4f,         // x the moire swirl's weight; y the second lattice's turn (rad); z fuel brightness; w fuel per R^2 at half
   hm3: vec4f,         // x oil rims' brightness; y a droplet's inside; z minerals' brightness; w springs' brightness
   ink: array<vec4f, 6>,   // green, orange, yellow, red, violet, blue
+  lod: vec4f,         // step V1: as DrawP.lod
 };
 @group(0) @binding(8) var<uniform> H: HarmP;
 
@@ -639,7 +730,10 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
   // ORANGE: the crust
   if (sb.z > 0.02 * H.hm.y && H.hm.x > 0.0) {
     let dens = sb.z / (sb.z + H.hm.y);
-    let fib = hm_crust(x, sb.z);
+    // (step V1: strands below the grid limit: their average, an even orange)
+    let kc = lod_keep(2.0 * H.hm.w * D.dpr, H.lod.z, H.lod.y, H.lod.x);
+    var fib = 0.3;
+    if (kc > 0.0) { fib = lod_mix(0.3, hm_crust(x, sb.z), kc); }
     let hs = clamp(sb.w / max(sb.z, 1e-6), 0.0, 1.0);
     let col = mix(mix(H.ink[1].rgb, H.ink[2].rgb, clamp(dens * fib * 1.2, 0.0, 1.0)), H.ink[3].rgb, 0.55 * hs);
     rgb += col * H.hm.x * dens * (0.22 + 0.9 * fib);

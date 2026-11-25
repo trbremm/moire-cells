@@ -39,6 +39,7 @@ import { Electrons } from './electrons.js';
 import { Vents } from './vents.js';
 import { setShaderConst } from './gpu.js';
 import { camera } from './camera.js';   // app: the view camera (drawing only)
+import { lod, LOD_URL } from './lod.js';   // step V1: LOD from band limits (drawing only)
 import { dish } from './dish.js';      // the dish: a scene's springs drip per area
 import { Carbon, CARBON, CB_LIP, CNAMES, LADDER, LG_CB, describeCarbon, carbonEngines, G_SPRING } from './carbon.js';   // step C15a: carbon in the open dish
 
@@ -662,7 +663,7 @@ const MT_WASH = MT_LEDGER + 2;            // slot: Shift+C
 const MT_SLOTS = MT_LEDGER + 3;
 export const MAX_SPRINGS = 16;            // the springs uniform's capacity
 const SPRING_FLOATS = 32;                 // struct Spring: pos (4), amt (20: 18 channels, [19] its disc's pixels), ink (4), seg (4: a line's or patch's shape)
-const DRAW_BYTES = 560;                   // struct DrawP in matter_draw.wgsl (224 until step C12, 336 until step C12c, 368 until C12d, 448 until the app's cam, 464 until step C15a)
+const DRAW_BYTES = 576;                   // struct DrawP in matter_draw.wgsl (step V1: + lod, 560 until then; 224 until step C12, 336 until step C12c, 368 until C12d, 448 until the app's cam, 464 until step C15a)
 const K_MAX = 0.2;
 const A_MAX = 0.15;                       // step N2: the water's share of a pixel per substep at most (CFL)
 const LG_M = { ADD: 3072, LOST: 4736, GONE: 6400, DISH: 8064, ORDER: 9728 };   // heat_common.wgsl
@@ -815,7 +816,8 @@ export class Matter {
     }
     const [mod, drawMod] = await Promise.all([
       loadShader(d, 'src/shaders/matter.wgsl', { prefixes: [{ name: HEAT_COMMON_URL, text: common }, { name: LIGHT_COMMON_URL, text: lightC }], suffix }),
-      loadShader(d, 'src/shaders/matter_draw.wgsl', { prefixes: [{ name: 'src/shaders/field_common.wgsl', text: field }] }),
+      loadShader(d, 'src/shaders/matter_draw.wgsl', { prefixes: [{ name: 'src/shaders/field_common.wgsl', text: field },
+        { name: LOD_URL, text: await (await fetch(LOD_URL, { cache: 'no-cache' })).text() }] }),   // (step V1: + the shared fade)
     ]);
     const C = GPUShaderStage.COMPUTE, U = GPUBufferUsage;
     this.bgl = d.createBindGroupLayout({
@@ -892,8 +894,8 @@ export class Matter {
       fragment: { module: drawMod, entryPoint: 'fs_harm', targets: [{ format: this.format, blend: { color: over, alpha: over } }] },
       primitive: { topology: 'triangle-list' },
     });
-    this.harmU = d.createBuffer({ label: 'matter draw (harmonic)', size: 144, usage: U.UNIFORM | U.COPY_DST });
-    this.harmF = new Float32Array(36);
+    this.harmU = d.createBuffer({ label: 'matter draw (harmonic)', size: 160, usage: U.UNIFORM | U.COPY_DST });   // (step V1: + lod, 144 until then)
+    this.harmF = new Float32Array(40);
     this.sampler = d.createSampler({ label: 'matter', magFilter: 'linear', minFilter: 'linear' });
     this.tex = null;          // [A, B] at the grid's size
   }
@@ -1558,10 +1560,12 @@ export class Matter {
     this.electrons.writeDraw(f, 92, P, H);   // step C12d: the minerals and the fluorescence glow
     f[0] = this.view.dpr * camera.z; f.set(camera.vec(), 112);   // app: the view camera
     this.writeCarbonDraw(f, 116, P);   // step C15a
+    lod.write4(f, 140);                // step V1: the dust's and the halftone's grid limit
     this.device.queue.writeBuffer(this.drawU, 0, this.drawAB);
     const HM = frame.look && frame.look.harmonic;   // step H1: the harmonic look
     if (HM) {
       HM.writeMatter(this.harmF, 0, Math.max(1e-4, p.sedStep), Math.max(1e-4, p.half));
+      lod.write4(this.harmF, 36);   // step V1: the crust's strands' grid limit
       this.device.queue.writeBuffer(this.harmU, 0, this.harmF);
       pass.setPipeline(this.harmPipe);
       pass.setBindGroup(0, this.harmBG);

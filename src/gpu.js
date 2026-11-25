@@ -54,7 +54,7 @@ export function showError(title, detail) {
  * Throws GPUUnavailable (with a readable reason) when WebGPU is missing.
  * onLost(info) is called if the device is lost later (not when we destroy it ourselves).
  */
-export async function initGPU(canvas, { onLost, forceFail = false } = {}) {
+export async function initGPU(canvas, { onLost, forceFail = false, timestamps = true } = {}) {
   if (forceFail) throw new GPUUnavailable('WebGPU was switched off for this test (?nogpu=1).');
   if (!window.isSecureContext) {
     throw new GPUUnavailable('This page is not in a secure context. Open it via http://localhost or https.');
@@ -75,7 +75,9 @@ export async function initGPU(canvas, { onLost, forceFail = false } = {}) {
 
   let device;
   try {
-    device = await adapter.requestDevice({ label: 'moire-cells' });
+    // step SP1: GPU timestamps per pass (moire.speed.passes()) where the browser offers them; ?timestamps=0 asks for nothing
+    const requiredFeatures = timestamps && adapter.features && adapter.features.has('timestamp-query') ? ['timestamp-query'] : [];
+    device = await adapter.requestDevice({ label: 'moire-cells', requiredFeatures });
   } catch (e) {
     throw new GPUUnavailable(`The graphics adapter refused to create a device: ${e && e.message ? e.message : e}`);
   }

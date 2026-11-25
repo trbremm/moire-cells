@@ -289,6 +289,7 @@ import { Warfare } from './warfare.js';
 import { lod } from './lod.js';   // step V1: LOD from band limits (drawing only; ?lod=0 the drawing as before)
 import { Flow } from './flow.js';   // step N2: substances that flow (gusts, heat carried, scour, patchy springs, the chemotaxis gene)
 import { CB_PHOTO, makeRng } from './genome.js';   // step C15d: founders that photosynthesise fix carbon (?cbphoto=0)
+import { speed as speedProf } from './speed.js';   // step SP1: what the GPU spends its time on, pass by pass (moire.speed.passes())
 
 window.__moireBooted = true;
 { const m = document.getElementById('msg'); if (m && m.dataset.net) { m.hidden = true; delete m.dataset.net; } }   // (a slow start: the safety net's message goes)
@@ -359,13 +360,17 @@ let running = false;
 let view = null;
 
 // boot progress on <body data-stage>; tools/shot.py waits for "running-10-frames"
-const stage = (s) => { document.body.dataset.stage = s; };
+const stage = (s) => { document.body.dataset.stage = s; bootMark(s); };
+// step SP1: when each part of the start was done (ms since the page began loading; moire.stats.boot)
+const bootTimes = [];
+const bootMark = (name) => { bootTimes.push([name, Math.round(performance.now())]); };
 
 async function boot() {
   stage('init-gpu');
   try {
     gpu = await initGPU(canvas, {
       forceFail: flag('nogpu'),
+      timestamps: !(params.has('timestamps') && !flag('timestamps')),   // step SP1
       onLost: (info) => {
         running = false;
         showError('The graphics device was lost',
@@ -466,16 +471,25 @@ async function boot() {
     // step C6n: every layer but the background draws into the light buffers (LIGHT_FORMAT), which src/neon.js
     // composites onto the canvas
     background = await Background.create(gpu.device, gpu.format);
+    bootMark('background');
     medium = new Medium(gpu.device);
     landscape = await Landscape.create(gpu.device, LIGHT_FORMAT, medium);
+    bootMark('landscape');
     light = await Light.create(gpu.device, LIGHT_FORMAT);
+    bootMark('light');
     matter = await Matter.create(gpu.device, LIGHT_FORMAT, medium);
+    bootMark('matter');
     charge = await Charge.create(gpu.device, LIGHT_FORMAT);
+    bootMark('charge');
     water = await Water.create(gpu.device, LIGHT_FORMAT);   // step N1
+    bootMark('water');
     obstacles = await Obstacles.create(gpu.device, LIGHT_FORMAT);   // step G0b
+    bootMark('obstacles');
     cells = await Cells.create(gpu.device, LIGHT_FORMAT, medium, nCells, SEED, nCap);
+    bootMark('cells');
     const small = Math.min(window.innerWidth || 800, window.innerHeight || 800) < 600;
     neon = await Neon.create(gpu.device, gpu.format, params.has('cheap') ? flag('cheap') : TOUCH || small);
+    bootMark('neon');
     neonOptions(neon);
     cells.heat.setLight(light);   // step C2: the heat passes absorb the light
     light.heat = cells.heat;
@@ -963,13 +977,14 @@ async function boot() {
   // mask first, so every pass of the frame reads it; drawn over the water, under the light's tint and the cells)   // (step C6b: the charge's contours over the substances; step N1: the water
   // after the ripples stepped and before the cells' ticks, its caustic net under the light's tint)
   // handle for tuning from the console or tools/shot.py --eval, e.g. moire.background.params.viscosity = 0.03
+  speedProf.init(gpu.device);   // step SP1
   window.moire = { gpu, layers, background, medium, landscape, cells, genome: cells.genome, heat: cells.heat, light, matter, eat: cells.eat, neon, charge,
     membrane: cells.eat.membrane, dipole: cells.dipole, pumps: cells.eat.pumps, catalysts: cells.eat.catalysts, hardlight: cells.eat.hardlight,
     division: cells.division, walls: cells.walls, oil: matter.oil, lipids: cells.eat.lipids, excited: matter.excited, guides: cells.guides,
     electrons: matter.electrons, waste: cells.eat.waste, vents: matter.vents, ions: cells.eat.ions, pigments: cells.eat.pigments, water, oases, whole: cells.eat.whole,
     kin: cells.kin, grn: cells.grn, predators: cells.pred, fidelity: cells.fidelity, dup: cells.dup, mutation: cells.mutation, perfusion, glue: cells.glue, stir: water.stir, obstacles,
     spindle: cells.spindle, carbon: matter.carbon, carbonCells: cells.eat.carbon, motors: cells.motors, flow, senses: cells.senses, folding: cells.folding, signals: cells.signals,
-    contract: cells.contract, tendrils: cells.tendrils, lod, inspect: cells.inspect };   // (step I1: moire.inspect.at(x, y), .cell(i), .family(), .follow(), .survey())
+    contract: cells.contract, tendrils: cells.tendrils, lod, inspect: cells.inspect, speed: speedProf };   // (step I1: moire.inspect.at(x, y), .cell(i), .family(), .follow(), .survey(); step SP1: moire.speed.passes())
   lod.app = window.moire;   // step V1: LOD from band limits (drawing only; moire.lod.table())
   window.moire.tissues = new Tissues(window.moire);     // step T1c: designed tissues (place, census)
   window.moire.organ = cells.organ = new Organ(window.moire);   // step L1: the tissue lab's organ (lay out, poke, twitch, measure)
@@ -987,6 +1002,7 @@ async function boot() {
   window.moire.warfare = new Warfare(window.moire);     // step T1c: the chemical warfare census (lineage borders against interiors)
   window.moire.time = () => simTime;   // simulation time (s), for tools/shot.py --at
   window.moire.stats = stats;          // frame time, ticks this frame, speed reached (step C3b)
+  stats.boot = bootTimes;              // step SP1: the start's parts, [name, ms since the page began loading]
   window.moire.budgets = budgets;      // the fast speeds' tick budgets
   // births and deaths drop small ripples into the background (a birth a bump, a death a dip)
   cells.onEvents = (events) => {
@@ -1257,12 +1273,15 @@ function frame(now) {
   camera.moved = false;
   const device = gpu.device;
   const encoder = device.createCommandEncoder({ label: `frame ${frameNo}` });
+  speedProf.instrument(encoder, f);   // step SP1: only while moire.speed.passes() measures (the same work, timed pass by pass)
   for (const l of layers) l.compute(encoder, f);
   neon.tickReal(dtReal);
   const drawn = { background, cells, under: layers.filter((l) => l !== background && l !== cells), top: layers };
   neon.encode(encoder, f, gpu.context.getCurrentTexture().createView(), drawn);
   if (cells.inspect && cells.inspect.sel) cells.inspect.draw(encoder, gpu.context.getCurrentTexture().createView(), view, now / 1000);   // step I1: its overlay, over either look
+  speedProf.resolve(encoder);
   device.queue.submit([encoder.finish()]);
+  speedProf.afterSubmit();
   const slow = neon.watch(stats.frameMs, dtReal, !paused && speed >= 1 && speed <= 8 && frameNo > 120);
   if (slow) flash(slow);
   stats.cpuMs += (performance.now() - t0 - stats.cpuMs) * 0.05;
@@ -1314,7 +1333,8 @@ ${flow.panelLine(compact)}`;
     }
     if (t !== entropyEl.textContent) entropyEl.textContent = t;
   }
-  if (frameNo === 10) stage('running-10-frames');
+  if (frameNo === 0) { stats.firstFrameMs = performance.now(); bootMark('first-frame'); }   // step SP1: page start (ms since the page began loading: load to first frame)
+  if (frameNo === 10) { stats.tenFramesMs = performance.now(); stage('running-10-frames'); }
   if (!overlayEl.hidden && now - stats.lastOverlay > 250) { stats.lastOverlay = now; drawOverlay(); }
   if (!overlayEl.hidden && now - stats.lastProbe > 1000) {
     stats.lastProbe = now;
@@ -1373,6 +1393,7 @@ function drawOverlay() {
     `adapter  <b>${esc(adapterName(i))}</b>${i.isFallbackAdapter ? '  (software fallback)' : ''}`,
     `vendor ${esc(i.vendor || '?')} · arch ${esc(i.architecture || '?')}${i.device ? ' · device ' + esc(i.device) : ''}`,
     guardLine(),
+    speedProf.overlayLine(),   // step SP1
     `canvas ${view.pxW}×${view.pxH} (dpr ${view.dpr.toFixed(2)}) · ${gpu.format}`,
     dish.line(),
     perfusion.overlayLine(),

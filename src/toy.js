@@ -358,6 +358,21 @@ export function createToy(ctx) {
       body.append(hm);
       body.append(el('h3', '', 'Counters and overlays'));
       for (const id of ['entropy', 'stats', 'machinery', 'keys']) { const a = byId.get(id); if (a && !(a.desktop && ctx.touch)) body.append(row(a)); }
+      {   // step SP1: what the GPU spends its time on, pass by pass (src/speed.js; the console shows the whole table)
+        const sp = el('div', 'row t-do'), spm = el('div', 'rmain'), sb = el('button', 'act', 'measure speed per pass');
+        sb.type = 'button';
+        const out = el('p', 'note', '');
+        out.dataset.speed = '1';
+        sb.addEventListener('click', () => {
+          const S = window.moire && window.moire.speed;
+          if (!S) return;
+          out.textContent = 'measuring (30 frames) ...';
+          S.passes().then((r) => { out.textContent = r ? S.lastText : 'no result'; ctx.flash(r ? S.lastText : 'speed: no result'); });
+        });
+        spm.append(sb);
+        sp.append(spm, el('p', 'help', 'GPU time of every pass for 30 frames (timestamps where the browser offers them): a summary here, the full table in the console (moire.speed.passes())'));
+        body.append(sp, out);
+      }
       body.append(el('h3', '', 'This world'));
       const w = el('p', 'note', '');
       w.dataset.world = '1';
@@ -375,6 +390,8 @@ export function createToy(ctx) {
     refresh() {
       const w = document.querySelector('[data-world]');
       if (w) w.textContent = worldText();
+      const sp = document.querySelector('[data-speed]');
+      if (sp && window.moire && window.moire.speed && window.moire.speed.lastText && !window.moire.speed.job) sp.textContent = window.moire.speed.lastText;
     },
   };
 

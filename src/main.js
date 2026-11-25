@@ -298,15 +298,18 @@ const TICK = 1 / 60;
 const MAX_TICKS = 4;        // 1x to 8x: at most this many ticks per frame per 1x of speed (as before step C3b)
 const TICK_CAP = 256;       // never more ticks than this in one frame (cells.js SLOTS = 320 leaves room for the warm-up)
 // step C3b: the tick budgets of the fast speeds. MAX: as many ticks per frame as the GPU does while the picture keeps
-// at least about 50 frames per s (frames of at most 20 ms; a GPU that keeps up does about 13 to 16 ms of work in each);
+// at least about 50 frames per s (frames of at most 20 ms; a GPU that keeps up does about 13 to 16 ms of work in each; step SP1: 33 ms);
 // 16x and 32x: up to frames of 34 ms (about 30 per s), so they come as close to their speed as the GPU allows.
 // `ticks` adapts to the time between frames (smoothed): up by 5 % a frame while the frames are quick, down by 15 % when
 // they are slow (or the GPU's queue runs far behind), then a pause before it grows again, and slowly near the level
 // where it last got slow (`ceil`), so a GPU at its limit does not see-saw between smooth and stuttering.
 const budgets = {
-  max: { ticks: 8, frameMs: 20, hold: 0, calm: 0, ceil: 0 },
+  max: { ticks: 8, frameMs: 33, hold: 0, calm: 0, ceil: 0 },
   fast: { ticks: 16, frameMs: 34, hold: 0, calm: 0, ceil: 0 },
 };
+// step SP1: MAX aims at frames of 33 ms (about 30 per s), as 16x and 32x do: more ticks per drawing and less time the GPU waits for the
+// screen (2000 cells, headless Chrome: x3.09 against x2.50 at 20 ms; 50 ms gave x3.19). ?maxframe=20 the old 50 frames per s.
+{ const v = Number(new URLSearchParams(location.search).get('maxframe')); if (Number.isFinite(v) && v >= 10 && v <= 100) budgets.max.frameMs = v; }
 let lastBud = null;   // the budget that limited the last frame (adapted at the next frame, when its time is known)
 
 const params = new URLSearchParams(location.search);

@@ -119,7 +119,7 @@ export const lod = {
     const R = C ? C.R : 7, dpr = C && C.view ? C.view.dpr : (typeof devicePixelRatio === 'number' ? devicePixelRatio : 1);
     const L = C ? C.look : null, MP = M && M.matter ? M.matter.params : null, LP = M && M.landscape ? M.landscape.params : null;
     const size = (f) => {
-      if (f.id === 'tube' && L) return L.tube;
+      if (f.id === 'tube' && L) return Math.min(L.tube, 0.3 * R);   // (at most 0.3 of the radius, as the shader)
       if (f.id === 'parts' && L) return 2 * L.partSize;
       if (f.id === 'core' && L) return 2 * L.coreParts;
       if (f.id === 'dust' && MP) return MP.dustCell;

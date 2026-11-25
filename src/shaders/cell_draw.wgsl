@@ -792,13 +792,12 @@ fn fs(in: VSOut) -> @location(0) vec4f {
   // step C13, the guides view: each side's tube by what that side feels (s, -1..1): bright where the field is high, dark where low
   if (guidesView) { lineCol *= (1.0 - D.gd.y) + D.gd.y * (1.0 + cell_felt(c, min(side, 5u))); }
   // step T1a: zoomed in, the self marker as a fine stripe texture along the tube (like surface immunostaining), as deep as the cell displays it
-  // (step V1: the stripes kept as far as their period clears the grid limit and the cell the host limit; below, their average dimming)
+  // (step V1: the stripes kept as far as their period clears the grid limit and the cell the host limit; below, the plain tube: the
+  // stripes only ever darken it, so they cut in smoothly over the fade instead of at zoom 3 at once; zoomed in exactly as before)
   if (D.kin.y > 0.0) {
     var stp = marker_stripe(g, in.local, D.R);
-    if (lodOn) { stp = mix(0.5, stp, lod_k(D.R * exp(g.mark.y) * D.dpr, D.lodL.y) * lod_k(cpx, D.lodL.w)); }
+    if (lodOn) { stp = lod_mix(1.0, stp, lod_k(D.R * exp(g.mark.y) * D.dpr, D.lodL.y) * lod_k(cpx, D.lodL.w)); }
     lineCol *= 1.0 - D.kin.y * clamp(g.mark.w, 0.0, 1.0) * (1.0 - stp);
-    // (step V1: the tube keeps its value: the stripes modulate round it instead of only darkening, so nothing dims as they fade)
-    if (lodOn) { lineCol /= 1.0 - 0.5 * D.kin.y * clamp(g.mark.w, 0.0, 1.0); }
   }
   // step C12b: soap's pearl (a pale sheen whose hue drifts along the tube and slowly in time) and oil's depth (more saturated)
   if (D.lip.x > 0.5 && !q1View) {   // (step Q1: not in the signals view, where the tube's hue is the flavour)
@@ -1047,7 +1046,7 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
   let cpx = 2.0 * c.r * D.dpr;
   let wFull = lod_k(cpx, 2.5 * D.lodL.z);
   let wSign = lod_k(cpx, 1.25 * D.lodL.z);
-  let mergeW = select(0.0, (1.0 - wFull) * D.lod.z, lodOn);
+  let mergeW = select(0.0, 0.5 * (1.0 - wFull) * D.lod.z, lodOn);   // (half the neon's: a shared wall is one interface, one green line)
   var ein = c.r - length(in.local);
   // (the neon tubes' gap from the wall, times harm4.y: 0 = two neighbours' rims touch, one shared green wall)
   if (in.hh1.w > 0.5) { ein = hex_inside(in.local, in) - D.harm4.y * min(D.hexDraw.y, 0.08 * c.r); }
@@ -1102,9 +1101,8 @@ fn fs_harm(in: VSOut) -> @location(0) vec4f {
   let ring = (1.0 - inner) * cover_in(ein2, aa);
   // step T1a: zoomed in, the self marker as fine stripes along the green rim (surface immunostaining), as deep as the cell displays it
   var stp = marker_stripe(g, in.local, D.R);
-  if (lodOn) { stp = mix(0.5, stp, lod_k(D.R * exp(g.mark.y) * D.dpr, D.lodL.y) * lod_k(cpx, D.lodL.w)); }   // (step V1, as fs)
-  var mk = select(1.0, 1.0 - D.kin.y * clamp(g.mark.w, 0.0, 1.0) * (1.0 - stp), D.kin.y > 0.0);
-  if (lodOn && D.kin.y > 0.0) { mk /= 1.0 - 0.5 * D.kin.y * clamp(g.mark.w, 0.0, 1.0); }   // (step V1: the rim keeps its value, as fs)
+  if (lodOn) { stp = lod_mix(1.0, stp, lod_k(D.R * exp(g.mark.y) * D.dpr, D.lodL.y) * lod_k(cpx, D.lodL.w)); }   // (step V1, as fs)
+  let mk = select(1.0, 1.0 - D.kin.y * clamp(g.mark.w, 0.0, 1.0) * (1.0 - stp), D.kin.y > 0.0);
   // step G0: a torn junction's side (src/glue.js): the rim broken in its middle, until it heals
   let tornH = select(1.0, smoothstep(0.1 * c.r, 0.2 * c.r, abs(sd.y)), jn_torn(c.kind, side) && D.wall.x > 0.5);   // (a break in the rim)
   var rgb = G * D.harm.x * lipid * ring * mk * tornH * rimK;

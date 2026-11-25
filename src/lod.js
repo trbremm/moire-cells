@@ -47,7 +47,7 @@ export const FEATURES = [
   { id: 'dashes', what: 'damaged membrane dashes', size: 0.45, unit: 'R', kind: 'grid', where: 'cell_draw',
     fold: 'a dimmer whole tube' },
   { id: 'marker', what: 'self-marker stripes on the tube', size: 0.25, unit: 'R', kind: 'grid', host: true, where: 'cell_draw',
-    fold: 'their average dimming (replaces the old switch at zoom 3)' },
+    fold: 'the plain tube; they cut in over the fade (replaces the switch at zoom 3)' },
   { id: 'latdots', what: 'lattice dots inside cells (machinery)', size: 0.62, unit: 'R', kind: 'grid', where: 'cell_draw',
     fold: 'their average into the tint' },
   { id: 'fibres', what: 'harmonic: fibres, striations in cells', size: 0.26, unit: 'R', kind: 'grid', where: 'cell_draw (fs_harm)',
@@ -79,13 +79,13 @@ export const lod = {
     merge: 0.35,       // zoomed out, a shared wall's tube dims by up to this share (the two neighbours' tubes close into one line) ...
     wallFold: 0.35,    // ... and this share of the light it lost goes into the cells' insides (1 = all: a flat lit mass, not neon)
     fold: 1,           // a failed feature's (part's, granule's, pattern's) light goes into its cell's tone x this (1 = its light kept)
-    partTube: 0.6,     // ... of the engines' marks' light, this share lights the tube instead (busy cells shine brighter, as the hum)
-    tubeMax: 1.6,      // ... by at most this factor
+    partTube: 0.8,     // ... of the engines' marks' light, this share lights the tube instead (busy cells shine brighter, as the hum)
+    tubeMax: 2.0,      // ... by at most this factor
     signFill: 0.18,    // the minimal sign: the blob's tone (share of the job colour) ...
     signLamp: 0.7,     // ... its middle brighter by this (a small lamp: the halo lights it) ...
     signTube: 0.7,     // ... and its tube's brightness (the rest of the tube's light is the blob)
     coreR: 0.34,       // the simplified sign's core: its radius (share of r)
-    harmFill: 0.5,     // harmonic: the share of a merged / failed rim's green kept as the inside's tone
+    harmFill: 0.3,     // harmonic: the share of a merged / failed rim's green kept as the inside's tone
   },
   app: null,           // window.moire (main.js), for table()
 

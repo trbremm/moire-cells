@@ -9751,11 +9751,76 @@ runs; pictures in `experiments/keep/h2/`:
 - The relay sheet sits in the default dish's scene (its springs and spotlight beside the sheet), as `?tissue=relay` always did.
 - The home button leaves at once (no "are you sure?"): a dish left is gone, as with a reload.
 
+### Step I1: a cell inspector
+
+The user, 2026-11-25, after leaving a dish running and finding a striking "queen": in a big starving honeycomb colony (one clone, every
+cell dark inside with the same engine marks) a few cells were round with a full green battery core and a bright halo, and the central
+one sat where the colony's cells packed in spiral arcs round her, like a growth centre. Nothing let the user ask a cell what it is. The
+inspector is a scientist's MAGNIFIER: it only looks. Code: `src/inspect.js` (the family tree, the read-backs, the overlay, the console),
+`src/inspectcard.js` (the card), `src/shaders/inspect.wgsl` (the per-tick bookkeeping pass), `src/shaders/inspect_draw.wgsl` (the overlay),
+the engine counters in `cell_eat.wgsl` / `cell_carbon.wgsl` (`ran_add`, binding 13, `src/eat.js` ranBuf), the tool in `src/toy.js`,
+`src/app.js`, `src/actions.js`, the styles in `index.html`.
+
+### How to use it
+
+- The **inspect** button (a magnifier) at the end of the toy's tool bar, the same tool in the developer toolbar, or the key **I**.
+  TAP A CELL: its card opens at the side of the dish away from the cell (on a phone: at the top or the bottom, away from it; it scrolls).
+  A tap on empty water closes it; so do its x button and Escape. With the tool, a DRAG pans the view (at a zoom).
+- The chosen cell gets a white ring with four slowly turning ticks (a reticle).
+- **follow**: the view zooms in (to x3 at least) and keeps the cell in the middle of the part of the screen the card leaves free, until it
+  dies (a drag of the view stops following).
+- **family**: everyone else dims; the cell's LIVING DESCENDANTS get rings, its daughters bright gold, deeper generations amber fading
+  with the generations; its MOTHER cyan, its SISTERS violet. The card adds how many of its living descendants are in each generation.
+- Console: `moire.inspect.at(x, y)` (dish px), `.cell(slot)`, `.family(on)`, `.follow(on)`, `.close()`, `.stats()` (births by how,
+  deaths by cause, since the page started), `.survey()` (every living cell's age, daughters, living descendants, light, neighbours and
+  lifetime engine income against its battery; the rich cells against the poor ones; the cells with the most living descendants), `.tree`.
+
+### What the card says
+
+- The JOB (the colour by job, as the dish draws it, and how clear it is: leaning, faint) and the cell's BIRTH ID (#1234); its portrait
+  (the zoo's drawing of it).
+- AGE (since its birth; founders "since the start"), GENERATION (Bio.resp.z: divisions in its line, its own included), LINE (the founder
+  line) with its self marker's hue as the lineage view (marker) colours it, BATTERY (share of its capacity, a bar, and how fast it changes,
+  energy per s), BODY CARBON (share of what it needs to divide; with carbon on).
+- FAMILY: how it was born (a founder, a division's daughter or the turnover's newborn of #mother, and whether she lives), DAUGHTERS (and how
+  many live), LIVING DESCENDANTS (of how many born, how many generations deep), SISTERS.
+- WHERE IT LIVES: the light on it, the oxygen (free t), fuel and trace inside, the heat against its tolerance (the gene network's senses,
+  Cell.sns0/sns1).
+- ENGINES, RAN vs CARRIED: each engine slot it carries, with what it RAN over the last few s of simulation (units per s) or "carried, idle";
+  and how much energy the engines put into the battery and the uphill ones took out of it, against the battery's net change.
+- BODY: size (R), round or how long, how many sides touch a neighbour and how many junctions are formed (glued), the membrane's integrity,
+  swelling. A STATE line when it applies: bursting, starving (s), wrapping a prey, digesting a meal, being engulfed, in its stress fold,
+  ready to divide.
+- GENES OF NOTE: glue, crawl, heat tolerance, fidelity always; engulf, kin sparing, elongation, flagellum, cilia, chemotaxis, tendril reach,
+  contraction, signal release when not 0; MEALS (cells it engulfed) when it has the engulf gene or ate.
+- When it dies: "DIED n s ago: eaten by #444 / burst / starved / too hot / old age (the background death rate, higher among strangers) /
+  turnover / gone", and how long it lived.
+
+### How it knows (read-only)
+
+- THE FAMILY TREE: every tick, right after the cells' step (its newborns still carry their mark and their mother's slot), a small pass
+  (`inspect.wgsl`, two dispatches, so no thread reads an id another changes) gives every cell new in a slot a BIRTH ID and its mother's
+  id, how it was born (division, turnover, or placed: a founder, a hand, a snapshot), and logs it; a cell that is gone is logged with what
+  is knowable of why: eaten (its slot became a predator's ghost; the predator's meal count goes up), burst (its last tick showed the burst
+  flash), starved (its starving clock ran out), heat (it was above its tolerance), else the background rate ("old age"); turnover; replaced
+  (a new culture or a snapshot). The log is a ring of 4096 entries read back every 0.2 s; the page keeps the whole tree since it started
+  (typed arrays by id). The card says so if the log ever ran over.
+- WHAT RAN: the eat pass adds each engine slot's events, and the energy downhill engines put into the battery and uphill ones took from
+  it, into the inspector's own counters (8 per slot, zeroed at a birth). Nothing in the simulation reads them.
+- THE CARD'S NUMBERS: small copies of the chosen cell's words (cell, genome, stock, carbon, counters, info) into a ring of two staging
+  buffers every 0.25 s of real time; FOLLOW reads its position every frame (one or two frames old). Never a stall.
+- The overlay is its own render pass over the finished picture (either look): it writes the canvas's (unused) alpha as a mask, dims all
+  but the family's discs, then draws the rings; a slot reused since the family list was made shows nothing (the birth id is checked live).
+- `?inspect=0`: none of it (no pass, no read-back, no card; the engine counters still count, unread). The tree starts with the page: a
+  snapshot loaded or a new culture starts every cell as a founder (snapshots carry no ids; nothing in them changed).
+
 ## Files
 
 - `index.html`: page, styles, safety-net message if the scripts do not start; the start: the home screen (no options) or the dish
 - `src/home.js`: step H2, the home screen (culture dish or tissue lab, the faint moire behind); `src/labs.js`: the tissue lab's pieces
   (names, lines, hints, glyphs; read by the home screen and the toy front)
+- `src/inspect.js`: step I1, the cell inspector (the family tree from `src/shaders/inspect.wgsl`, the read-backs, follow, survey, the
+  overlay `src/shaders/inspect_draw.wgsl`); `src/inspectcard.js`: its card
 - `src/tendrils.js`: step T2, tendrils and bone (switches, knobs, the tendril pass's setup, provision, census, the TENDRILS panel line,
   drawing; `src/shaders/tendril.wgsl`, `tendril_draw.wgsl`)
 - `src/actions.js`: the one table of actions (step C3b): every key and every toolbar button, with its label, group,

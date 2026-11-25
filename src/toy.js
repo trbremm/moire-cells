@@ -22,6 +22,7 @@ import { dish } from './dish.js';
 import { springInk } from './matter.js';
 import { keysText } from './actions.js';
 import { CARBON } from './carbon.js';
+import { LABS, labOf } from './labs.js';   // step H2: the tissue lab's pieces (their names, lines and hints)
 
 const NS = 'http://www.w3.org/2000/svg';
 const ICON = {
@@ -45,6 +46,7 @@ const ICON = {
   close: '<path d="M5 5l10 10M15 5L5 15"/>',
   fold: '<circle cx="10" cy="10" r="7"/><path d="M6 7.5l8 5M6 12.5l8-5M10 3v14"/>',   // step G3: refold (a folded hex lattice)
   stress: '<path d="M11.5 2.5L5 11h4.6l-1.4 6.5L15 9h-4.6z"/>',   // step G3: a stress shock
+  home: '<path d="M3.2 9.6L10 3.4l6.8 6.2"/><path d="M5.2 8v8.6h3.6v-4.8h2.4v4.8h3.6V8"/>',   // step H2: back to the home screen
   signal: '<path d="M10 2.5c-2.6 3.4-4.3 5.9-4.3 8.2a4.3 4.3 0 0 0 8.6 0c0-2.3-1.7-4.8-4.3-8.2z"/><path d="M3 17.5q2-2 4 0t4 0 4 0 4 0"/>',   // step Q1: the signal pipette
 };
 function svg(name) {
@@ -76,7 +78,6 @@ const CLASSIC = [
   ['oases', 'Oases', 'Soft light and wandering oases of a scarce nutrient, carried in silver plumes.'],
   ['plumes', 'Plumes', 'A lake turning slowly, food swept round the basin in plumes.'],
   ['colonies', 'Colonies', 'Five wild colonies grow out and meet at their borders.'],
-  ['lab', 'Tissue lab', 'Sixty cloned cells and no evolution: watch them link into tissue.'],
 ].filter(([id]) => !id || PRESETS[id]);
 
 // the toy's tools: [id, icon, label, the action table's tool id, obstacle shape]
@@ -128,6 +129,11 @@ export function createToy(ctx) {
   else if (P.has('terrain') && TERRAINS[P.get('terrain')]) T.world = { type: 'terrain', name: P.get('terrain'), seed: SEED };
   else T.world = { type: 'open', name: '', seed: SEED };
   const inPlaceOK = () => !ctx.preset && !P.has('snap');
+  // step H2: a TISSUE LAB piece (src/labs.js: its name, line and hint in the caption, its tool picked) and the way HOME: a new page at the
+  // plain link (the home screen, src/home.js), so nothing of this dish keeps running
+  T.lab = P.has('snap') ? null : labOf(P);
+  const goHome = () => { location.assign(location.pathname); };
+  T.home = goHome;
 
   // ---------- the DOM ----------
   const root = el('div', 'toy');
@@ -139,10 +145,11 @@ export function createToy(ctx) {
   const capName = el('span', 'toy-name'), capSeed = el('span', 'toy-seed'), capLine = el('span', 'toy-line');
   cap.append(capName, capSeed, capLine);
   const corner = el('div', 'toy-corner');
+  const bHome = btn('home', 'home', 'Home: the culture dish or the tissue lab', 'mini tohome');   // (step H2)
   const bLook = btn('look', 'look', 'Look: neon tubes or a harmonic microscope image', 'mini');
   const bShare = btn('share', 'share', 'Copy a link to this world', 'mini');
   const bGear = btn('gear', 'dev', 'Developer: every rule, view and counter (key D)', 'mini');
-  corner.append(bLook, bShare, bGear);
+  corner.append(bHome, bLook, bShare, bGear);
   top.append(cap);
   const bar = el('div', 'toy-bar');
   bar.setAttribute('role', 'toolbar');
@@ -227,6 +234,7 @@ export function createToy(ctx) {
     catch { window.prompt('The link to this world:', link); }
   });
   bGear.addEventListener('click', () => setDev(!T.dev));
+  bHome.addEventListener('click', () => goHome());
   gT.addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (b && b.dataset.tool) pickTool(b.dataset.tool);
@@ -337,6 +345,12 @@ export function createToy(ctx) {
       if (!ctx.touch) bm.append(el('kbd', '', 'D'));
       back.append(bm, el('p', 'help', 'the friendly front: a few big buttons, the worlds and the terrain generators; nothing of this panel shows there'));
       body.append(back);
+      const hm = el('div', 'row t-do'), hmm = el('div', 'rmain'), hb = el('button', 'act', 'home screen');
+      hb.type = 'button';
+      hb.addEventListener('click', goHome);
+      hmm.append(hb);
+      hm.append(hmm, el('p', 'help', 'the plain link: the culture dish or the tissue lab (this page closes; step H2)'));
+      body.append(hm);
       body.append(el('h3', '', 'Counters and overlays'));
       for (const id of ['entropy', 'stats', 'machinery', 'keys']) { const a = byId.get(id); if (a && !(a.desktop && ctx.touch)) body.append(row(a)); }
       body.append(el('h3', '', 'This world'));
@@ -509,11 +523,11 @@ export function createToy(ctx) {
   let capT = 0;
   function caption() {
     const W = T.world;
-    const [name, line] = W.type === 'terrain' ? [TERRAINS[W.name].label, TERRAINS[W.name].line]
+    const [name, line] = T.lab ? [T.lab.name, T.lab.line] : W.type === 'terrain' ? [TERRAINS[W.name].label, TERRAINS[W.name].line]
       : W.type === 'preset' ? (CLASSIC.find((c) => c[0] === W.name) || [0, PRESETS[W.name].label, PRESETS[W.name].desc.split('. ')[0] + '.']).slice(1)
         : ['Open dish', CLASSIC[0][2]];
     capName.textContent = name;
-    capSeed.textContent = W.type === 'terrain' ? `seed ${W.seed}` : '';
+    capSeed.textContent = T.lab ? 'tissue lab' : W.type === 'terrain' ? `seed ${W.seed}` : '';
     capLine.textContent = line;
     cap.classList.add('fresh');
     clearTimeout(capT);
@@ -577,6 +591,17 @@ export function createToy(ctx) {
       list.append(b);
     }
     body.append(list);
+    // step H2: the tissue lab's pieces (as on the home screen; each opens as a fresh page)
+    body.append(el('h3', '', 'Tissue lab'), el('p', 'toy-sub', 'Hand-designed tissues to poke (they open as a fresh page).'));
+    const labList = el('div', 'toy-classic');
+    for (const L of LABS) {
+      const b = el('button', 'toy-row');
+      b.type = 'button'; b.dataset.lab = L.id;
+      b.append(el('b', '', L.name), el('span', '', L.line));
+      if (T.lab && T.lab.id === L.id) b.setAttribute('aria-current', 'true');
+      labList.append(b);
+    }
+    body.append(labList);
     box.append(head, body);
     sheet.append(box);
     document.body.append(sheet);
@@ -599,6 +624,12 @@ export function createToy(ctx) {
       const b = e.target.closest('button');
       if (!b) return;
       if (b.dataset.terrain) { const n = b.dataset.terrain; closeWorlds(); buildWorld(n, previews.get(n)); }
+      else if (b.dataset.lab) {
+        const L = LABS.find((x) => x.id === b.dataset.lab), u = new URL(location.href);
+        u.search = L.query + (A.neon.harmonic.on ? '&look=harmonic' : '') + (P.has('dev') ? `&dev=${P.get('dev')}` : '');
+        u.hash = '';
+        location.assign(u.href);
+      }
       else if (b.dataset.preset != null) {
         const q = new URLSearchParams();
         if (b.dataset.preset) q.set('preset', b.dataset.preset);
@@ -700,6 +731,11 @@ export function createToy(ctx) {
     setDev(ctx.flag('dev'), true);
     if (T.world.type === 'terrain' && inPlaceOK()) applyWorld(T.world.name, T.world.seed, true);
     else caption();
+    // step H2: a lab piece picks its tool (quietly) and says once how to poke it
+    if (T.lab && chrome) {
+      if (T.lab.tool === 'signal' && toolIndex('signal') >= 0 && ctx.cells.signals) A.setTool(toolIndex('signal'));
+      setTimeout(() => say(T.lab.hint, 11000), 1200);
+    }
     refresh();
   };
   return T;

@@ -84,7 +84,7 @@ export const lod = {
     signFill: 0.18,    // the minimal sign: the blob's tone (share of the job colour) ...
     signLamp: 0.7,     // ... its middle brighter by this (a small lamp: the halo lights it) ...
     signTube: 0.7,     // ... and its tube's brightness (the rest of the tube's light is the blob)
-    coreR: 0.34,       // the simplified sign's core: its radius (share of r)
+    coreR: 0.3,        // the simplified sign's core: its radius (share of r)
     harmFill: 0.3,     // harmonic: the share of a merged / failed rim's green kept as the inside's tone
   },
   app: null,           // window.moire (main.js), for table()

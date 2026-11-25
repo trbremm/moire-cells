@@ -668,8 +668,11 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     let rc = select(D.core, D.inkSwap.w, partsOn) * c.r * sqrt(clamp(c.bat, 0.0, 1.0));
     // step V1: the SIMPLIFIED sign's core (where the full core fails its beat limit): a fixed disc, as bright as the battery is full
     if (lodOn && kCore < 1.0) {
-      let cs = cover(D.lod2.z * c.r, d, aa) * (1.0 - kCore) * wSign;
-      rgb = mix(rgb, max(rgb, D.coreInk.rgb * clamp(c.bat, 0.0, 1.0)), cs);
+      let rs = D.lod2.z * c.r;
+      let cs = cover(rs, d, aa) * (1.0 - kCore) * wSign;
+      // (a small lamp: hotter at its middle, x1.6 at a full battery, as bright as the full core's lit rim reads at this size)
+      let hot = 1.0 + 0.6 * clamp(1.0 - d / max(rs, 1e-3), 0.0, 1.0) * select(0.0, 1.0, neon);
+      rgb = mix(rgb, max(rgb, D.coreInk.rgb * 1.6 * clamp(c.bat, 0.0, 1.0) * hot), cs);
       coreA = cs;
     }
     if (rc * D.dpr > 0.6) {
@@ -980,7 +983,13 @@ fn fs(in: VSOut) -> @location(0) vec4f {
     let joint = clamp(min(fu, 1.0 - fu) * bl / aa - 0.4, 0.0, 1.0);
     rimA = (1.0 - cover_in(ein2, aa)) * cover_in(ein - 0.15 * wOff, aa) * joint * select(0.0, 1.0, bh < lq.w);
     // step V1: bricks are marks on the cell (host limit): below it a flat rim as covered as the wall is
-    if (lodOn) { rimA = mix((1.0 - cover_in(ein2, aa)) * cover_in(ein - 0.15 * wOff, aa) * 0.85 * lq.w, rimA, lod_k(cpx, D.lodL.w)); }
+    // (the flat rim as bright on average as the bricks are drawn: the bricks' share lq.w x their joints' mean coverage at this size, k bricks
+    // per anti-aliasing width: 0.25 k - 0.4 + 0.16 / k up to k 2.8, then 1 - 1.8 / k)
+    if (lodOn) {
+      let kb = max(bl / aa, 1.6);
+      let jm = select(1.0 - 1.8 / kb, 0.25 * kb - 0.4 + 0.16 / kb, kb <= 2.8);
+      rimA = lod_mix((1.0 - cover_in(ein2, aa)) * cover_in(ein - 0.15 * wOff, aa) * jm * lq.w, rimA, lod_k(cpx, D.lodL.w));
+    }
     let ck = mix(D.lipInk[0].rgb, D.lipInk[1].rgb, lq.y) * D.lip2.x;
     rgb = mix(rgb, ck, rimA);
   }
